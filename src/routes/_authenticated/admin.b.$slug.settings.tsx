@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { AlertTriangle, Eye, EyeOff, RefreshCw, Upload, Sparkles } from "lucide-react";
+import { AlertTriangle, Eye, EyeOff, RefreshCw, Upload, Sparkles, Truck, MapPin } from "lucide-react";
 import { useT, useI18n } from "@/lib/i18n";
 import { PhoneInput } from "@/components/phone-input";
 import { Rnd } from "react-rnd";
@@ -789,7 +789,6 @@ function Settings() {
     { value: "storefront", ar: "إعدادات المتجر", en: "Storefront" },
     { value: "checkout", ar: "الشحن والاستلام", en: "Checkout & Fulfillment" },
     { value: "payments", ar: "طرق الدفع", en: "Payment Methods" },
-    { value: "branches", ar: "الفروع", en: "Branches" },
     { value: "emails", ar: "الإشعارات والبريد", en: "Notifications & Emails" },
     { value: "security", ar: "الأمان والخصوصية", en: "Security & Privacy" },
     { value: "apps", ar: "تطبيقات الجوال", en: "Mobile Applications" },
@@ -819,21 +818,15 @@ function Settings() {
     },
     checkout: {
       en: "Checkout & Fulfillment Settings",
-      enDescription: "Manage fulfillment methods, delivery options, and global flat rates.",
-      ar: "إعدادات الدفع والتسليم",
-      arDescription: "إدارة طرق التسليم وخيارات التوصيل والرسوم العامة الثابتة.",
+      enDescription: "Manage fulfillment methods, delivery options, and pickup branches.",
+      ar: "إعدادات الشحن والتسليم والفروع",
+      arDescription: "إدارة خيارات التوصيل، فروع الاستلام، والرسوم العامة.",
     },
     payments: {
       en: "Payment Method Settings",
       enDescription: "Choose the payment methods available to customers.",
       ar: "إعدادات طرق الدفع",
       arDescription: "اختيار طرق الدفع المتاحة للعملاء.",
-    },
-    branches: {
-      en: "Branch Settings",
-      enDescription: "Manage pickup locations and branch information.",
-      ar: "إعدادات الفروع",
-      arDescription: "إدارة مواقع الاستلام وبيانات الفروع.",
     },
     emails: {
       en: "Notifications & Email Settings",
@@ -1637,15 +1630,11 @@ function Settings() {
         </TabsContent>
 
         <TabsContent value="checkout" className="space-y-6 mt-0">
-          <ShippingSettingsCard brandId={brandId} />
+          <CheckoutFulfillmentSection brandId={brandId} />
         </TabsContent>
 
         <TabsContent value="payments" className="space-y-6 mt-0">
           <PaymentSettingsCard brandId={brandId} />
-        </TabsContent>
-
-        <TabsContent value="branches" className="space-y-6 mt-0">
-          <BranchesCard brandId={brandId} />
         </TabsContent>
 
         <TabsContent value="emails" className="space-y-6 mt-0">
@@ -3362,19 +3351,18 @@ function CustomizerNavigation({
   onChange,
   isAr,
 }: {
-  active: "general" | "theme" | "content" | "promotions";
-  onChange: (value: "general" | "theme" | "content" | "promotions") => void;
+  active: "theme" | "general" | "promotions";
+  onChange: (value: "theme" | "general" | "promotions") => void;
   isAr: boolean;
 }) {
   const items = [
-    ["theme", isAr ? "الألوان والمظهر (Theme & Colors)" : "Theme & Colors"],
-    ["general", isAr ? "الشعار والهوية (Logo & Header)" : "Logo & Header"],
-    ["content", isAr ? "المحتوى والرسائل (Content & Messaging)" : "Content & Messaging"],
-    ["promotions", isAr ? "البنرات الترويجية (Promotions)" : "Promotional Banners"],
+    ["theme", isAr ? "الألوان والمظهر العام" : "Theme & Styles"],
+    ["general", isAr ? "الشعار والواجهة الرئيسية" : "Logo & Hero"],
+    ["promotions", isAr ? "شريط الإعلانات والترويج" : "Announcements & Merchandising"],
   ] as const;
   return (
     <div
-      className="grid grid-cols-2 gap-2 rounded-xl bg-muted/60 p-1 lg:grid-cols-4"
+      className="grid grid-cols-1 sm:grid-cols-3 gap-2 rounded-xl bg-muted/60 p-1.5"
       role="tablist"
     >
       {items.map(([value, label]) => (
@@ -3382,7 +3370,7 @@ function CustomizerNavigation({
           key={value}
           type="button"
           variant={active === value ? "default" : "ghost"}
-          className="h-auto min-h-11 whitespace-normal px-3 py-2"
+          className="h-10 text-xs sm:text-sm font-semibold rounded-lg"
           onClick={() => onChange(value)}
           role="tab"
           aria-selected={active === value}
@@ -3586,21 +3574,11 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
   const qc = useQueryClient();
   const router = useRouter();
   const [saving, setSaving] = useState(false);
-  const [uploadingFont, setUploadingFont] = useState<null | "en" | "ar">(null);
   const [promoCropSrc, setPromoCropSrc] = useState<string | null>(null);
   const [promoCropIndex, setPromoCropIndex] = useState<number | null>(null);
   const [uploadingPromo, setUploadingPromo] = useState(false);
-  const [uploadingSecondaryBanner, setUploadingSecondaryBanner] = useState<
-    "trending" | "category" | null
-  >(null);
-  const [uploadingEditorialAsset, setUploadingEditorialAsset] = useState<string | null>(null);
-  const [settingsTab, setSettingsTab] = useState<"general" | "theme" | "content" | "promotions">(
-    "theme",
-  );
-  const [themeMode, setThemeMode] = useState<"quick" | "advanced">("quick");
+  const [settingsTab, setSettingsTab] = useState<"theme" | "general" | "promotions">("theme");
   const [contentLanguage, setContentLanguage] = useState<"en" | "ar">(lang === "ar" ? "ar" : "en");
-  const enFontInput = useRef<HTMLInputElement>(null);
-  const arFontInput = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<{
     logo_size: number;
     logo_align: string;
@@ -3893,73 +3871,6 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     }
   };
 
-  const uploadStorefrontFont = async (file: File, language: "en" | "ar") => {
-    try {
-      setUploadingFont(language);
-      const url = await uploadPublicMedia(brandId, file, "font");
-      const cleanName = file.name
-        .replace(/\.[^.]+$/, "")
-        .replace(/[_-]+/g, " ")
-        .trim();
-      const customFamily = `Custom — ${cleanName || (language === "ar" ? "Arabic" : "English")}`;
-      setState((current) =>
-        current
-          ? {
-              ...current,
-              [language === "en" ? "storefront_font_en" : "storefront_font_ar"]: customFamily,
-              [language === "en" ? "storefront_font_en_url" : "storefront_font_ar_url"]: url,
-              storefront_typography: {
-                ...current.storefront_typography,
-                body: {
-                  ...current.storefront_typography.body,
-                  [language]: {
-                    family: customFamily,
-                    url,
-                  },
-                },
-                display: {
-                  ...current.storefront_typography.display,
-                  [language]: {
-                    family: customFamily,
-                    url,
-                  },
-                },
-              },
-            }
-          : current,
-      );
-      toast.success(isAr ? "تم رفع الخط — لا تنسَ الحفظ" : "Font uploaded — remember to save");
-    } catch (error: any) {
-      toast.error(error.message ?? "Font upload failed");
-    } finally {
-      setUploadingFont(null);
-    }
-  };
-
-  const removeStorefrontFont = (language: "en" | "ar") => {
-    const fallbackFamily = language === "ar" ? "Tajawal" : "Inter";
-    setState((current) =>
-      current
-        ? {
-            ...current,
-            [language === "en" ? "storefront_font_en" : "storefront_font_ar"]: fallbackFamily,
-            [language === "en" ? "storefront_font_en_url" : "storefront_font_ar_url"]: null,
-            storefront_typography: {
-              ...current.storefront_typography,
-              body: {
-                ...current.storefront_typography.body,
-                [language]: { family: fallbackFamily, url: null },
-              },
-              display: {
-                ...current.storefront_typography.display,
-                [language]: { family: fallbackFamily, url: null },
-              },
-            },
-          }
-        : current,
-    );
-  };
-
   const updatePromoCard = (index: number, patch: Partial<HomePromoCard>) =>
     setState((current) =>
       current
@@ -4011,70 +3922,6 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     setPromoCropIndex(null);
   };
 
-  const uploadSecondaryBanner = async (target: "trending" | "category", blob: Blob) => {
-    try {
-      setUploadingSecondaryBanner(target);
-      const file = new File([blob], `${target}-secondary-banner.jpg`, { type: "image/jpeg" });
-      const url = await uploadPublicMedia(brandId, file, "hero");
-      setState((current) =>
-        current
-          ? {
-              ...current,
-              [target === "trending"
-                ? "trending_banner_background_url"
-                : "category_banner_background_url"]: url,
-            }
-          : current,
-      );
-      toast.success(
-        isAr
-          ? "تم رفع خلفية اللافتة — احفظ التغييرات"
-          : "Banner background uploaded — remember to save",
-      );
-    } catch (error: any) {
-      toast.error(error.message ?? "Banner upload failed");
-    } finally {
-      setUploadingSecondaryBanner(null);
-    }
-  };
-
-  const updateEditorialSection = (
-    key: EditorialSectionKey,
-    patch: Partial<EditorialSectionConfig>,
-  ) =>
-    setState((current) =>
-      current
-        ? {
-            ...current,
-            homepage_editorial_sections: {
-              ...current.homepage_editorial_sections,
-              [key]: { ...current.homepage_editorial_sections[key], ...patch },
-            },
-          }
-        : current,
-    );
-
-  const uploadEditorialAsset = async (
-    key: EditorialSectionKey,
-    field: "banner_image_url" | "background_image_url",
-    blob: Blob,
-  ) => {
-    const uploadKey = `${key}-${field}`;
-    try {
-      setUploadingEditorialAsset(uploadKey);
-      const file = new File([blob], `${uploadKey}.jpg`, { type: "image/jpeg" });
-      const url = await uploadPublicMedia(brandId, file, "hero");
-      updateEditorialSection(key, { [field]: url });
-      toast.success(
-        isAr ? "تم رفع صورة القسم — احفظ التغييرات" : "Section image uploaded — remember to save",
-      );
-    } catch (error: any) {
-      toast.error(error.message ?? "Section image upload failed");
-    } finally {
-      setUploadingEditorialAsset(null);
-    }
-  };
-
   if (!state) {
     return (
       <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
@@ -4102,144 +3949,20 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
       </div>
 
       <CustomizerNavigation active={settingsTab} onChange={setSettingsTab} isAr={isAr} />
-      {(settingsTab === "content" || settingsTab === "promotions") && (
+      {settingsTab === "promotions" && (
         <ContentLanguageToggle value={contentLanguage} onChange={setContentLanguage} isAr={isAr} />
       )}
 
-      <div className={settingsTab === "general" ? "space-y-3" : "hidden"}>
-        <h3 className="font-medium text-sm">{isAr ? "الشعار" : "Logo"}</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <Label>{isAr ? "حجم الشعار (بكسل)" : "Logo size (px)"}</Label>
-            <Input
-              type="number"
-              min={24}
-              max={120}
-              value={state.logo_size}
-              onChange={(e) =>
-                setState({
-                  ...state,
-                  logo_size: Math.max(24, Math.min(120, Number(e.target.value))),
-                })
-              }
-            />
-          </div>
-          <div>
-            <Label>{isAr ? "محاذاة الشعار" : "Logo alignment"}</Label>
-            <div className="flex gap-2">
-              {(["left", "center", "right"] as const).map((a) => (
-                <Button
-                  key={a}
-                  type="button"
-                  size="sm"
-                  variant={state.logo_align === a ? "default" : "outline"}
-                  onClick={() => setState({ ...state, logo_align: a })}
-                >
-                  {isAr ? (a === "left" ? "يسار" : a === "center" ? "وسط" : "يمين") : a}
-                </Button>
-              ))}
-            </div>
-          </div>
-          <div className="sm:col-span-2 space-y-3 border-t border-border pt-4">
-            <div>
-              <h3 className="font-medium text-sm">
-                {isAr ? "تفضيلات العرض" : "Display Preferences"}
-              </h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {isAr
-                  ? "تبقى أسماء العلامة محفوظة للهوية والبحث، ويمكن إخفاؤها بشكل مستقل في كل قسم."
-                  : "Brand names remain saved for identity and SEO, but can be hidden independently in each storefront area."}
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {(
-                [
-                  [
-                    "show_header_name",
-                    isAr ? "إظهار الاسم بجانب الشعار" : "Show name beside header logo",
-                  ],
-                  [
-                    "show_hero_title",
-                    isAr ? "إظهار اسم العلامة في الواجهة" : "Show brand name in hero",
-                  ],
-                  ["show_hero_about", isAr ? "إظهار النبذة في الواجهة" : "Show About text in hero"],
-                  [
-                    "show_footer_name",
-                    isAr ? "إظهار اسم العلامة في التذييل" : "Show brand name in footer",
-                  ],
-                ] as const
-              ).map(([key, label]) => (
-                <div
-                  key={key}
-                  className="flex items-center justify-between gap-4 rounded-xl border border-border p-3"
-                >
-                  <div>
-                    <Label className="cursor-pointer">{label}</Label>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {isAr
-                        ? "فعّل هذا الخيار لإظهار العنصر للعملاء في واجهة المتجر."
-                        : "Turn this on to show the element to customers on the storefront."}
-                    </p>
-                  </div>
-                  <Switch
-                    checked={state[key]}
-                    onCheckedChange={(checked) => setState({ ...state, [key]: checked })}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="space-y-1 pt-2">
-            <Label>
-              {isAr ? "رقم الهاتف أو الحساب أو IBAN" : "Benefit phone, account number, or IBAN"}
-            </Label>
-            <Input
-              value={(state as any).benefit_account_number ?? ""}
-              onChange={(e) =>
-                setState({ ...state, benefit_account_number: e.target.value } as any)
-              }
-              placeholder={
-                isAr ? "يظهر للعميل مع زر النسخ" : "Shown to customers with a copy button"
-              }
-            />
-          </div>
-        </div>
-        <div className="pt-3">
-          <BrandHeroCard brandId={brandId} onSaveRef={heroSaveRef} />
-        </div>
-      </div>
-
-      {settingsTab === "theme" && (
-        <div className="flex items-center gap-2 p-1 bg-muted/40 rounded-lg w-fit border border-border">
-          <Button
-            type="button"
-            size="sm"
-            variant={themeMode === "quick" ? "default" : "ghost"}
-            onClick={() => setThemeMode("quick")}
-            className="gap-1.5 h-8 text-xs font-semibold"
-          >
-            <Sparkles className="size-3.5" />
-            <span>{isAr ? "المظهر السريع (Quick)" : "Quick Theme"}</span>
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant={themeMode === "advanced" ? "default" : "ghost"}
-            onClick={() => setThemeMode("advanced")}
-            className="gap-1.5 h-8 text-xs font-semibold"
-          >
-            <span>{isAr ? "تخصيص متقدم (Advanced)" : "Advanced Customizer"}</span>
-          </Button>
-        </div>
-      )}
-
-      {settingsTab === "theme" && themeMode === "quick" && state && (
+      {/* ---------------- Tab 1: Theme & Style (الألوان والمظهر العام) ---------------- */}
+      <div className={settingsTab === "theme" ? "space-y-6" : "hidden"}>
         <QuickThemeCustomizer
           primaryColor={state.storefront_accent_color || state.btn_primary_bg || "#000000"}
           secondaryColor={state.btn_secondary_bg || "#1f1f1f"}
-          radius={state.storefront_radius || "0.5rem"}
+          radius={state.storefront_radius || "0.375rem"}
           currentFontAr={state.storefront_font_ar || "Cairo"}
           currentFontEn={state.storefront_font_en || "Inter"}
+          headerGlass={state.header_glass ?? true}
+          badgeAccent={state.badge_accent || "maroon"}
           isAr={isAr}
           onPrimaryChange={(val) =>
             setState((prev) =>
@@ -4272,6 +3995,26 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   },
             )
           }
+          onHeaderGlassChange={(val) =>
+            setState((prev) =>
+              !prev
+                ? prev
+                : {
+                    ...prev,
+                    header_glass: val,
+                  },
+            )
+          }
+          onBadgeAccentChange={(val) =>
+            setState((prev) =>
+              !prev
+                ? prev
+                : {
+                    ...prev,
+                    badge_accent: val,
+                  },
+            )
+          }
           onSelectFontPreset={(preset: FontMoodPreset) => {
             setState((prev) =>
               !prev
@@ -4299,172 +4042,27 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           onSwapColors={() => {
             setState((prev) => {
               if (!prev) return prev;
-              const currentP = prev.storefront_accent_color || prev.btn_primary_bg || "#000000";
-              const currentS = prev.btn_secondary_bg || "#1f1f1f";
+              const curPrimary = prev.storefront_accent_color || prev.btn_primary_bg || "#000000";
+              const curSecondary = prev.btn_secondary_bg || "#1f1f1f";
               return {
                 ...prev,
-                storefront_accent_color: currentS,
-                btn_primary_bg: currentS,
-                btn_secondary_bg: currentP,
+                storefront_accent_color: curSecondary,
+                btn_primary_bg: curSecondary,
+                btn_secondary_bg: curPrimary,
               };
             });
           }}
         />
-      )}
 
-      <div
-        className={
-          settingsTab === "theme" && themeMode === "advanced"
-            ? "space-y-4 rounded-xl border border-border p-4"
-            : "hidden"
-        }
-      >
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between rounded-xl border border-border p-4 bg-card shadow-sm">
           <div>
-            <h3 className="font-medium text-sm">
-              {isAr ? "حركة لافتات الأقسام الثانوية" : "Secondary banner parallax"}
-            </h3>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <Label className="text-sm font-semibold cursor-pointer">
+              {isAr ? "شارات التخفيضات التلقائية" : "Automatic Sale Badges"}
+            </Label>
+            <p className="mt-0.5 text-xs text-muted-foreground">
               {isAr
-                ? "حركة تمرير خفيفة للافتة الرائج الآن ولافتات فواصل التصنيفات فقط."
-                : "Subtle scroll movement for configured editorial and category divider banners."}
-            </p>
-          </div>
-          <Switch
-            checked={state.secondary_banner_parallax_enabled}
-            onCheckedChange={(checked) =>
-              setState({ ...state, secondary_banner_parallax_enabled: checked })
-            }
-          />
-        </div>
-        <div className="grid grid-cols-1 gap-4 border-t border-border pt-4 lg:grid-cols-2">
-          {(
-            [
-              {
-                key: "category_banner_background_url",
-                target: "category",
-                title: isAr ? "خلفية لافتات التصنيفات" : "Category banner background",
-              },
-            ] as const
-          ).map(({ key, target, title }) => {
-            const imageUrl = state[key];
-            return (
-              <div key={key} className="space-y-3 rounded-xl border border-border p-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <Label>{title}</Label>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {isAr ? "صورة عريضة محسّنة بنسبة 2:1" : "Optimized wide image · 2:1 ratio"}
-                    </p>
-                  </div>
-                  {imageUrl && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      aria-label={isAr ? "إزالة الخلفية" : "Remove background"}
-                      onClick={() => setState({ ...state, [key]: null })}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-                <div className="relative aspect-[2/1] overflow-hidden rounded-xl border border-border bg-muted">
-                  {imageUrl ? (
-                    <ResponsiveImage
-                      src={imageUrl}
-                      preset="hero"
-                      sizes="(min-width: 1024px) 50vw, 100vw"
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-                      {isAr ? "لا توجد خلفية" : "No background selected"}
-                    </div>
-                  )}
-                </div>
-                <CropUploadButton
-                  preset="editorialBanner"
-                  heroPreview
-                  busy={uploadingSecondaryBanner === target}
-                  className="w-full"
-                  title={isAr ? "ضبط خلفية اللافتة" : "Frame banner background"}
-                  description={
-                    isAr
-                      ? "اضبط موضع الصورة مع مساحة إضافية آمنة لحركة التمرير."
-                      : "Position the image with safe visual room for the scroll movement."
-                  }
-                  onCrop={(blob) => uploadSecondaryBanner(target, blob)}
-                >
-                  <Upload className="me-2 h-4 w-4" />
-                  {imageUrl
-                    ? isAr
-                      ? "استبدال الخلفية"
-                      : "Replace background"
-                    : isAr
-                      ? "رفع خلفية"
-                      : "Upload background"}
-                </CropUploadButton>
-              </div>
-            );
-          })}
-        </div>
-        {state.secondary_banner_parallax_enabled && (
-          <div className="grid grid-cols-1 gap-4 border-t border-border pt-4 sm:grid-cols-2">
-            <div className="flex items-center justify-between gap-4 rounded-md border border-border p-3">
-              <div>
-                <Label>{isAr ? "تفعيلها على الجوال" : "Enable on mobile"}</Label>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {isAr
-                    ? "عند إيقافه تصبح اللافتات ثابتة تحت نقطة التوقف."
-                    : "When off, banners stay static below the breakpoint."}
-                </p>
-              </div>
-              <Switch
-                checked={state.secondary_banner_parallax_mobile_enabled}
-                onCheckedChange={(checked) =>
-                  setState({ ...state, secondary_banner_parallax_mobile_enabled: checked })
-                }
-              />
-            </div>
-            <div>
-              <Label htmlFor="secondary-banner-parallax-breakpoint">
-                {isAr ? "نقطة توقف سطح المكتب (بكسل)" : "Desktop breakpoint (px)"}
-              </Label>
-              <Input
-                id="secondary-banner-parallax-breakpoint"
-                type="number"
-                min={320}
-                max={1920}
-                value={state.secondary_banner_parallax_breakpoint}
-                onChange={(event) =>
-                  setState({
-                    ...state,
-                    secondary_banner_parallax_breakpoint: Math.max(
-                      320,
-                      Math.min(1920, Number(event.target.value) || 768),
-                    ),
-                  })
-                }
-              />
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div
-        className={
-          settingsTab === "general" ? "space-y-4 rounded-xl border border-border p-4" : "hidden"
-        }
-      >
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h3 className="font-medium text-sm">{isAr ? "شارات التنزيلات" : "Sale badges"}</h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {isAr
-                ? "تحكم عام بإظهار شارات الخصم. ويمكن تخصيص كل منتج من المخزون."
-                : "Master switch for discount badges. Individual products can be controlled in Inventory."}
+                ? "إظهار شارة الخصم تلقائياً على كروت المنتجات المخفضة في المتجر"
+                : "Automatically show a discount badge on discounted product cards"}
             </p>
           </div>
           <Switch
@@ -4476,1142 +4074,367 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         </div>
       </div>
 
-      <div
-        className={
-          settingsTab === "content" ? "space-y-4 rounded-xl border border-border p-4" : "hidden"
-        }
-      >
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h3 className="font-medium text-sm">{isAr ? "شريط الإعلانات" : "Announcement bar"}</h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {isAr
-                ? "رسالة قابلة للتخصيص مع قواعد للصفحات والزوار."
-                : "A customizable message with page and audience rules."}
-            </p>
+      {/* ---------------- Tab 2: Logo & Hero (الشعار والواجهة الرئيسية) ---------------- */}
+      <div className={settingsTab === "general" ? "space-y-6" : "hidden"}>
+        <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
+          <h3 className="font-semibold text-sm">{isAr ? "الشعار والهوية" : "Logo & Header"}</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label>{isAr ? "حجم الشعار (بكسل)" : "Logo size (px)"}</Label>
+              <Input
+                type="number"
+                min={24}
+                max={120}
+                value={state.logo_size}
+                onChange={(e) =>
+                  setState({
+                    ...state,
+                    logo_size: Math.max(24, Math.min(120, Number(e.target.value))),
+                  })
+                }
+              />
+            </div>
+            <div>
+              <Label>{isAr ? "محاذاة الشعار" : "Logo alignment"}</Label>
+              <div className="flex gap-2 mt-1">
+                {(["left", "center", "right"] as const).map((a) => (
+                  <Button
+                    key={a}
+                    type="button"
+                    size="sm"
+                    variant={state.logo_align === a ? "default" : "outline"}
+                    onClick={() => setState({ ...state, logo_align: a })}
+                  >
+                    {isAr ? (a === "left" ? "يسار" : a === "center" ? "وسط" : "يمين") : a}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="sm:col-span-2 space-y-3 border-t border-border pt-4">
+              <div>
+                <h4 className="font-medium text-xs text-muted-foreground">
+                  {isAr ? "تفضيلات العرض في الموقع" : "Storefront Display Preferences"}
+                </h4>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {(
+                  [
+                    [
+                      "show_header_name",
+                      isAr ? "إظهار الاسم بجانب الشعار" : "Show name beside header logo",
+                    ],
+                    [
+                      "show_hero_title",
+                      isAr ? "إظهار اسم العلامة في الواجهة" : "Show brand name in hero",
+                    ],
+                    ["show_hero_about", isAr ? "إظهار النبذة في الواجهة" : "Show About text in hero"],
+                    [
+                      "show_footer_name",
+                      isAr ? "إظهار اسم العلامة في التذييل" : "Show brand name in footer",
+                    ],
+                  ] as const
+                ).map(([key, label]) => (
+                  <div
+                    key={key}
+                    className="flex items-center justify-between gap-4 rounded-xl border border-border p-3"
+                  >
+                    <div>
+                      <Label className="cursor-pointer text-xs">{label}</Label>
+                    </div>
+                    <Switch
+                      checked={state[key]}
+                      onCheckedChange={(checked) => setState({ ...state, [key]: checked })}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1 pt-2 sm:col-span-2">
+              <Label>
+                {isAr ? "رقم الهاتف أو الحساب أو IBAN للتحويل" : "Benefit phone, account number, or IBAN"}
+              </Label>
+              <Input
+                value={(state as any).benefit_account_number ?? ""}
+                onChange={(e) =>
+                  setState({ ...state, benefit_account_number: e.target.value } as any)
+                }
+                placeholder={
+                  isAr ? "يظهر للمتسوقين عند الدفع مع زر النسخ السريع" : "Shown to customers with a copy button"
+                }
+              />
+            </div>
           </div>
-          <Switch
-            checked={state.announcement_enabled}
-            onCheckedChange={(checked) => setState({ ...state, announcement_enabled: checked })}
-          />
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="sm:col-span-2" dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
-            <Label>{contentLanguage === "ar" ? "نص الإعلان" : "Announcement text"}</Label>
-            <Input
-              className={contentLanguage === "ar" ? "text-right" : "text-left"}
-              value={
-                (contentLanguage === "ar"
-                  ? state.announcement_text_ar
-                  : state.announcement_text_en) ?? ""
-              }
-              onChange={(e) =>
-                setState({
-                  ...state,
-                  [contentLanguage === "ar" ? "announcement_text_ar" : "announcement_text_en"]:
-                    e.target.value || null,
-                })
-              }
+
+        <BrandHeroCard brandId={brandId} onSaveRef={heroSaveRef} />
+      </div>
+
+      {/* ---------------- Tab 3: Announcements & Merchandising (شريط الإعلانات والترويج) ---------------- */}
+      <div className={settingsTab === "promotions" ? "space-y-6" : "hidden"}>
+        {/* Top Announcement Bar */}
+        <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h3 className="font-semibold text-sm">{isAr ? "شريط الإعلانات أعلى الصفحة" : "Top Announcement Bar"}</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {isAr
+                  ? "شريط علوي يظهر عروضك الخاصة أو التوصيل المجاني للزوار"
+                  : "Top bar announcing special offers or delivery policies to visitors"}
+              </p>
+            </div>
+            <Switch
+              checked={state.announcement_enabled}
+              onCheckedChange={(checked) => setState({ ...state, announcement_enabled: checked })}
             />
           </div>
-          <ColorField
-            label={isAr ? "الخلفية" : "Background"}
-            value={state.announcement_bg}
-            onChange={(v) => setState({ ...state, announcement_bg: v || "#111111" })}
-          />
-          <ColorField
-            label={isAr ? "لون النص" : "Text color"}
-            value={state.announcement_fg}
-            onChange={(v) => setState({ ...state, announcement_fg: v || "#ffffff" })}
-          />
-        </div>
-        <div className="flex flex-wrap gap-3">
-          {(
-            [
-              ["announcement_bold", isAr ? "عريض" : "Bold"],
-              ["announcement_italic", isAr ? "مائل" : "Italic"],
-              ["announcement_dismissible", isAr ? "قابل للإغلاق" : "Dismissible"],
-            ] as const
-          ).map(([key, label]) => (
-            <div key={key} className="flex items-center gap-2 rounded-md border px-3 py-2">
-              <Switch
-                checked={state[key]}
-                onCheckedChange={(checked) => setState({ ...state, [key]: checked })}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2" dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
+              <Label>{contentLanguage === "ar" ? "نص الإعلان (بالعربية)" : "Announcement text (English)"}</Label>
+              <Input
+                className={contentLanguage === "ar" ? "text-right" : "text-left"}
+                value={
+                  (contentLanguage === "ar"
+                    ? state.announcement_text_ar
+                    : state.announcement_text_en) ?? ""
+                }
+                placeholder={contentLanguage === "ar" ? "توصيل مجاني للطلبات فوق 20 دينار" : "Free delivery on orders over 20 BHD"}
+                onChange={(e) =>
+                  setState({
+                    ...state,
+                    [contentLanguage === "ar" ? "announcement_text_ar" : "announcement_text_en"]:
+                      e.target.value || null,
+                  })
+                }
               />
-              <Label>{label}</Label>
             </div>
-          ))}
-        </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <ColorField
+              label={isAr ? "لون خلفية الشريط" : "Bar background"}
+              value={state.announcement_bg}
+              onChange={(v) => setState({ ...state, announcement_bg: v || "#111111" })}
+            />
+            <ColorField
+              label={isAr ? "لون نص الشريط" : "Bar text color"}
+              value={state.announcement_fg}
+              onChange={(v) => setState({ ...state, announcement_fg: v || "#ffffff" })}
+            />
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <div className="flex items-center gap-2 rounded-md border border-border px-3 py-2">
+              <Switch
+                checked={state.announcement_dismissible}
+                onCheckedChange={(checked) => setState({ ...state, announcement_dismissible: checked })}
+              />
+              <Label className="cursor-pointer text-xs">{isAr ? "قابل للإغلاق من العميل" : "Dismissible by customer"}</Label>
+            </div>
+            <div className="flex items-center gap-2 rounded-md border border-border px-3 py-2">
+              <Switch
+                checked={state.announcement_bold}
+                onCheckedChange={(checked) => setState({ ...state, announcement_bold: checked })}
+              />
+              <Label className="cursor-pointer text-xs">{isAr ? "نص عريض" : "Bold text"}</Label>
+            </div>
+          </div>
           <div>
-            <Label>{isAr ? "الصفحات" : "Pages"}</Label>
+            <Label>{isAr ? "ظهور الشريط في الصفحات" : "Display Pages"}</Label>
             <Select
               value={state.announcement_scope}
               onValueChange={(v: any) => setState({ ...state, announcement_scope: v })}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full sm:w-64 mt-1">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{isAr ? "كل الصفحات" : "All pages"}</SelectItem>
-                <SelectItem value="home">{isAr ? "الرئيسية فقط" : "Homepage only"}</SelectItem>
-                <SelectItem value="catalog">{isAr ? "صفحات التسوق" : "Shopping pages"}</SelectItem>
-                <SelectItem value="checkout">{isAr ? "الدفع فقط" : "Checkout only"}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>{isAr ? "الجمهور" : "Audience"}</Label>
-            <Select
-              value={state.announcement_audience}
-              onValueChange={(v: any) => setState({ ...state, announcement_audience: v })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{isAr ? "الجميع" : "Everyone"}</SelectItem>
-                <SelectItem value="guest">{isAr ? "الزوار" : "Guests"}</SelectItem>
-                <SelectItem value="authenticated">
-                  {isAr ? "المسجلون" : "Signed-in customers"}
-                </SelectItem>
+                <SelectItem value="all">{isAr ? "جميع صفحات المتجر" : "All pages"}</SelectItem>
+                <SelectItem value="home">{isAr ? "الصفحة الرئيسية فقط" : "Homepage only"}</SelectItem>
+                <SelectItem value="catalog">{isAr ? "صفحات المنتجات والتسوق" : "Shopping pages"}</SelectItem>
+                <SelectItem value="checkout">{isAr ? "صفحة الدفع فقط" : "Checkout only"}</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
-      </div>
 
-      <div
-        className={
-          settingsTab === "theme" && themeMode === "advanced"
-            ? "space-y-6 rounded-xl border border-border p-4 sm:p-5"
-            : "hidden"
-        }
-      >
-        <div>
-          <h3 className="font-medium text-sm">{isAr ? "ألوان المتجر" : "Storefront colors"}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {isAr
-              ? "هذه الألوان خاصة بالمتجر ولا تؤثر على الفواتير."
-              : "These colors apply only to the storefront and never affect invoices."}
-          </p>
-        </div>
-        <ColorField
-          label={isAr ? "لون المتجر الأساسي" : "Storefront accent color"}
-          value={state.storefront_accent_color}
-          onChange={(value) => setState({ ...state, storefront_accent_color: value })}
-        />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <ColorField
-            label={isAr ? "خلفية المتجر" : "Storefront background"}
-            value={state.storefront_background_color}
-            onChange={(value) => setState({ ...state, storefront_background_color: value })}
-          />
-          <ColorField
-            label={isAr ? "نص المتجر" : "Storefront text"}
-            value={state.storefront_text_color}
-            onChange={(value) => setState({ ...state, storefront_text_color: value })}
-          />
-        </div>
-
-        {/* Storefront Corner Curvature (storefront_radius) */}
-        <div className="space-y-2 border-t border-border/60 pt-4">
-          <Label className="font-semibold text-sm">
-            {isAr
-              ? "انحناء زوايا المتجر (Storefront Corner Curvature)"
-              : "Storefront Corner Curvature"}
-          </Label>
-          <p className="text-xs text-muted-foreground">
-            {isAr
-              ? "يحدد درجة استدارة الحواف للبطاقات والأزرار والعناصر التفاعلية في متجر العميل."
-              : "Controls the corner roundness of product cards, buttons, and interactive containers across your storefront."}
-          </p>
-          <Select
-            value={state.storefront_radius || "1rem"}
-            onValueChange={(val) => {
-              try {
-                localStorage.setItem("boutq_storefront_radius", val);
-              } catch (e) {
-                void e;
-              }
-              setState({ ...state, storefront_radius: val });
-            }}
-          >
-            <SelectTrigger className="mt-1.5 max-w-md">
-              <SelectValue placeholder={isAr ? "اختر انحناء الزوايا" : "Select corner curvature"} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="0px">
-                {isAr ? "مستقيمة حادة (Sharp — 0px)" : "Sharp Rectangles (0px)"}
-              </SelectItem>
-              <SelectItem value="0.375rem">
-                {isAr ? "انحناء خفيف (Subtle — 6px / 0.375rem)" : "Subtle Rounded (6px / 0.375rem)"}
-              </SelectItem>
-              <SelectItem value="1rem">
-                {isAr
-                  ? "انحناء مميز (Rounded / Extra Curved — 16px / 1rem - الافتراضي)"
-                  : "Rounded / Extra Curved (16px / 1rem - Default)"}
-              </SelectItem>
-              <SelectItem value="1.5rem">
-                {isAr
-                  ? "شبه بيضاوية / كبسولة (Pill — 24px / 1.5rem)"
-                  : "Pill / Fully Curved (24px / 1.5rem)"}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Navigation Bar Style (header_glass) */}
-        <div className="space-y-2 border-t border-border/60 pt-4">
-          <Label className="font-semibold text-sm">
-            {isAr ? "نمط شريط التنقل العلوي (Navigation Bar Style)" : "Navigation Bar Style"}
-          </Label>
-          <p className="text-xs text-muted-foreground">
-            {isAr
-              ? "اختر بين هيدر زجاجي مضبب عائم أو خلفية صلبة لترويسة المتجر."
-              : "Choose between a modern glassmorphic blur with backdrop opacity or a solid background for the top navigation bar."}
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 pt-1">
-            <Button
-              type="button"
-              variant={state.header_glass ? "default" : "outline"}
-              onClick={() => {
-                try {
-                  localStorage.setItem("boutq_header_glass", "true");
-                } catch (e) {
-                  void e;
-                }
-                setState({ ...state, header_glass: true });
-              }}
-              className="justify-start sm:w-auto"
-            >
-              <span className="me-2 h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block" />
-              {isAr ? "زجاجي مضبب (Glassmorphic Blur)" : "Glassmorphic Blur"}
-            </Button>
-            <Button
-              type="button"
-              variant={!state.header_glass ? "default" : "outline"}
-              onClick={() => {
-                try {
-                  localStorage.setItem("boutq_header_glass", "false");
-                } catch (e) {
-                  void e;
-                }
-                setState({ ...state, header_glass: false });
-              }}
-              className="justify-start sm:w-auto"
-            >
-              <span className="me-2 h-2.5 w-2.5 rounded-full bg-muted-foreground/50 inline-block" />
-              {isAr ? "خلفية صلبة كاملة (Solid Background)" : "Solid Background"}
-            </Button>
-          </div>
-        </div>
-
-        {/* Sale & Badge Accent (badge_accent) */}
-        <div className="space-y-2 border-t border-border/60 pt-4">
-          <Label className="font-semibold text-sm">
-            {isAr ? "لون شارات الخصومات والعروض (Sale & Badge Accent)" : "Sale & Badge Accent"}
-          </Label>
-          <p className="text-xs text-muted-foreground">
-            {isAr
-              ? "حدد لون التمييز لشارات الخصم والتنزيلات في قوائم المنتجات."
-              : "Select the accent color used for discount badges, sale tags, and product highlight labels."}
-          </p>
-          <Select
-            value={state.badge_accent || "maroon"}
-            onValueChange={(val) => {
-              try {
-                localStorage.setItem("boutq_badge_accent", val);
-              } catch (e) {
-                void e;
-              }
-              setState({ ...state, badge_accent: val });
-            }}
-          >
-            <SelectTrigger className="mt-1.5 max-w-md">
-              <SelectValue placeholder={isAr ? "اختر لون شارة العرض" : "Select badge accent"} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="maroon">
-                <div className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-full bg-[#8C6D58]" />
-                  <span>{isAr ? "عنابي كلاسيكي (Classic Maroon)" : "Classic Maroon"}</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="crimson">
-                <div className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-full bg-[#dc2626]" />
-                  <span>{isAr ? "أحمر قرمزي (Crimson Red)" : "Crimson Red"}</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="slate">
-                <div className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-full bg-[#334155]" />
-                  <span>{isAr ? "رمادي داكن (Dark Slate)" : "Dark Slate"}</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="emerald">
-                <div className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-full bg-[#059669]" />
-                  <span>{isAr ? "أخضر زمردي (Emerald Green)" : "Emerald Green"}</span>
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div
-        className={
-          settingsTab === "theme" && themeMode === "advanced"
-            ? "space-y-4 rounded-xl border border-border p-4"
-            : "hidden"
-        }
-      >
-        <div>
-          <h3 className="font-medium text-sm">{isAr ? "خطوط المتجر" : "Storefront fonts"}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {isAr
-              ? "اختر خطاً مستقلاً لكل لغة في واجهة المتجر."
-              : "Choose an independent website font for each storefront language."}
-          </p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Homepage Sections */}
+        <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
           <div>
-            <Label>{isAr ? "الخط الإنجليزي" : "English font"}</Label>
-            <Select
-              value={state.storefront_font_en}
-              onValueChange={(value) =>
-                setState({
-                  ...state,
-                  storefront_font_en: value,
-                  storefront_font_en_url: null,
-                  storefront_typography: {
-                    ...state.storefront_typography,
-                    body: {
-                      ...state.storefront_typography.body,
-                      en: { family: value, url: null },
-                    },
-                  },
-                })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {(state.storefront_font_en_url ||
-                !STOREFRONT_EN_FONTS.includes(state.storefront_font_en)
-                  ? [
-                      state.storefront_font_en,
-                      ...STOREFRONT_EN_FONTS.filter((font) => font !== state.storefront_font_en),
-                    ]
-                  : STOREFRONT_EN_FONTS
-                ).map((font) => (
-                  <SelectItem key={font} value={font}>
-                    <span
-                      style={{
-                        fontFamily:
-                          state.storefront_font_en_url && font === state.storefront_font_en
-                            ? "StorefrontTypographyPreviewBody"
-                            : font,
-                      }}
-                    >
-                      {font}
-                      {state.storefront_font_en_url && font === state.storefront_font_en
-                        ? isAr
-                          ? " — مرفوع"
-                          : " — uploaded"
-                        : ""}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="mt-2 flex gap-2">
-              <Input
-                readOnly
-                value={
-                  state.storefront_font_en_url
-                    ? isAr
-                      ? "خط مخصص مرفوع"
-                      : "Custom font uploaded"
-                    : ""
-                }
-                placeholder={isAr ? "أو ارفع خطاً مخصصاً" : "Or upload a custom font"}
-              />
-              <input
-                ref={enFontInput}
-                type="file"
-                accept=".woff,.woff2,.ttf,.otf"
-                className="hidden"
-                onChange={(e) =>
-                  e.target.files?.[0] && uploadStorefrontFont(e.target.files[0], "en")
-                }
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                disabled={uploadingFont === "en"}
-                onClick={() => enFontInput.current?.click()}
-              >
-                <Upload className="h-4 w-4" />
-              </Button>
-              {state.storefront_font_en_url && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeStorefrontFont("en")}
-                >
-                  {isAr ? "إزالة" : "Remove"}
-                </Button>
-              )}
-            </div>
-          </div>
-          <div>
-            <Label>{isAr ? "الخط العربي" : "Arabic font"}</Label>
-            <Select
-              value={state.storefront_font_ar}
-              onValueChange={(value) =>
-                setState({
-                  ...state,
-                  storefront_font_ar: value,
-                  storefront_font_ar_url: null,
-                  storefront_typography: {
-                    ...state.storefront_typography,
-                    body: {
-                      ...state.storefront_typography.body,
-                      ar: { family: value, url: null },
-                    },
-                  },
-                })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {(state.storefront_font_ar_url ||
-                !STOREFRONT_AR_FONTS.includes(state.storefront_font_ar)
-                  ? [
-                      state.storefront_font_ar,
-                      ...STOREFRONT_AR_FONTS.filter((font) => font !== state.storefront_font_ar),
-                    ]
-                  : STOREFRONT_AR_FONTS
-                ).map((font) => (
-                  <SelectItem key={font} value={font}>
-                    <span
-                      style={{
-                        fontFamily:
-                          state.storefront_font_ar_url && font === state.storefront_font_ar
-                            ? "StorefrontTypographyPreviewBody"
-                            : font,
-                      }}
-                    >
-                      {font}
-                      {state.storefront_font_ar_url && font === state.storefront_font_ar
-                        ? isAr
-                          ? " — مرفوع"
-                          : " — uploaded"
-                        : ""}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="mt-2 flex gap-2">
-              <Input
-                readOnly
-                value={
-                  state.storefront_font_ar_url
-                    ? isAr
-                      ? "خط مخصص مرفوع"
-                      : "Custom font uploaded"
-                    : ""
-                }
-                placeholder={isAr ? "أو ارفع خطاً مخصصاً" : "Or upload a custom font"}
-              />
-              <input
-                ref={arFontInput}
-                type="file"
-                accept=".woff,.woff2,.ttf,.otf"
-                className="hidden"
-                onChange={(e) =>
-                  e.target.files?.[0] && uploadStorefrontFont(e.target.files[0], "ar")
-                }
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                disabled={uploadingFont === "ar"}
-                onClick={() => arFontInput.current?.click()}
-              >
-                <Upload className="h-4 w-4" />
-              </Button>
-              {state.storefront_font_ar_url && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeStorefrontFont("ar")}
-                >
-                  {isAr ? "إزالة" : "Remove"}
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-        <TypographyAdvancedControls
-          title={isAr ? "نظام خطوط واجهة المتجر" : "Storefront typography system"}
-          config={state.storefront_typography}
-          onChange={(storefront_typography) => setState({ ...state, storefront_typography })}
-          isAr={isAr}
-          namespace="Storefront"
-        />
-        <div className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h3 className="text-sm font-semibold">
-                {isAr ? "خطوط لوحة الإدارة" : "Admin workspace typography"}
-              </h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {isAr
-                  ? "تُطبّق على فريق هذا المتجر فقط، ولا تغيّر مساحة السوبرأدمن."
-                  : "Applies only to this store's team; the platform workspace stays neutral."}
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setState({ ...state, admin_typography: state.storefront_typography })}
-            >
-              {isAr ? "نسخ إعدادات المتجر" : "Copy storefront system"}
-            </Button>
-          </div>
-          <TypographyAdvancedControls
-            title={isAr ? "نظام خطوط لوحة الإدارة" : "Admin typography system"}
-            config={state.admin_typography}
-            onChange={(admin_typography) => setState({ ...state, admin_typography })}
-            isAr={isAr}
-            namespace="Admin"
-          />
-        </div>
-      </div>
-
-      <div
-        className={
-          settingsTab === "content" ? "space-y-4 rounded-xl border border-border p-4" : "hidden"
-        }
-      >
-        <div>
-          <h3 className="font-medium text-sm">{isAr ? "عنوان الواجهة الرئيسي" : "Hero title"}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {isAr
-              ? "تحكم مستقل في اسم العلامة الظاهر فوق صورة الواجهة."
-              : "Independent styling for the brand name displayed over the hero media."}
-          </p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="sm:col-span-2" dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
-            <Label>{contentLanguage === "ar" ? "عنوان الواجهة" : "Hero title"}</Label>
-            <Input
-              className={contentLanguage === "ar" ? "text-right" : "text-left"}
-              value={(contentLanguage === "ar" ? state.hero_title_ar : state.hero_title_en) ?? ""}
-              placeholder={
-                contentLanguage === "ar"
-                  ? "فارغ يستخدم اسم العلامة بالعربية"
-                  : "Blank uses the English brand name"
-              }
-              onChange={(e) =>
-                setState({
-                  ...state,
-                  [contentLanguage === "ar" ? "hero_title_ar" : "hero_title_en"]:
-                    e.target.value || null,
-                })
-              }
-            />
-          </div>
-          <div>
-            <Label>{isAr ? "حجم العنوان (بكسل)" : "Title size (px)"}</Label>
-            <Input
-              type="number"
-              min={24}
-              max={96}
-              value={state.hero_title_size}
-              onChange={(e) =>
-                setState({
-                  ...state,
-                  hero_title_size: Math.max(24, Math.min(96, Number(e.target.value))),
-                })
-              }
-            />
-          </div>
-          <ColorField
-            label={isAr ? "لون عنوان الواجهة" : "Hero title color"}
-            value={state.hero_title_color}
-            onChange={(value) => setState({ ...state, hero_title_color: value })}
-          />
-          <div className="sm:col-span-2">
-            <Label>{isAr ? "محاذاة العنوان" : "Title alignment"}</Label>
-            <div className="mt-1 flex gap-2">
-              {(["start", "center", "end"] as const).map((alignment) => (
-                <Button
-                  key={alignment}
-                  type="button"
-                  size="sm"
-                  variant={state.hero_title_align === alignment ? "default" : "outline"}
-                  onClick={() => setState({ ...state, hero_title_align: alignment })}
-                >
-                  {isAr
-                    ? alignment === "start"
-                      ? "البداية"
-                      : alignment === "center"
-                        ? "الوسط"
-                        : "النهاية"
-                    : alignment}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className={settingsTab === "theme" && themeMode === "advanced" ? "space-y-3" : "hidden"}>
-        <h3 className="font-medium text-sm">{isAr ? "الترويسة والتذييل" : "Header & Footer"}</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <ColorField
-            label={isAr ? "خلفية الترويسة" : "Header background"}
-            value={state.header_bg}
-            onChange={(v) => setState({ ...state, header_bg: v })}
-          />
-          <ColorField
-            label={isAr ? "نص الترويسة" : "Header text"}
-            value={state.header_fg}
-            onChange={(v) => setState({ ...state, header_fg: v })}
-          />
-          <ColorField
-            label={isAr ? "خلفية التذييل" : "Footer background"}
-            value={state.footer_bg}
-            onChange={(v) => setState({ ...state, footer_bg: v })}
-          />
-          <ColorField
-            label={isAr ? "نص التذييل" : "Footer text"}
-            value={state.footer_fg}
-            onChange={(v) => setState({ ...state, footer_fg: v })}
-          />
-        </div>
-      </div>
-
-      <div
-        className={
-          settingsTab === "content" ? "space-y-4 rounded-xl border border-border p-4" : "hidden"
-        }
-      >
-        <div>
-          <h3 className="font-medium text-sm">{isAr ? "قائمة المتجر" : "Storefront menu"}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {isAr
-              ? "خصص عنوان وألوان وروابط قائمة التنقل. الصفحات الإضافية تدار من الصفحات والسياسات."
-              : "Customize the drawer title, colors, and core links. Additional links come from Pages & Policies."}
-          </p>
-        </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="sm:col-span-2" dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
-            <Label>{contentLanguage === "ar" ? "عنوان القائمة" : "Menu title"}</Label>
-            <Input
-              className={contentLanguage === "ar" ? "text-right" : "text-left"}
-              value={(contentLanguage === "ar" ? state.menu_title_ar : state.menu_title_en) ?? ""}
-              placeholder={
-                contentLanguage === "ar"
-                  ? "فارغ يستخدم اسم العلامة بالعربية"
-                  : "Blank uses the brand name"
-              }
-              onChange={(e) =>
-                setState({
-                  ...state,
-                  [contentLanguage === "ar" ? "menu_title_ar" : "menu_title_en"]:
-                    e.target.value || null,
-                })
-              }
-            />
-          </div>
-          <ColorField
-            label={isAr ? "خلفية القائمة" : "Menu background"}
-            value={state.menu_bg}
-            onChange={(value) => setState({ ...state, menu_bg: value })}
-          />
-          <ColorField
-            label={isAr ? "نص القائمة" : "Menu text"}
-            value={state.menu_fg}
-            onChange={(value) => setState({ ...state, menu_fg: value })}
-          />
-        </div>
-        <div
-          className={settingsTab === "content" ? "grid grid-cols-1 gap-3 sm:grid-cols-2" : "hidden"}
-        >
-          {(
-            [
-              ["menu_show_home", isAr ? "إظهار الرئيسية" : "Show Home"],
-              ["menu_show_account", isAr ? "إظهار الحساب وتسجيل الدخول" : "Show Account / Sign in"],
-              ["menu_show_orders", isAr ? "إظهار طلباتي" : "Show My orders"],
-              ["menu_show_pages", isAr ? "إظهار الصفحات المخصصة" : "Show custom pages"],
-            ] as const
-          ).map(([key, label]) => (
-            <div
-              key={key}
-              className="flex items-center justify-between gap-4 rounded-md border border-border p-3"
-            >
-              <Label className="cursor-pointer">{label}</Label>
-              <Switch
-                checked={state[key]}
-                onCheckedChange={(checked) => setState({ ...state, [key]: checked })}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {hasLoaderColumns && (
-        <div
-          className={
-            settingsTab === "content" ? "space-y-4 rounded-xl border border-border p-4" : "hidden"
-          }
-        >
-          <div>
-            <h3 className="font-medium text-sm">
-              {isAr ? "شاشة تحميل المتجر" : "Storefront loading screen"}
+            <h3 className="font-semibold text-sm">
+              {isAr ? "أقسام الصفحة الرئيسية التلقائية" : "Homepage Sections"}
             </h3>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-0.5 text-xs text-muted-foreground">
               {isAr
-                ? "خصص العبارة التي تظهر للمتسوقين أثناء فتح موقعك."
-                : "Customize the loading message shoppers see when they first open your website."}
+                ? "تخصيص ظهور وعناوين أقسام وصل حديثاً والأكثر مبيعاً"
+                : "Customize display and titles for New Arrivals and Best Sellers"}
             </p>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div dir="rtl">
-              <Label>{isAr ? "عبارة التحميل (العربية)" : "Loading text (Arabic)"}</Label>
-              <Input
-                className="text-right"
-                value={state.storefront_loader_text_ar ?? ""}
-                placeholder="جاري فتح المتجر الإلكتروني..."
-                onChange={(e) =>
-                  setState({ ...state, storefront_loader_text_ar: e.target.value || null })
-                }
-              />
+            <div className="space-y-3 rounded-lg border border-border p-3">
+              <div className="flex items-center justify-between gap-3">
+                <Label className="cursor-pointer text-xs font-medium">{isAr ? "إظهار قسم وصل حديثاً" : "Show New Arrivals"}</Label>
+                <Switch
+                  checked={state.show_new_arrivals}
+                  onCheckedChange={(checked) => setState({ ...state, show_new_arrivals: checked })}
+                />
+              </div>
+              <div dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
+                <Label className="text-xs">{contentLanguage === "ar" ? "عنوان القسم" : "Section title"}</Label>
+                <Input
+                  className={contentLanguage === "ar" ? "text-right" : "text-left"}
+                  value={
+                    (contentLanguage === "ar"
+                      ? state.new_arrivals_title_ar
+                      : state.new_arrivals_title_en) ?? ""
+                  }
+                  placeholder={contentLanguage === "ar" ? "وصل حديثاً" : "New arrivals"}
+                  onChange={(e) =>
+                    setState({
+                      ...state,
+                      [contentLanguage === "ar" ? "new_arrivals_title_ar" : "new_arrivals_title_en"]:
+                        e.target.value || null,
+                    })
+                  }
+                />
+              </div>
             </div>
-            <div dir="ltr">
-              <Label>{isAr ? "عبارة التحميل (الإنجليزية)" : "Loading text (English)"}</Label>
-              <Input
-                className="text-left"
-                value={state.storefront_loader_text_en ?? ""}
-                placeholder="Resolving boutique storefront..."
-                onChange={(e) =>
-                  setState({ ...state, storefront_loader_text_en: e.target.value || null })
-                }
-              />
+
+            <div className="space-y-3 rounded-lg border border-border p-3">
+              <div className="flex items-center justify-between gap-3">
+                <Label className="cursor-pointer text-xs font-medium">{isAr ? "إظهار الأكثر مبيعاً" : "Show Best Sellers"}</Label>
+                <Switch
+                  checked={state.show_best_sellers}
+                  onCheckedChange={(checked) => setState({ ...state, show_best_sellers: checked })}
+                />
+              </div>
+              <div dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
+                <Label className="text-xs">{contentLanguage === "ar" ? "عنوان القسم" : "Section title"}</Label>
+                <Input
+                  className={contentLanguage === "ar" ? "text-right" : "text-left"}
+                  value={
+                    (contentLanguage === "ar"
+                      ? state.best_sellers_title_ar
+                      : state.best_sellers_title_en) ?? ""
+                  }
+                  placeholder={contentLanguage === "ar" ? "الأكثر مبيعاً" : "Best sellers"}
+                  onChange={(e) =>
+                    setState({
+                      ...state,
+                      [contentLanguage === "ar" ? "best_sellers_title_ar" : "best_sellers_title_en"]:
+                        e.target.value || null,
+                    })
+                  }
+                />
+              </div>
             </div>
           </div>
         </div>
-      )}
 
-      <div
-        className={
-          settingsTab === "content" || settingsTab === "promotions"
-            ? "space-y-4 rounded-xl border border-border p-4"
-            : "hidden"
-        }
-      >
-        <div>
-          <h3 className="font-medium text-sm">
-            {isAr ? "أقسام الصفحة الرئيسية" : "Homepage merchandising"}
-          </h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {isAr
-              ? "خصص أربع بطاقات ترويجية وروابطها. المقاس النهائي: 1600 × 800 بكسل (نسبة 2:1)."
-              : "Customize four promotional cards and their destinations. Final crop: 1600 × 800 px (2:1 ratio)."}
-          </p>
-        </div>
-        <div
-          className={settingsTab === "content" ? "grid grid-cols-1 gap-3 sm:grid-cols-2" : "hidden"}
-        >
-          <div className="flex items-center justify-between gap-3 rounded-md border p-3">
-            <Label>{isAr ? "إظهار وصل حديثاً" : "Show New arrivals"}</Label>
-            <Switch
-              checked={state.show_new_arrivals}
-              onCheckedChange={(checked) => setState({ ...state, show_new_arrivals: checked })}
-            />
+        {/* Promo Cards */}
+        <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
+          <div>
+            <h3 className="font-semibold text-sm">
+              {isAr ? "البطاقات الترويجية في الصفحة الرئيسية" : "Homepage Promotional Cards"}
+            </h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {isAr
+                ? "خصص أربع بطاقات ترويجية وروابطها بنسبة 2:1 لتوجيه المتسوقين"
+                : "Customize four promotional cards and their destinations (2:1 ratio)"}
+            </p>
           </div>
-          <div dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
-            <Label>{contentLanguage === "ar" ? "عنوان وصل حديثاً" : "New arrivals title"}</Label>
-            <Input
-              className={contentLanguage === "ar" ? "text-right" : "text-left"}
-              value={
-                (contentLanguage === "ar"
-                  ? state.new_arrivals_title_ar
-                  : state.new_arrivals_title_en) ?? ""
-              }
-              placeholder={contentLanguage === "ar" ? "وصل حديثاً" : "New arrivals"}
-              onChange={(e) =>
-                setState({
-                  ...state,
-                  [contentLanguage === "ar" ? "new_arrivals_title_ar" : "new_arrivals_title_en"]:
-                    e.target.value || null,
-                })
-              }
-            />
-          </div>
-          <div dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
-            <Label>{contentLanguage === "ar" ? "عنوان الأكثر مبيعاً" : "Best sellers title"}</Label>
-            <Input
-              className={contentLanguage === "ar" ? "text-right" : "text-left"}
-              value={
-                (contentLanguage === "ar"
-                  ? state.best_sellers_title_ar
-                  : state.best_sellers_title_en) ?? ""
-              }
-              placeholder={contentLanguage === "ar" ? "الأكثر مبيعاً" : "Best sellers"}
-              onChange={(e) =>
-                setState({
-                  ...state,
-                  [contentLanguage === "ar" ? "best_sellers_title_ar" : "best_sellers_title_en"]:
-                    e.target.value || null,
-                })
-              }
-            />
-          </div>
-        </div>
-        <div
-          className={
-            settingsTab === "promotions" ? "grid grid-cols-1 gap-4 lg:grid-cols-2" : "hidden"
-          }
-        >
-          <div className="space-y-4 lg:col-span-2">
-            <div>
-              <h3 className="font-medium text-sm">
-                {isAr ? "أقسام الصفحة التحريرية" : "Editorial homepage sections"}
-              </h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {isAr
-                  ? "خصص اللافتة وخلفية منطقة المنتجات لكل قسم بعرض كامل."
-                  : "Customize the full-bleed banner and product-area background for each section."}
-              </p>
-            </div>
-            <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-              {(
-                [
-                  ["best", isAr ? "الأكثر مبيعاً" : "Best sellers"],
-                  ["sale", isAr ? "تنزيلات" : "Sale"],
-                  ["trending", isAr ? "الرائج الآن" : "Trending now"],
-                ] as const
-              ).map(([key, label]) => {
-                const config = state.homepage_editorial_sections[key];
-                return (
-                  <div key={key} className="space-y-4 rounded-xl border border-border p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <h4 className="font-medium">{label}</h4>
-                        <p className="text-xs text-muted-foreground">
-                          {isAr
-                            ? "يُخفى تلقائياً عند عدم وجود منتجات"
-                            : "Automatically hidden when empty"}
-                        </p>
-                      </div>
-                      <Switch
-                        checked={config.enabled}
-                        onCheckedChange={(enabled) => updateEditorialSection(key, { enabled })}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>{isAr ? "صورة اللافتة" : "Banner image"}</Label>
-                      <div className="relative aspect-[21/9] overflow-hidden rounded-xl bg-muted shadow-sm">
-                        {config.banner_image_url ? (
-                          <>
-                            <ResponsiveImage
-                              src={config.banner_image_url}
-                              preset="hero"
-                              sizes="420px"
-                              alt=""
-                              className="h-full w-full object-cover"
-                            />
-                            <div className="pointer-events-none absolute bottom-3 start-3 z-20">
-                              <h4 className="font-display text-sm font-bold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-                                {label}
-                              </h4>
-                            </div>
-                          </>
-                        ) : (
-                          <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-                            {isAr ? "لا توجد صورة" : "No banner image"}
-                          </div>
-                        )}
-                        {config.banner_image_url && (
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            size="icon"
-                            className="absolute end-2 top-2 z-30"
-                            aria-label={isAr ? "إزالة صورة اللافتة" : "Remove banner image"}
-                            onClick={() => updateEditorialSection(key, { banner_image_url: "" })}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                      <CropUploadButton
-                        preset="editorialBanner"
-                        heroPreview
-                        overlayTitle={label}
-                        className="w-full"
-                        busy={uploadingEditorialAsset === `${key}-banner_image_url`}
-                        onCrop={(blob) => uploadEditorialAsset(key, "banner_image_url", blob)}
-                      >
-                        <Upload className="me-2 h-4 w-4" />
-                        {config.banner_image_url
-                          ? isAr
-                            ? "استبدال اللافتة"
-                            : "Replace banner"
-                          : isAr
-                            ? "رفع لافتة"
-                            : "Upload banner"}
-                      </CropUploadButton>
-                    </div>
-
-                    <ColorField
-                      label={isAr ? "لون خلفية المنتجات" : "Product-area background color"}
-                      value={config.background_color || null}
-                      onChange={(background_color) =>
-                        updateEditorialSection(key, { background_color: background_color || "" })
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {state.home_promo_cards.map((card, index) => (
+              <div key={index} className="space-y-3 rounded-xl border border-border p-4 bg-background">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-sm">
+                      {isAr ? `بطاقة ترويجية ${index + 1}` : `Promotion Card ${index + 1}`}
+                    </h4>
+                    <p className="text-[11px] text-muted-foreground">1600 × 800 px · 2:1</p>
+                  </div>
+                  {card.image_url && (
+                    <img
+                      src={card.image_url}
+                      alt=""
+                      className="aspect-[2/1] h-10 rounded-md object-cover border border-border"
+                    />
+                  )}
+                </div>
+                <div className="grid gap-2" dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
+                  <div>
+                    <Label className="text-xs">{contentLanguage === "ar" ? "العنوان" : "Title"}</Label>
+                    <Input
+                      className={contentLanguage === "ar" ? "text-right" : "text-left"}
+                      value={contentLanguage === "ar" ? card.title_ar : card.title_en}
+                      onChange={(e) =>
+                        updatePromoCard(index, {
+                          [contentLanguage === "ar" ? "title_ar" : "title_en"]: e.target.value,
+                        })
                       }
                     />
-
-                    <div className="space-y-2">
-                      <Label>
-                        {isAr ? "صورة خلفية المنتجات" : "Product-area background image"}
-                      </Label>
-                      {config.background_image_url && (
-                        <div className="relative aspect-[3/1] overflow-hidden rounded-xl bg-muted">
-                          <ResponsiveImage
-                            src={config.background_image_url}
-                            preset="content"
-                            sizes="420px"
-                            alt=""
-                            className="h-full w-full object-cover"
-                          />
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            size="icon"
-                            className="absolute end-2 top-2"
-                            aria-label={isAr ? "إزالة صورة الخلفية" : "Remove background image"}
-                            onClick={() =>
-                              updateEditorialSection(key, { background_image_url: "" })
-                            }
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
-                      <CropUploadButton
-                        preset="editorialBackground"
-                        className="w-full"
-                        busy={uploadingEditorialAsset === `${key}-background_image_url`}
-                        onCrop={(blob) => uploadEditorialAsset(key, "background_image_url", blob)}
-                      >
-                        <Upload className="me-2 h-4 w-4" />
-                        {config.background_image_url
-                          ? isAr
-                            ? "استبدال الخلفية"
-                            : "Replace background"
-                          : isAr
-                            ? "رفع خلفية"
-                            : "Upload background"}
-                      </CropUploadButton>
-                    </div>
                   </div>
-                );
-              })}
-            </div>
+                  <div>
+                    <Label className="text-xs">{contentLanguage === "ar" ? "الوصف" : "Subtitle"}</Label>
+                    <Input
+                      className={contentLanguage === "ar" ? "text-right" : "text-left"}
+                      value={contentLanguage === "ar" ? card.subtitle_ar : card.subtitle_en}
+                      onChange={(e) =>
+                        updatePromoCard(index, {
+                          [contentLanguage === "ar" ? "subtitle_ar" : "subtitle_en"]: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs">{isAr ? "رابط التوجيه عند الضغط" : "Click Destination URL"}</Label>
+                  <Input
+                    value={card.href}
+                    placeholder="/search?q=sale"
+                    onChange={(e) => updatePromoCard(index, { href: e.target.value })}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    value={card.image_url}
+                    placeholder={isAr ? "رابط الصورة" : "Image URL"}
+                    onChange={(e) => updatePromoCard(index, { image_url: e.target.value })}
+                  />
+                  <label className="inline-flex h-10 cursor-pointer items-center rounded-md border border-border px-3 text-sm shrink-0 hover:bg-muted">
+                    <Upload className="me-2 h-4 w-4" />
+                    {isAr ? "رفع" : "Upload"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={uploadingPromo}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        e.currentTarget.value = "";
+                        if (file) choosePromoImage(index, file);
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+            ))}
           </div>
-          {state.home_promo_cards.map((card, index) => (
-            <div key={index} className="space-y-3 rounded-xl border p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">
-                    {isAr ? `بنر ترويجي ${index + 1}` : `Promotion Banner ${index + 1}`}
-                  </h4>
-                  <p className="text-[11px] text-muted-foreground">1600 × 800 px · 2:1</p>
-                </div>
-                {card.image_url && (
-                  <img
-                    src={card.image_url}
-                    alt=""
-                    className="aspect-[2/1] h-12 rounded object-cover"
-                  />
-                )}
-              </div>
-              <div className="grid gap-2" dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
-                <div>
-                  <Label>{contentLanguage === "ar" ? "عنوان البنر" : "Banner title"}</Label>
-                  <Input
-                    className={contentLanguage === "ar" ? "text-right" : "text-left"}
-                    value={contentLanguage === "ar" ? card.title_ar : card.title_en}
-                    onChange={(e) =>
-                      updatePromoCard(index, {
-                        [contentLanguage === "ar" ? "title_ar" : "title_en"]: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>{contentLanguage === "ar" ? "وصف البنر" : "Banner subtitle"}</Label>
-                  <Input
-                    className={contentLanguage === "ar" ? "text-right" : "text-left"}
-                    value={contentLanguage === "ar" ? card.subtitle_ar : card.subtitle_en}
-                    onChange={(e) =>
-                      updatePromoCard(index, {
-                        [contentLanguage === "ar" ? "subtitle_ar" : "subtitle_en"]: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-              </div>
-              <div>
-                <Label>{isAr ? "رابط التوجيه عند الضغط" : "Banner Click Link"}</Label>
-                <Input
-                  value={card.href}
-                  placeholder={
-                    isAr
-                      ? "/pura/search?q=abaya أو رابط كامل"
-                      : "/pura/search?q=abaya or a full URL"
-                  }
-                  onChange={(e) => updatePromoCard(index, { href: e.target.value })}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  value={card.image_url}
-                  placeholder={isAr ? "رابط الصورة" : "Image URL"}
-                  onChange={(e) => updatePromoCard(index, { image_url: e.target.value })}
-                />
-                <label className="inline-flex h-10 cursor-pointer items-center rounded-md border px-3 text-sm">
-                  <Upload className="me-2 h-4 w-4" />
-                  {isAr ? "رفع" : "Upload"}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    disabled={uploadingPromo}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      e.currentTarget.value = "";
-                      if (file) choosePromoImage(index, file);
-                    }}
-                  />
-                </label>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <ColorField
-                  label={isAr ? "الخلفية" : "Background"}
-                  value={card.background_color}
-                  onChange={(value) =>
-                    updatePromoCard(index, { background_color: value || "#f4f4f4" })
-                  }
-                />
-                <ColorField
-                  label={isAr ? "النص" : "Text"}
-                  value={card.text_color}
-                  onChange={(value) => updatePromoCard(index, { text_color: value || "#ffffff" })}
-                />
-              </div>
-            </div>
-          ))}
         </div>
-      </div>
 
-      <ImageCropperDialog
-        open={Boolean(promoCropSrc)}
-        imageSrc={promoCropSrc}
-        preset="promotionBanner"
-        busy={uploadingPromo}
-        heroPreview
-        title={isAr ? "ضبط صورة البنر" : "Frame promotion banner"}
-        description={
-          isAr
-            ? "اسحب وكبّر الصورة حتى تظهر بأفضل شكل داخل مساحة البنر بنسبة 2:1."
-            : "Reposition and zoom for a precise 2:1 banner crop. The storefront uses this exact ratio at every viewport size."
-        }
-        onCancel={() => {
-          setPromoCropSrc(null);
-          setPromoCropIndex(null);
-        }}
-        onConfirm={confirmPromoCrop}
-      />
-
-      <div className={settingsTab === "theme" && themeMode === "advanced" ? "space-y-3" : "hidden"}>
-        <h3 className="font-medium text-sm">{isAr ? "الطباعة" : "Typography"}</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <ColorField
-            label={isAr ? "لون العناوين" : "Heading color"}
-            value={state.heading_color}
-            onChange={(v) => setState({ ...state, heading_color: v })}
-          />
-          <ColorField
-            label={isAr ? "لون الروابط" : "Link color"}
-            value={state.link_color}
-            onChange={(v) => setState({ ...state, link_color: v })}
-          />
-        </div>
-      </div>
-
-      <div className={settingsTab === "theme" && themeMode === "advanced" ? "space-y-3" : "hidden"}>
-        <h3 className="font-medium text-sm">{isAr ? "الأزرار" : "Buttons"}</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <ColorField
-            label={isAr ? "خلفية الزر الأساسي (أضف للسلة)" : "Primary button bg (Add to cart)"}
-            value={state.btn_primary_bg}
-            onChange={(v) => setState({ ...state, btn_primary_bg: v })}
-          />
-          <ColorField
-            label={isAr ? "نص الزر الأساسي" : "Primary button text"}
-            value={state.btn_primary_fg}
-            onChange={(v) => setState({ ...state, btn_primary_fg: v })}
-          />
-          <ColorField
-            label={isAr ? "خلفية الزر الثانوي (اشتر الآن)" : "Secondary button bg (Buy now)"}
-            value={state.btn_secondary_bg}
-            onChange={(v) => setState({ ...state, btn_secondary_bg: v })}
-          />
-          <ColorField
-            label={isAr ? "نص الزر الثانوي" : "Secondary button text"}
-            value={state.btn_secondary_fg}
-            onChange={(v) => setState({ ...state, btn_secondary_fg: v })}
-          />
-          <ColorField
-            label={isAr ? "خلفية زر إتمام الشراء" : "Checkout button bg"}
-            value={state.btn_checkout_bg}
-            onChange={(v) => setState({ ...state, btn_checkout_bg: v })}
-          />
-          <ColorField
-            label={isAr ? "نص زر إتمام الشراء" : "Checkout button text"}
-            value={state.btn_checkout_fg}
-            onChange={(v) => setState({ ...state, btn_checkout_fg: v })}
-          />
-          <ColorField
-            label={isAr ? "خلفية زر السلة المنبثقة" : "Cart drawer checkout background"}
-            value={state.cart_drawer_checkout_bg}
-            onChange={(v) => setState({ ...state, cart_drawer_checkout_bg: v })}
-          />
-          <ColorField
-            label={isAr ? "نص زر السلة المنبثقة" : "Cart drawer checkout text"}
-            value={state.cart_drawer_checkout_fg}
-            onChange={(v) => setState({ ...state, cart_drawer_checkout_fg: v })}
-          />
-        </div>
+        <ImageCropperDialog
+          open={Boolean(promoCropSrc)}
+          imageSrc={promoCropSrc}
+          preset="promotionBanner"
+          busy={uploadingPromo}
+          heroPreview
+          title={isAr ? "ضبط صورة البنر" : "Frame promotion banner"}
+          description={
+            isAr
+              ? "اسحب وكبّر الصورة حتى تظهر بأفضل شكل داخل مساحة البنر بنسبة 2:1."
+              : "Reposition and zoom for a precise 2:1 banner crop."
+          }
+          onCancel={() => {
+            setPromoCropSrc(null);
+            setPromoCropIndex(null);
+          }}
+          onConfirm={confirmPromoCrop}
+        />
       </div>
 
       <div className="sticky bottom-20 md:bottom-3 z-10 flex justify-end rounded-xl border border-border/70 bg-background/90 p-3 shadow-lg backdrop-blur-xl">
@@ -5842,6 +4665,45 @@ function BranchesCard({ brandId }: { brandId: string }) {
         </Button>
       </div>
     </Card>
+  );
+}
+
+function CheckoutFulfillmentSection({ brandId }: { brandId: string }) {
+  const { lang } = useI18n();
+  const isAr = lang === "ar";
+  const [subTab, setSubTab] = useState<"shipping" | "branches">("shipping");
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-2 p-1 bg-muted/60 rounded-xl w-fit border border-border">
+        <Button
+          type="button"
+          size="sm"
+          variant={subTab === "shipping" ? "default" : "ghost"}
+          onClick={() => setSubTab("shipping")}
+          className="gap-2 h-9 text-xs font-semibold rounded-lg"
+        >
+          <Truck className="size-4" />
+          <span>{isAr ? "خيارات ورسوم الشحن" : "Shipping & Delivery Rates"}</span>
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={subTab === "branches" ? "default" : "ghost"}
+          onClick={() => setSubTab("branches")}
+          className="gap-2 h-9 text-xs font-semibold rounded-lg"
+        >
+          <MapPin className="size-4" />
+          <span>{isAr ? "فروع ومواقع الاستلام (Store Pickup)" : "Branches & Pickup Locations"}</span>
+        </Button>
+      </div>
+
+      {subTab === "shipping" ? (
+        <ShippingSettingsCard brandId={brandId} />
+      ) : (
+        <BranchesCard brandId={brandId} />
+      )}
+    </div>
   );
 }
 

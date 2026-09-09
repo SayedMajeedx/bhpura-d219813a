@@ -2,7 +2,6 @@ import {
   Building2,
   CreditCard,
   Mail,
-  MapPin,
   MoreHorizontal,
   Receipt,
   ShieldCheck,
@@ -24,7 +23,6 @@ export type SettingsTabId =
   | "storefront"
   | "checkout"
   | "payments"
-  | "branches"
   | "emails"
   | "security"
   | "apps"
@@ -53,7 +51,6 @@ export function SettingsScopeSwitcher({
     },
     { id: "checkout", icon: Truck, ar: "الشحن والتسليم", en: "Fulfillment" },
     { id: "payments", icon: CreditCard, ar: "طرق الدفع", en: "Payments" },
-    { id: "branches", icon: MapPin, ar: "الفروع والمواقع", en: "Branches" },
     { id: "emails", icon: Mail, ar: "الإشعارات والبريد", en: "Notifications" },
     { id: "security", icon: ShieldCheck, ar: "الأمان والبصمة", en: "Security" },
     { id: "apps", icon: Smartphone, ar: "تطبيقات الجوال", en: "Mobile Apps" },

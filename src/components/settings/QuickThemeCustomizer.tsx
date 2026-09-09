@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ArrowLeftRight, Check, Sparkles } from "lucide-react";
+import { ArrowLeftRight, Check, Sparkles, Layers, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -18,7 +18,7 @@ export const FONT_MOOD_PRESETS: FontMoodPreset[] = [
   {
     id: "classic",
     labelEn: "Classic",
-    labelAr: "كلاسيكي",
+    labelAr: "كلاسيكي فاخر",
     fontAr: "Amiri",
     fontEn: "Playfair Display",
     descriptionEn: "Heritage & luxury vibe",
@@ -27,7 +27,7 @@ export const FONT_MOOD_PRESETS: FontMoodPreset[] = [
   {
     id: "modern",
     labelEn: "Modern",
-    labelAr: "عصري",
+    labelAr: "عصري وبسيط",
     fontAr: "Cairo",
     fontEn: "Inter",
     descriptionEn: "Clean & contemporary",
@@ -36,11 +36,11 @@ export const FONT_MOOD_PRESETS: FontMoodPreset[] = [
   {
     id: "signature",
     labelEn: "Signature",
-    labelAr: "توقيع مميز",
+    labelAr: "توقيع بوتيك",
     fontAr: "Tajawal",
     fontEn: "Cormorant Garamond",
     descriptionEn: "Boutique & editorial",
-    descriptionAr: "طابع بوتيك حصري",
+    descriptionAr: "طابع بوتيك حصري وأنيق",
   },
   {
     id: "strong",
@@ -68,12 +68,16 @@ export interface QuickThemeCustomizerProps {
   radius: string;
   currentFontAr: string;
   currentFontEn: string;
+  headerGlass?: boolean;
+  badgeAccent?: string;
   isAr: boolean;
   onPrimaryChange: (val: string) => void;
   onSecondaryChange: (val: string) => void;
   onRadiusChange: (val: string) => void;
   onSelectFontPreset: (preset: FontMoodPreset) => void;
   onSwapColors: () => void;
+  onHeaderGlassChange?: (val: boolean) => void;
+  onBadgeAccentChange?: (val: string) => void;
 }
 
 export function QuickThemeCustomizer({
@@ -82,42 +86,73 @@ export function QuickThemeCustomizer({
   radius,
   currentFontAr,
   currentFontEn,
+  headerGlass = true,
+  badgeAccent = "maroon",
   isAr,
   onPrimaryChange,
   onSecondaryChange,
   onRadiusChange,
   onSelectFontPreset,
   onSwapColors,
+  onHeaderGlassChange,
+  onBadgeAccentChange,
 }: QuickThemeCustomizerProps) {
-  // Normalize radius to sharp / smooth / round
+  // Normalize radius to sharp / smooth / round matching storefront route
   const activeRadiusPreset = React.useMemo(() => {
     if (radius === "0" || radius === "0px" || radius === "0rem") return "sharp";
-    if (radius === "1.25rem" || radius === "1.5rem" || radius === "2rem") return "round";
-    return "smooth"; // 0.5rem, 0.75rem, 1rem default
+    if (radius === "1rem" || radius === "1.25rem" || radius === "1.5rem" || radius === "2rem")
+      return "round";
+    return "smooth"; // 0.375rem, 0.5rem default
   }, [radius]);
 
   const cornerPresets = [
     {
       id: "sharp",
       value: "0px",
-      labelEn: "Sharp",
-      labelAr: "حاد (Sharp)",
+      labelEn: "Sharp (0px)",
+      labelAr: "مستقيم حاد (0px)",
       previewClass: "rounded-none",
     },
     {
       id: "smooth",
-      value: "0.5rem",
-      labelEn: "Smooth",
-      labelAr: "ناعم (Smooth)",
+      value: "0.375rem",
+      labelEn: "Smooth (6px)",
+      labelAr: "انسيابي ناعم (6px)",
       previewClass: "rounded-lg",
     },
     {
       id: "round",
-      value: "1.25rem",
-      labelEn: "Round",
-      labelAr: "دائري (Round)",
+      value: "1rem",
+      labelEn: "Curved (16px)",
+      labelAr: "دائري عصري (16px)",
       previewClass: "rounded-2xl",
     },
+  ];
+
+  // Guarantee single active font preset at all times
+  const activePresetId = React.useMemo(() => {
+    const exact = FONT_MOOD_PRESETS.find(
+      (p) =>
+        p.fontAr.toLowerCase() === (currentFontAr || "").toLowerCase() &&
+        p.fontEn.toLowerCase() === (currentFontEn || "").toLowerCase(),
+    );
+    if (exact) return exact.id;
+    const matchAr = FONT_MOOD_PRESETS.find(
+      (p) => p.fontAr.toLowerCase() === (currentFontAr || "").toLowerCase(),
+    );
+    if (matchAr) return matchAr.id;
+    const matchEn = FONT_MOOD_PRESETS.find(
+      (p) => p.fontEn.toLowerCase() === (currentFontEn || "").toLowerCase(),
+    );
+    if (matchEn) return matchEn.id;
+    return "modern";
+  }, [currentFontAr, currentFontEn]);
+
+  const badgePresets = [
+    { id: "maroon", color: "#8C6D58", labelAr: "عنابي كلاسيكي", labelEn: "Classic Maroon" },
+    { id: "crimson", color: "#dc2626", labelAr: "أحمر قرمزي", labelEn: "Crimson Red" },
+    { id: "slate", color: "#334155", labelAr: "رمادي داكن", labelEn: "Dark Slate" },
+    { id: "emerald", color: "#059669", labelAr: "أخضر زمردي", labelEn: "Emerald Green" },
   ];
 
   return (
@@ -128,13 +163,13 @@ export function QuickThemeCustomizer({
           <div className="flex items-center gap-2">
             <Sparkles className="size-4 text-primary" />
             <h3 className="font-semibold text-base text-foreground">
-              {isAr ? "المظهر السريع لمتجرك" : "Your Store, Your Style"}
+              {isAr ? "مظهر وهوية المتجر" : "Storefront Look & Feel"}
             </h3>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
             {isAr
-              ? "اختر لونين أساسيين، نمط الحواف، ونبرة الخط — ويتحدث متجرك فورياً ليطابق هويتك بكل مكان."
-              : "Pick brand colors, corner style, and typography mood — your storefront updates to match everywhere."}
+              ? "تحكم بالألوان الأساسية، انحناء الحواف، ونبرة الخطوط — تتحدث واجهة متجرك فورياً لتعكس هويتك."
+              : "Pick brand colors, corner radius, and typography vibe — updates your public storefront instantly."}
           </p>
         </div>
       </div>
@@ -142,11 +177,11 @@ export function QuickThemeCustomizer({
       {/* 1. Brand Colors */}
       <div className="space-y-3 pt-2">
         <Label className="text-sm font-medium">
-          {isAr ? "1. ألوان الهوية (Brand Colors)" : "1. Brand Colors"}
+          {isAr ? "1. ألوان الهوية الرئيسية" : "1. Brand Colors"}
         </Label>
         <div className="flex flex-wrap items-center gap-4">
           {/* Primary Swatch */}
-          <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-2 min-w-[160px]">
+          <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-2 min-w-[170px]">
             <label
               className="relative size-10 shrink-0 cursor-pointer overflow-hidden rounded-md border border-border shadow-sm ring-1 ring-border/50 transition-transform active:scale-95"
               style={{ backgroundColor: primaryColor || "#000000" }}
@@ -182,7 +217,7 @@ export function QuickThemeCustomizer({
           </Button>
 
           {/* Secondary Swatch */}
-          <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-2 min-w-[160px]">
+          <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-2 min-w-[170px]">
             <label
               className="relative size-10 shrink-0 cursor-pointer overflow-hidden rounded-md border border-border shadow-sm ring-1 ring-border/50 transition-transform active:scale-95"
               style={{ backgroundColor: secondaryColor || "#1f1f1f" }}
@@ -210,7 +245,7 @@ export function QuickThemeCustomizer({
       {/* 2. Corner Radius Style */}
       <div className="space-y-3 border-t border-border/60 pt-4">
         <Label className="text-sm font-medium">
-          {isAr ? "2. انحناء الحواف والبطاقات (Corner Style)" : "2. Corner Style"}
+          {isAr ? "2. انحناء الحواف والبطاقات" : "2. Corner Style"}
         </Label>
         <div className="grid grid-cols-3 gap-3">
           {cornerPresets.map((preset) => {
@@ -246,13 +281,11 @@ export function QuickThemeCustomizer({
       {/* 3. Typography Mood Presets */}
       <div className="space-y-3 border-t border-border/60 pt-4">
         <Label className="text-sm font-medium">
-          {isAr ? "3. نبرة وطابع الخط (Typography Vibe)" : "3. Typography Vibe"}
+          {isAr ? "3. نبرة وطابع الخطوط" : "3. Typography Mood"}
         </Label>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {FONT_MOOD_PRESETS.map((preset) => {
-            const isSelected =
-              currentFontAr.toLowerCase().includes(preset.fontAr.toLowerCase()) ||
-              currentFontEn.toLowerCase().includes(preset.fontEn.toLowerCase());
+            const isSelected = activePresetId === preset.id;
 
             return (
               <button
@@ -260,9 +293,9 @@ export function QuickThemeCustomizer({
                 type="button"
                 onClick={() => onSelectFontPreset(preset)}
                 className={cn(
-                  "relative flex flex-col items-start gap-1 p-3.5 rounded-xl border-2 text-start transition-all",
+                  "relative flex flex-col items-start gap-1 p-3.5 rounded-xl border-2 text-start transition-all cursor-pointer",
                   isSelected
-                    ? "border-primary bg-primary/5 shadow-sm"
+                    ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20"
                     : "border-border hover:border-muted-foreground/30 bg-card",
                 )}
               >
@@ -281,13 +314,84 @@ export function QuickThemeCustomizer({
                 </span>
                 <div className="mt-2 text-[11px] font-mono text-muted-foreground/80 flex items-center gap-2">
                   <span className="px-1.5 py-0.5 rounded bg-muted">
-                    {isAr ? preset.fontAr : preset.fontEn}
+                    {preset.fontAr} / {preset.fontEn}
                   </span>
                 </div>
               </button>
             );
           })}
         </div>
+      </div>
+
+      {/* 4. Navigation & Badges */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-border/60 pt-4">
+        {/* Navigation Bar Style */}
+        {onHeaderGlassChange && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5">
+              <Layers className="size-4 text-muted-foreground" />
+              <Label className="text-sm font-medium">
+                {isAr ? "نمط شريط التنقل العلوي" : "Navigation Bar Style"}
+              </Label>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant={headerGlass ? "default" : "outline"}
+                onClick={() => onHeaderGlassChange(true)}
+                className="flex-1 text-xs"
+              >
+                {isAr ? "زجاجي مضبب" : "Glassmorphic"}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={!headerGlass ? "default" : "outline"}
+                onClick={() => onHeaderGlassChange(false)}
+                className="flex-1 text-xs"
+              >
+                {isAr ? "خلفية صلبة" : "Solid"}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Sale & Badge Accent */}
+        {onBadgeAccentChange && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5">
+              <Tag className="size-4 text-muted-foreground" />
+              <Label className="text-sm font-medium">
+                {isAr ? "لون شارة الخصومات" : "Sale Badge Accent"}
+              </Label>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {badgePresets.map((b) => {
+                const isBadgeSelected = (badgeAccent || "maroon") === b.id;
+                return (
+                  <button
+                    key={b.id}
+                    type="button"
+                    onClick={() => onBadgeAccentChange(b.id)}
+                    className={cn(
+                      "flex items-center gap-1.5 p-2 rounded-lg border text-xs font-medium transition-all",
+                      isBadgeSelected
+                        ? "border-primary bg-primary/10 font-bold"
+                        : "border-border hover:bg-muted/40",
+                    )}
+                  >
+                    <span
+                      className="size-3 rounded-full shrink-0"
+                      style={{ backgroundColor: b.color }}
+                    />
+                    <span className="truncate">{isAr ? b.labelAr : b.labelEn}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
