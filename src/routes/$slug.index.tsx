@@ -667,7 +667,15 @@ function HeroBanner() {
         />
       )}
 
-      <div className="relative z-10 mx-auto flex max-w-7xl items-center px-3 py-1 sm:px-6 sm:py-0 min-h-[220px] sm:min-h-[55vh]">
+      <div
+        className={`relative z-10 mx-auto flex max-w-7xl items-center px-4 py-2 sm:px-6 sm:py-0 min-h-[220px] sm:min-h-[55vh] ${
+          settings.hero_title_align === "center"
+            ? "justify-center"
+            : settings.hero_title_align === "end"
+              ? "justify-end"
+              : "justify-start"
+        }`}
+      >
         <HeroContentCarousel slides={slides} />
       </div>
     </section>
@@ -684,6 +692,25 @@ function HeroContentCarousel({
   const [idx, setIdx] = useState(0);
   const touchStartX = useRef<number | null>(null);
   const blockedClick = useRef(false);
+
+  const hasMultipleSlides = slides.length > 1;
+  const anySlideHasMedia = slides.some((s) => {
+    const mUrl =
+      (lang === "ar" ? s.media_url_ar : s.media_url_en) ||
+      s.media_url ||
+      (lang === "ar" ? s.media_url_en : s.media_url_ar);
+    const iframeUrl =
+      (lang === "ar" ? s.media_iframe_url_ar : s.media_iframe_url_en) ||
+      (lang === "ar" ? s.media_iframe_url_en : s.media_iframe_url_ar);
+    return (s.type === "image" && Boolean(mUrl)) || (s.type === "video" && Boolean(mUrl || iframeUrl));
+  });
+
+  const alignClass =
+    settings.hero_title_align === "center"
+      ? "items-center text-center"
+      : settings.hero_title_align === "end"
+        ? "items-end text-end"
+        : "items-start text-start";
 
   const goTo = (next: number) => {
     const safe = (next + slides.length) % slides.length;
@@ -713,10 +740,16 @@ function HeroContentCarousel({
   }
 
   return (
-    <div className="relative isolate w-[88%] max-w-xl overflow-hidden rounded-2xl bg-transparent shadow-lg [clip-path:inset(0_round_1rem)] sm:w-full">
+    <div
+      className={`relative isolate w-full max-w-xl overflow-hidden rounded-2xl bg-transparent ${
+        anySlideHasMedia ? "shadow-lg [clip-path:inset(0_round_1rem)]" : ""
+      }`}
+    >
       <div
         dir="ltr"
-        className="grid items-stretch overflow-hidden rounded-2xl [clip-path:inset(0_round_1rem)] touch-pan-y"
+        className={`grid items-stretch overflow-hidden rounded-2xl ${
+          anySlideHasMedia ? "[clip-path:inset(0_round_1rem)]" : ""
+        } touch-pan-y`}
         onTouchStart={(event) => {
           touchStartX.current = event.touches[0]?.clientX ?? null;
         }}
@@ -750,15 +783,25 @@ function HeroContentCarousel({
             (lang === "ar" ? slide.media_poster_url_ar : slide.media_poster_url_en) ||
             (lang === "ar" ? slide.media_poster_url_en : slide.media_poster_url_ar) ||
             mediaUrl;
+          const isMediaSlide =
+            (slide.type === "image" && Boolean(mediaUrl)) ||
+            (slide.type === "video" && Boolean(mediaUrl || streamIframeUrl));
+
           return (
             <article
               key={`${slide.id}-${lang}-${mediaUrl}`}
               dir={lang === "ar" ? "rtl" : "ltr"}
               aria-hidden={slideIndex !== idx}
               inert={slideIndex !== idx ? true : undefined}
-              className={`col-start-1 row-start-1 aspect-video min-w-0 overflow-hidden rounded-2xl transition-[opacity,transform] duration-[500ms] ease-[cubic-bezier(0.22,1,0.36,1)] [backface-visibility:hidden] [clip-path:inset(0_round_1rem)] sm:duration-[600ms] ${slideIndex === idx ? "z-10 pointer-events-auto translate-y-0 scale-100 opacity-100" : "z-0 pointer-events-none translate-y-1 scale-[0.992] opacity-0"}`}
+              className={`col-start-1 row-start-1 min-w-0 overflow-hidden rounded-2xl transition-[opacity,transform] duration-[500ms] ease-[cubic-bezier(0.22,1,0.36,1)] [backface-visibility:hidden] [clip-path:inset(0_round_1rem)] sm:duration-[600ms] ${
+                anySlideHasMedia ? "aspect-video" : "w-full"
+              } ${
+                slideIndex === idx
+                  ? "z-10 pointer-events-auto translate-y-0 scale-100 opacity-100"
+                  : "z-0 pointer-events-none translate-y-1 scale-[0.992] opacity-0"
+              }`}
             >
-              {slide.type === "image" && mediaUrl ? (
+              {isMediaSlide && slide.type === "image" ? (
                 <div className="relative h-full w-full overflow-hidden rounded-2xl sm:h-[320px]">
                   <StorefrontLink
                     href={slide.button_href || "#products"}
@@ -774,15 +817,14 @@ function HeroContentCarousel({
                     <ResponsiveImage
                       src={mediaUrl}
                       preset="hero"
-                      sizes="100vw"
-                      alt=""
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      fetchPriority={prioritizeHero && slideIndex === 0 ? "high" : "auto"}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      alt={title || ""}
+                      className="pointer-events-none h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                      decoding="async"
+                      fetchPriority={slideIndex === 0 && prioritizeHero ? "high" : "auto"}
                       loading={slideIndex === 0 ? "eager" : "lazy"}
                     />
-                    {/* Directional Legibility Gradient Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent pointer-events-none" />
-
                     {(title || body || button) && (
                       <div
                         className="absolute inset-0 flex flex-col justify-end p-5 pb-12 sm:p-8 sm:pb-16 text-white"
@@ -790,39 +832,20 @@ function HeroContentCarousel({
                       >
                         {settings.show_hero_title && title && (
                           <h1
-                            className={`mb-1 font-semibold leading-tight drop-shadow-sm sm:mb-2 transition-[transform,opacity] duration-500 delay-75 ease-out ${
-                              slideIndex === idx
-                                ? "translate-y-0 opacity-100"
-                                : "translate-y-2.5 opacity-0"
-                            }`}
-                            style={{
-                              fontSize: `clamp(1.25rem, 5vw, ${settings.hero_title_size}px)`,
-                              fontFamily: "var(--sf-font)",
-                            }}
+                            className="text-lg font-bold drop-shadow-md sm:text-2xl"
+                            style={{ fontFamily: "var(--sf-font)" }}
                           >
                             {title}
                           </h1>
                         )}
                         {settings.show_hero_about && body && (
-                          <p
-                            className={`mb-3 max-w-lg line-clamp-2 text-xs leading-relaxed text-white/90 drop-shadow-sm sm:mb-4 sm:line-clamp-3 sm:text-sm transition-[transform,opacity] duration-500 delay-150 ease-out ${
-                              slideIndex === idx
-                                ? "translate-y-0 opacity-100"
-                                : "translate-y-2.5 opacity-0"
-                            }`}
-                          >
+                          <p className="mt-1 line-clamp-2 text-xs text-white/90 drop-shadow-sm sm:line-clamp-none sm:text-sm">
                             {body}
                           </p>
                         )}
                         {button && (
-                          <div
-                            className={`transition-[transform,opacity] duration-500 delay-[225ms] ease-out ${
-                              slideIndex === idx
-                                ? "translate-y-0 opacity-100"
-                                : "translate-y-2.5 opacity-0"
-                            }`}
-                          >
-                            <span className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-md transition-transform duration-200 group-hover:scale-105 sm:px-6 sm:py-2.5 sm:text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                          <div className="mt-3">
+                            <span className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-md transition-transform duration-200 group-hover:scale-105 sm:px-6 sm:py-2.5 sm:text-sm">
                               {button}
                             </span>
                           </div>
@@ -831,30 +854,45 @@ function HeroContentCarousel({
                     )}
                   </StorefrontLink>
                 </div>
-              ) : slide.type === "video" && (mediaUrl || streamIframeUrl) ? (
+              ) : isMediaSlide && slide.type === "video" ? (
                 <div className="relative h-full w-full overflow-hidden rounded-2xl sm:h-[320px]">
                   <StorefrontLink
                     href={slide.button_href || "#products"}
                     className="group relative block h-full w-full cursor-pointer overflow-hidden rounded-2xl"
-                    aria-label={title || (lang === "ar" ? "فتح الرابط" : "Open link")}
+                    aria-label={
+                      title || body || button
+                        ? undefined
+                        : lang === "ar"
+                          ? "عرض المنتجات"
+                          : "View products"
+                    }
                   >
-                    <OptimizedVideo
-                      src={streamIframeUrl ? undefined : mediaUrl}
-                      streamIframeUrl={streamIframeUrl}
-                      poster={posterUrl}
-                      active={slideIndex === idx}
-                      prepare={!streamIframeUrl && slideIndex === preparedVideoIndex}
-                      preload={
-                        slideIndex === idx || slideIndex === preparedVideoIndex
-                          ? "metadata"
-                          : "none"
-                      }
-                      className="pointer-events-none h-full w-full object-cover"
-                      wrapperClassName="pointer-events-none h-full w-full overflow-hidden"
-                    />
-                    {/* Directional Legibility Gradient Overlay */}
+                    {streamIframeUrl ? (
+                      <div className="pointer-events-none relative h-full w-full overflow-hidden">
+                        <iframe
+                          src={streamIframeUrl}
+                          className="h-full w-full border-0 pointer-events-none scale-105"
+                          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                          tabIndex={-1}
+                          aria-hidden="true"
+                        />
+                        <div className="absolute inset-0 z-10 pointer-events-none" />
+                      </div>
+                    ) : (
+                      <OptimizedVideo
+                        src={mediaUrl}
+                        poster={posterUrl}
+                        active={slideIndex === idx}
+                        preloadPriority={
+                          slideIndex === idx || slideIndex === preparedVideoIndex
+                            ? "high"
+                            : "metadata"
+                        }
+                        wrapperClassName="pointer-events-none h-full w-full"
+                        className="pointer-events-none h-full w-full object-cover"
+                      />
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent pointer-events-none" />
-
                     {(title || body || button) && (
                       <div
                         className="absolute inset-0 flex flex-col justify-end p-5 pb-12 sm:p-8 sm:pb-16 text-white"
@@ -862,39 +900,20 @@ function HeroContentCarousel({
                       >
                         {settings.show_hero_title && title && (
                           <h1
-                            className={`mb-1 font-semibold leading-tight drop-shadow-sm sm:mb-2 transition-[transform,opacity] duration-500 delay-75 ease-out ${
-                              slideIndex === idx
-                                ? "translate-y-0 opacity-100"
-                                : "translate-y-2.5 opacity-0"
-                            }`}
-                            style={{
-                              fontSize: `clamp(1.25rem, 5vw, ${settings.hero_title_size}px)`,
-                              fontFamily: "var(--sf-font)",
-                            }}
+                            className="text-lg font-bold drop-shadow-md sm:text-2xl"
+                            style={{ fontFamily: "var(--sf-font)" }}
                           >
                             {title}
                           </h1>
                         )}
                         {settings.show_hero_about && body && (
-                          <p
-                            className={`mb-3 max-w-lg line-clamp-2 text-xs leading-relaxed text-white/90 drop-shadow-sm sm:mb-4 sm:line-clamp-3 sm:text-sm transition-[transform,opacity] duration-500 delay-150 ease-out ${
-                              slideIndex === idx
-                                ? "translate-y-0 opacity-100"
-                                : "translate-y-2.5 opacity-0"
-                            }`}
-                          >
+                          <p className="mt-1 line-clamp-2 text-xs text-white/90 drop-shadow-sm sm:line-clamp-none sm:text-sm">
                             {body}
                           </p>
                         )}
                         {button && (
-                          <div
-                            className={`transition-[transform,opacity] duration-500 delay-[225ms] ease-out ${
-                              slideIndex === idx
-                                ? "translate-y-0 opacity-100"
-                                : "translate-y-2.5 opacity-0"
-                            }`}
-                          >
-                            <span className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-md transition-transform duration-200 group-hover:scale-105 sm:px-6 sm:py-2.5 sm:text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                          <div className="mt-3">
+                            <span className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-md transition-transform duration-200 group-hover:scale-105 sm:px-6 sm:py-2.5 sm:text-sm">
                               {button}
                             </span>
                           </div>
@@ -905,12 +924,18 @@ function HeroContentCarousel({
                 </div>
               ) : (
                 <div
-                  className="hero-carousel-text-card flex h-full flex-col justify-center overflow-hidden rounded-2xl bg-white/70 dark:bg-black/60 text-card-foreground p-5 pb-12 shadow-[0_8px_32px_rgba(0,0,0,0.12),inset_0_1px_1.5px_rgba(255,255,255,0.7)] backdrop-blur-2xl backdrop-saturate-180 border border-white/50 dark:border-white/15 sm:h-[320px] sm:p-8 sm:pb-20"
+                  className={`hero-carousel-text-card flex flex-col justify-center overflow-hidden rounded-2xl bg-white/70 dark:bg-black/60 text-card-foreground shadow-[0_8px_32px_rgba(0,0,0,0.12),inset_0_1px_1.5px_rgba(255,255,255,0.7)] backdrop-blur-2xl backdrop-saturate-180 border border-white/50 dark:border-white/15 ${alignClass} ${
+                    anySlideHasMedia ? "h-full sm:h-[320px]" : "w-full"
+                  } ${
+                    hasMultipleSlides
+                      ? "pt-6 px-6 pb-12 sm:pt-8 sm:px-10 sm:pb-16"
+                      : "p-6 sm:p-8"
+                  }`}
                   style={{ textAlign: settings.hero_title_align }}
                 >
                   {settings.show_hero_title && title && (
                     <h1
-                      className="mb-1 font-semibold leading-tight sm:mb-3"
+                      className="font-semibold leading-tight drop-shadow-sm mb-2 sm:mb-3"
                       style={{
                         color: settings.hero_title_color || "var(--color-foreground)",
                         fontSize: `clamp(1.25rem, 5vw, ${settings.hero_title_size}px)`,
@@ -921,7 +946,7 @@ function HeroContentCarousel({
                     </h1>
                   )}
                   {settings.show_hero_about && body && (
-                    <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-foreground/85 dark:text-neutral-200 sm:mb-4 sm:line-clamp-none sm:text-base font-normal">
+                    <p className="line-clamp-3 text-xs leading-relaxed text-foreground/85 dark:text-neutral-200 mb-3 sm:mb-4 sm:line-clamp-none sm:text-base font-normal">
                       {body}
                     </p>
                   )}
@@ -929,7 +954,7 @@ function HeroContentCarousel({
                     <div>
                       <StorefrontLink
                         href={slide.button_href || "#products"}
-                        className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-sm transition-transform duration-200 hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-6 sm:py-3 sm:text-base"
+                        className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-5 py-2.5 text-xs font-semibold shadow-sm transition-transform duration-200 hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-6 sm:py-3 sm:text-sm"
                       >
                         {button}
                       </StorefrontLink>
@@ -941,10 +966,10 @@ function HeroContentCarousel({
           );
         })}
       </div>
-      {slides.length > 1 && (
+      {hasMultipleSlides && (
         <div
           dir="ltr"
-          className="pointer-events-none absolute inset-x-3 bottom-1 z-20 flex items-center justify-between text-white mix-blend-difference sm:inset-x-5 sm:bottom-6"
+          className="pointer-events-none absolute inset-x-3 bottom-1.5 z-20 flex items-center justify-between text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.7)] sm:inset-x-5 sm:bottom-4"
         >
           <button
             type="button"
@@ -952,7 +977,7 @@ function HeroContentCarousel({
             aria-label={lang === "ar" ? "الشريحة السابقة" : "Previous hero slide"}
             className="pointer-events-auto grid h-11 w-11 place-items-center bg-transparent transition duration-300 hover:scale-110 hover:opacity-70 active:scale-95"
           >
-            <ChevronLeft strokeWidth={1} className="h-7 w-7" />
+            <ChevronLeft strokeWidth={1.5} className="h-7 w-7" />
           </button>
           <div className="pointer-events-auto flex items-center justify-center gap-1">
             {slides.map((slide, dot) => (
@@ -967,7 +992,7 @@ function HeroContentCarousel({
                 }`}
               >
                 <span
-                  className={`block h-px bg-current transition-all duration-500 ${
+                  className={`block h-0.5 rounded-full bg-current transition-all duration-500 ${
                     dot === idx ? "w-8" : "w-3"
                   }`}
                 />
@@ -980,7 +1005,7 @@ function HeroContentCarousel({
             aria-label={lang === "ar" ? "الشريحة التالية" : "Next hero slide"}
             className="pointer-events-auto grid h-11 w-11 place-items-center bg-transparent transition duration-300 hover:scale-110 hover:opacity-70 active:scale-95"
           >
-            <ChevronRight strokeWidth={1} className="h-7 w-7" />
+            <ChevronRight strokeWidth={1.5} className="h-7 w-7" />
           </button>
         </div>
       )}

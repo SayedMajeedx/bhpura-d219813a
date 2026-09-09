@@ -1690,7 +1690,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-sm font-bold">
-                            Pura Fit Passport ·{" "}
+                            {(lang === "ar" ? brand.name_ar : brand.name_en) || brand.name_en || brand.name_ar || "Fit"} Passport ·{" "}
                             {fitProfileType === "abaya" ? t("عباية", "Abaya") : t("فستان", "Dress")}
                           </p>
                           {isGuest && (

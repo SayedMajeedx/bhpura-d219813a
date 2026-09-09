@@ -39,10 +39,12 @@ type Passport = {
 
 export function CustomerFitPassport({
   brandId,
+  brandName,
   customerId,
   isAr,
 }: {
   brandId: string;
+  brandName?: string;
   customerId: string;
   isAr: boolean;
 }) {
@@ -158,7 +160,9 @@ export function CustomerFitPassport({
             <Ruler className="size-5" />
           </span>
           <div>
-            <h2 className="font-display text-xl font-bold">Pura Fit Passport</h2>
+            <h2 className="font-display text-xl font-bold">
+              {brandName ? `${brandName} Fit Passport` : "Fit Passport"}
+            </h2>
             <p className="mt-1 text-xs text-muted-foreground">
               {isAr
                 ? "مقاسات موثّقة يمكن إعادة استخدامها في الطلبات القادمة"

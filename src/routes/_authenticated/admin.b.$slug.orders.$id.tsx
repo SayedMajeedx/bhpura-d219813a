@@ -349,6 +349,7 @@ function ItemTailoringCustomizer({
   productName?: string | null;
   onChange: (patch: Partial<Item>) => void;
 }) {
+  const brand = useBrand();
   const currentSize = item.selected_variant?.size ?? "";
   const currentColor = item.selected_variant?.color ?? "";
   const currentFabric = item.selected_variant?.fabric ?? "";
@@ -475,7 +476,7 @@ function ItemTailoringCustomizer({
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <p className="font-bold">
-                Pura Fit Passport ·{" "}
+                {(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.name_ar || "Fit"} Passport ·{" "}
                 {profileType === "abaya" ? (isAr ? "عباية" : "Abaya") : isAr ? "فستان" : "Dress"}
               </p>
               <p className="mt-0.5 text-[11px] text-muted-foreground">

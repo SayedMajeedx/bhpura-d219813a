@@ -424,7 +424,12 @@ function CustomerProfilePage() {
         </div>
 
         <div className="space-y-6">
-          <CustomerFitPassport brandId={brand.id} customerId={customerId} isAr={lang === "ar"} />
+          <CustomerFitPassport
+            brandId={brand.id}
+            brandName={lang === "ar" ? (brand.name_ar || brand.name_en) : (brand.name_en || brand.name_ar)}
+            customerId={customerId}
+            isAr={lang === "ar"}
+          />
           <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
             <div className="flex items-center justify-between gap-3 border-b border-border/50 p-5 bg-primary/5">
               <div>

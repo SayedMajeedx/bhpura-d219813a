@@ -609,7 +609,12 @@ function AccountPage() {
             </TabsContent>
 
             <TabsContent value="fit" className="mt-0 focus-visible:outline-none">
-              <StorefrontFitPassport brandId={brand.id} customerId={customer?.id} isAr={isAr} />
+              <StorefrontFitPassport
+                brandId={brand.id}
+                brandName={isAr ? (brand.name_ar || brand.name_en) : (brand.name_en || brand.name_ar)}
+                customerId={customer?.id}
+                isAr={isAr}
+              />
             </TabsContent>
 
             <TabsContent value="addresses" className="mt-0 focus-visible:outline-none">

@@ -3400,7 +3400,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div>
                             <p className="font-bold text-primary">
-                              Pura Fit Passport ·{" "}
+                              {(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.name_ar || "Fit"} Passport ·{" "}
                               {passportType === "abaya"
                                 ? isAr
                                   ? "عباية"

@@ -38,14 +38,17 @@ const emptyProfiles = (): FitProfiles => ({ abaya: {}, dress: {} });
 
 export function StorefrontFitPassport({
   brandId,
+  brandName,
   customerId,
   isAr,
 }: {
   brandId: string;
+  brandName?: string;
   customerId?: string;
   isAr: boolean;
 }) {
   const qc = useQueryClient();
+  const passportTitle = brandName ? `${brandName} Fit Passport` : "Fit Passport";
   const [profile, setProfile] = useState<FitProfileType>("abaya");
   const [measurements, setMeasurements] = useState<FitProfiles>(emptyProfiles);
   const [fit, setFit] = useState<Passport["fit_preference"]>("regular");
@@ -113,8 +116,8 @@ export function StorefrontFitPassport({
     return (
       <Card className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
         {isAr
-          ? "يتم تفعيل Pura Fit Passport بعد إكمال أول طلب."
-          : "Place your first order to activate your Pura Fit Passport."}
+          ? `يتم تفعيل ${passportTitle} بعد إكمال أول طلب.`
+          : `Place your first order to activate your ${passportTitle}.`}
       </Card>
     );
   const save = async () => {
@@ -173,7 +176,7 @@ export function StorefrontFitPassport({
             </span>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[.16em] text-primary">
-                Pura Fit Passport
+                {passportTitle}
               </p>
               <h3 className="mt-1 text-lg font-bold">
                 {isAr ? "ملفان دقيقان لكل تفصيل" : "Two precise profiles for every custom order"}
