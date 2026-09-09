@@ -587,7 +587,7 @@ function StoreHeader() {
           <Link
             to="/$slug"
             params={{ slug: brand.slug }}
-            className={`flex min-h-11 items-center gap-2 min-w-0 shrink ${align === "center" ? "sm:mx-auto" : ""}`}
+            className={`flex min-h-11 items-center gap-3 min-w-0 ${align === "center" ? "sm:mx-auto" : ""}`}
             style={{ color: "var(--sf-header-fg)" }}
             aria-label={displayName}
           >
@@ -599,17 +599,19 @@ function StoreHeader() {
                 height={55}
                 fetchPriority="high"
                 decoding="async"
-                className="shrink object-contain max-h-8 sm:max-h-12 max-w-[110px] sm:max-w-[180px] w-auto"
+                className="shrink-0 object-contain"
                 style={{
-                  height: "auto",
+                  height: logoSize,
+                  maxHeight: logoSize,
                   width: "auto",
+                  maxWidth: logoSize * 3,
                 }}
               />
             )}
 
             {settings.show_header_name && (
               <span
-                className="font-display text-base sm:text-xl truncate"
+                className="font-display text-lg sm:text-xl truncate"
                 style={{ color: "var(--sf-header-fg)" }}
               >
                 {displayName}
@@ -628,17 +630,15 @@ function StoreHeader() {
             <Button
               variant="ghost"
               size="sm"
-              className="h-9 px-2 sm:h-11 sm:min-w-11 sm:px-3 gap-1.5 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border border-white/15 sm:border-0 rounded-lg sm:rounded-[var(--radius)] shadow-none focus-visible:ring-1 focus-visible:ring-white/30"
+              className="min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-1 focus-visible:ring-white/30"
               style={{ color: "var(--sf-header-fg)" }}
               onClick={() => setLang(lang === "ar" ? "en" : "ar")}
               aria-label={
                 lang === "ar" ? "تغيير اللغة إلى الإنجليزية" : "Switch language to Arabic"
               }
             >
-              <Languages className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span className="text-xs font-bold font-mono">
-                {lang === "ar" ? "EN" : "العربية"}
-              </span>
+              <Languages className="h-4 w-4" />
+              <span className="hidden sm:inline">{lang === "ar" ? "English" : "العربية"}</span>
             </Button>
 
             {session && isStoreMember ? (
@@ -646,7 +646,7 @@ function StoreHeader() {
                 asChild
                 variant="ghost"
                 size="sm"
-                className="h-9 w-9 sm:h-11 sm:min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-1 focus-visible:ring-white/30"
+                className="min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-1 focus-visible:ring-white/30"
                 style={{ color: "var(--sf-header-fg)" }}
               >
                 <Link
@@ -666,7 +666,7 @@ function StoreHeader() {
                 asChild
                 variant="ghost"
                 size="sm"
-                className="h-9 w-9 sm:h-11 sm:min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-1 focus-visible:ring-white/30"
+                className="min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-1 focus-visible:ring-white/30"
                 style={{ color: "var(--sf-header-fg)" }}
               >
                 <Link
@@ -687,7 +687,7 @@ function StoreHeader() {
               type="button"
               variant="ghost"
               size="sm"
-              className="hidden sm:inline-flex relative min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-1 focus-visible:ring-white/30"
+              className="relative min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-1 focus-visible:ring-white/30"
               style={{ color: "var(--sf-header-fg)" }}
               onClick={() => {
                 if (
@@ -711,7 +711,7 @@ function StoreHeader() {
               asChild
               variant="ghost"
               size="sm"
-              className="h-9 w-9 sm:h-11 sm:min-w-11 relative gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-1 focus-visible:ring-white/30"
+              className="relative min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-1 focus-visible:ring-white/30"
               style={{ color: "var(--sf-header-fg)" }}
             >
               <Link
@@ -719,7 +719,7 @@ function StoreHeader() {
                 params={{ slug: brand.slug }}
                 aria-label={t("المفضلة", "Wishlist")}
               >
-                <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
+                <Heart className="h-5 w-5" />
                 <span className="hidden sm:inline">{t("المفضلة", "Wishlist")}</span>
                 {wishlistCount > 0 && (
                   <span
@@ -739,11 +739,11 @@ function StoreHeader() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-9 w-9 sm:h-11 sm:min-w-11 relative gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-1 focus-visible:ring-white/30"
+                className="relative min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-1 focus-visible:ring-white/30"
                 style={{ color: "var(--sf-header-fg)" }}
                 aria-label={t("سلة التسوق", "Shopping cart")}
               >
-                <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5" />
+                <ShoppingBag className="h-5 w-5" />
                 <span className="hidden sm:inline">{t("السلة", "Cart")}</span>
                 {cartCount > 0 && (
                   <span
