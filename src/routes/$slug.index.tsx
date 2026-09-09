@@ -752,7 +752,7 @@ function HeroContentCarousel({
             mediaUrl;
           return (
             <article
-              key={slide.id}
+              key={`${slide.id}-${lang}-${mediaUrl}`}
               dir={lang === "ar" ? "rtl" : "ltr"}
               aria-hidden={slideIndex !== idx}
               inert={slideIndex !== idx ? true : undefined}

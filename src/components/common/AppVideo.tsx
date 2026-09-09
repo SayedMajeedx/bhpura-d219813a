@@ -49,6 +49,17 @@ export function AppVideo({
     }
   };
 
+  // Reload and reset playback when src changes
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    setIsVideoPlaying(false);
+    video.load();
+    if (active) {
+      video.play().catch(() => {});
+    }
+  }, [src, resolvedMp4, resolvedWebm]);
+
   // Re-trigger play when active changes in carousels
   useEffect(() => {
     const video = videoRef.current;
@@ -102,7 +113,9 @@ export function AppVideo({
       )}
 
       <video
+        key={src || "app-video"}
         ref={videoRef}
+        src={resolvedMp4 || resolvedWebm || src || undefined}
         poster={poster ?? undefined}
         autoPlay={shouldAutoPlay}
         muted={shouldMute}

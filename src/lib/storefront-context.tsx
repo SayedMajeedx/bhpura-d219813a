@@ -324,8 +324,20 @@ export function StorefrontProvider({
 
   useEffect(() => {
     try {
-      const storedLang = localStorage.getItem(langKey);
-      if (storedLang === "en" || storedLang === "ar") setLangState(storedLang);
+      const urlParams =
+        typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+      const urlLang = urlParams?.get("lang");
+      if (urlLang === "en" || urlLang === "ar") {
+        setLangState(urlLang);
+        try {
+          localStorage.setItem(langKey, urlLang);
+        } catch {
+          /* ignore */
+        }
+      } else {
+        const storedLang = localStorage.getItem(langKey);
+        if (storedLang === "en" || storedLang === "ar") setLangState(storedLang);
+      }
 
       // 1. Check for shared cart in URL: ?c=... or ?cart=... (short code) OR ?share_cart=... (payload)
       let sharedCartLoaded = false;

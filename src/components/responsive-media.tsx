@@ -117,6 +117,7 @@ export function OptimizedVideo({
 
   return (
     <AppVideo
+      key={src || "opt-video"}
       src={src}
       poster={resolvedPoster}
       variant="hero"

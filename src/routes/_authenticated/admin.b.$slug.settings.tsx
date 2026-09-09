@@ -2902,6 +2902,7 @@ function HeroSlideLivePreview({
           <div className="relative h-full w-full">
             {slide.type === "video" ? (
               <video
+                key={mediaUrl}
                 src={mediaUrl}
                 muted
                 autoPlay
