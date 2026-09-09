@@ -668,12 +668,16 @@ function HeroBanner() {
       )}
 
       <div
-        className={`relative z-10 mx-auto flex max-w-7xl items-center px-4 py-2 sm:px-6 sm:py-0 min-h-[220px] sm:min-h-[55vh] ${
+        className={`relative z-10 mx-auto flex w-full max-w-7xl items-center px-3 py-1 sm:px-6 sm:py-0 min-h-[220px] sm:min-h-[55vh] ${
           settings.hero_title_align === "center"
             ? "justify-center"
             : settings.hero_title_align === "end"
-              ? "justify-end"
-              : "justify-start"
+              ? lang === "ar"
+                ? "justify-center sm:justify-start"
+                : "justify-center sm:justify-end"
+              : lang === "ar"
+                ? "justify-center sm:justify-end"
+                : "justify-center sm:justify-start"
         }`}
       >
         <HeroContentCarousel slides={slides} />
@@ -694,13 +698,7 @@ function HeroContentCarousel({
   const blockedClick = useRef(false);
 
   const hasMultipleSlides = slides.length > 1;
-
-  const alignClass =
-    settings.hero_title_align === "center"
-      ? "items-center text-center"
-      : settings.hero_title_align === "end"
-        ? "items-end text-end"
-        : "items-start text-start";
+  const isAr = lang === "ar";
 
   const goTo = (next: number) => {
     const safe = (next + slides.length) % slides.length;
@@ -730,7 +728,7 @@ function HeroContentCarousel({
   }
 
   return (
-    <div className="relative isolate w-full max-w-xl overflow-hidden rounded-2xl bg-transparent shadow-lg [clip-path:inset(0_round_1rem)]">
+    <div className="relative isolate w-[92%] sm:w-full max-w-xl mx-auto overflow-hidden rounded-2xl bg-transparent shadow-lg [clip-path:inset(0_round_1rem)]">
       <div
         dir="ltr"
         className="grid items-stretch overflow-hidden rounded-2xl [clip-path:inset(0_round_1rem)] touch-pan-y"
@@ -770,6 +768,19 @@ function HeroContentCarousel({
           const isMediaSlide =
             (slide.type === "image" && Boolean(mediaUrl)) ||
             (slide.type === "video" && Boolean(mediaUrl || streamIframeUrl));
+          const slideAlign = slide.align || settings.hero_title_align || "start";
+          const slideTextAlign =
+            slideAlign === "center"
+              ? "center"
+              : isAr
+                ? slideAlign === "end"
+                  ? "left"
+                  : "right"
+                : slideAlign === "end"
+                  ? "right"
+                  : "left";
+          const rawTitleSize = slide.title_size || settings.hero_title_size || 26;
+          const titleSize = Math.max(16, Math.min(48, rawTitleSize));
 
           return (
             <article
@@ -810,12 +821,15 @@ function HeroContentCarousel({
                     {(title || body || button) && (
                       <div
                         className="absolute inset-0 flex flex-col justify-end p-5 pb-12 sm:p-8 sm:pb-16 text-white"
-                        style={{ textAlign: settings.hero_title_align }}
+                        style={{ textAlign: slideTextAlign }}
                       >
                         {settings.show_hero_title && title && (
                           <h1
-                            className="text-lg font-bold drop-shadow-md sm:text-2xl"
-                            style={{ fontFamily: "var(--sf-font)" }}
+                            className="font-bold drop-shadow-md sm:text-2xl"
+                            style={{
+                              fontFamily: "var(--sf-font)",
+                              fontSize: `clamp(1.125rem, 3.8vw, ${titleSize}px)`,
+                            }}
                           >
                             {title}
                           </h1>
@@ -826,7 +840,7 @@ function HeroContentCarousel({
                           </p>
                         )}
                         {button && (
-                          <div className="mt-3">
+                          <div className="mt-3" style={{ textAlign: slideTextAlign }}>
                             <span className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-md transition-transform duration-200 group-hover:scale-105 sm:px-6 sm:py-2.5 sm:text-sm">
                               {button}
                             </span>
@@ -878,12 +892,15 @@ function HeroContentCarousel({
                     {(title || body || button) && (
                       <div
                         className="absolute inset-0 flex flex-col justify-end p-5 pb-12 sm:p-8 sm:pb-16 text-white"
-                        style={{ textAlign: settings.hero_title_align }}
+                        style={{ textAlign: slideTextAlign }}
                       >
                         {settings.show_hero_title && title && (
                           <h1
-                            className="text-lg font-bold drop-shadow-md sm:text-2xl"
-                            style={{ fontFamily: "var(--sf-font)" }}
+                            className="font-bold drop-shadow-md sm:text-2xl"
+                            style={{
+                              fontFamily: "var(--sf-font)",
+                              fontSize: `clamp(1.125rem, 3.8vw, ${titleSize}px)`,
+                            }}
                           >
                             {title}
                           </h1>
@@ -894,7 +911,7 @@ function HeroContentCarousel({
                           </p>
                         )}
                         {button && (
-                          <div className="mt-3">
+                          <div className="mt-3" style={{ textAlign: slideTextAlign }}>
                             <span className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-md transition-transform duration-200 group-hover:scale-105 sm:px-6 sm:py-2.5 sm:text-sm">
                               {button}
                             </span>
@@ -906,19 +923,20 @@ function HeroContentCarousel({
                 </div>
               ) : (
                 <div
-                  className={`hero-carousel-text-card flex h-full flex-col justify-center overflow-hidden rounded-2xl bg-white/70 dark:bg-black/60 text-card-foreground shadow-[0_8px_32px_rgba(0,0,0,0.12),inset_0_1px_1.5px_rgba(255,255,255,0.7)] backdrop-blur-2xl backdrop-saturate-180 border border-white/50 dark:border-white/15 sm:h-[320px] ${alignClass} ${
+                  dir={isAr ? "rtl" : "ltr"}
+                  className={`hero-carousel-text-card flex h-full flex-col justify-center overflow-hidden rounded-2xl bg-white/70 dark:bg-black/60 text-card-foreground shadow-[0_8px_32px_rgba(0,0,0,0.12),inset_0_1px_1.5px_rgba(255,255,255,0.7)] backdrop-blur-2xl backdrop-saturate-180 border border-white/50 dark:border-white/15 sm:h-[320px] ${
                     hasMultipleSlides
                       ? "p-5 pb-12 sm:p-8 sm:pb-20"
                       : "p-6 sm:p-8"
                   }`}
-                  style={{ textAlign: settings.hero_title_align }}
+                  style={{ textAlign: slideTextAlign }}
                 >
                   {settings.show_hero_title && title && (
                     <h1
                       className="font-semibold leading-tight drop-shadow-sm mb-2 sm:mb-3"
                       style={{
                         color: settings.hero_title_color || "var(--color-foreground)",
-                        fontSize: `clamp(1.25rem, 5vw, ${settings.hero_title_size}px)`,
+                        fontSize: `clamp(1.125rem, 3.8vw, ${titleSize}px)`,
                         fontFamily: "var(--sf-font)",
                       }}
                     >
@@ -931,7 +949,7 @@ function HeroContentCarousel({
                     </p>
                   )}
                   {button && (
-                    <div>
+                    <div style={{ textAlign: slideTextAlign }}>
                       <StorefrontLink
                         href={slide.button_href || "#products"}
                         className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-5 py-2.5 text-xs font-semibold shadow-sm transition-transform duration-200 hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-6 sm:py-3 sm:text-sm"

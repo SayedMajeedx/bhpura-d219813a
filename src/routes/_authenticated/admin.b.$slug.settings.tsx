@@ -1742,10 +1742,11 @@ type HeroSlide = {
   media_iframe_url_en?: string;
   media_iframe_url_ar?: string;
   media_poster_url_en?: string;
-  media_poster_url_ar?: string;
   button_en: string;
   button_ar: string;
   button_href: string;
+  title_size?: number;
+  align?: "start" | "center" | "end";
 };
 type HeroState = {
   background: MediaItem | null;
@@ -2848,6 +2849,74 @@ function HeroSlidesEditor({
                     value={slide.title_ar}
                     onChange={(event) => update(index, { title_ar: event.target.value })}
                   />
+                </div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <Label>{isAr ? "حجم خط العنوان (بكسل)" : "Title font size (px)"}</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input
+                      type="number"
+                      min={16}
+                      max={48}
+                      className="w-24"
+                      value={slide.title_size ?? 26}
+                      onChange={(event) =>
+                        update(index, {
+                          title_size: Math.max(16, Math.min(48, Number(event.target.value) || 26)),
+                        })
+                      }
+                    />
+                    <div className="flex gap-1">
+                      {[
+                        { label: isAr ? "صغير" : "Sm", size: 20 },
+                        { label: isAr ? "متوسط" : "Md", size: 26 },
+                        { label: isAr ? "كبير" : "Lg", size: 34 },
+                      ].map((preset) => (
+                        <Button
+                          key={preset.size}
+                          type="button"
+                          size="sm"
+                          variant={
+                            (slide.title_size ?? 26) === preset.size
+                              ? "default"
+                              : "outline"
+                          }
+                          className="h-9 px-2.5 text-xs"
+                          onClick={() => update(index, { title_size: preset.size })}
+                        >
+                          {preset.label} ({preset.size})
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <Label>{isAr ? "محاذاة النص" : "Text alignment"}</Label>
+                  <div className="flex gap-2 mt-1">
+                    {(["start", "center", "end"] as const).map((alignment) => (
+                      <Button
+                        key={alignment}
+                        type="button"
+                        size="sm"
+                        variant={
+                          (slide.align ?? "start") === alignment
+                            ? "default"
+                            : "outline"
+                        }
+                        className="h-9 flex-1 text-xs"
+                        onClick={() => update(index, { align: alignment })}
+                      >
+                        {isAr
+                          ? alignment === "start"
+                            ? "البداية"
+                            : alignment === "center"
+                              ? "الوسط"
+                              : "النهاية"
+                          : alignment}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -4684,10 +4753,23 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   <Select
                     value={state.storefront_font_en}
                     onValueChange={(val) => {
+                      const isCustom = val.startsWith("Custom —");
+                      const url = isCustom ? state.storefront_font_en_url : null;
                       setState({
                         ...state,
                         storefront_font_en: val,
-                        storefront_font_en_url: val.startsWith("Custom —") ? state.storefront_font_en_url : null,
+                        storefront_font_en_url: url,
+                        storefront_typography: {
+                          ...state.storefront_typography,
+                          body: {
+                            ...state.storefront_typography.body,
+                            en: { family: val, url },
+                          },
+                          display: {
+                            ...state.storefront_typography.display,
+                            en: { family: val, url },
+                          },
+                        },
                       });
                     }}
                   >
@@ -4762,10 +4844,23 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   <Select
                     value={state.storefront_font_ar}
                     onValueChange={(val) => {
+                      const isCustom = val.startsWith("Custom —");
+                      const url = isCustom ? state.storefront_font_ar_url : null;
                       setState({
                         ...state,
                         storefront_font_ar: val,
-                        storefront_font_ar_url: val.startsWith("Custom —") ? state.storefront_font_ar_url : null,
+                        storefront_font_ar_url: url,
+                        storefront_typography: {
+                          ...state.storefront_typography,
+                          body: {
+                            ...state.storefront_typography.body,
+                            ar: { family: val, url },
+                          },
+                          display: {
+                            ...state.storefront_typography.display,
+                            ar: { family: val, url },
+                          },
+                        },
                       });
                     }}
                   >

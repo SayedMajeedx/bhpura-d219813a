@@ -60,10 +60,11 @@ export type HeroContentSlide = {
   media_iframe_url_ar?: string;
   media_poster_url?: string;
   media_poster_url_en?: string;
-  media_poster_url_ar?: string;
   button_en: string;
   button_ar: string;
   button_href: string;
+  title_size?: number;
+  align?: "start" | "center" | "end";
 };
 export type HeroMediaConfig = { background: HeroMediaItem | null; slides: HeroContentSlide[] };
 

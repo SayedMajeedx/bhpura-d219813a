@@ -138,9 +138,21 @@ export const Route = createFileRoute("/$slug")({
       family: s?.storefront_font_ar ?? "Tajawal",
       url: s?.storefront_font_ar_url ?? null,
     };
-    legacyTypography.display.en = legacyTypography.body.en;
-    legacyTypography.display.ar = legacyTypography.body.ar;
     const storefrontTypography = normalizeTypography(s?.storefront_typography, legacyTypography);
+    if (s?.storefront_font_ar) {
+      storefrontTypography.body.ar = {
+        family: s.storefront_font_ar,
+        url: s.storefront_font_ar_url ?? null,
+      };
+      storefrontTypography.display.ar = storefrontTypography.body.ar;
+    }
+    if (s?.storefront_font_en) {
+      storefrontTypography.body.en = {
+        family: s.storefront_font_en,
+        url: s.storefront_font_en_url ?? null,
+      };
+      storefrontTypography.display.en = storefrontTypography.body.en;
+    }
     const safeSettings: PublicSettings = {
       brand_id: brand.id,
       business_name: s?.business_name ?? brand.name_en,
