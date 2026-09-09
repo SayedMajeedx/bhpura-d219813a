@@ -6120,10 +6120,16 @@ function VariantList({
         </div>
 
         <div className="w-full overflow-x-auto os-scrollbar">
-          <table className="w-full text-xs text-start border-collapse min-w-[700px]">
+          <table
+            className="w-full text-xs text-start border-collapse"
+            style={{ minWidth: totalTableWidth }}
+          >
             <thead>
               <tr className="text-start text-xs uppercase tracking-wider border-b bg-muted/40 font-semibold text-muted-foreground">
-                <th className="px-2 py-3 text-center align-middle">
+                <th
+                  className="px-2 py-3 text-center align-middle"
+                  style={{ width: 44, minWidth: 44 }}
+                >
                   <input
                     type="checkbox"
                     className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer transition-all"
@@ -6131,7 +6137,10 @@ function VariantList({
                     onChange={toggleSelectAll}
                   />
                 </th>
-                <th className="px-2 py-3 text-start font-black text-[10px]">
+                <th
+                  className="px-2 py-3 text-start font-black text-[10px]"
+                  style={{ width: 270, minWidth: 260 }}
+                >
                   {(() => {
                     const sizeLbl =
                       (isAr ? product?.variant_label_size_ar : product?.variant_label_size_en) ||
@@ -6156,35 +6165,61 @@ function VariantList({
                   })()}
                 </th>
                 {renderImageCol && (
-                  <th className="px-2 py-3 text-center font-black text-[10px]">
+                  <th
+                    className="px-2 py-3 text-center font-black text-[10px]"
+                    style={{ width: 96, minWidth: 96 }}
+                  >
                     {isAr ? "الصورة" : "Image"}
                   </th>
                 )}
                 {renderSkuCol && (
-                  <th className="px-2 py-3 text-start font-black text-[10px]">
+                  <th
+                    className="px-2 py-3 text-start font-black text-[10px]"
+                    style={{ width: 120, minWidth: 110 }}
+                  >
                     {t("inventory.sku")}
                   </th>
                 )}
                 {renderBarcodeCol && (
-                  <th className="px-2 py-3 text-start font-black text-[10px]">{barcodeLabel}</th>
+                  <th
+                    className="px-2 py-3 text-start font-black text-[10px]"
+                    style={{ width: 190, minWidth: 180 }}
+                  >
+                    {barcodeLabel}
+                  </th>
                 )}
                 {canViewFinancials && (
-                  <th className="px-2 py-3 text-center font-black text-[10px]">
+                  <th
+                    className="px-2 py-3 text-center font-black text-[10px]"
+                    style={{ width: 110, minWidth: 100 }}
+                  >
                     {t("inventory.cost")}
                   </th>
                 )}
-                <th className="px-2 py-3 text-center font-black text-[10px]">
+                <th
+                  className="px-2 py-3 text-center font-black text-[10px]"
+                  style={{ width: 110, minWidth: 105 }}
+                >
                   {isAr ? "السعر اللي يدفعه العميل" : "Customer Price"}
                 </th>
-                <th className="px-2 py-3 text-center font-black text-[10px]">
+                <th
+                  className="px-2 py-3 text-center font-black text-[10px]"
+                  style={{ width: 110, minWidth: 105 }}
+                >
                   {isAr ? "السعر الأساسي" : "Base Price"}
                 </th>
                 {canViewFinancials && (
-                  <th className="px-2 py-3 text-center font-black text-[10px]">
+                  <th
+                    className="px-2 py-3 text-center font-black text-[10px]"
+                    style={{ width: 96, minWidth: 90 }}
+                  >
                     {t("inventory.margin")}
                   </th>
                 )}
-                <th className="px-2 py-3 text-center font-black text-[10px]">
+                <th
+                  className="px-2 py-3 text-center font-black text-[10px]"
+                  style={{ width: 115, minWidth: 105 }}
+                >
                   <div className="inline-flex items-center justify-center gap-1">
                     <span>{mainLabel}</span>
                     <TooltipProvider delayDuration={200}>
@@ -6201,7 +6236,10 @@ function VariantList({
                     </TooltipProvider>
                   </div>
                 </th>
-                <th className="px-2 py-3 text-center font-black text-[10px]">
+                <th
+                  className="px-2 py-3 text-center font-black text-[10px]"
+                  style={{ width: 115, minWidth: 105 }}
+                >
                   <div className="inline-flex items-center justify-center gap-1">
                     <span>{incLabel}</span>
                     <TooltipProvider delayDuration={200}>
@@ -6218,10 +6256,17 @@ function VariantList({
                     </TooltipProvider>
                   </div>
                 </th>
-                <th className="px-2 py-3 text-center font-black text-[10px]">
+                <th
+                  className="px-2 py-3 text-center font-black text-[10px]"
+                  style={{ width: 88, minWidth: 80 }}
+                >
                   {t("inventory.stock")}
                 </th>
-                <th aria-label={isAr ? "الإجراءات" : "Actions"}></th>
+                <th
+                  className="px-2 py-3 text-center"
+                  style={{ width: 60, minWidth: 60 }}
+                  aria-label={isAr ? "الإجراءات" : "Actions"}
+                ></th>
               </tr>
             </thead>
             <tbody>
@@ -6253,51 +6298,54 @@ function VariantList({
               {/* Adding desktop row (perfect matching design) */}
               {adding && (
                 <tr className="border-t border-border bg-secondary/30 animate-in fade-in duration-150">
-                  <td></td>
+                  <td className="px-2 py-3 text-center"></td>
                   {/* Variant (combined attributes inputs) */}
-                  <td className="px-2 py-3">
-                    <div className="grid grid-cols-2 gap-1.5 max-w-[320px]">
-                      <div className="flex gap-1">
+                  <td className="px-2 py-3 align-middle">
+                    <div className="flex flex-col gap-1.5 w-full max-w-[260px]">
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <div className="flex gap-1 min-w-0">
+                          <Input
+                            className="h-8 flex-1 min-w-0 text-start text-xs font-semibold"
+                            value={row.size}
+                            onChange={(e) => setRow({ ...row, size: e.target.value })}
+                            placeholder={
+                              (isAr
+                                ? product?.variant_label_size_ar
+                                : product?.variant_label_size_en) ||
+                              product?.variant_label_size_en ||
+                              product?.variant_label_size_ar ||
+                              (isAr ? "المقاس" : "Size")
+                            }
+                          />
+                          <select
+                            className="h-8 rounded-md border border-input bg-background px-1 text-xs outline-none shrink-0"
+                            value={row.size_unit}
+                            onChange={(e) => setRow({ ...row, size_unit: e.target.value })}
+                            title={isAr ? "وحدة المقاس" : "Size unit"}
+                          >
+                            {SIZE_UNITS.map((u) => (
+                              <option key={u} value={u}>
+                                {u === "" ? "—" : u}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                         <Input
-                          className="h-8 w-16 text-start text-xs font-semibold"
-                          value={row.size}
-                          onChange={(e) => setRow({ ...row, size: e.target.value })}
+                          className="h-8 w-full min-w-0 text-xs font-semibold"
+                          value={row.color}
+                          onChange={(e) => setRow({ ...row, color: e.target.value })}
                           placeholder={
                             (isAr
-                              ? product?.variant_label_size_ar
-                              : product?.variant_label_size_en) ||
-                            product?.variant_label_size_en ||
-                            product?.variant_label_size_ar ||
-                            "Size"
+                              ? product?.variant_label_color_ar
+                              : product?.variant_label_color_en) ||
+                            product?.variant_label_color_en ||
+                            product?.variant_label_color_ar ||
+                            (isAr ? "اللون" : "Color")
                           }
                         />
-                        <select
-                          className="h-8 rounded border border-input bg-background px-1 text-xs outline-none"
-                          value={row.size_unit}
-                          onChange={(e) => setRow({ ...row, size_unit: e.target.value })}
-                        >
-                          {SIZE_UNITS.map((u) => (
-                            <option key={u} value={u}>
-                              {u === "" ? "—" : u}
-                            </option>
-                          ))}
-                        </select>
                       </div>
                       <Input
-                        className="h-8 w-full text-xs font-semibold"
-                        value={row.color}
-                        onChange={(e) => setRow({ ...row, color: e.target.value })}
-                        placeholder={
-                          (isAr
-                            ? product?.variant_label_color_ar
-                            : product?.variant_label_color_en) ||
-                          product?.variant_label_color_en ||
-                          product?.variant_label_color_ar ||
-                          "Color"
-                        }
-                      />
-                      <Input
-                        className="h-8 w-full text-xs font-semibold col-span-2"
+                        className="h-8 w-full min-w-0 text-xs font-semibold"
                         value={row.fabric}
                         onChange={(e) => setRow({ ...row, fabric: e.target.value })}
                         placeholder={
@@ -6313,7 +6361,18 @@ function VariantList({
                   </td>
 
                   {/* Optional Image */}
-                  {renderImageCol && <td></td>}
+                  {renderImageCol && (
+                    <td className="px-2 py-3 text-center">
+                      <div className="flex justify-center">
+                        <VariantImageUploader
+                          brandId={brand.id}
+                          imageUrl={row.image_url}
+                          onChange={(url) => setRow({ ...row, image_url: url || "" })}
+                          isAr={isAr}
+                        />
+                      </div>
+                    </td>
+                  )}
 
                   {/* Optional SKU */}
                   {renderSkuCol && (
@@ -6321,7 +6380,7 @@ function VariantList({
                       <Input
                         className="h-8 w-full text-xs font-mono"
                         value={row.sku}
-                        placeholder="SKU"
+                        placeholder={isAr ? "كود المنتج" : "SKU"}
                         onChange={(e) => setRow({ ...row, sku: e.target.value })}
                       />
                     </td>
@@ -6339,6 +6398,7 @@ function VariantList({
                         />
                         <button
                           type="button"
+                          title={isAr ? "توليد باركود" : "Generate barcode"}
                           className="text-muted-foreground hover:text-primary p-1 rounded-sm hover:bg-secondary touch-manipulation active:scale-95 transition"
                           onClick={(e) => {
                             e.preventDefault();
@@ -6377,6 +6437,7 @@ function VariantList({
                         type="number"
                         step="0.001"
                         value={row.selling_price}
+                        placeholder={String(product?.base_price ?? "0.000")}
                         onChange={(e) => setRow({ ...row, selling_price: e.target.value })}
                       />
                       <span className="absolute right-2 text-[8px] font-black text-muted-foreground/50 pointer-events-none uppercase">
@@ -6398,7 +6459,9 @@ function VariantList({
                   </td>
 
                   {/* Margin column (blank on add) */}
-                  {canViewFinancials && <td></td>}
+                  {canViewFinancials && (
+                    <td className="px-2 py-3 text-center text-muted-foreground text-xs">—</td>
+                  )}
 
                   {/* Main Stock */}
                   <td className="px-2 py-3 text-center">
@@ -6420,8 +6483,10 @@ function VariantList({
                     />
                   </td>
 
-                  {/* Total stock & Actions */}
-                  <td></td>
+                  {/* Total stock */}
+                  <td className="px-2 py-3 text-center font-bold text-xs">
+                    {Number(row.stock_main || 0) + Number(row.stock_incubator || 0)}
+                  </td>
                   <td className="px-2 py-3">
                     <div className="flex justify-center gap-1.5">
                       <Button
