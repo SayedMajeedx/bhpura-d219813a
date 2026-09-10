@@ -591,12 +591,10 @@ export const batchRehostAllMedia = createServerFn({ method: "POST" })
       .parse(raw),
   )
   .handler(async ({ data, context }) => {
-    const brandId = data.brandId;
-    const [{ data: hasAccess }, { data: isAdmin }] = await Promise.all([
-      context.supabase.rpc("can_access_brand", { _brand_id: brandId }),
-      context.supabase.rpc("is_admin"),
-    ]);
-    if (!hasAccess && !isAdmin) throw new Error("UNAUTHORIZED");
+    const { data: hasAccess } = await context.supabase.rpc("can_access_brand", {
+      _brand_id: brandId,
+    });
+    if (!hasAccess) throw new Error("UNAUTHORIZED");
 
     const posts = data.posts as InstagramPostPreview[];
     const processedPosts: InstagramPostPreview[] = [];
@@ -655,12 +653,10 @@ export const retryImageRehostFn = createServerFn({ method: "POST" })
       .parse(raw),
   )
   .handler(async ({ data, context }) => {
-    const brandId = data.brandId;
-    const [{ data: hasAccess }, { data: isAdmin }] = await Promise.all([
-      context.supabase.rpc("can_access_brand", { _brand_id: brandId }),
-      context.supabase.rpc("is_admin"),
-    ]);
-    if (!hasAccess && !isAdmin) throw new Error("UNAUTHORIZED");
+    const { data: hasAccess } = await context.supabase.rpc("can_access_brand", {
+      _brand_id: brandId,
+    });
+    if (!hasAccess) throw new Error("UNAUTHORIZED");
 
     const res = await rehostSingleImageWithIntegrity(brandId, data.imageUrl);
     return res;
@@ -998,11 +994,10 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
     const userId = context.userId;
     const brandId = data.brandId;
 
-    const [{ data: hasAccess }, { data: isAdmin }] = await Promise.all([
-      context.supabase.rpc("can_access_brand", { _brand_id: brandId }),
-      context.supabase.rpc("is_admin"),
-    ]);
-    if (!hasAccess && !isAdmin) throw new Error("UNAUTHORIZED");
+    const { data: hasAccess } = await context.supabase.rpc("can_access_brand", {
+      _brand_id: brandId,
+    });
+    if (!hasAccess) throw new Error("UNAUTHORIZED");
 
     if (data.products.length === 0) {
       return { successCount: 0, skippedCount: 0 };

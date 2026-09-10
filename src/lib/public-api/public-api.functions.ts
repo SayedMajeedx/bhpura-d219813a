@@ -1,13 +1,24 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { generateBrandApiKeySecret, generateWebhookSecret } from "./public-api-security";
 import type { ApiScope, WebhookEventName, ConnectorType } from "./public-api.types";
+
+async function assertBrandAccess(supabase: any, brandId: string) {
+  const { data: hasAccess } = await supabase.rpc("can_access_brand", { _brand_id: brandId });
+  if (!hasAccess) {
+    throw new Error("FORBIDDEN: You do not have permission to manage API settings for this brand.");
+  }
+}
 
 /**
  * Fetch API Keys for a Brand
  */
 export const getBrandApiKeysFn = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .validator((d: { brandId: string }) => d)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertBrandAccess(context.supabase, data.brandId);
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: keys, error } = await (supabaseAdmin as any)
       .from("brand_api_keys")
@@ -23,6 +34,7 @@ export const getBrandApiKeysFn = createServerFn({ method: "GET" })
  * Create a new Scoped API Key (Returns raw secret ONCE)
  */
 export const createBrandApiKeyFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .validator(
     (d: {
       brandId: string;
@@ -33,7 +45,9 @@ export const createBrandApiKeyFn = createServerFn({ method: "POST" })
       environment?: "live" | "test";
     }) => d,
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertBrandAccess(context.supabase, data.brandId);
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { rawSecret, keyHash, keyHint, keyPrefix } = await generateBrandApiKeySecret(
       data.environment || "live",
@@ -67,8 +81,11 @@ export const createBrandApiKeyFn = createServerFn({ method: "POST" })
  * Revoke or Delete an API Key
  */
 export const revokeBrandApiKeyFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .validator((d: { brandId: string; keyId: string }) => d)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertBrandAccess(context.supabase, data.brandId);
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await (supabaseAdmin as any)
       .from("brand_api_keys")
@@ -84,8 +101,11 @@ export const revokeBrandApiKeyFn = createServerFn({ method: "POST" })
  * Fetch Webhook Endpoints for a Brand
  */
 export const getWebhookEndpointsFn = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .validator((d: { brandId: string }) => d)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertBrandAccess(context.supabase, data.brandId);
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: endpoints, error } = await (supabaseAdmin as any)
       .from("brand_webhook_endpoints")
@@ -101,6 +121,7 @@ export const getWebhookEndpointsFn = createServerFn({ method: "GET" })
  * Create a Webhook Endpoint
  */
 export const createWebhookEndpointFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .validator(
     (d: {
       brandId: string;
@@ -109,7 +130,9 @@ export const createWebhookEndpointFn = createServerFn({ method: "POST" })
       subscribedEvents: WebhookEventName[];
     }) => d,
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertBrandAccess(context.supabase, data.brandId);
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const secret = generateWebhookSecret();
 
@@ -134,8 +157,11 @@ export const createWebhookEndpointFn = createServerFn({ method: "POST" })
  * Delete a Webhook Endpoint
  */
 export const deleteWebhookEndpointFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .validator((d: { brandId: string; endpointId: string }) => d)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertBrandAccess(context.supabase, data.brandId);
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await (supabaseAdmin as any)
       .from("brand_webhook_endpoints")
@@ -151,8 +177,11 @@ export const deleteWebhookEndpointFn = createServerFn({ method: "POST" })
  * Send Test Webhook Ping
  */
 export const testWebhookPingFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .validator((d: { brandId: string; endpointId: string }) => d)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertBrandAccess(context.supabase, data.brandId);
+
     const { sendTestWebhookPing } = await import("../webhooks/webhook-dispatcher.server");
     return await sendTestWebhookPing(data.endpointId, data.brandId);
   });
@@ -161,8 +190,11 @@ export const testWebhookPingFn = createServerFn({ method: "POST" })
  * Fetch Webhook Delivery Logs
  */
 export const getWebhookDeliveryLogsFn = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .validator((d: { brandId: string; limit?: number }) => d)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertBrandAccess(context.supabase, data.brandId);
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: logs, error } = await (supabaseAdmin as any)
       .from("webhook_delivery_logs")
@@ -179,8 +211,11 @@ export const getWebhookDeliveryLogsFn = createServerFn({ method: "GET" })
  * Fetch API Request Audit Logs
  */
 export const getApiRequestLogsFn = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .validator((d: { brandId: string; limit?: number }) => d)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertBrandAccess(context.supabase, data.brandId);
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: logs, error } = await (supabaseAdmin as any)
       .from("api_request_logs")
@@ -197,8 +232,11 @@ export const getApiRequestLogsFn = createServerFn({ method: "GET" })
  * Fetch Brand Connectors
  */
 export const getBrandConnectorsFn = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .validator((d: { brandId: string }) => d)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertBrandAccess(context.supabase, data.brandId);
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: connectors, error } = await (supabaseAdmin as any)
       .from("brand_connectors")
@@ -213,6 +251,7 @@ export const getBrandConnectorsFn = createServerFn({ method: "GET" })
  * Save / Update a Brand Connector
  */
 export const saveBrandConnectorFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .validator(
     (d: {
       brandId: string;
@@ -224,7 +263,9 @@ export const saveBrandConnectorFn = createServerFn({ method: "POST" })
       syncFrequencyMinutes: number;
     }) => d,
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertBrandAccess(context.supabase, data.brandId);
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: connector, error } = await (supabaseAdmin as any)
       .from("brand_connectors")
@@ -252,6 +293,7 @@ export const saveBrandConnectorFn = createServerFn({ method: "POST" })
  * Trigger Manual Connector Sync
  */
 export const triggerConnectorSyncFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .validator(
     (d: {
       brandId: string;
@@ -259,7 +301,9 @@ export const triggerConnectorSyncFn = createServerFn({ method: "POST" })
       entityType: "products" | "orders" | "inventory" | "customers";
     }) => d,
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertBrandAccess(context.supabase, data.brandId);
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const syncJobId = `sync_${Date.now()}`;
 

@@ -36,11 +36,10 @@ export const executeCopilotChat = createServerFn({ method: "POST" })
     const isAr = data.language !== "en";
 
     // 1. Authenticate user & ensure brand membership
-    const [{ data: hasAccess }, { data: isAdmin }] = await Promise.all([
-      (context.supabase.rpc as any)("can_access_brand", { _brand_id: data.brandId }),
-      (context.supabase.rpc as any)("is_admin"),
-    ]);
-    if (!hasAccess && !isAdmin) {
+    const { data: hasAccess } = await (context.supabase.rpc as any)("can_access_brand", {
+      _brand_id: data.brandId,
+    });
+    if (!hasAccess) {
       throw new Error("UNAUTHORIZED");
     }
 

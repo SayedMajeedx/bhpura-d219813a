@@ -119,17 +119,16 @@ async function verifyBrandAccess(brandId: string, context: any) {
 
   // 2. Check for technical support impersonation token if standard access check fails
   try {
-    const { readImpersonationCookie } = await import("@/lib/impersonation-cookies.server");
+    const { readImpersonationCookie, verifyImpersonationToken } = await import("@/lib/impersonation-cookies.server");
     const cookieToken = await readImpersonationCookie();
     if (cookieToken) {
-      const tokenPayload = JSON.parse(Buffer.from(cookieToken, "base64").toString("utf-8"));
+      const tokenPayload = await verifyImpersonationToken(cookieToken);
       if (tokenPayload && tokenPayload.targetTenantId === brandId) {
-        // Confirm the operator is an authorized Superadmin (via RPC or hardcoded emails)
-        const { data: isSuperAdmin } = await context.supabase.rpc("is_admin");
-        const email = (context.claims?.email || "").toLowerCase();
-        const isFixedSuperAdmin = email === "majeed@hotmail.it" || email === "majeed@hotmail.com";
+        // Confirm the operator is an authorized Superadmin
+        const { data: isSuperAdmin } = await context.supabase.rpc("is_super_admin");
 
-        if (isSuperAdmin || isFixedSuperAdmin) {
+        if (isSuperAdmin === true) {
+          const email = (context.claims?.email || "").toLowerCase();
           console.log(
             `[Impersonation Auth] Superadmin (${email}) authorized to perform product import on brand: ${brandId}`,
           );

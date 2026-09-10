@@ -100,21 +100,7 @@ export async function verifyImpersonationToken(
     return null;
   }
 
-  // Graceful fallback for non-HMAC legacy tokens during active session transitions
-  try {
-    const payload = JSON.parse(Buffer.from(token, "base64").toString("utf-8"));
-    if (
-      payload?.targetTenantId &&
-      payload?.operatorId &&
-      typeof payload.issuedAt === "number" &&
-      payload.issuedAt > Date.now() - 1000 * 60 * 60 * 24
-    ) {
-      return payload;
-    }
-  } catch (_err) {
-    return null;
-  }
-
+  // Reject all unsigned or legacy tokens
   return null;
 }
 

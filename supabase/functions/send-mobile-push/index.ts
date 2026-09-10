@@ -8,8 +8,40 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
   status, headers: { "content-type": "application/json" },
 });
 
+async function secretsEqual(left: string, right: string): Promise<boolean> {
+  if (!left || !right) return false;
+  const encoder = new TextEncoder();
+  const [leftHash, rightHash] = await Promise.all([
+    crypto.subtle.digest("SHA-256", encoder.encode(left)),
+    crypto.subtle.digest("SHA-256", encoder.encode(right)),
+  ]);
+  const leftBytes = new Uint8Array(leftHash);
+  const rightBytes = new Uint8Array(rightHash);
+  let mismatch = 0;
+  for (let index = 0; index < leftBytes.length; index += 1) {
+    mismatch |= leftBytes[index] ^ rightBytes[index];
+  }
+  return mismatch === 0;
+}
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+
+  const authz = req.headers.get("authorization") ?? "";
+  const cronSecretHeader = req.headers.get("x-cron-secret") ?? "";
+  const token = authz.toLowerCase().startsWith("bearer ") ? authz.slice(7).trim() : "";
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const cronSecret = Deno.env.get("CRON_SECRET") ?? "";
+
+  const [isServiceRole, isCronSecret, isCronHeader] = await Promise.all([
+    secretsEqual(token, serviceRoleKey),
+    secretsEqual(token, cronSecret),
+    secretsEqual(cronSecretHeader, cronSecret),
+  ]);
+
+  if (!isServiceRole && !isCronSecret && !isCronHeader) {
+    return json({ error: "Unauthorized" }, 401);
+  }
 
   // Materialize reminders whose three-day waiting period has elapsed.
   const { data: due } = await supabase.from("order_review_requests")
