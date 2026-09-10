@@ -182,7 +182,8 @@ export function ShareCartModal({ open, onOpenChange }: ShareCartModalProps) {
           <div className="grid grid-cols-1 gap-2.5 pt-2 sm:grid-cols-2">
             <Button
               type="button"
-              className="h-11 w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+              variant="outline"
+              className="h-11 w-full gap-2 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
               asChild
             >
               <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
@@ -195,10 +196,6 @@ export function ShareCartModal({ open, onOpenChange }: ShareCartModalProps) {
               type="button"
               variant="default"
               className="h-11 w-full gap-2"
-              style={{
-                backgroundColor: settings.primary_color,
-                color: "#ffffff",
-              }}
               onClick={handleNativeShare}
             >
               <Share2 className="h-4 w-4" />

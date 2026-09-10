@@ -1425,22 +1425,16 @@ function Checkout() {
                     type="button"
                     variant={active ? "outline" : "ghost"}
                     onClick={() => setFulfillment(opt.id)}
-                    className="text-start flex items-center justify-start gap-3 h-auto p-4 rounded-lg border transition-all"
-                    style={
-                      active
-                        ? {
-                            borderColor: settings.primary_color,
-                            backgroundColor: `${settings.primary_color}11`,
-                          }
-                        : undefined
-                    }
+                    className={`text-start flex items-center justify-start gap-3 h-auto p-4 rounded-lg border transition-all ${
+                      active ? "border-primary bg-primary/10" : ""
+                    }`}
                   >
                     <div
-                      className="h-10 w-10 rounded-md grid place-items-center shrink-0"
-                      style={{
-                        backgroundColor: active ? settings.primary_color : "hsl(var(--muted))",
-                        color: active ? "#fff" : "inherit",
-                      }}
+                      className={`h-10 w-10 rounded-md grid place-items-center shrink-0 transition-colors ${
+                        active
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground"
+                      }`}
                     >
                       <Icon className="h-5 w-5" />
                     </div>
@@ -1485,31 +1479,21 @@ function Checkout() {
                       type="button"
                       variant={active ? "outline" : "ghost"}
                       onClick={() => setBranchId(b.id)}
-                      className="relative text-start flex flex-col items-start justify-center h-auto p-4 rounded-xl border-2 transition-all hover:shadow-sm"
-                      style={
-                        active
-                          ? {
-                              borderColor: settings.primary_color,
-                              backgroundColor: `${settings.primary_color}14`,
-                            }
-                          : undefined
-                      }
+                      className={`relative text-start flex flex-col items-start justify-center h-auto p-4 rounded-xl border-2 transition-all hover:shadow-sm ${
+                        active ? "border-primary bg-primary/10" : "border-border"
+                      }`}
                       aria-pressed={active}
                     >
                       <div className="flex items-start gap-3">
                         <span
-                          className={`mt-0.5 h-5 w-5 shrink-0 rounded-full border-2 grid place-items-center transition-colors ${active ? "" : "border-muted-foreground/40"}`}
-                          style={
+                          className={`mt-0.5 h-5 w-5 shrink-0 rounded-full border-2 grid place-items-center transition-colors ${
                             active
-                              ? {
-                                  borderColor: settings.primary_color,
-                                  backgroundColor: settings.primary_color,
-                                }
-                              : undefined
-                          }
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-muted-foreground/40"
+                          }`}
                           aria-hidden
                         >
-                          {active && <span className="h-2 w-2 rounded-full bg-white" />}
+                          {active && <span className="h-2 w-2 rounded-full bg-primary-foreground" />}
                         </span>
                         <div className="min-w-0 flex-1">
                           <div className="font-semibold truncate">{branchLabel(b)}</div>
@@ -1561,15 +1545,11 @@ function Checkout() {
                     setDigitalChannel(channel);
                     setDigitalContact("");
                   }}
-                  className="flex items-center gap-2 rounded-lg border p-3 h-auto justify-start"
-                  style={
+                  className={`flex items-center gap-2 rounded-lg border p-3 h-auto justify-start ${
                     digitalChannel === channel
-                      ? {
-                          borderColor: settings.primary_color,
-                          backgroundColor: `${settings.primary_color}11`,
-                        }
-                      : undefined
-                  }
+                      ? "border-primary bg-primary/10"
+                      : "border-border"
+                  }`}
                 >
                   <Icon className="h-5 w-5" />
                   <span>{label}</span>
@@ -1651,22 +1631,17 @@ function Checkout() {
                         type="button"
                         variant={active ? "outline" : "ghost"}
                         onClick={() => setSelectedZoneId(z.id)}
-                        className="flex items-center justify-between p-3 rounded-lg border text-sm transition-all text-start cursor-pointer hover:bg-secondary/5 h-auto"
-                        style={
-                          active
-                            ? {
-                                borderColor: settings.primary_color,
-                                backgroundColor: `${settings.primary_color}11`,
-                              }
-                            : undefined
-                        }
+                        className={`flex items-center justify-between p-3 rounded-lg border text-sm transition-all text-start cursor-pointer hover:bg-secondary/5 h-auto ${
+                          active ? "border-primary bg-primary/10" : "border-border"
+                        }`}
                       >
                         <div>
                           <p className="font-medium">{lang === "ar" ? z.name_ar : z.name_en}</p>
                         </div>
                         <div
-                          className="text-end font-mono font-semibold"
-                          style={active ? { color: settings.primary_color } : undefined}
+                          className={`text-end font-mono font-semibold ${
+                            active ? "text-primary" : ""
+                          }`}
                         >
                           {z.fee > 0 ? formatPrice(z.fee, currency, lang) : t("مجانًا", "Free")}
                         </div>
@@ -1800,15 +1775,9 @@ function Checkout() {
                   type="button"
                   variant={active ? "outline" : "ghost"}
                   onClick={() => setMethod(m.id)}
-                  className="text-start flex items-center justify-start gap-3 p-3 rounded-lg border h-auto"
-                  style={
-                    active
-                      ? {
-                          borderColor: settings.primary_color,
-                          backgroundColor: `${settings.primary_color}11`,
-                        }
-                      : undefined
-                  }
+                  className={`text-start flex items-center justify-start gap-3 p-3 rounded-lg border h-auto ${
+                    active ? "border-primary bg-primary/10" : "border-border"
+                  }`}
                 >
                   <Icon className="h-5 w-5 shrink-0" />
                   <span className="font-medium">{lang === "ar" ? m.ar : m.en}</span>
@@ -2179,7 +2148,7 @@ function Checkout() {
 
           <div className="border-t pt-3 flex justify-between font-semibold text-lg">
             <span>{t("الإجمالي", "Total")}</span>
-            <span style={{ color: settings.primary_color }}>
+            <span className="text-primary font-bold">
               {formatPrice(grandTotal, currency, lang)}
             </span>
           </div>
@@ -2241,10 +2210,7 @@ function Checkout() {
         <div className="mx-auto flex max-w-lg items-center gap-3">
           <div className="min-w-0 flex-1">
             <div className="text-xs text-muted-foreground">{t("الإجمالي", "Total")}</div>
-            <div
-              className="truncate text-lg font-semibold"
-              style={{ color: settings.primary_color }}
-            >
+            <div className="truncate text-lg font-bold text-primary">
               {formatPrice(grandTotal, currency, lang)}
             </div>
           </div>
