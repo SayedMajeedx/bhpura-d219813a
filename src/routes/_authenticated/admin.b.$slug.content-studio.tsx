@@ -492,9 +492,12 @@ function ContentStudioPage() {
     setExportProgress(0);
 
     const target = FORMATS[format];
+    let hiddenMount: HTMLDivElement | null = null;
+    let animId: number | null = null;
+    let backupTimer: number | null = null;
 
     try {
-      // 1. Check video readystate
+      // 1. Ensure video metadata is loaded
       if (v.readyState < 2) {
         await new Promise((resolve) => {
           const handler = () => {
@@ -506,12 +509,9 @@ function ContentStudioPage() {
         });
       }
 
-      // 2. Generate crisp high-DPI overlays with html2canvas
+      // 2. Pre-render overlay without modifying video state or visibility
       const originalStageBg = stageRef.current.style.background;
-      const originalVideoVisibility = v.style.visibility;
       stageRef.current.style.background = "transparent";
-      v.style.visibility = "hidden";
-
       let overlayCanvas: HTMLCanvasElement;
       try {
         const { default: html2canvas } = await import("html2canvas-pro");
@@ -520,10 +520,10 @@ function ContentStudioPage() {
           scale: target.width / stageRef.current.offsetWidth,
           useCORS: true,
           logging: false,
+          ignoreElements: (element) => element.tagName === "VIDEO",
         });
       } finally {
         stageRef.current.style.background = originalStageBg;
-        v.style.visibility = originalVideoVisibility;
       }
 
       // 3. Test CORS on video element to prevent tainted canvas crash
@@ -552,14 +552,25 @@ function ContentStudioPage() {
         return;
       }
 
-      // 4. Setup output canvas & MediaRecorder
+      // 4. Setup output canvas ATTACHED to DOM (mandatory for Chromium captureStream pipeline)
+      hiddenMount = document.createElement("div");
+      hiddenMount.style.cssText =
+        "position:fixed;top:-99999px;left:-99999px;width:1px;height:1px;opacity:0.001;pointer-events:none;z-index:-99999;overflow:hidden;";
+      document.body.appendChild(hiddenMount);
+
       const recordCanvas = document.createElement("canvas");
       recordCanvas.width = target.width;
       recordCanvas.height = target.height;
-      const ctx = recordCanvas.getContext("2d");
+      hiddenMount.appendChild(recordCanvas);
+
+      const ctx = recordCanvas.getContext("2d", { alpha: false });
       if (!ctx) throw new Error("Could not create canvas context");
 
-      const stream = (recordCanvas as any).captureStream ? (recordCanvas as any).captureStream(30) : null;
+      const fps = 30;
+      const stream = (recordCanvas as any).captureStream
+        ? (recordCanvas as any).captureStream(fps)
+        : null;
+
       if (!stream || typeof MediaRecorder === "undefined") {
         toast.info(
           isAr
@@ -570,22 +581,31 @@ function ContentStudioPage() {
         return;
       }
 
-      let mimeType = "video/webm";
-      let ext = "webm";
-      if (MediaRecorder.isTypeSupported("video/mp4;codecs=avc1")) {
-        mimeType = "video/mp4;codecs=avc1";
-        ext = "mp4";
-      } else if (MediaRecorder.isTypeSupported("video/mp4")) {
-        mimeType = "video/mp4";
-        ext = "mp4";
-      } else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp9")) {
-        mimeType = "video/webm;codecs=vp9";
-        ext = "webm";
+      const track = stream.getVideoTracks()[0];
+
+      // Detect supported MIME type
+      let mimeType = "";
+      let ext = "mp4";
+      const candidateTypes = [
+        "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+        "video/mp4;codecs=avc1",
+        "video/mp4",
+        "video/webm;codecs=h264",
+        "video/webm;codecs=vp9",
+        "video/webm;codecs=vp8",
+        "video/webm",
+      ];
+      for (const t of candidateTypes) {
+        if (MediaRecorder.isTypeSupported(t)) {
+          mimeType = t;
+          ext = t.startsWith("video/mp4") ? "mp4" : "webm";
+          break;
+        }
       }
 
       const recorder = new MediaRecorder(stream, {
-        mimeType: MediaRecorder.isTypeSupported(mimeType) ? mimeType : undefined,
-        videoBitsPerSecond: 8_000_000,
+        mimeType: mimeType || undefined,
+        videoBitsPerSecond: 10_000_000,
       });
 
       const chunks: Blob[] = [];
@@ -594,21 +614,39 @@ function ContentStudioPage() {
       };
 
       const recordingPromise = new Promise<Blob>((resolve, reject) => {
-        recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }));
+        recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType || "video/mp4" }));
         recorder.onerror = reject;
       });
 
-      // 5. Seek video to start and record
+      // 5. Prepare video for playback with guaranteed muted policy
+      v.muted = true;
+      v.defaultMuted = true;
+      v.volume = 0;
+      v.playsInline = true;
       v.loop = false;
-      v.pause();
       v.currentTime = 0;
-      await new Promise((res) => {
-        const onSeeked = () => {
-          v.removeEventListener("seeked", onSeeked);
-          res(true);
+
+      await new Promise<void>((resolve) => {
+        let settled = false;
+        const onReady = () => {
+          if (!settled) {
+            settled = true;
+            v.removeEventListener("seeked", onReady);
+            v.removeEventListener("canplay", onReady);
+            resolve();
+          }
         };
-        v.addEventListener("seeked", onSeeked);
-        setTimeout(() => res(true), 400);
+        v.addEventListener("seeked", onReady);
+        v.addEventListener("canplay", onReady);
+        if (v.readyState >= 2) {
+          setTimeout(onReady, 60);
+        }
+        setTimeout(() => {
+          if (!settled) {
+            settled = true;
+            resolve();
+          }
+        }, 800);
       });
 
       const vw = v.videoWidth || target.width;
@@ -623,60 +661,112 @@ function ContentStudioPage() {
         Math.max(v.duration && isFinite(v.duration) ? v.duration : 6, 2),
         30,
       );
-      const totalDuration = duration + 0.3;
 
+      // Start recorder before playback starts
       recorder.start(100);
 
-      let isRecording = true;
-      let animFrameId: number | null = null;
-
-      const renderFrame = () => {
-        if (!isRecording) return;
-        ctx.clearRect(0, 0, target.width, target.height);
-        try {
-          ctx.drawImage(v, drawX, drawY, drawW, drawH);
-        } catch {}
-        ctx.drawImage(overlayCanvas, 0, 0, target.width, target.height);
-
-        const prog = Math.min(Math.round((v.currentTime / duration) * 100), 99);
-        setExportProgress(prog);
-
-        animFrameId = requestAnimationFrame(renderFrame);
-      };
-
-      animFrameId = requestAnimationFrame(renderFrame);
-
+      // Start playback and verify it plays
+      v.muted = true;
       try {
         await v.play();
       } catch (playErr) {
-        console.warn("Playback error during export", playErr);
+        console.warn("Direct play failed, retrying muted", playErr);
+        v.muted = true;
+        await v.play().catch(() => {});
       }
 
-      const stopRecording = () => {
-        if (!isRecording) return;
+      let isRecording = true;
+      let lastTime = -1;
+      let stallFrameCount = 0;
+      let finished = false;
+
+      const finishRecording = () => {
+        if (finished) return;
+        finished = true;
         isRecording = false;
-        if (animFrameId !== null) cancelAnimationFrame(animFrameId);
+        if (animId !== null) cancelAnimationFrame(animId);
+        if (backupTimer !== null) clearInterval(backupTimer);
+
         window.setTimeout(() => {
           if (recorder.state === "recording") {
             recorder.stop();
           }
-        }, 300);
+        }, 350);
       };
 
-      v.addEventListener("ended", stopRecording, { once: true });
+      const drawSingleFrame = () => {
+        if (!isRecording) return;
 
-      const startTime = performance.now();
-      const progressInterval = window.setInterval(() => {
-        const elapsed = (performance.now() - startTime) / 1000;
-        if (elapsed >= totalDuration) {
-          window.clearInterval(progressInterval);
-          stopRecording();
+        // Draw current video frame
+        try {
+          ctx.drawImage(v, drawX, drawY, drawW, drawH);
+        } catch (drawErr) {
+          console.warn("drawImage error", drawErr);
         }
-      }, 100);
+
+        // Draw branding overlay
+        ctx.drawImage(overlayCanvas, 0, 0, target.width, target.height);
+
+        // Force frame pump on video stream track if supported
+        if (track && typeof (track as any).requestFrame === "function") {
+          (track as any).requestFrame();
+        }
+
+        const current = v.currentTime;
+        const prog = Math.min(Math.round((current / duration) * 100), 99);
+        setExportProgress(prog);
+
+        // Anti-stall watchdog: if video paused or stuck, force advance
+        if (current === lastTime && !v.ended) {
+          stallFrameCount++;
+          if (stallFrameCount > 15) {
+            if (v.paused) {
+              v.play().catch(() => {});
+            } else {
+              v.currentTime = Math.min(v.currentTime + 0.05, duration);
+            }
+            stallFrameCount = 0;
+          }
+        } else {
+          lastTime = current;
+          stallFrameCount = 0;
+        }
+
+        if (v.ended || v.currentTime >= duration - 0.05) {
+          finishRecording();
+          return;
+        }
+
+        animId = requestAnimationFrame(drawSingleFrame);
+      };
+
+      // Start animation loop
+      animId = requestAnimationFrame(drawSingleFrame);
+
+      // Backup watchdog interval for backgrounded tabs / throttled frames
+      backupTimer = window.setInterval(() => {
+        if (!isRecording) {
+          if (backupTimer !== null) clearInterval(backupTimer);
+          return;
+        }
+        if (v.paused && !v.ended) {
+          v.play().catch(() => {});
+        }
+        if (v.currentTime >= duration || v.ended) {
+          if (backupTimer !== null) clearInterval(backupTimer);
+          finishRecording();
+        }
+      }, 250);
+
+      v.addEventListener("ended", finishRecording, { once: true });
+
+      const maxTimeout = window.setTimeout(() => {
+        finishRecording();
+      }, (duration + 3) * 1000);
 
       const blob = await recordingPromise;
-      window.clearInterval(progressInterval);
-      v.removeEventListener("ended", stopRecording);
+      window.clearTimeout(maxTimeout);
+      v.removeEventListener("ended", finishRecording);
       setExportProgress(100);
 
       // 6. Deliver file via Web Share or direct download
@@ -719,7 +809,7 @@ function ContentStudioPage() {
           : `Video creative downloaded (${target.width}×${target.height})`,
       );
     } catch (error) {
-      console.error(error);
+      console.error("Video export error:", error);
       toast.error(
         isAr
           ? "تعذر تسجيل الفيديو. جاري تنزيل الملف الأصلي بدلاً منه."
@@ -727,6 +817,11 @@ function ContentStudioPage() {
       );
       await downloadOriginalVideo();
     } finally {
+      if (hiddenMount && hiddenMount.parentNode) {
+        hiddenMount.remove();
+      }
+      if (animId !== null) cancelAnimationFrame(animId);
+      if (backupTimer !== null) clearInterval(backupTimer);
       setExporting(false);
       setExportProgress(0);
       if (v) {
