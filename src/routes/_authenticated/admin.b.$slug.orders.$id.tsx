@@ -52,6 +52,7 @@ import {
   Box,
   Store,
   Ruler,
+  FileText,
 } from "lucide-react";
 import {
   Dialog,
@@ -353,20 +354,90 @@ function ItemTailoringCustomizer({
   const currentSize = item.selected_variant?.size ?? "";
   const currentColor = item.selected_variant?.color ?? "";
   const currentFabric = item.selected_variant?.fabric ?? "";
-  const configuredType = String(
+
+  const detectedProfile = fitProfileForProduct(productCategory, productName);
+  const existingProfileField = String(
     item.custom_field_values?.find((field) => field.key === "fit_passport_profile")?.value ?? "",
   ).toLowerCase();
-  const profileType: FitProfileType =
-    configuredType.includes("dress") || configuredType.includes("فستان")
+  const initialProfile: FitProfileType =
+    existingProfileField.includes("dress") || existingProfileField.includes("فستان")
       ? "dress"
-      : fitProfileForProduct(productCategory, productName);
-  const passportValues = normalizeFitProfiles(passport?.measurements)[profileType];
+      : existingProfileField.includes("abaya") || existingProfileField.includes("عباية")
+        ? "abaya"
+        : detectedProfile;
+  const [selectedProfile, setSelectedProfile] = useState<FitProfileType>(initialProfile);
+
+  const existingUnitField = item.custom_field_values?.find(
+    (field) => field.key === "fit_passport_unit",
+  )?.value;
+  const initialUnit: "in" | "cm" =
+    existingUnitField === "cm" || passport?.preferred_length_unit === "cm" ? "cm" : "in";
+  const [unit, setUnit] = useState<"in" | "cm">(initialUnit);
+
+  const getMeasurementVal = (key: string): string => {
+    const direct = item.custom_field_values?.find(
+      (f) => f.key === `fit_passport_${selectedProfile}_${key}`,
+    );
+    if (direct?.value != null) {
+      return String(direct.value).replace(/[^\d.]/g, "").trim();
+    }
+    const legacy = item.custom_field_values?.find(
+      (f) => f.key === key || f.key.endsWith(`_${key}`),
+    );
+    if (legacy?.value != null) {
+      return String(legacy.value).replace(/[^\d.]/g, "").trim();
+    }
+    return "";
+  };
+
+  const handleMeasurementChange = (key: string, val: string, labelAr: string, labelEn: string) => {
+    const retained = (item.custom_field_values ?? []).filter(
+      (f) => f.key !== `fit_passport_${selectedProfile}_${key}`,
+    );
+    const updated = [...retained];
+    if (val.trim()) {
+      updated.push({
+        key: `fit_passport_${selectedProfile}_${key}`,
+        label_ar: `Passport — ${labelAr}`,
+        label_en: `Passport — ${labelEn}`,
+        value: `${val.trim()} ${unit}`,
+      });
+    }
+    const cleaned = updated.filter(
+      (f) => f.key !== "fit_passport_profile" && f.key !== "fit_passport_unit",
+    );
+    cleaned.push({
+      key: "fit_passport_profile",
+      label_ar: "ملف المقاس المستخدم",
+      label_en: "Fit Passport profile",
+      value: selectedProfile === "abaya" ? "عباية / Abaya" : "فستان / Dress",
+    });
+    cleaned.push({
+      key: "fit_passport_unit",
+      label_ar: "وحدة القياس",
+      label_en: "Length unit",
+      value: unit,
+    });
+
+    onChange({
+      selected_variant: {
+        ...(item.selected_variant ?? {}),
+        size: item.selected_variant?.size || (isAr ? "تفصيل / قياسات Passport" : "Custom / Fit Passport"),
+      },
+      location: "custom",
+      custom_field_values: cleaned,
+    });
+  };
+
+  const passportValues = normalizeFitProfiles(passport?.measurements)[selectedProfile];
   const passportComplete = Boolean(
-    passport && missingFitFields(profileType, passportValues).length === 0,
+    passport && missingFitFields(selectedProfile, passportValues).length === 0,
   );
 
-  const applyPassport = () => {
-    if (!passport || !passportComplete) return;
+  const applyCustomerPassport = () => {
+    if (!passport) return;
+    const prefUnit = passport.preferred_length_unit || unit;
+    setUnit(prefUnit);
     const retained = (item.custom_field_values ?? []).filter(
       (field) => !field.key.startsWith("fit_passport_"),
     );
@@ -375,15 +446,21 @@ function ItemTailoringCustomizer({
         key: "fit_passport_profile",
         label_ar: "ملف المقاس المستخدم",
         label_en: "Fit Passport profile",
-        value: profileType === "abaya" ? "عباية / Abaya" : "فستان / Dress",
+        value: selectedProfile === "abaya" ? "عباية / Abaya" : "فستان / Dress",
       },
-      ...FIT_PROFILE_FIELDS[profileType]
+      {
+        key: "fit_passport_unit",
+        label_ar: "وحدة القياس",
+        label_en: "Length unit",
+        value: prefUnit,
+      },
+      ...FIT_PROFILE_FIELDS[selectedProfile]
         .filter(([key]) => passportValues[key] != null && String(passportValues[key]).trim())
         .map(([key, ar, en]) => ({
-          key: `fit_passport_${profileType}_${key}`,
+          key: `fit_passport_${selectedProfile}_${key}`,
           label_ar: `Passport — ${ar}`,
           label_en: `Passport — ${en}`,
-          value: `${passportValues[key]} ${passport.preferred_length_unit}`,
+          value: `${passportValues[key]} ${prefUnit}`,
         })),
       {
         key: "fit_passport_version",
@@ -400,13 +477,35 @@ function ItemTailoringCustomizer({
       location: "custom",
       custom_field_values: [...retained, ...snapshot],
     });
-    toast.success(isAr ? "تم تطبيق مقاسات العميل على البند" : "Customer Fit Passport applied");
+    toast.success(isAr ? "تم تطبيق مقاسات العميل المحفوظة" : "Customer Fit Passport applied");
   };
+
+  const hasAppliedPassport = (item.custom_field_values ?? []).some((f) =>
+    f.key.startsWith(`fit_passport_${selectedProfile}_`),
+  );
 
   const notesField = (item.custom_field_values ?? []).find(
     (cf) => cf.key === "tailoring_notes" || cf.key === "custom_measurements",
   );
   const currentNotes = notesField?.value ?? "";
+
+  const handleNotesChange = (notesVal: string) => {
+    const others = (item.custom_field_values ?? []).filter(
+      (cf) => cf.key !== "tailoring_notes" && cf.key !== "custom_measurements",
+    );
+    const updated = notesVal.trim()
+      ? [
+          ...others,
+          {
+            key: "tailoring_notes",
+            label_ar: "ملاحظات وتفاصيل التفصيل",
+            label_en: "Tailoring & Measurements",
+            value: notesVal.trim(),
+          },
+        ]
+      : others;
+    onChange({ custom_field_values: updated });
+  };
 
   const handleSizeChange = (sizeVal: string) => {
     onChange({
@@ -435,24 +534,6 @@ function ItemTailoringCustomizer({
     });
   };
 
-  const handleNotesChange = (notesVal: string) => {
-    const others = (item.custom_field_values ?? []).filter(
-      (cf) => cf.key !== "tailoring_notes" && cf.key !== "custom_measurements",
-    );
-    const updated = notesVal.trim()
-      ? [
-          ...others,
-          {
-            key: "tailoring_notes",
-            label_ar: "ملاحظات وتفاصيل التفصيل",
-            label_en: "Tailoring & Measurements",
-            value: notesVal.trim(),
-          },
-        ]
-      : others;
-    onChange({ custom_field_values: updated });
-  };
-
   return (
     <div className="rounded-xl border border-primary/25 bg-primary/5 p-3.5 space-y-3.5 text-xs animate-in fade-in-50 duration-200">
       <div className="flex items-center justify-between gap-2 border-b border-primary/15 pb-2">
@@ -460,8 +541,8 @@ function ItemTailoringCustomizer({
           <Scissors className="h-4 w-4" />
           <span>
             {isAr
-              ? "خيارات التخصيص والمقاسات (اختياري)"
-              : "Customization & Tailoring Options (Optional)"}
+              ? "خيارات التخصيص والمقاسات (التفصيل)"
+              : "Customization & Tailoring Options"}
           </span>
         </div>
         <span className="text-[11px] text-muted-foreground font-normal">
@@ -469,201 +550,333 @@ function ItemTailoringCustomizer({
         </span>
       </div>
 
-      {passport && (
-        <div
-          className={`rounded-lg border p-3 ${passportComplete ? "border-primary/25 bg-background" : "border-amber-200 bg-amber-50"}`}
-        >
-          <div className="flex flex-wrap items-center justify-between gap-2">
+      {/* 📏 Fit Passport Module */}
+      <div className="rounded-xl border border-border bg-card p-3.5 space-y-3 shadow-2xs">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2.5">
+          <div className="flex items-center gap-2">
+            <span className="grid size-7 place-items-center rounded-lg bg-primary text-primary-foreground">
+              <Ruler className="size-3.5" />
+            </span>
             <div>
-              <p className="font-bold">
-                {(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.name_ar || "Fit"} Passport ·{" "}
-                {profileType === "abaya" ? (isAr ? "عباية" : "Abaya") : isAr ? "فستان" : "Dress"}
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-foreground">
+                  {(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.name_ar || "Fit"} Passport
+                </span>
+                {hasAppliedPassport && (
+                  <span className="rounded-full bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 text-[10px] font-semibold">
+                    {isAr ? "مطبّق على البند" : "Applied"}
+                  </span>
+                )}
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                {isAr ? "مقاسات الخياطة والتفصيل المعتمدة" : "Standard tailoring measurements"}
               </p>
-              <p className="mt-0.5 text-[11px] text-muted-foreground">
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Profile Selector (Abaya / Dress) */}
+            <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-[11px]">
+              <button
+                type="button"
+                onClick={() => setSelectedProfile("abaya")}
+                className={`rounded-md px-2 py-1 font-semibold transition-colors ${
+                  selectedProfile === "abaya"
+                    ? "bg-primary text-primary-foreground shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {isAr ? "عباية" : "Abaya"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedProfile("dress")}
+                className={`rounded-md px-2 py-1 font-semibold transition-colors ${
+                  selectedProfile === "dress"
+                    ? "bg-primary text-primary-foreground shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {isAr ? "فستان" : "Dress"}
+              </button>
+            </div>
+
+            {/* Unit Selector (in / cm) */}
+            <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-[11px]">
+              <button
+                type="button"
+                onClick={() => setUnit("in")}
+                className={`rounded-md px-2 py-1 font-semibold transition-colors ${
+                  unit === "in"
+                    ? "bg-primary text-primary-foreground shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {isAr ? "بوصة" : "in"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setUnit("cm")}
+                className={`rounded-md px-2 py-1 font-semibold transition-colors ${
+                  unit === "cm"
+                    ? "bg-primary text-primary-foreground shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {isAr ? "سم" : "cm"}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Saved Customer Passport banner if available */}
+        {passport && (
+          <div
+            className={`rounded-lg border p-2.5 flex flex-wrap items-center justify-between gap-2 ${
+              passportComplete
+                ? "border-primary/25 bg-primary/5"
+                : "border-amber-200 bg-amber-50/70 dark:border-amber-900/50 dark:bg-amber-950/20"
+            }`}
+          >
+            <div>
+              <p className="font-bold text-[11px]">
+                {isAr
+                  ? `مقاسات العميل المحفوظة متوفرة (إصدار V${passport.version})`
+                  : `Saved customer measurements available (V${passport.version})`}
+              </p>
+              <p className="text-[10px] text-muted-foreground">
                 {passportComplete
                   ? isAr
-                    ? "مقاسات العميل جاهزة للاستخدام"
-                    : "Customer measurements are ready"
+                    ? "يمكن تطبيق المقاسات المسجلة للعميل مباشرة"
+                    : "Customer profile complete, ready to apply"
                   : isAr
-                    ? "ملف العميل غير مكتمل لهذا النوع"
-                    : "Customer profile is incomplete for this type"}
+                    ? "ملف العميل غير مكتمل لبعض الحقول، يمكن إكمالها يدوياً"
+                    : "Some fields missing in customer profile, can be set manually"}
               </p>
             </div>
             <Button
               type="button"
               size="sm"
               variant="outline"
-              disabled={!passportComplete}
-              onClick={applyPassport}
-              className="h-8 gap-1.5"
+              onClick={applyCustomerPassport}
+              className="h-7 text-xs gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
             >
-              <Ruler className="size-3.5" />
-              {isAr ? "تطبيق المقاسات" : "Apply measurements"}
+              <Check className="size-3.5" />
+              {isAr ? "تطبيق مقاسات العميل" : "Apply saved passport"}
             </Button>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Size Selection */}
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between">
-          <Label className="text-[11px] font-semibold text-foreground">
-            {isAr ? "المقاس أو الطول:" : "Size / Length:"}
+        {/* Measurements Input Grid */}
+        <div className="space-y-1.5">
+          <Label className="text-[11px] font-semibold text-foreground flex items-center justify-between">
+            <span>{isAr ? "قياسات التفصيل:" : "Tailoring Measurements:"}</span>
+            <span className="text-[10px] text-muted-foreground font-normal">
+              {isAr ? `الوحدة: ${unit === "in" ? "بوصة (إنش)" : "سنتيمتر"}` : `Unit: ${unit}`}
+            </span>
           </Label>
-          {currentSize && (
-            <button
-              type="button"
-              onClick={() => handleSizeChange("")}
-              className="text-[10px] text-muted-foreground hover:text-destructive transition-colors"
-            >
-              {isAr ? "مسح" : "Clear"}
-            </button>
-          )}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {FIT_PROFILE_FIELDS[selectedProfile].map(([key, ar, en, req]) => {
+              const val = getMeasurementVal(key);
+              return (
+                <div key={key} className="space-y-1">
+                  <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-0.5">
+                    {isAr ? ar : en}
+                    {req && <span className="text-destructive font-bold">*</span>}
+                  </span>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min="0.1"
+                      value={val}
+                      onChange={(e) => handleMeasurementChange(key, e.target.value, ar, en)}
+                      placeholder={unit}
+                      className="h-8 text-xs bg-background pe-7"
+                    />
+                    <span className="absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none uppercase">
+                      {unit}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {QUICK_SIZES.map((s) => {
-            const active = currentSize === s;
-            return (
-              <button
-                key={s}
-                type="button"
-                onClick={() => handleSizeChange(active ? "" : s)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
-                  active
-                    ? "bg-primary text-primary-foreground border-primary shadow-xs font-bold"
-                    : "border-border/80 bg-background hover:bg-muted text-foreground"
-                }`}
-              >
-                {s}
-              </button>
-            );
-          })}
-        </div>
-        <Input
-          type="text"
-          value={currentSize}
-          onChange={(e) => handleSizeChange(e.target.value)}
-          placeholder={
-            isAr ? "أو اكتب المقاس يدوياً (مثال: 54 خاص أو مقاس مخصص)..." : "Or type custom size..."
-          }
-          className="h-8 text-xs bg-background mt-1"
-        />
       </div>
 
-      {/* Color Selection */}
-      <div className="space-y-1.5">
+      {/* 📝 Tailoring Notes & Workshop Instructions ("بوكس ملاحظات") */}
+      <div className="rounded-xl border border-border bg-card p-3.5 space-y-1.5 shadow-2xs">
         <div className="flex items-center justify-between">
-          <Label className="text-[11px] font-semibold text-foreground">
-            {isAr ? "اللون:" : "Color:"}
+          <Label className="text-[11px] font-bold text-foreground flex items-center gap-1.5">
+            <FileText className="h-3.5 w-3.5 text-primary" />
+            <span>{isAr ? "ملاحظات وتفاصيل التفصيل والخياط:" : "Tailoring & Workshop Notes:"}</span>
           </Label>
-          {currentColor && (
-            <button
-              type="button"
-              onClick={() => handleColorChange("")}
-              className="text-[10px] text-muted-foreground hover:text-destructive transition-colors"
-            >
-              {isAr ? "مسح" : "Clear"}
-            </button>
-          )}
+          <span className="text-[10px] text-muted-foreground">
+            {isAr ? "تعليمات للمشغل" : "Workshop instructions"}
+          </span>
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {QUICK_COLORS.map((c) => {
-            const active = currentColor === c.name;
-            return (
-              <button
-                key={c.name}
-                type="button"
-                onClick={() => handleColorChange(active ? "" : c.name)}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
-                  active
-                    ? "bg-primary text-primary-foreground border-primary shadow-xs font-bold"
-                    : "border-border/80 bg-background hover:bg-muted text-foreground"
-                }`}
-              >
-                <span
-                  className={`h-2.5 w-2.5 rounded-full border shrink-0 ${c.border}`}
-                  style={{ backgroundColor: c.color }}
-                />
-                <span>{c.name}</span>
-              </button>
-            );
-          })}
-        </div>
-        <Input
-          type="text"
-          value={currentColor}
-          onChange={(e) => handleColorChange(e.target.value)}
-          placeholder={
-            isAr
-              ? "أو اكتب اسم اللون يدوياً (مثال: رمادي غامق، كحلي مطفي)..."
-              : "Or type custom color..."
-          }
-          className="h-8 text-xs bg-background mt-1"
-        />
-      </div>
-
-      {/* Fabric Selection */}
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between">
-          <Label className="text-[11px] font-semibold text-foreground">
-            {isAr ? "القماش أو نوع الخامة (اختياري):" : "Fabric / Material (Optional):"}
-          </Label>
-          {currentFabric && (
-            <button
-              type="button"
-              onClick={() => handleFabricChange("")}
-              className="text-[10px] text-muted-foreground hover:text-destructive transition-colors"
-            >
-              {isAr ? "مسح" : "Clear"}
-            </button>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          {QUICK_FABRICS.map((f) => {
-            const active = currentFabric === f;
-            return (
-              <button
-                key={f}
-                type="button"
-                onClick={() => handleFabricChange(active ? "" : f)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
-                  active
-                    ? "bg-primary text-primary-foreground border-primary shadow-xs font-bold"
-                    : "border-border/80 bg-background hover:bg-muted text-foreground"
-                }`}
-              >
-                {f}
-              </button>
-            );
-          })}
-        </div>
-        <Input
-          type="text"
-          value={currentFabric}
-          onChange={(e) => handleFabricChange(e.target.value)}
-          placeholder={isAr ? "أو اكتب نوع القماش يدوياً..." : "Or type custom fabric..."}
-          className="h-8 text-xs bg-background mt-1"
-        />
-      </div>
-
-      {/* Tailoring Notes & Custom Measurements */}
-      <div className="space-y-1.5">
-        <Label className="text-[11px] font-semibold text-foreground">
+        <p className="text-[10px] text-muted-foreground leading-relaxed">
           {isAr
-            ? "ملاحظات القياسات والتفصيل الخاص (اختياري):"
-            : "Tailoring Measurements & Workshop Notes (Optional):"}
-        </Label>
+            ? "دوّن أي تفاصيل خاصة للخياطة (مثل: بطانة كاملة، تعديل طول الكم، خياطة مخفية، فتحة أزرار، تضييق الخصر...)"
+            : "Enter any workshop instructions (e.g., full lining, specific sleeve adjustment, hidden buttons)..."}
+        </p>
         <Textarea
-          rows={2}
+          rows={3}
           value={currentNotes}
           onChange={(e) => handleNotesChange(e.target.value)}
           placeholder={
             isAr
-              ? "مثال: الطول 54، دوران الصدر 22، طول الكم 28، تضييق بسيط عند الخصر، بطانة كاملة..."
-              : "e.g. Length 54, Chest 22, Sleeves 28, extra lining..."
+              ? "مثال: الطول 54، دوران الصدر 22، طول الكم 28، تضييق بسيط عند الخصر، بطانة كاملة، قصة كلوش..."
+              : "e.g. Length 54, Chest 22, Sleeves 28, slim waist, full lining..."
           }
-          className="text-xs bg-background resize-none leading-relaxed"
+          className="text-xs bg-background resize-none leading-relaxed border-border/80 focus-visible:ring-2 focus-visible:ring-ring"
         />
+      </div>
+
+      {/* Quick Variant Attributes (Optional Preset Size, Color, Fabric) */}
+      <div className="space-y-3 pt-1">
+        {/* Size Selection */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <Label className="text-[11px] font-semibold text-foreground">
+              {isAr ? "المقاس أو الطول السريع (اختياري):" : "Quick Size / Length (Optional):"}
+            </Label>
+            {currentSize && (
+              <button
+                type="button"
+                onClick={() => handleSizeChange("")}
+                className="text-[10px] text-muted-foreground hover:text-destructive transition-colors"
+              >
+                {isAr ? "مسح" : "Clear"}
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {QUICK_SIZES.map((s) => {
+              const active = currentSize === s;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => handleSizeChange(active ? "" : s)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                    active
+                      ? "bg-primary text-primary-foreground border-primary shadow-xs font-bold"
+                      : "border-border/80 bg-background hover:bg-muted text-foreground"
+                  }`}
+                >
+                  {s}
+                </button>
+              );
+            })}
+          </div>
+          <Input
+            type="text"
+            value={currentSize}
+            onChange={(e) => handleSizeChange(e.target.value)}
+            placeholder={
+              isAr ? "أو اكتب المقاس يدوياً (مثال: 54 خاص أو مقاس مخصص)..." : "Or type custom size..."
+            }
+            className="h-8 text-xs bg-background mt-1"
+          />
+        </div>
+
+        {/* Color Selection */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <Label className="text-[11px] font-semibold text-foreground">
+              {isAr ? "اللون:" : "Color:"}
+            </Label>
+            {currentColor && (
+              <button
+                type="button"
+                onClick={() => handleColorChange("")}
+                className="text-[10px] text-muted-foreground hover:text-destructive transition-colors"
+              >
+                {isAr ? "مسح" : "Clear"}
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {QUICK_COLORS.map((c) => {
+              const active = currentColor === c.name;
+              return (
+                <button
+                  key={c.name}
+                  type="button"
+                  onClick={() => handleColorChange(active ? "" : c.name)}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                    active
+                      ? "bg-primary text-primary-foreground border-primary shadow-xs font-bold"
+                      : "border-border/80 bg-background hover:bg-muted text-foreground"
+                  }`}
+                >
+                  <span
+                    className={`h-2.5 w-2.5 rounded-full border shrink-0 ${c.border}`}
+                    style={{ backgroundColor: c.color }}
+                  />
+                  <span>{c.name}</span>
+                </button>
+              );
+            })}
+          </div>
+          <Input
+            type="text"
+            value={currentColor}
+            onChange={(e) => handleColorChange(e.target.value)}
+            placeholder={
+              isAr
+                ? "أو اكتب اسم اللون يدوياً (مثال: رمادي غامق، كحلي مطفي)..."
+                : "Or type custom color..."
+            }
+            className="h-8 text-xs bg-background mt-1"
+          />
+        </div>
+
+        {/* Fabric Selection */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <Label className="text-[11px] font-semibold text-foreground">
+              {isAr ? "القماش أو نوع الخامة (اختياري):" : "Fabric / Material (Optional):"}
+            </Label>
+            {currentFabric && (
+              <button
+                type="button"
+                onClick={() => handleFabricChange("")}
+                className="text-[10px] text-muted-foreground hover:text-destructive transition-colors"
+              >
+                {isAr ? "مسح" : "Clear"}
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {QUICK_FABRICS.map((f) => {
+              const active = currentFabric === f;
+              return (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => handleFabricChange(active ? "" : f)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                    active
+                      ? "bg-primary text-primary-foreground border-primary shadow-xs font-bold"
+                      : "border-border/80 bg-background hover:bg-muted text-foreground"
+                  }`}
+                >
+                  {f}
+                </button>
+              );
+            })}
+          </div>
+          <Input
+            type="text"
+            value={currentFabric}
+            onChange={(e) => handleFabricChange(e.target.value)}
+            placeholder={isAr ? "أو اكتب نوع القماش يدوياً..." : "Or type custom fabric..."}
+            className="h-8 text-xs bg-background mt-1"
+          />
+        </div>
       </div>
     </div>
   );

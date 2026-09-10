@@ -14,6 +14,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { formatSizeWithUnit } from "@/lib/format";
@@ -32,6 +33,7 @@ import {
   Check,
   Truck,
   Share2,
+  FileText,
 } from "lucide-react";
 import { SizeGuideModal } from "@/components/storefront/SizeGuideModal";
 import { ProductShareModal } from "@/components/storefront/ProductShareModal";
@@ -335,6 +337,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const [passportDraft, setPassportDraft] = useState<Record<string, string>>({});
   const [guestUnit, setGuestUnit] = useState<"in" | "cm">("in");
   const [savingPassport, setSavingPassport] = useState(false);
+  const [tailoringNotes, setTailoringNotes] = useState("");
   const [uploadingField, setUploadingField] = useState<Record<string, boolean>>({});
   const optionsRef = useRef<HTMLDivElement | null>(null);
 
@@ -673,7 +676,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     queryFn: async () => {
       const { data } = await (authenticatedSupabase as any)
         .from("customer_fit_passports")
-        .select("measurements,preferred_length_unit,version,consent_to_store")
+        .select("measurements,preferred_length_unit,version,consent_to_store,tailoring_notes")
         .eq("brand_id", brand.id)
         .eq("customer_id", customerQ.data!.id)
         .maybeSingle();
@@ -682,6 +685,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         preferred_length_unit: "in" | "cm";
         version: number;
         consent_to_store: boolean;
+        tailoring_notes: string | null;
       } | null;
     },
   });
@@ -695,6 +699,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       setPassportDraft(
         Object.fromEntries(Object.entries(values).map(([key, value]) => [key, String(value)])),
       );
+      if (fitPassportQ.data?.tailoring_notes) {
+        setTailoringNotes(fitPassportQ.data.tailoring_notes);
+      }
     } else if (!customerQ.data?.id) {
       try {
         const raw = localStorage.getItem(`pura_guest_fit_passport_${brand.slug}_${fitProfileType}`);
@@ -707,9 +714,13 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             setGuestUnit(parsed.unit);
           }
         }
+        const guestNotes = localStorage.getItem(`pura_guest_tailoring_notes_${brand.slug}`);
+        if (guestNotes) {
+          setTailoringNotes(guestNotes);
+        }
       } catch {}
     }
-  }, [customerQ.data?.id, fitPassportQ.data?.measurements, fitProfileType, brand.slug]);
+  }, [customerQ.data?.id, fitPassportQ.data?.measurements, fitPassportQ.data?.tailoring_notes, fitProfileType, brand.slug]);
 
   const fitProfileComplete = Boolean(
     (isGuest ? true : fitPassportQ.data?.consent_to_store) &&
@@ -751,6 +762,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         `pura_guest_fit_passport_${brand.slug}_${fitProfileType}`,
         JSON.stringify({ draft: passportDraft, unit: guestUnit }),
       );
+      if (tailoringNotes.trim()) {
+        localStorage.setItem(`pura_guest_tailoring_notes_${brand.slug}`, tailoringNotes.trim());
+      }
     } catch {}
 
     setCfValues((current) => {
@@ -796,6 +810,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         measurements: { ...storedFitProfiles, [fitProfileType]: cleanedProfile },
         preferred_length_unit: fitPassportQ.data?.preferred_length_unit ?? "in",
         consent_to_store: true,
+        tailoring_notes: tailoringNotes.trim() || null,
       },
       { onConflict: "brand_id,customer_id" },
     );
@@ -1118,6 +1133,20 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       });
     }
 
+    if (tailoringNotes.trim()) {
+      custom.push({
+        key: "tailoring_notes",
+        label_ar: "ملاحظات وتفاصيل التفصيل",
+        label_en: "Tailoring & Workshop Notes",
+        value: tailoringNotes.trim(),
+        type: "text",
+        price_delta: 0,
+      });
+      try {
+        localStorage.setItem(`pura_guest_tailoring_notes_${brand.slug}`, tailoringNotes.trim());
+      } catch {}
+    }
+
     const fileField = activeCustomFields.find((f) => f.type === "file");
     const file_url = fileField ? (cfValues[fileField.key] ?? "").trim() : "";
     const textField = activeCustomFields.find((f) => f.type === "text");
@@ -1129,7 +1158,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         value: c.value,
         price_delta: c.price_delta,
       })),
-      custom_text,
+      custom_text: tailoringNotes.trim() || custom_text,
       file_url,
     };
 
@@ -2012,6 +2041,41 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   </div>
                 );
               })}
+
+              {/* 📝 Customer Tailoring & Workshop Notes Box */}
+              <div className="space-y-2 pt-3 border-t border-border/60">
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 text-xs sm:text-sm font-bold text-foreground">
+                    <FileText className="h-4 w-4 text-primary shrink-0" />
+                    <span>
+                      {t(
+                        "ملاحظات وتفاصيل التفصيل والخياط (اختياري)",
+                        "Tailoring & Workshop Notes (Optional)",
+                      )}
+                    </span>
+                  </label>
+                  <span className="text-[10px] sm:text-xs text-muted-foreground font-normal">
+                    {t("تعليمات للمشغل", "Workshop notes")}
+                  </span>
+                </div>
+                <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
+                  {t(
+                    "اكتبي هنا أي تفاصيل خاصة للتفصيل ترغبين بإبلاغ الخياط بها (مثل: تضييق الخصر، زيادة/إنقاص طول الكم، بطانة كاملة، شكل الأزرار...)",
+                    "Add any specific tailoring instructions for the workshop (e.g. custom waist tightening, sleeve length adjust, full lining, button style...)",
+                  )}
+                </p>
+                <Textarea
+                  rows={3}
+                  value={tailoringNotes}
+                  onChange={(e) => setTailoringNotes(e.target.value)}
+                  placeholder={
+                    lang === "ar"
+                      ? "مثال: الطول 54، دوران الصدر 22، طول الكم 28، تضييق بسيط عند الخصر، بطانة كاملة، قصة كلوش..."
+                      : "e.g. Length 54, Chest 22, Sleeves 28, slim waist, full lining..."
+                  }
+                  className="text-xs bg-background resize-none leading-relaxed rounded-xl border border-input shadow-2xs focus-visible:ring-2 focus-visible:ring-ring"
+                />
+              </div>
             </div>
           )}
 
