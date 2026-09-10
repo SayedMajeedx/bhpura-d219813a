@@ -127,14 +127,23 @@ export const CustomerMobileCard: React.FC<CustomerMobileCardProps> = ({
 
       {/* CRM Stats Footer & Quick WhatsApp Action */}
       <div className="flex items-center justify-between pt-2 border-t border-border/40 text-xs">
-        <div className="flex items-center gap-3">
-          <span className="font-mono text-[11px]">
-            {isAr ? "الطلبات:" : "Orders:"} <b className="text-foreground">{stats?.totalOrders ?? 0}</b>
-          </span>
-          <span>•</span>
-          <span className="font-mono text-xs font-extrabold text-foreground">
-            {formatMoney(stats?.lifetimeSpend ?? 0, currency, lang)}
-          </span>
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[11px]">
+              {isAr ? "الطلبات:" : "Orders:"} <b className="text-foreground">{stats?.totalOrders ?? 0}</b>
+            </span>
+            <span>•</span>
+            <span className="font-mono text-xs font-extrabold text-foreground">
+              {formatMoney(stats?.lifetimeSpend ?? 0, currency, lang)}
+            </span>
+          </div>
+          {stats?.pendingAmount && stats.pendingAmount > 0 ? (
+            <span className="text-[10px] text-amber-600 dark:text-amber-400 font-sans">
+              {isAr
+                ? `(معلق: ${formatMoney(stats.pendingAmount, currency, lang)})`
+                : `(Pending: ${formatMoney(stats.pendingAmount, currency, lang)})`}
+            </span>
+          ) : null}
         </div>
 
         {cleanPhone && (

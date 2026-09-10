@@ -38,10 +38,13 @@ import {
   Truck,
   MessageCircle,
   History,
+  RotateCw,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
+import { useProfile } from "@/lib/profile-context";
 
 import { IntegrationsCommandHeader } from "@/components/integrations/IntegrationsCommandHeader";
 import {
@@ -103,8 +106,11 @@ function IntegrationsPage() {
   const brand = useBrand();
   const brandId = brand.id;
   const qc = useQueryClient();
+  const { profile: currentUser, isAdmin, isSuperAdmin, isBrandAdmin } = useProfile();
+  const canRotateKeys = isSuperAdmin || isAdmin || isBrandAdmin;
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
+  const [rotatingIntegration, setRotatingIntegration] = useState<Row | null>(null);
   const [categoryScope, setCategoryScope] = useState<IntegrationsCategoryScope>("all");
 
   const q = useQuery({
@@ -227,6 +233,14 @@ function IntegrationsPage() {
           }}
         />
       </Dialog>
+
+      <RotateKeyDialog
+        brandId={brandId}
+        row={rotatingIntegration}
+        isOpen={Boolean(rotatingIntegration)}
+        onClose={() => setRotatingIntegration(null)}
+        onRotated={() => qc.invalidateQueries({ queryKey: ["integrations", brandId] })}
+      />
 
       {categoryScope === "connectors" && <ConnectorsCatalog brandId={brandId} />}
       {categoryScope === "api_keys" && <ApiKeysManager brandId={brandId} />}
@@ -363,24 +377,42 @@ function IntegrationsPage() {
                           row.provider === "gemini" ? row.api_key_masked : row.webhook_secret_masked
                         }
                       />
-                      <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1.5 border-t border-border/50">
-                        <span className="flex items-center gap-1.5">
-                          <History className="h-3 w-3 text-muted-foreground/70" />
-                          {isAr ? "آخر تدوير للمفاتيح:" : "Last rotated:"}
-                        </span>
-                        <span className="font-mono font-medium">
-                          {row.last_rotated_at
-                            ? new Date(row.last_rotated_at).toLocaleDateString(isAr ? "ar-BH" : "en-US", {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                            : isAr
-                              ? "غير مدوّر بعد"
-                              : "Not rotated yet"}
-                        </span>
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground pt-2 border-t border-border/50 sm:col-span-2">
+                        <div className="flex items-center gap-1.5">
+                          <History className="h-3.5 w-3.5 text-muted-foreground/70" />
+                          <span>{isAr ? "آخر تدوير للمفاتيح:" : "Last rotated:"}</span>
+                          <span className="font-mono font-medium text-foreground">
+                            {row.last_rotated_at
+                              ? new Date(row.last_rotated_at).toLocaleDateString(isAr ? "ar-BH" : "en-US", {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : isAr
+                                ? "غير مدوّر بعد"
+                                : "Not rotated yet"}
+                          </span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={!canRotateKeys}
+                          onClick={() => setRotatingIntegration(row)}
+                          className="h-7 px-2.5 text-[11px] gap-1.5 border-border/70 hover:border-amber-500/50 hover:text-amber-600 dark:hover:text-amber-400"
+                          title={
+                            !canRotateKeys
+                              ? isAr
+                                ? "يتطلب صلاحيات مدير لتغيير وتدوير المفاتيح"
+                                : "Requires Admin privileges to rotate keys"
+                              : undefined
+                          }
+                        >
+                          <RotateCw className="h-3 w-3" />
+                          {isAr ? "تدوير المفتاح الآن" : "Rotate key now"}
+                        </Button>
                       </div>
                     </div>
 
@@ -964,5 +996,197 @@ function IntegrationDialog({
         </Button>
       </DialogFooter>
     </DialogContent>
+  );
+}
+
+function RotateKeyDialog({
+  brandId,
+  row,
+  isOpen,
+  onClose,
+  onRotated,
+}: {
+  brandId: string;
+  row: Row | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onRotated: () => void;
+}) {
+  const { lang } = useI18n();
+  const isAr = lang === "ar";
+  const { profile: currentUser, isAdmin, isSuperAdmin, isBrandAdmin } = useProfile();
+  const canRotate = isSuperAdmin || isAdmin || isBrandAdmin;
+
+  const [newApiKey, setNewApiKey] = useState("");
+  const [newWebhookSecret, setNewWebhookSecret] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setNewApiKey("");
+      setNewWebhookSecret("");
+      setSubmitting(false);
+    }
+  }, [isOpen]);
+
+  if (!row) return null;
+
+  const preset = PROVIDER_PRESETS.find((p) => p.value === row.provider);
+  const providerLabel = preset?.label ?? row.provider;
+  const isNoWebhook =
+    row.provider === "resend_customer_email" ||
+    row.provider === "sendpulse_admin" ||
+    row.provider === "gemini";
+
+  const handleRotate = async () => {
+    if (!canRotate) {
+      toast.error(
+        isAr ? "يتطلب صلاحيات مدير لتنفيذ تدوير المفتاح" : "Admin privileges required to rotate key",
+      );
+      return;
+    }
+    if (!newApiKey.trim() && !newWebhookSecret.trim()) {
+      toast.error(
+        isAr
+          ? "يرجى إدخال مفتاح API أو سر Webhook الجديد لتنفيذ التدوير"
+          : "Please enter a new API key or Webhook secret to rotate",
+      );
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const { error } = await (supabase.rpc as any)("save_integration_credential", {
+        p_brand_id: brandId,
+        p_id: row.id,
+        p_provider: row.provider,
+        p_base_url: row.base_url,
+        p_api_key: newApiKey.trim(),
+        p_webhook_secret: newWebhookSecret.trim(),
+        p_is_active: row.is_active,
+        p_notes: row.notes,
+      });
+
+      if (error) throw error;
+
+      try {
+        await (supabase as any).from("saas_audit_logs").insert({
+          brand_id: brandId,
+          actor_user_id: currentUser?.id,
+          action: "INTEGRATION_KEY_ROTATED",
+          details: {
+            provider: row.provider,
+            integration_id: row.id,
+            rotated_at: new Date().toISOString(),
+          },
+        });
+      } catch {
+        // Fallback silently if saas_audit_logs table has RLS
+      }
+
+      toast.success(
+        isAr
+          ? "تم تدوير المفتاح وتحديث تاريخ التدوير بنجاح"
+          : "Key successfully rotated and timestamp updated",
+      );
+      setNewApiKey("");
+      setNewWebhookSecret("");
+      onRotated();
+      onClose();
+    } catch (err: any) {
+      toast.error(err?.message || (isAr ? "تعذر تدوير المفتاح" : "Failed to rotate key"));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md p-5 sm:p-6">
+        <DialogHeader>
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
+              <RotateCw className="h-5 w-5" />
+            </div>
+            <div>
+              <DialogTitle className="text-base font-bold">
+                {isAr ? `تدوير مفاتيح ${providerLabel}` : `Rotate ${providerLabel} Keys`}
+              </DialogTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {isAr ? "تحديث وتجديد بيانات الاعتماد بأمان" : "Securely update and rotate active credentials"}
+              </p>
+            </div>
+          </div>
+        </DialogHeader>
+
+        {/* Security Warning Notice */}
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3.5 space-y-2 mt-2">
+          <div className="flex items-start gap-2 text-destructive font-semibold text-xs">
+            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+            <span>
+              {isAr ? "تحذير هام: انقطاع مؤقت محتمل" : "Critical Warning: Invalidation of Old Key"}
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {isAr
+              ? "تدوير المفتاح سيوقف صلاحية المفتاح القديم فوراً لدى Boutq. يجب إدخال المفتاح الجديد وتحديثه في لوحة تحكم المزود الخارجي لضمان استمرار عمل الاتصال."
+              : "Rotating this credential will immediately invalidate the previous secret in Boutq. Ensure you update your external provider settings with this new key to prevent downtime."}
+          </p>
+        </div>
+
+        <div className="space-y-3.5 mt-3">
+          <div>
+            <Label className="text-xs">
+              {isAr ? "مفتاح API الجديد" : "New API Key"}
+            </Label>
+            <Input
+              type="password"
+              className="font-mono text-xs mt-1"
+              value={newApiKey}
+              onChange={(e) => setNewApiKey(e.target.value)}
+              placeholder={isAr ? "أدخل المفتاح الجديد هنا..." : "Enter new API key..."}
+              autoComplete="new-password"
+            />
+          </div>
+
+          {!isNoWebhook && (
+            <div>
+              <Label className="text-xs">
+                {isAr ? "سر Webhook الجديد (اختياري)" : "New Webhook Secret (Optional)"}
+              </Label>
+              <Input
+                type="password"
+                className="font-mono text-xs mt-1"
+                value={newWebhookSecret}
+                onChange={(e) => setNewWebhookSecret(e.target.value)}
+                placeholder={isAr ? "أدخل السر الجديد إن وجد..." : "Enter new webhook secret..."}
+                autoComplete="new-password"
+              />
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="mt-4 gap-2">
+          <Button type="button" variant="ghost" onClick={onClose} disabled={submitting}>
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button
+            type="button"
+            onClick={handleRotate}
+            disabled={submitting || (!newApiKey.trim() && !newWebhookSecret.trim())}
+            className="bg-amber-600 hover:bg-amber-700 text-white dark:bg-amber-600 dark:hover:bg-amber-700"
+          >
+            {submitting ? (
+              <span className="flex items-center gap-1.5">
+                <RotateCw className="h-3.5 w-3.5 animate-spin" />
+                {isAr ? "جارٍ التدوير..." : "Rotating..."}
+              </span>
+            ) : (
+              isAr ? "تدوير وتفعيل الآن" : "Rotate & Activate"
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

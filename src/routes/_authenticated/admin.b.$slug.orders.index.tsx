@@ -111,7 +111,23 @@ import { getFulfillmentStage, getOrderWorkflow } from "@/lib/order-workflow";
 import { getFulfillmentBadgeDetails } from "@/lib/status-labels";
 import { orderRequiresCourier } from "@/lib/order-fulfillment";
 
+type OrdersSearch = {
+  tab?: string;
+  queue?: string;
+  fulfillment_status?: string;
+  filter?: string;
+};
+
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/orders/")({
+  validateSearch: (search: Record<string, unknown>): OrdersSearch => {
+    const result: OrdersSearch = {};
+    if (typeof search.tab === "string") result.tab = search.tab;
+    if (typeof search.queue === "string") result.queue = search.queue;
+    if (typeof search.fulfillment_status === "string")
+      result.fulfillment_status = search.fulfillment_status;
+    if (typeof search.filter === "string") result.filter = search.filter;
+    return result;
+  },
   component: OrdersList,
 });
 
@@ -324,10 +340,59 @@ function OrdersList() {
   const [includeHistorical, setIncludeHistorical] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
-  // New Quick Tab filter
+  // Route search parameter integration for direct tab selection from dashboard
+  const routeSearch = Route.useSearch();
+
+  const initialTabFilter = useMemo<
+    "all" | "unpaid" | "to_prepare" | "action_required" | "shipped" | "completed"
+  >(() => {
+    if (
+      routeSearch?.tab === "to_prepare" ||
+      routeSearch?.queue === "to_prepare" ||
+      routeSearch?.fulfillment_status === "unfulfilled" ||
+      routeSearch?.filter === "unfulfilled"
+    ) {
+      return "to_prepare";
+    }
+    if (routeSearch?.tab === "unpaid" || routeSearch?.filter === "unpaid") return "unpaid";
+    if (routeSearch?.tab === "action_required") return "action_required";
+    if (routeSearch?.tab === "shipped") return "shipped";
+    if (routeSearch?.tab === "completed") return "completed";
+    return (
+      (savedContext?.tabFilter as
+        | "all"
+        | "unpaid"
+        | "to_prepare"
+        | "action_required"
+        | "shipped"
+        | "completed") || "all"
+    );
+  }, [routeSearch, savedContext?.tabFilter]);
+
+  // Quick Tab filter
   const [tabFilter, setTabFilter] = useState<
     "all" | "unpaid" | "to_prepare" | "action_required" | "shipped" | "completed"
-  >(savedContext?.tabFilter || "all");
+  >(initialTabFilter);
+
+  // Sync tab filter whenever route search params change
+  useEffect(() => {
+    if (
+      routeSearch?.tab === "to_prepare" ||
+      routeSearch?.queue === "to_prepare" ||
+      routeSearch?.fulfillment_status === "unfulfilled" ||
+      routeSearch?.filter === "unfulfilled"
+    ) {
+      setTabFilter("to_prepare");
+    } else if (routeSearch?.tab === "unpaid" || routeSearch?.filter === "unpaid") {
+      setTabFilter("unpaid");
+    } else if (routeSearch?.tab === "action_required") {
+      setTabFilter("action_required");
+    } else if (routeSearch?.tab === "shipped") {
+      setTabFilter("shipped");
+    } else if (routeSearch?.tab === "completed") {
+      setTabFilter("completed");
+    }
+  }, [routeSearch?.tab, routeSearch?.queue, routeSearch?.fulfillment_status, routeSearch?.filter]);
 
   // Save navigation filters when they change
   useEffect(() => {

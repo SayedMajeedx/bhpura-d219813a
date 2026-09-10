@@ -1,4 +1,4 @@
-﻿import * as React from "react";
+import * as React from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,7 +44,7 @@ export function DashboardActionStrip({
         ? `${unfulfilledOrdersCount} طلب مدفوع أو مؤكد يحتاج التغليف وتجهيز البوليصة`
         : `${unfulfilledOrdersCount} paid/confirmed order(s) waiting for dispatch`,
       to: "/admin/b/$slug/orders" as const,
-      search: { fulfillment_status: "unfulfilled" },
+      search: { tab: "to_prepare", fulfillment_status: "unfulfilled" },
       actionLabel: isAr ? "بدء التجهيز" : "Fulfill Orders",
       icon: Package,
       badgeText: isAr ? "تجهيز فوري" : "Action Required",
@@ -57,10 +57,10 @@ export function DashboardActionStrip({
       count: lowStockCount,
       title: isAr ? "منتجات قاربت على النفاد" : "Low Stock & Depleted Items",
       description: isAr
-        ? `${lowStockCount} خيار/منتج بمستوى مخزون حرج يتطلب إعادة الطلب`
-        : `${lowStockCount} variant(s) at or below critical reorder threshold`,
+        ? `${lowStockCount} منتج بمستوى مخزون حرج يتطلب إعادة الطلب`
+        : `${lowStockCount} product(s) at or below critical reorder threshold`,
       to: "/admin/b/$slug/inventory" as const,
-      search: { filter: "low_stock" },
+      search: { filter: "low", scope: "low" },
       actionLabel: isAr ? "مراجعة المخزون" : "Review Stock",
       icon: AlertTriangle,
       badgeText: isAr ? "مخزون حرج" : "Restock Alert",
@@ -122,6 +122,50 @@ export function DashboardActionStrip({
           </span>
         )}
       </div>
+
+      {/* Task Breakdown Pills */}
+      {totalActionItems > 0 && (
+        <div className="flex flex-wrap items-center gap-2 pb-3 mb-1">
+          {unfulfilledOrdersCount > 0 && (
+            <Link
+              to="/admin/b/$slug/orders"
+              params={{ slug }}
+              search={{ tab: "to_prepare", fulfillment_status: "unfulfilled" }}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 transition-colors"
+            >
+              <Package className="h-3.5 w-3.5 shrink-0" />
+              <span>{isAr ? "طلبات بانتظار التجهيز" : "Orders to Prepare"}</span>
+              <span className="font-mono font-bold">({unfulfilledOrdersCount})</span>
+            </Link>
+          )}
+
+          {lowStockCount > 0 && (
+            <Link
+              to="/admin/b/$slug/inventory"
+              params={{ slug }}
+              search={{ filter: "low", scope: "low" }}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/30 hover:bg-rose-500/20 transition-colors"
+            >
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+              <span>{isAr ? "خيارات بمخزون حرج" : "Critical Stock Options"}</span>
+              <span className="font-mono font-bold">({lowStockCount})</span>
+            </Link>
+          )}
+
+          {pendingReturnsCount > 0 && (
+            <Link
+              to="/admin/b/$slug/orders"
+              params={{ slug }}
+              search={{ filter: "needs_action", tab: "all" }}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 transition-colors"
+            >
+              <RotateCcw className="h-3.5 w-3.5 shrink-0" />
+              <span>{isAr ? "طلبات إرجاع قيد المعالجة" : "Returns in Processing"}</span>
+              <span className="font-mono font-bold">({pendingReturnsCount})</span>
+            </Link>
+          )}
+        </div>
+      )}
 
       {/* Action Cards Grid or All-Clear Celebration */}
       {actionCards.length > 0 ? (

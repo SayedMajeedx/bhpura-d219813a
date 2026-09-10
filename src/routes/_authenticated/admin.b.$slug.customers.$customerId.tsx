@@ -28,13 +28,17 @@ import { useI18n, useT } from "@/lib/i18n";
 import { formatAddressLine, regionLabel } from "@/lib/bahrain-regions";
 import { formatMoney } from "@/lib/format";
 import { getOrderWorkflow } from "@/lib/order-workflow";
-import { getFulfillmentBadgeDetails } from "@/lib/status-labels";
-import { resolveCustomerSegmentBadge } from "@/lib/commerce-metrics";
+import {
+  resolveCustomerSegmentBadge,
+  isActiveCustomerOrder,
+  isRecognizedPaidSale,
+} from "@/lib/commerce-metrics";
 import {
   resolvePaymentStatus,
   PAYMENT_BADGE_CLASSES,
   PAYMENT_BADGE_LABEL,
 } from "@/lib/payment-status";
+import { getFulfillmentBadgeDetails } from "@/lib/status-labels";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -187,18 +191,31 @@ function CustomerProfilePage() {
 
   const customer = customerQ.data;
   const orders = useMemo(() => ordersQ.data ?? [], [ordersQ.data]);
-  const totalSpent = useMemo(
-    () => orders.reduce((sum, o) => sum + Number(o.total || 0), 0),
+  const activeOrders = useMemo(
+    () => orders.filter((o) => isActiveCustomerOrder(o as any)),
     [orders],
   );
+  const totalSpent = useMemo(
+    () => activeOrders.reduce((sum, o) => sum + Number(o.total || 0), 0),
+    [activeOrders],
+  );
+  const totalPaid = useMemo(
+    () =>
+      activeOrders.reduce((sum, o) => {
+        if (isRecognizedPaidSale(o as any)) return sum + Number(o.total || 0);
+        return sum + Math.max(0, Number(o.advance_paid || 0));
+      }, 0),
+    [activeOrders],
+  );
+  const pendingCollection = Math.max(0, Number((totalSpent - totalPaid).toFixed(3)));
   const aov = useMemo(
-    () => (orders.length > 0 ? totalSpent / orders.length : 0),
-    [totalSpent, orders.length],
+    () => (activeOrders.length > 0 ? totalSpent / activeOrders.length : 0),
+    [totalSpent, activeOrders.length],
   );
   const lastOrderDate = useMemo(() => {
-    if (orders.length === 0) return null;
-    return orders[0].order_date;
-  }, [orders]);
+    if (activeOrders.length === 0) return null;
+    return activeOrders[0].order_date;
+  }, [activeOrders]);
   const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
   const paginatedOrders = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
@@ -398,10 +415,10 @@ function CustomerProfilePage() {
                 <div className="flex flex-wrap gap-1 justify-end">
                   {(() => {
                     const badge = resolveCustomerSegmentBadge({
-                      totalOrders: orders.length,
+                      totalOrders: activeOrders.length,
                       lifetimeSpend: totalSpent,
                       lastOrderDate,
-                      currency: customer?.currency || "BHD",
+                      currency: brand.currency || "BHD",
                     });
                     if (badge.segment === "lead") return null;
                     return (
@@ -436,10 +453,33 @@ function CustomerProfilePage() {
               <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-border/40">
                 <div className="rounded-lg bg-background/70 border border-border/40 p-2 text-center">
                   <span className="text-[10px] text-muted-foreground block font-medium">
-                    {lang === "ar" ? "إجمالي الإنفاق" : "Lifetime Spend"}
+                    {lang === "ar" ? "إجمالي المشتريات" : "Total Spend"}
                   </span>
                   <span className="text-xs font-bold font-mono text-primary">
                     {formatMoney(totalSpent, "BHD")}
+                  </span>
+                  {pendingCollection > 0 && (
+                    <span className="text-[9px] text-amber-600 dark:text-amber-400 block mt-0.5">
+                      {lang === "ar"
+                        ? `(معلق: ${formatMoney(pendingCollection, "BHD")})`
+                        : `(Pending: ${formatMoney(pendingCollection, "BHD")})`}
+                    </span>
+                  )}
+                </div>
+                <div className="rounded-lg bg-background/70 border border-border/40 p-2 text-center">
+                  <span className="text-[10px] text-muted-foreground block font-medium">
+                    {lang === "ar" ? "المبالغ المحصّلة" : "Total Paid"}
+                  </span>
+                  <span className="text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400">
+                    {formatMoney(totalPaid, "BHD")}
+                  </span>
+                </div>
+                <div className="rounded-lg bg-background/70 border border-border/40 p-2 text-center">
+                  <span className="text-[10px] text-muted-foreground block font-medium">
+                    {lang === "ar" ? "الطلبات المؤكدة" : "Total Orders"}
+                  </span>
+                  <span className="text-xs font-bold font-mono text-foreground">
+                    {activeOrders.length}
                   </span>
                 </div>
                 <div className="rounded-lg bg-background/70 border border-border/40 p-2 text-center">
@@ -448,14 +488,6 @@ function CustomerProfilePage() {
                   </span>
                   <span className="text-xs font-bold font-mono text-foreground">
                     {formatMoney(aov, "BHD")}
-                  </span>
-                </div>
-                <div className="rounded-lg bg-background/70 border border-border/40 p-2 text-center">
-                  <span className="text-[10px] text-muted-foreground block font-medium">
-                    {lang === "ar" ? "عدد الطلبات" : "Total Orders"}
-                  </span>
-                  <span className="text-xs font-bold font-mono text-foreground">
-                    {orders.length}
                   </span>
                 </div>
                 <div className="rounded-lg bg-background/70 border border-border/40 p-2 text-center">

@@ -196,6 +196,66 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                 const isOutOfStock = totalStock === 0;
                 const isExpanded = !!expandedProducts[product.id];
 
+                // Commercial identifier resolution
+                const sku = product.sku || pVariants.find((v: any) => v.sku)?.sku || null;
+                const barcode = product.barcode || pVariants.find((v: any) => v.barcode)?.barcode || null;
+
+                // Detailed attention diagnostics
+                const media = Array.isArray(product.media) ? product.media : [];
+                const hasMedia =
+                  product.image_url ||
+                  media.some((m: any) =>
+                    typeof m === "string" ? Boolean(m.trim()) : Boolean(m?.url || m?.src),
+                  );
+                const hasCategory = Boolean(product.category && resolveCategoryName(product.category));
+                const isHiddenWithStock = !product.is_active && totalStock > 0;
+
+                const attentionReasons: {
+                  key: string;
+                  label_ar: string;
+                  label_en: string;
+                  tone: "danger" | "warning" | "info";
+                }[] = [];
+                if (isOutOfStock) {
+                  attentionReasons.push({
+                    key: "out_of_stock",
+                    label_ar: "نفاد المخزون",
+                    label_en: "Out of Stock",
+                    tone: "danger",
+                  });
+                } else if (isLowStock) {
+                  attentionReasons.push({
+                    key: "low_stock",
+                    label_ar: "مخزون منخفض",
+                    label_en: "Low Stock",
+                    tone: "warning",
+                  });
+                }
+                if (!hasMedia) {
+                  attentionReasons.push({
+                    key: "missing_image",
+                    label_ar: "نقص الصور",
+                    label_en: "No Image",
+                    tone: "warning",
+                  });
+                }
+                if (!hasCategory) {
+                  attentionReasons.push({
+                    key: "missing_category",
+                    label_ar: "بدون تصنيف",
+                    label_en: "No Category",
+                    tone: "info",
+                  });
+                }
+                if (isHiddenWithStock) {
+                  attentionReasons.push({
+                    key: "hidden_with_stock",
+                    label_ar: "مخفي ولديه مخزون",
+                    label_en: "Hidden with Stock",
+                    tone: "info",
+                  });
+                }
+
                 return (
                   <React.Fragment key={product.id}>
                     <tr
@@ -232,9 +292,33 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                                 <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0 group-hover:text-foreground" />
                               )}
                             </div>
-                            <div className="text-[10px] text-muted-foreground font-mono">
-                              ID: {product.id.slice(0, 8)}
-                            </div>
+                            {sku ? (
+                              <div className="text-[10px] text-muted-foreground font-mono">
+                                SKU: {sku}
+                              </div>
+                            ) : barcode ? (
+                              <div className="text-[10px] text-muted-foreground font-mono">
+                                BAR: {barcode}
+                              </div>
+                            ) : null}
+                            {attentionReasons.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {attentionReasons.map((reason) => (
+                                  <span
+                                    key={reason.key}
+                                    className={`inline-flex items-center px-1.5 py-0.5 text-[9px] font-semibold rounded ${
+                                      reason.tone === "danger"
+                                        ? "bg-destructive/10 text-destructive border border-destructive/20"
+                                        : reason.tone === "warning"
+                                          ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20"
+                                          : "bg-muted text-muted-foreground border border-border/40"
+                                    }`}
+                                  >
+                                    {isAr ? reason.label_ar : reason.label_en}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </td>

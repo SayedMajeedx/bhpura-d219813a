@@ -123,10 +123,18 @@ import {
 /** Common measurement units the admin can pick from for a "size" variant. */
 const SIZE_UNITS = ["", "cm", "mm", "m", "inch", "ft", "kg", "g", "ml", "l"] as const;
 
+type InventorySearch = {
+  filter?: string;
+  scope?: string;
+};
+
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/inventory")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    filter: typeof search.filter === "string" ? search.filter : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): InventorySearch => {
+    const result: InventorySearch = {};
+    if (typeof search.filter === "string") result.filter = search.filter;
+    if (typeof search.scope === "string") result.scope = search.scope;
+    return result;
+  },
   component: Inventory,
 });
 
@@ -413,7 +421,7 @@ function Inventory() {
 
       {tab === "products" ? (
         <ProductsSection
-          initialFilter={searchParams.filter}
+          initialFilter={searchParams.scope || searchParams.filter}
           products={products.data ?? []}
           variants={variants.data ?? []}
           businessName={businessName.data?.business_name ?? null}
@@ -1158,6 +1166,7 @@ function ProductsSection({
   const t = useT();
   const brand = useBrand();
   const brandId = brand.id;
+  const { entitlements } = useEntitlements({ brandId });
   const [editing, setEditing] = useState<Product | null>(null);
   const [bomTargetProduct, setBomTargetProduct] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
@@ -1241,7 +1250,7 @@ function ProductsSection({
       const productLimit = entitlements?.limits?.["products.limit"];
       const isUnlimited = productLimit === -1;
       if (!isUnlimited && typeof productLimit === "number" && productLimit > 0) {
-        const currentCount = products.data?.length ?? 0;
+        const currentCount = products.length;
         if (currentCount >= productLimit) {
           toast.error(
             isAr
@@ -1454,17 +1463,39 @@ function ProductsSection({
   }, [variants]);
 
   const initialScope =
-    initialFilter === "attention" || initialFilter === "low_stock"
-      ? "attention"
-      : initialFilter === "active"
-        ? "active"
-        : initialFilter === "inactive" || initialFilter === "hidden"
-          ? "inactive"
-          : "all";
+    initialFilter === "low_stock" || initialFilter === "low"
+      ? "low"
+      : initialFilter === "out_of_stock" || initialFilter === "out"
+        ? "out"
+        : initialFilter === "attention"
+          ? "attention"
+          : initialFilter === "active"
+            ? "active"
+            : initialFilter === "inactive" || initialFilter === "hidden"
+              ? "inactive"
+              : initialFilter === "featured"
+                ? "featured"
+                : "all";
 
   const [scopeFilter, setScopeFilter] = useState<
     "all" | "attention" | "active" | "low" | "out" | "featured" | "inactive"
   >(initialScope);
+
+  useEffect(() => {
+    if (initialFilter === "low_stock" || initialFilter === "low") {
+      setScopeFilter("low");
+    } else if (initialFilter === "out_of_stock" || initialFilter === "out") {
+      setScopeFilter("out");
+    } else if (initialFilter === "attention") {
+      setScopeFilter("attention");
+    } else if (initialFilter === "active") {
+      setScopeFilter("active");
+    } else if (initialFilter === "inactive" || initialFilter === "hidden") {
+      setScopeFilter("inactive");
+    } else if (initialFilter === "featured") {
+      setScopeFilter("featured");
+    }
+  }, [initialFilter]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("newest");
 

@@ -1,15 +1,21 @@
-export type CustomerMetricOrder = {
+export type CustomerMetricOrder = {
   customer_id: string | null;
   total: number | string | null;
   created_at: string;
   status?: string | null;
   payment_status?: string | null;
+  payment_method?: string | null;
   fulfillment_status?: string | null;
+  advance_paid?: number | string | null;
+  paid_amount?: number | string | null;
 };
 
 export type CustomerCrmStats = {
   totalOrders: number;
   lifetimeSpend: number;
+  totalPaid: number;
+  pendingAmount: number;
+  hasPendingOrCod: boolean;
   lastOrderDate: string | null;
   badge: "VIP" | "Churn Risk" | "New Buyer" | "Regular" | null;
 };
@@ -18,7 +24,6 @@ const normalized = (value: unknown) =>
   String(value ?? "")
     .trim()
     .toLowerCase();
-
 export function isRecognizedPaidSale(order: CustomerMetricOrder) {
   return (
     normalized(order.payment_status) === "paid" &&
@@ -142,9 +147,28 @@ export function buildCustomerCrmStats(
   const sixtyDaysMs = 60 * 24 * 60 * 60 * 1000;
   grouped.forEach((customerOrders, customerId) => {
     const totalOrders = customerOrders.length;
-    const lifetimeSpend = customerOrders
-      .filter(isRecognizedPaidSale)
-      .reduce((sum, order) => sum + Number(order.total || 0), 0);
+    // Total confirmed purchases (excluding cancelled/refunded)
+    const lifetimeSpend = customerOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+    // Actually collected/settled amounts
+    const totalPaid = customerOrders.reduce((sum, order) => {
+      if (isRecognizedPaidSale(order)) {
+        return sum + Number(order.total || 0);
+      }
+      const partial = Number(order.advance_paid ?? order.paid_amount ?? 0);
+      return sum + Math.max(0, partial);
+    }, 0);
+
+    const pendingAmount = Math.max(0, Number((lifetimeSpend - totalPaid).toFixed(3)));
+    const hasPendingOrCod =
+      pendingAmount > 0 ||
+      customerOrders.some((o) => {
+        const method = normalized(o.payment_method);
+        return (
+          ["cod", "cash", "cash_on_delivery"].includes(method) ||
+          normalized(o.payment_status) !== "paid"
+        );
+      });
+
     const latest = customerOrders.reduce<CustomerMetricOrder | null>(
       (current, order) =>
         !current || Date.parse(order.created_at) > Date.parse(current.created_at) ? order : current,
@@ -157,7 +181,16 @@ export function buildCustomerCrmStats(
     else if (totalOrders > 1 && lastOrderMs > 0 && nowMs - lastOrderMs > sixtyDaysMs) badge = "Churn Risk";
     else if (totalOrders === 1) badge = "New Buyer";
     else if (totalOrders > 1) badge = "Regular";
-    result.set(customerId, { totalOrders, lifetimeSpend, lastOrderDate, badge });
+
+    result.set(customerId, {
+      totalOrders,
+      lifetimeSpend,
+      totalPaid,
+      pendingAmount,
+      hasPendingOrCod,
+      lastOrderDate,
+      badge,
+    });
   });
   return result;
 }

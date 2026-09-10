@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,7 +47,7 @@ export function StoreReadinessChecklist({
         .from("products")
         .select("id", { count: "exact", head: true })
         .eq("brand_id", brandId)
-        .eq("status", "active");
+        .eq("is_active", true);
       if (error) return 0;
       return count ?? 0;
     },

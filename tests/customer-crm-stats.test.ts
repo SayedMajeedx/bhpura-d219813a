@@ -15,14 +15,16 @@ const order = (overrides: Record<string, unknown> = {}) => ({
 });
 
 describe("customer CRM stats", () => {
-  it("counts active orders while limiting spend to fully paid sales", () => {
+  it("tracks lifetime spend across active orders while distinguishing collected payments", () => {
     const stats = buildCustomerCrmStats([
       order(),
       order({ total: 50, payment_status: "partially_paid" }),
     ]).get("customer-1");
 
     expect(stats?.totalOrders).toBe(2);
-    expect(stats?.lifetimeSpend).toBe(20);
+    expect(stats?.lifetimeSpend).toBe(70);
+    expect(stats?.totalPaid).toBe(20);
+    expect(stats?.pendingAmount).toBe(50);
     expect(stats?.badge).toBe("Regular");
   });
 

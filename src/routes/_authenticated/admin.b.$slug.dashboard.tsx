@@ -538,6 +538,8 @@ function Dashboard() {
 
     return {
       revenue: reportRevenue,
+      storeRevenue: orderRevenue,
+      incubatorRevenue,
       cogs: reportCogs,
       opex: reportOpex,
       totalExpenses: reportCogs + reportOpex,
@@ -761,19 +763,21 @@ function Dashboard() {
     };
   }, [productsQ.data, variantsQ.data, validRevenueOrders, lang]);
 
-  // Unfulfilled orders needing merchant dispatch
+  // Orders awaiting merchant preparation & fulfillment (synchronized with orders page to_prepare tab)
   const unfulfilledOrdersCount = useMemo(() => {
     return (ordersQ.data ?? []).filter((o: any) => {
-      const status = (o.status || "").toLowerCase();
-      if (status === "cancelled" || status === "refunded") return false;
-      const fulfillment = (o.fulfillment_status || "").toLowerCase();
-      const isDelivered = fulfillment === "delivered" || fulfillment === "fulfilled";
-      if (isDelivered) return false;
+      const workflow = getOrderWorkflow(o);
       return (
-        status === "paid" ||
-        status === "processing" ||
-        status === "confirmed" ||
-        (o.payment_status || "").toLowerCase() === "paid"
+        !workflow.terminal &&
+        [
+          "pending",
+          "packing",
+          "on_hold",
+          "needs_packing",
+          "received_from_tailor",
+          "sent_to_tailor",
+        ].includes(workflow.fulfillment) &&
+        (!workflow.awaitingPayment || workflow.isCod)
       );
     }).length;
   }, [ordersQ.data]);
@@ -836,6 +840,12 @@ function Dashboard() {
             label: isAr ? "الإيرادات وصافي الربح" : "Revenue & Net Profit",
             value: formatMoney(financials.revenue, currency, locale),
             subValue: `${isAr ? "صافي الربح" : "Net Profit"}: ${formatMoney(financials.netProfit, currency, locale)}`,
+            breakdown:
+              financials.incubatorRevenue > 0
+                ? isAr
+                  ? `(متجر: ${formatMoney(financials.storeRevenue, currency, locale)} | حاضنات: ${formatMoney(financials.incubatorRevenue, currency, locale)})`
+                  : `(Store: ${formatMoney(financials.storeRevenue, currency, locale)} | Incubators: ${formatMoney(financials.incubatorRevenue, currency, locale)})`
+                : null,
             deltaPct: financials.revenueDeltaPct,
             icon: TrendingUp,
             color: "text-emerald-500",
@@ -1124,12 +1134,12 @@ function Dashboard() {
                           <span
                             title={
                               isAr
-                                ? "لا تتوفر فترة سابقة كافية للمقارنة"
-                                : "No prior baseline available"
+                                ? "لا توجد بيانات للفترة السابقة للمقارنة"
+                                : "No prior baseline available for comparison"
                             }
-                            className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded-full border border-border bg-muted/40 text-muted-foreground"
+                            className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full border border-border bg-muted/40 text-muted-foreground"
                           >
-                            —
+                            {isAr ? "لا توجد مقارنة" : "No baseline"}
                           </span>
                         )}
                         <div
@@ -1148,6 +1158,16 @@ function Dashboard() {
                     <p className="mt-1 text-xs font-medium leading-snug text-muted-foreground line-clamp-1">
                       {k.subValue}
                     </p>
+                    {(k as any).breakdown && (
+                      <p className="mt-1 text-[11px] text-muted-foreground/90 font-medium">
+                        {(k as any).breakdown}
+                      </p>
+                    )}
+                    {!hasDelta && (
+                      <p className="mt-1 text-[10px] text-muted-foreground/75">
+                        {isAr ? "لا توجد بيانات للفترة السابقة للمقارنة" : "No prior period data for comparison"}
+                      </p>
+                    )}
                   </div>
                 </Card>
               );

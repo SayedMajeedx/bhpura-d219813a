@@ -127,7 +127,7 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
                 {isAr ? "عنوان التوصيل الافتراضي" : "Delivery Address"}
               </th>
               <th className="p-3 text-center">{isAr ? "عدد الطلبات" : "Orders"}</th>
-              <th className="p-3 text-end">{isAr ? "إجمالي الإنفاق" : "Lifetime Spend"}</th>
+              <th className="p-3 text-end">{isAr ? "إجمالي المشتريات" : "Total Spend"}</th>
               <th className="p-3 text-center w-10"></th>
             </tr>
           </thead>
@@ -256,8 +256,21 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
                   </td>
 
                   {/* Lifetime Spend */}
-                  <td className="p-3 align-middle text-end font-mono font-extrabold text-foreground">
-                    {formatMoney(stats.lifetimeSpend, currency, lang)}
+                  <td className="p-3 align-middle text-end font-mono">
+                    <div className="font-extrabold text-foreground">
+                      {formatMoney(stats.lifetimeSpend, currency, lang)}
+                    </div>
+                    {stats.pendingAmount > 0 ? (
+                      <div className="text-[10px] text-amber-600 dark:text-amber-400 font-sans font-normal">
+                        {isAr
+                          ? `(معلق/استلام: ${formatMoney(stats.pendingAmount, currency, lang)})`
+                          : `(Pending: ${formatMoney(stats.pendingAmount, currency, lang)})`}
+                      </div>
+                    ) : stats.lifetimeSpend > 0 ? (
+                      <div className="text-[10px] text-muted-foreground font-sans font-normal">
+                        {isAr ? "مدفوع بالكامل" : "Fully paid"}
+                      </div>
+                    ) : null}
                   </td>
 
                   {/* Row actions */}
