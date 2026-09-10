@@ -118,7 +118,7 @@ export function ProductCard({
         <div className="aspect-[3/4] rounded-xl overflow-hidden bg-muted relative">
           {badgeLabel && (
             <span
-              className={`absolute start-2.5 top-2.5 z-10 rounded-md border px-2.5 py-1 text-[10px] font-medium shadow-sm select-none ${badgeStyle} ${
+              className={`absolute start-2.5 top-2.5 z-10 rounded-md border px-2.5 py-1 text-xs font-medium shadow-sm select-none ${badgeStyle} ${
                 isAr ? "font-display leading-none" : "tracking-widest uppercase"
               }`}
             >

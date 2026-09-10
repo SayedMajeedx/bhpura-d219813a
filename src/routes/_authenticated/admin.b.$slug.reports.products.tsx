@@ -125,26 +125,26 @@ function ReportsProducts() {
                         <div className="min-w-0">
                           <h3 className="truncate text-sm font-bold">{p.product_name}</h3>
                           <p
-                            className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground"
+                            className="mt-0.5 truncate font-mono text-xs text-muted-foreground"
                             dir="ltr"
                           >
                             {p.sku || "—"}
                           </p>
                         </div>
-                        <span className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary">
+                        <span className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-xs font-bold text-primary">
                           {p.units_sold} {lang === "ar" ? "وحدة" : "units"}
                         </span>
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1">
                         {[p.color, p.size, p.fabric].filter(Boolean).map((value: string) => (
-                          <Badge key={value} variant="outline" className="text-[10px] font-normal">
+                          <Badge key={value} variant="outline" className="text-xs font-normal">
                             {value}
                           </Badge>
                         ))}
                       </div>
                       <dl className="mt-3 grid grid-cols-2 gap-2 border-t border-border/50 pt-3 text-xs">
                         <div>
-                          <dt className="text-[10px] text-muted-foreground">
+                          <dt className="text-xs text-muted-foreground">
                             {lang === "ar" ? "صافي المبيعات" : "Net sales"}
                           </dt>
                           <dd className="mt-0.5 font-mono font-bold">
@@ -152,7 +152,7 @@ function ReportsProducts() {
                           </dd>
                         </div>
                         <div>
-                          <dt className="text-[10px] text-muted-foreground">
+                          <dt className="text-xs text-muted-foreground">
                             {lang === "ar" ? "تكلفة البضاعة" : "COGS"}
                           </dt>
                           <dd className="mt-0.5 font-mono font-bold">
@@ -161,7 +161,7 @@ function ReportsProducts() {
                         </div>
                       </dl>
                       <div className="mt-3 flex items-center justify-between border-t border-border/50 pt-2.5">
-                        <span className="text-[11px] text-muted-foreground">
+                        <span className="text-xs text-muted-foreground">
                           {lang === "ar" ? "المخزون الحالي" : "Current stock"}
                         </span>
                         {p.is_out_of_stock ? (
@@ -175,7 +175,7 @@ function ReportsProducts() {
                         )}
                       </div>
                       {p.is_missing_cost && (
-                        <p className="mt-2 rounded-lg bg-amber-50 px-2 py-1.5 text-[10px] font-semibold text-amber-800">
+                        <p className="mt-2 rounded-lg bg-amber-50 px-2 py-1.5 text-xs font-semibold text-amber-800">
                           {lang === "ar" ? "بيانات التكلفة غير متوفرة" : "Cost data is unavailable"}
                         </p>
                       )}
@@ -211,7 +211,7 @@ function ReportsProducts() {
                             {p.is_missing_cost && (
                               <Badge
                                 variant="destructive"
-                                className="ml-2 mt-1 text-[10px]"
+                                className="ml-2 mt-1 text-xs"
                                 title={
                                   lang === "ar"
                                     ? "بيانات التكلفة مفقودة لهذا المنتج"

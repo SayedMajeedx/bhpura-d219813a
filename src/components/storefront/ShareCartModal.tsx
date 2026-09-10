@@ -144,7 +144,7 @@ export function ShareCartModal({ open, onOpenChange }: ShareCartModalProps) {
                 {t("رابط السلة المختصر", "Short Cart Link")}
               </label>
               {generating && (
-                <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Loader2 className="h-3 w-3 animate-spin" />
                   <span>{t("جاري التجهيز...", "Generating...")}</span>
                 </span>

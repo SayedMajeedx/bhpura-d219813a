@@ -127,7 +127,7 @@ export function ReturnsScopeSwitcher({
             {s.count !== undefined && s.count > 0 && (
               <span
                 className={cn(
-                  "text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full",
+                  "text-xs font-mono font-bold px-1.5 py-0.2 rounded-full",
                   s.badgeClass || (isActive ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"),
                 )}
               >

@@ -86,7 +86,7 @@ export const CustomersToolbar: React.FC<CustomersToolbarProps> = ({
               <SlidersHorizontal className="h-3.5 w-3.5" />
               <span>{isAr ? "التصفية" : "Filters"}</span>
               {activeFilterCount > 0 && (
-                <span className="rounded-full bg-primary-foreground/20 px-1.5 py-0.2 text-[10px] font-bold">
+                <span className="rounded-full bg-primary-foreground/20 px-1.5 py-0.2 text-xs font-bold">
                   {activeFilterCount}
                 </span>
               )}
@@ -97,7 +97,7 @@ export const CustomersToolbar: React.FC<CustomersToolbarProps> = ({
               {isAr ? "تصفية المتقدمة" : "Advanced Filters"}
             </div>
             <div className="space-y-1">
-              <label className="text-[11px] font-medium text-muted-foreground">
+              <label className="text-xs font-medium text-muted-foreground">
                 {isAr ? "المنطقة" : "Region"}
               </label>
               <Select value={regionFilter} onValueChange={onRegionChange}>
@@ -133,7 +133,7 @@ export const CustomersToolbar: React.FC<CustomersToolbarProps> = ({
             >
               <SlidersHorizontal className="h-3.5 w-3.5" />
               {activeFilterCount > 0 && (
-                <span className="rounded-full bg-primary-foreground/20 px-1 py-0.2 text-[10px]">
+                <span className="rounded-full bg-primary-foreground/20 px-1 py-0.2 text-xs">
                   {activeFilterCount}
                 </span>
               )}
@@ -147,7 +147,7 @@ export const CustomersToolbar: React.FC<CustomersToolbarProps> = ({
             </SheetHeader>
             <div className="space-y-3">
               <div className="space-y-1">
-                <label className="text-[11px] font-medium text-muted-foreground">
+                <label className="text-xs font-medium text-muted-foreground">
                   {isAr ? "المنطقة" : "Region"}
                 </label>
                 <Select value={regionFilter} onValueChange={onRegionChange}>

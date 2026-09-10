@@ -333,7 +333,7 @@ function SuperAdminSettings() {
                 ) : (
                   <div className="text-zinc-400 dark:text-zinc-600 flex flex-col items-center gap-1">
                     <ImageIcon className="h-8 w-8" />
-                    <span className="text-[10px] uppercase font-bold tracking-wider">Boutq</span>
+                    <span className="text-xs uppercase font-bold tracking-wider">Boutq</span>
                   </div>
                 )}
               </div>
@@ -357,7 +357,7 @@ function SuperAdminSettings() {
                       <p className="text-xs font-semibold">
                         {lang === "ar" ? "اضغط لرفع الشعار الجديد" : "Click to select logo asset"}
                       </p>
-                      <p className="text-[10px] text-muted-foreground">
+                      <p className="text-xs text-muted-foreground">
                         PNG, JPG, WEBP, SVG (Max 5MB)
                       </p>
                     </div>
@@ -419,7 +419,7 @@ function SuperAdminSettings() {
                 <span>
                   {lang === "ar" ? "سعر الخصم النشط (BHD)" : "Promotional Discounted Price (BHD)"}
                 </span>
-                <span className="text-[10px] text-zinc-400 font-normal">
+                <span className="text-xs text-zinc-400 font-normal">
                   {lang === "ar"
                     ? "[اتركه فارغاً لعدم تطبيق خصم]"
                     : "[Leave blank for no discount]"}
@@ -511,7 +511,7 @@ function SuperAdminSettings() {
                   ) : (
                     <div className="text-zinc-400 dark:text-zinc-600 flex flex-col items-center gap-1.5 text-center">
                       <QrCode className="h-10 w-10 stroke-[1.25]" />
-                      <span className="text-[8px] uppercase font-bold tracking-wider">
+                      <span className="text-xs uppercase font-bold tracking-wider">
                         {lang === "ar" ? "افتراضي" : "Default QR"}
                       </span>
                     </div>
@@ -539,7 +539,7 @@ function SuperAdminSettings() {
                             ? "اضغط لرفع رمز الاستجابة السريع الجديد"
                             : "Click to select BenefitPay QR image"}
                         </p>
-                        <p className="text-[10px] text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                           PNG, JPG, WEBP (Max 5MB)
                         </p>
                       </div>
@@ -571,7 +571,7 @@ function SuperAdminSettings() {
                 className="h-11 font-mono"
                 required
               />
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 {lang === "ar"
                   ? "يظهر للتجار في صفحة الاشتراك مع زر نسخ."
                   : "Shown to merchants on the subscription page with a copy button."}
@@ -624,7 +624,7 @@ function SuperAdminSettings() {
                     ? "السماح بالتعديلات أثناء تقمص الأدوار (Impersonation Write Access)"
                     : "Developer Mode - Impersonation Write Access"}
                 </Label>
-                <p className="text-[11px] text-muted-foreground leading-normal">
+                <p className="text-xs text-muted-foreground leading-normal">
                   {lang === "ar"
                     ? "عند إيقاف هذا الخيار، يتم تجميد جميع لوحات تحكم التجار أثناء تقمص السوبرأدمن لحمايتهم من أي خطأ غير مقصود."
                     : "By default, impersonating superadmins cannot modify merchant records. Switch on to allow live developer write-override safeguards."}
@@ -644,7 +644,7 @@ function SuperAdminSettings() {
           <Button
             type="submit"
             disabled={submitting}
-            className="h-11 px-8 gap-2 bg-primary hover:bg-primary/90 text-white font-semibold text-xs uppercase tracking-wider shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 shrink-0"
+            className="h-11 px-8 gap-2 bg-primary hover:bg-primary/90 text-white font-semibold text-xs shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 shrink-0"
           >
             {submitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />

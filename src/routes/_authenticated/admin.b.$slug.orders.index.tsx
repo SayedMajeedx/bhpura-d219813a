@@ -298,7 +298,7 @@ function OrderItemsSummary({
   const truncated = descriptions.length > 35 ? descriptions.slice(0, 35) + "..." : descriptions;
 
   return (
-    <div className="mt-1.5 text-[11px] font-medium text-muted-foreground flex items-center gap-1.5 bg-secondary/50 px-2 py-0.5 rounded-md w-fit max-w-full">
+    <div className="mt-1.5 text-xs font-medium text-muted-foreground flex items-center gap-1.5 bg-secondary/50 px-2 py-0.5 rounded-md w-fit max-w-full">
       <Package className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
       <span className="font-bold text-foreground">
         {totalQty} {lang === "ar" ? "منتج" : totalQty === 1 ? "item" : "items"}
@@ -2323,7 +2323,7 @@ function OrdersList() {
                                     </span>
                                   </div>
                                   {sku && (
-                                    <div className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                                    <div className="text-xs text-muted-foreground font-mono mt-0.5">
                                       SKU: {sku}
                                     </div>
                                   )}
@@ -3017,7 +3017,7 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
                   }`}
                 >
                   <p className="text-xs font-semibold">{p.label}</p>
-                  <p className="text-[10px] text-muted-foreground mt-1">{p.desc}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{p.desc}</p>
                 </button>
               ))}
             </div>
@@ -3222,7 +3222,7 @@ function OrderQuickInspectSheet({
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Customer Card */}
           <div className="rounded-xl border p-4 space-y-2 bg-card">
-            <h4 className="text-xs uppercase tracking-wider font-bold text-muted-foreground">
+            <h4 className="text-xs font-semibold text-muted-foreground">
               {isAr ? "معلومات العميل" : "Customer Overview"}
             </h4>
             <div className="text-sm font-semibold">
@@ -3236,7 +3236,7 @@ function OrderQuickInspectSheet({
 
           {/* Line Items Breakdown */}
           <div className="space-y-3">
-            <h4 className="text-xs uppercase tracking-wider font-bold text-muted-foreground">
+            <h4 className="text-xs font-semibold text-muted-foreground">
               {isAr ? "المنتجات والأصناف التفصيلية" : "Order Line Items Breakdown"}
             </h4>
             <div className="divide-y border border-border/60 rounded-xl overflow-hidden bg-card shadow-2xs">
@@ -3284,11 +3284,11 @@ function OrderQuickInspectSheet({
                         {itemTitle}
                       </div>
                       {variantTitle && (
-                        <div className="text-[11px] text-muted-foreground font-mono mt-0.5 bg-muted/60 px-2 py-0.5 rounded w-fit border border-border/40">
+                        <div className="text-xs text-muted-foreground font-mono mt-0.5 bg-muted/60 px-2 py-0.5 rounded w-fit border border-border/40">
                           {variantTitle}
                         </div>
                       )}
-                      <div className="text-[10px] text-muted-foreground font-mono mt-1">
+                      <div className="text-xs text-muted-foreground font-mono mt-1">
                         {qty} × {formatMoney(unitPrice, order.currency || "BHD", locale)}
                       </div>
                     </div>
@@ -3340,7 +3340,7 @@ function OrderQuickInspectSheet({
 
             return (
               <div className="rounded-xl border border-border/60 p-4 space-y-2.5 bg-card/80 text-xs shadow-2xs">
-                <h4 className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground border-b border-border/40 pb-2">
+                <h4 className="text-xs font-semibold text-muted-foreground border-b border-border/40 pb-2">
                   {isAr ? "تفاصيل الحساب المالي للفاتورة" : "Financial Price Breakdown"}
                 </h4>
 

@@ -58,6 +58,12 @@
   --radius-overlay: var(--os-radius-panel);
   --font-display: "Cormorant Garamond", ui-serif, Georgia, serif;
   --font-sans: "Inter", "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* Five semantic typography roles (Phase 2 - 12px hard floor) */
+  --text-title: 1.125rem;
+  --text-section: 0.9375rem;
+  --text-body: 0.84375rem;
+  --text-label: 0.75rem;
+  --text-meta: 0.75rem;
 }
 
 /* Majestic Maroon palette
@@ -402,24 +408,42 @@ html.lang-ar .font-display {
   }
 }
 
-/* Smart Adaptive Mobile Typography System
-   Prevents harsh, heavy bold ink-bleed on high-DPI mobile screens,
-   automatically softening weights on mobile while preserving full hierarchy on desktop. */
+/* Phase 2: Five typography scale roles with 12px as the hard floor */
+.txt-title {
+  font-size: 1.125rem; /* 18px */
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.txt-section {
+  font-size: 0.9375rem; /* 15px */
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.txt-body {
+  font-size: 0.84375rem; /* 13.5px */
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+.txt-label {
+  font-size: 0.75rem; /* 12px Hard Floor */
+  line-height: 1.35;
+  font-weight: 500;
+}
+
+.txt-meta {
+  font-size: 0.75rem; /* 12px Hard Floor */
+  line-height: 1.35;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
+/* Mobile Typography & Rendering Performance
+   High-performance text rendering without blunt global font-weight hacks */
 @media (max-width: 640px) {
-  /* Automatically soften 700+ bold weights to clean 600 semibold on mobile viewports */
-  .font-bold,
-  .font-extrabold,
-  .font-black,
-  b,
-  strong {
-    font-weight: 600 !important;
-  }
-
-  /* Soften heading weights for supreme mobile legibility */
-  .admin-typography :is(h1, h2, h3, .font-display, .font-heading) {
-    font-weight: 600 !important;
-  }
-
   /* High performance text rendering */
   body,
   .admin-typography,

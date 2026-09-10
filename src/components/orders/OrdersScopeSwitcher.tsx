@@ -54,7 +54,7 @@ export const OrdersScopeSwitcher: React.FC<OrdersScopeSwitcherProps> = ({
         <span className="truncate">{label}</span>
         <span
           className={cn(
-            "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-extrabold tabular-nums",
+            "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-extrabold tabular-nums",
             isActive ? "bg-primary-foreground/20" : "bg-muted",
           )}
         >
@@ -103,7 +103,7 @@ export const OrdersScopeSwitcher: React.FC<OrdersScopeSwitcherProps> = ({
                 >
                   <Icon className="h-4 w-4" />
                   <span className="flex-1">{isAr ? tab.label_ar : tab.label_en}</span>
-                  <span className="rounded-full bg-muted px-2 text-[10px] font-bold tabular-nums">
+                  <span className="rounded-full bg-muted px-2 text-xs font-bold tabular-nums">
                     {tab.count}
                   </span>
                 </DropdownMenuItem>

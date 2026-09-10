@@ -478,7 +478,7 @@ function ItemTailoringCustomizer({
               : "Customization & Tailoring Options"}
           </span>
         </div>
-        <span className="text-[11px] text-muted-foreground font-normal">
+        <span className="text-xs text-muted-foreground font-normal">
           {isAr ? "تفصيل حسب الطلب" : "Made to order"}
         </span>
       </div>
@@ -496,12 +496,12 @@ function ItemTailoringCustomizer({
                   {(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.name_ar || "Fit"} Passport
                 </span>
                 {hasAppliedPassport && (
-                  <span className="rounded-full bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 text-[10px] font-semibold">
+                  <span className="rounded-full bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 text-xs font-semibold">
                     {isAr ? "مطبّق على البند" : "Applied"}
                   </span>
                 )}
               </div>
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 {isAr ? "مقاسات الخياطة والتفصيل المعتمدة" : "Standard tailoring measurements"}
               </p>
             </div>
@@ -509,7 +509,7 @@ function ItemTailoringCustomizer({
 
           <div className="flex items-center gap-2">
             {/* Profile Selector (Abaya / Dress) */}
-            <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-[11px]">
+            <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-xs">
               <button
                 type="button"
                 onClick={() => setSelectedProfile("abaya")}
@@ -535,7 +535,7 @@ function ItemTailoringCustomizer({
             </div>
 
             {/* Unit Selector (in / cm) */}
-            <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-[11px]">
+            <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-xs">
               <button
                 type="button"
                 onClick={() => setUnit("in")}
@@ -572,12 +572,12 @@ function ItemTailoringCustomizer({
             }`}
           >
             <div>
-              <p className="font-bold text-[11px]">
+              <p className="font-bold text-xs">
                 {isAr
                   ? `مقاسات العميل المحفوظة متوفرة (إصدار V${passport.version})`
                   : `Saved customer measurements available (V${passport.version})`}
               </p>
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 {passportComplete
                   ? isAr
                     ? "يمكن تطبيق المقاسات المسجلة للعميل مباشرة"
@@ -602,9 +602,9 @@ function ItemTailoringCustomizer({
 
         {/* Measurements Input Grid */}
         <div className="space-y-1.5">
-          <Label className="text-[11px] font-semibold text-foreground flex items-center justify-between">
+          <Label className="text-xs font-semibold text-foreground flex items-center justify-between">
             <span>{isAr ? "قياسات التفصيل:" : "Tailoring Measurements:"}</span>
-            <span className="text-[10px] text-muted-foreground font-normal">
+            <span className="text-xs text-muted-foreground font-normal">
               {isAr ? `الوحدة: ${unit === "in" ? "بوصة (إنش)" : "سنتيمتر"}` : `Unit: ${unit}`}
             </span>
           </Label>
@@ -613,7 +613,7 @@ function ItemTailoringCustomizer({
               const val = getMeasurementVal(key);
               return (
                 <div key={key} className="space-y-1">
-                  <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-0.5">
+                  <span className="text-xs font-medium text-muted-foreground flex items-center gap-0.5">
                     {isAr ? ar : en}
                     {req && <span className="text-destructive font-bold">*</span>}
                   </span>
@@ -627,7 +627,7 @@ function ItemTailoringCustomizer({
                       placeholder={unit}
                       className="h-8 text-xs bg-background pe-7"
                     />
-                    <span className="absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none uppercase">
+                    <span className="absolute end-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none uppercase">
                       {unit}
                     </span>
                   </div>
@@ -641,15 +641,15 @@ function ItemTailoringCustomizer({
       {/* 📝 Tailoring Notes & Workshop Instructions ("بوكس ملاحظات") */}
       <div className="rounded-xl border border-border bg-card p-3.5 space-y-1.5 shadow-2xs">
         <div className="flex items-center justify-between">
-          <Label className="text-[11px] font-bold text-foreground flex items-center gap-1.5">
+          <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
             <FileText className="h-3.5 w-3.5 text-primary" />
             <span>{isAr ? "ملاحظات وتفاصيل التفصيل والخياط:" : "Tailoring & Workshop Notes:"}</span>
           </Label>
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-xs text-muted-foreground">
             {isAr ? "تعليمات للمشغل" : "Workshop instructions"}
           </span>
         </div>
-        <p className="text-[10px] text-muted-foreground leading-relaxed">
+        <p className="text-xs text-muted-foreground leading-relaxed">
           {isAr
             ? "دوّن أي تفاصيل خاصة للخياطة (مثل: بطانة كاملة، تعديل طول الكم، خياطة مخفية، فتحة أزرار، تضييق الخصر...)"
             : "Enter any workshop instructions (e.g., full lining, specific sleeve adjustment, hidden buttons)..."}
@@ -3158,7 +3158,7 @@ function OrderDetail() {
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="h-6 px-2 text-[11px] font-semibold text-primary"
+                        className="h-6 px-2 text-xs font-semibold text-primary"
                         onClick={() => setNewCustomerOpen(true)}
                       >
                         <Plus className="h-3 w-3 me-1" />
@@ -3208,7 +3208,7 @@ function OrderDetail() {
                     const legacyLines = formatDeliveryAddress(selected, lang);
                     return (
                       <div className="mt-4 pt-4 border-t border-border text-start">
-                        <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                        <p className="text-xs text-muted-foreground mb-1">
                           {order.fulfillment_method === "digital"
                             ? lang === "ar"
                               ? "بيانات العميل"
@@ -3302,7 +3302,7 @@ function OrderDetail() {
                     <div className="mt-5 overflow-hidden rounded-xl border bg-muted/20 text-start shadow-sm">
                       <div className="flex flex-col gap-2.5 border-b bg-muted/50 px-4 py-3">
                         <div>
-                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          <p className="text-xs font-semibold text-muted-foreground">
                             {lang === "ar" ? "طريقة التسليم" : "FULFILLMENT"}
                           </p>
                           <p className="text-base font-semibold leading-tight text-foreground mt-0.5">
@@ -3394,14 +3394,14 @@ function OrderDetail() {
                                 <div className="space-y-2 pt-2 border-t">
                                   <div className="flex flex-wrap items-center justify-between gap-2">
                                     {notifiedAgo ? (
-                                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800 text-[11px] font-bold px-2.5 py-1">
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800 text-xs font-bold px-2.5 py-1">
                                         🔔{" "}
                                         {lang === "ar"
                                           ? `تم الإشعار (${notifiedAgo})`
                                           : `Notified ${notifiedAgo}`}
                                       </span>
                                     ) : (
-                                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800 text-[11px] font-bold px-2.5 py-1">
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800 text-xs font-bold px-2.5 py-1">
                                         ⏳{" "}
                                         {lang === "ar"
                                           ? "لم يتم الإشعار عبر واتساب بعد"
@@ -3736,11 +3736,11 @@ function OrderDetail() {
                                 (product?.name ?? (isAr ? "منتج مخصص" : "Custom Item"))}
                             </p>
                             {sku ? (
-                              <span className="inline-flex items-center text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-muted/80 text-muted-foreground border border-border/60 mt-1">
+                              <span className="inline-flex items-center text-xs font-mono font-medium px-2 py-0.5 rounded bg-muted/80 text-muted-foreground border border-border/60 mt-1">
                                 SKU: {sku}
                               </span>
                             ) : (
-                              <span className="text-[11px] text-muted-foreground">
+                              <span className="text-xs text-muted-foreground">
                                 {(it.custom_field_values && it.custom_field_values.length > 0) ||
                                 String(it.selected_variant?.size ?? "").includes("تفصيل")
                                   ? isAr
@@ -3775,7 +3775,7 @@ function OrderDetail() {
                             </span>
                           </div>
                           <div className="text-end">
-                            <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">
+                            <span className="text-xs text-muted-foreground font-semibold block">
                               {isAr ? "المجموع" : "Total"}
                             </span>
                             <span className="font-extrabold text-sm text-foreground">
@@ -3940,12 +3940,12 @@ function OrderDetail() {
                                 </span>
                                 <div className="flex items-center gap-2">
                                   {it.unit_cost != null && Number(it.unit_cost) > 0 ? (
-                                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-800 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">
+                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-800 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">
                                       {isAr ? "التكلفة المسجلة:" : "Cost:"}{" "}
                                       {formatMoney(it.unit_cost, currency)}
                                     </span>
                                   ) : (
-                                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-800 dark:text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-md">
+                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-800 dark:text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-md">
                                       {isAr
                                         ? "بدون تكلفة مسجلة (اضغط تعديل لإضافتها)"
                                         : "No cost set (click edit to set)"}
@@ -3977,7 +3977,7 @@ function OrderDetail() {
                                   {it.selected_variant && (
                                     <div className="flex flex-wrap gap-2">
                                       {it.selected_variant.size && (
-                                        <span className="inline-flex items-center gap-1 bg-background border border-border/80 px-2.5 py-1 rounded-lg text-[11px] font-medium text-foreground">
+                                        <span className="inline-flex items-center gap-1 bg-background border border-border/80 px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
                                           <span className="text-muted-foreground">
                                             {isAr ? "المقاس:" : "Size:"}
                                           </span>
@@ -3993,7 +3993,7 @@ function OrderDetail() {
                                         </span>
                                       )}
                                       {it.selected_variant.color && (
-                                        <span className="inline-flex items-center gap-1.5 bg-background border border-border/80 px-2.5 py-1 rounded-lg text-[11px] font-medium text-foreground">
+                                        <span className="inline-flex items-center gap-1.5 bg-background border border-border/80 px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
                                           <span className="text-muted-foreground">
                                             {isAr ? "اللون:" : "Color:"}
                                           </span>
@@ -4001,7 +4001,7 @@ function OrderDetail() {
                                         </span>
                                       )}
                                       {it.selected_variant.fabric && (
-                                        <span className="inline-flex items-center gap-1 bg-background border border-border/80 px-2.5 py-1 rounded-lg text-[11px] font-medium text-foreground">
+                                        <span className="inline-flex items-center gap-1 bg-background border border-border/80 px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
                                           <span className="text-muted-foreground">
                                             {isAr ? "القماش:" : "Fabric:"}
                                           </span>
@@ -4013,7 +4013,7 @@ function OrderDetail() {
                                   {it.custom_field_values && it.custom_field_values.length > 0 && (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 pt-1 border-t border-border/50">
                                       {it.custom_field_values.map((cf, i) => (
-                                        <div key={i} className="text-[11px]">
+                                        <div key={i} className="text-xs">
                                           <span className="font-bold text-muted-foreground">
                                             {isAr
                                               ? cf.label_ar || cf.label_en || cf.key
@@ -4489,7 +4489,7 @@ function OrderDetail() {
                 <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
                   <div className="flex items-center gap-2">
                     <CreditCard className="h-4 w-4 text-primary" />
-                    <span className="text-xs font-bold uppercase tracking-wider text-foreground">
+                    <span className="text-xs font-semibold text-foreground">
                       {lang === "ar" ? "الملخص المالي والرسوم" : "Financial Summary & Ledger"}
                     </span>
                   </div>
@@ -4518,7 +4518,7 @@ function OrderDetail() {
                 {/* Integrated Order & Payment Channel Summary Strip */}
                 <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted/40 p-2.5 text-xs">
                   <div>
-                    <span className="text-[11px] text-muted-foreground block font-medium">
+                    <span className="text-xs text-muted-foreground block font-medium">
                       {t("orderDetail.orderDate")}
                     </span>
                     <span className="font-bold text-foreground">
@@ -4527,13 +4527,13 @@ function OrderDetail() {
                   </div>
                   <div>
                     <div className="flex items-center justify-between gap-1">
-                      <span className="text-[11px] text-muted-foreground block font-medium">
+                      <span className="text-xs text-muted-foreground block font-medium">
                         {t("orderDetail.paymentMethod")}
                       </span>
                       <button
                         type="button"
                         onClick={() => setManagePaymentOpen(true)}
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline focus-visible:outline-none cursor-pointer"
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline focus-visible:outline-none cursor-pointer"
                         title={lang === "ar" ? "تعديل طريقة الدفع" : "Edit payment method"}
                       >
                         <Pencil className="h-2.5 w-2.5 shrink-0" />
@@ -4546,7 +4546,7 @@ function OrderDetail() {
                     </span>
                   </div>
                   {getPaymentGatewayReference(order) && (
-                    <div className="col-span-2 border-t border-border/40 pt-1.5 flex items-center justify-between font-mono text-[11px]">
+                    <div className="col-span-2 border-t border-border/40 pt-1.5 flex items-center justify-between font-mono text-xs">
                       <span className="text-muted-foreground">Gateway Ref:</span>
                       <span className="font-bold text-foreground truncate max-w-[200px]">
                         {getPaymentGatewayReference(order)}
@@ -4617,7 +4617,7 @@ function OrderDetail() {
                         <div className="flex items-center justify-between mb-1 text-xs">
                           <Label className="text-xs font-bold">{t("orderDetail.discount")}</Label>
                           {!appliedPromo && !isReadOnly && (
-                            <div className="flex items-center rounded-md border p-0.5 text-[10px] bg-background">
+                            <div className="flex items-center rounded-md border p-0.5 text-xs bg-background">
                               <button
                                 type="button"
                                 className={cn(
@@ -4711,7 +4711,7 @@ function OrderDetail() {
                           {!isReadOnly && (
                             <button
                               type="button"
-                              className="text-[10px] text-primary font-bold hover:underline"
+                              className="text-xs text-primary font-bold hover:underline"
                               onClick={() => {
                                 if (Number(order.tax_rate) > 0) {
                                   setLastNonZeroTaxRate(Number(order.tax_rate));
@@ -4776,7 +4776,7 @@ function OrderDetail() {
                         {formatMoney(totals.total, currency)}
                       </span>
                       <span
-                        className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${PAYMENT_BADGE_CLASSES[paymentBadge]}`}
+                        className={`text-xs  px-2 py-0.5 rounded-full border ${PAYMENT_BADGE_CLASSES[paymentBadge]}`}
                       >
                         {t(`payStatus.${paymentBadge}`)}
                       </span>
@@ -4836,7 +4836,7 @@ function OrderDetail() {
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2 font-mono text-[11px] pt-1.5 border-t border-border/40 text-muted-foreground">
+                      <div className="grid grid-cols-2 gap-2 font-mono text-xs pt-1.5 border-t border-border/40 text-muted-foreground">
                         <div>
                           <span>{isAr ? "تكلفة المنتجات:" : "Product Cost:"} </span>
                           <strong className="text-foreground">
@@ -5136,9 +5136,9 @@ function OrderDetail() {
                             <p className="font-semibold text-xs sm:text-sm text-foreground truncate">
                               {title}
                             </p>
-                            <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-[11px] text-muted-foreground">
+                            <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
                               {sku && (
-                                <span className="font-mono bg-muted/80 px-1.5 py-0.5 rounded text-[10px]">
+                                <span className="font-mono bg-muted/80 px-1.5 py-0.5 rounded text-xs">
                                   {sku}
                                 </span>
                               )}
@@ -5155,7 +5155,7 @@ function OrderDetail() {
                           </p>
                           <span
                             className={cn(
-                              "text-[10px] font-semibold px-1.5 py-0.5 rounded inline-block mt-0.5",
+                              "text-xs font-semibold px-1.5 py-0.5 rounded inline-block mt-0.5",
                               totalStock > 0
                                 ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
                                 : "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300",
@@ -5232,10 +5232,10 @@ function OrderDetail() {
               </div>
               <div className="border-t pt-3 space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <Label className="text-xs font-semibold text-muted-foreground">
                     {lang === "ar" ? "عنوان التوصيل الافتراضي" : "Default Delivery Address"}
                   </Label>
-                  <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                  <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
                     {lang === "ar" ? "اختياري" : "Optional"}
                   </span>
                 </div>

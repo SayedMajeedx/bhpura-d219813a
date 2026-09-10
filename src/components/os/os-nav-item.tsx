@@ -34,11 +34,11 @@ export const OsNavItem = React.forwardRef<HTMLAnchorElement, OsNavItemProps>(
         {badge !== undefined && (
           <span
             className={cn(
-              "ms-auto rounded-full px-2 py-0.5 text-[10px] font-bold tracking-tight shrink-0",
+              "ms-auto rounded-full px-2 py-0.5 text-xs font-bold tracking-tight shrink-0",
               active
                 ? "bg-primary-foreground/20 text-primary-foreground"
                 : "bg-muted text-muted-foreground",
-              collapsed && "absolute -top-1 -end-1 px-1 py-0 text-[9px]",
+              collapsed && "absolute -top-1 -end-1 px-1 py-0 text-xs",
             )}
           >
             {badge}

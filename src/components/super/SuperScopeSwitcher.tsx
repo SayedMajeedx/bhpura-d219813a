@@ -75,7 +75,7 @@ export function SuperScopeSwitcher({
             {s.badge !== undefined && (
               <span
                 className={cn(
-                  "ms-1 px-1.5 py-0.2 text-[10px] font-extrabold rounded-full",
+                  "ms-1 px-1.5 py-0.2 text-xs font-extrabold rounded-full",
                   isActive
                     ? "bg-white/20 text-white"
                     : "bg-amber-500/15 text-amber-700 dark:text-amber-300",

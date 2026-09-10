@@ -747,7 +747,7 @@ function StoreHeader() {
                 <span className="hidden sm:inline">{t("المفضلة", "Wishlist")}</span>
                 {wishlistCount > 0 && (
                   <span
-                    className="absolute -top-1 -right-1 grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-[10px] font-semibold"
+                    className="absolute -top-1 -right-1 grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-xs font-semibold"
                     style={{
                       backgroundColor: "var(--sf-btn-primary-bg)",
                       color: "var(--sf-btn-primary-fg)",
@@ -771,7 +771,7 @@ function StoreHeader() {
                 <span className="hidden sm:inline">{t("السلة", "Cart")}</span>
                 {cartCount > 0 && (
                   <span
-                    className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-semibold grid place-items-center"
+                    className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-xs font-semibold grid place-items-center"
                     style={{
                       backgroundColor: "var(--sf-btn-primary-bg)",
                       color: "var(--sf-btn-primary-fg)",
@@ -2117,11 +2117,11 @@ function SearchBar() {
                                 </span>
                                 {oldPrice > Number(price) && (
                                   <>
-                                    <span className="line-through text-[10px]">
+                                    <span className="line-through text-xs">
                                       {formatPrice(oldPrice, currency, lang)}
                                     </span>
                                     {discount > 0 && (
-                                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-red-100 text-red-700 dark:bg-red-950/45 dark:text-red-400 font-medium">
+                                      <span className="text-xs px-1.5 py-0.2 rounded-full bg-red-100 text-red-700 dark:bg-red-950/45 dark:text-red-400 font-medium">
                                         {discount}% {t("خصم", "OFF")}
                                       </span>
                                     )}
@@ -2297,7 +2297,7 @@ function StorefrontFooter() {
           )}
 
           {socials.length > 0 && (
-            <nav className="flex flex-wrap justify-center items-center gap-x-4 gap-y-1 text-[11px] opacity-75 uppercase tracking-widest">
+            <nav className="flex flex-wrap justify-center items-center gap-x-4 gap-y-1 text-xs opacity-75 uppercase tracking-widest">
               {socials.map((s, i) => (
                 <a
                   key={`${s.name}-${i}`}
@@ -2315,7 +2315,7 @@ function StorefrontFooter() {
 
           {/* Custom Boutique Trust & Security Reassurance Bar */}
           {activeBadges.length > 0 && (
-            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 my-2 py-2.5 px-4 text-[11px] font-medium opacity-90 border-y border-white/10 rounded-xl bg-white/5 backdrop-blur-xs max-w-3xl w-full">
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 my-2 py-2.5 px-4 text-xs font-medium opacity-90 border-y border-white/10 rounded-xl bg-white/5 backdrop-blur-xs max-w-3xl w-full">
               {activeBadges.map((badge, idx) => (
                 <React.Fragment key={badge.id || idx}>
                   {idx > 0 && <div className="hidden sm:inline text-white/20">•</div>}
@@ -2328,7 +2328,7 @@ function StorefrontFooter() {
             </div>
           )}
 
-          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] opacity-70 border-t border-border pt-2 w-full max-w-2xl">
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs opacity-70 border-t border-border pt-2 w-full max-w-2xl">
             {settings.show_footer_name && (
               <span className="font-semibold" style={{ color: "var(--sf-footer-fg)" }}>
                 {lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en}
@@ -2483,7 +2483,7 @@ function StorefrontFooter() {
                   className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-xs p-3 flex flex-col items-center justify-center text-center gap-1.5 min-h-[72px]"
                 >
                   {renderTrustBadgeIcon(badge.icon, "h-5 w-5", badge.color)}
-                  <span className="font-medium text-[11px] leading-tight">
+                  <span className="font-medium text-xs leading-tight">
                     {isAr ? badge.text_ar || badge.text_en : badge.text_en || badge.text_ar}
                   </span>
                 </div>
@@ -2492,7 +2492,7 @@ function StorefrontFooter() {
           )}
 
           {/* Section 5: Bottom Bar */}
-          <div className="pt-3 border-t border-white/10 flex flex-col items-center gap-1.5 text-[11px] opacity-75">
+          <div className="pt-3 border-t border-white/10 flex flex-col items-center gap-1.5 text-xs opacity-75">
             {settings.show_footer_name && (
               <span className="font-semibold" style={{ color: "var(--sf-footer-fg)" }}>
                 {lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en}

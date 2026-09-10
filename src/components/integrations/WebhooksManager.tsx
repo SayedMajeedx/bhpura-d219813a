@@ -174,7 +174,7 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
 
       {/* Endpoints List */}
       <div className="space-y-4">
-        <h4 className="text-sm font-semibold text-foreground uppercase tracking-wider">
+        <h4 className="text-sm font-semibold text-foreground">
           {isAr ? "الروابط المسجلة" : "Configured Endpoints"} ({endpoints.length})
         </h4>
 
@@ -297,7 +297,7 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
         ) : (
           <div className="border border-border rounded-lg overflow-x-auto bg-card">
             <table className="w-full text-xs text-left rtl:text-right">
-              <thead className="bg-muted text-muted-foreground uppercase text-[11px] font-semibold">
+              <thead className="bg-muted text-muted-foreground uppercase text-xs font-semibold">
                 <tr>
                   <th className="px-4 py-3">{isAr ? "الحدث" : "Event"}</th>
                   <th className="px-4 py-3">{isAr ? "الحالة" : "Status"}</th>
@@ -331,7 +331,7 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
                         {log.response_status ? (
                           <Badge
                             variant={log.response_status < 300 ? "default" : "destructive"}
-                            className="text-[10px] px-1.5 py-0"
+                            className="text-xs px-1.5 py-0"
                           >
                             {log.response_status}
                           </Badge>

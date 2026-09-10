@@ -607,7 +607,7 @@ export function SuperPlansManager() {
           className="text-xs font-semibold gap-1.5 h-9 rounded-xl"
         >
           <span>{isAr ? "جميع الباقات" : "All Plans"}</span>
-          <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-mono">
+          <Badge variant="secondary" className="px-1.5 py-0 text-xs font-mono">
             {plans.length}
           </Badge>
         </Button>
@@ -621,7 +621,7 @@ export function SuperPlansManager() {
         >
           <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
           <span>{isAr ? "النشطة والمتاحة" : "Active & Public"}</span>
-          <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-mono">
+          <Badge variant="secondary" className="px-1.5 py-0 text-xs font-mono">
             {activeCount}
           </Badge>
         </Button>
@@ -635,7 +635,7 @@ export function SuperPlansManager() {
         >
           <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
           <span>{isAr ? "المخفية عن العامة" : "Hidden"}</span>
-          <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-mono">
+          <Badge variant="secondary" className="px-1.5 py-0 text-xs font-mono">
             {hiddenCount}
           </Badge>
         </Button>
@@ -649,7 +649,7 @@ export function SuperPlansManager() {
         >
           <span className="h-2 w-2 rounded-full bg-destructive shrink-0" />
           <span>{isAr ? "الملغاة والمعطلة" : "Deactivated / Cancelled"}</span>
-          <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-mono">
+          <Badge variant="secondary" className="px-1.5 py-0 text-xs font-mono">
             {inactiveCount}
           </Badge>
         </Button>
@@ -697,7 +697,7 @@ export function SuperPlansManager() {
                         {!plan.is_active ? (
                           <Badge
                             variant="outline"
-                            className="text-[10px] bg-destructive/10 text-destructive border-destructive/20 font-bold"
+                            className="text-xs bg-destructive/10 text-destructive border-destructive/20 font-bold"
                           >
                             <PowerOff className="h-2.5 w-2.5 me-1" />
                             {isAr ? "خطة ملغاة / معطلة" : "Deactivated / Cancelled"}
@@ -705,7 +705,7 @@ export function SuperPlansManager() {
                         ) : !plan.is_public ? (
                           <Badge
                             variant="outline"
-                            className="text-[10px] bg-amber-500/10 text-amber-600 border-amber-500/20 font-bold"
+                            className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/20 font-bold"
                           >
                             <EyeOff className="h-2.5 w-2.5 me-1" />
                             {isAr ? "مخفية عن العامة" : "Hidden"}
@@ -713,14 +713,14 @@ export function SuperPlansManager() {
                         ) : (
                           <Badge
                             variant="outline"
-                            className="text-[10px] bg-emerald-500/10 text-emerald-600 border-emerald-500/20 font-bold"
+                            className="text-xs bg-emerald-500/10 text-emerald-600 border-emerald-500/20 font-bold"
                           >
                             <Check className="h-2.5 w-2.5 me-1" />
                             {isAr ? "نشطة ومتاحة" : "Active"}
                           </Badge>
                         )}
 
-                        <Badge variant="secondary" className="text-[10px] font-medium">
+                        <Badge variant="secondary" className="text-xs font-medium">
                           {plan.billing_interval_mode === "monthly_only"
                             ? (isAr ? "شهري فقط" : "Monthly Only")
                             : plan.billing_interval_mode === "annual_only"
@@ -820,7 +820,7 @@ export function SuperPlansManager() {
                     </div>
 
                     {plan.trial_days > 0 && (
-                      <div className="flex items-center gap-1 text-[11px] font-mono text-primary">
+                      <div className="flex items-center gap-1 text-xs font-mono text-primary">
                         <Clock className="h-3 w-3" />
                         <span>
                           {plan.trial_days} {isAr ? "أيام تجربة" : "Days Trial"}
@@ -834,7 +834,7 @@ export function SuperPlansManager() {
                   {/* Current Active Pricing */}
                   <div className="p-3 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] uppercase font-bold text-muted-foreground block">
+                      <span className="text-xs uppercase font-bold text-muted-foreground block">
                         {isAr ? "الإصدار الحالي النشط" : "Current Active Version"}
                       </span>
                       <span className="text-xs font-bold text-foreground">
@@ -844,13 +844,13 @@ export function SuperPlansManager() {
                     <div className="text-right">
                       <span className="text-xs font-mono font-bold text-foreground block">
                         {currentVer?.price_monthly ?? 0} {currentVer?.currency || "BHD"}
-                        <span className="text-[10px] font-normal text-muted-foreground">
+                        <span className="text-xs font-normal text-muted-foreground">
                           /{isAr ? "شهر" : "mo"}
                         </span>
                       </span>
-                      <span className="text-[10px] font-mono text-muted-foreground">
+                      <span className="text-xs font-mono text-muted-foreground">
                         {currentVer?.price_annual ?? 0} {currentVer?.currency || "BHD"}
-                        <span className="text-[10px]">/{isAr ? "سنة" : "yr"}</span>
+                        <span className="text-xs">/{isAr ? "سنة" : "yr"}</span>
                       </span>
                     </div>
                   </div>
@@ -882,19 +882,19 @@ export function SuperPlansManager() {
                         {planVers.map((v) => (
                           <div
                             key={v.id}
-                            className="p-2 rounded-lg bg-muted/30 flex items-center justify-between text-[11px]"
+                            className="p-2 rounded-lg bg-muted/30 flex items-center justify-between text-xs"
                           >
                             <div>
                               <span className="font-bold text-foreground">v{v.version_number}</span>
                               {v.is_current && (
                                 <Badge
                                   variant="outline"
-                                  className="ms-1 text-[9px] bg-emerald-500/10 text-emerald-600"
+                                  className="ms-1 text-xs bg-emerald-500/10 text-emerald-600"
                                 >
                                   {isAr ? "نشط" : "Current"}
                                 </Badge>
                               )}
-                              <p className="text-[10px] text-muted-foreground truncate max-w-[150px]">
+                              <p className="text-xs text-muted-foreground truncate max-w-[150px]">
                                 {v.change_summary || "No notes"}
                               </p>
                             </div>
@@ -910,7 +910,7 @@ export function SuperPlansManager() {
                   {/* Quick Action Switches Bar */}
                   <div className="p-2.5 rounded-xl bg-muted/20 border border-border/50 flex items-center justify-between gap-3 text-xs">
                     <div className="flex items-center gap-2">
-                      <Label htmlFor={`pub-${plan.id}`} className="text-[11px] font-medium text-muted-foreground cursor-pointer">
+                      <Label htmlFor={`pub-${plan.id}`} className="text-xs font-medium text-muted-foreground cursor-pointer">
                         {plan.is_public ? (isAr ? "معروضة" : "Public") : (isAr ? "مخفية" : "Hidden")}
                       </Label>
                       <Switch
@@ -921,7 +921,7 @@ export function SuperPlansManager() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Label htmlFor={`act-${plan.id}`} className="text-[11px] font-medium text-muted-foreground cursor-pointer">
+                      <Label htmlFor={`act-${plan.id}`} className="text-xs font-medium text-muted-foreground cursor-pointer">
                         {plan.is_active ? (isAr ? "مفعلة" : "Active") : (isAr ? "ملغاة" : "Cancelled")}
                       </Label>
                       <Switch
@@ -1123,7 +1123,7 @@ export function SuperPlansManager() {
 
               {/* Initial Feature Allocations Matrix */}
               <div className="space-y-2">
-                <Label className="font-bold uppercase tracking-wider text-muted-foreground block">
+                <Label className="font-semibold text-muted-foreground block">
                   {isAr ? "تخصيص المزايا والحدود للإصدار الأول v1" : "Feature Allocations for Version 1"}
                 </Label>
 
@@ -1140,7 +1140,7 @@ export function SuperPlansManager() {
                         <div className="space-y-0.5 max-w-[280px]">
                           <div className="flex items-center gap-1.5 font-bold text-foreground">
                             <span>{isAr ? feat.name_ar : feat.name_en}</span>
-                            <span className="font-mono text-[10px] text-muted-foreground font-normal">
+                            <span className="font-mono text-xs text-muted-foreground font-normal">
                               ({feat.key})
                             </span>
                           </div>
@@ -1149,7 +1149,7 @@ export function SuperPlansManager() {
                         <div className="flex items-center gap-3 shrink-0">
                           {isBool ? (
                             <div className="flex items-center gap-2">
-                              <span className="text-[11px] font-semibold text-muted-foreground">
+                              <span className="text-xs font-semibold text-muted-foreground">
                                 {currentVal.enabled ? (isAr ? "مفعل" : "Enabled") : (isAr ? "معطل" : "Disabled")}
                               </span>
                               <Switch
@@ -1164,7 +1164,7 @@ export function SuperPlansManager() {
                             </div>
                           ) : (
                             <div className="flex items-center gap-1.5">
-                              <Label className="text-[10px] text-muted-foreground">
+                              <Label className="text-xs text-muted-foreground">
                                 {isAr ? "الحد (-1 غير محدود):" : "Limit (-1 for unlimited):"}
                               </Label>
                               <Input
@@ -1183,7 +1183,7 @@ export function SuperPlansManager() {
                                 className="w-24 h-8 font-mono text-xs"
                               />
                               {feat.unit && (
-                                <span className="text-[10px] text-muted-foreground">{feat.unit}</span>
+                                <span className="text-xs text-muted-foreground">{feat.unit}</span>
                               )}
                             </div>
                           )}
@@ -1485,7 +1485,7 @@ export function SuperPlansManager() {
 
               {/* Entitlements & Feature Limits Allocation Matrix */}
               <div className="space-y-3">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
+                <Label className="text-xs font-semibold text-muted-foreground block">
                   {isAr ? "تخصيص المزايا والحدود لهذا الإصدار" : "Feature Allocations & Quotas for this Version"}
                 </Label>
 
@@ -1502,11 +1502,11 @@ export function SuperPlansManager() {
                         <div className="space-y-0.5 max-w-[280px]">
                           <div className="flex items-center gap-1.5 font-bold text-foreground">
                             <span>{isAr ? feat.name_ar : feat.name_en}</span>
-                            <span className="font-mono text-[10px] text-muted-foreground font-normal">
+                            <span className="font-mono text-xs text-muted-foreground font-normal">
                               ({feat.key})
                             </span>
                           </div>
-                          <p className="text-[11px] text-muted-foreground leading-tight">
+                          <p className="text-xs text-muted-foreground leading-tight">
                             {isAr ? feat.description_ar : feat.description_en}
                           </p>
                         </div>
@@ -1514,7 +1514,7 @@ export function SuperPlansManager() {
                         <div className="flex items-center gap-3 shrink-0">
                           {isBool ? (
                             <div className="flex items-center gap-2">
-                              <span className="text-[11px] font-semibold text-muted-foreground">
+                              <span className="text-xs font-semibold text-muted-foreground">
                                 {currentVal.enabled ? (isAr ? "مفعل" : "Enabled") : (isAr ? "معطل" : "Disabled")}
                               </span>
                               <Switch
@@ -1530,7 +1530,7 @@ export function SuperPlansManager() {
                           ) : (
                             <div className="flex items-center gap-2">
                               <div className="flex items-center gap-1.5">
-                                <Label className="text-[10px] text-muted-foreground">
+                                <Label className="text-xs text-muted-foreground">
                                   {isAr ? "الحد (-1 غير محدود):" : "Limit (-1 for unlimited):"}
                                 </Label>
                                 <Input
@@ -1549,7 +1549,7 @@ export function SuperPlansManager() {
                                   className="w-24 h-8 font-mono text-xs"
                                 />
                                 {feat.unit && (
-                                  <span className="text-[10px] text-muted-foreground">{feat.unit}</span>
+                                  <span className="text-xs text-muted-foreground">{feat.unit}</span>
                                 )}
                               </div>
                             </div>
@@ -1568,7 +1568,7 @@ export function SuperPlansManager() {
                   <span className="font-bold block">
                     {isAr ? "معاينة التأثير قبل الحفظ" : "Pre-save Impact Preview"}
                   </span>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     {isAr
                       ? `سيبدأ المشتركون الجدد على الإصدار v${(versions.filter((v) => v.plan_id === versioningPlan.id).length || 0) + 1} فور الحفظ. المشتركون الحاليون (${subscribersCountByPlan[versioningPlan.id] || 0} متجر) سيبقون على عقودهم السابقة دون انقطاع.`
                       : `New subscribers will be provisioned on v${(versions.filter((v) => v.plan_id === versioningPlan.id).length || 0) + 1}. Existing ${subscribersCountByPlan[versioningPlan.id] || 0} active stores remain protected on their existing plan version.`}

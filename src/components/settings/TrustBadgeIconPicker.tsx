@@ -119,7 +119,7 @@ export function TrustBadgeIconPicker({
               <Sparkles className="h-3.5 w-3.5 text-primary" />
               {isAr ? "اختيار أيقونة الشارة" : "Select Badge Icon"}
             </span>
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               {filteredIcons.length} {isAr ? "أيقونة متاحة" : "icons"}
             </span>
           </div>
@@ -156,7 +156,7 @@ export function TrustBadgeIconPicker({
                 variant={selectedCategory === cat.id ? "default" : "ghost"}
                 size="sm"
                 className={cn(
-                  "h-6 px-2 text-[11px] rounded-md shrink-0 font-normal",
+                  "h-6 px-2 text-xs rounded-md shrink-0 font-normal",
                   selectedCategory === cat.id && "font-semibold"
                 )}
                 onClick={() => setSelectedCategory(cat.id)}
@@ -213,7 +213,7 @@ export function TrustBadgeIconPicker({
                         </span>
                         {isSelected && <Check className="h-3 w-3 text-primary shrink-0" />}
                       </div>
-                      <p className="text-[10px] text-muted-foreground line-clamp-1 leading-snug">
+                      <p className="text-xs text-muted-foreground line-clamp-1 leading-snug">
                         {isAr ? item.description_ar : item.description_en}
                       </p>
                     </div>
@@ -225,7 +225,7 @@ export function TrustBadgeIconPicker({
         </div>
 
         {/* Footer tip */}
-        <div className="p-2 border-t border-border bg-muted/20 text-[10px] text-muted-foreground text-center">
+        <div className="p-2 border-t border-border bg-muted/20 text-xs text-muted-foreground text-center">
           {isAr
             ? "تلميح: يمكنك البحث بكلمات مثل 'بنفت'، 'تشفير'، 'توصيل'، 'عباية'"
             : "Tip: Search for keywords like 'benefit', 'ssl', 'courier', 'guarantee'"}

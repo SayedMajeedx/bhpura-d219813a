@@ -62,7 +62,7 @@ export function DiscountsWorkQueue({
       <div className="overflow-x-auto">
         <table className="w-full text-start text-xs border-collapse">
           <thead>
-            <tr className="border-b border-border/60 bg-muted/40 font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">
+            <tr className="border-b border-border/60 bg-muted/40 font-semibold text-muted-foreground text-xs">
               <th className="p-3 text-start">{isAr ? "رمز الخصم" : "Promo Code"}</th>
               <th className="p-3 text-start">{isAr ? "قيمة الخصم" : "Discount Value"}</th>
               <th className="p-3 text-start">
@@ -92,7 +92,7 @@ export function DiscountsWorkQueue({
                 const isCapReached = p.max_redemptions != null && usage >= p.max_redemptions;
 
                 let statusBadge = (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
                     <CheckCircle2 className="h-3 w-3" />
                     {isAr ? "نشط" : "Active"}
                   </span>
@@ -100,27 +100,27 @@ export function DiscountsWorkQueue({
 
                 if (!p.is_active) {
                   statusBadge = (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                       {isAr ? "متوقف" : "Paused"}
                     </span>
                   );
                 } else if (!isStarted) {
                   statusBadge = (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
                       <Clock className="h-3 w-3" />
                       {isAr ? "مجدول" : "Scheduled"}
                     </span>
                   );
                 } else if (isExpired) {
                   statusBadge = (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
                       <AlertCircle className="h-3 w-3" />
                       {isAr ? "منتهي" : "Expired"}
                     </span>
                   );
                 } else if (isCapReached) {
                   statusBadge = (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
                       <AlertCircle className="h-3 w-3" />
                       {isAr ? "مكتمل الاستخدام" : "Cap Reached"}
                     </span>
@@ -160,7 +160,7 @@ export function DiscountsWorkQueue({
                     <td className="p-3 align-middle text-muted-foreground">
                       <div className="flex flex-col gap-0.5 max-w-[220px]">
                         {p.minimum_order_amount && (
-                          <span className="text-[11px]">
+                          <span className="text-xs">
                             {isAr ? "الحد الأدنى:" : "Min order:"}{" "}
                             <b className="text-foreground">
                               {formatMoney(p.minimum_order_amount, currency)}
@@ -168,7 +168,7 @@ export function DiscountsWorkQueue({
                           </span>
                         )}
                         {p.maximum_discount_amount && p.discount_type === "percentage" && (
-                          <span className="text-[11px]">
+                          <span className="text-xs">
                             {isAr ? "أقصى خصم:" : "Max cap:"}{" "}
                             <b className="text-foreground">
                               {formatMoney(p.maximum_discount_amount, currency)}
@@ -176,12 +176,12 @@ export function DiscountsWorkQueue({
                           </span>
                         )}
                         {p.first_time_customers_only && (
-                          <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">
+                          <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold">
                             ✨ {isAr ? "للعملاء الجدد فقط" : "First-time buyers only"}
                           </span>
                         )}
                         {p.returning_customers_only && (
-                          <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:text-blue-300">
+                          <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300">
                             ↩ {isAr ? "لعملاء سابقين فقط" : "Returning buyers only"}
                           </span>
                         )}
@@ -195,7 +195,7 @@ export function DiscountsWorkQueue({
                     </td>
 
                     {/* Schedule */}
-                    <td className="p-3 align-middle text-muted-foreground font-mono text-[11px]">
+                    <td className="p-3 align-middle text-muted-foreground font-mono text-xs">
                       <div className="flex flex-col gap-0.5">
                         {p.start_date && (
                           <span>
@@ -232,10 +232,10 @@ export function DiscountsWorkQueue({
                       <div className="flex flex-col items-center gap-0.5">
                         <span className="font-bold text-foreground text-xs flex items-center justify-center gap-1">
                           <span dir="ltr">{usage} {p.max_redemptions ? `/ ${p.max_redemptions}` : ""}</span>
-                          <span className="text-muted-foreground font-normal text-[11px]">{isAr ? "استخدام" : "redemptions"}</span>
+                          <span className="text-muted-foreground font-normal text-xs">{isAr ? "استخدام" : "redemptions"}</span>
                         </span>
                         {revenue > 0 && (
-                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold" dir="ltr">
+                          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold" dir="ltr">
                             {formatMoney(revenue, currency)}
                           </span>
                         )}

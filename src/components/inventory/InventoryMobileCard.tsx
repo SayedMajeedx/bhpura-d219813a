@@ -108,7 +108,7 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
                   <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 )}
               </h3>
-              <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
+              <p className="text-xs text-muted-foreground font-mono mt-0.5">
                 {variantCountLabel(variants.length, lang)}
               </p>
             </div>
@@ -124,7 +124,7 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
         {/* Stock Status Badge */}
         <div className="flex items-center justify-between text-xs">
           <span
-            className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+            className={`px-2 py-0.5 rounded-md text-xs font-bold ${
               isOutOfStock
                 ? "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300"
                 : isLowStock
@@ -151,7 +151,7 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
               size="sm"
               onClick={() => setIsExpanded(!isExpanded)}
               variant="outline"
-              className="h-8 px-2 text-[11px] font-bold text-muted-foreground hover:text-foreground"
+              className="h-8 px-2 text-xs font-bold text-muted-foreground hover:text-foreground"
             >
               {isAr ? "المتغيرات" : "Variants"}
               {isExpanded ? (

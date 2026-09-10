@@ -392,8 +392,8 @@ function SuperRequestsPage() {
                               <Badge
                                 className={
                                   request.request_type === "trial"
-                                    ? "bg-primary/10 text-primary border-none font-semibold text-[10px]"
-                                    : "bg-emerald-500/10 text-emerald-500 border-none font-semibold text-[10px]"
+                                    ? "bg-primary/10 text-primary border-none font-semibold text-xs"
+                                    : "bg-emerald-500/10 text-emerald-500 border-none font-semibold text-xs"
                                 }
                                 variant="outline"
                               >
@@ -407,7 +407,7 @@ function SuperRequestsPage() {
                                     (lang === "ar" ? "متجر مدفوع" : "Official Paid")}
                               </Badge>
                               {request.quoted_price != null && request.request_type === "paid" && (
-                                <p className="mt-1 text-[10px] font-semibold text-muted-foreground">
+                                <p className="mt-1 text-xs font-semibold text-muted-foreground">
                                   {request.quoted_price} {request.quoted_currency || "BHD"} · {request.billing_interval === "monthly" ? (lang === "ar" ? "شهري" : "monthly") : (lang === "ar" ? "سنوي" : "annual")}
                                 </p>
                               )}
@@ -538,7 +538,7 @@ function SuperRequestsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
+              <Label className="text-xs font-semibold text-muted-foreground block">
                 {lang === "ar" ? "اختر باقة تفعيل العميل" : "Select Deployment Access Plan"}
               </Label>
 
@@ -565,7 +565,7 @@ function SuperRequestsPage() {
                     <button key={plan.id} type="button" onClick={() => setSelectedPlanId(plan.id)} className={`w-full rounded-xl border p-4 text-start transition-all ${selectedPlanId === plan.id ? "border-primary bg-primary/[0.03] ring-1 ring-primary" : "border-border"}`}>
                       <div className="flex items-center justify-between gap-3">
                         <span className="flex items-center gap-2 text-sm font-semibold"><Crown className="h-4 w-4 text-amber-500" />{lang === "ar" ? plan.name_ar : plan.name_en}</span>
-                        <Badge variant="outline" className="text-[10px]">{selectedBillingInterval === "monthly" ? plan.version.price_monthly : plan.version.price_annual} {plan.version.currency}</Badge>
+                        <Badge variant="outline" className="text-xs">{selectedBillingInterval === "monthly" ? plan.version.price_monthly : plan.version.price_annual} {plan.version.currency}</Badge>
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">v{plan.version.version_number} · {plan.code}</p>
                     </button>

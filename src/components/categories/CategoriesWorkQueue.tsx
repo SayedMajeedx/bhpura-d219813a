@@ -95,19 +95,19 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
                   <div className="flex items-center gap-1.5">
                     <h2 className="truncate text-sm font-bold text-foreground">{name}</h2>
                     {cat.is_smart && (
-                      <span className="shrink-0 rounded-md border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary">
+                      <span className="shrink-0 rounded-md border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary">
                         {isAr ? "ذكي" : "Smart"}
                       </span>
                     )}
                   </div>
                   <p
-                    className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground"
+                    className="mt-0.5 truncate font-mono text-xs text-muted-foreground"
                     dir="ltr"
                   >
                     /{cat.slug || cat.id.slice(0, 8)}
                   </p>
                 </div>
-                <span className="shrink-0 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary">
+                <span className="shrink-0 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
                   {countText}
                 </span>
               </div>
@@ -164,7 +164,7 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
       <div className="hidden overflow-x-auto sm:block">
         <table className="w-full text-start text-xs border-collapse">
           <thead>
-            <tr className="border-b border-border/60 bg-muted/40 font-bold text-muted-foreground uppercase text-[10px] tracking-wider">
+            <tr className="border-b border-border/60 bg-muted/40 font-bold text-muted-foreground uppercase text-xs tracking-wider">
               <th className="p-3 text-start">{isAr ? "اسم القسم" : "Category Name"}</th>
               <th className="p-3 text-start">{isAr ? "الرابط اللطيف (Slug)" : "Slug"}</th>
               <th className="p-3 text-start">{isAr ? "عدد المنتجات" : "Products"}</th>
@@ -188,17 +188,17 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
                     <div className="flex items-center gap-1.5">
                       <span>{name}</span>
                       {cat.is_smart && (
-                        <span className="shrink-0 rounded-md border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary">
+                        <span className="shrink-0 rounded-md border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary">
                           {isAr ? "قسم ذكي" : "Smart"}
                         </span>
                       )}
                     </div>
                   </td>
-                  <td className="p-3 align-middle font-mono text-[11px] text-muted-foreground">
+                  <td className="p-3 align-middle font-mono text-xs text-muted-foreground">
                     {cat.slug || cat.id.slice(0, 8)}
                   </td>
                   <td className="p-3 align-middle font-mono text-xs font-semibold">
-                    <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
+                    <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
                       {countText}
                     </span>
                   </td>

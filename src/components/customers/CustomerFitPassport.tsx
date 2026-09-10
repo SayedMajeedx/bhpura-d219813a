@@ -241,7 +241,7 @@ export function CustomerFitPassport({
                   }
                   className="pe-9 font-mono"
                 />
-                <span className="absolute end-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
+                <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
                   {unit}
                 </span>
               </div>

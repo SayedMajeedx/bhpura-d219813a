@@ -1206,7 +1206,7 @@ function ReceiptReviewDialog({
         {/* Header block: store, date, time */}
         <div className="rounded-lg border bg-secondary/30 p-4 space-y-4">
           <div>
-            <Label className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground mb-1">
+            <Label className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
               <StoreIcon className="h-3.5 w-3.5" />
               {lang === "ar" ? "اسم المتجر" : "Store name"}
             </Label>
@@ -1218,7 +1218,7 @@ function ReceiptReviewDialog({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground mb-1">
+              <Label className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                 <Calendar className="h-3.5 w-3.5" />
                 {lang === "ar" ? "التاريخ" : "Date"}
               </Label>
@@ -1229,7 +1229,7 @@ function ReceiptReviewDialog({
               />
             </div>
             <div>
-              <Label className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground mb-1">
+              <Label className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                 <Clock className="h-3.5 w-3.5" />
                 {lang === "ar" ? "الوقت" : "Time"}
               </Label>
@@ -1255,7 +1255,7 @@ function ReceiptReviewDialog({
           </div>
 
           <div className="rounded-lg border overflow-hidden">
-            <div className="grid grid-cols-[1fr_70px_100px_100px_36px] gap-2 px-3 py-2 bg-secondary/50 text-xs uppercase tracking-wider text-muted-foreground">
+            <div className="grid grid-cols-[1fr_70px_100px_100px_36px] gap-2 px-3 py-2 bg-secondary/50 text-xs text-muted-foreground">
               <div>{lang === "ar" ? "المنتج" : "Item"}</div>
               <div className="text-center">{lang === "ar" ? "الكمية" : "Qty"}</div>
               <div className="text-end">{lang === "ar" ? "سعر الوحدة" : "Unit price"}</div>

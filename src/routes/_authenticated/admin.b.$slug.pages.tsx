@@ -465,7 +465,7 @@ function PagesAndPolicies() {
               />
             </div>
             <div>
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">
                 {isAr ? "رقم واتساب مع رمز الدولة" : "WhatsApp number with country code"}
               </Label>
               <Input

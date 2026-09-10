@@ -289,7 +289,7 @@ function OnboardPage() {
             />
             <div className="flex flex-col text-left">
               <span className="font-black text-sm tracking-widest text-foreground font-mono leading-none">BOUTQ</span>
-              <span className="text-[9px] font-bold text-amber-600 dark:text-amber-500 tracking-widest leading-none mt-1">STORE • OS</span>
+              <span className="text-xs font-bold text-amber-600 dark:text-amber-500 tracking-widest leading-none mt-1">STORE • OS</span>
             </div>
           </Link>
 
@@ -361,7 +361,7 @@ function OnboardPage() {
                 <p className="text-xs font-bold text-foreground">
                   {isAr ? "شاهد تجربة حية لمتجرك" : "View Live Boutique Demo"}
                 </p>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {isAr ? "تصفح المنتجات والسلة كما يراها عميلك" : "Browse products & test the cart"}
                 </p>
               </div>
@@ -447,12 +447,12 @@ function OnboardPage() {
                         {isAr ? "رابط المتجر" : "Store Link"} *
                       </Label>
                       {slugStatus === "available" && (
-                        <span className="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
+                        <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">
                           <Check className="size-3" /> {isAr ? "متاح" : "Available"}
                         </span>
                       )}
                       {slugStatus === "taken" && (
-                        <span className="text-[11px] text-destructive font-medium">
+                        <span className="text-xs text-destructive font-medium">
                           {isAr ? "محجوز مسبقاً" : "Taken"}
                         </span>
                       )}
@@ -488,13 +488,13 @@ function OnboardPage() {
                         .boutq.store
                       </span>
                     </div>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       {isAr
                         ? "يُقترح تلقائياً من اسم متجرك بحروف إنجليزية (مثال: dar-alanaqa)، ويمكنك تعديله."
                         : "Auto-suggested from your boutique name in English letters (e.g. dar-alanaqa)."}
                     </p>
                     {slugArabicWarning && (
-                      <p className="text-[11px] text-amber-600 dark:text-amber-500 font-medium">
+                      <p className="text-xs text-amber-600 dark:text-amber-500 font-medium">
                         {isAr
                           ? "تنبيه: الرابط يقبل الحروف الإنجليزية فقط (a-z والأرقام)."
                           : "Note: Store links only support English letters (a-z) and numbers."}
@@ -635,7 +635,7 @@ function OnboardPage() {
                     )}
                   </Button>
 
-                  <p className="text-[11px] text-center text-muted-foreground mt-3">
+                  <p className="text-xs text-center text-muted-foreground mt-3">
                     {isAr
                       ? "تفعيل فوري في ثوانٍ • بدون بطاقة بنكية • إمكانية الترقية أو الإلغاء في أي وقت"
                       : "Instant 5-second activation • No credit card needed • Cancel or upgrade anytime"}
@@ -759,7 +759,7 @@ function OnboardPage() {
                   )}
                 >
                   {isPopular && (
-                    <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold bg-primary text-primary-foreground">
+                    <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-bold bg-primary text-primary-foreground">
                       {isAr ? "الأكثر شعبية" : "Most Popular"}
                     </Badge>
                   )}
@@ -770,12 +770,12 @@ function OnboardPage() {
                         {isAr ? plan.name_ar : plan.name_en}
                       </h3>
                       {plan.billing_interval_mode === "monthly_only" && (
-                        <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-md font-medium">
+                        <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-md font-medium">
                           {isAr ? "شهري فقط" : "Monthly Only"}
                         </span>
                       )}
                       {plan.billing_interval_mode === "annual_only" && (
-                        <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-md font-medium">
+                        <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-md font-medium">
                           {isAr ? "سنوي فقط" : "Annual Only"}
                         </span>
                       )}

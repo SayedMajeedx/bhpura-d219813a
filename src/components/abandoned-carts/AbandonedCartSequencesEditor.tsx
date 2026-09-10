@@ -183,7 +183,7 @@ export function AbandonedCartSequencesEditor({
               </div>
 
               <div className="space-y-1">
-                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                <span className="text-xs font-semibold text-muted-foreground block">
                   {isAr ? "عنوان الرسالة" : "Subject"}
                 </span>
                 <p className="text-xs font-medium text-foreground line-clamp-1">
@@ -192,10 +192,10 @@ export function AbandonedCartSequencesEditor({
               </div>
 
               <div className="space-y-1">
-                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                <span className="text-xs font-semibold text-muted-foreground block">
                   {isAr ? "معاينة القالب" : "Message Preview"}
                 </span>
-                <p className="text-xs text-muted-foreground line-clamp-3 bg-background p-2 rounded border border-border/50 font-mono text-[11px]">
+                <p className="text-xs text-muted-foreground line-clamp-3 bg-background p-2 rounded border border-border/50 font-mono text-xs">
                   {isAr ? seq.message_template_ar : seq.message_template_en}
                 </p>
               </div>
@@ -307,7 +307,7 @@ export function AbandonedCartSequencesEditor({
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label>{isAr ? "قالب الرسالة (عربي)" : "Message Template (Arabic)"}</Label>
-                  <span className="text-[10px] text-muted-foreground font-mono">
+                  <span className="text-xs text-muted-foreground font-mono">
                     {"{name}, {brand_name}, {recovery_link}, {discount_code}"}
                   </span>
                 </div>
@@ -327,7 +327,7 @@ export function AbandonedCartSequencesEditor({
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label>{isAr ? "قالب الرسالة (إنجليزي)" : "Message Template (English)"}</Label>
-                  <span className="text-[10px] text-muted-foreground font-mono">
+                  <span className="text-xs text-muted-foreground font-mono">
                     {"{name}, {brand_name}, {recovery_link}, {discount_code}"}
                   </span>
                 </div>

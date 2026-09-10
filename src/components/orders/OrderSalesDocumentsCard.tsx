@@ -229,7 +229,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
                 </span>
               </div>
               <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                className={`text-xs font-bold px-2 py-0.5 rounded-md ${
                   isPaid
                     ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
                     : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20"
@@ -310,7 +310,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
                   {isAr ? "إذن التسليم وبوليصة الشحن" : "Delivery Note & Consignment"}
                 </span>
               </div>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
+              <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
                 {order?.fulfillment_status || order?.status || "PENDING"}
               </span>
             </div>
@@ -334,7 +334,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>{isAr ? "ملاحظات التوصيل:" : "Driver instructions:"}</span>
-                <span className="truncate max-w-[150px] font-mono text-[11px] text-foreground">
+                <span className="truncate max-w-[150px] font-mono text-xs text-foreground">
                   {order?.delivery_notes || (isAr ? "لا توجد ملاحظات" : "None")}
                 </span>
               </div>
@@ -366,11 +366,11 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
                 </span>
               </div>
               {linkedReturns.length > 0 ? (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
                   {isAr ? `${linkedReturns.length} إرجاع مرتبط` : `${linkedReturns.length} return`}
                 </span>
               ) : (
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
                   {isAr ? "لا يوجد إرجاع" : "None"}
                 </span>
               )}
@@ -391,7 +391,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
                       <span className="font-mono font-bold text-foreground">
                         {ret.return_number || ret.id.slice(0, 8)}
                       </span>
-                      <div className="text-[10px] text-muted-foreground">
+                      <div className="text-xs text-muted-foreground">
                         {ret.reason || (isAr ? "طلب إرجاع" : "Return request")}
                       </div>
                     </div>
@@ -399,7 +399,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
                       <span className="font-mono font-bold text-destructive">
                         {formatMoney(ret.net_refund_amount || 0, currency, lang)}
                       </span>
-                      <div className="text-[10px] font-semibold text-muted-foreground uppercase">
+                      <div className="text-xs font-semibold text-muted-foreground uppercase">
                         {ret.status}
                       </div>
                     </div>

@@ -220,7 +220,7 @@ export function OsSidebar({
               <span className="text-xl font-bold font-heading text-foreground truncate leading-tight block">
                 {brandLabel}
               </span>
-              <p className="text-[11px] text-muted-foreground truncate">{brandSubtitle}</p>
+              <p className="text-xs text-muted-foreground truncate">{brandSubtitle}</p>
             </div>
           ) : (
             <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold font-heading text-base shadow-sm">
@@ -288,7 +288,7 @@ export function OsSidebar({
         <nav className="flex-1 p-3 space-y-3 overflow-y-auto scrollbar-none">
           {/* Navigation Mode Switcher */}
           {!collapsed && !isPlatformMode && !isCourier && (
-            <div className="flex items-center gap-1 p-0.5 rounded-xl bg-muted/40 border border-border/50 text-[11px] mb-2 font-medium">
+            <div className="flex items-center gap-1 p-0.5 rounded-xl bg-muted/40 border border-border/50 text-xs mb-2 font-medium">
               <button
                 type="button"
                 onClick={() => handleNavModeChange("jobs")}
@@ -323,11 +323,11 @@ export function OsSidebar({
               {visibleModularItems.length > 0 && (
                 <div className="space-y-1 pb-1.5 border-b border-border/40">
                   <div className="flex items-center justify-between px-3 mb-1">
-                    <span className="text-[10px] font-bold tracking-wider text-muted-foreground/70 uppercase flex items-center gap-1.5">
+                    <span className="text-xs font-bold tracking-wider text-muted-foreground/70 uppercase flex items-center gap-1.5">
                       <Pin className="h-2.5 w-2.5 text-primary" />
                       <span>{isAr ? "المثبتة" : "PINNED"}</span>
                     </span>
-                    <span className="text-[10px] text-muted-foreground/60 font-semibold">
+                    <span className="text-xs text-muted-foreground/60 font-semibold">
                       {visibleModularItems.length}
                     </span>
                   </div>
@@ -373,7 +373,7 @@ export function OsSidebar({
               {jobGroups.map((group) => (
                 <div key={group.id} className="space-y-1">
                   <div className="flex items-center justify-between px-3 mt-1.5 mb-1">
-                    <span className="text-[10px] font-bold tracking-wider text-muted-foreground/70 uppercase">
+                    <span className="text-xs font-bold tracking-wider text-muted-foreground/70 uppercase">
                       {isAr ? group.labelAr : group.labelEn}
                     </span>
                   </div>
@@ -437,7 +437,7 @@ export function OsSidebar({
               <div className="space-y-1">
                 {!collapsed && (
                   <div className="flex items-center justify-between px-3 mt-1 mb-1.5">
-                    <span className="text-[10px] font-bold tracking-wider text-muted-foreground/70 uppercase">
+                    <span className="text-xs font-bold tracking-wider text-muted-foreground/70 uppercase">
                       {isAr ? "الأساسيات" : "CORE"}
                     </span>
                   </div>
@@ -474,11 +474,11 @@ export function OsSidebar({
                 <div className="space-y-1 pt-1">
                   {!collapsed && (
                     <div className="flex items-center justify-between px-3 mt-2 mb-1.5">
-                      <span className="text-[10px] font-bold tracking-wider text-muted-foreground/70 uppercase flex items-center gap-1.5">
+                      <span className="text-xs font-bold tracking-wider text-muted-foreground/70 uppercase flex items-center gap-1.5">
                         <Pin className="h-2.5 w-2.5 text-primary" />
                         <span>{isAr ? "الأدوات المثبتة" : "PINNED TOOLS"}</span>
                       </span>
-                      <span className="text-[10px] text-muted-foreground/60 font-semibold">
+                      <span className="text-xs text-muted-foreground/60 font-semibold">
                         {visibleModularItems.length}
                       </span>
                     </div>
@@ -566,7 +566,7 @@ export function OsSidebar({
                       <span>{isAr ? "كافة الأدوات" : "All Apps & Tools"}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-muted text-muted-foreground">
+                      <span className="text-xs font-bold px-1.5 py-0.2 rounded-full bg-muted text-muted-foreground">
                         {modularItems.length}
                       </span>
                       <ChevronDown
@@ -600,7 +600,7 @@ export function OsSidebar({
                         placeholder={isAr ? "ابحث عن أداة..." : "Search tool..."}
                         value={filterQuery}
                         onChange={(e) => setFilterQuery(e.target.value)}
-                        className="w-full ps-7 pe-2 py-1 text-[11px] rounded-lg bg-muted/60 border border-border/50 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        className="w-full ps-7 pe-2 py-1 text-xs rounded-lg bg-muted/60 border border-border/50 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                       />
                     </div>
 
@@ -665,7 +665,7 @@ export function OsSidebar({
                       })}
 
                       {filteredModularItems.length === 0 && (
-                        <p className="text-[11px] text-center text-muted-foreground py-2">
+                        <p className="text-xs text-center text-muted-foreground py-2">
                           {isAr ? "لا توجد أدوات مطابقة" : "No matching tools found"}
                         </p>
                       )}

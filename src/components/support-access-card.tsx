@@ -182,7 +182,7 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80 font-mono text-[11px]">
+                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80 font-mono text-xs">
                   {auditLogs.map((log: any) => {
                     const formattedDate = new Date(log.created_at).toLocaleString(
                       lang === "ar" ? "ar-BH-u-nu-latn" : "en-US",
@@ -196,13 +196,13 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
                       >
                         <td className="p-3.5 pl-6 font-medium text-foreground">
                           <div>{log.operator?.name || "Boutq Support"}</div>
-                          <div className="text-[10px] text-muted-foreground font-normal">
+                          <div className="text-xs text-muted-foreground font-normal">
                             {log.operator?.email || "support@boutq.store"}
                           </div>
                         </td>
                         <td className="p-3.5">
                           <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium border ${
+                            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${
                               log.action_type === "impersonation_start"
                                 ? "bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400"
                                 : "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"

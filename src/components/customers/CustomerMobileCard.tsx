@@ -71,19 +71,19 @@ export const CustomerMobileCard: React.FC<CustomerMobileCardProps> = ({
             <h3 className="font-bold text-xs text-foreground truncate flex items-center gap-1.5">
               <span>{customer.name}</span>
               {stats?.badge === "VIP" && (
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-300/40">
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-300/40">
                   <Star className="h-2.5 w-2.5 fill-amber-500 text-amber-500" />
                   VIP
                 </span>
               )}
               {stats?.badge === "Churn Risk" && (
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-300/40">
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-xs font-bold bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-300/40">
                   <AlertCircle className="h-2.5 w-2.5 text-rose-600 dark:text-rose-400" />
                   {isAr ? "راكد" : "Churn"}
                 </span>
               )}
               {stats?.badge === "New Buyer" && (
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-300/40">
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-xs font-bold bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-300/40">
                   <UserPlus className="h-2.5 w-2.5 text-blue-600 dark:text-blue-400" />
                   {isAr ? "جديد" : "New"}
                 </span>
@@ -92,14 +92,14 @@ export const CustomerMobileCard: React.FC<CustomerMobileCardProps> = ({
                 (stats?.totalOrders > 1 &&
                   stats?.badge !== "VIP" &&
                   stats?.badge !== "Churn Risk")) && (
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-300/40">
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-300/40">
                   <RefreshCw className="h-2.5 w-2.5 text-emerald-600 dark:text-emerald-400" />
                   {isAr ? "متكرر" : "Repeat"}
                 </span>
               )}
             </h3>
             {customer.phone && (
-              <p className="text-[11px] text-muted-foreground font-mono mt-0.5" dir="ltr">
+              <p className="text-xs text-muted-foreground font-mono mt-0.5" dir="ltr">
                 {maskPhoneForList(customer.phone)}
               </p>
             )}
@@ -118,7 +118,7 @@ export const CustomerMobileCard: React.FC<CustomerMobileCardProps> = ({
           </div>
         )}
         {customer.email && (
-          <div className="flex items-center gap-1.5 truncate font-mono text-[11px]" dir="ltr">
+          <div className="flex items-center gap-1.5 truncate font-mono text-xs" dir="ltr">
             <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             <span className="truncate">{customer.email}</span>
           </div>
@@ -129,7 +129,7 @@ export const CustomerMobileCard: React.FC<CustomerMobileCardProps> = ({
       <div className="flex items-center justify-between pt-2 border-t border-border/40 text-xs">
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-[11px]">
+            <span className="font-mono text-xs">
               {isAr ? "الطلبات:" : "Orders:"} <b className="text-foreground">{stats?.totalOrders ?? 0}</b>
             </span>
             <span>•</span>
@@ -138,7 +138,7 @@ export const CustomerMobileCard: React.FC<CustomerMobileCardProps> = ({
             </span>
           </div>
           {stats?.pendingAmount && stats.pendingAmount > 0 ? (
-            <span className="text-[10px] text-amber-600 dark:text-amber-400 font-sans">
+            <span className="text-xs text-amber-600 dark:text-amber-400 font-sans">
               {isAr
                 ? `(معلق: ${formatMoney(stats.pendingAmount, currency, lang)})`
                 : `(Pending: ${formatMoney(stats.pendingAmount, currency, lang)})`}
@@ -152,7 +152,7 @@ export const CustomerMobileCard: React.FC<CustomerMobileCardProps> = ({
             target="_blank"
             rel="noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20"
           >
             <MessageCircle className="h-3.5 w-3.5" />
             <span>{isAr ? "واتساب" : "WhatsApp"}</span>

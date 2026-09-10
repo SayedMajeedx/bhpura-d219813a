@@ -58,20 +58,20 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
             </h1>
             {paymentBadge && (
               <span
-                className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${paymentBadge.className}`}
+                className={`px-2 py-0.5 rounded-md text-xs font-bold ${paymentBadge.className}`}
               >
                 {paymentBadge.label}
               </span>
             )}
             {fulfillmentBadge && (
               <span
-                className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${fulfillmentBadge.classes}`}
+                className={`px-2 py-0.5 rounded-md text-xs font-bold ${fulfillmentBadge.classes}`}
               >
                 {fulfillmentBadge.label}
               </span>
             )}
           </div>
-          <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
+          <p className="text-xs text-muted-foreground font-mono mt-0.5">
             {formatDate(order.created_at, lang)}
           </p>
         </div>

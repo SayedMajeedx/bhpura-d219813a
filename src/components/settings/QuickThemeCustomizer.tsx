@@ -214,7 +214,7 @@ export function QuickThemeCustomizer({
               <span className="block text-xs font-semibold text-foreground">
                 {isAr ? "اللون الأساسي" : "Primary"}
               </span>
-              <span className="block font-mono text-[11px] text-muted-foreground uppercase">
+              <span className="block font-mono text-xs text-muted-foreground uppercase">
                 {primaryColor || "#000000"}
               </span>
             </div>
@@ -250,7 +250,7 @@ export function QuickThemeCustomizer({
               <span className="block text-xs font-semibold text-foreground">
                 {isAr ? "اللون الثانوي" : "Secondary"}
               </span>
-              <span className="block font-mono text-[11px] text-muted-foreground uppercase">
+              <span className="block font-mono text-xs text-muted-foreground uppercase">
                 {secondaryColor || "#1f1f1f"}
               </span>
             </div>
@@ -285,7 +285,7 @@ export function QuickThemeCustomizer({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="h-6 px-1.5 text-[10px]"
+                      className="h-6 px-1.5 text-xs"
                       onClick={() => {
                         onHeaderBgChange("#ffffff");
                         if (onHeaderFgChange) onHeaderFgChange("#111111");
@@ -297,7 +297,7 @@ export function QuickThemeCustomizer({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="h-6 px-1.5 text-[10px]"
+                      className="h-6 px-1.5 text-xs"
                       onClick={() => {
                         onHeaderBgChange(primaryColor || "#000000");
                         if (onHeaderFgChange) onHeaderFgChange("#ffffff");
@@ -309,7 +309,7 @@ export function QuickThemeCustomizer({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="h-6 px-1.5 text-[10px]"
+                      className="h-6 px-1.5 text-xs"
                       onClick={() => {
                         onHeaderBgChange("#111111");
                         if (onHeaderFgChange) onHeaderFgChange("#ffffff");
@@ -336,10 +336,10 @@ export function QuickThemeCustomizer({
                       />
                     </label>
                     <div className="min-w-0">
-                      <span className="block text-[11px] font-medium text-foreground truncate">
+                      <span className="block text-xs font-medium text-foreground truncate">
                         {isAr ? "خلفية الترويسة" : "Background"}
                       </span>
-                      <span className="block font-mono text-[10px] text-muted-foreground uppercase">
+                      <span className="block font-mono text-xs text-muted-foreground uppercase">
                         {headerBg || "#ffffff"}
                       </span>
                     </div>
@@ -361,10 +361,10 @@ export function QuickThemeCustomizer({
                         />
                       </label>
                       <div className="min-w-0">
-                        <span className="block text-[11px] font-medium text-foreground truncate">
+                        <span className="block text-xs font-medium text-foreground truncate">
                           {isAr ? "النص والأيقونات" : "Text / Icons"}
                         </span>
-                        <span className="block font-mono text-[10px] text-muted-foreground uppercase">
+                        <span className="block font-mono text-xs text-muted-foreground uppercase">
                           {headerFg || "#111111"}
                         </span>
                       </div>
@@ -386,7 +386,7 @@ export function QuickThemeCustomizer({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="h-6 px-1.5 text-[10px]"
+                      className="h-6 px-1.5 text-xs"
                       onClick={() => {
                         onFooterBgChange("#ffffff");
                         if (onFooterFgChange) onFooterFgChange("#111111");
@@ -398,7 +398,7 @@ export function QuickThemeCustomizer({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="h-6 px-1.5 text-[10px]"
+                      className="h-6 px-1.5 text-xs"
                       onClick={() => {
                         onFooterBgChange(primaryColor || "#000000");
                         if (onFooterFgChange) onFooterFgChange("#ffffff");
@@ -410,7 +410,7 @@ export function QuickThemeCustomizer({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="h-6 px-1.5 text-[10px]"
+                      className="h-6 px-1.5 text-xs"
                       onClick={() => {
                         onFooterBgChange("#111111");
                         if (onFooterFgChange) onFooterFgChange("#ffffff");
@@ -437,10 +437,10 @@ export function QuickThemeCustomizer({
                       />
                     </label>
                     <div className="min-w-0">
-                      <span className="block text-[11px] font-medium text-foreground truncate">
+                      <span className="block text-xs font-medium text-foreground truncate">
                         {isAr ? "خلفية الفوتر" : "Background"}
                       </span>
-                      <span className="block font-mono text-[10px] text-muted-foreground uppercase">
+                      <span className="block font-mono text-xs text-muted-foreground uppercase">
                         {footerBg || "#ffffff"}
                       </span>
                     </div>
@@ -462,10 +462,10 @@ export function QuickThemeCustomizer({
                         />
                       </label>
                       <div className="min-w-0">
-                        <span className="block text-[11px] font-medium text-foreground truncate">
+                        <span className="block text-xs font-medium text-foreground truncate">
                           {isAr ? "النصوص والروابط" : "Text / Links"}
                         </span>
-                        <span className="block font-mono text-[10px] text-muted-foreground uppercase">
+                        <span className="block font-mono text-xs text-muted-foreground uppercase">
                           {footerFg || "#111111"}
                         </span>
                       </div>
@@ -548,7 +548,7 @@ export function QuickThemeCustomizer({
                 <span className="text-xs text-muted-foreground">
                   {isAr ? preset.descriptionAr : preset.descriptionEn}
                 </span>
-                <div className="mt-2 text-[11px] font-mono text-muted-foreground/80 flex items-center gap-2">
+                <div className="mt-2 text-xs font-mono text-muted-foreground/80 flex items-center gap-2">
                   <span className="px-1.5 py-0.5 rounded bg-muted">
                     {preset.fontAr} / {preset.fontEn}
                   </span>

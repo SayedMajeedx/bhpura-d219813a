@@ -54,7 +54,7 @@ export function DiscountMobileCard({
   const isCapReached = p.max_redemptions != null && usage >= p.max_redemptions;
 
   let statusBadge = (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
       <CheckCircle2 className="h-3 w-3" />
       {isAr ? "نشط" : "Active"}
     </span>
@@ -62,27 +62,27 @@ export function DiscountMobileCard({
 
   if (!p.is_active) {
     statusBadge = (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
         {isAr ? "متوقف" : "Paused"}
       </span>
     );
   } else if (!isStarted) {
     statusBadge = (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
         <Clock className="h-3 w-3" />
         {isAr ? "مجدول" : "Scheduled"}
       </span>
     );
   } else if (isExpired) {
     statusBadge = (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
         <AlertCircle className="h-3 w-3" />
         {isAr ? "منتهي" : "Expired"}
       </span>
     );
   } else if (isCapReached) {
     statusBadge = (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
         <AlertCircle className="h-3 w-3" />
         {isAr ? "مكتمل" : "Cap Reached"}
       </span>
@@ -131,9 +131,9 @@ export function DiscountMobileCard({
       </div>
 
       {(p.start_date || p.end_date) && (
-        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>{isAr ? "فترة الصلاحية:" : "Validity:"}</span>
-          <span className="font-mono text-foreground text-[11px]" dir="ltr">
+          <span className="font-mono text-foreground text-xs" dir="ltr">
             {p.start_date
               ? new Date(p.start_date).toLocaleDateString(isAr ? "ar-BH-u-nu-latn" : "en-GB", {
                   day: "numeric",

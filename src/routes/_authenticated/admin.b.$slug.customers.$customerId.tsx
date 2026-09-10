@@ -428,7 +428,7 @@ function CustomerProfilePage() {
                     return (
                       <span
                         className={cn(
-                          "text-[10px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 shadow-2xs",
+                          "text-xs font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 shadow-2xs",
                           badge.classes,
                         )}
                       >
@@ -456,14 +456,14 @@ function CustomerProfilePage() {
 
               <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-border/40">
                 <div className="rounded-lg bg-background/70 border border-border/40 p-2 text-center">
-                  <span className="text-[10px] text-muted-foreground block font-medium">
+                  <span className="text-xs text-muted-foreground block font-medium">
                     {lang === "ar" ? "إجمالي المشتريات" : "Total Spend"}
                   </span>
                   <span className="text-xs font-bold font-mono text-primary">
                     {formatMoney(totalSpent, "BHD")}
                   </span>
                   {pendingCollection > 0 && (
-                    <span className="text-[9px] text-amber-600 dark:text-amber-400 block mt-0.5">
+                    <span className="text-xs text-amber-600 dark:text-amber-400 block mt-0.5">
                       {lang === "ar"
                         ? `(معلق: ${formatMoney(pendingCollection, "BHD")})`
                         : `(Pending: ${formatMoney(pendingCollection, "BHD")})`}
@@ -471,7 +471,7 @@ function CustomerProfilePage() {
                   )}
                 </div>
                 <div className="rounded-lg bg-background/70 border border-border/40 p-2 text-center">
-                  <span className="text-[10px] text-muted-foreground block font-medium">
+                  <span className="text-xs text-muted-foreground block font-medium">
                     {lang === "ar" ? "المبالغ المحصّلة" : "Total Paid"}
                   </span>
                   <span className="text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400">
@@ -479,7 +479,7 @@ function CustomerProfilePage() {
                   </span>
                 </div>
                 <div className="rounded-lg bg-background/70 border border-border/40 p-2 text-center">
-                  <span className="text-[10px] text-muted-foreground block font-medium">
+                  <span className="text-xs text-muted-foreground block font-medium">
                     {lang === "ar" ? "الطلبات المؤكدة" : "Total Orders"}
                   </span>
                   <span className="text-xs font-bold font-mono text-foreground">
@@ -487,7 +487,7 @@ function CustomerProfilePage() {
                   </span>
                 </div>
                 <div className="rounded-lg bg-background/70 border border-border/40 p-2 text-center">
-                  <span className="text-[10px] text-muted-foreground block font-medium">
+                  <span className="text-xs text-muted-foreground block font-medium">
                     {lang === "ar" ? "متوسط الطلب" : "Avg Order (AOV)"}
                   </span>
                   <span className="text-xs font-bold font-mono text-foreground">
@@ -495,10 +495,10 @@ function CustomerProfilePage() {
                   </span>
                 </div>
                 <div className="rounded-lg bg-background/70 border border-border/40 p-2 text-center">
-                  <span className="text-[10px] text-muted-foreground block font-medium">
+                  <span className="text-xs text-muted-foreground block font-medium">
                     {lang === "ar" ? "آخر طلب" : "Last Order"}
                   </span>
-                  <span className="text-[11px] font-bold text-foreground truncate block">
+                  <span className="text-xs font-bold text-foreground truncate block">
                     {lastOrderDate
                       ? new Date(lastOrderDate).toLocaleDateString(
                           lang === "ar" ? "ar-BH" : "en-GB",
@@ -605,7 +605,7 @@ function CustomerProfilePage() {
                           <p className="font-mono text-sm font-bold text-primary">
                             #{order.invoice_number}
                           </p>
-                          <p className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                          <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                             <CalendarDays className="h-3.5 w-3.5" />
                             {new Date(order.order_date).toLocaleDateString(
                               lang === "ar" ? "ar-BH-u-nu-latn" : "en-BH",
@@ -622,7 +622,7 @@ function CustomerProfilePage() {
                           return (
                             <span
                               className={cn(
-                                "inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold",
+                                "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold",
                                 badge.classes,
                               )}
                             >
@@ -630,13 +630,13 @@ function CustomerProfilePage() {
                             </span>
                           );
                         })()}
-                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           {(() => {
                             const payBadge = getOrderPaymentBadge(order, lang);
                             return (
                               <span
                                 className={cn(
-                                  "inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold border",
+                                  "inline-flex px-1.5 py-0.5 rounded text-xs font-bold border",
                                   payBadge.className,
                                 )}
                               >
@@ -654,19 +654,19 @@ function CustomerProfilePage() {
                   <table className="w-full min-w-[680px] text-sm whitespace-nowrap">
                     <thead className="border-b bg-muted/40 font-semibold text-muted-foreground">
                       <tr>
-                        <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
+                        <th className="p-4 text-start font-semibold text-xs whitespace-nowrap">
                           {lang === "ar" ? "رقم الطلب" : "Order ID #"}
                         </th>
-                        <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
+                        <th className="p-4 text-start font-semibold text-xs whitespace-nowrap">
                           {lang === "ar" ? "التاريخ" : "Date"}
                         </th>
-                        <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
+                        <th className="p-4 text-start font-semibold text-xs whitespace-nowrap">
                           {lang === "ar" ? "الحالة" : "Status"}
                         </th>
-                        <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
+                        <th className="p-4 text-start font-semibold text-xs whitespace-nowrap">
                           {lang === "ar" ? "طريقة الدفع" : "Payment Method"}
                         </th>
-                        <th className="p-4 text-end font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
+                        <th className="p-4 text-end font-semibold text-xs whitespace-nowrap">
                           {lang === "ar" ? "الإجمالي" : "Total Amount"}
                         </th>
                       </tr>
@@ -730,7 +730,7 @@ function CustomerProfilePage() {
                                 return (
                                   <span
                                     className={cn(
-                                      "inline-flex px-2 py-0.5 rounded text-[10px] font-bold border",
+                                      "inline-flex px-2 py-0.5 rounded text-xs font-bold border",
                                       payBadge.className,
                                     )}
                                   >

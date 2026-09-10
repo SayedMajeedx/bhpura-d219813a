@@ -91,7 +91,7 @@ export function OsMenuBar({
             );
           })}
         </nav>
-        <span className="hidden shrink-0 rounded-full border border-primary/15 bg-primary/5 px-2 py-0.5 text-[10px] font-semibold text-primary xl:inline-flex">
+        <span className="hidden shrink-0 rounded-full border border-primary/15 bg-primary/5 px-2 py-0.5 text-xs font-semibold text-primary xl:inline-flex">
           {brandLabel}
         </span>
       </div>
@@ -109,10 +109,10 @@ export function OsMenuBar({
           className="h-6.5 px-2 gap-1.5 text-xs text-muted-foreground hover:text-foreground bg-background/50 hover:bg-background/90 border border-[var(--os-border)] rounded-md flex items-center transition-all shadow-2xs"
         >
           <Search className="h-3 w-3 text-muted-foreground" />
-          <span className="hidden lg:inline text-[11px] font-medium">
+          <span className="hidden lg:inline text-xs font-medium">
             {lang === "ar" ? "البحث السريع..." : "Search OS..."}
           </span>
-          <kbd className="pointer-events-none inline-flex h-4 select-none items-center gap-0.5 rounded border bg-muted/80 px-1 font-mono text-[9px] font-semibold text-muted-foreground">
+          <kbd className="pointer-events-none inline-flex h-4 select-none items-center gap-0.5 rounded border bg-muted/80 px-1 font-mono text-xs font-semibold text-muted-foreground">
             {shortcutLabel}
           </kbd>
         </button>
@@ -127,7 +127,7 @@ export function OsMenuBar({
           type="button"
           onClick={() => onSetLang(lang === "en" ? "ar" : "en")}
           aria-label={lang === "en" ? "التحويل للعربية" : "Switch to English"}
-          className="h-6.5 px-2 text-[10px] font-bold uppercase tracking-wide text-muted-foreground hover:text-foreground bg-background/40 hover:bg-background/80 border border-[var(--os-border)] rounded-md flex items-center gap-1 transition-colors"
+          className="h-6.5 px-2 text-xs font-bold uppercase tracking-wide text-muted-foreground hover:text-foreground bg-background/40 hover:bg-background/80 border border-[var(--os-border)] rounded-md flex items-center gap-1 transition-colors"
           title={lang === "en" ? "التحويل للعربية" : "Switch to English"}
         >
           <Languages className="h-3 w-3" />
@@ -151,7 +151,7 @@ export function OsMenuBar({
               <div className="flex flex-col space-y-1">
                 <p className="text-xs font-semibold leading-none">{brandLabel}</p>
                 {userEmail && (
-                  <p className="text-[11px] leading-none text-muted-foreground truncate">
+                  <p className="text-xs leading-none text-muted-foreground truncate">
                     {userEmail}
                   </p>
                 )}

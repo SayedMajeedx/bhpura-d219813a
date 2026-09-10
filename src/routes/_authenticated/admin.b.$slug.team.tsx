@@ -534,7 +534,7 @@ function TeamManagement() {
                     </span>
                   </div>
                   <span
-                    className={`shrink-0 inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                    className={`shrink-0 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${
                       member.status === "active"
                         ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
                         : "bg-neutral-500/15 text-neutral-700 dark:text-neutral-300"
@@ -596,7 +596,7 @@ function TeamManagement() {
 
                   {member.phone && (
                     <span
-                      className="inline-flex items-center gap-1 text-[10px] font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded-md"
+                      className="inline-flex items-center gap-1 text-xs font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded-md"
                       dir="ltr"
                     >
                       📱 {member.phone}
@@ -605,7 +605,7 @@ function TeamManagement() {
                 </div>
 
                 <div className="pt-3 mt-1 border-t border-border/50 flex justify-between items-center">
-                  <span className="text-[10px] text-muted-foreground font-medium">
+                  <span className="text-xs text-muted-foreground font-medium">
                     {new Date(member.created_at).toLocaleDateString(locale)}
                   </span>
 
@@ -618,7 +618,7 @@ function TeamManagement() {
                       const canManage = !isSelf && (!targetIsSuper || isSuperAdmin);
                       if (!canManage) {
                         return (
-                          <span className="text-[10px] text-muted-foreground font-semibold px-2">
+                          <span className="text-xs text-muted-foreground font-semibold px-2">
                             {isSelf ? (isAr ? "أنت" : "You") : isAr ? "محمي" : "Protected"}
                           </span>
                         );

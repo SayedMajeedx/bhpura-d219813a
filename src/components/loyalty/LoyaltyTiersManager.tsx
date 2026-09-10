@@ -141,7 +141,7 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
 
                 {/* Requirements */}
                 <div className="space-y-1">
-                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                  <span className="text-xs font-semibold text-muted-foreground block">
                     {isAr ? "شروط التأهل" : "Qualification"}
                   </span>
                   <div className="text-sm font-bold text-foreground">
@@ -158,7 +158,7 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
                 {/* Multiplier & Discount */}
                 <div className="grid grid-cols-2 gap-2 py-2 border-y border-border/60">
                   <div>
-                    <span className="text-[10px] text-muted-foreground block">
+                    <span className="text-xs text-muted-foreground block">
                       {isAr ? "مضاعف النقاط" : "Multiplier"}
                     </span>
                     <span className="text-base font-extrabold text-primary">
@@ -166,7 +166,7 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-muted-foreground block">
+                    <span className="text-xs text-muted-foreground block">
                       {isAr ? "خصم حصري" : "Perk Discount"}
                     </span>
                     <span className="text-base font-extrabold text-foreground">
@@ -177,7 +177,7 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
 
                 {/* Perks list */}
                 <div className="space-y-1.5">
-                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                  <span className="text-xs font-semibold text-muted-foreground block">
                     {isAr ? "المزايا الممنوحة" : "Perks & Benefits"}
                   </span>
                   <ul className="space-y-1 text-xs text-muted-foreground">

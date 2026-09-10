@@ -401,7 +401,7 @@ export function CustomerAddressManager({
                 {/* Address Dropdown Picker if customer has multiple addresses */}
                 {addresses.length > 1 && (
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                    <label className="text-xs font-bold text-muted-foreground">
                       {isAr
                         ? `تحديد العنوان (${addresses.length})`
                         : `Select Address (${addresses.length})`}
@@ -419,7 +419,7 @@ export function CustomerAddressManager({
                                 — {a.region || a.block || a.road}
                               </span>
                               {a.is_default && (
-                                <span className="ms-auto font-bold text-primary text-[10px]">
+                                <span className="ms-auto font-bold text-primary text-xs">
                                   ({isAr ? "الافتراضي" : "Default"})
                                 </span>
                               )}
@@ -449,13 +449,13 @@ export function CustomerAddressManager({
                         size="sm"
                         disabled={saving}
                         onClick={() => makeDefault(activeAddress.id)}
-                        className="h-7 px-2.5 text-[11px] font-bold gap-1 text-primary border-primary/30 bg-primary/5 hover:bg-primary/10 rounded-lg"
+                        className="h-7 px-2.5 text-xs font-bold gap-1 text-primary border-primary/30 bg-primary/5 hover:bg-primary/10 rounded-lg"
                       >
                         <Star className="h-3 w-3 fill-primary text-primary" />
                         <span>{isAr ? "تعيين كافتراضي" : "Set as Default"}</span>
                       </Button>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
                         <Check className="h-3 w-3" />
                         {isAr ? "العنوان الافتراضي" : "Default Address"}
                       </span>
@@ -466,7 +466,7 @@ export function CustomerAddressManager({
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="h-7 px-2 text-[11px] font-semibold gap-1 text-muted-foreground hover:text-foreground"
+                        className="h-7 px-2 text-xs font-semibold gap-1 text-muted-foreground hover:text-foreground"
                         onClick={() => startEdit(activeAddress)}
                       >
                         <Pencil className="h-3 w-3" />
@@ -476,7 +476,7 @@ export function CustomerAddressManager({
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="h-7 px-2 text-[11px] font-semibold gap-1 text-destructive hover:text-destructive"
+                        className="h-7 px-2 text-xs font-semibold gap-1 text-destructive hover:text-destructive"
                         onClick={() => setDeleting(activeAddress)}
                       >
                         <Trash2 className="h-3 w-3" />

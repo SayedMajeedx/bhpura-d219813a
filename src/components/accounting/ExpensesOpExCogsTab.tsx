@@ -276,7 +276,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
                 ? `النطاق الزمني المطبق: من ${activeRange?.from} إلى ${activeRange?.to}`
                 : `Active Range: ${activeRange?.from} to ${activeRange?.to}`}
             </span>
-            <Badge variant="outline" className="text-[10px] bg-background">
+            <Badge variant="outline" className="text-xs bg-background">
               {filterByDateRange
                 ? (isAr ? "مفلتر" : "Filtered")
                 : (isAr ? "الكل" : "All Time")}
@@ -313,7 +313,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
             </span>
             <Badge
               variant="outline"
-              className="bg-primary/10 text-primary border-primary/20 text-[10px]"
+              className="bg-primary/10 text-primary border-primary/20 text-xs"
             >
               {isAr ? "أصل / مخزون" : "Asset COGS"}
             </Badge>
@@ -321,7 +321,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
           <span className="text-xl font-extrabold text-primary mt-1">
             {formatMoney(totalCogsAmount, "BHD")}
           </span>
-          <p className="text-[10px] text-muted-foreground mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             {isAr
               ? "تضاف إلى أصول المخزون وتستقطع تكلفة القطعة منها عند إتمام كل طلب"
               : "Added to inventory asset & deducted per fulfilled order unit cost"}
@@ -333,14 +333,14 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
             <span className="text-xs font-bold text-muted-foreground">
               {isAr ? "مصاريف تشغيلية ثابتة (Monthly OpEx)" : "Fixed OpEx Overhead"}
             </span>
-            <Badge variant="outline" className="bg-muted text-muted-foreground text-[10px]">
+            <Badge variant="outline" className="bg-muted text-muted-foreground text-xs">
               OpEx
             </Badge>
           </div>
           <span className="text-xl font-extrabold text-foreground mt-1">
             {formatMoney(totalOpexAmount, "BHD")}
           </span>
-          <p className="text-[10px] text-muted-foreground mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             {isAr
               ? "تستقطع من صافي ربح المتجر الإجمالي للفترة"
               : "Deducted at the overall store financial level"}
@@ -413,12 +413,12 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
                       <span className="font-bold text-sm text-foreground">{exp.description}</span>
                       <Badge
                         variant="outline"
-                        className={`text-[10px] ${isCogs ? "border-primary/30 text-primary" : "border-border text-muted-foreground"}`}
+                        className={`text-xs ${isCogs ? "border-primary/30 text-primary" : "border-border text-muted-foreground"}`}
                       >
                         {isCogs ? "COGS" : "OpEx"}
                       </Badge>
                       {exp.is_recurring && (
-                        <Badge variant="secondary" className="text-[10px] gap-1">
+                        <Badge variant="secondary" className="text-xs gap-1">
                           <Repeat className="h-2.5 w-2.5" />
                           {isAr
                             ? `دوري (${exp.recurrence_period === "yearly" ? "سنوي" : "شهري"})`
@@ -578,7 +578,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-[11px] font-semibold">
+                    <Label className="text-xs font-semibold">
                       {isAr ? "الكمية / Quantity" : "Quantity"}
                     </Label>
                     <Input
@@ -592,7 +592,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-[11px] font-semibold">
+                    <Label className="text-xs font-semibold">
                       {isAr ? "الوحدة / Unit Type" : "Unit Type"}
                     </Label>
                     <select
@@ -612,7 +612,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
 
                 {/* Dynamic Calculation Live Display Badge */}
                 <div className="rounded-md border border-primary/20 bg-background/80 p-2 flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground text-[11px] font-medium">
+                  <span className="text-muted-foreground text-xs font-medium">
                     {isAr ? "تكلفة القطعة الواحدة الحسابية:" : "Calculated Unit Cost:"}
                   </span>
                   <Badge
@@ -689,7 +689,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
                   </select>
                 )}
               </div>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 {isAr
                   ? "مثل رسوم الاشتراك بالحاضنة أو الإيجار الشهري لتتبع الالتزامات المستقبلية."
                   : "For fixed recurring obligations like monthly incubator fees or rent."}

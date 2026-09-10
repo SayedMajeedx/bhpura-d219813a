@@ -289,7 +289,7 @@ export function SettingsSearchBar({ lang, onSelectResult }: SettingsSearchBarPro
         <div className="absolute top-full start-0 end-0 mt-1.5 z-50 rounded-xl border border-border/80 bg-popover/95 backdrop-blur-md shadow-xl overflow-hidden animate-fade-in max-h-80 overflow-y-auto">
           {results.length > 0 ? (
             <div className="p-1.5 space-y-1">
-              <div className="px-2 py-1 text-[11px] font-semibold text-muted-foreground">
+              <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">
                 {isAr
                   ? `عُثر على ${results.length} خيار مطابق`
                   : `Found ${results.length} matching setting(s)`}
@@ -311,14 +311,14 @@ export function SettingsSearchBar({ lang, onSelectResult }: SettingsSearchBarPro
                         <span className="text-xs font-bold text-foreground block truncate">
                           {isAr ? item.title_ar : item.title_en}
                         </span>
-                        <span className="text-[11px] text-muted-foreground block truncate">
+                        <span className="text-xs text-muted-foreground block truncate">
                           {isAr ? item.category_ar : item.category_en}
                         </span>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0 text-muted-foreground group-hover:text-primary transition-colors">
-                      <span className="text-[11px] font-semibold hidden sm:inline">
+                      <span className="text-xs font-semibold hidden sm:inline">
                         {isAr ? "الانتقال للقسم" : "Jump to section"}
                       </span>
                       <ChevronRight className="h-3.5 w-3.5 rtl:rotate-180" />

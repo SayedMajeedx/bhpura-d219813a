@@ -92,7 +92,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 <span>{isAr ? "التصفية" : "Filters"}</span>
                 {activeFilterCount > 0 && (
-                  <span className="rounded-full bg-primary-foreground/20 px-1.5 py-0.2 text-[10px] font-bold">
+                  <span className="rounded-full bg-primary-foreground/20 px-1.5 py-0.2 text-xs font-bold">
                     {activeFilterCount}
                   </span>
                 )}
@@ -103,7 +103,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
                 {isAr ? "تصفية المتقدمة" : "Advanced Filters"}
               </div>
               <div className="space-y-1">
-                <label className="text-[11px] font-medium text-muted-foreground">
+                <label className="text-xs font-medium text-muted-foreground">
                   {isAr ? "القسم" : "Category"}
                 </label>
                 <Select value={selectedCategory} onValueChange={onCategoryChange}>
@@ -136,7 +136,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
               >
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 {activeFilterCount > 0 && (
-                  <span className="rounded-full bg-primary-foreground/20 px-1 py-0.2 text-[10px]">
+                  <span className="rounded-full bg-primary-foreground/20 px-1 py-0.2 text-xs">
                     {activeFilterCount}
                   </span>
                 )}
@@ -150,7 +150,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
               </SheetHeader>
               <div className="space-y-3">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-muted-foreground">
+                  <label className="text-xs font-medium text-muted-foreground">
                     {isAr ? "القسم" : "Category"}
                   </label>
                   <Select value={selectedCategory} onValueChange={onCategoryChange}>
@@ -170,7 +170,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-muted-foreground">
+                  <label className="text-xs font-medium text-muted-foreground">
                     {isAr ? "الترتيب" : "Sort By"}
                   </label>
                   <Select value={sortBy} onValueChange={onSortChange}>
@@ -220,11 +220,11 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
       {/* Active Filter Chips */}
       {activeFilterCount > 0 && (
         <div className="flex items-center gap-1.5 flex-wrap pt-1">
-          <span className="text-[11px] text-muted-foreground font-medium me-1">
+          <span className="text-xs text-muted-foreground font-medium me-1">
             {isAr ? "التصفية النشطة:" : "Active filters:"}
           </span>
           {selectedCategory !== "all" && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-primary/10 text-primary border border-primary/20">
               {isAr ? "القسم:" : "Category:"} {selectedCategory}
               <button
                 type="button"
@@ -240,7 +240,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
             variant="ghost"
             size="sm"
             onClick={onClearFilters}
-            className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground font-bold"
+            className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground font-bold"
           >
             {isAr ? "مسح الكل" : "Clear all"}
           </Button>

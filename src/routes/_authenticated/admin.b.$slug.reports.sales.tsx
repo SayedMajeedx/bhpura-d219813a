@@ -272,7 +272,7 @@ function SalesTooltip({ active, payload, label, currency, lang }: any) {
   if (!active || !payload?.length) return null;
   return (
     <div className="min-w-52 rounded-xl border border-border bg-card p-4 shadow-xl">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <p className="mb-3 text-xs font-semibold text-muted-foreground">
         {label}
       </p>
       {payload.map((item: any) => (

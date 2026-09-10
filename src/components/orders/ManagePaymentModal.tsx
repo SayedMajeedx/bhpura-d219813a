@@ -221,7 +221,7 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
               <Label className="text-xs font-bold text-foreground">
                 {isAr ? "المبلغ المستلم / العربون" : "Collected / Advance Amount"}
               </Label>
-              <span className="text-[11px] font-mono text-muted-foreground">
+              <span className="text-xs font-mono text-muted-foreground">
                 {isAr ? "الإجمالي:" : "Total:"} {formatMoney(totals.total, currency, lang)}
               </span>
             </div>
@@ -234,7 +234,7 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
                 onChange={(e) => setAdvanceAmount(e.target.value)}
                 className="h-9 rounded-xl border-border/80 font-mono text-xs pe-12 bg-background font-bold text-foreground"
               />
-              <span className="absolute end-3 top-2 text-[11px] font-mono font-bold text-muted-foreground">
+              <span className="absolute end-3 top-2 text-xs font-mono font-bold text-muted-foreground">
                 {currency}
               </span>
             </div>
@@ -263,7 +263,7 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
               <p className="font-bold">
                 {isAr ? "راجع التغييرات قبل التأكيد" : "Review changes before confirming"}
               </p>
-              <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 text-[11px]">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 text-xs">
                 <span className="truncate">
                   {PAYMENT_BADGE_LABEL[originalStatus]?.[lang]} ·{" "}
                   {formatMoney(originalAdvance, currency, lang)}

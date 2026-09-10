@@ -77,7 +77,7 @@ export function DiscountsScopeSwitcher({
             <span className="truncate">{tab.label}</span>
             <span
               className={cn(
-                "ms-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold",
+                "ms-1 px-1.5 py-0.2 rounded-full text-xs font-bold",
                 isActive
                   ? "bg-primary-foreground/20 text-primary-foreground"
                   : "bg-muted text-muted-foreground",

@@ -161,15 +161,15 @@ export function SuperAddonsManager() {
           >
             <CardHeader className="pb-3 border-b border-border/50">
               <div className="flex items-center justify-between">
-                <Badge variant="outline" className="font-mono text-[10px]">
+                <Badge variant="outline" className="font-mono text-xs">
                   {addon.code}
                 </Badge>
                 {addon.is_active ? (
-                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 text-[10px]">
+                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 text-xs">
                     {isAr ? "مفعل" : "Active"}
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="bg-muted text-muted-foreground text-[10px]">
+                  <Badge variant="outline" className="bg-muted text-muted-foreground text-xs">
                     {isAr ? "معطل" : "Inactive"}
                   </Badge>
                 )}
@@ -185,7 +185,7 @@ export function SuperAddonsManager() {
             <CardContent className="pt-4 space-y-4">
               <div className="p-3 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between text-xs">
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground block">
+                  <span className="text-xs uppercase font-bold text-muted-foreground block">
                     {isAr ? "الميزة المستهدفة" : "Target Feature"}
                   </span>
                   <span className="font-mono font-bold text-foreground">{addon.target_feature_key}</span>
@@ -194,7 +194,7 @@ export function SuperAddonsManager() {
                   <span className="font-mono font-bold text-foreground block">
                     {addon.price_monthly} BHD/m
                   </span>
-                  <span className="text-[10px] font-mono text-muted-foreground">
+                  <span className="text-xs font-mono text-muted-foreground">
                     {addon.price_annual} BHD/y
                   </span>
                 </div>

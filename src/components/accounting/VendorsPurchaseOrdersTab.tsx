@@ -258,7 +258,7 @@ export function VendorsPurchaseOrdersTab() {
                         </span>
                         <Badge
                           variant="outline"
-                          className={`text-[10px] ${isFullyPaid ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-amber-500/10 text-amber-600 border-amber-500/20"}`}
+                          className={`text-xs ${isFullyPaid ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-amber-500/10 text-amber-600 border-amber-500/20"}`}
                         >
                           {isFullyPaid
                             ? isAr

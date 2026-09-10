@@ -69,7 +69,7 @@ export function ReportsToolbar({
                   </div>
                   {interval && setInterval && (
                     <div className="space-y-1">
-                      <label className="text-[11px] font-medium text-muted-foreground">
+                      <label className="text-xs font-medium text-muted-foreground">
                         {isAr ? "الفاصل الزمني" : "Interval"}
                       </label>
                       <Select
@@ -90,7 +90,7 @@ export function ReportsToolbar({
                   )}
                   {sortBy && setSortBy && (
                     <div className="space-y-1">
-                      <label className="text-[11px] font-medium text-muted-foreground">
+                      <label className="text-xs font-medium text-muted-foreground">
                         {isAr ? "ترتيب حسب" : "Sort By"}
                       </label>
                       <Select value={sortBy} onValueChange={setSortBy}>
@@ -135,7 +135,7 @@ export function ReportsToolbar({
                   <div className="space-y-3">
                     {interval && setInterval && (
                       <div className="space-y-1">
-                        <label className="text-[11px] font-medium text-muted-foreground">
+                        <label className="text-xs font-medium text-muted-foreground">
                           {isAr ? "الفاصل الزمني" : "Interval"}
                         </label>
                         <Select
@@ -156,7 +156,7 @@ export function ReportsToolbar({
                     )}
                     {sortBy && setSortBy && (
                       <div className="space-y-1">
-                        <label className="text-[11px] font-medium text-muted-foreground">
+                        <label className="text-xs font-medium text-muted-foreground">
                           {isAr ? "ترتيب حسب" : "Sort By"}
                         </label>
                         <Select value={sortBy} onValueChange={setSortBy}>

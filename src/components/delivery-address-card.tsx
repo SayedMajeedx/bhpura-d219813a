@@ -67,7 +67,7 @@ export function DeliveryAddressCard({
                 {address.label || (isAr ? "عنوان التوصيل" : "Delivery address")}
               </span>
               {address.is_default && (
-                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-bold text-primary shrink-0">
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary shrink-0">
                   {isAr ? "افتراضي" : "Default"}
                 </span>
               )}
@@ -107,7 +107,7 @@ export function DeliveryAddressCard({
             (isAr ? "لا تتوفّر تفاصيل عنوان" : "No address details")}
         </p>
         {address.delivery_notes && (
-          <p className="text-[11px] text-amber-800 dark:text-amber-300 font-medium truncate">
+          <p className="text-xs text-amber-800 dark:text-amber-300 font-medium truncate">
             {isAr ? "ملاحظة:" : "Note:"} {address.delivery_notes}
           </p>
         )}
@@ -123,7 +123,7 @@ export function DeliveryAddressCard({
             <MapPin className="h-4 w-4 text-primary" />
             <strong>{address.label || (isAr ? "عنوان التوصيل" : "Delivery address")}</strong>
             {address.is_default && (
-              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
                 {isAr ? "افتراضي" : "Default"}
               </span>
             )}
@@ -167,7 +167,7 @@ export function DeliveryAddressCard({
       <dl className="grid gap-x-5 gap-y-2 sm:grid-cols-2">
         {fields.map(([label, value]) => (
           <div key={label} className="min-w-0">
-            <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</dt>
+            <dt className="text-xs uppercase tracking-wide text-muted-foreground">{label}</dt>
             <dd className="break-words text-sm font-medium">{value}</dd>
           </div>
         ))}

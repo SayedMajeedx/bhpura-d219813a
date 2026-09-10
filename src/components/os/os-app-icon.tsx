@@ -45,7 +45,7 @@ export function OsAppIcon({
       </div>
 
       {badge !== undefined && (
-        <span className="absolute -top-1 -end-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground shadow-sm">
+        <span className="absolute -top-1 -end-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-xs font-bold text-destructive-foreground shadow-sm">
           {badge}
         </span>
       )}

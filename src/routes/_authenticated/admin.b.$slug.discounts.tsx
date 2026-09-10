@@ -720,7 +720,7 @@ function DiscountCodes() {
                 placeholder={ar ? "مثال: 500 مرة" : "e.g. 100 redemptions"}
                 className="h-11 font-mono"
               />
-              <p className="text-[11px] text-muted-foreground px-1">
+              <p className="text-xs text-muted-foreground px-1">
                 {ar
                   ? "يعطل الرمز تلقائياً بعد استخدامه بالكامل في الطلبيات."
                   : "Automatically pauses the code globally once the redemptions cap is met."}

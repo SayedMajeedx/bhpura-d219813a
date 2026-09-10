@@ -17,7 +17,7 @@ export const OrderItemsSection: React.FC<OrderItemsSectionProps> = ({ lang, orde
         <div className="h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
           <ShoppingBag className="h-4 w-4" />
         </div>
-        <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
+        <h2 className="text-xs font-semibold text-foreground">
           {isAr ? "المنتجات المشتراة" : "Order Items"} ({items.length})
         </h2>
       </div>
@@ -65,12 +65,12 @@ export const OrderItemsSection: React.FC<OrderItemsSectionProps> = ({ lang, orde
                 <div className="min-w-0">
                   <div className="font-bold text-foreground truncate">{itemTitle}</div>
                   {variantTitle && (
-                    <div className="text-[11px] text-muted-foreground font-mono">
+                    <div className="text-xs text-muted-foreground font-mono">
                       {variantTitle}
                     </div>
                   )}
                   {customFields.length > 0 && (
-                    <div className="text-[10px] text-muted-foreground/80 mt-0.5 space-y-0.5">
+                    <div className="text-xs text-muted-foreground/80 mt-0.5 space-y-0.5">
                       {customFields.map((cf: any, cfi: number) => (
                         <div key={cfi} className="flex items-center gap-1">
                           <span className="font-semibold">{isAr ? cf.label_ar || cf.label_en || cf.key : cf.label_en || cf.label_ar || cf.key}:</span>
@@ -79,7 +79,7 @@ export const OrderItemsSection: React.FC<OrderItemsSectionProps> = ({ lang, orde
                       ))}
                     </div>
                   )}
-                  <div className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                  <div className="text-xs text-muted-foreground font-mono mt-0.5">
                     {qty} × {formatMoney(unitPrice, order.currency || "BHD", lang)}
                   </div>
                 </div>

@@ -207,7 +207,7 @@ export const TrialExpiredPaywall: React.FC<TrialExpiredPaywallProps> = ({
               }`}
             >
               <span>{isAr ? "دفع سنوي" : "Annual Billing"}</span>
-              <span className="text-[10px] bg-emerald-500/20 text-emerald-600 px-1.5 py-0.2 rounded font-bold">
+              <span className="text-xs bg-emerald-500/20 text-emerald-600 px-1.5 py-0.2 rounded font-bold">
                 {isAr ? "وفّر 20%" : "Save 20%"}
               </span>
             </button>
@@ -232,7 +232,7 @@ export const TrialExpiredPaywall: React.FC<TrialExpiredPaywallProps> = ({
               >
                 {plan.badge && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-primary text-primary-foreground font-bold text-[11px] px-3 shadow-sm">
+                    <Badge className="bg-primary text-primary-foreground font-bold text-xs px-3 shadow-sm">
                       {plan.badge}
                     </Badge>
                   </div>
@@ -260,7 +260,7 @@ export const TrialExpiredPaywall: React.FC<TrialExpiredPaywallProps> = ({
                 </CardHeader>
 
                 <CardContent className="space-y-2.5 pt-2 border-t border-border/60">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                  <p className="text-xs font-semibold text-muted-foreground mb-2">
                     {isAr ? "المزايا المشمولة:" : "Included Features:"}
                   </p>
                   {(isAr ? plan.featuresAr : plan.featuresEn).map((feature, i) => (

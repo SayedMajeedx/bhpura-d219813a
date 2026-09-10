@@ -6,9 +6,12 @@ describe("Mobile Admin Smart Adaptive Typography & Performance Rules", () => {
   const cssPath = path.resolve(__dirname, "../src/styles.css");
   const cssContent = fs.readFileSync(cssPath, "utf-8");
 
-  it("includes responsive media query rules that soften font-bold on mobile viewports", () => {
-    expect(cssContent).toContain("@media (max-width: 640px)");
-    expect(cssContent).toContain("font-weight: 600 !important;");
+  it("defines the five semantic typography roles (.txt-title, .txt-section, .txt-body, .txt-label, .txt-meta)", () => {
+    expect(cssContent).toContain(".txt-title");
+    expect(cssContent).toContain(".txt-section");
+    expect(cssContent).toContain(".txt-body");
+    expect(cssContent).toContain(".txt-label");
+    expect(cssContent).toContain(".txt-meta");
   });
 
   it("provides smart responsive utility classes (.font-smart-bold, .font-smart-semibold, .font-smart-heading)", () => {

@@ -420,7 +420,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
         <CardContent className="pt-2 pb-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-2xl bg-background/60 border border-border/60 backdrop-blur-sm">
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+              <span className="text-xs font-semibold text-muted-foreground block">
                 {isTrial
                   ? (isAr ? "نوع الحساب" : "Account Mode")
                   : (isAr ? "حماية الأسعار" : "Grandfathering")}
@@ -439,7 +439,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
             </div>
 
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+              <span className="text-xs font-semibold text-muted-foreground block">
                 {isAr ? "فترة الفوترة" : "Billing Cycle"}
               </span>
               <span className="text-sm font-bold text-foreground">
@@ -452,7 +452,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
             </div>
 
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+              <span className="text-xs font-semibold text-muted-foreground block">
                 {isTrial
                   ? (isAr ? "تاريخ انتهاء التجربة" : "Trial Expiry Date")
                   : (isAr ? "تاريخ التجديد القادم" : "Next Renewal Date")}
@@ -480,14 +480,14 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                   <p className="font-bold text-amber-800 dark:text-amber-300">
                     {isAr ? "طلب الترقية قيد المراجعة والتحقق" : "Upgrade Request Pending Verification"}
                   </p>
-                  <p className="text-[11px] text-amber-700/80 dark:text-amber-400/80 mt-0.5">
+                  <p className="text-xs text-amber-700/80 dark:text-amber-400/80 mt-0.5">
                     {isAr
                       ? "تم استلام إشعار التحويل عبر BenefitPay بنجاح. جاري مطابقة التحويل من قبل إدارة المنصة وسيتم تفعيل الباقة فور الاعتماد."
                       : "BenefitPay transfer receipt submitted. Admin verification is in progress."}
                   </p>
                 </div>
               </div>
-              <Badge className="bg-amber-500 text-white shrink-0 text-[10px] font-bold">
+              <Badge className="bg-amber-500 text-white shrink-0 text-xs font-bold">
                 {isAr ? "بانتظار الاعتماد" : "Pending Approval"}
               </Badge>
             </div>
@@ -587,7 +587,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                     onClick={() => setUpgradeBillingInterval("annual")}
                   >
                     <span>{isAr ? "اشتراك سنوي" : "Annual"}</span>
-                    <Badge variant="secondary" className="text-[10px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-extrabold px-1.5 py-0 border-0">
+                    <Badge variant="secondary" className="text-xs bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-extrabold px-1.5 py-0 border-0">
                       {isAr ? "وفّر شهرين!" : "2 Mos Free"}
                     </Badge>
                   </Button>
@@ -613,7 +613,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                       }`}
                     >
                       {isRecommended && (
-                        <span className="absolute -top-2.5 left-4 px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary text-primary-foreground shadow-xs">
+                        <span className="absolute -top-2.5 left-4 px-2 py-0.5 rounded-full text-xs font-bold bg-primary text-primary-foreground shadow-xs">
                           {isAr ? "الأكثر طلباً ⭐" : "Most Popular ⭐"}
                         </span>
                       )}
@@ -623,7 +623,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                           {isAr ? plan.name_ar : plan.name_en}
                         </span>
                         {currentVer && (
-                          <span className="text-[10px] text-muted-foreground font-mono">
+                          <span className="text-xs text-muted-foreground font-mono">
                             v{currentVer.version_number}
                           </span>
                         )}
@@ -638,7 +638,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                         </span>
                       </div>
 
-                      <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                         {isAr ? plan.description_ar : plan.description_en}
                       </p>
                     </div>
@@ -673,16 +673,16 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                         <div className="text-xs font-bold text-foreground">
                           {isAr ? "باي بال والبطاقات البنكية" : "PayPal & Cards"}
                         </div>
-                        <div className="text-[10px] text-muted-foreground">
+                        <div className="text-xs text-muted-foreground">
                           {isAr ? "فيزا / ماستركارد / Apple Pay" : "Visa / Mastercard / Apple Pay"}
                         </div>
                       </div>
                     </div>
-                    <Badge variant="default" className="text-[10px] font-bold bg-primary text-primary-foreground">
+                    <Badge variant="default" className="text-xs font-bold bg-primary text-primary-foreground">
                       {isAr ? "تفعيل فوري" : "Instant"}
                     </Badge>
                   </div>
-                  <p className="text-[11px] text-muted-foreground font-normal">
+                  <p className="text-xs text-muted-foreground font-normal">
                     {isAr
                       ? "سداد إلكتروني مباشر عبر حساب PayPal أو أي بطاقة بنكية، وتفعيل فوري للباقة دون انتظار."
                       : "Instant online payment via PayPal account or bank card with automatic tier activation."}
@@ -708,16 +708,16 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                         <div className="text-xs font-bold text-foreground">
                           {isAr ? "بنفت باي (BenefitPay)" : "BenefitPay (Fawri+)"}
                         </div>
-                        <div className="text-[10px] text-muted-foreground">
+                        <div className="text-xs text-muted-foreground">
                           {isAr ? "تحويل محلي فوري بالدينار البحريني" : "Local BHD Transfer"}
                         </div>
                       </div>
                     </div>
-                    <Badge variant="outline" className="text-[10px] font-semibold text-muted-foreground">
+                    <Badge variant="outline" className="text-xs font-semibold text-muted-foreground">
                       {isAr ? "اعتماد يدوي" : "Manual Review"}
                     </Badge>
                   </div>
-                  <p className="text-[11px] text-muted-foreground font-normal">
+                  <p className="text-xs text-muted-foreground font-normal">
                     {isAr
                       ? "تحويل فوري بدون رسوم بوابة عبر تطبيق بنفت باي، وإرفاق الإشعار لاعتماد الإدارة."
                       : "Zero gateway fees via BenefitPay app; submit receipt for admin approval."}
@@ -787,14 +787,14 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                           <QrCode className="h-10 w-10 text-primary/70" />
                         </div>
                       )}
-                      <span className="mt-2 text-[11px] font-bold text-foreground">
+                      <span className="mt-2 text-xs font-bold text-foreground">
                         {systemSettings?.merchant_account_name || "BOUTQ-OFFICIAL"}
                       </span>
                     </div>
 
                     <div className="space-y-3 flex flex-col justify-center">
                       <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                        <span className="text-xs font-semibold text-muted-foreground block mb-1">
                           {isAr ? "رقم الآيبان الرسمي (IBAN):" : "Official IBAN:"}
                         </span>
                         <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-border/80 bg-background">
@@ -823,7 +823,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                         </div>
                       </div>
 
-                      <div className="text-[11px] text-muted-foreground space-y-1">
+                      <div className="text-xs text-muted-foreground space-y-1">
                         <p className="font-semibold text-foreground">
                           {isAr ? "طريقة الدفع في تطبيق BenefitPay:" : "How to transfer in BenefitPay:"}
                         </p>
@@ -851,10 +851,10 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                         />
                         <div>
                           <p className="text-xs font-bold text-foreground line-clamp-1">{receiptFile?.name}</p>
-                          <p className="text-[11px] text-muted-foreground">
+                          <p className="text-xs text-muted-foreground">
                             {receiptFile ? (receiptFile.size / 1024 / 1024).toFixed(2) : 0} MB
                           </p>
-                          <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 font-bold mt-0.5">
+                          <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-bold mt-0.5">
                             <CheckCircle2 className="h-3 w-3" />
                             {isAr ? "جاهز للإرسال" : "Ready for submission"}
                           </span>
@@ -879,7 +879,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                       <span className="mt-2 text-xs font-bold text-foreground">
                         {isAr ? "انقر لاختيار صورة الإيصال أو اسحب الملف إلى هنا" : "Click to select receipt or drag & drop"}
                       </span>
-                      <span className="text-[10px] text-muted-foreground mt-0.5">
+                      <span className="text-xs text-muted-foreground mt-0.5">
                         PNG, JPG, WebP {isAr ? "حتى 10 ميجابايت" : "up to 10MB"}
                       </span>
                       <input
@@ -899,7 +899,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                       <p className="font-bold text-amber-800 dark:text-amber-300">
                         {isAr ? "ملاحظة هامة حول آلية التفعيل:" : "Important Activation Note:"}
                       </p>
-                      <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80 mt-0.5 leading-relaxed">
+                      <p className="text-xs text-amber-800/80 dark:text-amber-300/80 mt-0.5 leading-relaxed">
                         {isAr
                           ? "التفعيل ليس تلقائياً أو فورياً. بعد إرسال الإيصال، يقوم السوبر أدمن بالتحقق من استلام المبلغ في الحساب البنكي ثم تفعيل الباقة والموارد الجديدة لحساب متجرك يدوياً."
                           : "Activation is not instant. After submitting the receipt, the super-admin verifies the bank transfer and manually activates your upgraded tier."}
@@ -1105,11 +1105,11 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                 >
                   <span className="font-semibold">{isAr ? item.labelAr : item.labelEn}</span>
                   {isEnabled ? (
-                    <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-none font-bold text-[10px]">
+                    <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-none font-bold text-xs">
                       {isAr ? "مفعل" : "Unlocked"}
                     </Badge>
                   ) : (
-                    <Badge variant="outline" className="bg-muted text-muted-foreground border-none text-[10px]">
+                    <Badge variant="outline" className="bg-muted text-muted-foreground border-none text-xs">
                       {isAr ? "مغلق" : "Locked"}
                     </Badge>
                   )}
@@ -1222,13 +1222,13 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                               {isCurrent && (
                                 <Badge
                                   variant="outline"
-                                  className="bg-emerald-500/10 text-emerald-600 font-bold text-[10px]"
+                                  className="bg-emerald-500/10 text-emerald-600 font-bold text-xs"
                                 >
                                   {isAr ? "خطتك الحالية" : "Current"}
                                 </Badge>
                               )}
                               {currentVer && (
-                                <span className="text-[10px] text-muted-foreground font-mono">
+                                <span className="text-xs text-muted-foreground font-mono">
                                   v{currentVer.version_number}
                                 </span>
                               )}
@@ -1236,7 +1236,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                             <h4 className="text-base font-bold text-foreground">
                               {isAr ? plan.name_ar : plan.name_en}
                             </h4>
-                            <p className="text-[11px] text-muted-foreground line-clamp-2">
+                            <p className="text-xs text-muted-foreground line-clamp-2">
                               {isAr ? plan.description_ar : plan.description_en}
                             </p>
                           </div>
@@ -1256,7 +1256,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                                     </span>
                                   </div>
                                   {upgradeBillingInterval === "annual" && Number(monthlyPrice) > 0 && (
-                                    <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                                    <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
                                       {isAr
                                         ? `(يعادل ${(Number(annualPrice) / 12).toFixed(1)} د.ب / شهرياً فقط)`
                                         : `(Equivalent to ${(Number(annualPrice) / 12).toFixed(1)} BHD/mo)`}
@@ -1334,7 +1334,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                     {/* Order Summary Card */}
                     <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/80 flex items-center justify-between">
                       <div>
-                        <span className="text-[11px] text-muted-foreground block">
+                        <span className="text-xs text-muted-foreground block">
                           {isAr ? "الباقة ودورة الفوترة:" : "Selected Plan & Cycle:"}
                         </span>
                         <span className="text-sm font-bold text-foreground">
@@ -1345,7 +1345,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                         </span>
                       </div>
                       <div className="text-end">
-                        <span className="text-[11px] text-muted-foreground block">
+                        <span className="text-xs text-muted-foreground block">
                           {isAr ? "المبلغ المستحق:" : "Total Amount:"}
                         </span>
                         <span className="text-lg font-black text-primary font-mono">
@@ -1373,11 +1373,11 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                               {isAr ? "باي بال والبطاقات" : "PayPal & Cards"}
                             </span>
                           </div>
-                          <Badge variant="default" className="text-[9px] font-bold bg-primary text-primary-foreground">
+                          <Badge variant="default" className="text-xs font-bold bg-primary text-primary-foreground">
                             {isAr ? "تفعيل فوري" : "Instant"}
                           </Badge>
                         </div>
-                        <p className="text-[10px] text-muted-foreground font-normal">
+                        <p className="text-xs text-muted-foreground font-normal">
                           {isAr ? "بطاقات فيزا، ماستركارد، Apple Pay" : "Visa, Mastercard, Apple Pay"}
                         </p>
                       </Button>
@@ -1398,11 +1398,11 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                               {isAr ? "بنفت باي" : "BenefitPay"}
                             </span>
                           </div>
-                          <Badge variant="outline" className="text-[9px] font-semibold text-muted-foreground">
+                          <Badge variant="outline" className="text-xs font-semibold text-muted-foreground">
                             {isAr ? "اعتماد يدوي" : "Manual Review"}
                           </Badge>
                         </div>
-                        <p className="text-[10px] text-muted-foreground font-normal">
+                        <p className="text-xs text-muted-foreground font-normal">
                           {isAr ? "تحويل محلي مباشر بالدينار" : "Direct Local BHD Transfer"}
                         </p>
                       </Button>
@@ -1435,13 +1435,13 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                                 <h5 className="text-xs font-bold text-foreground">
                                   {isAr ? "بيانات التحويل عبر BenefitPay" : "BenefitPay Transfer Account"}
                                 </h5>
-                                <p className="text-[11px] text-muted-foreground font-mono">
+                                <p className="text-xs text-muted-foreground font-mono">
                                   {merchantName}
                                 </p>
                               </div>
                             </div>
                             {qrUrl && (
-                              <Badge variant="outline" className="text-[10px] gap-1">
+                              <Badge variant="outline" className="text-xs gap-1">
                                 <QrCode className="h-3 w-3" />
                                 <span>{isAr ? "رمز QR متاح" : "QR Available"}</span>
                               </Badge>
@@ -1462,7 +1462,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                           {/* IBAN Copy Box */}
                           <div className="p-3 rounded-xl bg-background border border-border flex items-center justify-between gap-2">
                             <div className="min-w-0">
-                              <span className="text-[10px] text-muted-foreground font-medium block">
+                              <span className="text-xs text-muted-foreground font-medium block">
                                 {isAr ? "رقم الآيبان (IBAN):" : "IBAN Number:"}
                               </span>
                               <span className="font-mono text-xs font-bold text-foreground break-all select-all">
@@ -1491,7 +1491,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                           </div>
 
                           {/* Transfer Instructions */}
-                          <div className="space-y-1 text-[11px] text-muted-foreground leading-relaxed pt-1">
+                          <div className="space-y-1 text-xs text-muted-foreground leading-relaxed pt-1">
                             <p>1. {isAr ? "افتح تطبيق BenefitPay واختر تحويل الأموال Fawri+." : "Open BenefitPay app and choose Fawri+ transfer."}</p>
                             <p>2. {isAr ? `حوّل المبلغ المطلوب (${duePrice} ${currency}) إلى رقم الآيبان الموضح أعلاه.` : `Transfer exact amount (${duePrice} ${currency}) to the IBAN above.`}</p>
                             <p>3. {isAr ? "احفظ لقطة شاشة لإشعار التحويل الناجح وارفعها في الحقل أدناه." : "Take a screenshot of the successful transfer receipt and upload below."}</p>
@@ -1510,7 +1510,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                               <span className="text-xs font-semibold text-foreground">
                                 {isAr ? "اضغط هنا لاختيار صورة الإيصال" : "Click to select transfer receipt"}
                               </span>
-                              <span className="text-[10px] text-muted-foreground mt-1">
+                              <span className="text-xs text-muted-foreground mt-1">
                                 PNG, JPG, WebP ({isAr ? "حتى 10 ميجابايت" : "up to 10MB"})
                               </span>
                               <input
@@ -1532,7 +1532,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                                   <span className="text-xs font-bold text-foreground truncate block">
                                     {receiptFile?.name}
                                   </span>
-                                  <span className="text-[10px] text-muted-foreground">
+                                  <span className="text-xs text-muted-foreground">
                                     {receiptFile && (receiptFile.size / (1024 * 1024)).toFixed(2)} MB
                                   </span>
                                 </div>
@@ -1555,7 +1555,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                         </div>
 
                         {/* Super-admin approval note */}
-                        <p className="text-[11px] text-amber-800 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl">
+                        <p className="text-xs text-amber-800 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl">
                           {isAr
                             ? "تنويه: يتم تدقيق الإيصال واعتماد التفعيل يدوياً من السوبر أدمن فور مطابقة التحويل البنكي."
                             : "Note: The super-admin will manually verify the receipt and activate your plan upon bank transfer confirmation."}

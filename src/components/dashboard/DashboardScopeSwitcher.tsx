@@ -66,7 +66,7 @@ export function DashboardScopeSwitcher({
             type="button"
             onClick={() => onScopeChange(scope.id)}
             className={cn(
-              "min-w-0 flex items-center justify-center gap-1 px-1.5 py-2 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all duration-200 cursor-pointer sm:justify-start sm:gap-1.5 sm:px-3 sm:text-xs sm:shrink-0",
+              "min-w-0 flex items-center justify-center gap-1 px-1.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer sm:justify-start sm:gap-1.5 sm:px-3 sm:text-xs sm:shrink-0",
               isActive
                 ? "bg-primary text-primary-foreground shadow-sm scale-[1.01]"
                 : "text-muted-foreground hover:bg-background/80 hover:text-foreground",
@@ -80,7 +80,7 @@ export function DashboardScopeSwitcher({
             {scope.badge !== undefined && (
               <span
                 className={cn(
-                  "ms-1 px-1.5 py-0.2 text-[10px] font-extrabold rounded-full",
+                  "ms-1 px-1.5 py-0.2 text-xs font-extrabold rounded-full",
                   isActive
                     ? "bg-primary-foreground text-primary"
                     : "bg-amber-500/20 text-amber-700 dark:text-amber-400",

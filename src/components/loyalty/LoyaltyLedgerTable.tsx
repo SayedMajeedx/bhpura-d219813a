@@ -77,32 +77,32 @@ export function LoyaltyLedgerTable({
     switch (status) {
       case "active":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
             {isAr ? "نشط" : "Active"}
           </span>
         );
       case "pending":
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
             <Clock className="h-3 w-3" />
             {isAr ? "معلق (انتظار)" : "Pending"}
           </span>
         );
       case "redeemed":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
             {isAr ? "مستخدم" : "Redeemed"}
           </span>
         );
       case "cancelled":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
             {isAr ? "ملغي" : "Cancelled"}
           </span>
         );
       case "expired":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground border border-border">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
             {isAr ? "منتهي" : "Expired"}
           </span>
         );
@@ -196,7 +196,7 @@ export function LoyaltyLedgerTable({
                       <span className="text-xs text-foreground block">
                         {isAr ? entry.reference_note_ar : entry.reference_note_en}
                       </span>
-                      <span className="text-[10px] font-mono text-muted-foreground block">
+                      <span className="text-xs font-mono text-muted-foreground block">
                         ID: {entry.idempotency_key}
                       </span>
                     </TableCell>

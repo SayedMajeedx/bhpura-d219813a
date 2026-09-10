@@ -164,7 +164,7 @@ export function CashFlowLiquidityTab() {
             </span>
             <Badge
               variant="outline"
-              className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px]"
+              className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-xs"
             >
               Cash
             </Badge>
@@ -183,7 +183,7 @@ export function CashFlowLiquidityTab() {
             </span>
             <Badge
               variant="outline"
-              className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px]"
+              className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-xs"
             >
               Bank / BENEFIT
             </Badge>
@@ -202,7 +202,7 @@ export function CashFlowLiquidityTab() {
             <Button
               size="sm"
               onClick={() => setTransferModalOpen(true)}
-              className="h-7 text-[11px] font-bold gap-1 px-2"
+              className="h-7 text-xs font-bold gap-1 px-2"
             >
               <ArrowRightLeft className="h-3 w-3" />
               {isAr ? "تحويل سيولة" : "Transfer"}
@@ -261,7 +261,7 @@ export function CashFlowLiquidityTab() {
                         </span>
                         <span className="text-xs text-muted-foreground">• {customerName}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                         <span>{formatDate(o.created_at)}</span>
                         <span>•</span>
                         <span className="uppercase font-mono">{o.payment_method || "cash"}</span>
@@ -316,7 +316,7 @@ export function CashFlowLiquidityTab() {
 
           <div className="space-y-4 py-2 text-xs">
             <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-1">
-              <span className="text-[11px] text-muted-foreground block">
+              <span className="text-xs text-muted-foreground block">
                 {isAr ? "رصيد الصندوق المتاح:" : "Cash Box Balance:"}
               </span>
               <span className="font-bold text-sm text-foreground">

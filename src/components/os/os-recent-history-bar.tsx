@@ -37,7 +37,7 @@ export function OsRecentHistoryBar({ lang, currentPageTitle }: OsRecentHistoryBa
     <div className="hidden lg:flex items-center justify-between gap-3 px-3 py-1 bg-muted/30 border-b border-border/40 text-xs shrink-0 select-none">
       {/* Left: Recently Visited Modules */}
       <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
-        <div className="inline-flex items-center gap-1 text-[11px] font-bold text-muted-foreground me-1 shrink-0">
+        <div className="inline-flex items-center gap-1 text-xs font-bold text-muted-foreground me-1 shrink-0">
           <Clock className="h-3 w-3 text-primary" />
           <span>{isAr ? "الزيارات الأخيرة:" : "Recent Visits:"}</span>
         </div>
@@ -53,7 +53,7 @@ export function OsRecentHistoryBar({ lang, currentPageTitle }: OsRecentHistoryBa
                 key={item.path}
                 to={item.path as any}
                 className={cn(
-                  "inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium transition-all duration-150 whitespace-nowrap",
+                  "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium transition-all duration-150 whitespace-nowrap",
                   isActive
                     ? "bg-primary/15 text-primary border border-primary/20 font-bold"
                     : "bg-background/60 text-muted-foreground hover:bg-background hover:text-foreground border border-border/40 shadow-2xs",

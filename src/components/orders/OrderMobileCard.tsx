@@ -71,7 +71,7 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <div className="flex items-center gap-1.5 min-w-0">
           {isGuest ? (
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground/80 bg-muted/50 px-2 py-0.5 rounded-md">
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground/80 bg-muted/50 px-2 py-0.5 rounded-md">
               <UserX className="h-3 w-3 text-muted-foreground" />
               {isAr ? "عميل زائر" : "Guest Customer"}
             </span>
@@ -84,7 +84,7 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
         {customerPhone && (
           <a
             href={`tel:${customerPhone}`}
-            className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline shrink-0 font-mono"
+            className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline shrink-0 font-mono"
           >
             <Phone className="h-3 w-3" />
             {maskPhoneForList(customerPhone)}
@@ -95,7 +95,7 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
       {/* Badges Row */}
       <div className="flex items-center gap-1.5 flex-wrap">
         <span
-          className={`rounded border px-2 py-0.5 text-[10px] font-semibold ${
+          className={`rounded border px-2 py-0.5 text-xs font-semibold ${
             paymentMethod.recognized
               ? "border-border/50 bg-muted/80 text-foreground"
               : "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300"
@@ -105,14 +105,14 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
         </span>
         {paymentBadge && (
           <span
-            className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${paymentBadge.className}`}
+            className={`px-2 py-0.5 rounded-md text-xs font-bold ${paymentBadge.className}`}
           >
             {paymentBadge.label}
           </span>
         )}
         {fulfillmentBadge && (
           <span
-            className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${fulfillmentBadge.classes}`}
+            className={`px-2 py-0.5 rounded-md text-xs font-bold ${fulfillmentBadge.classes}`}
           >
             {fulfillmentBadge.label}
           </span>

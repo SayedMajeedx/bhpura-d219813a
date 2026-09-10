@@ -172,11 +172,11 @@ function AuthPage() {
         {/* Bottom-Right Floating Sales Telemetry Card */}
         <div className="absolute bottom-[18%] right-10 bg-zinc-900/85 border border-border backdrop-blur-md p-4 rounded-2xl shadow-xl w-60">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-[10px] text-zinc-400 font-bold tracking-wider uppercase flex items-center gap-1">
+            <span className="text-xs text-zinc-400 font-bold tracking-wider uppercase flex items-center gap-1">
               <TrendingUp className="h-3 w-3 text-primary" />
               {lang === "ar" ? "مبيعات البوتيك" : "BOUTIQUE SALES"}
             </span>
-            <span className="text-[9px] bg-rose-500/10 text-rose-300 font-bold border border-rose-500/20 px-2 py-0.5 rounded-full">
+            <span className="text-xs bg-rose-500/10 text-rose-300 font-bold border border-rose-500/20 px-2 py-0.5 rounded-full">
               LIVE
             </span>
           </div>
@@ -317,7 +317,7 @@ function AuthPage() {
 
           {passkeySupported && (
             <div className="mt-6 space-y-4">
-              <div className="flex items-center gap-3 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+              <div className="flex items-center gap-3 text-xs font-bold text-zinc-400 uppercase tracking-wider">
                 <span className="h-px flex-1 bg-zinc-800" />
                 <span>{lang === "ar" ? "أو باستخدام" : "or biometric"}</span>
                 <span className="h-px flex-1 bg-zinc-800" />
@@ -340,7 +340,7 @@ function AuthPage() {
                 </span>
               </Button>
 
-              <p className="text-center text-[11px] font-medium text-zinc-400">
+              <p className="text-center text-xs font-medium text-zinc-400">
                 {lang === "ar"
                   ? "استخدم Face ID أو Touch ID أو مفتاح أمان مسجّل."
                   : "Use a registered Face ID, Touch ID, device PIN, or security key."}

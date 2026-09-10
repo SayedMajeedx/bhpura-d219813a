@@ -52,27 +52,27 @@ export function AbandonedCartLogsTable({ logs, isLoading }: AbandonedCartLogsTab
     switch (status) {
       case "sent":
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
             <CheckCircle2 className="h-3 w-3" />
             {isAr ? "تم الإرسال" : "Sent"}
           </span>
         );
       case "failed":
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
             <AlertTriangle className="h-3 w-3" />
             {isAr ? "فشل" : "Failed"}
           </span>
         );
       case "skipped_opt_out":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground border border-border">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
             {isAr ? "تم التخطي (عدم موافقة)" : "Opted-out"}
           </span>
         );
       case "skipped_recovered":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-sky-500/10 text-sky-600 border border-sky-500/20">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-sky-500/10 text-sky-600 border border-sky-500/20">
             {isAr ? "تم التخطي (اكتمل الطلب)" : "Order Placed"}
           </span>
         );

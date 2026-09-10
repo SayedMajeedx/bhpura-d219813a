@@ -57,7 +57,7 @@ describe("design system guardrails", () => {
     // Phase 2 drives this to 0. Every one of these is an arbitrary pixel size
     // smaller than text-xs, which is already the smallest size worth shipping.
     const count = countMatches(/text-\[(?:[0-9]|10|11)(?:\.\d+)?px\]/g);
-    expect(count).toBeLessThanOrEqual(941);
+    expect(count).toBe(0);
   });
 
   it("keeps hand-rolled <button> elements within budget", () => {

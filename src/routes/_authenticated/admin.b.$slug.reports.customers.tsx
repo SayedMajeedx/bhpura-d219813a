@@ -201,7 +201,7 @@ function ReportsCustomers() {
                               {formatMoney(c.total_pov, c.currency, lang)}
                             </strong>
                           </div>
-                          <p className="mt-2 text-[11px] text-muted-foreground">
+                          <p className="mt-2 text-xs text-muted-foreground">
                             {c.paid_order_count} {lang === "ar" ? "طلبات مدفوعة" : "paid orders"}
                           </p>
                         </article>

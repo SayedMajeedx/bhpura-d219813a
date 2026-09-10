@@ -306,7 +306,7 @@ export function OsMobileNavigation({
                 <div className="min-w-0">
                   <h2 className="text-base font-bold font-heading text-foreground truncate flex items-center gap-1.5">
                     <span className="truncate">{brandLabel}</span>
-                    <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25 shrink-0">
+                    <span className="text-xs font-mono uppercase px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25 shrink-0">
                       OS
                     </span>
                   </h2>
@@ -346,7 +346,7 @@ export function OsMobileNavigation({
                       <div className="text-xs font-bold font-heading">
                         {lang === "ar" ? "مركز الأدوات والتطبيقات" : "Apps & Tools Hub"}
                       </div>
-                      <div className="text-[10px] text-muted-foreground">
+                      <div className="text-xs text-muted-foreground">
                         {lang === "ar"
                           ? "استعرض وشاهد شرح وتفعيل كافة الأدوات"
                           : "Explore, guide, and manage all tools"}
@@ -363,12 +363,12 @@ export function OsMobileNavigation({
                 if (group.items.length === 0) return null;
                 return (
                   <div key={group.id} className="space-y-1.5">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 px-2 flex items-center gap-1.5">
+                    <div className="text-xs font-semibold text-muted-foreground/80 px-2 flex items-center gap-1.5">
                       <span className="h-1.5 w-1.5 rounded-full bg-primary/60" />
                       <span>{group.title}</span>
                     </div>
 
-                    <div className="space-y-1 bg-white/30 dark:bg-slate-900/30 backdrop-blur-md rounded-2xl p-1.5 border border-border/40 shadow-2xs">
+                    <div className="space-y-1 bg-white/30 dark:bg-slate-900/30 backdrop-blur-md rounded-2xl p-1.5 border border-border shadow-2xs">
                       {group.items.map((item) => {
                         const targetPath = item.to.replace("$slug", item.params?.slug ?? "");
                         const active = pathname.startsWith(targetPath);
@@ -533,7 +533,7 @@ export function OsMobileNavigation({
             {brandLabel}
           </div>
           {currentPageLabel && (
-            <div className="truncate text-[10px] text-muted-foreground font-medium">
+            <div className="truncate text-xs text-muted-foreground font-medium">
               {currentPageLabel}
             </div>
           )}
@@ -549,7 +549,7 @@ export function OsMobileNavigation({
             onClick={() => onSetLang(lang === "en" ? "ar" : "en")}
             aria-label={lang === "en" ? "تبديل إلى العربية" : "Switch to English"}
           >
-            <span className="text-[11px] font-bold uppercase">{lang === "en" ? "AR" : "EN"}</span>
+            <span className="text-xs font-bold uppercase">{lang === "en" ? "AR" : "EN"}</span>
           </Button>
           <Button
             variant="ghost"

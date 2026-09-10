@@ -17,7 +17,7 @@ export function SuperCommandHeader({ lang, pendingCount, onRefresh }: SuperComma
 
       <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 dark:text-amber-300 tracking-wide">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-300 tracking-wide">
             <Crown className="h-3.5 w-3.5 shrink-0 text-amber-500" />
             <span>
               {isAr ? "لوحة تحكم المشرف العام منصة BOUTQ OS" : "SUPER ADMIN PLATFORM CONTROL"}

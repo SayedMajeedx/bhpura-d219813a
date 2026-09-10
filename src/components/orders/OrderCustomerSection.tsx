@@ -50,7 +50,7 @@ export const OrderCustomerSection: React.FC<OrderCustomerSectionProps> = ({
           <div className="h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
             <User className="h-4 w-4" />
           </div>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
+          <h2 className="text-xs font-semibold text-foreground">
             {isAr ? "معلومات العميل" : "Customer & Contact"}
           </h2>
         </div>
@@ -58,7 +58,7 @@ export const OrderCustomerSection: React.FC<OrderCustomerSectionProps> = ({
           <Link
             to="/admin/b/$slug/customers/$customerId"
             params={{ slug, customerId: order.customer_id }}
-            className="text-[11px] font-bold text-primary hover:underline inline-flex items-center gap-1"
+            className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1"
           >
             {isAr ? "الملف الشخصي" : "Profile"}
             <ExternalLink className="h-3 w-3" />
@@ -90,7 +90,7 @@ export const OrderCustomerSection: React.FC<OrderCustomerSectionProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 px-2 text-[10px] gap-1 font-bold text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                  className="h-7 px-2 text-xs gap-1 font-bold text-emerald-600 border-emerald-200 hover:bg-emerald-50"
                   asChild
                 >
                   <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
@@ -117,7 +117,7 @@ export const OrderCustomerSection: React.FC<OrderCustomerSectionProps> = ({
             <MapPin className="h-3.5 w-3.5 text-primary" />
             <span>{isAr ? "عنوان التوصيل (البحرين)" : "Delivery Address"}</span>
           </div>
-          <div className="text-muted-foreground leading-relaxed ps-5 font-mono text-[11px]">
+          <div className="text-muted-foreground leading-relaxed ps-5 font-mono text-xs">
             {address.building && `${isAr ? "مبنى" : "Bldg"} ${address.building}, `}
             {address.road && `${isAr ? "طريق" : "Road"} ${address.road}, `}
             {address.block && `${isAr ? "مجمع" : "Block"} ${address.block}, `}

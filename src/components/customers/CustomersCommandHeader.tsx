@@ -34,7 +34,7 @@ export const CustomersCommandHeader: React.FC<CustomersCommandHeaderProps> = ({
             <h1 className="font-display text-lg sm:text-xl font-bold tracking-tight text-foreground">
               {isAr ? "العملاء وسجل المبيعات" : "Customers & CRM Database"}
             </h1>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-primary/10 text-primary border border-primary/20">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
               {customerCount} {isAr ? "عميل" : "customers"}
             </span>
           </div>

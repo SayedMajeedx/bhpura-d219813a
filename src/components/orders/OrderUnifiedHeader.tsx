@@ -172,14 +172,14 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
               </h1>
 
               {!isCreationMode && (
-                <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary border border-primary/20">
+                <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary border border-primary/20">
                   {orderTypeLabel}
                 </span>
               )}
             </div>
 
             {!isCreationMode && (
-              <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
+              <p className="text-xs text-muted-foreground font-mono mt-0.5">
                 {formatDate(order.created_at ?? order.order_date, isAr ? "ar-BH" : "en-BH")}
               </p>
             )}
@@ -194,7 +194,7 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                 disabled={isReadOnly || !onOpenPaymentModal}
                 title={isAr ? "انقر لإدارة حالة وسجل الدفع" : "Click to manage payment lifecycle"}
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-bold tracking-tight transition-all hover:opacity-90 touch-manipulation focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-80",
+                  "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold tracking-tight transition-all hover:opacity-90 touch-manipulation focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-80",
                   PAYMENT_BADGE_CLASSES[paymentBadge],
                 )}
               >
@@ -221,7 +221,7 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                         : "Click to change order fulfillment status"
                     }
                     className={cn(
-                      "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-bold tracking-tight transition-all hover:opacity-90 touch-manipulation focus-visible:ring-2 focus-visible:ring-ring cursor-pointer disabled:cursor-default",
+                      "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold tracking-tight transition-all hover:opacity-90 touch-manipulation focus-visible:ring-2 focus-visible:ring-ring cursor-pointer disabled:cursor-default",
                       getFulfillmentBadgeClasses(order?.fulfillment_status),
                     )}
                   >
@@ -230,7 +230,7 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align={isAr ? "start" : "end"} className="w-56 font-sans">
-                  <div className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
                     {isAr ? "تغيير حالة الطلب والتنفيذ" : "Change Fulfillment Status"}
                   </div>
                   <DropdownMenuSeparator />

@@ -922,7 +922,7 @@ function ProductImporterModal({
                     <span className="text-sm font-semibold font-display text-foreground block">
                       {item.name}
                     </span>
-                    <span className="text-[10px] text-muted-foreground block mt-0.5">
+                    <span className="text-xs text-muted-foreground block mt-0.5">
                       {item.desc}
                     </span>
                   </button>
@@ -952,7 +952,7 @@ function ProductImporterModal({
                   {importHistoryQuery.data!.map((run: any) => (
                     <div
                       key={run.session_id}
-                      className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2 text-[11px]"
+                      className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2 text-xs"
                     >
                       <div>
                         <span className="font-semibold uppercase">{run.source}</span>
@@ -1034,7 +1034,7 @@ function ProductImporterModal({
                   </span>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[420px] text-[11px]">
+                  <table className="w-full min-w-[420px] text-xs">
                     <thead>
                       <tr className="border-b">
                         {headers.slice(0, 5).map((header) => (
@@ -1125,7 +1125,7 @@ function ProductImporterModal({
                     : `Imported ${successCount} products, skipped ${skippedCount} duplicates, and ${failedCount} failed.`}
                 </p>
                 {importIssues.length > 0 && (
-                  <p className="text-[11px] text-amber-600">
+                  <p className="text-xs text-amber-600">
                     {isAr
                       ? "يمكن مراجعة العناصر المتخطاة وتصحيح الملف ثم إعادة المحاولة بأمان."
                       : "Review skipped items, correct the file, and safely retry."}
@@ -1796,7 +1796,7 @@ function ProductsSection({
         }}
         renderImporters={
           <div className="flex flex-col gap-1 p-1 min-w-[210px]">
-            <div className="px-2.5 py-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/40">
+            <div className="px-2.5 py-1 text-xs font-bold text-muted-foreground border-b border-border/40">
               {isAr ? "الاستيراد السريع" : "Quick Import"}
             </div>
             <Button
@@ -1810,7 +1810,7 @@ function ProductsSection({
             </Button>
             <ProductImporterModal brandId={brandId} onComplete={onChanged} />
 
-            <div className="px-2.5 pt-2 py-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/40">
+            <div className="px-2.5 pt-2 py-1 text-xs font-bold text-muted-foreground border-b border-border/40">
               {isAr ? "الباركود والطباعة" : "Barcodes & Print"}
             </div>
             <Button
@@ -1823,7 +1823,7 @@ function ProductsSection({
               {isAr ? "طباعة جميع الباركودات" : "Print All Barcodes"}
             </Button>
 
-            <div className="px-2.5 pt-2 py-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/40">
+            <div className="px-2.5 pt-2 py-1 text-xs font-bold text-muted-foreground border-b border-border/40">
               {isAr ? "العمليات المتقدمة" : "Advanced Operations"}
             </div>
             <Button
@@ -2997,7 +2997,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                   <button
                     type="button"
                     onClick={() => setForm({ ...form, category: "" })}
-                    className="text-[11px] text-destructive hover:underline font-medium"
+                    className="text-xs text-destructive hover:underline font-medium"
                   >
                     {isAr ? "إلغاء تعيين القسم (بدون قسم)" : "Clear category (No category)"}
                   </button>
@@ -3278,7 +3278,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                         <p className="text-xs font-bold text-foreground">
                           {isAr ? "إبراز في الرائج الآن" : "Feature in Trending now"}
                         </p>
-                        <p className="text-[11px] text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                           {isAr ? "أولوية في العرض للعملاء" : "Prioritizes this product for discovery"}
                         </p>
                       </div>
@@ -3292,7 +3292,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                         <p className="text-xs font-bold text-foreground">
                           {isAr ? "إظهار شارة التنزيلات" : "Show Sale badge"}
                         </p>
-                        <p className="text-[11px] text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                           {isAr ? "تظهر عند وجود سعر أصلي أعلى" : "Shown when an original price is higher"}
                         </p>
                       </div>
@@ -3309,7 +3309,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                       <p className="text-xs font-bold text-foreground">
                         {isAr ? "🏷️ مسميات المتغيرات المخصصة" : "🏷️ Custom Variant Labels"}
                       </p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         {isAr
                           ? "تخصيص أسماء أعمدة المقاس، اللون، والخامة لصفحة عرض المنتج."
                           : "Override default column labels (Size, Color, Fabric) for the storefront."}
@@ -3318,7 +3318,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                     <div className="space-y-3">
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 border-b border-border/40 pb-2.5">
                         <div>
-                          <Label className="text-[11px] font-bold text-muted-foreground">
+                          <Label className="text-xs font-bold text-muted-foreground">
                             {isAr ? "مسمى المقاس بالعربية" : "Custom Size Label — Arabic"}
                           </Label>
                           <Input
@@ -3331,7 +3331,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                           />
                         </div>
                         <div>
-                          <Label className="text-[11px] font-bold text-muted-foreground">
+                          <Label className="text-xs font-bold text-muted-foreground">
                             {isAr ? "مسمى المقاس بالإنجليزية" : "Custom Size Label — English"}
                           </Label>
                           <Input
@@ -3347,7 +3347,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
 
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 border-b border-border/40 pb-2.5">
                         <div>
-                          <Label className="text-[11px] font-bold text-muted-foreground">
+                          <Label className="text-xs font-bold text-muted-foreground">
                             {isAr ? "مسمى اللون بالعربية" : "Custom Color Label — Arabic"}
                           </Label>
                           <Input
@@ -3360,7 +3360,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                           />
                         </div>
                         <div>
-                          <Label className="text-[11px] font-bold text-muted-foreground">
+                          <Label className="text-xs font-bold text-muted-foreground">
                             {isAr ? "مسمى اللون بالإنجليزية" : "Custom Color Label — English"}
                           </Label>
                           <Input
@@ -3376,7 +3376,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
 
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <div>
-                          <Label className="text-[11px] font-bold text-muted-foreground">
+                          <Label className="text-xs font-bold text-muted-foreground">
                             {isAr ? "مسمى الخامة بالعربية" : "Custom Fabric Label — Arabic"}
                           </Label>
                           <Input
@@ -3389,7 +3389,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                           />
                         </div>
                         <div>
-                          <Label className="text-[11px] font-bold text-muted-foreground">
+                          <Label className="text-xs font-bold text-muted-foreground">
                             {isAr ? "مسمى الخامة بالإنجليزية" : "Custom Fabric Label — English"}
                           </Label>
                           <Input
@@ -3452,7 +3452,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                           className="w-full h-full object-cover"
                         />
                       )}
-                      <span className="absolute top-2 start-2 bg-black/80 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">
+                      <span className="absolute top-2 start-2 bg-black/80 text-white text-xs font-bold px-2 py-0.5 rounded shadow">
                         {m.type === "video"
                           ? isAr
                             ? "🎬 فيديو"
@@ -3462,7 +3462,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                             : "📷 Image"}
                       </span>
                       {i === 0 && (
-                        <span className="absolute top-2 end-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded shadow">
+                        <span className="absolute top-2 end-2 bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded shadow">
                           {isAr ? "الغلاف" : "Cover"}
                         </span>
                       )}
@@ -3531,7 +3531,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                         <span className="text-xs font-bold block text-foreground">
                           {isAr ? "إضافة وسائط" : "Add media"}
                         </span>
-                        <span className="text-[10px] text-muted-foreground block">
+                        <span className="text-xs text-muted-foreground block">
                           {isAr ? "صور أو مقاطع فيديو" : "Images or Videos"}
                         </span>
                       </div>
@@ -3562,7 +3562,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                     <span>
                       {isAr ? "⚙️ محرك تصميم وتخصيص المنتج" : "⚙️ Product Customization Engine"}
                     </span>
-                    <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary uppercase">
+                    <span className="rounded bg-primary/15 px-1.5 py-0.5 text-xs font-bold text-primary uppercase">
                       Unlimited
                     </span>
                   </div>
@@ -3670,7 +3670,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                   <span className="text-xs font-bold text-foreground">
                     {isAr ? "لا توجد خيارات مخصصة مفعلة" : "No custom options configured yet"}
                   </span>
-                  <span className="text-[10px] opacity-75 mt-1">
+                  <span className="text-xs opacity-75 mt-1">
                     {isAr
                       ? "استخدم النماذج السريعة بالأعلى لتعبئة الحقول بضغطة زر!"
                       : "Use the dropdown template presets above to populate in 1-click!"}
@@ -3729,7 +3729,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                           {FIT_PROFILE_FIELDS[passportType].map(([key, ar, en, required]) => (
                             <span
                               key={key}
-                              className="rounded-full border bg-background px-2.5 py-1 text-[11px]"
+                              className="rounded-full border bg-background px-2.5 py-1 text-xs"
                             >
                               {isAr ? ar : en} ·{" "}
                               {required
@@ -3827,7 +3827,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                           {/* Real-time storefront preview block */}
                           <div className="rounded-lg bg-muted/40 p-3 border border-dashed border-border/60 text-xs">
                             <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                              <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                                 {isAr
                                   ? "👁️ معاينة فورية لصفحة المنتج"
                                   : "👁️ Real-time Storefront Preview"}
@@ -3872,7 +3872,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                                       d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
                                     />
                                   </svg>
-                                  <span className="text-[10px] font-bold">
+                                  <span className="text-xs font-bold">
                                     {isAr
                                       ? "انقر لرفع ملف مخصص (.pdf, .png, .jpg)"
                                       : "Click to upload custom file (.pdf, .png, .jpg)"}
@@ -3882,14 +3882,14 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                               {f.type === "select" && (
                                 <div className="flex flex-wrap gap-1.5 pt-0.5">
                                   {(f.options ?? []).length === 0 ? (
-                                    <span className="text-[11px] text-muted-foreground italic">
+                                    <span className="text-xs text-muted-foreground italic">
                                       {isAr ? "لا توجد خيارات بعد" : "No options specified yet"}
                                     </span>
                                   ) : (
                                     (f.options ?? []).map((opt) => (
                                       <div
                                         key={opt}
-                                        className="rounded-md border border-border bg-background px-2.5 py-1 text-[11px] font-bold text-foreground shadow-sm"
+                                        className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-bold text-foreground shadow-sm"
                                       >
                                         {opt}
                                       </div>
@@ -3954,7 +3954,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                                 type="button"
                                 size="sm"
                                 variant="ghost"
-                                className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 h-7 text-[11px] rounded font-bold touch-manipulation"
+                                className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 h-7 text-xs rounded font-bold touch-manipulation"
                                 onClick={(e) => {
                                   e.preventDefault();
                                   remove();
@@ -4411,7 +4411,7 @@ function BulkVariantDialog({
                 ? "صف المتغيرات بالعربية أو الإنجليزية (الذكاء الاصطناعي)"
                 : "Describe variants in English or Arabic (AI Parser)"}
             </Label>
-            <span className="text-[11px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               {isAr
                 ? "يدعم مقاسات العبايات، الملابس، الألوان، الأسعار، والمخزون"
                 : "Supports Abayas, Apparel, Shoes, Colors, Prices & Stock"}
@@ -4551,7 +4551,7 @@ function BulkVariantDialog({
               value={salePriceText}
               onChange={(e) => setSalePriceText(e.target.value)}
             />
-            <p className="mt-1 text-[10px] text-muted-foreground">
+            <p className="mt-1 text-xs text-muted-foreground">
               {isAr
                 ? "السعر الفعلي للبيع. اتركه مطابقاً للأساسي أو فارغاً إذا لم يكن هناك تخفيض."
                 : "The price customers actually pay. Leave blank if matching regular price."}
@@ -4991,7 +4991,7 @@ function PremiumCurrencyInput({
           <X className="h-3.5 w-3.5" />
         </button>
       )}
-      <span className="absolute end-2.5 text-[9px] font-black text-muted-foreground/60 pointer-events-none uppercase tracking-tight">
+      <span className="absolute end-2.5 text-xs font-black text-muted-foreground/60 pointer-events-none uppercase tracking-tight">
         BHD
       </span>
     </div>
@@ -5125,7 +5125,7 @@ function VariantDesktopRow({
           <div className="flex flex-col gap-2.5 p-3 bg-card/95 backdrop-blur-md border border-primary/30 rounded-2xl w-[320px] sm:w-[350px] shadow-xl animate-in fade-in zoom-in-95 duration-150 relative z-40">
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
+                <span className="text-xs font-bold text-muted-foreground block mb-1">
                   {(isAr ? product?.variant_label_size_ar : product?.variant_label_size_en) ||
                     product?.variant_label_size_en ||
                     product?.variant_label_size_ar ||
@@ -5139,7 +5139,7 @@ function VariantDesktopRow({
                 />
               </div>
               <div>
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
+                <span className="text-xs font-bold text-muted-foreground block mb-1">
                   {isAr ? "الوحدة" : "Unit"}
                 </span>
                 <select
@@ -5157,7 +5157,7 @@ function VariantDesktopRow({
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
+                <span className="text-xs font-bold text-muted-foreground block mb-1">
                   {(isAr ? product?.variant_label_color_ar : product?.variant_label_color_en) ||
                     product?.variant_label_color_en ||
                     product?.variant_label_color_ar ||
@@ -5171,7 +5171,7 @@ function VariantDesktopRow({
                 />
               </div>
               <div>
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
+                <span className="text-xs font-bold text-muted-foreground block mb-1">
                   {(isAr ? product?.variant_label_fabric_ar : product?.variant_label_fabric_en) ||
                     product?.variant_label_fabric_en ||
                     product?.variant_label_fabric_ar ||
@@ -5186,7 +5186,7 @@ function VariantDesktopRow({
               </div>
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-border/60 mt-0.5">
-              <span className="text-[10px] text-muted-foreground font-medium">
+              <span className="text-xs text-muted-foreground font-medium">
                 {isAr ? "تعديل المتغير" : "Edit Variant Attributes"}
               </span>
               <div className="flex gap-1.5">
@@ -5237,7 +5237,7 @@ function VariantDesktopRow({
             )}
 
             {!renderBarcodeCol && (v.barcode || v.sku) && (
-              <span className="inline-flex items-center gap-1 font-mono text-[10px] text-muted-foreground/85 bg-muted/70 px-1.5 py-0.5 rounded-md border border-border/60 shrink-0">
+              <span className="inline-flex items-center gap-1 font-mono text-xs text-muted-foreground/85 bg-muted/70 px-1.5 py-0.5 rounded-md border border-border/60 shrink-0">
                 <Barcode className="h-3 w-3 text-primary/80" />
                 <span>{v.barcode || v.sku}</span>
               </span>
@@ -5419,22 +5419,22 @@ function VariantDesktopRow({
           const dailyVelocity = qtySold / daysElapsed;
 
           let runRateText = isAr ? "لا مبيعات" : "No sales";
-          let runRateColor = "text-muted-foreground/60 text-[9px]";
+          let runRateColor = "text-muted-foreground/60 text-xs";
 
           if (stock <= 0) {
             runRateText = isAr ? "نفد" : "Out of stock";
-            runRateColor = "text-rose-600 dark:text-rose-400 font-bold text-[9px]";
+            runRateColor = "text-rose-600 dark:text-rose-400 font-bold text-xs";
           } else if (dailyVelocity > 0) {
             const days = Math.ceil(stock / dailyVelocity);
             runRateText = isAr ? `ينفد في ${days} ي` : `${days} d left`;
             runRateColor =
               days <= 7
-                ? "text-amber-600 dark:text-amber-400 font-bold text-[9px]"
-                : "text-emerald-600 dark:text-emerald-400 font-medium text-[9px]";
+                ? "text-amber-600 dark:text-amber-400 font-bold text-xs"
+                : "text-emerald-600 dark:text-emerald-400 font-medium text-xs";
           }
 
           return (
-            <div className={`text-[9px] mt-0.5 whitespace-nowrap leading-none ${runRateColor}`}>
+            <div className={`text-xs mt-0.5 whitespace-nowrap leading-none ${runRateColor}`}>
               {runRateText}
             </div>
           );
@@ -5543,17 +5543,17 @@ function VariantMobileCard({
             {[v.size, v.color, v.fabric].some(Boolean) ? (
               <>
                 {v.size && (
-                  <span className="inline-flex items-center bg-primary/5 text-primary text-[10px] font-bold px-1.5 py-0.5 border border-primary/10 rounded-sm">
+                  <span className="inline-flex items-center bg-primary/5 text-primary text-xs font-bold px-1.5 py-0.5 border border-primary/10 rounded-sm">
                     {v.size} {v.size_unit || ""}
                   </span>
                 )}
                 {v.color && (
-                  <span className="inline-flex items-center bg-slate-100 text-slate-800 text-[10px] font-bold px-1.5 py-0.5 border border-slate-200 rounded-sm">
+                  <span className="inline-flex items-center bg-slate-100 text-slate-800 text-xs font-bold px-1.5 py-0.5 border border-slate-200 rounded-sm">
                     {v.color}
                   </span>
                 )}
                 {v.fabric && (
-                  <span className="inline-flex items-center bg-zinc-100 text-zinc-800 text-[10px] font-bold px-1.5 py-0.5 border border-zinc-200 rounded-sm">
+                  <span className="inline-flex items-center bg-zinc-100 text-zinc-800 text-xs font-bold px-1.5 py-0.5 border border-zinc-200 rounded-sm">
                     {v.fabric}
                   </span>
                 )}
@@ -5581,7 +5581,7 @@ function VariantMobileCard({
       >
         <div>
           <div className="flex items-center gap-1">
-            <Label className="text-[10px] font-black uppercase text-muted-foreground/85">
+            <Label className="text-xs font-black uppercase text-muted-foreground/85">
               {mainLabel}
             </Label>
             <TooltipProvider delayDuration={200}>
@@ -5608,7 +5608,7 @@ function VariantMobileCard({
         </div>
         <div>
           <div className="flex items-center gap-1">
-            <Label className="text-[10px] font-black uppercase text-muted-foreground/85">
+            <Label className="text-xs font-black uppercase text-muted-foreground/85">
               {incLabel}
             </Label>
             <TooltipProvider delayDuration={200}>
@@ -5650,7 +5650,7 @@ function VariantMobileCard({
           {/* Inherited cost and optional sale price */}
           {canViewFinancials && (
             <div>
-              <Label className="text-[10px] font-black uppercase text-muted-foreground/85">
+              <Label className="text-xs font-black uppercase text-muted-foreground/85">
                 {t("inventory.cost")}
               </Label>
               <div className="mt-1">
@@ -5665,7 +5665,7 @@ function VariantMobileCard({
             </div>
           )}
           <div>
-            <Label className="text-[10px] font-black uppercase text-muted-foreground/85">
+            <Label className="text-xs font-black uppercase text-muted-foreground/85">
               {isAr ? "السعر اللي يدفعه العميل" : "Customer Price"}
             </Label>
             <div className="mt-1">
@@ -5683,7 +5683,7 @@ function VariantMobileCard({
 
           {/* Dynamic image picker and regular price */}
           <div>
-            <Label className="text-[10px] font-black uppercase text-muted-foreground/85">
+            <Label className="text-xs font-black uppercase text-muted-foreground/85">
               {isAr ? "صورة المتغير" : "Variant Image"}
             </Label>
             <div className="mt-1">
@@ -5696,7 +5696,7 @@ function VariantMobileCard({
             </div>
           </div>
           <div>
-            <Label className="text-[10px] font-black uppercase text-muted-foreground/85">
+            <Label className="text-xs font-black uppercase text-muted-foreground/85">
               {isAr ? "السعر العادي" : "Regular Price"}
             </Label>
             <input
@@ -5711,7 +5711,7 @@ function VariantMobileCard({
 
           {/* SKU & Barcode */}
           <div>
-            <Label className="text-[10px] font-black uppercase text-muted-foreground/85">SKU</Label>
+            <Label className="text-xs font-black uppercase text-muted-foreground/85">SKU</Label>
             <input
               className="mt-1 h-9 w-full rounded-lg border border-input bg-background px-2.5 text-xs font-mono outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               defaultValue={v.sku ?? ""}
@@ -5720,7 +5720,7 @@ function VariantMobileCard({
             />
           </div>
           <div>
-            <Label className="text-[10px] font-black uppercase text-muted-foreground/85">
+            <Label className="text-xs font-black uppercase text-muted-foreground/85">
               {barcodeLabel}
             </Label>
             <input
@@ -6155,7 +6155,7 @@ function VariantList({
             </div>
             <div className="grid grid-cols-2 gap-3.5">
               <div>
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">
                   {(isAr ? product?.variant_label_size_ar : product?.variant_label_size_en) ||
                     product?.variant_label_size_en ||
                     product?.variant_label_size_ar ||
@@ -6168,7 +6168,7 @@ function VariantList({
                 />
               </div>
               <div>
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">
                   {isAr ? "الوحدة" : "Unit"}
                 </Label>
                 <select
@@ -6184,7 +6184,7 @@ function VariantList({
                 </select>
               </div>
               <div>
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">
                   {(isAr ? product?.variant_label_color_ar : product?.variant_label_color_en) ||
                     product?.variant_label_color_en ||
                     product?.variant_label_color_ar ||
@@ -6197,7 +6197,7 @@ function VariantList({
                 />
               </div>
               <div>
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">
                   {(isAr ? product?.variant_label_fabric_ar : product?.variant_label_fabric_en) ||
                     product?.variant_label_fabric_en ||
                     product?.variant_label_fabric_ar ||
@@ -6210,7 +6210,7 @@ function VariantList({
                 />
               </div>
               <div>
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">
                   {t("inventory.sku")}
                 </Label>
                 <Input
@@ -6220,7 +6220,7 @@ function VariantList({
                 />
               </div>
               <div>
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">
                   {barcodeLabel}
                 </Label>
                 <Input
@@ -6231,7 +6231,7 @@ function VariantList({
               </div>
               {canViewFinancials && (
                 <div>
-                  <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">
                     {t("inventory.cost")}
                   </Label>
                   <Input
@@ -6244,7 +6244,7 @@ function VariantList({
                 </div>
               )}
               <div>
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">
                   {isAr ? "السعر اللي يدفعه العميل" : "Customer Price"}
                 </Label>
                 <Input
@@ -6257,7 +6257,7 @@ function VariantList({
                 />
               </div>
               <div>
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">
                   {isAr ? "السعر الأساسي للمنتج" : "Base Price"}
                 </Label>
                 <Input
@@ -6271,7 +6271,7 @@ function VariantList({
               </div>
               <div>
                 <div className="flex items-center gap-1">
-                  <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">
                     {mainLabel}
                   </Label>
                   <TooltipProvider delayDuration={200}>
@@ -6296,7 +6296,7 @@ function VariantList({
               </div>
               <div>
                 <div className="flex items-center gap-1">
-                  <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">
                     {incLabel}
                   </Label>
                   <TooltipProvider delayDuration={200}>
@@ -6320,7 +6320,7 @@ function VariantList({
                 />
               </div>
               <div>
-                <Label className="text-[10px] font-bold text-muted-foreground block uppercase mb-1">
+                <Label className="text-xs font-bold text-muted-foreground block uppercase mb-1">
                   {isAr ? "صورة المتغير" : "Variant Image"}
                 </Label>
                 <div className="mt-1">
@@ -6376,7 +6376,7 @@ function VariantList({
             >
               <Zap className="h-3.5 w-3.5" />
               <span>{isAr ? "الأسعار والمخزون السريع" : "Quick Stock & Prices"}</span>
-              <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 ms-1">
+              <span className="text-xs font-black uppercase px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 ms-1">
                 {isAr ? "بدون تمرير" : "Zero Scroll"}
               </span>
             </button>
@@ -6408,7 +6408,7 @@ function VariantList({
             </button>
           </div>
 
-          <div className="text-[11px] font-bold text-muted-foreground px-2">
+          <div className="text-xs font-bold text-muted-foreground px-2">
             {variants.length} {isAr ? "متغيرات" : "variants"}
           </div>
         </div>
@@ -6419,7 +6419,7 @@ function VariantList({
             style={{ minWidth: totalTableWidth }}
           >
             <thead>
-              <tr className="text-start text-xs uppercase tracking-wider border-b bg-muted/40 font-semibold text-muted-foreground">
+              <tr className="text-start text-xs border-b bg-muted/40 font-semibold text-muted-foreground">
                 <th
                   className="px-2 py-3 text-center align-middle"
                   style={{ width: 44, minWidth: 44 }}
@@ -6432,7 +6432,7 @@ function VariantList({
                   />
                 </th>
                 <th
-                  className="px-2 py-3 text-start font-black text-[10px]"
+                  className="px-2 py-3 text-start font-black text-xs"
                   style={{ width: 270, minWidth: 260 }}
                 >
                   {(() => {
@@ -6460,7 +6460,7 @@ function VariantList({
                 </th>
                 {renderImageCol && (
                   <th
-                    className="px-2 py-3 text-center font-black text-[10px]"
+                    className="px-2 py-3 text-center font-black text-xs"
                     style={{ width: 96, minWidth: 96 }}
                   >
                     {isAr ? "الصورة" : "Image"}
@@ -6468,7 +6468,7 @@ function VariantList({
                 )}
                 {renderSkuCol && (
                   <th
-                    className="px-2 py-3 text-start font-black text-[10px]"
+                    className="px-2 py-3 text-start font-black text-xs"
                     style={{ width: 120, minWidth: 110 }}
                   >
                     {t("inventory.sku")}
@@ -6476,7 +6476,7 @@ function VariantList({
                 )}
                 {renderBarcodeCol && (
                   <th
-                    className="px-2 py-3 text-start font-black text-[10px]"
+                    className="px-2 py-3 text-start font-black text-xs"
                     style={{ width: 190, minWidth: 180 }}
                   >
                     {barcodeLabel}
@@ -6484,34 +6484,34 @@ function VariantList({
                 )}
                 {canViewFinancials && (
                   <th
-                    className="px-2 py-3 text-center font-black text-[10px]"
+                    className="px-2 py-3 text-center font-black text-xs"
                     style={{ width: 110, minWidth: 100 }}
                   >
                     {t("inventory.cost")}
                   </th>
                 )}
                 <th
-                  className="px-2 py-3 text-center font-black text-[10px]"
+                  className="px-2 py-3 text-center font-black text-xs"
                   style={{ width: 110, minWidth: 105 }}
                 >
                   {isAr ? "السعر اللي يدفعه العميل" : "Customer Price"}
                 </th>
                 <th
-                  className="px-2 py-3 text-center font-black text-[10px]"
+                  className="px-2 py-3 text-center font-black text-xs"
                   style={{ width: 110, minWidth: 105 }}
                 >
                   {isAr ? "السعر الأساسي" : "Base Price"}
                 </th>
                 {canViewFinancials && (
                   <th
-                    className="px-2 py-3 text-center font-black text-[10px]"
+                    className="px-2 py-3 text-center font-black text-xs"
                     style={{ width: 96, minWidth: 90 }}
                   >
                     {t("inventory.margin")}
                   </th>
                 )}
                 <th
-                  className="px-2 py-3 text-center font-black text-[10px]"
+                  className="px-2 py-3 text-center font-black text-xs"
                   style={{ width: 115, minWidth: 105 }}
                 >
                   <div className="inline-flex items-center justify-center gap-1">
@@ -6531,7 +6531,7 @@ function VariantList({
                   </div>
                 </th>
                 <th
-                  className="px-2 py-3 text-center font-black text-[10px]"
+                  className="px-2 py-3 text-center font-black text-xs"
                   style={{ width: 115, minWidth: 105 }}
                 >
                   <div className="inline-flex items-center justify-center gap-1">
@@ -6551,7 +6551,7 @@ function VariantList({
                   </div>
                 </th>
                 <th
-                  className="px-2 py-3 text-center font-black text-[10px]"
+                  className="px-2 py-3 text-center font-black text-xs"
                   style={{ width: 88, minWidth: 80 }}
                 >
                   {t("inventory.stock")}
@@ -6716,7 +6716,7 @@ function VariantList({
                           value={row.cost_price}
                           disabled
                         />
-                        <span className="absolute right-2 text-[8px] font-black text-muted-foreground/50 pointer-events-none uppercase">
+                        <span className="absolute right-2 text-xs font-black text-muted-foreground/50 pointer-events-none uppercase">
                           BHD
                         </span>
                       </div>
@@ -6734,7 +6734,7 @@ function VariantList({
                         placeholder={String(product?.base_price ?? "0.000")}
                         onChange={(e) => setRow({ ...row, selling_price: e.target.value })}
                       />
-                      <span className="absolute right-2 text-[8px] font-black text-muted-foreground/50 pointer-events-none uppercase">
+                      <span className="absolute right-2 text-xs font-black text-muted-foreground/50 pointer-events-none uppercase">
                         BHD
                       </span>
                     </div>
@@ -6846,7 +6846,7 @@ function VariantList({
       {selectedIds.size > 0 && (
         <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 max-w-[95vw] overflow-x-auto bg-white/85 dark:bg-black/75 backdrop-blur-2xl backdrop-saturate-200 border border-white/50 dark:border-white/15 shadow-2xl rounded-2xl py-2.5 px-4 flex items-center gap-3 z-55 animate-in slide-in-from-bottom-5 duration-200">
           <div className="flex items-center gap-2 border-r border-border pr-4 shrink-0">
-            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center text-[10px] text-primary-foreground font-black">
+            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center text-xs text-primary-foreground font-black">
               {selectedIds.size}
             </div>
             <span className="text-xs font-bold text-muted-foreground">
@@ -7155,14 +7155,14 @@ function CustomizationsSection({
                             className="h-7 w-7 rounded object-cover border border-border"
                           />
                         ) : (
-                          <div className="h-7 w-7 rounded bg-muted flex items-center justify-center text-[10px]">
+                          <div className="h-7 w-7 rounded bg-muted flex items-center justify-center text-xs">
                             📦
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium truncate">{p.name}</p>
                           {p.category && (
-                            <p className="text-[10px] text-muted-foreground">{p.category}</p>
+                            <p className="text-xs text-muted-foreground">{p.category}</p>
                           )}
                         </div>
                       </label>
@@ -7335,7 +7335,7 @@ function CustomizationsSection({
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium truncate">{p.name}</p>
                         {p.category && (
-                          <p className="text-[10px] text-muted-foreground">{p.category}</p>
+                          <p className="text-xs text-muted-foreground">{p.category}</p>
                         )}
                       </div>
                     </label>

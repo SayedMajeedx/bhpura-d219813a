@@ -130,7 +130,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 <span>{isAr ? "التصفية" : "Filters"}</span>
                 {activeFilterCount > 0 && (
-                  <span className="rounded-full bg-primary-foreground/20 px-1.5 py-0.2 text-[10px] font-bold">
+                  <span className="rounded-full bg-primary-foreground/20 px-1.5 py-0.2 text-xs font-bold">
                     {activeFilterCount}
                   </span>
                 )}
@@ -143,7 +143,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
 
               {/* Payment Filter */}
               <div className="space-y-1">
-                <label className="text-[11px] font-medium text-muted-foreground">
+                <label className="text-xs font-medium text-muted-foreground">
                   {isAr ? "حالة الدفع" : "Payment Status"}
                 </label>
                 <Select value={paymentFilter} onValueChange={onPaymentFilterChange}>
@@ -162,7 +162,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
 
               {/* Fulfillment Status Filter */}
               <div className="space-y-1">
-                <label className="text-[11px] font-medium text-muted-foreground">
+                <label className="text-xs font-medium text-muted-foreground">
                   {isAr ? "حالة التنفيذ" : "Fulfillment Status"}
                 </label>
                 <Select
@@ -184,7 +184,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
 
               {/* Gateway Filter */}
               <div className="space-y-1">
-                <label className="text-[11px] font-medium text-muted-foreground">
+                <label className="text-xs font-medium text-muted-foreground">
                   {isAr ? "طريقة الدفع" : "Payment Method"}
                 </label>
                 <Select
@@ -219,7 +219,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
               >
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 {activeFilterCount > 0 && (
-                  <span className="rounded-full bg-primary-foreground/20 px-1 py-0.2 text-[10px]">
+                  <span className="rounded-full bg-primary-foreground/20 px-1 py-0.2 text-xs">
                     {activeFilterCount}
                   </span>
                 )}
@@ -234,7 +234,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
               <div className="space-y-3">
                 {/* Payment Filter */}
                 <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-muted-foreground">
+                  <label className="text-xs font-medium text-muted-foreground">
                     {isAr ? "حالة الدفع" : "Payment Status"}
                   </label>
                   <Select value={paymentFilter} onValueChange={onPaymentFilterChange}>
@@ -253,7 +253,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
 
                 {/* Fulfillment Status Filter */}
                 <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-muted-foreground">
+                  <label className="text-xs font-medium text-muted-foreground">
                     {isAr ? "حالة التنفيذ" : "Fulfillment Status"}
                   </label>
                   <Select
@@ -275,7 +275,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
 
                 {/* Gateway Filter */}
                 <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-muted-foreground">
+                  <label className="text-xs font-medium text-muted-foreground">
                     {isAr ? "طريقة الدفع" : "Payment Method"}
                   </label>
                   <Select
@@ -324,7 +324,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
           />
           <label
             htmlFor="include-historical-toggle"
-            className="text-[10px] font-bold text-muted-foreground cursor-pointer whitespace-nowrap hidden sm:inline"
+            className="text-xs font-bold text-muted-foreground cursor-pointer whitespace-nowrap hidden sm:inline"
           >
             {isAr ? "الأرشيف" : "Archive"}
           </label>
@@ -334,11 +334,11 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
       {/* Active Filter Chips */}
       {activeFilterCount > 0 && (
         <div className="flex items-center gap-1.5 flex-wrap pt-1">
-          <span className="text-[11px] text-muted-foreground font-medium me-1">
+          <span className="text-xs text-muted-foreground font-medium me-1">
             {isAr ? "التصفية النشطة:" : "Active filters:"}
           </span>
           {paymentFilter !== "all" && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-primary/10 text-primary border border-primary/20">
               {isAr ? "الدفع:" : "Payment:"} {paymentFilter}
               <button
                 type="button"
@@ -350,7 +350,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
             </span>
           )}
           {fulfillmentStatusFilter !== "all" && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-primary/10 text-primary border border-primary/20">
               {isAr ? "التنفيذ:" : "Fulfillment:"} {fulfillmentStatusFilter}
               <button
                 type="button"
@@ -365,7 +365,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
             variant="ghost"
             size="sm"
             onClick={onClearFilters}
-            className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground font-bold"
+            className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground font-bold"
           >
             {isAr ? "مسح الكل" : "Clear all"}
           </Button>

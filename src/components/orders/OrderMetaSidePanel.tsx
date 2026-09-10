@@ -49,7 +49,7 @@ export const OrderMetaSidePanel: React.FC<OrderMetaSidePanelProps> = ({
             <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
               <UserRound className="h-4 w-4" />
             </div>
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-foreground font-display">
+            <h3 className="text-xs font-extrabold text-foreground font-display">
               {isAr ? "بيانات العميل" : "Customer Details"}
             </h3>
           </div>
@@ -60,7 +60,7 @@ export const OrderMetaSidePanel: React.FC<OrderMetaSidePanelProps> = ({
               variant="ghost"
               size="sm"
               onClick={onOpenCustomerModal}
-              className="h-7 px-2 text-[11px] font-bold text-primary hover:bg-primary/10 rounded-lg"
+              className="h-7 px-2 text-xs font-bold text-primary hover:bg-primary/10 rounded-lg"
             >
               {isAr ? "تعديل" : "Edit"}
             </Button>
@@ -108,12 +108,12 @@ export const OrderMetaSidePanel: React.FC<OrderMetaSidePanelProps> = ({
               <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
                 <MapPin className="h-4 w-4" />
               </div>
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-foreground font-display">
+              <h3 className="text-xs font-extrabold text-foreground font-display">
                 {isAr ? "التسليم والتوصيل" : "Fulfillment & Delivery"}
               </h3>
             </div>
 
-            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-foreground">
+            <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-bold text-foreground">
               {getFulfillmentMethodLabel(order.fulfillment_method, lang)}
             </span>
           </div>
@@ -144,7 +144,7 @@ export const OrderMetaSidePanel: React.FC<OrderMetaSidePanelProps> = ({
               <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
                 <Truck className="h-4 w-4" />
               </div>
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-foreground font-display">
+              <h3 className="text-xs font-extrabold text-foreground font-display">
                 {isAr ? "مندوب التوصيل" : "Courier Logistics"}
               </h3>
             </div>
@@ -155,7 +155,7 @@ export const OrderMetaSidePanel: React.FC<OrderMetaSidePanelProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={onOpenCourierModal}
-                className="h-7 px-2.5 text-[11px] font-bold rounded-lg border-border/80"
+                className="h-7 px-2.5 text-xs font-bold rounded-lg border-border/80"
               >
                 <Send className="h-3 w-3 me-1 text-emerald-600" />
                 {isAr ? "إسناد" : "Dispatch"}
@@ -185,7 +185,7 @@ export const OrderMetaSidePanel: React.FC<OrderMetaSidePanelProps> = ({
             <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
               <History className="h-4 w-4" />
             </div>
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-foreground font-display">
+            <h3 className="text-xs font-extrabold text-foreground font-display">
               {isAr ? "سجل العمليات" : "Activity Log"}
             </h3>
           </div>

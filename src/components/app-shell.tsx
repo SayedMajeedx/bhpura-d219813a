@@ -455,7 +455,7 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
             variant="destructive"
             size="sm"
             onClick={handleExitImpersonation}
-            className="bg-white hover:bg-white/90 text-rose-700 hover:text-rose-800 font-bold px-3 py-1 h-7 rounded text-[11px] shadow-sm uppercase tracking-wider shrink-0 transition-all border-none"
+            className="bg-white hover:bg-white/90 text-rose-700 hover:text-rose-800 font-bold px-3 py-1 h-7 rounded text-xs shadow-sm shrink-0 transition-all border-none"
           >
             {lang === "ar" ? "الخروج من وضع المحاكاة" : "Exit Impersonation Mode"}
           </Button>
@@ -542,7 +542,7 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
               pageKey={pathname}
               badge={
                 activeSlug && (
-                  <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
+                  <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
                     {activeSlug.toUpperCase()}
                   </span>
                 )
@@ -558,7 +558,7 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
                       title={lang === "ar" ? "عرض المتجر الإلكتروني" : "View Live Storefront"}
                     >
                       <Store className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline text-[11px]">
+                      <span className="hidden sm:inline text-xs">
                         {lang === "ar" ? "المتجر" : "Storefront"}
                       </span>
                     </a>

@@ -183,11 +183,11 @@ export function OsCopilotSheet({
                 <h3 className="font-bold text-sm text-foreground">
                   {isAr ? "كوبايلوت المتجر" : "Store AI Copilot"}
                 </h3>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                   {isAr ? "مجاني" : "Free"}
                 </span>
               </div>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 {isAr ? "مساعد تنفيذي فوري لمتجرك" : "Executive assistant for your store"}
               </p>
             </div>
@@ -255,7 +255,7 @@ export function OsCopilotSheet({
                 key={i}
                 type="button"
                 onClick={() => handleSend(prompt)}
-                className="text-[11px] font-medium px-2.5 py-1 rounded-full border border-border bg-background hover:bg-muted/80 text-foreground transition-colors"
+                className="text-xs font-medium px-2.5 py-1 rounded-full border border-border bg-background hover:bg-muted/80 text-foreground transition-colors"
               >
                 {prompt}
               </button>

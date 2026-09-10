@@ -802,7 +802,7 @@ function CampaignsPage() {
                 onClick={() => insertPlaceholder(p.token)}
                 className="text-xs px-2.5 py-1 rounded-full bg-secondary/80 text-foreground hover:bg-primary hover:text-primary-foreground hover:scale-105 active:scale-95 transition-all duration-200"
               >
-                {p.label} <code className="opacity-70 font-mono text-[10px]">{p.token}</code>
+                {p.label} <code className="opacity-70 font-mono text-xs">{p.token}</code>
               </button>
             ))}
           </div>
@@ -947,12 +947,12 @@ function CampaignsPage() {
                           <div className="flex items-center gap-1.5 font-semibold text-foreground truncate flex-wrap">
                             <span className="truncate">{c.name}</span>
                             {c.marketing_consent !== true && (
-                              <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400 shrink-0">
+                              <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400 shrink-0">
                                 {isAr ? "بلا موافقة تسويقية" : "No consent"}
                               </span>
                             )}
                             {c.opted_out_at && (
-                              <span className="rounded bg-rose-500/15 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-400 shrink-0">
+                              <span className="rounded bg-rose-500/15 px-1.5 py-0.5 text-xs font-bold text-rose-700 dark:text-rose-400 shrink-0">
                                 {isAr ? "إلغاء اشتراك" : "Opted out"}
                               </span>
                             )}
@@ -964,7 +964,7 @@ function CampaignsPage() {
                       </div>
                       {stats?.badge && (
                         <span
-                          className={`inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                          className={`inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5 text-xs font-bold ${
                             stats.badge === "VIP"
                               ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
                               : stats.badge === "Churn Risk"
@@ -998,7 +998,7 @@ function CampaignsPage() {
                         ) : (
                           <Button
                             size="sm"
-                            className="h-7 text-[11px]"
+                            className="h-7 text-xs"
                             variant="outline"
                             onClick={() => send(c)}
                             disabled={!eligibility.eligible}
@@ -1047,16 +1047,16 @@ function CampaignsPage() {
                         onChange={toggleSelectAll}
                       />
                     </th>
-                    <th className="p-4 font-semibold text-xs uppercase tracking-wider text-start">
+                    <th className="p-4 font-semibold text-xs text-start">
                       {isAr ? "الاسم" : "Name"}
                     </th>
-                    <th className="p-4 font-semibold text-xs uppercase tracking-wider text-start">
+                    <th className="p-4 font-semibold text-xs text-start">
                       {isAr ? "الهاتف" : "Phone"}
                     </th>
-                    <th className="p-4 font-semibold text-xs uppercase tracking-wider text-start">
+                    <th className="p-4 font-semibold text-xs text-start">
                       {isAr ? "فئة العملاء" : "Customer Segment"}
                     </th>
-                    <th className="p-4 font-semibold text-xs uppercase tracking-wider text-start">
+                    <th className="p-4 font-semibold text-xs text-start">
                       {isAr ? "إجمالي الطلبات" : "Total Orders"}
                     </th>
                     <th className="p-4"></th>
@@ -1096,12 +1096,12 @@ function CampaignsPage() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <span>{c.name}</span>
                             {c.marketing_consent !== true && (
-                              <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400">
+                              <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400">
                                 {isAr ? "بلا موافقة تسويقية" : "No consent"}
                               </span>
                             )}
                             {c.opted_out_at && (
-                              <span className="rounded bg-rose-500/15 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-400">
+                              <span className="rounded bg-rose-500/15 px-1.5 py-0.5 text-xs font-bold text-rose-700 dark:text-rose-400">
                                 {isAr ? "إلغاء اشتراك" : "Opted out"}
                               </span>
                             )}
@@ -1249,7 +1249,7 @@ function CampaignsPage() {
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             {/* Mode selection tabs */}
             <div>
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <Label className="text-xs font-semibold text-muted-foreground">
                 {isAr ? "طريقة التشغيل" : "Sender Mode"}
               </Label>
               <div className="grid grid-cols-2 gap-2 mt-2 p-1 bg-secondary rounded-lg">
@@ -1344,7 +1344,7 @@ function CampaignsPage() {
 
             {/* Recipient Queue Grid */}
             <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <Label className="text-xs font-semibold text-muted-foreground">
                 {isAr ? "قائمة المستلمين وقنواتهم" : "Recipient List Queue"}
               </Label>
               <div className="border rounded-lg overflow-hidden max-h-48 overflow-y-auto divide-y">
@@ -1359,30 +1359,30 @@ function CampaignsPage() {
                         <span className="text-muted-foreground font-mono w-5">#{idx + 1}</span>
                         <div>
                           <div className="font-medium">{c.name}</div>
-                          <div className="text-muted-foreground text-[10px] font-mono" dir="ltr">
+                          <div className="text-muted-foreground text-xs font-mono" dir="ltr">
                             {c.phone}
                           </div>
                         </div>
                       </div>
                       <div>
                         {status === "queued" && (
-                          <span className="text-muted-foreground bg-muted/60 px-2 py-0.5 rounded text-[10px] font-medium">
+                          <span className="text-muted-foreground bg-muted/60 px-2 py-0.5 rounded text-xs font-medium">
                             {isAr ? "في الانتظار" : "Queued"}
                           </span>
                         )}
                         {status === "sending" && (
-                          <span className="text-amber-700 bg-amber-500/10 px-2 py-0.5 rounded text-[10px] font-medium animate-pulse">
+                          <span className="text-amber-700 bg-amber-500/10 px-2 py-0.5 rounded text-xs font-medium animate-pulse">
                             {isAr ? "جاري الإرسال" : "Sending..."}
                           </span>
                         )}
                         {status === "sent" && (
-                          <span className="text-emerald-700 bg-emerald-500/10 px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1">
+                          <span className="text-emerald-700 bg-emerald-500/10 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
                             <Check className="h-2.5 w-2.5" />
                             {isAr ? "تم فتح الشات" : "Opened"}
                           </span>
                         )}
                         {status === "skipped" && (
-                          <span className="text-destructive bg-destructive/10 px-2 py-0.5 rounded text-[10px] font-medium">
+                          <span className="text-destructive bg-destructive/10 px-2 py-0.5 rounded text-xs font-medium">
                             {isAr ? "تخطي" : "Skipped"}
                           </span>
                         )}

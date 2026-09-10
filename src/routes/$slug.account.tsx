@@ -246,7 +246,7 @@ function OrderTimelineTracker({
                 {isCompleted ? "✓" : idx + 1}
               </div>
               <span
-                className={`text-[10px] sm:text-xs mt-2 font-semibold transition-colors ${
+                className={`text-xs sm:text-xs mt-2 font-semibold transition-colors ${
                   isActive ? "text-foreground" : "text-muted-foreground"
                 }`}
               >
@@ -407,7 +407,7 @@ function AccountPage() {
       {/* Editorial Header */}
       <div className="border-b pb-6 mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <span className="text-[10px] uppercase font-bold tracking-widest text-primary/80 block mb-1">
+          <span className="text-xs uppercase font-bold tracking-widest text-primary/80 block mb-1">
             {t("بوابة العميل", "Customer Portal")}
           </span>
           <h1 className="font-display text-3xl sm:text-4xl" style={{ color: "var(--sf-heading)" }}>
@@ -454,7 +454,7 @@ function AccountPage() {
             {/* Store Credit Wallet Pill if Available */}
             {Number(storeCredit) > 0 && (
               <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
-                <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-700 dark:text-emerald-300 block flex items-center justify-center gap-1">
+                <span className="text-xs uppercase font-bold tracking-wider text-emerald-700 dark:text-emerald-300 block flex items-center justify-center gap-1">
                   <Wallet className="h-3 w-3" />
                   {t("رصيد المتجر (المحفظة)", "Store Credit")}
                 </span>
@@ -470,7 +470,7 @@ function AccountPage() {
           {/* Core metrics panel */}
           <div className="grid grid-cols-3 gap-1 divide-x divide-border/40 rtl:divide-x-reverse text-center">
             <div className="px-1">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
                 {t("المشتريات", "Spent")}
               </p>
               <p
@@ -481,7 +481,7 @@ function AccountPage() {
               </p>
             </div>
             <div className="px-1">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
                 {t("الطلبات", "Orders")}
               </p>
               <p
@@ -492,7 +492,7 @@ function AccountPage() {
               </p>
             </div>
             <div className="px-1">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
                 {t("المرتجعات", "Returns")}
               </p>
               <p
@@ -540,7 +540,7 @@ function AccountPage() {
                 <RotateCcw className="h-4 w-4 text-primary" />
                 <span className="font-semibold text-xs">{t("المرتجعات", "Returns")}</span>
                 {customerReturns.length > 0 && (
-                  <span className="text-[10px] font-mono font-bold bg-primary/20 text-primary px-1.5 py-0.2 rounded-full">
+                  <span className="text-xs font-mono font-bold bg-primary/20 text-primary px-1.5 py-0.2 rounded-full">
                     {customerReturns.length}
                   </span>
                 )}
@@ -802,7 +802,7 @@ function OrdersSection({
                     {t("طلب رقم", "Order")} #{o.invoice_number}
                   </span>
                   <Badge
-                    className={`${st.tone} text-[10px] font-bold border-0 px-2.5 py-0.5 rounded-full`}
+                    className={`${st.tone} text-xs font-bold border-0 px-2.5 py-0.5 rounded-full`}
                   >
                     {st.label}
                   </Badge>
@@ -810,7 +810,7 @@ function OrdersSection({
                 <div className="text-xs text-muted-foreground">{date}</div>
               </div>
               <div className="text-right">
-                <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
+                <p className="text-xs uppercase font-bold tracking-widest text-muted-foreground">
                   {t("الإجمالي", "Total Value")}
                 </p>
                 <p className="text-lg font-bold mt-0.5" style={{ color: "var(--sf-heading)" }}>
@@ -854,7 +854,7 @@ function OrdersSection({
                       >
                         <span className="font-medium text-foreground">
                           {it.description}{" "}
-                          <span className="text-primary text-[10px] bg-primary/10 px-1.5 py-0.5 rounded ml-1">
+                          <span className="text-primary text-xs bg-primary/10 px-1.5 py-0.5 rounded ml-1">
                             × {it.quantity}
                           </span>
                         </span>
@@ -973,11 +973,11 @@ function CustomerReturnsSection({
                     {r.return_number}
                   </span>
                   <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusCfg.badgeClass}`}
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${statusCfg.badgeClass}`}
                   >
                     {isAr ? statusCfg.labelAr : statusCfg.labelEn}
                   </span>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-muted text-foreground border border-border">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-muted text-foreground border border-border">
                     {r.type === "exchange"
                       ? isAr
                         ? "استبدال"
@@ -994,7 +994,7 @@ function CustomerReturnsSection({
               </div>
 
               <div className="text-right">
-                <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground block">
+                <span className="text-xs uppercase font-bold tracking-widest text-muted-foreground block">
                   {isAr ? "صافي الاسترداد" : "Net Refund"}
                 </span>
                 <span className="text-base font-bold font-mono text-emerald-600 dark:text-emerald-400">
@@ -1010,7 +1010,7 @@ function CustomerReturnsSection({
 
             {r.items && r.items.length > 0 && (
               <div className="pt-2 border-t border-border/40 space-y-1 text-xs">
-                <span className="text-[11px] font-semibold text-muted-foreground">
+                <span className="text-xs font-semibold text-muted-foreground">
                   {isAr ? "المنتجات المطلوب إرجاعها:" : "Returned items:"}
                 </span>
                 <ul className="divide-y divide-border/30">
@@ -1324,7 +1324,7 @@ function AddressesSection({
                     {a.label || t("عنوان توصيل", "Shipping destination")}
                   </span>
                   {a.is_default && (
-                    <Badge className="bg-primary/10 text-primary hover:bg-primary/15 border-0 font-bold text-[10px] px-2.5 py-0.5 rounded-full">
+                    <Badge className="bg-primary/10 text-primary hover:bg-primary/15 border-0 font-bold text-xs px-2.5 py-0.5 rounded-full">
                       {t("عنوان افتراضي", "Default")}
                     </Badge>
                   )}
@@ -1336,7 +1336,7 @@ function AddressesSection({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 text-[11px] font-semibold"
+                    className="h-8 text-xs font-semibold"
                     onClick={() => setDefault(a.id)}
                   >
                     {t("تعيين افتراضي", "Set default")}

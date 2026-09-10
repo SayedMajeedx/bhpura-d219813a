@@ -2003,7 +2003,7 @@ function Checkout() {
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <div className="flex h-full items-center justify-center px-1 text-center text-[9px] text-muted-foreground">
+                      <div className="flex h-full items-center justify-center px-1 text-center text-xs text-muted-foreground">
                         {t("لا توجد صورة", "No image")}
                       </div>
                     )}
@@ -2137,7 +2137,7 @@ function Checkout() {
                   <Coins className="h-4 w-4 text-amber-500" />
                   <span>{t("استخدام نقاط المكافآت", "Redeem Loyalty Points")}</span>
                 </div>
-                <span className="text-[11px] font-mono text-muted-foreground">
+                <span className="text-xs font-mono text-muted-foreground">
                   {t("متاح:", "Available:")} {loyaltyAccount?.active_points} {t("نقطة", "pts")}
                 </span>
               </div>

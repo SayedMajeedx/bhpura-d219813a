@@ -1058,7 +1058,7 @@ ${desc}${detailsBlock}
               <Palette className="size-5" />
             </span>
             <div>
-              <div className="mb-1 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[.18em] text-primary">
+              <div className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-[.18em] text-primary">
                 <Sparkles className="size-3.5" />
                 <span>{brandNameEn} Content Studio</span>
               </div>
@@ -1128,7 +1128,7 @@ ${desc}${detailsBlock}
                         <span className="font-semibold text-xs">
                           {isAr ? "تنزيل فيديو مصمم (MP4)" : "Branded Video (MP4)"}
                         </span>
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="text-xs text-muted-foreground">
                           {isAr ? "فيديو مع القالب والشعار والأسعار" : "Video with layout, branding & price"}
                         </span>
                       </div>
@@ -1143,7 +1143,7 @@ ${desc}${detailsBlock}
                         <span className="font-semibold text-xs">
                           {isAr ? "تنزيل الفيديو الأصلي الخام" : "Original Raw Video"}
                         </span>
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="text-xs text-muted-foreground">
                           {isAr ? "ملف الفيديو الأصلي بدون إضافات" : "Source MP4 file without overlays"}
                         </span>
                       </div>
@@ -1158,7 +1158,7 @@ ${desc}${detailsBlock}
                         <span className="font-semibold text-xs">
                           {isAr ? "تنزيل لقطة كصورة (PNG)" : "Snapshot Frame (PNG)"}
                         </span>
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="text-xs text-muted-foreground">
                           {isAr ? "صورة ثابتة للتصميم الحالي" : "Still image of current frame"}
                         </span>
                       </div>
@@ -1216,7 +1216,7 @@ ${desc}${detailsBlock}
                   <Label htmlFor="studio-product" className="text-xs font-bold text-foreground">
                     {isAr ? "المنتج" : "Product"}
                   </Label>
-                  <span className="text-[10px] font-medium text-muted-foreground">
+                  <span className="text-xs font-medium text-muted-foreground">
                     {products.length} {isAr ? "منتجات نشطة" : "active products"}
                   </span>
                 </div>
@@ -1241,7 +1241,7 @@ ${desc}${detailsBlock}
                     <Label htmlFor="studio-variant" className="text-xs font-bold text-foreground">
                       {isAr ? "المتغير / المقاس واللون" : "Product Variant"}
                     </Label>
-                    <span className="text-[10px] font-medium text-muted-foreground">
+                    <span className="text-xs font-medium text-muted-foreground">
                       {productVariants.length} {isAr ? "خيارات" : "options"}
                     </span>
                   </div>
@@ -1279,7 +1279,7 @@ ${desc}${detailsBlock}
                       <LucideImage className="size-3.5 text-primary" />
                       {isAr ? "اختيار صورة أو فيديو التصميم" : "Select design media"}
                     </span>
-                    <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full">
+                    <span className="text-xs bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full">
                       {productMediaList.length} {isAr ? "عناصر" : "items"}
                     </span>
                   </div>
@@ -1302,7 +1302,7 @@ ${desc}${detailsBlock}
                           {item.type === "video" ? (
                             <div className="size-full bg-neutral-900 flex flex-col items-center justify-center text-white p-1">
                               <Video className="size-5 text-primary" />
-                              <span className="text-[9px] font-bold mt-0.5">MP4</span>
+                              <span className="text-xs font-bold mt-0.5">MP4</span>
                             </div>
                           ) : (
                             <img
@@ -1313,7 +1313,7 @@ ${desc}${detailsBlock}
                             />
                           )}
                           {item.type === "video" && (
-                            <span className="absolute bottom-0.5 end-0.5 bg-black/80 text-[8px] text-white px-1 rounded font-semibold flex items-center gap-0.5">
+                            <span className="absolute bottom-0.5 end-0.5 bg-black/80 text-xs text-white px-1 rounded font-semibold flex items-center gap-0.5">
                               <Video className="size-2" />
                             </span>
                           )}
@@ -1360,7 +1360,7 @@ ${desc}${detailsBlock}
                           </span>
                         )}
                       </div>
-                      <span dir="ltr" className="font-mono text-[10px] text-muted-foreground tabular-nums">
+                      <span dir="ltr" className="font-mono text-xs text-muted-foreground tabular-nums">
                         {item.width} × {item.height}
                       </span>
                     </button>
@@ -1435,7 +1435,7 @@ ${desc}${detailsBlock}
                       </span>
                     )}
                   </div>
-                  <span className="text-[10px] text-muted-foreground mt-1">
+                  <span className="text-xs text-muted-foreground mt-1">
                     {isAr ? "تكبير الصورة لملء الخلفية" : "Fills canvas boundary"}
                   </span>
                 </button>
@@ -1459,7 +1459,7 @@ ${desc}${detailsBlock}
                       </span>
                     )}
                   </div>
-                  <span className="text-[10px] text-muted-foreground mt-1">
+                  <span className="text-xs text-muted-foreground mt-1">
                     {isAr ? "حفظ كامل تفاصيل الصورة" : "Preserves full photo"}
                   </span>
                 </button>
@@ -1482,7 +1482,7 @@ ${desc}${detailsBlock}
                     <h3 className="text-xs font-bold text-foreground">
                       {isAr ? "شريط الشعار والترويسة" : "Header & Branding Bar"}
                     </h3>
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       {isAr ? "تخصيص الموضع والحجم وخلفية الشعار" : "Position, resize & backdrop plate"}
                     </p>
                   </div>
@@ -1492,7 +1492,7 @@ ${desc}${detailsBlock}
                   variant="ghost"
                   size="sm"
                   onClick={resetHeaderLayout}
-                  className="h-7 gap-1 px-2.5 text-[11px] font-semibold text-muted-foreground hover:text-foreground hover:bg-background/80"
+                  className="h-7 gap-1 px-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-background/80"
                   title={isAr ? "استعادة الموضع والحجم الافتراضي" : "Reset layout"}
                 >
                   <RotateCcw className="size-3" />
@@ -1507,7 +1507,7 @@ ${desc}${detailsBlock}
                     <Label htmlFor="studio-edition-label" className="text-xs font-bold text-foreground leading-none">
                       {isAr ? "العبارة بجانب الشعار" : "Edition label"}
                     </Label>
-                    <span dir="ltr" className="font-mono text-[10px] text-muted-foreground/70 tabular-nums leading-none">
+                    <span dir="ltr" className="font-mono text-xs text-muted-foreground/70 tabular-nums leading-none">
                       {editionLabel.length}/28
                     </span>
                   </div>
@@ -1529,7 +1529,7 @@ ${desc}${detailsBlock}
                       type="button"
                       onClick={() => setHeaderShowBadge(!headerShowBadge)}
                       className={cn(
-                        "inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-all cursor-pointer leading-none",
+                        "inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-md border transition-all cursor-pointer leading-none",
                         headerShowBadge
                           ? "border-primary/30 bg-primary/10 text-primary hover:bg-primary/15"
                           : "border-border bg-muted/50 text-muted-foreground hover:text-foreground",
@@ -1605,9 +1605,9 @@ ${desc}${detailsBlock}
                 {headerPlateStyle !== "none" && (
                   <div className="space-y-3 rounded-xl border border-border/60 bg-background/70 p-3 pt-2.5">
                     <div>
-                      <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1.5 font-medium">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5 font-medium">
                         <span>{isAr ? "لون الخلفية" : "Plate color"}</span>
-                        <span dir="ltr" className="font-mono text-[10px] tabular-nums">{headerPlateColor}</span>
+                        <span dir="ltr" className="font-mono text-xs tabular-nums">{headerPlateColor}</span>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         {headerPlateStyle === "glass" ? (
@@ -1619,7 +1619,7 @@ ${desc}${detailsBlock}
                                 setHeaderTextColor("white");
                               }}
                               className={cn(
-                                "h-7 px-2.5 rounded-lg text-[10px] font-bold border transition-all flex items-center gap-1.5 cursor-pointer",
+                                "h-7 px-2.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer",
                                 headerPlateColor === "rgba(0, 0, 0, 0.52)"
                                   ? "border-primary ring-1 ring-primary"
                                   : "border-border",
@@ -1636,7 +1636,7 @@ ${desc}${detailsBlock}
                                 setHeaderTextColor("dark");
                               }}
                               className={cn(
-                                "h-7 px-2.5 rounded-lg text-[10px] font-bold border transition-all flex items-center gap-1.5 cursor-pointer",
+                                "h-7 px-2.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer",
                                 headerPlateColor === "rgba(255, 255, 255, 0.78)"
                                   ? "border-primary ring-1 ring-primary"
                                   : "border-border",
@@ -1653,7 +1653,7 @@ ${desc}${detailsBlock}
                                 setHeaderTextColor("white");
                               }}
                               className={cn(
-                                "h-7 px-2.5 rounded-lg text-[10px] font-bold border transition-all flex items-center gap-1.5 cursor-pointer",
+                                "h-7 px-2.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer",
                                 headerPlateColor === "rgba(51, 10, 10, 0.65)"
                                   ? "border-primary ring-1 ring-primary"
                                   : "border-border",
@@ -1673,7 +1673,7 @@ ${desc}${detailsBlock}
                                 setHeaderTextColor("white");
                               }}
                               className={cn(
-                                "h-7 px-2.5 rounded-lg text-[10px] font-bold border transition-all flex items-center gap-1.5 cursor-pointer",
+                                "h-7 px-2.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer",
                                 headerPlateColor === "#111111"
                                   ? "border-primary ring-1 ring-primary"
                                   : "border-border",
@@ -1689,7 +1689,7 @@ ${desc}${detailsBlock}
                                 setHeaderTextColor("dark");
                               }}
                               className={cn(
-                                "h-7 px-2.5 rounded-lg text-[10px] font-bold border transition-all flex items-center gap-1.5 cursor-pointer",
+                                "h-7 px-2.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer",
                                 headerPlateColor === "#ffffff"
                                   ? "border-primary ring-1 ring-primary"
                                   : "border-border",
@@ -1705,7 +1705,7 @@ ${desc}${detailsBlock}
                                 setHeaderTextColor("white");
                               }}
                               className={cn(
-                                "h-7 px-2.5 rounded-lg text-[10px] font-bold border transition-all flex items-center gap-1.5 cursor-pointer",
+                                "h-7 px-2.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer",
                                 headerPlateColor === palette.ink
                                   ? "border-primary ring-1 ring-primary"
                                   : "border-border",
@@ -1717,7 +1717,7 @@ ${desc}${detailsBlock}
                             </button>
                           </>
                         )}
-                        <label className="flex items-center gap-1.5 h-7 px-2.5 rounded-lg border border-border bg-background cursor-pointer text-[10px] text-muted-foreground hover:text-foreground">
+                        <label className="flex items-center gap-1.5 h-7 px-2.5 rounded-lg border border-border bg-background cursor-pointer text-xs text-muted-foreground hover:text-foreground">
                           <input
                             type="color"
                             value={headerPlateColor.startsWith("#") ? headerPlateColor : "#1a1a1a"}
@@ -1731,7 +1731,7 @@ ${desc}${detailsBlock}
 
                     {/* Text Contrast Mode */}
                     <div className="flex items-center justify-between border-t border-border/50 pt-2 text-xs">
-                      <span className="text-[11px] font-semibold text-muted-foreground">
+                      <span className="text-xs font-semibold text-muted-foreground">
                         {isAr ? "تباين الشعار والنصوص" : "Content contrast"}
                       </span>
                       <div className="flex items-center gap-1">
@@ -1739,7 +1739,7 @@ ${desc}${detailsBlock}
                           type="button"
                           onClick={() => setHeaderTextColor("white")}
                           className={cn(
-                            "px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer",
+                            "px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer",
                             headerTextColor === "white"
                               ? "border-primary bg-primary/10 text-primary"
                               : "border-border text-muted-foreground hover:text-foreground",
@@ -1751,7 +1751,7 @@ ${desc}${detailsBlock}
                           type="button"
                           onClick={() => setHeaderTextColor("dark")}
                           className={cn(
-                            "px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer",
+                            "px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer",
                             headerTextColor === "dark"
                               ? "border-primary bg-primary/10 text-primary"
                               : "border-border text-muted-foreground hover:text-foreground",
@@ -1772,7 +1772,7 @@ ${desc}${detailsBlock}
                     <Move className="size-3.5 text-primary" />
                     <span>{isAr ? "الموضع والارتفاع" : "Position & Sizing"}</span>
                   </span>
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     {isAr ? "اسحب بالماوس مباشرة أو اضبط هنا" : "Drag on canvas or adjust"}
                   </span>
                 </div>
@@ -1780,10 +1780,10 @@ ${desc}${detailsBlock}
                 {/* Vertical Position (Y) */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-[11px] font-medium text-muted-foreground">
+                    <span className="text-xs font-medium text-muted-foreground">
                       {isAr ? "الموضع العمودي (من الأعلى)" : "Vertical position (Y)"}
                     </span>
-                    <span dir="ltr" className="font-mono text-[11px] font-bold tabular-nums px-2 py-0.5 rounded-md bg-background border border-border/70 text-foreground shadow-2xs">
+                    <span dir="ltr" className="font-mono text-xs font-bold tabular-nums px-2 py-0.5 rounded-md bg-background border border-border/70 text-foreground shadow-2xs">
                       {headerPosY}%
                     </span>
                   </div>
@@ -1801,10 +1801,10 @@ ${desc}${detailsBlock}
                 {/* Logo Height */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-[11px] font-medium text-muted-foreground">
+                    <span className="text-xs font-medium text-muted-foreground">
                       {isAr ? "ارتفاع الشعار" : "Logo height"}
                     </span>
-                    <span dir="ltr" className="font-mono text-[11px] font-bold tabular-nums px-2 py-0.5 rounded-md bg-background border border-border/70 text-foreground shadow-2xs">
+                    <span dir="ltr" className="font-mono text-xs font-bold tabular-nums px-2 py-0.5 rounded-md bg-background border border-border/70 text-foreground shadow-2xs">
                       {headerLogoHeight}px
                     </span>
                   </div>
@@ -1822,10 +1822,10 @@ ${desc}${detailsBlock}
                 {/* Overall Scale */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-[11px] font-medium text-muted-foreground">
+                    <span className="text-xs font-medium text-muted-foreground">
                       {isAr ? "مقياس الترويسة الكاملة" : "Overall header scale"}
                     </span>
-                    <span dir="ltr" className="font-mono text-[11px] font-bold tabular-nums px-2 py-0.5 rounded-md bg-background border border-border/70 text-foreground shadow-2xs">
+                    <span dir="ltr" className="font-mono text-xs font-bold tabular-nums px-2 py-0.5 rounded-md bg-background border border-border/70 text-foreground shadow-2xs">
                       {Math.round(headerScale * 100)}%
                     </span>
                   </div>
@@ -1847,7 +1847,7 @@ ${desc}${detailsBlock}
                   <Label htmlFor="studio-headline" className="text-xs font-bold text-foreground">
                     {isAr ? "العنوان الرئيسي" : "Headline"}
                   </Label>
-                  <span dir="ltr" className="font-mono text-[10px] text-muted-foreground tabular-nums">
+                  <span dir="ltr" className="font-mono text-xs text-muted-foreground tabular-nums">
                     {headline.length}/64
                   </span>
                 </div>
@@ -1862,7 +1862,7 @@ ${desc}${detailsBlock}
                   <button
                     type="button"
                     onClick={() => setHeadline(productName)}
-                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-background hover:bg-muted px-2.5 py-1 text-[11px] font-medium text-foreground transition-colors cursor-pointer shadow-2xs"
+                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-background hover:bg-muted px-2.5 py-1 text-xs font-medium text-foreground transition-colors cursor-pointer shadow-2xs"
                     title={isAr ? "تعيين اسم المنتج كعنوان" : "Set product name as headline"}
                   >
                     <Sparkles className="size-3 text-primary" />
@@ -1871,21 +1871,21 @@ ${desc}${detailsBlock}
                   <button
                     type="button"
                     onClick={() => setHeadline(isAr ? "صُممت لتبقى في الذاكرة" : "Designed to Remember")}
-                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/50 hover:bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
+                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/50 hover:bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
                   >
                     <span>{isAr ? "صُممت لتبقى في الذاكرة" : "Designed to Remember"}</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setHeadline(isAr ? "وصل حديثاً ✨" : "New Arrival ✨")}
-                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/50 hover:bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
+                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/50 hover:bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
                   >
                     <span>{isAr ? "وصل حديثاً ✨" : "New Arrival ✨"}</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setHeadline(isAr ? "الأكثر طلباً 🔥" : "Best Seller 🔥")}
-                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/50 hover:bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
+                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/50 hover:bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
                   >
                     <span>{isAr ? "الأكثر طلباً 🔥" : "Best Seller 🔥"}</span>
                   </button>
@@ -1898,7 +1898,7 @@ ${desc}${detailsBlock}
                   <Label htmlFor="studio-body" className="text-xs font-bold text-foreground">
                     {isAr ? "النص والوصف" : "Body copy"}
                   </Label>
-                  <span dir="ltr" className="font-mono text-[10px] text-muted-foreground tabular-nums">
+                  <span dir="ltr" className="font-mono text-xs text-muted-foreground tabular-nums">
                     {body.length}/160
                   </span>
                 </div>
@@ -1916,7 +1916,7 @@ ${desc}${detailsBlock}
                     <button
                       type="button"
                       onClick={() => setBody(snappyDesc)}
-                      className="inline-flex items-center gap-1 rounded-lg border border-border bg-background hover:bg-muted px-2.5 py-1 text-[11px] font-medium text-foreground transition-colors cursor-pointer shadow-2xs"
+                      className="inline-flex items-center gap-1 rounded-lg border border-border bg-background hover:bg-muted px-2.5 py-1 text-xs font-medium text-foreground transition-colors cursor-pointer shadow-2xs"
                       title={isAr ? "اقتباس ذكي من أول الوصف" : "Smart excerpt from description"}
                     >
                       <Sparkles className="size-3 text-primary" />
@@ -1927,7 +1927,7 @@ ${desc}${detailsBlock}
                     <button
                       type="button"
                       onClick={() => setBody(selectedDescription.slice(0, 160))}
-                      className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/50 hover:bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
+                      className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/50 hover:bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
                       title={isAr ? "نسخ الوصف بالكامل (حتى 160 حرف)" : "Full description up to 160 chars"}
                     >
                       <span>{isAr ? "الوصف كاملاً" : "Full Desc"}</span>
@@ -1942,7 +1942,7 @@ ${desc}${detailsBlock}
                           : "Quiet elegance, thoughtful details for every moment.",
                       )
                     }
-                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/50 hover:bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
+                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/50 hover:bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
                   >
                     <span>{isAr ? "أناقة هادئة" : "Quiet Elegance"}</span>
                   </button>
@@ -1955,7 +1955,7 @@ ${desc}${detailsBlock}
                           : "Available now to order online.",
                       )
                     }
-                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/50 hover:bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
+                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/50 hover:bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
                   >
                     <span>{isAr ? "جاهز للطلب" : "Ready to Order"}</span>
                   </button>
@@ -2014,7 +2014,7 @@ ${desc}${detailsBlock}
                     <strong className="block text-xs font-bold text-foreground">
                       {isAr ? "آراء وتقييمات العملاء" : "Customer stories"}
                     </strong>
-                    <small className="text-[11px] text-muted-foreground">
+                    <small className="text-xs text-muted-foreground">
                       {isAr ? "تحويل أي تقييم إلى ستوري تسويقي" : "Turn any review into a story"}
                     </small>
                   </span>
@@ -2124,7 +2124,7 @@ ${desc}${detailsBlock}
                 {/* Drag handle tooltip on hover (hidden during export) */}
                 {!exporting && (
                   <div className="absolute -top-7 start-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30">
-                    <span className="flex items-center gap-1 text-[9px] font-bold bg-black/85 text-white px-2.5 py-0.5 rounded-full shadow-md whitespace-nowrap">
+                    <span className="flex items-center gap-1 text-xs font-bold bg-black/85 text-white px-2.5 py-0.5 rounded-full shadow-md whitespace-nowrap">
                       <Move className="size-2.5" />
                       {isAr ? "اسحب لتغيير الموضع" : "Drag to reposition"}
                     </span>
@@ -2163,7 +2163,7 @@ ${desc}${detailsBlock}
                           "font-semibold truncate pointer-events-none",
                           editionIsAr
                             ? "text-[12px] sm:text-sm"
-                            : "text-[9px] sm:text-[10px] uppercase tracking-[.22em]",
+                            : "text-xs sm:text-xs uppercase tracking-[.22em]",
                         )}
                         style={editionIsAr ? { fontFamily: "Tahoma, Arial, sans-serif" } : undefined}
                       >
@@ -2176,7 +2176,7 @@ ${desc}${detailsBlock}
                 {headerShowBadge && headerBadgeText?.trim() && (
                   <span
                     className={cn(
-                      "rounded-full px-2.5 py-0.5 sm:px-3 sm:py-1 text-[8px] sm:text-[9px] font-bold uppercase tracking-[.16em] whitespace-nowrap pointer-events-none shrink-0",
+                      "rounded-full px-2.5 py-0.5 sm:px-3 sm:py-1 text-xs sm:text-xs font-bold uppercase tracking-[.16em] whitespace-nowrap pointer-events-none shrink-0",
                       headerTextColor === "dark"
                         ? "border border-neutral-900/30 bg-black/5 text-neutral-900"
                         : "border border-white/50 bg-white/10 text-white",
@@ -2201,7 +2201,7 @@ ${desc}${detailsBlock}
               >
                 <div className="mb-[2.25%] flex items-center gap-2">
                   <span className="h-px w-6 bg-current opacity-45" />
-                  <p className="text-[9px] font-black opacity-65">{productName}</p>
+                  <p className="text-xs font-black opacity-65">{productName}</p>
                 </div>
                 <h2
                   dir="auto"
@@ -2220,7 +2220,7 @@ ${desc}${detailsBlock}
                 <p
                   dir="auto"
                   lang={bodyIsAr ? "ar" : "en"}
-                  className="mt-[2.5%] max-w-[94%] text-[11px] font-medium leading-[1.65] opacity-80 sm:text-sm"
+                  className="mt-[2.5%] max-w-[94%] text-xs font-medium leading-[1.65] opacity-80 sm:text-sm"
                   style={{
                     unicodeBidi: "plaintext",
                     fontFamily: bodyIsAr ? "Tahoma, Arial, sans-serif" : undefined,
@@ -2241,7 +2241,7 @@ ${desc}${detailsBlock}
               </div>
               <div
                 dir="ltr"
-                className="absolute inset-x-[6%] bottom-[2.2%] flex items-center justify-between gap-3 text-[9px] font-semibold tracking-wide text-white"
+                className="absolute inset-x-[6%] bottom-[2.2%] flex items-center justify-between gap-3 text-xs font-semibold tracking-wide text-white"
               >
                 <span className="flex items-center gap-1.5 rounded-full bg-black/35 px-2.5 py-1.5 shadow-sm backdrop-blur-sm">
                   <Instagram className="size-3" /> {instagram || businessName}

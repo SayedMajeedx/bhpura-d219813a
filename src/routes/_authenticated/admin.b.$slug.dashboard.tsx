@@ -1136,16 +1136,16 @@ function Dashboard() {
                 >
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                      <span className="text-xs font-semibold text-muted-foreground">
                         {isAr ? "الخطوة 1" : "Step 1"}
                       </span>
                       {step1Done ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
+                        <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
                           <CheckCircle2 className="h-3.5 w-3.5" />
                           {isAr ? "تمت الإضافة" : "Completed"}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full">
+                        <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full">
                           <Clock className="h-3.5 w-3.5" />
                           {isAr ? "بانتظارك" : "Pending"}
                         </span>
@@ -1195,16 +1195,16 @@ function Dashboard() {
                 >
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                      <span className="text-xs font-semibold text-muted-foreground">
                         {isAr ? "الخطوة 2" : "Step 2"}
                       </span>
                       {step2Done ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
+                        <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
                           <CheckCircle2 className="h-3.5 w-3.5" />
                           {isAr ? "تمت المعاينة" : "Completed"}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                        <span className="inline-flex items-center gap-1 text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                           {isAr ? "جاهز للمعاينة" : "Ready"}
                         </span>
                       )}
@@ -1259,7 +1259,7 @@ function Dashboard() {
                       <button
                         type="button"
                         onClick={() => togglePreviewMilestone(!step2Done)}
-                        className="text-[10px] text-muted-foreground/80 hover:text-foreground transition-colors underline decoration-dotted"
+                        className="text-xs text-muted-foreground/80 hover:text-foreground transition-colors underline decoration-dotted"
                       >
                         {step2Done
                           ? isAr
@@ -1283,16 +1283,16 @@ function Dashboard() {
                 >
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                      <span className="text-xs font-semibold text-muted-foreground">
                         {isAr ? "الخطوة 3" : "Step 3"}
                       </span>
                       {step3Done ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
+                        <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
                           <CheckCircle2 className="h-3.5 w-3.5" />
                           {isAr ? "تم التسجيل" : "Completed"}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                        <span className="inline-flex items-center gap-1 text-xs font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                           {isAr ? "الخطوة القادمة" : "Next Milestone"}
                         </span>
                       )}
@@ -1336,7 +1336,7 @@ function Dashboard() {
                       <button
                         type="button"
                         onClick={() => toggleSaleMilestone(!step3Done)}
-                        className="text-[10px] text-muted-foreground/80 hover:text-foreground transition-colors underline decoration-dotted"
+                        className="text-xs text-muted-foreground/80 hover:text-foreground transition-colors underline decoration-dotted"
                       >
                         {step3Done
                           ? isAr
@@ -1359,7 +1359,7 @@ function Dashboard() {
               <button
                 type="button"
                 onClick={handleRestoreOnboarding}
-                className="text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1.5 py-1 px-2.5 rounded-lg hover:bg-muted/50"
+                className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1.5 py-1 px-2.5 rounded-lg hover:bg-muted/50"
               >
                 <Sparkles className="h-3 w-3 text-primary" />
                 {isAr
@@ -1384,7 +1384,7 @@ function Dashboard() {
                 >
                   <div className="min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/90 leading-tight line-clamp-2">
+                      <p className="text-xs font-medium text-muted-foreground leading-tight line-clamp-2">
                         {k.label}
                       </p>
                       <div className="flex items-center gap-1.5 shrink-0">
@@ -1395,7 +1395,7 @@ function Dashboard() {
                                 ? "مقارنة بـ 30 يومًا السابقة"
                                 : "Compared to previous 30-day period"
                             }
-                            className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${
+                            className={`inline-flex items-center text-xs font-bold px-1.5 py-0.5 rounded-full border ${
                               isPositive
                                 ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-400"
                                 : "bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/30 dark:border-rose-800 dark:text-rose-400"
@@ -1415,7 +1415,7 @@ function Dashboard() {
                                 ? "لا توجد بيانات للفترة السابقة للمقارنة"
                                 : "No prior baseline available for comparison"
                             }
-                            className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full border border-border bg-muted/40 text-muted-foreground"
+                            className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full border border-border bg-muted/40 text-muted-foreground"
                           >
                             {isAr ? "لا توجد مقارنة" : "No baseline"}
                           </span>
@@ -1437,12 +1437,12 @@ function Dashboard() {
                       {k.subValue}
                     </p>
                     {(k as any).breakdown && (
-                      <p className="mt-1 text-[11px] text-muted-foreground/90 font-medium">
+                      <p className="mt-1 text-xs text-muted-foreground/90 font-medium">
                         {(k as any).breakdown}
                       </p>
                     )}
                     {!hasDelta && (
-                      <p className="mt-1 text-[10px] text-muted-foreground/75">
+                      <p className="mt-1 text-xs text-muted-foreground/75">
                         {isAr ? "لا توجد بيانات للفترة السابقة للمقارنة" : "No prior period data for comparison"}
                       </p>
                     )}
@@ -1481,7 +1481,7 @@ function Dashboard() {
                           ? "اتجاه المبيعات اليومية (آخر 30 يومًا)"
                           : "Daily Sales Performance (30 Days)"}
                       </h3>
-                      <p className="text-[11px] text-muted-foreground">
+                      <p className="text-xs text-muted-foreground">
                         {isAr
                           ? "المبيعات خلال آخر 30 يومًا"
                           : "Daily revenue trajectory and completed volume trends."}
@@ -1523,7 +1523,7 @@ function Dashboard() {
                                     <p className="text-emerald-500 font-mono font-bold">
                                       {formatMoney(Number(data.sales), currency, locale)}
                                     </p>
-                                    <p className="text-muted-foreground text-[11px]">
+                                    <p className="text-muted-foreground text-xs">
                                       {data.orders} {isAr ? "عمليات بيع" : "sales transactions"}
                                     </p>
                                   </div>
@@ -1602,7 +1602,7 @@ function Dashboard() {
                           #{o.invoice_number} —{" "}
                           {getOrderCustomerName(o) || (isAr ? "عميل" : "Customer")}
                         </Link>
-                        <span className="text-[11px] text-muted-foreground">
+                        <span className="text-xs text-muted-foreground">
                           {formatDate(o.created_at, locale)}
                         </span>
                       </div>
@@ -1613,7 +1613,7 @@ function Dashboard() {
                         <Link
                           to="/admin/b/$slug/orders/$id"
                           params={{ slug, id: o.id }}
-                          className="h-6 px-2 rounded-md bg-primary/10 text-primary text-[10px] font-bold flex items-center gap-1 hover:bg-primary/20 transition-colors"
+                          className="h-6 px-2 rounded-md bg-primary/10 text-primary text-xs font-bold flex items-center gap-1 hover:bg-primary/20 transition-colors"
                         >
                           {isAr ? "عرض التفاصيل" : "View Details"}
                         </Link>
@@ -1670,7 +1670,7 @@ function Dashboard() {
                 </Link>
               </div>
 
-              <p className="text-[11px] leading-relaxed text-muted-foreground">
+              <p className="text-xs leading-relaxed text-muted-foreground">
                 {isAr
                   ? `${inventoryIntel.lowStockCount} منتجات منخفضة إجمالًا، منها ${inventoryIntel.outOfStockVariantCount} خيارات مقاس أو لون نافدة. قد يبقى المنتج متوفرًا إذا كانت خيارات أخرى منه موجودة.`
                   : `${inventoryIntel.lowStockCount} products are low overall, including ${inventoryIntel.outOfStockVariantCount} sold-out size or color options. A product can remain available when other options have stock.`}
@@ -1694,7 +1694,7 @@ function Dashboard() {
                       className="flex items-center justify-between gap-2 rounded-lg bg-background/70 px-2.5 py-2 text-xs hover:bg-background"
                     >
                       <span className="truncate font-semibold">{product.name}</span>
-                      <span className="shrink-0 text-[10px] text-muted-foreground">
+                      <span className="shrink-0 text-xs text-muted-foreground">
                         {product.stock} {isAr ? "متوفر" : "in stock"}
                       </span>
                     </Link>
@@ -1724,7 +1724,7 @@ function Dashboard() {
                       <span className="font-semibold text-foreground truncate max-w-[180px]">
                         {item.name}
                       </span>
-                      <span className="text-[10px] shrink-0 font-bold bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">
+                      <span className="text-xs shrink-0 font-bold bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">
                         {item.stock === 0
                           ? isAr
                             ? "نفد"
@@ -1789,7 +1789,7 @@ function Dashboard() {
                               <p className="text-emerald-500 font-mono font-extrabold text-sm">
                                 {formatMoney(Number(data.sales), currency, locale)}
                               </p>
-                              <p className="text-muted-foreground text-[11px]">
+                              <p className="text-muted-foreground text-xs">
                                 {data.orders} {isAr ? "عمليات بيع" : "sales transactions"}
                               </p>
                             </div>
@@ -1862,7 +1862,7 @@ function Dashboard() {
                     >
                       <div>
                         <p className="font-bold text-foreground">{item.name}</p>
-                        <p className="text-[10px] text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                           {isAr ? "مستوى المخزون الحالي" : "Current stock quantity"}
                         </p>
                       </div>

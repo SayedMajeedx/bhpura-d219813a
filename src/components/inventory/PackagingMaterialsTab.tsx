@@ -316,7 +316,7 @@ export function PackagingMaterialsTab() {
               </span>
               <span
                 className={cn(
-                  "text-[10px] font-bold px-2 py-0.5 rounded-full border",
+                  "text-xs font-bold px-2 py-0.5 rounded-full border",
                   bomEnabled
                     ? "bg-primary/10 text-primary border-primary/30"
                     : "bg-muted text-muted-foreground border-border",
@@ -425,7 +425,7 @@ export function PackagingMaterialsTab() {
                         </h3>
                         <span
                           className={cn(
-                            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold border",
+                            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold border",
                             item.deduction_rule === "per_order"
                               ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
                               : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
@@ -441,13 +441,13 @@ export function PackagingMaterialsTab() {
                         </span>
                       </div>
                       {item.sku && (
-                        <span className="text-[11px] font-mono text-muted-foreground">
+                        <span className="text-xs font-mono text-muted-foreground">
                           SKU: {item.sku}
                         </span>
                       )}
                     </div>
                     {isLowStock && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-bold text-destructive">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-bold text-destructive">
                         <AlertTriangle className="h-3 w-3" />
                         {isAr ? "مخزون منخفض" : "Low Stock"}
                       </span>
@@ -456,7 +456,7 @@ export function PackagingMaterialsTab() {
 
                   <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted/40 p-2.5 text-xs">
                     <div>
-                      <span className="text-[11px] text-muted-foreground block">
+                      <span className="text-xs text-muted-foreground block">
                         {isAr ? "المخزون المتوفر" : "In Stock"}
                       </span>
                       <span className="font-extrabold text-foreground text-sm">
@@ -464,7 +464,7 @@ export function PackagingMaterialsTab() {
                       </span>
                     </div>
                     <div>
-                      <span className="text-[11px] text-muted-foreground block">
+                      <span className="text-xs text-muted-foreground block">
                         {isAr ? "تكلفة الوحدة" : "Unit Cost"}
                       </span>
                       <span className="font-extrabold text-primary text-sm">
@@ -560,7 +560,7 @@ export function PackagingMaterialsTab() {
                     <span>👗</span>
                     <span>{isAr ? "لكل منتج / قطعة" : "Per Product Item"}</span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground leading-tight">
+                  <span className="text-xs text-muted-foreground leading-tight">
                     {isAr
                       ? "تُخصم بعدد المنتجات (مثل كيس بلاستيك فردي أو بطاقة تسعير لكل عباية)"
                       : "Deducts for each item (e.g. polybag/tag per abaya)"}
@@ -581,7 +581,7 @@ export function PackagingMaterialsTab() {
                     <span>📦</span>
                     <span>{isAr ? "لكل طلب كامل" : "Per Entire Order"}</span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground leading-tight">
+                  <span className="text-xs text-muted-foreground leading-tight">
                     {isAr
                       ? "تُخصم قطعة واحدة فقط للطلب مهما كان عدد المنتجات (مثل كيس المحل الكبير أو كرتون الشحن)"
                       : "Deducts 1 unit per order regardless of items (e.g. boutique bag)"}

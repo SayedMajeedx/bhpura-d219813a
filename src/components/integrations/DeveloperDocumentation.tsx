@@ -221,7 +221,7 @@ export function verifyBoutqWebhook(rawBody, signatureHeader, secret) {
         </h4>
         <div className="border border-border rounded-lg overflow-x-auto bg-card">
           <table className="w-full text-xs text-left rtl:text-right">
-            <thead className="bg-muted text-muted-foreground uppercase text-[11px] font-semibold">
+            <thead className="bg-muted text-muted-foreground uppercase text-xs font-semibold">
               <tr>
                 <th className="px-4 py-3">{isAr ? "الطريقة" : "Method"}</th>
                 <th className="px-4 py-3">{isAr ? "المسار" : "Endpoint"}</th>

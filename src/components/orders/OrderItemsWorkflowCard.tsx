@@ -133,7 +133,7 @@ export const OrderItemsWorkflowCard: React.FC<OrderItemsWorkflowCardProps> = ({
                     </div>
 
                     {variantTitle && (
-                      <div className="text-[11px] font-mono text-muted-foreground font-medium">
+                      <div className="text-xs font-mono text-muted-foreground font-medium">
                         {variantTitle}
                       </div>
                     )}
@@ -143,7 +143,7 @@ export const OrderItemsWorkflowCard: React.FC<OrderItemsWorkflowCardProps> = ({
                       <button
                         type="button"
                         onClick={() => onOpenTailoringNotes?.(idx)}
-                        className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md hover:bg-amber-500/20 transition-colors"
+                        className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md hover:bg-amber-500/20 transition-colors"
                       >
                         <Scissors className="h-3 w-3" />
                         <span className="truncate max-w-[200px]">{tailoringSpecs}</span>
@@ -154,7 +154,7 @@ export const OrderItemsWorkflowCard: React.FC<OrderItemsWorkflowCardProps> = ({
                         <button
                           type="button"
                           onClick={() => onOpenTailoringNotes(idx)}
-                          className="inline-flex items-center gap-1 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
                         >
                           <Scissors className="h-3 w-3" />
                           <span>{isAr ? "+ تفاصيل التفصيل" : "+ Add Tailoring Specs"}</span>

@@ -16,7 +16,7 @@ export function ReportsCommandHeader({ lang, title, subtitle }: ReportsCommandHe
 
       <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary tracking-wide">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary tracking-wide">
             <Sparkles className="h-3 w-3 shrink-0" />
             <span>{isAr ? "رؤى الأعمال والتحليلات" : "BUSINESS INTELLIGENCE"}</span>
           </div>

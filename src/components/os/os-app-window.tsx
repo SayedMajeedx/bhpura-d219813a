@@ -57,7 +57,7 @@ export const OsAppWindow = React.forwardRef<HTMLDivElement, OsAppWindowProps>(
                 {title}
               </span>
               {subtitle && (
-                <span className="hidden md:inline text-[11px] text-muted-foreground truncate">
+                <span className="hidden md:inline text-xs text-muted-foreground truncate">
                   — {subtitle}
                 </span>
               )}

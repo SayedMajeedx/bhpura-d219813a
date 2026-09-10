@@ -190,14 +190,14 @@ export function OrderQuickViewModal({
                   <span>{isAr ? "طريقة وحالة الدفع:" : "Payment Method:"}</span>
                 </div>
                 <p className="font-semibold text-primary">{paymentMethodLabel}</p>
-                <p className="text-[11px] text-muted-foreground font-mono">
+                <p className="text-xs text-muted-foreground font-mono">
                   {isAr ? "حالة الدفع: " : "Status: "}
                   {order.payment_status || "pending"}
                 </p>
                 {isAdmin && getPaymentGatewayReference(order) && (
                   <div className="mt-2 pt-2 border-t border-border/40">
-                    <p className="text-[10px] text-muted-foreground mb-0.5">Reference ID:</p>
-                    <p className="text-[11px] font-mono break-all">
+                    <p className="text-xs text-muted-foreground mb-0.5">Reference ID:</p>
+                    <p className="text-xs font-mono break-all">
                       {getPaymentGatewayReference(order)}
                     </p>
                   </div>
@@ -219,7 +219,7 @@ export function OrderQuickViewModal({
                     <Button
                       size="xs"
                       variant="outline"
-                      className="h-6 gap-1 text-[10px] text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10"
+                      className="h-6 gap-1 text-xs text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10"
                       onClick={() => onWhatsAppCourier(order, assignedCourier)}
                     >
                       <MessageSquare className="h-3 w-3" />
@@ -308,12 +308,12 @@ export function OrderQuickViewModal({
                           <td className="p-2.5 font-semibold text-foreground">
                             <div>{itemTitle}</div>
                             {variantTitle && (
-                              <span className="text-[11px] text-muted-foreground block font-mono font-medium mt-0.5">
+                              <span className="text-xs text-muted-foreground block font-mono font-medium mt-0.5">
                                 {variantTitle}
                               </span>
                             )}
                             {customFields.length > 0 && (
-                              <div className="text-[10px] text-muted-foreground/90 mt-1 space-y-0.5">
+                              <div className="text-xs text-muted-foreground/90 mt-1 space-y-0.5">
                                 {customFields.map((cf: any, cfi: number) => (
                                   <div key={cfi} className="flex items-center gap-1">
                                     <span className="font-semibold">{isAr ? cf.label_ar || cf.label_en || cf.key : cf.label_en || cf.label_ar || cf.key}:</span>
@@ -388,7 +388,7 @@ export function OrderQuickViewModal({
             return (
               <div className="space-y-3">
                 <div className="rounded-xl border border-border/60 p-4 space-y-2 bg-card/80 text-xs shadow-2xs">
-                  <h4 className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground border-b border-border/40 pb-2">
+                  <h4 className="text-xs font-semibold text-muted-foreground border-b border-border/40 pb-2">
                     {isAr ? "تفاصيل الحساب المالي للفاتورة" : "Financial Price Breakdown"}
                   </h4>
 
@@ -472,7 +472,7 @@ export function OrderQuickViewModal({
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 font-mono text-[11px] pt-1.5 border-t border-border/40 text-muted-foreground">
+                  <div className="grid grid-cols-2 gap-2 font-mono text-xs pt-1.5 border-t border-border/40 text-muted-foreground">
                     <div>
                       <span>{isAr ? "تكلفة المنتجات:" : "Product Cost:"} </span>
                       <strong className="text-foreground">

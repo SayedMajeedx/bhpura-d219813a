@@ -86,7 +86,7 @@ export const CustomersScopeSwitcher: React.FC<CustomersScopeSwitcherProps> = ({
         <span className="truncate">{isAr ? scope.labelAr : scope.labelEn}</span>
         <span
           className={cn(
-            "rounded-full px-1.5 text-[10px] font-extrabold",
+            "rounded-full px-1.5 text-xs font-extrabold",
             isActive ? "bg-primary/10 text-primary" : "bg-muted",
           )}
         >
@@ -130,7 +130,7 @@ export const CustomersScopeSwitcher: React.FC<CustomersScopeSwitcherProps> = ({
                 >
                   <Icon className={cn("h-4 w-4", scope.badgeStyle)} />
                   <span className="flex-1">{isAr ? scope.labelAr : scope.labelEn}</span>
-                  <span className="rounded-full bg-muted px-2 text-[10px] font-bold">
+                  <span className="rounded-full bg-muted px-2 text-xs font-bold">
                     {counts[scope.id] || 0}
                   </span>
                 </DropdownMenuItem>

@@ -333,7 +333,7 @@ export function SuperOverridesManager() {
                 <p className="font-bold text-foreground">
                   {isAr ? "لا توجد استثناءات خاصة لهذا المتجر" : "No custom overrides active for this store"}
                 </p>
-                <p className="text-[11px]">
+                <p className="text-xs">
                   {isAr ? "يخضع المتجر لحدود ومزايا باقته الأساسية فقط." : "Store operates strictly within standard plan quotas."}
                 </p>
               </div>
@@ -354,7 +354,7 @@ export function SuperOverridesManager() {
                       <tr key={ov.id} className="border-b border-border/40 hover:bg-muted/20">
                         <td className="p-3 font-mono font-bold text-foreground">{ov.feature_key}</td>
                         <td className="p-3">
-                          <Badge variant="outline" className="text-[10px]">
+                          <Badge variant="outline" className="text-xs">
                             {ov.override_type}
                           </Badge>
                         </td>
@@ -367,7 +367,7 @@ export function SuperOverridesManager() {
                               ? "UNLIMITED"
                               : ov.numeric_value}
                         </td>
-                        <td className="p-3 text-muted-foreground text-[11px] max-w-[180px] truncate">
+                        <td className="p-3 text-muted-foreground text-xs max-w-[180px] truncate">
                           {ov.reason}
                         </td>
                         <td className="p-3 text-center">
@@ -428,7 +428,7 @@ export function SuperOverridesManager() {
                 <tbody>
                   {auditLogs.map((log: any) => (
                     <tr key={log.id} className="border-b border-border/40 hover:bg-muted/20">
-                      <td className="p-3 text-muted-foreground font-mono text-[11px] whitespace-nowrap">
+                      <td className="p-3 text-muted-foreground font-mono text-xs whitespace-nowrap">
                         {new Date(log.created_at).toLocaleString()}
                       </td>
                       <td className="p-3 text-foreground font-semibold flex items-center gap-1">
@@ -436,14 +436,14 @@ export function SuperOverridesManager() {
                         <span>{log.actor_email || "System"}</span>
                       </td>
                       <td className="p-3">
-                        <Badge variant="outline" className="font-mono text-[10px] bg-primary/10 text-primary">
+                        <Badge variant="outline" className="font-mono text-xs bg-primary/10 text-primary">
                           {log.action}
                         </Badge>
                       </td>
-                      <td className="p-3 font-mono text-[11px] text-muted-foreground">
+                      <td className="p-3 font-mono text-xs text-muted-foreground">
                         {log.target_type}: {log.target_id.slice(0, 12)}...
                       </td>
-                      <td className="p-3 font-mono text-[10px] text-muted-foreground max-w-[280px] truncate">
+                      <td className="p-3 font-mono text-xs text-muted-foreground max-w-[280px] truncate">
                         {JSON.stringify(log.changes)}
                       </td>
                     </tr>

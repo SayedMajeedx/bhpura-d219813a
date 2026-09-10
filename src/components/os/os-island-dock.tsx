@@ -84,7 +84,7 @@ export function OsIslandDock({
                 )}
               />
               {item.badge !== undefined && (
-                <span className="absolute -top-1 -end-2 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground shadow-xs border-2 border-background">
+                <span className="absolute -top-1 -end-2 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-xs font-bold text-destructive-foreground shadow-xs border-2 border-background">
                   {item.badge}
                 </span>
               )}
@@ -92,7 +92,7 @@ export function OsIslandDock({
 
             <span
               className={cn(
-                "text-[10px] tracking-tight leading-normal whitespace-nowrap mt-0.5 transition-colors duration-200",
+                "text-xs tracking-tight leading-normal whitespace-nowrap mt-0.5 transition-colors duration-200",
                 item.active
                   ? "font-semibold text-primary"
                   : "font-medium text-muted-foreground/80",

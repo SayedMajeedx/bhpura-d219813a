@@ -33,7 +33,7 @@ export const OrderMobileQuickActions: React.FC<OrderMobileQuickActionsProps> = (
           variant="outline"
           size="sm"
           onClick={onSendWhatsApp}
-          className="flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl p-1 text-[10px] font-bold border-border/80 text-foreground hover:bg-muted touch-manipulation"
+          className="flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl p-1 text-xs font-bold border-border/80 text-foreground hover:bg-muted touch-manipulation"
         >
           <Send className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
           <span>{isAr ? "واتساب" : "WhatsApp"}</span>
@@ -44,7 +44,7 @@ export const OrderMobileQuickActions: React.FC<OrderMobileQuickActionsProps> = (
       {cleanPhone ? (
         <a
           href={`tel:${cleanPhone}`}
-          className="inline-flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl border border-border/80 bg-background p-1 text-[10px] font-bold text-foreground hover:bg-muted active:scale-95 transition-transform touch-manipulation text-center"
+          className="inline-flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl border border-border/80 bg-background p-1 text-xs font-bold text-foreground hover:bg-muted active:scale-95 transition-transform touch-manipulation text-center"
         >
           <Phone className="h-4 w-4 text-primary" />
           <span>{isAr ? "اتصال" : "Call"}</span>
@@ -54,7 +54,7 @@ export const OrderMobileQuickActions: React.FC<OrderMobileQuickActionsProps> = (
           variant="outline"
           size="sm"
           disabled
-          className="flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl p-1 text-[10px] font-bold opacity-50"
+          className="flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl p-1 text-xs font-bold opacity-50"
         >
           <Phone className="h-4 w-4" />
           <span>{isAr ? "اتصال" : "Call"}</span>
@@ -66,7 +66,7 @@ export const OrderMobileQuickActions: React.FC<OrderMobileQuickActionsProps> = (
         variant="outline"
         size="sm"
         onClick={onPrintReceipt}
-        className="flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl p-1 text-[10px] font-bold border-border/80 text-foreground hover:bg-muted touch-manipulation"
+        className="flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl p-1 text-xs font-bold border-border/80 text-foreground hover:bg-muted touch-manipulation"
       >
         <Receipt className="h-4 w-4 text-amber-600 dark:text-amber-400" />
         <span>{isAr ? "إيصال" : "Receipt"}</span>
@@ -77,7 +77,7 @@ export const OrderMobileQuickActions: React.FC<OrderMobileQuickActionsProps> = (
         variant="outline"
         size="sm"
         onClick={onCopyLink}
-        className="flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl p-1 text-[10px] font-bold border-border/80 text-foreground hover:bg-muted touch-manipulation"
+        className="flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl p-1 text-xs font-bold border-border/80 text-foreground hover:bg-muted touch-manipulation"
       >
         <Copy className="h-4 w-4 text-blue-600 dark:text-blue-400" />
         <span>{isAr ? "الرابط" : "Copy Link"}</span>

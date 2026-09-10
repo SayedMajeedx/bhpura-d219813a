@@ -619,7 +619,7 @@ function CustomerImporterModal({
                     <span className="text-sm font-semibold font-display text-foreground block">
                       {item.name}
                     </span>
-                    <span className="text-[10px] text-muted-foreground block mt-0.5">
+                    <span className="text-xs text-muted-foreground block mt-0.5">
                       {item.desc}
                     </span>
                   </button>

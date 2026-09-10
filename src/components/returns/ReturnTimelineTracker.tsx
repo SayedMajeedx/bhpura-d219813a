@@ -34,7 +34,7 @@ export function ReturnTimelineTracker({ returnReq, lang }: ReturnTimelineTracker
             {returnReq.rejection_reason || (isAr ? "لم يتم تحديد سبب الرفض" : "No reason provided")}
           </p>
           {returnReq.reviewed_at && (
-            <span className="text-[10px] text-muted-foreground font-mono mt-1 block">
+            <span className="text-xs text-muted-foreground font-mono mt-1 block">
               {formatDate(returnReq.reviewed_at, isAr ? "ar-BH" : "en-US")}
             </span>
           )}
@@ -132,7 +132,7 @@ export function ReturnTimelineTracker({ returnReq, lang }: ReturnTimelineTracker
 
   return (
     <div className="p-4 rounded-xl border border-border bg-card shadow-2xs">
-      <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">
+      <h3 className="text-xs font-semibold text-muted-foreground mb-4">
         {isAr ? "مراحل دورة حياة المرتجع" : "Return Lifecycle Tracker"}
       </h3>
 
@@ -171,7 +171,7 @@ export function ReturnTimelineTracker({ returnReq, lang }: ReturnTimelineTracker
                   {isAr ? step.labelAr : step.labelEn}
                 </span>
                 {step.date && (
-                  <span className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                  <span className="text-xs text-muted-foreground font-mono mt-0.5">
                     {formatDate(step.date, isAr ? "ar-BH" : "en-US")}
                   </span>
                 )}
@@ -210,7 +210,7 @@ export function ReturnTimelineTracker({ returnReq, lang }: ReturnTimelineTracker
                     {isAr ? step.labelAr : step.labelEn}
                   </h4>
                   {step.date && (
-                    <span className="text-[10px] text-muted-foreground font-mono block">
+                    <span className="text-xs text-muted-foreground font-mono block">
                       {formatDate(step.date, isAr ? "ar-BH" : "en-US")}
                     </span>
                   )}

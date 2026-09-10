@@ -277,7 +277,7 @@ function ReturnDetailPage() {
               >
                 {isAr ? statusCfg.labelAr : statusCfg.labelEn}
               </span>
-              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-muted text-foreground border border-border">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-muted text-foreground border border-border">
                 {returnReq.type === "exchange"
                   ? isAr
                     ? "طلب استبدال"
@@ -435,10 +435,10 @@ function ReturnDetailPage() {
                             ? item.product?.name_ar || item.product?.name_en
                             : item.product?.name_en || item.product?.name_ar}
                         </h4>
-                        <p className="text-[11px] text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                           {item.variant?.variant_name || item.variant?.sku || "Default SKU"}
                         </p>
-                        <div className="flex items-center gap-2 font-mono text-[11px] mt-0.5">
+                        <div className="flex items-center gap-2 font-mono text-xs mt-0.5">
                           <span className="font-semibold text-foreground">
                             {isAr ? "الكمية:" : "Qty:"} {item.quantity}
                           </span>
@@ -465,12 +465,12 @@ function ReturnDetailPage() {
                     <div className="flex items-center gap-2 self-end sm:self-auto">
                       <div className="text-end">
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${condCfg.badgeClass}`}
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${condCfg.badgeClass}`}
                         >
                           {isAr ? condCfg.labelAr : condCfg.labelEn}
                         </span>
                         {item.restocked && (
-                          <span className="block text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
+                          <span className="block text-xs font-mono text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
                             {isAr ? "تم إعادة المخزون" : "Restocked"} (+{item.restocked_quantity})
                           </span>
                         )}
@@ -558,11 +558,11 @@ function ReturnDetailPage() {
                     <span className="font-semibold text-foreground block">
                       {isAr ? log.message_ar || log.message_en : log.message_en || log.message_ar}
                     </span>
-                    <span className="text-[10px] text-muted-foreground font-mono">
+                    <span className="text-xs text-muted-foreground font-mono">
                       {log.action}
                     </span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground font-mono">
+                  <span className="text-xs text-muted-foreground font-mono">
                     {formatDate(log.created_at, isAr ? "ar-BH" : "en-US")}
                   </span>
                 </div>
@@ -642,8 +642,8 @@ function ReturnDetailPage() {
               <span
                 className={
                   returnReq.refund_status === "processed"
-                    ? "text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20"
-                    : "text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/20"
+                    ? "text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20"
+                    : "text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/20"
                 }
               >
                 {returnReq.refund_status === "processed"
@@ -719,7 +719,7 @@ function ReturnDetailPage() {
               </div>
 
               {returnReq.refund_processed_at && (
-                <div className="pt-2 border-t border-border text-[11px] text-muted-foreground space-y-1">
+                <div className="pt-2 border-t border-border text-xs text-muted-foreground space-y-1">
                   <div className="flex items-center justify-between">
                     <span>{isAr ? "طريقة الصرف:" : "Method:"}</span>
                     <span className="font-semibold text-foreground">

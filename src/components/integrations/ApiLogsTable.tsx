@@ -37,20 +37,20 @@ export function ApiLogsTable({ brandId }: ApiLogsTableProps) {
   const getStatusBadge = (statusCode: number) => {
     if (statusCode >= 200 && statusCode < 300) {
       return (
-        <Badge variant="default" className="text-[10px] bg-green-600 hover:bg-green-600">
+        <Badge variant="default" className="text-xs bg-green-600 hover:bg-green-600">
           {statusCode}
         </Badge>
       );
     }
     if (statusCode >= 400 && statusCode < 500) {
       return (
-        <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-600/30">
+        <Badge variant="outline" className="text-xs text-amber-600 border-amber-600/30">
           {statusCode}
         </Badge>
       );
     }
     return (
-      <Badge variant="destructive" className="text-[10px]">
+      <Badge variant="destructive" className="text-xs">
         {statusCode}
       </Badge>
     );
@@ -67,7 +67,7 @@ export function ApiLogsTable({ brandId }: ApiLogsTableProps) {
     };
     return (
       <span
-        className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold border ${
+        className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono font-bold border ${
           colors[m] || "bg-muted text-muted-foreground border-border"
         }`}
       >
@@ -117,7 +117,7 @@ export function ApiLogsTable({ brandId }: ApiLogsTableProps) {
       ) : (
         <div className="border border-border rounded-lg overflow-x-auto bg-card">
           <table className="w-full text-xs text-left rtl:text-right">
-            <thead className="bg-muted text-muted-foreground uppercase text-[11px] font-semibold">
+            <thead className="bg-muted text-muted-foreground uppercase text-xs font-semibold">
               <tr>
                 <th className="px-4 py-3">{isAr ? "النوع" : "Method"}</th>
                 <th className="px-4 py-3">{isAr ? "المسار" : "Path"}</th>
@@ -135,7 +135,7 @@ export function ApiLogsTable({ brandId }: ApiLogsTableProps) {
                   <td className="px-4 py-3">{getMethodBadge(log.method)}</td>
                   <td className="px-4 py-3 font-medium text-foreground">{log.path}</td>
                   <td className="px-4 py-3">{getStatusBadge(log.status_code)}</td>
-                  <td className="px-4 py-3 text-muted-foreground text-[11px]">
+                  <td className="px-4 py-3 text-muted-foreground text-xs">
                     {log.brand_api_keys?.name ? (
                       <span>
                         {log.brand_api_keys.name} (•••{log.brand_api_keys.key_hint})
@@ -158,7 +158,7 @@ export function ApiLogsTable({ brandId }: ApiLogsTableProps) {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleCopy(log.request_id)}
-                      className="h-7 px-2 text-[10px] gap-1 text-muted-foreground hover:text-foreground"
+                      className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
                     >
                       {copiedId === log.request_id ? (
                         <Check className="h-3 w-3 text-green-500" />

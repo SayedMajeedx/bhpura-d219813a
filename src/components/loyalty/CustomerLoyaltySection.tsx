@@ -123,7 +123,7 @@ export function CustomerLoyaltySection({
         <Card className="p-6 border-border bg-gradient-to-br from-primary/10 via-primary/5 to-transparent flex flex-col justify-between relative overflow-hidden">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-primary uppercase tracking-wider">
+              <span className="text-xs font-semibold text-primary">
                 {isAr ? "رصيد النقاط المتاح" : "Available Points"}
               </span>
               <div className="h-9 w-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-xs">
@@ -142,7 +142,7 @@ export function CustomerLoyaltySection({
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-border/50 text-[11px] text-muted-foreground flex items-center gap-1.5">
+          <div className="mt-4 pt-3 border-t border-border/50 text-xs text-muted-foreground flex items-center gap-1.5">
             <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
             <span>
               {isAr
@@ -156,7 +156,7 @@ export function CustomerLoyaltySection({
         <Card className="p-6 border-border bg-card flex flex-col justify-between">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              <span className="text-xs font-semibold text-muted-foreground">
                 {isAr ? "نقاط معلقة (قيد الاعتماد)" : "Pending Points"}
               </span>
               <div className="h-9 w-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
@@ -175,7 +175,7 @@ export function CustomerLoyaltySection({
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-border/50 text-[11px] text-muted-foreground flex items-center gap-1.5">
+          <div className="mt-4 pt-3 border-t border-border/50 text-xs text-muted-foreground flex items-center gap-1.5">
             <Clock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
             <span>
               {isAr
@@ -189,7 +189,7 @@ export function CustomerLoyaltySection({
         <Card className="p-6 border-border bg-card flex flex-col justify-between">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              <span className="text-xs font-semibold text-muted-foreground">
                 {isAr ? "مستوى العضوية الحالي" : "Current VIP Tier"}
               </span>
               <div
@@ -208,7 +208,7 @@ export function CustomerLoyaltySection({
                   {currentTier.points_multiplier}x {isAr ? "مضاعف نقاط" : "multiplier"}
                 </span>
                 {currentTier.free_shipping && (
-                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
                     <Truck className="h-3 w-3" />
                     {isAr ? "شحن مجاني" : "Free shipping"}
                   </span>
@@ -219,7 +219,7 @@ export function CustomerLoyaltySection({
 
           {nextTier ? (
             <div className="mt-4 pt-3 border-t border-border/50 space-y-1.5">
-              <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>{isAr ? "الترقية للمستوى التالي:" : "Next Tier:"}</span>
                 <span className="font-semibold text-foreground">
                   {isAr ? nextTier.name_ar : nextTier.name_en} ({nextTier.min_spend} {currency})
@@ -228,7 +228,7 @@ export function CustomerLoyaltySection({
               <Progress value={Math.min(100, Math.max(15, (activePoints / (nextTier.min_points || 1000)) * 100))} className="h-1.5" />
             </div>
           ) : (
-            <div className="mt-4 pt-3 border-t border-border/50 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+            <div className="mt-4 pt-3 border-t border-border/50 text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
               <Sparkles className="h-3.5 w-3.5" />
               <span>{isAr ? "أنت في أعلى مستويات العضوية!" : "You have reached the top tier!"}</span>
             </div>
@@ -266,7 +266,7 @@ export function CustomerLoyaltySection({
                     {isAr ? t.name_ar : t.name_en}
                   </span>
                   {isCurrent && (
-                    <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                    <span className="text-xs font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
                       {isAr ? "مستواك الحالي" : "Your Tier"}
                     </span>
                   )}
@@ -345,7 +345,7 @@ export function CustomerLoyaltySection({
                       <p className="text-xs font-semibold text-foreground">
                         {isAr ? entry.reference_note_ar : entry.reference_note_en}
                       </p>
-                      <span className="text-[11px] text-muted-foreground block">
+                      <span className="text-xs text-muted-foreground block">
                         {new Date(entry.created_at).toLocaleDateString(isAr ? "ar-BH" : "en-US", {
                           month: "short",
                           day: "numeric",
@@ -366,7 +366,7 @@ export function CustomerLoyaltySection({
                       {isPositive ? "+" : ""}
                       {entry.points} {isAr ? "نقطة" : "pts"}
                     </span>
-                    <span className="text-[10px] text-muted-foreground block">
+                    <span className="text-xs text-muted-foreground block">
                       {isAr ? "الرصيد: " : "Balance: "} {entry.balance_after}
                     </span>
                   </div>

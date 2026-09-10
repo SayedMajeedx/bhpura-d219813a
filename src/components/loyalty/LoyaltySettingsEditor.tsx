@@ -169,7 +169,7 @@ export function LoyaltySettingsEditor({
                     }))
                   }
                 />
-                <span className="text-[11px] text-muted-foreground block">
+                <span className="text-xs text-muted-foreground block">
                   {isAr
                     ? `(100 نقطة = ${((form.redemption_rate ?? 0.010) * 100).toFixed(3)} د.ب)`
                     : `(100 pts = ${((form.redemption_rate ?? 0.010) * 100).toFixed(3)} BHD)`}
@@ -240,7 +240,7 @@ export function LoyaltySettingsEditor({
                     }))
                   }
                 />
-                <span className="text-[11px] text-muted-foreground block">
+                <span className="text-xs text-muted-foreground block">
                   {isAr
                     ? "تظل النقاط معلقة حتى تنتهي مهلة المرتجع المسموحة"
                     : "Points stay pending until the return window elapses"}

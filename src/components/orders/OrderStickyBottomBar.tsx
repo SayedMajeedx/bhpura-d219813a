@@ -141,7 +141,7 @@ export const OrderStickyBottomBar: React.FC<OrderStickyBottomBarProps> = ({
             sideOffset={8}
             className="w-56 font-sans rounded-xl p-1.5 shadow-xl border-border/80"
           >
-            <div className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
               {isAr ? "إجراءات إضافية" : "Secondary Actions"}
             </div>
             <DropdownMenuSeparator />

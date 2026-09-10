@@ -27,10 +27,10 @@ export function SettingsCommandHeader({
 
       <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary tracking-wide">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary tracking-wide">
             <Settings className="h-3 w-3 shrink-0" />
             <span>{isAr ? "إعدادات المنصة والبوتيك" : "BOUTIQUE SYSTEM CONFIGURATION"}</span>
-            <span className="ms-1 px-1.5 py-0.2 rounded-full bg-primary text-primary-foreground text-[10px] font-extrabold">
+            <span className="ms-1 px-1.5 py-0.2 rounded-full bg-primary text-primary-foreground text-xs font-extrabold">
               {brandName}
             </span>
           </div>

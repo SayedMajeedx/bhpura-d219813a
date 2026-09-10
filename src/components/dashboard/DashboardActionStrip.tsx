@@ -197,7 +197,7 @@ export function DashboardActionStrip({
                     </div>
                     <span
                       className={cn(
-                        "text-[11px] font-semibold px-2 py-0.5 rounded-full border",
+                        "text-xs font-semibold px-2 py-0.5 rounded-full border",
                         card.badgeClass,
                       )}
                     >
@@ -207,7 +207,7 @@ export function DashboardActionStrip({
 
                   <div>
                     <h3 className="text-xs font-bold text-foreground">{card.title}</h3>
-                    <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">
+                    <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
                       {card.description}
                     </p>
                   </div>
@@ -247,7 +247,7 @@ export function DashboardActionStrip({
                   ? "كل أمورك جاهزة ومنتظمة اليوم!"
                   : "All operational queues are clear today!"}
               </p>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 {isAr
                   ? "لا توجد طلبات معلقة للشحن، ولا تنبيهات لمخزون حرج، ولا مرتجعات بانتظار الفحص."
                   : "No unfulfilled orders, critical inventory alerts, or pending return inspections."}

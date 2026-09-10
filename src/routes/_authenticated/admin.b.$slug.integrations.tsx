@@ -377,7 +377,7 @@ function IntegrationsPage() {
                           row.provider === "gemini" ? row.api_key_masked : row.webhook_secret_masked
                         }
                       />
-                      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground pt-2 border-t border-border/50 sm:col-span-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground pt-2 border-t border-border/50 sm:col-span-2">
                         <div className="flex items-center gap-1.5">
                           <History className="h-3.5 w-3.5 text-muted-foreground/70" />
                           <span>{isAr ? "آخر تدوير للمفاتيح:" : "Last rotated:"}</span>
@@ -401,7 +401,7 @@ function IntegrationsPage() {
                           size="sm"
                           disabled={!canRotateKeys}
                           onClick={() => setRotatingIntegration(row)}
-                          className="h-7 px-2.5 text-[11px] gap-1.5 border-border/70 hover:border-amber-500/50 hover:text-amber-600 dark:hover:text-amber-400"
+                          className="h-7 px-2.5 text-xs gap-1.5 border-border/70 hover:border-amber-500/50 hover:text-amber-600 dark:hover:text-amber-400"
                           title={
                             !canRotateKeys
                               ? isAr

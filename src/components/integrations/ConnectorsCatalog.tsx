@@ -210,7 +210,7 @@ export function ConnectorsCatalog({ brandId }: ConnectorsCatalogProps) {
 
               <CardContent className="p-5 pt-0 space-y-3">
                 {isConnected && (
-                  <div className="text-[11px] text-muted-foreground border-t border-border pt-2 flex items-center justify-between">
+                  <div className="text-xs text-muted-foreground border-t border-border pt-2 flex items-center justify-between">
                     <span>
                       {isAr ? "اتجاه المزامنة:" : "Sync:"}{" "}
                       {config?.sync_direction === "two_way"

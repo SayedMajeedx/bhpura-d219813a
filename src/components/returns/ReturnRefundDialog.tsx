@@ -189,7 +189,7 @@ export function ReturnRefundDialog({
                   <CreditCard className="h-4 w-4 text-primary" />
                   {isAr ? "رصيد متجر (موصى به)" : "Store Credit"}
                 </div>
-                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                <p className="text-xs text-muted-foreground leading-relaxed">
                   {isAr
                     ? "فوري وبدون رسوم بنكية للمتجر، يشجع العميل على الشراء ثانية"
                     : "Instant, no payment gateway fees, retains customer value"}
@@ -209,7 +209,7 @@ export function ReturnRefundDialog({
                   <Banknote className="h-4 w-4 text-emerald-600" />
                   {isAr ? "استرداد للوسيلة الأصلية" : "Original Payment"}
                 </div>
-                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                <p className="text-xs text-muted-foreground leading-relaxed">
                   {isAr
                     ? "تحويل بنكي أو بطاقة، يستغرق 3-7 أيام عمل"
                     : "Card or bank reversal, takes 3-7 business days"}
@@ -226,7 +226,7 @@ export function ReturnRefundDialog({
                   ? `مبلغ الاسترداد الفعلي (${currency === "BHD" ? "د.ب" : currency})`
                   : `Refund Amount (${currency})`}
               </Label>
-              <span className="text-[11px] text-muted-foreground font-mono">
+              <span className="text-xs text-muted-foreground font-mono">
                 {isAr ? "سقف المدفوع:" : "Paid Cap:"} {formatMoney(totalPaid, currency, isAr ? "ar-BH-u-nu-latn" : "en-US")}
               </span>
             </div>
@@ -259,7 +259,7 @@ export function ReturnRefundDialog({
           </div>
 
           {/* Ledger Notice */}
-          <div className="p-3 rounded-lg border border-border bg-background text-[11px] text-muted-foreground flex items-center gap-2">
+          <div className="p-3 rounded-lg border border-border bg-background text-xs text-muted-foreground flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
             <span>
               {isAr

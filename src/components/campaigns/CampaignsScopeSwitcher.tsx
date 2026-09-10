@@ -54,7 +54,7 @@ export function CampaignsScopeSwitcher({
             {count !== undefined && (
               <span
                 className={cn(
-                  "ms-1 px-1.5 py-0.2 text-[10px] font-extrabold rounded-full",
+                  "ms-1 px-1.5 py-0.2 text-xs font-extrabold rounded-full",
                   isActive
                     ? "bg-primary-foreground text-primary"
                     : "bg-muted text-muted-foreground",

@@ -76,43 +76,43 @@ export function AbandonedCartsList({
     switch (status) {
       case "active":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
             {isAr ? "سلة نشطة حالياً" : "Active Session"}
           </span>
         );
       case "abandoned":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
             {isAr ? "متروكة" : "Abandoned"}
           </span>
         );
       case "recovering":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
             {isAr ? "قيد المتابعة" : "Recovering"}
           </span>
         );
       case "recovered":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
             {isAr ? "تمت الاستعادة بنجاح" : "Recovered"}
           </span>
         );
       case "expired":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground border border-border">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
             {isAr ? "تم إفراغها" : "Cleared"}
           </span>
         );
       case "unsubscribed":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
             {isAr ? "أوقف المتابعة" : "Unsubscribed"}
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground border border-border">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
             {status}
           </span>
         );
@@ -251,7 +251,7 @@ export function AbandonedCartsList({
                             {phone || cart.guest_email || cart.customers?.email || "—"}
                           </span>
                           {Boolean(cart.marketing_consent && (phone || cart.guest_email || cart.customers?.email)) && (
-                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1 mt-0.5">
+                            <span className="text-xs text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1 mt-0.5">
                               <CheckCircle2 className="h-2.5 w-2.5" />
                               {isAr ? "موافق على التسويق" : "Marketing consent"}
                             </span>
@@ -264,7 +264,7 @@ export function AbandonedCartsList({
                           <span className="text-xs font-medium text-foreground">
                             {items.length} {isAr ? "منتج" : "item(s)"}
                           </span>
-                          <span className="text-[11px] text-muted-foreground line-clamp-1">
+                          <span className="text-xs text-muted-foreground line-clamp-1">
                             {items.map((it: any) => it.title).join(", ")}
                           </span>
                         </div>

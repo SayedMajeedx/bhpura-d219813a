@@ -88,7 +88,7 @@ export function TrustBadgesEditor({
             <h3 className="font-semibold text-sm">
               {isAr ? "شارات الطمأنينة والأمان في التذييل (Trust Badges)" : "Footer Reassurance & Trust Badges"}
             </h3>
-            <Badge variant="outline" className="text-[10px] font-normal border-primary/40 text-primary">
+            <Badge variant="outline" className="text-xs font-normal border-primary/40 text-primary">
               {isAr ? "شريط الفوتر" : "Footer Reassurance"}
             </Badge>
           </div>
@@ -219,7 +219,7 @@ export function TrustBadgesEditor({
                   {/* Item Row 2: Bilingual Text Inputs */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                     <div dir="rtl" className="space-y-1">
-                      <Label className="text-[11px] text-muted-foreground font-medium">
+                      <Label className="text-xs text-muted-foreground font-medium">
                         {isAr ? "النص بالعربية" : "Arabic Text"}
                       </Label>
                       <Input
@@ -230,7 +230,7 @@ export function TrustBadgesEditor({
                       />
                     </div>
                     <div dir="ltr" className="space-y-1">
-                      <Label className="text-[11px] text-muted-foreground font-medium">
+                      <Label className="text-xs text-muted-foreground font-medium">
                         {isAr ? "النص بالإنجليزية" : "English Text"}
                       </Label>
                       <Input
@@ -257,7 +257,7 @@ export function TrustBadgesEditor({
             >
               <Plus className="h-3.5 w-3.5 text-primary" />
               <span>{isAr ? "إضافة شارة طمأنينة جديدة" : "Add New Trust Badge"}</span>
-              <span className="text-[10px] text-muted-foreground font-normal">
+              <span className="text-xs text-muted-foreground font-normal">
                 ({items.length}/8)
               </span>
             </Button>
@@ -270,7 +270,7 @@ export function TrustBadgesEditor({
                 <Eye className="h-3.5 w-3.5 text-primary" />
                 {isAr ? "معاينة حية لشكل الفوتر بالمتجر" : "Live Storefront Footer Preview"}
               </span>
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 {isAr ? "تنعكس فورياً على المتجر" : "Reflected live on storefront"}
               </span>
             </div>
@@ -283,12 +283,12 @@ export function TrustBadgesEditor({
                 color: footerFg || "#ffffff",
               }}
             >
-              <div className="text-[10px] uppercase tracking-wider opacity-50 mb-2 flex items-center gap-1 font-mono">
+              <div className="text-xs opacity-50 mb-2 flex items-center gap-1 font-mono">
                 <Monitor className="h-3 w-3" />
                 {isAr ? "العرض على الكمبيوتر (Desktop)" : "Desktop View"}
               </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 py-2.5 px-4 text-[11px] font-medium border-y border-white/10 rounded-xl bg-white/5 backdrop-blur-xs max-w-3xl mx-auto">
+              <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 py-2.5 px-4 text-xs font-medium border-y border-white/10 rounded-xl bg-white/5 backdrop-blur-xs max-w-3xl mx-auto">
                 {items
                   .filter((b) => b.enabled)
                   .map((badge, idx) => (
@@ -303,7 +303,7 @@ export function TrustBadgesEditor({
 
               {/* Simulated Mobile Preview */}
               <div className="mt-4 pt-3 border-t border-white/10">
-                <div className="text-[10px] uppercase tracking-wider opacity-50 mb-2 flex items-center gap-1 font-mono">
+                <div className="text-xs opacity-50 mb-2 flex items-center gap-1 font-mono">
                   <Smartphone className="h-3 w-3" />
                   {isAr ? "العرض على شاشة الجوال (Mobile Grid)" : "Mobile Grid View"}
                 </div>
@@ -316,7 +316,7 @@ export function TrustBadgesEditor({
                         className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-xs p-2.5 flex flex-col items-center justify-center text-center gap-1.5 min-h-[64px]"
                       >
                         {renderTrustBadgeIcon(badge.icon, "h-4 w-4", badge.color)}
-                        <span className="text-[10px] font-medium opacity-95 line-clamp-2">
+                        <span className="text-xs font-medium opacity-95 line-clamp-2">
                           {isAr ? badge.text_ar || badge.text_en : badge.text_en || badge.text_ar}
                         </span>
                       </div>

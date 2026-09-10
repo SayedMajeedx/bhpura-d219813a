@@ -149,7 +149,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
         <div className="overflow-x-auto">
           <table className="w-full text-start text-xs border-collapse">
             <thead>
-              <tr className="border-b border-border/60 bg-muted/40 font-bold text-muted-foreground uppercase text-[10px] tracking-wider">
+              <tr className="border-b border-border/60 bg-muted/40 font-bold text-muted-foreground uppercase text-xs tracking-wider">
                 <th className="p-3 text-center w-12">
                   <Checkbox
                     checked={
@@ -293,11 +293,11 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                               )}
                             </div>
                             {sku ? (
-                              <div className="text-[10px] text-muted-foreground font-mono">
+                              <div className="text-xs text-muted-foreground font-mono">
                                 SKU: {sku}
                               </div>
                             ) : barcode ? (
-                              <div className="text-[10px] text-muted-foreground font-mono">
+                              <div className="text-xs text-muted-foreground font-mono">
                                 BAR: {barcode}
                               </div>
                             ) : null}
@@ -306,7 +306,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                                 {attentionReasons.map((reason) => (
                                   <span
                                     key={reason.key}
-                                    className={`inline-flex items-center px-1.5 py-0.5 text-[9px] font-semibold rounded ${
+                                    className={`inline-flex items-center px-1.5 py-0.5 text-xs font-semibold rounded ${
                                       reason.tone === "danger"
                                         ? "bg-destructive/10 text-destructive border border-destructive/20"
                                         : reason.tone === "warning"
@@ -326,11 +326,11 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                       {/* Category */}
                       <td className="p-3 align-middle font-medium">
                         {product.category && resolveCategoryName(product.category) ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] bg-muted/70 text-foreground border border-border/50">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-muted/70 text-foreground border border-border/50">
                             {resolveCategoryName(product.category)}
                           </span>
                         ) : (
-                          <span className="text-muted-foreground/50 text-[11px] italic">
+                          <span className="text-muted-foreground/50 text-xs italic">
                             {isAr ? "بدون قسم" : "No category"}
                           </span>
                         )}
@@ -345,7 +345,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                             e.stopPropagation();
                             toggleExpand(product.id);
                           }}
-                          className="h-7 px-2 text-[11px] font-mono font-bold hover:bg-primary/10 hover:text-primary"
+                          className="h-7 px-2 text-xs font-mono font-bold hover:bg-primary/10 hover:text-primary"
                         >
                           {variantCountLabel(pVariants.length, lang)}
                           {isExpanded ? (
@@ -359,7 +359,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                       {/* Stock Level */}
                       <td className="p-3 align-middle">
                         <span
-                          className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                          className={`inline-flex px-2 py-0.5 rounded-md text-xs font-bold ${
                             isOutOfStock
                               ? "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300"
                               : isLowStock

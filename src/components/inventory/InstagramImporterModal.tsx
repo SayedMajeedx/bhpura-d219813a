@@ -619,7 +619,7 @@ export function InstagramImporterModal({
                           }}
                           className="h-7 w-16 text-xs text-center font-bold font-mono rounded-lg"
                         />
-                        <span className="text-[11px] text-muted-foreground">{isAr ? "منشور" : "posts"}</span>
+                        <span className="text-xs text-muted-foreground">{isAr ? "منشور" : "posts"}</span>
                       </div>
                     </div>
                   </div>
@@ -637,7 +637,7 @@ export function InstagramImporterModal({
                       variant="ghost"
                       size="sm"
                       onClick={() => setShowRateLimitDoc(!showRateLimitDoc)}
-                      className="h-6 text-[11px] text-muted-foreground hover:text-foreground"
+                      className="h-6 text-xs text-muted-foreground hover:text-foreground"
                     >
                       {showRateLimitDoc
                         ? isAr
@@ -841,14 +841,14 @@ export function InstagramImporterModal({
                           {/* Post Type Badges */}
                           <div className="absolute top-2 start-2 flex flex-col gap-1 z-10">
                             {draft.postType === "reel" && (
-                              <Badge className="bg-zinc-900/80 text-white text-[10px] gap-1 backdrop-blur-xs font-semibold border-0">
+                              <Badge className="bg-zinc-900/80 text-white text-xs gap-1 backdrop-blur-xs font-semibold border-0">
                                 <Video className="h-3 w-3" />
                                 {isAr ? "مستخرجة من فيديو" : "Reel Cover"}
                               </Badge>
                             )}
 
                             {draft.postType === "carousel" && (
-                              <Badge className="bg-zinc-900/80 text-white text-[10px] gap-1 backdrop-blur-xs font-semibold border-0">
+                              <Badge className="bg-zinc-900/80 text-white text-xs gap-1 backdrop-blur-xs font-semibold border-0">
                                 <Layers className="h-3 w-3" />
                                 {isAr
                                   ? `${draft.images.length} صور (معرض)`
@@ -939,14 +939,14 @@ export function InstagramImporterModal({
                         <div className="p-3.5 flex-1 flex flex-col gap-3">
                           {/* Title Field */}
                           <div className="space-y-1">
-                            <div className="flex items-center justify-between text-[11px]">
+                            <div className="flex items-center justify-between text-xs">
                               <span className="font-semibold text-muted-foreground">
                                 {isAr ? "اسم المنتج" : "Title"}
                               </span>
                               <Badge
                                 variant="outline"
                                 className={cn(
-                                  "text-[10px] h-4 px-1 border-0",
+                                  "text-xs h-4 px-1 border-0",
                                   draft.fieldSources.name === "manual"
                                     ? "bg-primary/10 text-primary"
                                     : draft.fieldConfidence.name >= 0.8
@@ -972,18 +972,18 @@ export function InstagramImporterModal({
 
                           {/* Price Field - STRICT CONFIDENCE & ZERO DEFAULT RULE */}
                           <div className="space-y-1">
-                            <div className="flex items-center justify-between text-[11px]">
+                            <div className="flex items-center justify-between text-xs">
                               <span className="font-bold text-foreground">
                                 {isAr ? "السعر (د.ب)" : "Price (BHD)"}
                               </span>
                               {isPriceLow ? (
-                                <span className="text-[10px] font-bold text-destructive">
+                                <span className="text-xs font-bold text-destructive">
                                   {isAr ? "⚠️ مطلوب التحقق" : "⚠️ Needs Input"}
                                 </span>
                               ) : (
                                 <Badge
                                   variant="outline"
-                                  className="text-[10px] h-4 px-1 bg-emerald-500/10 text-emerald-600 border-0 font-bold"
+                                  className="text-xs h-4 px-1 bg-emerald-500/10 text-emerald-600 border-0 font-bold"
                                 >
                                   {draft.fieldSources.price === "manual"
                                     ? isAr
@@ -1019,7 +1019,7 @@ export function InstagramImporterModal({
 
                             {/* Price Conflict or Missing Alert */}
                             {draft.priceConflict && (
-                              <p className="text-[10px] text-destructive leading-tight">
+                              <p className="text-xs text-destructive leading-tight">
                                 {draft.priceConflict.reason}
                               </p>
                             )}
@@ -1028,7 +1028,7 @@ export function InstagramImporterModal({
                           {/* Category and Sizes */}
                           <div className="grid grid-cols-2 gap-2 text-xs">
                             <div className="space-y-1">
-                              <span className="text-[11px] font-semibold text-muted-foreground">
+                              <span className="text-xs font-semibold text-muted-foreground">
                                 {isAr ? "القسم" : "Category"}
                               </span>
                               <Input
@@ -1042,7 +1042,7 @@ export function InstagramImporterModal({
                             </div>
 
                             <div className="space-y-1">
-                              <span className="text-[11px] font-semibold text-muted-foreground">
+                              <span className="text-xs font-semibold text-muted-foreground">
                                 {isAr ? "المقاسات" : "Sizes"}
                               </span>
                               <Input
@@ -1061,7 +1061,7 @@ export function InstagramImporterModal({
 
                           {/* Description */}
                           <div className="space-y-1">
-                            <span className="text-[11px] font-semibold text-muted-foreground">
+                            <span className="text-xs font-semibold text-muted-foreground">
                               {isAr ? "الوصف" : "Description"}
                             </span>
                             <Textarea
@@ -1076,7 +1076,7 @@ export function InstagramImporterModal({
 
                           {/* Individual Card Action */}
                           <div className="pt-2 mt-auto border-t border-border flex items-center justify-between">
-                            <span className="text-[10px] text-muted-foreground font-semibold">
+                            <span className="text-xs text-muted-foreground font-semibold">
                               {ready
                                 ? isAr
                                   ? "جاهز للاعتماد كمسودة"

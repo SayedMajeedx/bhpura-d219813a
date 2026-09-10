@@ -24,7 +24,7 @@ export const OrderFulfillmentSection: React.FC<OrderFulfillmentSectionProps> = (
         <div className="h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
           <Truck className="h-4 w-4" />
         </div>
-        <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
+        <h2 className="text-xs font-semibold text-foreground">
           {isAr ? "الشحن والتنفيذ" : "Fulfillment & Courier"}
         </h2>
       </div>

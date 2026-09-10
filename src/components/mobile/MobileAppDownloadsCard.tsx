@@ -123,7 +123,7 @@ export function MobileAppDownloadsCard({ brandSlug, isAr }: { brandSlug: string;
                         : "Download APK"}
                   </a>
                 </Button>
-                <div className="mt-3 flex items-start gap-2 text-[11px] leading-relaxed text-muted-foreground">
+                <div className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
                   <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
                   <span>
                     {isAr

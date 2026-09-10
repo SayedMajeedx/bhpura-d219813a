@@ -127,12 +127,12 @@ export const OrderFinancialLedgerCard: React.FC<OrderFinancialLedgerCardProps> =
 
           <div className="pt-2 border-t border-border/60">
             {isFullyPaid ? (
-              <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg">
                 <CheckCircle2 className="h-4 w-4 shrink-0" />
                 <span>{isAr ? "الطلب مدفوع بالكامل ✅" : "Fully Paid & Settled ✅"}</span>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-lg">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-lg">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 <span>
                   {isAr

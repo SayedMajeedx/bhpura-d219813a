@@ -275,7 +275,7 @@ export function ProductBomModal({
               <span>
                 {isAr ? "تكلفة التغليف المباشرة (إدخال يدوي)" : "Direct Packaging Cost (Manual)"}
               </span>
-              <span className="text-[11px] text-muted-foreground">BHD</span>
+              <span className="text-xs text-muted-foreground">BHD</span>
             </Label>
             <Input
               type="number"
@@ -286,7 +286,7 @@ export function ProductBomModal({
               className="h-9 text-sm"
               placeholder="0.000"
             />
-            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
               <Info className="h-3 w-3 text-primary shrink-0" />
               {isAr
                 ? "استخدم هذا الحقل للإعداد السريع إذا لم تقم بإنشاء مواد تغليف في المخزون."
@@ -360,7 +360,7 @@ export function ProductBomModal({
                         />
                       </div>
 
-                      <span className="text-[11px] font-semibold text-muted-foreground w-16 text-right">
+                      <span className="text-xs font-semibold text-muted-foreground w-16 text-right">
                         {formatMoney(matCost * item.quantity_per_unit, "BHD")}
                       </span>
 

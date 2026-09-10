@@ -256,7 +256,7 @@ export function OsAppsHubModal({
                   >
                     <Icon className={cn("h-4 w-4", isSelected && "text-primary")} />
                     <span>{cat.label}</span>
-                    <span className="ms-auto min-w-5 rounded-md bg-muted px-1.5 py-0.5 text-center font-mono text-[10px] text-muted-foreground">
+                    <span className="ms-auto min-w-5 rounded-md bg-muted px-1.5 py-0.5 text-center font-mono text-xs text-muted-foreground">
                       {cat.count}
                     </span>
                   </button>
