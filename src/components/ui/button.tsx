@@ -23,6 +23,8 @@ const buttonVariants = cva(
         sm: "h-8 px-3 text-xs",
         lg: "h-10 px-8",
         icon: "h-9 w-9",
+        "icon-touch": "h-11 w-11 min-h-[44px] min-w-[44px]",
+        touch: "min-h-[44px] min-w-[44px] px-4 py-2",
       },
     },
     defaultVariants: {

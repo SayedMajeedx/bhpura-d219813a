@@ -109,20 +109,18 @@ export function ProductGrid({
           <Button
             type="button"
             variant={mobileCols === "2" ? "default" : "outline"}
-            size="icon"
+            size="icon-touch"
             onClick={() => toggleMobileCols("2")}
             aria-label={t("عرض شبكة ثنائية", "Dense 2-Column Grid")}
-            className="h-11 w-11"
           >
             <Grid2X2 className="h-4 w-4" />
           </Button>
           <Button
             type="button"
             variant={mobileCols === "1" ? "default" : "outline"}
-            size="icon"
+            size="icon-touch"
             onClick={() => toggleMobileCols("1")}
             aria-label={t("عرض قائمة عمودية", "Immersive 1-Column List")}
-            className="h-11 w-11"
           >
             <Rows className="h-4 w-4" />
           </Button>

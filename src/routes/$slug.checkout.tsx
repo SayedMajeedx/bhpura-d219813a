@@ -627,10 +627,59 @@ function Checkout() {
   ]);
 
   const promoDiscount = Math.min(appliedPromo?.amount ?? 0, cartTotal);
-  const loyaltyDiscount = useMemo(() => {
+
+  const maxRedemptionPercent =
+    loyaltyProgram?.max_redemption_percentage ?? loyaltyProgram?.max_redemption_percent ?? 50;
+  const redemptionRate = Number(loyaltyProgram?.redemption_rate || 0.01);
+
+  const maxAllowedLoyaltyDiscount = useMemo(() => {
+    return Math.max(0, (cartTotal * maxRedemptionPercent) / 100);
+  }, [cartTotal, maxRedemptionPercent]);
+
+  const maxRedeemablePoints = useMemo(() => {
+    if (!loyaltyProgram?.is_enabled || redemptionRate <= 0) return 0;
+    const maxByCart = Math.floor(maxAllowedLoyaltyDiscount / redemptionRate);
+    const maxByAccount = loyaltyAccount?.active_points || 0;
+    return Math.max(0, Math.min(maxByCart, maxByAccount));
+  }, [loyaltyProgram, redemptionRate, maxAllowedLoyaltyDiscount, loyaltyAccount]);
+
+  const effectiveRedeemedPoints = useMemo(() => {
     if (!loyaltyProgram?.is_enabled || redeemedPoints <= 0) return 0;
-    return Number((redeemedPoints * Number(loyaltyProgram.redemption_rate || 0.01)).toFixed(3));
-  }, [loyaltyProgram, redeemedPoints]);
+    const minRedemption =
+      loyaltyProgram?.min_points_to_redeem ?? loyaltyProgram?.min_redemption_points ?? 100;
+    if (redeemedPoints < minRedemption) return 0;
+    return Math.min(redeemedPoints, maxRedeemablePoints);
+  }, [loyaltyProgram, redeemedPoints, maxRedeemablePoints]);
+
+  const loyaltyDiscount = useMemo(() => {
+    if (!loyaltyProgram?.is_enabled || effectiveRedeemedPoints <= 0) return 0;
+    const rawDisc = Number((effectiveRedeemedPoints * redemptionRate).toFixed(3));
+    const maxApplicable = Math.max(0, Math.min(maxAllowedLoyaltyDiscount, cartTotal - promoDiscount));
+    return Number(Math.min(rawDisc, maxApplicable).toFixed(3));
+  }, [loyaltyProgram, effectiveRedeemedPoints, redemptionRate, maxAllowedLoyaltyDiscount, cartTotal, promoDiscount]);
+
+  useEffect(() => {
+    if (!redeemedPoints || !loyaltyProgram?.is_enabled) return;
+    const minRedemption =
+      loyaltyProgram?.min_points_to_redeem ?? loyaltyProgram?.min_redemption_points ?? 100;
+    if (maxRedeemablePoints < minRedemption || cartTotal <= 0) {
+      setRedeemedPoints(0);
+      setPointsToRedeemInput("");
+      toast.info(
+        lang === "ar"
+          ? "تم إلغاء خصم نقاط المكافآت لتغير إجمالي السلة عن الحد الأدنى"
+          : "Loyalty points discount removed as cart total fell below redemption threshold",
+      );
+    } else if (redeemedPoints > maxRedeemablePoints) {
+      setRedeemedPoints(maxRedeemablePoints);
+      setPointsToRedeemInput(String(maxRedeemablePoints));
+      toast.info(
+        lang === "ar"
+          ? `تم تحديث خصم النقاط تلقائياً ليلائم السلة الجديدة (${maxRedeemablePoints} نقطة)`
+          : `Loyalty points adjusted to fit new cart subtotal (${maxRedeemablePoints} pts)`,
+      );
+    }
+  }, [cartTotal, maxRedeemablePoints, loyaltyProgram, lang, redeemedPoints]);
 
   const grandTotal = Math.max(0, cartTotal - promoDiscount - loyaltyDiscount) + shipping;
 
@@ -970,12 +1019,12 @@ function Checkout() {
         }
 
         // 1. Loyalty redemption
-        if (redeemedPoints > 0 && customerId && orderId) {
+        if (effectiveRedeemedPoints > 0 && customerId && orderId) {
           try {
             await redeemLoyaltyPoints({
               brandId: brand.id,
               customerId,
-              pointsToRedeem: redeemedPoints,
+              pointsToRedeem: effectiveRedeemedPoints,
               orderSubtotal: cartTotal,
               idempotencyKey: `${idempotencyKey}_redeem`,
               orderId: String(orderId),

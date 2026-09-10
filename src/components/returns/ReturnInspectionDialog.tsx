@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +25,7 @@ import {
   Loader2,
   ArrowRight,
   ShieldAlert,
+  Building2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { inspectAndRestockReturnItem } from "@/lib/returns.functions";
@@ -53,6 +56,28 @@ export function ReturnInspectionDialog({
   const [condition, setCondition] = useState<ReturnItemCondition>("sellable");
   const [inspectionNotes, setInspectionNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [selectedBranchId, setSelectedBranchId] = useState<string>("");
+
+  const { data: branches = [] } = useQuery({
+    queryKey: ["brand_branches_active", brandId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("branches")
+        .select("id, name_ar, name_en, is_active, sort_order")
+        .eq("brand_id", brandId)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: open && !!brandId,
+  });
+
+  useEffect(() => {
+    if (branches.length > 0 && !selectedBranchId) {
+      setSelectedBranchId(branches[0].id);
+    }
+  }, [branches, selectedBranchId]);
 
   if (!item) return null;
 
@@ -67,6 +92,7 @@ export function ReturnInspectionDialog({
         brandId,
         returnItemId: item.id,
         condition,
+        restockBranchId: isSellable ? (selectedBranchId || undefined) : undefined,
         inspectionNotes: inspectionNotes.trim() || undefined,
       });
 
@@ -194,6 +220,36 @@ export function ReturnInspectionDialog({
               </span>
             </div>
           </div>
+
+          {/* Branch Target for Restock */}
+          {isSellable && branches.length > 0 && (
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                {isAr ? "الفرع المستلم لإعادة إدراج المخزون" : "Destination Branch for Restock"}
+              </Label>
+              <Select
+                value={selectedBranchId}
+                onValueChange={setSelectedBranchId}
+              >
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue placeholder={isAr ? "اختر الفرع..." : "Select branch..."} />
+                </SelectTrigger>
+                <SelectContent>
+                  {branches.map((b) => (
+                    <SelectItem key={b.id} value={b.id} className="text-xs">
+                      {isAr ? b.name_ar || b.name_en : b.name_en || b.name_ar}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground">
+                {isAr
+                  ? "سيتم تسجيل حركة الاسترجاع وتخصيص البضاعة للفرع المختار لمنع عزل المخزون."
+                  : "Restocked inventory will be officially tracked and credited to this branch."}
+              </p>
+            </div>
+          )}
 
           {/* Notes */}
           <div className="space-y-1.5">

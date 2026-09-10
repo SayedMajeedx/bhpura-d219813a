@@ -88,14 +88,14 @@ export function ProductCard({
       <Button
         type="button"
         variant="ghost"
-        size="icon"
+        size="icon-touch"
         onClick={() => toggleWishlist(product.id)}
         aria-label={
           wished
             ? t("إزالة من المفضلة", "Remove from wishlist")
             : t("إضافة إلى المفضلة", "Add to wishlist")
         }
-        className="absolute end-2.5 top-2.5 z-20 h-11 w-11 rounded-full bg-background/95 text-foreground shadow-sm border border-border transition-[transform,colors] duration-200 hover:scale-110 active:scale-90 hover:bg-background hover:text-destructive"
+        className="absolute end-2.5 top-2.5 z-20 rounded-full bg-background/95 text-foreground shadow-sm border border-border transition-[transform,colors] duration-200 hover:scale-110 active:scale-90 hover:bg-background hover:text-destructive"
       >
         <Heart
           className={`h-4 w-4 transition-colors duration-200 ${wished ? "fill-destructive text-destructive" : ""}`}
@@ -145,8 +145,8 @@ export function ProductCard({
           )}
 
           {oos && (
-            <div className="absolute inset-0 bg-black/40 grid place-items-center">
-              <span className="bg-white/95 px-3 py-1 rounded-full text-xs font-semibold text-neutral-900">
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-[2px] grid place-items-center">
+              <span className="bg-background/95 border border-border px-3 py-1 rounded-full text-xs font-semibold text-foreground shadow-sm">
                 {t("نفد المخزون", "Sold out")}
               </span>
             </div>
