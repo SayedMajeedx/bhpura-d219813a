@@ -34,6 +34,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -1465,8 +1466,13 @@ ${desc}${detailsBlock}
               </div>
             </div>
 
+            {/* Visual Separation Divider */}
+            <div className="pt-2">
+              <Separator className="bg-border/60" />
+            </div>
+
             {/* Header & Branding Bar Customization Card */}
-            <div className="rounded-2xl border border-border/80 bg-muted/20 p-4 space-y-4">
+            <div className="rounded-2xl border border-border/80 bg-muted/20 p-5 space-y-5 shadow-2xs">
               <div className="flex items-center justify-between border-b border-border/60 pb-3">
                 <div className="flex items-center gap-2">
                   <span className="grid size-7 place-items-center rounded-lg bg-primary/10 text-primary">
@@ -1495,38 +1501,42 @@ ${desc}${detailsBlock}
               </div>
 
               {/* Text Fields */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
-                <div>
-                  <div className="flex items-center justify-between h-5 mb-1.5">
-                    <Label htmlFor="studio-edition-label" className="text-xs font-bold text-foreground">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between h-6">
+                    <Label htmlFor="studio-edition-label" className="text-xs font-bold text-foreground leading-none">
                       {isAr ? "العبارة بجانب الشعار" : "Edition label"}
                     </Label>
+                    <span dir="ltr" className="font-mono text-[10px] text-muted-foreground/70 tabular-nums leading-none">
+                      {editionLabel.length}/28
+                    </span>
                   </div>
                   <Input
                     id="studio-edition-label"
                     value={editionLabel}
                     maxLength={28}
                     onChange={(event) => setEditionLabel(event.target.value)}
-                    className="h-9 rounded-xl text-xs"
+                    className="h-10 rounded-xl text-xs bg-background"
                     placeholder={defaultEditionLabel}
                   />
                 </div>
-                <div>
-                  <div className="flex items-center justify-between h-5 mb-1.5">
-                    <Label htmlFor="studio-badge-text" className="text-xs font-bold text-foreground">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between h-6">
+                    <Label htmlFor="studio-badge-text" className="text-xs font-bold text-foreground leading-none">
                       {isAr ? "شارة الموقع / الدولة" : "Location badge"}
                     </Label>
                     <button
                       type="button"
                       onClick={() => setHeaderShowBadge(!headerShowBadge)}
                       className={cn(
-                        "text-[10px] font-semibold px-1.5 py-0.5 rounded transition-colors cursor-pointer",
+                        "inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-all cursor-pointer leading-none",
                         headerShowBadge
-                          ? "text-primary hover:bg-primary/10"
-                          : "text-muted-foreground hover:text-foreground",
+                          ? "border-primary/30 bg-primary/10 text-primary hover:bg-primary/15"
+                          : "border-border bg-muted/50 text-muted-foreground hover:text-foreground",
                       )}
                     >
-                      {headerShowBadge ? (isAr ? "إخفاء" : "Hide") : (isAr ? "إظهار" : "Show")}
+                      <span className={cn("size-1.5 rounded-full shrink-0", headerShowBadge ? "bg-primary" : "bg-muted-foreground/40")} />
+                      <span>{headerShowBadge ? (isAr ? "مفعّلة" : "Visible") : (isAr ? "مخفية" : "Hidden")}</span>
                     </button>
                   </div>
                   <Input
@@ -1535,7 +1545,7 @@ ${desc}${detailsBlock}
                     maxLength={16}
                     disabled={!headerShowBadge}
                     onChange={(event) => setHeaderBadgeText(event.target.value)}
-                    className="h-9 rounded-xl text-xs disabled:opacity-50"
+                    className="h-10 rounded-xl text-xs bg-background disabled:opacity-40 disabled:cursor-not-allowed"
                     placeholder="Bahrain"
                   />
                 </div>
