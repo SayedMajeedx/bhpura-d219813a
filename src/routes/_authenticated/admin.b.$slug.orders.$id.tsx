@@ -5103,7 +5103,7 @@ function OrderDetail() {
               currency={currency}
               lang={lang}
               slug={slug}
-              onPrintThermalReceipt={printThermal}
+              onPrintThermalReceipt={printReceipt}
               onPrintInvoice={() => window.print()}
             />
           </div>

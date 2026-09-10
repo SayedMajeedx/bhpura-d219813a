@@ -24,6 +24,14 @@ import { useBrand } from "@/lib/brand-context";
 import { useI18n, useT } from "@/lib/i18n";
 import { formatAddressLine, regionLabel } from "@/lib/bahrain-regions";
 import { formatMoney } from "@/lib/format";
+import { getOrderWorkflow } from "@/lib/order-workflow";
+import { getFulfillmentBadgeDetails } from "@/lib/status-labels";
+import {
+  resolvePaymentStatus,
+  PAYMENT_BADGE_CLASSES,
+  PAYMENT_BADGE_LABEL,
+} from "@/lib/payment-status";
+import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -71,6 +79,10 @@ type CustomerOrder = {
   invoice_number: number;
   order_date: string;
   status: string;
+  fulfillment_status?: string | null;
+  payment_status?: string | null;
+  fulfillment_method?: string | null;
+  advance_paid?: number | null;
   payment_method: string | null;
   total: number;
   currency: string;
@@ -84,48 +96,30 @@ const PAYMENT_LABELS: Record<string, { en: string; ar: string }> = {
   benefit_pay: { en: "BenefitPay", ar: "بنفت بي" },
 };
 
+function getOrderDisplayStatus(order: CustomerOrder, lang: "en" | "ar") {
+  const workflow = getOrderWorkflow(order as any);
+  return getFulfillmentBadgeDetails(
+    workflow.fulfillment || order.fulfillment_status || order.status,
+    lang,
+    order.fulfillment_method,
+  );
+}
+
+function getOrderPaymentBadge(order: CustomerOrder, lang: "en" | "ar") {
+  const pb = resolvePaymentStatus(
+    order.payment_status,
+    order.status,
+    Number(order.total),
+    Number(order.advance_paid ?? 0),
+  );
+  return {
+    label: PAYMENT_BADGE_LABEL[pb]?.[lang] || pb,
+    className: PAYMENT_BADGE_CLASSES[pb],
+  };
+}
+
 function formatArabicOrderStatus(status: string | null | undefined, lang: "en" | "ar") {
-  const s = String(status || "").toLowerCase();
-  if (lang === "ar") {
-    switch (s) {
-      case "pending":
-      case "unpaid":
-        return "غير مدفوع";
-      case "pending_verification":
-        return "بانتظار التحقق";
-      case "confirmed":
-      case "paid":
-        return "مؤكد";
-      case "completed":
-      case "delivered":
-        return "مكتمل";
-      case "cancelled":
-        return "ملغي";
-      case "refunded":
-        return "مسترجع";
-      default:
-        return status || "مؤكد";
-    }
-  }
-  switch (s) {
-    case "pending":
-    case "unpaid":
-      return "Unpaid";
-    case "pending_verification":
-      return "Pending Verification";
-    case "confirmed":
-    case "paid":
-      return "Confirmed";
-    case "completed":
-    case "delivered":
-      return "Completed";
-    case "cancelled":
-      return "Cancelled";
-    case "refunded":
-      return "Refunded";
-    default:
-      return status || "Confirmed";
-  }
+  return getFulfillmentBadgeDetails(status, lang).label;
 }
 
 function CustomerProfilePage() {
@@ -173,7 +167,9 @@ function CustomerProfilePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, invoice_number, order_date, status, payment_method, total, currency")
+        .select(
+          "id, invoice_number, order_date, status, fulfillment_status, payment_status, fulfillment_method, advance_paid, payment_method, total, currency",
+        )
         .eq("brand_id", brand.id)
         .eq("customer_id", customerId)
         .order("created_at", { ascending: false });
@@ -556,12 +552,35 @@ function CustomerProfilePage() {
                         </p>
                       </div>
                       <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/50 pt-2.5">
-                        <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-bold">
-                          {formatArabicOrderStatus(order.status, lang)}
-                        </span>
-                        <span className="truncate text-[11px] text-muted-foreground">
-                          {paymentLabel(order.payment_method, lang)}
-                        </span>
+                        {(() => {
+                          const badge = getOrderDisplayStatus(order, lang);
+                          return (
+                            <span
+                              className={cn(
+                                "inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold",
+                                badge.classes,
+                              )}
+                            >
+                              {badge.label}
+                            </span>
+                          );
+                        })()}
+                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                          {(() => {
+                            const payBadge = getOrderPaymentBadge(order, lang);
+                            return (
+                              <span
+                                className={cn(
+                                  "inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold border",
+                                  payBadge.className,
+                                )}
+                              >
+                                {payBadge.label}
+                              </span>
+                            );
+                          })()}
+                          <span className="truncate">{paymentLabel(order.payment_method, lang)}</span>
+                        </div>
                       </div>
                     </button>
                   ))}
@@ -625,12 +644,39 @@ function CustomerProfilePage() {
                             </span>
                           </td>
                           <td className="p-4 whitespace-nowrap">
-                            <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-foreground">
-                              {formatArabicOrderStatus(order.status, lang)}
-                            </span>
+                            {(() => {
+                              const badge = getOrderDisplayStatus(order, lang);
+                              return (
+                                <span
+                                  className={cn(
+                                    "inline-flex items-center rounded-full px-3 py-1 text-xs font-bold",
+                                    badge.classes,
+                                  )}
+                                >
+                                  {badge.label}
+                                </span>
+                              );
+                            })()}
                           </td>
-                          <td className="p-4 text-muted-foreground whitespace-nowrap">
-                            {paymentLabel(order.payment_method, lang)}
+                          <td className="p-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {(() => {
+                                const payBadge = getOrderPaymentBadge(order, lang);
+                                return (
+                                  <span
+                                    className={cn(
+                                      "inline-flex px-2 py-0.5 rounded text-[10px] font-bold border",
+                                      payBadge.className,
+                                    )}
+                                  >
+                                    {payBadge.label}
+                                  </span>
+                                );
+                              })()}
+                              <span className="text-muted-foreground text-xs">
+                                {paymentLabel(order.payment_method, lang)}
+                              </span>
+                            </div>
                           </td>
                           <td className="p-4 text-end font-semibold text-foreground whitespace-nowrap font-mono">
                             {formatMoney(Number(order.total), order.currency || "BHD")}

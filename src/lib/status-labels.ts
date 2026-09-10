@@ -265,3 +265,95 @@ export function sanitizeActivityLogMessage(message: string, lang: Lang = "ar"): 
     .replace(/\bpaid\b/gi, "مدفوع")
     .replace(/\bunpaid\b/gi, "غير مدفوع");
 }
+
+/**
+ * Returns localized label and styling classes for fulfillment status badge.
+ * Consistent across Orders list, Customer Profile order history, and Quick View.
+ */
+export function getFulfillmentBadgeDetails(
+  status: string | null | undefined,
+  lang: "en" | "ar",
+  fulfillmentMethod?: string | null,
+): { label: string; classes: string } {
+  const s = String(status || "ON_HOLD").toUpperCase();
+  if (s === "SENT_TO_TAILOR") {
+    return {
+      label: lang === "ar" ? "تم الإرسال للخياط" : "Sent to Tailor",
+      classes: "bg-purple-100 text-purple-900 border border-purple-300/80 font-semibold shadow-2xs dark:bg-purple-950/40 dark:text-purple-300",
+    };
+  }
+  if (s === "RECEIVED_FROM_TAILOR") {
+    return {
+      label: lang === "ar" ? "تم الاستلام من الخياط" : "Received from Tailor",
+      classes: "bg-teal-100 text-teal-900 border border-teal-300/80 font-semibold shadow-2xs dark:bg-teal-950/40 dark:text-teal-300",
+    };
+  }
+  if (s === "PACKING") {
+    return {
+      label: lang === "ar" ? "قيد التعبئة والتغليف" : "Packing",
+      classes: "bg-amber-100 text-amber-900 border border-amber-300/80 font-semibold shadow-2xs dark:bg-amber-950/40 dark:text-amber-300",
+    };
+  }
+  if (s === "NEEDS_PACKING") {
+    return {
+      label: lang === "ar" ? "بحاجة للتعبئة" : "Needs Packing",
+      classes: "bg-amber-100 text-amber-900 border border-amber-300/80 font-semibold shadow-2xs dark:bg-amber-950/40 dark:text-amber-300",
+    };
+  }
+  if (s === "READY_FOR_PICKUP") {
+    return {
+      label: lang === "ar" ? "جاهز للاستلام" : "Ready for Pickup",
+      classes: "bg-indigo-100 text-indigo-900 border border-indigo-300/80 font-semibold shadow-2xs dark:bg-indigo-950/40 dark:text-indigo-300",
+    };
+  }
+  if (["SHIPPED", "ASSIGNED", "OUT_FOR_DELIVERY", "READY_FOR_DELIVERY"].includes(s)) {
+    return {
+      label:
+        s === "ASSIGNED"
+          ? lang === "ar"
+            ? "تم التعيين"
+            : "Assigned to Courier"
+          : lang === "ar"
+            ? "خرج للتوصيل"
+            : "Out for Delivery",
+      classes: "bg-sky-100 text-sky-900 border border-sky-300/80 font-semibold shadow-2xs dark:bg-sky-950/40 dark:text-sky-300",
+    };
+  }
+  if (s === "COMPLETED" || s === "DELIVERED") {
+    const isPickup = String(fulfillmentMethod ?? "").toLowerCase() === "pickup";
+    return {
+      label: isPickup
+        ? lang === "ar"
+          ? "تم الاستلام"
+          : "Picked Up"
+        : lang === "ar"
+          ? "تم التوصيل"
+          : "Delivered",
+      classes:
+        "bg-emerald-100 text-emerald-900 border border-emerald-300/80 font-semibold shadow-2xs dark:bg-emerald-950/40 dark:text-emerald-300",
+    };
+  }
+  if (["CANCELLED", "CANCELED", "DELIVERY_FAILED", "FAILED", "RETURNED"].includes(s)) {
+    return {
+      label:
+        s === "RETURNED"
+          ? lang === "ar"
+            ? "مرتجع"
+            : "Returned"
+          : ["DELIVERY_FAILED", "FAILED"].includes(s)
+            ? lang === "ar"
+              ? "فشل التوصيل"
+              : "Delivery Failed"
+            : lang === "ar"
+              ? "ملغي"
+              : "Cancelled",
+      classes: "bg-rose-100 text-rose-900 border border-rose-300/80 font-semibold shadow-2xs dark:bg-rose-950/40 dark:text-rose-300",
+    };
+  }
+  // ON_HOLD / default
+  return {
+    label: lang === "ar" ? "قيد الانتظار" : "On Hold",
+    classes: "bg-slate-200 text-slate-800 border border-border font-semibold shadow-2xs dark:bg-slate-800 dark:text-slate-200",
+  };
+}
+
