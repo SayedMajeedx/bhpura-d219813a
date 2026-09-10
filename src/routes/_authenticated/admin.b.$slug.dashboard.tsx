@@ -761,6 +761,23 @@ function Dashboard() {
     };
   }, [productsQ.data, variantsQ.data, validRevenueOrders, lang]);
 
+  // Unfulfilled orders needing merchant dispatch
+  const unfulfilledOrdersCount = useMemo(() => {
+    return (ordersQ.data ?? []).filter((o: any) => {
+      const status = (o.status || "").toLowerCase();
+      if (status === "cancelled" || status === "refunded") return false;
+      const fulfillment = (o.fulfillment_status || "").toLowerCase();
+      const isDelivered = fulfillment === "delivered" || fulfillment === "fulfilled";
+      if (isDelivered) return false;
+      return (
+        status === "paid" ||
+        status === "processing" ||
+        status === "confirmed" ||
+        (o.payment_status || "").toLowerCase() === "paid"
+      );
+    }).length;
+  }, [ordersQ.data]);
+
   // Loading skeleton placeholder
   if (isLoading) {
     return (
@@ -853,23 +870,6 @@ function Dashboard() {
       border: "hover:border-indigo-500/20",
     },
   ];
-
-  // Unfulfilled orders needing merchant dispatch
-  const unfulfilledOrdersCount = useMemo(() => {
-    return (ordersQ.data ?? []).filter((o: any) => {
-      const status = (o.status || "").toLowerCase();
-      if (status === "cancelled" || status === "refunded") return false;
-      const fulfillment = (o.fulfillment_status || "").toLowerCase();
-      const isDelivered = fulfillment === "delivered" || fulfillment === "fulfilled";
-      if (isDelivered) return false;
-      return (
-        status === "paid" ||
-        status === "processing" ||
-        status === "confirmed" ||
-        (o.payment_status || "").toLowerCase() === "paid"
-      );
-    }).length;
-  }, [ordersQ.data]);
 
   return (
     <div className="mx-auto max-w-[1500px] space-y-3.5 p-1 sm:p-2">
