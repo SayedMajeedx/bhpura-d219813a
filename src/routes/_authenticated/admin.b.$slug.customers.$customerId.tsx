@@ -9,6 +9,7 @@ import {
   MapPin,
   Pencil,
   Phone,
+  Plus,
   ReceiptText,
   StickyNote,
   UserRound,
@@ -190,6 +191,14 @@ function CustomerProfilePage() {
     () => orders.reduce((sum, o) => sum + Number(o.total || 0), 0),
     [orders],
   );
+  const aov = useMemo(
+    () => (orders.length > 0 ? totalSpent / orders.length : 0),
+    [totalSpent, orders.length],
+  );
+  const lastOrderDate = useMemo(() => {
+    if (orders.length === 0) return null;
+    return orders[0].order_date;
+  }, [orders]);
   const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
   const paginatedOrders = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
@@ -295,7 +304,25 @@ function CustomerProfilePage() {
               : `${orders.length} order${orders.length === 1 ? "" : "s"} linked to this customer`}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          {/* Create Order Quick Action */}
+          <Button
+            asChild
+            className="min-h-11 shadow-sm transition-all duration-200 hover:shadow active:scale-95 px-3 bg-primary text-primary-foreground font-bold"
+          >
+            <Link
+              to="/admin/b/$slug/orders/$id"
+              params={{ slug, id: "new" }}
+              search={{ customerId: customer.id } as any}
+            >
+              <Plus className="h-4 w-4 sm:me-1.5" />
+              <span className="hidden sm:inline">
+                {lang === "ar" ? "إنشاء طلب للعميل" : "Create Order"}
+              </span>
+              <span className="sm:hidden">{lang === "ar" ? "طلب جديد" : "New Order"}</span>
+            </Link>
+          </Button>
+
           {/* Desktop Actions */}
           <div className="hidden sm:flex items-center gap-2">
             {customer.phone && (
@@ -312,7 +339,11 @@ function CustomerProfilePage() {
             {customer.phone && (
               <Button asChild variant="outline" className="min-h-11 px-3 text-emerald-700">
                 <a
-                  href={`https://wa.me/${customer.phone.replace(/[^\d]/g, "")}`}
+                  href={`https://wa.me/${customer.phone.replace(/[^\d]/g, "")}?text=${encodeURIComponent(
+                    lang === "ar"
+                      ? `مرحباً ${customer.name}، بخصوص طلبكم من المتجر:`
+                      : `Hello ${customer.name}, regarding your store order:`
+                  )}`}
                   target="_blank"
                   rel="noreferrer"
                   aria-label={
@@ -328,6 +359,7 @@ function CustomerProfilePage() {
 
           <Button
             onClick={() => setEditing(true)}
+            variant="outline"
             className="min-h-11 shadow-sm transition-all duration-200 hover:shadow active:scale-95 px-3"
           >
             <Pencil className="h-4 w-4 sm:me-2" />
@@ -378,13 +410,48 @@ function CustomerProfilePage() {
               <h2 className="font-display text-xl font-bold">
                 {lang === "ar" ? "بيانات العميل" : "Customer Details"}
               </h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                {lang === "ar" ? "إجمالي الإنفاق:" : "Lifetime Spend:"}{" "}
-                <span className="font-bold text-primary font-mono">
-                  {formatMoney(totalSpent, "BHD")}
-                </span>{" "}
-                ({orders.length} {lang === "ar" ? "طلبات" : "orders"})
-              </p>
+
+              <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-border/40">
+                <div className="rounded-lg bg-background/70 border border-border/40 p-2 text-center">
+                  <span className="text-[10px] text-muted-foreground block font-medium">
+                    {lang === "ar" ? "إجمالي الإنفاق" : "Lifetime Spend"}
+                  </span>
+                  <span className="text-xs font-bold font-mono text-primary">
+                    {formatMoney(totalSpent, "BHD")}
+                  </span>
+                </div>
+                <div className="rounded-lg bg-background/70 border border-border/40 p-2 text-center">
+                  <span className="text-[10px] text-muted-foreground block font-medium">
+                    {lang === "ar" ? "متوسط الطلب" : "Avg Order (AOV)"}
+                  </span>
+                  <span className="text-xs font-bold font-mono text-foreground">
+                    {formatMoney(aov, "BHD")}
+                  </span>
+                </div>
+                <div className="rounded-lg bg-background/70 border border-border/40 p-2 text-center">
+                  <span className="text-[10px] text-muted-foreground block font-medium">
+                    {lang === "ar" ? "عدد الطلبات" : "Total Orders"}
+                  </span>
+                  <span className="text-xs font-bold font-mono text-foreground">
+                    {orders.length}
+                  </span>
+                </div>
+                <div className="rounded-lg bg-background/70 border border-border/40 p-2 text-center">
+                  <span className="text-[10px] text-muted-foreground block font-medium">
+                    {lang === "ar" ? "آخر طلب" : "Last Order"}
+                  </span>
+                  <span className="text-[11px] font-bold text-foreground truncate block">
+                    {lastOrderDate
+                      ? new Date(lastOrderDate).toLocaleDateString(
+                          lang === "ar" ? "ar-BH" : "en-GB",
+                          { month: "short", day: "numeric", year: "2-digit" },
+                        )
+                      : lang === "ar"
+                        ? "لا يوجد"
+                        : "None"}
+                  </span>
+                </div>
+              </div>
             </div>
             <div className="space-y-4 p-5 text-sm">
               <Detail
@@ -657,6 +724,20 @@ function CustomerProfilePage() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-2 py-2">
+            <Button
+              className="min-h-12 justify-start rounded-xl font-bold bg-primary text-primary-foreground"
+              asChild
+              onClick={() => setMobileActionsOpen(false)}
+            >
+              <Link
+                to="/admin/b/$slug/orders/$id"
+                params={{ slug, id: "new" }}
+                search={{ customerId: customer.id } as any}
+              >
+                <Plus className="me-2 h-4 w-4" />
+                {lang === "ar" ? "إنشاء طلب جديد لهذا العميل" : "Create New Order"}
+              </Link>
+            </Button>
             {customer.phone && (
               <Button
                 variant="outline"

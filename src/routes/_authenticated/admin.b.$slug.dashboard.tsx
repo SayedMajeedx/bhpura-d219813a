@@ -48,6 +48,7 @@ import {
 import { DashboardActivityQueue } from "@/components/dashboard/DashboardActivityQueue";
 import { ReviewRequestQueue } from "@/components/dashboard/ReviewRequestQueue";
 import { ReviewInsightsSummary } from "@/components/dashboard/ReviewInsightsSummary";
+import { DashboardActionStrip } from "@/components/dashboard/DashboardActionStrip";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/dashboard")({
   component: Dashboard,
@@ -240,6 +241,22 @@ function Dashboard() {
       const { data, error } = await supabase.from("expenses").select("*").eq("brand_id", brandId);
       if (error) throw error;
       return data ?? [];
+    },
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  // Pending returns requiring inspection/action
+  const pendingReturnsQ = useQuery({
+    queryKey: ["dashboard-pending-returns", brandId],
+    queryFn: async () => {
+      const { count, error } = await (supabase as any)
+        .from("return_requests")
+        .select("id", { count: "exact", head: true })
+        .eq("brand_id", brandId)
+        .in("status", ["new", "under_review", "under_inspection", "received"]);
+      if (error) return 0;
+      return count ?? 0;
     },
     staleTime: 60_000,
     refetchOnWindowFocus: false,
@@ -837,6 +854,23 @@ function Dashboard() {
     },
   ];
 
+  // Unfulfilled orders needing merchant dispatch
+  const unfulfilledOrdersCount = useMemo(() => {
+    return (ordersQ.data ?? []).filter((o: any) => {
+      const status = (o.status || "").toLowerCase();
+      if (status === "cancelled" || status === "refunded") return false;
+      const fulfillment = (o.fulfillment_status || "").toLowerCase();
+      const isDelivered = fulfillment === "delivered" || fulfillment === "fulfilled";
+      if (isDelivered) return false;
+      return (
+        status === "paid" ||
+        status === "processing" ||
+        status === "confirmed" ||
+        (o.payment_status || "").toLowerCase() === "paid"
+      );
+    }).length;
+  }, [ordersQ.data]);
+
   return (
     <div className="mx-auto max-w-[1500px] space-y-3.5 p-1 sm:p-2">
       {/* 1. Integrated Command Header */}
@@ -846,6 +880,15 @@ function Dashboard() {
         brandName={(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug}
         salesTransactionCount={financials.ordersCurrent}
         periodLabel={reportingPeriodLabel}
+      />
+
+      {/* 1.5 Merchant Action Strip: What Needs Attention Today */}
+      <DashboardActionStrip
+        slug={slug}
+        isAr={isAr}
+        unfulfilledOrdersCount={unfulfilledOrdersCount}
+        lowStockCount={inventoryIntel.lowStockCount}
+        pendingReturnsCount={pendingReturnsQ.data ?? 0}
       />
 
       <ReviewRequestQueue

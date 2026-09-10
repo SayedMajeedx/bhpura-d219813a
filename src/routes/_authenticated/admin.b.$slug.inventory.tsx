@@ -124,6 +124,9 @@ import {
 const SIZE_UNITS = ["", "cm", "mm", "m", "inch", "ft", "kg", "g", "ml", "l"] as const;
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/inventory")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    filter: typeof search.filter === "string" ? search.filter : undefined,
+  }),
   component: Inventory,
 });
 
@@ -236,6 +239,7 @@ function InventoryDeleteAction({
 }
 
 function Inventory() {
+  const searchParams = Route.useSearch();
   const t = useT();
   const { lang } = useI18n();
   const qc = useQueryClient();
@@ -409,6 +413,7 @@ function Inventory() {
 
       {tab === "products" ? (
         <ProductsSection
+          initialFilter={searchParams.filter}
           products={products.data ?? []}
           variants={variants.data ?? []}
           businessName={businessName.data?.business_name ?? null}
@@ -1134,6 +1139,7 @@ function ProductImporterModal({
 }
 
 function ProductsSection({
+  initialFilter,
   products,
   variants,
   businessName,
@@ -1141,6 +1147,7 @@ function ProductsSection({
   onChanged,
   salesHistory,
 }: {
+  initialFilter?: string;
   products: Product[];
   variants: Variant[];
   businessName: string | null;
@@ -1446,11 +1453,34 @@ function ProductsSection({
     return map;
   }, [variants]);
 
-  const [scopeFilter, setScopeFilter] = useState<"all" | "low" | "out" | "featured" | "inactive">(
-    "all",
-  );
+  const initialScope =
+    initialFilter === "attention" || initialFilter === "low_stock"
+      ? "attention"
+      : initialFilter === "active"
+        ? "active"
+        : initialFilter === "inactive" || initialFilter === "hidden"
+          ? "inactive"
+          : "all";
+
+  const [scopeFilter, setScopeFilter] = useState<
+    "all" | "attention" | "active" | "low" | "out" | "featured" | "inactive"
+  >(initialScope);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("newest");
+
+  const needsAttentionProducts = useMemo(() => {
+    return products.filter((p) => {
+      const stock = productStock(p.id);
+      const isCriticalStock = isLowStock(stock, productWeeklySales(p.id)) || isOutOfStock(stock);
+      const media = Array.isArray(p.media) ? p.media : [];
+      const hasMedia =
+        p.image_url ||
+        media.some((m: any) =>
+          typeof m === "string" ? Boolean(m.trim()) : Boolean(m?.url || m?.src),
+        );
+      return isCriticalStock || !hasMedia;
+    });
+  }, [products, productStock, productWeeklySales]);
 
   const scopeTabs: InventoryScopeTab[] = [
     {
@@ -1459,6 +1489,27 @@ function ProductsSection({
       label_ar: "جميع المنتجات",
       count: products.length,
       icon: Package,
+    },
+    {
+      id: "attention",
+      label_en: "Needs Attention",
+      label_ar: "يتطلب الانتباه",
+      count: needsAttentionProducts.length,
+      icon: AlertTriangle,
+    },
+    {
+      id: "active",
+      label_en: "Active in Store",
+      label_ar: "نشط بالمتجر",
+      count: products.filter((p) => p.is_active).length,
+      icon: Check,
+    },
+    {
+      id: "inactive",
+      label_en: "Hidden / Drafts",
+      label_ar: "مخفي ومسودات",
+      count: products.filter((p) => !p.is_active).length,
+      icon: Search,
     },
     {
       id: "low",
@@ -1476,17 +1527,10 @@ function ProductsSection({
     },
     {
       id: "featured",
-      label_en: "Featured / Trending",
+      label_en: "Featured",
       label_ar: "المنتجات المميزة",
       count: products.filter((p) => p.featured_trending).length,
       icon: TrendingUp,
-    },
-    {
-      id: "inactive",
-      label_en: "Inactive / Hidden",
-      label_ar: "مخفي وغير نشط",
-      count: products.filter((p) => !p.is_active).length,
-      icon: Search,
     },
   ];
 
@@ -1554,10 +1598,26 @@ function ProductsSection({
       const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
 
       let matchesScope = true;
-      if (scopeFilter === "low") matchesScope = isLowStock(stock, productWeeklySales(product.id));
-      else if (scopeFilter === "out") matchesScope = isOutOfStock(stock);
-      else if (scopeFilter === "featured") matchesScope = Boolean(product.featured_trending);
-      else if (scopeFilter === "inactive") matchesScope = !product.is_active;
+      if (scopeFilter === "attention") {
+        const isCriticalStock = isLowStock(stock, productWeeklySales(product.id)) || isOutOfStock(stock);
+        const media = Array.isArray(product.media) ? product.media : [];
+        const hasMedia =
+          product.image_url ||
+          media.some((m: any) =>
+            typeof m === "string" ? Boolean(m.trim()) : Boolean(m?.url || m?.src),
+          );
+        matchesScope = isCriticalStock || !hasMedia;
+      } else if (scopeFilter === "active") {
+        matchesScope = Boolean(product.is_active);
+      } else if (scopeFilter === "low") {
+        matchesScope = isLowStock(stock, productWeeklySales(product.id));
+      } else if (scopeFilter === "out") {
+        matchesScope = isOutOfStock(stock);
+      } else if (scopeFilter === "featured") {
+        matchesScope = Boolean(product.featured_trending);
+      } else if (scopeFilter === "inactive") {
+        matchesScope = !product.is_active;
+      }
 
       return matchesSearch && matchesCategory && matchesScope;
     });
@@ -1704,25 +1764,57 @@ function ProductsSection({
           setOpen(true);
         }}
         renderImporters={
-          <div className="flex flex-col gap-1 p-1">
+          <div className="flex flex-col gap-1 p-1 min-w-[210px]">
+            <div className="px-2.5 py-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/40">
+              {isAr ? "الاستيراد السريع" : "Quick Import"}
+            </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setIsInstagramModalOpen(true)}
-              className="justify-start text-xs font-semibold"
+              className="justify-start text-xs font-medium h-9"
             >
-              <Instagram className="h-3.5 w-3.5 me-2 text-primary" />
+              <Instagram className="h-4 w-4 me-2 text-primary" />
               {isAr ? "استيراد كتالوج إنستغرام" : "Import from Instagram"}
             </Button>
             <ProductImporterModal brandId={brandId} onComplete={onChanged} />
+
+            <div className="px-2.5 pt-2 py-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/40">
+              {isAr ? "الباركود والطباعة" : "Barcodes & Print"}
+            </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={printAll}
-              className="justify-start text-xs font-semibold"
+              className="justify-start text-xs font-medium h-9"
             >
-              <Printer className="h-3.5 w-3.5 me-2" />
+              <Printer className="h-4 w-4 me-2 text-muted-foreground" />
               {isAr ? "طباعة جميع الباركودات" : "Print All Barcodes"}
+            </Button>
+
+            <div className="px-2.5 pt-2 py-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/40">
+              {isAr ? "العمليات المتقدمة" : "Advanced Operations"}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                if (selectedProductIds.size > 0) {
+                  const targetList = products.filter((p) => selectedProductIds.has(p.id));
+                  setIncubatorTransferProducts(targetList);
+                  setIncubatorTransferModalOpen(true);
+                } else {
+                  toast.info(
+                    isAr
+                      ? "يرجى تحديد منتج واحد على الأقل للتحويل للحاضنات"
+                      : "Please select at least one product to transfer to incubators",
+                  );
+                }
+              }}
+              className="justify-start text-xs font-medium h-9"
+            >
+              <Boxes className="h-4 w-4 me-2 text-muted-foreground" />
+              {isAr ? "تحويل دفعي للحاضنات" : "Transfer to Incubators"}
             </Button>
           </div>
         }
@@ -2449,6 +2541,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
 
   // Stepper state: 'basic' | 'media' | 'customizer'
   const [activeDialogTab, setActiveDialogTab] = useState<"basic" | "media" | "customizer">("basic");
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   useEffect(
     () => () => {
@@ -2935,39 +3028,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                 </p>
               )}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <Label className="text-xs font-bold text-muted-foreground">
-                  {isAr ? "نوع القماش" : "Fabric Type"}
-                </Label>
-                <Input
-                  className="mt-1 h-10.5 rounded-lg"
-                  placeholder={
-                    isAr ? "مثال: كريب ملكي، لينن، حرير..." : "e.g., Royal Crepe, Linen..."
-                  }
-                  value={form.fabric_type}
-                  onChange={(e) => setForm({ ...form, fabric_type: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label className="text-xs font-bold text-muted-foreground">
-                  {isAr ? "مناسبة لـ" : "Suitable for"}
-                </Label>
-                <div className="mt-1">
-                  <select
-                    className="w-full h-10.5 rounded-lg border border-input bg-background px-3 text-sm focus:ring-1 focus:ring-primary outline-none"
-                    value={form.occasion}
-                    onChange={(e) => setForm({ ...form, occasion: e.target.value })}
-                  >
-                    <option value="">{isAr ? "اختر المناسبة..." : "Select occasion..."}</option>
-                    <option value="يومي">{isAr ? "يومي" : "Daily"}</option>
-                    <option value="سهرة">{isAr ? "سهرة" : "Evening"}</option>
-                    <option value="مناسبات">{isAr ? "مناسبات" : "Occasions"}</option>
-                    <option value="إطلالة رسمية">{isAr ? "إطلالة رسمية" : "Formal"}</option>
-                  </select>
-                </div>
-              </div>
-            </div>
+
             <div>
               <Label className="text-xs font-bold text-muted-foreground">
                 {isAr ? "السعر الأساسي للمنتج (د.ب)" : "Base Price (BHD)"}
@@ -3120,138 +3181,200 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                 </span>
               </div>
             )}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="flex items-center justify-between rounded-xl border border-border/80 p-4 bg-secondary/10 transition hover:bg-secondary/20">
-                <div>
-                  <p className="text-sm font-bold text-foreground">
-                    {isAr ? "إبراز في الرائج الآن" : "Feature in Trending now"}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+            {/* Step 3 (Collapsible): Advanced Details & Specifications */}
+            <div className="rounded-xl border border-border/80 bg-card overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setAdvancedOpen((prev) => !prev)}
+                className="w-full flex items-center justify-between p-3.5 text-xs font-bold text-foreground bg-secondary/15 hover:bg-secondary/25 transition-colors touch-manipulation"
+              >
+                <div className="flex items-center gap-2">
+                  <Sliders className="h-4 w-4 text-primary" />
+                  <span>
                     {isAr
-                      ? "يعطي المنتج أولوية للعملاء."
-                      : "Prioritizes this product for discovery."}
-                  </p>
+                      ? "خيارات ومواصفات إضافية (الأقمشة، المناسبات، المسميات والشارات)"
+                      : "Advanced Options & Details (Fabrics, Occasions, Labels & Badges)"}
+                  </span>
                 </div>
-                <Switch
-                  checked={form.featured_trending}
-                  onCheckedChange={(v) => setForm({ ...form, featured_trending: v })}
+                <ChevronDown
+                  className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
+                    advancedOpen ? "rotate-180" : ""
+                  }`}
                 />
-              </div>
-              <div className="flex items-center justify-between rounded-xl border border-border/80 p-4 bg-secondary/10 transition hover:bg-secondary/20">
-                <div>
-                  <p className="text-sm font-bold text-foreground">
-                    {isAr ? "إظهار شارة التنزيلات" : "Show Sale badge"}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {isAr
-                      ? "تظهر عند وجود سعر أصلي أعلى."
-                      : "Shown when an original price is higher."}
-                  </p>
-                </div>
-                <Switch
-                  checked={form.show_sale_badge}
-                  onCheckedChange={(v) => setForm({ ...form, show_sale_badge: v })}
-                />
-              </div>
-            </div>
+              </button>
 
-            {/* 🏷️ Custom Variant Labels Section */}
-            <div className="rounded-xl border border-border/80 p-5 bg-secondary/10 space-y-4">
-              <div>
-                <p className="text-sm font-bold text-foreground">
-                  {isAr ? "🏷️ مسميات المتغيرات المخصصة" : "🏷️ Custom Variant Labels"}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {isAr
-                    ? "تخصيص أسماء أعمدة المقاس، اللون، والخامة لتظهر بالاسم المفضل في صفحة عرض المنتج باللغتين العربية والإنجليزية."
-                    : "Override default column labels (Size, Color, Fabric) to match your custom product's options in both Arabic and English."}
-                </p>
-              </div>
-              <div className="space-y-4.5">
-                {/* Size Label */}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 border-b border-border/40 pb-3">
-                  <div>
-                    <Label className="text-xs font-bold text-muted-foreground">
-                      {isAr ? "مسمى المقاس بالعربية (مثال: التصميم)" : "Custom Size Label — Arabic"}
-                    </Label>
-                    <Input
-                      className="mt-1 h-9.5 rounded-lg text-xs"
-                      placeholder={isAr ? "المقاس / خيار" : "Size / Option"}
-                      value={form.variant_label_size_ar || ""}
-                      onChange={(e) => setForm({ ...form, variant_label_size_ar: e.target.value })}
-                    />
+              {advancedOpen && (
+                <div className="p-4 space-y-4 border-t border-border/50 animate-in fade-in duration-150">
+                  {/* Fabric & Occasion */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-xs font-bold text-muted-foreground">
+                        {isAr ? "نوع القماش" : "Fabric Type"}
+                      </Label>
+                      <Input
+                        className="mt-1 h-9.5 rounded-lg text-xs"
+                        placeholder={
+                          isAr ? "مثال: كريب ملكي، لينن، حرير..." : "e.g., Royal Crepe, Linen..."
+                        }
+                        value={form.fabric_type}
+                        onChange={(e) => setForm({ ...form, fabric_type: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-bold text-muted-foreground">
+                        {isAr ? "مناسبة لـ" : "Suitable for"}
+                      </Label>
+                      <div className="mt-1">
+                        <select
+                          className="w-full h-9.5 rounded-lg border border-input bg-background px-3 text-xs focus:ring-1 focus:ring-primary outline-none"
+                          value={form.occasion}
+                          onChange={(e) => setForm({ ...form, occasion: e.target.value })}
+                        >
+                          <option value="">{isAr ? "اختر المناسبة..." : "Select occasion..."}</option>
+                          <option value="يومي">{isAr ? "يومي" : "Daily"}</option>
+                          <option value="سهرة">{isAr ? "سهرة" : "Evening"}</option>
+                          <option value="مناسبات">{isAr ? "مناسبات" : "Occasions"}</option>
+                          <option value="إطلالة رسمية">{isAr ? "إطلالة رسمية" : "Formal"}</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <Label className="text-xs font-bold text-muted-foreground">
-                      {isAr
-                        ? "مسمى المقاس بالإنجليزية (مثال: Stamp Size)"
-                        : "Custom Size Label — English"}
-                    </Label>
-                    <Input
-                      className="mt-1 h-9.5 rounded-lg text-xs"
-                      placeholder="Size / Option"
-                      value={form.variant_label_size_en || ""}
-                      onChange={(e) => setForm({ ...form, variant_label_size_en: e.target.value })}
-                    />
-                  </div>
-                </div>
 
-                {/* Color Label */}
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 border-b border-border/40 pb-3">
-                  <div>
-                    <Label className="text-xs font-bold text-muted-foreground">
-                      {isAr ? "مسمى اللون بالعربية" : "Custom Color Label — Arabic"}
-                    </Label>
-                    <Input
-                      className="mt-1 h-9.5 rounded-lg text-xs"
-                      placeholder={isAr ? "اللون" : "Color"}
-                      value={form.variant_label_color_ar || ""}
-                      onChange={(e) => setForm({ ...form, variant_label_color_ar: e.target.value })}
-                    />
+                  {/* Feature & Sale Switches */}
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="flex items-center justify-between rounded-lg border border-border/60 p-3 bg-secondary/10">
+                      <div>
+                        <p className="text-xs font-bold text-foreground">
+                          {isAr ? "إبراز في الرائج الآن" : "Feature in Trending now"}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {isAr ? "أولوية في العرض للعملاء" : "Prioritizes this product for discovery"}
+                        </p>
+                      </div>
+                      <Switch
+                        checked={form.featured_trending}
+                        onCheckedChange={(v) => setForm({ ...form, featured_trending: v })}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border border-border/60 p-3 bg-secondary/10">
+                      <div>
+                        <p className="text-xs font-bold text-foreground">
+                          {isAr ? "إظهار شارة التنزيلات" : "Show Sale badge"}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {isAr ? "تظهر عند وجود سعر أصلي أعلى" : "Shown when an original price is higher"}
+                        </p>
+                      </div>
+                      <Switch
+                        checked={form.show_sale_badge}
+                        onCheckedChange={(v) => setForm({ ...form, show_sale_badge: v })}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <Label className="text-xs font-bold text-muted-foreground">
-                      {isAr ? "مسمى اللون بالإنجليزية" : "Custom Color Label — English"}
-                    </Label>
-                    <Input
-                      className="mt-1 h-9.5 rounded-lg text-xs"
-                      placeholder="Color"
-                      value={form.variant_label_color_en || ""}
-                      onChange={(e) => setForm({ ...form, variant_label_color_en: e.target.value })}
-                    />
-                  </div>
-                </div>
 
-                {/* Fabric Label */}
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div>
-                    <Label className="text-xs font-bold text-muted-foreground">
-                      {isAr ? "مسمى الخامة بالعربية" : "Custom Fabric Label — Arabic"}
-                    </Label>
-                    <Input
-                      className="mt-1 h-9.5 rounded-lg text-xs"
-                      placeholder={isAr ? "الخامة" : "Fabric"}
-                      value={form.variant_label_fabric_ar || ""}
-                      onChange={(e) =>
-                        setForm({ ...form, variant_label_fabric_ar: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs font-bold text-muted-foreground">
-                      {isAr ? "مسمى الخامة بالإنجليزية" : "Custom Fabric Label — English"}
-                    </Label>
-                    <Input
-                      className="mt-1 h-9.5 rounded-lg text-xs"
-                      placeholder="Fabric"
-                      value={form.variant_label_fabric_en || ""}
-                      onChange={(e) =>
-                        setForm({ ...form, variant_label_fabric_en: e.target.value })
-                      }
-                    />
+                  {/* Custom Variant Labels */}
+                  <div className="rounded-lg border border-border/60 p-3.5 bg-secondary/5 space-y-3">
+                    <div>
+                      <p className="text-xs font-bold text-foreground">
+                        {isAr ? "🏷️ مسميات المتغيرات المخصصة" : "🏷️ Custom Variant Labels"}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {isAr
+                          ? "تخصيص أسماء أعمدة المقاس، اللون، والخامة لصفحة عرض المنتج."
+                          : "Override default column labels (Size, Color, Fabric) for the storefront."}
+                      </p>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 border-b border-border/40 pb-2.5">
+                        <div>
+                          <Label className="text-[11px] font-bold text-muted-foreground">
+                            {isAr ? "مسمى المقاس بالعربية" : "Custom Size Label — Arabic"}
+                          </Label>
+                          <Input
+                            className="mt-1 h-8 rounded-md text-xs"
+                            placeholder={isAr ? "المقاس / خيار" : "Size / Option"}
+                            value={form.variant_label_size_ar || ""}
+                            onChange={(e) =>
+                              setForm({ ...form, variant_label_size_ar: e.target.value })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-[11px] font-bold text-muted-foreground">
+                            {isAr ? "مسمى المقاس بالإنجليزية" : "Custom Size Label — English"}
+                          </Label>
+                          <Input
+                            className="mt-1 h-8 rounded-md text-xs"
+                            placeholder="Size / Option"
+                            value={form.variant_label_size_en || ""}
+                            onChange={(e) =>
+                              setForm({ ...form, variant_label_size_en: e.target.value })
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 border-b border-border/40 pb-2.5">
+                        <div>
+                          <Label className="text-[11px] font-bold text-muted-foreground">
+                            {isAr ? "مسمى اللون بالعربية" : "Custom Color Label — Arabic"}
+                          </Label>
+                          <Input
+                            className="mt-1 h-8 rounded-md text-xs"
+                            placeholder={isAr ? "اللون" : "Color"}
+                            value={form.variant_label_color_ar || ""}
+                            onChange={(e) =>
+                              setForm({ ...form, variant_label_color_ar: e.target.value })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-[11px] font-bold text-muted-foreground">
+                            {isAr ? "مسمى اللون بالإنجليزية" : "Custom Color Label — English"}
+                          </Label>
+                          <Input
+                            className="mt-1 h-8 rounded-md text-xs"
+                            placeholder="Color"
+                            value={form.variant_label_color_en || ""}
+                            onChange={(e) =>
+                              setForm({ ...form, variant_label_color_en: e.target.value })
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div>
+                          <Label className="text-[11px] font-bold text-muted-foreground">
+                            {isAr ? "مسمى الخامة بالعربية" : "Custom Fabric Label — Arabic"}
+                          </Label>
+                          <Input
+                            className="mt-1 h-8 rounded-md text-xs"
+                            placeholder={isAr ? "الخامة" : "Fabric"}
+                            value={form.variant_label_fabric_ar || ""}
+                            onChange={(e) =>
+                              setForm({ ...form, variant_label_fabric_ar: e.target.value })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-[11px] font-bold text-muted-foreground">
+                            {isAr ? "مسمى الخامة بالإنجليزية" : "Custom Fabric Label — English"}
+                          </Label>
+                          <Input
+                            className="mt-1 h-8 rounded-md text-xs"
+                            placeholder="Fabric"
+                            value={form.variant_label_fabric_en || ""}
+                            onChange={(e) =>
+                              setForm({ ...form, variant_label_fabric_en: e.target.value })
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         )}

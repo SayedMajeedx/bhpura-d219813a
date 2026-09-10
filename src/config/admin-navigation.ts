@@ -24,6 +24,29 @@ import {
 
 export type NavItemTier = "core" | "modular";
 
+export type MerchantJobCategory =
+  | "today"
+  | "products_stock"
+  | "customers_growth"
+  | "money_reports"
+  | "store_setup";
+
+export interface MerchantJobGroup {
+  id: MerchantJobCategory;
+  labelEn: string;
+  labelAr: string;
+  shortLabelEn: string;
+  shortLabelAr: string;
+}
+
+export const MERCHANT_JOB_GROUPS: MerchantJobGroup[] = [
+  { id: "today", labelEn: "Today", labelAr: "اليوم", shortLabelEn: "Today", shortLabelAr: "اليوم" },
+  { id: "products_stock", labelEn: "Products & Stock", labelAr: "المنتجات والمخزون", shortLabelEn: "Stock", shortLabelAr: "المخزون" },
+  { id: "customers_growth", labelEn: "Customers & Growth", labelAr: "العملاء والنمو", shortLabelEn: "Growth", shortLabelAr: "النمو" },
+  { id: "money_reports", labelEn: "Money & Reports", labelAr: "المالية والتقارير", shortLabelEn: "Finance", shortLabelAr: "المالية" },
+  { id: "store_setup", labelEn: "Store Setup", labelAr: "إعداد المتجر", shortLabelEn: "Setup", shortLabelAr: "الإعدادات" },
+];
+
 export interface AdminNavItemConfig {
   id: string;
   to: string;
@@ -36,6 +59,7 @@ export interface AdminNavItemConfig {
   permission?: string;
   adminOnly?: boolean;
   section: "overview" | "operations" | "growth_finance" | "storefront_settings";
+  category?: MerchantJobCategory;
   tier?: NavItemTier;
   badge?: string | number;
 }
@@ -82,12 +106,13 @@ export function getAdminNavItems({
         descriptionAr: "متابعة الطلبات وتوصيل الشحنات",
         icon: ReceiptText,
         section: "operations",
+        category: "money_reports",
       },
     ];
   }
 
   const allItems: AdminNavItemConfig[] = [
-    // Group 1: OVERVIEW
+    // Group 1: OVERVIEW / TODAY
     {
       id: "dashboard",
       to: "/admin/b/$slug/dashboard",
@@ -98,6 +123,7 @@ export function getAdminNavItems({
       descriptionAr: "لوحة التحكم الرئيسية والإحصائيات اللحظية للمبيعات والطلبات",
       icon: LayoutDashboard,
       section: "overview",
+      category: "today",
       tier: "core",
     },
     {
@@ -112,6 +138,7 @@ export function getAdminNavItems({
       icon: BarChart,
       permission: "manage_orders",
       section: "overview",
+      category: "money_reports",
       tier: "core",
     },
 
@@ -127,6 +154,7 @@ export function getAdminNavItems({
       icon: ReceiptText,
       permission: "manage_orders",
       section: "operations",
+      category: "money_reports",
       tier: "core",
     },
     {
@@ -141,6 +169,7 @@ export function getAdminNavItems({
       icon: RotateCcw,
       permission: "manage_orders",
       section: "operations",
+      category: "money_reports",
       tier: "modular",
     },
     {
@@ -154,6 +183,7 @@ export function getAdminNavItems({
       icon: Users,
       permission: "manage_customers",
       section: "operations",
+      category: "customers_growth",
       tier: "core",
     },
     {
@@ -167,6 +197,7 @@ export function getAdminNavItems({
       icon: MessageSquareHeart,
       permission: "manage_customers",
       section: "operations",
+      category: "customers_growth",
       tier: "modular",
     },
     {
@@ -180,6 +211,7 @@ export function getAdminNavItems({
       icon: Package,
       permission: "manage_inventory",
       section: "operations",
+      category: "products_stock",
       tier: "core",
     },
     {
@@ -194,6 +226,7 @@ export function getAdminNavItems({
       icon: Building2,
       permission: "manage_inventory",
       section: "operations",
+      category: "products_stock",
       tier: "modular",
     },
     {
@@ -208,6 +241,7 @@ export function getAdminNavItems({
       icon: Tags,
       permission: "manage_inventory",
       section: "operations",
+      category: "products_stock",
       tier: "modular",
     },
 
@@ -223,6 +257,7 @@ export function getAdminNavItems({
       icon: Palette,
       permission: "manage_inventory",
       section: "growth_finance",
+      category: "customers_growth",
       tier: "modular",
     },
     {
@@ -236,6 +271,7 @@ export function getAdminNavItems({
       icon: Megaphone,
       permission: "manage_orders",
       section: "growth_finance",
+      category: "customers_growth",
       tier: "modular",
     },
     {
@@ -249,6 +285,7 @@ export function getAdminNavItems({
       icon: BadgePercent,
       permission: "manage_settings",
       section: "growth_finance",
+      category: "customers_growth",
       tier: "modular",
     },
     {
@@ -262,6 +299,7 @@ export function getAdminNavItems({
       icon: Award,
       permission: "manage_settings",
       section: "growth_finance",
+      category: "customers_growth",
       tier: "modular",
     },
     {
@@ -275,6 +313,7 @@ export function getAdminNavItems({
       icon: ShoppingCart,
       permission: "manage_orders",
       section: "growth_finance",
+      category: "customers_growth",
       tier: "modular",
     },
     {
@@ -288,6 +327,7 @@ export function getAdminNavItems({
       icon: Wallet,
       permission: "view_financials",
       section: "growth_finance",
+      category: "money_reports",
       tier: "modular",
     },
 
@@ -303,6 +343,7 @@ export function getAdminNavItems({
       icon: Plug,
       adminOnly: true,
       section: "storefront_settings",
+      category: "store_setup",
       tier: "modular",
     },
     {
@@ -317,6 +358,7 @@ export function getAdminNavItems({
       icon: Mail,
       permission: "manage_settings",
       section: "storefront_settings",
+      category: "store_setup",
       tier: "modular",
     },
     {
@@ -330,6 +372,7 @@ export function getAdminNavItems({
       icon: FileText,
       permission: "manage_settings",
       section: "storefront_settings",
+      category: "store_setup",
       tier: "modular",
     },
     {
@@ -343,6 +386,7 @@ export function getAdminNavItems({
       icon: Shield,
       permission: "manage_team",
       section: "storefront_settings",
+      category: "store_setup",
       tier: "modular",
     },
     {
@@ -356,6 +400,7 @@ export function getAdminNavItems({
       icon: Settings,
       permission: "manage_settings",
       section: "storefront_settings",
+      category: "store_setup",
       tier: "core",
     },
   ];

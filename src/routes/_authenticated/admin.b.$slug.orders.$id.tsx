@@ -133,6 +133,7 @@ import { OrderMobileQuickActions } from "@/components/orders/OrderMobileQuickAct
 import { OrderStickyBottomBar } from "@/components/orders/OrderStickyBottomBar";
 import { OrderItemsWorkflowCard } from "@/components/orders/OrderItemsWorkflowCard";
 import { OrderFinancialLedgerCard } from "@/components/orders/OrderFinancialLedgerCard";
+import { OrderSalesDocumentsCard } from "@/components/orders/OrderSalesDocumentsCard";
 import { OrderMetaSidePanel } from "@/components/orders/OrderMetaSidePanel";
 import {
   FIT_PROFILE_FIELDS,
@@ -1171,7 +1172,7 @@ function OrderDetail() {
   useEffect(() => {
     if (!order?.id) return;
     const scrollContainer = document.querySelector(".os-scrollbar");
-    const sectionIds = ["sec-overview", "sec-items", "sec-invoice", "sec-activity"];
+    const sectionIds = ["sec-overview", "sec-items", "sec-documents", "sec-invoice", "sec-activity"];
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -3235,6 +3236,19 @@ function OrderDetail() {
               </button>
               <button
                 type="button"
+                onClick={() => scrollToSection("sec-documents")}
+                className={cn(
+                  "min-h-11 justify-center rounded-xl px-3.5 py-1.5 text-xs font-bold transition-colors flex items-center gap-1.5 whitespace-nowrap touch-manipulation",
+                  activeSection === "sec-documents"
+                    ? "bg-foreground text-background font-bold shadow-2xs"
+                    : "hover:bg-muted text-muted-foreground",
+                )}
+              >
+                <FileText className="h-3.5 w-3.5" />
+                <span>{lang === "ar" ? "المستندات" : "Documents"}</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => scrollToSection("sec-invoice")}
                 className={cn(
                   "min-h-11 justify-center rounded-xl px-3.5 py-1.5 text-xs font-bold transition-colors flex items-center gap-1.5 whitespace-nowrap touch-manipulation",
@@ -5078,6 +5092,22 @@ function OrderDetail() {
             </div>
           </div>
         </fieldset>
+
+        {/* Unified Sales Documents Chain */}
+        {!isCreationMode && order && (
+          <div className="no-print mb-6">
+            <OrderSalesDocumentsCard
+              order={order}
+              items={items}
+              brand={brand}
+              currency={currency}
+              lang={lang}
+              slug={slug}
+              onPrintThermalReceipt={printThermal}
+              onPrintInvoice={() => window.print()}
+            />
+          </div>
+        )}
 
         {/* Invoice Preview Section Anchor */}
         <div

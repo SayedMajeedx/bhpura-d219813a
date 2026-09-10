@@ -20,6 +20,7 @@ import { OsBrandSwitcher, type BrandRow } from "./os-brand-switcher";
 import { OsAppsHubModal } from "./os-apps-hub-modal";
 import {
   DEFAULT_PINNED_IDS,
+  MERCHANT_JOB_GROUPS,
   type AdminNavItemConfig,
 } from "@/config/admin-navigation";
 
@@ -158,6 +159,38 @@ export function OsSidebar({
     return items;
   }, [modularItems, pinnedIds, activeModularItem, isPlatformMode, isCourier]);
 
+  // Merchant Jobs navigation mode state
+  const [navMode, setNavMode] = React.useState<"jobs" | "focus">(() => {
+    if (typeof window === "undefined") return "jobs";
+    try {
+      const saved = localStorage.getItem("boutq_sidebar_nav_mode");
+      if (saved === "focus" || saved === "jobs") return saved;
+    } catch {
+      // ignore
+    }
+    return "jobs";
+  });
+
+  const handleNavModeChange = (mode: "jobs" | "focus") => {
+    setNavMode(mode);
+    try {
+      localStorage.setItem("boutq_sidebar_nav_mode", mode);
+    } catch {
+      // ignore
+    }
+  };
+
+  const jobGroups = React.useMemo(() => {
+    if (isPlatformMode || isCourier) return [];
+    return MERCHANT_JOB_GROUPS.map((group) => {
+      const items = navItems.filter((i) => (i.category || "today") === group.id);
+      return {
+        ...group,
+        items,
+      };
+    }).filter((g) => g.items.length > 0);
+  }, [navItems, isPlatformMode, isCourier]);
+
   // Filtered modular items in the Apps Drawer
   const filteredModularItems = React.useMemo(() => {
     const q = filterQuery.trim().toLowerCase();
@@ -253,66 +286,171 @@ export function OsSidebar({
 
         {/* Main Nav List */}
         <nav className="flex-1 p-3 space-y-3 overflow-y-auto scrollbar-none">
-          {/* Core Daily Essentials */}
-          <div className="space-y-1">
-            {!collapsed && (
-              <div className="flex items-center justify-between px-3 mt-1 mb-1.5">
-                <span className="text-[10px] font-bold tracking-wider text-muted-foreground/70 uppercase">
-                  {isAr ? "الأساسيات" : "CORE"}
-                </span>
-              </div>
-            )}
-            <div className="flex flex-col gap-1">
-              {coreItems.map((item) => {
-                const targetPath = item.to.replace("$slug", item.params?.slug ?? "");
-                const active = pathname.startsWith(targetPath);
-                const label = isAr ? item.labelAr : item.labelEn;
-
-                return (
-                  <Link
-                    key={item.id}
-                    to={item.to as any}
-                    params={item.params as any}
-                    preload="intent"
-                    className="block"
-                  >
-                    <OsNavItem
-                      icon={item.icon}
-                      label={label}
-                      active={active}
-                      collapsed={collapsed}
-                      badge={item.badge}
-                    />
-                  </Link>
-                );
-              })}
+          {/* Navigation Mode Switcher */}
+          {!collapsed && !isPlatformMode && !isCourier && (
+            <div className="flex items-center gap-1 p-0.5 rounded-xl bg-muted/40 border border-border/50 text-[11px] mb-2 font-medium">
+              <button
+                type="button"
+                onClick={() => handleNavModeChange("jobs")}
+                className={cn(
+                  "flex-1 py-1 px-2 rounded-lg text-center transition-all min-h-[30px]",
+                  navMode === "jobs"
+                    ? "bg-background text-foreground font-bold shadow-2xs border border-border/60"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {isAr ? "الأقسام" : "All Jobs"}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleNavModeChange("focus")}
+                className={cn(
+                  "flex-1 py-1 px-2 rounded-lg text-center transition-all min-h-[30px]",
+                  navMode === "focus"
+                    ? "bg-background text-foreground font-bold shadow-2xs border border-border/60"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {isAr ? "الأساسية" : "Focused"}
+              </button>
             </div>
-          </div>
+          )}
 
-          {/* Pinned & Active Modular Tools */}
-          {visibleModularItems.length > 0 && (
-            <div className="space-y-1 pt-1">
-              {!collapsed && (
-                <div className="flex items-center justify-between px-3 mt-2 mb-1.5">
-                  <span className="text-[10px] font-bold tracking-wider text-muted-foreground/70 uppercase flex items-center gap-1.5">
-                    <Pin className="h-2.5 w-2.5 text-primary" />
-                    <span>{isAr ? "الأدوات المثبتة" : "PINNED TOOLS"}</span>
-                  </span>
-                  <span className="text-[10px] text-muted-foreground/60 font-semibold">
-                    {visibleModularItems.length}
-                  </span>
+          {/* Jobs View (5 Merchant Categories) */}
+          {!collapsed && navMode === "jobs" && !isPlatformMode && !isCourier ? (
+            <div className="space-y-3">
+              {/* Optional Pinned Quick-Access */}
+              {visibleModularItems.length > 0 && (
+                <div className="space-y-1 pb-1.5 border-b border-border/40">
+                  <div className="flex items-center justify-between px-3 mb-1">
+                    <span className="text-[10px] font-bold tracking-wider text-muted-foreground/70 uppercase flex items-center gap-1.5">
+                      <Pin className="h-2.5 w-2.5 text-primary" />
+                      <span>{isAr ? "المثبتة" : "PINNED"}</span>
+                    </span>
+                    <span className="text-[10px] text-muted-foreground/60 font-semibold">
+                      {visibleModularItems.length}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    {visibleModularItems.map((item) => {
+                      const targetPath = item.to.replace("$slug", item.params?.slug ?? "");
+                      const active = pathname.startsWith(targetPath);
+                      const label = isAr ? item.labelAr : item.labelEn;
+                      const isPinned = pinnedIds.includes(item.id);
+
+                      return (
+                        <div key={item.id} className="relative group">
+                          <Link
+                            to={item.to as any}
+                            params={item.params as any}
+                            preload="intent"
+                            className="block"
+                          >
+                            <OsNavItem
+                              icon={item.icon}
+                              label={label}
+                              active={active}
+                              collapsed={collapsed}
+                              badge={item.badge}
+                            />
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={(e) => togglePin(item.id, e)}
+                            title={isPinned ? (isAr ? "إلغاء التثبيت" : "Unpin") : (isAr ? "تثبيت" : "Pin")}
+                            className="absolute top-1/2 -translate-y-1/2 end-2.5 h-6 w-6 rounded-md flex items-center justify-center transition-opacity opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <PinOff className="h-3 w-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
-              <div className="flex flex-col gap-1">
-                {visibleModularItems.map((item) => {
-                  const targetPath = item.to.replace("$slug", item.params?.slug ?? "");
-                  const active = pathname.startsWith(targetPath);
-                  const label = isAr ? item.labelAr : item.labelEn;
-                  const isPinned = pinnedIds.includes(item.id);
 
-                  return (
-                    <div key={item.id} className="relative group">
+              {/* 5 Job Groups */}
+              {jobGroups.map((group) => (
+                <div key={group.id} className="space-y-1">
+                  <div className="flex items-center justify-between px-3 mt-1.5 mb-1">
+                    <span className="text-[10px] font-bold tracking-wider text-muted-foreground/70 uppercase">
+                      {isAr ? group.labelAr : group.labelEn}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    {group.items.map((item) => {
+                      const targetPath = item.to.replace("$slug", item.params?.slug ?? "");
+                      const active = pathname.startsWith(targetPath);
+                      const label = isAr ? item.labelAr : item.labelEn;
+                      const isPinned = pinnedIds.includes(item.id);
+
+                      return (
+                        <div key={item.id} className="relative group">
+                          <Link
+                            to={item.to as any}
+                            params={item.params as any}
+                            preload="intent"
+                            className="block"
+                          >
+                            <OsNavItem
+                              icon={item.icon}
+                              label={label}
+                              active={active}
+                              collapsed={collapsed}
+                              badge={item.badge}
+                            />
+                          </Link>
+                          {item.tier === "modular" && (
+                            <button
+                              type="button"
+                              onClick={(e) => togglePin(item.id, e)}
+                              title={
+                                isPinned
+                                  ? isAr
+                                    ? "إلغاء التثبيت"
+                                    : "Unpin"
+                                  : isAr
+                                    ? "تثبيت في المفضلة"
+                                    : "Pin to favorites"
+                              }
+                              className={cn(
+                                "absolute top-1/2 -translate-y-1/2 end-2.5 h-6 w-6 rounded-md flex items-center justify-center transition-opacity",
+                                isPinned
+                                  ? "opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                  : "opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary hover:bg-primary/10",
+                              )}
+                            >
+                              {isPinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            /* Focus Mode (or Collapsed / Courier / Platform Mode) */
+            <>
+              {/* Core Daily Essentials */}
+              <div className="space-y-1">
+                {!collapsed && (
+                  <div className="flex items-center justify-between px-3 mt-1 mb-1.5">
+                    <span className="text-[10px] font-bold tracking-wider text-muted-foreground/70 uppercase">
+                      {isAr ? "الأساسيات" : "CORE"}
+                    </span>
+                  </div>
+                )}
+                <div className="flex flex-col gap-1">
+                  {coreItems.map((item) => {
+                    const targetPath = item.to.replace("$slug", item.params?.slug ?? "");
+                    const active = pathname.startsWith(targetPath);
+                    const label = isAr ? item.labelAr : item.labelEn;
+
+                    return (
                       <Link
+                        key={item.id}
                         to={item.to as any}
                         params={item.params as any}
                         preload="intent"
@@ -326,40 +464,84 @@ export function OsSidebar({
                           badge={item.badge}
                         />
                       </Link>
-
-                      {/* Quick Unpin Icon on hover */}
-                      {!collapsed && (
-                        <button
-                          type="button"
-                          onClick={(e) => togglePin(item.id, e)}
-                          title={
-                            isPinned
-                              ? isAr
-                                ? "إلغاء التثبيت من القائمة"
-                                : "Unpin from sidebar"
-                              : isAr
-                                ? "تثبيت في القائمة"
-                                : "Pin to sidebar"
-                          }
-                          className={cn(
-                            "absolute top-1/2 -translate-y-1/2 end-2.5 h-6 w-6 rounded-md flex items-center justify-center transition-opacity",
-                            isPinned
-                              ? "opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                              : "opacity-100 text-primary hover:bg-primary/10",
-                          )}
-                        >
-                          {isPinned ? (
-                            <PinOff className="h-3 w-3" />
-                          ) : (
-                            <Pin className="h-3 w-3" />
-                          )}
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+
+              {/* Pinned & Active Modular Tools */}
+              {visibleModularItems.length > 0 && (
+                <div className="space-y-1 pt-1">
+                  {!collapsed && (
+                    <div className="flex items-center justify-between px-3 mt-2 mb-1.5">
+                      <span className="text-[10px] font-bold tracking-wider text-muted-foreground/70 uppercase flex items-center gap-1.5">
+                        <Pin className="h-2.5 w-2.5 text-primary" />
+                        <span>{isAr ? "الأدوات المثبتة" : "PINNED TOOLS"}</span>
+                      </span>
+                      <span className="text-[10px] text-muted-foreground/60 font-semibold">
+                        {visibleModularItems.length}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-1">
+                    {visibleModularItems.map((item) => {
+                      const targetPath = item.to.replace("$slug", item.params?.slug ?? "");
+                      const active = pathname.startsWith(targetPath);
+                      const label = isAr ? item.labelAr : item.labelEn;
+                      const isPinned = pinnedIds.includes(item.id);
+
+                      return (
+                        <div key={item.id} className="relative group">
+                          <Link
+                            to={item.to as any}
+                            params={item.params as any}
+                            preload="intent"
+                            className="block"
+                          >
+                            <OsNavItem
+                              icon={item.icon}
+                              label={label}
+                              active={active}
+                              collapsed={collapsed}
+                              badge={item.badge}
+                            />
+                          </Link>
+
+                          {/* Quick Unpin Icon on hover */}
+                          {!collapsed && (
+                            <button
+                              type="button"
+                              onClick={(e) => togglePin(item.id, e)}
+                              title={
+                                isPinned
+                                  ? isAr
+                                    ? "إلغاء التثبيت من القائمة"
+                                    : "Unpin from sidebar"
+                                  : isAr
+                                    ? "تثبيت في القائمة"
+                                    : "Pin to sidebar"
+                              }
+                              className={cn(
+                                "absolute top-1/2 -translate-y-1/2 end-2.5 h-6 w-6 rounded-md flex items-center justify-center transition-opacity",
+                                isPinned
+                                  ? "opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                  : "opacity-100 text-primary hover:bg-primary/10",
+                              )}
+                            >
+                              {isPinned ? (
+                                <PinOff className="h-3 w-3" />
+                              ) : (
+                                <Pin className="h-3 w-3" />
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </nav>
 

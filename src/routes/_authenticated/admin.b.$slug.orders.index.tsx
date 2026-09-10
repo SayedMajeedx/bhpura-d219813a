@@ -12,6 +12,7 @@ import {
   ReceiptText,
   Trash2,
   Search,
+  AlertCircle,
   Clock3,
   CircleDollarSign,
   CreditCard,
@@ -411,7 +412,7 @@ function OrdersList() {
 
   // New Quick Tab filter
   const [tabFilter, setTabFilter] = useState<
-    "all" | "unpaid" | "action_required" | "shipped" | "completed"
+    "all" | "unpaid" | "to_prepare" | "action_required" | "shipped" | "completed"
   >(savedContext?.tabFilter || "all");
 
   // Save navigation filters when they change
@@ -644,6 +645,73 @@ function OrdersList() {
     }
   };
 
+  const [isBatchUpdating, setIsBatchUpdating] = useState(false);
+
+  const handleBatchFulfillmentUpdate = async (newFulfillmentStatus: string, newOrderStatus?: string) => {
+    const orderIds = [...selectedOrderIds];
+    if (orderIds.length === 0) return;
+    setIsBatchUpdating(true);
+    try {
+      const headers = await authenticatedJsonHeaders();
+      const updates = orderIds.map((id) =>
+        fetch("/api/orders/status", {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({
+            id,
+            fulfillment_status: newFulfillmentStatus,
+            ...(newOrderStatus ? { status: newOrderStatus } : {}),
+            admin_override: true,
+          }),
+        }),
+      );
+      await Promise.all(updates);
+      toast.success(
+        lang === "ar"
+          ? `تم تحديث حالة ${orderIds.length} طلب بنجاح`
+          : `Updated fulfillment status for ${orderIds.length} orders`,
+      );
+      setSelectedOrderIds(new Set());
+      await qc.invalidateQueries({ queryKey: ["orders", brandId] });
+    } catch (error: any) {
+      toast.error(error?.message || (lang === "ar" ? "فشل تحديث الطلبات" : "Failed to update orders"));
+    } finally {
+      setIsBatchUpdating(false);
+    }
+  };
+
+  const handleBatchAssignCourier = async (courierId: string) => {
+    const orderIds = [...selectedOrderIds];
+    if (orderIds.length === 0) return;
+    setIsBatchUpdating(true);
+    try {
+      const headers = await authenticatedJsonHeaders();
+      const updates = orderIds.map((id) =>
+        fetch("/api/orders/status", {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({
+            id,
+            fulfillment_status: "ASSIGNED",
+            assigned_to: courierId,
+          }),
+        }),
+      );
+      await Promise.all(updates);
+      toast.success(
+        lang === "ar"
+          ? `تم تعيين المندوب لـ ${orderIds.length} طلب بنجاح`
+          : `Courier assigned to ${orderIds.length} orders`,
+      );
+      setSelectedOrderIds(new Set());
+      await qc.invalidateQueries({ queryKey: ["orders", brandId] });
+    } catch (error: any) {
+      toast.error(error?.message || (lang === "ar" ? "فشل تعيين المندوب" : "Failed to assign courier"));
+    } finally {
+      setIsBatchUpdating(false);
+    }
+  };
+
   const [sortField, setSortField] = useState<
     "invoice_number" | "created_at" | "customer" | "status" | "total"
   >("created_at");
@@ -711,6 +779,7 @@ function OrdersList() {
     let all = 0;
     let unpaid = 0;
     let action_required = 0;
+    let to_prepare = 0;
     let shipped = 0;
     let completed = 0;
 
@@ -724,11 +793,20 @@ function OrdersList() {
       all++;
       if (workflow.awaitingPayment) unpaid++;
       if (workflow.needsAttention) action_required++;
+      if (
+        !workflow.terminal &&
+        ["pending", "packing", "on_hold", "needs_packing", "received_from_tailor", "sent_to_tailor"].includes(
+          workflow.fulfillment,
+        ) &&
+        (!workflow.awaitingPayment || workflow.isCod)
+      ) {
+        to_prepare++;
+      }
       if (workflow.withCourier) shipped++;
       if (workflow.fulfillment === "completed") completed++;
     }
 
-    return { all, unpaid, action_required, shipped, completed };
+    return { all, unpaid, action_required, to_prepare, shipped, completed };
   }, [orders, includeHistorical]);
 
   // Combined search, standard drop-down filters, and our premium quick tab filter
@@ -793,6 +871,16 @@ function OrdersList() {
       }
       if (tabFilter === "action_required") {
         return orderNeedsOperatorAction(order);
+      }
+      if (tabFilter === "to_prepare") {
+        const wf = getOrderWorkflow(order);
+        return (
+          !wf.terminal &&
+          ["pending", "packing", "on_hold", "needs_packing", "received_from_tailor", "sent_to_tailor"].includes(
+            wf.fulfillment,
+          ) &&
+          (!wf.awaitingPayment || wf.isCod)
+        );
       }
       if (tabFilter === "shipped") {
         return normalizedFulfillmentStage(order) === "out_for_delivery";
@@ -895,6 +983,13 @@ function OrdersList() {
       label_ar: "بانتظار الدفع",
       count: tabCounts.unpaid,
       icon: CircleDollarSign,
+    },
+    {
+      id: "to_prepare",
+      label_en: "To prepare",
+      label_ar: "قيد التجهيز",
+      count: tabCounts.to_prepare,
+      icon: Package,
     },
     {
       id: "shipped",
@@ -1626,6 +1721,39 @@ function OrdersList() {
         }}
       />
 
+      {/* 2b. Urgent Order Exceptions Banner */}
+      {tabCounts.action_required > 0 && tabFilter !== "action_required" && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+            <div className="text-xs font-medium">
+              <span className="font-bold">
+                {lang === "ar"
+                  ? `تنبيه: ${tabCounts.action_required} طلب يحتاج إجراءً فورياً`
+                  : `Attention: ${tabCounts.action_required} order(s) require immediate action`}
+              </span>
+              <span className="opacity-80 ms-1.5 hidden sm:inline">
+                {lang === "ar"
+                  ? "(تحصيل عند الاستلام، تسليم غير مكتمل، أو قياسات خياطة)"
+                  : "(COD collection, failed delivery, or tailoring measurements)"}
+              </span>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setTabFilter("action_required");
+              setPage(1);
+            }}
+            className="h-7 text-xs font-bold border-amber-500/40 hover:bg-amber-500/20 text-amber-900 dark:text-amber-100 shrink-0"
+          >
+            {lang === "ar" ? "معالجة التنبيهات الآن" : "Resolve Exceptions Now"}
+          </Button>
+        </div>
+      )}
+
       {/* 3. Compact Command Toolbar */}
       <OrdersToolbar
         lang={lang}
@@ -1703,18 +1831,91 @@ function OrdersList() {
               {lang === "ar" ? "إلغاء تحديد الكل" : "Deselect all"}
             </Button>
             {selectedOrderIds.size > 0 && (
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                className="h-8 gap-1.5 text-xs"
-                onClick={() => setBulkDeleteOpen(true)}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                {lang === "ar"
-                  ? `حذف المحدد (${selectedOrderIds.size})`
-                  : `Delete selected (${selectedOrderIds.size})`}
-              </Button>
+              <>
+                {/* Batch Fulfillment Status Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={isBatchUpdating}
+                      className="h-8 gap-1.5 text-xs font-semibold"
+                    >
+                      <Package className="h-3.5 w-3.5 text-primary" />
+                      {lang === "ar" ? "تحديث حالة التجهيز" : "Update fulfillment"}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52">
+                    <DropdownMenuItem
+                      onClick={() => handleBatchFulfillmentUpdate("PACKING")}
+                      className="text-xs cursor-pointer"
+                    >
+                      {lang === "ar" ? "قيد التجهيز والتغليف" : "Mark as Packing"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleBatchFulfillmentUpdate("READY_FOR_PICKUP")}
+                      className="text-xs cursor-pointer"
+                    >
+                      {lang === "ar" ? "جاهز للتسليم / للشحن" : "Ready for pickup / dispatch"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleBatchFulfillmentUpdate("OUT_FOR_DELIVERY")}
+                      className="text-xs cursor-pointer"
+                    >
+                      {lang === "ar" ? "خرج مع المندوب للتوصيل" : "Out for delivery"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleBatchFulfillmentUpdate("COMPLETED", "completed")}
+                      className="text-xs cursor-pointer font-semibold text-emerald-600 dark:text-emerald-400"
+                    >
+                      {lang === "ar" ? "اكتمال وتسليم الطلب" : "Mark as Completed"}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Batch Assign Courier Dropdown */}
+                {(couriersQ.data?.length ?? 0) > 0 && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={isBatchUpdating}
+                        className="h-8 gap-1.5 text-xs font-semibold"
+                      >
+                        <Truck className="h-3.5 w-3.5 text-blue-600" />
+                        {lang === "ar" ? "تعيين المندوب" : "Assign courier"}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      {(couriersQ.data ?? []).map((courier: any) => (
+                        <DropdownMenuItem
+                          key={courier.id}
+                          onClick={() => handleBatchAssignCourier(courier.id)}
+                          className="text-xs cursor-pointer"
+                        >
+                          {courier.name || courier.email}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs font-semibold"
+                  onClick={() => setBulkDeleteOpen(true)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  {lang === "ar"
+                    ? `حذف المحدد (${selectedOrderIds.size})`
+                    : `Delete selected (${selectedOrderIds.size})`}
+                </Button>
+              </>
             )}
           </div>
         </div>

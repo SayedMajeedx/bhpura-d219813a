@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowUpRight, Search, Star, Compass, Boxes, Zap, Sliders, X, Layers } from "lucide-react";
+import { ArrowUpRight, Search, Star, Compass, Boxes, Zap, Sliders, X, Layers, Wallet } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -22,7 +22,16 @@ export interface OsAppsHubModalProps {
   onPinnedChange?: (pinnedIds: string[]) => void;
 }
 
-type CategoryTab = "all" | "pinned" | "operations" | "growth_finance" | "storefront_settings";
+type CategoryTab =
+  | "all"
+  | "pinned"
+  | "products_stock"
+  | "customers_growth"
+  | "money_reports"
+  | "store_setup"
+  | "operations"
+  | "growth_finance"
+  | "storefront_settings";
 
 export function OsAppsHubModal({
   open,
@@ -116,21 +125,27 @@ export function OsAppsHubModal({
       icon: Star,
     },
     {
-      id: "operations" as const,
-      label: isAr ? "العمليات" : "Operations",
-      count: modularItems.filter((i) => i.section === "operations").length,
+      id: "products_stock" as const,
+      label: isAr ? "المنتجات والمخزون" : "Products & Stock",
+      count: modularItems.filter((i) => (i.category || i.section) === "products_stock").length,
       icon: Boxes,
     },
     {
-      id: "growth_finance" as const,
-      label: isAr ? "التسويق والمال" : "Growth & finance",
-      count: modularItems.filter((i) => i.section === "growth_finance").length,
+      id: "customers_growth" as const,
+      label: isAr ? "العملاء والنمو" : "Customers & Growth",
+      count: modularItems.filter((i) => (i.category || i.section) === "customers_growth").length,
       icon: Zap,
     },
     {
-      id: "storefront_settings" as const,
-      label: isAr ? "المتجر" : "Store",
-      count: modularItems.filter((i) => i.section === "storefront_settings").length,
+      id: "money_reports" as const,
+      label: isAr ? "المالية والتقارير" : "Money & Reports",
+      count: modularItems.filter((i) => (i.category || i.section) === "money_reports").length,
+      icon: Wallet,
+    },
+    {
+      id: "store_setup" as const,
+      label: isAr ? "إعداد المتجر" : "Store Setup",
+      count: modularItems.filter((i) => (i.category || i.section) === "store_setup").length,
       icon: Sliders,
     },
   ];
@@ -141,8 +156,11 @@ export function OsAppsHubModal({
       // Category match
       if (selectedCategory === "pinned") {
         if (!pinnedIds.includes(item.id)) return false;
-      } else if (selectedCategory !== "all" && item.section !== selectedCategory) {
-        return false;
+      } else if (selectedCategory !== "all") {
+        const itemCat = item.category || item.section;
+        if (itemCat !== selectedCategory && item.section !== selectedCategory) {
+          return false;
+        }
       }
 
       // Search match

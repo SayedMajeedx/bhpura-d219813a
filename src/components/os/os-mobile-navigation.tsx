@@ -228,31 +228,37 @@ export function OsMobileNavigation({
       ];
     }
 
-    const core = navItems.filter((item) => item.section === "overview");
-    const operations = navItems.filter((item) => item.section === "operations");
-    const growth = navItems.filter((item) => item.section === "growth_finance");
-    const settings = navItems.filter((item) => item.section === "storefront_settings");
+    const today = navItems.filter((item) => item.category === "today");
+    const productsStock = navItems.filter((item) => item.category === "products_stock");
+    const customersGrowth = navItems.filter((item) => item.category === "customers_growth");
+    const moneyReports = navItems.filter((item) => item.category === "money_reports");
+    const storeSetup = navItems.filter((item) => item.category === "store_setup");
 
     return [
       {
-        id: "core",
-        title: lang === "ar" ? "الرئيسية" : "Overview",
-        items: core,
+        id: "today",
+        title: lang === "ar" ? "اليوم" : "Today",
+        items: today,
       },
       {
-        id: "operations",
-        title: lang === "ar" ? "إدارة الطلبات والمنتجات" : "Orders & Products",
-        items: operations,
+        id: "products_stock",
+        title: lang === "ar" ? "المنتجات والمخزون" : "Products & Stock",
+        items: productsStock,
       },
       {
-        id: "growth",
-        title: lang === "ar" ? "التسويق والمال" : "Growth & Finance",
-        items: growth,
+        id: "customers_growth",
+        title: lang === "ar" ? "العملاء والنمو" : "Customers & Growth",
+        items: customersGrowth,
       },
       {
-        id: "settings",
-        title: lang === "ar" ? "المتجر والإعدادات" : "Store & Settings",
-        items: settings,
+        id: "money_reports",
+        title: lang === "ar" ? "المالية والتقارير" : "Money & Reports",
+        items: moneyReports,
+      },
+      {
+        id: "store_setup",
+        title: lang === "ar" ? "إعداد المتجر" : "Store Setup",
+        items: storeSetup,
       },
     ];
   }, [activeSlug, isSuperAdmin, navItems, lang]);

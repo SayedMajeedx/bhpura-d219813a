@@ -208,3 +208,168 @@ export function printThermalReceipt(a: ThermalArgs) {
   w.document.close();
   return true;
 }
+
+export type DeliveryNoteArgs = {
+  brand: string;
+  orderNumber: string | number;
+  orderDate: string;
+  fulfillmentStatus?: string | null;
+  customerName?: string | null;
+  customerPhone?: string | null;
+  deliveryAddress?: string | null;
+  courierName?: string | null;
+  deliveryNotes?: string | null;
+  items: Array<{
+    description: string;
+    quantity: number;
+    selected_variant?: {
+      size?: string | null;
+      color?: string | null;
+      fabric?: string | null;
+    } | null;
+  }>;
+  isPaid: boolean;
+  balanceDue?: number;
+  currency?: string;
+  lang: "en" | "ar";
+};
+
+export function printDeliveryNote(a: DeliveryNoteArgs) {
+  const isRTL = a.lang === "ar";
+  const locale = isRTL ? "ar-BH-u-nu-latn" : "en-US";
+  const currency = a.currency || "BHD";
+
+  const itemsRows = a.items
+    .map((it, idx) => {
+      const variantParts = [
+        it.selected_variant?.color && `${isRTL ? "اللون" : "Color"}: ${escapeHtml(it.selected_variant.color)}`,
+        it.selected_variant?.size && `${isRTL ? "المقاس" : "Size"}: ${escapeHtml(it.selected_variant.size)}`,
+        it.selected_variant?.fabric && `${isRTL ? "القماش" : "Fabric"}: ${escapeHtml(it.selected_variant.fabric)}`,
+      ].filter(Boolean);
+
+      const variantHtml = variantParts.length > 0
+        ? `<div style="font-size:11px;color:#666;margin-top:2px;">${variantParts.join(" · ")}</div>`
+        : "";
+
+      return `
+        <tr style="border-bottom:1px solid #e5e7eb;">
+          <td style="padding:8px 6px;text-align:center;font-size:11px;color:#888;">${idx + 1}</td>
+          <td style="padding:8px 6px;font-size:12px;font-weight:600;color:#111;">
+            ${escapeHtml(it.description)}
+            ${variantHtml}
+          </td>
+          <td style="padding:8px 6px;text-align:center;font-size:13px;font-weight:700;">${it.quantity}</td>
+          <td style="padding:8px 6px;text-align:center;">
+            <div style="width:16px;height:16px;border:1.5px solid #999;border-radius:3px;margin:auto;"></div>
+          </td>
+        </tr>`;
+    })
+    .join("");
+
+  const paymentAlertHtml = a.isPaid
+    ? `<div style="margin:12px 0;padding:10px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;color:#065f46;font-size:12px;font-weight:bold;text-align:center;">
+        ✓ ${isRTL ? "مدفوع مسبقاً بالكامل — لا تقم بتحصيل أي مبالغ من العميل" : "Prepaid in Full — Do NOT collect payment from customer"}
+       </div>`
+    : `<div style="margin:12px 0;padding:10px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#991b1b;font-size:13px;font-weight:bold;text-align:center;">
+        ⚠️ ${isRTL ? "المبلغ المطلوب تحصيله عند التسليم" : "Amount to collect on delivery"}:
+        <span style="font-size:15px;display:block;margin-top:4px;">${escapeHtml(formatMoney(a.balanceDue ?? 0, currency, locale))}</span>
+       </div>`;
+
+  const html = `<!DOCTYPE html>
+<html dir="${isRTL ? "rtl" : "ltr"}" lang="${a.lang}">
+<head>
+  <meta charset="utf-8" />
+  <title>${isRTL ? "إذن تسليم وبوليصة شحن" : "Delivery Note"} #${escapeHtml(String(a.orderNumber))}</title>
+  <style>
+    @page { size: A4; margin: 15mm; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #111; margin: 0; padding: 20px; font-size: 13px; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 16px; }
+    .brand { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+    .doc-title { font-size: 16px; font-weight: 700; color: #444; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; }
+    .card-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #6b7280; margin-bottom: 6px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th { background: #f3f4f6; padding: 8px 6px; font-size: 11px; text-transform: uppercase; color: #4b5563; border-bottom: 2px solid #d1d5db; }
+    .signature-box { margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .sign-line { border-top: 1px dashed #9ca3af; padding-top: 6px; font-size: 11px; color: #6b7280; text-align: center; margin-top: 40px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="brand">${escapeHtml(a.brand)}</div>
+      <div style="font-size:12px;color:#6b7280;margin-top:2px;">${escapeHtml(a.orderDate)}</div>
+    </div>
+    <div style="text-align:${isRTL ? "left" : "right"};">
+      <div class="doc-title">${isRTL ? "إذن تسليم وبوليصة شحن" : "DELIVERY NOTE"}</div>
+      <div style="font-size:14px;font-weight:700;font-family:monospace;margin-top:2px;">#${escapeHtml(String(a.orderNumber))}</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-title">${isRTL ? "بيانات العميل والتوصيل" : "Customer & Destination"}</div>
+      <div style="font-size:13px;font-weight:700;">${escapeHtml(a.customerName || (isRTL ? "عميل غير مسجل" : "Guest Customer"))}</div>
+      ${a.customerPhone ? `<div style="font-size:12px;font-family:monospace;margin-top:2px;">📞 ${escapeHtml(a.customerPhone)}</div>` : ""}
+      <div style="font-size:12px;color:#374151;margin-top:4px;">📍 ${escapeHtml(a.deliveryAddress || (isRTL ? "استلام من المحل" : "Store Pickup"))}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">${isRTL ? "بيانات المندوب وملاحظات السائق" : "Courier & Driver Trace"}</div>
+      <div style="font-size:12px;font-weight:600;">🛵 ${escapeHtml(a.courierName || (isRTL ? "لم يتم التعيين بعد" : "Unassigned"))}</div>
+      ${
+        a.deliveryNotes
+          ? `<div style="margin-top:6px;padding:6px;background:#fff;border:1px solid #d1d5db;border-radius:4px;font-size:11px;font-family:monospace;color:#1f2937;">
+              <strong>${isRTL ? "ملاحظة السائق:" : "Driver Note:"}</strong> ${escapeHtml(a.deliveryNotes)}
+             </div>`
+          : `<div style="font-size:11px;color:#9ca3af;margin-top:4px;">${isRTL ? "لا توجد ملاحظات إضافية" : "No delivery instructions"}</div>`
+      }
+    </div>
+  </div>
+
+  ${paymentAlertHtml}
+
+  <div style="margin-top:16px;">
+    <div style="font-size:12px;font-weight:700;margin-bottom:6px;">${isRTL ? "محتويات الشحنة والتحقق:" : "Package Contents & Verification:"}</div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:30px;">#</th>
+          <th style="text-align:${isRTL ? "right" : "left"};">${isRTL ? "المنتج / الوصف" : "Item / Description"}</th>
+          <th style="width:60px;text-align:center;">${isRTL ? "الكمية" : "Qty"}</th>
+          <th style="width:60px;text-align:center;">${isRTL ? "تم الفحص" : "Check"}</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemsRows}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="signature-box">
+    <div>
+      <div class="sign-line">${isRTL ? "توقيع المندوب / السائق" : "Courier Signature"}</div>
+    </div>
+    <div>
+      <div class="sign-line">${isRTL ? "توقيع المستلم وتاريخ الاستلام" : "Recipient Signature & Date"}</div>
+    </div>
+  </div>
+
+  <script>
+    window.addEventListener('load', function () {
+      setTimeout(function () { window.focus(); window.print(); }, 150);
+    });
+    window.addEventListener('afterprint', function () { window.close(); });
+  </script>
+</body>
+</html>`;
+
+  const w = window.open("", "_blank", "width=800,height=900");
+  if (!w) return false;
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  return true;
+}
+

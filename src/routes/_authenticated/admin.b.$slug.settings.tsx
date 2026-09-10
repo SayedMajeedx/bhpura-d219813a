@@ -74,6 +74,8 @@ import {
   type TrustBadgesConfig,
   DEFAULT_TRUST_BADGES,
 } from "@/lib/trust-badges";
+import { StoreReadinessChecklist } from "@/components/settings/StoreReadinessChecklist";
+import { SettingsSearchBar } from "@/components/settings/SettingsSearchBar";
 
 const SUPPORTED_CURRENCIES = [
   { code: "BHD", name_en: "BHD — Bahraini Dinar", name_ar: "د.ب — دينار بحريني" },
@@ -891,6 +893,34 @@ function Settings() {
         saving={saving}
         onSave={save}
         showSave={activeTab === "business" || activeTab === "invoice"}
+      />
+
+      {/* 1b. Search & Customer Preview Bar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+        <SettingsSearchBar
+          lang={lang === "ar" ? "ar" : "en"}
+          onSelectResult={(tabId) => setActiveTab(tabId)}
+        />
+        <Button
+          asChild
+          variant="outline"
+          size="sm"
+          className="h-9 gap-1.5 text-xs font-semibold shrink-0"
+        >
+          <a href={`/${brand.slug}`} target="_blank" rel="noopener noreferrer">
+            <Eye className="h-3.5 w-3.5 text-primary" />
+            <span>{lang === "ar" ? "معاينة ما يراه العميل" : "Customer View"}</span>
+          </a>
+        </Button>
+      </div>
+
+      {/* 1c. Store Readiness Checklist */}
+      <StoreReadinessChecklist
+        brandId={brandId}
+        slug={brand.slug}
+        lang={lang === "ar" ? "ar" : "en"}
+        logoUrl={f?.logo_url}
+        onNavigateTab={(tabId) => setActiveTab(tabId)}
       />
 
       {/* 2. Scope Switcher */}
