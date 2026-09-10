@@ -434,51 +434,51 @@ export function OsMobileNavigation({
               )}
 
               {/* Theme / Appearance Segmented Pill Toggle */}
-              <div className="flex items-center justify-between bg-muted/60 p-1 rounded-2xl border border-border/40">
+              <div className="flex items-center justify-between bg-muted/60 p-1 rounded-2xl border border-border">
                 <span className="text-xs font-semibold px-3 text-muted-foreground flex items-center gap-1.5">
                   <Sun className="h-3.5 w-3.5" />
                   {lang === "ar" ? "المظهر" : "Theme"}
                 </span>
-                <div className="inline-flex rounded-xl bg-background/80 p-0.5 border border-border/40 shadow-2xs">
-                  <button
+                <div className="inline-flex rounded-xl bg-background/80 p-0.5 border border-border shadow-2xs">
+                  <Button
                     type="button"
+                    size="sm"
+                    variant={theme === "light" ? "default" : "ghost"}
                     onClick={() => setTheme("light")}
                     className={cn(
-                      "px-2.5 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1",
-                      theme === "light"
-                        ? "bg-primary text-primary-foreground shadow-xs"
-                        : "text-muted-foreground hover:text-foreground",
+                      "h-7 px-2.5 text-xs font-bold rounded-lg transition-all gap-1",
+                      theme !== "light" && "text-muted-foreground hover:text-foreground",
                     )}
                   >
                     <Sun className="h-3 w-3" />
                     <span>{lang === "ar" ? "فاتح" : "Light"}</span>
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    size="sm"
+                    variant={theme === "dark" ? "default" : "ghost"}
                     onClick={() => setTheme("dark")}
                     className={cn(
-                      "px-2.5 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1",
-                      theme === "dark"
-                        ? "bg-primary text-primary-foreground shadow-xs"
-                        : "text-muted-foreground hover:text-foreground",
+                      "h-7 px-2.5 text-xs font-bold rounded-lg transition-all gap-1",
+                      theme !== "dark" && "text-muted-foreground hover:text-foreground",
                     )}
                   >
                     <Moon className="h-3 w-3" />
                     <span>{lang === "ar" ? "داكن" : "Dark"}</span>
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    size="sm"
+                    variant={theme === "system" ? "default" : "ghost"}
                     onClick={() => setTheme("system")}
                     className={cn(
-                      "px-2.5 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1",
-                      theme === "system"
-                        ? "bg-primary text-primary-foreground shadow-xs"
-                        : "text-muted-foreground hover:text-foreground",
+                      "h-7 px-2.5 text-xs font-bold rounded-lg transition-all gap-1",
+                      theme !== "system" && "text-muted-foreground hover:text-foreground",
                     )}
                   >
                     <Monitor className="h-3 w-3" />
                     <span>{lang === "ar" ? "تلقائي" : "Auto"}</span>
-                  </button>
+                  </Button>
                 </div>
               </div>
 
