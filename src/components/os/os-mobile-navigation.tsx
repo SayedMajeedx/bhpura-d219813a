@@ -16,14 +16,19 @@ import {
   Activity,
   Boxes,
   Fingerprint,
+  Sun,
+  Moon,
+  Monitor,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { OsMobileTabBar, type OsMobileTabItem } from "./os-mobile-tab-bar";
 import { OsIslandDock, type OsIslandDockItem } from "./os-island-dock";
 import { OsQuickActions } from "./os-quick-actions";
+import { OsThemeToggle } from "./os-theme-toggle";
 import { OsAppsHubModal } from "./os-apps-hub-modal";
 import { type AdminNavItemConfig } from "@/config/admin-navigation";
+import { useTheme } from "@/lib/theme-context";
 import { cn } from "@/lib/utils";
 
 export interface OsMobileNavigationProps {
@@ -54,6 +59,7 @@ export function OsMobileNavigation({
   onOpenChangeMobile,
 }: OsMobileNavigationProps) {
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   const [appsHubOpen, setAppsHubOpen] = React.useState(false);
 
   // Deep detail views (order detail, return detail, customer detail) require full vertical focus and hide the global dock
@@ -427,6 +433,55 @@ export function OsMobileNavigation({
                 </Button>
               )}
 
+              {/* Theme / Appearance Segmented Pill Toggle */}
+              <div className="flex items-center justify-between bg-muted/60 p-1 rounded-2xl border border-border/40">
+                <span className="text-xs font-semibold px-3 text-muted-foreground flex items-center gap-1.5">
+                  <Sun className="h-3.5 w-3.5" />
+                  {lang === "ar" ? "المظهر" : "Theme"}
+                </span>
+                <div className="inline-flex rounded-xl bg-background/80 p-0.5 border border-border/40 shadow-2xs">
+                  <button
+                    type="button"
+                    onClick={() => setTheme("light")}
+                    className={cn(
+                      "px-2.5 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1",
+                      theme === "light"
+                        ? "bg-primary text-primary-foreground shadow-xs"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <Sun className="h-3 w-3" />
+                    <span>{lang === "ar" ? "فاتح" : "Light"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTheme("dark")}
+                    className={cn(
+                      "px-2.5 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1",
+                      theme === "dark"
+                        ? "bg-primary text-primary-foreground shadow-xs"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <Moon className="h-3 w-3" />
+                    <span>{lang === "ar" ? "داكن" : "Dark"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTheme("system")}
+                    className={cn(
+                      "px-2.5 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1",
+                      theme === "system"
+                        ? "bg-primary text-primary-foreground shadow-xs"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <Monitor className="h-3 w-3" />
+                    <span>{lang === "ar" ? "تلقائي" : "Auto"}</span>
+                  </button>
+                </div>
+              </div>
+
               {/* Language Segmented Pill Toggle */}
               <div className="flex items-center justify-between bg-muted/60 p-1 rounded-2xl border border-border/40">
                 <span className="text-xs font-semibold px-3 text-muted-foreground">
@@ -486,6 +541,7 @@ export function OsMobileNavigation({
 
         <div className="flex items-center gap-1.5 shrink-0">
           <OsQuickActions slug={activeSlug} lang={lang} className="h-8.5 px-2 text-xs" />
+          <OsThemeToggle lang={lang} className="h-10 w-10 min-h-[44px] min-w-[44px] rounded-xl" />
           <Button
             variant="ghost"
             size="icon"

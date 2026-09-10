@@ -600,7 +600,7 @@ export function OsSidebar({
                         placeholder={isAr ? "ابحث عن أداة..." : "Search tool..."}
                         value={filterQuery}
                         onChange={(e) => setFilterQuery(e.target.value)}
-                        className="w-full ps-7 pe-2 py-1 text-[11px] rounded-lg bg-muted/60 border border-border/50 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                        className="w-full ps-7 pe-2 py-1 text-[11px] rounded-lg bg-muted/60 border border-border/50 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                       />
                     </div>
 

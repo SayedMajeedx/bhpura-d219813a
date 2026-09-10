@@ -265,7 +265,7 @@ export function SettingsSearchBar({ lang, onSelectResult }: SettingsSearchBarPro
               ? "ابحث في الإعدادات (الشعار، العملة، ألوان المتجر، رسوم الشحن، طرق الدفع...)"
               : "Search settings (logo, currency, storefront theme, shipping rates, payments...)"
           }
-          className="h-9 ps-9 pe-9 text-xs rounded-xl bg-background border-border/80 shadow-xs focus-visible:ring-1 focus-visible:ring-primary"
+          className="h-9 ps-9 pe-9 text-xs rounded-xl bg-background border-border/80 shadow-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         />
         {query && (
           <Button

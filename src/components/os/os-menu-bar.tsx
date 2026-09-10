@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { OsQuickActions } from "./os-quick-actions";
+import { OsThemeToggle } from "./os-theme-toggle";
 import { cn } from "@/lib/utils";
 import { useCommandShortcutLabel } from "@/lib/platform-shortcut";
 
@@ -117,6 +118,9 @@ export function OsMenuBar({
         </button>
 
         <span className="h-3 w-px bg-[var(--os-border)]" />
+
+        {/* Appearance (light / dark / follow system) */}
+        <OsThemeToggle lang={lang} className="h-6.5 w-6.5" />
 
         {/* Language Switcher */}
         <button

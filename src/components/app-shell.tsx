@@ -16,6 +16,7 @@ import { OsAppWindow } from "@/components/os/os-app-window";
 import { OsMobileNavigation } from "@/components/os/os-mobile-navigation";
 import { OsRecentHistoryBar } from "@/components/os/os-recent-history-bar";
 import { cn } from "@/lib/utils";
+import { ThemeProvider } from "@/lib/theme-context";
 import { getStorefrontUrl } from "@/lib/storefront-url";
 import {
   customFontFaces,
@@ -32,7 +33,19 @@ type BrandRow = {
   is_active: boolean;
 };
 
+/**
+ * Theme is provided here rather than at the router root so the `.dark` class
+ * is scoped to admin. Storefront appearance is the merchant's own setting.
+ */
 export function AppShell({ children }: { children: React.ReactNode }) {
+  return (
+    <ThemeProvider>
+      <AdminWorkspace>{children}</AdminWorkspace>
+    </ThemeProvider>
+  );
+}
+
+function AdminWorkspace({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const router = useRouter();
   const navigate = useNavigate();

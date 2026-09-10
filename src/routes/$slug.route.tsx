@@ -654,7 +654,7 @@ function StoreHeader() {
             <Button
               variant="ghost"
               size="sm"
-              className="min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-1 focus-visible:ring-white/30"
+              className="min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-white/80"
               style={{ color: "var(--sf-header-fg)" }}
               onClick={() => setLang(lang === "ar" ? "en" : "ar")}
               aria-label={
@@ -670,7 +670,7 @@ function StoreHeader() {
                 asChild
                 variant="ghost"
                 size="sm"
-                className="min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-1 focus-visible:ring-white/30"
+                className="min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-white/80"
                 style={{ color: "var(--sf-header-fg)" }}
               >
                 <Link
@@ -690,7 +690,7 @@ function StoreHeader() {
                 asChild
                 variant="ghost"
                 size="sm"
-                className="min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-1 focus-visible:ring-white/30"
+                className="min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-white/80"
                 style={{ color: "var(--sf-header-fg)" }}
               >
                 <Link
@@ -711,7 +711,7 @@ function StoreHeader() {
               type="button"
               variant="ghost"
               size="sm"
-              className="relative min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-1 focus-visible:ring-white/30"
+              className="relative min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-white/80"
               style={{ color: "var(--sf-header-fg)" }}
               onClick={() => {
                 if (
@@ -735,7 +735,7 @@ function StoreHeader() {
               asChild
               variant="ghost"
               size="sm"
-              className="relative min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-1 focus-visible:ring-white/30"
+              className="relative min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-white/80"
               style={{ color: "var(--sf-header-fg)" }}
             >
               <Link
@@ -763,7 +763,7 @@ function StoreHeader() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="relative min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-1 focus-visible:ring-white/30"
+                className="relative min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-white/80"
                 style={{ color: "var(--sf-header-fg)" }}
                 aria-label={t("سلة التسوق", "Shopping cart")}
               >
@@ -1844,7 +1844,7 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
                         )}
                         value={giftMessage}
                         onChange={(e) => setGiftMessage(e.target.value)}
-                        className="w-full h-16 p-2 text-xs rounded-lg border bg-background text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+                        className="w-full h-16 p-2 text-xs rounded-lg border bg-background text-foreground resize-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                       />
                     </div>
                   )}
