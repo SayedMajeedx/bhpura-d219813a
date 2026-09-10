@@ -480,6 +480,61 @@ function ContentStudioPage() {
     }
   };
 
+  const getExactVideoDuration = async (videoElement: HTMLVideoElement, url: string): Promise<number> => {
+    // 1. Direct finite duration on element if already loaded
+    if (videoElement.duration && isFinite(videoElement.duration) && videoElement.duration > 0) {
+      return videoElement.duration;
+    }
+
+    // 2. Seekable range check (often available even when duration is Infinity)
+    try {
+      if (videoElement.seekable && videoElement.seekable.length > 0) {
+        const end = videoElement.seekable.end(videoElement.seekable.length - 1);
+        if (isFinite(end) && end > 0) {
+          return end;
+        }
+      }
+    } catch {}
+
+    // 3. Fast MP4 mvhd atom parser directly from file header (accurate to milliseconds)
+    try {
+      const response = await fetch(url, { headers: { Range: "bytes=0-32768" } });
+      const buf = await response.arrayBuffer();
+      const u8 = new Uint8Array(buf);
+      for (let i = 0; i < u8.length - 32; i++) {
+        if (u8[i] === 0x6d && u8[i + 1] === 0x76 && u8[i + 2] === 0x68 && u8[i + 3] === 0x64) {
+          // 'mvhd' atom
+          const ver = u8[i + 4];
+          const dv = new DataView(buf, i);
+          const timescale = ver === 1 ? dv.getUint32(24) : dv.getUint32(16);
+          const dur = ver === 1 ? Number(dv.getBigUint64(28)) : dv.getUint32(20);
+          if (timescale > 0 && dur > 0) {
+            const secs = dur / timescale;
+            if (isFinite(secs) && secs > 0) return secs;
+          }
+          break;
+        }
+      }
+    } catch (err) {
+      console.warn("Could not parse MP4 mvhd duration from header", err);
+    }
+
+    // 4. Seek to large number trick (forces browser to find clamped true duration)
+    try {
+      const prevTime = videoElement.currentTime;
+      videoElement.currentTime = 1e7;
+      await new Promise((r) => {
+        videoElement.addEventListener("seeked", () => r(true), { once: true });
+        setTimeout(r, 300);
+      });
+      const measured = videoElement.currentTime;
+      videoElement.currentTime = prevTime;
+      if (isFinite(measured) && measured > 0) return measured;
+    } catch {}
+
+    return 0;
+  };
+
   const exportVideoCreative = async () => {
     if (!stageRef.current) return;
     const v = videoRef.current;
@@ -493,8 +548,9 @@ function ContentStudioPage() {
 
     const target = FORMATS[format];
     let hiddenMount: HTMLDivElement | null = null;
-    let animId: number | null = null;
-    let backupTimer: number | null = null;
+    let rVFCId: number | null = null;
+    let rAFId: number | null = null;
+    let checkTimer: number | null = null;
 
     try {
       // 1. Ensure video metadata is loaded
@@ -509,7 +565,10 @@ function ContentStudioPage() {
         });
       }
 
-      // 2. Pre-render overlay without modifying video state or visibility
+      // 2. Discover exact full video duration (no arbitrary 6s or 30s limits!)
+      const exactDuration = await getExactVideoDuration(v, photo);
+
+      // 3. Pre-render overlay without modifying video state or visibility
       const originalStageBg = stageRef.current.style.background;
       stageRef.current.style.background = "transparent";
       let overlayCanvas: HTMLCanvasElement;
@@ -526,7 +585,7 @@ function ContentStudioPage() {
         stageRef.current.style.background = originalStageBg;
       }
 
-      // 3. Test CORS on video element to prevent tainted canvas crash
+      // 4. Test CORS on video element to prevent tainted canvas crash
       let corsOk = true;
       try {
         const testCanvas = document.createElement("canvas");
@@ -552,7 +611,7 @@ function ContentStudioPage() {
         return;
       }
 
-      // 4. Setup output canvas ATTACHED to DOM (mandatory for Chromium captureStream pipeline)
+      // 5. Setup output canvas ATTACHED to DOM (mandatory for Chromium captureStream pipeline)
       hiddenMount = document.createElement("div");
       hiddenMount.style.cssText =
         "position:fixed;top:-99999px;left:-99999px;width:1px;height:1px;opacity:0.001;pointer-events:none;z-index:-99999;overflow:hidden;";
@@ -583,6 +642,19 @@ function ContentStudioPage() {
 
       const track = stream.getVideoTracks()[0];
 
+      // Try capturing audio track from video if available so sound isn't lost
+      try {
+        const vStream = (v as any).captureStream
+          ? (v as any).captureStream()
+          : (v as any).mozCaptureStream
+            ? (v as any).mozCaptureStream()
+            : null;
+        if (vStream) {
+          const aTrack = vStream.getAudioTracks()[0];
+          if (aTrack) stream.addTrack(aTrack);
+        }
+      } catch {}
+
       // Detect supported MIME type
       let mimeType = "";
       let ext = "mp4";
@@ -605,7 +677,7 @@ function ContentStudioPage() {
 
       const recorder = new MediaRecorder(stream, {
         mimeType: mimeType || undefined,
-        videoBitsPerSecond: 10_000_000,
+        videoBitsPerSecond: 12_000_000,
       });
 
       const chunks: Blob[] = [];
@@ -618,7 +690,7 @@ function ContentStudioPage() {
         recorder.onerror = reject;
       });
 
-      // 5. Prepare video for playback with guaranteed muted policy
+      // 6. Prepare video for playback from frame 0
       v.muted = true;
       v.defaultMuted = true;
       v.volume = 0;
@@ -632,21 +704,17 @@ function ContentStudioPage() {
           if (!settled) {
             settled = true;
             v.removeEventListener("seeked", onReady);
-            v.removeEventListener("canplay", onReady);
             resolve();
           }
         };
         v.addEventListener("seeked", onReady);
-        v.addEventListener("canplay", onReady);
-        if (v.readyState >= 2) {
-          setTimeout(onReady, 60);
-        }
+        if (v.currentTime === 0) setTimeout(onReady, 60);
         setTimeout(() => {
           if (!settled) {
             settled = true;
             resolve();
           }
-        }, 800);
+        }, 500);
       });
 
       const vw = v.videoWidth || target.width;
@@ -657,47 +725,34 @@ function ContentStudioPage() {
       const drawX = (target.width - drawW) / 2;
       const drawY = (target.height - drawH) / 2;
 
-      const duration = Math.min(
-        Math.max(v.duration && isFinite(v.duration) ? v.duration : 6, 2),
-        30,
-      );
-
-      // Start recorder before playback starts
-      recorder.start(100);
-
-      // Start playback and verify it plays
-      v.muted = true;
-      try {
-        await v.play();
-      } catch (playErr) {
-        console.warn("Direct play failed, retrying muted", playErr);
-        v.muted = true;
-        await v.play().catch(() => {});
-      }
-
       let isRecording = true;
-      let lastTime = -1;
-      let stallFrameCount = 0;
       let finished = false;
 
       const finishRecording = () => {
         if (finished) return;
         finished = true;
         isRecording = false;
-        if (animId !== null) cancelAnimationFrame(animId);
-        if (backupTimer !== null) clearInterval(backupTimer);
 
+        if (rVFCId !== null && typeof (v as any).cancelVideoFrameCallback === "function") {
+          (v as any).cancelVideoFrameCallback(rVFCId);
+        }
+        if (rAFId !== null) cancelAnimationFrame(rAFId);
+        if (checkTimer !== null) clearInterval(checkTimer);
+
+        // Hold last frame for 250ms so video doesn't end abruptly
         window.setTimeout(() => {
           if (recorder.state === "recording") {
             recorder.stop();
           }
-        }, 350);
+        }, 250);
       };
 
-      const drawSingleFrame = () => {
+      v.addEventListener("ended", finishRecording, { once: true });
+
+      const renderCanvas = () => {
         if (!isRecording) return;
 
-        // Draw current video frame
+        // Draw current video frame (clean 1:1 hardware frame)
         try {
           ctx.drawImage(v, drawX, drawY, drawW, drawH);
         } catch (drawErr) {
@@ -707,69 +762,75 @@ function ContentStudioPage() {
         // Draw branding overlay
         ctx.drawImage(overlayCanvas, 0, 0, target.width, target.height);
 
-        // Force frame pump on video stream track if supported
+        // Notify stream track
         if (track && typeof (track as any).requestFrame === "function") {
           (track as any).requestFrame();
         }
 
         const current = v.currentTime;
-        const prog = Math.min(Math.round((current / duration) * 100), 99);
-        setExportProgress(prog);
-
-        // Anti-stall watchdog: if video paused or stuck, force advance
-        if (current === lastTime && !v.ended) {
-          stallFrameCount++;
-          if (stallFrameCount > 15) {
-            if (v.paused) {
-              v.play().catch(() => {});
-            } else {
-              v.currentTime = Math.min(v.currentTime + 0.05, duration);
-            }
-            stallFrameCount = 0;
-          }
-        } else {
-          lastTime = current;
-          stallFrameCount = 0;
+        if (exactDuration > 0) {
+          const prog = Math.min(Math.round((current / exactDuration) * 100), 99);
+          setExportProgress(prog);
         }
-
-        if (v.ended || v.currentTime >= duration - 0.05) {
-          finishRecording();
-          return;
-        }
-
-        animId = requestAnimationFrame(drawSingleFrame);
       };
 
-      // Start animation loop
-      animId = requestAnimationFrame(drawSingleFrame);
+      // 7. Buttery smooth frame synchronization using requestVideoFrameCallback (rVFC)
+      const supportsRVFC = typeof (v as any).requestVideoFrameCallback === "function";
 
-      // Backup watchdog interval for backgrounded tabs / throttled frames
-      backupTimer = window.setInterval(() => {
+      if (supportsRVFC) {
+        const onVideoFrame = () => {
+          if (!isRecording) return;
+          renderCanvas();
+          if (!v.ended && isRecording) {
+            rVFCId = (v as any).requestVideoFrameCallback(onVideoFrame);
+          }
+        };
+        rVFCId = (v as any).requestVideoFrameCallback(onVideoFrame);
+      } else {
+        const onAnimFrame = () => {
+          if (!isRecording) return;
+          renderCanvas();
+          if (!v.ended && isRecording) {
+            rAFId = requestAnimationFrame(onAnimFrame);
+          }
+        };
+        rAFId = requestAnimationFrame(onAnimFrame);
+      }
+
+      // Check ended condition every 50ms without interfering with playback
+      checkTimer = window.setInterval(() => {
         if (!isRecording) {
-          if (backupTimer !== null) clearInterval(backupTimer);
+          if (checkTimer !== null) clearInterval(checkTimer);
           return;
         }
-        if (v.paused && !v.ended) {
-          v.play().catch(() => {});
-        }
-        if (v.currentTime >= duration || v.ended) {
-          if (backupTimer !== null) clearInterval(backupTimer);
+        if (v.ended || (exactDuration > 0 && v.currentTime >= exactDuration - 0.04)) {
+          if (checkTimer !== null) clearInterval(checkTimer);
           finishRecording();
         }
-      }, 250);
+      }, 50);
 
-      v.addEventListener("ended", finishRecording, { once: true });
+      // Start recording and start playback
+      recorder.start(100);
 
+      try {
+        await v.play();
+      } catch {
+        v.muted = true;
+        await v.play().catch(() => {});
+      }
+
+      // Safety timeout: full duration + 5 seconds buffer (or 90s max if unknown)
+      const timeoutLimitMs = (exactDuration > 0 ? exactDuration + 5 : 90) * 1000;
       const maxTimeout = window.setTimeout(() => {
         finishRecording();
-      }, (duration + 3) * 1000);
+      }, timeoutLimitMs);
 
       const blob = await recordingPromise;
       window.clearTimeout(maxTimeout);
       v.removeEventListener("ended", finishRecording);
       setExportProgress(100);
 
-      // 6. Deliver file via Web Share or direct download
+      // 8. Deliver file via Web Share or direct download
       const fileName = `${brandSlugClean}-${selected?.name || "creative"}-${format}.${ext}`
         .replace(/\s+/g, "-")
         .toLowerCase();
@@ -820,8 +881,11 @@ function ContentStudioPage() {
       if (hiddenMount && hiddenMount.parentNode) {
         hiddenMount.remove();
       }
-      if (animId !== null) cancelAnimationFrame(animId);
-      if (backupTimer !== null) clearInterval(backupTimer);
+      if (rVFCId !== null && typeof (v as any).cancelVideoFrameCallback === "function") {
+        (v as any).cancelVideoFrameCallback(rVFCId);
+      }
+      if (rAFId !== null) cancelAnimationFrame(rAFId);
+      if (checkTimer !== null) clearInterval(checkTimer);
       setExporting(false);
       setExportProgress(0);
       if (v) {
