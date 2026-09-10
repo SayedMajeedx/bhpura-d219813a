@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { type AdminNavItemConfig, DEFAULT_PINNED_IDS } from "@/config/admin-navigation";
+import { type AdminNavItemConfig, type MerchantJobCategory, DEFAULT_PINNED_IDS } from "@/config/admin-navigation";
 
 export interface OsAppsHubModalProps {
   open: boolean;
@@ -22,16 +22,7 @@ export interface OsAppsHubModalProps {
   onPinnedChange?: (pinnedIds: string[]) => void;
 }
 
-type CategoryTab =
-  | "all"
-  | "pinned"
-  | "products_stock"
-  | "customers_growth"
-  | "money_reports"
-  | "store_setup"
-  | "operations"
-  | "growth_finance"
-  | "storefront_settings";
+type CategoryTab = "all" | "pinned" | MerchantJobCategory;
 
 export function OsAppsHubModal({
   open,
@@ -127,25 +118,25 @@ export function OsAppsHubModal({
     {
       id: "products_stock" as const,
       label: isAr ? "المنتجات والمخزون" : "Products & Stock",
-      count: modularItems.filter((i) => (i.category || i.section) === "products_stock").length,
+      count: modularItems.filter((i) => i.category === "products_stock").length,
       icon: Boxes,
     },
     {
       id: "customers_growth" as const,
       label: isAr ? "العملاء والنمو" : "Customers & Growth",
-      count: modularItems.filter((i) => (i.category || i.section) === "customers_growth").length,
+      count: modularItems.filter((i) => i.category === "customers_growth").length,
       icon: Zap,
     },
     {
       id: "money_reports" as const,
       label: isAr ? "المالية والتقارير" : "Money & Reports",
-      count: modularItems.filter((i) => (i.category || i.section) === "money_reports").length,
+      count: modularItems.filter((i) => i.category === "money_reports").length,
       icon: Wallet,
     },
     {
       id: "store_setup" as const,
       label: isAr ? "إعداد المتجر" : "Store Setup",
-      count: modularItems.filter((i) => (i.category || i.section) === "store_setup").length,
+      count: modularItems.filter((i) => i.category === "store_setup").length,
       icon: Sliders,
     },
   ];
@@ -157,8 +148,7 @@ export function OsAppsHubModal({
       if (selectedCategory === "pinned") {
         if (!pinnedIds.includes(item.id)) return false;
       } else if (selectedCategory !== "all") {
-        const itemCat = item.category || item.section;
-        if (itemCat !== selectedCategory && item.section !== selectedCategory) {
+        if (item.category !== selectedCategory) {
           return false;
         }
       }

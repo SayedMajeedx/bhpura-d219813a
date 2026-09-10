@@ -284,8 +284,8 @@ function SuperAdminSettings() {
       {/* Premium Header bar */}
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between border-b border-border/60 pb-5">
         <div>
-          <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300 flex items-center gap-2">
-            <Sliders className="h-8 w-8 text-primary" />
+          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <Sliders className="h-6 w-6 text-primary" />
             <span>{lang === "ar" ? "إعدادات المنصة العامة" : "Platform Master Settings"}</span>
           </h1>
           <p className="text-xs text-muted-foreground mt-1">

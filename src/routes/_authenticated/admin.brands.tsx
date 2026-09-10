@@ -329,7 +329,7 @@ function BrandsPage() {
             <Crown className="h-3.5 w-3.5 text-amber-500 animate-pulse" />{" "}
             {lang === "ar" ? "المدير الأعلى" : "Super Admin Cockpit"}
           </div>
-          <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
             {lang === "ar" ? "لوحة تحكم بوتيك" : "Boutq Dashboard"}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">

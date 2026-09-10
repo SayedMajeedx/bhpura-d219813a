@@ -192,44 +192,49 @@ export function OsMobileNavigation({
   // Organize navigation items into iOS Control Center Groups
   const navGroups = React.useMemo(() => {
     if (!activeSlug && isSuperAdmin) {
+      const superItems: AdminNavItemConfig[] = [
+        {
+          id: "brands",
+          to: "/admin/brands",
+          labelEn: "Manage Brands & Tenants",
+          labelAr: "إدارة العلامات والمتاجر",
+          icon: Store,
+          category: "today",
+          section: "overview",
+        },
+        {
+          id: "requests",
+          to: "/admin/super/requests",
+          labelEn: "Tenant Requests",
+          labelAr: "طلبات الانضمام والاشتراكات",
+          icon: ClockIcon,
+          category: "today",
+          section: "overview",
+        },
+        {
+          id: "health",
+          to: "/admin/super/health",
+          labelEn: "System Health",
+          labelAr: "صحة النظام",
+          icon: Activity,
+          category: "today",
+          section: "overview",
+        },
+        {
+          id: "settings",
+          to: "/admin/super/settings",
+          labelEn: "Platform Settings",
+          labelAr: "إعدادات المنصة",
+          icon: Settings,
+          category: "today",
+          section: "overview",
+        },
+      ];
       return [
         {
           id: "super_admin",
           title: lang === "ar" ? "إدارة المنصة" : "Platform Management",
-          items: [
-            {
-              id: "brands",
-              to: "/admin/brands",
-              labelEn: "Manage Brands & Tenants",
-              labelAr: "إدارة العلامات والمتاجر",
-              icon: Store,
-              section: "overview" as const,
-            },
-            {
-              id: "requests",
-              to: "/admin/super/requests",
-              labelEn: "Tenant Requests",
-              labelAr: "طلبات الانضمام والاشتراكات",
-              icon: ClockIcon,
-              section: "overview" as const,
-            },
-            {
-              id: "health",
-              to: "/admin/super/health",
-              labelEn: "System Health",
-              labelAr: "صحة النظام",
-              icon: Activity,
-              section: "overview" as const,
-            },
-            {
-              id: "settings",
-              to: "/admin/super/settings",
-              labelEn: "Platform Settings",
-              labelAr: "إعدادات المنصة",
-              icon: Settings,
-              section: "overview" as const,
-            },
-          ],
+          items: superItems,
         },
       ];
     }

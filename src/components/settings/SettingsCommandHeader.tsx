@@ -27,15 +27,15 @@ export function SettingsCommandHeader({
 
       <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary tracking-wide">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
             <Settings className="h-3 w-3 shrink-0" />
-            <span>{isAr ? "إعدادات المنصة والبوتيك" : "BOUTIQUE SYSTEM CONFIGURATION"}</span>
-            <span className="ms-1 px-1.5 py-0.2 rounded-full bg-primary text-primary-foreground text-xs font-extrabold">
+            <span>{isAr ? "إعدادات المنصة والبوتيك" : "Boutique Settings"}</span>
+            <span className="ms-1 px-1.5 py-0.2 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
               {brandName}
             </span>
           </div>
 
-          <h1 className="text-xl font-extrabold tracking-tight text-foreground sm:text-2xl">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
             {activeTabLabel}
           </h1>
 

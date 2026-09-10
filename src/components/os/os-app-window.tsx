@@ -1,17 +1,18 @@
 import * as React from "react";
-import { type LucideIcon, Maximize2, Minimize2 } from "lucide-react";
+import { type LucideIcon, Minimize2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 export interface OsAppWindowProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
   icon?: LucideIcon;
-  title: React.ReactNode;
+  title?: React.ReactNode;
   subtitle?: React.ReactNode;
   actions?: React.ReactNode;
   badge?: React.ReactNode;
   isFocusMode?: boolean;
   onToggleFocusMode?: () => void;
   pageKey?: string;
+  showTitlebar?: boolean;
 }
 
 export const OsAppWindow = React.forwardRef<HTMLDivElement, OsAppWindowProps>(
@@ -25,6 +26,7 @@ export const OsAppWindow = React.forwardRef<HTMLDivElement, OsAppWindowProps>(
       isFocusMode = false,
       onToggleFocusMode,
       pageKey,
+      showTitlebar = false,
       className,
       children,
       ...props
@@ -35,66 +37,50 @@ export const OsAppWindow = React.forwardRef<HTMLDivElement, OsAppWindowProps>(
       <div
         ref={ref}
         className={cn(
-          "os-window-frame flex flex-col flex-1 min-w-0 overflow-hidden transition-all duration-300",
+          "os-window-frame relative flex flex-col flex-1 min-w-0 overflow-hidden transition-all duration-300",
           className,
         )}
         {...props}
       >
-        {/* Window Titlebar Region */}
-        <div className="no-print h-11 px-4 border-b border-[var(--os-border)]/60 bg-gradient-to-r from-muted/30 via-background/80 to-muted/20 backdrop-blur-md flex items-center justify-between gap-3 shrink-0 select-none">
-          {/* Left: App Identity */}
-          <div className="flex items-center gap-2.5 min-w-0">
-            {/* Module Icon Container */}
-            {Icon && (
-              <div className="h-6 w-6 rounded-md bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0 shadow-2xs">
-                <Icon className="h-3.5 w-3.5" />
-              </div>
-            )}
-
-            {/* Module Title & Subtitle */}
-            <div className="min-w-0 flex items-center gap-2">
-              <span className="text-xs font-bold font-heading text-foreground truncate">
-                {title}
-              </span>
-              {subtitle && (
-                <span className="hidden md:inline text-xs text-muted-foreground truncate">
-                  — {subtitle}
-                </span>
+        {/* Optional Titlebar Region (only if explicitly opted-in) */}
+        {showTitlebar && (
+          <div className="no-print h-11 px-4 border-b border-border bg-card/80 backdrop-blur-md flex items-center justify-between gap-3 shrink-0 select-none">
+            <div className="flex items-center gap-2.5 min-w-0">
+              {Icon && (
+                <div className="h-6 w-6 rounded-md bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0 shadow-2xs">
+                  <Icon className="h-3.5 w-3.5" />
+                </div>
               )}
-              {badge}
-            </div>
-          </div>
-
-          {/* Right: Window Actions & Focus Mode Toggle */}
-          <div className="flex items-center gap-2 shrink-0">
-            {actions}
-
-            {onToggleFocusMode && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onToggleFocusMode}
-                className="hidden md:inline-flex h-6 w-6 text-muted-foreground hover:text-foreground rounded-md p-0"
-                title={
-                  isFocusMode
-                    ? "خروج من مساحة العمل المركزة / Exit Focus Workspace"
-                    : "وضع التركيز / Focus mode"
-                }
-                aria-label={
-                  isFocusMode
-                    ? "خروج من مساحة العمل المركزة / Exit Focus Workspace"
-                    : "وضع التركيز / Focus mode"
-                }
-              >
-                {isFocusMode ? (
-                  <Minimize2 className="h-3.5 w-3.5" />
-                ) : (
-                  <Maximize2 className="h-3.5 w-3.5" />
+              <div className="min-w-0 flex items-center gap-2">
+                <span className="text-xs font-semibold text-foreground truncate">
+                  {title}
+                </span>
+                {subtitle && (
+                  <span className="hidden md:inline text-xs text-muted-foreground truncate">
+                    — {subtitle}
+                  </span>
                 )}
-              </Button>
-            )}
+                {badge}
+              </div>
+            </div>
+            {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
           </div>
-        </div>
+        )}
+
+        {/* Floating Focus Mode Exit Pill */}
+        {isFocusMode && onToggleFocusMode && (
+          <div className="no-print absolute top-3 end-5 z-40 animate-in fade-in duration-200">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onToggleFocusMode}
+              className="h-8 px-3 gap-1.5 text-xs font-semibold shadow-md bg-background/90 backdrop-blur-md border-border hover:bg-muted"
+            >
+              <Minimize2 className="h-3.5 w-3.5" />
+              <span>خروج من وضع التركيز / Exit</span>
+            </Button>
+          </div>
+        )}
 
         {/* Opaque Readable Content Area with Butter-Smooth Page Transition */}
         <div
@@ -110,3 +96,4 @@ export const OsAppWindow = React.forwardRef<HTMLDivElement, OsAppWindowProps>(
 );
 
 OsAppWindow.displayName = "OsAppWindow";
+

@@ -41,7 +41,7 @@ export const OrdersCommandHeader: React.FC<OrdersCommandHeaderProps> = ({
             <h1
               data-route-heading="orders"
               tabIndex={-1}
-              className="font-display text-lg sm:text-xl font-bold tracking-tight text-foreground"
+              className="text-2xl font-bold tracking-tight text-foreground"
             >
               {isAr ? "الطلبات والفواتير" : "Orders & Invoices"}
             </h1>

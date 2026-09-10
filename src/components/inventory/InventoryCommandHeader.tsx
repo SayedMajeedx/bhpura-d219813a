@@ -37,7 +37,7 @@ export const InventoryCommandHeader: React.FC<InventoryCommandHeaderProps> = ({
             <h1
               data-route-heading="inventory"
               tabIndex={-1}
-              className="min-w-0 font-display text-lg font-bold tracking-tight text-foreground sm:text-xl"
+              className="min-w-0 text-2xl font-bold tracking-tight text-foreground"
             >
               {isAr ? "المخزون والمنتجات" : "Inventory & Products"}
             </h1>

@@ -14,7 +14,6 @@ import { OsSidebar } from "@/components/os/os-sidebar";
 import { OsMenuBar } from "@/components/os/os-menu-bar";
 import { OsAppWindow } from "@/components/os/os-app-window";
 import { OsMobileNavigation } from "@/components/os/os-mobile-navigation";
-import { OsRecentHistoryBar } from "@/components/os/os-recent-history-bar";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/lib/theme-context";
 import { getStorefrontUrl } from "@/lib/storefront-url";
@@ -528,6 +527,24 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
               onSignOut={signOut}
               activeSlug={activeSlug}
               userEmail={profile?.email}
+              isFocusMode={isFocusMode}
+              onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
+              actions={
+                activeSlug && !isCourier ? (
+                  <a
+                    href={getStorefrontUrl(activeSlug)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 h-8 px-2.5 text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg transition-colors"
+                    title={lang === "ar" ? "عرض المتجر الإلكتروني" : "View Live Storefront"}
+                  >
+                    <Store className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline text-xs">
+                      {lang === "ar" ? "المتجر" : "Storefront"}
+                    </span>
+                  </a>
+                ) : undefined
+              }
             />
           )}
 
@@ -536,35 +553,9 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
             <OsAppWindow
               icon={activeNavItem?.icon}
               title={currentPageLabel || brandLabel}
-              subtitle={undefined}
               isFocusMode={isFocusMode}
               onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
               pageKey={pathname}
-              badge={
-                activeSlug && (
-                  <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
-                    {activeSlug.toUpperCase()}
-                  </span>
-                )
-              }
-              actions={
-                <div className="flex items-center gap-1.5">
-                  {activeSlug && !isCourier && (
-                    <a
-                      href={getStorefrontUrl(activeSlug)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 h-6.5 px-2 text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-md transition-colors"
-                      title={lang === "ar" ? "عرض المتجر الإلكتروني" : "View Live Storefront"}
-                    >
-                      <Store className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline text-xs">
-                        {lang === "ar" ? "المتجر" : "Storefront"}
-                      </span>
-                    </a>
-                  )}
-                </div>
-              }
             >
               {children}
             </OsAppWindow>

@@ -1,6 +1,15 @@
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
-import { Search, Languages, LogOut, User, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Search,
+  Languages,
+  LogOut,
+  User,
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
+  Minimize2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -24,6 +33,9 @@ export interface OsMenuBarProps {
   onSignOut: () => void;
   activeSlug?: string | null;
   userEmail?: string;
+  actions?: React.ReactNode;
+  isFocusMode?: boolean;
+  onToggleFocusMode?: () => void;
   className?: string;
 }
 
@@ -36,6 +48,9 @@ export function OsMenuBar({
   onSignOut,
   activeSlug,
   userEmail,
+  actions,
+  isFocusMode = false,
+  onToggleFocusMode,
   className,
 }: OsMenuBarProps) {
   const shortcutLabel = useCommandShortcutLabel();
@@ -43,12 +58,12 @@ export function OsMenuBar({
   return (
     <header
       className={cn(
-        "no-print hidden md:flex h-10 border border-[var(--os-border)] os-glass shadow-2xs shrink-0 items-center justify-between px-4 my-2.5 ms-3.5 me-4 rounded-xl transition-all select-none z-30",
+        "no-print hidden md:flex h-11 border border-border bg-card/80 backdrop-blur-md shadow-xs shrink-0 items-center justify-between px-4 my-2 ms-3.5 me-4 rounded-xl transition-all select-none z-30",
         className,
       )}
     >
       {/* Useful route context instead of a static product label. */}
-      <div className="flex min-w-0 items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2.5">
         <nav
           aria-label={lang === "ar" ? "مسار الصفحة" : "Breadcrumb"}
           className="flex min-w-0 items-center gap-1.5"
@@ -58,14 +73,14 @@ export function OsMenuBar({
             const Separator = lang === "ar" ? ChevronLeft : ChevronRight;
             return (
               <React.Fragment key={`${item.label}-${index}`}>
-                {index > 0 && <Separator className="h-3 w-3 shrink-0 text-muted-foreground/50" />}
+                {index > 0 && <Separator className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />}
                 {item.href && !isLast ? (
                   <Link
                     to={item.href as any}
                     className={cn(
-                      "inline-flex shrink-0 items-center gap-1 text-xs transition-colors hover:text-primary",
+                      "inline-flex shrink-0 items-center gap-1.5 text-xs transition-colors hover:text-primary",
                       index === 0
-                        ? "font-bold tracking-wider text-primary"
+                        ? "font-semibold text-primary"
                         : "font-medium text-muted-foreground",
                     )}
                   >
@@ -78,7 +93,7 @@ export function OsMenuBar({
                   <span
                     className={cn(
                       "truncate text-xs",
-                      isLast ? "font-bold text-foreground" : "font-medium text-muted-foreground",
+                      isLast ? "font-semibold text-foreground" : "font-medium text-muted-foreground",
                     )}
                   >
                     {index === 0 && breadcrumbs.length === 1 && (
@@ -91,13 +106,16 @@ export function OsMenuBar({
             );
           })}
         </nav>
-        <span className="hidden shrink-0 rounded-full border border-primary/15 bg-primary/5 px-2 py-0.5 text-xs font-semibold text-primary xl:inline-flex">
+        <span className="hidden shrink-0 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary xl:inline-flex">
           {brandLabel}
         </span>
       </div>
 
-      {/* Right: Global Quick Actions, Search, Language, & Account Menu */}
+      {/* Right: Consolidated Actions & Controls */}
       <div className="flex items-center gap-2">
+        {/* Custom page-level or shell actions (e.g., View Storefront) */}
+        {actions}
+
         {/* Global Quick Action Trigger (+ جديد) */}
         <OsQuickActions slug={activeSlug ?? null} lang={lang} />
 
@@ -106,33 +124,63 @@ export function OsMenuBar({
           type="button"
           onClick={onOpenSpotlight}
           aria-label={`${lang === "ar" ? "البحث السريع" : "Quick Search"} (${shortcutLabel})`}
-          className="h-6.5 px-2 gap-1.5 text-xs text-muted-foreground hover:text-foreground bg-background/50 hover:bg-background/90 border border-[var(--os-border)] rounded-md flex items-center transition-all shadow-2xs"
+          className="h-8 px-2.5 gap-2 text-xs text-muted-foreground hover:text-foreground bg-background/60 hover:bg-background border border-border rounded-lg flex items-center transition-all shadow-2xs"
         >
-          <Search className="h-3 w-3 text-muted-foreground" />
+          <Search className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="hidden lg:inline text-xs font-medium">
             {lang === "ar" ? "البحث السريع..." : "Search OS..."}
           </span>
-          <kbd className="pointer-events-none inline-flex h-4 select-none items-center gap-0.5 rounded border bg-muted/80 px-1 font-mono text-xs font-semibold text-muted-foreground">
+          <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-0.5 rounded border border-border bg-muted/80 px-1.5 font-mono text-xs font-semibold text-muted-foreground">
             {shortcutLabel}
           </kbd>
         </button>
 
-        <span className="h-3 w-px bg-[var(--os-border)]" />
+        <span className="h-4 w-px bg-border" />
 
         {/* Appearance (light / dark / follow system) */}
-        <OsThemeToggle lang={lang} className="h-6.5 w-6.5" />
+        <OsThemeToggle lang={lang} className="h-8 w-8" />
 
         {/* Language Switcher */}
         <button
           type="button"
           onClick={() => onSetLang(lang === "en" ? "ar" : "en")}
           aria-label={lang === "en" ? "التحويل للعربية" : "Switch to English"}
-          className="h-6.5 px-2 text-xs font-bold uppercase tracking-wide text-muted-foreground hover:text-foreground bg-background/40 hover:bg-background/80 border border-[var(--os-border)] rounded-md flex items-center gap-1 transition-colors"
+          className="h-8 px-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground bg-background/60 hover:bg-background border border-border rounded-lg flex items-center gap-1.5 transition-colors"
           title={lang === "en" ? "التحويل للعربية" : "Switch to English"}
         >
-          <Languages className="h-3 w-3" />
+          <Languages className="h-3.5 w-3.5" />
           <span>{lang === "en" ? "AR" : "EN"}</span>
         </button>
+
+        {/* Focus Mode Toggle */}
+        {onToggleFocusMode && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleFocusMode}
+            aria-label={
+              isFocusMode
+                ? lang === "ar"
+                  ? "الخروج من وضع التركيز"
+                  : "Exit Focus Mode"
+                : lang === "ar"
+                  ? "وضع التركيز"
+                  : "Focus Mode"
+            }
+            title={
+              isFocusMode
+                ? lang === "ar"
+                  ? "الخروج من وضع التركيز"
+                  : "Exit Focus Mode"
+                : lang === "ar"
+                  ? "وضع التركيز"
+                  : "Focus Mode"
+            }
+            className="h-8 w-8 rounded-lg p-0 text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent hover:border-border"
+          >
+            {isFocusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </Button>
+        )}
 
         {/* User Account Dropdown */}
         <DropdownMenu>
@@ -141,9 +189,9 @@ export function OsMenuBar({
               variant="ghost"
               size="sm"
               aria-label={lang === "ar" ? "حساب المستخدم" : "User Profile"}
-              className="h-6.5 w-6.5 rounded-md p-0 text-muted-foreground hover:text-foreground hover:bg-muted/80 border border-transparent hover:border-border/60"
+              className="h-8 w-8 rounded-lg p-0 text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent hover:border-border"
             >
-              <User className="h-3.5 w-3.5" />
+              <User className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56 os-surface-elevated rounded-xl">
