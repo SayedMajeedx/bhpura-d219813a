@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   CheckCircle2,
-  CircleAlert,
   ExternalLink,
   ChevronDown,
   ChevronUp,
@@ -19,6 +18,207 @@ import {
   Image,
 } from "lucide-react";
 import type { SettingsTabId } from "@/components/settings/SettingsScopeSwitcher";
+
+export interface BusinessSettingsData {
+  logo_url?: string | null;
+  cod_enabled?: boolean | null;
+  card_enabled?: boolean | null;
+  benefit_enabled?: boolean | null;
+  delivery_enabled?: boolean | null;
+  pickup_enabled?: boolean | null;
+  delivery_fee?: number | string | null;
+  shipping_zones?: any[] | null;
+  pages?: any;
+}
+
+export interface ReadinessEvaluationInput {
+  logoUrl?: string | null;
+  activeProductsCount: number;
+  businessSettings?: BusinessSettingsData | null;
+  brandLogoUrl?: string | null;
+  lang?: "ar" | "en";
+}
+
+export interface ReadinessItem {
+  id: "logo" | "products" | "payments" | "fulfillment" | "policies";
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  isComplete: boolean;
+  actionType: "tab" | "link";
+  tabId?: SettingsTabId;
+  href?: string;
+  actionLabel: string;
+  editLabel: string;
+}
+
+export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
+  const isAr = input.lang !== "en";
+  const bData = input.businessSettings;
+
+  // 1. Logo
+  const resolvedLogoUrl =
+    (input.logoUrl && input.logoUrl.trim().length > 0)
+      ? input.logoUrl.trim()
+      : (bData?.logo_url && bData.logo_url.trim().length > 0)
+        ? bData.logo_url.trim()
+        : (input.brandLogoUrl && input.brandLogoUrl.trim().length > 0)
+          ? input.brandLogoUrl.trim()
+          : null;
+  const hasLogo = Boolean(resolvedLogoUrl);
+
+  // 2. Products
+  const activeProducts = input.activeProductsCount ?? 0;
+  const hasProducts = activeProducts > 0;
+
+  // 3. Payments
+  const hasPayments = Boolean(
+    bData &&
+      (bData.cod_enabled || bData.card_enabled || bData.benefit_enabled),
+  );
+
+  // 4. Fulfillment
+  const hasFulfillment = Boolean(
+    bData &&
+      (bData.delivery_enabled ||
+        bData.pickup_enabled ||
+        (Array.isArray(bData.shipping_zones) && bData.shipping_zones.length > 0) ||
+        (bData.delivery_fee != null && Number(bData.delivery_fee) >= 0 && bData.delivery_enabled !== false)),
+  );
+
+  // 5. CMS / Policy Pages
+  const rawPages = bData?.pages;
+  const pagesList: any[] = Array.isArray(rawPages)
+    ? rawPages
+    : Array.isArray((rawPages as any)?.pages)
+      ? (rawPages as any).pages
+      : [];
+
+  const validPages = pagesList.filter(
+    (p) =>
+      p &&
+      (Boolean(p.slug) ||
+        Boolean(p.title_ar) ||
+        Boolean(p.title_en) ||
+        Boolean(p.content_ar) ||
+        Boolean(p.content_en)),
+  );
+  const hasPolicies = validPages.length > 0;
+
+  const items: ReadinessItem[] = [
+    {
+      id: "logo",
+      icon: Image,
+      title: isAr ? "رفع شعار المتجر الرسمي" : "Upload official store logo",
+      description: isAr
+        ? (hasLogo
+            ? "تم تعيين وتحديث شعار المتجر الرسمي بنجاح"
+            : "يظهر الشعار في ترويسة المتجر والفواتير والإيصالات الحرارية")
+        : (hasLogo
+            ? "Official store logo uploaded and configured"
+            : "Appears in storefront header, customer invoices, and receipts"),
+      isComplete: hasLogo,
+      actionType: "tab",
+      tabId: "business",
+      actionLabel: isAr ? "إعداد الشعار" : "Configure Logo",
+      editLabel: isAr ? "تعديل" : "Edit",
+    },
+    {
+      id: "products",
+      icon: Package,
+      title: isAr ? "إضافة وتفعيل منتج واحد على الأقل" : "Add and activate at least 1 product",
+      description: isAr
+        ? (hasProducts
+            ? `${activeProducts} منتج نشط حالياً جاهز للبيع مباشرة`
+            : "أضف وتفعيل أول منتج لبدء استقبال الطلبات")
+        : (hasProducts
+            ? `${activeProducts} active product(s) ready for purchase`
+            : "Add and activate your first product to start selling"),
+      isComplete: hasProducts,
+      actionType: "link",
+      actionLabel: isAr ? "إدارة المنتجات" : "Manage Products",
+      editLabel: isAr ? "عرض" : "View",
+    },
+    {
+      id: "payments",
+      icon: CreditCard,
+      title: isAr ? "تفعيل وسيلة دفع واحدة على الأقل" : "Configure at least 1 payment method",
+      description: isAr
+        ? (hasPayments
+            ? (bData?.cod_enabled && bData?.card_enabled && bData?.benefit_enabled
+                ? "تم تفعيل الدفع عند الاستلام والبطاقات ومحفظة بنفت"
+                : bData?.cod_enabled && bData?.card_enabled
+                  ? "تم تفعيل الدفع عند الاستلام والبطاقات الائتمانية"
+                  : "تم تفعيل وتجهيز وسائل الدفع بنجاح")
+            : "تفعيل الدفع عند الاستلام (COD)، بطاقة، أو محفظة بنفت")
+        : (hasPayments
+            ? "Payment methods configured and active"
+            : "Enable Cash on Delivery (COD), Card, or BenefitPay"),
+      isComplete: hasPayments,
+      actionType: "tab",
+      tabId: "payments",
+      actionLabel: isAr ? "إعداد الدفع" : "Setup Payments",
+      editLabel: isAr ? "تعديل" : "Edit",
+    },
+    {
+      id: "fulfillment",
+      icon: Truck,
+      title: isAr ? "تحديد مناطق ورسوم الشحن والتوصيل" : "Define shipping zones and delivery fees",
+      description: isAr
+        ? (hasFulfillment
+            ? (bData?.delivery_enabled && bData?.pickup_enabled
+                ? "تم تفعيل التوصيل والاستلام المحلي ومناطق الشحن"
+                : bData?.delivery_enabled
+                  ? "تم تفعيل التوصيل ورسوم الشحن بنجاح"
+                  : "تم إعداد خيارات التسليم والشحن")
+            : "حدد رسوم التوصيل المحلي أو الاستلام من الفرع")
+        : (hasFulfillment
+            ? "Delivery, pickup, and shipping zones active"
+            : "Specify local delivery fees, pickup locations, or zones"),
+      isComplete: hasFulfillment,
+      actionType: "tab",
+      tabId: "checkout",
+      actionLabel: isAr ? "إعداد الشحن" : "Configure Shipping",
+      editLabel: isAr ? "تعديل" : "Edit",
+    },
+    {
+      id: "policies",
+      icon: FileText,
+      title: isAr ? "نشر صفحة الشروط أو سياسة الإرجاع" : "Publish return policy or terms page",
+      description: isAr
+        ? (hasPolicies
+            ? `${validPages.length} صفحات منشورة تشمل الشروط والسياسات`
+            : "توضيح حقوق العميل وسياسة الاستبدال يبني الثقة في المتجر")
+        : (hasPolicies
+            ? `${validPages.length} published page(s) with store policies`
+            : "Clear refund and delivery terms builds customer trust"),
+      isComplete: hasPolicies,
+      actionType: "link",
+      actionLabel: isAr ? "إدارة الصفحات" : "Manage Pages",
+      editLabel: isAr ? "إدارة" : "Manage",
+    },
+  ];
+
+  const completedCount = items.filter((it) => it.isComplete).length;
+  const totalCount = items.length;
+  const progressPercent = Math.round((completedCount / totalCount) * 100);
+  const isAllComplete = completedCount === totalCount;
+
+  return {
+    hasLogo,
+    hasProducts,
+    activeProducts,
+    hasPayments,
+    hasFulfillment,
+    hasPolicies,
+    pagesCount: validPages.length,
+    items,
+    completedCount,
+    totalCount,
+    progressPercent,
+    isAllComplete,
+  };
+}
 
 interface StoreReadinessChecklistProps {
   brandId: string;
@@ -38,7 +238,7 @@ export function StoreReadinessChecklist({
   const isAr = lang === "ar";
   const [collapsed, setCollapsed] = useState(false);
 
-  // 1. Query active products count
+  // 1. Query active products count (using canonical is_active flag)
   const productsQ = useQuery({
     queryKey: ["readiness-active-products", brandId],
     enabled: Boolean(brandId),
@@ -53,145 +253,65 @@ export function StoreReadinessChecklist({
     },
   });
 
-  // 2. Query payment methods
-  const paymentSettingsQ = useQuery({
-    queryKey: ["readiness-payments", brandId],
+  // 2. Query business_settings (payments, fulfillment, pages, logo)
+  const businessSettingsQ = useQuery({
+    queryKey: ["readiness-business-settings", brandId],
     enabled: Boolean(brandId),
     queryFn: async () => {
       const { data, error } = await (supabase.from("business_settings") as any)
-        .select("cod_enabled, card_enabled, benefit_enabled")
+        .select(
+          "logo_url, cod_enabled, card_enabled, benefit_enabled, delivery_enabled, pickup_enabled, delivery_fee, shipping_zones, pages",
+        )
         .eq("brand_id", brandId)
         .maybeSingle();
       if (error) return null;
-      return data;
+      return data as BusinessSettingsData;
     },
   });
 
-  // 3. Query fulfillment settings
-  const fulfillmentSettingsQ = useQuery({
-    queryKey: ["readiness-fulfillment", brandId],
-    enabled: Boolean(brandId),
+  // 3. Query brand logo fallback if needed
+  const brandQ = useQuery({
+    queryKey: ["readiness-brand-logo", brandId],
+    enabled: Boolean(brandId && !logoUrl && !businessSettingsQ.data?.logo_url),
     queryFn: async () => {
-      const { data, error } = await (supabase.from("store_settings") as any)
-        .select("delivery_enabled, pickup_enabled, shipping_zones")
-        .eq("brand_id", brandId)
+      const { data, error } = await supabase
+        .from("brands")
+        .select("logo_url")
+        .eq("id", brandId)
         .maybeSingle();
       if (error) return null;
-      return data;
+      return (data?.logo_url as string) ?? null;
     },
   });
 
-  // 4. Query CMS / policy pages
-  const pagesQ = useQuery({
-    queryKey: ["readiness-pages", brandId],
-    enabled: Boolean(brandId),
-    queryFn: async () => {
-      const { count, error } = await (supabase.from("pages") as any)
-        .select("id", { count: "exact", head: true })
-        .eq("brand_id", brandId)
-        .eq("is_published", true);
-      if (error) return 0;
-      return count ?? 0;
-    },
+  const evaluation = evaluateStoreReadiness({
+    logoUrl,
+    activeProductsCount: productsQ.data ?? 0,
+    businessSettings: businessSettingsQ.data,
+    brandLogoUrl: brandQ.data,
+    lang,
   });
 
-  const hasLogo = Boolean(logoUrl && logoUrl.trim().length > 0);
-  const activeProducts = productsQ.data ?? 0;
-  const hasProducts = activeProducts > 0;
-  
-  const paymentData = paymentSettingsQ.data;
-  const hasPayments = Boolean(
-    paymentData &&
-      (paymentData.cod_enabled || paymentData.card_enabled || paymentData.benefit_enabled),
-  );
+  const checklistItems = evaluation.items.map((item) => {
+    if (item.id === "products") {
+      return { ...item, href: `/admin/b/${slug}/inventory` };
+    }
+    if (item.id === "policies") {
+      return { ...item, href: `/admin/b/${slug}/pages` };
+    }
+    return item;
+  });
 
-  const fulfillData = fulfillmentSettingsQ.data;
-  const hasFulfillment = Boolean(
-    fulfillData &&
-      (fulfillData.delivery_enabled ||
-        fulfillData.pickup_enabled ||
-        (Array.isArray(fulfillData.shipping_zones) && fulfillData.shipping_zones.length > 0)),
-  );
-
-  const publishedPages = pagesQ.data ?? 0;
-  const hasPolicies = publishedPages > 0;
-
-  const checklistItems = [
-    {
-      id: "logo",
-      icon: Image,
-      title: isAr ? "رفع شعار المتجر الرسمي" : "Upload official store logo",
-      description: isAr
-        ? "يظهر الشعار في ترويسة المتجر والفواتير والإيصالات الحرارية"
-        : "Appears in storefront header, customer invoices, and receipts",
-      isComplete: hasLogo,
-      actionType: "tab" as const,
-      tabId: "business" as SettingsTabId,
-      actionLabel: isAr ? "إعداد الشعار" : "Configure Logo",
-    },
-    {
-      id: "products",
-      icon: Package,
-      title: isAr ? "إضافة وتفعيل منتج واحد على الأقل" : "Add and activate at least 1 product",
-      description: isAr
-        ? `${activeProducts} منتج نشط حالياً جاهز للبيع`
-        : `${activeProducts} active product(s) ready for purchase`,
-      isComplete: hasProducts,
-      actionType: "link" as const,
-      href: `/admin/b/${slug}/inventory`,
-      actionLabel: isAr ? "إدارة المنتجات" : "Manage Products",
-    },
-    {
-      id: "payments",
-      icon: CreditCard,
-      title: isAr ? "تفعيل وسيلة دفع واحدة على الأقل" : "Configure at least 1 payment method",
-      description: isAr
-        ? "تفعيل الدفع عند الاستلام (COD)، بطاقة، أو محفظة بنفت"
-        : "Enable Cash on Delivery (COD), Card, or BenefitPay",
-      isComplete: hasPayments,
-      actionType: "tab" as const,
-      tabId: "payments" as SettingsTabId,
-      actionLabel: isAr ? "إعداد الدفع" : "Setup Payments",
-    },
-    {
-      id: "fulfillment",
-      icon: Truck,
-      title: isAr ? "تحديد مناطق ورسوم الشحن والتوصيل" : "Define shipping zones and delivery fees",
-      description: isAr
-        ? "حدد رسوم التوصيل المحلي أو الاستلام من الفرع"
-        : "Specify local delivery fees, pickup locations, or zones",
-      isComplete: hasFulfillment,
-      actionType: "tab" as const,
-      tabId: "checkout" as SettingsTabId,
-      actionLabel: isAr ? "إعداد الشحن" : "Configure Shipping",
-    },
-    {
-      id: "policies",
-      icon: FileText,
-      title: isAr ? "نشر صفحة الشروط أو سياسة الإرجاع" : "Publish return policy or terms page",
-      description: isAr
-        ? "توضيح حقوق العميل وسياسة الاستبدال يبني الثقة في المتجر"
-        : "Clear refund and delivery terms builds customer trust",
-      isComplete: hasPolicies,
-      actionType: "link" as const,
-      href: `/admin/b/${slug}/pages`,
-      actionLabel: isAr ? "إدارة الصفحات" : "Manage Pages",
-    },
-  ];
-
-  const completedCount = checklistItems.filter((it) => it.isComplete).length;
-  const totalCount = checklistItems.length;
-  const progressPercent = Math.round((completedCount / totalCount) * 100);
-  const isAllComplete = completedCount === totalCount;
+  const { completedCount, totalCount, progressPercent, isAllComplete } = evaluation;
 
   return (
     <div className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs transition-all">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
           <div
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${
               isAllComplete
-                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/20"
                 : "bg-primary/10 text-primary"
             }`}
           >
@@ -207,7 +327,7 @@ export function StoreReadinessChecklist({
                 {isAr ? "جاهزية المتجر للانطلاق المباشر" : "Store Launch Readiness"}
               </h3>
               <span
-                className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                className={`text-[11px] font-bold px-2 py-0.5 rounded-full transition-colors ${
                   isAllComplete
                     ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
                     : "bg-amber-500/15 text-amber-800 dark:text-amber-200"
@@ -219,7 +339,7 @@ export function StoreReadinessChecklist({
             <p className="text-xs text-muted-foreground mt-0.5">
               {isAllComplete
                 ? isAr
-                  ? "متجرك مستوفٍ لجميع المتطلبات الأساسية ومستعد لاستقبال العملاء!"
+                  ? "متجرك مستوفٍ لجميع المتطلبات الأساسية ومستعد لاستقبال العملاء والطلبات!"
                   : "All essential requirements are met. Your store is ready for customers!"
                 : isAr
                   ? "أكمل المتطلبات الأساسية لضمان تجربة تسوق وشراء متكاملة بدون عوائق"
@@ -248,7 +368,15 @@ export function StoreReadinessChecklist({
             size="sm"
             onClick={() => setCollapsed(!collapsed)}
             className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-            aria-label={collapsed ? (isAr ? "إظهار التفاصيل" : "Show details") : (isAr ? "إخفاء التفاصيل" : "Hide details")}
+            aria-label={
+              collapsed
+                ? isAr
+                  ? "إظهار التفاصيل"
+                  : "Show details"
+                : isAr
+                  ? "إخفاء التفاصيل"
+                  : "Hide details"
+            }
           >
             {collapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
           </Button>
@@ -305,20 +433,46 @@ export function StoreReadinessChecklist({
 
                 <div className="shrink-0 self-center">
                   {item.isComplete ? (
-                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded bg-emerald-500/10">
-                      {isAr ? "مكتمل" : "Ready"}
-                    </span>
-                  ) : item.actionType === "tab" ? (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded bg-emerald-500/10">
+                        {isAr ? "مكتمل" : "Ready"}
+                      </span>
+                      {item.actionType === "tab" && item.tabId ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onNavigateTab(item.tabId!)}
+                          className="h-6 px-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground"
+                          title={item.editLabel}
+                        >
+                          <span>{item.editLabel}</span>
+                        </Button>
+                      ) : item.href ? (
+                        <Button
+                          asChild
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground"
+                          title={item.editLabel}
+                        >
+                          <Link to={item.href}>
+                            <span>{item.editLabel}</span>
+                          </Link>
+                        </Button>
+                      ) : null}
+                    </div>
+                  ) : item.actionType === "tab" && item.tabId ? (
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => onNavigateTab(item.tabId)}
+                      onClick={() => onNavigateTab(item.tabId!)}
                       className="h-7 text-[11px] font-bold px-2"
                     >
                       {item.actionLabel}
                     </Button>
-                  ) : (
+                  ) : item.href ? (
                     <Button
                       asChild
                       variant="outline"
@@ -327,10 +481,10 @@ export function StoreReadinessChecklist({
                     >
                       <Link to={item.href}>
                         {item.actionLabel}
-                        <ArrowRight className="h-2.5 w-2.5 ms-1" />
+                        <ArrowRight className="h-2.5 w-2.5 ms-1 rtl:rotate-180" />
                       </Link>
                     </Button>
-                  )}
+                  ) : null}
                 </div>
               </div>
             );
