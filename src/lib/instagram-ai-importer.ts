@@ -591,6 +591,8 @@ export const batchRehostAllMedia = createServerFn({ method: "POST" })
       .parse(raw),
   )
   .handler(async ({ data, context }) => {
+    const brandId = data.brandId;
+
     const { data: hasAccess } = await context.supabase.rpc("can_access_brand", {
       _brand_id: brandId,
     });
@@ -653,6 +655,8 @@ export const retryImageRehostFn = createServerFn({ method: "POST" })
       .parse(raw),
   )
   .handler(async ({ data, context }) => {
+    const brandId = data.brandId;
+
     const { data: hasAccess } = await context.supabase.rpc("can_access_brand", {
       _brand_id: brandId,
     });

@@ -331,7 +331,11 @@ export function StorefrontProvider({
       const urlParams =
         typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
       const urlLang = urlParams?.get("lang");
+      // Declared at effect scope: the shared-cart callbacks below read this to
+      // pick a toast language, and they run after this block has returned.
+      let storedLang: string | null = null;
       if (urlLang === "en" || urlLang === "ar") {
+        storedLang = urlLang;
         setLangState(urlLang);
         try {
           localStorage.setItem(langKey, urlLang);
@@ -339,7 +343,7 @@ export function StorefrontProvider({
           /* ignore */
         }
       } else {
-        const storedLang = localStorage.getItem(langKey);
+        storedLang = localStorage.getItem(langKey);
         if (storedLang === "en" || storedLang === "ar") setLangState(storedLang);
       }
 
