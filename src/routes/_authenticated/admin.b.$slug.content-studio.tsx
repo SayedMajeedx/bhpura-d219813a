@@ -122,6 +122,24 @@ function containsArabic(value: string) {
   return /[\u0600-\u06ff]/.test(value);
 }
 
+function extractSnappySnippet(text: string | null | undefined, fallback: string): string {
+  if (!text) return fallback;
+  const clean = text.replace(/\r\n/g, "\n").trim();
+  const lines = clean.split("\n").map((s) => s.trim()).filter(Boolean);
+  const firstLine = lines[0] || "";
+  if (firstLine.length >= 10 && firstLine.length <= 110) {
+    return firstLine;
+  }
+  const sentenceMatch = clean.match(/^([^.!?؟\n]+[.!?؟]?)/);
+  if (sentenceMatch && sentenceMatch[1].trim().length >= 10 && sentenceMatch[1].trim().length <= 110) {
+    return sentenceMatch[1].trim();
+  }
+  if (clean.length <= 110) return clean;
+  const sliced = clean.slice(0, 105);
+  const lastSpace = sliced.lastIndexOf(" ");
+  return (lastSpace > 40 ? sliced.slice(0, lastSpace) : sliced).trim() + "...";
+}
+
 function ContentStudioPage() {
   const { slug } = Route.useParams();
   const brand = useBrand();
@@ -292,6 +310,26 @@ function ContentStudioPage() {
       setSelectedMediaUrl(null);
     }
   }, [selected?.id, productMediaList, selectedMediaUrl]);
+
+  useEffect(() => {
+    if (!selected) return;
+    const name = isAr
+      ? selected.name_ar || selected.name
+      : selected.name_en || selected.name;
+    if (name) {
+      setHeadline(name);
+    }
+    const rawDesc = isAr
+      ? selected.description_ar || selected.description
+      : selected.description || selected.description_ar;
+    const autoBody = extractSnappySnippet(
+      rawDesc,
+      isAr
+        ? "أناقة هادئة، وتفاصيل مدروسة لكل لحظة."
+        : "Quiet elegance, thoughtful details for every moment.",
+    );
+    setBody(autoBody);
+  }, [selected?.id, isAr]);
 
   const handleSelectVariant = (variantId: string | null) => {
     setSelectedVariantId(variantId);
@@ -934,6 +972,17 @@ function ContentStudioPage() {
           : selected.description
         : null,
     [isAr, selected],
+  );
+
+  const snappyDesc = useMemo(
+    () =>
+      extractSnappySnippet(
+        selectedDescription,
+        isAr
+          ? "أناقة هادئة، وتفاصيل مدروسة لكل لحظة."
+          : "Quiet elegance, thoughtful details for every moment.",
+      ),
+    [isAr, selectedDescription],
   );
 
   const [copiedCaption, setCopiedCaption] = useState(false);
@@ -1710,27 +1759,119 @@ ${desc}${detailsBlock}
                 </div>
               </div>
             </div>
-              <div>
-                <Label htmlFor="studio-headline">{isAr ? "العنوان" : "Headline"}</Label>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="studio-headline" className="text-xs font-semibold">
+                    {isAr ? "العنوان" : "Headline"}
+                  </Label>
+                  <span className="text-[10px] text-muted-foreground">{headline.length}/64</span>
+                </div>
                 <Input
                   id="studio-headline"
                   value={headline}
                   maxLength={64}
                   onChange={(event) => setHeadline(event.target.value)}
-                  className="mt-2 h-11 rounded-xl"
+                  className="h-10 rounded-xl"
                 />
+                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setHeadline(productName)}
+                    className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 hover:bg-muted px-2 py-1 text-[11px] font-medium text-foreground transition-colors cursor-pointer"
+                    title={isAr ? "تعيين اسم المنتج كعنوان" : "Set product name as headline"}
+                  >
+                    <Sparkles className="size-3 text-primary" />
+                    <span>{isAr ? "اسم المنتج" : "Product Name"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHeadline(isAr ? "صُممت لتبقى في الذاكرة" : "Designed to Remember")}
+                    className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 hover:bg-muted px-2 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  >
+                    <span>{isAr ? "صُممت لتبقى في الذاكرة" : "Designed to Remember"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHeadline(isAr ? "وصل حديثاً ✨" : "New Arrival ✨")}
+                    className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 hover:bg-muted px-2 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  >
+                    <span>{isAr ? "وصل حديثاً ✨" : "New Arrival ✨"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHeadline(isAr ? "الأكثر طلباً 🔥" : "Best Seller 🔥")}
+                    className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 hover:bg-muted px-2 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  >
+                    <span>{isAr ? "الأكثر طلباً 🔥" : "Best Seller 🔥"}</span>
+                  </button>
+                </div>
               </div>
-              <div>
-                <Label htmlFor="studio-body">{isAr ? "النص" : "Body copy"}</Label>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="studio-body" className="text-xs font-semibold">
+                    {isAr ? "النص" : "Body copy"}
+                  </Label>
+                  <span className="text-[10px] text-muted-foreground">{body.length}/160</span>
+                </div>
                 <Textarea
                   id="studio-body"
                   value={body}
                   maxLength={160}
                   rows={3}
                   onChange={(event) => setBody(event.target.value)}
-                  className="mt-2 rounded-xl"
+                  className="rounded-xl resize-none text-xs leading-relaxed"
                   placeholder={selectedDescription || ""}
                 />
+                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                  {selectedDescription && (
+                    <button
+                      type="button"
+                      onClick={() => setBody(snappyDesc)}
+                      className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 hover:bg-muted px-2 py-1 text-[11px] font-medium text-foreground transition-colors cursor-pointer"
+                      title={isAr ? "اقتباس ذكي من أول الوصف" : "Smart excerpt from description"}
+                    >
+                      <Sparkles className="size-3 text-primary" />
+                      <span>{isAr ? "مقتطف الوصف" : "Excerpt"}</span>
+                    </button>
+                  )}
+                  {selectedDescription && (
+                    <button
+                      type="button"
+                      onClick={() => setBody(selectedDescription.slice(0, 160))}
+                      className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 hover:bg-muted px-2 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      title={isAr ? "نسخ الوصف بالكامل (حتى 160 حرف)" : "Full description up to 160 chars"}
+                    >
+                      <span>{isAr ? "الوصف كاملاً" : "Full Desc"}</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setBody(
+                        isAr
+                          ? "أناقة هادئة، وتفاصيل مدروسة لكل لحظة."
+                          : "Quiet elegance, thoughtful details for every moment.",
+                      )
+                    }
+                    className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 hover:bg-muted px-2 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  >
+                    <span>{isAr ? "أناقة هادئة" : "Quiet Elegance"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setBody(
+                        isAr
+                          ? "متوفرة الآن للطلب والتفصيل عبر متجرنا الإلكتروني."
+                          : "Available now to order online.",
+                      )
+                    }
+                    className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 hover:bg-muted px-2 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  >
+                    <span>{isAr ? "جاهز للتفصيل" : "Ready to Order"}</span>
+                  </button>
+                </div>
               </div>
               <div className="flex items-center justify-between rounded-xl border bg-muted/20 px-3.5 py-2.5">
                 <Label htmlFor="studio-show-price" className="text-xs font-semibold cursor-pointer">
