@@ -418,7 +418,11 @@ function CustomerProfilePage() {
                       totalOrders: activeOrders.length,
                       lifetimeSpend: totalSpent,
                       lastOrderDate,
-                      currency: brand.currency || "BHD",
+                      // Single-currency storefront: this admin Brand context
+                      // (brands table) never carries a currency column — that
+                      // lives on brand_storefront_settings — so this always
+                      // resolved to the fallback below anyway.
+                      currency: "BHD",
                     });
                     if (badge.segment === "lead") return null;
                     return (
@@ -547,7 +551,10 @@ function CustomerProfilePage() {
         <div className="space-y-6">
           <CustomerFitPassport
             brandId={brand.id}
-            brandName={lang === "ar" ? (brand.name_ar || brand.name_en) : (brand.name_en || brand.name_ar)}
+            brandName={
+              (lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en || brand.name_ar) ??
+              undefined
+            }
             customerId={customerId}
             isAr={lang === "ar"}
           />

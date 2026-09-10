@@ -220,7 +220,7 @@ export const approveSubscriptionSaaS = createServerFn({ method: "POST" })
     // Fetch subscription record to discover merchant's requested upgrade plan & interval
     const { data: sub } = await context.supabase
       .from("brand_subscriptions")
-      .select("id, renewal_target_plan_id, billing_interval, plan_id")
+      .select("id, renewal_target_plan_id, billing_interval, plan_id, plan_version_id")
       .eq("brand_id", data.brandId)
       .maybeSingle();
 

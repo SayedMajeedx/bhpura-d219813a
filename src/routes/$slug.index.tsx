@@ -868,11 +868,7 @@ function HeroContentCarousel({
                         src={mediaUrl}
                         poster={posterUrl}
                         active={slideIndex === idx}
-                        preloadPriority={
-                          slideIndex === idx || slideIndex === preparedVideoIndex
-                            ? "high"
-                            : "metadata"
-                        }
+                        prepare={slideIndex === preparedVideoIndex}
                         wrapperClassName="pointer-events-none h-full w-full"
                         className="pointer-events-none h-full w-full object-cover"
                       />

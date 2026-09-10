@@ -265,11 +265,13 @@ export const capturePayPalSubscriptionOrder = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (sub) {
-      await context.supabase
+      // plan_version_id is NOT NULL in brand_subscriptions — omit it rather
+      // than writing null when no current version exists for the plan.
+      const { error: subUpdateError } = await context.supabase
         .from("brand_subscriptions")
         .update({
           plan_id: data.targetPlanId,
-          plan_version_id: ver?.id || null,
+          ...(ver?.id ? { plan_version_id: ver.id } : {}),
           billing_interval: data.billingInterval,
           status: "active",
           current_period_start: new Date().toISOString(),
@@ -280,6 +282,8 @@ export const capturePayPalSubscriptionOrder = createServerFn({ method: "POST" })
           updated_at: new Date().toISOString(),
         })
         .eq("id", sub.id);
+
+      if (subUpdateError) throw subUpdateError;
     }
 
     return {

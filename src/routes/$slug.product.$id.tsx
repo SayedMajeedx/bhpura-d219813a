@@ -1864,6 +1864,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                       <Link
                         to="/$slug/auth"
                         params={{ slug: brand.slug }}
+                        search={{
+                          redirect: typeof window !== "undefined" ? window.location.pathname : "",
+                        }}
                         className="text-primary hover:underline font-semibold"
                       >
                         {t(

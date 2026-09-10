@@ -89,7 +89,9 @@ export type InstagramProductDraft = {
   description: string;
   sizes: string[];
   colors: string[];
-  category: string;
+  // null when the AI could not confidently infer a category — the extraction
+  // prompt is explicit that it must never guess or force a default here.
+  category: string | null;
   fieldConfidence: FieldConfidence;
   fieldSources: FieldSources;
   priceConflict?: {

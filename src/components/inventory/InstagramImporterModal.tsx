@@ -1032,10 +1032,11 @@ export function InstagramImporterModal({
                                 {isAr ? "القسم" : "Category"}
                               </span>
                               <Input
-                                value={draft.category}
+                                value={draft.category ?? ""}
                                 onChange={(e) =>
                                   handleFieldEdit(draft.id, "category", e.target.value)
                                 }
+                                placeholder={isAr ? "لم يُحدَّد" : "Not detected"}
                                 className="h-7 text-xs rounded-lg"
                               />
                             </div>
