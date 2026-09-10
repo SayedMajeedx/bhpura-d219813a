@@ -40,6 +40,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/content-studio")({
   component: ContentStudioPage,
@@ -127,6 +133,7 @@ function ContentStudioPage() {
   const defaultEditionLabel = `The ${brandNameEn} Edit`;
 
   const stageRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [format, setFormat] = useState<keyof typeof FORMATS>("story");
   const [theme, setTheme] = useState<keyof typeof THEMES>("editorial");
   const [productId, setProductId] = useState("");
@@ -136,6 +143,7 @@ function ContentStudioPage() {
   const [showPrice, setShowPrice] = useState(true);
   const [imageFit, setImageFit] = useState<"cover" | "contain">("cover");
   const [exporting, setExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
 
   useEffect(() => {
     setEditionLabel((prev) => {
@@ -369,7 +377,41 @@ function ContentStudioPage() {
       : selected.name_en || selected.name
     : fallbackLineName;
 
-  const exportCreative = async () => {
+  const downloadOriginalVideo = async () => {
+    if (!photo) return;
+    const cleanUrl = photo.split("?")[0];
+    const ext = cleanUrl.split(".").pop()?.toLowerCase() || "mp4";
+    const fileName = `${brandSlugClean}-${selected?.name || "video"}.${ext}`
+      .replace(/\s+/g, "-")
+      .toLowerCase();
+
+    try {
+      const resp = await fetch(photo);
+      if (!resp.ok) throw new Error("Fetch failed");
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
+      toast.success(isAr ? "تم تنزيل الفيديو الأصلي بنجاح" : "Original video downloaded successfully");
+    } catch {
+      const a = document.createElement("a");
+      a.href = photo;
+      a.download = fileName;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      toast.success(isAr ? "تم بدء تنزيل الفيديو" : "Video download started");
+    }
+  };
+
+  const exportImageCreative = async () => {
     if (!stageRef.current) return;
     setExporting(true);
     try {
@@ -435,6 +477,270 @@ function ContentStudioPage() {
       );
     } finally {
       setExporting(false);
+    }
+  };
+
+  const exportVideoCreative = async () => {
+    if (!stageRef.current) return;
+    const v = videoRef.current;
+    if (!v || !photo) {
+      await downloadOriginalVideo();
+      return;
+    }
+
+    setExporting(true);
+    setExportProgress(0);
+
+    const target = FORMATS[format];
+
+    try {
+      // 1. Check video readystate
+      if (v.readyState < 2) {
+        await new Promise((resolve) => {
+          const handler = () => {
+            v.removeEventListener("loadeddata", handler);
+            resolve(true);
+          };
+          v.addEventListener("loadeddata", handler);
+          setTimeout(resolve, 2000);
+        });
+      }
+
+      // 2. Generate crisp high-DPI overlays with html2canvas
+      const originalStageBg = stageRef.current.style.background;
+      const originalVideoVisibility = v.style.visibility;
+      stageRef.current.style.background = "transparent";
+      v.style.visibility = "hidden";
+
+      let overlayCanvas: HTMLCanvasElement;
+      try {
+        const { default: html2canvas } = await import("html2canvas-pro");
+        overlayCanvas = await html2canvas(stageRef.current, {
+          backgroundColor: null,
+          scale: target.width / stageRef.current.offsetWidth,
+          useCORS: true,
+          logging: false,
+        });
+      } finally {
+        stageRef.current.style.background = originalStageBg;
+        v.style.visibility = originalVideoVisibility;
+      }
+
+      // 3. Test CORS on video element to prevent tainted canvas crash
+      let corsOk = true;
+      try {
+        const testCanvas = document.createElement("canvas");
+        testCanvas.width = 16;
+        testCanvas.height = 16;
+        const testCtx = testCanvas.getContext("2d");
+        if (testCtx) {
+          testCtx.drawImage(v, 0, 0, 16, 16);
+          testCanvas.toDataURL();
+        }
+      } catch (err) {
+        console.warn("Video canvas tainted by CORS, falling back to direct video download", err);
+        corsOk = false;
+      }
+
+      if (!corsOk) {
+        toast.info(
+          isAr
+            ? "نظراً لقيود أمان مصدر الفيديو من المتصفح، جرى تنزيل ملف الفيديو الأصلي مباشرة."
+            : "Direct source video downloaded due to browser CORS restriction.",
+        );
+        await downloadOriginalVideo();
+        return;
+      }
+
+      // 4. Setup output canvas & MediaRecorder
+      const recordCanvas = document.createElement("canvas");
+      recordCanvas.width = target.width;
+      recordCanvas.height = target.height;
+      const ctx = recordCanvas.getContext("2d");
+      if (!ctx) throw new Error("Could not create canvas context");
+
+      const stream = (recordCanvas as any).captureStream ? (recordCanvas as any).captureStream(30) : null;
+      if (!stream || typeof MediaRecorder === "undefined") {
+        toast.info(
+          isAr
+            ? "متصفحك لا يدعم تسجيل مقاطع الفيديو، تم تنزيل الفيديو الأصلي."
+            : "Video recording unsupported in this browser; downloading original file.",
+        );
+        await downloadOriginalVideo();
+        return;
+      }
+
+      let mimeType = "video/webm";
+      let ext = "webm";
+      if (MediaRecorder.isTypeSupported("video/mp4;codecs=avc1")) {
+        mimeType = "video/mp4;codecs=avc1";
+        ext = "mp4";
+      } else if (MediaRecorder.isTypeSupported("video/mp4")) {
+        mimeType = "video/mp4";
+        ext = "mp4";
+      } else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp9")) {
+        mimeType = "video/webm;codecs=vp9";
+        ext = "webm";
+      }
+
+      const recorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported(mimeType) ? mimeType : undefined,
+        videoBitsPerSecond: 8_000_000,
+      });
+
+      const chunks: Blob[] = [];
+      recorder.ondataavailable = (ev) => {
+        if (ev.data && ev.data.size > 0) chunks.push(ev.data);
+      };
+
+      const recordingPromise = new Promise<Blob>((resolve, reject) => {
+        recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }));
+        recorder.onerror = reject;
+      });
+
+      // 5. Seek video to start and record
+      v.loop = false;
+      v.pause();
+      v.currentTime = 0;
+      await new Promise((res) => {
+        const onSeeked = () => {
+          v.removeEventListener("seeked", onSeeked);
+          res(true);
+        };
+        v.addEventListener("seeked", onSeeked);
+        setTimeout(() => res(true), 400);
+      });
+
+      const vw = v.videoWidth || target.width;
+      const vh = v.videoHeight || target.height;
+      const scale = Math.max(target.width / vw, target.height / vh);
+      const drawW = vw * scale;
+      const drawH = vh * scale;
+      const drawX = (target.width - drawW) / 2;
+      const drawY = (target.height - drawH) / 2;
+
+      const duration = Math.min(
+        Math.max(v.duration && isFinite(v.duration) ? v.duration : 6, 2),
+        30,
+      );
+      const totalDuration = duration + 0.3;
+
+      recorder.start(100);
+
+      let isRecording = true;
+      let animFrameId: number | null = null;
+
+      const renderFrame = () => {
+        if (!isRecording) return;
+        ctx.clearRect(0, 0, target.width, target.height);
+        try {
+          ctx.drawImage(v, drawX, drawY, drawW, drawH);
+        } catch {}
+        ctx.drawImage(overlayCanvas, 0, 0, target.width, target.height);
+
+        const prog = Math.min(Math.round((v.currentTime / duration) * 100), 99);
+        setExportProgress(prog);
+
+        animFrameId = requestAnimationFrame(renderFrame);
+      };
+
+      animFrameId = requestAnimationFrame(renderFrame);
+
+      try {
+        await v.play();
+      } catch (playErr) {
+        console.warn("Playback error during export", playErr);
+      }
+
+      const stopRecording = () => {
+        if (!isRecording) return;
+        isRecording = false;
+        if (animFrameId !== null) cancelAnimationFrame(animFrameId);
+        window.setTimeout(() => {
+          if (recorder.state === "recording") {
+            recorder.stop();
+          }
+        }, 300);
+      };
+
+      v.addEventListener("ended", stopRecording, { once: true });
+
+      const startTime = performance.now();
+      const progressInterval = window.setInterval(() => {
+        const elapsed = (performance.now() - startTime) / 1000;
+        if (elapsed >= totalDuration) {
+          window.clearInterval(progressInterval);
+          stopRecording();
+        }
+      }, 100);
+
+      const blob = await recordingPromise;
+      window.clearInterval(progressInterval);
+      v.removeEventListener("ended", stopRecording);
+      setExportProgress(100);
+
+      // 6. Deliver file via Web Share or direct download
+      const fileName = `${brandSlugClean}-${selected?.name || "creative"}-${format}.${ext}`
+        .replace(/\s+/g, "-")
+        .toLowerCase();
+      const file = new File([blob], fileName, { type: mimeType });
+      const isMobileDevice =
+        window.matchMedia("(pointer: coarse)").matches && window.innerWidth < 900;
+      const canShareFile =
+        isMobileDevice &&
+        typeof navigator.share === "function" &&
+        navigator.canShare?.({ files: [file] });
+
+      if (canShareFile) {
+        try {
+          await navigator.share({ files: [file], title: headline || businessName });
+          toast.success(
+            isAr ? "فيديو التصميم جاهز للحفظ أو المشاركة" : "Video creative ready to share",
+          );
+          return;
+        } catch (shareError) {
+          if (shareError instanceof DOMException && shareError.name === "AbortError") return;
+          console.warn("Native file sharing unavailable; using fallback", shareError);
+        }
+      }
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = fileName;
+      link.href = url;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
+      toast.success(
+        isAr
+          ? `تم تنزيل فيديو التصميم بنجاح (${target.width}×${target.height})`
+          : `Video creative downloaded (${target.width}×${target.height})`,
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        isAr
+          ? "تعذر تسجيل الفيديو. جاري تنزيل الملف الأصلي بدلاً منه."
+          : "Could not record video. Downloading original file.",
+      );
+      await downloadOriginalVideo();
+    } finally {
+      setExporting(false);
+      setExportProgress(0);
+      if (v) {
+        v.loop = true;
+        v.play().catch(() => {});
+      }
+    }
+  };
+
+  const exportCreative = async () => {
+    if (isCurrentVideo) {
+      await exportVideoCreative();
+    } else {
+      await exportImageCreative();
     }
   };
 
@@ -544,21 +850,104 @@ ${desc}${detailsBlock}
               {copiedCaption ? <Check className="size-4 text-emerald-600" /> : <Copy className="size-4 text-primary" />}
               {isAr ? "نسخ كابشن انستقرام" : "Copy Instagram Caption"}
             </Button>
-            <Button
-              onClick={exportCreative}
-              disabled={exporting || productsQ.isLoading}
-              size="lg"
-              className="gap-2 rounded-xl"
-            >
-              <Download className="size-4" />
-              {exporting
-                ? isAr
-                  ? "جارٍ التصدير…"
-                  : "Exporting…"
-                : isAr
-                  ? "تنزيل PNG"
-                  : "Download PNG"}
-            </Button>
+            {isCurrentVideo ? (
+              <div className="flex items-center">
+                <Button
+                  onClick={exportCreative}
+                  disabled={exporting || productsQ.isLoading}
+                  size="lg"
+                  className="gap-2 rounded-s-xl rounded-e-none"
+                >
+                  <Video className="size-4" />
+                  {exporting
+                    ? exportProgress > 0
+                      ? isAr
+                        ? `جارٍ التصدير (${exportProgress}%)…`
+                        : `Exporting (${exportProgress}%)…`
+                      : isAr
+                        ? "جارٍ التجهيز…"
+                        : "Preparing…"
+                    : isAr
+                      ? "تنزيل فيديو MP4"
+                      : "Download Video (MP4)"}
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      disabled={exporting || productsQ.isLoading}
+                      size="lg"
+                      className="px-2.5 rounded-s-none rounded-e-xl border-s border-primary-foreground/20"
+                      aria-label={isAr ? "خيارات التنزيل" : "Download options"}
+                    >
+                      <ChevronDown className="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align={isAr ? "start" : "end"} className="w-60">
+                    <DropdownMenuItem
+                      onClick={exportVideoCreative}
+                      disabled={exporting}
+                      className="gap-2.5 cursor-pointer py-2"
+                    >
+                      <Video className="size-4 text-primary shrink-0" />
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-xs">
+                          {isAr ? "تنزيل فيديو مصمم (MP4)" : "Branded Video (MP4)"}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {isAr ? "فيديو مع القالب والشعار والأسعار" : "Video with layout, branding & price"}
+                        </span>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={downloadOriginalVideo}
+                      disabled={exporting}
+                      className="gap-2.5 cursor-pointer py-2"
+                    >
+                      <Download className="size-4 text-muted-foreground shrink-0" />
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-xs">
+                          {isAr ? "تنزيل الفيديو الأصلي الخام" : "Original Raw Video"}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {isAr ? "ملف الفيديو الأصلي بدون إضافات" : "Source MP4 file without overlays"}
+                        </span>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={exportImageCreative}
+                      disabled={exporting}
+                      className="gap-2.5 cursor-pointer py-2"
+                    >
+                      <LucideImage className="size-4 text-muted-foreground shrink-0" />
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-xs">
+                          {isAr ? "تنزيل لقطة كصورة (PNG)" : "Snapshot Frame (PNG)"}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {isAr ? "صورة ثابتة للتصميم الحالي" : "Still image of current frame"}
+                        </span>
+                      </div>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            ) : (
+              <Button
+                onClick={exportCreative}
+                disabled={exporting || productsQ.isLoading}
+                size="lg"
+                className="gap-2 rounded-xl"
+              >
+                <Download className="size-4" />
+                {exporting
+                  ? isAr
+                    ? "جارٍ التصدير…"
+                    : "Exporting…"
+                  : isAr
+                    ? "تنزيل PNG"
+                    : "Download PNG"}
+              </Button>
+            )}
           </div>
         </div>
       </section>
@@ -1245,6 +1634,7 @@ ${desc}${detailsBlock}
               {photo ? (
                 isCurrentVideo ? (
                   <video
+                    ref={videoRef}
                     src={photo}
                     crossOrigin="anonymous"
                     autoPlay
