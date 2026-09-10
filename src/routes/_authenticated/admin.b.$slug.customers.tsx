@@ -917,7 +917,11 @@ function CustomersPage() {
       if (stats?.badge === "VIP") counts.vip++;
       else if (stats?.badge === "Churn Risk") counts.churn++;
       else if (stats?.badge === "New Buyer") counts.new++;
-      else if (stats && stats.totalOrders > 1) counts.repeat++;
+      else if (
+        stats?.badge === "Regular" ||
+        (stats && stats.totalOrders > 1 && stats.badge !== "VIP" && stats.badge !== "Churn Risk")
+      )
+        counts.repeat++;
     });
     return counts;
   }, [data, customerCrmStats]);
@@ -944,7 +948,10 @@ function CustomersPage() {
     else if (segmentScope === "churn") matchesScope = stats?.badge === "Churn Risk";
     else if (segmentScope === "new") matchesScope = stats?.badge === "New Buyer";
     else if (segmentScope === "repeat")
-      matchesScope = Boolean(stats && stats.totalOrders > 1 && stats.badge !== "VIP");
+      matchesScope = Boolean(
+        stats?.badge === "Regular" ||
+          (stats && stats.totalOrders > 1 && stats.badge !== "VIP" && stats.badge !== "Churn Risk"),
+      );
 
     return matchesSearch && matchesRegion && matchesScope;
   });

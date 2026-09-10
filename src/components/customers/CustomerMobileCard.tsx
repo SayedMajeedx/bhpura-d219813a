@@ -1,6 +1,17 @@
 import React from "react";
 import { formatMoney } from "@/lib/format";
-import { Users, Star, Phone, Mail, MapPin, ChevronRight, MessageCircle } from "lucide-react";
+import {
+  Users,
+  Star,
+  Phone,
+  Mail,
+  MapPin,
+  ChevronRight,
+  MessageCircle,
+  RefreshCw,
+  UserPlus,
+  AlertCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { regionLabel } from "@/lib/bahrain-regions";
@@ -63,6 +74,27 @@ export const CustomerMobileCard: React.FC<CustomerMobileCardProps> = ({
                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-300/40">
                   <Star className="h-2.5 w-2.5 fill-amber-500 text-amber-500" />
                   VIP
+                </span>
+              )}
+              {stats?.badge === "Churn Risk" && (
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-300/40">
+                  <AlertCircle className="h-2.5 w-2.5 text-rose-600 dark:text-rose-400" />
+                  {isAr ? "راكد" : "Churn"}
+                </span>
+              )}
+              {stats?.badge === "New Buyer" && (
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-300/40">
+                  <UserPlus className="h-2.5 w-2.5 text-blue-600 dark:text-blue-400" />
+                  {isAr ? "جديد" : "New"}
+                </span>
+              )}
+              {(stats?.badge === "Regular" ||
+                (stats?.totalOrders > 1 &&
+                  stats?.badge !== "VIP" &&
+                  stats?.badge !== "Churn Risk")) && (
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-300/40">
+                  <RefreshCw className="h-2.5 w-2.5 text-emerald-600 dark:text-emerald-400" />
+                  {isAr ? "متكرر" : "Repeat"}
                 </span>
               )}
             </h3>

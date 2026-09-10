@@ -18,6 +18,9 @@ import {
   ChevronRight,
   AlertTriangle,
   RotateCw,
+  Star,
+  RefreshCw,
+  UserPlus,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
@@ -26,6 +29,7 @@ import { formatAddressLine, regionLabel } from "@/lib/bahrain-regions";
 import { formatMoney } from "@/lib/format";
 import { getOrderWorkflow } from "@/lib/order-workflow";
 import { getFulfillmentBadgeDetails } from "@/lib/status-labels";
+import { resolveCustomerSegmentBadge } from "@/lib/commerce-metrics";
 import {
   resolvePaymentStatus,
   PAYMENT_BADGE_CLASSES,
@@ -392,15 +396,37 @@ function CustomerProfilePage() {
                 </div>
                 {/* VIP / Segment Badges */}
                 <div className="flex flex-wrap gap-1 justify-end">
-                  {orders.length >= 3 || totalSpent >= 100 ? (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-300 dark:border-amber-800">
-                      👑 {lang === "ar" ? "عميل مميز (VIP)" : "VIP Customer"}
-                    </span>
-                  ) : orders.length > 0 ? (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
-                      ✨ {lang === "ar" ? "عميل متكرر" : "Repeat Buyer"}
-                    </span>
-                  ) : null}
+                  {(() => {
+                    const badge = resolveCustomerSegmentBadge({
+                      totalOrders: orders.length,
+                      lifetimeSpend: totalSpent,
+                      lastOrderDate,
+                      currency: customer?.currency || "BHD",
+                    });
+                    if (badge.segment === "lead") return null;
+                    return (
+                      <span
+                        className={cn(
+                          "text-[10px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 shadow-2xs",
+                          badge.classes,
+                        )}
+                      >
+                        {badge.segment === "vip" && (
+                          <Star className="h-3 w-3 fill-amber-500 text-amber-500 shrink-0" />
+                        )}
+                        {badge.segment === "repeat" && (
+                          <RefreshCw className="h-3 w-3 shrink-0" />
+                        )}
+                        {badge.segment === "new" && (
+                          <UserPlus className="h-3 w-3 shrink-0" />
+                        )}
+                        {badge.segment === "churn" && (
+                          <AlertTriangle className="h-3 w-3 shrink-0" />
+                        )}
+                        <span>{lang === "ar" ? badge.label.ar : badge.label.en}</span>
+                      </span>
+                    );
+                  })()}
                 </div>
               </div>
               <h2 className="font-display text-xl font-bold">

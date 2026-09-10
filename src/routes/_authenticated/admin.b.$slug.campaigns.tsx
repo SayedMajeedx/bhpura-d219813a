@@ -256,7 +256,7 @@ function CampaignsPage() {
     const segmentFiltered = list.filter((c) => {
       if (selectedSegment === "All") return true;
       const stats = customerCrmStats.get(c.id);
-      const badge = stats?.badge || "Regular";
+      const badge = stats?.badge ?? null;
       return badge === selectedSegment;
     });
 
