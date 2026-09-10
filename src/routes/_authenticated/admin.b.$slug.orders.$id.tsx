@@ -298,44 +298,6 @@ function fillCourierMessage(template: string, order: any, brandName: string) {
     .replaceAll("{{customer_phone}}", getOrderCustomerPhone(order));
 }
 
-const QUICK_SIZES = [
-  "50",
-  "52",
-  "54",
-  "56",
-  "58",
-  "60",
-  "62",
-  "XS",
-  "S",
-  "M",
-  "L",
-  "XL",
-  "XXL",
-  "Free Size",
-  "تفصيل خاص",
-];
-
-const QUICK_COLORS = [
-  { name: "أسود", color: "#18181b", border: "border-zinc-700" },
-  { name: "كحلي", color: "#1e293b", border: "border-slate-700" },
-  { name: "بيج", color: "#d4c5b9", border: "border-stone-400" },
-  { name: "أبيض", color: "#ffffff", border: "border-zinc-300" },
-  { name: "عنابي", color: "#881337", border: "border-rose-900" },
-  { name: "رمادي", color: "#64748b", border: "border-slate-500" },
-  { name: "زيتي", color: "#3f6212", border: "border-lime-900" },
-  { name: "بني", color: "#78350f", border: "border-amber-900" },
-];
-
-const QUICK_FABRICS = [
-  "كريب صالونا",
-  "لينن طبيعي",
-  "حرير مغسول",
-  "كريب ملكي",
-  "قطن فاخر",
-  "شيفون ناعم",
-];
-
 function ItemTailoringCustomizer({
   item,
   isAr,
@@ -352,9 +314,6 @@ function ItemTailoringCustomizer({
   onChange: (patch: Partial<Item>) => void;
 }) {
   const brand = useBrand();
-  const currentSize = item.selected_variant?.size ?? "";
-  const currentColor = item.selected_variant?.color ?? "";
-  const currentFabric = item.selected_variant?.fabric ?? "";
 
   const detectedProfile = fitProfileForProduct(productCategory, productName);
   const existingProfileField = String(
@@ -506,33 +465,6 @@ function ItemTailoringCustomizer({
         ]
       : others;
     onChange({ custom_field_values: updated });
-  };
-
-  const handleSizeChange = (sizeVal: string) => {
-    onChange({
-      selected_variant: {
-        ...(item.selected_variant ?? {}),
-        size: sizeVal,
-      },
-    });
-  };
-
-  const handleColorChange = (colorVal: string) => {
-    onChange({
-      selected_variant: {
-        ...(item.selected_variant ?? {}),
-        color: colorVal,
-      },
-    });
-  };
-
-  const handleFabricChange = (fabricVal: string) => {
-    onChange({
-      selected_variant: {
-        ...(item.selected_variant ?? {}),
-        fabric: fabricVal,
-      },
-    });
   };
 
   return (
@@ -733,151 +665,6 @@ function ItemTailoringCustomizer({
           }
           className="text-xs bg-background resize-none leading-relaxed border-border/80 focus-visible:ring-2 focus-visible:ring-ring"
         />
-      </div>
-
-      {/* Quick Variant Attributes (Optional Preset Size, Color, Fabric) */}
-      <div className="space-y-3 pt-1">
-        {/* Size Selection */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <Label className="text-[11px] font-semibold text-foreground">
-              {isAr ? "المقاس أو الطول السريع (اختياري):" : "Quick Size / Length (Optional):"}
-            </Label>
-            {currentSize && (
-              <button
-                type="button"
-                onClick={() => handleSizeChange("")}
-                className="text-[10px] text-muted-foreground hover:text-destructive transition-colors"
-              >
-                {isAr ? "مسح" : "Clear"}
-              </button>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {QUICK_SIZES.map((s) => {
-              const active = currentSize === s;
-              return (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => handleSizeChange(active ? "" : s)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
-                    active
-                      ? "bg-primary text-primary-foreground border-primary shadow-xs font-bold"
-                      : "border-border/80 bg-background hover:bg-muted text-foreground"
-                  }`}
-                >
-                  {s}
-                </button>
-              );
-            })}
-          </div>
-          <Input
-            type="text"
-            value={currentSize}
-            onChange={(e) => handleSizeChange(e.target.value)}
-            placeholder={
-              isAr ? "أو اكتب المقاس يدوياً (مثال: 54 خاص أو مقاس مخصص)..." : "Or type custom size..."
-            }
-            className="h-8 text-xs bg-background mt-1"
-          />
-        </div>
-
-        {/* Color Selection */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <Label className="text-[11px] font-semibold text-foreground">
-              {isAr ? "اللون:" : "Color:"}
-            </Label>
-            {currentColor && (
-              <button
-                type="button"
-                onClick={() => handleColorChange("")}
-                className="text-[10px] text-muted-foreground hover:text-destructive transition-colors"
-              >
-                {isAr ? "مسح" : "Clear"}
-              </button>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {QUICK_COLORS.map((c) => {
-              const active = currentColor === c.name;
-              return (
-                <button
-                  key={c.name}
-                  type="button"
-                  onClick={() => handleColorChange(active ? "" : c.name)}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
-                    active
-                      ? "bg-primary text-primary-foreground border-primary shadow-xs font-bold"
-                      : "border-border/80 bg-background hover:bg-muted text-foreground"
-                  }`}
-                >
-                  <span
-                    className={`h-2.5 w-2.5 rounded-full border shrink-0 ${c.border}`}
-                    style={{ backgroundColor: c.color }}
-                  />
-                  <span>{c.name}</span>
-                </button>
-              );
-            })}
-          </div>
-          <Input
-            type="text"
-            value={currentColor}
-            onChange={(e) => handleColorChange(e.target.value)}
-            placeholder={
-              isAr
-                ? "أو اكتب اسم اللون يدوياً (مثال: رمادي غامق، كحلي مطفي)..."
-                : "Or type custom color..."
-            }
-            className="h-8 text-xs bg-background mt-1"
-          />
-        </div>
-
-        {/* Fabric Selection */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <Label className="text-[11px] font-semibold text-foreground">
-              {isAr ? "القماش أو نوع الخامة (اختياري):" : "Fabric / Material (Optional):"}
-            </Label>
-            {currentFabric && (
-              <button
-                type="button"
-                onClick={() => handleFabricChange("")}
-                className="text-[10px] text-muted-foreground hover:text-destructive transition-colors"
-              >
-                {isAr ? "مسح" : "Clear"}
-              </button>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {QUICK_FABRICS.map((f) => {
-              const active = currentFabric === f;
-              return (
-                <button
-                  key={f}
-                  type="button"
-                  onClick={() => handleFabricChange(active ? "" : f)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
-                    active
-                      ? "bg-primary text-primary-foreground border-primary shadow-xs font-bold"
-                      : "border-border/80 bg-background hover:bg-muted text-foreground"
-                  }`}
-                >
-                  {f}
-                </button>
-              );
-            })}
-          </div>
-          <Input
-            type="text"
-            value={currentFabric}
-            onChange={(e) => handleFabricChange(e.target.value)}
-            placeholder={isAr ? "أو اكتب نوع القماش يدوياً..." : "Or type custom fabric..."}
-            className="h-8 text-xs bg-background mt-1"
-          />
-        </div>
       </div>
     </div>
   );
