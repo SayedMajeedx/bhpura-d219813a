@@ -481,29 +481,70 @@ function ContentStudioPage() {
   };
 
   const getExactVideoDuration = async (videoElement: HTMLVideoElement, url: string): Promise<number> => {
-    // 1. Direct finite duration on element if already loaded
+    // 1. Direct finite duration on element if already fully loaded
     if (videoElement.duration && isFinite(videoElement.duration) && videoElement.duration > 0) {
       return videoElement.duration;
     }
 
-    // 2. Seekable range check (often available even when duration is Infinity)
+    // 2. Fast MP4 mvhd atom parser directly from file header / body (accurate to milliseconds)
     try {
-      if (videoElement.seekable && videoElement.seekable.length > 0) {
-        const end = videoElement.seekable.end(videoElement.seekable.length - 1);
-        if (isFinite(end) && end > 0) {
-          return end;
+      const response = await fetch(url);
+      const reader = response.body?.getReader();
+      if (reader) {
+        let totalLen = 0;
+        const chunks: Uint8Array[] = [];
+        // Read up to 256KB to locate the moov/mvhd atom
+        while (totalLen < 256 * 1024) {
+          const { done, value } = await reader.read();
+          if (done || !value) break;
+          chunks.push(value);
+          totalLen += value.length;
+
+          const merged = new Uint8Array(totalLen);
+          let offset = 0;
+          for (const c of chunks) {
+            merged.set(c, offset);
+            offset += c.length;
+          }
+
+          for (let i = 0; i < merged.length - 32; i++) {
+            if (
+              merged[i] === 0x6d &&
+              merged[i + 1] === 0x76 &&
+              merged[i + 2] === 0x68 &&
+              merged[i + 3] === 0x64
+            ) {
+              // 'mvhd' atom
+              const ver = merged[i + 4];
+              const dv = new DataView(merged.buffer, i);
+              const timescale = ver === 1 ? dv.getUint32(24) : dv.getUint32(16);
+              const dur = ver === 1 ? Number(dv.getBigUint64(28)) : dv.getUint32(20);
+              reader.cancel().catch(() => {});
+              if (timescale > 0 && dur > 0) {
+                const secs = dur / timescale;
+                if (isFinite(secs) && secs > 0) return secs;
+              }
+              break;
+            }
+          }
         }
       }
-    } catch {}
+    } catch (err) {
+      console.warn("Could not parse MP4 mvhd duration via stream", err);
+    }
 
-    // 3. Fast MP4 mvhd atom parser directly from file header (accurate to milliseconds)
+    // 3. If stream reader didn't find mvhd (e.g. moov at end of file), read full arrayBuffer
     try {
-      const response = await fetch(url, { headers: { Range: "bytes=0-32768" } });
-      const buf = await response.arrayBuffer();
+      const res = await fetch(url);
+      const buf = await res.arrayBuffer();
       const u8 = new Uint8Array(buf);
       for (let i = 0; i < u8.length - 32; i++) {
-        if (u8[i] === 0x6d && u8[i + 1] === 0x76 && u8[i + 2] === 0x68 && u8[i + 3] === 0x64) {
-          // 'mvhd' atom
+        if (
+          u8[i] === 0x6d &&
+          u8[i + 1] === 0x76 &&
+          u8[i + 2] === 0x68 &&
+          u8[i + 3] === 0x64
+        ) {
           const ver = u8[i + 4];
           const dv = new DataView(buf, i);
           const timescale = ver === 1 ? dv.getUint32(24) : dv.getUint32(16);
@@ -516,21 +557,8 @@ function ContentStudioPage() {
         }
       }
     } catch (err) {
-      console.warn("Could not parse MP4 mvhd duration from header", err);
+      console.warn("Could not parse MP4 mvhd duration from full buffer", err);
     }
-
-    // 4. Seek to large number trick (forces browser to find clamped true duration)
-    try {
-      const prevTime = videoElement.currentTime;
-      videoElement.currentTime = 1e7;
-      await new Promise((r) => {
-        videoElement.addEventListener("seeked", () => r(true), { once: true });
-        setTimeout(r, 300);
-      });
-      const measured = videoElement.currentTime;
-      videoElement.currentTime = prevTime;
-      if (isFinite(measured) && measured > 0) return measured;
-    } catch {}
 
     return 0;
   };
@@ -565,7 +593,7 @@ function ContentStudioPage() {
         });
       }
 
-      // 2. Discover exact full video duration (no arbitrary 6s or 30s limits!)
+      // 2. Discover exact full video duration directly from file metadata
       const exactDuration = await getExactVideoDuration(v, photo);
 
       // 3. Pre-render overlay without modifying video state or visibility
@@ -642,7 +670,7 @@ function ContentStudioPage() {
 
       const track = stream.getVideoTracks()[0];
 
-      // Try capturing audio track from video if available so sound isn't lost
+      // Try capturing audio track from video if available so original sound is preserved
       try {
         const vStream = (v as any).captureStream
           ? (v as any).captureStream()
@@ -690,32 +718,25 @@ function ContentStudioPage() {
         recorder.onerror = reject;
       });
 
-      // 6. Prepare video for playback from frame 0
+      // 6. Pause, reset, and strictly await seek to 0 before starting recorder
+      v.pause();
       v.muted = true;
       v.defaultMuted = true;
       v.volume = 0;
       v.playsInline = true;
       v.loop = false;
-      v.currentTime = 0;
 
-      await new Promise<void>((resolve) => {
-        let settled = false;
-        const onReady = () => {
-          if (!settled) {
-            settled = true;
-            v.removeEventListener("seeked", onReady);
+      if (v.currentTime !== 0) {
+        await new Promise<void>((resolve) => {
+          const onSeeked = () => {
+            v.removeEventListener("seeked", onSeeked);
             resolve();
-          }
-        };
-        v.addEventListener("seeked", onReady);
-        if (v.currentTime === 0) setTimeout(onReady, 60);
-        setTimeout(() => {
-          if (!settled) {
-            settled = true;
-            resolve();
-          }
-        }, 500);
-      });
+          };
+          v.addEventListener("seeked", onSeeked, { once: true });
+          v.currentTime = 0;
+          setTimeout(resolve, 800);
+        });
+      }
 
       const vw = v.videoWidth || target.width;
       const vh = v.videoHeight || target.height;
@@ -739,14 +760,15 @@ function ContentStudioPage() {
         if (rAFId !== null) cancelAnimationFrame(rAFId);
         if (checkTimer !== null) clearInterval(checkTimer);
 
-        // Hold last frame for 250ms so video doesn't end abruptly
+        // Allow 300ms for final frame buffer to commit
         window.setTimeout(() => {
           if (recorder.state === "recording") {
             recorder.stop();
           }
-        }, 250);
+        }, 300);
       };
 
+      // Native ended event is our primary end signal
       v.addEventListener("ended", finishRecording, { once: true });
 
       const renderCanvas = () => {
@@ -797,17 +819,18 @@ function ContentStudioPage() {
         rAFId = requestAnimationFrame(onAnimFrame);
       }
 
-      // Check ended condition every 50ms without interfering with playback
+      // Check ended condition every 100ms without cutting off prematurely
       checkTimer = window.setInterval(() => {
         if (!isRecording) {
           if (checkTimer !== null) clearInterval(checkTimer);
           return;
         }
-        if (v.ended || (exactDuration > 0 && v.currentTime >= exactDuration - 0.04)) {
+        // Only stop if the video has truly ended, or if we have exactDuration and currentTime reached it
+        if (v.ended || (exactDuration > 0 && v.currentTime >= exactDuration)) {
           if (checkTimer !== null) clearInterval(checkTimer);
           finishRecording();
         }
-      }, 50);
+      }, 100);
 
       // Start recording and start playback
       recorder.start(100);
@@ -819,8 +842,8 @@ function ContentStudioPage() {
         await v.play().catch(() => {});
       }
 
-      // Safety timeout: full duration + 5 seconds buffer (or 90s max if unknown)
-      const timeoutLimitMs = (exactDuration > 0 ? exactDuration + 5 : 90) * 1000;
+      // Generous safety timeout: full duration + 8 seconds buffer (or 120s max if unknown)
+      const timeoutLimitMs = (exactDuration > 0 ? exactDuration + 8 : 120) * 1000;
       const maxTimeout = window.setTimeout(() => {
         finishRecording();
       }, timeoutLimitMs);
@@ -1797,7 +1820,7 @@ ${desc}${detailsBlock}
                     src={photo}
                     crossOrigin="anonymous"
                     autoPlay
-                    loop
+                    loop={!exporting}
                     muted
                     playsInline
                     className="absolute inset-0 size-full object-cover"
