@@ -2137,7 +2137,7 @@ function ProductsSection({
                 {isAr ? "القسم المستهدف" : "Target Category"}
               </Label>
               <select
-                className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus:ring-1 focus:ring-primary outline-none"
+                className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
                 value={bulkSelectedCategory}
                 onChange={(e) => setBulkSelectedCategory(e.target.value)}
               >
@@ -3006,7 +3006,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
               <div>
                 {(categoriesQ.data ?? []).length > 0 ? (
                   <select
-                    className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus:ring-1 focus:ring-primary outline-none"
+                    className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
                     value={(() => {
                       if (!form.category) return "";
                       const match = (categoriesQ.data ?? []).find(
@@ -3257,7 +3257,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                       </Label>
                       <div className="mt-1">
                         <select
-                          className="w-full h-9.5 rounded-lg border border-input bg-background px-3 text-xs focus:ring-1 focus:ring-primary outline-none"
+                          className="w-full h-9.5 rounded-lg border border-input bg-background px-3 text-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
                           value={form.occasion}
                           onChange={(e) => setForm({ ...form, occasion: e.target.value })}
                         >
@@ -5713,7 +5713,7 @@ function VariantMobileCard({
           <div>
             <Label className="text-[10px] font-black uppercase text-muted-foreground/85">SKU</Label>
             <input
-              className="mt-1 h-9 w-full rounded-lg border border-input bg-background px-2.5 text-xs font-mono outline-none focus:ring-1 focus:ring-primary"
+              className="mt-1 h-9 w-full rounded-lg border border-input bg-background px-2.5 text-xs font-mono outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               defaultValue={v.sku ?? ""}
               onBlur={(e) => update(v, { sku: e.target.value || null })}
               placeholder="—"
@@ -5724,7 +5724,7 @@ function VariantMobileCard({
               {barcodeLabel}
             </Label>
             <input
-              className="mt-1 h-9 w-full rounded-lg border border-input bg-background px-2.5 text-xs font-mono outline-none focus:ring-1 focus:ring-primary"
+              className="mt-1 h-9 w-full rounded-lg border border-input bg-background px-2.5 text-xs font-mono outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               defaultValue={v.barcode ?? ""}
               onBlur={(e) => update(v, { barcode: e.target.value.trim() || null })}
               placeholder="—"
@@ -6172,7 +6172,7 @@ function VariantList({
                   {isAr ? "الوحدة" : "Unit"}
                 </Label>
                 <select
-                  className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2.5 text-xs outline-none focus:ring-1 focus:ring-primary"
+                  className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2.5 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   value={row.size_unit}
                   onChange={(e) => setRow({ ...row, size_unit: e.target.value })}
                 >

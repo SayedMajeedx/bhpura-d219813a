@@ -22,6 +22,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/com
 import { OsMobileTabBar, type OsMobileTabItem } from "./os-mobile-tab-bar";
 import { OsIslandDock, type OsIslandDockItem } from "./os-island-dock";
 import { OsQuickActions } from "./os-quick-actions";
+import { OsThemeToggle } from "./os-theme-toggle";
 import { OsAppsHubModal } from "./os-apps-hub-modal";
 import { type AdminNavItemConfig } from "@/config/admin-navigation";
 import { cn } from "@/lib/utils";
@@ -486,6 +487,7 @@ export function OsMobileNavigation({
 
         <div className="flex items-center gap-1.5 shrink-0">
           <OsQuickActions slug={activeSlug} lang={lang} className="h-8.5 px-2 text-xs" />
+          <OsThemeToggle lang={lang} className="h-10 w-10 min-h-[44px] min-w-[44px] rounded-xl" />
           <Button
             variant="ghost"
             size="icon"
