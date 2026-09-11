@@ -367,8 +367,8 @@ function SuperRequestsPage() {
                             className="border-b border-border-subtle hover:bg-muted/20 transition-colors"
                           >
                             <td className="p-4 space-y-1">
-                              <div className="font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                                <User className="h-3.5 w-3.5 text-zinc-400" />
+                              <div className="font-semibold text-foreground flex items-center gap-1.5">
+                                <User className="h-3.5 w-3.5 text-muted-foreground" />
                                 <span>{request.full_name}</span>
                               </div>
                               <div className="text-xs text-muted-foreground flex flex-col gap-0.5 font-mono">
@@ -414,7 +414,7 @@ function SuperRequestsPage() {
                             </td>
 
                             <td className="p-4">
-                              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-300 border border-border">
+                              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-muted text-muted-foreground border border-border">
                                 {request.business_type || (lang === "ar" ? "أزياء" : "Fashion")}
                               </span>
                             </td>
@@ -433,7 +433,7 @@ function SuperRequestsPage() {
                                       <span>{lang === "ar" ? "معاينة الإيصال" : "View Receipt"}</span>
                                     </Button>
                                   </DialogTrigger>
-                                  <DialogContent className="sm:max-w-md bg-zinc-950 text-white border-zinc-900">
+                                  <DialogContent className="sm:max-w-md bg-card text-foreground border-border">
                                     <DialogHeader>
                                       <DialogTitle className="text-sm font-semibold flex items-center gap-1.5">
                                         <ClockIcon className="h-4.5 w-4.5 text-primary" />
@@ -446,7 +446,7 @@ function SuperRequestsPage() {
                                       {receiptLoading ? (
                                         <div className="flex flex-col items-center gap-2">
                                           <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                                          <span className="text-xs text-zinc-400">
+                                          <span className="text-xs text-muted-foreground">
                                             {lang === "ar"
                                               ? "جاري فك تشفير رابط الإيصال..."
                                               : "Generating secure viewer..."}
@@ -456,10 +456,10 @@ function SuperRequestsPage() {
                                         <img
                                           src={receiptViewUrl}
                                           alt="Benefit Payment Receipt"
-                                          className="max-h-[400px] w-auto rounded-lg object-contain border border-zinc-800"
+                                          className="max-h-[400px] w-auto rounded-lg object-contain border border-border"
                                         />
                                       ) : (
-                                        <div className="text-xs text-zinc-500">
+                                        <div className="text-xs text-muted-foreground">
                                           {lang === "ar" ? "تعذر تحميل الإيصال" : "Receipt unavailable"}
                                         </div>
                                       )}
@@ -520,7 +520,7 @@ function SuperRequestsPage() {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div className="p-3.5 bg-zinc-50 dark:bg-zinc-900/50 rounded-lg border border-zinc-100 dark:border-zinc-900 text-xs space-y-1 font-mono">
+            <div className="p-3.5 bg-muted/50 rounded-lg border border-border text-xs space-y-1 font-mono">
               <p className="flex justify-between">
                 <span className="text-muted-foreground">
                   {lang === "ar" ? "اسم المالك:" : "Owner Name:"}

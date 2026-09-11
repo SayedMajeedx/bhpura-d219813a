@@ -861,7 +861,7 @@ function ProductImporterModal({
       )}
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-xl border-zinc-100 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl">
+        <DialogContent className="max-w-xl border-border bg-card/95 backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 font-display text-xl">
               <Sparkles className="h-5 w-5 text-amber-500" />
@@ -913,7 +913,7 @@ function ProductImporterModal({
                   <button
                     key={item.id}
                     onClick={() => setPreset(item.id as any)}
-                    className={`flex flex-col items-start p-3.5 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 text-start transition-all ${item.color} ${
+                    className={`flex flex-col items-start p-3.5 rounded-xl border border-border bg-muted/30 text-start transition-all ${item.color} ${
                       preset === item.id
                         ? "border-primary ring-2 ring-primary/10 bg-primary/5 dark:bg-primary/5"
                         : ""
@@ -929,7 +929,7 @@ function ProductImporterModal({
                 ))}
               </div>
 
-              <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
+              <div className="pt-4 border-t border-border flex justify-end">
                 <label className="relative cursor-pointer">
                   <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground font-semibold text-xs rounded-xl shadow-lg shadow-primary/10 hover:shadow-xl hover:bg-primary/95 transition-all">
                     <Upload className="h-4 w-4" />
@@ -997,7 +997,7 @@ function ProductImporterModal({
                 ].map((field) => (
                   <div
                     key={field.key}
-                    className="flex items-center justify-between gap-4 p-3 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border border-zinc-100 dark:border-zinc-800"
+                    className="flex items-center justify-between gap-4 p-3 bg-muted/40 rounded-xl border border-border"
                   >
                     <span className="text-xs font-semibold text-foreground">
                       {field.label} {field.required && <span className="text-rose-500">*</span>}
@@ -1062,7 +1062,7 @@ function ProductImporterModal({
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
+              <div className="pt-4 border-t border-border flex justify-end">
                 <Button
                   onClick={() => {
                     if (mappings.name === -1 || mappings.price === -1) {
@@ -1101,7 +1101,7 @@ function ProductImporterModal({
                   {progress}
                 </p>
               </div>
-              <div className="w-full max-w-xs bg-zinc-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+              <div className="w-full max-w-xs bg-muted h-1.5 rounded-full overflow-hidden">
                 <div
                   className="bg-primary h-full transition-all duration-300"
                   style={{ width: `${totalCount > 0 ? (successCount / totalCount) * 100 : 0}%` }}
@@ -1116,7 +1116,7 @@ function ProductImporterModal({
                 <Check className="h-7 w-7 animate-bounce" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-lg font-bold font-display text-zinc-900 dark:text-zinc-100">
+                <h3 className="text-lg font-bold font-display text-foreground">
                   {isAr ? "اكتمل استيراد الكتالوج بنجاح!" : "Catalog Migration Completed!"}
                 </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed max-w-sm">
@@ -5113,7 +5113,7 @@ function VariantDesktopRow({
       <td className="px-2 py-3 text-center" onClick={(e) => e.stopPropagation()}>
         <input
           type="checkbox"
-          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer transition-all"
+          className="h-4 w-4 rounded border-input text-primary focus:ring-primary cursor-pointer transition-all"
           checked={isSelected}
           onChange={onToggleSelect}
         />
@@ -5219,13 +5219,13 @@ function VariantDesktopRow({
                   </span>
                 )}
                 {v.color && (
-                  <span className="inline-flex items-center bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 text-xs font-semibold px-2 py-0.5 border border-slate-200 dark:border-slate-700 rounded-md gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
+                  <span className="inline-flex items-center bg-muted text-foreground text-xs font-semibold px-2 py-0.5 border border-border rounded-md gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground shrink-0" />
                     {v.color}
                   </span>
                 )}
                 {v.fabric && (
-                  <span className="inline-flex items-center bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 text-xs font-semibold px-2 py-0.5 border border-zinc-200 dark:border-slate-700 rounded-md">
+                  <span className="inline-flex items-center bg-muted text-foreground text-xs font-semibold px-2 py-0.5 border border-border rounded-md">
                     {v.fabric}
                   </span>
                 )}
@@ -5535,7 +5535,7 @@ function VariantMobileCard({
         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
           <input
             type="checkbox"
-            className="h-4.5 w-4.5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer transition-all"
+            className="h-4.5 w-4.5 rounded border-input text-primary focus:ring-primary cursor-pointer transition-all"
             checked={isSelected}
             onChange={onToggleSelect}
           />
@@ -5548,12 +5548,12 @@ function VariantMobileCard({
                   </span>
                 )}
                 {v.color && (
-                  <span className="inline-flex items-center bg-slate-100 text-slate-800 text-xs font-bold px-1.5 py-0.5 border border-slate-200 rounded-sm">
+                  <span className="inline-flex items-center bg-muted text-foreground text-xs font-bold px-1.5 py-0.5 border border-border rounded-sm">
                     {v.color}
                   </span>
                 )}
                 {v.fabric && (
-                  <span className="inline-flex items-center bg-zinc-100 text-zinc-800 text-xs font-bold px-1.5 py-0.5 border border-zinc-200 rounded-sm">
+                  <span className="inline-flex items-center bg-muted text-foreground text-xs font-bold px-1.5 py-0.5 border border-border rounded-sm">
                     {v.fabric}
                   </span>
                 )}
@@ -6426,7 +6426,7 @@ function VariantList({
                 >
                   <input
                     type="checkbox"
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer transition-all"
+                    className="h-4 w-4 rounded border-input text-primary focus:ring-primary cursor-pointer transition-all"
                     checked={isAllSelected}
                     onChange={toggleSelectAll}
                   />

@@ -300,7 +300,7 @@ function SuperAdminSettings() {
         {/* Row 1: Logo Asset Customization */}
         <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card">
           <CardHeader className="pb-3 border-b border-border-subtle">
-            <CardTitle className="text-sm font-medium text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
+            <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
               <Globe className="h-4 w-4 text-primary" />
               {lang === "ar"
                 ? "شعار المنصة الرئيسي (Whitelabel Assets)"
@@ -315,7 +315,7 @@ function SuperAdminSettings() {
           <CardContent className="space-y-4">
             <div className="flex flex-col md:flex-row items-center gap-6">
               {/* Image Preview Block */}
-              <div className="h-24 w-40 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 flex items-center justify-center overflow-hidden shrink-0 relative group">
+              <div className="h-24 w-40 rounded-lg border border-border bg-muted/40 flex items-center justify-center overflow-hidden shrink-0 relative group">
                 {logoPreviewUrl ? (
                   <>
                     <img src={logoPreviewUrl} alt="Logo Preview" className="h-16 object-contain" />
@@ -331,7 +331,7 @@ function SuperAdminSettings() {
                     </button>
                   </>
                 ) : (
-                  <div className="text-zinc-400 dark:text-zinc-600 flex flex-col items-center gap-1">
+                  <div className="text-muted-foreground flex flex-col items-center gap-1">
                     <ImageIcon className="h-8 w-8" />
                     <span className="text-xs uppercase font-bold tracking-wider">Boutq</span>
                   </div>
@@ -342,17 +342,17 @@ function SuperAdminSettings() {
               <div className="flex-1 w-full">
                 <Label
                   htmlFor="logo-uploader"
-                  className="flex flex-col items-center justify-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 hover:border-primary/50 rounded-lg p-6 cursor-pointer bg-zinc-50/50 dark:bg-zinc-950/10 hover:bg-zinc-100/30 transition-all text-center relative"
+                  className="flex flex-col items-center justify-center border-2 border-dashed border-border hover:border-primary/50 rounded-lg p-6 cursor-pointer bg-card hover:bg-muted/30 transition-all text-center relative"
                 >
                   {uploadingLogo ? (
                     <div className="space-y-2 flex flex-col items-center">
                       <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                      <span className="text-xs font-medium text-zinc-500">
+                      <span className="text-xs font-medium text-muted-foreground">
                         {lang === "ar" ? "جاري الرفع..." : "Uploading logo..."}
                       </span>
                     </div>
                   ) : (
-                    <div className="space-y-1.5 text-zinc-500">
+                    <div className="space-y-1.5 text-muted-foreground">
                       <UploadCloud className="h-6 w-6 mx-auto text-primary/80" />
                       <p className="text-xs font-semibold">
                         {lang === "ar" ? "اضغط لرفع الشعار الجديد" : "Click to select logo asset"}
@@ -379,7 +379,7 @@ function SuperAdminSettings() {
         {/* Row 2: Standard and Promotional Pricing Configuration */}
         <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card">
           <CardHeader className="pb-3 border-b border-border-subtle">
-            <CardTitle className="text-sm font-medium text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
+            <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-primary" />
               {lang === "ar" ? "تكوين أسعار التفعيل (BHD)" : "Onboarding Package Pricing"}
             </CardTitle>
@@ -392,7 +392,7 @@ function SuperAdminSettings() {
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Standard Price BHD */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+              <Label className="text-xs font-semibold text-muted-foreground">
                 {lang === "ar"
                   ? "السعر الأساسي لتفعيل المتجر (BHD)"
                   : "Standard Lifetime Price (BHD)"}
@@ -402,12 +402,12 @@ function SuperAdminSettings() {
                   type="number"
                   step="0.01"
                   min="1"
-                  className="font-mono text-sm ps-12 h-11 border-zinc-200 dark:border-zinc-800 focus-visible:ring-primary"
+                  className="font-mono text-sm ps-12 h-11 border-input focus-visible:ring-primary"
                   value={basePrice}
                   onChange={(e) => setBasePrice(Number(e.target.value) || 0)}
                   required
                 />
-                <span className="absolute start-4 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400 uppercase">
+                <span className="absolute start-4 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground uppercase">
                   BHD
                 </span>
               </div>
@@ -415,11 +415,11 @@ function SuperAdminSettings() {
 
             {/* Discount Price BHD */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 flex items-center justify-between">
+              <Label className="text-xs font-semibold text-muted-foreground flex items-center justify-between">
                 <span>
                   {lang === "ar" ? "سعر الخصم النشط (BHD)" : "Promotional Discounted Price (BHD)"}
                 </span>
-                <span className="text-xs text-zinc-400 font-normal">
+                <span className="text-xs text-muted-foreground font-normal">
                   {lang === "ar"
                     ? "[اتركه فارغاً لعدم تطبيق خصم]"
                     : "[Leave blank for no discount]"}
@@ -431,14 +431,14 @@ function SuperAdminSettings() {
                   step="0.01"
                   min="0"
                   placeholder="e.g. 45.00"
-                  className="font-mono text-sm ps-12 h-11 border-zinc-200 dark:border-zinc-800 focus-visible:ring-primary"
+                  className="font-mono text-sm ps-12 h-11 border-input focus-visible:ring-primary"
                   value={discountPrice !== null ? discountPrice : ""}
                   onChange={(e) => {
                     const val = e.target.value;
                     setDiscountPrice(val === "" ? null : Number(val));
                   }}
                 />
-                <span className="absolute start-4 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400 uppercase">
+                <span className="absolute start-4 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground uppercase">
                   BHD
                 </span>
               </div>
@@ -449,7 +449,7 @@ function SuperAdminSettings() {
         {/* Row 2.5: BenefitPay Merchant Settings */}
         <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card">
           <CardHeader className="pb-3 border-b border-border-subtle">
-            <CardTitle className="text-sm font-medium text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
+            <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
               <QrCode className="h-4 w-4 text-primary" />
               {lang === "ar" ? "إعدادات حساب بنفت بي (BenefitPay)" : "BenefitPay Merchant Settings"}
             </CardTitle>
@@ -462,34 +462,34 @@ function SuperAdminSettings() {
           <CardContent className="space-y-6">
             {/* Merchant Account Name */}
             <div className="space-y-1.5 max-w-md">
-              <Label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+              <Label className="text-xs font-semibold text-muted-foreground">
                 {lang === "ar" ? "اسم الحساب التجاري" : "Merchant Account Name"}
               </Label>
               <div className="relative">
                 <Input
                   type="text"
                   placeholder="e.g. BOUTQ-OFFICIAL"
-                  className="font-mono text-sm ps-12 h-11 border-zinc-200 dark:border-zinc-800 focus-visible:ring-primary"
+                  className="font-mono text-sm ps-12 h-11 border-input focus-visible:ring-primary"
                   value={merchantAccountName}
                   onChange={(e) => setMerchantAccountName(e.target.value)}
                   required
                 />
                 <span className="absolute start-4 top-1/2 -translate-y-1/2">
-                  <Sliders className="h-4 w-4 text-zinc-400" />
+                  <Sliders className="h-4 w-4 text-muted-foreground" />
                 </span>
               </div>
             </div>
 
             {/* QR Code Upload Section */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+              <Label className="text-xs font-semibold text-muted-foreground">
                 {lang === "ar"
                   ? "رمز الاستجابة السريع المخصص (QR Code Image)"
                   : "BenefitPay Merchant QR Code Asset"}
               </Label>
               <div className="flex flex-col md:flex-row items-center gap-6 pt-1">
                 {/* QR Image Preview Block */}
-                <div className="h-28 w-28 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 flex flex-col items-center justify-center overflow-hidden shrink-0 relative group p-2">
+                <div className="h-28 w-28 rounded-lg border border-border bg-muted/40 flex flex-col items-center justify-center overflow-hidden shrink-0 relative group p-2">
                   {qrPreviewUrl ? (
                     <>
                       <img
@@ -509,7 +509,7 @@ function SuperAdminSettings() {
                       </button>
                     </>
                   ) : (
-                    <div className="text-zinc-400 dark:text-zinc-600 flex flex-col items-center gap-1.5 text-center">
+                    <div className="text-muted-foreground flex flex-col items-center gap-1.5 text-center">
                       <QrCode className="h-10 w-10 stroke-[1.25]" />
                       <span className="text-xs uppercase font-bold tracking-wider">
                         {lang === "ar" ? "افتراضي" : "Default QR"}
@@ -522,17 +522,17 @@ function SuperAdminSettings() {
                 <div className="flex-1 w-full">
                   <Label
                     htmlFor="qr-uploader"
-                    className="flex flex-col items-center justify-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 hover:border-primary/50 rounded-lg p-5 cursor-pointer bg-zinc-50/50 dark:bg-zinc-950/10 hover:bg-zinc-100/30 transition-all text-center relative"
+                    className="flex flex-col items-center justify-center border-2 border-dashed border-border hover:border-primary/50 rounded-lg p-5 cursor-pointer bg-card hover:bg-muted/30 transition-all text-center relative"
                   >
                     {uploadingQr ? (
                       <div className="space-y-2 flex flex-col items-center">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                        <span className="text-xs font-medium text-zinc-500">
+                        <span className="text-xs font-medium text-muted-foreground">
                           {lang === "ar" ? "جاري الرفع..." : "Uploading QR..."}
                         </span>
                       </div>
                     ) : (
-                      <div className="space-y-1.5 text-zinc-500">
+                      <div className="space-y-1.5 text-muted-foreground">
                         <UploadCloud className="h-5 w-5 mx-auto text-primary/80" />
                         <p className="text-xs font-semibold">
                           {lang === "ar"
@@ -558,7 +558,7 @@ function SuperAdminSettings() {
             </div>
 
             <div className="space-y-1.5 max-w-xl">
-              <Label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+              <Label className="text-xs font-semibold text-muted-foreground">
                 {lang === "ar"
                   ? "رقم الحساب الدولي للاشتراكات (IBAN)"
                   : "Subscription payment IBAN"}
@@ -583,7 +583,7 @@ function SuperAdminSettings() {
         {/* Row 3: Support Contact Attribution */}
         <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card">
           <CardHeader className="pb-3 border-b border-border-subtle">
-            <CardTitle className="text-sm font-medium text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
+            <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
               <Phone className="h-4 w-4 text-primary" />
               {lang === "ar" ? "قنوات التواصل والدعم" : "Attribution & Support Settings"}
             </CardTitle>
@@ -595,7 +595,7 @@ function SuperAdminSettings() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-1.5 max-w-md">
-              <Label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+              <Label className="text-xs font-semibold text-muted-foreground">
                 {lang === "ar"
                   ? "رقم دعم العملاء بالواتساب (رمز الدولة + الرقم)"
                   : "WhatsApp Support Phone Number (Country Code + No)"}
@@ -604,21 +604,21 @@ function SuperAdminSettings() {
                 <Input
                   type="text"
                   placeholder="e.g. 97339955508"
-                  className="font-mono text-sm ps-12 h-11 border-zinc-200 dark:border-zinc-800 focus-visible:ring-primary"
+                  className="font-mono text-sm ps-12 h-11 border-input focus-visible:ring-primary"
                   value={whatsappNumber}
                   onChange={(e) => setWhatsappNumber(e.target.value)}
                   required
                 />
                 <span className="absolute start-4 top-1/2 -translate-y-1/2">
-                  <Phone className="h-4 w-4 text-zinc-400" />
+                  <Phone className="h-4 w-4 text-muted-foreground" />
                 </span>
               </div>
             </div>
 
             {/* Impersonation Mutation Security Switch */}
-            <div className="border-t border-zinc-100 dark:border-zinc-900 pt-5 flex items-center justify-between">
+            <div className="border-t border-border pt-5 flex items-center justify-between">
               <div className="space-y-0.5 max-w-xl">
-                <Label className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
+                <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                   <ShieldAlert className="h-4 w-4 text-rose-500" />
                   {lang === "ar"
                     ? "السماح بالتعديلات أثناء تقمص الأدوار (Impersonation Write Access)"

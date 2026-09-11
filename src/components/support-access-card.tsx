@@ -107,7 +107,7 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-2.5 p-3 rounded-lg bg-zinc-100/50 dark:bg-zinc-900/50 border border-border text-xs text-muted-foreground">
+          <div className="flex items-center gap-2.5 p-3 rounded-lg bg-muted/50 border border-border text-xs text-muted-foreground">
             {accessEnabled ? (
               <>
                 <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
@@ -169,7 +169,7 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
             <div className="overflow-x-auto">
               <table className="w-full text-start border-collapse text-xs">
                 <thead>
-                  <tr className="bg-zinc-50 dark:bg-zinc-900/50 border-b border-border text-muted-foreground font-medium">
+                  <tr className="bg-muted/40 border-b border-border text-muted-foreground font-medium">
                     <th className="p-3.5 ps-6">
                       {lang === "ar" ? "المهندس / المسؤول" : "Operator / Engineer"}
                     </th>
@@ -182,7 +182,7 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80 font-mono text-xs">
+                <tbody className="divide-y divide-border font-mono text-xs">
                   {auditLogs.map((log: any) => {
                     const formattedDate = new Date(log.created_at).toLocaleString(
                       lang === "ar" ? "ar-BH-u-nu-latn" : "en-US",
@@ -192,7 +192,7 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
                     return (
                       <tr
                         key={log.id}
-                        className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors"
+                        className="hover:bg-muted/50 transition-colors"
                       >
                         <td className="p-3.5 ps-6 font-medium text-foreground">
                           <div>{log.operator?.name || "Boutq Support"}</div>

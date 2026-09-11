@@ -294,7 +294,7 @@ export function OsMobileNavigation({
           <SheetContent
             side={lang === "ar" ? "right" : "left"}
             hideDefaultClose
-            className="w-[85vw] sm:w-80 max-w-xs border-s border-border-strong p-0 flex flex-col bg-card dark:bg-slate-950 text-foreground shadow-2xl overflow-hidden z-50 admin-mobile-fast-transition"
+            className="w-[85vw] sm:w-80 max-w-xs border-s border-border-strong p-0 flex flex-col bg-card text-foreground shadow-2xl overflow-hidden z-50 admin-mobile-fast-transition"
           >
             {/* Ambient liquid background blur blobs */}
             <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-primary/20 blur-3xl pointer-events-none animate-pulse" />
@@ -303,7 +303,7 @@ export function OsMobileNavigation({
             <SheetTitle className="sr-only">{brandLabel}</SheetTitle>
 
             {/* iOS Style Sheet Header */}
-            <div className="p-4 sm:p-5 border-b border-border-subtle bg-white/40 dark:bg-slate-900/40 backdrop-blur-md flex items-center justify-between relative z-10">
+            <div className="p-4 sm:p-5 border-b border-border-subtle bg-card/40 backdrop-blur-md flex items-center justify-between relative z-10">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-primary/30 via-primary/20 to-amber-500/20 border border-border-subtle text-primary font-heading font-black text-lg flex items-center justify-center shadow-xs shrink-0">
                   {brandLabel.charAt(0)}
@@ -373,7 +373,7 @@ export function OsMobileNavigation({
                       <span>{group.title}</span>
                     </div>
 
-                    <div className="space-y-1 bg-white/30 dark:bg-slate-900/30 backdrop-blur-md rounded-2xl p-1.5 border border-border shadow-2xs">
+                    <div className="space-y-1 bg-card/30 backdrop-blur-md rounded-2xl p-1.5 border border-border shadow-2xs">
                       {group.items.map((item) => {
                         const targetPath = item.to.replace("$slug", item.params?.slug ?? "");
                         const active = pathname.startsWith(targetPath);
@@ -390,7 +390,7 @@ export function OsMobileNavigation({
                               "flex items-center justify-between px-3 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 active:scale-[0.98]",
                               active
                                 ? "bg-primary text-primary-foreground font-semibold shadow-md border border-primary/30"
-                                : "text-foreground/90 hover:text-foreground hover:bg-white/40 dark:hover:bg-slate-800/40",
+                                : "text-foreground/90 hover:text-foreground hover:bg-card/40",
                             )}
                           >
                             <div className="flex items-center gap-3 min-w-0">
@@ -419,7 +419,7 @@ export function OsMobileNavigation({
             </nav>
 
             {/* iOS Liquid Control Center Footer */}
-            <div className="p-3.5 border-t border-border-subtle bg-white/40 dark:bg-slate-900/40 backdrop-blur-md space-y-2.5 relative z-10">
+            <div className="p-3.5 border-t border-border-subtle bg-card/40 backdrop-blur-md space-y-2.5 relative z-10">
               {/* Native App Tools Trigger (When in iPhone/Android Native App Wrapper) */}
               {typeof window !== "undefined" && Boolean((window as any).ReactNativeWebView) && (
                 <Button
@@ -439,23 +439,25 @@ export function OsMobileNavigation({
               )}
 
               {/* Theme / Appearance Segmented Pill Toggle */}
-              <div className="flex items-center justify-between bg-muted/60 p-1 rounded-2xl border border-border">
-                <span className="text-xs font-semibold px-3 text-muted-foreground flex items-center gap-1.5">
-                  <Sun className="h-3.5 w-3.5" />
-                  {lang === "ar" ? "المظهر" : "Theme"}
-                </span>
-                <div className="inline-flex rounded-xl bg-background/80 p-0.5 border border-border shadow-2xs">
+              <div className="bg-muted/60 p-2 rounded-2xl border border-border space-y-1.5">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                    <Sun className="h-3.5 w-3.5" />
+                    {lang === "ar" ? "المظهر" : "Theme"}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-1 rounded-xl bg-background/80 p-0.5 border border-border shadow-2xs">
                   <Button
                     type="button"
                     size="sm"
                     variant={theme === "light" ? "default" : "ghost"}
                     onClick={() => setTheme("light")}
                     className={cn(
-                      "h-7 px-2.5 text-xs font-bold rounded-lg transition-all gap-1",
+                      "h-8 px-1 text-xs font-bold rounded-lg transition-all gap-1.5 justify-center",
                       theme !== "light" && "text-muted-foreground hover:text-foreground",
                     )}
                   >
-                    <Sun className="h-3 w-3" />
+                    <Sun className="h-3.5 w-3.5 shrink-0" />
                     <span>{lang === "ar" ? "فاتح" : "Light"}</span>
                   </Button>
                   <Button
@@ -464,11 +466,11 @@ export function OsMobileNavigation({
                     variant={theme === "dark" ? "default" : "ghost"}
                     onClick={() => setTheme("dark")}
                     className={cn(
-                      "h-7 px-2.5 text-xs font-bold rounded-lg transition-all gap-1",
+                      "h-8 px-1 text-xs font-bold rounded-lg transition-all gap-1.5 justify-center",
                       theme !== "dark" && "text-muted-foreground hover:text-foreground",
                     )}
                   >
-                    <Moon className="h-3 w-3" />
+                    <Moon className="h-3.5 w-3.5 shrink-0" />
                     <span>{lang === "ar" ? "داكن" : "Dark"}</span>
                   </Button>
                   <Button
@@ -477,46 +479,48 @@ export function OsMobileNavigation({
                     variant={theme === "system" ? "default" : "ghost"}
                     onClick={() => setTheme("system")}
                     className={cn(
-                      "h-7 px-2.5 text-xs font-bold rounded-lg transition-all gap-1",
+                      "h-8 px-1 text-xs font-bold rounded-lg transition-all gap-1.5 justify-center",
                       theme !== "system" && "text-muted-foreground hover:text-foreground",
                     )}
                   >
-                    <Monitor className="h-3 w-3" />
+                    <Monitor className="h-3.5 w-3.5 shrink-0" />
                     <span>{lang === "ar" ? "تلقائي" : "Auto"}</span>
                   </Button>
                 </div>
               </div>
 
               {/* Language Segmented Pill Toggle */}
-              <div className="flex items-center justify-between bg-muted/60 p-1 rounded-2xl border border-border-subtle">
-                <span className="text-xs font-semibold px-3 text-muted-foreground">
-                  {lang === "ar" ? "اللغة" : "Language"}
-                </span>
-                <div className="inline-flex rounded-xl bg-background/80 p-0.5 border border-border-subtle shadow-2xs">
-                  <button
+              <div className="bg-muted/60 p-2 rounded-2xl border border-border-subtle space-y-1.5">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-xs font-semibold text-muted-foreground">
+                    {lang === "ar" ? "اللغة" : "Language"}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-1 rounded-xl bg-background/80 p-0.5 border border-border-subtle shadow-2xs">
+                  <Button
                     type="button"
+                    size="sm"
+                    variant={lang === "en" ? "default" : "ghost"}
                     onClick={() => onSetLang("en")}
                     className={cn(
-                      "px-3 py-1 text-xs font-bold rounded-lg transition-all",
-                      lang === "en"
-                        ? "bg-primary text-primary-foreground shadow-xs"
-                        : "text-muted-foreground hover:text-foreground",
+                      "h-8 px-2 text-xs font-bold rounded-lg transition-all justify-center",
+                      lang !== "en" && "text-muted-foreground hover:text-foreground",
                     )}
                   >
                     EN
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    size="sm"
+                    variant={lang === "ar" ? "default" : "ghost"}
                     onClick={() => onSetLang("ar")}
                     className={cn(
-                      "px-3 py-1 text-xs font-bold rounded-lg transition-all",
-                      lang === "ar"
-                        ? "bg-primary text-primary-foreground shadow-xs"
-                        : "text-muted-foreground hover:text-foreground",
+                      "h-8 px-2 text-xs font-bold rounded-lg transition-all justify-center",
+                      lang !== "ar" && "text-muted-foreground hover:text-foreground",
                     )}
                   >
                     العربية
-                  </button>
+                  </Button>
                 </div>
               </div>
 

@@ -1300,7 +1300,7 @@ ${desc}${detailsBlock}
                           title={item.label}
                         >
                           {item.type === "video" ? (
-                            <div className="size-full bg-neutral-900 flex flex-col items-center justify-center text-white p-1">
+                            <div className="size-full bg-muted flex flex-col items-center justify-center text-foreground p-1">
                               <Video className="size-5 text-primary" />
                               <span className="text-xs font-bold mt-0.5">MP4</span>
                             </div>
@@ -2153,7 +2153,7 @@ ${desc}${detailsBlock}
                       <span
                         className={cn(
                           "h-6 sm:h-7 w-px pointer-events-none",
-                          headerTextColor === "dark" ? "bg-neutral-900/30" : "bg-white/40",
+                          headerTextColor === "dark" ? "bg-foreground/30" : "bg-white/40",
                         )}
                       />
                       <span
@@ -2178,7 +2178,7 @@ ${desc}${detailsBlock}
                     className={cn(
                       "rounded-full px-2.5 py-0.5 sm:px-3 sm:py-1 text-xs sm:text-xs font-bold uppercase tracking-[.16em] whitespace-nowrap pointer-events-none shrink-0",
                       headerTextColor === "dark"
-                        ? "border border-neutral-900/30 bg-black/5 text-neutral-900"
+                        ? "border border-foreground/30 bg-black/5 text-foreground"
                         : "border border-white/50 bg-white/10 text-white",
                     )}
                   >

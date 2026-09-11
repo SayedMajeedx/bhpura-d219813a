@@ -552,7 +552,7 @@ function CustomerImporterModal({
       )}
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-xl border-zinc-100 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl">
+        <DialogContent className="max-w-xl border-border bg-card/95 backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 font-display text-xl">
               <Users className="h-5 w-5 text-primary" />
@@ -568,37 +568,37 @@ function CustomerImporterModal({
                   : "Select your export source. We will automatically sanitize GCC phone numbers, prevent duplicates, and apply automatic VIP tagging."}
               </p>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 {[
                   {
                     id: "shopify",
                     name: "Shopify Customers",
                     desc: "customers_export.csv",
-                    color: "hover:border-emerald-500/30",
+                    color: "hover:border-primary/30",
                   },
                   {
                     id: "salla",
                     name: "Salla (سلة)",
                     desc: "عملاء سلة إكسل",
-                    color: "hover:border-green-500/30",
+                    color: "hover:border-primary/30",
                   },
                   {
                     id: "zid",
                     name: "Zid (زد)",
                     desc: "عملاء زد إكسل",
-                    color: "hover:border-purple-500/30",
+                    color: "hover:border-primary/30",
                   },
                   {
                     id: "woocommerce",
                     name: "WooCommerce",
                     desc: "WooCommerce CSV",
-                    color: "hover:border-blue-500/30",
+                    color: "hover:border-primary/30",
                   },
                   {
                     id: "whatsapp",
                     name: "WhatsApp / Contacts",
                     desc: ".vcf vCard format",
-                    color: "hover:border-amber-500/30",
+                    color: "hover:border-primary/30",
                   },
                   {
                     id: "custom",
@@ -610,7 +610,7 @@ function CustomerImporterModal({
                   <button
                     key={item.id}
                     onClick={() => setPreset(item.id as any)}
-                    className={`flex flex-col items-start p-3.5 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 text-start transition-all ${item.color} ${
+                    className={`flex flex-col items-start p-3.5 rounded-xl border border-border bg-muted/30 text-start transition-all ${item.color} ${
                       preset === item.id
                         ? "border-primary ring-2 ring-primary/10 bg-primary/5 dark:bg-primary/5"
                         : ""
@@ -626,7 +626,7 @@ function CustomerImporterModal({
                 ))}
               </div>
 
-              <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
+              <div className="pt-4 border-t border-border flex justify-end">
                 <label className="relative cursor-pointer">
                   <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground font-semibold text-xs rounded-xl shadow-lg shadow-primary/10 hover:shadow-xl hover:bg-primary/95 transition-all">
                     <Upload className="h-4 w-4" />
@@ -681,7 +681,7 @@ function CustomerImporterModal({
                 ].map((field) => (
                   <div
                     key={field.key}
-                    className="flex items-center justify-between gap-4 p-3 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border border-zinc-100 dark:border-zinc-800"
+                    className="flex items-center justify-between gap-4 p-3 bg-muted/40 rounded-xl border border-border"
                   >
                     <span className="text-xs font-semibold text-foreground">
                       {field.label} {field.required && <span className="text-rose-500">*</span>}
@@ -710,7 +710,7 @@ function CustomerImporterModal({
                 ))}
               </div>
 
-              <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
+              <div className="pt-4 border-t border-border flex justify-end">
                 <Button
                   onClick={() => {
                     if (mappings.name === -1 || mappings.phone === -1) {
@@ -749,7 +749,7 @@ function CustomerImporterModal({
                   {progress}
                 </p>
               </div>
-              <div className="w-full max-w-xs bg-zinc-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+              <div className="w-full max-w-xs bg-muted h-1.5 rounded-full overflow-hidden">
                 <div
                   className="bg-primary h-full transition-all duration-300"
                   style={{ width: `${totalCount > 0 ? (successCount / totalCount) * 100 : 0}%` }}
@@ -764,7 +764,7 @@ function CustomerImporterModal({
                 <Check className="h-7 w-7 animate-bounce" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-lg font-bold font-display text-zinc-900 dark:text-zinc-100">
+                <h3 className="text-lg font-bold font-display text-foreground">
                   {isAr
                     ? "تم استيراد قاعدة بيانات العملاء بنجاح!"
                     : "Customer Database Migrated Successfully!"}

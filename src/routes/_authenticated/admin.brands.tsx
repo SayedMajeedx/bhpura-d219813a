@@ -492,7 +492,7 @@ function BrandsPage() {
                             Pending
                           </Badge>
                         ) : (
-                          <Badge className="bg-zinc-400 text-white hover:bg-zinc-500 text-xs">
+                          <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-xs">
                             Unpaid
                           </Badge>
                         )}
@@ -564,7 +564,7 @@ function BrandsPage() {
                           className="w-full h-9 opacity-50 cursor-not-allowed"
                           disabled
                         >
-                          <Shield className="h-3.5 w-3.5 me-1 text-zinc-400" />
+                          <Shield className="h-3.5 w-3.5 me-1 text-muted-foreground" />
                           {lang === "ar" ? "المحاكاة معطلة" : "Impersonation Disabled"}
                         </Button>
                       </div>
@@ -643,14 +643,14 @@ function BrandsPage() {
                         <ClockIcon className="h-5 w-5 animate-pulse" />
                       </div>
                       <div>
-                        <h4 className="font-display font-medium text-base text-zinc-900 dark:text-zinc-100">
+                        <h4 className="font-display font-medium text-base text-foreground">
                           {lang === "ar" ? b.name_ar || b.name_en : b.name_en}
                         </h4>
                         <p className="text-xs text-muted-foreground font-mono">
                           /{b.slug} • ID: {b.id.substring(0, 8)}...
                         </p>
                         {b.payment_receipt_uploaded_at && (
-                          <p className="text-xs text-zinc-400 mt-1">
+                          <p className="text-xs text-muted-foreground mt-1">
                             {lang === "ar" ? "تم الرفع:" : "Uploaded:"}{" "}
                             {new Date(b.payment_receipt_uploaded_at).toLocaleString(
                               lang === "ar" ? "ar-BH-u-nu-latn" : "en-US",
@@ -1052,7 +1052,7 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
               className={`p-2.5 text-xs rounded border font-semibold text-center cursor-pointer transition-all ${
                 planType === "annual"
                   ? "border-primary bg-primary/[0.02] ring-1 ring-primary text-primary"
-                  : "border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                  : "border-border hover:bg-muted/50"
               }`}
             >
               {lang === "ar" ? "اشتراك سنوي" : "Annual Subscription"}
@@ -1063,7 +1063,7 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
               className={`p-2.5 text-xs rounded border font-semibold text-center cursor-pointer transition-all ${
                 planType === "trial"
                   ? "border-primary bg-primary/[0.02] ring-1 ring-primary text-primary"
-                  : "border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                  : "border-border hover:bg-muted/50"
               }`}
             >
               {lang === "ar" ? "تجربة مجانية" : "Free Trial"}

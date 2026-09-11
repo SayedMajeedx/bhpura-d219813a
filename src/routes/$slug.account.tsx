@@ -118,7 +118,7 @@ function statusMeta(
   const label = getInvoiceStatusLabel(effectiveStatus, isAr ? "ar" : "en");
 
   let tone =
-    "bg-neutral-100 text-neutral-800 dark:bg-neutral-850 dark:text-neutral-300 border border-border";
+    "bg-muted text-muted-foreground border border-border";
   if (ful === "SENT_TO_TAILOR") {
     tone =
       "bg-purple-50 text-purple-800 dark:bg-purple-950/30 dark:text-purple-400 border border-purple-200/50";
@@ -219,7 +219,7 @@ function OrderTimelineTracker({
     <div className="mt-5 pt-5 border-t border-border-subtle">
       <div className="relative flex justify-between w-full">
         {/* Connection bar */}
-        <div className="absolute top-[14px] left-[5%] right-[5%] h-[2px] bg-muted dark:bg-zinc-800 -z-0">
+        <div className="absolute top-[14px] left-[5%] right-[5%] h-[2px] bg-muted -z-0">
           <div
             className="h-full bg-primary transition-all duration-500"
             style={{
@@ -240,7 +240,7 @@ function OrderTimelineTracker({
                 className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-300 ${
                   isCompleted
                     ? "bg-primary text-primary-foreground border-primary shadow-xs scale-105"
-                    : "bg-background text-muted-foreground border-muted dark:border-zinc-800"
+                    : "bg-background text-muted-foreground border-muted"
                 }`}
               >
                 {isCompleted ? "✓" : idx + 1}
@@ -371,7 +371,7 @@ function AccountPage() {
     if (totalSpent >= 150) {
       return {
         label: t("عضوية VIP الفضية", "Silver VIP Member"),
-        style: "bg-slate-50 text-slate-700 border-border dark:bg-slate-900/20 dark:text-slate-300",
+        style: "bg-muted text-muted-foreground border-border",
       };
     }
     return {
@@ -845,7 +845,7 @@ function OrdersSection({
               </Button>
 
               {isExpanded && o.order_items && o.order_items.length > 0 && (
-                <div className="mt-3 bg-muted/30 dark:bg-zinc-900/30 rounded-lg p-3.5 space-y-2 border border-border-subtle">
+                <div className="mt-3 bg-muted/30 rounded-lg p-3.5 space-y-2 border border-border-subtle">
                   <ul className="space-y-2 text-xs">
                     {o.order_items.map((it) => (
                       <li

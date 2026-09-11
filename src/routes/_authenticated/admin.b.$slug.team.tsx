@@ -462,7 +462,7 @@ function TeamManagement() {
                         <input
                           type="checkbox"
                           checked={checked}
-                          className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
+                          className="rounded border-input text-primary focus:ring-primary h-4 w-4"
                           onChange={() => {
                             const newPerms = checked
                               ? form.permissions.filter((x) => x !== p.id)
@@ -537,7 +537,7 @@ function TeamManagement() {
                     className={`shrink-0 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${
                       member.status === "active"
                         ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                        : "bg-neutral-500/15 text-neutral-700 dark:text-neutral-300"
+                        : "bg-muted text-muted-foreground border border-border"
                     }`}
                   >
                     {member.status === "active" ? (
@@ -761,7 +761,7 @@ function TeamManagement() {
                           className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
                             member.status === "active"
                               ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                              : "bg-neutral-500/15 text-neutral-700 dark:text-neutral-300"
+                              : "bg-muted text-muted-foreground border border-border"
                           }`}
                         >
                           {member.status === "active" ? (
@@ -973,7 +973,7 @@ function TeamManagement() {
                           <input
                             type="checkbox"
                             checked={checked}
-                            className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
+                            className="rounded border-input text-primary focus:ring-primary h-4 w-4"
                             onChange={() => {
                               const newPerms = checked
                                 ? memberPerms.filter((x: string) => x !== p.id)

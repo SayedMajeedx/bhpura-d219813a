@@ -305,7 +305,7 @@ function IntegrationsPage() {
                           className={`text-xs px-2.5 py-0.5 rounded-full font-semibold border ${
                             row.is_active
                               ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                              : "bg-slate-500/10 text-slate-500 border-slate-500/20"
+                              : "bg-muted text-muted-foreground border-border"
                           }`}
                         >
                           {row.is_active ? t("integrations.active") : isAr ? "معطّل" : "Off"}
@@ -537,7 +537,7 @@ function NabdaOtpPilotCard({ isAr }: { isAr: boolean }) {
                 className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${
                   enabled
                     ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700"
-                    : "border-slate-500/20 bg-slate-500/10 text-slate-500"
+                    : "border-border bg-muted text-muted-foreground"
                 }`}
               >
                 {enabled === null

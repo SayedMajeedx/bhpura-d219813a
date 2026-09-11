@@ -898,7 +898,7 @@ function CampaignsPage() {
                 <span className="font-semibold">{isAr ? "تحديد الكل" : "Select All"}</span>
                 <input
                   type="checkbox"
-                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
+                  className="h-4 w-4 rounded border-input text-primary focus:ring-primary accent-primary cursor-pointer"
                   checked={
                     filtered.filter(
                       (c) =>
@@ -931,7 +931,7 @@ function CampaignsPage() {
                       <div className="flex items-start gap-2.5 min-w-0">
                         <input
                           type="checkbox"
-                          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="mt-1 h-4 w-4 rounded border-input text-primary focus:ring-primary accent-primary cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                           checked={isChecked}
                           onChange={() => toggleSelectCustomer(c)}
                           disabled={!eligibility.eligible}
@@ -971,7 +971,7 @@ function CampaignsPage() {
                                 ? "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400"
                                 : stats.badge === "New Buyer"
                                   ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
-                                  : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
+                                  : "bg-muted text-muted-foreground border border-border"
                           }`}
                         >
                           {stats.badge}
@@ -1029,7 +1029,7 @@ function CampaignsPage() {
                     <th className="p-4 w-12 text-center">
                       <input
                         type="checkbox"
-                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
+                        className="h-4 w-4 rounded border-input text-primary focus:ring-primary accent-primary cursor-pointer"
                         checked={
                           filtered.filter(
                             (c) =>
@@ -1079,7 +1079,7 @@ function CampaignsPage() {
                         <td className="p-4 text-center">
                           <input
                             type="checkbox"
-                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="h-4 w-4 rounded border-input text-primary focus:ring-primary accent-primary cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                             checked={isChecked}
                             onChange={() => toggleSelectCustomer(c)}
                             disabled={!eligibility.eligible}
@@ -1120,7 +1120,7 @@ function CampaignsPage() {
                                     ? "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400"
                                     : stats.badge === "New Buyer"
                                       ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
-                                      : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
+                                      : "bg-muted text-muted-foreground border border-border"
                               }`}
                             >
                               {stats.badge}

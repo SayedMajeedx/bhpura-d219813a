@@ -172,7 +172,7 @@ function deliveryStatusPresentation(status: string | null | undefined, lang: "en
     assigned: {
       en: "Assigned",
       ar: "تم التعيين",
-      className: "bg-slate-100 text-slate-800 border border-slate-300 font-semibold",
+      className: "bg-muted text-muted-foreground border border-border font-semibold",
     },
     out_for_delivery: {
       en: "Out for delivery",
@@ -183,16 +183,6 @@ function deliveryStatusPresentation(status: string | null | undefined, lang: "en
       en: "Delivered",
       ar: "تم التوصيل",
       className: "bg-emerald-100 text-emerald-900 border border-emerald-300 font-semibold",
-    },
-    failed: {
-      en: "Delivery failed",
-      ar: "فشل التوصيل",
-      className: "bg-rose-100 text-rose-900 border border-rose-300 font-semibold",
-    },
-    delivery_failed: {
-      en: "Delivery failed",
-      ar: "فشل التوصيل",
-      className: "bg-rose-100 text-rose-900 border border-rose-300 font-semibold",
     },
     returned: {
       en: "Returned",
@@ -227,7 +217,7 @@ function CustomerContactActions({ customer, lang }: { customer: any; lang: "en" 
       <a
         href={`tel:${cleanPhone}`}
         onClick={(e) => e.stopPropagation()}
-        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-md bg-slate-100 text-slate-800 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 transition-colors shadow-xs"
+        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-md bg-muted text-foreground hover:bg-muted/80 transition-colors shadow-xs"
       >
         <Phone className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0" />
         {lang === "ar" ? "اتصال" : "Call"}
@@ -1061,7 +1051,7 @@ function OrdersList() {
 
     if (isCancelled || isRefunded) {
       return (
-        <span className="inline-flex items-center rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400">
+        <span className="inline-flex items-center rounded-md border border-border bg-muted/50 px-3 py-1.5 text-xs font-semibold text-muted-foreground">
           {isRefunded
             ? lang === "ar"
               ? "تم الاسترجاع"
@@ -2984,8 +2974,8 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
           {isAr ? "استيراد طلبات سابقة" : "Import Past Orders"}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-xl p-6 bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-100 dark:border-zinc-900 shadow-2xl">
-        <DialogHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-900">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-xl p-6 bg-card rounded-2xl border border-border shadow-2xl">
+        <DialogHeader className="pb-4 border-b border-border">
           <DialogTitle className="text-lg font-bold font-display flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
             {isAr ? "معالج ترحيل واستيراد الطلبات السابقة" : "Historical Orders Migration Engine"}
@@ -3013,7 +3003,7 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
                   className={`p-4 rounded-xl border text-start transition-all ${
                     preset === p.id
                       ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary"
-                      : "border-zinc-100 dark:border-zinc-900 hover:border-zinc-200 hover:bg-zinc-50/50"
+                      : "border-border hover:border-border hover:bg-muted/30"
                   }`}
                 >
                   <p className="text-xs font-semibold">{p.label}</p>
@@ -3022,7 +3012,7 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
               ))}
             </div>
 
-            <div className="pt-4 border-t border-zinc-100 dark:border-zinc-900 flex justify-between items-center">
+            <div className="pt-4 border-t border-border flex justify-between items-center">
               <Button
                 variant="ghost"
                 onClick={() => setPreset("custom")}
@@ -3082,7 +3072,7 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
               ].map((field) => (
                 <div
                   key={field.key}
-                  className="flex items-center justify-between gap-4 p-3 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border border-zinc-100 dark:border-zinc-800"
+                  className="flex items-center justify-between gap-4 p-3 bg-muted/40 rounded-xl border border-border"
                 >
                   <span className="text-xs font-semibold text-foreground">
                     {field.label} {field.required && <span className="text-rose-500">*</span>}
@@ -3109,7 +3099,7 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
               ))}
             </div>
 
-            <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-2">
+            <div className="pt-4 border-t border-border flex justify-end gap-2">
               <Button
                 variant="ghost"
                 onClick={() => setStep("preset")}

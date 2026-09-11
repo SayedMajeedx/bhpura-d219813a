@@ -539,7 +539,7 @@ function DesktopSubMenu({
 
         return (
           <div key={sub.id} className="w-full">
-            <div className="flex items-center justify-between rounded-lg transition-all hover:bg-slate-50 dark:hover:bg-slate-800/40">
+            <div className="flex items-center justify-between rounded-lg transition-all hover:bg-muted/40">
               <Link
                 to="/$slug/$category"
                 params={{ slug: brand.slug, category: url }}
@@ -565,7 +565,7 @@ function DesktopSubMenu({
               </Link>
               {hasChildren && (
                 <div
-                  className="p-1 me-1 text-muted-foreground transition-all duration-200 shrink-0 cursor-pointer hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded-md"
+                  className="p-1 me-1 text-muted-foreground transition-all duration-200 shrink-0 cursor-pointer hover:text-foreground hover:bg-muted rounded-md"
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -586,7 +586,7 @@ function DesktopSubMenu({
             </div>
 
             {hasChildren && isExpanded && (
-              <div className="vertical-submenu mt-0.5 ms-3 ps-3 border-s border-slate-100 dark:border-slate-800 animate-in fade-in duration-150">
+              <div className="vertical-submenu mt-0.5 ms-3 ps-3 border-s border-border animate-in fade-in duration-150">
                 <DesktopSubMenu
                   parentCategoryId={sub.id}
                   categories={categories}
@@ -826,7 +826,7 @@ function SearchBar() {
       {/* Premium backdrop-blurred modal dialog */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent
-          className="sm:max-w-2xl gap-0 p-0 overflow-hidden bg-white/95 dark:bg-neutral-950/95 backdrop-blur-md border border-border shadow-2xl rounded-2xl [&>button]:text-neutral-500 [&>button]:hover:text-neutral-800 [&>button]:dark:text-neutral-400 [&>button]:dark:hover:text-neutral-100 [&>button]:top-5"
+          className="sm:max-w-2xl gap-0 p-0 overflow-hidden bg-card/95 backdrop-blur-md border border-border shadow-2xl rounded-2xl [&>button]:text-muted-foreground [&>button]:hover:text-foreground [&>button]:top-5"
           dir={lang === "ar" ? "rtl" : "ltr"}
         >
           <DialogHeader className="p-4 border-b border-border flex flex-row items-center gap-2">
@@ -890,7 +890,7 @@ function SearchBar() {
                           to="/$slug/$category"
                           params={{ slug: brand.slug, category: cat.slug }}
                           onClick={() => setModalOpen(false)}
-                          className="px-3.5 py-1.5 rounded-full border border-border text-xs font-medium bg-neutral-100 hover:bg-neutral-200/60 dark:bg-neutral-900 dark:hover:bg-neutral-800 transition-all cursor-pointer"
+                          className="px-3.5 py-1.5 rounded-full border border-border text-xs font-medium bg-muted hover:bg-muted/80 transition-all cursor-pointer"
                         >
                           {catName}
                         </Link>
@@ -915,10 +915,10 @@ function SearchBar() {
                   <div className="space-y-3 py-2">
                     {[1, 2, 3].map((i) => (
                       <div key={i} className="flex items-center gap-3 animate-pulse">
-                        <div className="h-12 w-12 rounded bg-neutral-200 dark:bg-neutral-850 shrink-0" />
+                        <div className="h-12 w-12 rounded bg-muted shrink-0" />
                         <div className="flex-1 space-y-2 min-w-0">
-                          <div className="h-4 bg-neutral-200 dark:bg-neutral-850 rounded w-2/3" />
-                          <div className="h-3 bg-neutral-200 dark:bg-neutral-850 rounded w-1/4" />
+                          <div className="h-4 bg-muted rounded w-2/3" />
+                          <div className="h-3 bg-muted rounded w-1/4" />
                         </div>
                       </div>
                     ))}
@@ -953,7 +953,7 @@ function SearchBar() {
                             }}
                             className="flex items-center gap-3 group"
                           >
-                            <div className="h-12 w-12 shrink-0 rounded-lg bg-neutral-100 dark:bg-neutral-900 border border-border overflow-hidden relative">
+                            <div className="h-12 w-12 shrink-0 rounded-lg bg-muted border border-border overflow-hidden relative">
                               {imageUrl && (
                                 <img
                                   src={cloudflareImageUrl(imageUrl, 120)}
@@ -970,7 +970,7 @@ function SearchBar() {
                                 {displayName}
                               </div>
                               <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
-                                <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                                <span className="font-semibold text-foreground">
                                   {formatPrice(Number(price), currency, lang)}
                                 </span>
                                 {oldPrice > Number(price) && (

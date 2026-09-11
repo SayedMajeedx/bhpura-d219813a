@@ -1676,7 +1676,7 @@ function Settings() {
                     }
                     bounds="parent"
                     lockAspectRatio
-                    className="border border-dashed border-neutral-300 hover:border-neutral-500"
+                    className="border border-dashed border-border hover:border-primary/50"
                   >
                     <img
                       src={f.logo_url}
@@ -2470,7 +2470,7 @@ function BrandHeroCard({
         </div>
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_240px]">
           {state.background ? (
-            <div className="group relative aspect-video min-h-44 overflow-hidden rounded-2xl border bg-neutral-950 shadow-sm">
+            <div className="group relative aspect-video min-h-44 overflow-hidden rounded-2xl border bg-muted shadow-sm">
               {state.background.type === "video" ? (
                 <video
                   src={state.background.url}
