@@ -185,7 +185,7 @@ export default function CourierOrderView({
           const message = fillCourierMessage(
             template || fallback,
             order,
-            settings?.brand_name || "Boutq Store",
+            settings?.brand_name || (slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : (lang === "ar" ? "المتجر" : "Store")),
           );
           const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
           if (whatsappWindow) {

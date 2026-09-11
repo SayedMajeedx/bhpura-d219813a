@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,10 +18,17 @@ import {
 import { toast } from "sonner";
 import { printDeliveryNote } from "@/lib/thermal-print";
 
+import {
+  getFulfillmentBadgeDetails,
+  getFulfillmentMethodLabel,
+} from "@/lib/status-labels";
+import { RETURN_STATUS_CONFIG, type ReturnStatus } from "@/lib/returns.types";
+
 interface OrderSalesDocumentsCardProps {
   order: any;
   items: any[];
   brand: any;
+  settings?: any;
   currency: string;
   lang: "en" | "ar";
   slug: string;
@@ -29,10 +36,20 @@ interface OrderSalesDocumentsCardProps {
   onPrintInvoice?: () => void;
 }
 
+function getPaymentStatusLabel(status: string | null | undefined, currentLang: "ar" | "en") {
+  const s = String(status || "unpaid").toLowerCase();
+  if (s === "paid") return currentLang === "ar" ? "مدفوع بالكامل" : "Paid in Full";
+  if (s === "partial" || s === "partially_paid") return currentLang === "ar" ? "مدفوع جزئياً" : "Partially Paid";
+  if (s === "unpaid") return currentLang === "ar" ? "غير مدفوع" : "Unpaid";
+  if (s === "refunded") return currentLang === "ar" ? "مسترجع" : "Refunded";
+  return s;
+}
+
 export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = ({
   order,
   items,
   brand,
+  settings,
   currency,
   lang,
   slug,
@@ -42,6 +59,23 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
   const isAr = lang === "ar";
   const [copiedInvoice, setCopiedInvoice] = React.useState(false);
   const brandId = brand?.id || order?.brand_id;
+
+  const resolvedBrandName =
+    (isAr ? brand?.name_ar : brand?.name_en) ||
+    brand?.name_ar ||
+    brand?.name_en ||
+    settings?.business_name ||
+    brand?.name ||
+    (slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : "") ||
+    (isAr ? "المتجر" : "Store");
+
+  const resolvedLogoUrl = brand?.logo_url || settings?.logo_url || null;
+
+  const fulfillmentDetails = getFulfillmentBadgeDetails(
+    order?.fulfillment_status || order?.status,
+    lang,
+    order?.fulfillment_method,
+  );
 
   // 1. Fetch linked return requests for this order
   const returnRequestsQ = useQuery({
@@ -85,8 +119,8 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
     if (!publicInvoiceUrl) return;
     const customerPhone = (order.customer_phone_snapshot || order.phone || "").replace(/\D/g, "");
     const msg = isAr
-      ? `مرحباً، تفضل رابط فاتورة طلبك #${order.invoice_number || order.id?.slice(0, 8)} من ${brand?.name || "المتجر"}: ${publicInvoiceUrl}`
-      : `Hello, here is the invoice for your order #${order.invoice_number || order.id?.slice(0, 8)} from ${brand?.name || "the store"}: ${publicInvoiceUrl}`;
+      ? `مرحباً، تفضل رابط فاتورة طلبك #${order.invoice_number || order.id?.slice(0, 8)} من ${resolvedBrandName}: ${publicInvoiceUrl}`
+      : `Hello, here is the invoice for your order #${order.invoice_number || order.id?.slice(0, 8)} from ${resolvedBrandName}: ${publicInvoiceUrl}`;
     const url = customerPhone
       ? `https://wa.me/${customerPhone.startsWith("973") ? customerPhone : `973${customerPhone.replace(/^0+/, "")}`}?text=${encodeURIComponent(msg)}`
       : `https://wa.me/?text=${encodeURIComponent(msg)}`;
@@ -109,10 +143,12 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
     );
 
     printDeliveryNote({
-      brand: brand?.name || "Boutq Store",
+      brand: resolvedBrandName,
+      logoUrl: resolvedLogoUrl,
       orderNumber: order.invoice_number || order.id?.slice(0, 8) || "—",
       orderDate: formatDate(order.created_at || new Date().toISOString(), lang),
       fulfillmentStatus: order.fulfillment_status || order.status,
+      fulfillmentStatusLabel: fulfillmentDetails.label,
       customerName: order.customer_name_snapshot || order.customer_name || null,
       customerPhone: order.customer_phone_snapshot || order.customer_phone || order.phone || null,
       deliveryAddress: formattedAddress || null,
@@ -248,8 +284,8 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
             <div className="space-y-1 text-xs mb-4">
               <div className="flex justify-between text-muted-foreground">
                 <span>{isAr ? "حالة الدفع:" : "Payment status:"}</span>
-                <span className="font-semibold text-foreground capitalize">
-                  {order?.payment_status || "unpaid"}
+                <span className="font-semibold text-foreground">
+                  {getPaymentStatusLabel(order?.payment_status, lang)}
                 </span>
               </div>
               <div className="flex justify-between text-muted-foreground">
@@ -311,7 +347,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
                 </span>
               </div>
               <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
-                {order?.fulfillment_status || order?.status || "PENDING"}
+                {fulfillmentDetails.label}
               </span>
             </div>
             <p className="text-xs text-muted-foreground mb-3">
@@ -328,8 +364,8 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>{isAr ? "طريقة الاستلام:" : "Fulfillment method:"}</span>
-                <span className="font-semibold text-foreground capitalize">
-                  {order?.fulfillment_method || "Delivery"}
+                <span className="font-semibold text-foreground">
+                  {getFulfillmentMethodLabel(order?.fulfillment_method, lang)}
                 </span>
               </div>
               <div className="flex justify-between text-muted-foreground">
@@ -399,8 +435,10 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
                       <span className="font-mono font-bold text-destructive">
                         {formatMoney(ret.net_refund_amount || 0, currency, lang)}
                       </span>
-                      <div className="text-xs font-semibold text-muted-foreground uppercase">
-                        {ret.status}
+                      <div className="text-xs font-semibold text-muted-foreground">
+                        {isAr
+                          ? RETURN_STATUS_CONFIG[ret.status as ReturnStatus]?.labelAr || ret.status
+                          : RETURN_STATUS_CONFIG[ret.status as ReturnStatus]?.labelEn || ret.status}
                       </div>
                     </div>
                   </div>

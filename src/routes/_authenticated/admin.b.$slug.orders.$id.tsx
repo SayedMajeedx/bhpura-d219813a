@@ -4981,6 +4981,7 @@ function OrderDetail() {
               order={order}
               items={items}
               brand={brand}
+              settings={settingsQ.data}
               currency={currency}
               lang={lang}
               slug={slug}
