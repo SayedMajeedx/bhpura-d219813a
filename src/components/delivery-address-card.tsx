@@ -88,7 +88,7 @@ export function DeliveryAddressCard({
               <Copy className="h-3 w-3" />
             </Button>
             {hasMap && (
-              <Button asChild type="button" variant="ghost" size="icon" className="h-7 w-7">
+              <Button asChild type="button" variant="ghost" size="icon" className="h-7 w-7" aria-label={isAr ? "فتح العنوان في الخريطة" : "Open address in map"}>
                 <a
                   target="_blank"
                   rel="noreferrer"

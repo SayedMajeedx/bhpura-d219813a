@@ -126,10 +126,7 @@ export function TrustBadgeIconPicker({
 
           <div className="relative">
             <Search
-              className={cn(
-                "absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none",
-                isAr ? "right-3" : "left-3"
-              )}
+              className="absolute top-1/2 -translate-y-1/2 start-3 h-3.5 w-3.5 text-muted-foreground pointer-events-none"
             />
             <Input
               value={search}
@@ -139,10 +136,7 @@ export function TrustBadgeIconPicker({
                   ? "ابحث باسم الأيقونة أو الوصف (أمان، شحن، كاش، جودة)..."
                   : "Search by text or description (security, cash, fast)..."
               }
-              className={cn(
-                "h-9 text-xs bg-background border-border",
-                isAr ? "pr-8 pl-3" : "pl-8 pr-3"
-              )}
+              className="h-9 text-xs bg-background border-border ps-8 pe-3"
               autoFocus
             />
           </div>

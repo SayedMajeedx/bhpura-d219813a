@@ -368,7 +368,7 @@ export function OsMobileNavigation({
                 if (group.items.length === 0) return null;
                 return (
                   <div key={group.id} className="space-y-1.5">
-                    <div className="text-xs font-semibold text-muted-foreground/80 px-2 flex items-center gap-1.5">
+                    <div className="text-xs font-semibold text-muted-foreground px-2 flex items-center gap-1.5">
                       <span className="h-1.5 w-1.5 rounded-full bg-primary/60" />
                       <span>{group.title}</span>
                     </div>

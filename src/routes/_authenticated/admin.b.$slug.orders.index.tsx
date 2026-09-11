@@ -2192,7 +2192,7 @@ function OrdersList() {
                 </div>
               </DialogHeader>
 
-              <div className="space-y-4 py-3 overflow-y-auto flex-1 pr-1 text-sm">
+              <div className="space-y-4 py-3 overflow-y-auto flex-1 pe-1 text-sm">
                 {/* Pick Checklist Header */}
                 {(() => {
                   const modalItems = selectedFulfillOrder.order_items ?? [];
@@ -2247,7 +2247,7 @@ function OrdersList() {
                             : "No item line details recorded for this order."}
                         </div>
                       ) : (
-                        <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                        <div className="space-y-2 max-h-[220px] overflow-y-auto pe-1">
                           {modalItems.map((item: any, idx: number) => {
                             const isChecked = Boolean(checkedItems[item.id]);
                             const imgUrl =
@@ -2309,7 +2309,7 @@ function OrdersList() {
                                         isChecked && "line-through text-muted-foreground",
                                       )}
                                     >
-                                      <span className="font-bold text-primary mr-1">
+                                      <span className="font-bold text-primary me-1">
                                         {item.quantity}x
                                       </span>{" "}
                                       {title}
@@ -2471,9 +2471,9 @@ function OrdersList() {
                   }}
                 >
                   {isFulfilling ? (
-                    <Loader2 className="animate-spin h-4 w-4 mr-1.5 inline" />
+                    <Loader2 className="animate-spin h-4 w-4 me-1.5 inline" />
                   ) : (
-                    <PackageCheck className="h-4 w-4 mr-1.5 inline" />
+                    <PackageCheck className="h-4 w-4 me-1.5 inline" />
                   )}
                   {lang === "ar" ? "تأكيد التعبئة والتجهيز للشحن" : "Confirm Packed & Dispatch"}
                 </Button>
@@ -2605,7 +2605,7 @@ function OrdersList() {
                   }}
                 >
                   {isSubmittingCash ? (
-                    <Loader2 className="animate-spin h-4 w-4 mr-1.5 inline" />
+                    <Loader2 className="animate-spin h-4 w-4 me-1.5 inline" />
                   ) : null}
                   {lang === "ar" ? "تأكيد التحصيل والتسليم" : "Confirm Cash & Complete"}
                 </Button>
@@ -3048,7 +3048,7 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
                 : "Map your custom CSV file columns to match required fields in our historical sales engine."}
             </p>
 
-            <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
+            <div className="space-y-2.5 max-h-[300px] overflow-y-auto pe-1">
               {[
                 { key: "order_number", label: isAr ? "رقم الطلب" : "Order Number", required: true },
                 { key: "order_date", label: isAr ? "تاريخ الطلب" : "Order Date", required: true },
@@ -3435,7 +3435,7 @@ function OrderQuickInspectSheet({
                       navigator.clipboard.writeText(getPaymentGatewayReference(order)!);
                       toast.success(isAr ? "تم النسخ" : "Copied Reference");
                     }}
-                  >
+                   aria-label={isAr ? "نسخ" : "Copy"}>
                     <Copy className="h-3 w-3" />
                   </Button>
                 </div>

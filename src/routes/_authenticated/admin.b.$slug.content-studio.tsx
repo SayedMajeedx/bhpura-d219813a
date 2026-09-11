@@ -1507,7 +1507,7 @@ ${desc}${detailsBlock}
                     <Label htmlFor="studio-edition-label" className="text-xs font-bold text-foreground leading-none">
                       {isAr ? "العبارة بجانب الشعار" : "Edition label"}
                     </Label>
-                    <span dir="ltr" className="font-mono text-xs text-muted-foreground/70 tabular-nums leading-none">
+                    <span dir="ltr" className="font-mono text-xs text-muted-foreground tabular-nums leading-none">
                       {editionLabel.length}/28
                     </span>
                   </div>
@@ -2191,7 +2191,7 @@ ${desc}${detailsBlock}
                 lang={isAr ? "ar" : "en"}
                 className={cn(
                   "absolute bottom-[7.5%] w-[66%] overflow-hidden rounded-[18px] border border-white/25 px-[4%] py-[2.75%] shadow-xl backdrop-blur-[6px]",
-                  isAr ? "right-[6%] text-right" : "left-[6%] text-left",
+                  isAr ? "right-[6%] text-end" : "left-[6%] text-start",
                 )}
                 style={{
                   background: palette.panel,

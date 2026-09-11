@@ -215,7 +215,7 @@ function ReportsCustomers() {
                             <TableHead className="text-center">
                               {lang === "ar" ? "الطلبات" : "Orders"}
                             </TableHead>
-                            <TableHead className="text-right">
+                            <TableHead className="text-end">
                               {lang === "ar" ? "إجمالي الإنفاق" : "Total Spent"}
                             </TableHead>
                           </TableRow>
@@ -225,7 +225,7 @@ function ReportsCustomers() {
                             <TableRow key={idx}>
                               <TableCell className="font-medium">{c.customer_name}</TableCell>
                               <TableCell className="text-center">{c.paid_order_count}</TableCell>
-                              <TableCell className="text-right">
+                              <TableCell className="text-end">
                                 {formatMoney(c.total_pov, c.currency, lang)}
                               </TableCell>
                             </TableRow>

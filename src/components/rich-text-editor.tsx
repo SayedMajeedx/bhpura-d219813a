@@ -121,7 +121,7 @@ export function RichTextEditor({
           "[&_h3]:mb-2 [&_h3]:mt-3 [&_h3]:text-xl [&_h3]:font-semibold [&_li]:my-1",
           "[&_ol]:my-3 [&_ol]:list-decimal [&_ol]:ps-6 [&_p]:my-2 [&_ul]:my-3 [&_ul]:list-disc [&_ul]:ps-6",
           "[&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:bg-muted [&_th]:p-2 [&_th]:font-semibold [&_td]:border [&_td]:p-2",
-          direction === "rtl" ? "text-right" : "text-left",
+          direction === "rtl" ? "text-end" : "text-start",
         )}
       />
     </div>

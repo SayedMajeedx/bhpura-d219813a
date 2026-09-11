@@ -651,7 +651,7 @@ export function ImageCropperDialog({
                   className="h-9 w-9 shrink-0"
                   onClick={() => adjustZoom(-0.1)}
                   disabled={isBusy || zoom <= 1}
-                >
+                 aria-label={isAr ? "إنقاص" : "Decrease"}>
                   <Minus className="h-3.5 w-3.5" />
                 </Button>
                 <Slider
@@ -670,7 +670,7 @@ export function ImageCropperDialog({
                   className="h-9 w-9 shrink-0"
                   onClick={() => adjustZoom(0.1)}
                   disabled={isBusy || zoom >= 4}
-                >
+                 aria-label={isAr ? "إضافة" : "Add"}>
                   <Plus className="h-3.5 w-3.5" />
                 </Button>
               </div>

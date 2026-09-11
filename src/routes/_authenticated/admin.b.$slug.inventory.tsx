@@ -913,7 +913,7 @@ function ProductImporterModal({
                   <button
                     key={item.id}
                     onClick={() => setPreset(item.id as any)}
-                    className={`flex flex-col items-start p-3.5 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 text-left transition-all ${item.color} ${
+                    className={`flex flex-col items-start p-3.5 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 text-start transition-all ${item.color} ${
                       preset === item.id
                         ? "border-primary ring-2 ring-primary/10 bg-primary/5 dark:bg-primary/5"
                         : ""
@@ -4799,7 +4799,7 @@ function BulkVariantDialog({
                           onClick={() =>
                             setRows((current) => current.filter((_, i) => i !== index))
                           }
-                        >
+                         aria-label={isAr ? "حذف" : "Delete"}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </td>
@@ -4910,7 +4910,7 @@ function StockStepper({ value, onChange }: { value: number; onChange: (val: numb
     >
       <button
         type="button"
-        className="w-8 h-full flex items-center justify-center hover:bg-muted active:scale-90 transition-all text-muted-foreground hover:text-foreground font-black text-sm border-r border-input"
+        className="w-8 h-full flex items-center justify-center hover:bg-muted active:scale-90 transition-all text-muted-foreground hover:text-foreground font-black text-sm border-e border-input"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -4931,7 +4931,7 @@ function StockStepper({ value, onChange }: { value: number; onChange: (val: numb
       />
       <button
         type="button"
-        className="w-8 h-full flex items-center justify-center hover:bg-muted active:scale-90 transition-all text-muted-foreground hover:text-foreground font-black text-sm border-l border-input"
+        className="w-8 h-full flex items-center justify-center hover:bg-muted active:scale-90 transition-all text-muted-foreground hover:text-foreground font-black text-sm border-s border-input"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -4972,7 +4972,7 @@ function PremiumCurrencyInput({
         type="number"
         step="0.001"
         placeholder={placeholder}
-        className={`w-full h-9.5 ${onClear && value ? "pl-7" : "pl-2.5"} pr-8 text-center font-mono font-bold bg-background border border-input rounded-xl outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-xs shadow-2xs transition-all disabled:cursor-not-allowed disabled:bg-muted/50 disabled:text-muted-foreground disabled:opacity-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${className}`}
+        className={`w-full h-9.5 ${onClear && value ? "ps-7" : "ps-2.5"} pe-8 text-center font-mono font-bold bg-background border border-input rounded-xl outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-xs shadow-2xs transition-all disabled:cursor-not-allowed disabled:bg-muted/50 disabled:text-muted-foreground disabled:opacity-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${className}`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onFocus={(e) => e.currentTarget.select()}
@@ -4991,7 +4991,7 @@ function PremiumCurrencyInput({
           <X className="h-3.5 w-3.5" />
         </button>
       )}
-      <span className="absolute end-2.5 text-xs font-black text-muted-foreground/60 pointer-events-none uppercase tracking-tight">
+      <span className="absolute end-2.5 text-xs font-black text-muted-foreground pointer-events-none uppercase tracking-tight">
         BHD
       </span>
     </div>
@@ -5237,7 +5237,7 @@ function VariantDesktopRow({
             )}
 
             {!renderBarcodeCol && (v.barcode || v.sku) && (
-              <span className="inline-flex items-center gap-1 font-mono text-xs text-muted-foreground/85 bg-muted/70 px-1.5 py-0.5 rounded-md border border-border-subtle shrink-0">
+              <span className="inline-flex items-center gap-1 font-mono text-xs text-muted-foreground bg-muted/70 px-1.5 py-0.5 rounded-md border border-border-subtle shrink-0">
                 <Barcode className="h-3 w-3 text-primary/80" />
                 <span>{v.barcode || v.sku}</span>
               </span>
@@ -5245,7 +5245,7 @@ function VariantDesktopRow({
 
             <button
               type="button"
-              className="p-1 rounded hover:bg-muted text-muted-foreground/60 hover:text-foreground opacity-0 group-hover/v:opacity-100 transition-opacity"
+              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground opacity-0 group-hover/v:opacity-100 transition-opacity"
               onClick={() => setIsEditingAttrs(true)}
               title={isAr ? "تعديل الخصائص" : "Edit attributes"}
             >
@@ -5419,7 +5419,7 @@ function VariantDesktopRow({
           const dailyVelocity = qtySold / daysElapsed;
 
           let runRateText = isAr ? "لا مبيعات" : "No sales";
-          let runRateColor = "text-muted-foreground/60 text-xs";
+          let runRateColor = "text-muted-foreground text-xs";
 
           if (stock <= 0) {
             runRateText = isAr ? "نفد" : "Out of stock";
@@ -5581,7 +5581,7 @@ function VariantMobileCard({
       >
         <div>
           <div className="flex items-center gap-1">
-            <Label className="text-xs font-black uppercase text-muted-foreground/85">
+            <Label className="text-xs font-black uppercase text-muted-foreground">
               {mainLabel}
             </Label>
             <TooltipProvider delayDuration={200}>
@@ -5608,7 +5608,7 @@ function VariantMobileCard({
         </div>
         <div>
           <div className="flex items-center gap-1">
-            <Label className="text-xs font-black uppercase text-muted-foreground/85">
+            <Label className="text-xs font-black uppercase text-muted-foreground">
               {incLabel}
             </Label>
             <TooltipProvider delayDuration={200}>
@@ -5650,7 +5650,7 @@ function VariantMobileCard({
           {/* Inherited cost and optional sale price */}
           {canViewFinancials && (
             <div>
-              <Label className="text-xs font-black uppercase text-muted-foreground/85">
+              <Label className="text-xs font-black uppercase text-muted-foreground">
                 {t("inventory.cost")}
               </Label>
               <div className="mt-1">
@@ -5665,7 +5665,7 @@ function VariantMobileCard({
             </div>
           )}
           <div>
-            <Label className="text-xs font-black uppercase text-muted-foreground/85">
+            <Label className="text-xs font-black uppercase text-muted-foreground">
               {isAr ? "السعر اللي يدفعه العميل" : "Customer Price"}
             </Label>
             <div className="mt-1">
@@ -5683,7 +5683,7 @@ function VariantMobileCard({
 
           {/* Dynamic image picker and regular price */}
           <div>
-            <Label className="text-xs font-black uppercase text-muted-foreground/85">
+            <Label className="text-xs font-black uppercase text-muted-foreground">
               {isAr ? "صورة المتغير" : "Variant Image"}
             </Label>
             <div className="mt-1">
@@ -5696,7 +5696,7 @@ function VariantMobileCard({
             </div>
           </div>
           <div>
-            <Label className="text-xs font-black uppercase text-muted-foreground/85">
+            <Label className="text-xs font-black uppercase text-muted-foreground">
               {isAr ? "السعر العادي" : "Regular Price"}
             </Label>
             <input
@@ -5711,7 +5711,7 @@ function VariantMobileCard({
 
           {/* SKU & Barcode */}
           <div>
-            <Label className="text-xs font-black uppercase text-muted-foreground/85">SKU</Label>
+            <Label className="text-xs font-black uppercase text-muted-foreground">SKU</Label>
             <input
               className="mt-1 h-9 w-full rounded-lg border border-input bg-background px-2.5 text-xs font-mono outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               defaultValue={v.sku ?? ""}
@@ -5720,7 +5720,7 @@ function VariantMobileCard({
             />
           </div>
           <div>
-            <Label className="text-xs font-black uppercase text-muted-foreground/85">
+            <Label className="text-xs font-black uppercase text-muted-foreground">
               {barcodeLabel}
             </Label>
             <input
@@ -5757,7 +5757,7 @@ function VariantMobileCard({
           const dailyVelocity = qtySold / daysElapsed;
 
           let runRateText = isAr ? "لا مبيعات مؤخراً" : "No recent sales";
-          let runRateColor = "text-muted-foreground/80";
+          let runRateColor = "text-muted-foreground";
 
           if (stock <= 0) {
             runRateText = isAr ? "نفد المخزون" : "Out of stock";
@@ -6710,13 +6710,13 @@ function VariantList({
                     <td className="px-2 py-3 text-center">
                       <div className="relative inline-flex items-center w-full max-w-[100px] shrink-0">
                         <Input
-                          className="h-8 w-full bg-muted/50 pl-2 pr-7 text-center text-xs font-bold text-muted-foreground disabled:cursor-not-allowed disabled:opacity-100"
+                          className="h-8 w-full bg-muted/50 ps-2 pe-7 text-center text-xs font-bold text-muted-foreground disabled:cursor-not-allowed disabled:opacity-100"
                           type="number"
                           step="0.001"
                           value={row.cost_price}
                           disabled
                         />
-                        <span className="absolute right-2 text-xs font-black text-muted-foreground/50 pointer-events-none uppercase">
+                        <span className="absolute end-2 text-xs font-black text-muted-foreground pointer-events-none uppercase">
                           BHD
                         </span>
                       </div>
@@ -6727,14 +6727,14 @@ function VariantList({
                   <td className="px-2 py-3 text-center">
                     <div className="relative inline-flex items-center w-full max-w-[100px] shrink-0">
                       <Input
-                        className="h-8 w-full pl-2 pr-7 text-center text-xs font-bold"
+                        className="h-8 w-full ps-2 pe-7 text-center text-xs font-bold"
                         type="number"
                         step="0.001"
                         value={row.selling_price}
                         placeholder={String(product?.base_price ?? "0.000")}
                         onChange={(e) => setRow({ ...row, selling_price: e.target.value })}
                       />
-                      <span className="absolute right-2 text-xs font-black text-muted-foreground/50 pointer-events-none uppercase">
+                      <span className="absolute end-2 text-xs font-black text-muted-foreground pointer-events-none uppercase">
                         BHD
                       </span>
                     </div>
@@ -6803,7 +6803,7 @@ function VariantList({
                           e.preventDefault();
                           setAdding(false);
                         }}
-                      >
+                       aria-label={isAr ? "إغلاق" : "Close"}>
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
@@ -6829,7 +6829,7 @@ function VariantList({
                 startAdding();
               }}
             >
-              <Plus className="h-3.5 w-3.5 mr-1" /> {t("inventory.addVariant")}
+              <Plus className="h-3.5 w-3.5 me-1" /> {t("inventory.addVariant")}
             </Button>
           )}
           <BulkVariantDialog
@@ -6845,7 +6845,7 @@ function VariantList({
       {/* FLOATING BULK ACTIONS TOOLBAR */}
       {selectedIds.size > 0 && (
         <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 max-w-[95vw] overflow-x-auto bg-white/85 dark:bg-black/75 backdrop-blur-2xl backdrop-saturate-200 border border-white/50 dark:border-white/15 shadow-2xl rounded-2xl py-2.5 px-4 flex items-center gap-3 z-55 animate-in slide-in-from-bottom-5 duration-200">
-          <div className="flex items-center gap-2 border-r border-border pr-4 shrink-0">
+          <div className="flex items-center gap-2 border-e border-border pe-4 shrink-0">
             <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center text-xs text-primary-foreground font-black">
               {selectedIds.size}
             </div>
@@ -6896,14 +6896,14 @@ function VariantList({
               className="h-8 text-xs font-bold rounded-lg px-2.5"
               onClick={bulkDelete}
             >
-              <Trash2 className="h-3 w-3 mr-1" />
+              <Trash2 className="h-3 w-3 me-1" />
               {isAr ? "حذف" : "Delete"}
             </Button>
           </div>
 
           <button
             type="button"
-            className="p-1 rounded-md hover:bg-muted text-muted-foreground/60 transition-colors ml-2"
+            className="p-1 rounded-md hover:bg-muted text-muted-foreground transition-colors ms-2"
             onClick={() => setSelectedIds(new Set())}
           >
             <X className="h-4 w-4" />

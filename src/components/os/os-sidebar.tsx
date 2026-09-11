@@ -323,11 +323,11 @@ export function OsSidebar({
               {visibleModularItems.length > 0 && (
                 <div className="space-y-1 pb-1.5 border-b border-border-subtle">
                   <div className="flex items-center justify-between px-3 mb-1">
-                    <span className="text-xs font-bold tracking-wider text-muted-foreground/70 uppercase flex items-center gap-1.5">
+                    <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase flex items-center gap-1.5">
                       <Pin className="h-2.5 w-2.5 text-primary" />
                       <span>{isAr ? "المثبتة" : "PINNED"}</span>
                     </span>
-                    <span className="text-xs text-muted-foreground/60 font-semibold">
+                    <span className="text-xs text-muted-foreground font-semibold">
                       {visibleModularItems.length}
                     </span>
                   </div>
@@ -373,7 +373,7 @@ export function OsSidebar({
               {jobGroups.map((group) => (
                 <div key={group.id} className="space-y-1">
                   <div className="flex items-center justify-between px-3 mt-1.5 mb-1">
-                    <span className="text-xs font-bold tracking-wider text-muted-foreground/70 uppercase">
+                    <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                       {isAr ? group.labelAr : group.labelEn}
                     </span>
                   </div>
@@ -437,7 +437,7 @@ export function OsSidebar({
               <div className="space-y-1">
                 {!collapsed && (
                   <div className="flex items-center justify-between px-3 mt-1 mb-1.5">
-                    <span className="text-xs font-bold tracking-wider text-muted-foreground/70 uppercase">
+                    <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                       {isAr ? "الأساسيات" : "CORE"}
                     </span>
                   </div>
@@ -474,11 +474,11 @@ export function OsSidebar({
                 <div className="space-y-1 pt-1">
                   {!collapsed && (
                     <div className="flex items-center justify-between px-3 mt-2 mb-1.5">
-                      <span className="text-xs font-bold tracking-wider text-muted-foreground/70 uppercase flex items-center gap-1.5">
+                      <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase flex items-center gap-1.5">
                         <Pin className="h-2.5 w-2.5 text-primary" />
                         <span>{isAr ? "الأدوات المثبتة" : "PINNED TOOLS"}</span>
                       </span>
-                      <span className="text-xs text-muted-foreground/60 font-semibold">
+                      <span className="text-xs text-muted-foreground font-semibold">
                         {visibleModularItems.length}
                       </span>
                     </div>

@@ -181,7 +181,7 @@ export function ReturnTimelineTracker({ returnReq, lang }: ReturnTimelineTracker
         </div>
 
         {/* Mobile Vertical Stepper */}
-        <div className="flex md:hidden flex-col gap-3 relative pl-6 rtl:pr-6 rtl:pl-0 border-l rtl:border-r border-border ms-3 rtl:me-3">
+        <div className="flex md:hidden flex-col gap-3 relative ps-6 rtl:pe-6 rtl:ps-0 border-s rtl:border-e border-border ms-3 rtl:me-3">
           {steps.map((step) => {
             const Icon = step.icon;
             return (

@@ -189,7 +189,7 @@ export function DiscountsWorkQueue({
                           !p.maximum_discount_amount &&
                           !p.first_time_customers_only &&
                           !p.returning_customers_only && (
-                            <span className="text-muted-foreground/60">—</span>
+                            <span className="text-muted-foreground">—</span>
                           )}
                       </div>
                     </td>

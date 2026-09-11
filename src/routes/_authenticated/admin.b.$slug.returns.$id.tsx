@@ -264,7 +264,7 @@ function ReturnDetailPage() {
             size="icon"
             onClick={() => navigate({ to: (`/admin/b/${slug}/returns`) as any })}
             className="h-9 w-9 border border-border"
-          >
+           aria-label={isAr ? "تحديث" : "Refresh"}>
             <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
           </Button>
           <div>

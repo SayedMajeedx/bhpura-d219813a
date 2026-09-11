@@ -190,7 +190,7 @@ export function SuperAddonsManager() {
                   </span>
                   <span className="font-mono font-bold text-foreground">{addon.target_feature_key}</span>
                 </div>
-                <div className="text-right">
+                <div className="text-end">
                   <span className="font-mono font-bold text-foreground block">
                     {addon.price_monthly} BHD/m
                   </span>

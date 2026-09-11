@@ -3727,7 +3727,7 @@ function OrderDetail() {
                                 className="h-full w-full object-cover"
                               />
                             ) : (
-                              <ImageIcon className="h-5 w-5 text-muted-foreground/40" />
+                              <ImageIcon className="h-5 w-5 text-muted-foreground" />
                             )}
                           </div>
                           <div className="min-w-0 flex-1">
@@ -4225,7 +4225,7 @@ function OrderDetail() {
                                           quantity: Math.max(1, Number(it.quantity || 1) - 1),
                                         })
                                       }
-                                    >
+                                     aria-label={isAr ? "إنقاص" : "Decrease"}>
                                       <Minus className="h-4 w-4" />
                                     </Button>
                                     <Input
@@ -4249,7 +4249,7 @@ function OrderDetail() {
                                           quantity: Number(it.quantity || 1) + 1,
                                         })
                                       }
-                                    >
+                                     aria-label={isAr ? "إضافة" : "Add"}>
                                       <Plus className="h-4 w-4" />
                                     </Button>
                                   </div>
@@ -4578,6 +4578,8 @@ function OrderDetail() {
                             className="h-6 w-6 shrink-0"
                             onClick={removeAdminPromo}
                             disabled={isReadOnly}
+                            aria-label={lang === "ar" ? "إزالة الخصم" : "Remove discount"}
+                            title={lang === "ar" ? "إزالة الخصم" : "Remove discount"}
                           >
                             <X className="h-3.5 w-3.5" />
                           </Button>
@@ -4672,7 +4674,7 @@ function OrderDetail() {
                               }}
                               className="h-8 text-xs font-mono"
                             />
-                            <span className="absolute right-2.5 top-2 text-xs text-muted-foreground font-bold">
+                            <span className="absolute end-2.5 top-2 text-xs text-muted-foreground font-bold">
                               %
                             </span>
                           </div>
@@ -5060,7 +5062,7 @@ function OrderDetail() {
             </DialogHeader>
             <div className="p-4 space-y-3">
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute start-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   autoFocus
                   placeholder={
@@ -5075,7 +5077,7 @@ function OrderDetail() {
                 {productSearchQuery && (
                   <button
                     type="button"
-                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                    className="absolute end-3 top-3 text-muted-foreground hover:text-foreground"
                     onClick={() => setProductSearchQuery("")}
                   >
                     <X className="h-4 w-4" />
@@ -5129,7 +5131,7 @@ function OrderDetail() {
                             {img ? (
                               <img src={img} alt={title} className="h-full w-full object-cover" />
                             ) : (
-                              <ImageIcon className="h-5 w-5 text-muted-foreground/30" />
+                              <ImageIcon className="h-5 w-5 text-muted-foreground" />
                             )}
                           </div>
                           <div className="min-w-0">
@@ -5221,7 +5223,7 @@ function OrderDetail() {
                     {lang === "ar" ? "البريد الإلكتروني" : "Email Address"}
                   </Label>
                   <Input
-                    className="h-11 mt-1 text-sm text-left"
+                    className="h-11 mt-1 text-sm text-start"
                     dir="ltr"
                     type="email"
                     placeholder="ali@example.com"
@@ -5557,9 +5559,9 @@ function ResendConfirmationEmailButton({
         title={title}
       >
         {sending ? (
-          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          <Loader2 className="h-4 w-4 me-2 animate-spin" />
         ) : (
-          <Mail className={`h-4 w-4 mr-2 ${color}`} />
+          <Mail className={`h-4 w-4 me-2 ${color}`} />
         )}
         {label}
       </DropdownMenuItem>
@@ -5569,9 +5571,9 @@ function ResendConfirmationEmailButton({
   return (
     <Button variant="outline" onClick={onClick} disabled={sending} title={title}>
       {sending ? (
-        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+        <Loader2 className="h-4 w-4 me-2 animate-spin" />
       ) : (
-        <Mail className={`h-4 w-4 mr-2 ${color}`} />
+        <Mail className={`h-4 w-4 me-2 ${color}`} />
       )}
       {label}
     </Button>

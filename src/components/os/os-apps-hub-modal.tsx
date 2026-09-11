@@ -211,7 +211,7 @@ export function OsAppsHubModal({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={isAr ? "ابحث باسم الأداة أو وظيفتها" : "Search by tool name or function"}
-              className="h-12 rounded-xl border-border-strong bg-muted/25 pe-11 ps-11 text-sm shadow-none transition-colors placeholder:text-muted-foreground/70 focus-visible:border-primary/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/15"
+              className="h-12 rounded-xl border-border-strong bg-muted/25 pe-11 ps-11 text-sm shadow-none transition-colors placeholder:text-muted-foreground focus-visible:border-primary/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/15"
             />
             {searchQuery && (
               <button
@@ -314,7 +314,7 @@ export function OsAppsHubModal({
                       <div className="min-w-0 flex-1 pe-7">
                         <div className="flex items-center gap-1.5">
                           <h4 className="text-sm font-bold leading-6 text-foreground">{title}</h4>
-                          <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/0 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary rtl:rotate-[-90deg]" />
+                          <ArrowUpRight className="h-3.5 w-3.5 shrink-0 opacity-0 text-muted-foreground transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary rtl:rotate-[-90deg]" />
                         </div>
                         {description && (
                           <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
@@ -338,7 +338,7 @@ export function OsAppsHubModal({
                           "absolute end-3 top-3 flex h-8 w-8 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                           isPinned
                             ? "bg-amber-50 text-amber-500 dark:bg-amber-500/10"
-                            : "text-muted-foreground/50 hover:bg-muted hover:text-foreground",
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground",
                         )}
                         aria-label={
                           isPinned ? (isAr ? "إلغاء التثبيت" : "Unpin") : isAr ? "تثبيت" : "Pin"

@@ -134,7 +134,7 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
                     size="icon"
                     onClick={() => setEditingTier(tier)}
                     className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                  >
+                   aria-label={isAr ? "تعديل" : "Edit"}>
                     <Edit2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>

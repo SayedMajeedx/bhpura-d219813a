@@ -710,7 +710,7 @@ function TeamManagement() {
                             📱 {member.phone}
                           </span>
                         ) : (
-                          <span className="text-xs text-muted-foreground/60 italic">
+                          <span className="text-xs text-muted-foreground italic">
                             {isAr ? "غير محدد" : "None"}
                           </span>
                         )}
@@ -801,7 +801,7 @@ function TeamManagement() {
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => openEdit(member)}
-                                >
+                                 aria-label={isAr ? "تعديل" : "Edit"}>
                                   <Pencil className="h-4 w-4" />
                                 </Button>
                                 {member.status === "active" && (
@@ -831,7 +831,7 @@ function TeamManagement() {
                                   size="icon"
                                   className="text-destructive hover:text-destructive hover:bg-destructive/10"
                                   onClick={() => setDeleteConfirm(member)}
-                                >
+                                 aria-label={isAr ? "حذف" : "Delete"}>
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </>

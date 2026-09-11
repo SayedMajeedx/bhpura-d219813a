@@ -74,7 +74,7 @@ export function PhoneInput({
       <Input
         id={id}
         name={name}
-        className="h-11 flex-1 text-left"
+        className="h-11 flex-1 text-start"
         dir="ltr"
         type="tel"
         inputMode="tel"

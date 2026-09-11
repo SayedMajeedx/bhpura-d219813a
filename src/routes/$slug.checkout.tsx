@@ -1259,7 +1259,7 @@ function Checkout() {
                 }}
                 disabled={submitting}
               >
-                <CreditCard className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
+                <CreditCard className="w-4 h-4 me-2 rtl:ms-2 rtl:me-0" />
                 {t("إعادة المحاولة بالبطاقة", "Retry Payment")}
               </Button>
               <Button

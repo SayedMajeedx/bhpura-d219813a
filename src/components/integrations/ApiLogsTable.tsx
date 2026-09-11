@@ -116,7 +116,7 @@ export function ApiLogsTable({ brandId }: ApiLogsTableProps) {
         </div>
       ) : (
         <div className="border border-border rounded-lg overflow-x-auto bg-card">
-          <table className="w-full text-xs text-left rtl:text-right">
+          <table className="w-full text-xs text-start rtl:text-end">
             <thead className="bg-muted text-muted-foreground uppercase text-xs font-semibold">
               <tr>
                 <th className="px-4 py-3">{isAr ? "النوع" : "Method"}</th>

@@ -84,7 +84,7 @@ export const OrderItemsWorkflowCard: React.FC<OrderItemsWorkflowCardProps> = ({
       {/* Items List */}
       {items.length === 0 ? (
         <div className="py-8 text-center border-2 border-dashed border-border-subtle rounded-xl p-4">
-          <Package className="mx-auto h-8 w-8 text-muted-foreground/50 mb-2" />
+          <Package className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
           <p className="text-xs font-bold text-muted-foreground">
             {isAr ? "لا توجد منتجات في هذا الطلب" : "No line items in this order yet"}
           </p>
@@ -123,7 +123,7 @@ export const OrderItemsWorkflowCard: React.FC<OrderItemsWorkflowCardProps> = ({
                     {imgUrl ? (
                       <img src={imgUrl} alt={itemTitle} className="h-full w-full object-cover" />
                     ) : (
-                      <Package className="h-6 w-6 text-muted-foreground/50" />
+                      <Package className="h-6 w-6 text-muted-foreground" />
                     )}
                   </div>
 

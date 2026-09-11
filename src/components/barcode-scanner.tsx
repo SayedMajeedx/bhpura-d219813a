@@ -310,6 +310,8 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
                 variant="secondary"
                 className="absolute end-2 top-2 h-9 w-9 rounded-full"
                 onClick={switchCamera}
+                aria-label="Switch camera"
+                title="Switch camera"
               >
                 <RefreshCw className="h-4 w-4" />
               </Button>

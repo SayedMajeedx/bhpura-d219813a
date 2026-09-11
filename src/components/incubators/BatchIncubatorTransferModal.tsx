@@ -578,7 +578,7 @@ export function BatchIncubatorTransferModal({
           {/* Search & Collapse Filter Bar */}
           <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-1">
             <div className="relative flex-1 w-full">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Search className="absolute end-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 type="text"
                 value={searchQuery}
@@ -588,7 +588,7 @@ export function BatchIncubatorTransferModal({
                     ? "بحث باسم المنتج، اللون، المقاس، أو الـ SKU..."
                     : "Search by product name, color, size, or SKU..."
                 }
-                className="h-8 text-xs pr-9 pl-3 w-full bg-background"
+                className="h-8 text-xs pe-9 ps-3 w-full bg-background"
               />
             </div>
             <div className="flex items-center gap-1.5 w-full sm:w-auto justify-between sm:justify-end">
@@ -603,7 +603,7 @@ export function BatchIncubatorTransferModal({
                   onClick={expandAll}
                   className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground"
                 >
-                  <ChevronDown className="h-3.5 w-3.5 mr-1" />
+                  <ChevronDown className="h-3.5 w-3.5 me-1" />
                   {isAr ? "توسيع الكل" : "Expand All"}
                 </Button>
                 <Button
@@ -613,7 +613,7 @@ export function BatchIncubatorTransferModal({
                   onClick={collapseAll}
                   className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground"
                 >
-                  <ChevronUp className="h-3.5 w-3.5 mr-1" />
+                  <ChevronUp className="h-3.5 w-3.5 me-1" />
                   {isAr ? "طي الكل" : "Collapse All"}
                 </Button>
               </div>
@@ -689,7 +689,7 @@ export function BatchIncubatorTransferModal({
                       <button
                         type="button"
                         onClick={() => toggleProductAccordion(group.productId)}
-                        className="flex items-center gap-2.5 text-right font-medium text-xs text-foreground hover:text-primary transition-colors cursor-pointer"
+                        className="flex items-center gap-2.5 text-end font-medium text-xs text-foreground hover:text-primary transition-colors cursor-pointer"
                       >
                         <Layers className="h-4 w-4 text-primary shrink-0" />
                         <span className="font-bold text-sm text-foreground">
@@ -744,7 +744,7 @@ export function BatchIncubatorTransferModal({
                   {/* Collapsible Variants Table for this Product */}
                   {isExpanded && (
                     <div className="border-t border-border-subtle">
-                      <table className="w-full text-xs text-right divide-y divide-border/40">
+                      <table className="w-full text-xs text-end divide-y divide-border/40">
                         <thead className="bg-muted/15 font-semibold text-muted-foreground text-xs">
                           <tr>
                             <th className="p-2.5 w-8 text-center"></th>

@@ -238,7 +238,7 @@ export function FinancialReportsTab() {
               </div>
 
               {/* COGS Breakdown */}
-              <div className="pl-4 pr-4 space-y-1.5 py-1 text-xs text-muted-foreground">
+              <div className="ps-4 pe-4 space-y-1.5 py-1 text-xs text-muted-foreground">
                 <div className="flex justify-between">
                   <span>{isAr ? "• تكلفة المنتجات المباعة (Product Cost)" : "• Product COGS"}</span>
                   <span className="font-mono">{formatMoney(pnl.productCogs, "BHD")}</span>
@@ -305,7 +305,7 @@ export function FinancialReportsTab() {
                     {formatMoney(pnl.netOperatingProfit, "BHD")}
                   </span>
                 </div>
-                <div className="text-right">
+                <div className="text-end">
                   <span className="text-xs opacity-90 block">
                     {isAr ? "هامش صافي الربح" : "Net Margin"}
                   </span>

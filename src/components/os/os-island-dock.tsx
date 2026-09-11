@@ -71,7 +71,7 @@ export function OsIslandDock({
               // Active vs Inactive state
               item.active
                 ? "bg-primary/10 dark:bg-primary/20 text-primary"
-                : "text-muted-foreground/75 hover:text-foreground hover:bg-foreground/[0.04] dark:hover:bg-white/[0.06] active:bg-foreground/[0.08] dark:active:bg-white/[0.1]",
+                : "text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04] dark:hover:bg-white/[0.06] active:bg-foreground/[0.08] dark:active:bg-white/[0.1]",
             )}
           >
             <div className="relative flex items-center justify-center">
@@ -95,7 +95,7 @@ export function OsIslandDock({
                 "text-xs tracking-tight leading-normal whitespace-nowrap mt-0.5 transition-colors duration-200",
                 item.active
                   ? "font-semibold text-primary"
-                  : "font-medium text-muted-foreground/80",
+                  : "font-medium text-muted-foreground",
               )}
             >
               {item.label}

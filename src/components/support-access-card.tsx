@@ -167,17 +167,17 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
+              <table className="w-full text-start border-collapse text-xs">
                 <thead>
                   <tr className="bg-zinc-50 dark:bg-zinc-900/50 border-b border-border text-muted-foreground font-medium">
-                    <th className="p-3.5 pl-6">
+                    <th className="p-3.5 ps-6">
                       {lang === "ar" ? "المهندس / المسؤول" : "Operator / Engineer"}
                     </th>
                     <th className="p-3.5">{lang === "ar" ? "نوع الإجراء" : "Action Type"}</th>
                     <th className="p-3.5">
                       {lang === "ar" ? "سبب الدخول" : "Troubleshooting Reason"}
                     </th>
-                    <th className="p-3.5 pr-6 text-right">
+                    <th className="p-3.5 pe-6 text-end">
                       {lang === "ar" ? "التاريخ والوقت" : "Date & Time"}
                     </th>
                   </tr>
@@ -194,7 +194,7 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
                         key={log.id}
                         className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors"
                       >
-                        <td className="p-3.5 pl-6 font-medium text-foreground">
+                        <td className="p-3.5 ps-6 font-medium text-foreground">
                           <div>{log.operator?.name || "Boutq Support"}</div>
                           <div className="text-xs text-muted-foreground font-normal">
                             {log.operator?.email || "support@boutq.store"}
@@ -216,7 +216,7 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
                         <td className="p-3.5 text-muted-foreground max-w-xs truncate font-sans">
                           {log.reason || "—"}
                         </td>
-                        <td className="p-3.5 pr-6 text-right text-muted-foreground whitespace-nowrap">
+                        <td className="p-3.5 pe-6 text-end text-muted-foreground whitespace-nowrap">
                           {formattedDate}
                         </td>
                       </tr>

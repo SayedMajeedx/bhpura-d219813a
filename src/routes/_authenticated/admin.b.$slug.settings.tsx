@@ -1194,6 +1194,8 @@ function Settings() {
                     size="icon"
                     onClick={() => fontInput.current?.click()}
                     disabled={uploading === "font"}
+                    aria-label={t("settings.uploadFont")}
+                    title={t("settings.uploadFont")}
                   >
                     <Upload className="h-4 w-4" />
                   </Button>
@@ -2705,7 +2707,7 @@ function HeroSlidesEditor({
                   slides: state.slides.filter((_, itemIndex) => itemIndex !== index),
                 })
               }
-            >
+             aria-label={isAr ? "حذف" : "Delete"}>
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -3383,7 +3385,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
           {/* Zones Table / List */}
           {zones.length > 0 ? (
             <div className="rounded-lg border border-border overflow-hidden bg-background">
-              <table className="w-full text-sm text-left rtl:text-right">
+              <table className="w-full text-sm text-start rtl:text-end">
                 <thead className="bg-secondary/10 text-xs font-semibold text-muted-foreground border-b border-border">
                   <tr>
                     <th className="p-3">{isAr ? "المنطقة (إنجليزي)" : "Zone Name (EN)"}</th>
@@ -3407,7 +3409,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
                           size="icon"
                           className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                           onClick={() => removeZone(z.id)}
-                        >
+                         aria-label={isAr ? "حذف" : "Delete"}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </td>
@@ -3449,7 +3451,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
                   }
                   value={newZone.name_ar}
                   onChange={(e) => setNewZone({ ...newZone, name_ar: e.target.value })}
-                  className="text-xs text-right"
+                  className="text-xs text-end"
                   dir="rtl"
                 />
               </div>
@@ -3527,7 +3529,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
                 value={state.delivery_estimate_ar}
                 onChange={(e) => setState({ ...state, delivery_estimate_ar: e.target.value })}
                 placeholder="التوصيل المتوقع خلال 24 - 48 ساعة داخل البحرين"
-                className="text-xs mt-1 text-right"
+                className="text-xs mt-1 text-end"
                 dir="rtl"
               />
             </div>
@@ -5431,7 +5433,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               <Label>{isAr ? "عنوان الواجهة (بالعربية)" : "Hero title (Arabic)"}</Label>
               <Input
                 dir="rtl"
-                className="text-right"
+                className="text-end"
                 value={state.hero_title_ar ?? ""}
                 placeholder={isAr ? "فارغ يستخدم اسم العلامة بالعربية" : "Blank uses brand name"}
                 onChange={(e) => setState({ ...state, hero_title_ar: e.target.value || null })}
@@ -5441,7 +5443,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               <Label>{isAr ? "عنوان الواجهة (بالإنجليزية)" : "Hero title (English)"}</Label>
               <Input
                 dir="ltr"
-                className="text-left"
+                className="text-start"
                 value={state.hero_title_en ?? ""}
                 placeholder={isAr ? "فارغ يستخدم اسم العلامة بالإنجليزية" : "Blank uses brand name"}
                 onChange={(e) => setState({ ...state, hero_title_en: e.target.value || null })}
@@ -5517,7 +5519,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             <div className="sm:col-span-2" dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
               <Label>{contentLanguage === "ar" ? "نص الإعلان (بالعربية)" : "Announcement text (English)"}</Label>
               <Input
-                className={contentLanguage === "ar" ? "text-right" : "text-left"}
+                className={contentLanguage === "ar" ? "text-end" : "text-start"}
                 value={
                   (contentLanguage === "ar"
                     ? state.announcement_text_ar
@@ -5630,7 +5632,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               <div dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
                 <Label className="text-xs text-muted-foreground">{contentLanguage === "ar" ? "عنوان القسم المعروض" : "Displayed title"}</Label>
                 <Input
-                  className={`mt-1 h-9 text-xs ${contentLanguage === "ar" ? "text-right" : "text-left"}`}
+                  className={`mt-1 h-9 text-xs ${contentLanguage === "ar" ? "text-end" : "text-start"}`}
                   value={
                     (contentLanguage === "ar"
                       ? state.new_arrivals_title_ar
@@ -5673,7 +5675,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               <div dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
                 <Label className="text-xs text-muted-foreground">{contentLanguage === "ar" ? "عنوان القسم المعروض" : "Displayed title"}</Label>
                 <Input
-                  className={`mt-1 h-9 text-xs ${contentLanguage === "ar" ? "text-right" : "text-left"}`}
+                  className={`mt-1 h-9 text-xs ${contentLanguage === "ar" ? "text-end" : "text-start"}`}
                   value={
                     (contentLanguage === "ar"
                       ? state.best_sellers_title_ar
@@ -5823,7 +5825,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   <div>
                     <Label className="text-xs">{contentLanguage === "ar" ? "العنوان" : "Title"}</Label>
                     <Input
-                      className={contentLanguage === "ar" ? "text-right" : "text-left"}
+                      className={contentLanguage === "ar" ? "text-end" : "text-start"}
                       value={contentLanguage === "ar" ? card.title_ar : card.title_en}
                       onChange={(e) =>
                         updatePromoCard(index, {
@@ -5835,7 +5837,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   <div>
                     <Label className="text-xs">{contentLanguage === "ar" ? "الوصف" : "Subtitle"}</Label>
                     <Input
-                      className={contentLanguage === "ar" ? "text-right" : "text-left"}
+                      className={contentLanguage === "ar" ? "text-end" : "text-start"}
                       value={contentLanguage === "ar" ? card.subtitle_ar : card.subtitle_en}
                       onChange={(e) =>
                         updatePromoCard(index, {
@@ -5977,7 +5979,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             <div dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
               <Label>{contentLanguage === "ar" ? "عنوان القائمة" : "Drawer menu title"}</Label>
               <Input
-                className={contentLanguage === "ar" ? "text-right" : "text-left"}
+                className={contentLanguage === "ar" ? "text-end" : "text-start"}
                 value={(contentLanguage === "ar" ? state.menu_title_ar : state.menu_title_en) ?? ""}
                 placeholder={contentLanguage === "ar" ? "فارغ يستخدم اسم المتجر" : "Blank uses brand name"}
                 onChange={(e) =>
@@ -6041,7 +6043,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               <div dir="rtl">
                 <Label>{isAr ? "عبارة التحميل (بالعربية)" : "Loading text (Arabic)"}</Label>
                 <Input
-                  className="text-right"
+                  className="text-end"
                   value={state.storefront_loader_text_ar ?? ""}
                   placeholder="جاري فتح المتجر الإلكتروني..."
                   onChange={(e) =>
@@ -6052,7 +6054,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               <div dir="ltr">
                 <Label>{isAr ? "عبارة التحميل (بالإنجليزية)" : "Loading text (English)"}</Label>
                 <Input
-                  className="text-left"
+                  className="text-start"
                   value={state.storefront_loader_text_en ?? ""}
                   placeholder="Loading boutique storefront..."
                   onChange={(e) =>

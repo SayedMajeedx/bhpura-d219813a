@@ -287,7 +287,7 @@ function OnboardPage() {
               alt="Boutq"
               className="size-8 rounded-xl shadow-sm object-contain"
             />
-            <div className="flex flex-col text-left">
+            <div className="flex flex-col text-start">
               <span className="font-black text-sm tracking-widest text-foreground font-mono leading-none">BOUTQ</span>
               <span className="text-xs font-bold text-amber-600 dark:text-amber-500 tracking-widest leading-none mt-1">STORE • OS</span>
             </div>
@@ -434,7 +434,7 @@ function OnboardPage() {
                           setSlug(transliterated);
                         }
                       }}
-                      className="h-10 text-xs placeholder:text-muted-foreground/35 placeholder:font-normal bg-background"
+                      className="h-10 text-xs placeholder:text-muted-foreground placeholder:font-normal bg-background"
                       autoComplete="off"
                       required
                     />
@@ -477,7 +477,7 @@ function OnboardPage() {
                           }
                           setSlug(raw.toLowerCase().replace(/[^a-z0-9-]/g, ""));
                         }}
-                        className="flex-1 min-w-0 bg-transparent px-3 text-xs text-foreground placeholder:text-muted-foreground/35 placeholder:font-normal focus:outline-none font-mono"
+                        className="flex-1 min-w-0 bg-transparent px-3 text-xs text-foreground placeholder:text-muted-foreground placeholder:font-normal focus:outline-none font-mono"
                         autoComplete="off"
                         required
                       />
@@ -514,7 +514,7 @@ function OnboardPage() {
                       placeholder={isAr ? "الاسم الكامل" : "Your name"}
                       value={ownerName}
                       onChange={(e) => setOwnerName(e.target.value)}
-                      className="h-10 text-xs placeholder:text-muted-foreground/35 placeholder:font-normal bg-background"
+                      className="h-10 text-xs placeholder:text-muted-foreground placeholder:font-normal bg-background"
                       autoComplete="name"
                       required
                     />
@@ -542,7 +542,7 @@ function OnboardPage() {
                         placeholder="39955508"
                         value={contactNumber}
                         onChange={(e) => setContactNumber(e.target.value)}
-                        className="flex-1 min-w-0 bg-transparent px-3 text-xs text-foreground placeholder:text-muted-foreground/35 placeholder:font-normal focus:outline-none font-mono"
+                        className="flex-1 min-w-0 bg-transparent px-3 text-xs text-foreground placeholder:text-muted-foreground placeholder:font-normal focus:outline-none font-mono"
                         autoComplete="tel"
                         required
                       />
@@ -563,7 +563,7 @@ function OnboardPage() {
                       placeholder="name@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="h-10 text-xs placeholder:text-muted-foreground/35 placeholder:font-normal bg-background text-left"
+                      className="h-10 text-xs placeholder:text-muted-foreground placeholder:font-normal bg-background text-start"
                       autoComplete="email"
                       required
                     />
@@ -583,8 +583,8 @@ function OnboardPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className={cn(
-                          "h-10 text-xs rounded-xl pe-10 placeholder:text-muted-foreground/35 placeholder:font-normal bg-background font-mono",
-                          isAr ? "text-right" : "text-left",
+                          "h-10 text-xs rounded-xl pe-10 placeholder:text-muted-foreground placeholder:font-normal bg-background font-mono",
+                          isAr ? "text-end" : "text-start",
                         )}
                         autoComplete="new-password"
                         required

@@ -610,7 +610,7 @@ function CustomerImporterModal({
                   <button
                     key={item.id}
                     onClick={() => setPreset(item.id as any)}
-                    className={`flex flex-col items-start p-3.5 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 text-left transition-all ${item.color} ${
+                    className={`flex flex-col items-start p-3.5 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 text-start transition-all ${item.color} ${
                       preset === item.id
                         ? "border-primary ring-2 ring-primary/10 bg-primary/5 dark:bg-primary/5"
                         : ""
@@ -1762,7 +1762,7 @@ function AddressManager({
                   <Check className="h-4 w-4" />
                 </Button>
               )}
-              <Button variant="ghost" size="icon" onClick={() => startEdit(a)}>
+              <Button variant="ghost" size="icon" onClick={() => startEdit(a)} aria-label={lang === "ar" ? "تعديل العنوان" : "Edit address"} title={lang === "ar" ? "تعديل العنوان" : "Edit address"}>
                 <Pencil className="h-4 w-4" />
               </Button>
               <DeleteAction

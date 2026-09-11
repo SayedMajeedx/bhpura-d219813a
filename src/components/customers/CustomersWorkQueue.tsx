@@ -87,7 +87,7 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
   if (customers.length === 0) {
     return (
       <div className="p-12 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border-subtle space-y-2">
-        <Users className="h-8 w-8 mx-auto text-muted-foreground/60 mb-2" />
+        <Users className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
         <p className="font-bold text-sm text-foreground">
           {isAr ? "لا يوجد عملاء مطابقون" : "No matching customers found"}
         </p>
@@ -246,7 +246,7 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
                         <span className="truncate font-medium">{regionText}</span>
                       </div>
                     ) : (
-                      <span className="text-muted-foreground/60 italic">—</span>
+                      <span className="text-muted-foreground italic">—</span>
                     )}
                   </td>
 

@@ -1957,6 +1957,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                               size="icon"
                               className="text-muted-foreground hover:text-destructive shrink-0"
                               onClick={() => set("")}
+                              aria-label={t("إزالة", "Remove")}
+                              title={t("إزالة", "Remove")}
                             >
                               <X className="h-4 w-4" />
                             </Button>

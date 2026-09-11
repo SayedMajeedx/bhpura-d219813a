@@ -226,7 +226,7 @@ export function TrustBadgesEditor({
                         value={item.text_ar || ""}
                         onChange={(e) => handleUpdateItem(index, { text_ar: e.target.value })}
                         placeholder={isAr ? "مثال: تصاميم حصرية خاصّة بنا" : "e.g. Exclusive In-House Designs"}
-                        className="h-9 text-xs text-right bg-background border-border"
+                        className="h-9 text-xs text-end bg-background border-border"
                       />
                     </div>
                     <div dir="ltr" className="space-y-1">
@@ -237,7 +237,7 @@ export function TrustBadgesEditor({
                         value={item.text_en || ""}
                         onChange={(e) => handleUpdateItem(index, { text_en: e.target.value })}
                         placeholder="e.g. Exclusive In-House Designs"
-                        className="h-9 text-xs text-left bg-background border-border"
+                        className="h-9 text-xs text-start bg-background border-border"
                       />
                     </div>
                   </div>

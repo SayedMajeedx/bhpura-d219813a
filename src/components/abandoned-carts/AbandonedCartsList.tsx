@@ -174,12 +174,12 @@ export function AbandonedCartsList({
       {/* Controls Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder={isAr ? "بحث بالعميل أو الهاتف أو البريد..." : "Search customer, phone, email..."}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 min-h-[44px] bg-background border-border"
+            className="ps-9 min-h-[44px] bg-background border-border"
           />
         </div>
 
@@ -204,6 +204,8 @@ export function AbandonedCartsList({
             size="icon"
             onClick={onRefresh}
             className="min-h-[44px] min-w-[44px] border-border"
+            aria-label={isAr ? "تحديث السلات" : "Refresh carts"}
+            title={isAr ? "تحديث السلات" : "Refresh carts"}
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
           </Button>
@@ -221,7 +223,7 @@ export function AbandonedCartsList({
                 <TableHead>{isAr ? "إجمالي السلة" : "Subtotal"}</TableHead>
                 <TableHead>{isAr ? "الحالة" : "Status"}</TableHead>
                 <TableHead>{isAr ? "آخر نشاط" : "Last Activity"}</TableHead>
-                <TableHead className="text-right">{isAr ? "الإجراءات" : "Actions"}</TableHead>
+                <TableHead className="text-end">{isAr ? "الإجراءات" : "Actions"}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -308,7 +310,7 @@ export function AbandonedCartsList({
                         )}
                       </TableCell>
 
-                      <TableCell className="text-right">
+                      <TableCell className="text-end">
                         <div className="flex items-center justify-end gap-1.5">
                           <Button
                             variant="ghost"

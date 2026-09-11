@@ -94,7 +94,7 @@ export function BilingualField({
             dir="rtl"
             value={valueAr}
             onChange={(e) => onChangeAr(e.target.value)}
-            className="text-right"
+            className="text-end"
             rows={rows}
             placeholder={placeholderAr}
           />
@@ -103,7 +103,7 @@ export function BilingualField({
             dir="rtl"
             value={valueAr}
             onChange={(e) => onChangeAr(e.target.value)}
-            className="text-right"
+            className="text-end"
             placeholder={placeholderAr}
           />
         )}

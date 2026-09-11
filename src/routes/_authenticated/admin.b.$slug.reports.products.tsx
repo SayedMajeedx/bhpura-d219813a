@@ -189,16 +189,16 @@ function ReportsProducts() {
                         <TableHead>{lang === "ar" ? "المنتج" : "Product"}</TableHead>
                         <TableHead>{lang === "ar" ? "SKU" : "SKU"}</TableHead>
                         <TableHead>{lang === "ar" ? "المتغير" : "Variant"}</TableHead>
-                        <TableHead className="text-right">
+                        <TableHead className="text-end">
                           {lang === "ar" ? "الوحدات المباعة" : "Units Sold"}
                         </TableHead>
-                        <TableHead className="text-right">
+                        <TableHead className="text-end">
                           {lang === "ar" ? "صافي المبيعات" : "Net Sales"}
                         </TableHead>
-                        <TableHead className="text-right">
+                        <TableHead className="text-end">
                           {lang === "ar" ? "تكلفة البضاعة" : "COGS"}
                         </TableHead>
-                        <TableHead className="text-right">
+                        <TableHead className="text-end">
                           {lang === "ar" ? "المخزون الحالي" : "Current Stock"}
                         </TableHead>
                       </TableRow>
@@ -211,7 +211,7 @@ function ReportsProducts() {
                             {p.is_missing_cost && (
                               <Badge
                                 variant="destructive"
-                                className="ml-2 mt-1 text-xs"
+                                className="ms-2 mt-1 text-xs"
                                 title={
                                   lang === "ar"
                                     ? "بيانات التكلفة مفقودة لهذا المنتج"
@@ -235,14 +235,14 @@ function ReportsProducts() {
                               )}
                             </div>
                           </TableCell>
-                          <TableCell className="text-right font-bold">{p.units_sold}</TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-end font-bold">{p.units_sold}</TableCell>
+                          <TableCell className="text-end">
                             {formatMoney(p.net_merch_sales, p.currency, lang)}
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-end">
                             {p.is_missing_cost ? "—" : formatMoney(p.known_cogs, p.currency, lang)}
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-end">
                             <div className="flex items-center justify-end gap-2">
                               {p.is_out_of_stock ? (
                                 <Badge variant="destructive" className="flex gap-1">

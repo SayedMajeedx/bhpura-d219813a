@@ -541,7 +541,7 @@ export function InstagramImporterModal({
                   size="icon"
                   onClick={() => setIsOpen(false)}
                   className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
-                >
+                 aria-label={isAr ? "إغلاق" : "Close"}>
                   <X className="h-4 w-4" />
                 </Button>
               </div>

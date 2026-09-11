@@ -76,7 +76,7 @@ export function CustomerPushCenter({ brandId, isAr }: { brandId:string; isAr:boo
       </div>
     </Card>
     <Card className="p-4 sm:p-6">
-      <div className="flex items-center justify-between"><h2 className="font-bold">{isAr?"آخر الإرسالات":"Recent sends"}</h2><Button variant="ghost" size="icon" onClick={()=>history.refetch()}><RefreshCw className={`h-4 w-4 ${history.isFetching?"animate-spin":""}`}/></Button></div>
+      <div className="flex items-center justify-between"><h2 className="font-bold">{isAr?"آخر الإرسالات":"Recent sends"}</h2><Button variant="ghost" size="icon" onClick={()=>history.refetch()} aria-label={isAr ? "تحديث السجل" : "Refresh history"} title={isAr ? "تحديث السجل" : "Refresh history"}><RefreshCw className={`h-4 w-4 ${history.isFetching?"animate-spin":""}`}/></Button></div>
       <div className="mt-4 space-y-2">{!history.data?.length?<p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">{isAr?"لا توجد إشعارات مرسلة بعد":"No notifications sent yet"}</p>:history.data.map(row=><div key={row.id} className="rounded-xl border p-3"><div className="flex items-start justify-between gap-2"><p className="font-bold text-sm">{row.title}</p><span className="rounded-full bg-muted px-2 py-0.5 text-xs">{row.status}</span></div><p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{row.body}</p><p className="mt-2 text-xs text-muted-foreground">{new Date(row.created_at).toLocaleString(isAr?"ar-BH-u-nu-latn":"en-GB")} · {isAr?"وصل":"accepted"} {row.accepted_count}/{row.recipient_count}</p></div>)}</div>
     </Card>
   </div>;

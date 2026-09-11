@@ -417,14 +417,14 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
               : "We couldn't confirm your access role yet. Please contact the super admin to finish setting up your account."}
           </p>
           {profileError && (
-            <p className="text-xs text-muted-foreground/70">
+            <p className="text-xs text-muted-foreground">
               {lang === "ar"
                 ? "حدث خطأ أثناء التحقق."
                 : "There was an error verifying your account."}
             </p>
           )}
           <Button variant="outline" onClick={signOut}>
-            <LogOut className="h-4 w-4 mr-2" /> {t("nav.signOut")}
+            <LogOut className="h-4 w-4 me-2" /> {t("nav.signOut")}
           </Button>
         </div>
       </div>

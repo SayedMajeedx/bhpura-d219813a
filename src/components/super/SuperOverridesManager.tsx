@@ -342,10 +342,10 @@ export function SuperOverridesManager() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="bg-muted/40 text-muted-foreground border-b border-border-subtle">
-                      <th className="p-3 text-left font-bold">{isAr ? "الميزة" : "Feature"}</th>
-                      <th className="p-3 text-left font-bold">{isAr ? "نوع التجاوز" : "Type"}</th>
-                      <th className="p-3 text-left font-bold">{isAr ? "القيمة الممنوحة" : "Granted Value"}</th>
-                      <th className="p-3 text-left font-bold">{isAr ? "السبب" : "Reason"}</th>
+                      <th className="p-3 text-start font-bold">{isAr ? "الميزة" : "Feature"}</th>
+                      <th className="p-3 text-start font-bold">{isAr ? "نوع التجاوز" : "Type"}</th>
+                      <th className="p-3 text-start font-bold">{isAr ? "القيمة الممنوحة" : "Granted Value"}</th>
+                      <th className="p-3 text-start font-bold">{isAr ? "السبب" : "Reason"}</th>
                       <th className="p-3 text-center font-bold">{isAr ? "إجراء" : "Action"}</th>
                     </tr>
                   </thead>
@@ -377,7 +377,7 @@ export function SuperOverridesManager() {
                             size="icon"
                             onClick={() => handleRevokeOverride(ov.feature_key)}
                             className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                          >
+                           aria-label="Delete">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </td>
@@ -418,11 +418,11 @@ export function SuperOverridesManager() {
               <table className="w-full text-xs">
                 <thead>
                   <tr className="bg-muted/40 text-muted-foreground border-b border-border-subtle sticky top-0 bg-background">
-                    <th className="p-3 text-left font-bold">{isAr ? "التاريخ والوقت" : "Timestamp"}</th>
-                    <th className="p-3 text-left font-bold">{isAr ? "المنفذ" : "Actor"}</th>
-                    <th className="p-3 text-left font-bold">{isAr ? "نوع الحدث" : "Action"}</th>
-                    <th className="p-3 text-left font-bold">{isAr ? "الهدف" : "Target"}</th>
-                    <th className="p-3 text-left font-bold">{isAr ? "تفاصيل التغيير" : "Payload / Changes"}</th>
+                    <th className="p-3 text-start font-bold">{isAr ? "التاريخ والوقت" : "Timestamp"}</th>
+                    <th className="p-3 text-start font-bold">{isAr ? "المنفذ" : "Actor"}</th>
+                    <th className="p-3 text-start font-bold">{isAr ? "نوع الحدث" : "Action"}</th>
+                    <th className="p-3 text-start font-bold">{isAr ? "الهدف" : "Target"}</th>
+                    <th className="p-3 text-start font-bold">{isAr ? "تفاصيل التغيير" : "Payload / Changes"}</th>
                   </tr>
                 </thead>
                 <tbody>

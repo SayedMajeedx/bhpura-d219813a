@@ -224,7 +224,7 @@ export function CustomerReturnRequestModal({
               <Label className="text-xs font-semibold text-foreground">
                 {isAr ? "اختر القطع المراد إرجاعها أو استبدالها" : "Select Items to Return or Exchange"}
               </Label>
-              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-48 overflow-y-auto pe-1">
                 {items.map((item, idx) => (
                   <div
                     key={item.orderItemId}

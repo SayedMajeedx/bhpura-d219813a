@@ -466,6 +466,8 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
                       size="icon"
                       onClick={() => handleOpenEdit(exp)}
                       className="h-8 w-8"
+                      aria-label={isAr ? "تعديل المصروف" : "Edit expense"}
+                      title={isAr ? "تعديل المصروف" : "Edit expense"}
                     >
                       <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                     </Button>
@@ -474,6 +476,8 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
                       size="icon"
                       onClick={() => handleDelete(exp.id)}
                       className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                      aria-label={isAr ? "حذف المصروف" : "Delete expense"}
+                      title={isAr ? "حذف المصروف" : "Delete expense"}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>

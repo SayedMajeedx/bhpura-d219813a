@@ -59,7 +59,7 @@ export const OrderItemsSection: React.FC<OrderItemsSectionProps> = ({ lang, orde
                   {imgUrl ? (
                     <img src={imgUrl} alt={itemTitle} className="h-full w-full object-cover" />
                   ) : (
-                    <Package className="h-5 w-5 text-muted-foreground/60" />
+                    <Package className="h-5 w-5 text-muted-foreground" />
                   )}
                 </div>
                 <div className="min-w-0">
@@ -70,7 +70,7 @@ export const OrderItemsSection: React.FC<OrderItemsSectionProps> = ({ lang, orde
                     </div>
                   )}
                   {customFields.length > 0 && (
-                    <div className="text-xs text-muted-foreground/80 mt-0.5 space-y-0.5">
+                    <div className="text-xs text-muted-foreground mt-0.5 space-y-0.5">
                       {customFields.map((cf: any, cfi: number) => (
                         <div key={cfi} className="flex items-center gap-1">
                           <span className="font-semibold">{isAr ? cf.label_ar || cf.label_en || cf.key : cf.label_en || cf.label_ar || cf.key}:</span>

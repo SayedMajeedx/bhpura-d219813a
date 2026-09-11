@@ -653,7 +653,7 @@ function PagesAndPolicies() {
                               editorLanguage === "ar" ? "مثال: دليل المقاسات" : "e.g. Size Guide"
                             }
                             dir={editorLanguage === "ar" ? "rtl" : "ltr"}
-                            className={editorLanguage === "ar" ? "text-right" : "text-left"}
+                            className={editorLanguage === "ar" ? "text-end" : "text-start"}
                           />
                         </div>
                         <div>
@@ -747,7 +747,7 @@ function PagesAndPolicies() {
                               updatePage(index, { meta_title: event.target.value })
                             }
                             dir={editorLanguage === "ar" ? "rtl" : "ltr"}
-                            className={editorLanguage === "ar" ? "text-right" : "text-left"}
+                            className={editorLanguage === "ar" ? "text-end" : "text-start"}
                             placeholder={
                               editorLanguage === "ar"
                                 ? "عنوان واضح يظهر في نتائج البحث"
@@ -771,7 +771,7 @@ function PagesAndPolicies() {
                               updatePage(index, { meta_description: event.target.value })
                             }
                             dir={editorLanguage === "ar" ? "rtl" : "ltr"}
-                            className={editorLanguage === "ar" ? "text-right" : "text-left"}
+                            className={editorLanguage === "ar" ? "text-end" : "text-start"}
                             placeholder={
                               editorLanguage === "ar"
                                 ? "وصف مختصر وجذاب للصفحة"

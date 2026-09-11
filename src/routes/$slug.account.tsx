@@ -402,7 +402,7 @@ function AccountPage() {
   return (
     <section
       dir={isAr ? "rtl" : "ltr"}
-      className={`mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12 ${isAr ? "text-right" : "text-left"}`}
+      className={`mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12 ${isAr ? "text-end" : "text-start"}`}
     >
       {/* Editorial Header */}
       <div className="border-b pb-6 mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
@@ -672,7 +672,7 @@ function SignOutButton() {
         navigate({ to: "/$slug", params: { slug: brand.slug }, replace: true });
       }}
     >
-      <LogOut className="h-3.5 w-3.5 mr-1" />
+      <LogOut className="h-3.5 w-3.5 me-1" />
       {t("تسجيل خروج", "Sign out")}
     </Button>
   );
@@ -809,7 +809,7 @@ function OrdersSection({
                 </div>
                 <div className="text-xs text-muted-foreground">{date}</div>
               </div>
-              <div className="text-right">
+              <div className="text-end">
                 <p className="text-xs uppercase font-bold tracking-widest text-muted-foreground">
                   {t("الإجمالي", "Total Value")}
                 </p>
@@ -854,7 +854,7 @@ function OrdersSection({
                       >
                         <span className="font-medium text-foreground">
                           {it.description}{" "}
-                          <span className="text-primary text-xs bg-primary/10 px-1.5 py-0.5 rounded ml-1">
+                          <span className="text-primary text-xs bg-primary/10 px-1.5 py-0.5 rounded ms-1">
                             × {it.quantity}
                           </span>
                         </span>
@@ -993,7 +993,7 @@ function CustomerReturnsSection({
                 </p>
               </div>
 
-              <div className="text-right">
+              <div className="text-end">
                 <span className="text-xs uppercase font-bold tracking-widest text-muted-foreground block">
                   {isAr ? "صافي الاسترداد" : "Net Refund"}
                 </span>
@@ -1101,7 +1101,7 @@ function ProfileSection({
   return (
     <Card
       dir={isAr ? "rtl" : "ltr"}
-      className={`p-5 sm:p-6 space-y-5 max-w-2xl border border-border-strong rounded-xl bg-card ${isAr ? "text-right" : "text-left"}`}
+      className={`p-5 sm:p-6 space-y-5 max-w-2xl border border-border-strong rounded-xl bg-card ${isAr ? "text-end" : "text-start"}`}
     >
       <div className="border-b pb-3 mb-2">
         <h3 className="font-semibold text-base" style={{ color: "var(--sf-heading)" }}>
@@ -1119,7 +1119,7 @@ function ProfileSection({
         <div className="space-y-1.5">
           <Label
             htmlFor="account-name"
-            className={`text-xs font-bold ${isAr ? "block text-right" : "block text-left"}`}
+            className={`text-xs font-bold ${isAr ? "block text-end" : "block text-start"}`}
           >
             {t("الاسم الكامل", "Full name")}
           </Label>
@@ -1130,14 +1130,14 @@ function ProfileSection({
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             dir={isAr ? "rtl" : "ltr"}
-            className={`h-11 text-sm ${isAr ? "text-right" : "text-left"}`}
+            className={`h-11 text-sm ${isAr ? "text-end" : "text-start"}`}
             placeholder={t("اكتب اسمك الكامل", "Your full name")}
           />
         </div>
         <div className="space-y-1.5">
           <Label
             htmlFor="account-phone"
-            className={`text-xs font-bold ${isAr ? "block text-right" : "block text-left"}`}
+            className={`text-xs font-bold ${isAr ? "block text-end" : "block text-start"}`}
           >
             {t("رقم الهاتف", "Phone number")}
           </Label>
@@ -1152,7 +1152,7 @@ function ProfileSection({
         <div className="space-y-1.5">
           <Label
             htmlFor="account-email"
-            className={`text-xs font-bold ${isAr ? "block text-right" : "block text-left"}`}
+            className={`text-xs font-bold ${isAr ? "block text-end" : "block text-start"}`}
           >
             {t("البريد الإلكتروني", "Email")}
           </Label>
@@ -1164,7 +1164,7 @@ function ProfileSection({
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             type="email"
             dir="ltr"
-            className="text-left h-11 text-sm"
+            className="text-start h-11 text-sm"
             placeholder="you@example.com"
           />
         </div>
@@ -1176,7 +1176,7 @@ function ProfileSection({
           disabled={saving}
           className="h-11 text-xs font-semibold px-5 shadow-xs"
         >
-          {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+          {saving && <Loader2 className="h-4 w-4 me-1 animate-spin" />}
           {t("حفظ التغييرات", "Save changes")}
         </Button>
       </div>
@@ -1298,7 +1298,7 @@ function AddressesSection({
     <div className="space-y-4">
       {(!addresses || addresses.length === 0) && !adding && (
         <Card className="p-10 text-center text-muted-foreground bg-card/20 border border-dashed rounded-xl">
-          <MapPin className="h-8 w-8 mx-auto text-muted-foreground/60 mb-2" />
+          <MapPin className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
           <p className="font-semibold text-sm text-foreground">
             {t("لا توجد أي عناوين شحن محفوظة", "No saved addresses")}
           </p>
@@ -1510,7 +1510,7 @@ function AddressesSection({
               disabled={saving}
               className="h-11 text-xs font-semibold px-4 shadow-xs"
             >
-              {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+              {saving && <Loader2 className="h-4 w-4 me-1 animate-spin" />}
               {t("حفظ العنوان", "Save address")}
             </Button>
             <Button

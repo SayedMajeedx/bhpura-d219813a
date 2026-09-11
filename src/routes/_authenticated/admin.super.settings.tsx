@@ -402,12 +402,12 @@ function SuperAdminSettings() {
                   type="number"
                   step="0.01"
                   min="1"
-                  className="font-mono text-sm pl-12 h-11 border-zinc-200 dark:border-zinc-800 focus-visible:ring-primary"
+                  className="font-mono text-sm ps-12 h-11 border-zinc-200 dark:border-zinc-800 focus-visible:ring-primary"
                   value={basePrice}
                   onChange={(e) => setBasePrice(Number(e.target.value) || 0)}
                   required
                 />
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400 uppercase">
+                <span className="absolute start-4 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400 uppercase">
                   BHD
                 </span>
               </div>
@@ -431,14 +431,14 @@ function SuperAdminSettings() {
                   step="0.01"
                   min="0"
                   placeholder="e.g. 45.00"
-                  className="font-mono text-sm pl-12 h-11 border-zinc-200 dark:border-zinc-800 focus-visible:ring-primary"
+                  className="font-mono text-sm ps-12 h-11 border-zinc-200 dark:border-zinc-800 focus-visible:ring-primary"
                   value={discountPrice !== null ? discountPrice : ""}
                   onChange={(e) => {
                     const val = e.target.value;
                     setDiscountPrice(val === "" ? null : Number(val));
                   }}
                 />
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400 uppercase">
+                <span className="absolute start-4 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400 uppercase">
                   BHD
                 </span>
               </div>
@@ -469,12 +469,12 @@ function SuperAdminSettings() {
                 <Input
                   type="text"
                   placeholder="e.g. BOUTQ-OFFICIAL"
-                  className="font-mono text-sm pl-12 h-11 border-zinc-200 dark:border-zinc-800 focus-visible:ring-primary"
+                  className="font-mono text-sm ps-12 h-11 border-zinc-200 dark:border-zinc-800 focus-visible:ring-primary"
                   value={merchantAccountName}
                   onChange={(e) => setMerchantAccountName(e.target.value)}
                   required
                 />
-                <span className="absolute left-4 top-1/2 -translate-y-1/2">
+                <span className="absolute start-4 top-1/2 -translate-y-1/2">
                   <Sliders className="h-4 w-4 text-zinc-400" />
                 </span>
               </div>
@@ -604,12 +604,12 @@ function SuperAdminSettings() {
                 <Input
                   type="text"
                   placeholder="e.g. 97339955508"
-                  className="font-mono text-sm pl-12 h-11 border-zinc-200 dark:border-zinc-800 focus-visible:ring-primary"
+                  className="font-mono text-sm ps-12 h-11 border-zinc-200 dark:border-zinc-800 focus-visible:ring-primary"
                   value={whatsappNumber}
                   onChange={(e) => setWhatsappNumber(e.target.value)}
                   required
                 />
-                <span className="absolute left-4 top-1/2 -translate-y-1/2">
+                <span className="absolute start-4 top-1/2 -translate-y-1/2">
                   <Phone className="h-4 w-4 text-zinc-400" />
                 </span>
               </div>

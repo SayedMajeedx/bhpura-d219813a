@@ -227,6 +227,8 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
                         className="h-7 w-7 text-muted-foreground"
                         disabled={index === 0}
                         onClick={() => onReorder(cat.id, "up")}
+                        aria-label={isAr ? "تحريك لأعلى" : "Move up"}
+                        title={isAr ? "تحريك لأعلى" : "Move up"}
                       >
                         <ArrowUp className="h-3.5 w-3.5" />
                       </Button>
@@ -236,6 +238,8 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
                         className="h-7 w-7 text-muted-foreground"
                         disabled={index === categories.length - 1}
                         onClick={() => onReorder(cat.id, "down")}
+                        aria-label={isAr ? "تحريك لأسفل" : "Move down"}
+                        title={isAr ? "تحريك لأسفل" : "Move down"}
                       >
                         <ArrowDown className="h-3.5 w-3.5" />
                       </Button>

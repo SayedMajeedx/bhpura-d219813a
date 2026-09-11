@@ -76,7 +76,7 @@ export const OrderMetaSidePanel: React.FC<OrderMetaSidePanelProps> = ({
 
           {customerPhone && (
             <div className="flex items-center gap-2 text-muted-foreground font-mono">
-              <Phone className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
+              <Phone className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
               <a
                 href={`tel:${cleanPhone}`}
                 className="hover:text-primary transition-colors truncate"
@@ -88,7 +88,7 @@ export const OrderMetaSidePanel: React.FC<OrderMetaSidePanelProps> = ({
 
           {customerEmail && (
             <div className="flex items-center gap-2 text-muted-foreground font-mono">
-              <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
+              <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
               <a
                 href={`mailto:${customerEmail}`}
                 className="hover:text-primary transition-colors truncate"

@@ -355,7 +355,7 @@ export function CustomerLoyaltySection({
                     </div>
                   </div>
 
-                  <div className="text-right">
+                  <div className="text-end">
                     <span
                       className={`font-mono text-sm font-bold ${
                         isPositive

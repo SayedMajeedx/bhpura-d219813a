@@ -206,7 +206,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                   {/* Customer / PII Snapshot */}
                   <td className="p-3 align-middle">
                     {isGuest ? (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground/80 bg-muted/50 px-2 py-0.5 rounded-md">
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md">
                         <UserX className="h-3.5 w-3.5 text-muted-foreground" />
                         {isAr ? "عميل زائر" : "Guest Customer"}
                       </span>

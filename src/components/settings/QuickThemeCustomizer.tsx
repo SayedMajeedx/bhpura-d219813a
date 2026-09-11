@@ -548,7 +548,7 @@ export function QuickThemeCustomizer({
                 <span className="text-xs text-muted-foreground">
                   {isAr ? preset.descriptionAr : preset.descriptionEn}
                 </span>
-                <div className="mt-2 text-xs font-mono text-muted-foreground/80 flex items-center gap-2">
+                <div className="mt-2 text-xs font-mono text-muted-foreground flex items-center gap-2">
                   <span className="px-1.5 py-0.5 rounded bg-muted">
                     {preset.fontAr} / {preset.fontEn}
                   </span>

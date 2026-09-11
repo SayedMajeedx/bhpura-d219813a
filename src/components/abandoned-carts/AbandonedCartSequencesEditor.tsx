@@ -168,6 +168,8 @@ export function AbandonedCartSequencesEditor({
                   size="icon"
                   onClick={() => setEditingSequence(seq)}
                   className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  aria-label="Edit sequence"
+                  title="Edit sequence"
                 >
                   <Edit2 className="h-3.5 w-3.5" />
                 </Button>

@@ -313,7 +313,7 @@ export function OrderQuickViewModal({
                               </span>
                             )}
                             {customFields.length > 0 && (
-                              <div className="text-xs text-muted-foreground/90 mt-1 space-y-0.5">
+                              <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
                                 {customFields.map((cf: any, cfi: number) => (
                                   <div key={cfi} className="flex items-center gap-1">
                                     <span className="font-semibold">{isAr ? cf.label_ar || cf.label_en || cf.key : cf.label_en || cf.label_ar || cf.key}:</span>

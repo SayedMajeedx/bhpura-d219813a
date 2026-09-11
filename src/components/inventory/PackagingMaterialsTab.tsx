@@ -371,12 +371,12 @@ export function PackagingMaterialsTab() {
       {/* Search & Stats */}
       <div className="flex items-center justify-between gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute start-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder={isAr ? "بحث في مواد التغليف..." : "Search packaging materials..."}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 h-9 text-xs"
+            className="ps-8 h-9 text-xs"
           />
         </div>
 
@@ -402,7 +402,7 @@ export function PackagingMaterialsTab() {
               : "Add packaging items (Boxes, Bags, Cards) and link them to products for automated cost deduction."}
           </p>
           <Button onClick={handleOpenAdd} variant="outline" size="sm" className="text-xs mt-2">
-            <Plus className="h-3.5 w-3.5 mr-1" />
+            <Plus className="h-3.5 w-3.5 me-1" />
             {isAr ? "إضافة مادة الآن" : "Add Material Now"}
           </Button>
         </Card>
@@ -536,7 +536,7 @@ export function PackagingMaterialsTab() {
                 value={nameAr}
                 onChange={(e) => setNameAr(e.target.value)}
                 placeholder="مثال: علبة هدايا فاخرة (وسط)"
-                className="h-9 text-xs text-right"
+                className="h-9 text-xs text-end"
               />
             </div>
 
@@ -550,7 +550,7 @@ export function PackagingMaterialsTab() {
                   type="button"
                   onClick={() => setDeductionRule("per_item")}
                   className={cn(
-                    "flex flex-col items-start gap-1 p-2.5 rounded-lg border text-right transition-all",
+                    "flex flex-col items-start gap-1 p-2.5 rounded-lg border text-end transition-all",
                     deductionRule === "per_item"
                       ? "border-primary bg-primary/10 text-primary ring-1 ring-primary"
                       : "border-border bg-background text-muted-foreground hover:bg-muted/50",
@@ -571,7 +571,7 @@ export function PackagingMaterialsTab() {
                   type="button"
                   onClick={() => setDeductionRule("per_order")}
                   className={cn(
-                    "flex flex-col items-start gap-1 p-2.5 rounded-lg border text-right transition-all",
+                    "flex flex-col items-start gap-1 p-2.5 rounded-lg border text-end transition-all",
                     deductionRule === "per_order"
                       ? "border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-1 ring-amber-500"
                       : "border-border bg-background text-muted-foreground hover:bg-muted/50",

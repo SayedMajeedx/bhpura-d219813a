@@ -73,7 +73,7 @@ export function OsMenuBar({
             const Separator = lang === "ar" ? ChevronLeft : ChevronRight;
             return (
               <React.Fragment key={`${item.label}-${index}`}>
-                {index > 0 && <Separator className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />}
+                {index > 0 && <Separator className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
                 {item.href && !isLast ? (
                   <Link
                     to={item.href as any}

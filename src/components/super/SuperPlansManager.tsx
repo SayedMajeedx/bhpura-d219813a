@@ -658,7 +658,7 @@ export function SuperPlansManager() {
       {/* Plans List Grid */}
       {filteredPlans.length === 0 ? (
         <div className="p-12 text-center text-muted-foreground border border-dashed border-border rounded-2xl space-y-2">
-          <Layers className="h-8 w-8 mx-auto text-muted-foreground/50" />
+          <Layers className="h-8 w-8 mx-auto text-muted-foreground" />
           <p className="text-sm font-bold">
             {isAr ? "لا توجد باقات في هذا التصنيف" : "No plans found in this filter category"}
           </p>
@@ -741,7 +741,7 @@ export function SuperPlansManager() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0 rounded-lg"
-                        >
+                         aria-label="Options">
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -841,7 +841,7 @@ export function SuperPlansManager() {
                         v{currentVer?.version_number || 1}
                       </span>
                     </div>
-                    <div className="text-right">
+                    <div className="text-end">
                       <span className="text-xs font-mono font-bold text-foreground block">
                         {currentVer?.price_monthly ?? 0} {currentVer?.currency || "BHD"}
                         <span className="text-xs font-normal text-muted-foreground">
@@ -898,7 +898,7 @@ export function SuperPlansManager() {
                                 {v.change_summary || "No notes"}
                               </p>
                             </div>
-                            <div className="text-right font-mono font-semibold">
+                            <div className="text-end font-mono font-semibold">
                               {v.price_monthly} BHD/m
                             </div>
                           </div>

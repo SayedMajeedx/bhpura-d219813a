@@ -41,7 +41,7 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
           size="icon"
           className="h-9 w-9 border-border-strong text-foreground shrink-0"
           asChild
-        >
+         aria-label={isAr ? "إجراء" : "Action"}>
           <Link
             to="/admin/b/$slug/orders"
             params={{ slug }}
@@ -91,7 +91,7 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon" className="h-9 w-9">
+            <Button variant="outline" size="icon" className="h-9 w-9" aria-label={isAr ? "خيارات" : "Options"}>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>

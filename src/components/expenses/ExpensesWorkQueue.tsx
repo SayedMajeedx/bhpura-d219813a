@@ -98,7 +98,7 @@ export function ExpensesWorkQueue({
                         <span>{e.store_name}</span>
                       </div>
                     ) : (
-                      <span className="text-muted-foreground/60">—</span>
+                      <span className="text-muted-foreground">—</span>
                     )}
                   </td>
 
@@ -116,7 +116,7 @@ export function ExpensesWorkQueue({
                         </span>
                       )}
                       {!e.description && !e.notes && (
-                        <span className="text-muted-foreground/60">—</span>
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </div>
                   </td>
@@ -139,7 +139,7 @@ export function ExpensesWorkQueue({
                         <ExternalLink className="h-2.5 w-2.5 opacity-60" />
                       </a>
                     ) : (
-                      <span className="text-muted-foreground/50 text-xs">—</span>
+                      <span className="text-muted-foreground text-xs">—</span>
                     )}
                   </td>
 

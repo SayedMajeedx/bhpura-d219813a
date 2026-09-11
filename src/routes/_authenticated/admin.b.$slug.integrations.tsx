@@ -379,7 +379,7 @@ function IntegrationsPage() {
                       />
                       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground pt-2 border-t border-border-subtle sm:col-span-2">
                         <div className="flex items-center gap-1.5">
-                          <History className="h-3.5 w-3.5 text-muted-foreground/70" />
+                          <History className="h-3.5 w-3.5 text-muted-foreground" />
                           <span>{isAr ? "آخر تدوير للمفاتيح:" : "Last rotated:"}</span>
                           <span className="font-mono font-medium text-foreground">
                             {row.last_rotated_at

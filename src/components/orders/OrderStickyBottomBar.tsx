@@ -148,7 +148,7 @@ export const OrderStickyBottomBar: React.FC<OrderStickyBottomBarProps> = ({
 
             {/* WhatsApp / Send Invoice */}
             {sendInvoiceDialogTrigger ? (
-              <div className="w-full text-left [&>button]:w-full [&>button]:justify-start [&>button]:h-9 [&>button]:px-2 [&>button]:text-xs [&>button]:font-medium">
+              <div className="w-full text-start [&>button]:w-full [&>button]:justify-start [&>button]:h-9 [&>button]:px-2 [&>button]:text-xs [&>button]:font-medium">
                 {sendInvoiceDialogTrigger}
               </div>
             ) : null}

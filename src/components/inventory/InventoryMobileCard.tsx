@@ -96,7 +96,7 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
               {product.image_url ? (
                 <img src={product.image_url} alt={name} className="h-full w-full object-cover" />
               ) : (
-                <Package className="h-6 w-6 text-muted-foreground/60" />
+                <Package className="h-6 w-6 text-muted-foreground" />
               )}
             </div>
             <div className="min-w-0">

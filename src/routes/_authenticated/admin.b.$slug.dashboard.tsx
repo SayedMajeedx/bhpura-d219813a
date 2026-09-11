@@ -1244,7 +1244,7 @@ function Dashboard() {
                       <button
                         type="button"
                         onClick={() => togglePreviewMilestone(!step2Done)}
-                        className="text-xs text-muted-foreground/80 hover:text-foreground transition-colors underline decoration-dotted"
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors underline decoration-dotted"
                       >
                         {step2Done
                           ? isAr
@@ -1321,7 +1321,7 @@ function Dashboard() {
                       <button
                         type="button"
                         onClick={() => toggleSaleMilestone(!step3Done)}
-                        className="text-xs text-muted-foreground/80 hover:text-foreground transition-colors underline decoration-dotted"
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors underline decoration-dotted"
                       >
                         {step3Done
                           ? isAr
@@ -1422,12 +1422,12 @@ function Dashboard() {
                       {k.subValue}
                     </p>
                     {(k as any).breakdown && (
-                      <p className="mt-1 text-xs text-muted-foreground/90 font-medium">
+                      <p className="mt-1 text-xs text-muted-foreground font-medium">
                         {(k as any).breakdown}
                       </p>
                     )}
                     {!hasDelta && (
-                      <p className="mt-1 text-xs text-muted-foreground/75">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         {isAr ? "لا توجد بيانات للفترة السابقة للمقارنة" : "No prior period data for comparison"}
                       </p>
                     )}

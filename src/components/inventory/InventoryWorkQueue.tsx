@@ -280,7 +280,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                                 className="h-full w-full object-cover"
                               />
                             ) : (
-                              <Package className="h-5 w-5 text-muted-foreground/60" />
+                              <Package className="h-5 w-5 text-muted-foreground" />
                             )}
                           </div>
                           <div className="min-w-0">
@@ -330,7 +330,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                             {resolveCategoryName(product.category)}
                           </span>
                         ) : (
-                          <span className="text-muted-foreground/50 text-xs italic">
+                          <span className="text-muted-foreground text-xs italic">
                             {isAr ? "بدون قسم" : "No category"}
                           </span>
                         )}

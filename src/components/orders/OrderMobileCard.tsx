@@ -71,7 +71,7 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <div className="flex items-center gap-1.5 min-w-0">
           {isGuest ? (
-            <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground/80 bg-muted/50 px-2 py-0.5 rounded-md">
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md">
               <UserX className="h-3 w-3 text-muted-foreground" />
               {isAr ? "عميل زائر" : "Guest Customer"}
             </span>

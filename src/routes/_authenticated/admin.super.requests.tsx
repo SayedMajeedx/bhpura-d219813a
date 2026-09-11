@@ -340,22 +340,22 @@ function SuperRequestsPage() {
                   <table className="w-full text-sm">
                       <thead>
                         <tr className="bg-muted/40 text-muted-foreground text-xs uppercase border-b border-border-subtle">
-                          <th className="p-4 text-left font-semibold">
+                          <th className="p-4 text-start font-semibold">
                             {lang === "ar" ? "صاحب المتجر" : "Owner Details"}
                           </th>
-                          <th className="p-4 text-left font-semibold">
+                          <th className="p-4 text-start font-semibold">
                             {lang === "ar" ? "الرابط المطلوب" : "Desired subdomain"}
                           </th>
-                          <th className="p-4 text-left font-semibold">
+                          <th className="p-4 text-start font-semibold">
                             {lang === "ar" ? "نوع الباقة" : "Plan Package"}
                           </th>
-                          <th className="p-4 text-left font-semibold">
+                          <th className="p-4 text-start font-semibold">
                             {lang === "ar" ? "نوع النشاط" : "Business Type"}
                           </th>
                           <th className="p-4 text-center font-semibold">
                             {lang === "ar" ? "إثبات الدفع" : "Benefit Receipt"}
                           </th>
-                          <th className="p-4 text-right font-semibold">
+                          <th className="p-4 text-end font-semibold">
                             {lang === "ar" ? "الإجراءات" : "Deployment Actions"}
                           </th>
                         </tr>
@@ -471,7 +471,7 @@ function SuperRequestsPage() {
                               )}
                             </td>
 
-                            <td className="p-4 text-right">
+                            <td className="p-4 text-end">
                               <div className="flex items-center justify-end gap-2">
                                 <Button
                                   variant="ghost"

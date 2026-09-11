@@ -117,12 +117,12 @@ export function LoyaltyLedgerTable({
       {/* Controls Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder={isAr ? "بحث بالعميل أو الملاحظة أو الهاتف..." : "Search customer, note, phone..."}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 min-h-[44px] bg-background border-border"
+            className="ps-9 min-h-[44px] bg-background border-border"
           />
         </div>
 
@@ -147,6 +147,8 @@ export function LoyaltyLedgerTable({
             size="icon"
             onClick={onRefresh}
             className="min-h-[44px] min-w-[44px] border-border"
+            aria-label={isAr ? "تحديث سجل النقاط" : "Refresh ledger"}
+            title={isAr ? "تحديث سجل النقاط" : "Refresh ledger"}
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
           </Button>

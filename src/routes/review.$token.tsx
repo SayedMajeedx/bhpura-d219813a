@@ -145,7 +145,7 @@ function ReviewPage() {
                 <Star
                   className={cn(
                     "size-8",
-                    value <= rating ? "fill-primary text-primary" : "text-muted-foreground/40",
+                    value <= rating ? "fill-primary text-primary" : "text-muted-foreground",
                   )}
                 />
               </Button>

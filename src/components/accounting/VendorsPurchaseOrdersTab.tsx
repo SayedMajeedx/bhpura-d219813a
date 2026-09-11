@@ -281,7 +281,7 @@ export function VendorsPurchaseOrdersTab() {
                       </span>
                     </div>
 
-                    <div className="text-right">
+                    <div className="text-end">
                       <span className="text-xs text-muted-foreground block">
                         {isAr ? "الإجمالي:" : "Total:"}
                       </span>

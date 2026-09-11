@@ -284,7 +284,7 @@ export function ConnectorsCatalog({ brandId }: ConnectorsCatalogProps) {
                 <div key={field.key} className="space-y-1.5">
                   <Label htmlFor={field.key} className="text-xs">
                     {isAr ? field.labelAr : field.labelEn}
-                    {field.required && <span className="text-destructive ml-1">*</span>}
+                    {field.required && <span className="text-destructive ms-1">*</span>}
                   </Label>
                   <Input
                     id={field.key}

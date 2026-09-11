@@ -63,13 +63,13 @@ describe("design system guardrails", () => {
   it("keeps hand-rolled <button> elements within budget", () => {
     // AGENTS.md §2: anything that behaves like a button uses <Button>.
     const count = countMatches(/<button[\s>]/g);
-    expect(count).toBeLessThanOrEqual(224);
+    expect(count).toBeLessThanOrEqual(223);
   });
 
   it("keeps glass and blur off data surfaces within budget", () => {
     // AGENTS.md §6: glassmorphism is for floating elements only.
     const count = countMatches(/backdrop-blur-[a-z0-9]+/g);
-    expect(count).toBeLessThanOrEqual(65);
+    expect(count).toBeLessThanOrEqual(60);
   });
 
   it("keeps opacity-hacked borders within budget", () => {
@@ -78,12 +78,24 @@ describe("design system guardrails", () => {
     expect(count).toBe(0);
   });
 
+  it("eliminates opacity hacks for text hierarchy", () => {
+    // Phase 5.2: text hierarchy relies on semantic tokens, not opacity hacks.
+    const count = countMatches(/text-muted-foreground\/\d+/g);
+    expect(count).toBe(0);
+  });
+
+  it("enforces logical directional CSS utilities for RTL/LTR parity", () => {
+    // Phase 5.3: physical margins, paddings, and borders migrated to logical properties.
+    const physicalProps = countMatches(/\b(?:ml|mr|pl|pr)-[0-9.]+\b/g);
+    expect(physicalProps).toBe(0);
+  });
+
   it("keeps raw palette literals within budget", () => {
     // Semantic --success / --warning / --info / --destructive replace these.
     const count = countMatches(
       /\b(?:bg|text|border|ring|from|to|via)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}\b/g,
     );
-    expect(count).toBeLessThanOrEqual(2546);
+    expect(count).toBeLessThanOrEqual(2524);
   });
 
   it("allows no new raw hex outside the files that genuinely need it", () => {

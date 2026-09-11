@@ -251,7 +251,7 @@ export function ReturnExchangeDialog({
                       size="icon"
                       onClick={() => handleRemoveRow(idx)}
                       className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                    >
+                     aria-label={isAr ? "حذف" : "Delete"}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   )}
