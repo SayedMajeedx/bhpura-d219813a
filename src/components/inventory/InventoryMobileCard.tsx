@@ -50,6 +50,8 @@ interface InventoryMobileCardProps {
   selected?: boolean;
   onToggleSelected?: (productId: string) => void;
   currency?: string;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
 export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
@@ -69,9 +71,19 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
   selected = false,
   onToggleSelected = () => undefined,
   currency = "BHD",
+  isExpanded: controlledExpanded,
+  onToggleExpand: controlledOnToggleExpand,
 }) => {
   const isAr = lang === "ar";
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [internalExpanded, setInternalExpanded] = useState(false);
+  const isExpanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded;
+  const toggleExpand = () => {
+    if (controlledOnToggleExpand) {
+      controlledOnToggleExpand();
+    } else {
+      setInternalExpanded((prev) => !prev);
+    }
+  };
   const [deleteOpen, setDeleteOpen] = useState(false);
   const name = isAr ? product.name_ar || product.name : product.name_en || product.name;
   const isLowStock = totalStock > 0 && totalStock <= 5;
@@ -82,7 +94,7 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
       <div className="p-3.5 rounded-xl bg-card border border-border-subtle shadow-2xs space-y-2.5">
         <div
           className="flex items-start justify-between gap-3"
-          onClick={() => setIsExpanded(!isExpanded)}
+          onClick={toggleExpand}
         >
           <div onClick={(event) => event.stopPropagation()}>
             <Checkbox
@@ -149,7 +161,7 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
           <div className="flex items-center gap-1">
             <Button
               size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
+              onClick={toggleExpand}
               variant="outline"
               className="h-8 px-2 text-xs font-bold text-muted-foreground hover:text-foreground"
             >

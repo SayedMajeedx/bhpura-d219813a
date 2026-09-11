@@ -2029,6 +2029,8 @@ function ProductsSection({
                 )}
                 selected={selectedProductIds.has(p.id)}
                 onToggleSelected={toggleSelectedProduct}
+                isExpanded={Boolean(expandedProducts[p.id])}
+                onToggleExpand={() => toggleProduct(p.id)}
               />
             </div>
           );
@@ -2045,6 +2047,8 @@ function ProductsSection({
           currency={currency}
           isLoading={false}
           isError={false}
+          expandedProducts={expandedProducts}
+          onToggleExpand={toggleProduct}
           onEdit={(prod) => {
             setEditing(prod);
             setDialogSession((v) => v + 1);
@@ -2644,7 +2648,7 @@ function ProductDialog({
       cost_price: product?.cost_price ? String(product.cost_price) : "0",
       image_url: product?.image_url ?? "",
       is_active: product ? product.is_active : true,
-      initial_stock: "10",
+      initial_stock: "0",
       featured_trending: product?.featured_trending ?? false,
       show_sale_badge: product?.show_sale_badge ?? true,
       media: (product?.media ?? []) as MediaItem[],
@@ -2797,7 +2801,7 @@ function ProductDialog({
         if (variantCountError) return toast.error(variantCountError.message);
         if (!count) {
           // Smart default: Automatically create a standard default variant so merchant isn't blocked
-          const initialQty = Math.max(0, parseInt(form.initial_stock || "10", 10) || 0);
+          const initialQty = Math.max(0, parseInt(form.initial_stock || "0", 10) || 0);
           const baseP = form.base_price ? Number(form.base_price) : 0;
           const costP = form.cost_price ? Number(form.cost_price) : 0;
           await (supabase.from("product_variants") as any).insert({

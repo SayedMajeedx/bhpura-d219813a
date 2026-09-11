@@ -60,6 +60,8 @@ interface InventoryWorkQueueProps {
     name_ar: string | null;
     slug: string | null;
   }>;
+  expandedProducts?: Record<string, boolean>;
+  onToggleExpand?: (productId: string) => void;
 }
 
 export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
@@ -82,9 +84,12 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
   onToggleAll = () => undefined,
   currency = "BHD",
   categories,
+  expandedProducts: controlledExpandedProducts,
+  onToggleExpand: controlledOnToggleExpand,
 }) => {
   const isAr = lang === "ar";
-  const [expandedProducts, setExpandedProducts] = useState<Record<string, boolean>>({});
+  const [internalExpandedProducts, setInternalExpandedProducts] = useState<Record<string, boolean>>({});
+  const expandedProducts = controlledExpandedProducts ?? internalExpandedProducts;
   const [pendingDelete, setPendingDelete] = useState<any | null>(null);
   const selectedOnPage = products.filter((product) => selectedProductIds.has(product.id)).length;
 
@@ -104,10 +109,14 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
   };
 
   const toggleExpand = (productId: string) => {
-    setExpandedProducts((prev) => ({
-      ...prev,
-      [productId]: !prev[productId],
-    }));
+    if (controlledOnToggleExpand) {
+      controlledOnToggleExpand(productId);
+    } else {
+      setInternalExpandedProducts((prev) => ({
+        ...prev,
+        [productId]: !prev[productId],
+      }));
+    }
   };
 
   if (isLoading) {
