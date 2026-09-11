@@ -54,9 +54,8 @@ export function OsQuickActions({ slug, lang, className }: OsQuickActionsProps) {
       icon: ReceiptText,
       onClick: () =>
         navigate({
-          to: "/admin/b/$slug/orders",
-          params: { slug },
-          search: { action: "new_manual" } as any,
+          to: "/admin/b/$slug/orders/$id",
+          params: { slug, id: "new" },
         }),
     },
     {

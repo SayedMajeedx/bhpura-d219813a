@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, useMemo, useCallback, useDeferredValue } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -126,6 +126,7 @@ const SIZE_UNITS = ["", "cm", "mm", "m", "inch", "ft", "kg", "g", "ml", "l"] as 
 type InventorySearch = {
   filter?: string;
   scope?: string;
+  action?: string;
 };
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/inventory")({
@@ -133,6 +134,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/inventory")(
     const result: InventorySearch = {};
     if (typeof search.filter === "string") result.filter = search.filter;
     if (typeof search.scope === "string") result.scope = search.scope;
+    if (typeof search.action === "string") result.action = search.action;
     return result;
   },
   component: Inventory,
@@ -422,6 +424,7 @@ function Inventory() {
       {tab === "products" ? (
         <ProductsSection
           initialFilter={searchParams.scope || searchParams.filter}
+          initialAction={searchParams.action}
           products={products.data ?? []}
           variants={variants.data ?? []}
           businessName={businessName.data?.business_name ?? null}
@@ -1148,6 +1151,7 @@ function ProductImporterModal({
 
 function ProductsSection({
   initialFilter,
+  initialAction,
   products,
   variants,
   businessName,
@@ -1156,6 +1160,7 @@ function ProductsSection({
   salesHistory,
 }: {
   initialFilter?: string;
+  initialAction?: string;
   products: Product[];
   variants: Variant[];
   businessName: string | null;
@@ -1163,6 +1168,7 @@ function ProductsSection({
   onChanged: () => void;
   salesHistory: any[];
 }) {
+  const navigate = useNavigate();
   const t = useT();
   const brand = useBrand();
   const brandId = brand.id;
@@ -1171,6 +1177,22 @@ function ProductsSection({
   const [bomTargetProduct, setBomTargetProduct] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
   const [dialogSession, setDialogSession] = useState(0);
+
+  useEffect(() => {
+    if (initialAction === "new") {
+      setEditing(null);
+      setDialogSession((v) => v + 1);
+      setOpen(true);
+      navigate({
+        search: ((prev: any) => {
+          const next = { ...prev };
+          delete next.action;
+          return next;
+        }) as any,
+        replace: true,
+      });
+    }
+  }, [initialAction, navigate]);
   const [search, setSearch] = useState("");
   const [stockFilter, setStockFilter] = useState<"all" | "low" | "out">("all");
   const [visibilityFilter, setVisibilityFilter] = useState<"all" | "active" | "hidden">("all");
@@ -1958,56 +1980,57 @@ function ProductsSection({
               : Number(p.base_price || 0);
 
           return (
-            <InventoryMobileCard
-              key={p.id}
-              lang={isAr ? "ar" : "en"}
-              product={p}
-              variants={pVariants}
-              totalStock={totalStock}
-              minPrice={minPrice}
-              currency={currency}
-              onEdit={(prod) => {
-                setEditing(prod);
-                setDialogSession((v) => v + 1);
-                setOpen(true);
-              }}
-              onDelete={(id) => setProductToDelete(id)}
-              onPrintLabel={(prod) => {
-                const labels: LabelData[] = (variantsByProduct[prod.id] || [])
-                  .filter((v) => Boolean(v.barcode))
-                  .map((v) => ({
-                    code: v.barcode!,
-                    productName: prod.name,
-                    size: v.size,
-                    color: v.color,
-                    price: v.selling_price,
-                    businessName,
-                  }));
-                if (labels.length > 0) printLabels(labels);
-                else
-                  toast.error(isAr ? "لا يوجد باركود لهذا المنتج" : "No barcode for this product");
-              }}
-              onTransferToIncubator={(prod) => {
-                setIncubatorTransferProducts([prod]);
-                setIncubatorTransferModalOpen(true);
-              }}
-              onDuplicate={handleDuplicateProduct}
-              onPreview={handlePreviewProduct}
-              onShare={handleShareProduct}
-              renderVariantList={(prod) => (
-                <VariantList
-                  productId={prod.id}
-                  productName={prod.name}
-                  businessName={businessName}
-                  variants={variantsByProduct[prod.id] || []}
-                  onChanged={onChanged}
-                  salesByVariant={salesByVariant}
-                  product={prod}
-                />
-              )}
-              selected={selectedProductIds.has(p.id)}
-              onToggleSelected={toggleSelectedProduct}
-            />
+            <div id={`product-row-${p.id}`} key={p.id}>
+              <InventoryMobileCard
+                lang={isAr ? "ar" : "en"}
+                product={p}
+                variants={pVariants}
+                totalStock={totalStock}
+                minPrice={minPrice}
+                currency={currency}
+                onEdit={(prod) => {
+                  setEditing(prod);
+                  setDialogSession((v) => v + 1);
+                  setOpen(true);
+                }}
+                onDelete={(id) => setProductToDelete(id)}
+                onPrintLabel={(prod) => {
+                  const labels: LabelData[] = (variantsByProduct[prod.id] || [])
+                    .filter((v) => Boolean(v.barcode))
+                    .map((v) => ({
+                      code: v.barcode!,
+                      productName: prod.name,
+                      size: v.size,
+                      color: v.color,
+                      price: v.selling_price,
+                      businessName,
+                    }));
+                  if (labels.length > 0) printLabels(labels);
+                  else
+                    toast.error(isAr ? "لا يوجد باركود لهذا المنتج" : "No barcode for this product");
+                }}
+                onTransferToIncubator={(prod) => {
+                  setIncubatorTransferProducts([prod]);
+                  setIncubatorTransferModalOpen(true);
+                }}
+                onDuplicate={handleDuplicateProduct}
+                onPreview={handlePreviewProduct}
+                onShare={handleShareProduct}
+                renderVariantList={(prod) => (
+                  <VariantList
+                    productId={prod.id}
+                    productName={prod.name}
+                    businessName={businessName}
+                    variants={variantsByProduct[prod.id] || []}
+                    onChanged={onChanged}
+                    salesByVariant={salesByVariant}
+                    product={prod}
+                  />
+                )}
+                selected={selectedProductIds.has(p.id)}
+                onToggleSelected={toggleSelectedProduct}
+              />
+            </div>
           );
         })}
       </div>
@@ -2223,10 +2246,29 @@ function ProductsSection({
         <ProductDialog
           key={`${editing?.id ?? "new"}-${dialogSession}`}
           product={editing}
-          onSaved={() => {
+          onSaved={(newProductId?: string) => {
             setOpen(false);
             setEditing(null);
             onChanged();
+            if (newProductId) {
+              setExpandedProducts((prev) => ({ ...prev, [newProductId]: true }));
+              toast.success(
+                isAr
+                  ? "تم إنشاء المنتج بنجاح! تم فتح قسم المقاسات والألوان لإضافة خياراتك."
+                  : "Product created successfully! Variants panel opened to add sizes & colors.",
+                {
+                  action: {
+                    label: isAr ? "إضافة مقاسات وألوان" : "Add sizes & colors",
+                    onClick: () => {
+                      setExpandedProducts((prev) => ({ ...prev, [newProductId]: true }));
+                      const el = document.getElementById(`product-row-${newProductId}`);
+                      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    },
+                  },
+                  duration: 8000,
+                },
+              );
+            }
           }}
         />
       </Dialog>
@@ -2529,7 +2571,13 @@ function cleanPassportCustomFields(fields: CustomField[]) {
   );
 }
 
-function ProductDialog({ product, onSaved }: { product: Product | null; onSaved: () => void }) {
+function ProductDialog({
+  product,
+  onSaved,
+}: {
+  product: Product | null;
+  onSaved: (newProductId?: string) => void;
+}) {
   const t = useT();
   const { lang } = useI18n();
   const isAr = lang === "ar";
@@ -2545,7 +2593,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     cost_price: product?.cost_price ? String(product.cost_price) : "0",
     image_url: product?.image_url ?? "",
     is_active: product ? product.is_active : true,
-    initial_stock: "10",
+    initial_stock: "0",
     featured_trending: product?.featured_trending ?? false,
     show_sale_badge: product?.show_sale_badge ?? true,
     media: (product?.media ?? []) as MediaItem[],
@@ -2738,6 +2786,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
 
     const legacyName = nameEn || nameAr;
     const legacyDesc = form.description_en.trim() || form.description_ar.trim() || null;
+    let createdProductId: string | undefined;
 
     if (product) {
       if (form.is_active) {
@@ -2864,9 +2913,10 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         .single();
       if (error) return toast.error(error.message);
 
+      createdProductId = newProd?.id;
       // Auto-create default standard variant for instant purchaseability
       if (newProd?.id) {
-        const initialQty = Math.max(0, parseInt(form.initial_stock || "10", 10) || 0);
+        const initialQty = Math.max(0, parseInt(form.initial_stock || "0", 10) || 0);
         const baseP = form.base_price ? Number(form.base_price) : 0;
         const costP = form.cost_price ? Number(form.cost_price) : 0;
         await (supabase.from("product_variants") as any).insert({
@@ -2892,14 +2942,10 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     }
     removedCommittedMedia.current.clear();
     uncommittedUploads.current.clear();
-    toast.success(
-      !product
-        ? isAr
-          ? "تم إنشاء المنتج وتفعيله في المتجر بنجاح!"
-          : "Product created and published successfully!"
-        : t("common.save"),
-    );
-    onSaved();
+    if (product) {
+      toast.success(t("common.save"));
+    }
+    onSaved(createdProductId);
   };
 
   return (

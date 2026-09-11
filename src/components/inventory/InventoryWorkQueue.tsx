@@ -259,6 +259,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                 return (
                   <React.Fragment key={product.id}>
                     <tr
+                      id={`product-row-${product.id}`}
                       className="hover:bg-muted/30 transition-colors group cursor-pointer"
                       onClick={() => toggleExpand(product.id)}
                     >

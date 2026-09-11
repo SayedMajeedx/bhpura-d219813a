@@ -116,6 +116,7 @@ type OrdersSearch = {
   queue?: string;
   fulfillment_status?: string;
   filter?: string;
+  action?: string;
 };
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/orders/")({
@@ -126,6 +127,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/orders/")({
     if (typeof search.fulfillment_status === "string")
       result.fulfillment_status = search.fulfillment_status;
     if (typeof search.filter === "string") result.filter = search.filter;
+    if (typeof search.action === "string") result.action = search.action;
     return result;
   },
   component: OrdersList,
@@ -332,6 +334,16 @@ function OrdersList() {
 
   // Route search parameter integration for direct tab selection from dashboard
   const routeSearch = Route.useSearch();
+
+  useEffect(() => {
+    if (routeSearch?.action === "new_manual" || routeSearch?.action === "new") {
+      navigate({
+        to: "/admin/b/$slug/orders/$id",
+        params: { slug, id: "new" },
+        replace: true,
+      });
+    }
+  }, [routeSearch?.action, slug, navigate]);
 
   const initialTabFilter = useMemo<
     "all" | "unpaid" | "to_prepare" | "action_required" | "shipped" | "completed"

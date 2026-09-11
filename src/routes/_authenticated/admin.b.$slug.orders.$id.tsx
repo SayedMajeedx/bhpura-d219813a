@@ -53,7 +53,27 @@ import {
   Store,
   Ruler,
   FileText,
+  ChevronsUpDown,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -945,7 +965,28 @@ function OrderDetail() {
       } | null;
     },
   });
-  const [phoneSearch, setPhoneSearch] = useState("");
+  const [customerPickerOpen, setCustomerPickerOpen] = useState(false);
+  const [customerSearchQuery, setCustomerSearchQuery] = useState("");
+  const [outOfStockConfirmVariant, setOutOfStockConfirmVariant] = useState<any | null>(null);
+
+  const filteredCustomers = useMemo(() => {
+    const list = customersQ.data ?? [];
+    const q = customerSearchQuery.trim().toLowerCase();
+    if (!q) return list.slice(0, 50);
+    const qDigits = q.replace(/\D/g, "");
+    return list
+      .filter((c: any) => {
+        const name = (c.name || "").toLowerCase();
+        const email = (c.email || "").toLowerCase();
+        const phone = c.phone || "";
+        const phoneDigits = phone.replace(/\D/g, "");
+        const matchesName = name.includes(q);
+        const matchesEmail = email.includes(q);
+        const matchesPhone = qDigits.length > 0 && phoneDigits.includes(qDigits);
+        return matchesName || matchesEmail || matchesPhone;
+      })
+      .slice(0, 50);
+  }, [customersQ.data, customerSearchQuery]);
   const [editingUnlocked, setEditingUnlocked] = useState(false);
   const [invoicePreviewOpen, setInvoicePreviewOpen] = useState(false);
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
@@ -1228,7 +1269,17 @@ function OrderDetail() {
       .slice(0, 35);
   }, [productSearchQuery, variantsQ.data, productsQ.data]);
 
-  const handleSelectVariantFromModal = (variant: any) => {
+  const handleSelectVariantFromModal = (variant: any, force = false) => {
+    const mainStock = Number(variant.stock_main ?? 0);
+    const incStock = Number(variant.stock_incubator ?? 0);
+    const fallbackStock = Number(variant.stock ?? variant.quantity ?? 0);
+    const totalStock = mainStock + incStock > 0 ? mainStock + incStock : fallbackStock;
+
+    if (!force && totalStock <= 0) {
+      setOutOfStockConfirmVariant(variant);
+      return;
+    }
+
     const p = (productsQ.data ?? []).find((x: any) => x.id === variant.product_id);
     const isAr = lang === "ar";
     const sizeLabel = isAr ? "المقاس" : "Size";
@@ -3112,88 +3163,129 @@ function OrderDetail() {
                 id="sec-overview"
                 className="scroll-mt-24 overflow-hidden rounded-2xl border border-border-subtle bg-card/60 p-4 shadow-sm sm:bg-card sm:p-6 sm:shadow-lg"
               >
-                <div className="mb-4">
-                  <Label className="flex items-center gap-2">
-                    <Search className="h-3 w-3" /> {t("customers.searchByPhone")}
-                  </Label>
-                  <Input
-                    className="text-start"
-                    placeholder={t("customers.searchByPhonePh")}
-                    value={phoneSearch}
-                    onChange={(e) => {
-                      const q = e.target.value;
-                      setPhoneSearch(q);
-                      const digits = q.replace(/\D/g, "");
-                      if (digits.length < 3) return;
-                      const match = (customersQ.data ?? []).find((c: any) =>
-                        (c.phone ?? "").replace(/\D/g, "").includes(digits),
-                      );
-                      if (match) {
-                        const def =
-                          (addressesQ.data ?? []).find(
-                            (a) => a.customer_id === match.id && a.is_default,
-                          ) ?? (addressesQ.data ?? []).find((a) => a.customer_id === match.id);
-                        setOrder({
-                          ...order,
-                          customer_id: match.id,
-                          shipping_address_id: def?.id ?? null,
-                        });
-                      }
-                    }}
-                  />
-                  {phoneSearch.replace(/\D/g, "").length >= 3 &&
-                    !(customersQ.data ?? []).some((c: any) =>
-                      (c.phone ?? "").replace(/\D/g, "").includes(phoneSearch.replace(/\D/g, "")),
-                    ) && (
-                      <p className="text-xs text-muted-foreground mt-1 italic">
-                        {t("customers.noMatch")}
-                      </p>
-                    )}
-                </div>
                 <div className="grid grid-cols-1 gap-4">
                   <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <Label>{t("orderDetail.customer")}</Label>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label className="font-semibold text-sm">{t("orderDetail.customer")}</Label>
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="h-6 px-2 text-xs font-semibold text-primary"
+                        className="h-7 px-2.5 text-xs font-semibold text-primary"
                         onClick={() => setNewCustomerOpen(true)}
                       >
-                        <Plus className="h-3 w-3 me-1" />
+                        <Plus className="h-3.5 w-3.5 me-1" />
                         {lang === "ar" ? "زبون جديد" : "New Customer"}
                       </Button>
                     </div>
-                    <Select
-                      value={order.customer_id ?? "none"}
-                      onValueChange={(v) => {
-                        const cid = v === "none" ? null : v;
-                        const def = cid
-                          ? ((addressesQ.data ?? []).find(
-                              (a) => a.customer_id === cid && a.is_default,
-                            ) ?? (addressesQ.data ?? []).find((a) => a.customer_id === cid))
-                          : null;
-                        setOrder({
-                          ...order,
-                          customer_id: cid,
-                          shipping_address_id: def?.id ?? null,
-                        });
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">{t("orderDetail.noCustomerOption")}</SelectItem>
-                        {(customersQ.data ?? []).map((c: any) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.name}
-                            {c.phone ? ` — ${c.phone}` : ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+
+                    <Popover open={customerPickerOpen} onOpenChange={setCustomerPickerOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={customerPickerOpen}
+                          className="w-full justify-between h-10 px-3 font-normal bg-background hover:bg-muted/40"
+                        >
+                          <span className="truncate">
+                            {order.customer_id
+                              ? (() => {
+                                  const c = (customersQ.data ?? []).find(
+                                    (x: any) => x.id === order.customer_id,
+                                  );
+                                  return c
+                                    ? `${c.name}${c.phone ? ` (${c.phone})` : ""}`
+                                    : t("orderDetail.customer");
+                                })()
+                              : t("orderDetail.noCustomerOption")}
+                          </span>
+                          <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                        <Command shouldFilter={false}>
+                          <CommandInput
+                            placeholder={
+                              lang === "ar"
+                                ? "بحث بالاسم أو الهاتف أو البريد..."
+                                : "Search customer by name, phone, or email..."
+                            }
+                            value={customerSearchQuery}
+                            onValueChange={setCustomerSearchQuery}
+                          />
+                          <CommandList className="max-h-60 overflow-y-auto">
+                            <CommandEmpty className="p-3 text-center text-xs text-muted-foreground">
+                              {lang === "ar" ? "لم يتم العثور على زبائن" : "No customers found"}
+                            </CommandEmpty>
+                            <CommandGroup>
+                              <CommandItem
+                                value="none"
+                                onSelect={() => {
+                                  setOrder({
+                                    ...order,
+                                    customer_id: null,
+                                    shipping_address_id: null,
+                                  });
+                                  setCustomerPickerOpen(false);
+                                  setCustomerSearchQuery("");
+                                }}
+                                className="cursor-pointer text-xs font-medium text-muted-foreground"
+                              >
+                                <Check
+                                  className={cn(
+                                    "me-2 h-4 w-4",
+                                    !order.customer_id ? "opacity-100 text-primary" : "opacity-0",
+                                  )}
+                                />
+                                {t("orderDetail.noCustomerOption")}
+                              </CommandItem>
+                              {filteredCustomers.map((c: any) => {
+                                const isSelected = order.customer_id === c.id;
+                                return (
+                                  <CommandItem
+                                    key={c.id}
+                                    value={c.id}
+                                    onSelect={() => {
+                                      const def =
+                                        (addressesQ.data ?? []).find(
+                                          (a) => a.customer_id === c.id && a.is_default,
+                                        ) ??
+                                        (addressesQ.data ?? []).find((a) => a.customer_id === c.id);
+                                      setOrder({
+                                        ...order,
+                                        customer_id: c.id,
+                                        shipping_address_id: def?.id ?? null,
+                                      });
+                                      setCustomerPickerOpen(false);
+                                      setCustomerSearchQuery("");
+                                    }}
+                                    className="cursor-pointer text-xs py-2"
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "me-2 h-4 w-4 shrink-0",
+                                        isSelected ? "opacity-100 text-primary" : "opacity-0",
+                                      )}
+                                    />
+                                    <div className="flex flex-col min-w-0">
+                                      <span className="font-semibold text-foreground truncate">
+                                        {c.name}
+                                      </span>
+                                      {(c.phone || c.email) && (
+                                        <span className="text-xs text-muted-foreground font-mono truncate">
+                                          {[c.phone, c.email].filter(Boolean).join(" • ")}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </CommandItem>
+                                );
+                              })}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
                 {order.customer_id &&
@@ -5178,6 +5270,43 @@ function OrderDetail() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Out-of-stock Variant Confirmation Dialog */}
+        <AlertDialog
+          open={Boolean(outOfStockConfirmVariant)}
+          onOpenChange={(open) => {
+            if (!open) setOutOfStockConfirmVariant(null);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {lang === "ar" ? "تنبيه: الصنف نافد من المخزون" : "Notice: Item is Out of Stock"}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {lang === "ar"
+                  ? "هذا الصنف رصيده الحالي 0 في المخزون. هل ترغب في إضافته إلى الطلب على أي حال؟"
+                  : "This item currently has 0 units in stock. Do you want to add it to the order anyway?"}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setOutOfStockConfirmVariant(null)}>
+                {lang === "ar" ? "إلغاء" : "Cancel"}
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => {
+                  if (outOfStockConfirmVariant) {
+                    handleSelectVariantFromModal(outOfStockConfirmVariant, true);
+                    setOutOfStockConfirmVariant(null);
+                  }
+                }}
+              >
+                {lang === "ar" ? "إضافة على أي حال" : "Add Anyway"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Inline New Customer Dialog */}
         <Dialog open={newCustomerOpen} onOpenChange={setNewCustomerOpen}>
