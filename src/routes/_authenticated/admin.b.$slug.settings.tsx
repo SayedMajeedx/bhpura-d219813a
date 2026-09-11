@@ -307,7 +307,7 @@ function TypographyAdvancedControls({
     formatValue: (value: number) => string = String,
     help?: string,
   ) => (
-    <div className="space-y-2 rounded-lg border border-border/50 bg-background/60 p-3">
+    <div className="space-y-2 rounded-lg border border-border-subtle bg-background/60 p-3">
       <div className="flex items-start justify-between gap-3">
         <div>
           <Label className="text-sm font-medium">{label}</Label>
@@ -332,7 +332,7 @@ function TypographyAdvancedControls({
   );
 
   return (
-    <div className="space-y-4 rounded-xl border border-border/70 bg-background/40 p-4">
+    <div className="space-y-4 rounded-xl border border-border-strong bg-background/40 p-4">
       {previewFaces && <style>{previewFaces}</style>}
       <div>
         <h4 className="text-sm font-semibold">{title}</h4>
@@ -502,7 +502,7 @@ function TypographyAdvancedControls({
             return (
               <div
                 key={axis}
-                className="space-y-2 rounded-lg border border-border/50 bg-background/60 p-3"
+                className="space-y-2 rounded-lg border border-border-subtle bg-background/60 p-3"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -535,7 +535,7 @@ function TypographyAdvancedControls({
         </div>
       )}
       {hasHexp && (
-        <div className="space-y-2 rounded-lg border border-border/50 bg-background/60 p-3">
+        <div className="space-y-2 rounded-lg border border-border-subtle bg-background/60 p-3">
           <div className="flex items-start justify-between gap-3">
             <div>
               <Label className="text-sm font-medium">
@@ -568,7 +568,7 @@ function TypographyAdvancedControls({
         </div>
       )}
       {hasItalic && (
-        <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 p-3">
+        <div className="flex items-center justify-between gap-4 rounded-lg border border-border-subtle p-3">
           <div>
             <Label>{isAr ? "النمط المائل الحقيقي" : "True italic style"}</Label>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -583,7 +583,7 @@ function TypographyAdvancedControls({
           />
         </div>
       )}
-      <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 p-3">
+      <div className="flex items-center justify-between gap-4 rounded-lg border border-border-subtle p-3">
         <div>
           <Label>{isAr ? "تحسين وضوح الخط تلقائيًا" : "Automatic optical optimization"}</Label>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -936,7 +936,7 @@ function Settings() {
         className="w-full mt-2"
       >
         <TabsContent value="business" className="space-y-6 mt-0">
-          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-3 sm:p-6 space-y-4">
+          <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-3 sm:p-6 space-y-4">
             <h2 className="font-display text-xl font-bold">{t("settings.business")}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -1154,7 +1154,7 @@ function Settings() {
         </TabsContent>
 
         <TabsContent value="invoice" className="space-y-6 mt-0">
-          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-3 sm:p-6 space-y-4">
+          <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-3 sm:p-6 space-y-4">
             <h2 className="font-display text-xl">{t("settings.appearance")}</h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1627,7 +1627,7 @@ function Settings() {
           </Card>
 
           {f.logo_url && (
-            <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-3 sm:p-6 space-y-4">
+            <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-3 sm:p-6 space-y-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h2 className="font-display text-xl">Invoice logo position &amp; size</h2>
@@ -1898,7 +1898,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
 
   if (isError) {
     return (
-      <Card className="overflow-hidden border border-destructive/30 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 text-center space-y-3">
+      <Card className="overflow-hidden border border-destructive/30 shadow-lg rounded-2xl bg-card p-6 text-center space-y-3">
         <p className="text-sm font-semibold text-destructive">
           {isAr ? "تعذر تحميل إعدادات طرق الدفع" : "Failed to load payment settings"}
         </p>
@@ -1911,7 +1911,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
 
   if (isLoading || !state) {
     return (
-      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+      <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-4">
         <div className="space-y-2">
           <Skeleton className="h-6 w-48" />
           <Skeleton className="h-4 w-72" />
@@ -1926,7 +1926,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
   }
 
   return (
-    <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-6">
+    <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-6">
       <div>
         <h2 className="font-display text-xl font-bold">
           {isAr ? "إعدادات الدفع" : "Payment Settings"}
@@ -1940,7 +1940,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
 
       <div className="space-y-4">
         {/* COD Block */}
-        <div className="overflow-hidden rounded-xl border border-border/40 p-5 space-y-4 bg-background/40 backdrop-blur-sm shadow-sm transition-all duration-300 hover:scale-[1.005] hover:border-primary/20">
+        <div className="overflow-hidden rounded-xl border border-border-subtle p-5 space-y-4 bg-background shadow-sm transition-all duration-300 hover:scale-[1.005] hover:border-primary/20">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold">
@@ -1960,7 +1960,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
         </div>
 
         {/* Card Payment Block */}
-        <div className="overflow-hidden rounded-xl border border-border/40 p-5 space-y-4 bg-background/40 backdrop-blur-sm shadow-sm transition-all duration-300 hover:scale-[1.005] hover:border-primary/20">
+        <div className="overflow-hidden rounded-xl border border-border-subtle p-5 space-y-4 bg-background shadow-sm transition-all duration-300 hover:scale-[1.005] hover:border-primary/20">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold">
@@ -1978,7 +1978,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
             />
           </div>
           {state.card_enabled && (
-            <div className="pt-4 border-t border-border/50 space-y-4 animate-in fade-in-50 duration-200">
+            <div className="pt-4 border-t border-border-subtle space-y-4 animate-in fade-in-50 duration-200">
               <div>
                 <Label className="text-xs font-semibold">
                   {isAr
@@ -2046,7 +2046,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
         </div>
 
         {/* Benefit Pay Block */}
-        <div className="overflow-hidden rounded-xl border border-border/40 p-5 space-y-4 bg-background/40 backdrop-blur-sm shadow-sm transition-all duration-300 hover:scale-[1.005] hover:border-primary/20">
+        <div className="overflow-hidden rounded-xl border border-border-subtle p-5 space-y-4 bg-background shadow-sm transition-all duration-300 hover:scale-[1.005] hover:border-primary/20">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold">
@@ -2064,7 +2064,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
             />
           </div>
           {state.benefit_enabled && (
-            <div className="pt-4 border-t border-border/50 space-y-4 animate-in fade-in-50 duration-200">
+            <div className="pt-4 border-t border-border-subtle space-y-4 animate-in fade-in-50 duration-200">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-xs font-semibold">
@@ -2445,7 +2445,7 @@ function BrandHeroCard({
   if (!state) return null;
 
   return (
-    <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+    <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-4">
       <div>
         <h2 className="font-display text-xl">{isAr ? "واجهة المتجر" : "Storefront Hero"}</h2>
         <p className="text-sm text-muted-foreground">
@@ -3302,7 +3302,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
 
   if (isError) {
     return (
-      <Card className="overflow-hidden border border-destructive/30 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 text-center space-y-3">
+      <Card className="overflow-hidden border border-destructive/30 shadow-lg rounded-2xl bg-card p-6 text-center space-y-3">
         <p className="text-sm font-semibold text-destructive">
           {isAr ? "تعذر تحميل إعدادات الشحن والتسليم" : "Failed to load shipping settings"}
         </p>
@@ -3315,7 +3315,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
 
   if (isLoading || !state) {
     return (
-      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+      <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-4">
         <div className="space-y-2">
           <Skeleton className="h-6 w-48" />
           <Skeleton className="h-4 w-72" />
@@ -3330,7 +3330,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
   }
 
   return (
-    <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+    <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-4">
       <div>
         <h2 className="font-display text-xl">{t("settings.shippingTitle")}</h2>
         <p className="text-sm text-muted-foreground">{t("settings.shippingSubtitle")}</p>
@@ -3517,7 +3517,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
         </div>
 
         {state.delivery_estimate_enabled && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-border/50">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-border-subtle">
             <div>
               <Label className="text-xs font-medium">
                 {isAr ? "نص مدة التوصيل (بالعربية)" : "Delivery Estimate Text (Arabic)"}
@@ -3834,7 +3834,7 @@ function StorefrontSeoCard({ brandId }: { brandId: string }) {
   };
 
   return (
-    <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+    <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-4">
       <div>
         <h2 className="font-display text-xl">
           {isAr ? "ظهور المتجر في محركات البحث" : "Storefront SEO"}
@@ -4652,7 +4652,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
 
   if (!state) {
     return (
-      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+      <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-4">
         <Skeleton className="h-7 w-56 bg-muted" />
         <Skeleton className="h-11 w-full bg-muted rounded-xl" />
         <Skeleton className="h-64 w-full bg-muted rounded-2xl" />
@@ -4662,7 +4662,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
 
   return (
     <Card
-      className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-6"
+      className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-6"
       dir={isAr ? "rtl" : "ltr"}
     >
       <div>
@@ -6065,7 +6065,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         )}
       </div>
 
-      <div className="sticky bottom-20 md:bottom-3 z-10 flex justify-end rounded-xl border border-border/70 bg-background/90 p-3 shadow-lg backdrop-blur-xl">
+      <div className="sticky bottom-20 md:bottom-3 z-10 flex justify-end rounded-xl border border-border-strong bg-background/90 p-3 shadow-lg backdrop-blur-xl">
         <Button onClick={save} disabled={saving}>
           {saving
             ? isAr
@@ -6155,7 +6155,7 @@ function BranchesCard({ brandId }: { brandId: string }) {
     qc.invalidateQueries({ queryKey: ["branches", brandId] });
   };
   return (
-    <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+    <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-4">
       <div>
         <h3 className="text-lg font-semibold">
           {isAr ? "الفروع (للاستلام)" : "Branches (for Pickup)"}
@@ -6459,7 +6459,7 @@ function EmailSettingsCard({ brandId }: { brandId: string }) {
   if (!state) return null;
 
   return (
-    <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+    <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-4">
       <div>
         <h3 className="text-lg font-semibold">
           {isAr ? "إعدادات بريد الطلبات" : "Order email settings"}

@@ -1230,7 +1230,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-3 sm:py-8 pb-28 md:pb-10">
       <div className="grid md:grid-cols-12 gap-6 lg:gap-10 items-start">
         <div className="md:col-span-5 max-w-[420px] mx-auto md:max-w-none w-full">
-          <div className="relative aspect-[3/4] max-h-[500px] bg-muted rounded-2xl overflow-hidden shadow-sm border border-border/40 mx-auto w-full">
+          <div className="relative aspect-[3/4] max-h-[500px] bg-muted rounded-2xl overflow-hidden shadow-sm border border-border-subtle mx-auto w-full">
             {media.length > 0 ? (
               <>
                 {media[mediaIdx % media.length].type === "video" ? (
@@ -1271,7 +1271,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                       variant="ghost"
                       size="icon"
                       onClick={() => setMediaIdx((i) => (i - 1 + media.length) % media.length)}
-                      className="absolute top-1/2 left-3 -translate-y-1/2 h-11 w-11 bg-background/90 hover:bg-background text-foreground rounded-full shadow-md border border-border/50 transition-transform active:scale-95 z-20"
+                      className="absolute top-1/2 left-3 -translate-y-1/2 h-11 w-11 bg-background/90 hover:bg-background text-foreground rounded-full shadow-md border border-border-subtle transition-transform active:scale-95 z-20"
                       aria-label="Previous media"
                     >
                       <ChevronLeft className="h-5 w-5" />
@@ -1281,7 +1281,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                       variant="ghost"
                       size="icon"
                       onClick={() => setMediaIdx((i) => (i + 1) % media.length)}
-                      className="absolute top-1/2 right-3 -translate-y-1/2 h-11 w-11 bg-background/90 hover:bg-background text-foreground rounded-full shadow-md border border-border/50 transition-transform active:scale-95 z-20"
+                      className="absolute top-1/2 right-3 -translate-y-1/2 h-11 w-11 bg-background/90 hover:bg-background text-foreground rounded-full shadow-md border border-border-subtle transition-transform active:scale-95 z-20"
                       aria-label="Next media"
                     >
                       <ChevronRight className="h-5 w-5" />
@@ -1305,7 +1305,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   className={`relative h-18 w-18 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${
                     i === mediaIdx % media.length
                       ? "ring-2 ring-primary border-primary shadow-sm opacity-100"
-                      : "border-border/60 hover:border-primary/50 opacity-75 hover:opacity-100"
+                      : "border-border-subtle hover:border-primary/50 opacity-75 hover:opacity-100"
                   }`}
                   style={i === mediaIdx % media.length ? { borderColor: primary } : undefined}
                 >
@@ -1854,7 +1854,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   )}
 
                   {isGuest && !passportApplied && (
-                    <div className="mt-3.5 pt-3 border-t border-border/40 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                    <div className="mt-3.5 pt-3 border-t border-border-subtle flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
                       <span>
                         {t(
                           "لا يشترط إنشاء حساب لتفصيل هذه القطعة.",
@@ -2046,7 +2046,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               })}
 
               {/* 📝 Customer Tailoring & Workshop Notes Box */}
-              <div className="space-y-2 pt-3 border-t border-border/60">
+              <div className="space-y-2 pt-3 border-t border-border-subtle">
                 <div className="flex items-center justify-between">
                   <label className="flex items-center gap-2 text-xs sm:text-sm font-bold text-foreground">
                     <FileText className="h-4 w-4 text-primary shrink-0" />

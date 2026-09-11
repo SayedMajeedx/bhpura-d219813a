@@ -259,7 +259,7 @@ export const TrialExpiredPaywall: React.FC<TrialExpiredPaywallProps> = ({
                   </div>
                 </CardHeader>
 
-                <CardContent className="space-y-2.5 pt-2 border-t border-border/60">
+                <CardContent className="space-y-2.5 pt-2 border-t border-border-subtle">
                   <p className="text-xs font-semibold text-muted-foreground mb-2">
                     {isAr ? "المزايا المشمولة:" : "Included Features:"}
                   </p>
@@ -271,7 +271,7 @@ export const TrialExpiredPaywall: React.FC<TrialExpiredPaywallProps> = ({
                   ))}
                 </CardContent>
 
-                <CardFooter className="pt-4 border-t border-border/60">
+                <CardFooter className="pt-4 border-t border-border-subtle">
                   <Button
                     type="button"
                     variant={isSelected ? "default" : "outline"}

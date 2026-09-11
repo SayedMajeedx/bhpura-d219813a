@@ -78,7 +78,7 @@ export const CustomersScopeSwitcher: React.FC<CustomersScopeSwitcherProps> = ({
           "flex min-h-10 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-bold transition-all cursor-pointer",
           mobile ? "min-w-0 flex-1" : "shrink-0",
           isActive
-            ? "border border-border/80 bg-card text-foreground shadow-2xs"
+            ? "border border-border-strong bg-card text-foreground shadow-2xs"
             : "text-muted-foreground hover:bg-card/50 hover:text-foreground",
         )}
       >
@@ -98,12 +98,12 @@ export const CustomersScopeSwitcher: React.FC<CustomersScopeSwitcherProps> = ({
 
   return (
     <>
-      <div className="hidden items-center gap-1.5 overflow-x-auto rounded-xl border border-border/50 bg-muted/50 p-1 no-scrollbar sm:flex">
+      <div className="hidden items-center gap-1.5 overflow-x-auto rounded-xl border border-border-subtle bg-muted/50 p-1 no-scrollbar sm:flex">
         {scopes.map((scope) => {
           return renderScope(scope);
         })}
       </div>
-      <div className="grid grid-cols-[repeat(2,minmax(0,1fr))_44px] gap-1.5 rounded-2xl border border-border/60 bg-muted/35 p-1 sm:hidden">
+      <div className="grid grid-cols-[repeat(2,minmax(0,1fr))_44px] gap-1.5 rounded-2xl border border-border-subtle bg-muted/35 p-1 sm:hidden">
         {scopes.slice(0, 2).map((scope) => renderScope(scope, true))}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -111,7 +111,7 @@ export const CustomersScopeSwitcher: React.FC<CustomersScopeSwitcherProps> = ({
               type="button"
               aria-label={isAr ? "المزيد من شرائح العملاء" : "More customer segments"}
               className={cn(
-                "flex min-h-10 items-center justify-center rounded-xl border border-border/60 bg-card text-muted-foreground",
+                "flex min-h-10 items-center justify-center rounded-xl border border-border-subtle bg-card text-muted-foreground",
                 ["repeat", "new", "churn"].includes(currentScope) &&
                   "border-primary/30 bg-primary/10 text-primary",
               )}

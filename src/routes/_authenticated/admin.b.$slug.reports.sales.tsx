@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { OsSkeleton } from "@/components/os/os-skeleton";
 import { AlertCircle, Banknote, CreditCard, RefreshCw, ShoppingBag, Truck } from "lucide-react";
 import {
   Area,
@@ -357,10 +358,10 @@ function ReportSkeleton() {
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-36 animate-pulse rounded-2xl bg-muted" />
+          <OsSkeleton key={i} variant="card" className="h-36 rounded-2xl" />
         ))}
       </div>
-      <div className="h-[430px] animate-pulse rounded-2xl bg-muted" />
+      <OsSkeleton variant="panel" className="h-[430px] rounded-2xl" />
     </div>
   );
 }

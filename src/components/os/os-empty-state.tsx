@@ -25,14 +25,14 @@ export function OsEmptyState({
       variant="glass"
       radius="panel"
       className={cn(
-        "flex flex-col items-center justify-center text-center mx-auto border border-dashed border-border/70 bg-card/50 shadow-xs",
+        "flex flex-col items-center justify-center text-center mx-auto border border-dashed border-border-strong bg-card/50 shadow-xs",
         compact ? "p-6 sm:p-8 max-w-sm my-3" : "p-8 sm:p-12 max-w-md my-6",
         className,
       )}
     >
       <div
         className={cn(
-          "flex items-center justify-center rounded-2xl bg-muted/60 text-muted-foreground border border-border/50 shadow-xs",
+          "flex items-center justify-center rounded-2xl bg-muted/60 text-muted-foreground border border-border-subtle shadow-xs",
           compact ? "h-11 w-11 mb-3" : "h-14 w-14 mb-4",
         )}
       >

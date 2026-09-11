@@ -341,7 +341,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
   return (
     <div className="space-y-8">
       {/* 1. Header Banner & Current Subscription Overview */}
-      <Card className="border border-border/80 bg-gradient-to-br from-card via-card/90 to-primary/5 shadow-sm rounded-3xl overflow-hidden relative">
+      <Card className="border border-border-strong bg-gradient-to-br from-card via-card/90 to-primary/5 shadow-sm rounded-3xl overflow-hidden relative">
         <div className="absolute top-0 right-0 p-8 opacity-5 select-none pointer-events-none text-primary">
           <Crown className="h-44 w-44" />
         </div>
@@ -418,7 +418,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
         </CardHeader>
 
         <CardContent className="pt-2 pb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-2xl bg-background/60 border border-border/60 backdrop-blur-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-2xl bg-background/60 border border-border-subtle backdrop-blur-sm">
             <div>
               <span className="text-xs font-semibold text-muted-foreground block">
                 {isTrial
@@ -533,7 +533,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
       {/* 1.5 Prominent Upgrade & Activation Section (For Trial, Expired, Grace or Pending Verification) */}
       {shouldShowInlineUpgradeCard && !isPendingVerification && (
         <Card className="border-2 border-primary/20 bg-gradient-to-b from-card via-card to-primary/5 shadow-md rounded-3xl overflow-hidden">
-          <CardHeader className="pb-4 border-b border-border/50 bg-muted/10">
+          <CardHeader className="pb-4 border-b border-border-subtle bg-muted/10">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <CardTitle className="text-xl font-bold flex items-center gap-2.5">
@@ -569,7 +569,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                 </span>
 
                 {/* Billing Cycle Switcher */}
-                <div className="inline-flex items-center p-1 rounded-xl bg-muted/60 border border-border/60 self-start sm:self-auto">
+                <div className="inline-flex items-center p-1 rounded-xl bg-muted/60 border border-border-subtle self-start sm:self-auto">
                   <Button
                     type="button"
                     variant={upgradeBillingInterval === "monthly" ? "default" : "ghost"}
@@ -609,7 +609,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                       className={`cursor-pointer relative p-4 rounded-2xl border transition-all ${
                         isSelected
                           ? "border-primary bg-primary/5 ring-2 ring-primary/20 shadow-sm"
-                          : "border-border/70 hover:border-border hover:bg-muted/30 bg-card"
+                          : "border-border-strong hover:border-border hover:bg-muted/30 bg-card"
                       }`}
                     >
                       {isRecommended && (
@@ -648,7 +648,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
             </div>
 
             {/* Step 2: Payment Method Choice */}
-            <div className="space-y-3 pt-2 border-t border-border/50">
+            <div className="space-y-3 pt-2 border-t border-border-subtle">
               <span className="text-xs font-bold text-foreground block">
                 {isAr ? "2. اختر وسيلة الدفع:" : "2. Select Payment Method:"}
               </span>
@@ -661,7 +661,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                   className={`h-auto p-4 rounded-2xl text-start transition-all flex flex-col justify-between items-start gap-3 w-full border ${
                     inlinePaymentMethod === "paypal"
                       ? "border-primary bg-primary/10 ring-2 ring-primary/20"
-                      : "border-border/70 hover:border-border hover:bg-muted/30"
+                      : "border-border-strong hover:border-border hover:bg-muted/30"
                   }`}
                 >
                   <div className="flex items-center justify-between w-full">
@@ -696,7 +696,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                   className={`h-auto p-4 rounded-2xl text-start transition-all flex flex-col justify-between items-start gap-3 w-full border ${
                     inlinePaymentMethod === "benefit"
                       ? "border-primary bg-primary/10 ring-2 ring-primary/20"
-                      : "border-border/70 hover:border-border hover:bg-muted/30"
+                      : "border-border-strong hover:border-border hover:bg-muted/30"
                   }`}
                 >
                   <div className="flex items-center justify-between w-full">
@@ -728,7 +728,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
 
             {/* Instant PayPal / Card Checkout */}
             {inlinePaymentMethod === "paypal" && inlineSelectedPlan && (
-              <div className="space-y-3 pt-2 border-t border-border/50">
+              <div className="space-y-3 pt-2 border-t border-border-subtle">
                 <span className="text-xs font-bold text-foreground block">
                   {isAr ? "3. إتمام الدفع والتفعيل الفوري:" : "3. Complete Payment & Instant Activation:"}
                 </span>
@@ -750,7 +750,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
             {inlinePaymentMethod === "benefit" && (
               <>
                 {/* Step 3: BenefitPay Account & Transfer Instructions */}
-                <div className="space-y-3 pt-2 border-t border-border/50">
+                <div className="space-y-3 pt-2 border-t border-border-subtle">
                   <span className="text-xs font-bold text-foreground block">
                     {isAr ? "3. تفاصيل التحويل عبر BenefitPay (Fawri+):" : "3. BenefitPay Transfer Details (Fawri+):"}
                   </span>
@@ -774,8 +774,8 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                   </div>
 
                   {/* QR and IBAN */}
-                  <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-4 p-4 rounded-2xl bg-muted/20 border border-border/60">
-                    <div className="flex flex-col items-center justify-center p-3 rounded-xl border border-border/60 bg-background text-center">
+                  <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-4 p-4 rounded-2xl bg-muted/20 border border-border-subtle">
+                    <div className="flex flex-col items-center justify-center p-3 rounded-xl border border-border-subtle bg-background text-center">
                       {systemSettings?.benefit_pay_qr_url ? (
                         <img
                           src={systemSettings.benefit_pay_qr_url}
@@ -797,7 +797,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                         <span className="text-xs font-semibold text-muted-foreground block mb-1">
                           {isAr ? "رقم الآيبان الرسمي (IBAN):" : "Official IBAN:"}
                         </span>
-                        <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-border/80 bg-background">
+                        <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-border-strong bg-background">
                           <code dir="ltr" className="break-all text-xs font-bold font-mono text-foreground">
                             {systemSettings?.subscription_iban || "BH12KHCB0000001234567890"}
                           </code>
@@ -836,7 +836,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                 </div>
 
                 {/* Step 4: Receipt Upload & Submit */}
-                <div className="space-y-3 pt-2 border-t border-border/50">
+                <div className="space-y-3 pt-2 border-t border-border-subtle">
                   <span className="text-xs font-bold text-foreground block">
                     {isAr ? "4. إرفاق صورة إشعار التحويل البنكي:" : "4. Upload Payment Receipt Screenshot:"}
                   </span>
@@ -1068,7 +1068,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
 
       {/* 3. Active Unlocked Features Summary */}
       <Card className="border border-border bg-card shadow-sm rounded-2xl">
-        <CardHeader className="pb-3 border-b border-border/50">
+        <CardHeader className="pb-3 border-b border-border-subtle">
           <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
             <ShieldCheck className="h-4.5 w-4.5 text-primary" />
             <span>{isAr ? "الميزات والقدرات المفعلة في خطتك" : "Active Plan Entitlements & Features"}</span>
@@ -1100,7 +1100,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                   className={`p-3 rounded-xl border flex items-center justify-between text-xs transition-colors ${
                     isEnabled
                       ? "bg-primary/[0.03] border-primary/20 text-foreground"
-                      : "bg-muted/20 border-border/60 text-muted-foreground opacity-60"
+                      : "bg-muted/20 border-border-subtle text-muted-foreground opacity-60"
                   }`}
                 >
                   <span className="font-semibold">{isAr ? item.labelAr : item.labelEn}</span>
@@ -1118,7 +1118,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
             })}
           </div>
         </CardContent>
-        <CardFooter className="pt-2 pb-4 border-t border-border/50 flex justify-between items-center text-xs text-muted-foreground">
+        <CardFooter className="pt-2 pb-4 border-t border-border-subtle flex justify-between items-center text-xs text-muted-foreground">
           <span>{isAr ? "هل ترغب في إدارة اشتراكك؟" : "Manage your store plan?"}</span>
           <Button
             type="button"
@@ -1208,7 +1208,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                           className={`p-4 rounded-2xl border flex flex-col justify-between text-xs space-y-3 ${
                             isCurrent
                               ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                              : "border-border bg-card hover:border-border/80"
+                              : "border-border bg-card hover:border-border-strong"
                           }`}
                         >
                           <div className="space-y-2">
@@ -1241,7 +1241,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                             </p>
                           </div>
 
-                          <div className="pt-2 border-t border-border/50 space-y-3">
+                          <div className="pt-2 border-t border-border-subtle space-y-3">
                             <div className="font-mono text-sm font-bold text-foreground">
                               {plan.code === "enterprise" ? (
                                 <span>{isAr ? "اتفاقية خاصة" : "Custom Enterprise"}</span>
@@ -1332,7 +1332,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                     </DialogHeader>
 
                     {/* Order Summary Card */}
-                    <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/80 flex items-center justify-between">
+                    <div className="p-3.5 rounded-2xl bg-muted/40 border border-border-strong flex items-center justify-between">
                       <div>
                         <span className="text-xs text-muted-foreground block">
                           {isAr ? "الباقة ودورة الفوترة:" : "Selected Plan & Cycle:"}
@@ -1363,7 +1363,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                         className={`h-auto p-3.5 rounded-xl text-start transition-all flex flex-col justify-between items-start gap-2 border ${
                           dialogPaymentMethod === "paypal"
                             ? "border-primary bg-primary/10 ring-2 ring-primary/20"
-                            : "border-border/70 hover:border-border hover:bg-muted/30"
+                            : "border-border-strong hover:border-border hover:bg-muted/30"
                         }`}
                       >
                         <div className="flex items-center justify-between w-full">
@@ -1389,7 +1389,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                         className={`h-auto p-3.5 rounded-xl text-start transition-all flex flex-col justify-between items-start gap-2 border ${
                           dialogPaymentMethod === "benefit"
                             ? "border-primary bg-primary/10 ring-2 ring-primary/20"
-                            : "border-border/70 hover:border-border hover:bg-muted/30"
+                            : "border-border-strong hover:border-border hover:bg-muted/30"
                         }`}
                       >
                         <div className="flex items-center justify-between w-full">
@@ -1450,7 +1450,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
 
                           {/* QR Display if available */}
                           {qrUrl && (
-                            <div className="flex justify-center p-2 bg-background rounded-xl border border-border/50 max-w-[160px] mx-auto">
+                            <div className="flex justify-center p-2 bg-background rounded-xl border border-border-subtle max-w-[160px] mx-auto">
                               <img
                                 src={qrUrl}
                                 alt="BenefitPay QR"

@@ -337,7 +337,7 @@ export function PackagingMaterialsTab() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0 self-end sm:self-center bg-background/80 p-2 rounded-lg border border-border/60">
+        <div className="flex items-center gap-3 shrink-0 self-end sm:self-center bg-background/80 p-2 rounded-lg border border-border-subtle">
           <Label htmlFor="bom-toggle" className="text-xs font-semibold cursor-pointer select-none">
             {bomEnabled
               ? isAr
@@ -474,7 +474,7 @@ export function PackagingMaterialsTab() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-border/40">
+                <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-border-subtle">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -541,7 +541,7 @@ export function PackagingMaterialsTab() {
             </div>
 
             {/* Deduction Rule Selection */}
-            <div className="space-y-2 rounded-xl border border-border/80 bg-muted/20 p-3">
+            <div className="space-y-2 rounded-xl border border-border-strong bg-muted/20 p-3">
               <Label className="text-xs font-bold text-foreground block">
                 {isAr ? "طريقة الخصم والاستهلاك في الطلبات" : "Deduction Rule in Orders"}
               </Label>

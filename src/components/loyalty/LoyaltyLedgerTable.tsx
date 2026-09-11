@@ -3,6 +3,7 @@ import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { OsSkeleton } from "@/components/os/os-skeleton";
 import {
   Table,
   TableBody,
@@ -167,14 +168,21 @@ export function LoyaltyLedgerTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredEntries.length === 0 ? (
+              {isLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><OsSkeleton variant="text" className="h-4 w-28" /></TableCell>
+                    <TableCell><OsSkeleton variant="text" className="h-4 w-36" /></TableCell>
+                    <TableCell><OsSkeleton variant="text" className="h-4 w-16" /></TableCell>
+                    <TableCell><OsSkeleton variant="text" className="h-4 w-20" /></TableCell>
+                    <TableCell><OsSkeleton variant="text" className="h-4 w-16" /></TableCell>
+                    <TableCell><OsSkeleton variant="text" className="h-4 w-24" /></TableCell>
+                  </TableRow>
+                ))
+              ) : filteredEntries.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-10 text-muted-foreground text-sm">
-                    {isLoading
-                      ? isAr
-                        ? "جاري تحميل سجل الولاء..."
-                        : "Loading loyalty ledger..."
-                      : isAr
+                    {isAr
                       ? "لا توجد حركات ولاء مسجلة حتى الآن."
                       : "No loyalty transactions recorded yet."}
                   </TableCell>

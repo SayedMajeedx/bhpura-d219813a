@@ -2,6 +2,7 @@ import React from "react";
 import { Boxes, Pencil, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OsEmptyState } from "@/components/os/os-empty-state";
+import { OsSkeleton } from "@/components/os/os-skeleton";
 
 interface CategoriesWorkQueueProps {
   lang: "en" | "ar";
@@ -53,9 +54,25 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
 
   if (isLoading) {
     return (
-      <div className="p-8 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border/60">
-        <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent mb-2" />
-        <p>{isAr ? "جاري تحميل الأقسام..." : "Loading categories..."}</p>
+      <div className="rounded-xl border border-border-subtle bg-card overflow-hidden shadow-2xs p-4 space-y-3">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div
+            key={i}
+            className="flex items-center justify-between gap-4 py-2 border-b border-border-subtle last:border-0"
+          >
+            <div className="flex items-center gap-3">
+              <OsSkeleton variant="avatar" className="h-8 w-8 rounded-lg" />
+              <div className="space-y-1.5">
+                <OsSkeleton variant="text" className="h-4 w-36" />
+                <OsSkeleton variant="text" className="h-3 w-20" />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <OsSkeleton variant="button" className="h-8 w-16" />
+              <OsSkeleton variant="button" className="h-8 w-8" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
@@ -75,7 +92,7 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
   }
 
   return (
-    <div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-2xs">
+    <div className="rounded-xl border border-border-subtle bg-card overflow-hidden shadow-2xs">
       <div className="space-y-2 p-2 sm:hidden">
         {categories.map((cat, index) => {
           const name = isAr ? cat.name_ar || cat.name : cat.name_en || cat.name;
@@ -88,7 +105,7 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
           return (
             <article
               key={cat.id}
-              className="rounded-xl border border-border/60 bg-background/70 p-3 shadow-2xs"
+              className="rounded-xl border border-border-subtle bg-background/70 p-3 shadow-2xs"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -111,7 +128,7 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
                   {countText}
                 </span>
               </div>
-              <div className="mt-3 flex items-center justify-between border-t border-border/50 pt-3">
+              <div className="mt-3 flex items-center justify-between border-t border-border-subtle pt-3">
                 <div
                   className="flex items-center gap-1"
                   aria-label={isAr ? "تغيير ترتيب القسم" : "Reorder category"}
@@ -164,7 +181,7 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
       <div className="hidden overflow-x-auto sm:block">
         <table className="w-full text-start text-xs border-collapse">
           <thead>
-            <tr className="border-b border-border/60 bg-muted/40 font-bold text-muted-foreground uppercase text-xs tracking-wider">
+            <tr className="border-b border-border-subtle bg-muted/40 font-bold text-muted-foreground uppercase text-xs tracking-wider">
               <th className="p-3 text-start">{isAr ? "اسم القسم" : "Category Name"}</th>
               <th className="p-3 text-start">{isAr ? "الرابط اللطيف (Slug)" : "Slug"}</th>
               <th className="p-3 text-start">{isAr ? "عدد المنتجات" : "Products"}</th>

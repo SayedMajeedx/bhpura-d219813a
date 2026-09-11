@@ -270,7 +270,7 @@ export function ProductBomModal({
 
         <div className="space-y-5 py-2">
           {/* Direct Packaging Cost Fallback */}
-          <div className="rounded-lg border border-border/60 bg-muted/30 p-3.5 space-y-2">
+          <div className="rounded-lg border border-border-subtle bg-muted/30 p-3.5 space-y-2">
             <Label className="text-xs font-semibold text-foreground flex items-center justify-between">
               <span>
                 {isAr ? "تكلفة التغليف المباشرة (إدخال يدوي)" : "Direct Packaging Cost (Manual)"}

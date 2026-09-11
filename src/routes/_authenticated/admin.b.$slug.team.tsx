@@ -522,7 +522,7 @@ function TeamManagement() {
             {filteredStaff.map((member) => (
               <Card
                 key={member.id}
-                className="p-4 border-border/60 shadow-sm rounded-xl bg-card/80 backdrop-blur flex flex-col gap-3"
+                className="p-4 border-border-subtle shadow-sm rounded-xl bg-card flex flex-col gap-3"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex flex-col min-w-0">
@@ -604,7 +604,7 @@ function TeamManagement() {
                   )}
                 </div>
 
-                <div className="pt-3 mt-1 border-t border-border/50 flex justify-between items-center">
+                <div className="pt-3 mt-1 border-t border-border-subtle flex justify-between items-center">
                   <span className="text-xs text-muted-foreground font-medium">
                     {new Date(member.created_at).toLocaleDateString(locale)}
                   </span>
@@ -673,7 +673,7 @@ function TeamManagement() {
           </div>
 
           {/* Desktop Table View */}
-          <Card className="hidden md:block overflow-hidden border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
+          <Card className="hidden md:block overflow-hidden border-border-subtle shadow-lg rounded-2xl bg-card">
             <div className="overflow-x-auto">
               <table className="w-full text-sm lg:min-w-[640px]">
                 <thead className="border-b bg-muted/40 font-semibold text-muted-foreground">

@@ -282,7 +282,7 @@ function SuperAdminSettings() {
       dir={lang === "ar" ? "rtl" : "ltr"}
     >
       {/* Premium Header bar */}
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between border-b border-border/60 pb-5">
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between border-b border-border-subtle pb-5">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
             <Sliders className="h-6 w-6 text-primary" />
@@ -298,8 +298,8 @@ function SuperAdminSettings() {
 
       <form onSubmit={handleSaveSettings} className="space-y-6">
         {/* Row 1: Logo Asset Customization */}
-        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
-          <CardHeader className="pb-3 border-b border-border/60">
+        <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card">
+          <CardHeader className="pb-3 border-b border-border-subtle">
             <CardTitle className="text-sm font-medium text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
               <Globe className="h-4 w-4 text-primary" />
               {lang === "ar"
@@ -377,8 +377,8 @@ function SuperAdminSettings() {
         </Card>
 
         {/* Row 2: Standard and Promotional Pricing Configuration */}
-        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
-          <CardHeader className="pb-3 border-b border-border/60">
+        <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card">
+          <CardHeader className="pb-3 border-b border-border-subtle">
             <CardTitle className="text-sm font-medium text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-primary" />
               {lang === "ar" ? "تكوين أسعار التفعيل (BHD)" : "Onboarding Package Pricing"}
@@ -447,8 +447,8 @@ function SuperAdminSettings() {
         </Card>
 
         {/* Row 2.5: BenefitPay Merchant Settings */}
-        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
-          <CardHeader className="pb-3 border-b border-border/60">
+        <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card">
+          <CardHeader className="pb-3 border-b border-border-subtle">
             <CardTitle className="text-sm font-medium text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
               <QrCode className="h-4 w-4 text-primary" />
               {lang === "ar" ? "إعدادات حساب بنفت بي (BenefitPay)" : "BenefitPay Merchant Settings"}
@@ -581,8 +581,8 @@ function SuperAdminSettings() {
         </Card>
 
         {/* Row 3: Support Contact Attribution */}
-        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
-          <CardHeader className="pb-3 border-b border-border/60">
+        <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card">
+          <CardHeader className="pb-3 border-b border-border-subtle">
             <CardTitle className="text-sm font-medium text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
               <Phone className="h-4 w-4 text-primary" />
               {lang === "ar" ? "قنوات التواصل والدعم" : "Attribution & Support Settings"}

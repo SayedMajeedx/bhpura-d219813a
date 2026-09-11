@@ -33,9 +33,9 @@ export const OrderItemsWorkflowCard: React.FC<OrderItemsWorkflowCardProps> = ({
   const isAr = lang === "ar";
 
   return (
-    <div className="rounded-2xl border border-border/70 bg-card p-3.5 sm:p-5 shadow-2xs space-y-4">
+    <div className="rounded-2xl border border-border-strong bg-card p-3.5 sm:p-5 shadow-2xs space-y-4">
       {/* Header Bar */}
-      <div className="flex items-center justify-between gap-3 border-b border-border/60 pb-3 flex-wrap">
+      <div className="flex items-center justify-between gap-3 border-b border-border-subtle pb-3 flex-wrap">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
             <ShoppingBag className="h-4 w-4" />
@@ -59,7 +59,7 @@ export const OrderItemsWorkflowCard: React.FC<OrderItemsWorkflowCardProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={onOpenBarcodeScanner}
-                className="h-8 px-2.5 text-xs font-semibold gap-1.5 rounded-xl border-border/80"
+                className="h-8 px-2.5 text-xs font-semibold gap-1.5 rounded-xl border-border-strong"
               >
                 <ScanLine className="h-3.5 w-3.5 text-primary" />
                 <span className="hidden sm:inline">{isAr ? "مسح الباركود" : "Scan Barcode"}</span>
@@ -83,7 +83,7 @@ export const OrderItemsWorkflowCard: React.FC<OrderItemsWorkflowCardProps> = ({
 
       {/* Items List */}
       {items.length === 0 ? (
-        <div className="py-8 text-center border-2 border-dashed border-border/60 rounded-xl p-4">
+        <div className="py-8 text-center border-2 border-dashed border-border-subtle rounded-xl p-4">
           <Package className="mx-auto h-8 w-8 text-muted-foreground/50 mb-2" />
           <p className="text-xs font-bold text-muted-foreground">
             {isAr ? "لا توجد منتجات في هذا الطلب" : "No line items in this order yet"}
@@ -119,7 +119,7 @@ export const OrderItemsWorkflowCard: React.FC<OrderItemsWorkflowCardProps> = ({
               >
                 {/* Product Meta */}
                 <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
-                  <div className="h-12 w-12 rounded-xl bg-muted border border-border/70 flex items-center justify-center overflow-hidden shrink-0 shadow-2xs">
+                  <div className="h-12 w-12 rounded-xl bg-muted border border-border-strong flex items-center justify-center overflow-hidden shrink-0 shadow-2xs">
                     {imgUrl ? (
                       <img src={imgUrl} alt={itemTitle} className="h-full w-full object-cover" />
                     ) : (
@@ -165,10 +165,10 @@ export const OrderItemsWorkflowCard: React.FC<OrderItemsWorkflowCardProps> = ({
                 </div>
 
                 {/* Quantity Controls & Line Price */}
-                <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 border-t border-border/40 pt-2 sm:border-0 sm:pt-0">
+                <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 border-t border-border-subtle pt-2 sm:border-0 sm:pt-0">
                   {/* Quantity Stepper */}
                   {!isReadOnly && onUpdateQuantity ? (
-                    <div className="flex items-center rounded-xl border border-border/80 bg-background p-0.5 shadow-2xs">
+                    <div className="flex items-center rounded-xl border border-border-strong bg-background p-0.5 shadow-2xs">
                       <button
                         type="button"
                         onClick={() => onUpdateQuantity(idx, Math.max(1, qty - 1))}

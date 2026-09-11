@@ -185,9 +185,9 @@ export function OsAppsHubModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         dir={isAr ? "rtl" : "ltr"}
-        className="flex h-[calc(100dvh-2rem)] max-h-[760px] w-[calc(100vw-1.5rem)] max-w-5xl flex-col overflow-hidden rounded-[24px] border-border/70 bg-background p-0 text-foreground shadow-2xl sm:w-[calc(100vw-3rem)]"
+        className="flex h-[calc(100dvh-2rem)] max-h-[760px] w-[calc(100vw-1.5rem)] max-w-5xl flex-col overflow-hidden rounded-[24px] border-border-strong bg-background p-0 text-foreground shadow-2xl sm:w-[calc(100vw-3rem)]"
       >
-        <DialogHeader className="border-b border-border/70 px-5 pb-5 pt-6 sm:px-7 sm:pb-6 sm:pt-7">
+        <DialogHeader className="border-b border-border-strong px-5 pb-5 pt-6 sm:px-7 sm:pb-6 sm:pt-7">
           <div className="flex items-start gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
               <Layers className="h-5 w-5" />
@@ -211,7 +211,7 @@ export function OsAppsHubModal({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={isAr ? "ابحث باسم الأداة أو وظيفتها" : "Search by tool name or function"}
-              className="h-12 rounded-xl border-border/80 bg-muted/25 pe-11 ps-11 text-sm shadow-none transition-colors placeholder:text-muted-foreground/70 focus-visible:border-primary/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/15"
+              className="h-12 rounded-xl border-border-strong bg-muted/25 pe-11 ps-11 text-sm shadow-none transition-colors placeholder:text-muted-foreground/70 focus-visible:border-primary/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/15"
             />
             {searchQuery && (
               <button
@@ -227,7 +227,7 @@ export function OsAppsHubModal({
         </DialogHeader>
 
         <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-          <aside className="shrink-0 border-b border-border/70 bg-muted/15 p-3 md:w-60 md:border-b-0 md:border-e md:p-4">
+          <aside className="shrink-0 border-b border-border-strong bg-muted/15 p-3 md:w-60 md:border-b-0 md:border-e md:p-4">
             <div className="flex gap-1 overflow-x-auto scrollbar-none md:flex-col md:overflow-visible">
               {categories.map((cat) => {
                 const Icon = cat.icon;
@@ -306,7 +306,7 @@ export function OsAppsHubModal({
                           handleLaunch(item);
                         }
                       }}
-                      className="group relative flex min-h-28 cursor-pointer items-start gap-4 rounded-2xl border border-border/70 bg-card p-4 text-start shadow-xs transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                      className="group relative flex min-h-28 cursor-pointer items-start gap-4 rounded-2xl border border-border-strong bg-card p-4 text-start shadow-xs transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                     >
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                         <Icon className="h-5 w-5" />
@@ -354,7 +354,7 @@ export function OsAppsHubModal({
           </main>
         </div>
 
-        <footer className="flex min-h-14 items-center justify-between border-t border-border/70 bg-background px-5 sm:px-7">
+        <footer className="flex min-h-14 items-center justify-between border-t border-border-strong bg-background px-5 sm:px-7">
           <p className="flex items-center gap-2 text-xs text-muted-foreground">
             <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
             {isAr

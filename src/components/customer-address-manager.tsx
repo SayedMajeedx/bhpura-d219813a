@@ -217,7 +217,7 @@ export function CustomerAddressManager({
     }
 
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(isAr ? "تعذر حفظ العنوان، يرجى المحاولة مرة أخرى." : "Failed to save address. Please try again.");
     toast.success(
       editing
         ? isAr
@@ -241,7 +241,7 @@ export function CustomerAddressManager({
       .eq("id", deleting.id)
       .eq("customer_id", customerId)
       .eq("brand_id", brandId);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(isAr ? "تعذر حذف العنوان، يرجى المحاولة مرة أخرى." : "Failed to delete address. Please try again.");
 
     if (wasDefault) {
       const replacement = addresses.find((address) => address.id !== deleting.id);
@@ -252,7 +252,7 @@ export function CustomerAddressManager({
           .eq("id", replacement.id)
           .eq("customer_id", customerId)
           .eq("brand_id", brandId);
-        if (defaultError) toast.error(defaultError.message);
+        if (defaultError) toast.error(isAr ? "تعذر تعيين العنوان الافتراضي." : "Failed to set default address.");
       }
     }
 
@@ -281,8 +281,8 @@ export function CustomerAddressManager({
 
       toast.success(isAr ? "تم تعيين العنوان كعنوان افتراضي" : "Set as default address");
       onChanged();
-    } catch (e: any) {
-      toast.error(e.message || "Error updating default address");
+    } catch {
+      toast.error(isAr ? "تعذر تحديث العنوان الافتراضي، يرجى المحاولة مرة أخرى." : "Failed to update default address. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -333,8 +333,8 @@ export function CustomerAddressManager({
       } else {
         toast.info(isAr ? "لا توجد عناوين مكررة لتنظيفها" : "No duplicate addresses found");
       }
-    } catch (e: any) {
-      toast.error(e.message || "Error cleaning up duplicates");
+    } catch {
+      toast.error(isAr ? "تعذر تنظيف العناوين المكررة، يرجى المحاولة مرة أخرى." : "Failed to clean up duplicate addresses. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -407,7 +407,7 @@ export function CustomerAddressManager({
                         : `Select Address (${addresses.length})`}
                     </label>
                     <Select value={activeAddress.id} onValueChange={setSelectedAddressId}>
-                      <SelectTrigger className="w-full h-9 text-xs font-semibold rounded-xl bg-background border-border/80">
+                      <SelectTrigger className="w-full h-9 text-xs font-semibold rounded-xl bg-background border-border-strong">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>

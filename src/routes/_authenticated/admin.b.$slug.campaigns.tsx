@@ -720,7 +720,7 @@ function CampaignsPage() {
         counts={segmentCounts}
       />
 
-      <Card className="mb-3 space-y-4 overflow-hidden rounded-2xl border border-border/60 bg-card/40 p-3 shadow-lg backdrop-blur-sm sm:mb-6 sm:p-6">
+      <Card className="mb-3 space-y-4 overflow-hidden rounded-2xl border border-border-subtle bg-card p-3 shadow-lg sm:mb-6 sm:p-6">
         {/* Template picker + actions */}
         <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
           <div className="flex-1 min-w-0">
@@ -808,7 +808,7 @@ function CampaignsPage() {
           </div>
         </div>
 
-        <div className="text-xs text-muted-foreground border-t border-border/50 pt-3">
+        <div className="text-xs text-muted-foreground border-t border-border-subtle pt-3">
           <span className="font-medium">{isAr ? "معاينة:" : "Preview:"}</span>{" "}
           <span className="text-foreground italic bg-secondary/20 px-2 py-1 rounded">
             {buildMessage(filtered[0]?.name ?? (isAr ? "العميل" : "Customer"))}
@@ -816,8 +816,8 @@ function CampaignsPage() {
         </div>
       </Card>
 
-      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
-        <div className="flex flex-col justify-between gap-3 border-b border-border/50 bg-primary/5 p-3 sm:flex-row sm:items-center sm:p-4">
+      <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card">
+        <div className="flex flex-col justify-between gap-3 border-b border-border-subtle bg-primary/5 p-3 sm:flex-row sm:items-center sm:p-4">
           <div className="relative w-full flex-1 sm:max-w-sm">
             <Search className="h-4 w-4 absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -978,7 +978,7 @@ function CampaignsPage() {
                         </span>
                       )}
                     </div>
-                    <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground border-t border-border/40 pt-2">
+                    <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground border-t border-border-subtle pt-2">
                       <div className="flex items-center gap-1.5">
                         <span>{isAr ? "إجمالي الطلبات:" : "Total orders:"}</span>
                         {orderCount === 0 ? (

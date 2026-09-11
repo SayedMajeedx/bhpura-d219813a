@@ -41,6 +41,7 @@ import { getOrderCustomerName } from "@/lib/order-customer-snapshot";
 import { getOrderWorkflow } from "@/lib/order-workflow";
 import { isLowStock } from "@/lib/inventory-health";
 import { OsStatusPill } from "@/components/os/os-status-pill";
+import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { getStorefrontUrl } from "@/lib/storefront-url";
 
 import { DashboardCommandHeader } from "@/components/dashboard/DashboardCommandHeader";
@@ -896,23 +897,7 @@ function Dashboard() {
 
   // Loading skeleton placeholder
   if (isLoading) {
-    return (
-      <div className="p-2 max-w-7xl mx-auto space-y-6 animate-pulse">
-        <div className="space-y-2">
-          <div className="h-7 w-48 bg-muted rounded-md" />
-          <div className="h-4 w-64 bg-muted rounded-sm" />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-28 bg-muted rounded-2xl border" />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 h-64 bg-muted rounded-2xl border" />
-          <div className="lg:col-span-1 h-64 bg-muted rounded-2xl border" />
-        </div>
-      </div>
-    );
+    return <RoutePendingSkeleton />;
   }
 
   if (reportingOverviewQ.error) {
@@ -1050,7 +1035,7 @@ function Dashboard() {
                   : "border-primary/25 bg-gradient-to-br from-primary/5 via-background to-secondary/15"
               }`}
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/60">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border-subtle">
                 <div className="flex items-center gap-3">
                   <div
                     className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl shadow-xs transition-colors ${
@@ -1421,7 +1406,7 @@ function Dashboard() {
                           </span>
                         )}
                         <div
-                          className={`flex h-8 w-8 items-center justify-center rounded-xl bg-background/80 shadow-2xs border border-border/50 ${k.color}`}
+                          className={`flex h-8 w-8 items-center justify-center rounded-xl bg-background/80 shadow-2xs border border-border-subtle ${k.color}`}
                         >
                           <Icon className="h-4 w-4" />
                         </div>
@@ -1456,7 +1441,7 @@ function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
             {canViewFinancials && (
               !hasSales ? (
-                <Card className="min-w-0 overflow-hidden lg:col-span-3 p-6 border border-dashed border-border rounded-2xl bg-card/60 flex flex-col items-center justify-center text-center space-y-3 h-full min-h-[260px]">
+                <Card className="min-w-0 overflow-hidden lg:col-span-3 p-6 border border-dashed border-border rounded-2xl bg-card flex flex-col items-center justify-center text-center space-y-3 h-full min-h-[260px]">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                     <TrendingUp className="h-6 w-6" />
                   </div>
@@ -1558,7 +1543,7 @@ function Dashboard() {
                   : "lg:col-span-5 p-5 border border-border shadow-xs rounded-2xl bg-card flex flex-col justify-between space-y-3 h-full"
               }
             >
-              <div className="flex items-center justify-between pb-2 border-b border-border/60">
+              <div className="flex items-center justify-between pb-2 border-b border-border-subtle">
                 <div className="flex items-center gap-2">
                   <AlertCircle className="h-4.5 w-4.5 text-amber-500" />
                   <h3 className="font-bold text-base font-heading text-foreground">
@@ -1591,7 +1576,7 @@ function Dashboard() {
                   {actionNeededOrders.map((o) => (
                     <div
                       key={o.id}
-                      className="p-2.5 bg-background/80 border border-border/60 rounded-xl flex items-center justify-between gap-3 text-xs hover:border-primary/40 transition-all shadow-2xs"
+                      className="p-2.5 bg-background/80 border border-border-subtle rounded-xl flex items-center justify-between gap-3 text-xs hover:border-primary/40 transition-all shadow-2xs"
                     >
                       <div className="min-w-0">
                         <Link
@@ -1628,7 +1613,7 @@ function Dashboard() {
           {/* Lower Feed: Activity Queue & Low Stock Alerts */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
             <Card className="lg:col-span-3 p-5 border border-border shadow-xs rounded-2xl bg-card flex flex-col justify-between space-y-3 h-full">
-              <div className="flex items-center justify-between pb-2 border-b border-border/60">
+              <div className="flex items-center justify-between pb-2 border-b border-border-subtle">
                 <div className="flex items-center gap-2">
                   <ReceiptText className="h-4.5 w-4.5 text-primary" />
                   <h3 className="font-bold text-base font-heading text-foreground">
@@ -1654,7 +1639,7 @@ function Dashboard() {
             </Card>
 
             <Card className="lg:col-span-2 p-5 border border-border shadow-xs rounded-2xl bg-card flex flex-col justify-between space-y-3 h-full">
-              <div className="flex items-center justify-between pb-2 border-b border-border/60">
+              <div className="flex items-center justify-between pb-2 border-b border-border-subtle">
                 <div className="flex items-center gap-2">
                   <Package className="h-4.5 w-4.5 text-amber-500" />
                   <h3 className="font-bold text-base font-heading text-foreground">
@@ -1744,7 +1729,7 @@ function Dashboard() {
       {activeScope === "sales_series" && (
         <div className="space-y-4 animate-in fade-in duration-200">
           <Card className="p-6 border border-border shadow-xs rounded-2xl bg-card space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/60">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border-subtle">
               <div>
                 <h3 className="text-lg font-extrabold flex items-center gap-2 text-foreground">
                   <CalendarDays className="h-5 w-5 text-emerald-500" />
@@ -1822,7 +1807,7 @@ function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {/* Inventory Diagnostics Detailed Panel */}
             <Card className="p-5 border border-border shadow-xs rounded-2xl bg-card space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-border/60">
+              <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
                 <div className="flex items-center gap-2">
                   <Package className="h-5 w-5 text-amber-500" />
                   <div>
@@ -1885,7 +1870,7 @@ function Dashboard() {
 
             {/* CRM Customer Diagnostics Panel */}
             <Card className="p-5 border border-border shadow-xs rounded-2xl bg-card space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-border/60">
+              <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
                 <div className="flex items-center gap-2">
                   <Users className="h-5 w-5 text-indigo-500" />
                   <div>

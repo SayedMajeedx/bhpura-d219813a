@@ -467,7 +467,7 @@ export function BatchIncubatorTransferModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[92vh] flex flex-col p-0 overflow-hidden rounded-2xl border border-border shadow-2xl bg-card">
         {/* Header */}
-        <DialogHeader className="p-5 pb-4 border-b border-border/70 bg-secondary/15">
+        <DialogHeader className="p-5 pb-4 border-b border-border-strong bg-secondary/15">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -494,7 +494,7 @@ export function BatchIncubatorTransferModal({
         </DialogHeader>
 
         {/* Top Control Bar: Incubator Picker & Quick Presets */}
-        <div className="p-4 border-b border-border/60 bg-muted/20 space-y-3">
+        <div className="p-4 border-b border-border-subtle bg-muted/20 space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
             {/* Incubator Selector */}
             <div className="space-y-1.5">
@@ -662,7 +662,7 @@ export function BatchIncubatorTransferModal({
               return (
                 <div
                   key={group.productId}
-                  className="border border-border/80 rounded-xl overflow-hidden bg-background shadow-2xs transition-all"
+                  className="border border-border-strong rounded-xl overflow-hidden bg-background shadow-2xs transition-all"
                 >
                   {/* Product Group Header / Dropdown Banner */}
                   <div className="p-3 bg-muted/30 hover:bg-muted/50 transition-colors flex items-center justify-between gap-3 select-none">
@@ -743,7 +743,7 @@ export function BatchIncubatorTransferModal({
 
                   {/* Collapsible Variants Table for this Product */}
                   {isExpanded && (
-                    <div className="border-t border-border/60">
+                    <div className="border-t border-border-subtle">
                       <table className="w-full text-xs text-right divide-y divide-border/40">
                         <thead className="bg-muted/15 font-semibold text-muted-foreground text-xs">
                           <tr>
@@ -937,7 +937,7 @@ export function BatchIncubatorTransferModal({
         </div>
 
         {/* Footer: Summary Metrics & Action Buttons */}
-        <DialogFooter className="p-4 border-t border-border/80 bg-secondary/10 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <DialogFooter className="p-4 border-t border-border-strong bg-secondary/10 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-4 text-xs">
             <div className="flex items-center gap-1.5">
               <span className="text-muted-foreground">

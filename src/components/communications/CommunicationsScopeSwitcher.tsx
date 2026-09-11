@@ -47,7 +47,7 @@ export function CommunicationsScopeSwitcher({
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-1.5 rounded-2xl border border-border/60 bg-muted/40 p-1 sm:flex sm:items-center">
+    <div className="grid grid-cols-3 gap-1.5 rounded-2xl border border-border-subtle bg-muted/40 p-1 sm:flex sm:items-center">
       {scopes.map((s) => {
         const Icon = s.icon;
         const isActive = activeScope === s.id;

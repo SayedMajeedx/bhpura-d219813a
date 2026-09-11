@@ -69,13 +69,13 @@ describe("design system guardrails", () => {
   it("keeps glass and blur off data surfaces within budget", () => {
     // AGENTS.md §6: glassmorphism is for floating elements only.
     const count = countMatches(/backdrop-blur-[a-z0-9]+/g);
-    expect(count).toBeLessThanOrEqual(125);
+    expect(count).toBeLessThanOrEqual(65);
   });
 
   it("keeps opacity-hacked borders within budget", () => {
     // --border-subtle and --border-strong exist now; these should drain away.
     const count = countMatches(/border-border\/\d+/g);
-    expect(count).toBeLessThanOrEqual(620);
+    expect(count).toBe(0);
   });
 
   it("keeps raw palette literals within budget", () => {

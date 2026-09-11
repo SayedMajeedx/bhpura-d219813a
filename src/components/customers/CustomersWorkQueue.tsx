@@ -66,7 +66,7 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
 
   if (isLoading) {
     return (
-      <div className="p-8 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border/60">
+      <div className="p-8 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border-subtle">
         <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent mb-2" />
         <p>{isAr ? "جاري تحميل قاعدة بيانات العملاء..." : "Loading customer records..."}</p>
       </div>
@@ -86,7 +86,7 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
 
   if (customers.length === 0) {
     return (
-      <div className="p-12 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border/60 space-y-2">
+      <div className="p-12 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border-subtle space-y-2">
         <Users className="h-8 w-8 mx-auto text-muted-foreground/60 mb-2" />
         <p className="font-bold text-sm text-foreground">
           {isAr ? "لا يوجد عملاء مطابقون" : "No matching customers found"}
@@ -101,11 +101,11 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
   }
 
   return (
-    <div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-2xs">
+    <div className="rounded-xl border border-border-subtle bg-card overflow-hidden shadow-2xs">
       <div className="overflow-x-auto">
         <table className="w-full text-start text-xs border-collapse">
           <thead>
-            <tr className="border-b border-border/60 bg-muted/40 font-bold text-muted-foreground uppercase text-xs tracking-wider">
+            <tr className="border-b border-border-subtle bg-muted/40 font-bold text-muted-foreground uppercase text-xs tracking-wider">
               <th className="p-3 text-center w-12">
                 <Checkbox
                   checked={

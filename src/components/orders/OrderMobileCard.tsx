@@ -36,7 +36,7 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
   const paymentMethod = getStoredPaymentMethodPresentation(order.payment_method, lang);
 
   return (
-    <div className="p-3.5 rounded-xl bg-card border border-border/60 shadow-2xs space-y-2.5">
+    <div className="p-3.5 rounded-xl bg-card border border-border-subtle shadow-2xs space-y-2.5">
       {/* Top Row: Invoice # + Amount */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
@@ -97,7 +97,7 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
         <span
           className={`rounded border px-2 py-0.5 text-xs font-semibold ${
             paymentMethod.recognized
-              ? "border-border/50 bg-muted/80 text-foreground"
+              ? "border-border-subtle bg-muted/80 text-foreground"
               : "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300"
           }`}
         >
@@ -120,7 +120,7 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
       </div>
 
       {/* Primary Action Button Bar */}
-      <div className="pt-1 flex items-center justify-end gap-2 border-t border-border/40">
+      <div className="pt-1 flex items-center justify-end gap-2 border-t border-border-subtle">
         <div className="w-full sm:w-auto">{renderPrimaryAction(order)}</div>
       </div>
     </div>

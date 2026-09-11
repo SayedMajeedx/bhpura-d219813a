@@ -49,7 +49,7 @@ export function DiscountsToolbar({
   }, []);
 
   return (
-    <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between p-3 bg-card/60 backdrop-blur-sm border border-border/60 rounded-xl shadow-2xs">
+    <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between p-3 bg-card border border-border-subtle rounded-xl shadow-2xs">
       <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
         {/* Search Bar */}
         <div className="relative flex-1 max-w-md">
@@ -95,7 +95,7 @@ export function DiscountsToolbar({
                   {isAr ? "نوع الخصم" : "Discount Type"}
                 </label>
                 <Select value={typeFilter} onValueChange={onTypeFilterChange}>
-                  <SelectTrigger className="h-8 text-xs bg-muted/30 border-border/60">
+                  <SelectTrigger className="h-8 text-xs bg-muted/30 border-border-subtle">
                     <SelectValue placeholder={isAr ? "جميع الأنواع" : "All Types"} />
                   </SelectTrigger>
                   <SelectContent>
@@ -142,7 +142,7 @@ export function DiscountsToolbar({
                     {isAr ? "نوع الخصم" : "Discount Type"}
                   </label>
                   <Select value={typeFilter} onValueChange={onTypeFilterChange}>
-                    <SelectTrigger className="h-9 text-xs bg-muted/30 border-border/60">
+                    <SelectTrigger className="h-9 text-xs bg-muted/30 border-border-subtle">
                       <SelectValue placeholder={isAr ? "جميع الأنواع" : "All Types"} />
                     </SelectTrigger>
                     <SelectContent>

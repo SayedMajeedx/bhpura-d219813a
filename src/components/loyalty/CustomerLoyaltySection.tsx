@@ -142,7 +142,7 @@ export function CustomerLoyaltySection({
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-border/50 text-xs text-muted-foreground flex items-center gap-1.5">
+          <div className="mt-4 pt-3 border-t border-border-subtle text-xs text-muted-foreground flex items-center gap-1.5">
             <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
             <span>
               {isAr
@@ -175,7 +175,7 @@ export function CustomerLoyaltySection({
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-border/50 text-xs text-muted-foreground flex items-center gap-1.5">
+          <div className="mt-4 pt-3 border-t border-border-subtle text-xs text-muted-foreground flex items-center gap-1.5">
             <Clock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
             <span>
               {isAr
@@ -218,7 +218,7 @@ export function CustomerLoyaltySection({
           </div>
 
           {nextTier ? (
-            <div className="mt-4 pt-3 border-t border-border/50 space-y-1.5">
+            <div className="mt-4 pt-3 border-t border-border-subtle space-y-1.5">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>{isAr ? "الترقية للمستوى التالي:" : "Next Tier:"}</span>
                 <span className="font-semibold text-foreground">
@@ -228,7 +228,7 @@ export function CustomerLoyaltySection({
               <Progress value={Math.min(100, Math.max(15, (activePoints / (nextTier.min_points || 1000)) * 100))} className="h-1.5" />
             </div>
           ) : (
-            <div className="mt-4 pt-3 border-t border-border/50 text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+            <div className="mt-4 pt-3 border-t border-border-subtle text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
               <Sparkles className="h-3.5 w-3.5" />
               <span>{isAr ? "أنت في أعلى مستويات العضوية!" : "You have reached the top tier!"}</span>
             </div>
@@ -252,7 +252,7 @@ export function CustomerLoyaltySection({
                 className={`p-4 rounded-xl border transition-all ${
                   isCurrent
                     ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                    : "border-border/70 bg-background/50"
+                    : "border-border-strong bg-background/50"
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">

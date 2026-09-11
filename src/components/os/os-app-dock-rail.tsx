@@ -66,7 +66,7 @@ export function OsAppDockRail({
                 onClick={onExpandSidebar}
                 title={lang === "ar" ? "توسيع شريط القائمة" : "Expand Full Sidebar"}
                 aria-label={lang === "ar" ? "توسيع شريط القائمة" : "Expand Full Sidebar"}
-                className="h-7 w-7 rounded-xl bg-muted/30 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-all hover:scale-110 shadow-2xs border border-border/40"
+                className="h-7 w-7 rounded-xl bg-muted/30 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-all hover:scale-110 shadow-2xs border border-border-subtle"
               >
                 <PanelLeftOpen className="h-3.5 w-3.5" />
               </button>
@@ -100,7 +100,7 @@ export function OsAppDockRail({
                       "h-10 w-10 rounded-2xl flex items-center justify-center border transition-all duration-200 hover:scale-110 active:scale-95 shadow-2xs",
                       active
                         ? "bg-primary/15 text-primary border-primary/30 ring-2 ring-primary/20"
-                        : "bg-background/60 hover:bg-background/90 text-muted-foreground hover:text-foreground border-border/50",
+                        : "bg-background/60 hover:bg-background/90 text-muted-foreground hover:text-foreground border-border-subtle",
                     )}
                   >
                     <Icon
@@ -112,7 +112,7 @@ export function OsAppDockRail({
                   </div>
 
                   {/* Hover Tooltip Label */}
-                  <div className="absolute start-full top-1/2 -translate-y-1/2 ms-3 px-2.5 py-1 rounded-lg bg-popover text-popover-foreground text-xs font-semibold shadow-md whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 border border-border/60">
+                  <div className="absolute start-full top-1/2 -translate-y-1/2 ms-3 px-2.5 py-1 rounded-lg bg-popover text-popover-foreground text-xs font-semibold shadow-md whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 border border-border-subtle">
                     {label}
                   </div>
                 </Link>
@@ -136,7 +136,7 @@ export function OsAppDockRail({
               {/* Subtle top-end indicator dot */}
               <span className="absolute top-1 end-1 h-2 w-2 rounded-full bg-amber-500 ring-2 ring-background animate-pulse" />
               {/* Tooltip */}
-              <div className="absolute start-full top-1/2 -translate-y-1/2 ms-3 px-3 py-1.5 rounded-xl bg-popover text-popover-foreground text-xs font-semibold shadow-xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 border border-border/80 flex items-center gap-1.5">
+              <div className="absolute start-full top-1/2 -translate-y-1/2 ms-3 px-3 py-1.5 rounded-xl bg-popover text-popover-foreground text-xs font-semibold shadow-xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 border border-border-strong flex items-center gap-1.5">
                 <Boxes className="h-3.5 w-3.5 text-primary" />
                 <span>{lang === "ar" ? "مركز الأدوات والتطبيقات" : "Apps & Tools Hub"}</span>
               </div>
@@ -151,7 +151,7 @@ export function OsAppDockRail({
               rel="noopener noreferrer"
               title={lang === "ar" ? "عرض المتجر" : "View Storefront"}
               aria-label={lang === "ar" ? "عرض المتجر" : "View Storefront"}
-              className="h-9 w-9 rounded-xl bg-muted/40 text-muted-foreground hover:bg-muted/80 hover:text-foreground border border-border/60 flex items-center justify-center transition-all hover:scale-105"
+              className="h-9 w-9 rounded-xl bg-muted/40 text-muted-foreground hover:bg-muted/80 hover:text-foreground border border-border-subtle flex items-center justify-center transition-all hover:scale-105"
             >
               <Store className="h-4 w-4 text-primary" />
             </a>

@@ -367,7 +367,7 @@ function PagesAndPolicies() {
 
       {activeScope === "socials" && (
         <>
-          <Card className="space-y-4 overflow-hidden rounded-2xl border-border/60 bg-card/40 p-3 shadow-lg backdrop-blur-sm sm:p-6">
+          <Card className="space-y-4 overflow-hidden rounded-2xl border-border-subtle bg-card p-3 shadow-lg sm:p-6">
             <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
               <div>
                 <h2 className="font-display text-xl font-bold">
@@ -440,7 +440,7 @@ function PagesAndPolicies() {
             </div>
           </Card>
 
-          <Card className="space-y-4 overflow-hidden rounded-2xl border-border/60 bg-card/40 p-3 shadow-lg backdrop-blur-sm sm:p-6">
+          <Card className="space-y-4 overflow-hidden rounded-2xl border-border-subtle bg-card p-3 shadow-lg sm:p-6">
             <div className="flex items-center gap-2">
               <MessageCircle className="h-5 w-5 text-emerald-500" />
               <h2 className="font-display text-xl font-bold">
@@ -482,7 +482,7 @@ function PagesAndPolicies() {
 
       {activeScope === "pages" && (
         <section className="space-y-4">
-          <Card className="space-y-4 overflow-hidden rounded-2xl border-border/60 bg-card/40 p-4 shadow-md backdrop-blur-sm">
+          <Card className="space-y-4 overflow-hidden rounded-2xl border-border-subtle bg-card p-4 shadow-md">
             <div>
               <h3 className="text-base font-bold">
                 {isAr ? "عناوين مجموعات رابط التذييل" : "Footer accordion group headings"}
@@ -599,7 +599,7 @@ function PagesAndPolicies() {
                     if (draggedIndex !== null) movePage(draggedIndex, index);
                     setDraggedIndex(null);
                   }}
-                  className="overflow-hidden rounded-2xl border-border/60 bg-card/40 px-2 shadow-md backdrop-blur-sm transition-all duration-200 hover:shadow-lg sm:px-4"
+                  className="overflow-hidden rounded-2xl border-border-subtle bg-card/40 px-2 shadow-md backdrop-blur-sm transition-all duration-200 hover:shadow-lg sm:px-4"
                 >
                   <div className="flex items-center gap-2">
                     <button
@@ -927,7 +927,7 @@ function PagesAndPolicies() {
         </section>
       )}
 
-      <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+5rem)] z-10 flex justify-end rounded-2xl border border-border/60 bg-background/90 p-3 shadow-lg backdrop-blur-md sm:bottom-4 sm:p-4">
+      <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+5rem)] z-10 flex justify-end rounded-2xl border border-border-subtle bg-background/90 p-3 shadow-lg backdrop-blur-md sm:bottom-4 sm:p-4">
         <Button
           onClick={save}
           disabled={saving}

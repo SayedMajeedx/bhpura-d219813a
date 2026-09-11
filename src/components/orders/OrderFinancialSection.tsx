@@ -29,8 +29,8 @@ export const OrderFinancialSection: React.FC<OrderFinancialSectionProps> = ({
   const isBenefit = paymentMethod.includes("benefit");
 
   return (
-    <div className="p-4 rounded-xl bg-card border border-border/60 shadow-2xs space-y-3">
-      <div className="flex items-center gap-2 border-b border-border/40 pb-3">
+    <div className="p-4 rounded-xl bg-card border border-border-subtle shadow-2xs space-y-3">
+      <div className="flex items-center gap-2 border-b border-border-subtle pb-3">
         <div className="h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
           <CreditCard className="h-4 w-4" />
         </div>
@@ -56,7 +56,7 @@ export const OrderFinancialSection: React.FC<OrderFinancialSectionProps> = ({
             <span>-{formatMoney(discount, order.currency || "BHD", lang)}</span>
           </div>
         )}
-        <div className="pt-2 border-t border-border/60 flex justify-between font-extrabold text-sm text-foreground">
+        <div className="pt-2 border-t border-border-subtle flex justify-between font-extrabold text-sm text-foreground">
           <span>{isAr ? "الإجمالي الكلي" : "Grand Total"}</span>
           <span className="text-primary">
             {formatMoney(grandTotal, order.currency || "BHD", lang)}
@@ -66,7 +66,7 @@ export const OrderFinancialSection: React.FC<OrderFinancialSectionProps> = ({
 
       {/* BenefitPay Proof Verification Panel */}
       {isBenefit && isAdmin && onViewBenefitReceipt && (
-        <div className="pt-3 border-t border-border/40 space-y-2">
+        <div className="pt-3 border-t border-border-subtle space-y-2">
           <div className="text-xs font-bold text-foreground">
             {isAr ? "إثبات تحويل بنفت بي" : "BenefitPay Transfer Receipt"}
           </div>

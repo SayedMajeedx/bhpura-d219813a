@@ -228,7 +228,7 @@ export function FinancialReportsTab() {
 
             <div className="space-y-3 text-sm">
               {/* Gross Revenue */}
-              <div className="flex items-center justify-between py-2 border-b border-border/60">
+              <div className="flex items-center justify-between py-2 border-b border-border-subtle">
                 <span className="font-bold text-foreground">
                   {isAr ? "إجمالي المبيعات والإيرادات (Revenue)" : "Gross Revenue"}
                 </span>
@@ -252,7 +252,7 @@ export function FinancialReportsTab() {
               </div>
 
               {/* Total COGS */}
-              <div className="flex items-center justify-between py-2 border-b border-border/60 bg-muted/20 px-3 rounded-lg">
+              <div className="flex items-center justify-between py-2 border-b border-border-subtle bg-muted/20 px-3 rounded-lg">
                 <span className="font-bold text-foreground">
                   {isAr ? "إجمالي تكلفة المبيعات (Total COGS)" : "Total COGS"}
                 </span>
@@ -272,7 +272,7 @@ export function FinancialReportsTab() {
               </div>
 
               {/* OpEx Breakdown */}
-              <div className="flex items-center justify-between py-2 border-b border-border/60">
+              <div className="flex items-center justify-between py-2 border-b border-border-subtle">
                 <span className="font-medium text-foreground">
                   {isAr
                     ? "المصاريف التشغيلية والأجور والإيجارات (OpEx)"
@@ -284,7 +284,7 @@ export function FinancialReportsTab() {
               </div>
 
               {/* Payment Processing Fees */}
-              <div className="flex items-center justify-between py-2 border-b border-border/60">
+              <div className="flex items-center justify-between py-2 border-b border-border-subtle">
                 <span className="font-medium text-foreground">
                   {isAr
                     ? "عمولات بوابات الدفع الإلكترونية (Gateway Fees)"

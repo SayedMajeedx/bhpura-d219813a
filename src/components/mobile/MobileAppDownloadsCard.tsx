@@ -77,7 +77,7 @@ export function MobileAppDownloadsCard({ brandSlug, isAr }: { brandSlug: string;
 
       <div className="grid gap-3 sm:grid-cols-2">
         {rows.map(({ appKey, platform, release }) => (
-          <Card key={`${appKey}-${platform}`} className="rounded-2xl border-border/70 p-4 sm:p-5">
+          <Card key={`${appKey}-${platform}`} className="rounded-2xl border-border-strong p-4 sm:p-5">
             <div className="flex items-center gap-3">
               <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border bg-muted/50">
                 {platform === "ios" ? (

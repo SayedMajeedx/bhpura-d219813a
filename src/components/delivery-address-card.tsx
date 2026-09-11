@@ -56,7 +56,7 @@ export function DeliveryAddressCard({
   if (compact) {
     return (
       <div
-        className="rounded-xl border border-border/60 bg-card p-3 shadow-2xs transition-colors hover:bg-muted/10 space-y-1.5"
+        className="rounded-xl border border-border-subtle bg-card p-3 shadow-2xs transition-colors hover:bg-muted/10 space-y-1.5"
         dir={isAr ? "rtl" : "ltr"}
       >
         <div className="flex items-center justify-between gap-2">

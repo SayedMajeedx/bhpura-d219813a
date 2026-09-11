@@ -1083,7 +1083,7 @@ function MobileStorefrontDropdown() {
           color: menuText,
         }}
       >
-        <SheetHeader className="px-4 pt-5 pb-3 border-b border-border/10 shrink-0">
+        <SheetHeader className="px-4 pt-5 pb-3 border-b border-border-subtle shrink-0">
           <SheetTitle
             className="text-start text-base font-semibold flex items-center gap-2"
             style={{ color: menuText }}
@@ -1122,7 +1122,7 @@ function MobileStorefrontDropdown() {
 
           {/* Pages Block */}
           {pages.length > 0 && (
-            <div className="space-y-3 pt-4 border-t border-border/10">
+            <div className="space-y-3 pt-4 border-t border-border-subtle">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider opacity-65">
                 <FileText className="h-4 w-4" />
                 {t("الصفحات", "Pages")}
@@ -1157,7 +1157,7 @@ function MobileStorefrontDropdown() {
         </div>
 
         {/* Footer: Language Toggle */}
-        <div className="p-4 border-t border-border/10 shrink-0 flex items-center justify-between">
+        <div className="p-4 border-t border-border-subtle shrink-0 flex items-center justify-between">
           <span className="text-xs font-semibold opacity-70 flex items-center gap-2">
             <Languages className="h-4 w-4" />
             {t("لغة المتجر", "Store Language")}
@@ -1829,7 +1829,7 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
                     <span>{t("هل هذا الطلب إهداء؟ 🎁", "Is this order a gift? 🎁")}</span>
                   </label>
                   {isGift && (
-                    <div className="space-y-2 pt-1 border-t border-border/60">
+                    <div className="space-y-2 pt-1 border-t border-border-subtle">
                       <Input
                         type="text"
                         placeholder={t("اسم المستلم (اختياري)", "Recipient Name (Optional)")}

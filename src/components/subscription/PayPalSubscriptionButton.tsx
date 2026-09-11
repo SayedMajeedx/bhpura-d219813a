@@ -233,7 +233,7 @@ export function PayPalSubscriptionButton({
   return (
     <div className="space-y-4" dir={isAr ? "rtl" : "ltr"}>
       {/* Price Summary Badge */}
-      <div className="p-3.5 rounded-xl border border-border/60 bg-muted/30 flex items-center justify-between text-xs">
+      <div className="p-3.5 rounded-xl border border-border-subtle bg-muted/30 flex items-center justify-between text-xs">
         <div className="space-y-0.5">
           <span className="text-muted-foreground block text-xs">
             {isAr ? "الباقة وفترة الاشتراك:" : "Plan & Interval:"}
@@ -261,7 +261,7 @@ export function PayPalSubscriptionButton({
       </div>
 
       {/* Security & Accepted Cards Note */}
-      <div className="p-3 rounded-xl border border-border/70 bg-card/60 space-y-1 text-xs">
+      <div className="p-3 rounded-xl border border-border-strong bg-card/60 space-y-1 text-xs">
         <div className="flex items-center gap-2 text-foreground font-semibold">
           <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" />
           <span>

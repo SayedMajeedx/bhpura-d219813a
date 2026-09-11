@@ -67,10 +67,10 @@ export function ExpensesToolbar({
   ];
 
   return (
-    <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between p-3 bg-card/60 backdrop-blur-sm border border-border/60 rounded-xl shadow-2xs">
+    <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between p-3 bg-card border border-border-subtle rounded-xl shadow-2xs">
       <div className="flex flex-1 flex-wrap items-center gap-2">
         {/* Date Presets */}
-        <div className="grid w-full grid-cols-4 gap-1 rounded-lg border border-border/40 bg-muted/40 p-0.5 sm:flex sm:w-auto sm:items-center">
+        <div className="grid w-full grid-cols-4 gap-1 rounded-lg border border-border-subtle bg-muted/40 p-0.5 sm:flex sm:w-auto sm:items-center">
           {presets.map((p) => (
             <button
               key={p.id}
@@ -132,7 +132,7 @@ export function ExpensesToolbar({
                   {isAr ? "التصنيف" : "Category"}
                 </label>
                 <Select value={categoryFilter} onValueChange={onCategoryFilterChange}>
-                  <SelectTrigger className="h-8 text-xs bg-muted/30 border-border/60">
+                  <SelectTrigger className="h-8 text-xs bg-muted/30 border-border-subtle">
                     <SelectValue placeholder={isAr ? "جميع التصنيفات" : "All Categories"} />
                   </SelectTrigger>
                   <SelectContent>
@@ -182,7 +182,7 @@ export function ExpensesToolbar({
                     {isAr ? "التصنيف" : "Category"}
                   </label>
                   <Select value={categoryFilter} onValueChange={onCategoryFilterChange}>
-                    <SelectTrigger className="h-9 text-xs bg-muted/30 border-border/60">
+                    <SelectTrigger className="h-9 text-xs bg-muted/30 border-border-subtle">
                       <SelectValue placeholder={isAr ? "جميع التصنيفات" : "All Categories"} />
                     </SelectTrigger>
                     <SelectContent>
@@ -220,7 +220,7 @@ export function ExpensesToolbar({
         variant="outline"
         size="sm"
         onClick={onDownloadCogsCsv}
-        className="h-10 w-full text-xs font-bold gap-1.5 sm:h-9 sm:w-auto self-start sm:self-auto border-border/60 hover:bg-muted/40"
+        className="h-10 w-full text-xs font-bold gap-1.5 sm:h-9 sm:w-auto self-start sm:self-auto border-border-subtle hover:bg-muted/40"
       >
         <Download className="h-3.5 w-3.5 text-primary shrink-0" />
         <span>{isAr ? "تصدير تكلفة المبيعات (COGS CSV)" : "Export COGS CSV"}</span>

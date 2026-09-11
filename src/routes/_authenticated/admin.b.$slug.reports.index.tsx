@@ -22,6 +22,7 @@ import {
   Info,
   TrendingUp,
 } from "lucide-react";
+import { OsSkeleton } from "@/components/os/os-skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -301,7 +302,7 @@ function Skeleton() {
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {Array.from({ length: 7 }).map((_, i) => (
-        <div key={i} className="h-36 animate-pulse rounded-2xl bg-muted" />
+        <OsSkeleton key={i} variant="card" className="h-36 rounded-2xl" />
       ))}
     </div>
   );

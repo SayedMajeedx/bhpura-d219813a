@@ -234,7 +234,7 @@ export default function CourierOrderView({
       <Link to="/admin/b/$slug/orders" params={{ slug }} className="text-sm text-muted-foreground">
         ← {lang === "ar" ? "الطلبات المسندة" : "Assigned orders"}
       </Link>
-      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 sm:p-6 space-y-4">
+      <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-5 sm:p-6 space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs text-muted-foreground">

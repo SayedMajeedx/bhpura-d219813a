@@ -398,7 +398,7 @@ function Inventory() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-4 p-1 sm:p-2 animate-fade-in">
-      <div className="flex p-1.5 gap-1.5 bg-muted/40 rounded-xl border border-border/40 backdrop-blur-sm max-w-lg">
+      <div className="flex p-1.5 gap-1.5 bg-muted/40 rounded-xl border border-border-subtle backdrop-blur-sm max-w-lg">
         <button
           className={`flex-1 rounded-lg py-2 px-3 text-sm font-semibold transition-all duration-200 ${tab === "products" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:bg-background/20"}`}
           onClick={() => setTab("products")}
@@ -945,7 +945,7 @@ function ProductImporterModal({
               </div>
 
               {(importHistoryQuery.data?.length ?? 0) > 0 && (
-                <div className="space-y-2 border-t border-border/60 pt-4">
+                <div className="space-y-2 border-t border-border-subtle pt-4">
                   <p className="text-xs font-semibold">
                     {isAr ? "آخر عمليات الاستيراد" : "Recent imports"}
                   </p>
@@ -1026,7 +1026,7 @@ function ProductImporterModal({
                 ))}
               </div>
 
-              <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
+              <div className="rounded-xl border border-border-strong bg-muted/20 p-3">
                 <div className="mb-2 flex items-center justify-between text-xs font-semibold">
                   <span>{isAr ? "معاينة البيانات" : "Data preview"}</span>
                   <span className="text-muted-foreground">
@@ -1796,7 +1796,7 @@ function ProductsSection({
         }}
         renderImporters={
           <div className="flex flex-col gap-1 p-1 min-w-[210px]">
-            <div className="px-2.5 py-1 text-xs font-bold text-muted-foreground border-b border-border/40">
+            <div className="px-2.5 py-1 text-xs font-bold text-muted-foreground border-b border-border-subtle">
               {isAr ? "الاستيراد السريع" : "Quick Import"}
             </div>
             <Button
@@ -1810,7 +1810,7 @@ function ProductsSection({
             </Button>
             <ProductImporterModal brandId={brandId} onComplete={onChanged} />
 
-            <div className="px-2.5 pt-2 py-1 text-xs font-bold text-muted-foreground border-b border-border/40">
+            <div className="px-2.5 pt-2 py-1 text-xs font-bold text-muted-foreground border-b border-border-subtle">
               {isAr ? "الباركود والطباعة" : "Barcodes & Print"}
             </div>
             <Button
@@ -1823,7 +1823,7 @@ function ProductsSection({
               {isAr ? "طباعة جميع الباركودات" : "Print All Barcodes"}
             </Button>
 
-            <div className="px-2.5 pt-2 py-1 text-xs font-bold text-muted-foreground border-b border-border/40">
+            <div className="px-2.5 pt-2 py-1 text-xs font-bold text-muted-foreground border-b border-border-subtle">
               {isAr ? "العمليات المتقدمة" : "Advanced Operations"}
             </div>
             <Button
@@ -2903,9 +2903,9 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
   };
 
   return (
-    <DialogContent className="max-h-[92vh] md:max-w-3xl p-0 flex flex-col rounded-2xl border border-border/80 shadow-2xl bg-background overflow-hidden">
+    <DialogContent className="max-h-[92vh] md:max-w-3xl p-0 flex flex-col rounded-2xl border border-border-strong shadow-2xl bg-background overflow-hidden">
       {/* Header with gradient bar and stepper indicators */}
-      <div className="relative border-b border-border/60 bg-secondary/20 p-5 pb-4">
+      <div className="relative border-b border-border-subtle bg-secondary/20 p-5 pb-4">
         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-indigo-500 to-purple-600" />
         <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
@@ -3179,7 +3179,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
               onChangeEn={(v) => setForm({ ...form, description_en: v })}
             />
 
-            <div className="flex items-center justify-between rounded-xl border border-border/80 p-4 bg-secondary/10 transition hover:bg-secondary/20">
+            <div className="flex items-center justify-between rounded-xl border border-border-strong p-4 bg-secondary/10 transition hover:bg-secondary/20">
               <div>
                 <p className="text-sm font-bold text-foreground">
                   {isAr ? "المنتج مفعّل في المتجر" : "Active in storefront"}
@@ -3213,7 +3213,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
               </div>
             )}
             {/* Step 3 (Collapsible): Advanced Details & Specifications */}
-            <div className="rounded-xl border border-border/80 bg-card overflow-hidden">
+            <div className="rounded-xl border border-border-strong bg-card overflow-hidden">
               <button
                 type="button"
                 onClick={() => setAdvancedOpen((prev) => !prev)}
@@ -3235,7 +3235,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
               </button>
 
               {advancedOpen && (
-                <div className="p-4 space-y-4 border-t border-border/50 animate-in fade-in duration-150">
+                <div className="p-4 space-y-4 border-t border-border-subtle animate-in fade-in duration-150">
                   {/* Fabric & Occasion */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -3273,7 +3273,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
 
                   {/* Feature & Sale Switches */}
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="flex items-center justify-between rounded-lg border border-border/60 p-3 bg-secondary/10">
+                    <div className="flex items-center justify-between rounded-lg border border-border-subtle p-3 bg-secondary/10">
                       <div>
                         <p className="text-xs font-bold text-foreground">
                           {isAr ? "إبراز في الرائج الآن" : "Feature in Trending now"}
@@ -3287,7 +3287,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                         onCheckedChange={(v) => setForm({ ...form, featured_trending: v })}
                       />
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border border-border/60 p-3 bg-secondary/10">
+                    <div className="flex items-center justify-between rounded-lg border border-border-subtle p-3 bg-secondary/10">
                       <div>
                         <p className="text-xs font-bold text-foreground">
                           {isAr ? "إظهار شارة التنزيلات" : "Show Sale badge"}
@@ -3304,7 +3304,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                   </div>
 
                   {/* Custom Variant Labels */}
-                  <div className="rounded-lg border border-border/60 p-3.5 bg-secondary/5 space-y-3">
+                  <div className="rounded-lg border border-border-subtle p-3.5 bg-secondary/5 space-y-3">
                     <div>
                       <p className="text-xs font-bold text-foreground">
                         {isAr ? "🏷️ مسميات المتغيرات المخصصة" : "🏷️ Custom Variant Labels"}
@@ -3316,7 +3316,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                       </p>
                     </div>
                     <div className="space-y-3">
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 border-b border-border/40 pb-2.5">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 border-b border-border-subtle pb-2.5">
                         <div>
                           <Label className="text-xs font-bold text-muted-foreground">
                             {isAr ? "مسمى المقاس بالعربية" : "Custom Size Label — Arabic"}
@@ -3345,7 +3345,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 border-b border-border/40 pb-2.5">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 border-b border-border-subtle pb-2.5">
                         <div>
                           <Label className="text-xs font-bold text-muted-foreground">
                             {isAr ? "مسمى اللون بالعربية" : "Custom Color Label — Arabic"}
@@ -3556,7 +3556,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         {activeDialogTab === "customizer" && (
           <div className="space-y-4 animate-in fade-in duration-200">
             <div className="rounded-xl border border-border p-5 bg-secondary/10 space-y-4 shadow-sm">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/50 pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border-subtle pb-4">
                 <div>
                   <div className="text-sm font-bold text-foreground flex items-center gap-1.5">
                     <span>
@@ -3665,7 +3665,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
               </div>
 
               {(form.custom_fields ?? []).length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground border-2 border-dashed border-border/70 rounded-xl bg-background/50">
+                <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground border-2 border-dashed border-border-strong rounded-xl bg-background/50">
                   <Sliders className="h-8 w-8 opacity-40 mb-2.5 text-muted-foreground" />
                   <span className="text-xs font-bold text-foreground">
                     {isAr ? "لا توجد خيارات مخصصة مفعلة" : "No custom options configured yet"}
@@ -3825,7 +3825,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                           )}
 
                           {/* Real-time storefront preview block */}
-                          <div className="rounded-lg bg-muted/40 p-3 border border-dashed border-border/60 text-xs">
+                          <div className="rounded-lg bg-muted/40 p-3 border border-dashed border-border-subtle text-xs">
                             <div className="flex items-center justify-between">
                               <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                                 {isAr
@@ -3901,7 +3901,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                           </div>
 
                           <div
-                            className="flex items-center justify-between border-t border-border/40 pt-3 text-xs"
+                            className="flex items-center justify-between border-t border-border-subtle pt-3 text-xs"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="flex items-center gap-2 text-xs font-medium">
@@ -3975,7 +3975,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       </div>
 
       {/* Persistent Footer with back/next and global save actions */}
-      <div className="border-t border-border/60 bg-secondary/20 px-6 py-4.5 flex items-center justify-between">
+      <div className="border-t border-border-subtle bg-secondary/20 px-6 py-4.5 flex items-center justify-between">
         <div className="flex items-center gap-2">
           {activeDialogTab !== "basic" && (
             <Button
@@ -5185,7 +5185,7 @@ function VariantDesktopRow({
                 />
               </div>
             </div>
-            <div className="flex items-center justify-between pt-2 border-t border-border/60 mt-0.5">
+            <div className="flex items-center justify-between pt-2 border-t border-border-subtle mt-0.5">
               <span className="text-xs text-muted-foreground font-medium">
                 {isAr ? "تعديل المتغير" : "Edit Variant Attributes"}
               </span>
@@ -5237,7 +5237,7 @@ function VariantDesktopRow({
             )}
 
             {!renderBarcodeCol && (v.barcode || v.sku) && (
-              <span className="inline-flex items-center gap-1 font-mono text-xs text-muted-foreground/85 bg-muted/70 px-1.5 py-0.5 rounded-md border border-border/60 shrink-0">
+              <span className="inline-flex items-center gap-1 font-mono text-xs text-muted-foreground/85 bg-muted/70 px-1.5 py-0.5 rounded-md border border-border-subtle shrink-0">
                 <Barcode className="h-3 w-3 text-primary/80" />
                 <span>{v.barcode || v.sku}</span>
               </span>
@@ -5531,7 +5531,7 @@ function VariantMobileCard({
       className={`rounded-xl border p-4 space-y-3.5 shadow-sm transition-all bg-background ${isSelected ? "border-primary bg-primary/5/10" : "border-border"}`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 border-b border-border/50 pb-2.5">
+      <div className="flex items-center justify-between gap-2 border-b border-border-subtle pb-2.5">
         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
           <input
             type="checkbox"
@@ -5636,7 +5636,7 @@ function VariantMobileCard({
       </div>
 
       <details
-        className="group rounded-xl border border-border/60 bg-muted/15"
+        className="group rounded-xl border border-border-subtle bg-muted/15"
         onClick={(e) => e.stopPropagation()}
       >
         <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between px-3 py-2 text-xs font-bold [&::-webkit-details-marker]:hidden">
@@ -5646,7 +5646,7 @@ function VariantMobileCard({
             {isAr ? "إغلاق" : "Close"}
           </span>
         </summary>
-        <div className="grid grid-cols-2 gap-3 border-t border-border/50 p-3">
+        <div className="grid grid-cols-2 gap-3 border-t border-border-subtle p-3">
           {/* Inherited cost and optional sale price */}
           {canViewFinancials && (
             <div>
@@ -5734,7 +5734,7 @@ function VariantMobileCard({
       </details>
 
       {/* Summary Footer */}
-      <div className="flex items-center justify-between rounded-xl bg-secondary/25 px-4 py-3 text-xs border border-border/45 font-semibold">
+      <div className="flex items-center justify-between rounded-xl bg-secondary/25 px-4 py-3 text-xs border border-border-subtle font-semibold">
         <span>
           {t("inventory.stock")}:{" "}
           <b className="text-sm font-black">{(v.stock_main ?? 0) + (v.stock_incubator ?? 0)}</b>
@@ -6333,7 +6333,7 @@ function VariantList({
                 </div>
               </div>
             </div>
-            <div className="flex justify-end gap-2 pt-2 border-t border-border/50">
+            <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
               <Button
                 type="button"
                 variant="ghost"
@@ -6361,10 +6361,10 @@ function VariantList({
       </div>
 
       {/* Desktop Redesigned Table View */}
-      <div className="hidden w-full md:block border border-border/75 rounded-2xl shadow-2xs bg-background overflow-hidden relative">
+      <div className="hidden w-full md:block border border-border-strong rounded-2xl shadow-2xs bg-background overflow-hidden relative">
         {/* View Mode Segmented Switcher Bar */}
-        <div className="flex items-center justify-between p-2 bg-muted/30 border-b border-border/60">
-          <div className="flex items-center gap-1.5 bg-background/80 p-1 rounded-xl border border-border/50 shadow-2xs">
+        <div className="flex items-center justify-between p-2 bg-muted/30 border-b border-border-subtle">
+          <div className="flex items-center gap-1.5 bg-background/80 p-1 rounded-xl border border-border-subtle shadow-2xs">
             <button
               type="button"
               onClick={() => setViewMode("quick")}
@@ -7030,7 +7030,7 @@ function CustomizationsSection({
 
   return (
     <div className="space-y-6">
-      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6">
+      <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6">
         <h3 className="font-bold text-base mb-1">
           {isAr ? "إضافة إضافات وتخصيصات جديدة" : "Add Customization Add-ons"}
         </h3>
@@ -7063,7 +7063,7 @@ function CustomizationsSection({
           </div>
         </div>
 
-        <div className="rounded-xl border border-border/60 bg-muted/20 p-4 mb-4 space-y-3">
+        <div className="rounded-xl border border-border-subtle bg-muted/20 p-4 mb-4 space-y-3">
           <Label className="text-xs font-bold text-foreground block">
             {isAr ? "نطاق التطبيق (المنتجات المتاحة فيها هذه الإضافة):" : "Applies to Products:"}
           </Label>
@@ -7094,7 +7094,7 @@ function CustomizationsSection({
           </div>
 
           {scope === "selected" && (
-            <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
+            <div className="mt-3 pt-3 border-t border-border-subtle space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <div className="relative flex-1">
                   <Search className="absolute start-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
@@ -7128,7 +7128,7 @@ function CustomizationsSection({
                 </Button>
               </div>
 
-              <div className="max-h-48 overflow-y-auto divide-y divide-border/40 rounded-lg border border-border/60 bg-background/80 p-1">
+              <div className="max-h-48 overflow-y-auto divide-y divide-border/40 rounded-lg border border-border-subtle bg-background/80 p-1">
                 {filteredProducts.length === 0 ? (
                   <p className="text-xs text-muted-foreground p-3 text-center">
                     {isAr ? "لا توجد منتجات مطابقة" : "No matching products found"}
@@ -7182,7 +7182,7 @@ function CustomizationsSection({
           {items.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("inventory.noAddons")}</p>
           ) : (
-            <ul className="divide-y divide-border rounded-xl border border-border/60 bg-background/50 overflow-hidden">
+            <ul className="divide-y divide-border rounded-xl border border-border-subtle bg-background/50 overflow-hidden">
               {items.map((i) => {
                 const pIds = Array.isArray(i.product_ids) ? i.product_ids : [];
                 const isAll = pIds.length === 0;
@@ -7301,7 +7301,7 @@ function CustomizationsSection({
               </button>
             </div>
 
-            <div className="max-h-60 overflow-y-auto divide-y divide-border/40 rounded-xl border border-border/60 bg-card p-1">
+            <div className="max-h-60 overflow-y-auto divide-y divide-border/40 rounded-xl border border-border-subtle bg-card p-1">
               {filteredEditProducts.length === 0 ? (
                 <p className="text-xs text-muted-foreground p-4 text-center">
                   {isAr ? "لا توجد منتجات مطابقة" : "No matching products found"}

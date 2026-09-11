@@ -132,7 +132,7 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
 
   return (
     <header className="no-print space-y-2">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card p-3 shadow-2xs sm:p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border-strong bg-card p-3 shadow-2xs sm:p-4">
         {/* Left: Back Arrow + Order # + Badges */}
         <div className="flex items-center gap-2.5 min-w-0 flex-wrap sm:flex-nowrap">
           <button
@@ -155,7 +155,7 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                 router.navigate({ to: `/admin/b/${slug}/orders` });
               }
             }}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/80 bg-background/80 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground shrink-0 touch-manipulation"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-border-strong bg-background/80 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground shrink-0 touch-manipulation"
             aria-label={isAr ? "العودة للطلبات" : "Back to orders"}
           >
             <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
@@ -187,7 +187,7 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
 
           {/* Micro-Pills Status Group */}
           {!isCreationMode && (
-            <div className="flex items-center gap-1.5 flex-wrap ms-1 sm:ms-3 border-s border-border/60 ps-2.5 sm:ps-3">
+            <div className="flex items-center gap-1.5 flex-wrap ms-1 sm:ms-3 border-s border-border-subtle ps-2.5 sm:ps-3">
               <button
                 type="button"
                 onClick={onOpenPaymentModal}
@@ -435,7 +435,7 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-9 px-2.5 sm:px-3 text-xs font-semibold gap-1.5 rounded-xl border-border/80"
+                  className="h-9 px-2.5 sm:px-3 text-xs font-semibold gap-1.5 rounded-xl border-border-strong"
                 >
                   <MoreHorizontal className="h-4 w-4" />
                   <span className="hidden sm:inline">{isAr ? "المزيد" : "More"}</span>

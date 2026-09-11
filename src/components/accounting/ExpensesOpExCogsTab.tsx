@@ -161,7 +161,8 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
       qc.invalidateQueries({ queryKey: ["dashboard-expenses", brandId] });
       qc.invalidateQueries({ queryKey: ["expenses", brandId] });
     } catch (err: any) {
-      toast.error(err.message || "Failed to delete");
+      console.error("Expense delete error:", err);
+      toast.error(isAr ? "تعذر حذف المصروف، يرجى المحاولة مرة أخرى." : "Failed to delete expense. Please try again.");
     }
   };
 
@@ -258,7 +259,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
       setModalOpen(false);
     } catch (err: any) {
       console.error("Expense save error:", err);
-      toast.error(err.message || "Error saving expense");
+      toast.error(isAr ? "تعذر حفظ المصروف، يرجى المحاولة مرة أخرى." : "Failed to save expense. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -297,7 +298,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
 
       {/* Overview Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-4 border-border/80 bg-card flex flex-col justify-between">
+        <Card className="p-4 border-border-strong bg-card flex flex-col justify-between">
           <span className="text-xs font-bold text-muted-foreground block">
             {isAr ? "إجمالي المصاريف والمشتريات المسجلة" : "Total Logged Purchases & Expenses"}
           </span>
@@ -306,7 +307,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
           </span>
         </Card>
 
-        <Card className="p-4 border-border/80 bg-card flex flex-col justify-between">
+        <Card className="p-4 border-border-strong bg-card flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-muted-foreground">
               {isAr ? "مشتريات مخزون التغليف والمواد (Asset)" : "Packaging Inventory Asset"}
@@ -328,7 +329,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
           </p>
         </Card>
 
-        <Card className="p-4 border-border/80 bg-card flex flex-col justify-between">
+        <Card className="p-4 border-border-strong bg-card flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-muted-foreground">
               {isAr ? "مصاريف تشغيلية ثابتة (Monthly OpEx)" : "Fixed OpEx Overhead"}
@@ -399,7 +400,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
             return (
               <Card
                 key={exp.id}
-                className="p-3.5 border-border hover:border-border/80 transition-colors flex items-center justify-between"
+                className="p-3.5 border-border hover:border-border-strong transition-colors flex items-center justify-between"
               >
                 <div className="flex items-center gap-3">
                   <div
@@ -490,7 +491,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
           dir={isAr ? "rtl" : "ltr"}
           className="max-w-lg w-[95vw] max-h-[85vh] sm:max-h-[90vh] flex flex-col rounded-2xl border border-border bg-card p-0 shadow-2xl overflow-hidden"
         >
-          <DialogHeader className="p-5 pb-3 pe-12 ps-5 border-b border-border/60 shrink-0 text-start">
+          <DialogHeader className="p-5 pb-3 pe-12 ps-5 border-b border-border-subtle shrink-0 text-start">
             <DialogTitle className="text-base font-bold text-foreground text-start">
               {editingExpense
                 ? isAr
@@ -664,7 +665,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
             </div>
 
             {/* Recurring Expense Toggle */}
-            <div className="rounded-lg border border-border/80 bg-muted/30 p-3 space-y-2">
+            <div className="rounded-lg border border-border-strong bg-muted/30 p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -697,7 +698,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
             </div>
           </div>
 
-          <DialogFooter className="p-4 pt-3 border-t border-border/60 shrink-0 bg-muted/20 gap-2 flex-row justify-end">
+          <DialogFooter className="p-4 pt-3 border-t border-border-subtle shrink-0 bg-muted/20 gap-2 flex-row justify-end">
             <Button variant="outline" onClick={() => setModalOpen(false)} className="h-9 text-xs">
               {isAr ? "إلغاء" : "Cancel"}
             </Button>

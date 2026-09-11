@@ -91,7 +91,7 @@ export function DiscountMobileCard({
 
   return (
     <Card
-      className="p-3.5 border border-border/60 shadow-sm rounded-xl bg-card/60 backdrop-blur-sm space-y-2.5 transition-all duration-200 hover:border-primary/40 cursor-pointer"
+      className="p-3.5 border border-border-subtle shadow-sm rounded-xl bg-card space-y-2.5 transition-all duration-200 hover:border-primary/40 cursor-pointer"
       onClick={() => onEdit(p)}
     >
       <div className="flex items-center justify-between gap-2">
@@ -110,7 +110,7 @@ export function DiscountMobileCard({
         </div>
       </div>
 
-      <div className="flex items-baseline justify-between text-xs pt-1 border-t border-border/40">
+      <div className="flex items-baseline justify-between text-xs pt-1 border-t border-border-subtle">
         <span className="text-muted-foreground">{isAr ? "قيمة الخصم:" : "Discount:"}</span>
         {p.discount_type === "percentage" ? (
           <span className="text-emerald-600 dark:text-emerald-400 font-extrabold text-sm">
@@ -152,7 +152,7 @@ export function DiscountMobileCard({
       )}
 
       <div
-        className="flex items-center justify-end gap-1 pt-2 border-t border-border/40"
+        className="flex items-center justify-end gap-1 pt-2 border-t border-border-subtle"
         onClick={(e) => e.stopPropagation()}
       >
         <Button

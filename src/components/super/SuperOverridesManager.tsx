@@ -161,7 +161,7 @@ export function SuperOverridesManager() {
       {/* 1. Custom Brand Overrides Panel */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-1 border border-border bg-card shadow-sm rounded-2xl">
-          <CardHeader className="pb-3 border-b border-border/50">
+          <CardHeader className="pb-3 border-b border-border-subtle">
             <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
               <ShieldAlert className="h-4.5 w-4.5 text-primary" />
               <span>{isAr ? "منح استثناء خاص بمتجر" : "Grant Custom Override"}</span>
@@ -300,7 +300,7 @@ export function SuperOverridesManager() {
 
         {/* Active Overrides for Selected Brand Table */}
         <Card className="lg:col-span-2 border border-border bg-card shadow-sm rounded-2xl">
-          <CardHeader className="pb-3 border-b border-border/50">
+          <CardHeader className="pb-3 border-b border-border-subtle">
             <CardTitle className="text-base font-bold text-foreground flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4.5 w-4.5 text-amber-500" />
@@ -341,7 +341,7 @@ export function SuperOverridesManager() {
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="bg-muted/40 text-muted-foreground border-b border-border/50">
+                    <tr className="bg-muted/40 text-muted-foreground border-b border-border-subtle">
                       <th className="p-3 text-left font-bold">{isAr ? "الميزة" : "Feature"}</th>
                       <th className="p-3 text-left font-bold">{isAr ? "نوع التجاوز" : "Type"}</th>
                       <th className="p-3 text-left font-bold">{isAr ? "القيمة الممنوحة" : "Granted Value"}</th>
@@ -351,7 +351,7 @@ export function SuperOverridesManager() {
                   </thead>
                   <tbody>
                     {brandOverrides.map((ov) => (
-                      <tr key={ov.id} className="border-b border-border/40 hover:bg-muted/20">
+                      <tr key={ov.id} className="border-b border-border-subtle hover:bg-muted/20">
                         <td className="p-3 font-mono font-bold text-foreground">{ov.feature_key}</td>
                         <td className="p-3">
                           <Badge variant="outline" className="text-xs">
@@ -393,7 +393,7 @@ export function SuperOverridesManager() {
 
       {/* 2. Full SaaS Audit Trail Log */}
       <Card className="border border-border bg-card shadow-sm rounded-2xl">
-        <CardHeader className="pb-3 border-b border-border/50">
+        <CardHeader className="pb-3 border-b border-border-subtle">
           <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
             <FileText className="h-4.5 w-4.5 text-primary" />
             <span>{isAr ? "سجل تدقيق تغييرات الاشتراكات والخطط (Audit Log)" : "SaaS Billing & Plans Audit Trail"}</span>
@@ -417,7 +417,7 @@ export function SuperOverridesManager() {
             <div className="overflow-x-auto max-h-[350px]">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="bg-muted/40 text-muted-foreground border-b border-border/50 sticky top-0 bg-background">
+                  <tr className="bg-muted/40 text-muted-foreground border-b border-border-subtle sticky top-0 bg-background">
                     <th className="p-3 text-left font-bold">{isAr ? "التاريخ والوقت" : "Timestamp"}</th>
                     <th className="p-3 text-left font-bold">{isAr ? "المنفذ" : "Actor"}</th>
                     <th className="p-3 text-left font-bold">{isAr ? "نوع الحدث" : "Action"}</th>
@@ -427,7 +427,7 @@ export function SuperOverridesManager() {
                 </thead>
                 <tbody>
                   {auditLogs.map((log: any) => (
-                    <tr key={log.id} className="border-b border-border/40 hover:bg-muted/20">
+                    <tr key={log.id} className="border-b border-border-subtle hover:bg-muted/20">
                       <td className="p-3 text-muted-foreground font-mono text-xs whitespace-nowrap">
                         {new Date(log.created_at).toLocaleString()}
                       </td>

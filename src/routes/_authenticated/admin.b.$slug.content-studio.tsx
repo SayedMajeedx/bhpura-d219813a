@@ -1050,7 +1050,7 @@ ${desc}${detailsBlock}
 
   return (
     <div className="mx-auto max-w-[1500px] space-y-5 p-1 sm:p-2" dir={isAr ? "rtl" : "ltr"}>
-      <section className="relative overflow-hidden rounded-[24px] border border-border/80 bg-card px-6 py-6 shadow-xs sm:px-8">
+      <section className="relative overflow-hidden rounded-[24px] border border-border-strong bg-card px-6 py-6 shadow-xs sm:px-8">
         <div className="absolute inset-y-0 end-0 w-72 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/.12),transparent_70%)]" />
         <div className="relative flex flex-col justify-between gap-6 md:flex-row md:items-center">
           <div className="flex items-center gap-4">
@@ -1190,8 +1190,8 @@ ${desc}${detailsBlock}
       </section>
 
       <div className="grid items-start gap-6 lg:gap-8 xl:grid-cols-[minmax(460px,520px)_1fr]">
-        <Card className="overflow-hidden rounded-[24px] border border-border/80 bg-card shadow-xs">
-          <div className="border-b border-border/60 p-5 sm:p-6">
+        <Card className="overflow-hidden rounded-[24px] border border-border-strong bg-card shadow-xs">
+          <div className="border-b border-border-subtle p-5 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="font-display text-lg font-bold text-foreground">
@@ -1273,7 +1273,7 @@ ${desc}${detailsBlock}
 
               {/* Media gallery selector (pictures & videos) */}
               {productMediaList.length > 1 && (
-                <div className="space-y-2 rounded-2xl border border-border/70 bg-muted/20 p-3.5">
+                <div className="space-y-2 rounded-2xl border border-border-strong bg-muted/20 p-3.5">
                   <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
                     <span className="flex items-center gap-1.5 font-bold text-foreground text-xs">
                       <LucideImage className="size-3.5 text-primary" />
@@ -1472,8 +1472,8 @@ ${desc}${detailsBlock}
             </div>
 
             {/* Header & Branding Bar Customization Card */}
-            <div className="rounded-2xl border border-border/80 bg-muted/20 p-5 space-y-5 shadow-2xs">
-              <div className="flex items-center justify-between border-b border-border/60 pb-3">
+            <div className="rounded-2xl border border-border-strong bg-muted/20 p-5 space-y-5 shadow-2xs">
+              <div className="flex items-center justify-between border-b border-border-subtle pb-3">
                 <div className="flex items-center gap-2">
                   <span className="grid size-7 place-items-center rounded-lg bg-primary/10 text-primary">
                     <Sliders className="size-3.5" />
@@ -1603,7 +1603,7 @@ ${desc}${detailsBlock}
 
                 {/* Plate Color & Contrast Settings */}
                 {headerPlateStyle !== "none" && (
-                  <div className="space-y-3 rounded-xl border border-border/60 bg-background/70 p-3 pt-2.5">
+                  <div className="space-y-3 rounded-xl border border-border-subtle bg-background/70 p-3 pt-2.5">
                     <div>
                       <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5 font-medium">
                         <span>{isAr ? "لون الخلفية" : "Plate color"}</span>
@@ -1730,7 +1730,7 @@ ${desc}${detailsBlock}
                     </div>
 
                     {/* Text Contrast Mode */}
-                    <div className="flex items-center justify-between border-t border-border/50 pt-2 text-xs">
+                    <div className="flex items-center justify-between border-t border-border-subtle pt-2 text-xs">
                       <span className="text-xs font-semibold text-muted-foreground">
                         {isAr ? "تباين الشعار والنصوص" : "Content contrast"}
                       </span>
@@ -1766,7 +1766,7 @@ ${desc}${detailsBlock}
               </div>
 
               {/* Resize & Drag Fine-Tuning Controls */}
-              <div className="space-y-3.5 border-t border-border/60 pt-3">
+              <div className="space-y-3.5 border-t border-border-subtle pt-3">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-bold flex items-center gap-1.5 text-foreground text-xs">
                     <Move className="size-3.5 text-primary" />
@@ -1783,7 +1783,7 @@ ${desc}${detailsBlock}
                     <span className="text-xs font-medium text-muted-foreground">
                       {isAr ? "الموضع العمودي (من الأعلى)" : "Vertical position (Y)"}
                     </span>
-                    <span dir="ltr" className="font-mono text-xs font-bold tabular-nums px-2 py-0.5 rounded-md bg-background border border-border/70 text-foreground shadow-2xs">
+                    <span dir="ltr" className="font-mono text-xs font-bold tabular-nums px-2 py-0.5 rounded-md bg-background border border-border-strong text-foreground shadow-2xs">
                       {headerPosY}%
                     </span>
                   </div>
@@ -1804,7 +1804,7 @@ ${desc}${detailsBlock}
                     <span className="text-xs font-medium text-muted-foreground">
                       {isAr ? "ارتفاع الشعار" : "Logo height"}
                     </span>
-                    <span dir="ltr" className="font-mono text-xs font-bold tabular-nums px-2 py-0.5 rounded-md bg-background border border-border/70 text-foreground shadow-2xs">
+                    <span dir="ltr" className="font-mono text-xs font-bold tabular-nums px-2 py-0.5 rounded-md bg-background border border-border-strong text-foreground shadow-2xs">
                       {headerLogoHeight}px
                     </span>
                   </div>
@@ -1825,7 +1825,7 @@ ${desc}${detailsBlock}
                     <span className="text-xs font-medium text-muted-foreground">
                       {isAr ? "مقياس الترويسة الكاملة" : "Overall header scale"}
                     </span>
-                    <span dir="ltr" className="font-mono text-xs font-bold tabular-nums px-2 py-0.5 rounded-md bg-background border border-border/70 text-foreground shadow-2xs">
+                    <span dir="ltr" className="font-mono text-xs font-bold tabular-nums px-2 py-0.5 rounded-md bg-background border border-border-strong text-foreground shadow-2xs">
                       {Math.round(headerScale * 100)}%
                     </span>
                   </div>
@@ -1963,7 +1963,7 @@ ${desc}${detailsBlock}
               </div>
 
               {/* Show price switch */}
-              <div className="flex items-center justify-between rounded-xl border border-border/70 bg-muted/20 px-3.5 py-2.5">
+              <div className="flex items-center justify-between rounded-xl border border-border-strong bg-muted/20 px-3.5 py-2.5">
                 <Label htmlFor="studio-show-price" className="text-xs font-bold text-foreground cursor-pointer">
                   {isAr ? "إظهار السعر على البطاقة" : "Show price on card"}
                 </Label>
@@ -1975,7 +1975,7 @@ ${desc}${detailsBlock}
               </div>
 
               {/* Instagram auto-caption block */}
-              <div className="rounded-2xl border border-border/70 bg-muted/20 p-4 space-y-2.5">
+              <div className="rounded-2xl border border-border-strong bg-muted/20 p-4 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold flex items-center gap-1.5 text-primary">
                     <Sparkles className="size-3.5" />
@@ -1994,7 +1994,7 @@ ${desc}${detailsBlock}
                 </div>
                 <pre
                   dir="rtl"
-                  className="whitespace-pre-wrap font-sans text-xs leading-relaxed text-muted-foreground bg-background/80 p-3 rounded-xl border border-border/60 select-all"
+                  className="whitespace-pre-wrap font-sans text-xs leading-relaxed text-muted-foreground bg-background/80 p-3 rounded-xl border border-border-subtle select-all"
                 >
                   {captionText}
                 </pre>
@@ -2004,10 +2004,10 @@ ${desc}${detailsBlock}
               <Link
                 to="/admin/b/$slug/reviews"
                 params={{ slug }}
-                className="group flex items-center justify-between rounded-2xl border border-border/70 bg-muted/20 p-4 transition-all hover:bg-muted/40 hover:border-primary/40"
+                className="group flex items-center justify-between rounded-2xl border border-border-strong bg-muted/20 p-4 transition-all hover:bg-muted/40 hover:border-primary/40"
               >
                 <span className="flex items-center gap-3">
-                  <span className="grid size-9 place-items-center rounded-xl bg-background border border-border/60 text-primary shadow-2xs">
+                  <span className="grid size-9 place-items-center rounded-xl bg-background border border-border-subtle text-primary shadow-2xs">
                     <MessageSquareHeart className="size-4 text-primary" />
                   </span>
                   <span>
@@ -2025,7 +2025,7 @@ ${desc}${detailsBlock}
         </Card>
 
         {/* Live Preview Stage */}
-        <div className="rounded-[28px] border border-border/70 bg-muted/30 p-4 sm:p-7 xl:sticky xl:top-4 self-start shadow-xs">
+        <div className="rounded-[28px] border border-border-strong bg-muted/30 p-4 sm:p-7 xl:sticky xl:top-4 self-start shadow-xs">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <p
@@ -2042,7 +2042,7 @@ ${desc}${detailsBlock}
                 </span>
               </p>
             </div>
-            <span className="grid size-8 place-items-center rounded-xl bg-background/80 border border-border/60 text-muted-foreground">
+            <span className="grid size-8 place-items-center rounded-xl bg-background/80 border border-border-subtle text-muted-foreground">
               <ImageIcon className="size-4" />
             </span>
           </div>

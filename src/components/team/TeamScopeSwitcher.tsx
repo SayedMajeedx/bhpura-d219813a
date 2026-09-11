@@ -30,7 +30,7 @@ export function TeamScopeSwitcher({
   ];
 
   return (
-    <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-muted/40 border border-border/60 rounded-2xl scrollbar-none">
+    <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-muted/40 border border-border-subtle rounded-2xl scrollbar-none">
       {scopes.map((s) => {
         const Icon = s.icon;
         const isActive = activeScope === s.id;

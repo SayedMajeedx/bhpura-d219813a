@@ -279,7 +279,7 @@ function OnboardPage() {
       className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/20 flex flex-col justify-between"
     >
       {/* 1. Minimalist Header */}
-      <header className="border-b border-border/60 bg-background/80 backdrop-blur sticky top-0 z-30">
+      <header className="border-b border-border-subtle bg-background/80 backdrop-blur sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link to="/" dir="ltr" className="flex items-center gap-2.5 group">
             <img
@@ -662,7 +662,7 @@ function OnboardPage() {
       </div>
 
         {/* 4. Bottom Transparent Plans Overview */}
-        <div className="pt-12 border-t border-border/60 space-y-6">
+        <div className="pt-12 border-t border-border-subtle space-y-6">
           <div className="text-center space-y-2">
             <h2 className="text-xl font-bold text-foreground">
               {isAr ? "باقات اشتراك واضحة ومدروسة" : "Transparent, Predictable Plans"}
@@ -831,7 +831,7 @@ function OnboardPage() {
       </main>
 
       {/* 5. Clean Footer */}
-      <footer className="border-t border-border/60 py-6 text-center text-xs text-muted-foreground">
+      <footer className="border-t border-border-subtle py-6 text-center text-xs text-muted-foreground">
         <p>
           {isAr
             ? "جميع الحقوق محفوظة © 2026 Boutq OS — منصة إدارة وتجارة البوتيكات الخليجية."

@@ -43,8 +43,8 @@ export const OrderMetaSidePanel: React.FC<OrderMetaSidePanelProps> = ({
   return (
     <div className="space-y-4">
       {/* 1. Customer Information Card */}
-      <div className="rounded-2xl border border-border/70 bg-card p-3.5 sm:p-4 shadow-2xs space-y-3">
-        <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
+      <div className="rounded-2xl border border-border-strong bg-card p-3.5 sm:p-4 shadow-2xs space-y-3">
+        <div className="flex items-center justify-between border-b border-border-subtle pb-2.5">
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
               <UserRound className="h-4 w-4" />
@@ -102,8 +102,8 @@ export const OrderMetaSidePanel: React.FC<OrderMetaSidePanelProps> = ({
 
       {/* 2. Delivery & Fulfillment Location Card */}
       {!customerOnly && (
-        <div className="rounded-2xl border border-border/70 bg-card p-3.5 sm:p-4 shadow-2xs space-y-3">
-          <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
+        <div className="rounded-2xl border border-border-strong bg-card p-3.5 sm:p-4 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between border-b border-border-subtle pb-2.5">
             <div className="flex items-center gap-2">
               <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
                 <MapPin className="h-4 w-4" />
@@ -120,11 +120,11 @@ export const OrderMetaSidePanel: React.FC<OrderMetaSidePanelProps> = ({
 
           <div className="space-y-2 text-xs">
             {isPickup ? (
-              <div className="p-2.5 rounded-xl bg-muted/30 border border-border/50 text-muted-foreground font-medium">
+              <div className="p-2.5 rounded-xl bg-muted/30 border border-border-subtle text-muted-foreground font-medium">
                 📍 {isAr ? "استلام من الفرع / المحل" : "Pickup from Store"}
               </div>
             ) : addressFormatted ? (
-              <div className="p-2.5 rounded-xl bg-muted/30 border border-border/50 space-y-1 font-mono">
+              <div className="p-2.5 rounded-xl bg-muted/30 border border-border-subtle space-y-1 font-mono">
                 <div className="font-bold text-foreground">{addressFormatted}</div>
               </div>
             ) : (
@@ -138,8 +138,8 @@ export const OrderMetaSidePanel: React.FC<OrderMetaSidePanelProps> = ({
 
       {/* 3. Courier & Logistics Card */}
       {!customerOnly && !isPickup && (
-        <div className="rounded-2xl border border-border/70 bg-card p-3.5 sm:p-4 shadow-2xs space-y-3">
-          <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
+        <div className="rounded-2xl border border-border-strong bg-card p-3.5 sm:p-4 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between border-b border-border-subtle pb-2.5">
             <div className="flex items-center gap-2">
               <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
                 <Truck className="h-4 w-4" />
@@ -155,7 +155,7 @@ export const OrderMetaSidePanel: React.FC<OrderMetaSidePanelProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={onOpenCourierModal}
-                className="h-7 px-2.5 text-xs font-bold rounded-lg border-border/80"
+                className="h-7 px-2.5 text-xs font-bold rounded-lg border-border-strong"
               >
                 <Send className="h-3 w-3 me-1 text-emerald-600" />
                 {isAr ? "إسناد" : "Dispatch"}
@@ -180,8 +180,8 @@ export const OrderMetaSidePanel: React.FC<OrderMetaSidePanelProps> = ({
 
       {/* 4. Activity Audit Timeline */}
       {!customerOnly && order.id && (
-        <div className="rounded-2xl border border-border/70 bg-card p-3.5 sm:p-4 shadow-2xs space-y-3">
-          <div className="flex items-center gap-2 border-b border-border/60 pb-2.5">
+        <div className="rounded-2xl border border-border-strong bg-card p-3.5 sm:p-4 shadow-2xs space-y-3">
+          <div className="flex items-center gap-2 border-b border-border-subtle pb-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
               <History className="h-4 w-4" />
             </div>

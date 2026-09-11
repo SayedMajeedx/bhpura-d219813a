@@ -112,7 +112,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
 
   if (isLoading) {
     return (
-      <div className="p-8 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border/60">
+      <div className="p-8 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border-subtle">
         <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent mb-2" />
         <p>{isAr ? "جاري تحميل كتالوج المنتجات..." : "Loading product catalog..."}</p>
       </div>
@@ -130,7 +130,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
 
   if (products.length === 0) {
     return (
-      <div className="p-12 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border/60 space-y-2">
+      <div className="p-12 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border-subtle space-y-2">
         <p className="font-bold text-sm text-foreground">
           {isAr ? "لا توجد منتجات مطابقة" : "No products found"}
         </p>
@@ -145,11 +145,11 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
 
   return (
     <>
-      <div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-2xs">
+      <div className="rounded-xl border border-border-subtle bg-card overflow-hidden shadow-2xs">
         <div className="overflow-x-auto">
           <table className="w-full text-start text-xs border-collapse">
             <thead>
-              <tr className="border-b border-border/60 bg-muted/40 font-bold text-muted-foreground uppercase text-xs tracking-wider">
+              <tr className="border-b border-border-subtle bg-muted/40 font-bold text-muted-foreground uppercase text-xs tracking-wider">
                 <th className="p-3 text-center w-12">
                   <Checkbox
                     checked={
@@ -272,7 +272,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                       {/* Product Name & Image */}
                       <td className="p-3 align-middle font-medium">
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg bg-muted border border-border/60 flex items-center justify-center overflow-hidden shrink-0">
+                          <div className="h-10 w-10 rounded-lg bg-muted border border-border-subtle flex items-center justify-center overflow-hidden shrink-0">
                             {product.image_url ? (
                               <img
                                 src={product.image_url}
@@ -311,7 +311,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                                         ? "bg-destructive/10 text-destructive border border-destructive/20"
                                         : reason.tone === "warning"
                                           ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20"
-                                          : "bg-muted text-muted-foreground border border-border/40"
+                                          : "bg-muted text-muted-foreground border border-border-subtle"
                                     }`}
                                   >
                                     {isAr ? reason.label_ar : reason.label_en}
@@ -326,7 +326,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                       {/* Category */}
                       <td className="p-3 align-middle font-medium">
                         {product.category && resolveCategoryName(product.category) ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-muted/70 text-foreground border border-border/50">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-muted/70 text-foreground border border-border-subtle">
                             {resolveCategoryName(product.category)}
                           </span>
                         ) : (
@@ -471,10 +471,10 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
 
                     {/* Expanded Variant Detail Row */}
                     {isExpanded && renderVariantList && (
-                      <tr className="bg-muted/15 border-b border-border/60">
+                      <tr className="bg-muted/15 border-b border-border-subtle">
                         <td colSpan={8} className="p-3 sm:p-4">
                           <div
-                            className="bg-card rounded-lg border border-border/60 p-3 shadow-2xs"
+                            className="bg-card rounded-lg border border-border-subtle p-3 shadow-2xs"
                             onClick={(e) => e.stopPropagation()}
                           >
                             {renderVariantList(product)}

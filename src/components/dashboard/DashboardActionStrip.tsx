@@ -95,7 +95,7 @@ export function DashboardActionStrip({
       )}
     >
       {/* Header with Title and Summary */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-3 border-b border-border/60">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-3 border-b border-border-subtle">
         <div className="flex items-center gap-2.5">
           <div className="h-8 w-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
             <Sparkles className="h-4 w-4" />
@@ -117,7 +117,7 @@ export function DashboardActionStrip({
         </div>
 
         {totalActionItems > 0 && (
-          <span className="inline-flex items-center self-start sm:self-center px-2.5 py-1 rounded-full text-xs font-semibold bg-muted text-foreground border border-border/80">
+          <span className="inline-flex items-center self-start sm:self-center px-2.5 py-1 rounded-full text-xs font-semibold bg-muted text-foreground border border-border-strong">
             {isAr ? `${totalActionItems} مهام معلّقة` : `${totalActionItems} actions pending`}
           </span>
         )}
@@ -176,7 +176,7 @@ export function DashboardActionStrip({
               <div
                 key={card.id}
                 className={cn(
-                  "flex flex-col justify-between p-3.5 rounded-xl border border-border/80 bg-background/50 transition-all duration-150 hover:shadow-xs",
+                  "flex flex-col justify-between p-3.5 rounded-xl border border-border-strong bg-background/50 transition-all duration-150 hover:shadow-xs",
                   card.accentBorder,
                 )}
               >
@@ -213,12 +213,12 @@ export function DashboardActionStrip({
                   </div>
                 </div>
 
-                <div className="pt-3 mt-3 border-t border-border/40">
+                <div className="pt-3 mt-3 border-t border-border-subtle">
                   <Button
                     asChild
                     variant="outline"
                     size="sm"
-                    className="w-full justify-between h-9 text-xs font-semibold border-border/80 hover:bg-muted"
+                    className="w-full justify-between h-9 text-xs font-semibold border-border-strong hover:bg-muted"
                   >
                     <Link
                       to={card.to as any}
@@ -260,7 +260,7 @@ export function DashboardActionStrip({
               asChild
               variant="outline"
               size="sm"
-              className="h-8.5 text-xs font-medium border-border/80"
+              className="h-8.5 text-xs font-medium border-border-strong"
             >
               <Link to="/admin/b/$slug/orders" params={{ slug } as any}>
                 {isAr ? "سجل الطلبات" : "Order History"}

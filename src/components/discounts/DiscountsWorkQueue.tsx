@@ -58,11 +58,11 @@ export function DiscountsWorkQueue({
   const now = new Date();
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm shadow-sm">
+    <div className="overflow-hidden rounded-2xl border border-border-subtle bg-card shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full text-start text-xs border-collapse">
           <thead>
-            <tr className="border-b border-border/60 bg-muted/40 font-semibold text-muted-foreground text-xs">
+            <tr className="border-b border-border-subtle bg-muted/40 font-semibold text-muted-foreground text-xs">
               <th className="p-3 text-start">{isAr ? "رمز الخصم" : "Promo Code"}</th>
               <th className="p-3 text-start">{isAr ? "قيمة الخصم" : "Discount Value"}</th>
               <th className="p-3 text-start">

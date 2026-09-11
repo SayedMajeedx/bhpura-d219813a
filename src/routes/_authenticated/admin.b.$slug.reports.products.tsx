@@ -119,7 +119,7 @@ function ReportsProducts() {
                   {productsData.map((p: any, idx: number) => (
                     <article
                       key={`${p.sku || p.product_name}-${idx}`}
-                      className="rounded-xl border border-border/60 bg-background/70 p-3 shadow-2xs"
+                      className="rounded-xl border border-border-subtle bg-background/70 p-3 shadow-2xs"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -142,7 +142,7 @@ function ReportsProducts() {
                           </Badge>
                         ))}
                       </div>
-                      <dl className="mt-3 grid grid-cols-2 gap-2 border-t border-border/50 pt-3 text-xs">
+                      <dl className="mt-3 grid grid-cols-2 gap-2 border-t border-border-subtle pt-3 text-xs">
                         <div>
                           <dt className="text-xs text-muted-foreground">
                             {lang === "ar" ? "صافي المبيعات" : "Net sales"}
@@ -160,7 +160,7 @@ function ReportsProducts() {
                           </dd>
                         </div>
                       </dl>
-                      <div className="mt-3 flex items-center justify-between border-t border-border/50 pt-2.5">
+                      <div className="mt-3 flex items-center justify-between border-t border-border-subtle pt-2.5">
                         <span className="text-xs text-muted-foreground">
                           {lang === "ar" ? "المخزون الحالي" : "Current stock"}
                         </span>

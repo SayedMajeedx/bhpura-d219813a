@@ -23,7 +23,7 @@ export const CustomersCommandHeader: React.FC<CustomersCommandHeaderProps> = ({
   const isAr = lang === "ar";
 
   return (
-    <header className="flex min-w-0 flex-col gap-3 rounded-xl border border-border/60 bg-card p-3.5 shadow-2xs sm:flex-row sm:items-center sm:justify-between sm:p-4">
+    <header className="flex min-w-0 flex-col gap-3 rounded-xl border border-border-subtle bg-card p-3.5 shadow-2xs sm:flex-row sm:items-center sm:justify-between sm:p-4">
       {/* Title + Icon + Count Badge */}
       <div className="flex min-w-0 items-center gap-3">
         <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
@@ -62,7 +62,7 @@ export const CustomersCommandHeader: React.FC<CustomersCommandHeaderProps> = ({
               <Button
                 variant="outline"
                 size="icon"
-                className="h-9 w-9 border-border/70 text-foreground hover:bg-muted"
+                className="h-9 w-9 border-border-strong text-foreground hover:bg-muted"
                 aria-label={isAr ? "خيارات الاستيراد والهجرة" : "Import & Migration Options"}
               >
                 <MoreHorizontal className="h-4 w-4" />
@@ -70,7 +70,7 @@ export const CustomersCommandHeader: React.FC<CustomersCommandHeaderProps> = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align={isAr ? "start" : "end"}
-              className="w-80 max-w-[calc(100vw-1rem)] rounded-xl border border-border/80 p-1.5 shadow-xl [&_button]:h-auto [&_button]:min-h-9 [&_button]:w-full [&_button]:min-w-0 [&_button]:justify-start [&_button]:whitespace-normal [&_button]:text-start"
+              className="w-80 max-w-[calc(100vw-1rem)] rounded-xl border border-border-strong p-1.5 shadow-xl [&_button]:h-auto [&_button]:min-h-9 [&_button]:w-full [&_button]:min-w-0 [&_button]:justify-start [&_button]:whitespace-normal [&_button]:text-start"
             >
               {renderImporters}
             </DropdownMenuContent>

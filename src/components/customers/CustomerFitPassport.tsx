@@ -153,7 +153,7 @@ export function CustomerFitPassport({
   };
 
   return (
-    <Card className="overflow-hidden rounded-2xl border-border/60 shadow-lg">
+    <Card className="overflow-hidden rounded-2xl border-border-subtle shadow-lg">
       <div className="flex items-start justify-between gap-4 border-b bg-primary/[0.04] p-5">
         <div className="flex gap-3">
           <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">

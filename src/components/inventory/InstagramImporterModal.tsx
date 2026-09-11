@@ -656,7 +656,7 @@ export function InstagramImporterModal({
                   </p>
 
                   {showRateLimitDoc && (
-                    <div className="pt-2 border-t border-border/60 text-xs space-y-1 text-muted-foreground">
+                    <div className="pt-2 border-t border-border-subtle text-xs space-y-1 text-muted-foreground">
                       <p>
                         <strong>Apify Scraper:</strong> {RATE_LIMIT_INFO.apify.freeTierDesc}
                       </p>
@@ -816,7 +816,7 @@ export function InstagramImporterModal({
                         key={draft.id}
                         className={cn(
                           "flex flex-col rounded-xl border bg-card overflow-hidden shadow-2xs transition-all",
-                          ready ? "border-border/80" : "border-amber-500/40 bg-amber-500/[0.02]",
+                          ready ? "border-border-strong" : "border-amber-500/40 bg-amber-500/[0.02]",
                           draft.imageUploadStatus === "failed" &&
                             "border-destructive/60 bg-destructive/[0.02]",
                         )}
@@ -908,7 +908,7 @@ export function InstagramImporterModal({
                                   "relative h-10 w-10 shrink-0 rounded-md overflow-hidden border-2 transition-all",
                                   img.isCover
                                     ? "border-primary ring-1 ring-primary"
-                                    : "border-border/60 opacity-60 hover:opacity-100",
+                                    : "border-border-subtle opacity-60 hover:opacity-100",
                                 )}
                                 title={
                                   img.isCover

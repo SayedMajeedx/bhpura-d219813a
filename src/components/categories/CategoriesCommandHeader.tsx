@@ -16,7 +16,7 @@ export const CategoriesCommandHeader: React.FC<CategoriesCommandHeaderProps> = (
   const isAr = lang === "ar";
 
   return (
-    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl bg-card border border-border/60 shadow-2xs">
+    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl bg-card border border-border-subtle shadow-2xs">
       <div className="flex items-center gap-3">
         <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
           <Boxes className="h-4.5 w-4.5" />

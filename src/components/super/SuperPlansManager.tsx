@@ -517,7 +517,7 @@ export function SuperPlansManager() {
   return (
     <div className="space-y-6">
       {/* Header & Controls Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border/60">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border-subtle">
         <div>
           <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
             <Layers className="h-5 w-5 text-primary" />
@@ -560,7 +560,7 @@ export function SuperPlansManager() {
           </p>
         </div>
 
-        <div className="flex items-center gap-1.5 p-1 bg-muted/40 border border-border/60 rounded-xl shrink-0">
+        <div className="flex items-center gap-1.5 p-1 bg-muted/40 border border-border-subtle rounded-xl shrink-0">
           <button
             type="button"
             onClick={() => handleUpdateGlobalBillingMode("both")}
@@ -674,7 +674,7 @@ export function SuperPlansManager() {
             return (
               <Card
                 key={plan.id}
-                className={`border bg-card/80 shadow-sm rounded-2xl flex flex-col justify-between transition-all hover:border-border/80 ${
+                className={`border bg-card shadow-sm rounded-2xl flex flex-col justify-between transition-all hover:border-border-strong ${
                   !plan.is_active
                     ? "opacity-75 border-destructive/30 bg-destructive/5"
                     : !plan.is_public
@@ -682,7 +682,7 @@ export function SuperPlansManager() {
                       : "border-border"
                 }`}
               >
-                <CardHeader className="pb-3 border-b border-border/50">
+                <CardHeader className="pb-3 border-b border-border-subtle">
                   <div className="flex items-start justify-between gap-2">
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-1.5 flex-wrap">
@@ -832,7 +832,7 @@ export function SuperPlansManager() {
 
                 <CardContent className="pt-4 space-y-4 flex-1 flex flex-col justify-between">
                   {/* Current Active Pricing */}
-                  <div className="p-3 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between">
+                  <div className="p-3 rounded-xl bg-muted/40 border border-border-subtle flex items-center justify-between">
                     <div>
                       <span className="text-xs uppercase font-bold text-muted-foreground block">
                         {isAr ? "الإصدار الحالي النشط" : "Current Active Version"}
@@ -878,7 +878,7 @@ export function SuperPlansManager() {
                     </Button>
 
                     {isExpanded && (
-                      <div className="space-y-1.5 p-2 rounded-xl bg-background border border-border/60 text-xs">
+                      <div className="space-y-1.5 p-2 rounded-xl bg-background border border-border-subtle text-xs">
                         {planVers.map((v) => (
                           <div
                             key={v.id}
@@ -908,7 +908,7 @@ export function SuperPlansManager() {
                   </div>
 
                   {/* Quick Action Switches Bar */}
-                  <div className="p-2.5 rounded-xl bg-muted/20 border border-border/50 flex items-center justify-between gap-3 text-xs">
+                  <div className="p-2.5 rounded-xl bg-muted/20 border border-border-subtle flex items-center justify-between gap-3 text-xs">
                     <div className="flex items-center gap-2">
                       <Label htmlFor={`pub-${plan.id}`} className="text-xs font-medium text-muted-foreground cursor-pointer">
                         {plan.is_public ? (isAr ? "معروضة" : "Public") : (isAr ? "مخفية" : "Hidden")}
@@ -1066,7 +1066,7 @@ export function SuperPlansManager() {
                     className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
                       newPlanBillingIntervalMode === "both"
                         ? "border-primary bg-primary/10 text-primary font-bold shadow-sm"
-                        : "border-border/60 hover:bg-muted/40 text-muted-foreground"
+                        : "border-border-subtle hover:bg-muted/40 text-muted-foreground"
                     }`}
                   >
                     {isAr ? "شهري وسنوي" : "Monthly & Annual"}
@@ -1077,7 +1077,7 @@ export function SuperPlansManager() {
                     className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
                       newPlanBillingIntervalMode === "monthly_only"
                         ? "border-primary bg-primary/10 text-primary font-bold shadow-sm"
-                        : "border-border/60 hover:bg-muted/40 text-muted-foreground"
+                        : "border-border-subtle hover:bg-muted/40 text-muted-foreground"
                     }`}
                   >
                     {isAr ? "فقط شهري" : "Monthly Only"}
@@ -1088,7 +1088,7 @@ export function SuperPlansManager() {
                     className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
                       newPlanBillingIntervalMode === "annual_only"
                         ? "border-primary bg-primary/10 text-primary font-bold shadow-sm"
-                        : "border-border/60 hover:bg-muted/40 text-muted-foreground"
+                        : "border-border-subtle hover:bg-muted/40 text-muted-foreground"
                     }`}
                   >
                     {isAr ? "فقط سنوي" : "Annual Only"}
@@ -1097,7 +1097,7 @@ export function SuperPlansManager() {
               </div>
 
               {/* Visibility & Status toggles */}
-              <div className="p-3 rounded-xl bg-muted/30 border border-border/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="p-3 rounded-xl bg-muted/30 border border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Switch
                     checked={newPlanIsPublic}
@@ -1135,7 +1135,7 @@ export function SuperPlansManager() {
                     return (
                       <div
                         key={feat.key}
-                        className="p-2 rounded-xl bg-card border border-border/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                        className="p-2 rounded-xl bg-card border border-border-strong flex flex-col sm:flex-row sm:items-center justify-between gap-2"
                       >
                         <div className="space-y-0.5 max-w-[280px]">
                           <div className="flex items-center gap-1.5 font-bold text-foreground">
@@ -1308,7 +1308,7 @@ export function SuperPlansManager() {
                     className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
                       editBillingIntervalMode === "both"
                         ? "border-primary bg-primary/10 text-primary font-bold shadow-sm"
-                        : "border-border/60 hover:bg-muted/40 text-muted-foreground"
+                        : "border-border-subtle hover:bg-muted/40 text-muted-foreground"
                     }`}
                   >
                     {isAr ? "شهري وسنوي" : "Monthly & Annual"}
@@ -1319,7 +1319,7 @@ export function SuperPlansManager() {
                     className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
                       editBillingIntervalMode === "monthly_only"
                         ? "border-primary bg-primary/10 text-primary font-bold shadow-sm"
-                        : "border-border/60 hover:bg-muted/40 text-muted-foreground"
+                        : "border-border-subtle hover:bg-muted/40 text-muted-foreground"
                     }`}
                   >
                     {isAr ? "فقط شهري" : "Monthly Only"}
@@ -1330,7 +1330,7 @@ export function SuperPlansManager() {
                     className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
                       editBillingIntervalMode === "annual_only"
                         ? "border-primary bg-primary/10 text-primary font-bold shadow-sm"
-                        : "border-border/60 hover:bg-muted/40 text-muted-foreground"
+                        : "border-border-subtle hover:bg-muted/40 text-muted-foreground"
                     }`}
                   >
                     {isAr ? "فقط سنوي" : "Annual Only"}
@@ -1497,7 +1497,7 @@ export function SuperPlansManager() {
                     return (
                       <div
                         key={feat.key}
-                        className="p-2.5 rounded-xl bg-card border border-border/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                        className="p-2.5 rounded-xl bg-card border border-border-strong flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
                       >
                         <div className="space-y-0.5 max-w-[280px]">
                           <div className="flex items-center gap-1.5 font-bold text-foreground">

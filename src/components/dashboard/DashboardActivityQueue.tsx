@@ -129,7 +129,7 @@ export const DashboardActivityQueue = React.memo(function DashboardActivityQueue
                 </OsStatusPill>
               </div>
 
-              <div className="flex items-center justify-between text-xs pt-1 border-t border-border/40">
+              <div className="flex items-center justify-between text-xs pt-1 border-t border-border-subtle">
                 <div className="space-y-0.5">
                   <p className="font-semibold text-foreground flex items-center gap-1">
                     <User className="h-3 w-3 text-muted-foreground" /> {custName}

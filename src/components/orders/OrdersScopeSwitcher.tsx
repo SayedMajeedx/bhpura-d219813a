@@ -47,7 +47,7 @@ export const OrdersScopeSwitcher: React.FC<OrdersScopeSwitcherProps> = ({
           mobile ? "min-w-0 flex-1" : "shrink-0",
           isActive
             ? "bg-primary text-primary-foreground shadow-2xs"
-            : "border border-border/60 bg-card text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+            : "border border-border-subtle bg-card text-muted-foreground hover:bg-muted/60 hover:text-foreground",
         )}
       >
         <TabIcon className="h-3.5 w-3.5 shrink-0" />
@@ -73,7 +73,7 @@ export const OrdersScopeSwitcher: React.FC<OrdersScopeSwitcherProps> = ({
       <div className="hidden items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar select-none sm:flex">
         {tabs.map((tab) => renderTab(tab))}
       </div>
-      <div className="grid grid-cols-[repeat(2,minmax(0,1fr))_44px] gap-1.5 rounded-2xl border border-border/60 bg-muted/35 p-1 sm:hidden">
+      <div className="grid grid-cols-[repeat(2,minmax(0,1fr))_44px] gap-1.5 rounded-2xl border border-border-subtle bg-muted/35 p-1 sm:hidden">
         {mobileTabs.map((tab) => renderTab(tab, true))}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -81,7 +81,7 @@ export const OrdersScopeSwitcher: React.FC<OrdersScopeSwitcherProps> = ({
               type="button"
               aria-label={isAr ? "بقية حالات الطلبات" : "More order views"}
               className={cn(
-                "flex min-h-10 items-center justify-center rounded-xl border border-border/60 bg-card text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/40",
+                "flex min-h-10 items-center justify-center rounded-xl border border-border-subtle bg-card text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/40",
                 activeOverflowTab && "border-primary/30 bg-primary/10 text-primary",
               )}
             >

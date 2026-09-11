@@ -104,7 +104,8 @@ export function CashFlowLiquidityTab() {
       qc.invalidateQueries({ queryKey: ["orders-reconciliation", brandId] });
       qc.invalidateQueries({ queryKey: ["dashboard-orders-with-items", brandId] });
     } catch (err: any) {
-      toast.error(err.message || "Failed to update status");
+      console.error("Reconciliation update error:", err);
+      toast.error(isAr ? "تعذر تحديث حالة التسوية، يرجى المحاولة مرة أخرى." : "Failed to update reconciliation status. Please try again.");
     }
   };
 
@@ -145,7 +146,8 @@ export function CashFlowLiquidityTab() {
       setTransferAmount(0);
       setTransferNotes("");
     } catch (err: any) {
-      toast.error(err.message || "Failed to transfer funds");
+      console.error("Transfer error:", err);
+      toast.error(isAr ? "تعذر تحويل السيولة، يرجى المحاولة مرة أخرى." : "Failed to transfer funds. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -156,7 +158,7 @@ export function CashFlowLiquidityTab() {
       {/* Account Balances Header */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Cash Box */}
-        <Card className="p-4 border-border/80 bg-card flex flex-col justify-between">
+        <Card className="p-4 border-border-strong bg-card flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
               <Wallet className="h-4 w-4 text-amber-500" />
@@ -175,7 +177,7 @@ export function CashFlowLiquidityTab() {
         </Card>
 
         {/* Bank Account */}
-        <Card className="p-4 border-border/80 bg-card flex flex-col justify-between">
+        <Card className="p-4 border-border-strong bg-card flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
               <Building className="h-4 w-4 text-emerald-500" />
@@ -194,7 +196,7 @@ export function CashFlowLiquidityTab() {
         </Card>
 
         {/* Total Liquidity & Transfer Button */}
-        <Card className="p-4 border-border/80 bg-primary/5 flex flex-col justify-between">
+        <Card className="p-4 border-border-strong bg-primary/5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-primary">
               {isAr ? "إجمالي السيولة المتاحة" : "Total Liquidity"}

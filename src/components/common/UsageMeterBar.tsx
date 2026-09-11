@@ -55,7 +55,7 @@ export function UsageMeterBar({
       : "bg-primary";
 
   return (
-    <div className="space-y-2 p-3.5 rounded-2xl border border-border/80 bg-card/60 shadow-sm transition-all hover:border-border">
+    <div className="space-y-2 p-3.5 rounded-2xl border border-border-strong bg-card/60 shadow-sm transition-all hover:border-border">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           {Icon && (

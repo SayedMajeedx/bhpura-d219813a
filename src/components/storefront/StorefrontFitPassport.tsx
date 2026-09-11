@@ -167,7 +167,7 @@ export function StorefrontFitPassport({
     await qc.invalidateQueries({ queryKey: ["storefront-fit-passport", brandId, customerId] });
   };
   return (
-    <Card className="overflow-hidden rounded-2xl border-border/70 bg-card shadow-sm">
+    <Card className="overflow-hidden rounded-2xl border-border-strong bg-card shadow-sm">
       <div className="border-b bg-primary/[0.045] p-5 sm:p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">

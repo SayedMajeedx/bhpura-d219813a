@@ -12,8 +12,8 @@ export const OrderItemsSection: React.FC<OrderItemsSectionProps> = ({ lang, orde
   const items = order.items || order.order_items || [];
 
   return (
-    <div className="p-4 rounded-xl bg-card border border-border/60 shadow-2xs space-y-3">
-      <div className="flex items-center gap-2 border-b border-border/40 pb-3">
+    <div className="p-4 rounded-xl bg-card border border-border-subtle shadow-2xs space-y-3">
+      <div className="flex items-center gap-2 border-b border-border-subtle pb-3">
         <div className="h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
           <ShoppingBag className="h-4 w-4" />
         </div>
@@ -55,7 +55,7 @@ export const OrderItemsSection: React.FC<OrderItemsSectionProps> = ({ lang, orde
               className="py-2.5 flex items-center justify-between gap-3 text-xs"
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="h-10 w-10 rounded-lg bg-muted border border-border/60 flex items-center justify-center overflow-hidden shrink-0">
+                <div className="h-10 w-10 rounded-lg bg-muted border border-border-subtle flex items-center justify-center overflow-hidden shrink-0">
                   {imgUrl ? (
                     <img src={imgUrl} alt={itemTitle} className="h-full w-full object-cover" />
                   ) : (

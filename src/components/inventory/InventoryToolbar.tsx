@@ -62,7 +62,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2 bg-card p-2 rounded-xl border border-border/60 shadow-2xs">
+      <div className="flex items-center gap-2 bg-card p-2 rounded-xl border border-border-subtle shadow-2xs">
         {/* Search Input - Flex 1 */}
         <div className="relative flex-1">
           <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -75,7 +75,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
                 ? "ابحث باسم المنتج أو الباركود..."
                 : `Search product name, SKU, or barcode... (${shortcutLabel})`
             }
-            className="h-9 ps-9 text-xs bg-background/50 border-border/70"
+            className="h-9 ps-9 text-xs bg-background/50 border-border-strong"
           />
         </div>
 
@@ -198,7 +198,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
 
         {/* Sort Select */}
         <Select value={sortBy} onValueChange={onSortChange}>
-          <SelectTrigger className="h-9 w-32 text-xs border-border/70 hidden md:flex">
+          <SelectTrigger className="h-9 w-32 text-xs border-border-strong hidden md:flex">
             <ArrowUpDown className="h-3 w-3 me-1 text-muted-foreground" />
             <SelectValue />
           </SelectTrigger>

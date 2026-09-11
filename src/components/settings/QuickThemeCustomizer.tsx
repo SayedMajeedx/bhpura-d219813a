@@ -260,7 +260,7 @@ export function QuickThemeCustomizer({
 
       {/* 2. Header & Footer Colors (ألوان الترويسة والفوتر) */}
       {(onHeaderBgChange || onFooterBgChange) && (
-        <div className="space-y-3 border-t border-border/60 pt-4">
+        <div className="space-y-3 border-t border-border-subtle pt-4">
           <div>
             <Label className="text-sm font-medium">
               {isAr ? "2. ألوان الترويسة العلوية والتذييل (الفوتر)" : "2. Header & Footer Colors"}
@@ -479,7 +479,7 @@ export function QuickThemeCustomizer({
       )}
 
       {/* 3. Corner Radius Style */}
-      <div className="space-y-3 border-t border-border/60 pt-4">
+      <div className="space-y-3 border-t border-border-subtle pt-4">
         <Label className="text-sm font-medium">
           {isAr ? "3. انحناء الحواف والبطاقات" : "3. Corner Style"}
         </Label>
@@ -515,7 +515,7 @@ export function QuickThemeCustomizer({
       </div>
 
       {/* 4. Typography Mood Presets */}
-      <div className="space-y-3 border-t border-border/60 pt-4">
+      <div className="space-y-3 border-t border-border-subtle pt-4">
         <Label className="text-sm font-medium">
           {isAr ? "4. نبرة وطابع الخطوط" : "4. Typography Mood"}
         </Label>
@@ -560,7 +560,7 @@ export function QuickThemeCustomizer({
       </div>
 
       {/* 5. Navigation & Badges */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-border/60 pt-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-border-subtle pt-4">
         {/* Navigation Bar Style */}
         {onHeaderGlassChange && (
           <div className="space-y-2">

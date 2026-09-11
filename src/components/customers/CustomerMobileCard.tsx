@@ -53,7 +53,7 @@ export const CustomerMobileCard: React.FC<CustomerMobileCardProps> = ({
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") onSelect(customer.id);
       }}
-      className="p-3.5 rounded-xl bg-card border border-border/60 shadow-2xs space-y-2.5 cursor-pointer hover:border-primary/40 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 transition-all"
+      className="p-3.5 rounded-xl bg-card border border-border-subtle shadow-2xs space-y-2.5 cursor-pointer hover:border-primary/40 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 transition-all"
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -110,7 +110,7 @@ export const CustomerMobileCard: React.FC<CustomerMobileCardProps> = ({
       </div>
 
       {/* Address & Email */}
-      <div className="flex flex-col gap-1 text-xs text-muted-foreground pt-1 border-t border-border/40">
+      <div className="flex flex-col gap-1 text-xs text-muted-foreground pt-1 border-t border-border-subtle">
         {regionText && (
           <div className="flex items-center gap-1.5 truncate">
             <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -126,7 +126,7 @@ export const CustomerMobileCard: React.FC<CustomerMobileCardProps> = ({
       </div>
 
       {/* CRM Stats Footer & Quick WhatsApp Action */}
-      <div className="flex items-center justify-between pt-2 border-t border-border/40 text-xs">
+      <div className="flex items-center justify-between pt-2 border-t border-border-subtle text-xs">
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
             <span className="font-mono text-xs">

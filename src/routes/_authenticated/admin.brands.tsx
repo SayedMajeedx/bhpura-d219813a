@@ -323,7 +323,7 @@ function BrandsPage() {
       dir={lang === "ar" ? "rtl" : "ltr"}
     >
       {/* Header Panel */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/60 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border-subtle pb-6">
         <div>
           <div className="flex items-center gap-2 text-xs text-primary mb-1">
             <Crown className="h-3.5 w-3.5 text-amber-500 animate-pulse" />{" "}
@@ -359,7 +359,7 @@ function BrandsPage() {
       {/* Modern SaaS KPI Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* KPI: Total Brands */}
-        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 flex items-center gap-4 relative">
+        <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 flex items-center gap-4 relative">
           <div className="p-3 rounded-full bg-primary/5 text-primary">
             <Users className="h-6 w-6" />
           </div>
@@ -372,7 +372,7 @@ function BrandsPage() {
         </Card>
 
         {/* KPI: Active SaaS Subscriptions */}
-        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 flex items-center gap-4 relative">
+        <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 flex items-center gap-4 relative">
           <div className="p-3 rounded-full bg-emerald-500/5 text-emerald-500">
             <TrendingUp className="h-6 w-6" />
           </div>
@@ -387,7 +387,7 @@ function BrandsPage() {
         </Card>
 
         {/* KPI: annual subscription revenue */}
-        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 flex items-center gap-4 relative">
+        <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 flex items-center gap-4 relative">
           <div className="p-3 rounded-full bg-blue-500/5 text-blue-500">
             <DollarSign className="h-6 w-6" />
           </div>
@@ -439,7 +439,7 @@ function BrandsPage() {
               {brands.map((b) => (
                 <Card
                   key={b.id}
-                  className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 relative flex flex-col justify-between h-56 transition-all duration-200 hover:shadow-xl hover:scale-[1.01]"
+                  className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 relative flex flex-col justify-between h-56 transition-all duration-200 hover:shadow-xl hover:scale-[1.01]"
                 >
                   <div>
                     <div className="flex items-center gap-3 mb-3">
@@ -447,10 +447,10 @@ function BrandsPage() {
                         <img
                           src={b.logo_url}
                           alt={b.name_en}
-                          className="h-10 w-10 rounded object-contain bg-secondary border border-border/60"
+                          className="h-10 w-10 rounded object-contain bg-secondary border border-border-subtle"
                         />
                       ) : (
-                        <div className="h-10 w-10 rounded bg-secondary grid place-items-center border border-border/60">
+                        <div className="h-10 w-10 rounded bg-secondary grid place-items-center border border-border-subtle">
                           <Store className="h-5 w-5 text-muted-foreground" />
                         </div>
                       )}
@@ -555,7 +555,7 @@ function BrandsPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-1.5 border-t border-border/60 pt-3">
+                  <div className="flex flex-wrap gap-1.5 border-t border-border-subtle pt-3">
                     {b.support_access_enabled === false ? (
                       <div className="flex-1 flex flex-col gap-1">
                         <Button
@@ -636,7 +636,7 @@ function BrandsPage() {
                 return (
                   <Card
                     key={b.id}
-                    className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+                    className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
                   >
                     <div className="flex items-center gap-3">
                       <div className="h-11 w-11 rounded-full bg-amber-500/5 grid place-items-center text-amber-500">
@@ -730,7 +730,7 @@ function BrandsPage() {
       {/* DIALOG: Approve Subscription & Assign Plan/Interval */}
       {approvingBrand && (
         <Dialog open={!!approvingBrand} onOpenChange={(v) => !v && setApprovingBrand(null)}>
-          <DialogContent className="max-w-md bg-background/95 backdrop-blur-md border border-border/60 text-foreground p-6 rounded-2xl shadow-xl">
+          <DialogContent className="max-w-md bg-background/95 backdrop-blur-md border border-border-subtle text-foreground p-6 rounded-2xl shadow-xl">
             <DialogHeader>
               <DialogTitle className="font-display font-medium flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-emerald-500" />
@@ -738,7 +738,7 @@ function BrandsPage() {
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-3">
-              <div className="p-3 bg-muted/40 border border-border/40 rounded-xl font-mono text-xs">
+              <div className="p-3 bg-muted/40 border border-border-subtle rounded-xl font-mono text-xs">
                 <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">
                   {lang === "ar" ? "المحل المختار" : "Boutique Brand"}
                 </p>
@@ -753,7 +753,7 @@ function BrandsPage() {
                   {lang === "ar" ? "الباقة المراد تفعيلها" : "Target Subscription Plan"}
                 </Label>
                 <Select value={approvingPlanId} onValueChange={setApprovingPlanId}>
-                  <SelectTrigger className="w-full bg-background/50 border-border/60">
+                  <SelectTrigger className="w-full bg-background/50 border-border-subtle">
                     <SelectValue placeholder={lang === "ar" ? "اختر الباقة..." : "Select Plan..."} />
                   </SelectTrigger>
                   <SelectContent>
@@ -777,7 +777,7 @@ function BrandsPage() {
                   value={approvingInterval}
                   onValueChange={(val: "monthly" | "annual") => setApprovingInterval(val)}
                 >
-                  <SelectTrigger className="w-full bg-background/50 border-border/60">
+                  <SelectTrigger className="w-full bg-background/50 border-border-subtle">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -931,7 +931,7 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
   };
 
   return (
-    <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto bg-background/95 backdrop-blur-md border border-border/60 text-foreground p-6 rounded-2xl shadow-xl">
+    <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto bg-background/95 backdrop-blur-md border border-border-subtle text-foreground p-6 rounded-2xl shadow-xl">
       <DialogHeader>
         <DialogTitle className="font-display font-bold text-lg">
           {lang === "ar" ? "علامة تجارية جديدة" : "New Brand"}
@@ -1154,7 +1154,7 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
   };
 
   return (
-    <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-background/95 backdrop-blur-md border border-border/60 text-foreground p-6 rounded-2xl shadow-xl">
+    <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-background/95 backdrop-blur-md border border-border-subtle text-foreground p-6 rounded-2xl shadow-xl">
       <DialogHeader>
         <DialogTitle className="font-display font-bold text-lg">
           {t("brands.editTitle")} — {brand.name_en}
@@ -1227,7 +1227,7 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
             />
           </div>
         </div>
-        <Card className="space-y-4 p-4 border border-border/60 shadow rounded-xl bg-card/40">
+        <Card className="space-y-4 p-4 border border-border-subtle shadow rounded-xl bg-card">
           <div>
             <div className="flex items-center justify-between gap-3">
               <Label>{isAr ? "عنوان محركات البحث" : "Meta Title"}</Label>
@@ -1264,7 +1264,7 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
             />
           </div>
         </Card>
-        <div className="flex items-center justify-between border border-border/60 rounded-xl p-3 bg-muted/20">
+        <div className="flex items-center justify-between border border-border-subtle rounded-xl p-3 bg-muted/20">
           <div>
             <p className="text-sm font-medium">{isAr ? "نشط" : "Active"}</p>
             <p className="text-xs text-muted-foreground">
@@ -1378,7 +1378,7 @@ function DeleteBrandDialog({ brand, onDone }: { brand: Brand; onDone: () => void
   };
 
   return (
-    <DialogContent className="max-w-md bg-background/95 backdrop-blur-md border border-border/60 text-foreground p-6 rounded-2xl shadow-xl">
+    <DialogContent className="max-w-md bg-background/95 backdrop-blur-md border border-border-subtle text-foreground p-6 rounded-2xl shadow-xl">
       <DialogHeader>
         <DialogTitle className="text-destructive flex items-center gap-2 font-display font-bold text-lg">
           <AlertTriangle className="h-5 w-5" /> {t("brands.delete")} — {brand.name_en}

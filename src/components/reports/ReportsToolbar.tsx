@@ -76,7 +76,7 @@ export function ReportsToolbar({
                         value={interval}
                         onValueChange={(val) => setInterval(val as ReportInterval)}
                       >
-                        <SelectTrigger className="h-8 text-xs bg-muted/30 border-border/60">
+                        <SelectTrigger className="h-8 text-xs bg-muted/30 border-border-subtle">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -94,7 +94,7 @@ export function ReportsToolbar({
                         {isAr ? "ترتيب حسب" : "Sort By"}
                       </label>
                       <Select value={sortBy} onValueChange={setSortBy}>
-                        <SelectTrigger className="h-8 text-xs bg-muted/30 border-border/60">
+                        <SelectTrigger className="h-8 text-xs bg-muted/30 border-border-subtle">
                           <SelectValue placeholder={isAr ? "ترتيب حسب" : "Sort by"} />
                         </SelectTrigger>
                         <SelectContent>
@@ -142,7 +142,7 @@ export function ReportsToolbar({
                           value={interval}
                           onValueChange={(val) => setInterval(val as ReportInterval)}
                         >
-                          <SelectTrigger className="h-9 text-xs bg-muted/30 border-border/60">
+                          <SelectTrigger className="h-9 text-xs bg-muted/30 border-border-subtle">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -160,7 +160,7 @@ export function ReportsToolbar({
                           {isAr ? "ترتيب حسب" : "Sort By"}
                         </label>
                         <Select value={sortBy} onValueChange={setSortBy}>
-                          <SelectTrigger className="h-9 text-xs bg-muted/30 border-border/60">
+                          <SelectTrigger className="h-9 text-xs bg-muted/30 border-border-subtle">
                             <SelectValue placeholder={isAr ? "ترتيب حسب" : "Sort by"} />
                           </SelectTrigger>
                           <SelectContent>
@@ -182,7 +182,7 @@ export function ReportsToolbar({
         )}
       </div>
 
-      <div className="flex min-h-10 items-center gap-2 rounded-lg border border-border/40 bg-muted/30 px-2 py-1">
+      <div className="flex min-h-10 items-center gap-2 rounded-lg border border-border-subtle bg-muted/30 px-2 py-1">
         <Switch
           id="historical-toggle"
           checked={includeHistorical}

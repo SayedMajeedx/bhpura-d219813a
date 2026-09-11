@@ -44,7 +44,7 @@ export const OsAppWindow = React.forwardRef<HTMLDivElement, OsAppWindowProps>(
       >
         {/* Optional Titlebar Region (only if explicitly opted-in) */}
         {showTitlebar && (
-          <div className="no-print h-11 px-4 border-b border-border bg-card/80 backdrop-blur-md flex items-center justify-between gap-3 shrink-0 select-none">
+          <div className="no-print h-11 px-4 border-b border-border bg-card flex items-center justify-between gap-3 shrink-0 select-none">
             <div className="flex items-center gap-2.5 min-w-0">
               {Icon && (
                 <div className="h-6 w-6 rounded-md bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0 shadow-2xs">

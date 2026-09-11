@@ -136,8 +136,8 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
   const isPaid = order?.payment_status === "paid" || balanceDue <= 0;
 
   return (
-    <Card id="sec-documents" className="scroll-mt-24 rounded-xl border border-border/70 bg-card p-4 sm:p-6 shadow-sm">
-      <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-b border-border/50 pb-4">
+    <Card id="sec-documents" className="scroll-mt-24 rounded-xl border border-border-strong bg-card p-4 sm:p-6 shadow-sm">
+      <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-b border-border-subtle pb-4">
         <div>
           <h3 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
@@ -153,7 +153,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Document 1: Sales Order */}
-        <div className="rounded-xl border border-border/60 bg-muted/20 p-4 flex flex-col justify-between hover:border-primary/40 transition-colors">
+        <div className="rounded-xl border border-border-subtle bg-muted/20 p-4 flex flex-col justify-between hover:border-primary/40 transition-colors">
           <div>
             <div className="flex items-center justify-between gap-2 mb-2">
               <div className="flex items-center gap-2">
@@ -190,7 +190,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 pt-2 border-t border-border/40">
+          <div className="flex items-center gap-2 pt-2 border-t border-border-subtle">
             {onPrintThermalReceipt && (
               <Button
                 variant="outline"
@@ -217,7 +217,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
         </div>
 
         {/* Document 2: Tax Invoice */}
-        <div className="rounded-xl border border-border/60 bg-muted/20 p-4 flex flex-col justify-between hover:border-primary/40 transition-colors">
+        <div className="rounded-xl border border-border-subtle bg-muted/20 p-4 flex flex-col justify-between hover:border-primary/40 transition-colors">
           <div>
             <div className="flex items-center justify-between gap-2 mb-2">
               <div className="flex items-center gap-2">
@@ -264,7 +264,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 pt-2 border-t border-border/40">
+          <div className="flex items-center gap-2 pt-2 border-t border-border-subtle">
             {publicInvoiceUrl ? (
               <>
                 <Button
@@ -299,7 +299,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
         </div>
 
         {/* Document 3: Delivery Note */}
-        <div className="rounded-xl border border-border/60 bg-muted/20 p-4 flex flex-col justify-between hover:border-primary/40 transition-colors">
+        <div className="rounded-xl border border-border-subtle bg-muted/20 p-4 flex flex-col justify-between hover:border-primary/40 transition-colors">
           <div>
             <div className="flex items-center justify-between gap-2 mb-2">
               <div className="flex items-center gap-2">
@@ -340,7 +340,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 pt-2 border-t border-border/40">
+          <div className="flex items-center gap-2 pt-2 border-t border-border-subtle">
             <Button
               variant="outline"
               size="sm"
@@ -354,7 +354,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
         </div>
 
         {/* Document 4: Return & Credit Note */}
-        <div className="rounded-xl border border-border/60 bg-muted/20 p-4 flex flex-col justify-between hover:border-primary/40 transition-colors">
+        <div className="rounded-xl border border-border-subtle bg-muted/20 p-4 flex flex-col justify-between hover:border-primary/40 transition-colors">
           <div>
             <div className="flex items-center justify-between gap-2 mb-2">
               <div className="flex items-center gap-2">
@@ -407,14 +407,14 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
                 ))}
               </div>
             ) : (
-              <div className="rounded-lg border border-border/40 bg-background/50 p-3 text-xs text-muted-foreground mb-4 text-center">
+              <div className="rounded-lg border border-border-subtle bg-background/50 p-3 text-xs text-muted-foreground mb-4 text-center">
                 {isAr
                   ? "لم يتم تسجيل أي طلب إرجاع أو استبدال لهذا الطلب بعد"
                   : "No return or exchange requested for this order yet."}
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2 pt-2 border-t border-border/40">
+          <div className="flex items-center gap-2 pt-2 border-t border-border-subtle">
             <Button
               asChild
               variant="outline"

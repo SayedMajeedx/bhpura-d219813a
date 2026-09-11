@@ -71,7 +71,7 @@ function SystemHealthPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8" dir={isAr ? "rtl" : "ltr"}>
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-5">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border-subtle pb-5">
         <div>
           <h1 className="flex items-center gap-2 text-3xl font-black tracking-tight">
             <Activity className="h-7 w-7 text-primary" />

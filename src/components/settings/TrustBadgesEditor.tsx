@@ -99,7 +99,7 @@ export function TrustBadgesEditor({
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-center bg-muted/40 p-2 rounded-xl border border-border/60">
+        <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-center bg-muted/40 p-2 rounded-xl border border-border-subtle">
           <Label htmlFor="toggle-trust-badges" className="text-xs font-semibold cursor-pointer">
             {isAr ? "إظهار شريط الشارات" : "Show Badges Bar"}
           </Label>
@@ -128,14 +128,14 @@ export function TrustBadgesEditor({
                   key={item.id || index}
                   className={cn(
                     "rounded-xl border p-3.5 bg-background/60 transition-all space-y-3",
-                    item.enabled ? "border-border shadow-2xs" : "border-border/40 opacity-60 bg-muted/20"
+                    item.enabled ? "border-border shadow-2xs" : "border-border-subtle opacity-60 bg-muted/20"
                   )}
                 >
                   {/* Item Row 1: Ordering + Icon Selector + Active Switch + Delete */}
                   <div className="flex flex-wrap items-center justify-between gap-2.5">
                     <div className="flex items-center gap-2">
                       {/* Order Controls */}
-                      <div className="flex items-center gap-0.5 bg-muted/60 rounded-lg p-0.5 border border-border/50">
+                      <div className="flex items-center gap-0.5 bg-muted/60 rounded-lg p-0.5 border border-border-subtle">
                         <Button
                           type="button"
                           variant="ghost"
@@ -175,7 +175,7 @@ export function TrustBadgesEditor({
 
                     <div className="flex items-center gap-3">
                       {/* Color Presets */}
-                      <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border/50">
+                      <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border-subtle">
                         {BADGE_COLOR_PRESETS.map((preset) => (
                           <button
                             key={preset.id}
@@ -264,7 +264,7 @@ export function TrustBadgesEditor({
           )}
 
           {/* Live Storefront Preview */}
-          <div className="mt-4 rounded-xl border border-border/80 bg-muted/20 p-3.5 space-y-3">
+          <div className="mt-4 rounded-xl border border-border-strong bg-muted/20 p-3.5 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold flex items-center gap-1.5 text-muted-foreground">
                 <Eye className="h-3.5 w-3.5 text-primary" />

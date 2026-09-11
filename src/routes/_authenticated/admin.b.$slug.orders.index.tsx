@@ -1772,7 +1772,7 @@ function OrdersList() {
       {isAdmin && (
         <div
           className={cn(
-            "flex-col gap-2 rounded-xl border border-border/70 bg-card p-3 shadow-sm sm:flex sm:flex-row sm:items-center sm:justify-between",
+            "flex-col gap-2 rounded-xl border border-border-strong bg-card p-3 shadow-sm sm:flex sm:flex-row sm:items-center sm:justify-between",
             selectedOrderIds.size > 0 ? "flex" : "hidden",
           )}
         >
@@ -2017,7 +2017,7 @@ function OrdersList() {
       </div>
 
       {/* Pagination Controls */}
-      <div className="mt-4 flex flex-col items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card p-3 text-sm shadow-sm select-none sm:flex-row sm:p-4">
+      <div className="mt-4 flex flex-col items-center justify-between gap-3 rounded-2xl border border-border-strong bg-card p-3 text-sm shadow-sm select-none sm:flex-row sm:p-4">
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground text-xs sm:text-sm">
             {lang === "ar" ? "الطلبات لكل صفحة:" : "Orders per page:"}
@@ -3239,7 +3239,7 @@ function OrderQuickInspectSheet({
             <h4 className="text-xs font-semibold text-muted-foreground">
               {isAr ? "المنتجات والأصناف التفصيلية" : "Order Line Items Breakdown"}
             </h4>
-            <div className="divide-y border border-border/60 rounded-xl overflow-hidden bg-card shadow-2xs">
+            <div className="divide-y border border-border-subtle rounded-xl overflow-hidden bg-card shadow-2xs">
               {items.map((it: any, idx: number) => {
                 const itemTitle =
                   it.description ||
@@ -3284,7 +3284,7 @@ function OrderQuickInspectSheet({
                         {itemTitle}
                       </div>
                       {variantTitle && (
-                        <div className="text-xs text-muted-foreground font-mono mt-0.5 bg-muted/60 px-2 py-0.5 rounded w-fit border border-border/40">
+                        <div className="text-xs text-muted-foreground font-mono mt-0.5 bg-muted/60 px-2 py-0.5 rounded w-fit border border-border-subtle">
                           {variantTitle}
                         </div>
                       )}
@@ -3339,8 +3339,8 @@ function OrderQuickInspectSheet({
             const codRemaining = Math.max(0, netTotal - advancePaid);
 
             return (
-              <div className="rounded-xl border border-border/60 p-4 space-y-2.5 bg-card/80 text-xs shadow-2xs">
-                <h4 className="text-xs font-semibold text-muted-foreground border-b border-border/40 pb-2">
+              <div className="rounded-xl border border-border-subtle p-4 space-y-2.5 bg-card/80 text-xs shadow-2xs">
+                <h4 className="text-xs font-semibold text-muted-foreground border-b border-border-subtle pb-2">
                   {isAr ? "تفاصيل الحساب المالي للفاتورة" : "Financial Price Breakdown"}
                 </h4>
 
@@ -3376,7 +3376,7 @@ function OrderQuickInspectSheet({
                   )}
 
                   {advancePaid > 0 && (
-                    <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 pt-1 border-t border-border/40">
+                    <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 pt-1 border-t border-border-subtle">
                       <span>
                         {isAr
                           ? "الدفعة المقدمة المدفوعة (Deposit Paid):"
@@ -3400,7 +3400,7 @@ function OrderQuickInspectSheet({
                   )}
                 </div>
 
-                <div className="flex justify-between items-center text-sm font-extrabold pt-2.5 border-t border-border/60 text-foreground">
+                <div className="flex justify-between items-center text-sm font-extrabold pt-2.5 border-t border-border-subtle text-foreground">
                   <span>{isAr ? "إجمالي الفاتورة النهائي:" : "Final Net Total:"}</span>
                   <span className="text-base text-primary font-mono font-extrabold">
                     {formatMoney(netTotal, currency, locale)}
@@ -3412,7 +3412,7 @@ function OrderQuickInspectSheet({
         </div>
 
         {isAdmin && getPaymentGatewayReference(order) ? (
-          <div className="mx-6 mb-6 rounded-xl border border-border/60 bg-card p-4 space-y-3">
+          <div className="mx-6 mb-6 rounded-xl border border-border-subtle bg-card p-4 space-y-3">
             <div className="flex items-center justify-between border-b pb-2">
               <div className="flex items-center gap-2">
                 <Lock className="h-4 w-4 text-primary" />

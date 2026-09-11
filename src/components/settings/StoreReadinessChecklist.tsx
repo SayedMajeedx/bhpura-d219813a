@@ -305,7 +305,7 @@ export function StoreReadinessChecklist({
   const { completedCount, totalCount, progressPercent, isAllComplete } = evaluation;
 
   return (
-    <div className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs transition-all">
+    <div className="rounded-2xl border border-border-strong bg-card p-4 sm:p-5 shadow-xs transition-all">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
           <div
@@ -395,7 +395,7 @@ export function StoreReadinessChecklist({
 
       {/* Checklist items list */}
       {!collapsed && (
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-2 border-t border-border/40">
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-2 border-t border-border-subtle">
           {checklistItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -404,7 +404,7 @@ export function StoreReadinessChecklist({
                 className={`flex items-start justify-between gap-3 p-3 rounded-xl border transition-colors ${
                   item.isComplete
                     ? "border-emerald-500/20 bg-emerald-500/[0.03]"
-                    : "border-border/80 bg-muted/20 hover:border-primary/40"
+                    : "border-border-strong bg-muted/20 hover:border-primary/40"
                 }`}
               >
                 <div className="flex items-start gap-2.5 min-w-0">

@@ -294,7 +294,7 @@ export function OsMobileNavigation({
           <SheetContent
             side={lang === "ar" ? "right" : "left"}
             hideDefaultClose
-            className="w-[85vw] sm:w-80 max-w-xs border-s border-border/80 p-0 flex flex-col bg-card dark:bg-slate-950 text-foreground shadow-2xl overflow-hidden z-50 admin-mobile-fast-transition"
+            className="w-[85vw] sm:w-80 max-w-xs border-s border-border-strong p-0 flex flex-col bg-card dark:bg-slate-950 text-foreground shadow-2xl overflow-hidden z-50 admin-mobile-fast-transition"
           >
             {/* Ambient liquid background blur blobs */}
             <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-primary/20 blur-3xl pointer-events-none animate-pulse" />
@@ -303,9 +303,9 @@ export function OsMobileNavigation({
             <SheetTitle className="sr-only">{brandLabel}</SheetTitle>
 
             {/* iOS Style Sheet Header */}
-            <div className="p-4 sm:p-5 border-b border-border/40 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md flex items-center justify-between relative z-10">
+            <div className="p-4 sm:p-5 border-b border-border-subtle bg-white/40 dark:bg-slate-900/40 backdrop-blur-md flex items-center justify-between relative z-10">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-primary/30 via-primary/20 to-amber-500/20 border border-border/40 text-primary font-heading font-black text-lg flex items-center justify-center shadow-xs shrink-0">
+                <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-primary/30 via-primary/20 to-amber-500/20 border border-border-subtle text-primary font-heading font-black text-lg flex items-center justify-center shadow-xs shrink-0">
                   {brandLabel.charAt(0)}
                 </div>
                 <div className="min-w-0">
@@ -323,7 +323,7 @@ export function OsMobileNavigation({
               <SheetClose asChild>
                 <button
                   type="button"
-                  className="h-9 w-9 rounded-full bg-muted/80 hover:bg-muted text-foreground border border-border/60 flex items-center justify-center transition-transform active:scale-90 shadow-sm shrink-0"
+                  className="h-9 w-9 rounded-full bg-muted/80 hover:bg-muted text-foreground border border-border-subtle flex items-center justify-center transition-transform active:scale-90 shadow-sm shrink-0"
                   aria-label={lang === "ar" ? "إغلاق" : "Close"}
                 >
                   <X className="h-4 w-4" />
@@ -419,7 +419,7 @@ export function OsMobileNavigation({
             </nav>
 
             {/* iOS Liquid Control Center Footer */}
-            <div className="p-3.5 border-t border-border/40 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md space-y-2.5 relative z-10">
+            <div className="p-3.5 border-t border-border-subtle bg-white/40 dark:bg-slate-900/40 backdrop-blur-md space-y-2.5 relative z-10">
               {/* Native App Tools Trigger (When in iPhone/Android Native App Wrapper) */}
               {typeof window !== "undefined" && Boolean((window as any).ReactNativeWebView) && (
                 <Button
@@ -488,11 +488,11 @@ export function OsMobileNavigation({
               </div>
 
               {/* Language Segmented Pill Toggle */}
-              <div className="flex items-center justify-between bg-muted/60 p-1 rounded-2xl border border-border/40">
+              <div className="flex items-center justify-between bg-muted/60 p-1 rounded-2xl border border-border-subtle">
                 <span className="text-xs font-semibold px-3 text-muted-foreground">
                   {lang === "ar" ? "اللغة" : "Language"}
                 </span>
-                <div className="inline-flex rounded-xl bg-background/80 p-0.5 border border-border/40 shadow-2xs">
+                <div className="inline-flex rounded-xl bg-background/80 p-0.5 border border-border-subtle shadow-2xs">
                   <button
                     type="button"
                     onClick={() => onSetLang("en")}

@@ -288,14 +288,14 @@ export function OsSidebar({
         <nav className="flex-1 p-3 space-y-3 overflow-y-auto scrollbar-none">
           {/* Navigation Mode Switcher */}
           {!collapsed && !isPlatformMode && !isCourier && (
-            <div className="flex items-center gap-1 p-0.5 rounded-xl bg-muted/40 border border-border/50 text-xs mb-2 font-medium">
+            <div className="flex items-center gap-1 p-0.5 rounded-xl bg-muted/40 border border-border-subtle text-xs mb-2 font-medium">
               <button
                 type="button"
                 onClick={() => handleNavModeChange("jobs")}
                 className={cn(
                   "flex-1 py-1 px-2 rounded-lg text-center transition-all min-h-[30px]",
                   navMode === "jobs"
-                    ? "bg-background text-foreground font-bold shadow-2xs border border-border/60"
+                    ? "bg-background text-foreground font-bold shadow-2xs border border-border-subtle"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
@@ -307,7 +307,7 @@ export function OsSidebar({
                 className={cn(
                   "flex-1 py-1 px-2 rounded-lg text-center transition-all min-h-[30px]",
                   navMode === "focus"
-                    ? "bg-background text-foreground font-bold shadow-2xs border border-border/60"
+                    ? "bg-background text-foreground font-bold shadow-2xs border border-border-subtle"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
@@ -321,7 +321,7 @@ export function OsSidebar({
             <div className="space-y-3">
               {/* Optional Pinned Quick-Access */}
               {visibleModularItems.length > 0 && (
-                <div className="space-y-1 pb-1.5 border-b border-border/40">
+                <div className="space-y-1 pb-1.5 border-b border-border-subtle">
                   <div className="flex items-center justify-between px-3 mb-1">
                     <span className="text-xs font-bold tracking-wider text-muted-foreground/70 uppercase flex items-center gap-1.5">
                       <Pin className="h-2.5 w-2.5 text-primary" />
@@ -558,7 +558,7 @@ export function OsSidebar({
                       "flex-1 flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl border transition-all duration-200 shadow-2xs",
                       appsDrawerOpen
                         ? "bg-primary/10 border-primary/30 text-primary font-bold"
-                        : "bg-muted/40 hover:bg-muted/70 border-border/60 text-muted-foreground hover:text-foreground",
+                        : "bg-muted/40 hover:bg-muted/70 border-border-subtle text-muted-foreground hover:text-foreground",
                     )}
                   >
                     <div className="flex items-center gap-2">
@@ -591,7 +591,7 @@ export function OsSidebar({
 
                 {/* Expandable Apps Tray */}
                 {appsDrawerOpen && (
-                  <div className="space-y-2 max-h-64 overflow-y-auto p-1.5 rounded-xl border border-border/60 bg-background/95 shadow-inner backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 duration-150">
+                  <div className="space-y-2 max-h-64 overflow-y-auto p-1.5 rounded-xl border border-border-subtle bg-background/95 shadow-inner backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 duration-150">
                     {/* Search Filter */}
                     <div className="relative">
                       <Search className="absolute top-1/2 -translate-y-1/2 start-2 h-3 w-3 text-muted-foreground" />
@@ -600,7 +600,7 @@ export function OsSidebar({
                         placeholder={isAr ? "ابحث عن أداة..." : "Search tool..."}
                         value={filterQuery}
                         onChange={(e) => setFilterQuery(e.target.value)}
-                        className="w-full ps-7 pe-2 py-1 text-xs rounded-lg bg-muted/60 border border-border/50 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        className="w-full ps-7 pe-2 py-1 text-xs rounded-lg bg-muted/60 border border-border-subtle text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                       />
                     </div>
 

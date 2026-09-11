@@ -265,7 +265,7 @@ export function SettingsSearchBar({ lang, onSelectResult }: SettingsSearchBarPro
               ? "ابحث في الإعدادات (الشعار، العملة، ألوان المتجر، رسوم الشحن، طرق الدفع...)"
               : "Search settings (logo, currency, storefront theme, shipping rates, payments...)"
           }
-          className="h-9 ps-9 pe-9 text-xs rounded-xl bg-background border-border/80 shadow-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="h-9 ps-9 pe-9 text-xs rounded-xl bg-background border-border-strong shadow-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         />
         {query && (
           <Button
@@ -286,7 +286,7 @@ export function SettingsSearchBar({ lang, onSelectResult }: SettingsSearchBarPro
 
       {/* Dropdown Results */}
       {isOpen && trimmed.length > 0 && (
-        <div className="absolute top-full start-0 end-0 mt-1.5 z-50 rounded-xl border border-border/80 bg-popover/95 backdrop-blur-md shadow-xl overflow-hidden animate-fade-in max-h-80 overflow-y-auto">
+        <div className="absolute top-full start-0 end-0 mt-1.5 z-50 rounded-xl border border-border-strong bg-popover/95 backdrop-blur-md shadow-xl overflow-hidden animate-fade-in max-h-80 overflow-y-auto">
           {results.length > 0 ? (
             <div className="p-1.5 space-y-1">
               <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">

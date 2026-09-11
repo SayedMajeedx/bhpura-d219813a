@@ -33,13 +33,13 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
   const BackIcon = isAr ? ArrowRight : ArrowLeft;
 
   return (
-    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-card border border-border/60 shadow-2xs">
+    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-card border border-border-subtle shadow-2xs">
       {/* Left Group: Back Button + Order ID + Badges */}
       <div className="flex items-center gap-3">
         <Button
           variant="outline"
           size="icon"
-          className="h-9 w-9 border-border/70 text-foreground shrink-0"
+          className="h-9 w-9 border-border-strong text-foreground shrink-0"
           asChild
         >
           <Link

@@ -290,8 +290,8 @@ function SuperRequestsPage() {
         <SuperOverridesManager />
       ) : (
         <div className="w-full space-y-4">
-          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
-            <CardHeader className="pb-3 border-b border-border/60">
+          <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card">
+            <CardHeader className="pb-3 border-b border-border-subtle">
               <div className="flex justify-between items-center">
                 <div>
                   <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
@@ -339,7 +339,7 @@ function SuperRequestsPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                       <thead>
-                        <tr className="bg-muted/40 text-muted-foreground text-xs uppercase border-b border-border/60">
+                        <tr className="bg-muted/40 text-muted-foreground text-xs uppercase border-b border-border-subtle">
                           <th className="p-4 text-left font-semibold">
                             {lang === "ar" ? "صاحب المتجر" : "Owner Details"}
                           </th>
@@ -364,7 +364,7 @@ function SuperRequestsPage() {
                         {requestsQuery.data.map((request) => (
                           <tr
                             key={request.id}
-                            className="border-b border-border/40 hover:bg-muted/20 transition-colors"
+                            className="border-b border-border-subtle hover:bg-muted/20 transition-colors"
                           >
                             <td className="p-4 space-y-1">
                               <div className="font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
@@ -509,7 +509,7 @@ function SuperRequestsPage() {
 
       {/* Interactive Deployment Configuration Dialog */}
       <Dialog open={!!approvingRequest} onOpenChange={(open) => !open && setApprovingRequest(null)}>
-        <DialogContent className="max-w-md bg-background/95 backdrop-blur-md border border-border/60 text-foreground p-6 rounded-2xl shadow-xl">
+        <DialogContent className="max-w-md bg-background/95 backdrop-blur-md border border-border-subtle text-foreground p-6 rounded-2xl shadow-xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-display font-medium flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary shrink-0" />

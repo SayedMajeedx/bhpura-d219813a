@@ -119,7 +119,8 @@ export function VendorsPurchaseOrdersTab() {
       setVendorPhone("");
       setVendorEmail("");
     } catch (err: any) {
-      toast.error(err.message || "Failed to add vendor");
+      console.error("Vendor add error:", err);
+      toast.error(isAr ? "تعذر إضافة المورد، يرجى المحاولة مرة أخرى." : "Failed to add vendor. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -151,7 +152,8 @@ export function VendorsPurchaseOrdersTab() {
       setPoTotalAmount(0);
       setPoPaidAmount(0);
     } catch (err: any) {
-      toast.error(err.message || "Failed to save PO");
+      console.error("PO save error:", err);
+      toast.error(isAr ? "تعذر إنشاء أمر الشراء، يرجى المحاولة مرة أخرى." : "Failed to create purchase order. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -176,7 +178,8 @@ export function VendorsPurchaseOrdersTab() {
       toast.success(isAr ? "تم تسجيل الدفعة بنجاح" : "Payment recorded");
       qc.invalidateQueries({ queryKey: ["purchase-orders", brandId] });
     } catch (err: any) {
-      toast.error(err.message || "Failed to update PO payment");
+      console.error("PO payment error:", err);
+      toast.error(isAr ? "تعذر تسجيل الدفعة، يرجى المحاولة مرة أخرى." : "Failed to record payment. Please try again.");
     }
   };
 
@@ -304,7 +307,7 @@ export function VendorsPurchaseOrdersTab() {
                     </div>
 
                     {!isFullyPaid && (
-                      <div className="flex items-center gap-2 pt-1 border-t border-border/40">
+                      <div className="flex items-center gap-2 pt-1 border-t border-border-subtle">
                         <Button
                           size="sm"
                           variant="outline"

@@ -201,7 +201,7 @@ function OrderErrorBoundary({ error }: { error?: Error }) {
   const { slug } = Route.useParams();
   return (
     <div className="p-8 max-w-lg mx-auto">
-      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-8 text-center space-y-3">
+      <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-8 text-center space-y-3">
         <h2 className="text-xl font-display">Order</h2>
         <p className="text-muted-foreground">
           {error?.message || "This order could not be loaded. It may have been deleted."}
@@ -485,7 +485,7 @@ function ItemTailoringCustomizer({
 
       {/* 📏 Fit Passport Module */}
       <div className="rounded-xl border border-border bg-card p-3.5 space-y-3 shadow-2xs">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle pb-2.5">
           <div className="flex items-center gap-2">
             <span className="grid size-7 place-items-center rounded-lg bg-primary text-primary-foreground">
               <Ruler className="size-3.5" />
@@ -663,7 +663,7 @@ function ItemTailoringCustomizer({
               ? "مثال: الطول 54، دوران الصدر 22، طول الكم 28، تضييق بسيط عند الخصر، بطانة كاملة، قصة كلوش..."
               : "e.g. Length 54, Chest 22, Sleeves 28, slim waist, full lining..."
           }
-          className="text-xs bg-background resize-none leading-relaxed border-border/80 focus-visible:ring-2 focus-visible:ring-ring"
+          className="text-xs bg-background resize-none leading-relaxed border-border-strong focus-visible:ring-2 focus-visible:ring-ring"
         />
       </div>
     </div>
@@ -2203,7 +2203,7 @@ function OrderDetail() {
 
     return (
       <div className="mx-auto max-w-2xl p-6 sm:p-8">
-        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+        <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-4">
           <h1 className="text-xl font-semibold">
             {lang === "ar" ? "تعذر فتح الطلب" : "Unable to open this order"}
           </h1>
@@ -2794,7 +2794,7 @@ function OrderDetail() {
 
   const renderMobileActionBar = () => (
     <div
-      className="mt-3 flex items-center gap-2 border-t border-border/60 pt-3"
+      className="mt-3 flex items-center gap-2 border-t border-border-subtle pt-3"
       aria-label={lang === "ar" ? "إجراءات الطلب" : "Order actions"}
     >
       {!isReadOnly && (isDirty || isCreationMode) ? (
@@ -2944,7 +2944,7 @@ function OrderDetail() {
         {/* Mobile workflow navigation. Creation mode must expose customer details too. */}
         <div
           className={cn(
-            "no-print my-3 grid gap-1 rounded-2xl border border-border/70 bg-muted/60 p-1.5 shadow-2xs select-none sm:hidden",
+            "no-print my-3 grid gap-1 rounded-2xl border border-border-strong bg-muted/60 p-1.5 shadow-2xs select-none sm:hidden",
             isCreationMode ? "grid-cols-2" : "grid-cols-3",
           )}
         >
@@ -2954,7 +2954,7 @@ function OrderDetail() {
             className={cn(
               "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-extrabold transition-all touch-manipulation min-h-10",
               mobileTab === "items"
-                ? "bg-card text-foreground shadow-xs border border-border/80 font-bold"
+                ? "bg-card text-foreground shadow-xs border border-border-strong font-bold"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
@@ -2967,7 +2967,7 @@ function OrderDetail() {
             className={cn(
               "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-extrabold transition-all touch-manipulation min-h-10",
               mobileTab === "customer"
-                ? "bg-card text-foreground shadow-xs border border-border/80 font-bold"
+                ? "bg-card text-foreground shadow-xs border border-border-strong font-bold"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
@@ -2981,7 +2981,7 @@ function OrderDetail() {
               className={cn(
                 "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-extrabold transition-all touch-manipulation min-h-10",
                 mobileTab === "activity"
-                  ? "bg-card text-foreground shadow-xs border border-border/80 font-bold"
+                  ? "bg-card text-foreground shadow-xs border border-border-strong font-bold"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
@@ -2993,7 +2993,7 @@ function OrderDetail() {
 
         {/* Desktop Section Navigation Bar (≥ 768px) */}
         {!isCreationMode && (
-          <div className="no-print mb-3 hidden sm:flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border/80 bg-card/90 p-1.5 shadow-sm select-none sm:mb-6 sm:rounded-xl">
+          <div className="no-print mb-3 hidden sm:flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border-strong bg-card/90 p-1.5 shadow-sm select-none sm:mb-6 sm:rounded-xl">
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -3110,7 +3110,7 @@ function OrderDetail() {
             >
               <Card
                 id="sec-overview"
-                className="scroll-mt-24 overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-4 shadow-sm backdrop-blur-sm sm:bg-card/40 sm:p-6 sm:shadow-lg"
+                className="scroll-mt-24 overflow-hidden rounded-2xl border border-border-subtle bg-card/60 p-4 shadow-sm sm:bg-card sm:p-6 sm:shadow-lg"
               >
                 <div className="mb-4">
                   <Label className="flex items-center gap-2">
@@ -3643,7 +3643,7 @@ function OrderDetail() {
               <Card
                 id="sec-items"
                 className={cn(
-                  "scroll-mt-24 overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-4 shadow-sm backdrop-blur-sm sm:bg-card/40 sm:p-6 sm:shadow-lg",
+                  "scroll-mt-24 overflow-hidden rounded-2xl border border-border-subtle bg-card/60 p-4 shadow-sm  sm:bg-card sm:p-6 sm:shadow-lg",
                   mobileTab !== "items" && "hidden sm:block",
                 )}
               >
@@ -3715,10 +3715,10 @@ function OrderDetail() {
                     return (
                       <div
                         key={idx}
-                        className="space-y-3 rounded-xl border border-border/80 bg-card p-3.5 shadow-xs transition-all"
+                        className="space-y-3 rounded-xl border border-border-strong bg-card p-3.5 shadow-xs transition-all"
                       >
                         {/* Item Thumbnail & SKU Header */}
-                        <div className="flex items-center gap-3 pb-2.5 border-b border-border/60">
+                        <div className="flex items-center gap-3 pb-2.5 border-b border-border-subtle">
                           <div className="h-12 w-12 rounded-lg border bg-muted/30 overflow-hidden shrink-0 flex items-center justify-center">
                             {imageUrl ? (
                               <img
@@ -3736,7 +3736,7 @@ function OrderDetail() {
                                 (product?.name ?? (isAr ? "منتج مخصص" : "Custom Item"))}
                             </p>
                             {sku ? (
-                              <span className="inline-flex items-center text-xs font-mono font-medium px-2 py-0.5 rounded bg-muted/80 text-muted-foreground border border-border/60 mt-1">
+                              <span className="inline-flex items-center text-xs font-mono font-medium px-2 py-0.5 rounded bg-muted/80 text-muted-foreground border border-border-subtle mt-1">
                                 SKU: {sku}
                               </span>
                             ) : (
@@ -3759,7 +3759,7 @@ function OrderDetail() {
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="h-8 text-xs font-semibold gap-1.5 shrink-0 rounded-lg border border-border/80 touch-manipulation"
+                            className="h-8 text-xs font-semibold gap-1.5 shrink-0 rounded-lg border border-border-strong touch-manipulation"
                             onClick={() => setEditingItemSheetIdx(idx)}
                           >
                             <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
@@ -3770,7 +3770,7 @@ function OrderDetail() {
                         {/* Mobile Read-Only Compact Summary Row (< 640px) */}
                         <div className="flex sm:hidden items-center justify-between gap-2 pt-1 pb-0.5">
                           <div className="flex items-center gap-1.5 text-xs font-semibold">
-                            <span className="bg-muted/80 text-foreground px-2.5 py-1 rounded-md border border-border/60">
+                            <span className="bg-muted/80 text-foreground px-2.5 py-1 rounded-md border border-border-subtle">
                               {it.quantity} × {formatMoney(it.unit_price, currency)}
                             </span>
                           </div>
@@ -3838,7 +3838,7 @@ function OrderDetail() {
                                 className="text-xs leading-snug rounded-xl resize-none"
                               />
                             ) : (
-                              <div className="text-xs font-medium text-foreground bg-muted/20 border border-border/60 rounded-lg p-2.5 min-h-[42px] flex items-center">
+                              <div className="text-xs font-medium text-foreground bg-muted/20 border border-border-subtle rounded-lg p-2.5 min-h-[42px] flex items-center">
                                 {it.description ||
                                   (isAr ? "لا يوجد وصف إضافي" : "No additional description")}
                               </div>
@@ -3846,7 +3846,7 @@ function OrderDetail() {
                           </div>
                           <div className="sm:col-span-2">
                             <Label>{t("orderDetail.qty")}</Label>
-                            <div className="flex items-center rounded-lg border border-border/80 bg-background overflow-hidden h-9 shadow-2xs mt-1">
+                            <div className="flex items-center rounded-lg border border-border-strong bg-background overflow-hidden h-9 shadow-2xs mt-1">
                               <Button
                                 type="button"
                                 variant="ghost"
@@ -3899,7 +3899,7 @@ function OrderDetail() {
                                 className="h-9 text-xs font-bold rounded-xl"
                               />
                             ) : (
-                              <div className="text-xs font-bold text-foreground bg-muted/20 border border-border/60 rounded-lg p-2.5 min-h-[42px] flex items-center">
+                              <div className="text-xs font-bold text-foreground bg-muted/20 border border-border-subtle rounded-lg p-2.5 min-h-[42px] flex items-center">
                                 {formatMoney(it.unit_price, currency)}
                               </div>
                             )}
@@ -3977,7 +3977,7 @@ function OrderDetail() {
                                   {it.selected_variant && (
                                     <div className="flex flex-wrap gap-2">
                                       {it.selected_variant.size && (
-                                        <span className="inline-flex items-center gap-1 bg-background border border-border/80 px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
+                                        <span className="inline-flex items-center gap-1 bg-background border border-border-strong px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
                                           <span className="text-muted-foreground">
                                             {isAr ? "المقاس:" : "Size:"}
                                           </span>
@@ -3993,7 +3993,7 @@ function OrderDetail() {
                                         </span>
                                       )}
                                       {it.selected_variant.color && (
-                                        <span className="inline-flex items-center gap-1.5 bg-background border border-border/80 px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
+                                        <span className="inline-flex items-center gap-1.5 bg-background border border-border-strong px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
                                           <span className="text-muted-foreground">
                                             {isAr ? "اللون:" : "Color:"}
                                           </span>
@@ -4001,7 +4001,7 @@ function OrderDetail() {
                                         </span>
                                       )}
                                       {it.selected_variant.fabric && (
-                                        <span className="inline-flex items-center gap-1 bg-background border border-border/80 px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
+                                        <span className="inline-flex items-center gap-1 bg-background border border-border-strong px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
                                           <span className="text-muted-foreground">
                                             {isAr ? "القماش:" : "Fabric:"}
                                           </span>
@@ -4011,7 +4011,7 @@ function OrderDetail() {
                                     </div>
                                   )}
                                   {it.custom_field_values && it.custom_field_values.length > 0 && (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 pt-1 border-t border-border/50">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 pt-1 border-t border-border-subtle">
                                       {it.custom_field_values.map((cf, i) => (
                                         <div key={i} className="text-xs">
                                           <span className="font-bold text-muted-foreground">
@@ -4141,8 +4141,8 @@ function OrderDetail() {
                           open={editingItemSheetIdx === idx}
                           onOpenChange={(open) => setEditingItemSheetIdx(open ? idx : null)}
                         >
-                          <DialogContent className="sm:max-w-[560px] w-[95vw] rounded-2xl p-6 font-sans border border-border/80 bg-card shadow-2xl space-y-5">
-                            <DialogHeader className="text-start pb-3 border-b border-border/60 pe-8 ps-0 space-y-1">
+                          <DialogContent className="sm:max-w-[560px] w-[95vw] rounded-2xl p-6 font-sans border border-border-strong bg-card shadow-2xl space-y-5">
+                            <DialogHeader className="text-start pb-3 border-b border-border-subtle pe-8 ps-0 space-y-1">
                               <DialogTitle className="text-lg font-extrabold text-foreground flex items-center gap-2">
                                 <Pencil className="h-4.5 w-4.5 text-primary shrink-0" />
                                 <span>{isAr ? "تعديل المنتج" : "Edit Product"}</span>
@@ -4291,7 +4291,7 @@ function OrderDetail() {
                               </div>
 
                               {/* Made-To-Order & Tailoring Specs Customizer */}
-                              <div className="pt-2 border-t border-border/60">
+                              <div className="pt-2 border-t border-border-subtle">
                                 <ItemTailoringCustomizer
                                   item={it}
                                   isAr={isAr}
@@ -4303,7 +4303,7 @@ function OrderDetail() {
                               </div>
                             </div>
 
-                            <DialogFooter className="flex flex-row justify-end items-center gap-2.5 pt-3 border-t border-border/60">
+                            <DialogFooter className="flex flex-row justify-end items-center gap-2.5 pt-3 border-t border-border-subtle">
                               <Button
                                 type="button"
                                 variant="outline"
@@ -4344,7 +4344,7 @@ function OrderDetail() {
               </div>
               <Card
                 className={cn(
-                  "overflow-hidden border border-border/60 shadow-xs rounded-2xl bg-card p-4 space-y-4",
+                  "overflow-hidden border border-border-subtle shadow-xs rounded-2xl bg-card p-4 space-y-4",
                   mobileTab !== "items" && "hidden sm:block",
                 )}
               >
@@ -4486,7 +4486,7 @@ function OrderDetail() {
                   </div>
                 )}
                 {/* Consolidated Financial Card Header with Toggle Button */}
-                <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
+                <div className="flex items-center justify-between border-b border-border-subtle pb-2.5">
                   <div className="flex items-center gap-2">
                     <CreditCard className="h-4 w-4 text-primary" />
                     <span className="text-xs font-semibold text-foreground">
@@ -4499,7 +4499,7 @@ function OrderDetail() {
                       variant={isEditingFees ? "secondary" : "outline"}
                       size="sm"
                       onClick={() => setIsEditingFees(!isEditingFees)}
-                      className="h-7 px-2.5 text-xs font-bold rounded-xl gap-1.5 border-border/80"
+                      className="h-7 px-2.5 text-xs font-bold rounded-xl gap-1.5 border-border-strong"
                     >
                       <Pencil className="h-3 w-3" />
                       <span>
@@ -4546,7 +4546,7 @@ function OrderDetail() {
                     </span>
                   </div>
                   {getPaymentGatewayReference(order) && (
-                    <div className="col-span-2 border-t border-border/40 pt-1.5 flex items-center justify-between font-mono text-xs">
+                    <div className="col-span-2 border-t border-border-subtle pt-1.5 flex items-center justify-between font-mono text-xs">
                       <span className="text-muted-foreground">Gateway Ref:</span>
                       <span className="font-bold text-foreground truncate max-w-[200px]">
                         {getPaymentGatewayReference(order)}
@@ -4836,7 +4836,7 @@ function OrderDetail() {
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2 font-mono text-xs pt-1.5 border-t border-border/40 text-muted-foreground">
+                      <div className="grid grid-cols-2 gap-2 font-mono text-xs pt-1.5 border-t border-border-subtle text-muted-foreground">
                         <div>
                           <span>{isAr ? "تكلفة المنتجات:" : "Product Cost:"} </span>
                           <strong className="text-foreground">
@@ -4853,7 +4853,7 @@ function OrderDetail() {
 
                       <div
                         className={cn(
-                          "flex justify-between items-center text-xs font-extrabold pt-1.5 border-t border-border/40",
+                          "flex justify-between items-center text-xs font-extrabold pt-1.5 border-t border-border-subtle",
                           totals.remaining > 0
                             ? "text-amber-700 dark:text-amber-300"
                             : "text-emerald-600 dark:text-emerald-400",
@@ -4952,14 +4952,14 @@ function OrderDetail() {
             mobileTab !== "activity" && "hidden sm:block",
           )}
         >
-          <details className="group overflow-hidden rounded-2xl border border-border/60 bg-card/60 shadow-sm sm:hidden">
+          <details className="group overflow-hidden rounded-2xl border border-border-subtle bg-card/60 shadow-sm sm:hidden">
             <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-bold marker:content-none">
               <span>{lang === "ar" ? "سجل النشاطات" : "Activity history"}</span>
               <span className="text-lg text-muted-foreground transition-transform group-open:rotate-45">
                 +
               </span>
             </summary>
-            <div className="border-t border-border/60 p-4">
+            <div className="border-t border-border-subtle p-4">
               <ActivityLogList orderId={order.id} scope="order" brandId={brand.id} />
             </div>
           </details>
@@ -5121,7 +5121,7 @@ function OrderDetail() {
                     return (
                       <div
                         key={v.id}
-                        className="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-border/70 hover:border-primary/60 hover:bg-primary/5 cursor-pointer transition-all"
+                        className="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-border-strong hover:border-primary/60 hover:bg-primary/5 cursor-pointer transition-all"
                         onClick={() => handleSelectVariantFromModal(v)}
                       >
                         <div className="flex items-center gap-3 min-w-0">

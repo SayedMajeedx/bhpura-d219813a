@@ -35,7 +35,7 @@ export function ListPagination({
   const end = Math.min(page * pageSize, totalItems);
 
   return (
-    <div className="flex flex-col items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card p-3 text-sm shadow-sm select-none sm:flex-row sm:p-4">
+    <div className="flex flex-col items-center justify-between gap-3 rounded-2xl border border-border-strong bg-card p-3 text-sm shadow-sm select-none sm:flex-row sm:p-4">
       <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
         <span className="text-xs text-muted-foreground sm:text-sm">
           {isAr ? `${entityAr} لكل صفحة:` : `${entityEn} per page:`}

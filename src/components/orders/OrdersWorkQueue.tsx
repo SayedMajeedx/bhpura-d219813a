@@ -85,7 +85,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
 
   if (isLoading) {
     return (
-      <div className="p-8 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border/60">
+      <div className="p-8 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border-subtle">
         <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent mb-2" />
         <p>{isAr ? "جاري تحميل الطلبات..." : "Loading orders work queue..."}</p>
       </div>
@@ -103,7 +103,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
 
   if (orders.length === 0) {
     return (
-      <div className="p-12 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border/60 space-y-2">
+      <div className="p-12 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border-subtle space-y-2">
         <p className="font-bold text-sm text-foreground">
           {isAr ? "لا توجد طلبات مطابقة" : "No orders found"}
         </p>
@@ -117,11 +117,11 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
   }
 
   return (
-    <div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-2xs select-text">
+    <div className="rounded-xl border border-border-subtle bg-card overflow-hidden shadow-2xs select-text">
       <div className="overflow-x-auto">
         <table className="w-full text-start text-xs border-collapse">
           <thead>
-            <tr className="border-b border-border/60 bg-muted/40 font-bold text-muted-foreground uppercase text-xs tracking-wider">
+            <tr className="border-b border-border-subtle bg-muted/40 font-bold text-muted-foreground uppercase text-xs tracking-wider">
               <th className="w-10 p-3 text-center">
                 <Checkbox
                   checked={selectAllState}
@@ -242,7 +242,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                       <span
                         className={`inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-semibold ${
                           paymentMethod.recognized
-                            ? "border-border/50 bg-muted/80 text-foreground"
+                            ? "border-border-subtle bg-muted/80 text-foreground"
                             : "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300"
                         }`}
                         title={paymentMethod.rawValue ?? undefined}
@@ -295,7 +295,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                             onValueChange={(val) => onAssignCourier(order.id, val)}
                             defaultValue=""
                           >
-                            <SelectTrigger className="h-6 text-xs font-semibold w-28 bg-background/80 border-border/60">
+                            <SelectTrigger className="h-6 text-xs font-semibold w-28 bg-background/80 border-border-subtle">
                               <SelectValue
                                 placeholder={isAr ? "+ تعيين مندوب" : "+ Assign Courier"}
                               />

@@ -43,7 +43,7 @@ export function CustomerPushCenter({ brandId, isAr }: { brandId:string; isAr:boo
     setSending(true);
     const {error}=await (supabase as any).rpc("create_customer_push_campaign",{p_brand_id:brandId,p_title:title.trim(),p_body:body.trim(),p_customer_id:target==="all"?null:target,p_target_url:"https://pura.boutq.store"});
     setSending(false);
-    if(error) return toast.error(error.message);
+    if(error) return toast.error(isAr ? "تعذر جدولة الإشعار، يرجى المحاولة مرة أخرى." : "Failed to queue push notification. Please try again.");
     setTitle("");setBody("");setTarget("all");toast.success(isAr?"تمت جدولة الإشعار للإرسال":"Push notification queued");
     void qc.invalidateQueries({queryKey:["customer-push-events",brandId]});
   };

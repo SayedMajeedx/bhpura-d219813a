@@ -70,7 +70,7 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
   return (
     <div className="space-y-6">
       {/* Support Access Control Toggle Card */}
-      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm relative">
+      <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card relative">
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="space-y-1">
@@ -132,7 +132,7 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
       </Card>
 
       {/* Security & Auditing Logs Card */}
-      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
+      <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card">
         <CardHeader className="pb-3 border-b border-border">
           <CardTitle className="text-base font-display font-medium flex items-center gap-2">
             <History className="h-4.5 w-4.5 text-muted-foreground" />

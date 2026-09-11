@@ -156,7 +156,7 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
                 </div>
 
                 {/* Multiplier & Discount */}
-                <div className="grid grid-cols-2 gap-2 py-2 border-y border-border/60">
+                <div className="grid grid-cols-2 gap-2 py-2 border-y border-border-subtle">
                   <div>
                     <span className="text-xs text-muted-foreground block">
                       {isAr ? "مضاعف النقاط" : "Multiplier"}
@@ -197,7 +197,7 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
                 </div>
               </div>
 
-              <div className="mt-5 pt-3 border-t border-border/40">
+              <div className="mt-5 pt-3 border-t border-border-subtle">
                 <Button
                   variant="outline"
                   size="sm"

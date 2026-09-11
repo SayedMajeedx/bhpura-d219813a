@@ -64,7 +64,7 @@ export function ReportsScopeSwitcher({ lang, slug }: ReportsScopeSwitcherProps) 
 
   return (
     <>
-      <div className="hidden items-center gap-1.5 overflow-x-auto rounded-xl border border-border/60 bg-muted/40 p-1 scrollbar-none sm:flex">
+      <div className="hidden items-center gap-1.5 overflow-x-auto rounded-xl border border-border-subtle bg-muted/40 p-1 scrollbar-none sm:flex">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeId === item.id;
@@ -89,7 +89,7 @@ export function ReportsScopeSwitcher({ lang, slug }: ReportsScopeSwitcherProps) 
       </div>
       <nav
         aria-label={isAr ? "أقسام التقارير" : "Report sections"}
-        className="grid grid-cols-[repeat(2,minmax(0,1fr))_44px] gap-1.5 rounded-2xl border border-border/60 bg-muted/35 p-1 sm:hidden"
+        className="grid grid-cols-[repeat(2,minmax(0,1fr))_44px] gap-1.5 rounded-2xl border border-border-subtle bg-muted/35 p-1 sm:hidden"
       >
         {navItems.slice(0, 2).map((item) => {
           const Icon = item.icon;
@@ -104,7 +104,7 @@ export function ReportsScopeSwitcher({ lang, slug }: ReportsScopeSwitcherProps) 
                 "flex min-h-10 min-w-0 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-semibold",
                 isActive
                   ? "bg-primary text-primary-foreground shadow-xs"
-                  : "border border-border/60 bg-card text-muted-foreground",
+                  : "border border-border-subtle bg-card text-muted-foreground",
               )}
             >
               <Icon className="h-3.5 w-3.5 shrink-0" />
@@ -118,7 +118,7 @@ export function ReportsScopeSwitcher({ lang, slug }: ReportsScopeSwitcherProps) 
               type="button"
               aria-label={isAr ? "المزيد من التقارير" : "More reports"}
               className={cn(
-                "flex min-h-10 items-center justify-center rounded-xl border border-border/60 bg-card text-muted-foreground",
+                "flex min-h-10 items-center justify-center rounded-xl border border-border-subtle bg-card text-muted-foreground",
                 !["overview", "sales"].includes(activeId) &&
                   "border-primary/30 bg-primary/10 text-primary",
               )}

@@ -72,7 +72,7 @@ export function PasskeySettings() {
 
   if (supported === false)
     return (
-      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6">
+      <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6">
         <div className="flex gap-3">
           <KeyRound className="mt-0.5 h-5 w-5 text-muted-foreground" />
           <div>
@@ -91,7 +91,7 @@ export function PasskeySettings() {
 
   return (
     <div className="space-y-5">
-      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6">
+      <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex gap-3">
             <div className="rounded-xl bg-primary/10 p-3 text-primary">
@@ -164,8 +164,8 @@ export function PasskeySettings() {
         </Card>
       )}
 
-      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
-        <div className="border-b border-border/60 p-4">
+      <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card">
+        <div className="border-b border-border-subtle p-4">
           <h3 className="font-medium">
             {isAr ? "أجهزة الدخول المسجّلة" : "Registered sign-in devices"}
           </h3>

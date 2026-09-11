@@ -108,7 +108,7 @@ export function IntegrationsScopeSwitcher({
   };
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-muted/40 p-1">
+    <div className="rounded-2xl border border-border-subtle bg-muted/40 p-1">
       <div className="flex flex-wrap items-center gap-1.5">
         {primary.map((scope) => scopeButton(scope))}
         <DropdownMenu>

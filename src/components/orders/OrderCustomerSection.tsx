@@ -43,9 +43,9 @@ export const OrderCustomerSection: React.FC<OrderCustomerSectionProps> = ({
   const whatsappUrl = buildWhatsAppLink(customerPhone);
 
   return (
-    <div className="p-4 rounded-xl bg-card border border-border/60 shadow-2xs space-y-4">
+    <div className="p-4 rounded-xl bg-card border border-border-subtle shadow-2xs space-y-4">
       {/* Customer Header */}
-      <div className="flex items-center justify-between border-b border-border/40 pb-3">
+      <div className="flex items-center justify-between border-b border-border-subtle pb-3">
         <div className="flex items-center gap-2">
           <div className="h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
             <User className="h-4 w-4" />
@@ -112,7 +112,7 @@ export const OrderCustomerSection: React.FC<OrderCustomerSectionProps> = ({
 
       {/* Shipping Address */}
       {address && (address.address_line1 || address.area || address.city) && (
-        <div className="pt-3 border-t border-border/40 space-y-1.5 text-xs">
+        <div className="pt-3 border-t border-border-subtle space-y-1.5 text-xs">
           <div className="flex items-center gap-1.5 font-bold text-foreground">
             <MapPin className="h-3.5 w-3.5 text-primary" />
             <span>{isAr ? "عنوان التوصيل (البحرين)" : "Delivery Address"}</span>

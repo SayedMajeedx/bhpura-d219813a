@@ -79,7 +79,7 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
 
   return (
     <>
-      <div className="p-3.5 rounded-xl bg-card border border-border/60 shadow-2xs space-y-2.5">
+      <div className="p-3.5 rounded-xl bg-card border border-border-subtle shadow-2xs space-y-2.5">
         <div
           className="flex items-start justify-between gap-3"
           onClick={() => setIsExpanded(!isExpanded)}
@@ -92,7 +92,7 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
             />
           </div>
           <div className="flex items-center gap-3 min-w-0 cursor-pointer">
-            <div className="h-12 w-12 rounded-lg bg-muted border border-border/60 flex items-center justify-center overflow-hidden shrink-0">
+            <div className="h-12 w-12 rounded-lg bg-muted border border-border-subtle flex items-center justify-center overflow-hidden shrink-0">
               {product.image_url ? (
                 <img src={product.image_url} alt={name} className="h-full w-full object-cover" />
               ) : (
@@ -224,7 +224,7 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
 
         {/* Expanded Variant Details Panel */}
         {isExpanded && renderVariantList && (
-          <div className="pt-2 border-t border-border/40 overflow-x-auto">
+          <div className="pt-2 border-t border-border-subtle overflow-x-auto">
             {renderVariantList(product)}
           </div>
         )}

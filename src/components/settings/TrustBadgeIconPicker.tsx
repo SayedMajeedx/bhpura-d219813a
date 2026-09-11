@@ -92,7 +92,7 @@ export function TrustBadgeIconPicker({
           aria-label={isAr ? "اختر أيقونة الشارة" : "Choose badge icon"}
         >
           <div className={cn("flex items-center gap-2 overflow-hidden", isAr ? "flex-row-reverse" : "flex-row")}>
-            <div className={cn("flex h-7 w-7 items-center justify-center rounded-lg border border-border/60", colorPreset.bgClass)}>
+            <div className={cn("flex h-7 w-7 items-center justify-center rounded-lg border border-border-subtle", colorPreset.bgClass)}>
               {renderTrustBadgeIcon(value, "h-4 w-4", colorId)}
             </div>
             <span className="text-xs font-medium truncate max-w-[90px]">
@@ -193,13 +193,13 @@ export function TrustBadgeIconPicker({
                       "flex items-start gap-2.5 p-2 rounded-xl text-start transition-all border min-h-[56px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
                       isSelected
                         ? "border-primary bg-primary/10 text-foreground shadow-xs"
-                        : "border-border/60 hover:border-border hover:bg-muted/50 text-foreground"
+                        : "border-border-subtle hover:border-border hover:bg-muted/50 text-foreground"
                     )}
                   >
                     <div
                       className={cn(
                         "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border",
-                        isSelected ? "border-primary/40 bg-primary/20" : "border-border/70 bg-card",
+                        isSelected ? "border-primary/40 bg-primary/20" : "border-border-strong bg-card",
                         colorPreset.textClass
                       )}
                     >

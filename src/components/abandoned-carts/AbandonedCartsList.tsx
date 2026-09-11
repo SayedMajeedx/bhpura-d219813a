@@ -3,6 +3,7 @@ import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { OsSkeleton } from "@/components/os/os-skeleton";
 import {
   Table,
   TableBody,
@@ -224,14 +225,33 @@ export function AbandonedCartsList({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredCarts.length === 0 ? (
+              {isLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <OsSkeleton variant="text" className="h-4 w-28" />
+                    </TableCell>
+                    <TableCell>
+                      <OsSkeleton variant="text" className="h-4 w-32" />
+                    </TableCell>
+                    <TableCell>
+                      <OsSkeleton variant="text" className="h-4 w-16" />
+                    </TableCell>
+                    <TableCell>
+                      <OsSkeleton variant="text" className="h-4 w-20" />
+                    </TableCell>
+                    <TableCell>
+                      <OsSkeleton variant="text" className="h-4 w-16" />
+                    </TableCell>
+                    <TableCell>
+                      <OsSkeleton variant="button" className="h-8 w-20 ms-auto" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : filteredCarts.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-10 text-muted-foreground text-sm">
-                    {isLoading
-                      ? isAr
-                        ? "جاري تحميل السلات المتروكة..."
-                        : "Loading abandoned carts..."
-                      : isAr
+                    {isAr
                       ? "لا توجد سلات متروكة مطابقة للبحث."
                       : "No abandoned carts found."}
                   </TableCell>

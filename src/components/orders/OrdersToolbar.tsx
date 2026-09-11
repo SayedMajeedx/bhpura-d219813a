@@ -100,7 +100,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2 bg-card p-2 rounded-xl border border-border/60 shadow-2xs">
+      <div className="flex items-center gap-2 bg-card p-2 rounded-xl border border-border-subtle shadow-2xs">
         {/* Search Bar - Flex 1 */}
         <div className="relative flex-1">
           <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -113,7 +113,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
                 ? "ابحث برقم الطلب أو اسم العميل..."
                 : `Search invoice, customer, or phone... (${shortcutLabel})`
             }
-            className="h-9 ps-9 text-xs bg-background/50 border-border/70"
+            className="h-9 ps-9 text-xs bg-background/50 border-border-strong"
           />
         </div>
 
@@ -304,7 +304,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
           value={sortOrder}
           onValueChange={(val) => onSortOrderChange(val as "newest" | "oldest")}
         >
-          <SelectTrigger className="h-9 w-28 text-xs border-border/70 hidden md:flex">
+          <SelectTrigger className="h-9 w-28 text-xs border-border-strong hidden md:flex">
             <ArrowUpDown className="h-3 w-3 me-1 text-muted-foreground" />
             <SelectValue />
           </SelectTrigger>
@@ -315,7 +315,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
         </Select>
 
         {/* Historical Switch */}
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-border/60 bg-muted/30 shrink-0">
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-border-subtle bg-muted/30 shrink-0">
           <Switch
             id="include-historical-toggle"
             aria-label={isAr ? "تضمين الطلبات المؤرشفة" : "Include archived orders"}

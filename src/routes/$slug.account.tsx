@@ -216,7 +216,7 @@ function OrderTimelineTracker({
   }
 
   return (
-    <div className="mt-5 pt-5 border-t border-border/50">
+    <div className="mt-5 pt-5 border-t border-border-subtle">
       <div className="relative flex justify-between w-full">
         {/* Connection bar */}
         <div className="absolute top-[14px] left-[5%] right-[5%] h-[2px] bg-muted dark:bg-zinc-800 -z-0">
@@ -424,7 +424,7 @@ function AccountPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[290px_1fr] gap-8 items-start">
         {/* Luxury Profiler Side Panel */}
-        <Card className="p-6 text-center space-y-6 bg-card/60 backdrop-blur-md border border-border/70 rounded-2xl shadow-xs relative overflow-hidden">
+        <Card className="p-6 text-center space-y-6 bg-card border border-border-strong rounded-2xl shadow-xs relative overflow-hidden">
           <div className="space-y-4">
             {/* Elegant Monogram Monocle */}
             <div className="w-20 h-20 rounded-full mx-auto bg-primary/10 text-primary flex items-center justify-center font-display text-2xl font-bold border border-primary/20 shadow-inner relative">
@@ -465,7 +465,7 @@ function AccountPage() {
             )}
           </div>
 
-          <hr className="border-border/50" />
+          <hr className="border-border-subtle" />
 
           {/* Core metrics panel */}
           <div className="grid grid-cols-3 gap-1 divide-x divide-border/40 rtl:divide-x-reverse text-center">
@@ -504,7 +504,7 @@ function AccountPage() {
             </div>
           </div>
 
-          <hr className="border-border/50" />
+          <hr className="border-border-subtle" />
 
           {/* Quick Sign Out control */}
           <div className="pt-1">
@@ -516,9 +516,9 @@ function AccountPage() {
         <div className="space-y-6">
           <Tabs
             defaultValue="orders"
-            className="w-full rounded-2xl border bg-card/40 backdrop-blur-md p-4 shadow-xs sm:p-6 border-border/70"
+            className="w-full rounded-2xl border bg-card p-4 shadow-xs sm:p-6 border-border-strong"
           >
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-7 h-auto rounded-xl p-1 bg-muted/40 border border-border/40 mb-6 gap-1">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-7 h-auto rounded-xl p-1 bg-muted/40 border border-border-subtle mb-6 gap-1">
               <TabsTrigger
                 value="orders"
                 className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
@@ -792,7 +792,7 @@ function OrdersSection({
         return (
           <Card
             key={o.id}
-            className="p-5 border border-border/70 hover:border-primary/20 shadow-xs hover:shadow-md transition-all duration-300 rounded-xl bg-card"
+            className="p-5 border border-border-strong hover:border-primary/20 shadow-xs hover:shadow-md transition-all duration-300 rounded-xl bg-card"
           >
             {/* Header info bar */}
             <div className="flex flex-wrap items-start justify-between gap-4">
@@ -829,7 +829,7 @@ function OrdersSection({
             />
 
             {/* Expander list control */}
-            <div className="mt-5 pt-3 border-t border-border/40">
+            <div className="mt-5 pt-3 border-t border-border-subtle">
               <Button
                 variant="ghost"
                 size="sm"
@@ -845,12 +845,12 @@ function OrdersSection({
               </Button>
 
               {isExpanded && o.order_items && o.order_items.length > 0 && (
-                <div className="mt-3 bg-muted/30 dark:bg-zinc-900/30 rounded-lg p-3.5 space-y-2 border border-border/30">
+                <div className="mt-3 bg-muted/30 dark:bg-zinc-900/30 rounded-lg p-3.5 space-y-2 border border-border-subtle">
                   <ul className="space-y-2 text-xs">
                     {o.order_items.map((it) => (
                       <li
                         key={it.id}
-                        className="flex justify-between items-center gap-3 border-b border-dashed border-border/50 pb-2 last:border-0 last:pb-0"
+                        className="flex justify-between items-center gap-3 border-b border-dashed border-border-subtle pb-2 last:border-0 last:pb-0"
                       >
                         <span className="font-medium text-foreground">
                           {it.description}{" "}
@@ -873,7 +873,7 @@ function OrdersSection({
             </div>
 
             {/* Actions Bar Footer */}
-            <div className="mt-4 pt-4 border-t border-border/40 flex flex-wrap gap-2 items-center justify-between">
+            <div className="mt-4 pt-4 border-t border-border-subtle flex flex-wrap gap-2 items-center justify-between">
               <div className="flex gap-2 flex-wrap">
                 <Button
                   variant="outline"
@@ -965,7 +965,7 @@ function CustomerReturnsSection({
         });
 
         return (
-          <Card key={r.id} className="p-5 border border-border/70 rounded-xl bg-card space-y-3">
+          <Card key={r.id} className="p-5 border border-border-strong rounded-xl bg-card space-y-3">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
@@ -1003,13 +1003,13 @@ function CustomerReturnsSection({
               </div>
             </div>
 
-            <div className="p-3 rounded-lg bg-muted/30 border border-border/40 text-xs text-muted-foreground">
+            <div className="p-3 rounded-lg bg-muted/30 border border-border-subtle text-xs text-muted-foreground">
               <span className="font-semibold text-foreground">{isAr ? "السبب:" : "Reason:"} </span>
               {r.reason}
             </div>
 
             {r.items && r.items.length > 0 && (
-              <div className="pt-2 border-t border-border/40 space-y-1 text-xs">
+              <div className="pt-2 border-t border-border-subtle space-y-1 text-xs">
                 <span className="text-xs font-semibold text-muted-foreground">
                   {isAr ? "المنتجات المطلوب إرجاعها:" : "Returned items:"}
                 </span>
@@ -1101,7 +1101,7 @@ function ProfileSection({
   return (
     <Card
       dir={isAr ? "rtl" : "ltr"}
-      className={`p-5 sm:p-6 space-y-5 max-w-2xl border border-border/70 rounded-xl bg-card ${isAr ? "text-right" : "text-left"}`}
+      className={`p-5 sm:p-6 space-y-5 max-w-2xl border border-border-strong rounded-xl bg-card ${isAr ? "text-right" : "text-left"}`}
     >
       <div className="border-b pb-3 mb-2">
         <h3 className="font-semibold text-base" style={{ color: "var(--sf-heading)" }}>
@@ -1316,7 +1316,7 @@ function AddressesSection({
           {addresses.map((a) => (
             <Card
               key={a.id}
-              className={`p-5 flex flex-col justify-between gap-4 border shadow-xs rounded-xl bg-card transition-all duration-300 ${a.is_default ? "border-primary/40 ring-1 ring-primary/10 bg-primary/[0.01]" : "border-border/70 hover:border-primary/20"}`}
+              className={`p-5 flex flex-col justify-between gap-4 border shadow-xs rounded-xl bg-card transition-all duration-300 ${a.is_default ? "border-primary/40 ring-1 ring-primary/10 bg-primary/[0.01]" : "border-border-strong hover:border-primary/20"}`}
             >
               <div>
                 <div className="flex items-center gap-2 mb-3">
@@ -1331,7 +1331,7 @@ function AddressesSection({
                 </div>
                 <DeliveryAddressCard address={a} lang={lang} compact showLabel={false} />
               </div>
-              <div className="flex gap-2 justify-end pt-3 border-t border-border/40">
+              <div className="flex gap-2 justify-end pt-3 border-t border-border-subtle">
                 {!a.is_default && (
                   <Button
                     variant="outline"
@@ -1358,7 +1358,7 @@ function AddressesSection({
       )}
 
       {adding ? (
-        <Card className="p-5 sm:p-6 space-y-4 border border-border/80 rounded-xl bg-card">
+        <Card className="p-5 sm:p-6 space-y-4 border border-border-strong rounded-xl bg-card">
           <div className="border-b pb-3 mb-2">
             <h3 className="font-semibold text-base" style={{ color: "var(--sf-heading)" }}>
               {t("إضافة عنوان شحن جديد", "New delivery destination")}

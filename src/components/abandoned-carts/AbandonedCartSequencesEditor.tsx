@@ -195,7 +195,7 @@ export function AbandonedCartSequencesEditor({
                 <span className="text-xs font-semibold text-muted-foreground block">
                   {isAr ? "معاينة القالب" : "Message Preview"}
                 </span>
-                <p className="text-xs text-muted-foreground line-clamp-3 bg-background p-2 rounded border border-border/50 font-mono text-xs">
+                <p className="text-xs text-muted-foreground line-clamp-3 bg-background p-2 rounded border border-border-subtle font-mono text-xs">
                   {isAr ? seq.message_template_ar : seq.message_template_en}
                 </p>
               </div>
@@ -212,7 +212,7 @@ export function AbandonedCartSequencesEditor({
               )}
             </div>
 
-            <div className="mt-5 pt-3 border-t border-border/40">
+            <div className="mt-5 pt-3 border-t border-border-subtle">
               <Button
                 variant="outline"
                 size="sm"

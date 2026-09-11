@@ -37,7 +37,7 @@ export function OsAppIcon({
           sizeClasses[size],
           selected
             ? "bg-primary text-primary-foreground border-primary/20 shadow-md scale-105"
-            : "bg-muted/50 text-foreground border-border/60 hover:bg-muted/80 hover:border-border",
+            : "bg-muted/50 text-foreground border-border-subtle hover:bg-muted/80 hover:border-border",
           className,
         )}
       >

@@ -211,7 +211,7 @@ function ResetPasswordPage() {
           <h1 className="text-3xl font-display font-bold text-foreground">{t("app.title")}</h1>
         </div>
 
-        <Card className="p-6 sm:p-8 backdrop-blur-md bg-card/90 border border-border shadow-xl rounded-2xl">
+        <Card className="p-6 sm:p-8 bg-card/90 border border-border shadow-xl rounded-2xl">
           {status === "verifying" && (
             <div className="py-8 text-center space-y-4">
               <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />

@@ -1417,7 +1417,7 @@ function Checkout() {
             />
           </div>
           {session?.user && (
-            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/70 bg-muted/20 p-3">
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border-strong bg-muted/20 p-3">
               <Checkbox
                 className="mt-0.5"
                 checked={saveToProfile}
@@ -2201,7 +2201,7 @@ function Checkout() {
               {formatPrice(grandTotal, currency, lang)}
             </span>
           </div>
-          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/70 bg-muted/20 p-3">
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border-strong bg-muted/20 p-3">
             <Checkbox
               className="mt-0.5"
               checked={acceptedTerms}
@@ -2223,7 +2223,7 @@ function Checkout() {
             </span>
           </label>
 
-          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/70 bg-muted/20 p-3">
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border-strong bg-muted/20 p-3">
             <Checkbox
               className="mt-0.5"
               checked={marketingConsent}

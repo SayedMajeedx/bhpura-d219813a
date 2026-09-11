@@ -37,7 +37,7 @@ export function ExpenseMobileCard({
 
   return (
     <Card
-      className="p-3.5 border border-border/60 shadow-sm rounded-xl bg-card/60 backdrop-blur-sm space-y-2.5 transition-all duration-200 hover:border-primary/40 cursor-pointer"
+      className="p-3.5 border border-border-subtle shadow-sm rounded-xl bg-card space-y-2.5 transition-all duration-200 hover:border-primary/40 cursor-pointer"
       onClick={() => onEdit(e)}
     >
       <div className="flex items-center justify-between gap-2">
@@ -51,7 +51,7 @@ export function ExpenseMobileCard({
         </span>
       </div>
 
-      <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t border-border/40">
+      <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t border-border-subtle">
         <div className="flex items-center gap-1">
           <Calendar className="h-3.5 w-3.5 shrink-0" />
           <span>
@@ -75,7 +75,7 @@ export function ExpenseMobileCard({
       )}
 
       <div
-        className="flex items-center justify-between pt-2 border-t border-border/40"
+        className="flex items-center justify-between pt-2 border-t border-border-subtle"
         onClick={(event) => event.stopPropagation()}
       >
         {e.receipt_url ? (

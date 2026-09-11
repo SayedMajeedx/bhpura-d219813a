@@ -268,7 +268,7 @@ function IntegrationsPage() {
             </Card>
 
           {filteredIntegrations.length === 0 ? (
-            <Card className="overflow-hidden border border-dashed border-border/80 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-8 sm:p-12 text-center">
+            <Card className="overflow-hidden border border-dashed border-border-strong shadow-lg rounded-2xl bg-card p-8 sm:p-12 text-center">
               <Plug className="h-10 w-10 mx-auto text-muted-foreground mb-3 animate-pulse" />
               <p className="text-muted-foreground">{t("integrations.none")}</p>
             </Card>
@@ -284,7 +284,7 @@ function IntegrationsPage() {
                 return (
                   <Card
                     key={row.id}
-                    className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-3 sm:p-6 transition-all duration-300 hover:border-primary/40 hover:shadow-xl"
+                    className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-3 sm:p-6 transition-all duration-300 hover:border-primary/40 hover:shadow-xl"
                   >
                     <div className="flex items-start justify-between gap-4 mb-4">
                       <div className="flex items-center gap-3 min-w-0">
@@ -377,7 +377,7 @@ function IntegrationsPage() {
                           row.provider === "gemini" ? row.api_key_masked : row.webhook_secret_masked
                         }
                       />
-                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground pt-2 border-t border-border/50 sm:col-span-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground pt-2 border-t border-border-subtle sm:col-span-2">
                         <div className="flex items-center gap-1.5">
                           <History className="h-3.5 w-3.5 text-muted-foreground/70" />
                           <span>{isAr ? "آخر تدوير للمفاتيح:" : "Last rotated:"}</span>
@@ -401,7 +401,7 @@ function IntegrationsPage() {
                           size="sm"
                           disabled={!canRotateKeys}
                           onClick={() => setRotatingIntegration(row)}
-                          className="h-7 px-2.5 text-xs gap-1.5 border-border/70 hover:border-amber-500/50 hover:text-amber-600 dark:hover:text-amber-400"
+                          className="h-7 px-2.5 text-xs gap-1.5 border-border-strong hover:border-amber-500/50 hover:text-amber-600 dark:hover:text-amber-400"
                           title={
                             !canRotateKeys
                               ? isAr
@@ -416,7 +416,7 @@ function IntegrationsPage() {
                       </div>
                     </div>
 
-                    <div className="mt-4 pt-4 border-t border-border/80 text-xs">
+                    <div className="mt-4 pt-4 border-t border-border-strong text-xs">
                       {isNoWebhookProvider ? (
                         <div className="flex items-center gap-2 text-muted-foreground bg-primary/5 border border-primary/10 rounded-lg px-3 py-2.5">
                           {row.provider === "gemini" ? (

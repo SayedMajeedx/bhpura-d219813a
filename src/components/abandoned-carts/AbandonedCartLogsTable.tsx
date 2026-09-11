@@ -1,5 +1,6 @@
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
+import { OsSkeleton } from "@/components/os/os-skeleton";
 import {
   Table,
   TableBody,
@@ -96,14 +97,21 @@ export function AbandonedCartLogsTable({ logs, isLoading }: AbandonedCartLogsTab
             </TableRow>
           </TableHeader>
           <TableBody>
-            {logs.length === 0 ? (
+            {isLoading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><OsSkeleton variant="text" className="h-4 w-20" /></TableCell>
+                  <TableCell><OsSkeleton variant="text" className="h-4 w-32" /></TableCell>
+                  <TableCell><OsSkeleton variant="text" className="h-4 w-16" /></TableCell>
+                  <TableCell><OsSkeleton variant="text" className="h-4 w-20" /></TableCell>
+                  <TableCell><OsSkeleton variant="text" className="h-4 w-16" /></TableCell>
+                  <TableCell><OsSkeleton variant="text" className="h-4 w-24" /></TableCell>
+                </TableRow>
+              ))
+            ) : logs.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-10 text-muted-foreground text-sm">
-                  {isLoading
-                    ? isAr
-                      ? "جاري تحميل سجل الإرسال..."
-                      : "Loading dispatch logs..."
-                    : isAr
+                  {isAr
                     ? "لا توجد رسائل استعادة مرسلة حتى الآن."
                     : "No recovery dispatch logs recorded yet."}
                 </TableCell>
