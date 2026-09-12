@@ -418,7 +418,7 @@ export function OsMobileNavigation({
             </nav>
 
             {/* iOS Liquid Control Center Footer */}
-            <div className="p-3.5 border-t border-border-subtle bg-card/40 backdrop-blur-md space-y-2.5 relative z-10">
+            <div className="p-3 border-t border-border-subtle bg-card/40 backdrop-blur-md space-y-2 relative z-10">
               {/* Native App Tools Trigger (When in iPhone/Android Native App Wrapper) */}
               {typeof window !== "undefined" && Boolean((window as any).ReactNativeWebView) && (
                 <Button
@@ -441,27 +441,23 @@ export function OsMobileNavigation({
                 </Button>
               )}
 
-              {/* Theme / Appearance Segmented Pill Toggle */}
-              <div className="bg-muted/60 p-2 rounded-2xl border border-border space-y-1.5">
-                <div className="flex items-center justify-between px-1">
-                  <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                    <Sun className="h-3.5 w-3.5" />
-                    {lang === "ar" ? "المظهر" : "Theme"}
-                  </span>
-                </div>
-                <div className="grid grid-cols-3 gap-1 rounded-xl bg-background/80 p-0.5 border border-border shadow-2xs">
+              {/* Ultra-Compact Quick Preferences: Theme (Light / Dark / Auto) & Language (AR / EN) */}
+              <div className="flex items-center justify-between gap-2 p-1 rounded-2xl bg-muted/60 border border-border">
+                {/* Theme Segmented Icons */}
+                <div className="flex items-center rounded-xl bg-background/80 p-0.5 border border-border shadow-2xs">
                   <Button
                     type="button"
                     size="sm"
                     variant={theme === "light" ? "default" : "ghost"}
                     onClick={() => setTheme("light")}
                     className={cn(
-                      "h-8 px-1 text-xs font-bold rounded-lg transition-all gap-1.5 justify-center",
+                      "h-8 w-8 p-0 rounded-lg transition-all",
                       theme !== "light" && "text-muted-foreground hover:text-foreground",
                     )}
+                    title={lang === "ar" ? "فاتح" : "Light"}
+                    aria-label={lang === "ar" ? "فاتح" : "Light"}
                   >
-                    <Sun className="h-3.5 w-3.5 shrink-0" />
-                    <span>{lang === "ar" ? "فاتح" : "Light"}</span>
+                    <Sun className="h-4 w-4 shrink-0" />
                   </Button>
                   <Button
                     type="button"
@@ -469,12 +465,13 @@ export function OsMobileNavigation({
                     variant={theme === "dark" ? "default" : "ghost"}
                     onClick={() => setTheme("dark")}
                     className={cn(
-                      "h-8 px-1 text-xs font-bold rounded-lg transition-all gap-1.5 justify-center",
+                      "h-8 w-8 p-0 rounded-lg transition-all",
                       theme !== "dark" && "text-muted-foreground hover:text-foreground",
                     )}
+                    title={lang === "ar" ? "داكن" : "Dark"}
+                    aria-label={lang === "ar" ? "داكن" : "Dark"}
                   >
-                    <Moon className="h-3.5 w-3.5 shrink-0" />
-                    <span>{lang === "ar" ? "داكن" : "Dark"}</span>
+                    <Moon className="h-4 w-4 shrink-0" />
                   </Button>
                   <Button
                     type="button"
@@ -482,47 +479,41 @@ export function OsMobileNavigation({
                     variant={theme === "system" ? "default" : "ghost"}
                     onClick={() => setTheme("system")}
                     className={cn(
-                      "h-8 px-1 text-xs font-bold rounded-lg transition-all gap-1.5 justify-center",
+                      "h-8 w-8 p-0 rounded-lg transition-all",
                       theme !== "system" && "text-muted-foreground hover:text-foreground",
                     )}
+                    title={lang === "ar" ? "تلقائي" : "Auto"}
+                    aria-label={lang === "ar" ? "تلقائي" : "Auto"}
                   >
-                    <Monitor className="h-3.5 w-3.5 shrink-0" />
-                    <span>{lang === "ar" ? "تلقائي" : "Auto"}</span>
+                    <Monitor className="h-4 w-4 shrink-0" />
                   </Button>
                 </div>
-              </div>
 
-              {/* Language Segmented Pill Toggle */}
-              <div className="bg-muted/60 p-2 rounded-2xl border border-border-subtle space-y-1.5">
-                <div className="flex items-center justify-between px-1">
-                  <span className="text-xs font-semibold text-muted-foreground">
-                    {lang === "ar" ? "اللغة" : "Language"}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-1 rounded-xl bg-background/80 p-0.5 border border-border-subtle shadow-2xs">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={lang === "en" ? "default" : "ghost"}
-                    onClick={() => onSetLang("en")}
-                    className={cn(
-                      "h-8 px-2 text-xs font-bold rounded-lg transition-all justify-center",
-                      lang !== "en" && "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    EN
-                  </Button>
+                {/* Language Segmented Toggle */}
+                <div className="flex items-center rounded-xl bg-background/80 p-0.5 border border-border-subtle shadow-2xs">
                   <Button
                     type="button"
                     size="sm"
                     variant={lang === "ar" ? "default" : "ghost"}
                     onClick={() => onSetLang("ar")}
                     className={cn(
-                      "h-8 px-2 text-xs font-bold rounded-lg transition-all justify-center",
+                      "h-8 px-2.5 text-xs font-bold rounded-lg transition-all justify-center",
                       lang !== "ar" && "text-muted-foreground hover:text-foreground",
                     )}
                   >
                     العربية
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={lang === "en" ? "default" : "ghost"}
+                    onClick={() => onSetLang("en")}
+                    className={cn(
+                      "h-8 px-2.5 text-xs font-bold rounded-lg transition-all justify-center",
+                      lang !== "en" && "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    EN
                   </Button>
                 </div>
               </div>
