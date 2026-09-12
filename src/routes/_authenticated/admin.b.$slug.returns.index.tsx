@@ -28,11 +28,7 @@ import {
 import { ReturnsCommandHeader } from "@/components/returns/ReturnsCommandHeader";
 import { ReturnsScopeSwitcher, type ReturnsScope } from "@/components/returns/ReturnsScopeSwitcher";
 import { ReturnPolicyEditor } from "@/components/returns/ReturnPolicyEditor";
-import {
-  RETURN_STATUS_CONFIG,
-  type ReturnRequest,
-  type ReturnStatus,
-} from "@/lib/returns.types";
+import { RETURN_STATUS_CONFIG, type ReturnRequest, type ReturnStatus } from "@/lib/returns.types";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/returns/")({
   component: ReturnsIndexPage,
@@ -69,14 +65,19 @@ function ReturnsIndexPage() {
   const currency = settingsQ.data?.currency || (brand as any)?.currency || "BHD";
 
   // Fetch returns with related order, customer, and items
-  const { data: returns = [], isLoading, refetch } = useQuery<ReturnRequest[]>({
+  const {
+    data: returns = [],
+    isLoading,
+    refetch,
+  } = useQuery<ReturnRequest[]>({
     queryKey: ["admin-returns-list", brandId],
     queryFn: async () => {
       if (!brandId) return [];
 
       const { data, error } = await (supabase as any)
         .from("return_requests")
-        .select(`
+        .select(
+          `
           *,
           order:orders (
             id,
@@ -123,7 +124,8 @@ function ReturnsIndexPage() {
               stock_quantity
             )
           )
-        `)
+        `,
+        )
         .eq("brand_id", brandId)
         .order("created_at", { ascending: false });
 
@@ -163,8 +165,10 @@ function ReturnsIndexPage() {
   const filteredReturns = returns.filter((r) => {
     // Scope filter
     if (activeScope === "under_review" && !["new", "under_review"].includes(r.status)) return false;
-    if (activeScope === "approved" && !["approved", "awaiting_shipment"].includes(r.status)) return false;
-    if (activeScope === "inspecting" && !["received", "under_inspection"].includes(r.status)) return false;
+    if (activeScope === "approved" && !["approved", "awaiting_shipment"].includes(r.status))
+      return false;
+    if (activeScope === "inspecting" && !["received", "under_inspection"].includes(r.status))
+      return false;
     if (activeScope === "settled" && !["refunded", "exchanged"].includes(r.status)) return false;
     if (activeScope === "completed" && r.status !== "completed") return false;
 
@@ -314,10 +318,16 @@ function ReturnsIndexPage() {
                   <thead>
                     <tr className="border-b border-border bg-muted/40 text-muted-foreground font-semibold">
                       <th className="p-3.5 text-start">{isAr ? "رقم المرتجع" : "Return #"}</th>
-                      <th className="p-3.5 text-start">{isAr ? "الفاتورة الأصلية" : "Invoice #"}</th>
+                      <th className="p-3.5 text-start">
+                        {isAr ? "الفاتورة الأصلية" : "Invoice #"}
+                      </th>
                       <th className="p-3.5 text-start">{isAr ? "العميل" : "Customer"}</th>
-                      <th className="p-3.5 text-start">{isAr ? "القطع والسبب" : "Items & Reason"}</th>
-                      <th className="p-3.5 text-start">{isAr ? "النوع والتعويض" : "Type & Compensation"}</th>
+                      <th className="p-3.5 text-start">
+                        {isAr ? "القطع والسبب" : "Items & Reason"}
+                      </th>
+                      <th className="p-3.5 text-start">
+                        {isAr ? "النوع والتعويض" : "Type & Compensation"}
+                      </th>
                       <th className="p-3.5 text-start">{isAr ? "صافي المستحق" : "Net Refund"}</th>
                       <th className="p-3.5 text-start">{isAr ? "الحالة" : "Status"}</th>
                       <th className="p-3.5 text-start">{isAr ? "التاريخ" : "Date"}</th>
@@ -328,7 +338,9 @@ function ReturnsIndexPage() {
                     {filteredReturns.map((r) => {
                       const statusCfg = RETURN_STATUS_CONFIG[r.status] || RETURN_STATUS_CONFIG.new;
                       const custName =
-                        r.customer?.name || r.order?.customer_name_snapshot || (isAr ? "عميل زائر" : "Guest");
+                        r.customer?.name ||
+                        r.order?.customer_name_snapshot ||
+                        (isAr ? "عميل زائر" : "Guest");
                       const itemsCount = r.items?.reduce((s, i) => s + (i.quantity || 1), 0) || 0;
 
                       return (
@@ -337,7 +349,7 @@ function ReturnsIndexPage() {
                           className="hover:bg-muted/30 transition-colors group cursor-pointer"
                           onClick={() =>
                             navigate({
-                              to: (`/admin/b/${slug}/returns/${r.id}`) as any,
+                              to: `/admin/b/${slug}/returns/${r.id}` as any,
                             })
                           }
                         >

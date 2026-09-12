@@ -71,7 +71,9 @@ function ReportsSales() {
 
   const chartData = useMemo(() => {
     const rows = (query.data as any)?.timeseries || [];
-    const currencies = Array.from(new Set(rows.map((row: any) => row.currency).filter(Boolean))) as string[];
+    const currencies = Array.from(
+      new Set(rows.map((row: any) => row.currency).filter(Boolean)),
+    ) as string[];
     const currency = currencies.includes(selectedCurrency) ? selectedCurrency : currencies[0];
     return [...rows]
       .filter((row: any) => !currency || row.currency === currency)
@@ -86,7 +88,15 @@ function ReportsSales() {
       }));
   }, [query.data, interval, selectedCurrency]);
 
-  const currencies = useMemo(() => Array.from(new Set(((query.data as any)?.timeseries || []).map((row: any) => row.currency).filter(Boolean))) as string[], [query.data]);
+  const currencies = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          ((query.data as any)?.timeseries || []).map((row: any) => row.currency).filter(Boolean),
+        ),
+      ) as string[],
+    [query.data],
+  );
 
   const currency = chartData[0]?.currency || "BHD";
   const totalRevenue = chartData.reduce((sum, row) => sum + Number(row.pov || 0), 0);
@@ -109,10 +119,23 @@ function ReportsSales() {
       />
       {currencies.length > 1 && (
         <div className="flex items-center justify-end gap-2">
-          <span className="text-sm text-muted-foreground">{lang === "ar" ? "عملة التقرير" : "Reporting currency"}</span>
-          <Select value={currencies.includes(selectedCurrency) ? selectedCurrency : currencies[0]} onValueChange={setSelectedCurrency}>
-            <SelectTrigger className="w-32 bg-card"><SelectValue /></SelectTrigger>
-            <SelectContent>{currencies.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}</SelectContent>
+          <span className="text-sm text-muted-foreground">
+            {lang === "ar" ? "عملة التقرير" : "Reporting currency"}
+          </span>
+          <Select
+            value={currencies.includes(selectedCurrency) ? selectedCurrency : currencies[0]}
+            onValueChange={setSelectedCurrency}
+          >
+            <SelectTrigger className="w-32 bg-card">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {currencies.map((item) => (
+                <SelectItem key={item} value={item}>
+                  {item}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </div>
       )}
@@ -249,7 +272,9 @@ function ReportsSales() {
             <BreakdownCard
               title={lang === "ar" ? "طرق الدفع" : "Payment methods"}
               icon={<CreditCard />}
-              rows={((query.data as any)?.payment || []).filter((row: any) => row.currency === currency)}
+              rows={((query.data as any)?.payment || []).filter(
+                (row: any) => row.currency === currency,
+              )}
               keyName="payment_method"
               currency={currency}
               lang={lang}
@@ -257,7 +282,9 @@ function ReportsSales() {
             <BreakdownCard
               title={lang === "ar" ? "طرق الاستلام" : "Fulfillment methods"}
               icon={<Truck />}
-              rows={((query.data as any)?.fulfillment || []).filter((row: any) => row.currency === currency)}
+              rows={((query.data as any)?.fulfillment || []).filter(
+                (row: any) => row.currency === currency,
+              )}
               keyName="fulfillment_method"
               currency={currency}
               lang={lang}
@@ -273,9 +300,7 @@ function SalesTooltip({ active, payload, label, currency, lang }: any) {
   if (!active || !payload?.length) return null;
   return (
     <div className="min-w-52 rounded-xl border border-border bg-card p-4 shadow-xl">
-      <p className="mb-3 text-xs font-semibold text-muted-foreground">
-        {label}
-      </p>
+      <p className="mb-3 text-xs font-semibold text-muted-foreground">{label}</p>
       {payload.map((item: any) => (
         <div key={item.dataKey} className="mt-2 flex items-center justify-between gap-6 text-sm">
           <span className="flex items-center gap-2">

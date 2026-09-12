@@ -103,7 +103,10 @@ export function FinancialReportsTab() {
         ["Gross Revenue (المبيعات والإيرادات الإجمالية)", String(pnl.grossRevenue)],
         ["Product COGS (تكلفة المنتجات المباعة)", String(pnl.productCogs)],
         ["Packaging BOM COGS (تكلفة مواد التغليف والعلب المستهلكة)", String(pnl.packagingBomCogs)],
-        ["Total COGS - Product & BOM Packaging (إجمالي تكلفة المبيعات والتغليف)", String(pnl.totalCogs)],
+        [
+          "Total COGS - Product & BOM Packaging (إجمالي تكلفة المبيعات والتغليف)",
+          String(pnl.totalCogs),
+        ],
         ["Gross Profit (إجمالي الربح)", String(pnl.grossProfit)],
         [
           "Operating Expenses - OpEx (المصاريف التشغيلية والأجور والإيجار)",

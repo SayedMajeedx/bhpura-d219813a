@@ -48,11 +48,7 @@ export function UsageMeterBar({
       ? "bg-amber-500 text-white"
       : "bg-primary text-primary-foreground";
 
-  const barTrackColor = is100
-    ? "bg-destructive"
-    : is80
-      ? "bg-amber-500"
-      : "bg-primary";
+  const barTrackColor = is100 ? "bg-destructive" : is80 ? "bg-amber-500" : "bg-primary";
 
   return (
     <div className="space-y-2 p-3.5 rounded-2xl border border-border-strong bg-card/60 shadow-sm transition-all hover:border-border">
@@ -63,9 +59,7 @@ export function UsageMeterBar({
               <Icon className="h-4 w-4" />
             </div>
           )}
-          <span className="text-xs font-bold text-foreground">
-            {isAr ? labelAr : labelEn}
-          </span>
+          <span className="text-xs font-bold text-foreground">{isAr ? labelAr : labelEn}</span>
         </div>
 
         <div className="flex items-center gap-1.5">

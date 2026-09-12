@@ -13,7 +13,7 @@ function readEnv(file) {
         if (!match) return [];
         const value = match[2].replace(/^(['"])(.*)\1$/, "$2");
         return [[match[1], value]];
-      })
+      }),
   );
 }
 
@@ -44,7 +44,9 @@ async function main() {
   } else if (!anonRows || anonRows.length === 0) {
     console.log("✔ RLS Check Passed: Anonymous direct access returned 0 rows (table isolated).");
   } else {
-    console.error("✖ RLS VIOLATION: Anonymous client was able to read integration_credentials rows!");
+    console.error(
+      "✖ RLS VIOLATION: Anonymous client was able to read integration_credentials rows!",
+    );
     process.exit(1);
   }
 
@@ -55,9 +57,14 @@ async function main() {
   });
 
   if (rpcError) {
-    console.log("✔ Category RPC Permissions Passed: Anonymous execution rejected:", rpcError.message);
+    console.log(
+      "✔ Category RPC Permissions Passed: Anonymous execution rejected:",
+      rpcError.message,
+    );
   } else {
-    console.error("✖ PERMISSION VIOLATION: Anonymous client was able to execute get_brand_categories_with_counts!");
+    console.error(
+      "✖ PERMISSION VIOLATION: Anonymous client was able to execute get_brand_categories_with_counts!",
+    );
     process.exit(1);
   }
 

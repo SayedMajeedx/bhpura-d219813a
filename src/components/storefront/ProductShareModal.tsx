@@ -7,14 +7,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Share2,
-  Copy,
-  Check,
-  MessageCircle,
-  Send,
-  Sparkles,
-} from "lucide-react";
+import { Share2, Copy, Check, MessageCircle, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 interface ProductShareModalProps {

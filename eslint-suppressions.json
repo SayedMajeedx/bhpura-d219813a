@@ -20,11 +20,6 @@
       "count": 2
     }
   },
-  "src/integrations/supabase/auth-middleware.ts": {
-    "no-empty": {
-      "count": 9
-    }
-  },
   "src/integrations/supabase/client.server.ts": {
     "no-empty": {
       "count": 2
@@ -38,11 +33,6 @@
   "src/lib/impersonation.functions.ts": {
     "no-empty": {
       "count": 1
-    }
-  },
-  "src/lib/instagram-ai-importer.ts": {
-    "no-misleading-character-class": {
-      "count": 8
     }
   },
   "src/lib/r2-stream.server.ts": {
@@ -62,11 +52,6 @@
   },
   "src/routes/$slug.account.tsx": {
     "react-hooks/rules-of-hooks": {
-      "count": 1
-    }
-  },
-  "src/routes/$slug.product.$id.tsx": {
-    "no-empty": {
       "count": 1
     }
   },

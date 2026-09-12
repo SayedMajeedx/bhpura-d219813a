@@ -111,9 +111,7 @@ export function ExpensesWorkQueue({
                         </span>
                       )}
                       {e.notes && (
-                        <span className="text-xs truncate text-muted-foreground">
-                          {e.notes}
-                        </span>
+                        <span className="text-xs truncate text-muted-foreground">{e.notes}</span>
                       )}
                       {!e.description && !e.notes && (
                         <span className="text-muted-foreground">—</span>

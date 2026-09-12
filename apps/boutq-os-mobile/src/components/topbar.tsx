@@ -35,36 +35,25 @@ export function AppTopBar({
         {showBrandSwitcher ? (
           <Pressable
             onPress={onOpenBrandSwitcher}
-            style={({ pressed }) => [
-              styles.brandTrigger,
-              pressed && { opacity: 0.8 },
-            ]}
+            style={({ pressed }) => [styles.brandTrigger, pressed && { opacity: 0.8 }]}
           >
             <View style={styles.brandBadge}>
-              <Text style={styles.brandBadgeText}>
-                {brandName.slice(0, 1).toUpperCase()}
-              </Text>
+              <Text style={styles.brandBadgeText}>{brandName.slice(0, 1).toUpperCase()}</Text>
             </View>
             <View style={styles.brandTitles}>
               <View style={styles.brandRow}>
                 <Text style={styles.brandTitle} numberOfLines={1}>
                   {brandName}
                 </Text>
-                {brands.length > 1 && (
-                  <AppIcon name="chevron-down" size={14} color={colors.text} />
-                )}
+                {brands.length > 1 && <AppIcon name="chevron-down" size={14} color={colors.text} />}
               </View>
-              {subtitle ? (
-                <Text style={styles.subtitleText}>{subtitle}</Text>
-              ) : null}
+              {subtitle ? <Text style={styles.subtitleText}>{subtitle}</Text> : null}
             </View>
           </Pressable>
         ) : (
           <View>
             <Text style={styles.titleText}>{title}</Text>
-            {subtitle ? (
-              <Text style={styles.subtitleText}>{subtitle}</Text>
-            ) : null}
+            {subtitle ? <Text style={styles.subtitleText}>{subtitle}</Text> : null}
           </View>
         )}
       </View>
@@ -72,24 +61,16 @@ export function AppTopBar({
       <View style={styles.actionsRow}>
         <Pressable
           onPress={toggleLang}
-          style={({ pressed }) => [
-            styles.langToggle,
-            pressed && { opacity: 0.8 },
-          ]}
+          style={({ pressed }) => [styles.langToggle, pressed && { opacity: 0.8 }]}
         >
           <AppIcon name="globe" size={14} color={colors.primary} />
-          <Text style={styles.langToggleText}>
-            {lang === "ar" ? "EN" : "عربي"}
-          </Text>
+          <Text style={styles.langToggleText}>{lang === "ar" ? "EN" : "عربي"}</Text>
         </Pressable>
 
         {rightAction ? (
           <Pressable
             onPress={rightAction.onPress}
-            style={({ pressed }) => [
-              styles.actionButton,
-              pressed && { opacity: 0.8 },
-            ]}
+            style={({ pressed }) => [styles.actionButton, pressed && { opacity: 0.8 }]}
           >
             <AppIcon name={rightAction.icon} size={18} color={colors.text} />
           </Pressable>

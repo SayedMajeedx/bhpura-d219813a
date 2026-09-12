@@ -217,7 +217,12 @@ export function CustomerAddressManager({
     }
 
     setSaving(false);
-    if (error) return toast.error(isAr ? "تعذر حفظ العنوان، يرجى المحاولة مرة أخرى." : "Failed to save address. Please try again.");
+    if (error)
+      return toast.error(
+        isAr
+          ? "تعذر حفظ العنوان، يرجى المحاولة مرة أخرى."
+          : "Failed to save address. Please try again.",
+      );
     toast.success(
       editing
         ? isAr
@@ -241,7 +246,12 @@ export function CustomerAddressManager({
       .eq("id", deleting.id)
       .eq("customer_id", customerId)
       .eq("brand_id", brandId);
-    if (error) return toast.error(isAr ? "تعذر حذف العنوان، يرجى المحاولة مرة أخرى." : "Failed to delete address. Please try again.");
+    if (error)
+      return toast.error(
+        isAr
+          ? "تعذر حذف العنوان، يرجى المحاولة مرة أخرى."
+          : "Failed to delete address. Please try again.",
+      );
 
     if (wasDefault) {
       const replacement = addresses.find((address) => address.id !== deleting.id);
@@ -252,7 +262,8 @@ export function CustomerAddressManager({
           .eq("id", replacement.id)
           .eq("customer_id", customerId)
           .eq("brand_id", brandId);
-        if (defaultError) toast.error(isAr ? "تعذر تعيين العنوان الافتراضي." : "Failed to set default address.");
+        if (defaultError)
+          toast.error(isAr ? "تعذر تعيين العنوان الافتراضي." : "Failed to set default address.");
       }
     }
 
@@ -282,7 +293,11 @@ export function CustomerAddressManager({
       toast.success(isAr ? "تم تعيين العنوان كعنوان افتراضي" : "Set as default address");
       onChanged();
     } catch {
-      toast.error(isAr ? "تعذر تحديث العنوان الافتراضي، يرجى المحاولة مرة أخرى." : "Failed to update default address. Please try again.");
+      toast.error(
+        isAr
+          ? "تعذر تحديث العنوان الافتراضي، يرجى المحاولة مرة أخرى."
+          : "Failed to update default address. Please try again.",
+      );
     } finally {
       setSaving(false);
     }
@@ -334,7 +349,11 @@ export function CustomerAddressManager({
         toast.info(isAr ? "لا توجد عناوين مكررة لتنظيفها" : "No duplicate addresses found");
       }
     } catch {
-      toast.error(isAr ? "تعذر تنظيف العناوين المكررة، يرجى المحاولة مرة أخرى." : "Failed to clean up duplicate addresses. Please try again.");
+      toast.error(
+        isAr
+          ? "تعذر تنظيف العناوين المكررة، يرجى المحاولة مرة أخرى."
+          : "Failed to clean up duplicate addresses. Please try again.",
+      );
     } finally {
       setSaving(false);
     }

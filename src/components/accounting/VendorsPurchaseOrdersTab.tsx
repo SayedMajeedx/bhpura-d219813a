@@ -120,7 +120,11 @@ export function VendorsPurchaseOrdersTab() {
       setVendorEmail("");
     } catch (err: any) {
       console.error("Vendor add error:", err);
-      toast.error(isAr ? "تعذر إضافة المورد، يرجى المحاولة مرة أخرى." : "Failed to add vendor. Please try again.");
+      toast.error(
+        isAr
+          ? "تعذر إضافة المورد، يرجى المحاولة مرة أخرى."
+          : "Failed to add vendor. Please try again.",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -153,7 +157,11 @@ export function VendorsPurchaseOrdersTab() {
       setPoPaidAmount(0);
     } catch (err: any) {
       console.error("PO save error:", err);
-      toast.error(isAr ? "تعذر إنشاء أمر الشراء، يرجى المحاولة مرة أخرى." : "Failed to create purchase order. Please try again.");
+      toast.error(
+        isAr
+          ? "تعذر إنشاء أمر الشراء، يرجى المحاولة مرة أخرى."
+          : "Failed to create purchase order. Please try again.",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -179,7 +187,11 @@ export function VendorsPurchaseOrdersTab() {
       qc.invalidateQueries({ queryKey: ["purchase-orders", brandId] });
     } catch (err: any) {
       console.error("PO payment error:", err);
-      toast.error(isAr ? "تعذر تسجيل الدفعة، يرجى المحاولة مرة أخرى." : "Failed to record payment. Please try again.");
+      toast.error(
+        isAr
+          ? "تعذر تسجيل الدفعة، يرجى المحاولة مرة أخرى."
+          : "Failed to record payment. Please try again.",
+      );
     }
   };
 

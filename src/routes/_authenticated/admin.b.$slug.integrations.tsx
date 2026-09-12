@@ -267,209 +267,217 @@ function IntegrationsPage() {
               </div>
             </Card>
 
-          {filteredIntegrations.length === 0 ? (
-            <Card className="overflow-hidden border border-dashed border-border-strong shadow-lg rounded-2xl bg-card p-8 sm:p-12 text-center">
-              <Plug className="h-10 w-10 mx-auto text-muted-foreground mb-3 animate-pulse" />
-              <p className="text-muted-foreground">{t("integrations.none")}</p>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {filteredIntegrations.map((row) => {
-                const webhookUrl = `${webhookBase}/${row.provider}/${brandId}`;
-                const preset = PROVIDER_PRESETS.find((p) => p.value === row.provider);
-                const isNoWebhookProvider =
-                  row.provider === "resend_customer_email" ||
-                  row.provider === "sendpulse_admin" ||
-                  row.provider === "gemini";
-                return (
-                  <Card
-                    key={row.id}
-                    className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-3 sm:p-6 transition-all duration-300 hover:border-primary/40 hover:shadow-xl"
-                  >
-                    <div className="flex items-start justify-between gap-4 mb-4">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="p-2.5 rounded-lg bg-secondary/50 border border-secondary shrink-0">
-                          {getProviderIcon(row.provider)}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="font-display text-xl font-bold tracking-tight text-foreground truncate">
-                            {preset?.label ?? row.provider}
+            {filteredIntegrations.length === 0 ? (
+              <Card className="overflow-hidden border border-dashed border-border-strong shadow-lg rounded-2xl bg-card p-8 sm:p-12 text-center">
+                <Plug className="h-10 w-10 mx-auto text-muted-foreground mb-3 animate-pulse" />
+                <p className="text-muted-foreground">{t("integrations.none")}</p>
+              </Card>
+            ) : (
+              <div className="grid gap-4">
+                {filteredIntegrations.map((row) => {
+                  const webhookUrl = `${webhookBase}/${row.provider}/${brandId}`;
+                  const preset = PROVIDER_PRESETS.find((p) => p.value === row.provider);
+                  const isNoWebhookProvider =
+                    row.provider === "resend_customer_email" ||
+                    row.provider === "sendpulse_admin" ||
+                    row.provider === "gemini";
+                  return (
+                    <Card
+                      key={row.id}
+                      className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-3 sm:p-6 transition-all duration-300 hover:border-primary/40 hover:shadow-xl"
+                    >
+                      <div className="flex items-start justify-between gap-4 mb-4">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="p-2.5 rounded-lg bg-secondary/50 border border-secondary shrink-0">
+                            {getProviderIcon(row.provider)}
                           </div>
-                          <div className="text-xs text-muted-foreground truncate font-mono mt-0.5">
-                            {row.base_url || (row.provider === "gemini" ? "gemini-1.5-flash" : "—")}
+                          <div className="min-w-0">
+                            <div className="font-display text-xl font-bold tracking-tight text-foreground truncate">
+                              {preset?.label ?? row.provider}
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate font-mono mt-0.5">
+                              {row.base_url ||
+                                (row.provider === "gemini" ? "gemini-1.5-flash" : "—")}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <span
-                          className={`text-xs px-2.5 py-0.5 rounded-full font-semibold border ${
-                            row.is_active
-                              ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                              : "bg-muted text-muted-foreground border-border"
-                          }`}
-                        >
-                          {row.is_active ? t("integrations.active") : isAr ? "معطّل" : "Off"}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setEditing(row);
-                            setOpen(true);
-                          }}
-                          aria-label={
-                            isAr
-                              ? `تعديل ${preset?.label ?? row.provider}`
-                              : `Edit ${preset?.label ?? row.provider}`
-                          }
-                          className="h-11 w-11 text-muted-foreground hover:text-foreground sm:h-8 sm:w-8 transition-all"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => del(row.id)}
-                          aria-label={
-                            isAr
-                              ? `حذف ${preset?.label ?? row.provider}`
-                              : `Delete ${preset?.label ?? row.provider}`
-                          }
-                          className="h-11 w-11 text-muted-foreground hover:text-destructive sm:h-8 sm:w-8 transition-all"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm bg-secondary/20 border border-secondary/30 rounded-lg p-4">
-                      <MaskedRow
-                        label={
-                          row.provider === "resend_customer_email"
-                            ? isAr
-                              ? "بريد المُرسل المعتمد"
-                              : "Verified sender email"
-                            : row.provider === "gemini"
-                              ? isAr
-                                ? "نموذج الذكاء الاصطناعي (اختياري)"
-                                : "AI Model (Optional)"
-                              : t("integrations.apiKey")
-                        }
-                        value={
-                          row.provider === "gemini"
-                            ? row.base_url || "gemini-1.5-flash"
-                            : row.api_key_masked
-                        }
-                      />
-                      <MaskedRow
-                        label={
-                          row.provider === "resend_customer_email"
-                            ? isAr
-                              ? "مفتاح API الخاص بـ Resend"
-                              : "Resend API key"
-                            : row.provider === "gemini"
-                              ? isAr
-                                ? "مفتاح API الخاص بـ Gemini"
-                                : "Gemini API key"
-                              : t("integrations.webhookSecret")
-                        }
-                        value={
-                          row.provider === "gemini" ? row.api_key_masked : row.webhook_secret_masked
-                        }
-                      />
-                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground pt-2 border-t border-border-subtle sm:col-span-2">
-                        <div className="flex items-center gap-1.5">
-                          <History className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span>{isAr ? "آخر تدوير للمفاتيح:" : "Last rotated:"}</span>
-                          <span className="font-mono font-medium text-foreground">
-                            {row.last_rotated_at
-                              ? new Date(row.last_rotated_at).toLocaleDateString(isAr ? "ar-BH" : "en-US", {
-                                  year: "numeric",
-                                  month: "short",
-                                  day: "numeric",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })
-                              : isAr
-                                ? "غير مدوّر بعد"
-                                : "Not rotated yet"}
+                        <div className="flex items-center gap-1 shrink-0">
+                          <span
+                            className={`text-xs px-2.5 py-0.5 rounded-full font-semibold border ${
+                              row.is_active
+                                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                                : "bg-muted text-muted-foreground border-border"
+                            }`}
+                          >
+                            {row.is_active ? t("integrations.active") : isAr ? "معطّل" : "Off"}
                           </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setEditing(row);
+                              setOpen(true);
+                            }}
+                            aria-label={
+                              isAr
+                                ? `تعديل ${preset?.label ?? row.provider}`
+                                : `Edit ${preset?.label ?? row.provider}`
+                            }
+                            className="h-11 w-11 text-muted-foreground hover:text-foreground sm:h-8 sm:w-8 transition-all"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => del(row.id)}
+                            aria-label={
+                              isAr
+                                ? `حذف ${preset?.label ?? row.provider}`
+                                : `Delete ${preset?.label ?? row.provider}`
+                            }
+                            className="h-11 w-11 text-muted-foreground hover:text-destructive sm:h-8 sm:w-8 transition-all"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled={!canRotateKeys}
-                          onClick={() => setRotatingIntegration(row)}
-                          className="h-7 px-2.5 text-xs gap-1.5 border-border-strong hover:border-amber-500/50 hover:text-amber-600 dark:hover:text-amber-400"
-                          title={
-                            !canRotateKeys
-                              ? isAr
-                                ? "يتطلب صلاحيات مدير لتغيير وتدوير المفاتيح"
-                                : "Requires Admin privileges to rotate keys"
-                              : undefined
-                          }
-                        >
-                          <RotateCw className="h-3 w-3" />
-                          {isAr ? "تدوير المفتاح الآن" : "Rotate key now"}
-                        </Button>
                       </div>
-                    </div>
 
-                    <div className="mt-4 pt-4 border-t border-border-strong text-xs">
-                      {isNoWebhookProvider ? (
-                        <div className="flex items-center gap-2 text-muted-foreground bg-primary/5 border border-primary/10 rounded-lg px-3 py-2.5">
-                          {row.provider === "gemini" ? (
-                            <Sparkles className="h-4 w-4 text-purple-500 shrink-0" />
-                          ) : (
-                            <Mail className="h-4 w-4 text-primary shrink-0" />
-                          )}
-                          <p className="leading-normal">
-                            {row.provider === "gemini"
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm bg-secondary/20 border border-secondary/30 rounded-lg p-4">
+                        <MaskedRow
+                          label={
+                            row.provider === "resend_customer_email"
                               ? isAr
-                                ? "يتم استخدام تكامل Gemini هذا مباشرةً لترجمة عناوين المنتجات والوصف تلقائياً وتفصيل مخرجات صياغة المحتوى الثنائي اللغة."
-                                : "This Gemini integration is used directly for super-high-quality storefront translations and product copywriting."
-                              : isAr
-                                ? "يستخدم هذا المزود مباشرةً من خدمة البريد الآمنة في Boutق عبر اتصال بروتوكول HTTP الآمن. لا يلزم إعداد رابط Webhook لدى المزود."
-                                : "This provider is used directly by Boutq's secure email service over high-speed HTTPS. No provider webhook URL is required."}
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="bg-secondary/10 border border-secondary/20 rounded-lg p-3">
-                          <p className="text-muted-foreground mb-1.5 font-medium">
-                            {t("integrations.webhookHint")}
-                          </p>
-                          <div className="flex min-w-0 items-center gap-2 bg-background/50 border rounded-md p-1.5 ps-3">
-                            <code className="flex-1 truncate font-mono text-xs">{webhookUrl}</code>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                navigator.clipboard?.writeText(webhookUrl);
-                                toast.success("Copied");
-                              }}
-                              aria-label={isAr ? "نسخ رابط Webhook" : "Copy webhook URL"}
-                              className="h-7 px-2 shrink-0"
-                            >
-                              <Copy className="h-3.5 w-3.5" />
-                            </Button>
+                                ? "بريد المُرسل المعتمد"
+                                : "Verified sender email"
+                              : row.provider === "gemini"
+                                ? isAr
+                                  ? "نموذج الذكاء الاصطناعي (اختياري)"
+                                  : "AI Model (Optional)"
+                                : t("integrations.apiKey")
+                          }
+                          value={
+                            row.provider === "gemini"
+                              ? row.base_url || "gemini-1.5-flash"
+                              : row.api_key_masked
+                          }
+                        />
+                        <MaskedRow
+                          label={
+                            row.provider === "resend_customer_email"
+                              ? isAr
+                                ? "مفتاح API الخاص بـ Resend"
+                                : "Resend API key"
+                              : row.provider === "gemini"
+                                ? isAr
+                                  ? "مفتاح API الخاص بـ Gemini"
+                                  : "Gemini API key"
+                                : t("integrations.webhookSecret")
+                          }
+                          value={
+                            row.provider === "gemini"
+                              ? row.api_key_masked
+                              : row.webhook_secret_masked
+                          }
+                        />
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground pt-2 border-t border-border-subtle sm:col-span-2">
+                          <div className="flex items-center gap-1.5">
+                            <History className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span>{isAr ? "آخر تدوير للمفاتيح:" : "Last rotated:"}</span>
+                            <span className="font-mono font-medium text-foreground">
+                              {row.last_rotated_at
+                                ? new Date(row.last_rotated_at).toLocaleDateString(
+                                    isAr ? "ar-BH" : "en-US",
+                                    {
+                                      year: "numeric",
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    },
+                                  )
+                                : isAr
+                                  ? "غير مدوّر بعد"
+                                  : "Not rotated yet"}
+                            </span>
                           </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={!canRotateKeys}
+                            onClick={() => setRotatingIntegration(row)}
+                            className="h-7 px-2.5 text-xs gap-1.5 border-border-strong hover:border-amber-500/50 hover:text-amber-600 dark:hover:text-amber-400"
+                            title={
+                              !canRotateKeys
+                                ? isAr
+                                  ? "يتطلب صلاحيات مدير لتغيير وتدوير المفاتيح"
+                                  : "Requires Admin privileges to rotate keys"
+                                : undefined
+                            }
+                          >
+                            <RotateCw className="h-3 w-3" />
+                            {isAr ? "تدوير المفتاح الآن" : "Rotate key now"}
+                          </Button>
                         </div>
-                      )}
-                    </div>
+                      </div>
 
-                    {row.notes && (
-                      <p className="text-xs text-muted-foreground mt-3 italic bg-secondary/10 px-3 py-1.5 rounded border border-secondary/20">
-                        {row.notes}
-                      </p>
-                    )}
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </>
-      )}
+                      <div className="mt-4 pt-4 border-t border-border-strong text-xs">
+                        {isNoWebhookProvider ? (
+                          <div className="flex items-center gap-2 text-muted-foreground bg-primary/5 border border-primary/10 rounded-lg px-3 py-2.5">
+                            {row.provider === "gemini" ? (
+                              <Sparkles className="h-4 w-4 text-purple-500 shrink-0" />
+                            ) : (
+                              <Mail className="h-4 w-4 text-primary shrink-0" />
+                            )}
+                            <p className="leading-normal">
+                              {row.provider === "gemini"
+                                ? isAr
+                                  ? "يتم استخدام تكامل Gemini هذا مباشرةً لترجمة عناوين المنتجات والوصف تلقائياً وتفصيل مخرجات صياغة المحتوى الثنائي اللغة."
+                                  : "This Gemini integration is used directly for super-high-quality storefront translations and product copywriting."
+                                : isAr
+                                  ? "يستخدم هذا المزود مباشرةً من خدمة البريد الآمنة في Boutق عبر اتصال بروتوكول HTTP الآمن. لا يلزم إعداد رابط Webhook لدى المزود."
+                                  : "This provider is used directly by Boutq's secure email service over high-speed HTTPS. No provider webhook URL is required."}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="bg-secondary/10 border border-secondary/20 rounded-lg p-3">
+                            <p className="text-muted-foreground mb-1.5 font-medium">
+                              {t("integrations.webhookHint")}
+                            </p>
+                            <div className="flex min-w-0 items-center gap-2 bg-background/50 border rounded-md p-1.5 ps-3">
+                              <code className="flex-1 truncate font-mono text-xs">
+                                {webhookUrl}
+                              </code>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  navigator.clipboard?.writeText(webhookUrl);
+                                  toast.success("Copied");
+                                }}
+                                aria-label={isAr ? "نسخ رابط Webhook" : "Copy webhook URL"}
+                                className="h-7 px-2 shrink-0"
+                              >
+                                <Copy className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {row.notes && (
+                        <p className="text-xs text-muted-foreground mt-3 italic bg-secondary/10 px-3 py-1.5 rounded border border-secondary/20">
+                          {row.notes}
+                        </p>
+                      )}
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
     </div>
   );
 }
@@ -1041,7 +1049,9 @@ function RotateKeyDialog({
   const handleRotate = async () => {
     if (!canRotate) {
       toast.error(
-        isAr ? "يتطلب صلاحيات مدير لتنفيذ تدوير المفتاح" : "Admin privileges required to rotate key",
+        isAr
+          ? "يتطلب صلاحيات مدير لتنفيذ تدوير المفتاح"
+          : "Admin privileges required to rotate key",
       );
       return;
     }
@@ -1113,7 +1123,9 @@ function RotateKeyDialog({
                 {isAr ? `تدوير مفاتيح ${providerLabel}` : `Rotate ${providerLabel} Keys`}
               </DialogTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {isAr ? "تحديث وتجديد بيانات الاعتماد بأمان" : "Securely update and rotate active credentials"}
+                {isAr
+                  ? "تحديث وتجديد بيانات الاعتماد بأمان"
+                  : "Securely update and rotate active credentials"}
               </p>
             </div>
           </div>
@@ -1136,9 +1148,7 @@ function RotateKeyDialog({
 
         <div className="space-y-3.5 mt-3">
           <div>
-            <Label className="text-xs">
-              {isAr ? "مفتاح API الجديد" : "New API Key"}
-            </Label>
+            <Label className="text-xs">{isAr ? "مفتاح API الجديد" : "New API Key"}</Label>
             <Input
               type="password"
               className="font-mono text-xs mt-1"
@@ -1181,8 +1191,10 @@ function RotateKeyDialog({
                 <RotateCw className="h-3.5 w-3.5 animate-spin" />
                 {isAr ? "جارٍ التدوير..." : "Rotating..."}
               </span>
+            ) : isAr ? (
+              "تدوير وتفعيل الآن"
             ) : (
-              isAr ? "تدوير وتفعيل الآن" : "Rotate & Activate"
+              "Rotate & Activate"
             )}
           </Button>
         </DialogFooter>

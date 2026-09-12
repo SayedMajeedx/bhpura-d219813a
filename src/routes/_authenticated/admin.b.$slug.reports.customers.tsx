@@ -106,7 +106,11 @@ function ReportsCustomers() {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>{lang === "ar" ? "تعذر تحميل التقرير" : "Report unavailable"}</AlertTitle>
-          <AlertDescription>{lang === "ar" ? "تعذر تحميل بيانات العملاء. أعد المحاولة." : "Failed to load customer data. Please try again."}</AlertDescription>
+          <AlertDescription>
+            {lang === "ar"
+              ? "تعذر تحميل بيانات العملاء. أعد المحاولة."
+              : "Failed to load customer data. Please try again."}
+          </AlertDescription>
         </Alert>
       ) : customersData ? (
         <>

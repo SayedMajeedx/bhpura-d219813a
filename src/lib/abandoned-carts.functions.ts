@@ -99,13 +99,16 @@ export async function generateCartRecoveryCoupon({
   discountValue?: number;
   expiryHours?: number;
 }) {
-  const { data, error } = await (supabase.rpc as any)("rpc_generate_abandoned_cart_recovery_coupon", {
-    p_brand_id: brandId,
-    p_cart_id: cartId,
-    p_discount_type: discountType,
-    p_discount_value: discountValue,
-    p_expiry_hours: expiryHours,
-  });
+  const { data, error } = await (supabase.rpc as any)(
+    "rpc_generate_abandoned_cart_recovery_coupon",
+    {
+      p_brand_id: brandId,
+      p_cart_id: cartId,
+      p_discount_type: discountType,
+      p_discount_value: discountValue,
+      p_expiry_hours: expiryHours,
+    },
+  );
 
   if (error) throw error;
   return data as string;

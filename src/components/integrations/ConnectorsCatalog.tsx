@@ -190,7 +190,10 @@ export function ConnectorsCatalog({ brandId }: ConnectorsCatalogProps) {
                     {getConnectorIcon(meta.type)}
                   </div>
                   {isConnected ? (
-                    <Badge variant="default" className="text-xs gap-1 bg-green-600 hover:bg-green-600">
+                    <Badge
+                      variant="default"
+                      className="text-xs gap-1 bg-green-600 hover:bg-green-600"
+                    >
                       <CheckCircle2 className="h-3 w-3" />
                       {isAr ? "متصل" : "Connected"}
                     </Badge>
@@ -239,7 +242,13 @@ export function ConnectorsCatalog({ brandId }: ConnectorsCatalogProps) {
                     className="flex-1 min-h-[44px] gap-1.5"
                   >
                     <Settings2 className="h-4 w-4" />
-                    {isConnected ? (isAr ? "تعديل الإعدادات" : "Configure") : (isAr ? "ربط الموصل" : "Connect")}
+                    {isConnected
+                      ? isAr
+                        ? "تعديل الإعدادات"
+                        : "Configure"
+                      : isAr
+                        ? "ربط الموصل"
+                        : "Connect"}
                   </Button>
 
                   {isConnected && (
@@ -251,7 +260,9 @@ export function ConnectorsCatalog({ brandId }: ConnectorsCatalogProps) {
                       className="min-h-[44px] px-3"
                       title={isAr ? "مزامنة الآن" : "Sync Now"}
                     >
-                      <RefreshCw className={`h-4 w-4 ${syncMutation.isPending ? "animate-spin" : ""}`} />
+                      <RefreshCw
+                        className={`h-4 w-4 ${syncMutation.isPending ? "animate-spin" : ""}`}
+                      />
                     </Button>
                   )}
                 </div>
@@ -267,7 +278,9 @@ export function ConnectorsCatalog({ brandId }: ConnectorsCatalogProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2.5 text-xl font-bold">
               {selectedConnector && getConnectorIcon(selectedConnector.type)}
-              {isAr ? `إعداد موصل ${selectedConnector?.nameAr}` : `Configure ${selectedConnector?.nameEn}`}
+              {isAr
+                ? `إعداد موصل ${selectedConnector?.nameAr}`
+                : `Configure ${selectedConnector?.nameEn}`}
             </DialogTitle>
             <DialogDescription>
               {isAr
@@ -279,7 +292,9 @@ export function ConnectorsCatalog({ brandId }: ConnectorsCatalogProps) {
           <div className="space-y-4 py-3">
             {/* Auth Fields */}
             <div className="space-y-3">
-              <Label className="text-sm font-semibold">{isAr ? "بيانات الاعتماد والربط" : "Credentials"}</Label>
+              <Label className="text-sm font-semibold">
+                {isAr ? "بيانات الاعتماد والربط" : "Credentials"}
+              </Label>
               {selectedConnector?.authFields.map((field) => (
                 <div key={field.key} className="space-y-1.5">
                   <Label htmlFor={field.key} className="text-xs">
@@ -302,11 +317,10 @@ export function ConnectorsCatalog({ brandId }: ConnectorsCatalogProps) {
 
             {/* Sync Direction */}
             <div className="space-y-2">
-              <Label className="text-sm font-semibold">{isAr ? "اتجاه المزامنة" : "Sync Direction"}</Label>
-              <Select
-                value={syncDirection}
-                onValueChange={(val: any) => setSyncDirection(val)}
-              >
+              <Label className="text-sm font-semibold">
+                {isAr ? "اتجاه المزامنة" : "Sync Direction"}
+              </Label>
+              <Select value={syncDirection} onValueChange={(val: any) => setSyncDirection(val)}>
                 <SelectTrigger className="min-h-[44px]">
                   <SelectValue />
                 </SelectTrigger>
@@ -315,7 +329,9 @@ export function ConnectorsCatalog({ brandId }: ConnectorsCatalogProps) {
                     {isAr ? "مزامنة باتجاهين (Inbound & Outbound)" : "Two-Way (Inbound & Outbound)"}
                   </SelectItem>
                   <SelectItem value="inbound_only">
-                    {isAr ? "استيراد فقط (من المنصة إلى Boutq)" : "Inbound Only (External -> Boutq)"}
+                    {isAr
+                      ? "استيراد فقط (من المنصة إلى Boutq)"
+                      : "Inbound Only (External -> Boutq)"}
                   </SelectItem>
                   <SelectItem value="outbound_only">
                     {isAr ? "تصدير فقط (من Boutq إلى المنصة)" : "Outbound Only (Boutq -> External)"}
@@ -326,7 +342,9 @@ export function ConnectorsCatalog({ brandId }: ConnectorsCatalogProps) {
 
             {/* Field Mappings */}
             <div className="space-y-2">
-              <Label className="text-sm font-semibold">{isAr ? "خريطة ربط الحقول (Field Mappings)" : "Field Mappings"}</Label>
+              <Label className="text-sm font-semibold">
+                {isAr ? "خريطة ربط الحقول (Field Mappings)" : "Field Mappings"}
+              </Label>
               <div className="border border-border rounded-lg p-3 space-y-2 bg-muted/40 max-h-48 overflow-y-auto">
                 {Object.entries(fieldMappings).map(([target, source]) => (
                   <div key={target} className="flex items-center gap-2 text-xs font-mono">
@@ -346,7 +364,11 @@ export function ConnectorsCatalog({ brandId }: ConnectorsCatalogProps) {
           </div>
 
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setSelectedConnector(null)} className="min-h-[44px]">
+            <Button
+              variant="outline"
+              onClick={() => setSelectedConnector(null)}
+              className="min-h-[44px]"
+            >
               {isAr ? "إلغاء" : "Cancel"}
             </Button>
             <Button

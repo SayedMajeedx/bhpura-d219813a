@@ -77,6 +77,15 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run Playwright smoke tests
+        # These are the Supabase project URL and publishable/anon key only —
+        # both are already shipped in every visitor's browser bundle in
+        # production, so they are not secrets. The smoke tests mock every
+        # Supabase network call via page.route(); this just lets the dev
+        # server boot (createSupabaseClient throws otherwise) rather than
+        # timing out before a single test can run.
+        env:
+          VITE_SUPABASE_URL: https://ikciahnuqhemvnyfvbyp.supabase.co
+          VITE_SUPABASE_ANON_KEY: sb_publishable_mZLaZzhuKAqvgwpsZmRslQ_YahrHqxy
         run: npx playwright test
 
       - name: Upload Playwright report artifact on failure
@@ -144,6 +153,10 @@ jobs:
         run: npm audit --audit-level=high
 
       - name: Run Gitleaks Secret Scan
-        uses: gitleaks/gitleaks-action@7007d4f95d109f5466dd264878a100fb6e594d4d # v2.3.7
+        # The SHA this was previously pinned to (7007d4f9...) did not
+        # correspond to any real commit on gitleaks/gitleaks-action, so the
+        # step failed before ever running. This is the actual SHA for the
+        # v2.3.7 tag the comment already claimed.
+        uses: gitleaks/gitleaks-action@83373cf2f8c4db6e24b41c1a9b086bb9619e9cd3 # v2.3.7
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

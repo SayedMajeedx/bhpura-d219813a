@@ -1,12 +1,5 @@
 import React, { useState } from "react";
-import {
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppIcon } from "@/components/icons";
@@ -30,7 +23,8 @@ type HubItem = {
 export default function MoreHubScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { profile, activeBrand, brands, setActiveBrandId, signOut, isAdmin, hasPermission } = useAuth();
+  const { profile, activeBrand, brands, setActiveBrandId, signOut, isAdmin, hasPermission } =
+    useAuth();
   const { t, isAr, lang, toggleLang } = useI18n();
   const [brandModalOpen, setBrandModalOpen] = useState(false);
 
@@ -175,7 +169,9 @@ export default function MoreHubScreen() {
           <View style={styles.profileRow}>
             <View style={styles.profileAvatar}>
               <Text style={styles.avatarLetter}>
-                {(profile?.name || profile?.full_name || profile?.email || "U").slice(0, 1).toUpperCase()}
+                {(profile?.name || profile?.full_name || profile?.email || "U")
+                  .slice(0, 1)
+                  .toUpperCase()}
               </Text>
             </View>
             <View style={styles.profileInfo}>
@@ -185,7 +181,9 @@ export default function MoreHubScreen() {
               <Text style={styles.profileEmail}>{profile?.email}</Text>
               <View style={styles.roleBadgeRow}>
                 <StatusPill
-                  status={profile?.role === "super_admin" || profile?.role === "admin" ? "مكتمل" : "نشط"}
+                  status={
+                    profile?.role === "super_admin" || profile?.role === "admin" ? "مكتمل" : "نشط"
+                  }
                   customLabel={profile?.role?.toUpperCase()}
                 />
               </View>
@@ -202,7 +200,9 @@ export default function MoreHubScreen() {
                 {isAr ? "تغيير لغة التطبيق" : "Change App Language"}
               </Text>
               <Text style={styles.langBannerSubtitle}>
-                {isAr ? "الحالية: العربية (اضغط للتحويل إلى English)" : "Current: English (Tap to switch to العربية)"}
+                {isAr
+                  ? "الحالية: العربية (اضغط للتحويل إلى English)"
+                  : "Current: English (Tap to switch to العربية)"}
               </Text>
             </View>
           </View>
@@ -221,9 +221,7 @@ export default function MoreHubScreen() {
 
           return (
             <View key={idx} style={styles.sectionContainer}>
-              <Text style={styles.sectionHeader}>
-                {isAr ? sec.titleAr : sec.titleEn}
-              </Text>
+              <Text style={styles.sectionHeader}>{isAr ? sec.titleAr : sec.titleEn}</Text>
               <Card style={styles.sectionCard}>
                 {visibleItems.map((item, itemIdx) => (
                   <React.Fragment key={item.id}>
@@ -258,10 +256,7 @@ export default function MoreHubScreen() {
         {/* Sign Out Button */}
         <Pressable
           onPress={handleSignOut}
-          style={({ pressed }) => [
-            styles.signOutButton,
-            pressed && { opacity: 0.8 },
-          ]}
+          style={({ pressed }) => [styles.signOutButton, pressed && { opacity: 0.8 }]}
         >
           <AppIcon name="log-out" size={18} color={colors.danger} />
           <Text style={styles.signOutText}>{t("nav.signOut")}</Text>
@@ -284,10 +279,7 @@ export default function MoreHubScreen() {
                   setActiveBrandId(b.id);
                   setBrandModalOpen(false);
                 }}
-                style={[
-                  styles.brandOption,
-                  isSelected && styles.brandOptionSelected,
-                ]}
+                style={[styles.brandOption, isSelected && styles.brandOptionSelected]}
               >
                 <View style={styles.brandOptionAvatar}>
                   <Text style={styles.brandOptionAvatarText}>
@@ -300,9 +292,7 @@ export default function MoreHubScreen() {
                   </Text>
                   <Text style={styles.brandOptionSlug}>@{b.slug}</Text>
                 </View>
-                {isSelected && (
-                  <AppIcon name="checkmark-circle" size={20} color={colors.primary} />
-                )}
+                {isSelected && <AppIcon name="checkmark-circle" size={20} color={colors.primary} />}
               </Pressable>
             );
           })}

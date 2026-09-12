@@ -120,16 +120,20 @@ export function SizeGuideModal({
                     {isAr ? "المقاس" : "Size"}
                   </th>
                   <th className="py-2.5 px-3 text-center font-semibold">
-                    {isAr ? "الطول" : "Length"} ({unit === "in" ? (isAr ? "إنش" : "in") : (isAr ? "سم" : "cm")})
+                    {isAr ? "الطول" : "Length"} (
+                    {unit === "in" ? (isAr ? "إنش" : "in") : isAr ? "سم" : "cm"})
                   </th>
                   <th className="py-2.5 px-3 text-center font-semibold">
-                    {isAr ? "محيط الصدر" : "Bust"} ({unit === "in" ? (isAr ? "إنش" : "in") : (isAr ? "سم" : "cm")})
+                    {isAr ? "محيط الصدر" : "Bust"} (
+                    {unit === "in" ? (isAr ? "إنش" : "in") : isAr ? "سم" : "cm"})
                   </th>
                   <th className="py-2.5 px-3 text-center font-semibold">
-                    {isAr ? "طول الكم" : "Sleeve"} ({unit === "in" ? (isAr ? "إنش" : "in") : (isAr ? "سم" : "cm")})
+                    {isAr ? "طول الكم" : "Sleeve"} (
+                    {unit === "in" ? (isAr ? "إنش" : "in") : isAr ? "سم" : "cm"})
                   </th>
                   <th className="py-2.5 px-3 text-center font-semibold">
-                    {isAr ? "عرض الكتف" : "Shoulder"} ({unit === "in" ? (isAr ? "إنش" : "in") : (isAr ? "سم" : "cm")})
+                    {isAr ? "عرض الكتف" : "Shoulder"} (
+                    {unit === "in" ? (isAr ? "إنش" : "in") : isAr ? "سم" : "cm"})
                   </th>
                   {onSelectSize && (
                     <th className="py-2.5 px-3 text-center font-semibold">
@@ -178,13 +182,7 @@ export function SizeGuideModal({
                               setOpen(false);
                             }}
                           >
-                            {isSelected
-                              ? isAr
-                                ? "مختار"
-                                : "Selected"
-                              : isAr
-                                ? "اختر"
-                                : "Select"}
+                            {isSelected ? (isAr ? "مختار" : "Selected") : isAr ? "اختر" : "Select"}
                           </Button>
                         </td>
                       )}

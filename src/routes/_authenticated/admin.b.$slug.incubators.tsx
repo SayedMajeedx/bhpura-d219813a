@@ -678,10 +678,13 @@ function IncubatorsPage() {
                           onChange={(e) => setIncludeZeroStock(e.target.checked)}
                           className="h-4 w-4 rounded border-input text-primary focus:ring-primary accent-primary"
                         />
-                        <span>{isAr ? "إظهار الأصناف المنتهية (0 كمية)" : "Show out of stock (0 qty)"}</span>
+                        <span>
+                          {isAr ? "إظهار الأصناف المنتهية (0 كمية)" : "Show out of stock (0 qty)"}
+                        </span>
                       </label>
                       <span className="rounded-md bg-muted px-2.5 py-1 font-mono text-xs font-semibold text-foreground">
-                        {filteredStock.length} {isAr ? "صنف" : "variants"} ({summary.units} {isAr ? "قطعة متوفرة" : "available units"})
+                        {filteredStock.length} {isAr ? "صنف" : "variants"} ({summary.units}{" "}
+                        {isAr ? "قطعة متوفرة" : "available units"})
                       </span>
                     </div>
                   </div>

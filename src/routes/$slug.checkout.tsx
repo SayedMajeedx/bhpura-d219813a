@@ -164,7 +164,9 @@ function Checkout() {
       try {
         const saved = sessionStorage.getItem("boutq_gift_details");
         if (saved) return JSON.parse(saved).is_gift === true;
-      } catch {}
+      } catch {
+        // sessionStorage can be unavailable (private mode, quota) — gift details just won't persist.
+      }
     }
     return false;
   });
@@ -173,7 +175,9 @@ function Checkout() {
       try {
         const saved = sessionStorage.getItem("boutq_gift_details");
         if (saved) return JSON.parse(saved).recipient_name || "";
-      } catch {}
+      } catch {
+        // sessionStorage can be unavailable (private mode, quota) — gift details just won't persist.
+      }
     }
     return "";
   });
@@ -182,7 +186,9 @@ function Checkout() {
       try {
         const saved = sessionStorage.getItem("boutq_gift_details");
         if (saved) return JSON.parse(saved).gift_message || "";
-      } catch {}
+      } catch {
+        // sessionStorage can be unavailable (private mode, quota) — gift details just won't persist.
+      }
     }
     return "";
   });
@@ -198,7 +204,9 @@ function Checkout() {
             gift_message: giftMessage,
           }),
         );
-      } catch {}
+      } catch {
+        // sessionStorage can be unavailable (private mode, quota) — gift details just won't persist.
+      }
     }
   }, [isGift, giftRecipient, giftMessage]);
 
@@ -654,9 +662,19 @@ function Checkout() {
   const loyaltyDiscount = useMemo(() => {
     if (!loyaltyProgram?.is_enabled || effectiveRedeemedPoints <= 0) return 0;
     const rawDisc = Number((effectiveRedeemedPoints * redemptionRate).toFixed(3));
-    const maxApplicable = Math.max(0, Math.min(maxAllowedLoyaltyDiscount, cartTotal - promoDiscount));
+    const maxApplicable = Math.max(
+      0,
+      Math.min(maxAllowedLoyaltyDiscount, cartTotal - promoDiscount),
+    );
     return Number(Math.min(rawDisc, maxApplicable).toFixed(3));
-  }, [loyaltyProgram, effectiveRedeemedPoints, redemptionRate, maxAllowedLoyaltyDiscount, cartTotal, promoDiscount]);
+  }, [
+    loyaltyProgram,
+    effectiveRedeemedPoints,
+    redemptionRate,
+    maxAllowedLoyaltyDiscount,
+    cartTotal,
+    promoDiscount,
+  ]);
 
   useEffect(() => {
     if (!redeemedPoints || !loyaltyProgram?.is_enabled) return;
@@ -1542,7 +1560,9 @@ function Checkout() {
                           }`}
                           aria-hidden
                         >
-                          {active && <span className="h-2 w-2 rounded-full bg-primary-foreground" />}
+                          {active && (
+                            <span className="h-2 w-2 rounded-full bg-primary-foreground" />
+                          )}
                         </span>
                         <div className="min-w-0 flex-1">
                           <div className="font-semibold truncate">{branchLabel(b)}</div>
@@ -1595,9 +1615,7 @@ function Checkout() {
                     setDigitalContact("");
                   }}
                   className={`flex items-center gap-2 rounded-lg border p-3 h-auto justify-start ${
-                    digitalChannel === channel
-                      ? "border-primary bg-primary/10"
-                      : "border-border"
+                    digitalChannel === channel ? "border-primary bg-primary/10" : "border-border"
                   }`}
                 >
                   <Icon className="h-5 w-5" />

@@ -563,7 +563,6 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-
       {/* Level 3: Spotlight Command Palette */}
       <SpotlightCommandPalette open={spotlightOpen} onOpenChange={setSpotlightOpen} />
     </div>

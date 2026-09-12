@@ -152,10 +152,7 @@ export function getOrderWorkflow(order: OrderWorkflowInput): OrderWorkflow {
   const hasUnpaidBalance = outstanding > 0 && payment !== "paid" && orderStatus !== "cancelled";
 
   // An order is terminal if fulfillment is terminal or status is cancelled/refunded
-  const terminal =
-    isFulfillmentTerminal ||
-    payment === "refunded" ||
-    orderStatus === "cancelled";
+  const terminal = isFulfillmentTerminal || payment === "refunded" || orderStatus === "cancelled";
 
   let nextAction: OrderNextAction = "none";
 

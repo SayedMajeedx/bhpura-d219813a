@@ -30,7 +30,7 @@ export async function generateBrandApiKeySecret(environment: "live" | "test" = "
   const randomHex = Array.from(randomBytes)
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
-  
+
   const rawSecret = `${prefix}${randomHex}`;
   const keyHash = await computeSha256Hex(rawSecret);
   const keyHint = rawSecret.slice(-4);

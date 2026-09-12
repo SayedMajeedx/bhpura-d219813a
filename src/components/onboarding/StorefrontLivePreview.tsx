@@ -275,9 +275,9 @@ export function StorefrontLivePreview({
               </>
             ) : (
               <>
-                <strong className="text-foreground font-semibold">Real Interactive Store:</strong> Feel
-                free to browse collections, pick variants, and test the cart before launching your
-                boutique.
+                <strong className="text-foreground font-semibold">Real Interactive Store:</strong>{" "}
+                Feel free to browse collections, pick variants, and test the cart before launching
+                your boutique.
               </>
             )}
           </p>

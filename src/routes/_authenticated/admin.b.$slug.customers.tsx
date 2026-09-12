@@ -619,9 +619,7 @@ function CustomerImporterModal({
                     <span className="text-sm font-semibold font-display text-foreground block">
                       {item.name}
                     </span>
-                    <span className="text-xs text-muted-foreground block mt-0.5">
-                      {item.desc}
-                    </span>
+                    <span className="text-xs text-muted-foreground block mt-0.5">{item.desc}</span>
                   </button>
                 ))}
               </div>
@@ -950,7 +948,7 @@ function CustomersPage() {
     else if (segmentScope === "repeat")
       matchesScope = Boolean(
         stats?.badge === "Regular" ||
-          (stats && stats.totalOrders > 1 && stats.badge !== "VIP" && stats.badge !== "Churn Risk"),
+        (stats && stats.totalOrders > 1 && stats.badge !== "VIP" && stats.badge !== "Churn Risk"),
       );
 
     return matchesSearch && matchesRegion && matchesScope;
@@ -1762,7 +1760,13 @@ function AddressManager({
                   <Check className="h-4 w-4" />
                 </Button>
               )}
-              <Button variant="ghost" size="icon" onClick={() => startEdit(a)} aria-label={lang === "ar" ? "تعديل العنوان" : "Edit address"} title={lang === "ar" ? "تعديل العنوان" : "Edit address"}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => startEdit(a)}
+                aria-label={lang === "ar" ? "تعديل العنوان" : "Edit address"}
+                title={lang === "ar" ? "تعديل العنوان" : "Edit address"}
+              >
                 <Pencil className="h-4 w-4" />
               </Button>
               <DeleteAction

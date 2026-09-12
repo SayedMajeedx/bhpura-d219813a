@@ -30,11 +30,7 @@ interface LoyaltyLedgerTableProps {
   onRefresh: () => void;
 }
 
-export function LoyaltyLedgerTable({
-  entries,
-  isLoading,
-  onRefresh,
-}: LoyaltyLedgerTableProps) {
+export function LoyaltyLedgerTable({ entries, isLoading, onRefresh }: LoyaltyLedgerTableProps) {
   const { lang, t } = useI18n();
   const isAr = lang === "ar";
 
@@ -119,7 +115,9 @@ export function LoyaltyLedgerTable({
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder={isAr ? "بحث بالعميل أو الملاحظة أو الهاتف..." : "Search customer, note, phone..."}
+            placeholder={
+              isAr ? "بحث بالعميل أو الملاحظة أو الهاتف..." : "Search customer, note, phone..."
+            }
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="ps-9 min-h-[44px] bg-background border-border"
@@ -134,11 +132,21 @@ export function LoyaltyLedgerTable({
             <SelectContent>
               <SelectItem value="all">{isAr ? "جميع الحركات" : "All Events"}</SelectItem>
               <SelectItem value="earn_order">{isAr ? "كسب من طلب" : "Order Earned"}</SelectItem>
-              <SelectItem value="redeem_checkout">{isAr ? "استخدام عند الدفع" : "Redeemed"}</SelectItem>
-              <SelectItem value="refund_return">{isAr ? "إعادة لمرتجع" : "Return Refund"}</SelectItem>
-              <SelectItem value="revoke_cancelled">{isAr ? "إلغاء لطلب ملغي" : "Cancelled"}</SelectItem>
-              <SelectItem value="earn_first_order">{isAr ? "مكافأة أول طلب" : "First Order Bonus"}</SelectItem>
-              <SelectItem value="earn_manual">{isAr ? "تعديل يدوي" : "Manual Adjustment"}</SelectItem>
+              <SelectItem value="redeem_checkout">
+                {isAr ? "استخدام عند الدفع" : "Redeemed"}
+              </SelectItem>
+              <SelectItem value="refund_return">
+                {isAr ? "إعادة لمرتجع" : "Return Refund"}
+              </SelectItem>
+              <SelectItem value="revoke_cancelled">
+                {isAr ? "إلغاء لطلب ملغي" : "Cancelled"}
+              </SelectItem>
+              <SelectItem value="earn_first_order">
+                {isAr ? "مكافأة أول طلب" : "First Order Bonus"}
+              </SelectItem>
+              <SelectItem value="earn_manual">
+                {isAr ? "تعديل يدوي" : "Manual Adjustment"}
+              </SelectItem>
             </SelectContent>
           </Select>
 
@@ -173,17 +181,32 @@ export function LoyaltyLedgerTable({
               {isLoading ? (
                 Array.from({ length: 4 }).map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell><OsSkeleton variant="text" className="h-4 w-28" /></TableCell>
-                    <TableCell><OsSkeleton variant="text" className="h-4 w-36" /></TableCell>
-                    <TableCell><OsSkeleton variant="text" className="h-4 w-16" /></TableCell>
-                    <TableCell><OsSkeleton variant="text" className="h-4 w-20" /></TableCell>
-                    <TableCell><OsSkeleton variant="text" className="h-4 w-16" /></TableCell>
-                    <TableCell><OsSkeleton variant="text" className="h-4 w-24" /></TableCell>
+                    <TableCell>
+                      <OsSkeleton variant="text" className="h-4 w-28" />
+                    </TableCell>
+                    <TableCell>
+                      <OsSkeleton variant="text" className="h-4 w-36" />
+                    </TableCell>
+                    <TableCell>
+                      <OsSkeleton variant="text" className="h-4 w-16" />
+                    </TableCell>
+                    <TableCell>
+                      <OsSkeleton variant="text" className="h-4 w-20" />
+                    </TableCell>
+                    <TableCell>
+                      <OsSkeleton variant="text" className="h-4 w-16" />
+                    </TableCell>
+                    <TableCell>
+                      <OsSkeleton variant="text" className="h-4 w-24" />
+                    </TableCell>
                   </TableRow>
                 ))
               ) : filteredEntries.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10 text-muted-foreground text-sm">
+                  <TableCell
+                    colSpan={6}
+                    className="text-center py-10 text-muted-foreground text-sm"
+                  >
                     {isAr
                       ? "لا توجد حركات ولاء مسجلة حتى الآن."
                       : "No loyalty transactions recorded yet."}

@@ -319,9 +319,7 @@ describe("server route security regressions", () => {
     });
 
     expect(response.status).toBe(200);
-    expect(updateSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ payment_status: "paid" }),
-    );
+    expect(updateSpy).toHaveBeenCalledWith(expect.objectContaining({ payment_status: "paid" }));
   });
 
   it("rejects a Tap redirect whose verified metadata targets another order", async () => {

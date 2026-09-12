@@ -73,9 +73,7 @@ describe("3-Day Free Trial & Complete Site Lockout Lifecycle", () => {
       is_active: true,
     };
 
-    const isLocked =
-      puraBrand.plan_type === "trial" &&
-      puraBrand.trial_ends_at !== null;
+    const isLocked = puraBrand.plan_type === "trial" && puraBrand.trial_ends_at !== null;
 
     expect(isLocked).toBe(false);
   });

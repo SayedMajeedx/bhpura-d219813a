@@ -39,7 +39,7 @@ export function LoyaltySettingsEditor({
   const [form, setForm] = useState<Partial<BrandLoyaltyProgram>>({
     is_enabled: true,
     points_per_currency_unit: 10,
-    redemption_rate: 0.010,
+    redemption_rate: 0.01,
     min_points_to_redeem: 100,
     max_redemption_percentage: 50,
     points_expiry_days: 365,
@@ -62,16 +62,14 @@ export function LoyaltySettingsEditor({
 
   const saveMutation = useMutation({
     mutationFn: async (updated: Partial<BrandLoyaltyProgram>) => {
-      const { error } = await (supabase as any)
-        .from("brand_loyalty_programs")
-        .upsert(
-          {
-            brand_id: brandId,
-            ...updated,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "brand_id" },
-        );
+      const { error } = await (supabase as any).from("brand_loyalty_programs").upsert(
+        {
+          brand_id: brandId,
+          ...updated,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "brand_id" },
+      );
       if (error) throw error;
     },
     onSuccess: () => {
@@ -161,18 +159,18 @@ export function LoyaltySettingsEditor({
                   type="number"
                   min="0.001"
                   step="0.001"
-                  value={form.redemption_rate ?? 0.010}
+                  value={form.redemption_rate ?? 0.01}
                   onChange={(e) =>
                     setForm((prev) => ({
                       ...prev,
-                      redemption_rate: Number(e.target.value) || 0.010,
+                      redemption_rate: Number(e.target.value) || 0.01,
                     }))
                   }
                 />
                 <span className="text-xs text-muted-foreground block">
                   {isAr
-                    ? `(100 نقطة = ${((form.redemption_rate ?? 0.010) * 100).toFixed(3)} د.ب)`
-                    : `(100 pts = ${((form.redemption_rate ?? 0.010) * 100).toFixed(3)} BHD)`}
+                    ? `(100 نقطة = ${((form.redemption_rate ?? 0.01) * 100).toFixed(3)} د.ب)`
+                    : `(100 pts = ${((form.redemption_rate ?? 0.01) * 100).toFixed(3)} BHD)`}
                 </span>
               </div>
 
@@ -249,7 +247,9 @@ export function LoyaltySettingsEditor({
 
               <div className="space-y-1.5">
                 <Label htmlFor="expiry_days">
-                  {isAr ? "مدة صلاحية النقاط (أيام - 0 = لا تنتهي)" : "Points Expiration (Days - 0 = never)"}
+                  {isAr
+                    ? "مدة صلاحية النقاط (أيام - 0 = لا تنتهي)"
+                    : "Points Expiration (Days - 0 = never)"}
                 </Label>
                 <Input
                   id="expiry_days"
@@ -278,7 +278,9 @@ export function LoyaltySettingsEditor({
               <div className="flex items-center justify-between">
                 <div>
                   <Label className="font-normal">
-                    {isAr ? "احتساب رسوم الشحن في كسب النقاط" : "Include shipping in points calculation"}
+                    {isAr
+                      ? "احتساب رسوم الشحن في كسب النقاط"
+                      : "Include shipping in points calculation"}
                   </Label>
                 </div>
                 <Switch
@@ -290,7 +292,9 @@ export function LoyaltySettingsEditor({
               <div className="flex items-center justify-between">
                 <div>
                   <Label className="font-normal">
-                    {isAr ? "احتساب الضريبة (VAT) في كسب النقاط" : "Include tax (VAT) in points calculation"}
+                    {isAr
+                      ? "احتساب الضريبة (VAT) في كسب النقاط"
+                      : "Include tax (VAT) in points calculation"}
                   </Label>
                 </div>
                 <Switch
@@ -302,24 +306,32 @@ export function LoyaltySettingsEditor({
               <div className="flex items-center justify-between">
                 <div>
                   <Label className="font-normal">
-                    {isAr ? "كسب نقاط على المنتجات المخفضة/العروض" : "Include discounted/sale items"}
+                    {isAr
+                      ? "كسب نقاط على المنتجات المخفضة/العروض"
+                      : "Include discounted/sale items"}
                   </Label>
                 </div>
                 <Switch
                   checked={form.include_discounted_items ?? false}
-                  onCheckedChange={(c) => setForm((prev) => ({ ...prev, include_discounted_items: c }))}
+                  onCheckedChange={(c) =>
+                    setForm((prev) => ({ ...prev, include_discounted_items: c }))
+                  }
                 />
               </div>
 
               <div className="flex items-center justify-between">
                 <div>
                   <Label className="font-normal">
-                    {isAr ? "تفعيل مضاعفات مستويات العضوية (Tier Multipliers)" : "Enable VIP Tier Multipliers"}
+                    {isAr
+                      ? "تفعيل مضاعفات مستويات العضوية (Tier Multipliers)"
+                      : "Enable VIP Tier Multipliers"}
                   </Label>
                 </div>
                 <Switch
                   checked={form.tier_multipliers_enabled ?? true}
-                  onCheckedChange={(c) => setForm((prev) => ({ ...prev, tier_multipliers_enabled: c }))}
+                  onCheckedChange={(c) =>
+                    setForm((prev) => ({ ...prev, tier_multipliers_enabled: c }))
+                  }
                 />
               </div>
             </div>

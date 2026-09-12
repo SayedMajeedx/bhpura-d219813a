@@ -51,7 +51,9 @@ export function calculateOrderLoyaltyPoints({
 
   const pointsPerCurrency = program.points_per_currency_unit ?? 10;
   const basePoints = Math.floor(eligibleSpend * pointsPerCurrency);
-  const effectiveMultiplier = program.tier_multipliers_enabled ? Math.max(1.0, tierMultiplier) : 1.0;
+  const effectiveMultiplier = program.tier_multipliers_enabled
+    ? Math.max(1.0, tierMultiplier)
+    : 1.0;
   const finalPoints = Math.floor(basePoints * effectiveMultiplier);
 
   return {
@@ -67,7 +69,7 @@ export function calculateOrderLoyaltyPoints({
  */
 export function calculatePointsRedemptionDiscount({
   pointsToRedeem,
-  redemptionRate = 0.010, // 1 pt = 0.010 BHD -> 100 pts = 1 BHD
+  redemptionRate = 0.01, // 1 pt = 0.010 BHD -> 100 pts = 1 BHD
   maxAllowedPercentage = 50,
   orderSubtotal,
   minPointsToRedeem = 100,

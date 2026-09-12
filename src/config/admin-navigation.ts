@@ -25,11 +25,7 @@ import {
 export type NavItemTier = "core" | "modular";
 
 export type MerchantJobCategory =
-  | "today"
-  | "products_stock"
-  | "customers_growth"
-  | "money_reports"
-  | "store_setup";
+  "today" | "products_stock" | "customers_growth" | "money_reports" | "store_setup";
 
 export interface MerchantJobGroup {
   id: MerchantJobCategory;
@@ -41,10 +37,34 @@ export interface MerchantJobGroup {
 
 export const MERCHANT_JOB_GROUPS: MerchantJobGroup[] = [
   { id: "today", labelEn: "Today", labelAr: "اليوم", shortLabelEn: "Today", shortLabelAr: "اليوم" },
-  { id: "products_stock", labelEn: "Products & Stock", labelAr: "المنتجات والمخزون", shortLabelEn: "Stock", shortLabelAr: "المخزون" },
-  { id: "customers_growth", labelEn: "Customers & Growth", labelAr: "العملاء والنمو", shortLabelEn: "Growth", shortLabelAr: "النمو" },
-  { id: "money_reports", labelEn: "Money & Reports", labelAr: "المالية والتقارير", shortLabelEn: "Finance", shortLabelAr: "المالية" },
-  { id: "store_setup", labelEn: "Store Setup", labelAr: "إعداد المتجر", shortLabelEn: "Setup", shortLabelAr: "الإعدادات" },
+  {
+    id: "products_stock",
+    labelEn: "Products & Stock",
+    labelAr: "المنتجات والمخزون",
+    shortLabelEn: "Stock",
+    shortLabelAr: "المخزون",
+  },
+  {
+    id: "customers_growth",
+    labelEn: "Customers & Growth",
+    labelAr: "العملاء والنمو",
+    shortLabelEn: "Growth",
+    shortLabelAr: "النمو",
+  },
+  {
+    id: "money_reports",
+    labelEn: "Money & Reports",
+    labelAr: "المالية والتقارير",
+    shortLabelEn: "Finance",
+    shortLabelAr: "المالية",
+  },
+  {
+    id: "store_setup",
+    labelEn: "Store Setup",
+    labelAr: "إعداد المتجر",
+    shortLabelEn: "Setup",
+    shortLabelAr: "الإعدادات",
+  },
 ];
 
 export interface AdminNavItemConfig {

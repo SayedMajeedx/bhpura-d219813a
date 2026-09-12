@@ -46,8 +46,8 @@ export function ProductCard({
   );
   const isCustomTailoringAvailable = Boolean(
     product.custom_fields &&
-      Array.isArray(product.custom_fields) &&
-      product.custom_fields.length > 0,
+    Array.isArray(product.custom_fields) &&
+    product.custom_fields.length > 0,
   );
   const oos = !isCustomTailoringAvailable && totalStock <= 0;
 

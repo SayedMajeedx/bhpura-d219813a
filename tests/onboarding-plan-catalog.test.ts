@@ -30,9 +30,9 @@ describe("onboarding SaaS catalog contract", () => {
 
   it("renders the live catalog and monthly or annual prices on onboarding", () => {
     expect(page).toContain("getPublicOnboardingPlans");
-    expect(page).toContain('chooseBillingInterval(interval)');
+    expect(page).toContain("chooseBillingInterval(interval)");
     expect(page).toContain("selectedPlanVersionId: selectedPlan.version.id");
-    expect(migration).toContain('billing_interval IN (\'monthly\',\'annual\',\'trial\')');
+    expect(migration).toContain("billing_interval IN ('monthly','annual','trial')");
   });
 
   it("sources the free-trial duration from the super-admin plan configuration", () => {

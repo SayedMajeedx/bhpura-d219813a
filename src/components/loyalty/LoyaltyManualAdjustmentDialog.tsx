@@ -93,9 +93,7 @@ export function LoyaltyManualAdjustmentDialog({
       return data;
     },
     onSuccess: () => {
-      toast.success(
-        isAr ? "تم تعديل رصيد النقاط بنجاح" : "Loyalty balance adjusted successfully",
-      );
+      toast.success(isAr ? "تم تعديل رصيد النقاط بنجاح" : "Loyalty balance adjusted successfully");
       queryClient.invalidateQueries({ queryKey: ["brand_loyalty_ledger", brandId] });
       queryClient.invalidateQueries({ queryKey: ["brand_loyalty_accounts", brandId] });
       onOpenChange(false);

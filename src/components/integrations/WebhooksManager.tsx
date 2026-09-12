@@ -195,7 +195,11 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
                 ? "سجّل رابط HTTPS لاستقبال تنبيهات الطلبات والمخزون مباشرة."
                 : "Register an HTTPS endpoint to automatically receive webhook dispatches."}
             </p>
-            <Button onClick={() => setCreateOpen(true)} variant="outline" className="mt-4 min-h-[44px]">
+            <Button
+              onClick={() => setCreateOpen(true)}
+              variant="outline"
+              className="mt-4 min-h-[44px]"
+            >
               <Plus className="me-2 h-4 w-4" />
               {isAr ? "إضافة أول رابط" : "Add Endpoint"}
             </Button>
@@ -209,11 +213,17 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 font-mono text-sm font-medium text-foreground">
                         <span className="truncate max-w-md">{ep.url}</span>
-                        <Badge variant={ep.is_active ? "default" : "destructive"} className="text-xs">
-                          {ep.is_active ? (isAr ? "نشط" : "Active") : (isAr ? "معطل" : "Disabled")}
+                        <Badge
+                          variant={ep.is_active ? "default" : "destructive"}
+                          className="text-xs"
+                        >
+                          {ep.is_active ? (isAr ? "نشط" : "Active") : isAr ? "معطل" : "Disabled"}
                         </Badge>
                         {ep.consecutive_failures > 0 && (
-                          <Badge variant="outline" className="text-xs text-amber-500 border-amber-500/30">
+                          <Badge
+                            variant="outline"
+                            className="text-xs text-amber-500 border-amber-500/30"
+                          >
                             <AlertOctagon className="h-3 w-3 me-1" />
                             {ep.consecutive_failures} {isAr ? "فشل متتالي" : "consecutive failures"}
                           </Badge>
@@ -239,7 +249,11 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          if (confirm(isAr ? "هل أنت متأكد من حذف هذا الرابط؟" : "Delete this webhook?")) {
+                          if (
+                            confirm(
+                              isAr ? "هل أنت متأكد من حذف هذا الرابط؟" : "Delete this webhook?",
+                            )
+                          ) {
                             deleteMutation.mutate(ep.id);
                           }
                         }}
@@ -309,7 +323,9 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
               </thead>
               <tbody className="divide-y divide-border">
                 {deliveryLogs.map((log) => {
-                  const isSuccess = log.status === "delivered" || (log.response_status && log.response_status < 400);
+                  const isSuccess =
+                    log.status === "delivered" ||
+                    (log.response_status && log.response_status < 400);
                   return (
                     <tr key={log.id} className="hover:bg-muted/40 transition-colors">
                       <td className="px-4 py-3 font-mono font-medium text-foreground">
@@ -322,7 +338,11 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
                           ) : (
                             <XCircle className="h-3.5 w-3.5 text-destructive" />
                           )}
-                          <span className={isSuccess ? "text-green-600 dark:text-green-400" : "text-destructive"}>
+                          <span
+                            className={
+                              isSuccess ? "text-green-600 dark:text-green-400" : "text-destructive"
+                            }
+                          >
                             {log.status}
                           </span>
                         </span>
@@ -385,7 +405,9 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
 
           <div className="space-y-4 py-3">
             <div className="space-y-2">
-              <Label htmlFor="webhook-url">{isAr ? "رابط الـ Webhook (HTTPS فقط)" : "Endpoint URL (HTTPS)"}</Label>
+              <Label htmlFor="webhook-url">
+                {isAr ? "رابط الـ Webhook (HTTPS فقط)" : "Endpoint URL (HTTPS)"}
+              </Label>
               <Input
                 id="webhook-url"
                 type="url"
@@ -397,10 +419,14 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="webhook-desc">{isAr ? "الوصف (اختياري)" : "Description (Optional)"}</Label>
+              <Label htmlFor="webhook-desc">
+                {isAr ? "الوصف (اختياري)" : "Description (Optional)"}
+              </Label>
               <Input
                 id="webhook-desc"
-                placeholder={isAr ? "مثال: سيرفر الشحن أو نظام ERP" : "e.g. ERP integration or shipping bot"}
+                placeholder={
+                  isAr ? "مثال: سيرفر الشحن أو نظام ERP" : "e.g. ERP integration or shipping bot"
+                }
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="min-h-[44px]"
@@ -408,7 +434,9 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-semibold">{isAr ? "الأحداث المتاحة للاشتراك" : "Event Subscriptions"}</Label>
+              <Label className="text-sm font-semibold">
+                {isAr ? "الأحداث المتاحة للاشتراك" : "Event Subscriptions"}
+              </Label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto p-1 border border-border rounded-lg">
                 {ALL_WEBHOOK_EVENTS.map((item) => {
                   const isChecked = selectedEvents.includes(item.event);
@@ -430,7 +458,9 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
                       />
                       <div className="space-y-0.5 text-xs">
                         <div className="font-mono font-medium text-foreground">{item.event}</div>
-                        <div className="text-muted-foreground">{isAr ? item.labelAr : item.labelEn}</div>
+                        <div className="text-muted-foreground">
+                          {isAr ? item.labelAr : item.labelEn}
+                        </div>
                       </div>
                     </div>
                   );
@@ -446,7 +476,9 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
             <Button
               onClick={() => {
                 if (!url.startsWith("https://") && !url.startsWith("http://localhost")) {
-                  toast.error(isAr ? "يجب أن يبدأ الرابط بـ https://" : "URL must start with https://");
+                  toast.error(
+                    isAr ? "يجب أن يبدأ الرابط بـ https://" : "URL must start with https://",
+                  );
                   return;
                 }
                 createMutation.mutate();
@@ -468,22 +500,29 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
               {selectedLog?.event_name} • {selectedLog?.event_id}
             </DialogTitle>
             <DialogDescription>
-              {isAr ? "تفاصيل حمولة الحدث واستجابة السيرفر" : "Dispatched JSON payload and target server response"}
+              {isAr
+                ? "تفاصيل حمولة الحدث واستجابة السيرفر"
+                : "Dispatched JSON payload and target server response"}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-muted-foreground">{isAr ? "الحمولة المرسلة (Payload)" : "Dispatched Payload"}</Label>
+              <Label className="text-xs font-semibold text-muted-foreground">
+                {isAr ? "الحمولة المرسلة (Payload)" : "Dispatched Payload"}
+              </Label>
               <pre className="p-3 bg-muted rounded-lg font-mono text-xs overflow-x-auto max-h-60 border border-border">
                 {JSON.stringify(selectedLog?.payload, null, 2)}
               </pre>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-muted-foreground">{isAr ? "استجابة السيرفر المستلم" : "Target Server Response"}</Label>
+              <Label className="text-xs font-semibold text-muted-foreground">
+                {isAr ? "استجابة السيرفر المستلم" : "Target Server Response"}
+              </Label>
               <div className="p-3 bg-muted/60 rounded-lg font-mono text-xs overflow-x-auto border border-border">
-                {selectedLog?.response_body || (isAr ? "لا توجد استجابة مسجلة" : "No response body")}
+                {selectedLog?.response_body ||
+                  (isAr ? "لا توجد استجابة مسجلة" : "No response body")}
               </div>
             </div>
           </div>

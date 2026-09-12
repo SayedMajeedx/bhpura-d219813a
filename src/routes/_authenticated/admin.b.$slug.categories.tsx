@@ -122,7 +122,9 @@ function CategoriesPage() {
           };
         }
         if (["sale", "offers", "discounts"].includes(slug)) {
-          const saleCount = productsList.filter((p: any) => p.is_active && p.show_sale_badge).length;
+          const saleCount = productsList.filter(
+            (p: any) => p.is_active && p.show_sale_badge,
+          ).length;
           return {
             ...cat,
             product_count: saleCount || totalActiveProducts,
@@ -160,9 +162,7 @@ function CategoriesPage() {
       reordered.splice(index, 1);
       reordered.splice(targetIndex, 0, c);
       const updates = reordered.map((cat, idx) =>
-        (supabase.from("categories") as any)
-          .update({ sort_order: idx + 1 })
-          .eq("id", cat.id),
+        (supabase.from("categories") as any).update({ sort_order: idx + 1 }).eq("id", cat.id),
       );
       await Promise.all(updates);
     } else {

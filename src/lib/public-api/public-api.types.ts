@@ -15,22 +15,97 @@ export type ApiScope =
   | "discounts:read"
   | "discounts:write";
 
-export const ALL_API_SCOPES: { scope: ApiScope; labelEn: string; labelAr: string; category: string }[] = [
-  { scope: "products:read", labelEn: "Read Products & Variants", labelAr: "قراءة المنتجات والخيارات", category: "Catalog" },
-  { scope: "products:write", labelEn: "Create & Modify Products", labelAr: "إنشاء وتعديل المنتجات", category: "Catalog" },
-  { scope: "inventory:read", labelEn: "Read Inventory Levels", labelAr: "قراءة أرصدة المخزون", category: "Catalog" },
-  { scope: "inventory:write", labelEn: "Adjust Inventory", labelAr: "تعديل كميات المخزون", category: "Catalog" },
-  { scope: "categories:read", labelEn: "Read Categories", labelAr: "قراءة الأقسام والتصنيفات", category: "Catalog" },
+export const ALL_API_SCOPES: {
+  scope: ApiScope;
+  labelEn: string;
+  labelAr: string;
+  category: string;
+}[] = [
+  {
+    scope: "products:read",
+    labelEn: "Read Products & Variants",
+    labelAr: "قراءة المنتجات والخيارات",
+    category: "Catalog",
+  },
+  {
+    scope: "products:write",
+    labelEn: "Create & Modify Products",
+    labelAr: "إنشاء وتعديل المنتجات",
+    category: "Catalog",
+  },
+  {
+    scope: "inventory:read",
+    labelEn: "Read Inventory Levels",
+    labelAr: "قراءة أرصدة المخزون",
+    category: "Catalog",
+  },
+  {
+    scope: "inventory:write",
+    labelEn: "Adjust Inventory",
+    labelAr: "تعديل كميات المخزون",
+    category: "Catalog",
+  },
+  {
+    scope: "categories:read",
+    labelEn: "Read Categories",
+    labelAr: "قراءة الأقسام والتصنيفات",
+    category: "Catalog",
+  },
   { scope: "orders:read", labelEn: "Read Orders", labelAr: "قراءة الطلبات", category: "Orders" },
-  { scope: "orders:write", labelEn: "Create & Update Orders", labelAr: "إنشاء وتحديث الطلبات", category: "Orders" },
-  { scope: "customers:read", labelEn: "Read Customers", labelAr: "قراءة بيانات العملاء", category: "Customers" },
-  { scope: "customers:write", labelEn: "Create & Update Customers", labelAr: "إنشاء وتحديث بيانات العملاء", category: "Customers" },
-  { scope: "returns:read", labelEn: "Read Returns & Exchanges", labelAr: "قراءة طلبات الإرجاع والاستبدال", category: "Orders" },
-  { scope: "returns:write", labelEn: "Create & Manage Returns", labelAr: "إنشاء وإدارة المرتجعات", category: "Orders" },
-  { scope: "loyalty:read", labelEn: "Read Loyalty Balances & Tiers", labelAr: "قراءة أرصدة ومستويات الولاء", category: "Growth" },
-  { scope: "loyalty:write", labelEn: "Adjust Loyalty Points", labelAr: "منح وسحب نقاط الولاء", category: "Growth" },
-  { scope: "discounts:read", labelEn: "Read Discount Coupons", labelAr: "قراءة كوبونات الخصم", category: "Growth" },
-  { scope: "discounts:write", labelEn: "Create & Modify Discounts", labelAr: "إنشاء وتعديل كوبونات الخصم", category: "Growth" },
+  {
+    scope: "orders:write",
+    labelEn: "Create & Update Orders",
+    labelAr: "إنشاء وتحديث الطلبات",
+    category: "Orders",
+  },
+  {
+    scope: "customers:read",
+    labelEn: "Read Customers",
+    labelAr: "قراءة بيانات العملاء",
+    category: "Customers",
+  },
+  {
+    scope: "customers:write",
+    labelEn: "Create & Update Customers",
+    labelAr: "إنشاء وتحديث بيانات العملاء",
+    category: "Customers",
+  },
+  {
+    scope: "returns:read",
+    labelEn: "Read Returns & Exchanges",
+    labelAr: "قراءة طلبات الإرجاع والاستبدال",
+    category: "Orders",
+  },
+  {
+    scope: "returns:write",
+    labelEn: "Create & Manage Returns",
+    labelAr: "إنشاء وإدارة المرتجعات",
+    category: "Orders",
+  },
+  {
+    scope: "loyalty:read",
+    labelEn: "Read Loyalty Balances & Tiers",
+    labelAr: "قراءة أرصدة ومستويات الولاء",
+    category: "Growth",
+  },
+  {
+    scope: "loyalty:write",
+    labelEn: "Adjust Loyalty Points",
+    labelAr: "منح وسحب نقاط الولاء",
+    category: "Growth",
+  },
+  {
+    scope: "discounts:read",
+    labelEn: "Read Discount Coupons",
+    labelAr: "قراءة كوبونات الخصم",
+    category: "Growth",
+  },
+  {
+    scope: "discounts:write",
+    labelEn: "Create & Modify Discounts",
+    labelAr: "إنشاء وتعديل كوبونات الخصم",
+    category: "Growth",
+  },
 ];
 
 export type WebhookEventName =
@@ -43,15 +118,60 @@ export type WebhookEventName =
   | "return.completed"
   | "loyalty.balance_changed";
 
-export const ALL_WEBHOOK_EVENTS: { event: WebhookEventName; labelEn: string; labelAr: string; description: string }[] = [
-  { event: "order.created", labelEn: "Order Created", labelAr: "تم إنشاء طلب جديد", description: "Fires when a new order is placed by customer or admin" },
-  { event: "order.updated", labelEn: "Order Updated", labelAr: "تم تعديل الطلب", description: "Fires when order details or shipping info is modified" },
-  { event: "order.completed", labelEn: "Order Completed", labelAr: "اكتمل تسليم الطلب", description: "Fires when order status becomes delivered or completed" },
-  { event: "order.cancelled", labelEn: "Order Cancelled", labelAr: "تم إلغاء الطلب", description: "Fires when order is cancelled or payment failed" },
-  { event: "inventory.updated", labelEn: "Inventory Updated", labelAr: "تحديث المخزون", description: "Fires when stock levels change" },
-  { event: "return.created", labelEn: "Return Ticket Created", labelAr: "تم فتح طلب إرجاع", description: "Fires when a return/exchange request is opened" },
-  { event: "return.completed", labelEn: "Return Completed", labelAr: "اكتمل الإرجاع", description: "Fires when return items are received & refunded" },
-  { event: "loyalty.balance_changed", labelEn: "Loyalty Balance Changed", labelAr: "تغير رصيد النقاط", description: "Fires when points are earned, redeemed, or refunded" },
+export const ALL_WEBHOOK_EVENTS: {
+  event: WebhookEventName;
+  labelEn: string;
+  labelAr: string;
+  description: string;
+}[] = [
+  {
+    event: "order.created",
+    labelEn: "Order Created",
+    labelAr: "تم إنشاء طلب جديد",
+    description: "Fires when a new order is placed by customer or admin",
+  },
+  {
+    event: "order.updated",
+    labelEn: "Order Updated",
+    labelAr: "تم تعديل الطلب",
+    description: "Fires when order details or shipping info is modified",
+  },
+  {
+    event: "order.completed",
+    labelEn: "Order Completed",
+    labelAr: "اكتمل تسليم الطلب",
+    description: "Fires when order status becomes delivered or completed",
+  },
+  {
+    event: "order.cancelled",
+    labelEn: "Order Cancelled",
+    labelAr: "تم إلغاء الطلب",
+    description: "Fires when order is cancelled or payment failed",
+  },
+  {
+    event: "inventory.updated",
+    labelEn: "Inventory Updated",
+    labelAr: "تحديث المخزون",
+    description: "Fires when stock levels change",
+  },
+  {
+    event: "return.created",
+    labelEn: "Return Ticket Created",
+    labelAr: "تم فتح طلب إرجاع",
+    description: "Fires when a return/exchange request is opened",
+  },
+  {
+    event: "return.completed",
+    labelEn: "Return Completed",
+    labelAr: "اكتمل الإرجاع",
+    description: "Fires when return items are received & refunded",
+  },
+  {
+    event: "loyalty.balance_changed",
+    labelEn: "Loyalty Balance Changed",
+    labelAr: "تغير رصيد النقاط",
+    description: "Fires when points are earned, redeemed, or refunded",
+  },
 ];
 
 export interface BrandApiKey {

@@ -5,17 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cloudflareImageUrl } from "@/lib/media-delivery";
 import { isColorDark } from "@/components/storefront/storefront-utils";
-import { StorefrontMenu, SearchBar, MobileStorefrontDropdown } from "@/components/storefront/StorefrontNavigation";
-import { CartDrawer } from "@/components/storefront/StorefrontCartDrawer";
 import {
-  ShoppingBag,
-  Heart,
-  User,
-  LogIn,
-  Languages,
-  X,
-  Bell,
-} from "lucide-react";
+  StorefrontMenu,
+  SearchBar,
+  MobileStorefrontDropdown,
+} from "@/components/storefront/StorefrontNavigation";
+import { CartDrawer } from "@/components/storefront/StorefrontCartDrawer";
+import { ShoppingBag, Heart, User, LogIn, Languages, X, Bell } from "lucide-react";
 
 function StoreHeader() {
   const { brand, settings, lang, setLang, t, cartCount, session, isStoreMember, wishlistCount } =
@@ -247,7 +243,9 @@ function StoreHeader() {
                   if (typeof window !== "undefined" && "Notification" in window) {
                     try {
                       await Notification.requestPermission();
-                    } catch {}
+                    } catch {
+                      // Notification API can be unsupported or blocked — nothing to do.
+                    }
                   }
                   setNotificationsOpen(false);
                 }}

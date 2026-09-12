@@ -65,15 +65,18 @@ export const OrderItemsSection: React.FC<OrderItemsSectionProps> = ({ lang, orde
                 <div className="min-w-0">
                   <div className="font-bold text-foreground truncate">{itemTitle}</div>
                   {variantTitle && (
-                    <div className="text-xs text-muted-foreground font-mono">
-                      {variantTitle}
-                    </div>
+                    <div className="text-xs text-muted-foreground font-mono">{variantTitle}</div>
                   )}
                   {customFields.length > 0 && (
                     <div className="text-xs text-muted-foreground mt-0.5 space-y-0.5">
                       {customFields.map((cf: any, cfi: number) => (
                         <div key={cfi} className="flex items-center gap-1">
-                          <span className="font-semibold">{isAr ? cf.label_ar || cf.label_en || cf.key : cf.label_en || cf.label_ar || cf.key}:</span>
+                          <span className="font-semibold">
+                            {isAr
+                              ? cf.label_ar || cf.label_en || cf.key
+                              : cf.label_en || cf.label_ar || cf.key}
+                            :
+                          </span>
                           <span>{cf.value}</span>
                         </div>
                       ))}

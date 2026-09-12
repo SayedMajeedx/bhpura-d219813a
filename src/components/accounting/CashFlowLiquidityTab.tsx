@@ -105,7 +105,11 @@ export function CashFlowLiquidityTab() {
       qc.invalidateQueries({ queryKey: ["dashboard-orders-with-items", brandId] });
     } catch (err: any) {
       console.error("Reconciliation update error:", err);
-      toast.error(isAr ? "تعذر تحديث حالة التسوية، يرجى المحاولة مرة أخرى." : "Failed to update reconciliation status. Please try again.");
+      toast.error(
+        isAr
+          ? "تعذر تحديث حالة التسوية، يرجى المحاولة مرة أخرى."
+          : "Failed to update reconciliation status. Please try again.",
+      );
     }
   };
 
@@ -147,7 +151,11 @@ export function CashFlowLiquidityTab() {
       setTransferNotes("");
     } catch (err: any) {
       console.error("Transfer error:", err);
-      toast.error(isAr ? "تعذر تحويل السيولة، يرجى المحاولة مرة أخرى." : "Failed to transfer funds. Please try again.");
+      toast.error(
+        isAr
+          ? "تعذر تحويل السيولة، يرجى المحاولة مرة أخرى."
+          : "Failed to transfer funds. Please try again.",
+      );
     } finally {
       setIsSaving(false);
     }

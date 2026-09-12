@@ -312,9 +312,7 @@ function CustomerProfilePage() {
             <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
             {lang === "ar" ? "العودة إلى العملاء" : "Back to customers"}
           </button>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            {customer.name}
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{customer.name}</h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
             {lang === "ar"
               ? `${orders.length} طلب مرتبط بهذا العميل`
@@ -359,7 +357,7 @@ function CustomerProfilePage() {
                   href={`https://wa.me/${customer.phone.replace(/[^\d]/g, "")}?text=${encodeURIComponent(
                     lang === "ar"
                       ? `مرحباً ${customer.name}، بخصوص طلبكم من المتجر:`
-                      : `Hello ${customer.name}, regarding your store order:`
+                      : `Hello ${customer.name}, regarding your store order:`,
                   )}`}
                   target="_blank"
                   rel="noreferrer"
@@ -435,12 +433,8 @@ function CustomerProfilePage() {
                         {badge.segment === "vip" && (
                           <Star className="h-3 w-3 fill-amber-500 text-amber-500 shrink-0" />
                         )}
-                        {badge.segment === "repeat" && (
-                          <RefreshCw className="h-3 w-3 shrink-0" />
-                        )}
-                        {badge.segment === "new" && (
-                          <UserPlus className="h-3 w-3 shrink-0" />
-                        )}
+                        {badge.segment === "repeat" && <RefreshCw className="h-3 w-3 shrink-0" />}
+                        {badge.segment === "new" && <UserPlus className="h-3 w-3 shrink-0" />}
                         {badge.segment === "churn" && (
                           <AlertTriangle className="h-3 w-3 shrink-0" />
                         )}
@@ -652,7 +646,9 @@ function CustomerProfilePage() {
                               </span>
                             );
                           })()}
-                          <span className="truncate">{paymentLabel(order.payment_method, lang)}</span>
+                          <span className="truncate">
+                            {paymentLabel(order.payment_method, lang)}
+                          </span>
                         </div>
                       </div>
                     </button>

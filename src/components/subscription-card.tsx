@@ -12,4 +12,3 @@ export function SubscriptionCard({ brand }: SubscriptionCardProps) {
     </div>
   );
 }
-

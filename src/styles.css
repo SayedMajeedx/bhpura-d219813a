@@ -57,7 +57,9 @@
   --radius-card: var(--os-radius-card);
   --radius-overlay: var(--os-radius-panel);
   --font-display: "Cormorant Garamond", ui-serif, Georgia, serif;
-  --font-sans: "Inter", "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans:
+    "Inter", "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, sans-serif;
   /* Five semantic typography roles (Phase 2 - 12px hard floor) */
   --text-title: 1.125rem;
   --text-section: 0.9375rem;
@@ -79,8 +81,8 @@
     "29LT Kaff", "Tajawal", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Noto Sans Arabic", sans-serif;
   --font-ui:
-    "Tajawal", "Inter", "Plus Jakarta Sans", "ArabicLocal", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    Roboto, "Noto Sans Arabic", sans-serif;
+    "Tajawal", "Inter", "Plus Jakarta Sans", "ArabicLocal", system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Arabic", sans-serif;
 
   --radius: 0.5rem;
   --background: oklch(1 0 0);
@@ -378,14 +380,35 @@ html.lang-ar .font-display {
 
   .admin-typography,
   .admin-typography * {
-    font-family: var(--type-body, "Inter", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif) !important;
+    font-family: var(
+      --type-body,
+      "Inter",
+      "Plus Jakarta Sans",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      sans-serif
+    ) !important;
     font-style: var(--type-body-style, normal);
     font-optical-sizing: var(--type-optical-sizing, auto);
     font-variation-settings: var(--type-body-variation, normal);
   }
 
   .admin-typography :is(h1, h2, h3, .font-display, .font-heading) {
-    font-family: var(--type-display, var(--type-body, "Inter", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif)) !important;
+    font-family: var(
+      --type-display,
+      var(
+        --type-body,
+        "Inter",
+        "Plus Jakarta Sans",
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        sans-serif
+      )
+    ) !important;
     font-style: var(--type-display-style, normal);
     font-variation-settings: var(--type-display-variation, normal);
     font-weight: var(--type-heading-weight, 600) !important;

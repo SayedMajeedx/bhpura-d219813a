@@ -54,7 +54,9 @@ export function ReturnTimelineTracker({ returnReq, lang }: ReturnTimelineTracker
             {isAr ? "تم إلغاء طلب الإرجاع" : "Return Request Cancelled"}
           </h4>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {isAr ? "تم إلغاء هذا الطلب من قبل العميل أو الإدارة" : "Cancelled by customer or admin"}
+            {isAr
+              ? "تم إلغاء هذا الطلب من قبل العميل أو الإدارة"
+              : "Cancelled by customer or admin"}
           </p>
         </div>
       </div>
@@ -77,10 +79,7 @@ export function ReturnTimelineTracker({ returnReq, lang }: ReturnTimelineTracker
       labelEn: "Approved",
       icon: ShieldCheck,
       date: returnReq.reviewed_at,
-      completed: ![
-        "new",
-        "under_review",
-      ].includes(returnReq.status),
+      completed: !["new", "under_review"].includes(returnReq.status),
       active: returnReq.status === "under_review" || returnReq.status === "approved",
     },
     {
@@ -89,12 +88,9 @@ export function ReturnTimelineTracker({ returnReq, lang }: ReturnTimelineTracker
       labelEn: "Items Received",
       icon: PackageCheck,
       date: returnReq.received_at,
-      completed: ![
-        "new",
-        "under_review",
-        "approved",
-        "awaiting_shipment",
-      ].includes(returnReq.status),
+      completed: !["new", "under_review", "approved", "awaiting_shipment"].includes(
+        returnReq.status,
+      ),
       active: returnReq.status === "received" || returnReq.status === "awaiting_shipment",
     },
     {
@@ -103,11 +99,7 @@ export function ReturnTimelineTracker({ returnReq, lang }: ReturnTimelineTracker
       labelEn: "Quality Inspected",
       icon: SearchCheck,
       date: returnReq.inspected_at,
-      completed: [
-        "refunded",
-        "exchanged",
-        "completed",
-      ].includes(returnReq.status),
+      completed: ["refunded", "exchanged", "completed"].includes(returnReq.status),
       active: returnReq.status === "under_inspection",
     },
     {

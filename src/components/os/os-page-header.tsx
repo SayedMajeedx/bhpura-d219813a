@@ -34,9 +34,7 @@ export function OsPageHeader({
           </div>
         )}
         <div className="flex items-center gap-3 flex-wrap">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            {title}
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
           {badge}
         </div>
         {description && (

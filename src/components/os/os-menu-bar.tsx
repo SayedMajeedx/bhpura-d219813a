@@ -93,7 +93,9 @@ export function OsMenuBar({
                   <span
                     className={cn(
                       "truncate text-xs",
-                      isLast ? "font-semibold text-foreground" : "font-medium text-muted-foreground",
+                      isLast
+                        ? "font-semibold text-foreground"
+                        : "font-medium text-muted-foreground",
                     )}
                   >
                     {index === 0 && breadcrumbs.length === 1 && (
@@ -199,9 +201,7 @@ export function OsMenuBar({
               <div className="flex flex-col space-y-1">
                 <p className="text-xs font-semibold leading-none">{brandLabel}</p>
                 {userEmail && (
-                  <p className="text-xs leading-none text-muted-foreground truncate">
-                    {userEmail}
-                  </p>
+                  <p className="text-xs leading-none text-muted-foreground truncate">{userEmail}</p>
                 )}
               </div>
             </DropdownMenuLabel>

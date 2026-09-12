@@ -71,4 +71,3 @@ describe("super-admin platform navigation", () => {
     expect(resetRoute).toContain("verifyOtp");
   });
 });
-

@@ -75,20 +75,30 @@ export function printThermalReceipt(a: ThermalArgs) {
     .map((it) => {
       const unit = Number(it.unit_price) + Number(it.customization_total);
       const variantParts = [
-        it.selected_variant?.color && `${isRTL ? "اللون" : "Color"}: ${escapeHtml(it.selected_variant.color)}`,
-        it.selected_variant?.size && `${isRTL ? "المقاس" : "Size"}: ${escapeHtml(it.selected_variant.size)}`,
-        it.selected_variant?.fabric && `${isRTL ? "القماش" : "Fabric"}: ${escapeHtml(it.selected_variant.fabric)}`,
+        it.selected_variant?.color &&
+          `${isRTL ? "اللون" : "Color"}: ${escapeHtml(it.selected_variant.color)}`,
+        it.selected_variant?.size &&
+          `${isRTL ? "المقاس" : "Size"}: ${escapeHtml(it.selected_variant.size)}`,
+        it.selected_variant?.fabric &&
+          `${isRTL ? "القماش" : "Fabric"}: ${escapeHtml(it.selected_variant.fabric)}`,
       ].filter(Boolean);
 
-      const variantHtml = variantParts.length > 0
-        ? `<div class="variant-meta" style="font-size:10px;opacity:0.85;">${variantParts.join(" · ")}</div>`
-        : "";
+      const variantHtml =
+        variantParts.length > 0
+          ? `<div class="variant-meta" style="font-size:10px;opacity:0.85;">${variantParts.join(" · ")}</div>`
+          : "";
 
-      const customFieldsHtml = (it.custom_field_values ?? []).length > 0
-        ? `<div class="custom-fields" style="font-size:10px;opacity:0.85;">${(it.custom_field_values ?? [])
-            .map((cf) => `${escapeHtml((isRTL ? cf.label_ar || cf.label_en : cf.label_en || cf.label_ar) || cf.key || "")}: ${escapeHtml(cf.value)}`)
-            .join("<br/>")}</div>`
-        : "";
+      const customFieldsHtml =
+        (it.custom_field_values ?? []).length > 0
+          ? `<div class="custom-fields" style="font-size:10px;opacity:0.85;">${(
+              it.custom_field_values ?? []
+            )
+              .map(
+                (cf) =>
+                  `${escapeHtml((isRTL ? cf.label_ar || cf.label_en : cf.label_en || cf.label_ar) || cf.key || "")}: ${escapeHtml(cf.value)}`,
+              )
+              .join("<br/>")}</div>`
+          : "";
 
       const addons =
         (it.customizations ?? []).length > 0
@@ -244,14 +254,18 @@ export function printDeliveryNote(a: DeliveryNoteArgs) {
   const itemsRows = a.items
     .map((it, idx) => {
       const variantParts = [
-        it.selected_variant?.color && `${isRTL ? "اللون" : "Color"}: ${escapeHtml(it.selected_variant.color)}`,
-        it.selected_variant?.size && `${isRTL ? "المقاس" : "Size"}: ${escapeHtml(it.selected_variant.size)}`,
-        it.selected_variant?.fabric && `${isRTL ? "القماش" : "Fabric"}: ${escapeHtml(it.selected_variant.fabric)}`,
+        it.selected_variant?.color &&
+          `${isRTL ? "اللون" : "Color"}: ${escapeHtml(it.selected_variant.color)}`,
+        it.selected_variant?.size &&
+          `${isRTL ? "المقاس" : "Size"}: ${escapeHtml(it.selected_variant.size)}`,
+        it.selected_variant?.fabric &&
+          `${isRTL ? "القماش" : "Fabric"}: ${escapeHtml(it.selected_variant.fabric)}`,
       ].filter(Boolean);
 
-      const variantHtml = variantParts.length > 0
-        ? `<div style="font-size:11px;color:#666;margin-top:2px;">${variantParts.join(" · ")}</div>`
-        : "";
+      const variantHtml =
+        variantParts.length > 0
+          ? `<div style="font-size:11px;color:#666;margin-top:2px;">${variantParts.join(" · ")}</div>`
+          : "";
 
       return `
         <tr style="border-bottom:1px solid #e5e7eb;">
@@ -378,4 +392,3 @@ export function printDeliveryNote(a: DeliveryNoteArgs) {
   w.document.close();
   return true;
 }
-

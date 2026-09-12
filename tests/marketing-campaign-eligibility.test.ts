@@ -116,7 +116,12 @@ describe("Marketing Campaign Consent & Eligibility", () => {
     const candidates = [
       { id: "c-1", phone: "+97333000111", marketing_consent: true, opted_out_at: null }, // Eligible
       { id: "c-2", phone: "+97333000222", marketing_consent: false, opted_out_at: null }, // No consent
-      { id: "c-3", phone: "+97333000333", marketing_consent: true, opted_out_at: "2026-08-01T00:00:00Z" }, // Opted out
+      {
+        id: "c-3",
+        phone: "+97333000333",
+        marketing_consent: true,
+        opted_out_at: "2026-08-01T00:00:00Z",
+      }, // Opted out
       { id: "c-4", phone: null, marketing_consent: true, opted_out_at: null }, // No phone
       { id: "c-5", phone: "+97333000555", marketing_consent: true, opted_out_at: null }, // 0 orders
     ];

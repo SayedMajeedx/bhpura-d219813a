@@ -11,13 +11,7 @@ import {
 } from "lucide-react";
 
 export type ReturnsScope =
-  | "all"
-  | "under_review"
-  | "approved"
-  | "inspecting"
-  | "settled"
-  | "completed"
-  | "policies";
+  "all" | "under_review" | "approved" | "inspecting" | "settled" | "completed" | "policies";
 
 interface ReturnsScopeSwitcherProps {
   lang: "en" | "ar";
@@ -62,7 +56,8 @@ export function ReturnsScopeSwitcher({
       labelEn: "Under Review",
       icon: Clock3,
       count: counts.under_review,
-      badgeClass: counts.under_review > 0 ? "bg-amber-500/15 text-amber-700 dark:text-amber-300" : undefined,
+      badgeClass:
+        counts.under_review > 0 ? "bg-amber-500/15 text-amber-700 dark:text-amber-300" : undefined,
     },
     {
       id: "approved",
@@ -70,7 +65,8 @@ export function ReturnsScopeSwitcher({
       labelEn: "Approved / Awaiting",
       icon: CheckCircle2,
       count: counts.approved,
-      badgeClass: counts.approved > 0 ? "bg-purple-500/15 text-purple-700 dark:text-purple-300" : undefined,
+      badgeClass:
+        counts.approved > 0 ? "bg-purple-500/15 text-purple-700 dark:text-purple-300" : undefined,
     },
     {
       id: "inspecting",
@@ -78,7 +74,8 @@ export function ReturnsScopeSwitcher({
       labelEn: "Received & Inspecting",
       icon: SearchCheck,
       count: counts.inspecting,
-      badgeClass: counts.inspecting > 0 ? "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300" : undefined,
+      badgeClass:
+        counts.inspecting > 0 ? "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300" : undefined,
     },
     {
       id: "settled",
@@ -122,13 +119,16 @@ export function ReturnsScopeSwitcher({
                 : "border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground",
             )}
           >
-            <Icon className={cn("h-3.5 w-3.5", isActive ? "text-primary" : "text-muted-foreground")} />
+            <Icon
+              className={cn("h-3.5 w-3.5", isActive ? "text-primary" : "text-muted-foreground")}
+            />
             <span>{label}</span>
             {s.count !== undefined && s.count > 0 && (
               <span
                 className={cn(
                   "text-xs font-mono font-bold px-1.5 py-0.2 rounded-full",
-                  s.badgeClass || (isActive ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"),
+                  s.badgeClass ||
+                    (isActive ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"),
                 )}
               >
                 {s.count}

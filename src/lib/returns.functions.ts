@@ -190,7 +190,13 @@ export async function createReturnRequest(params: {
   }>;
   pickupAddress?: any;
   images?: string[];
-}): Promise<{ success: boolean; returnId?: string; returnNumber?: string; netRefund?: number; error?: string }> {
+}): Promise<{
+  success: boolean;
+  returnId?: string;
+  returnNumber?: string;
+  netRefund?: number;
+  error?: string;
+}> {
   try {
     const { data, error } = await (supabase.rpc as any)("rpc_create_return_request", {
       p_brand_id: params.brandId,
@@ -209,7 +215,10 @@ export async function createReturnRequest(params: {
     }
 
     if (!data?.success) {
-      return { success: false, error: data?.error || data?.details || "Failed to create return request" };
+      return {
+        success: false,
+        error: data?.error || data?.details || "Failed to create return request",
+      };
     }
 
     return {
@@ -404,8 +413,10 @@ export async function updateReturnRequestStatus(
     };
 
     if (options?.adminNotes !== undefined) updatePayload.admin_notes = options.adminNotes;
-    if (options?.rejectionReason !== undefined) updatePayload.rejection_reason = options.rejectionReason;
-    if (options?.trackingNumber !== undefined) updatePayload.tracking_number = options.trackingNumber;
+    if (options?.rejectionReason !== undefined)
+      updatePayload.rejection_reason = options.rejectionReason;
+    if (options?.trackingNumber !== undefined)
+      updatePayload.tracking_number = options.trackingNumber;
     if (options?.courierName !== undefined) updatePayload.courier_name = options.courierName;
 
     if (newStatus === "approved") {

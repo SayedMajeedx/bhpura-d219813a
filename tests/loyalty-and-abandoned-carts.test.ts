@@ -12,7 +12,7 @@ describe("Loyalty Points Engine Unit Tests", () => {
     brand_id: "brand-1",
     is_enabled: true,
     points_per_currency_unit: 10,
-    redemption_rate: 0.010, // 1 point = 0.010 BHD (100 points = 1 BHD)
+    redemption_rate: 0.01, // 1 point = 0.010 BHD (100 points = 1 BHD)
     min_redemption_points: 100,
     max_redemption_percent: 50,
     points_holding_days: 14,
@@ -228,14 +228,34 @@ describe("Abandoned Carts Recovery Logic", () => {
 
   it("should correctly identify targetable abandoned carts based on reachable contact channels", () => {
     const carts = [
-      { id: "1", status: "abandoned", guest_phone: "39955508", guest_email: null, customer_id: null },
-      { id: "2", status: "abandoned", guest_phone: null, guest_email: "test@example.com", customer_id: null },
+      {
+        id: "1",
+        status: "abandoned",
+        guest_phone: "39955508",
+        guest_email: null,
+        customer_id: null,
+      },
+      {
+        id: "2",
+        status: "abandoned",
+        guest_phone: null,
+        guest_email: "test@example.com",
+        customer_id: null,
+      },
       { id: "3", status: "abandoned", guest_phone: null, guest_email: null, customer_id: null }, // anonymous, unreachable
       { id: "4", status: "active", guest_phone: "39955508", guest_email: null, customer_id: null }, // active, not abandoned
-      { id: "5", status: "recovering", guest_phone: null, guest_email: null, customers: { phone: "39955508" } }, // reachable via customer
+      {
+        id: "5",
+        status: "recovering",
+        guest_phone: null,
+        guest_email: null,
+        customers: { phone: "39955508" },
+      }, // reachable via customer
     ];
 
-    const abandonedCarts = carts.filter((c) => c.status === "abandoned" || c.status === "recovering");
+    const abandonedCarts = carts.filter(
+      (c) => c.status === "abandoned" || c.status === "recovering",
+    );
     const targetableCarts = abandonedCarts.filter((c) =>
       Boolean(c.guest_phone || c.guest_email || c.customers?.phone),
     );
@@ -254,7 +274,9 @@ describe("Abandoned Carts Recovery Logic", () => {
 
     const canConsentWithoutContact = Boolean(
       anonymousVisitor.marketing_consent &&
-      (anonymousVisitor.guest_phone || anonymousVisitor.guest_email || anonymousVisitor.customer_id),
+      (anonymousVisitor.guest_phone ||
+        anonymousVisitor.guest_email ||
+        anonymousVisitor.customer_id),
     );
 
     expect(canConsentWithoutContact).toBe(false);

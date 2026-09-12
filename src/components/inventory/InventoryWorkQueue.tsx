@@ -88,7 +88,9 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
   onToggleExpand: controlledOnToggleExpand,
 }) => {
   const isAr = lang === "ar";
-  const [internalExpandedProducts, setInternalExpandedProducts] = useState<Record<string, boolean>>({});
+  const [internalExpandedProducts, setInternalExpandedProducts] = useState<Record<string, boolean>>(
+    {},
+  );
   const expandedProducts = controlledExpandedProducts ?? internalExpandedProducts;
   const [pendingDelete, setPendingDelete] = useState<any | null>(null);
   const selectedOnPage = products.filter((product) => selectedProductIds.has(product.id)).length;
@@ -207,7 +209,8 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
 
                 // Commercial identifier resolution
                 const sku = product.sku || pVariants.find((v: any) => v.sku)?.sku || null;
-                const barcode = product.barcode || pVariants.find((v: any) => v.barcode)?.barcode || null;
+                const barcode =
+                  product.barcode || pVariants.find((v: any) => v.barcode)?.barcode || null;
 
                 // Detailed attention diagnostics
                 const media = Array.isArray(product.media) ? product.media : [];
@@ -216,7 +219,9 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                   media.some((m: any) =>
                     typeof m === "string" ? Boolean(m.trim()) : Boolean(m?.url || m?.src),
                   );
-                const hasCategory = Boolean(product.category && resolveCategoryName(product.category));
+                const hasCategory = Boolean(
+                  product.category && resolveCategoryName(product.category),
+                );
                 const isHiddenWithStock = !product.is_active && totalStock > 0;
 
                 const attentionReasons: {

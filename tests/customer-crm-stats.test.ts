@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  buildCustomerCrmStats,
-  resolveCustomerSegmentBadge,
-} from "../src/lib/commerce-metrics";
+import { buildCustomerCrmStats, resolveCustomerSegmentBadge } from "../src/lib/commerce-metrics";
 
 const order = (overrides: Record<string, unknown> = {}) => ({
   customer_id: "customer-1",
@@ -38,9 +35,9 @@ describe("customer CRM stats", () => {
   });
 
   it("classifies customer with exactly 1 order as New Buyer, NEVER Repeat Buyer", () => {
-    const stats = buildCustomerCrmStats([
-      order({ total: 8, payment_status: "paid" }),
-    ]).get("customer-1");
+    const stats = buildCustomerCrmStats([order({ total: 8, payment_status: "paid" })]).get(
+      "customer-1",
+    );
 
     expect(stats?.totalOrders).toBe(1);
     expect(stats?.lifetimeSpend).toBe(8);

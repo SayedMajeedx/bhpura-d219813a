@@ -78,16 +78,14 @@ export function AbandonedCartSequencesEditor({
 
   const saveSequenceMutation = useMutation({
     mutationFn: async (seq: AbandonedCartSequence) => {
-      const { error } = await (supabase as any)
-        .from("abandoned_cart_sequences")
-        .upsert(
-          {
-            ...seq,
-            brand_id: brandId,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "brand_id,step_number" },
-        );
+      const { error } = await (supabase as any).from("abandoned_cart_sequences").upsert(
+        {
+          ...seq,
+          brand_id: brandId,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "brand_id,step_number" },
+      );
       if (error) throw error;
     },
     onSuccess: () => {
@@ -102,7 +100,8 @@ export function AbandonedCartSequencesEditor({
     },
   });
 
-  const displaySequences = sequences.length > 0 ? sequences : (DEFAULT_ABANDONED_SEQUENCES as any[]);
+  const displaySequences =
+    sequences.length > 0 ? sequences : (DEFAULT_ABANDONED_SEQUENCES as any[]);
 
   const getChannelIcon = (ch: RecoveryChannel) => {
     switch (ch) {
@@ -230,10 +229,7 @@ export function AbandonedCartSequencesEditor({
 
       {/* Sequence Edit Dialog */}
       {editingSequence && (
-        <Dialog
-          open={!!editingSequence}
-          onOpenChange={(open) => !open && setEditingSequence(null)}
-        >
+        <Dialog open={!!editingSequence} onOpenChange={(open) => !open && setEditingSequence(null)}>
           <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 font-display">
