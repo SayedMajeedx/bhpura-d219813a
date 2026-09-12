@@ -1122,36 +1122,39 @@ ${desc}${detailsBlock}
   };
 
   return (
-    <div className="mx-auto max-w-[1500px] space-y-5 p-1 sm:p-2" dir={isAr ? "rtl" : "ltr"}>
-      <section className="relative overflow-hidden rounded-[24px] border border-border-strong bg-card px-6 py-6 shadow-xs sm:px-8">
-        <div className="absolute inset-y-0 end-0 w-72 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/.12),transparent_70%)]" />
-        <div className="relative flex flex-col justify-between gap-6 md:flex-row md:items-center">
-          <div className="flex items-center gap-4">
-            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+    <div
+      className="mx-auto w-full min-w-0 max-w-[1500px] space-y-4 sm:space-y-6 p-2 sm:p-4 pb-32 sm:pb-16 overflow-x-hidden"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <section className="relative overflow-hidden rounded-2xl sm:rounded-[24px] border border-border-strong bg-card p-4 sm:p-6 lg:p-8 shadow-xs">
+        <div className="absolute inset-y-0 end-0 w-72 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/.12),transparent_70%)] pointer-events-none" />
+        <div className="relative flex flex-col justify-between gap-4 md:flex-row md:items-center">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+            <span className="grid size-11 sm:size-12 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
               <Palette className="size-5" />
             </span>
-            <div>
-              <div className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-[.18em] text-primary">
-                <Sparkles className="size-3.5" />
-                <span>{brandNameEn} Content Studio</span>
+            <div className="min-w-0">
+              <div className="mb-0.5 sm:mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-[.18em] text-primary">
+                <Sparkles className="size-3.5 shrink-0" />
+                <span className="truncate">{brandNameEn} Content Studio</span>
               </div>
-              <h1 className="font-display text-2xl font-black text-foreground sm:text-3xl">
+              <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-black text-foreground">
                 {isAr ? "من المنتج إلى محتوى جاهز للنشر" : "From product to publish-ready creative"}
               </h1>
-              <p className="mt-1 max-w-2xl text-xs sm:text-sm text-muted-foreground">
+              <p className="mt-0.5 sm:mt-1 max-w-2xl text-xs sm:text-sm text-muted-foreground line-clamp-2 sm:line-clamp-none">
                 {isAr
                   ? "استديو بصري يحافظ على هوية البراند ويصدّر المقاس الصحيح لكل منصة."
                   : "A focused visual studio that protects your brand language and exports the right social size."}
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 shrink-0">
             <Button
               type="button"
               variant="outline"
               onClick={handleCopyCaption}
               size="default"
-              className="h-10 gap-2 rounded-xl border-border bg-background/80 text-xs font-semibold px-4 shadow-2xs hover:bg-muted/50"
+              className="h-10 gap-2 rounded-xl border-border bg-background/80 text-xs font-semibold px-3.5 sm:px-4 shadow-2xs hover:bg-muted/50"
             >
               {copiedCaption ? (
                 <Check className="size-4 text-emerald-600" />
@@ -1166,7 +1169,7 @@ ${desc}${detailsBlock}
                   onClick={exportCreative}
                   disabled={exporting || productsQ.isLoading}
                   size="default"
-                  className="h-10 gap-2 rounded-s-xl rounded-e-none text-xs font-semibold px-4"
+                  className="h-10 gap-2 rounded-s-xl rounded-e-none text-xs font-semibold px-3.5 sm:px-4"
                 >
                   <Video className="size-4" />
                   <span>
@@ -1252,7 +1255,7 @@ ${desc}${detailsBlock}
                 onClick={exportCreative}
                 disabled={exporting || productsQ.isLoading}
                 size="default"
-                className="h-10 gap-2 rounded-xl text-xs font-semibold px-4 shadow-2xs"
+                className="h-10 gap-2 rounded-xl text-xs font-semibold px-3.5 sm:px-4 shadow-2xs"
               >
                 <Download className="size-4" />
                 <span>
@@ -1270,12 +1273,15 @@ ${desc}${detailsBlock}
         </div>
       </section>
 
-      <div className="grid items-start gap-6 lg:gap-8 xl:grid-cols-[minmax(460px,520px)_1fr]">
-        <Card className="overflow-hidden rounded-[24px] border border-border-strong bg-card shadow-xs">
-          <div className="border-b border-border-subtle p-5 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="font-display text-lg font-bold text-foreground">
+      <div className="grid w-full min-w-0 max-w-full items-start gap-4 sm:gap-6 lg:gap-8 xl:grid-cols-[minmax(460px,520px)_1fr]">
+        <Card
+          id="studio-controls"
+          className="w-full min-w-0 max-w-full overflow-hidden rounded-2xl sm:rounded-[24px] border border-border-strong bg-card shadow-xs"
+        >
+          <div className="border-b border-border-subtle p-4 sm:p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="font-display text-base sm:text-lg font-bold text-foreground">
                   {isAr ? "اتجاه التصميم" : "Creative direction"}
                 </h2>
                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -1284,12 +1290,28 @@ ${desc}${detailsBlock}
                     : "Every change appears instantly in the preview."}
                 </p>
               </div>
-              <span className="grid size-8 place-items-center rounded-xl bg-primary/10 text-primary">
-                <Sliders className="size-4" />
-              </span>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    document
+                      .getElementById("studio-preview")
+                      ?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className="xl:hidden h-8 px-2.5 gap-1.5 text-xs font-semibold rounded-xl text-primary border-primary/30 bg-primary/5 hover:bg-primary/10 cursor-pointer"
+                >
+                  <Eye className="size-3.5" />
+                  <span>{isAr ? "المعاينة" : "Preview"}</span>
+                </Button>
+                <span className="grid size-8 place-items-center rounded-xl bg-primary/10 text-primary shrink-0">
+                  <Sliders className="size-4" />
+                </span>
+              </div>
             </div>
           </div>
-          <div className="space-y-6 p-5 sm:p-6">
+          <div className="space-y-5 p-4 sm:space-y-6 sm:p-6 min-w-0">
             {/* Product Selector */}
             <div className="space-y-3">
               <div className="space-y-1.5">
@@ -1424,11 +1446,11 @@ ${desc}${detailsBlock}
             </div>
 
             {/* Publish Size */}
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label className="text-xs font-bold text-foreground">
                 {isAr ? "مقاس النشر" : "Publish size"}
               </Label>
-              <div className="grid grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5">
                 {Object.entries(FORMATS).map(([key, item]) => {
                   const isSelected = format === key;
                   return (
@@ -1437,25 +1459,25 @@ ${desc}${detailsBlock}
                       key={key}
                       onClick={() => setFormat(key as keyof typeof FORMATS)}
                       className={cn(
-                        "relative flex flex-col justify-between rounded-xl border p-3 text-start transition-all cursor-pointer min-h-[66px]",
+                        "relative flex flex-col justify-between rounded-xl border p-2 sm:p-3 text-start transition-all cursor-pointer min-h-[58px] sm:min-h-[66px] min-w-0",
                         isSelected
                           ? "border-primary bg-primary/[0.06] ring-1 ring-primary shadow-2xs"
                           : "border-border hover:border-primary/40 bg-card/60",
                       )}
                     >
-                      <div className="flex items-center justify-between gap-1 w-full">
-                        <span className="text-xs font-bold text-foreground truncate">
+                      <div className="flex items-center justify-between gap-1 w-full min-w-0">
+                        <span className="text-[11px] sm:text-xs font-bold text-foreground truncate">
                           {isAr ? item.ar : item.en}
                         </span>
                         {isSelected && (
-                          <span className="grid size-4 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
-                            <Check className="size-2.5 stroke-[3]" />
+                          <span className="grid size-3.5 sm:size-4 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+                            <Check className="size-2 sm:size-2.5 stroke-[3]" />
                           </span>
                         )}
                       </div>
                       <span
                         dir="ltr"
-                        className="font-mono text-xs text-muted-foreground tabular-nums"
+                        className="font-mono text-[10px] sm:text-xs text-muted-foreground tabular-nums truncate"
                       >
                         {item.width} × {item.height}
                       </span>
@@ -1466,11 +1488,11 @@ ${desc}${detailsBlock}
             </div>
 
             {/* Visual Style */}
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label className="text-xs font-bold text-foreground">
                 {isAr ? "الأسلوب البصري" : "Visual style"}
               </Label>
-              <div className="grid grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5">
                 {Object.entries(THEMES).map(([key, item]) => {
                   const isSelected = theme === key;
                   return (
@@ -1479,30 +1501,30 @@ ${desc}${detailsBlock}
                       key={key}
                       onClick={() => setTheme(key as keyof typeof THEMES)}
                       className={cn(
-                        "relative flex flex-col justify-between rounded-xl border p-3 text-start transition-all cursor-pointer min-h-[66px]",
+                        "relative flex flex-col justify-between rounded-xl border p-2 sm:p-3 text-start transition-all cursor-pointer min-h-[58px] sm:min-h-[66px] min-w-0",
                         isSelected
                           ? "border-primary bg-primary/[0.06] ring-1 ring-primary shadow-2xs"
                           : "border-border hover:border-primary/40 bg-card/60",
                       )}
                     >
-                      <div className="flex items-center justify-between w-full">
-                        <span className="flex items-center gap-1.5">
+                      <div className="flex items-center justify-between w-full min-w-0">
+                        <span className="flex items-center gap-1 sm:gap-1.5 shrink-0">
                           <i
-                            className="size-3.5 rounded-full border border-black/10 shadow-2xs"
+                            className="size-3 sm:size-3.5 rounded-full border border-black/10 shadow-2xs"
                             style={{ background: item.bg }}
                           />
                           <i
-                            className="size-3.5 rounded-full shadow-2xs"
+                            className="size-3 sm:size-3.5 rounded-full shadow-2xs"
                             style={{ background: item.ink }}
                           />
                         </span>
                         {isSelected && (
-                          <span className="grid size-4 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
-                            <Check className="size-2.5 stroke-[3]" />
+                          <span className="grid size-3.5 sm:size-4 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+                            <Check className="size-2 sm:size-2.5 stroke-[3]" />
                           </span>
                         )}
                       </div>
-                      <span className="text-xs font-bold text-foreground truncate">
+                      <span className="text-[11px] sm:text-xs font-bold text-foreground truncate mt-1">
                         {isAr ? item.ar : item.en}
                       </span>
                     </button>
@@ -1512,32 +1534,32 @@ ${desc}${detailsBlock}
             </div>
 
             {/* Product Framing */}
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label className="text-xs font-bold text-foreground">
                 {isAr ? "طريقة عرض صورة المنتج" : "Product photo framing"}
               </Label>
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
                 <button
                   type="button"
                   onClick={() => setImageFit("cover")}
                   className={cn(
-                    "relative flex flex-col justify-between rounded-xl border p-3 text-start transition-all cursor-pointer min-h-[64px]",
+                    "relative flex flex-col justify-between rounded-xl border p-2.5 sm:p-3 text-start transition-all cursor-pointer min-h-[58px] sm:min-h-[64px] min-w-0",
                     imageFit === "cover"
                       ? "border-primary bg-primary/[0.06] ring-1 ring-primary shadow-2xs"
                       : "border-border hover:border-primary/40 bg-card/60",
                   )}
                 >
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-xs font-bold text-foreground">
+                  <div className="flex items-center justify-between w-full min-w-0">
+                    <span className="text-xs font-bold text-foreground truncate">
                       {isAr ? "ملء الإطار (قص)" : "Cover frame"}
                     </span>
                     {imageFit === "cover" && (
-                      <span className="grid size-4 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
-                        <Check className="size-2.5 stroke-[3]" />
+                      <span className="grid size-3.5 sm:size-4 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+                        <Check className="size-2 sm:size-2.5 stroke-[3]" />
                       </span>
                     )}
                   </div>
-                  <span className="text-xs text-muted-foreground mt-1">
+                  <span className="text-[11px] sm:text-xs text-muted-foreground mt-1 truncate">
                     {isAr ? "تكبير الصورة لملء الخلفية" : "Fills canvas boundary"}
                   </span>
                 </button>
@@ -1545,23 +1567,23 @@ ${desc}${detailsBlock}
                   type="button"
                   onClick={() => setImageFit("contain")}
                   className={cn(
-                    "relative flex flex-col justify-between rounded-xl border p-3 text-start transition-all cursor-pointer min-h-[64px]",
+                    "relative flex flex-col justify-between rounded-xl border p-2.5 sm:p-3 text-start transition-all cursor-pointer min-h-[58px] sm:min-h-[64px] min-w-0",
                     imageFit === "contain"
                       ? "border-primary bg-primary/[0.06] ring-1 ring-primary shadow-2xs"
                       : "border-border hover:border-primary/40 bg-card/60",
                   )}
                 >
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-xs font-bold text-foreground">
+                  <div className="flex items-center justify-between w-full min-w-0">
+                    <span className="text-xs font-bold text-foreground truncate">
                       {isAr ? "احتواء كامل (كاملة)" : "Fit / Contain"}
                     </span>
                     {imageFit === "contain" && (
-                      <span className="grid size-4 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+                      <span className="grid size-3.5 sm:size-4 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
                         <Check className="size-2.5 stroke-[3]" />
                       </span>
                     )}
                   </div>
-                  <span className="text-xs text-muted-foreground mt-1">
+                  <span className="text-[11px] sm:text-xs text-muted-foreground mt-1 truncate">
                     {isAr ? "حفظ كامل تفاصيل الصورة" : "Preserves full photo"}
                   </span>
                 </button>
@@ -1574,7 +1596,7 @@ ${desc}${detailsBlock}
             </div>
 
             {/* Header & Branding Bar Customization Card */}
-            <div className="rounded-2xl border border-border-strong bg-muted/20 p-5 space-y-5 shadow-2xs">
+            <div className="rounded-2xl border border-border-strong bg-muted/20 p-3.5 sm:p-5 space-y-4 sm:space-y-5 shadow-2xs min-w-0">
               <div className="flex items-center justify-between border-b border-border-subtle pb-3">
                 <div className="flex items-center gap-2">
                   <span className="grid size-7 place-items-center rounded-lg bg-primary/10 text-primary">
@@ -1682,12 +1704,12 @@ ${desc}${detailsBlock}
                 <Label className="text-xs font-bold text-foreground">
                   {isAr ? "خلفية شريط الشعار (لزيادة الوضوح)" : "Header backdrop plate"}
                 </Label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                   <button
                     type="button"
                     onClick={() => setHeaderPlateStyle("none")}
                     className={cn(
-                      "rounded-xl border p-2 text-center text-xs font-bold transition-all cursor-pointer",
+                      "rounded-xl border p-2 text-center text-[11px] sm:text-xs font-bold transition-all cursor-pointer truncate min-w-0",
                       headerPlateStyle === "none"
                         ? "border-primary bg-primary/[0.08] ring-1 ring-primary text-primary"
                         : "border-border bg-background/50 hover:border-primary/40 text-muted-foreground",
@@ -1703,7 +1725,7 @@ ${desc}${detailsBlock}
                         setHeaderPlateColor("rgba(0, 0, 0, 0.48)");
                     }}
                     className={cn(
-                      "rounded-xl border p-2 text-center text-xs font-bold transition-all cursor-pointer",
+                      "rounded-xl border p-2 text-center text-[11px] sm:text-xs font-bold transition-all cursor-pointer truncate min-w-0",
                       headerPlateStyle === "glass"
                         ? "border-primary bg-primary/[0.08] ring-1 ring-primary text-primary"
                         : "border-border bg-background/50 hover:border-primary/40 text-muted-foreground",
@@ -1718,7 +1740,7 @@ ${desc}${detailsBlock}
                       if (headerPlateColor.startsWith("rgba")) setHeaderPlateColor("#1a1a1a");
                     }}
                     className={cn(
-                      "rounded-xl border p-2 text-center text-xs font-bold transition-all cursor-pointer",
+                      "rounded-xl border p-2 text-center text-[11px] sm:text-xs font-bold transition-all cursor-pointer truncate min-w-0",
                       headerPlateStyle === "solid"
                         ? "border-primary bg-primary/[0.08] ring-1 ring-primary text-primary"
                         : "border-border bg-background/50 hover:border-primary/40 text-muted-foreground",
@@ -2172,9 +2194,12 @@ ${desc}${detailsBlock}
         </Card>
 
         {/* Live Preview Stage */}
-        <div className="rounded-[28px] border border-border-strong bg-muted/30 p-4 sm:p-7 xl:sticky xl:top-4 self-start shadow-xs">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
+        <div
+          id="studio-preview"
+          className="w-full min-w-0 max-w-full overflow-hidden rounded-2xl sm:rounded-[28px] border border-border-strong bg-muted/30 p-3 sm:p-7 xl:sticky xl:top-4 self-start shadow-xs"
+        >
+          <div className="mb-3 sm:mb-4 flex items-center justify-between gap-3">
+            <div className="min-w-0">
               <p
                 className={cn(
                   "text-xs font-bold text-muted-foreground",
@@ -2183,19 +2208,36 @@ ${desc}${detailsBlock}
               >
                 {isAr ? "معاينة مباشرة" : "Live preview"}
               </p>
-              <p className="mt-1 text-xs sm:text-sm font-semibold flex items-center gap-1 text-foreground">
+              <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm font-semibold flex items-center gap-1 text-foreground">
                 <span dir="ltr" className="font-mono tabular-nums">
                   {FORMATS[format].width} × {FORMATS[format].height} px
                 </span>
               </p>
             </div>
-            <span className="grid size-8 place-items-center rounded-xl bg-background/80 border border-border-subtle text-muted-foreground">
-              <ImageIcon className="size-4" />
-            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  document
+                    .getElementById("studio-controls")
+                    ?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="xl:hidden h-8 px-2.5 gap-1.5 text-xs font-semibold rounded-xl text-foreground border-border bg-background hover:bg-muted cursor-pointer"
+              >
+                <Sliders className="size-3.5" />
+                <span>{isAr ? "التعديل" : "Edit"}</span>
+              </Button>
+              <span className="grid size-8 place-items-center rounded-xl bg-background/80 border border-border-subtle text-muted-foreground">
+                <ImageIcon className="size-4" />
+              </span>
+            </div>
           </div>
           <div
             ref={stageViewportRef}
-            className="mx-auto max-w-[570px] overflow-hidden rounded-[22px] shadow-2xl"
+            dir="ltr"
+            className="mx-auto w-full max-w-[570px] overflow-hidden rounded-[22px] shadow-2xl relative"
             style={{
               // Reserves exactly the scaled-down footprint of the fixed-width
               // stage below, so shrinking it on a narrow screen doesn't leave
@@ -2209,7 +2251,7 @@ ${desc}${detailsBlock}
           >
             <div
               ref={stageRef}
-              className={cn("relative isolate overflow-hidden", FORMATS[format].ratio)}
+              className={cn("relative isolate overflow-hidden shrink-0", FORMATS[format].ratio)}
               style={{
                 background: palette.bg,
                 color: palette.ink,
