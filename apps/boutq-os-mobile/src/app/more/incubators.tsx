@@ -152,13 +152,13 @@ export default function IncubatorsScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.incubatorName}>{item.name}</Text>
-                {item.location ? (
-                  <Text style={styles.locationText}>{item.location}</Text>
-                ) : null}
+                {item.location ? <Text style={styles.locationText}>{item.location}</Text> : null}
               </View>
               <StatusPill
                 status={item.is_active ? "مكتمل" : "ملغى"}
-                customLabel={item.is_active ? (isAr ? "نشط" : "Active") : (isAr ? "متوقف" : "Inactive")}
+                customLabel={
+                  item.is_active ? (isAr ? "نشط" : "Active") : isAr ? "متوقف" : "Inactive"
+                }
               />
             </View>
 

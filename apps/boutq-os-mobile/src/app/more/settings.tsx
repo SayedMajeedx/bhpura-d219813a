@@ -1,13 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppIcon } from "@/components/icons";
 import { Card, Field, PrimaryButton } from "@/components/ui";
@@ -190,7 +182,9 @@ export default function SettingsScreen() {
                   {isAr ? "تفعيل خيار التوصيل للعملاء" : "Enable Home Delivery"}
                 </Text>
                 <Text style={styles.switchSubtitle}>
-                  {isAr ? "إتاحة اختيار التوصيل للمنازل بالمتجر" : "Allow customers to choose home delivery"}
+                  {isAr
+                    ? "إتاحة اختيار التوصيل للمنازل بالمتجر"
+                    : "Allow customers to choose home delivery"}
                 </Text>
               </View>
               <Switch
@@ -228,11 +222,7 @@ export default function SettingsScreen() {
           </Card>
 
           {/* Save Button */}
-          <PrimaryButton
-            title={t("common.save")}
-            onPress={handleSaveSettings}
-            loading={saving}
-          />
+          <PrimaryButton title={t("common.save")} onPress={handleSaveSettings} loading={saving} />
         </>
       )}
     </ScrollView>

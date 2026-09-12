@@ -167,7 +167,8 @@ export async function fetchReportingOverview(
     const incubatorCommissions = Number(consignment.commission_amount || 0);
     const refunds: any = refundsByCurrency.get(row.currency) || {};
     const orderCogs: any = cogsByCurrency.get(row.currency) || {};
-    const paidOrderValue = Number(row.paid_order_value || 0) + Number(consignment.gross_amount || 0);
+    const paidOrderValue =
+      Number(row.paid_order_value || 0) + Number(consignment.gross_amount || 0);
     const netMerchandise = Number(row.net_merch_sales || 0) + Number(consignment.gross_amount || 0);
     return {
       ...row,
@@ -184,10 +185,13 @@ export async function fetchReportingOverview(
       incubator_cogs: Number(consignment.cogs || 0),
       missing_product_link_count: Number(orderCogs.missing_product_link_count || 0),
       zero_packaging_item_count: Number(orderCogs.zero_packaging_item_count || 0),
-      known_cogs: Number(orderCogs.known_cogs ?? row.known_cogs ?? 0) + Number(consignment.cogs || 0),
+      known_cogs:
+        Number(orderCogs.known_cogs ?? row.known_cogs ?? 0) + Number(consignment.cogs || 0),
       known_cogs_after_returns: Math.max(
         0,
-        Number(orderCogs.known_cogs ?? row.known_cogs ?? 0) + Number(consignment.cogs || 0) - Number(refunds.returned_cogs_reversal || 0),
+        Number(orderCogs.known_cogs ?? row.known_cogs ?? 0) +
+          Number(consignment.cogs || 0) -
+          Number(refunds.returned_cogs_reversal || 0),
       ),
       returned_cogs_reversal: Number(refunds.returned_cogs_reversal || 0),
       manual_expenses: manualExpenses,

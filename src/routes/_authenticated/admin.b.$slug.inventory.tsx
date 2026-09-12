@@ -7,12 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -922,9 +917,7 @@ function ProductImporterModal({
                     <span className="text-sm font-semibold font-display text-foreground block">
                       {item.name}
                     </span>
-                    <span className="text-xs text-muted-foreground block mt-0.5">
-                      {item.desc}
-                    </span>
+                    <span className="text-xs text-muted-foreground block mt-0.5">{item.desc}</span>
                   </button>
                 ))}
               </div>
@@ -1283,8 +1276,12 @@ function ProductsSection({
       const copySuffixAr = " (نسخة)";
       const copySuffixEn = " (Copy)";
       const newName = `${productToDuplicate.name}${isAr ? copySuffixAr : copySuffixEn}`;
-      const newNameAr = productToDuplicate.name_ar ? `${productToDuplicate.name_ar}${copySuffixAr}` : null;
-      const newNameEn = productToDuplicate.name_en ? `${productToDuplicate.name_en}${copySuffixEn}` : null;
+      const newNameAr = productToDuplicate.name_ar
+        ? `${productToDuplicate.name_ar}${copySuffixAr}`
+        : null;
+      const newNameEn = productToDuplicate.name_en
+        ? `${productToDuplicate.name_en}${copySuffixEn}`
+        : null;
 
       const { data: insertedProduct, error: prodErr } = await (supabase.from("products") as any)
         .insert({
@@ -1308,7 +1305,9 @@ function ProductsSection({
         .single();
 
       if (prodErr || !insertedProduct) {
-        toast.error(prodErr?.message || (isAr ? "فشل تكرار المنتج" : "Failed to duplicate product"));
+        toast.error(
+          prodErr?.message || (isAr ? "فشل تكرار المنتج" : "Failed to duplicate product"),
+        );
         return;
       }
 
@@ -1332,9 +1331,7 @@ function ProductsSection({
       }
 
       toast.success(
-        isAr
-          ? "تم تكرار المنتج كمسودة بنجاح"
-          : "Product duplicated as draft successfully",
+        isAr ? "تم تكرار المنتج كمسودة بنجاح" : "Product duplicated as draft successfully",
       );
       onChanged();
     } catch (err: any) {
@@ -1621,7 +1618,8 @@ function ProductsSection({
 
       let matchesScope = true;
       if (scopeFilter === "attention") {
-        const isCriticalStock = isLowStock(stock, productWeeklySales(product.id)) || isOutOfStock(stock);
+        const isCriticalStock =
+          isLowStock(stock, productWeeklySales(product.id)) || isOutOfStock(stock);
         const media = Array.isArray(product.media) ? product.media : [];
         const hasMedia =
           product.image_url ||
@@ -1976,7 +1974,9 @@ function ProductsSection({
                     }));
                   if (labels.length > 0) printLabels(labels);
                   else
-                    toast.error(isAr ? "لا يوجد باركود لهذا المنتج" : "No barcode for this product");
+                    toast.error(
+                      isAr ? "لا يوجد باركود لهذا المنتج" : "No barcode for this product",
+                    );
                 }}
                 onTransferToIncubator={(prod) => {
                   setIncubatorTransferProducts([prod]);
@@ -2137,7 +2137,9 @@ function ProductsSection({
                 value={bulkSelectedCategory}
                 onChange={(e) => setBulkSelectedCategory(e.target.value)}
               >
-                <option value="">{isAr ? "بدون قسم (إلغاء تعيين القسم)" : "No category (Unassign)"}</option>
+                <option value="">
+                  {isAr ? "بدون قسم (إلغاء تعيين القسم)" : "No category (Unassign)"}
+                </option>
                 {(categoriesQ.data ?? []).map((c) => {
                   const val = c.slug || c.name_en;
                   const label = isAr ? c.name_ar || c.name_en : c.name_en;
@@ -2742,7 +2744,9 @@ function ProductDialog({
         : "A valid price greater than or equal to 0 is required";
     }
     if (form.cost_price.trim() && (isNaN(Number(form.cost_price)) || Number(form.cost_price) < 0)) {
-      newErrors.cost = isAr ? "أدخل تكلفة صحيحة غير سالبة أو اترك الحقل فارغاً" : "Enter a valid non-negative cost or leave empty";
+      newErrors.cost = isAr
+        ? "أدخل تكلفة صحيحة غير سالبة أو اترك الحقل فارغاً"
+        : "Enter a valid non-negative cost or leave empty";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -3058,7 +3062,8 @@ function ProductDialog({
                           c.id === form.category,
                       ) && (
                         <option value={form.category}>
-                          {form.category} ({isAr ? "قسم حالي غير مسجل" : "Current unlisted category"})
+                          {form.category} (
+                          {isAr ? "قسم حالي غير مسجل" : "Current unlisted category"})
                         </option>
                       )}
                   </select>
@@ -3133,7 +3138,9 @@ function ProductDialog({
             {!product && (
               <div>
                 <Label className="text-xs font-bold text-muted-foreground">
-                  {isAr ? "الكمية المتوفرة بالمحل (المخزون الأولي)" : "In-Store Available Quantity (Initial Stock)"}
+                  {isAr
+                    ? "الكمية المتوفرة بالمحل (المخزون الأولي)"
+                    : "In-Store Available Quantity (Initial Stock)"}
                 </Label>
                 <Input
                   type="number"
@@ -3280,7 +3287,9 @@ function ProductDialog({
                           value={form.occasion}
                           onChange={(e) => setForm({ ...form, occasion: e.target.value })}
                         >
-                          <option value="">{isAr ? "اختر المناسبة..." : "Select occasion..."}</option>
+                          <option value="">
+                            {isAr ? "اختر المناسبة..." : "Select occasion..."}
+                          </option>
                           <option value="يومي">{isAr ? "يومي" : "Daily"}</option>
                           <option value="سهرة">{isAr ? "سهرة" : "Evening"}</option>
                           <option value="مناسبات">{isAr ? "مناسبات" : "Occasions"}</option>
@@ -3298,7 +3307,9 @@ function ProductDialog({
                           {isAr ? "إبراز في الرائج الآن" : "Feature in Trending now"}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {isAr ? "أولوية في العرض للعملاء" : "Prioritizes this product for discovery"}
+                          {isAr
+                            ? "أولوية في العرض للعملاء"
+                            : "Prioritizes this product for discovery"}
                         </p>
                       </div>
                       <Switch
@@ -3312,7 +3323,9 @@ function ProductDialog({
                           {isAr ? "إظهار شارة التنزيلات" : "Show Sale badge"}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {isAr ? "تظهر عند وجود سعر أصلي أعلى" : "Shown when an original price is higher"}
+                          {isAr
+                            ? "تظهر عند وجود سعر أصلي أعلى"
+                            : "Shown when an original price is higher"}
                         </p>
                       </div>
                       <Switch
@@ -3713,7 +3726,11 @@ function ProductDialog({
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div>
                             <p className="font-bold text-primary">
-                              {(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.name_ar || "Fit"} Passport ·{" "}
+                              {(isAr ? brand.name_ar : brand.name_en) ||
+                                brand.name_en ||
+                                brand.name_ar ||
+                                "Fit"}{" "}
+                              Passport ·{" "}
                               {passportType === "abaya"
                                 ? isAr
                                   ? "عباية"
@@ -4818,7 +4835,8 @@ function BulkVariantDialog({
                           onClick={() =>
                             setRows((current) => current.filter((_, i) => i !== index))
                           }
-                         aria-label={isAr ? "حذف" : "Delete"}>
+                          aria-label={isAr ? "حذف" : "Delete"}
+                        >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </td>
@@ -5627,9 +5645,7 @@ function VariantMobileCard({
         </div>
         <div>
           <div className="flex items-center gap-1">
-            <Label className="text-xs font-black uppercase text-muted-foreground">
-              {incLabel}
-            </Label>
+            <Label className="text-xs font-black uppercase text-muted-foreground">{incLabel}</Label>
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -6296,7 +6312,10 @@ function VariantList({
                   <TooltipProvider delayDuration={200}>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <button type="button" className="text-muted-foreground hover:text-foreground">
+                        <button
+                          type="button"
+                          className="text-muted-foreground hover:text-foreground"
+                        >
                           <HelpCircle className="h-3 w-3" />
                         </button>
                       </TooltipTrigger>
@@ -6321,7 +6340,10 @@ function VariantList({
                   <TooltipProvider delayDuration={200}>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <button type="button" className="text-muted-foreground hover:text-foreground">
+                        <button
+                          type="button"
+                          className="text-muted-foreground hover:text-foreground"
+                        >
                           <HelpCircle className="h-3 w-3" />
                         </button>
                       </TooltipTrigger>
@@ -6538,7 +6560,10 @@ function VariantList({
                     <TooltipProvider delayDuration={200}>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <button type="button" className="text-muted-foreground hover:text-foreground">
+                          <button
+                            type="button"
+                            className="text-muted-foreground hover:text-foreground"
+                          >
                             <HelpCircle className="h-3 w-3" />
                           </button>
                         </TooltipTrigger>
@@ -6558,7 +6583,10 @@ function VariantList({
                     <TooltipProvider delayDuration={200}>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <button type="button" className="text-muted-foreground hover:text-foreground">
+                          <button
+                            type="button"
+                            className="text-muted-foreground hover:text-foreground"
+                          >
                             <HelpCircle className="h-3 w-3" />
                           </button>
                         </TooltipTrigger>
@@ -6822,7 +6850,8 @@ function VariantList({
                           e.preventDefault();
                           setAdding(false);
                         }}
-                       aria-label={isAr ? "إغلاق" : "Close"}>
+                        aria-label={isAr ? "إغلاق" : "Close"}
+                      >
                         <X className="h-4 w-4" />
                       </Button>
                     </div>

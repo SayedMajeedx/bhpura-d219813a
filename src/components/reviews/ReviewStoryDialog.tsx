@@ -901,7 +901,9 @@ export function ReviewStoryDialog({
       video.currentTime = 0;
       try {
         await video.play();
-      } catch {}
+      } catch {
+        // Autoplay can be blocked by the browser — the play/pause UI still works.
+      }
       setIsVideoPlaying(true);
       setIsVideoEnded(false);
 

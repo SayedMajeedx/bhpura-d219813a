@@ -319,11 +319,14 @@ function StorefrontLayout() {
   const loaderData = Route.useLoaderData() as any;
   const { brand, settings, isSuspended, suspensionReason } = loaderData;
 
+  // Must run unconditionally, before the early return below — React hooks
+  // can't be called conditionally. It safely handles undefined inputs.
+  useDynamicFavicon(settings?.favicon_url, settings?.logo_url ?? brand.logo_url);
+
   if (isSuspended) {
     return <StorefrontSuspended brand={brand} suspensionReason={suspensionReason} />;
   }
 
-  useDynamicFavicon(settings?.favicon_url, settings?.logo_url ?? brand.logo_url);
   return (
     <StorefrontProvider brand={brand} settings={settings}>
       <StorefrontAnalytics />
@@ -565,7 +568,10 @@ function WhatsAppFab() {
 
 // Modularized storefront components
 import { AnnouncementBar, StoreHeader } from "@/components/storefront/StorefrontHeader";
-import { DesktopStoreNavigation, StorefrontMenu } from "@/components/storefront/StorefrontNavigation";
+import {
+  DesktopStoreNavigation,
+  StorefrontMenu,
+} from "@/components/storefront/StorefrontNavigation";
 import { CartDrawer } from "@/components/storefront/StorefrontCartDrawer";
 
 export { StorefrontMenu, CartDrawer };
@@ -629,9 +635,10 @@ function StorefrontFooter() {
       ? rawTrustBadges
       : DEFAULT_TRUST_BADGES;
 
-  const activeBadges = (trustBadgesConfig.enabled ?? true)
-    ? (trustBadgesConfig.items || []).filter((b) => b.enabled)
-    : [];
+  const activeBadges =
+    (trustBadgesConfig.enabled ?? true)
+      ? (trustBadgesConfig.items || []).filter((b) => b.enabled)
+      : [];
 
   const pages = settings.pages ?? [];
   const pageLinks = pages
@@ -747,7 +754,9 @@ function StorefrontFooter() {
                   {idx > 0 && <div className="hidden sm:inline text-white/20">•</div>}
                   <div className="inline-flex items-center gap-1.5">
                     {renderTrustBadgeIcon(badge.icon, "h-3.5 w-3.5", badge.color)}
-                    <span>{isAr ? badge.text_ar || badge.text_en : badge.text_en || badge.text_ar}</span>
+                    <span>
+                      {isAr ? badge.text_ar || badge.text_en : badge.text_en || badge.text_ar}
+                    </span>
                   </div>
                 </React.Fragment>
               ))}

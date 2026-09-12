@@ -1,9 +1,5 @@
-import{ useState, useMemo } from "react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { useState, useMemo } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,7 +17,8 @@ interface TrustBadgeIconPickerProps {
   isAr?: boolean;
 }
 
-type CategoryFilter = "all" | "quality" | "payment" | "security" | "delivery" | "support" | "general";
+type CategoryFilter =
+  "all" | "quality" | "payment" | "security" | "delivery" | "support" | "general";
 
 const CATEGORIES: { id: CategoryFilter; label_ar: string; label_en: string }[] = [
   { id: "all", label_ar: "الكل", label_en: "All" },
@@ -45,7 +42,9 @@ export function TrustBadgeIconPicker({
 
   const selectedCatalogItem = useMemo(() => {
     return TRUST_ICON_CATALOG.find(
-      (item) => item.id.toLowerCase() === value.toLowerCase() || item.name.toLowerCase() === value.toLowerCase()
+      (item) =>
+        item.id.toLowerCase() === value.toLowerCase() ||
+        item.name.toLowerCase() === value.toLowerCase(),
     );
   }, [value]);
 
@@ -69,7 +68,9 @@ export function TrustBadgeIconPicker({
       const matchDescEn = item.description_en.toLowerCase().includes(q);
       const matchKeywords = item.keywords.some((k) => k.toLowerCase().includes(q));
 
-      return matchName || matchLabelAr || matchLabelEn || matchDescAr || matchDescEn || matchKeywords;
+      return (
+        matchName || matchLabelAr || matchLabelEn || matchDescAr || matchDescEn || matchKeywords
+      );
     });
   }, [search, selectedCategory]);
 
@@ -84,12 +85,22 @@ export function TrustBadgeIconPicker({
           size="default"
           className={cn(
             "h-11 min-w-[140px] justify-between gap-2 px-3 border-border bg-card hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-            isAr ? "flex-row-reverse" : "flex-row"
+            isAr ? "flex-row-reverse" : "flex-row",
           )}
           aria-label={isAr ? "اختر أيقونة الشارة" : "Choose badge icon"}
         >
-          <div className={cn("flex items-center gap-2 overflow-hidden", isAr ? "flex-row-reverse" : "flex-row")}>
-            <div className={cn("flex h-7 w-7 items-center justify-center rounded-lg border border-border-subtle", colorPreset.bgClass)}>
+          <div
+            className={cn(
+              "flex items-center gap-2 overflow-hidden",
+              isAr ? "flex-row-reverse" : "flex-row",
+            )}
+          >
+            <div
+              className={cn(
+                "flex h-7 w-7 items-center justify-center rounded-lg border border-border-subtle",
+                colorPreset.bgClass,
+              )}
+            >
               {renderTrustBadgeIcon(value, "h-4 w-4", colorId)}
             </div>
             <span className="text-xs font-medium truncate max-w-[90px]">
@@ -122,9 +133,7 @@ export function TrustBadgeIconPicker({
           </div>
 
           <div className="relative">
-            <Search
-              className="absolute top-1/2 -translate-y-1/2 start-3 h-3.5 w-3.5 text-muted-foreground pointer-events-none"
-            />
+            <Search className="absolute top-1/2 -translate-y-1/2 start-3 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -148,7 +157,7 @@ export function TrustBadgeIconPicker({
                 size="sm"
                 className={cn(
                   "h-6 px-2 text-xs rounded-md shrink-0 font-normal",
-                  selectedCategory === cat.id && "font-semibold"
+                  selectedCategory === cat.id && "font-semibold",
                 )}
                 onClick={() => setSelectedCategory(cat.id)}
               >
@@ -184,14 +193,16 @@ export function TrustBadgeIconPicker({
                       "flex items-start gap-2.5 p-2 rounded-xl text-start transition-all border min-h-[56px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
                       isSelected
                         ? "border-primary bg-primary/10 text-foreground shadow-xs"
-                        : "border-border-subtle hover:border-border hover:bg-muted/50 text-foreground"
+                        : "border-border-subtle hover:border-border hover:bg-muted/50 text-foreground",
                     )}
                   >
                     <div
                       className={cn(
                         "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border",
-                        isSelected ? "border-primary/40 bg-primary/20" : "border-border-strong bg-card",
-                        colorPreset.textClass
+                        isSelected
+                          ? "border-primary/40 bg-primary/20"
+                          : "border-border-strong bg-card",
+                        colorPreset.textClass,
                       )}
                     >
                       <IconComp className="h-4 w-4" />

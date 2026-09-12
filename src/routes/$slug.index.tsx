@@ -75,7 +75,7 @@ export function hasAvailableStock(product: ProductRow): boolean {
     return true;
   }
   return product.product_variants.some(
-    (variant) => (Number(variant.stock_main || 0) + Number(variant.stock_incubator || 0)) > 0,
+    (variant) => Number(variant.stock_main || 0) + Number(variant.stock_incubator || 0) > 0,
   );
 }
 
@@ -887,9 +887,7 @@ function HeroContentCarousel({
                 <div
                   dir={isAr ? "rtl" : "ltr"}
                   className={`hero-carousel-text-card flex w-full h-full flex-col justify-center overflow-hidden rounded-2xl bg-white/70 dark:bg-black/60 text-card-foreground shadow-[0_8px_32px_rgba(0,0,0,0.12),inset_0_1px_1.5px_rgba(255,255,255,0.7)] backdrop-blur-2xl backdrop-saturate-180 border border-white/50 dark:border-white/15 sm:h-[320px] ${
-                    hasMultipleSlides
-                      ? "p-4 pb-11 sm:p-8 sm:pb-20"
-                      : "p-4 sm:p-8"
+                    hasMultipleSlides ? "p-4 pb-11 sm:p-8 sm:pb-20" : "p-4 sm:p-8"
                   }`}
                   style={{ textAlign: slideTextAlign }}
                 >

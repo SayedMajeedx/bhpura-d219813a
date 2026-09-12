@@ -32,7 +32,7 @@ export function AbandonedCartsCommandHeader({
                   : "bg-muted text-muted-foreground border-border"
               }`}
             >
-              {isEnabled ? (isAr ? "مفعّل" : "Active") : (isAr ? "معطّل" : "Disabled")}
+              {isEnabled ? (isAr ? "مفعّل" : "Active") : isAr ? "معطّل" : "Disabled"}
             </span>
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">

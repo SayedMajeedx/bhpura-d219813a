@@ -230,7 +230,8 @@ export function StatusPill({
   let resolvedTone = tone;
   if (!resolvedTone) {
     if (["paid", "completed", "delivered", "مكتمل"].includes(normalized)) resolvedTone = "success";
-    else if (["pending", "cod_pending", "packing", "نشط"].includes(normalized)) resolvedTone = "warning";
+    else if (["pending", "cod_pending", "packing", "نشط"].includes(normalized))
+      resolvedTone = "warning";
     else if (["failed", "cancelled", "canceled", "returned", "ملغى", "معطل"].includes(normalized))
       resolvedTone = "danger";
     else if (

@@ -593,24 +593,37 @@ function PublicInvoice() {
                               </div>
                             )}
                             {(() => {
-                              const itemColor = it.selected_variant?.color || it.product_variants?.color;
-                              const itemSize = it.selected_variant?.size || it.product_variants?.size;
-                              const itemFabric = it.selected_variant?.fabric || it.product_variants?.fabric;
+                              const itemColor =
+                                it.selected_variant?.color || it.product_variants?.color;
+                              const itemSize =
+                                it.selected_variant?.size || it.product_variants?.size;
+                              const itemFabric =
+                                it.selected_variant?.fabric || it.product_variants?.fabric;
                               return (
                                 <>
                                   {itemColor && (
-                                    <p className="text-xs mt-0.5" style={{ color: textColor, opacity: 0.75 }}>
+                                    <p
+                                      className="text-xs mt-0.5"
+                                      style={{ color: textColor, opacity: 0.75 }}
+                                    >
                                       {L.color}: <span className="font-medium">{itemColor}</span>
                                     </p>
                                   )}
                                   {itemSize && (
-                                    <p className="text-xs mt-0.5" style={{ color: textColor, opacity: 0.75 }}>
+                                    <p
+                                      className="text-xs mt-0.5"
+                                      style={{ color: textColor, opacity: 0.75 }}
+                                    >
                                       {L.size}: <span className="font-medium">{itemSize}</span>
                                     </p>
                                   )}
                                   {itemFabric && (
-                                    <p className="text-xs mt-0.5" style={{ color: textColor, opacity: 0.75 }}>
-                                      {isRTL ? "القماش" : "Fabric"}: <span className="font-medium">{itemFabric}</span>
+                                    <p
+                                      className="text-xs mt-0.5"
+                                      style={{ color: textColor, opacity: 0.75 }}
+                                    >
+                                      {isRTL ? "القماش" : "Fabric"}:{" "}
+                                      <span className="font-medium">{itemFabric}</span>
                                     </p>
                                   )}
                                 </>

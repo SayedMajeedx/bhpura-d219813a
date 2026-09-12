@@ -19,6 +19,12 @@ export default tseslint.config(
       ".temp/**",
       "supabase/.temp/**",
       "node_modules/**",
+      // Gitignored local SDK/toolchain caches (e.g. an Android SDK for the
+      // Expo mobile apps) that some machines have on disk. They're never
+      // part of the repo, so CI never sees them, but ESLint's flat config
+      // doesn't consult .gitignore on its own — without this, a machine
+      // that happens to have one cached lints thousands of vendor files.
+      ".local-tools/**",
     ],
   },
   {

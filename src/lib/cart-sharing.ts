@@ -90,21 +90,36 @@ export async function fetchSharedCartByCode(code: string): Promise<CartItem[] | 
 
   try {
     const cleanCode = code.trim().toLowerCase();
-    const { data, error } = await (supabase as any)
-      .from("shared_carts")
-      .select("items, expires_at")
-      .eq("code", cleanCode)
-      .maybeSingle();
+    // Try RPC first for tight security (world-read on table is revoked)
+    const { data: rpcData, error: rpcError } = await (supabase.rpc as any)(
+      "get_shared_cart_by_code",
+      { _code: cleanCode },
+    );
 
-    if (error || !data) return null;
+    let row = Array.isArray(rpcData) ? rpcData[0] : rpcData;
 
-    if (data.expires_at && new Date(data.expires_at).getTime() < Date.now()) {
+    // Fallback to direct query if RPC does not exist
+    if (rpcError || !row) {
+      const { data, error } = await (supabase as any)
+        .from("shared_carts")
+        .select("items, expires_at")
+        .eq("code", cleanCode)
+        .maybeSingle();
+
+      if (!error && data) {
+        row = data;
+      }
+    }
+
+    if (!row) return null;
+
+    if (row.expires_at && new Date(row.expires_at).getTime() < Date.now()) {
       console.warn("Shared cart link has expired");
       return null;
     }
 
-    if (Array.isArray(data.items) && data.items.length > 0) {
-      return data.items as CartItem[];
+    if (Array.isArray(row.items) && row.items.length > 0) {
+      return row.items as CartItem[];
     }
   } catch (err) {
     console.error("Error fetching shared cart by code:", err);

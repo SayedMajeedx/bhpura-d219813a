@@ -64,21 +64,21 @@ export function AbandonedCartSettingsDialog({
 
   const saveMutation = useMutation({
     mutationFn: async (updated: Partial<BrandAbandonedCartSettings>) => {
-      const { error } = await (supabase as any)
-        .from("brand_abandoned_cart_settings")
-        .upsert(
-          {
-            brand_id: brandId,
-            ...updated,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "brand_id" },
-        );
+      const { error } = await (supabase as any).from("brand_abandoned_cart_settings").upsert(
+        {
+          brand_id: brandId,
+          ...updated,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "brand_id" },
+      );
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success(
-        isAr ? "تم حفظ إعدادات السلات المتروكة بنجاح" : "Abandoned cart settings saved successfully",
+        isAr
+          ? "تم حفظ إعدادات السلات المتروكة بنجاح"
+          : "Abandoned cart settings saved successfully",
       );
       queryClient.invalidateQueries({ queryKey: ["brand_abandoned_cart_settings", brandId] });
       onOpenChange(false);
@@ -203,7 +203,9 @@ export function AbandonedCartSettingsDialog({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <MessageSquare className="h-4 w-4 text-emerald-500" />
-                  <Label className="font-normal">{isAr ? "تفعيل واتساب (WhatsApp)" : "WhatsApp Recovery"}</Label>
+                  <Label className="font-normal">
+                    {isAr ? "تفعيل واتساب (WhatsApp)" : "WhatsApp Recovery"}
+                  </Label>
                 </div>
                 <Switch
                   checked={form.enable_whatsapp ?? true}
@@ -214,7 +216,9 @@ export function AbandonedCartSettingsDialog({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-sky-500" />
-                  <Label className="font-normal">{isAr ? "تفعيل البريد الإلكتروني (Email)" : "Email Recovery"}</Label>
+                  <Label className="font-normal">
+                    {isAr ? "تفعيل البريد الإلكتروني (Email)" : "Email Recovery"}
+                  </Label>
                 </div>
                 <Switch
                   checked={form.enable_email ?? true}
@@ -225,7 +229,9 @@ export function AbandonedCartSettingsDialog({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Bell className="h-4 w-4 text-purple-500" />
-                  <Label className="font-normal">{isAr ? "تفعيل إشعارات الويب / الموبايل (Push)" : "Push Notifications"}</Label>
+                  <Label className="font-normal">
+                    {isAr ? "تفعيل إشعارات الويب / الموبايل (Push)" : "Push Notifications"}
+                  </Label>
                 </div>
                 <Switch
                   checked={form.enable_push ?? false}
@@ -255,8 +261,12 @@ export function AbandonedCartSettingsDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="percentage">{isAr ? "نسبة مئوية (%)" : "Percentage (%)"}</SelectItem>
-                    <SelectItem value="fixed">{isAr ? "مبلغ ثابت (د.ب)" : "Fixed Amount (BHD)"}</SelectItem>
+                    <SelectItem value="percentage">
+                      {isAr ? "نسبة مئوية (%)" : "Percentage (%)"}
+                    </SelectItem>
+                    <SelectItem value="fixed">
+                      {isAr ? "مبلغ ثابت (د.ب)" : "Fixed Amount (BHD)"}
+                    </SelectItem>
                     <SelectItem value="none">{isAr ? "بدون خصم" : "No Discount"}</SelectItem>
                   </SelectContent>
                 </Select>

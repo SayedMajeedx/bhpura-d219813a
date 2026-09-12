@@ -71,7 +71,11 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
   const isAr = lang === "ar";
   const queryClient = useQueryClient();
 
-  const { data: subData, isLoading, error } = useQuery({
+  const {
+    data: subData,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["brand_subscription_details", brandId],
     queryFn: () => getBrandSubscriptionDetails({ data: { brandId } }),
     enabled: Boolean(brandId),
@@ -87,7 +91,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [selectedPlanForUpgrade, setSelectedPlanForUpgrade] = useState<any | null>(null);
   const [inlineSelectedPlanId, setInlineSelectedPlanId] = useState<string | null>(null);
-  const [upgradeBillingInterval, setUpgradeBillingInterval] = useState<"monthly" | "annual">("annual");
+  const [upgradeBillingInterval, setUpgradeBillingInterval] = useState<"monthly" | "annual">(
+    "annual",
+  );
   const [inlinePaymentMethod, setInlinePaymentMethod] = useState<"paypal" | "benefit">("paypal");
   const [dialogPaymentMethod, setDialogPaymentMethod] = useState<"paypal" | "benefit">("paypal");
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
@@ -132,11 +138,19 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
     if (!file) return;
 
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      toast.error(isAr ? "يرجى اختيار صورة بصيغة JPG أو PNG أو WebP." : "Please upload a JPG, PNG, or WebP image.");
+      toast.error(
+        isAr
+          ? "يرجى اختيار صورة بصيغة JPG أو PNG أو WebP."
+          : "Please upload a JPG, PNG, or WebP image.",
+      );
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      toast.error(isAr ? "حجم الصورة كبير جداً، الحد الأقصى هو 10 ميجابايت." : "File is too large, maximum 10MB allowed.");
+      toast.error(
+        isAr
+          ? "حجم الصورة كبير جداً، الحد الأقصى هو 10 ميجابايت."
+          : "File is too large, maximum 10MB allowed.",
+      );
       return;
     }
 
@@ -151,13 +165,19 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
   const handleUploadAndConfirmUpgrade = async (overridePlan?: any) => {
     const planToUpgrade = overridePlan || selectedPlanForUpgrade;
     if (!receiptFile || !planToUpgrade) {
-      toast.error(isAr ? "يرجى إرفاق صورة إشعار التحويل أولاً." : "Please attach the transfer receipt image first.");
+      toast.error(
+        isAr
+          ? "يرجى إرفاق صورة إشعار التحويل أولاً."
+          : "Please attach the transfer receipt image first.",
+      );
       return;
     }
 
     setIsUploadingReceipt(true);
     const toastId = toast.loading(
-      isAr ? "جاري رفع إشعار التحويل وتأكيد الترقية..." : "Uploading receipt and confirming upgrade...",
+      isAr
+        ? "جاري رفع إشعار التحويل وتأكيد الترقية..."
+        : "Uploading receipt and confirming upgrade...",
     );
 
     try {
@@ -209,7 +229,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
       void queryClient.invalidateQueries({ queryKey: ["brands"] });
     } catch (err: any) {
       console.error(err);
-      toast.error(getFriendlyErrorMessage(err) || "Failed to submit upgrade receipt", { id: toastId });
+      toast.error(getFriendlyErrorMessage(err) || "Failed to submit upgrade receipt", {
+        id: toastId,
+      });
     } finally {
       setIsUploadingReceipt(false);
     }
@@ -227,7 +249,11 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
     return (
       <div className="p-12 flex flex-col items-center justify-center text-muted-foreground gap-3">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="text-xs">{isAr ? "جاري فحص باقة واشتراك المتجر..." : "Checking store subscription and live quotas..."}</span>
+        <span className="text-xs">
+          {isAr
+            ? "جاري فحص باقة واشتراك المتجر..."
+            : "Checking store subscription and live quotas..."}
+        </span>
       </div>
     );
   }
@@ -236,7 +262,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
     return (
       <div className="p-8 text-center text-destructive space-y-2">
         <AlertTriangle className="h-8 w-8 mx-auto" />
-        <p className="text-sm font-bold">{isAr ? "فشل تحميل تفاصيل الاشتراك" : "Failed to load subscription details"}</p>
+        <p className="text-sm font-bold">
+          {isAr ? "فشل تحميل تفاصيل الاشتراك" : "Failed to load subscription details"}
+        </p>
         <p className="text-xs text-muted-foreground">{getFriendlyErrorMessage(error)}</p>
       </div>
     );
@@ -253,16 +281,20 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
 
   // Derive status
   const isFounder = currentPlan?.code === "lifetime_founder";
-  const isTrial = currentPlan?.code === "trial" || subscription?.status === "trialing" || subscription?.billing_interval === "trial";
+  const isTrial =
+    currentPlan?.code === "trial" ||
+    subscription?.status === "trialing" ||
+    subscription?.billing_interval === "trial";
   const isInGrace = subscription?.status === "grace_period";
   const isCancelled = subscription?.status === "cancelled" || subscription?.cancel_at_period_end;
   const isPendingVerification = brand?.subscription_status === "pending_verification";
 
-  const trialEndsAtDate = isTrial
-    ? (subscription?.trial_ends_at || brand?.trial_ends_at)
-    : null;
+  const trialEndsAtDate = isTrial ? subscription?.trial_ends_at || brand?.trial_ends_at : null;
   const trialDaysRemaining = trialEndsAtDate
-    ? Math.max(0, Math.ceil((new Date(trialEndsAtDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    ? Math.max(
+        0,
+        Math.ceil((new Date(trialEndsAtDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+      )
     : null;
 
   // Filter eligible paid plans for upgrade
@@ -304,7 +336,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
 
   const handleCancelSubscription = async () => {
     setIsSubmitting(true);
-    const toastId = toast.loading(isAr ? "جاري معالجة الإلغاء..." : "Processing cancellation request...");
+    const toastId = toast.loading(
+      isAr ? "جاري معالجة الإلغاء..." : "Processing cancellation request...",
+    );
 
     try {
       await cancelBrandSubscription({
@@ -347,15 +381,21 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                   className={
                     isTrial
                       ? "bg-sky-500/10 text-sky-600 border-sky-500/20 text-xs font-bold"
-                      : currentPlan?.badge_color || "bg-primary/10 text-primary border-primary/20 text-xs font-bold"
+                      : currentPlan?.badge_color ||
+                        "bg-primary/10 text-primary border-primary/20 text-xs font-bold"
                   }
                 >
                   {isTrial
-                    ? (isAr ? "باقة تجريبية (3 أيام)" : "3-DAY TRIAL")
+                    ? isAr
+                      ? "باقة تجريبية (3 أيام)"
+                      : "3-DAY TRIAL"
                     : (currentPlan?.code || "PLAN").toUpperCase()}
                 </Badge>
                 {isFounder && (
-                  <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-xs font-bold gap-1">
+                  <Badge
+                    variant="outline"
+                    className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-xs font-bold gap-1"
+                  >
                     <Sparkles className="h-3 w-3" />
                     <span>{isAr ? "باقة المؤسس مدى الحياة" : "Lifetime Founder"}</span>
                   </Badge>
@@ -371,25 +411,32 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                   }
                 >
                   {subscription?.status === "active"
-                    ? (isAr ? "نشط" : "ACTIVE")
+                    ? isAr
+                      ? "نشط"
+                      : "ACTIVE"
                     : subscription?.status === "trialing" || isTrial
-                      ? (isAr ? "فترة تجريبية نشطة" : "ACTIVE TRIAL")
+                      ? isAr
+                        ? "فترة تجريبية نشطة"
+                        : "ACTIVE TRIAL"
                       : (subscription?.status || "ACTIVE").toUpperCase()}
                 </Badge>
               </div>
 
               <CardTitle className="text-2xl font-extrabold text-foreground mt-2">
                 {isAr
-                  ? (currentPlan?.name_ar || (isTrial ? "الفترة التجريبية (3 أيام)" : "الخطة الأساسية"))
-                  : (currentPlan?.name_en || (isTrial ? "3-Day Free Trial" : "Base Plan"))}
+                  ? currentPlan?.name_ar ||
+                    (isTrial ? "الفترة التجريبية (3 أيام)" : "الخطة الأساسية")
+                  : currentPlan?.name_en || (isTrial ? "3-Day Free Trial" : "Base Plan")}
                 <span className="text-xs font-normal text-muted-foreground ms-2">
                   (v{currentVersion?.version_number || 1})
                 </span>
               </CardTitle>
               <CardDescription className="text-xs max-w-xl">
                 {isAr
-                  ? (currentPlan?.description_ar || (isTrial ? "تجربة كاملة ومجانية لكافة مزايا وموارد المتجر لمدة 3 أيام." : ""))
-                  : (currentPlan?.description_en || (isTrial ? "Full-featured 3-day trial of all store capabilities." : ""))}
+                  ? currentPlan?.description_ar ||
+                    (isTrial ? "تجربة كاملة ومجانية لكافة مزايا وموارد المتجر لمدة 3 أيام." : "")
+                  : currentPlan?.description_en ||
+                    (isTrial ? "Full-featured 3-day trial of all store capabilities." : "")}
               </CardDescription>
             </div>
 
@@ -414,8 +461,12 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
             <div>
               <span className="text-xs font-semibold text-muted-foreground block">
                 {isTrial
-                  ? (isAr ? "نوع الحساب" : "Account Mode")
-                  : (isAr ? "حماية الأسعار" : "Grandfathering")}
+                  ? isAr
+                    ? "نوع الحساب"
+                    : "Account Mode"
+                  : isAr
+                    ? "حماية الأسعار"
+                    : "Grandfathering"}
               </span>
               {isTrial ? (
                 <span className="text-sm font-bold text-sky-600 dark:text-sky-400 flex items-center gap-1">
@@ -425,7 +476,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
               ) : (
                 <span className="text-sm font-bold text-emerald-600 flex items-center gap-1">
                   <ShieldCheck className="h-3.5 w-3.5" />
-                  <span>{isAr ? "سعر محمي" : "Locked v" + (currentVersion?.version_number || 1)}</span>
+                  <span>
+                    {isAr ? "سعر محمي" : "Locked v" + (currentVersion?.version_number || 1)}
+                  </span>
                 </span>
               )}
             </div>
@@ -436,28 +489,45 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
               </span>
               <span className="text-sm font-bold text-foreground">
                 {isTrial
-                  ? (isAr ? "فترة تجريبية (3 أيام)" : "Free Trial (3 Days)")
+                  ? isAr
+                    ? "فترة تجريبية (3 أيام)"
+                    : "Free Trial (3 Days)"
                   : subscription?.billing_interval === "annual"
-                    ? (isAr ? "سنوي" : "Annual")
-                    : (isAr ? "شهري" : "Monthly")}
+                    ? isAr
+                      ? "سنوي"
+                      : "Annual"
+                    : isAr
+                      ? "شهري"
+                      : "Monthly"}
               </span>
             </div>
 
             <div>
               <span className="text-xs font-semibold text-muted-foreground block">
                 {isTrial
-                  ? (isAr ? "تاريخ انتهاء التجربة" : "Trial Expiry Date")
-                  : (isAr ? "تاريخ التجديد القادم" : "Next Renewal Date")}
+                  ? isAr
+                    ? "تاريخ انتهاء التجربة"
+                    : "Trial Expiry Date"
+                  : isAr
+                    ? "تاريخ التجديد القادم"
+                    : "Next Renewal Date"}
               </span>
               <span className="text-sm font-bold text-foreground font-mono">
                 {isTrial && trialEndsAtDate
                   ? `${new Date(trialEndsAtDate).toLocaleDateString(isAr ? "ar-BH" : "en-US", { year: "numeric", month: "short", day: "numeric" })} ${
-                      trialDaysRemaining !== null ? `(${isAr ? `متبقي ${trialDaysRemaining} أيام` : `${trialDaysRemaining}d left`})` : ""
+                      trialDaysRemaining !== null
+                        ? `(${isAr ? `متبقي ${trialDaysRemaining} أيام` : `${trialDaysRemaining}d left`})`
+                        : ""
                     }`
                   : subscription?.current_period_end
-                    ? new Date(subscription.current_period_end).toLocaleDateString(isAr ? "ar-BH" : "en-US", { year: "numeric", month: "short", day: "numeric" })
+                    ? new Date(subscription.current_period_end).toLocaleDateString(
+                        isAr ? "ar-BH" : "en-US",
+                        { year: "numeric", month: "short", day: "numeric" },
+                      )
                     : isFounder
-                      ? (isAr ? "دائم" : "Never")
+                      ? isAr
+                        ? "دائم"
+                        : "Never"
                       : "-"}
               </span>
             </div>
@@ -470,7 +540,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                 <Clock className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 animate-pulse" />
                 <div>
                   <p className="font-bold text-amber-800 dark:text-amber-300">
-                    {isAr ? "طلب الترقية قيد المراجعة والتحقق" : "Upgrade Request Pending Verification"}
+                    {isAr
+                      ? "طلب الترقية قيد المراجعة والتحقق"
+                      : "Upgrade Request Pending Verification"}
                   </p>
                   <p className="text-xs text-amber-700/80 dark:text-amber-400/80 mt-0.5">
                     {isAr
@@ -530,7 +602,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
               <div>
                 <CardTitle className="text-xl font-bold flex items-center gap-2.5">
                   <CreditCard className="h-5 w-5 text-primary" />
-                  <span>{isAr ? "ترقية الباقة وتفعيل الاشتراك" : "Upgrade Plan & Activate Subscription"}</span>
+                  <span>
+                    {isAr ? "ترقية الباقة وتفعيل الاشتراك" : "Upgrade Plan & Activate Subscription"}
+                  </span>
                 </CardTitle>
                 <CardDescription className="text-xs mt-1">
                   {isAr
@@ -539,12 +613,18 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                 </CardDescription>
               </div>
               {inlinePaymentMethod === "paypal" ? (
-                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-xs font-bold gap-1.5 self-start sm:self-center">
+                <Badge
+                  variant="outline"
+                  className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-xs font-bold gap-1.5 self-start sm:self-center"
+                >
                   <Sparkles className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                   <span>{isAr ? "تفعيل فوري تلقائي" : "Instant Activation"}</span>
                 </Badge>
               ) : (
-                <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 text-xs font-bold gap-1.5 self-start sm:self-center">
+                <Badge
+                  variant="outline"
+                  className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 text-xs font-bold gap-1.5 self-start sm:self-center"
+                >
                   <ShieldCheck className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                   <span>{isAr ? "تفعيل يدوي باعتماد الإدارة" : "Admin Approval Required"}</span>
                 </Badge>
@@ -579,7 +659,10 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                     onClick={() => setUpgradeBillingInterval("annual")}
                   >
                     <span>{isAr ? "اشتراك سنوي" : "Annual"}</span>
-                    <Badge variant="secondary" className="text-xs bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-extrabold px-1.5 py-0 border-0">
+                    <Badge
+                      variant="secondary"
+                      className="text-xs bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-extrabold px-1.5 py-0 border-0"
+                    >
                       {isAr ? "وفّر شهرين!" : "2 Mos Free"}
                     </Badge>
                   </Button>
@@ -588,54 +671,63 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
 
               {/* Dynamic Plan Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {upgradeEligiblePlans.filter((p: any) => p.code !== "enterprise").map((plan: any) => {
-                  const isSelected = (inlineSelectedPlan?.id === plan.id);
-                  const isRecommended = plan.code === "pro";
-                  const currentVer = getPlanCurrentVersion(plan);
-                  const price = getPlanPrice(plan, upgradeBillingInterval);
+                {upgradeEligiblePlans
+                  .filter((p: any) => p.code !== "enterprise")
+                  .map((plan: any) => {
+                    const isSelected = inlineSelectedPlan?.id === plan.id;
+                    const isRecommended = plan.code === "pro";
+                    const currentVer = getPlanCurrentVersion(plan);
+                    const price = getPlanPrice(plan, upgradeBillingInterval);
 
-                  return (
-                    <div
-                      key={plan.id}
-                      onClick={() => setInlineSelectedPlanId(plan.id)}
-                      className={`cursor-pointer relative p-4 rounded-2xl border transition-all ${
-                        isSelected
-                          ? "border-primary bg-primary/5 ring-2 ring-primary/20 shadow-sm"
-                          : "border-border-strong hover:border-border hover:bg-muted/30 bg-card"
-                      }`}
-                    >
-                      {isRecommended && (
-                        <span className="absolute -top-2.5 left-4 px-2 py-0.5 rounded-full text-xs font-bold bg-primary text-primary-foreground shadow-xs">
-                          {isAr ? "الأكثر طلباً ⭐" : "Most Popular ⭐"}
-                        </span>
-                      )}
-
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-bold text-sm text-foreground">
-                          {isAr ? plan.name_ar : plan.name_en}
-                        </span>
-                        {currentVer && (
-                          <span className="text-xs text-muted-foreground font-mono">
-                            v{currentVer.version_number}
+                    return (
+                      <div
+                        key={plan.id}
+                        onClick={() => setInlineSelectedPlanId(plan.id)}
+                        className={`cursor-pointer relative p-4 rounded-2xl border transition-all ${
+                          isSelected
+                            ? "border-primary bg-primary/5 ring-2 ring-primary/20 shadow-sm"
+                            : "border-border-strong hover:border-border hover:bg-muted/30 bg-card"
+                        }`}
+                      >
+                        {isRecommended && (
+                          <span className="absolute -top-2.5 left-4 px-2 py-0.5 rounded-full text-xs font-bold bg-primary text-primary-foreground shadow-xs">
+                            {isAr ? "الأكثر طلباً ⭐" : "Most Popular ⭐"}
                           </span>
                         )}
-                      </div>
 
-                      <div className="mt-2.5 flex items-baseline gap-1">
-                        <span className="text-xl font-black text-primary font-mono">
-                          {price.toFixed(3)}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {isAr ? "د.ب" : "BHD"} / {upgradeBillingInterval === "annual" ? (isAr ? "سنة" : "year") : (isAr ? "شهر" : "mo")}
-                        </span>
-                      </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold text-sm text-foreground">
+                            {isAr ? plan.name_ar : plan.name_en}
+                          </span>
+                          {currentVer && (
+                            <span className="text-xs text-muted-foreground font-mono">
+                              v{currentVer.version_number}
+                            </span>
+                          )}
+                        </div>
 
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                        {isAr ? plan.description_ar : plan.description_en}
-                      </p>
-                    </div>
-                  );
-                })}
+                        <div className="mt-2.5 flex items-baseline gap-1">
+                          <span className="text-xl font-black text-primary font-mono">
+                            {price.toFixed(3)}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {isAr ? "د.ب" : "BHD"} /{" "}
+                            {upgradeBillingInterval === "annual"
+                              ? isAr
+                                ? "سنة"
+                                : "year"
+                              : isAr
+                                ? "شهر"
+                                : "mo"}
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                          {isAr ? plan.description_ar : plan.description_en}
+                        </p>
+                      </div>
+                    );
+                  })}
               </div>
             </div>
 
@@ -670,7 +762,10 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                         </div>
                       </div>
                     </div>
-                    <Badge variant="default" className="text-xs font-bold bg-primary text-primary-foreground">
+                    <Badge
+                      variant="default"
+                      className="text-xs font-bold bg-primary text-primary-foreground"
+                    >
                       {isAr ? "تفعيل فوري" : "Instant"}
                     </Badge>
                   </div>
@@ -705,7 +800,10 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                         </div>
                       </div>
                     </div>
-                    <Badge variant="outline" className="text-xs font-semibold text-muted-foreground">
+                    <Badge
+                      variant="outline"
+                      className="text-xs font-semibold text-muted-foreground"
+                    >
                       {isAr ? "اعتماد يدوي" : "Manual Review"}
                     </Badge>
                   </div>
@@ -722,7 +820,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
             {inlinePaymentMethod === "paypal" && inlineSelectedPlan && (
               <div className="space-y-3 pt-2 border-t border-border-subtle">
                 <span className="text-xs font-bold text-foreground block">
-                  {isAr ? "3. إتمام الدفع والتفعيل الفوري:" : "3. Complete Payment & Instant Activation:"}
+                  {isAr
+                    ? "3. إتمام الدفع والتفعيل الفوري:"
+                    : "3. Complete Payment & Instant Activation:"}
                 </span>
 
                 <PayPalSubscriptionButton
@@ -744,7 +844,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                 {/* Step 3: BenefitPay Account & Transfer Instructions */}
                 <div className="space-y-3 pt-2 border-t border-border-subtle">
                   <span className="text-xs font-bold text-foreground block">
-                    {isAr ? "3. تفاصيل التحويل عبر BenefitPay (Fawri+):" : "3. BenefitPay Transfer Details (Fawri+):"}
+                    {isAr
+                      ? "3. تفاصيل التحويل عبر BenefitPay (Fawri+):"
+                      : "3. BenefitPay Transfer Details (Fawri+):"}
                   </span>
 
                   {/* Dynamic Due Amount Banner */}
@@ -760,7 +862,15 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                         {isAr ? "دينار بحريني" : "BHD"}
                       </span>
                       <span className="text-xs text-muted-foreground font-normal ms-1">
-                        ({upgradeBillingInterval === "annual" ? (isAr ? "اشتراك سنوي كامل" : "Full Annual") : (isAr ? "اشتراك شهري" : "Monthly")})
+                        (
+                        {upgradeBillingInterval === "annual"
+                          ? isAr
+                            ? "اشتراك سنوي كامل"
+                            : "Full Annual"
+                          : isAr
+                            ? "اشتراك شهري"
+                            : "Monthly"}
+                        )
                       </span>
                     </div>
                   </div>
@@ -790,7 +900,10 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                           {isAr ? "رقم الآيبان الرسمي (IBAN):" : "Official IBAN:"}
                         </span>
                         <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-border-strong bg-background">
-                          <code dir="ltr" className="break-all text-xs font-bold font-mono text-foreground">
+                          <code
+                            dir="ltr"
+                            className="break-all text-xs font-bold font-mono text-foreground"
+                          >
                             {systemSettings?.subscription_iban || "BH12KHCB0000001234567890"}
                           </code>
                           <Button
@@ -803,7 +916,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                             {copiedIban ? (
                               <>
                                 <Check className="h-3.5 w-3.5 text-emerald-600" />
-                                <span className="text-emerald-600">{isAr ? "تم النسخ" : "Copied"}</span>
+                                <span className="text-emerald-600">
+                                  {isAr ? "تم النسخ" : "Copied"}
+                                </span>
                               </>
                             ) : (
                               <>
@@ -817,11 +932,28 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
 
                       <div className="text-xs text-muted-foreground space-y-1">
                         <p className="font-semibold text-foreground">
-                          {isAr ? "طريقة الدفع في تطبيق BenefitPay:" : "How to transfer in BenefitPay:"}
+                          {isAr
+                            ? "طريقة الدفع في تطبيق BenefitPay:"
+                            : "How to transfer in BenefitPay:"}
                         </p>
-                        <p>• {isAr ? "افتح تطبيق بنفت باي واختر تحويل فوري Fawri+." : "Open BenefitPay app and select Fawri+ transfer."}</p>
-                        <p>• {isAr ? "الصق رقم الآيبان أعلاه، وتأكد من كتابة المبلغ المطلوب بدقة." : "Paste the IBAN above and enter the exact total amount."}</p>
-                        <p>• {isAr ? "احفظ صورة إشعار التحويل المالي أو لقطة شاشة للعملية." : "Save the confirmation receipt screenshot after transfer."}</p>
+                        <p>
+                          •{" "}
+                          {isAr
+                            ? "افتح تطبيق بنفت باي واختر تحويل فوري Fawri+."
+                            : "Open BenefitPay app and select Fawri+ transfer."}
+                        </p>
+                        <p>
+                          •{" "}
+                          {isAr
+                            ? "الصق رقم الآيبان أعلاه، وتأكد من كتابة المبلغ المطلوب بدقة."
+                            : "Paste the IBAN above and enter the exact total amount."}
+                        </p>
+                        <p>
+                          •{" "}
+                          {isAr
+                            ? "احفظ صورة إشعار التحويل المالي أو لقطة شاشة للعملية."
+                            : "Save the confirmation receipt screenshot after transfer."}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -830,7 +962,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                 {/* Step 4: Receipt Upload & Submit */}
                 <div className="space-y-3 pt-2 border-t border-border-subtle">
                   <span className="text-xs font-bold text-foreground block">
-                    {isAr ? "4. إرفاق صورة إشعار التحويل البنكي:" : "4. Upload Payment Receipt Screenshot:"}
+                    {isAr
+                      ? "4. إرفاق صورة إشعار التحويل البنكي:"
+                      : "4. Upload Payment Receipt Screenshot:"}
                   </span>
 
                   {receiptPreview ? (
@@ -842,7 +976,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                           className="h-16 w-16 object-cover rounded-xl border border-border"
                         />
                         <div>
-                          <p className="text-xs font-bold text-foreground line-clamp-1">{receiptFile?.name}</p>
+                          <p className="text-xs font-bold text-foreground line-clamp-1">
+                            {receiptFile?.name}
+                          </p>
                           <p className="text-xs text-muted-foreground">
                             {receiptFile ? (receiptFile.size / 1024 / 1024).toFixed(2) : 0} MB
                           </p>
@@ -869,7 +1005,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                     <label className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-border hover:border-primary/50 bg-background/50 hover:bg-primary/5 cursor-pointer transition-colors group">
                       <UploadCloud className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
                       <span className="mt-2 text-xs font-bold text-foreground">
-                        {isAr ? "انقر لاختيار صورة الإيصال أو اسحب الملف إلى هنا" : "Click to select receipt or drag & drop"}
+                        {isAr
+                          ? "انقر لاختيار صورة الإيصال أو اسحب الملف إلى هنا"
+                          : "Click to select receipt or drag & drop"}
                       </span>
                       <span className="text-xs text-muted-foreground mt-0.5">
                         PNG, JPG, WebP {isAr ? "حتى 10 ميجابايت" : "up to 10MB"}
@@ -909,7 +1047,11 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                     {isUploadingReceipt ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>{isAr ? "جاري رفع الإيصال وإرساله للاعتماد..." : "Uploading & Submitting for Approval..."}</span>
+                        <span>
+                          {isAr
+                            ? "جاري رفع الإيصال وإرساله للاعتماد..."
+                            : "Uploading & Submitting for Approval..."}
+                        </span>
                       </>
                     ) : (
                       <>
@@ -942,9 +1084,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                   <Badge className="bg-amber-500 hover:bg-amber-500 text-white font-bold text-xs">
                     {isAr ? "طلب الترقية قيد المراجعة" : "Upgrade Pending Verification"}
                   </Badge>
-                  <span className="text-xs text-muted-foreground font-mono">
-                    BenefitPay Fawri+
-                  </span>
+                  <span className="text-xs text-muted-foreground font-mono">BenefitPay Fawri+</span>
                 </div>
                 <h3 className="text-lg font-bold text-foreground mt-2">
                   {isAr
@@ -994,9 +1134,16 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
           <UsageMeterBar
             labelAr="عدد المنتجات في الكتالوج"
             labelEn="Catalog Products Limit"
-            currentUsage={usageSummary.products?.current_usage ?? (usageSnapshots["products.limit"]?.current_usage || 0)}
-            limitValue={usageSummary.products?.limit_value ?? (entitlements?.limits["products.limit"] ?? 25)}
-            isUnlimited={usageSummary.products?.is_unlimited ?? (entitlements?.limits["products.limit"] === -1)}
+            currentUsage={
+              usageSummary.products?.current_usage ??
+              (usageSnapshots["products.limit"]?.current_usage || 0)
+            }
+            limitValue={
+              usageSummary.products?.limit_value ?? entitlements?.limits["products.limit"] ?? 25
+            }
+            isUnlimited={
+              usageSummary.products?.is_unlimited ?? entitlements?.limits["products.limit"] === -1
+            }
             unitAr="منتج"
             unitEn="items"
           />
@@ -1005,9 +1152,17 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
           <UsageMeterBar
             labelAr="طلبات المتجر الشهرية"
             labelEn="Monthly Orders Quota"
-            currentUsage={usageSummary.orders?.current_usage ?? (usageSnapshots["orders.monthly_limit"]?.current_usage || 0)}
-            limitValue={usageSummary.orders?.limit_value ?? (entitlements?.limits["orders.monthly_limit"] ?? 50)}
-            isUnlimited={usageSummary.orders?.is_unlimited ?? (entitlements?.limits["orders.monthly_limit"] === -1)}
+            currentUsage={
+              usageSummary.orders?.current_usage ??
+              (usageSnapshots["orders.monthly_limit"]?.current_usage || 0)
+            }
+            limitValue={
+              usageSummary.orders?.limit_value ?? entitlements?.limits["orders.monthly_limit"] ?? 50
+            }
+            isUnlimited={
+              usageSummary.orders?.is_unlimited ??
+              entitlements?.limits["orders.monthly_limit"] === -1
+            }
             unitAr="طلب"
             unitEn="orders"
           />
@@ -1016,9 +1171,19 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
           <UsageMeterBar
             labelAr="استدعاءات الـ API الشهرية"
             labelEn="Monthly API Requests"
-            currentUsage={usageSummary.api_requests?.current_usage ?? (usageSnapshots["api.monthly_requests"]?.current_usage || 0)}
-            limitValue={usageSummary.api_requests?.limit_value ?? (entitlements?.limits["api.monthly_requests"] ?? 2500)}
-            isUnlimited={usageSummary.api_requests?.is_unlimited ?? (entitlements?.limits["api.monthly_requests"] === -1)}
+            currentUsage={
+              usageSummary.api_requests?.current_usage ??
+              (usageSnapshots["api.monthly_requests"]?.current_usage || 0)
+            }
+            limitValue={
+              usageSummary.api_requests?.limit_value ??
+              entitlements?.limits["api.monthly_requests"] ??
+              2500
+            }
+            isUnlimited={
+              usageSummary.api_requests?.is_unlimited ??
+              entitlements?.limits["api.monthly_requests"] === -1
+            }
             unitAr="استدعاء"
             unitEn="reqs"
           />
@@ -1027,9 +1192,19 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
           <UsageMeterBar
             labelAr="رسائل استرجاع السلات المتروكة"
             labelEn="Abandoned Cart Messages"
-            currentUsage={usageSummary.abandoned_cart_messages?.current_usage ?? (usageSnapshots["abandoned_carts.monthly_messages"]?.current_usage || 0)}
-            limitValue={usageSummary.abandoned_cart_messages?.limit_value ?? (entitlements?.limits["abandoned_carts.monthly_messages"] ?? 50)}
-            isUnlimited={usageSummary.abandoned_cart_messages?.is_unlimited ?? (entitlements?.limits["abandoned_carts.monthly_messages"] === -1)}
+            currentUsage={
+              usageSummary.abandoned_cart_messages?.current_usage ??
+              (usageSnapshots["abandoned_carts.monthly_messages"]?.current_usage || 0)
+            }
+            limitValue={
+              usageSummary.abandoned_cart_messages?.limit_value ??
+              entitlements?.limits["abandoned_carts.monthly_messages"] ??
+              50
+            }
+            isUnlimited={
+              usageSummary.abandoned_cart_messages?.is_unlimited ??
+              entitlements?.limits["abandoned_carts.monthly_messages"] === -1
+            }
             unitAr="رسالة"
             unitEn="msgs"
           />
@@ -1038,9 +1213,19 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
           <UsageMeterBar
             labelAr="أعضاء فريق العمل والموظفين"
             labelEn="Team Members Limit"
-            currentUsage={usageSummary.team_members?.current_usage ?? (usageSnapshots["team.members_limit"]?.current_usage || 1)}
-            limitValue={usageSummary.team_members?.limit_value ?? (entitlements?.limits["team.members_limit"] ?? 2)}
-            isUnlimited={usageSummary.team_members?.is_unlimited ?? (entitlements?.limits["team.members_limit"] === -1)}
+            currentUsage={
+              usageSummary.team_members?.current_usage ??
+              (usageSnapshots["team.members_limit"]?.current_usage || 1)
+            }
+            limitValue={
+              usageSummary.team_members?.limit_value ??
+              entitlements?.limits["team.members_limit"] ??
+              2
+            }
+            isUnlimited={
+              usageSummary.team_members?.is_unlimited ??
+              entitlements?.limits["team.members_limit"] === -1
+            }
             unitAr="حساب"
             unitEn="members"
           />
@@ -1049,9 +1234,19 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
           <UsageMeterBar
             labelAr="إرساليات الويب هوك الشهرية"
             labelEn="Monthly Webhook Deliveries"
-            currentUsage={usageSummary.webhooks?.current_usage ?? (usageSnapshots["webhooks.monthly_deliveries"]?.current_usage || 0)}
-            limitValue={usageSummary.webhooks?.limit_value ?? (entitlements?.limits["webhooks.monthly_deliveries"] ?? 5000)}
-            isUnlimited={usageSummary.webhooks?.is_unlimited ?? (entitlements?.limits["webhooks.monthly_deliveries"] === -1)}
+            currentUsage={
+              usageSummary.webhooks?.current_usage ??
+              (usageSnapshots["webhooks.monthly_deliveries"]?.current_usage || 0)
+            }
+            limitValue={
+              usageSummary.webhooks?.limit_value ??
+              entitlements?.limits["webhooks.monthly_deliveries"] ??
+              5000
+            }
+            isUnlimited={
+              usageSummary.webhooks?.is_unlimited ??
+              entitlements?.limits["webhooks.monthly_deliveries"] === -1
+            }
             unitAr="إرسالية"
             unitEn="events"
           />
@@ -1063,7 +1258,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
         <CardHeader className="pb-3 border-b border-border-subtle">
           <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
             <ShieldCheck className="h-4.5 w-4.5 text-primary" />
-            <span>{isAr ? "الميزات والقدرات المفعلة في خطتك" : "Active Plan Entitlements & Features"}</span>
+            <span>
+              {isAr ? "الميزات والقدرات المفعلة في خطتك" : "Active Plan Entitlements & Features"}
+            </span>
           </CardTitle>
           <CardDescription className="text-xs">
             {isAr
@@ -1074,15 +1271,51 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
         <CardContent className="pt-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {[
-              { key: "returns.enabled", labelAr: "بوابة المرتجعات الآلية", labelEn: "Self-Service Returns Portal" },
-              { key: "loyalty.enabled", labelAr: "برنامج نقاط الولاء والمكافآت", labelEn: "Loyalty & Rewards Program" },
-              { key: "abandoned_carts.enabled", labelAr: "استرجاع السلات المتروكة", labelEn: "Abandoned Carts Recovery" },
-              { key: "api.enabled", labelAr: "مفاتيح وواجهات API المباشرة", labelEn: "Developer REST API Keys" },
-              { key: "webhooks.enabled", labelAr: "إشعارات الويب هوك اللحظية", labelEn: "Live Outbound Webhooks" },
-              { key: "white_label.enabled", labelAr: "إزالة علامة Boutq الرسمية", labelEn: "White Label Branding" },
-              { key: "custom_domain.enabled", labelAr: "ربط دومين مخصص خاص", labelEn: "Custom Domain Connection" },
-              { key: "mobile_factory.enabled", labelAr: "مصنع تطبيقات الموبايل", labelEn: "Mobile App Factory Builder" },
-              { key: "affiliates.enabled", labelAr: "نظام المسوقين بالعمولة", labelEn: "Affiliates & Referrals Engine" },
+              {
+                key: "returns.enabled",
+                labelAr: "بوابة المرتجعات الآلية",
+                labelEn: "Self-Service Returns Portal",
+              },
+              {
+                key: "loyalty.enabled",
+                labelAr: "برنامج نقاط الولاء والمكافآت",
+                labelEn: "Loyalty & Rewards Program",
+              },
+              {
+                key: "abandoned_carts.enabled",
+                labelAr: "استرجاع السلات المتروكة",
+                labelEn: "Abandoned Carts Recovery",
+              },
+              {
+                key: "api.enabled",
+                labelAr: "مفاتيح وواجهات API المباشرة",
+                labelEn: "Developer REST API Keys",
+              },
+              {
+                key: "webhooks.enabled",
+                labelAr: "إشعارات الويب هوك اللحظية",
+                labelEn: "Live Outbound Webhooks",
+              },
+              {
+                key: "white_label.enabled",
+                labelAr: "إزالة علامة Boutq الرسمية",
+                labelEn: "White Label Branding",
+              },
+              {
+                key: "custom_domain.enabled",
+                labelAr: "ربط دومين مخصص خاص",
+                labelEn: "Custom Domain Connection",
+              },
+              {
+                key: "mobile_factory.enabled",
+                labelAr: "مصنع تطبيقات الموبايل",
+                labelEn: "Mobile App Factory Builder",
+              },
+              {
+                key: "affiliates.enabled",
+                labelAr: "نظام المسوقين بالعمولة",
+                labelEn: "Affiliates & Referrals Engine",
+              },
             ].map((item) => {
               const isEnabled = entitlements?.features[item.key] ?? false;
 
@@ -1097,11 +1330,17 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                 >
                   <span className="font-semibold">{isAr ? item.labelAr : item.labelEn}</span>
                   {isEnabled ? (
-                    <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-none font-bold text-xs">
+                    <Badge
+                      variant="outline"
+                      className="bg-emerald-500/10 text-emerald-600 border-none font-bold text-xs"
+                    >
                       {isAr ? "مفعل" : "Unlocked"}
                     </Badge>
                   ) : (
-                    <Badge variant="outline" className="bg-muted text-muted-foreground border-none text-xs">
+                    <Badge
+                      variant="outline"
+                      className="bg-muted text-muted-foreground border-none text-xs"
+                    >
                       {isAr ? "مغلق" : "Locked"}
                     </Badge>
                   )}
@@ -1207,7 +1446,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                             <div className="flex items-center justify-between">
                               <Badge
                                 variant="outline"
-                                className={plan.badge_color || "bg-primary/10 text-primary font-bold"}
+                                className={
+                                  plan.badge_color || "bg-primary/10 text-primary font-bold"
+                                }
                               >
                                 {plan.code}
                               </Badge>
@@ -1244,16 +1485,24 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                                       {effectivePrice}
                                     </span>
                                     <span className="text-xs text-muted-foreground font-normal">
-                                      {currency} / {upgradeBillingInterval === "annual" ? (isAr ? "سنوياً" : "year") : (isAr ? "شهرياً" : "mo")}
+                                      {currency} /{" "}
+                                      {upgradeBillingInterval === "annual"
+                                        ? isAr
+                                          ? "سنوياً"
+                                          : "year"
+                                        : isAr
+                                          ? "شهرياً"
+                                          : "mo"}
                                     </span>
                                   </div>
-                                  {upgradeBillingInterval === "annual" && Number(monthlyPrice) > 0 && (
-                                    <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
-                                      {isAr
-                                        ? `(يعادل ${(Number(annualPrice) / 12).toFixed(1)} د.ب / شهرياً فقط)`
-                                        : `(Equivalent to ${(Number(annualPrice) / 12).toFixed(1)} BHD/mo)`}
-                                    </div>
-                                  )}
+                                  {upgradeBillingInterval === "annual" &&
+                                    Number(monthlyPrice) > 0 && (
+                                      <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+                                        {isAr
+                                          ? `(يعادل ${(Number(annualPrice) / 12).toFixed(1)} د.ب / شهرياً فقط)`
+                                          : `(Equivalent to ${(Number(annualPrice) / 12).toFixed(1)} BHD/mo)`}
+                                      </div>
+                                    )}
                                 </div>
                               ) : (
                                 <span>{isAr ? "حسب العرض" : "On Request"}</span>
@@ -1269,8 +1518,12 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                               className="w-full font-bold text-xs min-h-[44px]"
                             >
                               {isCurrent
-                                ? (isAr ? "الخطة الحالية" : "Current Plan")
-                                : (isAr ? "اختيار الباقة والمتابعة للدفع" : "Select Plan & Pay")}
+                                ? isAr
+                                  ? "الخطة الحالية"
+                                  : "Current Plan"
+                                : isAr
+                                  ? "اختيار الباقة والمتابعة للدفع"
+                                  : "Select Plan & Pay"}
                             </Button>
                           </div>
                         </div>
@@ -1286,8 +1539,8 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                   selectedPlanForUpgrade.versions?.[0];
                 const duePrice =
                   upgradeBillingInterval === "annual"
-                    ? currentVer?.price_annual ?? 0
-                    : currentVer?.price_monthly ?? 0;
+                    ? (currentVer?.price_annual ?? 0)
+                    : (currentVer?.price_monthly ?? 0);
                 const currency = currentVer?.currency || "BHD";
                 const merchantName = systemSettings?.merchant_account_name || "BOUTQ-OFFICIAL";
                 const iban = systemSettings?.subscription_iban || "BH12KHCB0000001234567890";
@@ -1304,7 +1557,11 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                           onClick={() => setSelectedPlanForUpgrade(null)}
                           className="h-8 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
                         >
-                          {isAr ? <ArrowRight className="h-3.5 w-3.5" /> : <ArrowLeft className="h-3.5 w-3.5" />}
+                          {isAr ? (
+                            <ArrowRight className="h-3.5 w-3.5" />
+                          ) : (
+                            <ArrowLeft className="h-3.5 w-3.5" />
+                          )}
                           <span>{isAr ? "العودة لتغيير الباقة" : "Change Plan"}</span>
                         </Button>
                         <Badge variant="outline" className="font-mono text-xs">
@@ -1314,7 +1571,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
 
                       <DialogTitle className="text-lg font-bold flex items-center gap-2 mt-2">
                         <CreditCard className="h-5 w-5 text-primary" />
-                        <span>{isAr ? "الدفع وتفعيل ترقية الباقة" : "Pay & Activate Plan Upgrade"}</span>
+                        <span>
+                          {isAr ? "الدفع وتفعيل ترقية الباقة" : "Pay & Activate Plan Upgrade"}
+                        </span>
                       </DialogTitle>
                       <DialogDescription className="text-xs">
                         {isAr
@@ -1332,7 +1591,15 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                         <span className="text-sm font-bold text-foreground">
                           {isAr ? selectedPlanForUpgrade.name_ar : selectedPlanForUpgrade.name_en}
                           <span className="text-xs font-normal text-muted-foreground ms-1.5">
-                            ({upgradeBillingInterval === "annual" ? (isAr ? "سنوي" : "Annual") : (isAr ? "شهري" : "Monthly")})
+                            (
+                            {upgradeBillingInterval === "annual"
+                              ? isAr
+                                ? "سنوي"
+                                : "Annual"
+                              : isAr
+                                ? "شهري"
+                                : "Monthly"}
+                            )
                           </span>
                         </span>
                       </div>
@@ -1365,12 +1632,17 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                               {isAr ? "باي بال والبطاقات" : "PayPal & Cards"}
                             </span>
                           </div>
-                          <Badge variant="default" className="text-xs font-bold bg-primary text-primary-foreground">
+                          <Badge
+                            variant="default"
+                            className="text-xs font-bold bg-primary text-primary-foreground"
+                          >
                             {isAr ? "تفعيل فوري" : "Instant"}
                           </Badge>
                         </div>
                         <p className="text-xs text-muted-foreground font-normal">
-                          {isAr ? "بطاقات فيزا، ماستركارد، Apple Pay" : "Visa, Mastercard, Apple Pay"}
+                          {isAr
+                            ? "بطاقات فيزا، ماستركارد، Apple Pay"
+                            : "Visa, Mastercard, Apple Pay"}
                         </p>
                       </Button>
 
@@ -1390,7 +1662,10 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                               {isAr ? "بنفت باي" : "BenefitPay"}
                             </span>
                           </div>
-                          <Badge variant="outline" className="text-xs font-semibold text-muted-foreground">
+                          <Badge
+                            variant="outline"
+                            className="text-xs font-semibold text-muted-foreground"
+                          >
                             {isAr ? "اعتماد يدوي" : "Manual Review"}
                           </Badge>
                         </div>
@@ -1425,7 +1700,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                               </div>
                               <div>
                                 <h5 className="text-xs font-bold text-foreground">
-                                  {isAr ? "بيانات التحويل عبر BenefitPay" : "BenefitPay Transfer Account"}
+                                  {isAr
+                                    ? "بيانات التحويل عبر BenefitPay"
+                                    : "BenefitPay Transfer Account"}
                                 </h5>
                                 <p className="text-xs text-muted-foreground font-mono">
                                   {merchantName}
@@ -1471,7 +1748,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                               {copiedIban ? (
                                 <>
                                   <Check className="h-3.5 w-3.5 text-emerald-600" />
-                                  <span className="text-emerald-600 font-bold">{isAr ? "تم النسخ" : "Copied"}</span>
+                                  <span className="text-emerald-600 font-bold">
+                                    {isAr ? "تم النسخ" : "Copied"}
+                                  </span>
                                 </>
                               ) : (
                                 <>
@@ -1484,23 +1763,42 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
 
                           {/* Transfer Instructions */}
                           <div className="space-y-1 text-xs text-muted-foreground leading-relaxed pt-1">
-                            <p>1. {isAr ? "افتح تطبيق BenefitPay واختر تحويل الأموال Fawri+." : "Open BenefitPay app and choose Fawri+ transfer."}</p>
-                            <p>2. {isAr ? `حوّل المبلغ المطلوب (${duePrice} ${currency}) إلى رقم الآيبان الموضح أعلاه.` : `Transfer exact amount (${duePrice} ${currency}) to the IBAN above.`}</p>
-                            <p>3. {isAr ? "احفظ لقطة شاشة لإشعار التحويل الناجح وارفعها في الحقل أدناه." : "Take a screenshot of the successful transfer receipt and upload below."}</p>
+                            <p>
+                              1.{" "}
+                              {isAr
+                                ? "افتح تطبيق BenefitPay واختر تحويل الأموال Fawri+."
+                                : "Open BenefitPay app and choose Fawri+ transfer."}
+                            </p>
+                            <p>
+                              2.{" "}
+                              {isAr
+                                ? `حوّل المبلغ المطلوب (${duePrice} ${currency}) إلى رقم الآيبان الموضح أعلاه.`
+                                : `Transfer exact amount (${duePrice} ${currency}) to the IBAN above.`}
+                            </p>
+                            <p>
+                              3.{" "}
+                              {isAr
+                                ? "احفظ لقطة شاشة لإشعار التحويل الناجح وارفعها في الحقل أدناه."
+                                : "Take a screenshot of the successful transfer receipt and upload below."}
+                            </p>
                           </div>
                         </div>
 
                         {/* Receipt Upload Input */}
                         <div className="space-y-2">
                           <label className="text-xs font-bold text-foreground block">
-                            {isAr ? "صورة إشعار التحويل (مطلوبة):" : "Transfer Receipt Screenshot (Required):"}
+                            {isAr
+                              ? "صورة إشعار التحويل (مطلوبة):"
+                              : "Transfer Receipt Screenshot (Required):"}
                           </label>
 
                           {!receiptPreview ? (
                             <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-border rounded-2xl cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-all">
                               <UploadCloud className="h-8 w-8 text-primary mb-2" />
                               <span className="text-xs font-semibold text-foreground">
-                                {isAr ? "اضغط هنا لاختيار صورة الإيصال" : "Click to select transfer receipt"}
+                                {isAr
+                                  ? "اضغط هنا لاختيار صورة الإيصال"
+                                  : "Click to select transfer receipt"}
                               </span>
                               <span className="text-xs text-muted-foreground mt-1">
                                 PNG, JPG, WebP ({isAr ? "حتى 10 ميجابايت" : "up to 10MB"})
@@ -1525,7 +1823,8 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                                     {receiptFile?.name}
                                   </span>
                                   <span className="text-xs text-muted-foreground">
-                                    {receiptFile && (receiptFile.size / (1024 * 1024)).toFixed(2)} MB
+                                    {receiptFile && (receiptFile.size / (1024 * 1024)).toFixed(2)}{" "}
+                                    MB
                                   </span>
                                 </div>
                               </div>
@@ -1576,12 +1875,20 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                             {isUploadingReceipt ? (
                               <>
                                 <Loader2 className="h-4 w-4 animate-spin" />
-                                <span>{isAr ? "جاري الرفع والإرسال للاعتماد..." : "Uploading & Submitting..."}</span>
+                                <span>
+                                  {isAr
+                                    ? "جاري الرفع والإرسال للاعتماد..."
+                                    : "Uploading & Submitting..."}
+                                </span>
                               </>
                             ) : (
                               <>
                                 <CheckCircle2 className="h-4 w-4" />
-                                <span>{isAr ? "إرسال الإيصال لاعتماد السوبر أدمن" : "Submit Receipt for Super-Admin Approval"}</span>
+                                <span>
+                                  {isAr
+                                    ? "إرسال الإيصال لاعتماد السوبر أدمن"
+                                    : "Submit Receipt for Super-Admin Approval"}
+                                </span>
                               </>
                             )}
                           </Button>
@@ -1649,7 +1956,11 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                 onClick={handleCancelSubscription}
                 className="font-bold min-h-[44px]"
               >
-                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <XCircle className="h-4 w-4" />
+                )}
                 <span>{isAr ? "تأكيد إيقاف التجديد" : "Stop Auto-Renewal"}</span>
               </Button>
             </DialogFooter>

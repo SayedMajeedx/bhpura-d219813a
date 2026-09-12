@@ -32,9 +32,7 @@ export async function dispatchReturnNotificationSafely(
     const recipient = payload.recipientEmail || payload.recipientPhone || "customer";
 
     // Enqueue into return_notification_events outbox
-    const { error } = await (supabase as any)
-      .from("return_notification_events")
-      .insert({
+    const { error } = await (supabase as any).from("return_notification_events").insert({
       brand_id: payload.brandId,
       return_id: payload.returnId,
       event_type: payload.eventType,

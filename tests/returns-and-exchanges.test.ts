@@ -218,7 +218,9 @@ describe("Returns & Exchanges Suite - Core Business Logic & Financial Integrity"
       expect(migrationSql).toContain("CREATE TABLE IF NOT EXISTS public.return_items");
       expect(migrationSql).toContain("CREATE TABLE IF NOT EXISTS public.store_credits");
       expect(migrationSql).toContain("CREATE TABLE IF NOT EXISTS public.inventory_movement_logs");
-      expect(migrationSql).toContain("CREATE TABLE IF NOT EXISTS public.return_notification_events");
+      expect(migrationSql).toContain(
+        "CREATE TABLE IF NOT EXISTS public.return_notification_events",
+      );
     });
 
     it("should enforce RLS and brand isolation policies", () => {

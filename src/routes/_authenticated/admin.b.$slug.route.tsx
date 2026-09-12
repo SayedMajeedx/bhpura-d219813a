@@ -31,7 +31,9 @@ function parseTokenPayload(token: string | null): any | null {
     if (typeof Buffer !== "undefined") {
       try {
         return JSON.parse(Buffer.from(part, "base64url").toString("utf-8"));
-      } catch {}
+      } catch {
+        // base64url isn't supported on every Node version — fall back to standard base64.
+      }
       return JSON.parse(Buffer.from(base64, "base64").toString("utf-8"));
     }
     const binary = atob(base64);
@@ -205,10 +207,7 @@ function BrandLayout() {
 
   if (isBrandSuspended) {
     return (
-      <TrialExpiredPaywall
-        brand={brand}
-        reason={isTrialExpired ? "trial_expired" : "inactive"}
-      />
+      <TrialExpiredPaywall brand={brand} reason={isTrialExpired ? "trial_expired" : "inactive"} />
     );
   }
 

@@ -132,9 +132,7 @@ export function PayPalSubscriptionButton({
             );
           },
           onCancel: () => {
-            toast.info(
-              isAr ? "تم إلغاء عملية الدفع في PayPal." : "PayPal checkout was cancelled.",
-            );
+            toast.info(isAr ? "تم إلغاء عملية الدفع في PayPal." : "PayPal checkout was cancelled.");
           },
         });
 
@@ -158,7 +156,9 @@ export function PayPalSubscriptionButton({
           .catch((err: any) => {
             console.error("PayPal render error:", err);
             if (isMounted) {
-              setLoadError(err?.message || (isAr ? "تعذر عرض أزرار PayPal" : "Failed to render buttons"));
+              setLoadError(
+                err?.message || (isAr ? "تعذر عرض أزرار PayPal" : "Failed to render buttons"),
+              );
               setLoadingSdk(false);
             }
           });
@@ -240,20 +240,12 @@ export function PayPalSubscriptionButton({
           </span>
           <span className="font-semibold text-foreground">
             {isAr ? planNameAr : planNameEn} (
-            {billingInterval === "monthly"
-              ? isAr
-                ? "شهري"
-                : "Monthly"
-              : isAr
-                ? "سنوي"
-                : "Annual"}
+            {billingInterval === "monthly" ? (isAr ? "شهري" : "Monthly") : isAr ? "سنوي" : "Annual"}
             )
           </span>
         </div>
         <div className="text-end" dir="ltr">
-          <div className="font-mono font-bold text-sm text-foreground">
-            ${usdAmount} USD
-          </div>
+          <div className="font-mono font-bold text-sm text-foreground">${usdAmount} USD</div>
           <div className="text-xs text-muted-foreground font-mono">
             ≈ {bhdAmount.toFixed(3)} BHD
           </div>
@@ -273,7 +265,10 @@ export function PayPalSubscriptionButton({
         <p className="text-muted-foreground leading-relaxed ps-6 text-xs">
           {isAr ? (
             <>
-              يقبل جميع بطاقات الائتمان البحرينية <bdi dir="ltr">(Credit Cards)</bdi> وبطاقات الخصم المباشر <bdi dir="ltr">(Debit Cards)</bdi> الصادرة من بنوك البحرين كـ <bdi dir="ltr">ila</bdi> و <bdi dir="ltr">BBK</bdi> و <bdi dir="ltr">BisB</bdi> المفعلة للشراء أونلاين عبر <bdi dir="ltr">Visa / Mastercard</bdi>.
+              يقبل جميع بطاقات الائتمان البحرينية <bdi dir="ltr">(Credit Cards)</bdi> وبطاقات الخصم
+              المباشر <bdi dir="ltr">(Debit Cards)</bdi> الصادرة من بنوك البحرين كـ{" "}
+              <bdi dir="ltr">ila</bdi> و <bdi dir="ltr">BBK</bdi> و <bdi dir="ltr">BisB</bdi>{" "}
+              المفعلة للشراء أونلاين عبر <bdi dir="ltr">Visa / Mastercard</bdi>.
             </>
           ) : (
             "Accepts all Bahraini Credit Cards and online-enabled Debit Cards (e.g. ila Bank, BBK, BisB, NBB with Visa/Mastercard enabled)."
@@ -285,7 +280,9 @@ export function PayPalSubscriptionButton({
       {loadingSdk && !loadError && (
         <div className="h-28 rounded-xl border border-dashed border-border flex flex-col items-center justify-center gap-2 text-xs text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
-          <span>{isAr ? "جاري تحميل خيارات الدفع الآمنة..." : "Loading secure payment options..."}</span>
+          <span>
+            {isAr ? "جاري تحميل خيارات الدفع الآمنة..." : "Loading secure payment options..."}
+          </span>
         </div>
       )}
 

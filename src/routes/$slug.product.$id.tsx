@@ -717,9 +717,17 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         if (guestNotes) {
           setTailoringNotes(guestNotes);
         }
-      } catch {}
+      } catch {
+        // localStorage can be unavailable (private mode, quota) — draft just won't persist.
+      }
     }
-  }, [customerQ.data?.id, fitPassportQ.data?.measurements, fitPassportQ.data?.tailoring_notes, fitProfileType, brand.slug]);
+  }, [
+    customerQ.data?.id,
+    fitPassportQ.data?.measurements,
+    fitPassportQ.data?.tailoring_notes,
+    fitProfileType,
+    brand.slug,
+  ]);
 
   const fitProfileComplete = Boolean(
     (isGuest ? true : fitPassportQ.data?.consent_to_store) &&
@@ -764,7 +772,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       if (tailoringNotes.trim()) {
         localStorage.setItem(`pura_guest_tailoring_notes_${brand.slug}`, tailoringNotes.trim());
       }
-    } catch {}
+    } catch {
+      // Storage can be unavailable (private mode, quota) — safe to continue either way.
+    }
 
     setCfValues((current) => {
       const next = { ...current };
@@ -842,7 +852,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     try {
       if (sessionStorage.getItem(key)) return;
       sessionStorage.setItem(key, "1");
-    } catch {}
+    } catch {
+      // Storage can be unavailable (private mode, quota) — safe to continue either way.
+    }
     void (supabase.rpc as any)("record_storefront_product_engagement", {
       p_brand_slug: brand.slug,
       p_product_id: product.id,
@@ -1086,7 +1098,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
 
     if (isTailoringActive && passportApplied && fitProfileComplete) {
       const activeUnit = fitPassportQ.data?.preferred_length_unit ?? guestUnit ?? "in";
-      const activeVersion = fitPassportQ.data?.version ? String(fitPassportQ.data.version) : "guest";
+      const activeVersion = fitPassportQ.data?.version
+        ? String(fitPassportQ.data.version)
+        : "guest";
 
       custom.push({
         key: "fit_passport_profile",
@@ -1142,7 +1156,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       });
       try {
         localStorage.setItem(`pura_guest_tailoring_notes_${brand.slug}`, tailoringNotes.trim());
-      } catch {}
+      } catch {
+        // localStorage can be unavailable (private mode, quota) — draft just won't persist.
+      }
     }
 
     const fileField = activeCustomFields.find((f) => f.type === "file");
@@ -1717,7 +1733,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-sm font-bold">
-                            {(lang === "ar" ? brand.name_ar : brand.name_en) || brand.name_en || brand.name_ar || "Fit"} Passport ·{" "}
+                            {(lang === "ar" ? brand.name_ar : brand.name_en) ||
+                              brand.name_en ||
+                              brand.name_ar ||
+                              "Fit"}{" "}
+                            Passport ·{" "}
                             {fitProfileType === "abaya" ? t("عباية", "Abaya") : t("فستان", "Dress")}
                           </p>
                           {isGuest && (
@@ -1834,7 +1854,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                           <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
                             {isGuest
                               ? guestUnit
-                              : fitPassportQ.data?.preferred_length_unit ?? "in"}
+                              : (fitPassportQ.data?.preferred_length_unit ?? "in")}
                           </span>
                         </div>
                       </label>

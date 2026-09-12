@@ -99,7 +99,9 @@ export function StorefrontFitPassport({
         if (found) {
           setMeasurements(loaded);
         }
-      } catch {}
+      } catch {
+        // Corrupted or unreadable local draft — fall through with no saved measurements.
+      }
       return;
     }
     const n = normalizeFitProfiles(p.measurements);

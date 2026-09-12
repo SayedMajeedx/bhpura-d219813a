@@ -100,18 +100,20 @@ export function CustomerLoyaltySection({
 
   const activePoints = account?.active_points ?? 0;
   const pendingPoints = account?.pending_points ?? 0;
-  const redemptionRate = program?.redemption_rate ?? 0.010;
+  const redemptionRate = program?.redemption_rate ?? 0.01;
   const cashEquivalent = (activePoints * redemptionRate).toFixed(3);
 
   const effectiveTiers = tiers.length > 0 ? tiers : (DEFAULT_LOYALTY_TIERS as any[]);
   const currentTierKey = account?.current_tier_key ?? "bronze";
-  const currentTier = effectiveTiers.find((t: any) => t.tier_key === currentTierKey) || effectiveTiers[0];
+  const currentTier =
+    effectiveTiers.find((t: any) => t.tier_key === currentTierKey) || effectiveTiers[0];
 
   // Find next tier for progression bar
   const currentTierIdx = effectiveTiers.findIndex((t: any) => t.tier_key === currentTierKey);
-  const nextTier = currentTierIdx >= 0 && currentTierIdx < effectiveTiers.length - 1
-    ? effectiveTiers[currentTierIdx + 1]
-    : null;
+  const nextTier =
+    currentTierIdx >= 0 && currentTierIdx < effectiveTiers.length - 1
+      ? effectiveTiers[currentTierIdx + 1]
+      : null;
 
   return (
     <div className="space-y-6">
@@ -223,12 +225,20 @@ export function CustomerLoyaltySection({
                   {isAr ? nextTier.name_ar : nextTier.name_en} ({nextTier.min_spend} {currency})
                 </span>
               </div>
-              <Progress value={Math.min(100, Math.max(15, (activePoints / (nextTier.min_points || 1000)) * 100))} className="h-1.5" />
+              <Progress
+                value={Math.min(
+                  100,
+                  Math.max(15, (activePoints / (nextTier.min_points || 1000)) * 100),
+                )}
+                className="h-1.5"
+              />
             </div>
           ) : (
             <div className="mt-4 pt-3 border-t border-border-subtle text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
               <Sparkles className="h-3.5 w-3.5" />
-              <span>{isAr ? "أنت في أعلى مستويات العضوية!" : "You have reached the top tier!"}</span>
+              <span>
+                {isAr ? "أنت في أعلى مستويات العضوية!" : "You have reached the top tier!"}
+              </span>
             </div>
           )}
         </Card>
@@ -274,8 +284,8 @@ export function CustomerLoyaltySection({
                   {Number(t.min_spend) > 0
                     ? `${t.min_spend} ${currency} ${isAr ? "إنفاق" : "spend"}`
                     : isAr
-                    ? "مستوى البداية"
-                    : "Starting Tier"}
+                      ? "مستوى البداية"
+                      : "Starting Tier"}
                 </div>
 
                 <ul className="space-y-1.5 text-xs text-foreground/80">

@@ -188,7 +188,9 @@ export function PuraWebShell() {
             if (data?.type === "OPEN_NOTIFICATIONS") {
               setSettings(true);
             }
-          } catch {}
+          } catch {
+            // Malformed message from the web view — ignore it.
+          }
         }}
         onError={() => setFailed(true)}
         onHttpError={({ nativeEvent }) => {

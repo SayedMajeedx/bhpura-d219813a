@@ -147,7 +147,10 @@ export function AbandonedCartsList({
         couponCode ? `&coupon=${couponCode}` : ""
       }`;
 
-      const name = cart.guest_name || (cart as any).customers?.name || (isAr ? "عزيزنا العميل" : "Valued Customer");
+      const name =
+        cart.guest_name ||
+        (cart as any).customers?.name ||
+        (isAr ? "عزيزنا العميل" : "Valued Customer");
       const message = isAr
         ? `مرحباً ${name}، لاحظنا أنك تركت منتجات في سلتك لدى ${brandName}. إليك كود خصم خاص 10% [${couponCode}] لإتمام طلبك الآن: ${recoveryUrl}`
         : `Hi ${name}, you left items in your cart at ${brandName}. Here is an exclusive 10% discount code [${couponCode}] to complete your order: ${recoveryUrl}`;
@@ -156,7 +159,9 @@ export function AbandonedCartsList({
       const waUrl = `https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`;
       window.open(waUrl, "_blank");
 
-      toast.success(isAr ? "تم فتح محادثة الواتساب مع كود الخصم" : "Opened WhatsApp with recovery offer");
+      toast.success(
+        isAr ? "تم فتح محادثة الواتساب مع كود الخصم" : "Opened WhatsApp with recovery offer",
+      );
     } catch (err: any) {
       toast.error(err.message || "Failed to generate recovery message");
     } finally {
@@ -171,7 +176,9 @@ export function AbandonedCartsList({
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder={isAr ? "بحث بالعميل أو الهاتف أو البريد..." : "Search customer, phone, email..."}
+            placeholder={
+              isAr ? "بحث بالعميل أو الهاتف أو البريد..." : "Search customer, phone, email..."
+            }
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="ps-9 min-h-[44px] bg-background border-border"
@@ -185,12 +192,16 @@ export function AbandonedCartsList({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{isAr ? "جميع السلات" : "All Carts"}</SelectItem>
-              <SelectItem value="abandoned">{isAr ? "متروكة (غير مكتملة)" : "Abandoned"}</SelectItem>
+              <SelectItem value="abandoned">
+                {isAr ? "متروكة (غير مكتملة)" : "Abandoned"}
+              </SelectItem>
               <SelectItem value="active">{isAr ? "نشطة" : "Active"}</SelectItem>
               <SelectItem value="recovering">{isAr ? "قيد المتابعة" : "Recovering"}</SelectItem>
               <SelectItem value="recovered">{isAr ? "تمت الاستعادة" : "Recovered"}</SelectItem>
               <SelectItem value="expired">{isAr ? "تم إفراغها" : "Cleared"}</SelectItem>
-              <SelectItem value="unsubscribed">{isAr ? "أوقف المتابعة" : "Unsubscribed"}</SelectItem>
+              <SelectItem value="unsubscribed">
+                {isAr ? "أوقف المتابعة" : "Unsubscribed"}
+              </SelectItem>
             </SelectContent>
           </Select>
 
@@ -247,10 +258,11 @@ export function AbandonedCartsList({
                 ))
               ) : filteredCarts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10 text-muted-foreground text-sm">
-                    {isAr
-                      ? "لا توجد سلات متروكة مطابقة للبحث."
-                      : "No abandoned carts found."}
+                  <TableCell
+                    colSpan={6}
+                    className="text-center py-10 text-muted-foreground text-sm"
+                  >
+                    {isAr ? "لا توجد سلات متروكة مطابقة للبحث." : "No abandoned carts found."}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -267,7 +279,10 @@ export function AbandonedCartsList({
                           <span className="text-xs text-muted-foreground block font-mono">
                             {phone || cart.guest_email || cart.customers?.email || "—"}
                           </span>
-                          {Boolean(cart.marketing_consent && (phone || cart.guest_email || cart.customers?.email)) && (
+                          {Boolean(
+                            cart.marketing_consent &&
+                            (phone || cart.guest_email || cart.customers?.email),
+                          ) && (
                             <span className="text-xs text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1 mt-0.5">
                               <CheckCircle2 className="h-2.5 w-2.5" />
                               {isAr ? "موافق على التسويق" : "Marketing consent"}
@@ -317,18 +332,19 @@ export function AbandonedCartsList({
                             <Link2 className="h-4 w-4" />
                           </Button>
 
-                          {phone && (cart.status === "abandoned" || cart.status === "recovering") && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleSendWhatsApp(cart)}
-                              disabled={generatingForCartId === cart.id}
-                              className="min-h-[36px] gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
-                            >
-                              <MessageSquare className="h-3.5 w-3.5" />
-                              <span>{isAr ? "استعادة واتساب" : "WhatsApp"}</span>
-                            </Button>
-                          )}
+                          {phone &&
+                            (cart.status === "abandoned" || cart.status === "recovering") && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleSendWhatsApp(cart)}
+                                disabled={generatingForCartId === cart.id}
+                                className="min-h-[36px] gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+                              >
+                                <MessageSquare className="h-3.5 w-3.5" />
+                                <span>{isAr ? "استعادة واتساب" : "WhatsApp"}</span>
+                              </Button>
+                            )}
                         </div>
                       </TableCell>
                     </TableRow>

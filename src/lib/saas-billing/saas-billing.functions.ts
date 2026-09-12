@@ -37,15 +37,16 @@ async function requireBrandAccess(context: any, brandId: string) {
     const { data: isSuperAdmin } = await db.rpc("is_super_admin");
     if (!isSuperAdmin) {
       try {
-        const { readImpersonationCookie, verifyImpersonationToken } = await import(
-          "@/lib/impersonation-cookies.server"
-        );
+        const { readImpersonationCookie, verifyImpersonationToken } =
+          await import("@/lib/impersonation-cookies.server");
         const token = await readImpersonationCookie();
         const payload = await verifyImpersonationToken(token);
         if (payload && payload.targetTenantId === brandId) {
           return;
         }
-      } catch {}
+      } catch {
+        // No valid impersonation token — fall through to the deny-by-default throw below.
+      }
       throw new Error("UNAUTHORIZED_BRAND_ACCESS_DENIED");
     }
   }
@@ -81,9 +82,7 @@ export const listPlansWithDetails = createServerFn({ method: "GET" })
     if (verErr) throw verErr;
 
     // Fetch all plan features
-    const { data: planFeatures, error: pfErr } = await db
-      .from("saas_plan_features")
-      .select("*");
+    const { data: planFeatures, error: pfErr } = await db.from("saas_plan_features").select("*");
 
     if (pfErr) throw pfErr;
 
@@ -188,9 +187,7 @@ export const createPlanVersion = createServerFn({ method: "POST" })
     }));
 
     if (featureInserts.length > 0) {
-      const { error: featInsertErr } = await db
-        .from("saas_plan_features")
-        .insert(featureInserts);
+      const { error: featInsertErr } = await db.from("saas_plan_features").insert(featureInserts);
 
       if (featInsertErr) throw featInsertErr;
     }
@@ -434,9 +431,7 @@ export const createCustomPlan = createServerFn({ method: "POST" })
     }));
 
     if (featureInserts.length > 0) {
-      const { error: featInsertErr } = await db
-        .from("saas_plan_features")
-        .insert(featureInserts);
+      const { error: featInsertErr } = await db.from("saas_plan_features").insert(featureInserts);
 
       if (featInsertErr) throw featInsertErr;
     }
@@ -489,10 +484,7 @@ export const deletePlan = createServerFn({ method: "POST" })
     }
 
     // Delete plan (cascades to versions and features in db)
-    const { error: delErr } = await db
-      .from("saas_plans")
-      .delete()
-      .eq("id", data.planId);
+    const { error: delErr } = await db.from("saas_plans").delete().eq("id", data.planId);
 
     if (delErr) throw delErr;
 
@@ -609,9 +601,7 @@ export const setBrandEntitlementOverride = createServerFn({ method: "POST" })
     const db = context.supabase as any;
 
     const overrideType =
-      data.numericValue !== undefined && data.numericValue !== null
-        ? "set_limit"
-        : "set_boolean";
+      data.numericValue !== undefined && data.numericValue !== null ? "set_limit" : "set_boolean";
 
     const { error } = await db.from("brand_entitlement_overrides").upsert(
       {
@@ -735,7 +725,8 @@ export const getBrandSubscriptionDetails = createServerFn({ method: "GET" })
     const db = context.supabase as any;
 
     // Fetch subscription record with explicit relation keys to prevent PGRST201 ambiguity
-    const subQuerySelect = "*, saas_plans:saas_plans!brand_subscriptions_plan_id_fkey(*), saas_plan_versions:saas_plan_versions!brand_subscriptions_plan_version_id_fkey(*)";
+    const subQuerySelect =
+      "*, saas_plans:saas_plans!brand_subscriptions_plan_id_fkey(*), saas_plan_versions:saas_plan_versions!brand_subscriptions_plan_version_id_fkey(*)";
     let { data: subscription } = await db
       .from("brand_subscriptions")
       .select(subQuerySelect)
@@ -775,7 +766,9 @@ export const getBrandSubscriptionDetails = createServerFn({ method: "GET" })
     // Fetch store metadata
     const { data: brand } = await db
       .from("brands")
-      .select("id, name_ar, name_en, slug, plan_type, subscription_status, subscription_expires_at, trial_ends_at, renewal_intent")
+      .select(
+        "id, name_ar, name_en, slug, plan_type, subscription_status, subscription_expires_at, trial_ends_at, renewal_intent",
+      )
       .eq("id", data.brandId)
       .single();
 
@@ -788,7 +781,8 @@ export const getBrandSubscriptionDetails = createServerFn({ method: "GET" })
     // Fetch all public plans with their current version details dynamically configured by super admin
     const { data: allPlans } = await db
       .from("saas_plans")
-      .select(`
+      .select(
+        `
         *,
         versions:saas_plan_versions(
           id,
@@ -799,7 +793,8 @@ export const getBrandSubscriptionDetails = createServerFn({ method: "GET" })
           is_current,
           change_summary
         )
-      `)
+      `,
+      )
       .eq("is_active", true)
       .order("sort_order", { ascending: true });
 
@@ -871,7 +866,9 @@ export const subscribeAddon = createServerFn({ method: "POST" })
 
 export const cancelAddon = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator((raw: unknown) => z.object({ brandId: z.string().uuid(), addonId: z.string().uuid() }).parse(raw))
+  .validator((raw: unknown) =>
+    z.object({ brandId: z.string().uuid(), addonId: z.string().uuid() }).parse(raw),
+  )
   .handler(async ({ data, context }) => {
     await requireBrandAccess(context, data.brandId);
     const db = context.supabase as any;

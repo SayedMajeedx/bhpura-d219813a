@@ -70,10 +70,7 @@ import {
   type FontMoodPreset,
 } from "@/components/settings/QuickThemeCustomizer";
 import { TrustBadgesEditor } from "@/components/settings/TrustBadgesEditor";
-import {
-  type TrustBadgesConfig,
-  DEFAULT_TRUST_BADGES,
-} from "@/lib/trust-badges";
+import { type TrustBadgesConfig, DEFAULT_TRUST_BADGES } from "@/lib/trust-badges";
 import { StoreReadinessChecklist } from "@/components/settings/StoreReadinessChecklist";
 import { SettingsSearchBar } from "@/components/settings/SettingsSearchBar";
 
@@ -311,9 +308,7 @@ function TypographyAdvancedControls({
       <div className="flex items-start justify-between gap-3">
         <div>
           <Label className="text-sm font-medium">{label}</Label>
-          {help && (
-            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{help}</p>
-          )}
+          {help && <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{help}</p>}
         </div>
         <span className="rounded-md bg-muted px-2 py-1 text-xs font-semibold tabular-nums text-foreground">
           {formatValue(config[key])}
@@ -947,9 +942,7 @@ function Settings() {
                     type="file"
                     accept="image/png,image/svg+xml,image/webp,image/jpeg,image/gif"
                     className="hidden"
-                    onChange={(e) =>
-                      e.target.files?.[0] && handleUpload(e.target.files[0], "logo")
-                    }
+                    onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], "logo")}
                   />
                   <Button
                     type="button"
@@ -957,7 +950,11 @@ function Settings() {
                     size="icon"
                     onClick={() => logoInput.current?.click()}
                     disabled={uploading === "logo"}
-                    title={lang === "ar" ? "رفع الشعار مباشرة بدون قص (يحفظ الشفافية كما هي)" : "Direct upload logo as-is (preserves transparency)"}
+                    title={
+                      lang === "ar"
+                        ? "رفع الشعار مباشرة بدون قص (يحفظ الشفافية كما هي)"
+                        : "Direct upload logo as-is (preserves transparency)"
+                    }
                     aria-label={lang === "ar" ? "رفع الشعار مباشرة" : "Direct upload logo"}
                   >
                     <Upload className="h-4 w-4" />
@@ -2695,7 +2692,8 @@ function HeroSlidesEditor({
                   slides: state.slides.filter((_, itemIndex) => itemIndex !== index),
                 })
               }
-             aria-label={isAr ? "حذف" : "Delete"}>
+              aria-label={isAr ? "حذف" : "Delete"}
+            >
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -2905,11 +2903,7 @@ function HeroSlidesEditor({
                           key={preset.size}
                           type="button"
                           size="sm"
-                          variant={
-                            (slide.title_size ?? 26) === preset.size
-                              ? "default"
-                              : "outline"
-                          }
+                          variant={(slide.title_size ?? 26) === preset.size ? "default" : "outline"}
                           className="h-9 px-2.5 text-xs"
                           onClick={() => update(index, { title_size: preset.size })}
                         >
@@ -2927,11 +2921,7 @@ function HeroSlidesEditor({
                         key={alignment}
                         type="button"
                         size="sm"
-                        variant={
-                          (slide.align ?? "start") === alignment
-                            ? "default"
-                            : "outline"
-                        }
+                        variant={(slide.align ?? "start") === alignment ? "default" : "outline"}
                         className="h-9 flex-1 text-xs"
                         onClick={() => update(index, { align: alignment })}
                       >
@@ -3105,7 +3095,10 @@ function HeroSlideLivePreview({
                 </h4>
               )}
               {body && (
-                <p className="mt-1 line-clamp-2 text-xs text-white/90 drop-shadow-sm" style={{ textAlign: previewTextAlign }}>
+                <p
+                  className="mt-1 line-clamp-2 text-xs text-white/90 drop-shadow-sm"
+                  style={{ textAlign: previewTextAlign }}
+                >
                   {body}
                 </p>
               )}
@@ -3139,7 +3132,10 @@ function HeroSlideLivePreview({
               </h4>
             )}
             {body && (
-              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground" style={{ textAlign: previewTextAlign }}>
+              <p
+                className="mt-1 line-clamp-2 text-xs text-muted-foreground"
+                style={{ textAlign: previewTextAlign }}
+              >
                 {body}
               </p>
             )}
@@ -3397,7 +3393,8 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
                           size="icon"
                           className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                           onClick={() => removeZone(z.id)}
-                         aria-label={isAr ? "حذف" : "Delete"}>
+                          aria-label={isAr ? "حذف" : "Delete"}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </td>
@@ -3480,9 +3477,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
               }
               className="mt-1"
             />
-            <p className="text-xs text-muted-foreground mt-1">
-              {t("settings.deliveryFeeHint")}
-            </p>
+            <p className="text-xs text-muted-foreground mt-1">{t("settings.deliveryFeeHint")}</p>
           </div>
         </div>
       )}
@@ -3946,7 +3941,8 @@ function FooterLivePreview({
       <div
         className="w-full flex justify-center items-center py-3 px-1 sm:px-2 rounded-lg transition-all"
         style={{
-          background: "radial-gradient(circle at center, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0.08) 100%)",
+          background:
+            "radial-gradient(circle at center, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0.08) 100%)",
         }}
       >
         <div
@@ -4025,7 +4021,10 @@ function FooterLivePreview({
 
               <div className="flex items-center justify-center gap-2 text-xs opacity-60 pt-1 border-t border-white/10">
                 {showFooterName && <span className="font-semibold">{brandName}</span>}
-                <span>© {new Date().getFullYear()} — {isAr ? "جميع الحقوق محفوظة" : "All rights reserved"}</span>
+                <span>
+                  © {new Date().getFullYear()} —{" "}
+                  {isAr ? "جميع الحقوق محفوظة" : "All rights reserved"}
+                </span>
               </div>
             </div>
           )}
@@ -4153,7 +4152,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
   const [promoCropIndex, setPromoCropIndex] = useState<number | null>(null);
   const [uploadingPromo, setUploadingPromo] = useState(false);
   const [uploadingSectionKey, setUploadingSectionKey] = useState<string | null>(null);
-  const [settingsTab, setSettingsTab] = useState<"theme" | "general" | "promotions" | "content">("theme");
+  const [settingsTab, setSettingsTab] = useState<"theme" | "general" | "promotions" | "content">(
+    "theme",
+  );
   const [themeMode, setThemeMode] = useState<"quick" | "advanced">("quick");
   const enFontInput = useRef<HTMLInputElement>(null);
   const arFontInput = useRef<HTMLInputElement>(null);
@@ -4493,10 +4494,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     }
   };
 
-  const handleUploadBanner = async (
-    key: "best" | "sale" | "trending" | "category",
-    file: File,
-  ) => {
+  const handleUploadBanner = async (key: "best" | "sale" | "trending" | "category", file: File) => {
     try {
       setUploadingSectionKey(key);
       const url = await uploadPublicMedia(brandId, file, "hero");
@@ -4697,8 +4695,12 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           </div>
           <span className="text-xs text-muted-foreground">
             {themeMode === "quick"
-              ? isAr ? "تعديل فوري منسق بضغطة زر" : "One-click curated styling"
-              : isAr ? "تحكم كامل بكافة الألوان والخطوط والأزرار" : "Granular control over all styles"}
+              ? isAr
+                ? "تعديل فوري منسق بضغطة زر"
+                : "One-click curated styling"
+              : isAr
+                ? "تحكم كامل بكافة الألوان والخطوط والأزرار"
+                : "Granular control over all styles"}
           </span>
         </div>
 
@@ -4717,10 +4719,18 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               footerBg={state.footer_bg}
               footerFg={state.footer_fg}
               isAr={isAr}
-              onHeaderBgChange={(val) => setState((prev) => (!prev ? prev : { ...prev, header_bg: val }))}
-              onHeaderFgChange={(val) => setState((prev) => (!prev ? prev : { ...prev, header_fg: val }))}
-              onFooterBgChange={(val) => setState((prev) => (!prev ? prev : { ...prev, footer_bg: val }))}
-              onFooterFgChange={(val) => setState((prev) => (!prev ? prev : { ...prev, footer_fg: val }))}
+              onHeaderBgChange={(val) =>
+                setState((prev) => (!prev ? prev : { ...prev, header_bg: val }))
+              }
+              onHeaderFgChange={(val) =>
+                setState((prev) => (!prev ? prev : { ...prev, header_fg: val }))
+              }
+              onFooterBgChange={(val) =>
+                setState((prev) => (!prev ? prev : { ...prev, footer_bg: val }))
+              }
+              onFooterFgChange={(val) =>
+                setState((prev) => (!prev ? prev : { ...prev, footer_fg: val }))
+              }
               onPrimaryChange={(val) =>
                 setState((prev) =>
                   !prev
@@ -4799,7 +4809,8 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               onSwapColors={() => {
                 setState((prev) => {
                   if (!prev) return prev;
-                  const curPrimary = prev.storefront_accent_color || prev.btn_primary_bg || "#000000";
+                  const curPrimary =
+                    prev.storefront_accent_color || prev.btn_primary_bg || "#000000";
                   const curSecondary = prev.btn_secondary_bg || "#1f1f1f";
                   return {
                     ...prev,
@@ -4838,7 +4849,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
               <div>
                 <h3 className="font-semibold text-sm">
-                  {isAr ? "ألوان المتجر والعناوين والمنتجات" : "Storefront, Headings & Products Colors"}
+                  {isAr
+                    ? "ألوان المتجر والعناوين والمنتجات"
+                    : "Storefront, Headings & Products Colors"}
                 </h3>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {isAr
@@ -4853,7 +4866,11 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   onChange={(value) => setState({ ...state, storefront_accent_color: value })}
                 />
                 <ColorField
-                  label={isAr ? "لون عناوين الأقسام الرئيسية (وصل حديثاً وغيرها)" : "Section Headings Color"}
+                  label={
+                    isAr
+                      ? "لون عناوين الأقسام الرئيسية (وصل حديثاً وغيرها)"
+                      : "Section Headings Color"
+                  }
                   value={state.heading_color}
                   onChange={(value) => setState({ ...state, heading_color: value })}
                 />
@@ -4891,9 +4908,13 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <h3 className="font-semibold text-sm">{isAr ? "الترويسة والتذييل" : "Header & Footer"}</h3>
+                  <h3 className="font-semibold text-sm">
+                    {isAr ? "الترويسة والتذييل" : "Header & Footer"}
+                  </h3>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {isAr ? "تخصيص ألوان ونمط شريط التنقل العلوي وتذييل الصفحة." : "Customize header bar and footer colors and styles."}
+                    {isAr
+                      ? "تخصيص ألوان ونمط شريط التنقل العلوي وتذييل الصفحة."
+                      : "Customize header bar and footer colors and styles."}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -4901,7 +4922,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                     checked={state.header_glass}
                     onCheckedChange={(checked) => setState({ ...state, header_glass: checked })}
                   />
-                  <Label className="cursor-pointer text-xs font-semibold">{isAr ? "نمط زجاجي مضبب" : "Glassmorphic Header"}</Label>
+                  <Label className="cursor-pointer text-xs font-semibold">
+                    {isAr ? "نمط زجاجي مضبب" : "Glassmorphic Header"}
+                  </Label>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -4944,7 +4967,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             {/* Card 3: Buttons */}
             <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
               <div>
-                <h3 className="font-semibold text-sm">{isAr ? "أزرار المتجر والتفاعل" : "Store Buttons & Actions"}</h3>
+                <h3 className="font-semibold text-sm">
+                  {isAr ? "أزرار المتجر والتفاعل" : "Store Buttons & Actions"}
+                </h3>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {isAr
                     ? "ألوان أزرار الشراء والإضافة للسلة وإتمام الطلب."
@@ -4953,7 +4978,11 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <ColorField
-                  label={isAr ? "خلفية الزر الأساسي (أضف للسلة)" : "Primary Button Background (Add to Cart)"}
+                  label={
+                    isAr
+                      ? "خلفية الزر الأساسي (أضف للسلة)"
+                      : "Primary Button Background (Add to Cart)"
+                  }
                   value={state.btn_primary_bg}
                   onChange={(v) => setState({ ...state, btn_primary_bg: v })}
                 />
@@ -4963,7 +4992,11 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   onChange={(v) => setState({ ...state, btn_primary_fg: v })}
                 />
                 <ColorField
-                  label={isAr ? "خلفية الزر الثانوي (اشترِ الآن)" : "Secondary Button Background (Buy Now)"}
+                  label={
+                    isAr
+                      ? "خلفية الزر الثانوي (اشترِ الآن)"
+                      : "Secondary Button Background (Buy Now)"
+                  }
                   value={state.btn_secondary_bg}
                   onChange={(v) => setState({ ...state, btn_secondary_bg: v })}
                 />
@@ -4983,12 +5016,18 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   onChange={(v) => setState({ ...state, btn_checkout_fg: v })}
                 />
                 <ColorField
-                  label={isAr ? "خلفية زر الدفع بسلة التسوق الجانبية" : "Cart Drawer Checkout Button Background"}
+                  label={
+                    isAr
+                      ? "خلفية زر الدفع بسلة التسوق الجانبية"
+                      : "Cart Drawer Checkout Button Background"
+                  }
                   value={state.cart_drawer_checkout_bg}
                   onChange={(v) => setState({ ...state, cart_drawer_checkout_bg: v })}
                 />
                 <ColorField
-                  label={isAr ? "نص زر الدفع بسلة التسوق الجانبية" : "Cart Drawer Checkout Button Text"}
+                  label={
+                    isAr ? "نص زر الدفع بسلة التسوق الجانبية" : "Cart Drawer Checkout Button Text"
+                  }
                   value={state.cart_drawer_checkout_fg}
                   onChange={(v) => setState({ ...state, cart_drawer_checkout_fg: v })}
                 />
@@ -4998,14 +5037,20 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             {/* Card 4: Curvature & Badges */}
             <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
               <div>
-                <h3 className="font-semibold text-sm">{isAr ? "انحناء الزوايا وشارات التخفيضات" : "Curvature & Badges"}</h3>
+                <h3 className="font-semibold text-sm">
+                  {isAr ? "انحناء الزوايا وشارات التخفيضات" : "Curvature & Badges"}
+                </h3>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  {isAr ? "درجة استدارة حواف العناصر وكروت المنتجات ولون شارات الخصم." : "Corner curvature and discount badge styles."}
+                  {isAr
+                    ? "درجة استدارة حواف العناصر وكروت المنتجات ولون شارات الخصم."
+                    : "Corner curvature and discount badge styles."}
                 </p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="font-semibold text-xs">{isAr ? "انحناء زوايا المتجر (Corner Curvature)" : "Corner Curvature"}</Label>
+                  <Label className="font-semibold text-xs">
+                    {isAr ? "انحناء زوايا المتجر (Corner Curvature)" : "Corner Curvature"}
+                  </Label>
                   <Select
                     value={state.storefront_radius || "1rem"}
                     onValueChange={(val) => setState({ ...state, storefront_radius: val })}
@@ -5034,7 +5079,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                 </div>
 
                 <div>
-                  <Label className="font-semibold text-xs">{isAr ? "لون شارة التخفيضات (Sale Badge Accent)" : "Sale Badge Accent"}</Label>
+                  <Label className="font-semibold text-xs">
+                    {isAr ? "لون شارة التخفيضات (Sale Badge Accent)" : "Sale Badge Accent"}
+                  </Label>
                   <Select
                     value={state.badge_accent || "maroon"}
                     onValueChange={(val) => setState({ ...state, badge_accent: val })}
@@ -5043,10 +5090,18 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="maroon">{isAr ? "عنابي كلاسيكي (Classic Maroon)" : "Classic Maroon"}</SelectItem>
-                      <SelectItem value="crimson">{isAr ? "أحمر قرمزي (Vibrant Crimson)" : "Vibrant Crimson"}</SelectItem>
-                      <SelectItem value="slate">{isAr ? "رمادي داكن نخبوي (Luxury Slate)" : "Luxury Slate"}</SelectItem>
-                      <SelectItem value="emerald">{isAr ? "أخضر زمردي (Fresh Emerald)" : "Fresh Emerald"}</SelectItem>
+                      <SelectItem value="maroon">
+                        {isAr ? "عنابي كلاسيكي (Classic Maroon)" : "Classic Maroon"}
+                      </SelectItem>
+                      <SelectItem value="crimson">
+                        {isAr ? "أحمر قرمزي (Vibrant Crimson)" : "Vibrant Crimson"}
+                      </SelectItem>
+                      <SelectItem value="slate">
+                        {isAr ? "رمادي داكن نخبوي (Luxury Slate)" : "Luxury Slate"}
+                      </SelectItem>
+                      <SelectItem value="emerald">
+                        {isAr ? "أخضر زمردي (Fresh Emerald)" : "Fresh Emerald"}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -5075,7 +5130,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             {/* Card 5: Typography & Custom Fonts */}
             <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
               <div>
-                <h3 className="font-semibold text-sm">{isAr ? "خطوط المتجر ورفع الخطوط المخصصة" : "Storefront Typography & Fonts"}</h3>
+                <h3 className="font-semibold text-sm">
+                  {isAr ? "خطوط المتجر ورفع الخطوط المخصصة" : "Storefront Typography & Fonts"}
+                </h3>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {isAr
                     ? "اختر خطاً لكل لغة، أو ارفع ملف الخط الخاص بهويتك بصيغة (.woff2 / .woff / .ttf / .otf)."
@@ -5087,7 +5144,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                 {/* English Font */}
                 <div className="space-y-2 rounded-lg border border-border p-3">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-semibold">{isAr ? "الخط الإنجليزي" : "English Font"}</Label>
+                    <Label className="text-xs font-semibold">
+                      {isAr ? "الخط الإنجليزي" : "English Font"}
+                    </Label>
                     {state.storefront_font_en_url && (
                       <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">
                         {isAr ? "خط مخصص مرفوع" : "Custom uploaded"}
@@ -5178,7 +5237,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                 {/* Arabic Font */}
                 <div className="space-y-2 rounded-lg border border-border p-3">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-semibold">{isAr ? "الخط العربي" : "Arabic Font"}</Label>
+                    <Label className="text-xs font-semibold">
+                      {isAr ? "الخط العربي" : "Arabic Font"}
+                    </Label>
                     {state.storefront_font_ar_url && (
                       <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">
                         {isAr ? "خط مخصص مرفوع" : "Custom uploaded"}
@@ -5272,7 +5333,11 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                 <summary className="cursor-pointer text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center justify-between select-none list-none">
                   <span className="flex items-center gap-2">
                     <Sparkles className="size-3.5 text-primary" />
-                    <span>{isAr ? "إعدادات أوزان ومقاييس الخطوط الدقيقة (للمصممين والمحترفين)" : "Advanced Typography Weights & Scales (Optional)"}</span>
+                    <span>
+                      {isAr
+                        ? "إعدادات أوزان ومقاييس الخطوط الدقيقة (للمصممين والمحترفين)"
+                        : "Advanced Typography Weights & Scales (Optional)"}
+                    </span>
                   </span>
                   <ChevronDown className="size-4 transition-transform group-open:rotate-180 text-muted-foreground" />
                 </summary>
@@ -5344,7 +5409,10 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                       "show_hero_title",
                       isAr ? "إظهار اسم العلامة في الواجهة" : "Show brand name in hero",
                     ],
-                    ["show_hero_about", isAr ? "إظهار النبذة في الواجهة" : "Show About text in hero"],
+                    [
+                      "show_hero_about",
+                      isAr ? "إظهار النبذة في الواجهة" : "Show About text in hero",
+                    ],
                     [
                       "show_footer_name",
                       isAr ? "إظهار اسم العلامة في التذييل" : "Show brand name in footer",
@@ -5368,7 +5436,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             </div>
             <div className="space-y-1 pt-2 sm:col-span-2">
               <Label>
-                {isAr ? "رقم الهاتف أو الحساب أو IBAN للتحويل" : "Benefit phone, account number, or IBAN"}
+                {isAr
+                  ? "رقم الهاتف أو الحساب أو IBAN للتحويل"
+                  : "Benefit phone, account number, or IBAN"}
               </Label>
               <Input
                 value={(state as any).benefit_account_number ?? ""}
@@ -5376,7 +5446,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   setState({ ...state, benefit_account_number: e.target.value } as any)
                 }
                 placeholder={
-                  isAr ? "يظهر للمتسوقين عند الدفع مع زر النسخ السريع" : "Shown to customers with a copy button"
+                  isAr
+                    ? "يظهر للمتسوقين عند الدفع مع زر النسخ السريع"
+                    : "Shown to customers with a copy button"
                 }
               />
             </div>
@@ -5409,7 +5481,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         {/* Hero Title Customization Card */}
         <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
           <div>
-            <h3 className="font-semibold text-sm">{isAr ? "عنوان واجهة المتجر الرئيسية (Hero Title)" : "Hero Title & Typography"}</h3>
+            <h3 className="font-semibold text-sm">
+              {isAr ? "عنوان واجهة المتجر الرئيسية (Hero Title)" : "Hero Title & Typography"}
+            </h3>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {isAr
                 ? "تخصيص النص والحجم واللون والمحاذاة للعنوان الرئيسي بالصفحة الأولى."
@@ -5491,7 +5565,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h3 className="font-semibold text-sm">{isAr ? "شريط الإعلانات أعلى الصفحة" : "Top Announcement Bar"}</h3>
+              <h3 className="font-semibold text-sm">
+                {isAr ? "شريط الإعلانات أعلى الصفحة" : "Top Announcement Bar"}
+              </h3>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 {isAr
                   ? "شريط علوي يظهر عروضك الخاصة أو التوصيل المجاني للزوار"
@@ -5505,7 +5581,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2" dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
-              <Label>{contentLanguage === "ar" ? "نص الإعلان (بالعربية)" : "Announcement text (English)"}</Label>
+              <Label>
+                {contentLanguage === "ar" ? "نص الإعلان (بالعربية)" : "Announcement text (English)"}
+              </Label>
               <Input
                 className={contentLanguage === "ar" ? "text-end" : "text-start"}
                 value={
@@ -5513,7 +5591,11 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                     ? state.announcement_text_ar
                     : state.announcement_text_en) ?? ""
                 }
-                placeholder={contentLanguage === "ar" ? "توصيل مجاني للطلبات فوق 20 دينار" : "Free delivery on orders over 20 BHD"}
+                placeholder={
+                  contentLanguage === "ar"
+                    ? "توصيل مجاني للطلبات فوق 20 دينار"
+                    : "Free delivery on orders over 20 BHD"
+                }
                 onChange={(e) =>
                   setState({
                     ...state,
@@ -5538,9 +5620,13 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             <div className="flex items-center gap-2 rounded-md border border-border px-3 py-2">
               <Switch
                 checked={state.announcement_dismissible}
-                onCheckedChange={(checked) => setState({ ...state, announcement_dismissible: checked })}
+                onCheckedChange={(checked) =>
+                  setState({ ...state, announcement_dismissible: checked })
+                }
               />
-              <Label className="cursor-pointer text-xs">{isAr ? "قابل للإغلاق من العميل" : "Dismissible by customer"}</Label>
+              <Label className="cursor-pointer text-xs">
+                {isAr ? "قابل للإغلاق من العميل" : "Dismissible by customer"}
+              </Label>
             </div>
             <div className="flex items-center gap-2 rounded-md border border-border px-3 py-2">
               <Switch
@@ -5569,9 +5655,15 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{isAr ? "جميع صفحات المتجر" : "All pages"}</SelectItem>
-                  <SelectItem value="home">{isAr ? "الصفحة الرئيسية فقط" : "Homepage only"}</SelectItem>
-                  <SelectItem value="catalog">{isAr ? "صفحات المنتجات والتسوق" : "Shopping pages"}</SelectItem>
-                  <SelectItem value="checkout">{isAr ? "صفحة الدفع فقط" : "Checkout only"}</SelectItem>
+                  <SelectItem value="home">
+                    {isAr ? "الصفحة الرئيسية فقط" : "Homepage only"}
+                  </SelectItem>
+                  <SelectItem value="catalog">
+                    {isAr ? "صفحات المنتجات والتسوق" : "Shopping pages"}
+                  </SelectItem>
+                  <SelectItem value="checkout">
+                    {isAr ? "صفحة الدفع فقط" : "Checkout only"}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -5585,9 +5677,15 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{isAr ? "الجميع (زوار ومسجلون)" : "All visitors"}</SelectItem>
-                  <SelectItem value="guest">{isAr ? "الزوار غير المسجلين فقط" : "Guests only"}</SelectItem>
-                  <SelectItem value="authenticated">{isAr ? "العملاء المسجلون فقط" : "Registered customers only"}</SelectItem>
+                  <SelectItem value="all">
+                    {isAr ? "الجميع (زوار ومسجلون)" : "All visitors"}
+                  </SelectItem>
+                  <SelectItem value="guest">
+                    {isAr ? "الزوار غير المسجلين فقط" : "Guests only"}
+                  </SelectItem>
+                  <SelectItem value="authenticated">
+                    {isAr ? "العملاء المسجلون فقط" : "Registered customers only"}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -5611,14 +5709,18 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             {/* 1. وصل حديثاً */}
             <div className="space-y-3 rounded-lg border border-border p-3.5 bg-muted/10">
               <div className="flex items-center justify-between gap-3">
-                <Label className="cursor-pointer text-xs font-semibold">{isAr ? "قسم وصل حديثاً" : "New Arrivals Section"}</Label>
+                <Label className="cursor-pointer text-xs font-semibold">
+                  {isAr ? "قسم وصل حديثاً" : "New Arrivals Section"}
+                </Label>
                 <Switch
                   checked={state.show_new_arrivals}
                   onCheckedChange={(checked) => setState({ ...state, show_new_arrivals: checked })}
                 />
               </div>
               <div dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
-                <Label className="text-xs text-muted-foreground">{contentLanguage === "ar" ? "عنوان القسم المعروض" : "Displayed title"}</Label>
+                <Label className="text-xs text-muted-foreground">
+                  {contentLanguage === "ar" ? "عنوان القسم المعروض" : "Displayed title"}
+                </Label>
                 <Input
                   className={`mt-1 h-9 text-xs ${contentLanguage === "ar" ? "text-end" : "text-start"}`}
                   value={
@@ -5630,8 +5732,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   onChange={(e) =>
                     setState({
                       ...state,
-                      [contentLanguage === "ar" ? "new_arrivals_title_ar" : "new_arrivals_title_en"]:
-                        e.target.value || null,
+                      [contentLanguage === "ar"
+                        ? "new_arrivals_title_ar"
+                        : "new_arrivals_title_en"]: e.target.value || null,
                     })
                   }
                 />
@@ -5641,11 +5744,14 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             {/* 2. الأكثر مبيعاً (Best Sellers) - with Banner Upload! */}
             <div className="space-y-3 rounded-lg border border-border p-3.5 bg-muted/10">
               <div className="flex items-center justify-between gap-3">
-                <Label className="cursor-pointer text-xs font-semibold">{isAr ? "قسم الأكثر مبيعاً" : "Best Sellers Section"}</Label>
+                <Label className="cursor-pointer text-xs font-semibold">
+                  {isAr ? "قسم الأكثر مبيعاً" : "Best Sellers Section"}
+                </Label>
                 <Switch
                   checked={state.show_best_sellers}
                   onCheckedChange={(checked) => {
-                    const currentBest = state.homepage_editorial_sections?.best ?? EMPTY_EDITORIAL_SECTION;
+                    const currentBest =
+                      state.homepage_editorial_sections?.best ?? EMPTY_EDITORIAL_SECTION;
                     setState({
                       ...state,
                       show_best_sellers: checked,
@@ -5661,7 +5767,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                 />
               </div>
               <div dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
-                <Label className="text-xs text-muted-foreground">{contentLanguage === "ar" ? "عنوان القسم المعروض" : "Displayed title"}</Label>
+                <Label className="text-xs text-muted-foreground">
+                  {contentLanguage === "ar" ? "عنوان القسم المعروض" : "Displayed title"}
+                </Label>
                 <Input
                   className={`mt-1 h-9 text-xs ${contentLanguage === "ar" ? "text-end" : "text-start"}`}
                   value={
@@ -5673,15 +5781,20 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   onChange={(e) =>
                     setState({
                       ...state,
-                      [contentLanguage === "ar" ? "best_sellers_title_ar" : "best_sellers_title_en"]:
-                        e.target.value || null,
+                      [contentLanguage === "ar"
+                        ? "best_sellers_title_ar"
+                        : "best_sellers_title_en"]: e.target.value || null,
                     })
                   }
                 />
               </div>
               <SectionBannerPicker
                 title={isAr ? "صورة لافتة الأكثر مبيعاً" : "Best Sellers Banner Image"}
-                subtitle={isAr ? "تظهر كخلفية لافتة لقسم الأكثر مبيعاً بالمتجر" : "Displays behind the best sellers section"}
+                subtitle={
+                  isAr
+                    ? "تظهر كخلفية لافتة لقسم الأكثر مبيعاً بالمتجر"
+                    : "Displays behind the best sellers section"
+                }
                 imageUrl={state.homepage_editorial_sections?.best?.banner_image_url}
                 isUploading={uploadingSectionKey === "best"}
                 onUpload={(file) => handleUploadBanner("best", file)}
@@ -5694,13 +5807,18 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             <div className="space-y-3 rounded-lg border border-border p-3.5 bg-muted/10">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <Label className="cursor-pointer text-xs font-semibold">{isAr ? "قسم التنزيلات والعروض" : "Sale & Offers Section"}</Label>
-                  <p className="text-xs text-muted-foreground">{isAr ? "يعرض المنتجات المخفضة تلقائياً" : "Shows discounted items"}</p>
+                  <Label className="cursor-pointer text-xs font-semibold">
+                    {isAr ? "قسم التنزيلات والعروض" : "Sale & Offers Section"}
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    {isAr ? "يعرض المنتجات المخفضة تلقائياً" : "Shows discounted items"}
+                  </p>
                 </div>
                 <Switch
                   checked={state.homepage_editorial_sections?.sale?.enabled ?? true}
                   onCheckedChange={(checked) => {
-                    const currentSale = state.homepage_editorial_sections?.sale ?? EMPTY_EDITORIAL_SECTION;
+                    const currentSale =
+                      state.homepage_editorial_sections?.sale ?? EMPTY_EDITORIAL_SECTION;
                     setState({
                       ...state,
                       homepage_editorial_sections: {
@@ -5716,7 +5834,11 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               </div>
               <SectionBannerPicker
                 title={isAr ? "صورة لافتة التنزيلات" : "Sale Banner Image"}
-                subtitle={isAr ? "تظهر كخلفية لقسم التنزيلات والعروض بالمتجر" : "Displays behind the sale section"}
+                subtitle={
+                  isAr
+                    ? "تظهر كخلفية لقسم التنزيلات والعروض بالمتجر"
+                    : "Displays behind the sale section"
+                }
                 imageUrl={state.homepage_editorial_sections?.sale?.banner_image_url}
                 isUploading={uploadingSectionKey === "sale"}
                 onUpload={(file) => handleUploadBanner("sale", file)}
@@ -5729,13 +5851,18 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             <div className="space-y-3 rounded-lg border border-border p-3.5 bg-muted/10">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <Label className="cursor-pointer text-xs font-semibold">{isAr ? "قسم الرائج الآن" : "Trending Now Section"}</Label>
-                  <p className="text-xs text-muted-foreground">{isAr ? "يعرض المنتجات ذات الشعبية العالية" : "Shows trending products"}</p>
+                  <Label className="cursor-pointer text-xs font-semibold">
+                    {isAr ? "قسم الرائج الآن" : "Trending Now Section"}
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    {isAr ? "يعرض المنتجات ذات الشعبية العالية" : "Shows trending products"}
+                  </p>
                 </div>
                 <Switch
                   checked={state.homepage_editorial_sections?.trending?.enabled ?? true}
                   onCheckedChange={(checked) => {
-                    const currentTrending = state.homepage_editorial_sections?.trending ?? EMPTY_EDITORIAL_SECTION;
+                    const currentTrending =
+                      state.homepage_editorial_sections?.trending ?? EMPTY_EDITORIAL_SECTION;
                     setState({
                       ...state,
                       homepage_editorial_sections: {
@@ -5751,7 +5878,11 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               </div>
               <SectionBannerPicker
                 title={isAr ? "صورة لافتة الرائج الآن" : "Trending Banner Image"}
-                subtitle={isAr ? "تظهر كخلفية لقسم المنتجات الرائجة بالمتجر" : "Displays behind trending products"}
+                subtitle={
+                  isAr
+                    ? "تظهر كخلفية لقسم المنتجات الرائجة بالمتجر"
+                    : "Displays behind trending products"
+                }
                 imageUrl={
                   state.homepage_editorial_sections?.trending?.banner_image_url ||
                   state.trending_banner_background_url
@@ -5765,10 +5896,16 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
 
             {/* 5. خلفية فواصل التصنيفات (Category Divider Banner) */}
             <div className="space-y-3 rounded-lg border border-border p-3.5 bg-muted/10 lg:col-span-2">
-              <Label className="text-xs font-semibold">{isAr ? "خلفية لافتات فواصل التصنيفات" : "Category Divider Banner"}</Label>
+              <Label className="text-xs font-semibold">
+                {isAr ? "خلفية لافتات فواصل التصنيفات" : "Category Divider Banner"}
+              </Label>
               <SectionBannerPicker
                 title={isAr ? "صورة خلفية فواصل التصنيفات" : "Category Divider Background"}
-                subtitle={isAr ? "صورة الخلفية التي تظهر عند تصفح التصنيفات والفئات بالمتجر" : "Background image for category browsing"}
+                subtitle={
+                  isAr
+                    ? "صورة الخلفية التي تظهر عند تصفح التصنيفات والفئات بالمتجر"
+                    : "Background image for category browsing"
+                }
                 imageUrl={state.category_banner_background_url}
                 isUploading={uploadingSectionKey === "category"}
                 onUpload={(file) => handleUploadBanner("category", file)}
@@ -5793,7 +5930,10 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {state.home_promo_cards.map((card, index) => (
-              <div key={index} className="space-y-3 rounded-xl border border-border p-4 bg-background">
+              <div
+                key={index}
+                className="space-y-3 rounded-xl border border-border p-4 bg-background"
+              >
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="font-medium text-sm">
@@ -5811,7 +5951,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                 </div>
                 <div className="grid gap-2" dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
                   <div>
-                    <Label className="text-xs">{contentLanguage === "ar" ? "العنوان" : "Title"}</Label>
+                    <Label className="text-xs">
+                      {contentLanguage === "ar" ? "العنوان" : "Title"}
+                    </Label>
                     <Input
                       className={contentLanguage === "ar" ? "text-end" : "text-start"}
                       value={contentLanguage === "ar" ? card.title_ar : card.title_en}
@@ -5823,20 +5965,25 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                     />
                   </div>
                   <div>
-                    <Label className="text-xs">{contentLanguage === "ar" ? "الوصف" : "Subtitle"}</Label>
+                    <Label className="text-xs">
+                      {contentLanguage === "ar" ? "الوصف" : "Subtitle"}
+                    </Label>
                     <Input
                       className={contentLanguage === "ar" ? "text-end" : "text-start"}
                       value={contentLanguage === "ar" ? card.subtitle_ar : card.subtitle_en}
                       onChange={(e) =>
                         updatePromoCard(index, {
-                          [contentLanguage === "ar" ? "subtitle_ar" : "subtitle_en"]: e.target.value,
+                          [contentLanguage === "ar" ? "subtitle_ar" : "subtitle_en"]:
+                            e.target.value,
                         })
                       }
                     />
                   </div>
                 </div>
                 <div>
-                  <Label className="text-xs">{isAr ? "رابط التوجيه عند الضغط" : "Click Destination URL"}</Label>
+                  <Label className="text-xs">
+                    {isAr ? "رابط التوجيه عند الضغط" : "Click Destination URL"}
+                  </Label>
                   <Input
                     value={card.href}
                     placeholder="/search?q=sale"
@@ -5893,7 +6040,11 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h3 className="font-semibold text-sm">{isAr ? "تأثير الحركة البارالاكس للافتات (Parallax Effect)" : "Banner Parallax Effect"}</h3>
+              <h3 className="font-semibold text-sm">
+                {isAr
+                  ? "تأثير الحركة البارالاكس للافتات (Parallax Effect)"
+                  : "Banner Parallax Effect"}
+              </h3>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 {isAr
                   ? "تأثير عمق ثلاثي الأبعاد يتحرك مع سكرول الصفحة للافتات التصنيفات والأقسام المميزة."
@@ -5911,7 +6062,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             <div className="grid grid-cols-1 gap-4 border-t border-border pt-4 sm:grid-cols-2">
               <div className="flex items-center justify-between gap-4 rounded-xl border border-border p-3">
                 <div>
-                  <Label className="cursor-pointer text-xs font-semibold">{isAr ? "تفعيل التأثير على الموبايل" : "Enable on mobile"}</Label>
+                  <Label className="cursor-pointer text-xs font-semibold">
+                    {isAr ? "تفعيل التأثير على الموبايل" : "Enable on mobile"}
+                  </Label>
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     {isAr
                       ? "عند الإيقاف تظل اللافتة ثابتة دون حركة على شاشات الهواتف."
@@ -5956,7 +6109,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         {/* Drawer Navigation Menu */}
         <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
           <div>
-            <h3 className="font-semibold text-sm">{isAr ? "القائمة الجانبية للمتجر (Drawer Menu)" : "Storefront Navigation Drawer"}</h3>
+            <h3 className="font-semibold text-sm">
+              {isAr ? "القائمة الجانبية للمتجر (Drawer Menu)" : "Storefront Navigation Drawer"}
+            </h3>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {isAr
                 ? "تخصيص عنوان وألوان والروابط الظاهرة داخل قائمة التنقل الجانبية للمتسوقين."
@@ -5969,11 +6124,14 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               <Input
                 className={contentLanguage === "ar" ? "text-end" : "text-start"}
                 value={(contentLanguage === "ar" ? state.menu_title_ar : state.menu_title_en) ?? ""}
-                placeholder={contentLanguage === "ar" ? "فارغ يستخدم اسم المتجر" : "Blank uses brand name"}
+                placeholder={
+                  contentLanguage === "ar" ? "فارغ يستخدم اسم المتجر" : "Blank uses brand name"
+                }
                 onChange={(e) =>
                   setState({
                     ...state,
-                    [contentLanguage === "ar" ? "menu_title_ar" : "menu_title_en"]: e.target.value || null,
+                    [contentLanguage === "ar" ? "menu_title_ar" : "menu_title_en"]:
+                      e.target.value || null,
                   })
                 }
               />
@@ -5997,7 +6155,10 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                 ["menu_show_home", isAr ? "إظهار رابط الرئيسية" : "Show Home link"],
                 ["menu_show_account", isAr ? "إظهار الحساب وتسجيل الدخول" : "Show Account & Login"],
                 ["menu_show_orders", isAr ? "إظهار طلباتي" : "Show My Orders"],
-                ["menu_show_pages", isAr ? "إظهار روابط الصفحات الثابتة والسياسات" : "Show custom pages & policies"],
+                [
+                  "menu_show_pages",
+                  isAr ? "إظهار روابط الصفحات الثابتة والسياسات" : "Show custom pages & policies",
+                ],
               ] as const
             ).map(([key, label]) => (
               <div
@@ -6312,7 +6473,9 @@ function CheckoutFulfillmentSection({ brandId }: { brandId: string }) {
           className="gap-2 h-9 text-xs font-semibold rounded-lg"
         >
           <MapPin className="size-4" />
-          <span>{isAr ? "فروع ومواقع الاستلام (Store Pickup)" : "Branches & Pickup Locations"}</span>
+          <span>
+            {isAr ? "فروع ومواقع الاستلام (Store Pickup)" : "Branches & Pickup Locations"}
+          </span>
         </Button>
       </div>
 

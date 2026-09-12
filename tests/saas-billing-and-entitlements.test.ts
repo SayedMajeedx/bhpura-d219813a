@@ -6,7 +6,10 @@ import {
   checkEntitlement,
   getBrandUsageSummary,
 } from "../src/lib/saas-billing/entitlements-engine.server";
-import type { SaaSFeatureKey, EntitlementEvaluationMap } from "../src/lib/saas-billing/saas-billing.types";
+import type {
+  SaaSFeatureKey,
+  EntitlementEvaluationMap,
+} from "../src/lib/saas-billing/saas-billing.types";
 
 describe("SaaS Billing & Entitlements Engine", () => {
   const mockEvaluationMap: EntitlementEvaluationMap = {
@@ -176,7 +179,9 @@ describe("SaaS Billing & Entitlements Engine", () => {
     it("prevents deleting plans that have active subscribers", () => {
       const canDeletePlan = (plan: (typeof mockCatalog)[0]) => {
         if (plan.subscribers > 0) {
-          throw new Error(`Cannot delete plan ${plan.code}: ${plan.subscribers} active subscriber(s) found.`);
+          throw new Error(
+            `Cannot delete plan ${plan.code}: ${plan.subscribers} active subscriber(s) found.`,
+          );
         }
         return true;
       };

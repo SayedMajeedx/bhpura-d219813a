@@ -88,7 +88,11 @@ function ReportsProducts() {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>{lang === "ar" ? "تعذر تحميل التقرير" : "Report unavailable"}</AlertTitle>
-          <AlertDescription>{lang === "ar" ? "تعذر تحميل بيانات المنتجات. أعد المحاولة." : "Failed to load product data. Please try again."}</AlertDescription>
+          <AlertDescription>
+            {lang === "ar"
+              ? "تعذر تحميل بيانات المنتجات. أعد المحاولة."
+              : "Failed to load product data. Please try again."}
+          </AlertDescription>
         </Alert>
       ) : productsData ? (
         <Card className="rounded-2xl border-black/[.07] shadow-[0_16px_45px_-34px_rgba(43,23,25,.5)]">

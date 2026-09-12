@@ -242,7 +242,11 @@ Be concise, practical, warm, and professional. Always answer in the merchant's l
         }
       }
 
-      const textReply = part?.text || (isAr ? "مرحباً بك، كيف أساعدك اليوم في متجرك؟" : "Hello! How can I assist you with your store today?");
+      const textReply =
+        part?.text ||
+        (isAr
+          ? "مرحباً بك، كيف أساعدك اليوم في متجرك؟"
+          : "Hello! How can I assist you with your store today?");
       return {
         reply: textReply,
         suggestedPrompts: isAr
@@ -328,7 +332,7 @@ export async function executeOfflineCopilot(
   return {
     reply: isAr
       ? "أهلاً بك في Boutq Copilot! ✨\nأنا مساعد متجرك الذكي. يمكنك أن تطلب مني:\n• «أضف عباية حرير بسعر 55»\n• «اعطني ملخص المتجر»\n• استفسارات حول نمو مبيعاتك وتنسيق الحملات."
-      : "Welcome to Boutq Copilot! ✨\nI am your store AI copilot. You can ask me to:\n• \"Add linen dress for 45\"\n• \"Give me store summary\"\n• Tips on improving conversions and seasonal promotions.",
+      : 'Welcome to Boutq Copilot! ✨\nI am your store AI copilot. You can ask me to:\n• "Add linen dress for 45"\n• "Give me store summary"\n• Tips on improving conversions and seasonal promotions.',
     suggestedPrompts: isAr
       ? ["ملخص المتجر", "أضف منتج جديد", "أفكار عروض ترويجية"]
       : ["Store Summary", "Add New Product", "Promotion Ideas"],

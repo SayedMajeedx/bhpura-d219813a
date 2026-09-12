@@ -87,7 +87,9 @@ export function ReturnRefundDialog({
       });
 
       if (!res.success) {
-        toast.error(res.error || (isAr ? "فشل تنفيذ الاسترداد المالي" : "Failed to process refund"));
+        toast.error(
+          res.error || (isAr ? "فشل تنفيذ الاسترداد المالي" : "Failed to process refund"),
+        );
         return;
       }
 
@@ -121,7 +123,11 @@ export function ReturnRefundDialog({
             <div className="flex items-center justify-between text-muted-foreground">
               <span>{isAr ? "قيمة البنود المرتجعة:" : "Items Total:"}</span>
               <span className="font-mono font-medium text-foreground">
-                {formatMoney(Number(returnReq.total_item_refund || 0), currency, isAr ? "ar-BH-u-nu-latn" : "en-US")}
+                {formatMoney(
+                  Number(returnReq.total_item_refund || 0),
+                  currency,
+                  isAr ? "ar-BH-u-nu-latn" : "en-US",
+                )}
               </span>
             </div>
 
@@ -129,7 +135,12 @@ export function ReturnRefundDialog({
               <div className="flex items-center justify-between text-muted-foreground">
                 <span>{isAr ? "خصم ترويجي موزع مستقطع:" : "Pro-rated Discount:"}</span>
                 <span className="font-mono text-destructive">
-                  -{formatMoney(Number(returnReq.pro_rated_discount_deduction || 0), currency, isAr ? "ar-BH-u-nu-latn" : "en-US")}
+                  -
+                  {formatMoney(
+                    Number(returnReq.pro_rated_discount_deduction || 0),
+                    currency,
+                    isAr ? "ar-BH-u-nu-latn" : "en-US",
+                  )}
                 </span>
               </div>
             )}
@@ -138,7 +149,12 @@ export function ReturnRefundDialog({
               <div className="flex items-center justify-between text-muted-foreground">
                 <span>{isAr ? "استرداد ضريبة القيمة المضافة:" : "Tax Refund (VAT):"}</span>
                 <span className="font-mono text-foreground">
-                  +{formatMoney(Number(returnReq.tax_refund || 0), currency, isAr ? "ar-BH-u-nu-latn" : "en-US")}
+                  +
+                  {formatMoney(
+                    Number(returnReq.tax_refund || 0),
+                    currency,
+                    isAr ? "ar-BH-u-nu-latn" : "en-US",
+                  )}
                 </span>
               </div>
             )}
@@ -147,15 +163,26 @@ export function ReturnRefundDialog({
               <div className="flex items-center justify-between text-muted-foreground">
                 <span>{isAr ? "رسوم شحن الإرجاع المستقطعة:" : "Return Shipping Fee:"}</span>
                 <span className="font-mono text-destructive">
-                  -{formatMoney(Number(returnReq.return_fee || 0), currency, isAr ? "ar-BH-u-nu-latn" : "en-US")}
+                  -
+                  {formatMoney(
+                    Number(returnReq.return_fee || 0),
+                    currency,
+                    isAr ? "ar-BH-u-nu-latn" : "en-US",
+                  )}
                 </span>
               </div>
             )}
 
             <div className="pt-2 border-t border-border flex items-center justify-between font-bold text-sm">
-              <span className="text-foreground">{isAr ? "صافي المستحق للاسترداد:" : "Net Refund Amount:"}</span>
+              <span className="text-foreground">
+                {isAr ? "صافي المستحق للاسترداد:" : "Net Refund Amount:"}
+              </span>
               <span className="font-mono text-emerald-600 dark:text-emerald-400">
-                {formatMoney(Number(returnReq.net_refund_amount || 0), currency, isAr ? "ar-BH-u-nu-latn" : "en-US")}
+                {formatMoney(
+                  Number(returnReq.net_refund_amount || 0),
+                  currency,
+                  isAr ? "ar-BH-u-nu-latn" : "en-US",
+                )}
               </span>
             </div>
           </div>
@@ -217,7 +244,8 @@ export function ReturnRefundDialog({
                   : `Refund Amount (${currency})`}
               </Label>
               <span className="text-xs text-muted-foreground font-mono">
-                {isAr ? "سقف المدفوع:" : "Paid Cap:"} {formatMoney(totalPaid, currency, isAr ? "ar-BH-u-nu-latn" : "en-US")}
+                {isAr ? "سقف المدفوع:" : "Paid Cap:"}{" "}
+                {formatMoney(totalPaid, currency, isAr ? "ar-BH-u-nu-latn" : "en-US")}
               </span>
             </div>
             <Input
@@ -230,7 +258,11 @@ export function ReturnRefundDialog({
             {isExceeding && (
               <div className="flex items-center gap-1.5 text-xs text-destructive mt-1">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                <span>{isAr ? "لا يمكن استرداد أكثر من المبلغ المدفوع في الطلب" : "Cannot exceed paid order total"}</span>
+                <span>
+                  {isAr
+                    ? "لا يمكن استرداد أكثر من المبلغ المدفوع في الطلب"
+                    : "Cannot exceed paid order total"}
+                </span>
               </div>
             )}
           </div>
@@ -238,7 +270,9 @@ export function ReturnRefundDialog({
           {/* Reference */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-foreground">
-              {isAr ? "المرجع المالي / رقم الإيصال (اختياري)" : "Payment / Gateway Reference (Optional)"}
+              {isAr
+                ? "المرجع المالي / رقم الإيصال (اختياري)"
+                : "Payment / Gateway Reference (Optional)"}
             </Label>
             <Input
               placeholder={isAr ? "مثال: TAP_REF_89324 أو رقم الحوالة..." : "e.g., TAP_REF_89324"}

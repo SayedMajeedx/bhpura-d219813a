@@ -10,31 +10,37 @@ describe("Stage 5 - Settings Search and Store Readiness", () => {
     };
 
     // 0 / 5 complete
-    expect(calculateReadiness([
-      { isComplete: false },
-      { isComplete: false },
-      { isComplete: false },
-      { isComplete: false },
-      { isComplete: false },
-    ])).toEqual({ completed: 0, total: 5, percent: 0, isAllComplete: false });
+    expect(
+      calculateReadiness([
+        { isComplete: false },
+        { isComplete: false },
+        { isComplete: false },
+        { isComplete: false },
+        { isComplete: false },
+      ]),
+    ).toEqual({ completed: 0, total: 5, percent: 0, isAllComplete: false });
 
     // 3 / 5 complete (60%)
-    expect(calculateReadiness([
-      { isComplete: true },
-      { isComplete: true },
-      { isComplete: true },
-      { isComplete: false },
-      { isComplete: false },
-    ])).toEqual({ completed: 3, total: 5, percent: 60, isAllComplete: false });
+    expect(
+      calculateReadiness([
+        { isComplete: true },
+        { isComplete: true },
+        { isComplete: true },
+        { isComplete: false },
+        { isComplete: false },
+      ]),
+    ).toEqual({ completed: 3, total: 5, percent: 60, isAllComplete: false });
 
     // 5 / 5 complete (100%)
-    expect(calculateReadiness([
-      { isComplete: true },
-      { isComplete: true },
-      { isComplete: true },
-      { isComplete: true },
-      { isComplete: true },
-    ])).toEqual({ completed: 5, total: 5, percent: 100, isAllComplete: true });
+    expect(
+      calculateReadiness([
+        { isComplete: true },
+        { isComplete: true },
+        { isComplete: true },
+        { isComplete: true },
+        { isComplete: true },
+      ]),
+    ).toEqual({ completed: 5, total: 5, percent: 100, isAllComplete: true });
   });
 
   it("identifies matching settings entries across Arabic and English terms", () => {
@@ -47,9 +53,7 @@ describe("Stage 5 - Settings Search and Store Readiness", () => {
 
     const search = (q: string) => {
       const query = q.trim().toLowerCase();
-      return searchEntries.filter((e) =>
-        e.keywords.some((k) => k.toLowerCase().includes(query))
-      );
+      return searchEntries.filter((e) => e.keywords.some((k) => k.toLowerCase().includes(query)));
     };
 
     expect(search("شعار").map((e) => e.id)).toContain("business");

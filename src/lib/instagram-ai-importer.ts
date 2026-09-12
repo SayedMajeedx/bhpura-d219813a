@@ -1011,8 +1011,9 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
 
     try {
       // Check existing imports to prevent duplicates
-      const { data: existingProducts, error: existingError } = await (supabaseAdmin
-        .from("products" as never) as any)
+      const { data: existingProducts, error: existingError } = await (
+        supabaseAdmin.from("products" as never) as any
+      )
         .select("id, custom_fields")
         .eq("brand_id", brandId);
       if (existingError)
@@ -1081,8 +1082,9 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
           },
         ];
 
-        const { data: prodData, error: prodErr } = await (supabaseAdmin
-          .from("products" as never) as any)
+        const { data: prodData, error: prodErr } = await (
+          supabaseAdmin.from("products" as never) as any
+        )
           .insert({
             user_id: userId,
             brand_id: brandId,
@@ -1136,9 +1138,9 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
           }));
 
         if (variantRows.length > 0) {
-          const { error: varErr } = await (supabaseAdmin
-            .from("product_variants" as never) as any)
-            .insert(variantRows);
+          const { error: varErr } = await (
+            supabaseAdmin.from("product_variants" as never) as any
+          ).insert(variantRows);
 
           if (varErr) {
             console.error("Failed to insert product variants:", varErr);

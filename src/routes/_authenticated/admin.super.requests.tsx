@@ -97,7 +97,9 @@ function SuperRequestsPage() {
   // Approval Dialog States
   const [approvingRequest, setApprovingRequest] = useState<TenantRequest | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [selectedBillingInterval, setSelectedBillingInterval] = useState<"monthly" | "annual">("annual");
+  const [selectedBillingInterval, setSelectedBillingInterval] = useState<"monthly" | "annual">(
+    "annual",
+  );
   const [deploying, setDeploying] = useState(false);
 
   // Queries
@@ -166,9 +168,7 @@ function SuperRequestsPage() {
     setApprovingRequest(request);
     const paidPlans = (publicPlansQuery.data ?? []).filter((plan: any) => plan.code !== "trial");
     setSelectedPlanId(request.selected_plan_id || paidPlans[0]?.id || null);
-    setSelectedBillingInterval(
-      request.billing_interval === "monthly" ? "monthly" : "annual",
-    );
+    setSelectedBillingInterval(request.billing_interval === "monthly" ? "monthly" : "annual");
   };
 
   // Action: Approve & Mark Deployed on Confirmed dialog
@@ -252,7 +252,9 @@ function SuperRequestsPage() {
     const selected = paidCatalogPlans.find((plan) => plan.id === selectedPlanId);
     const supported =
       selected &&
-      Number(interval === "monthly" ? selected.version.price_monthly : selected.version.price_annual) > 0;
+      Number(
+        interval === "monthly" ? selected.version.price_monthly : selected.version.price_annual,
+      ) > 0;
     const fallback = paidCatalogPlans.find(
       (plan) =>
         Number(interval === "monthly" ? plan.version.price_monthly : plan.version.price_annual) > 0,
@@ -336,172 +338,179 @@ function SuperRequestsPage() {
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-muted/40 text-muted-foreground text-xs uppercase border-b border-border-subtle">
-                          <th className="p-4 text-start font-semibold">
-                            {lang === "ar" ? "صاحب المتجر" : "Owner Details"}
-                          </th>
-                          <th className="p-4 text-start font-semibold">
-                            {lang === "ar" ? "الرابط المطلوب" : "Desired subdomain"}
-                          </th>
-                          <th className="p-4 text-start font-semibold">
-                            {lang === "ar" ? "نوع الباقة" : "Plan Package"}
-                          </th>
-                          <th className="p-4 text-start font-semibold">
-                            {lang === "ar" ? "نوع النشاط" : "Business Type"}
-                          </th>
-                          <th className="p-4 text-center font-semibold">
-                            {lang === "ar" ? "إثبات الدفع" : "Benefit Receipt"}
-                          </th>
-                          <th className="p-4 text-end font-semibold">
-                            {lang === "ar" ? "الإجراءات" : "Deployment Actions"}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {requestsQuery.data.map((request) => (
-                          <tr
-                            key={request.id}
-                            className="border-b border-border-subtle hover:bg-muted/20 transition-colors"
-                          >
-                            <td className="p-4 space-y-1">
-                              <div className="font-semibold text-foreground flex items-center gap-1.5">
-                                <User className="h-3.5 w-3.5 text-muted-foreground" />
-                                <span>{request.full_name}</span>
-                              </div>
-                              <div className="text-xs text-muted-foreground flex flex-col gap-0.5 font-mono">
-                                <span className="flex items-center gap-1">
-                                  <Mail className="h-3 w-3" /> {request.email}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Phone className="h-3 w-3" /> {request.contact_number}
-                                </span>
-                              </div>
-                            </td>
-
-                            <td className="p-4 font-mono text-xs">
-                              <span className="font-bold text-primary">
-                                {request.desired_subdomain}
+                    <thead>
+                      <tr className="bg-muted/40 text-muted-foreground text-xs uppercase border-b border-border-subtle">
+                        <th className="p-4 text-start font-semibold">
+                          {lang === "ar" ? "صاحب المتجر" : "Owner Details"}
+                        </th>
+                        <th className="p-4 text-start font-semibold">
+                          {lang === "ar" ? "الرابط المطلوب" : "Desired subdomain"}
+                        </th>
+                        <th className="p-4 text-start font-semibold">
+                          {lang === "ar" ? "نوع الباقة" : "Plan Package"}
+                        </th>
+                        <th className="p-4 text-start font-semibold">
+                          {lang === "ar" ? "نوع النشاط" : "Business Type"}
+                        </th>
+                        <th className="p-4 text-center font-semibold">
+                          {lang === "ar" ? "إثبات الدفع" : "Benefit Receipt"}
+                        </th>
+                        <th className="p-4 text-end font-semibold">
+                          {lang === "ar" ? "الإجراءات" : "Deployment Actions"}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {requestsQuery.data.map((request) => (
+                        <tr
+                          key={request.id}
+                          className="border-b border-border-subtle hover:bg-muted/20 transition-colors"
+                        >
+                          <td className="p-4 space-y-1">
+                            <div className="font-semibold text-foreground flex items-center gap-1.5">
+                              <User className="h-3.5 w-3.5 text-muted-foreground" />
+                              <span>{request.full_name}</span>
+                            </div>
+                            <div className="text-xs text-muted-foreground flex flex-col gap-0.5 font-mono">
+                              <span className="flex items-center gap-1">
+                                <Mail className="h-3 w-3" /> {request.email}
                               </span>
-                              <span className="text-muted-foreground">.boutq.store</span>
-                            </td>
+                              <span className="flex items-center gap-1">
+                                <Phone className="h-3 w-3" /> {request.contact_number}
+                              </span>
+                            </div>
+                          </td>
 
-                            <td className="p-4">
-                              <Badge
-                                className={
-                                  request.request_type === "trial"
-                                    ? "bg-primary/10 text-primary border-none font-semibold text-xs"
-                                    : "bg-emerald-500/10 text-emerald-500 border-none font-semibold text-xs"
-                                }
-                                variant="outline"
-                              >
-                                {request.request_type === "trial"
+                          <td className="p-4 font-mono text-xs">
+                            <span className="font-bold text-primary">
+                              {request.desired_subdomain}
+                            </span>
+                            <span className="text-muted-foreground">.boutq.store</span>
+                          </td>
+
+                          <td className="p-4">
+                            <Badge
+                              className={
+                                request.request_type === "trial"
+                                  ? "bg-primary/10 text-primary border-none font-semibold text-xs"
+                                  : "bg-emerald-500/10 text-emerald-500 border-none font-semibold text-xs"
+                              }
+                              variant="outline"
+                            >
+                              {request.request_type === "trial"
+                                ? lang === "ar"
+                                  ? "تجربة مجانية"
+                                  : "Free Trial"
+                                : (lang === "ar"
+                                    ? request.selected_plan_snapshot?.name_ar
+                                    : request.selected_plan_snapshot?.name_en) ||
+                                  (lang === "ar" ? "متجر مدفوع" : "Official Paid")}
+                            </Badge>
+                            {request.quoted_price != null && request.request_type === "paid" && (
+                              <p className="mt-1 text-xs font-semibold text-muted-foreground">
+                                {request.quoted_price} {request.quoted_currency || "BHD"} ·{" "}
+                                {request.billing_interval === "monthly"
                                   ? lang === "ar"
-                                    ? "تجربة مجانية"
-                                    : "Free Trial"
-                                  : (lang === "ar"
-                                      ? request.selected_plan_snapshot?.name_ar
-                                      : request.selected_plan_snapshot?.name_en) ||
-                                    (lang === "ar" ? "متجر مدفوع" : "Official Paid")}
-                              </Badge>
-                              {request.quoted_price != null && request.request_type === "paid" && (
-                                <p className="mt-1 text-xs font-semibold text-muted-foreground">
-                                  {request.quoted_price} {request.quoted_currency || "BHD"} · {request.billing_interval === "monthly" ? (lang === "ar" ? "شهري" : "monthly") : (lang === "ar" ? "سنوي" : "annual")}
-                                </p>
-                              )}
-                            </td>
+                                    ? "شهري"
+                                    : "monthly"
+                                  : lang === "ar"
+                                    ? "سنوي"
+                                    : "annual"}
+                              </p>
+                            )}
+                          </td>
 
-                            <td className="p-4">
-                              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-muted text-muted-foreground border border-border">
-                                {request.business_type || (lang === "ar" ? "أزياء" : "Fashion")}
-                              </span>
-                            </td>
+                          <td className="p-4">
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-muted text-muted-foreground border border-border">
+                              {request.business_type || (lang === "ar" ? "أزياء" : "Fashion")}
+                            </span>
+                          </td>
 
-                            <td className="p-4 text-center">
-                              {request.benefit_receipt_url ? (
-                                <Dialog>
-                                  <DialogTrigger asChild>
-                                    <Button
-                                      variant="outline"
-                                      size="xs"
-                                      onClick={() => handleViewReceipt(request.benefit_receipt_url!)}
-                                      className="text-xs gap-1 h-8 border-dashed border-primary/35 hover:bg-primary/[0.04]"
-                                    >
-                                      <ExternalLink className="h-3 w-3" />
-                                      <span>{lang === "ar" ? "معاينة الإيصال" : "View Receipt"}</span>
-                                    </Button>
-                                  </DialogTrigger>
-                                  <DialogContent className="sm:max-w-md bg-card text-foreground border-border">
-                                    <DialogHeader>
-                                      <DialogTitle className="text-sm font-semibold flex items-center gap-1.5">
-                                        <ClockIcon className="h-4.5 w-4.5 text-primary" />
-                                        <span>
-                                          {lang === "ar" ? "إيصال سداد الدفع" : "Proof of Payment"}
+                          <td className="p-4 text-center">
+                            {request.benefit_receipt_url ? (
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="xs"
+                                    onClick={() => handleViewReceipt(request.benefit_receipt_url!)}
+                                    className="text-xs gap-1 h-8 border-dashed border-primary/35 hover:bg-primary/[0.04]"
+                                  >
+                                    <ExternalLink className="h-3 w-3" />
+                                    <span>{lang === "ar" ? "معاينة الإيصال" : "View Receipt"}</span>
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-md bg-card text-foreground border-border">
+                                  <DialogHeader>
+                                    <DialogTitle className="text-sm font-semibold flex items-center gap-1.5">
+                                      <ClockIcon className="h-4.5 w-4.5 text-primary" />
+                                      <span>
+                                        {lang === "ar" ? "إيصال سداد الدفع" : "Proof of Payment"}
+                                      </span>
+                                    </DialogTitle>
+                                  </DialogHeader>
+                                  <div className="py-4 flex justify-center items-center min-h-[300px]">
+                                    {receiptLoading ? (
+                                      <div className="flex flex-col items-center gap-2">
+                                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                        <span className="text-xs text-muted-foreground">
+                                          {lang === "ar"
+                                            ? "جاري فك تشفير رابط الإيصال..."
+                                            : "Generating secure viewer..."}
                                         </span>
-                                      </DialogTitle>
-                                    </DialogHeader>
-                                    <div className="py-4 flex justify-center items-center min-h-[300px]">
-                                      {receiptLoading ? (
-                                        <div className="flex flex-col items-center gap-2">
-                                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                                          <span className="text-xs text-muted-foreground">
-                                            {lang === "ar"
-                                              ? "جاري فك تشفير رابط الإيصال..."
-                                              : "Generating secure viewer..."}
-                                          </span>
-                                        </div>
-                                      ) : receiptViewUrl ? (
-                                        <img
-                                          src={receiptViewUrl}
-                                          alt="Benefit Payment Receipt"
-                                          className="max-h-[400px] w-auto rounded-lg object-contain border border-border"
-                                        />
-                                      ) : (
-                                        <div className="text-xs text-muted-foreground">
-                                          {lang === "ar" ? "تعذر تحميل الإيصال" : "Receipt unavailable"}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </DialogContent>
-                                </Dialog>
-                              ) : (
-                                <span className="text-xs text-muted-foreground">-</span>
-                              )}
-                            </td>
+                                      </div>
+                                    ) : receiptViewUrl ? (
+                                      <img
+                                        src={receiptViewUrl}
+                                        alt="Benefit Payment Receipt"
+                                        className="max-h-[400px] w-auto rounded-lg object-contain border border-border"
+                                      />
+                                    ) : (
+                                      <div className="text-xs text-muted-foreground">
+                                        {lang === "ar"
+                                          ? "تعذر تحميل الإيصال"
+                                          : "Receipt unavailable"}
+                                      </div>
+                                    )}
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">-</span>
+                            )}
+                          </td>
 
-                            <td className="p-4 text-end">
-                              <div className="flex items-center justify-end gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="xs"
-                                  onClick={() =>
-                                    handleReject(request.id, request.desired_subdomain)
-                                  }
-                                  className="text-xs text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 py-1 h-8 px-2"
-                                >
-                                  <XCircle className="h-3.5 w-3.5" />
-                                  <span className="sr-only sm:not-sr-only sm:ms-1">
-                                    {lang === "ar" ? "رفض" : "Dismiss"}
-                                  </span>
-                                </Button>
-                                <Button
-                                  size="xs"
-                                  onClick={() => handleApprove(request)}
-                                  className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white py-1 h-8 px-2.5 gap-1"
-                                >
-                                  <CheckCircle2 className="h-3.5 w-3.5" />
-                                  <span>{lang === "ar" ? "تفعيل ونشر" : "Approve"}</span>
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                          <td className="p-4 text-end">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="xs"
+                                onClick={() => handleReject(request.id, request.desired_subdomain)}
+                                className="text-xs text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 py-1 h-8 px-2"
+                              >
+                                <XCircle className="h-3.5 w-3.5" />
+                                <span className="sr-only sm:not-sr-only sm:ms-1">
+                                  {lang === "ar" ? "رفض" : "Dismiss"}
+                                </span>
+                              </Button>
+                              <Button
+                                size="xs"
+                                onClick={() => handleApprove(request)}
+                                className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white py-1 h-8 px-2.5 gap-1"
+                              >
+                                <CheckCircle2 className="h-3.5 w-3.5" />
+                                <span>{lang === "ar" ? "تفعيل ونشر" : "Approve"}</span>
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
 
@@ -547,27 +556,64 @@ function SuperRequestsPage() {
                     {lang === "ar" ? "نسخة تجريبية" : "Free Trial"}
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {lang === "ar" ? "سيتم ربط المتجر تلقائياً بإصدار التجربة الحالي." : "The workspace will use the current trial plan version."}
+                    {lang === "ar"
+                      ? "سيتم ربط المتجر تلقائياً بإصدار التجربة الحالي."
+                      : "The workspace will use the current trial plan version."}
                   </p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   <div className="flex rounded-lg border bg-muted/40 p-1">
                     {approvalIntervals.map((interval) => (
-                      <button key={interval} type="button" onClick={() => chooseApprovalInterval(interval)} className={`flex-1 rounded-md py-2 text-xs font-semibold ${selectedBillingInterval === interval ? "bg-background text-primary shadow-sm" : "text-muted-foreground"}`}>
-                        {interval === "monthly" ? (lang === "ar" ? "شهري" : "Monthly") : (lang === "ar" ? "سنوي" : "Annual")}
+                      <button
+                        key={interval}
+                        type="button"
+                        onClick={() => chooseApprovalInterval(interval)}
+                        className={`flex-1 rounded-md py-2 text-xs font-semibold ${selectedBillingInterval === interval ? "bg-background text-primary shadow-sm" : "text-muted-foreground"}`}
+                      >
+                        {interval === "monthly"
+                          ? lang === "ar"
+                            ? "شهري"
+                            : "Monthly"
+                          : lang === "ar"
+                            ? "سنوي"
+                            : "Annual"}
                       </button>
                     ))}
                   </div>
-                  {paidCatalogPlans.filter((plan: any) => Number(selectedBillingInterval === "monthly" ? plan.version.price_monthly : plan.version.price_annual) > 0).map((plan: any) => (
-                    <button key={plan.id} type="button" onClick={() => setSelectedPlanId(plan.id)} className={`w-full rounded-xl border p-4 text-start transition-all ${selectedPlanId === plan.id ? "border-primary bg-primary/[0.03] ring-1 ring-primary" : "border-border"}`}>
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="flex items-center gap-2 text-sm font-semibold"><Crown className="h-4 w-4 text-amber-500" />{lang === "ar" ? plan.name_ar : plan.name_en}</span>
-                        <Badge variant="outline" className="text-xs">{selectedBillingInterval === "monthly" ? plan.version.price_monthly : plan.version.price_annual} {plan.version.currency}</Badge>
-                      </div>
-                      <p className="mt-1 text-xs text-muted-foreground">v{plan.version.version_number} · {plan.code}</p>
-                    </button>
-                  ))}
+                  {paidCatalogPlans
+                    .filter(
+                      (plan: any) =>
+                        Number(
+                          selectedBillingInterval === "monthly"
+                            ? plan.version.price_monthly
+                            : plan.version.price_annual,
+                        ) > 0,
+                    )
+                    .map((plan: any) => (
+                      <button
+                        key={plan.id}
+                        type="button"
+                        onClick={() => setSelectedPlanId(plan.id)}
+                        className={`w-full rounded-xl border p-4 text-start transition-all ${selectedPlanId === plan.id ? "border-primary bg-primary/[0.03] ring-1 ring-primary" : "border-border"}`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="flex items-center gap-2 text-sm font-semibold">
+                            <Crown className="h-4 w-4 text-amber-500" />
+                            {lang === "ar" ? plan.name_ar : plan.name_en}
+                          </span>
+                          <Badge variant="outline" className="text-xs">
+                            {selectedBillingInterval === "monthly"
+                              ? plan.version.price_monthly
+                              : plan.version.price_annual}{" "}
+                            {plan.version.currency}
+                          </Badge>
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          v{plan.version.version_number} · {plan.code}
+                        </p>
+                      </button>
+                    ))}
                 </div>
               )}
             </div>

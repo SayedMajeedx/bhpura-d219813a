@@ -4,7 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 import { DashboardActionStrip } from "../src/components/dashboard/DashboardActionStrip";
 
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ children, to }: { children: React.ReactNode; to?: string }) => <a href={to}>{children}</a>,
+  Link: ({ children, to }: { children: React.ReactNode; to?: string }) => (
+    <a href={to}>{children}</a>
+  ),
 }));
 
 describe("DashboardActionStrip", () => {

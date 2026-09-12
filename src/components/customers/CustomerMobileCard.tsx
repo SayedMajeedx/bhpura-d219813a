@@ -58,7 +58,9 @@ export const CustomerMobileCard: React.FC<CustomerMobileCardProps> = ({
             <Checkbox
               checked={selected}
               onCheckedChange={() => onToggleSelected(customer.id)}
-              aria-label={isAr ? `تحديد العميل ${customer.name}` : `Select customer ${customer.name}`}
+              aria-label={
+                isAr ? `تحديد العميل ${customer.name}` : `Select customer ${customer.name}`
+              }
             />
           </div>
           <div className="h-10 w-10 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-bold text-sm shrink-0">
@@ -103,7 +105,9 @@ export const CustomerMobileCard: React.FC<CustomerMobileCardProps> = ({
           </div>
         </div>
 
-        <ChevronRight className={`h-4 w-4 text-muted-foreground shrink-0 ${isAr ? "rotate-180" : ""}`} />
+        <ChevronRight
+          className={`h-4 w-4 text-muted-foreground shrink-0 ${isAr ? "rotate-180" : ""}`}
+        />
       </div>
 
       {/* Address & Email */}
@@ -127,7 +131,8 @@ export const CustomerMobileCard: React.FC<CustomerMobileCardProps> = ({
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
             <span className="font-mono text-xs">
-              {isAr ? "الطلبات:" : "Orders:"} <b className="text-foreground">{stats?.totalOrders ?? 0}</b>
+              {isAr ? "الطلبات:" : "Orders:"}{" "}
+              <b className="text-foreground">{stats?.totalOrders ?? 0}</b>
             </span>
             <span>•</span>
             <span className="font-mono text-xs font-extrabold text-foreground">

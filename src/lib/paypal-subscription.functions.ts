@@ -20,9 +20,9 @@ export function convertBhdToUsd(bhdAmount: number): string {
 }
 
 async function getPayPalAccessToken(): Promise<string> {
-  const credentials = Buffer.from(
-    `${PAYPAL_LIVE_CLIENT_ID}:${PAYPAL_LIVE_CLIENT_SECRET}`,
-  ).toString("base64");
+  const credentials = Buffer.from(`${PAYPAL_LIVE_CLIENT_ID}:${PAYPAL_LIVE_CLIENT_SECRET}`).toString(
+    "base64",
+  );
 
   const response = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
     method: "POST",

@@ -136,13 +136,20 @@ function containsArabic(value: string) {
 function extractSnappySnippet(text: string | null | undefined, fallback: string): string {
   if (!text) return fallback;
   const clean = text.replace(/\r\n/g, "\n").trim();
-  const lines = clean.split("\n").map((s) => s.trim()).filter(Boolean);
+  const lines = clean
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
   const firstLine = lines[0] || "";
   if (firstLine.length >= 10 && firstLine.length <= 110) {
     return firstLine;
   }
   const sentenceMatch = clean.match(/^([^.!?؟\n]+[.!?؟]?)/);
-  if (sentenceMatch && sentenceMatch[1].trim().length >= 10 && sentenceMatch[1].trim().length <= 110) {
+  if (
+    sentenceMatch &&
+    sentenceMatch[1].trim().length >= 10 &&
+    sentenceMatch[1].trim().length <= 110
+  ) {
     return sentenceMatch[1].trim();
   }
   if (clean.length <= 110) return clean;
@@ -182,7 +189,11 @@ function ContentStudioPage() {
 
   useEffect(() => {
     setEditionLabel((prev) => {
-      if (!prev || prev === "The Pura Edit" || (prev.startsWith("The ") && prev.endsWith(" Edit"))) {
+      if (
+        !prev ||
+        prev === "The Pura Edit" ||
+        (prev.startsWith("The ") && prev.endsWith(" Edit"))
+      ) {
         return `The ${brandNameEn} Edit`;
       }
       return prev;
@@ -194,7 +205,9 @@ function ContentStudioPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("id,name,name_ar,name_en,description,description_ar,image_url,media,base_price,fabric_type,occasion")
+        .select(
+          "id,name,name_ar,name_en,description,description_ar,image_url,media,base_price,fabric_type,occasion",
+        )
         .eq("brand_id", brand.id)
         .eq("is_active", true)
         .order("updated_at", { ascending: false });
@@ -207,7 +220,9 @@ function ContentStudioPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("product_variants")
-        .select("id,product_id,size,color,fabric,selling_price,original_price,image_url,stock_main,stock_incubator")
+        .select(
+          "id,product_id,size,color,fabric,selling_price,original_price,image_url,stock_main,stock_incubator",
+        )
         .eq("brand_id", brand.id);
       if (error) throw error;
       return (data ?? []) as Array<{
@@ -302,14 +317,17 @@ function ContentStudioPage() {
           url,
           isVid ? "video" : "image",
           "gallery",
-          isVid ? `${isAr ? "فيديو" : "Video"} ${idx + 1}` : `${isAr ? "صورة" : "Image"} ${idx + 1}`,
+          isVid
+            ? `${isAr ? "فيديو" : "Video"} ${idx + 1}`
+            : `${isAr ? "صورة" : "Image"} ${idx + 1}`,
         );
       });
     }
 
     productVariants.forEach((v) => {
       if (v.image_url) {
-        const vLabel = [v.size, v.color].filter(Boolean).join(" · ") || (isAr ? "متغير" : "Variant");
+        const vLabel =
+          [v.size, v.color].filter(Boolean).join(" · ") || (isAr ? "متغير" : "Variant");
         add(v.image_url, "image", "variant", vLabel);
       }
     });
@@ -330,9 +348,7 @@ function ContentStudioPage() {
 
   useEffect(() => {
     if (!selected) return;
-    const name = isAr
-      ? selected.name_ar || selected.name
-      : selected.name_en || selected.name;
+    const name = isAr ? selected.name_ar || selected.name : selected.name_en || selected.name;
     if (name) {
       setHeadline(name);
     }
@@ -366,7 +382,9 @@ function ContentStudioPage() {
   const isCurrentVideo = currentMedia?.type === "video";
 
   const effectivePrice =
-    activeVariant?.selling_price != null ? activeVariant.selling_price : selected?.base_price ?? null;
+    activeVariant?.selling_price != null
+      ? activeVariant.selling_price
+      : (selected?.base_price ?? null);
 
   // Keeps the mobile preview a scaled-down copy of the desktop one instead of
   // a re-flowed, disproportionate one: the stage always lays out at a fixed
@@ -476,7 +494,9 @@ function ContentStudioPage() {
       a.click();
       a.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
-      toast.success(isAr ? "تم تنزيل الفيديو الأصلي بنجاح" : "Original video downloaded successfully");
+      toast.success(
+        isAr ? "تم تنزيل الفيديو الأصلي بنجاح" : "Original video downloaded successfully",
+      );
     } catch {
       const a = document.createElement("a");
       a.href = photo;
@@ -566,7 +586,10 @@ function ContentStudioPage() {
     }
   };
 
-  const getExactVideoDuration = async (videoElement: HTMLVideoElement, url: string): Promise<number> => {
+  const getExactVideoDuration = async (
+    videoElement: HTMLVideoElement,
+    url: string,
+  ): Promise<number> => {
     // 1. Direct finite duration on element if already fully loaded
     if (videoElement.duration && isFinite(videoElement.duration) && videoElement.duration > 0) {
       return videoElement.duration;
@@ -625,12 +648,7 @@ function ContentStudioPage() {
       const buf = await res.arrayBuffer();
       const u8 = new Uint8Array(buf);
       for (let i = 0; i < u8.length - 32; i++) {
-        if (
-          u8[i] === 0x6d &&
-          u8[i + 1] === 0x76 &&
-          u8[i + 2] === 0x68 &&
-          u8[i + 3] === 0x64
-        ) {
+        if (u8[i] === 0x6d && u8[i + 1] === 0x76 && u8[i + 2] === 0x68 && u8[i + 3] === 0x64) {
           const ver = u8[i + 4];
           const dv = new DataView(buf, i);
           const timescale = ver === 1 ? dv.getUint32(24) : dv.getUint32(16);
@@ -772,7 +790,9 @@ function ContentStudioPage() {
           const aTrack = vStream.getAudioTracks()[0];
           if (aTrack) stream.addTrack(aTrack);
         }
-      } catch {}
+      } catch {
+        // mozCaptureStream isn't available in every browser — export continues without audio.
+      }
 
       // Detect supported MIME type
       let mimeType = "";
@@ -1056,8 +1076,7 @@ function ContentStudioPage() {
       ),
     );
 
-    const sizesFormatted =
-      availableSizes.length > 0 ? availableSizes.join(" · ") : "";
+    const sizesFormatted = availableSizes.length > 0 ? availableSizes.join(" · ") : "";
 
     const occasionFormatted = selected.occasion ? selected.occasion.trim() : "";
     const fabricFormatted = selected.fabric_type ? selected.fabric_type.trim() : "";
@@ -1100,38 +1119,45 @@ ${desc}${detailsBlock}
   };
 
   return (
-    <div className="mx-auto max-w-[1500px] space-y-5 p-1 sm:p-2" dir={isAr ? "rtl" : "ltr"}>
-      <section className="relative overflow-hidden rounded-[24px] border border-border-strong bg-card px-6 py-6 shadow-xs sm:px-8">
-        <div className="absolute inset-y-0 end-0 w-72 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/.12),transparent_70%)]" />
-        <div className="relative flex flex-col justify-between gap-6 md:flex-row md:items-center">
-          <div className="flex items-center gap-4">
-            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+    <div
+      className="mx-auto w-full min-w-0 max-w-[1500px] space-y-4 sm:space-y-6 p-2 sm:p-4 pb-32 sm:pb-16 overflow-x-hidden"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <section className="relative overflow-hidden rounded-2xl sm:rounded-[24px] border border-border-strong bg-card p-4 sm:p-6 lg:p-8 shadow-xs">
+        <div className="absolute inset-y-0 end-0 w-72 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/.12),transparent_70%)] pointer-events-none" />
+        <div className="relative flex flex-col justify-between gap-4 md:flex-row md:items-center">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+            <span className="grid size-11 sm:size-12 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
               <Palette className="size-5" />
             </span>
-            <div>
-              <div className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-[.18em] text-primary">
-                <Sparkles className="size-3.5" />
-                <span>{brandNameEn} Content Studio</span>
+            <div className="min-w-0">
+              <div className="mb-0.5 sm:mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-[.18em] text-primary">
+                <Sparkles className="size-3.5 shrink-0" />
+                <span className="truncate">{brandNameEn} Content Studio</span>
               </div>
-              <h1 className="font-display text-2xl font-black text-foreground sm:text-3xl">
+              <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-black text-foreground">
                 {isAr ? "من المنتج إلى محتوى جاهز للنشر" : "From product to publish-ready creative"}
               </h1>
-              <p className="mt-1 max-w-2xl text-xs sm:text-sm text-muted-foreground">
+              <p className="mt-0.5 sm:mt-1 max-w-2xl text-xs sm:text-sm text-muted-foreground line-clamp-2 sm:line-clamp-none">
                 {isAr
                   ? "استديو بصري يحافظ على هوية البراند ويصدّر المقاس الصحيح لكل منصة."
                   : "A focused visual studio that protects your brand language and exports the right social size."}
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 shrink-0">
             <Button
               type="button"
               variant="outline"
               onClick={handleCopyCaption}
               size="default"
-              className="h-10 gap-2 rounded-xl border-border bg-background/80 text-xs font-semibold px-4 shadow-2xs hover:bg-muted/50"
+              className="h-10 gap-2 rounded-xl border-border bg-background/80 text-xs font-semibold px-3.5 sm:px-4 shadow-2xs hover:bg-muted/50"
             >
-              {copiedCaption ? <Check className="size-4 text-emerald-600" /> : <Copy className="size-4 text-primary" />}
+              {copiedCaption ? (
+                <Check className="size-4 text-emerald-600" />
+              ) : (
+                <Copy className="size-4 text-primary" />
+              )}
               <span>{isAr ? "نسخ كابشن انستقرام" : "Copy Instagram Caption"}</span>
             </Button>
             {isCurrentVideo ? (
@@ -1140,7 +1166,7 @@ ${desc}${detailsBlock}
                   onClick={exportCreative}
                   disabled={exporting || productsQ.isLoading}
                   size="default"
-                  className="h-10 gap-2 rounded-s-xl rounded-e-none text-xs font-semibold px-4"
+                  className="h-10 gap-2 rounded-s-xl rounded-e-none text-xs font-semibold px-3.5 sm:px-4"
                 >
                   <Video className="size-4" />
                   <span>
@@ -1180,7 +1206,9 @@ ${desc}${detailsBlock}
                           {isAr ? "تنزيل فيديو مصمم (MP4)" : "Branded Video (MP4)"}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {isAr ? "فيديو مع القالب والشعار والأسعار" : "Video with layout, branding & price"}
+                          {isAr
+                            ? "فيديو مع القالب والشعار والأسعار"
+                            : "Video with layout, branding & price"}
                         </span>
                       </div>
                     </DropdownMenuItem>
@@ -1195,7 +1223,9 @@ ${desc}${detailsBlock}
                           {isAr ? "تنزيل الفيديو الأصلي الخام" : "Original Raw Video"}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {isAr ? "ملف الفيديو الأصلي بدون إضافات" : "Source MP4 file without overlays"}
+                          {isAr
+                            ? "ملف الفيديو الأصلي بدون إضافات"
+                            : "Source MP4 file without overlays"}
                         </span>
                       </div>
                     </DropdownMenuItem>
@@ -1222,7 +1252,7 @@ ${desc}${detailsBlock}
                 onClick={exportCreative}
                 disabled={exporting || productsQ.isLoading}
                 size="default"
-                className="h-10 gap-2 rounded-xl text-xs font-semibold px-4 shadow-2xs"
+                className="h-10 gap-2 rounded-xl text-xs font-semibold px-3.5 sm:px-4 shadow-2xs"
               >
                 <Download className="size-4" />
                 <span>
@@ -1240,12 +1270,15 @@ ${desc}${detailsBlock}
         </div>
       </section>
 
-      <div className="grid items-start gap-6 lg:gap-8 xl:grid-cols-[minmax(460px,520px)_1fr]">
-        <Card className="overflow-hidden rounded-[24px] border border-border-strong bg-card shadow-xs">
-          <div className="border-b border-border-subtle p-5 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="font-display text-lg font-bold text-foreground">
+      <div className="grid w-full min-w-0 max-w-full items-start gap-4 sm:gap-6 lg:gap-8 xl:grid-cols-[minmax(460px,520px)_1fr]">
+        <Card
+          id="studio-controls"
+          className="w-full min-w-0 max-w-full overflow-hidden rounded-2xl sm:rounded-[24px] border border-border-strong bg-card shadow-xs"
+        >
+          <div className="border-b border-border-subtle p-4 sm:p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="font-display text-base sm:text-lg font-bold text-foreground">
                   {isAr ? "اتجاه التصميم" : "Creative direction"}
                 </h2>
                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -1254,12 +1287,28 @@ ${desc}${detailsBlock}
                     : "Every change appears instantly in the preview."}
                 </p>
               </div>
-              <span className="grid size-8 place-items-center rounded-xl bg-primary/10 text-primary">
-                <Sliders className="size-4" />
-              </span>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    document
+                      .getElementById("studio-preview")
+                      ?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className="xl:hidden h-8 px-2.5 gap-1.5 text-xs font-semibold rounded-xl text-primary border-primary/30 bg-primary/5 hover:bg-primary/10 cursor-pointer"
+                >
+                  <Eye className="size-3.5" />
+                  <span>{isAr ? "المعاينة" : "Preview"}</span>
+                </Button>
+                <span className="grid size-8 place-items-center rounded-xl bg-primary/10 text-primary shrink-0">
+                  <Sliders className="size-4" />
+                </span>
+              </div>
             </div>
           </div>
-          <div className="space-y-6 p-5 sm:p-6">
+          <div className="space-y-5 p-4 sm:space-y-6 sm:p-6 min-w-0">
             {/* Product Selector */}
             <div className="space-y-3">
               <div className="space-y-1.5">
@@ -1272,7 +1321,10 @@ ${desc}${detailsBlock}
                   </span>
                 </div>
                 <Select value={selected?.id ?? ""} onValueChange={setProductId}>
-                  <SelectTrigger id="studio-product" className="h-11 rounded-xl text-xs font-medium">
+                  <SelectTrigger
+                    id="studio-product"
+                    className="h-11 rounded-xl text-xs font-medium"
+                  >
                     <SelectValue placeholder={isAr ? "اختيار منتج" : "Choose a product"} />
                   </SelectTrigger>
                   <SelectContent>
@@ -1300,8 +1352,13 @@ ${desc}${detailsBlock}
                     value={selectedVariantId || "all"}
                     onValueChange={(val) => handleSelectVariant(val === "all" ? null : val)}
                   >
-                    <SelectTrigger id="studio-variant" className="h-10 rounded-xl text-xs bg-muted/20">
-                      <SelectValue placeholder={isAr ? "جميع المتغيرات / الأساسي" : "All variants (base)"} />
+                    <SelectTrigger
+                      id="studio-variant"
+                      className="h-10 rounded-xl text-xs bg-muted/20"
+                    >
+                      <SelectValue
+                        placeholder={isAr ? "جميع المتغيرات / الأساسي" : "All variants (base)"}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">
@@ -1309,8 +1366,12 @@ ${desc}${detailsBlock}
                       </SelectItem>
                       {productVariants.map((v) => {
                         const labelParts = [v.size, v.color].filter(Boolean);
-                        const vTitle = labelParts.length > 0 ? labelParts.join(" · ") : v.id.slice(0, 6);
-                        const priceStr = v.selling_price != null ? ` · ${Number(v.selling_price).toFixed(3)} ${currencySymbol}` : "";
+                        const vTitle =
+                          labelParts.length > 0 ? labelParts.join(" · ") : v.id.slice(0, 6);
+                        const priceStr =
+                          v.selling_price != null
+                            ? ` · ${Number(v.selling_price).toFixed(3)} ${currencySymbol}`
+                            : "";
                         return (
                           <SelectItem key={v.id} value={v.id}>
                             {vTitle} {priceStr}
@@ -1382,11 +1443,11 @@ ${desc}${detailsBlock}
             </div>
 
             {/* Publish Size */}
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label className="text-xs font-bold text-foreground">
                 {isAr ? "مقاس النشر" : "Publish size"}
               </Label>
-              <div className="grid grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5">
                 {Object.entries(FORMATS).map(([key, item]) => {
                   const isSelected = format === key;
                   return (
@@ -1395,23 +1456,26 @@ ${desc}${detailsBlock}
                       key={key}
                       onClick={() => setFormat(key as keyof typeof FORMATS)}
                       className={cn(
-                        "relative flex flex-col justify-between rounded-xl border p-3 text-start transition-all cursor-pointer min-h-[66px]",
+                        "relative flex flex-col justify-between rounded-xl border p-2 sm:p-3 text-start transition-all cursor-pointer min-h-[58px] sm:min-h-[66px] min-w-0",
                         isSelected
                           ? "border-primary bg-primary/[0.06] ring-1 ring-primary shadow-2xs"
                           : "border-border hover:border-primary/40 bg-card/60",
                       )}
                     >
-                      <div className="flex items-center justify-between gap-1 w-full">
+                      <div className="flex items-center justify-between gap-1 w-full min-w-0">
                         <span className="text-xs font-bold text-foreground truncate">
                           {isAr ? item.ar : item.en}
                         </span>
                         {isSelected && (
-                          <span className="grid size-4 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
-                            <Check className="size-2.5 stroke-[3]" />
+                          <span className="grid size-3.5 sm:size-4 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+                            <Check className="size-2 sm:size-2.5 stroke-[3]" />
                           </span>
                         )}
                       </div>
-                      <span dir="ltr" className="font-mono text-xs text-muted-foreground tabular-nums">
+                      <span
+                        dir="ltr"
+                        className="font-mono text-xs text-muted-foreground tabular-nums truncate"
+                      >
                         {item.width} × {item.height}
                       </span>
                     </button>
@@ -1421,11 +1485,11 @@ ${desc}${detailsBlock}
             </div>
 
             {/* Visual Style */}
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label className="text-xs font-bold text-foreground">
                 {isAr ? "الأسلوب البصري" : "Visual style"}
               </Label>
-              <div className="grid grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5">
                 {Object.entries(THEMES).map(([key, item]) => {
                   const isSelected = theme === key;
                   return (
@@ -1434,24 +1498,30 @@ ${desc}${detailsBlock}
                       key={key}
                       onClick={() => setTheme(key as keyof typeof THEMES)}
                       className={cn(
-                        "relative flex flex-col justify-between rounded-xl border p-3 text-start transition-all cursor-pointer min-h-[66px]",
+                        "relative flex flex-col justify-between rounded-xl border p-2 sm:p-3 text-start transition-all cursor-pointer min-h-[58px] sm:min-h-[66px] min-w-0",
                         isSelected
                           ? "border-primary bg-primary/[0.06] ring-1 ring-primary shadow-2xs"
                           : "border-border hover:border-primary/40 bg-card/60",
                       )}
                     >
-                      <div className="flex items-center justify-between w-full">
-                        <span className="flex items-center gap-1.5">
-                          <i className="size-3.5 rounded-full border border-black/10 shadow-2xs" style={{ background: item.bg }} />
-                          <i className="size-3.5 rounded-full shadow-2xs" style={{ background: item.ink }} />
+                      <div className="flex items-center justify-between w-full min-w-0">
+                        <span className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                          <i
+                            className="size-3 sm:size-3.5 rounded-full border border-black/10 shadow-2xs"
+                            style={{ background: item.bg }}
+                          />
+                          <i
+                            className="size-3 sm:size-3.5 rounded-full shadow-2xs"
+                            style={{ background: item.ink }}
+                          />
                         </span>
                         {isSelected && (
-                          <span className="grid size-4 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
-                            <Check className="size-2.5 stroke-[3]" />
+                          <span className="grid size-3.5 sm:size-4 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+                            <Check className="size-2 sm:size-2.5 stroke-[3]" />
                           </span>
                         )}
                       </div>
-                      <span className="text-xs font-bold text-foreground truncate">
+                      <span className="text-xs font-bold text-foreground truncate mt-1">
                         {isAr ? item.ar : item.en}
                       </span>
                     </button>
@@ -1461,32 +1531,32 @@ ${desc}${detailsBlock}
             </div>
 
             {/* Product Framing */}
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label className="text-xs font-bold text-foreground">
                 {isAr ? "طريقة عرض صورة المنتج" : "Product photo framing"}
               </Label>
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
                 <button
                   type="button"
                   onClick={() => setImageFit("cover")}
                   className={cn(
-                    "relative flex flex-col justify-between rounded-xl border p-3 text-start transition-all cursor-pointer min-h-[64px]",
+                    "relative flex flex-col justify-between rounded-xl border p-2.5 sm:p-3 text-start transition-all cursor-pointer min-h-[58px] sm:min-h-[64px] min-w-0",
                     imageFit === "cover"
                       ? "border-primary bg-primary/[0.06] ring-1 ring-primary shadow-2xs"
                       : "border-border hover:border-primary/40 bg-card/60",
                   )}
                 >
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-xs font-bold text-foreground">
+                  <div className="flex items-center justify-between w-full min-w-0">
+                    <span className="text-xs font-bold text-foreground truncate">
                       {isAr ? "ملء الإطار (قص)" : "Cover frame"}
                     </span>
                     {imageFit === "cover" && (
-                      <span className="grid size-4 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
-                        <Check className="size-2.5 stroke-[3]" />
+                      <span className="grid size-3.5 sm:size-4 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+                        <Check className="size-2 sm:size-2.5 stroke-[3]" />
                       </span>
                     )}
                   </div>
-                  <span className="text-xs text-muted-foreground mt-1">
+                  <span className="text-xs text-muted-foreground mt-1 truncate">
                     {isAr ? "تكبير الصورة لملء الخلفية" : "Fills canvas boundary"}
                   </span>
                 </button>
@@ -1494,23 +1564,23 @@ ${desc}${detailsBlock}
                   type="button"
                   onClick={() => setImageFit("contain")}
                   className={cn(
-                    "relative flex flex-col justify-between rounded-xl border p-3 text-start transition-all cursor-pointer min-h-[64px]",
+                    "relative flex flex-col justify-between rounded-xl border p-2.5 sm:p-3 text-start transition-all cursor-pointer min-h-[58px] sm:min-h-[64px] min-w-0",
                     imageFit === "contain"
                       ? "border-primary bg-primary/[0.06] ring-1 ring-primary shadow-2xs"
                       : "border-border hover:border-primary/40 bg-card/60",
                   )}
                 >
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-xs font-bold text-foreground">
+                  <div className="flex items-center justify-between w-full min-w-0">
+                    <span className="text-xs font-bold text-foreground truncate">
                       {isAr ? "احتواء كامل (كاملة)" : "Fit / Contain"}
                     </span>
                     {imageFit === "contain" && (
-                      <span className="grid size-4 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+                      <span className="grid size-3.5 sm:size-4 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
                         <Check className="size-2.5 stroke-[3]" />
                       </span>
                     )}
                   </div>
-                  <span className="text-xs text-muted-foreground mt-1">
+                  <span className="text-xs text-muted-foreground mt-1 truncate">
                     {isAr ? "حفظ كامل تفاصيل الصورة" : "Preserves full photo"}
                   </span>
                 </button>
@@ -1523,7 +1593,7 @@ ${desc}${detailsBlock}
             </div>
 
             {/* Header & Branding Bar Customization Card */}
-            <div className="rounded-2xl border border-border-strong bg-muted/20 p-5 space-y-5 shadow-2xs">
+            <div className="rounded-2xl border border-border-strong bg-muted/20 p-3.5 sm:p-5 space-y-4 sm:space-y-5 shadow-2xs min-w-0">
               <div className="flex items-center justify-between border-b border-border-subtle pb-3">
                 <div className="flex items-center gap-2">
                   <span className="grid size-7 place-items-center rounded-lg bg-primary/10 text-primary">
@@ -1534,7 +1604,9 @@ ${desc}${detailsBlock}
                       {isAr ? "شريط الشعار والترويسة" : "Header & Branding Bar"}
                     </h3>
                     <p className="text-xs text-muted-foreground">
-                      {isAr ? "تخصيص الموضع والحجم وخلفية الشعار" : "Position, resize & backdrop plate"}
+                      {isAr
+                        ? "تخصيص الموضع والحجم وخلفية الشعار"
+                        : "Position, resize & backdrop plate"}
                     </p>
                   </div>
                 </div>
@@ -1555,10 +1627,16 @@ ${desc}${detailsBlock}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between h-6">
-                    <Label htmlFor="studio-edition-label" className="text-xs font-bold text-foreground leading-none">
+                    <Label
+                      htmlFor="studio-edition-label"
+                      className="text-xs font-bold text-foreground leading-none"
+                    >
                       {isAr ? "العبارة بجانب الشعار" : "Edition label"}
                     </Label>
-                    <span dir="ltr" className="font-mono text-xs text-muted-foreground tabular-nums leading-none">
+                    <span
+                      dir="ltr"
+                      className="font-mono text-xs text-muted-foreground tabular-nums leading-none"
+                    >
                       {editionLabel.length}/28
                     </span>
                   </div>
@@ -1573,7 +1651,10 @@ ${desc}${detailsBlock}
                 </div>
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between h-6">
-                    <Label htmlFor="studio-badge-text" className="text-xs font-bold text-foreground leading-none">
+                    <Label
+                      htmlFor="studio-badge-text"
+                      className="text-xs font-bold text-foreground leading-none"
+                    >
                       {isAr ? "شارة الموقع / الدولة" : "Location badge"}
                     </Label>
                     <button
@@ -1586,8 +1667,21 @@ ${desc}${detailsBlock}
                           : "border-border bg-muted/50 text-muted-foreground hover:text-foreground",
                       )}
                     >
-                      <span className={cn("size-1.5 rounded-full shrink-0", headerShowBadge ? "bg-primary" : "bg-muted-foreground/40")} />
-                      <span>{headerShowBadge ? (isAr ? "مفعّلة" : "Visible") : (isAr ? "مخفية" : "Hidden")}</span>
+                      <span
+                        className={cn(
+                          "size-1.5 rounded-full shrink-0",
+                          headerShowBadge ? "bg-primary" : "bg-muted-foreground/40",
+                        )}
+                      />
+                      <span>
+                        {headerShowBadge
+                          ? isAr
+                            ? "مفعّلة"
+                            : "Visible"
+                          : isAr
+                            ? "مخفية"
+                            : "Hidden"}
+                      </span>
                     </button>
                   </div>
                   <Input
@@ -1607,12 +1701,12 @@ ${desc}${detailsBlock}
                 <Label className="text-xs font-bold text-foreground">
                   {isAr ? "خلفية شريط الشعار (لزيادة الوضوح)" : "Header backdrop plate"}
                 </Label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                   <button
                     type="button"
                     onClick={() => setHeaderPlateStyle("none")}
                     className={cn(
-                      "rounded-xl border p-2 text-center text-xs font-bold transition-all cursor-pointer",
+                      "rounded-xl border p-2 text-center text-xs font-bold transition-all cursor-pointer truncate min-w-0",
                       headerPlateStyle === "none"
                         ? "border-primary bg-primary/[0.08] ring-1 ring-primary text-primary"
                         : "border-border bg-background/50 hover:border-primary/40 text-muted-foreground",
@@ -1624,10 +1718,11 @@ ${desc}${detailsBlock}
                     type="button"
                     onClick={() => {
                       setHeaderPlateStyle("glass");
-                      if (headerPlateColor === "#1a1a1a") setHeaderPlateColor("rgba(0, 0, 0, 0.48)");
+                      if (headerPlateColor === "#1a1a1a")
+                        setHeaderPlateColor("rgba(0, 0, 0, 0.48)");
                     }}
                     className={cn(
-                      "rounded-xl border p-2 text-center text-xs font-bold transition-all cursor-pointer",
+                      "rounded-xl border p-2 text-center text-xs font-bold transition-all cursor-pointer truncate min-w-0",
                       headerPlateStyle === "glass"
                         ? "border-primary bg-primary/[0.08] ring-1 ring-primary text-primary"
                         : "border-border bg-background/50 hover:border-primary/40 text-muted-foreground",
@@ -1642,7 +1737,7 @@ ${desc}${detailsBlock}
                       if (headerPlateColor.startsWith("rgba")) setHeaderPlateColor("#1a1a1a");
                     }}
                     className={cn(
-                      "rounded-xl border p-2 text-center text-xs font-bold transition-all cursor-pointer",
+                      "rounded-xl border p-2 text-center text-xs font-bold transition-all cursor-pointer truncate min-w-0",
                       headerPlateStyle === "solid"
                         ? "border-primary bg-primary/[0.08] ring-1 ring-primary text-primary"
                         : "border-border bg-background/50 hover:border-primary/40 text-muted-foreground",
@@ -1658,7 +1753,9 @@ ${desc}${detailsBlock}
                     <div>
                       <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5 font-medium">
                         <span>{isAr ? "لون الخلفية" : "Plate color"}</span>
-                        <span dir="ltr" className="font-mono text-xs tabular-nums">{headerPlateColor}</span>
+                        <span dir="ltr" className="font-mono text-xs tabular-nums">
+                          {headerPlateColor}
+                        </span>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         {headerPlateStyle === "glass" ? (
@@ -1834,7 +1931,10 @@ ${desc}${detailsBlock}
                     <span className="text-xs font-medium text-muted-foreground">
                       {isAr ? "الموضع العمودي (من الأعلى)" : "Vertical position (Y)"}
                     </span>
-                    <span dir="ltr" className="font-mono text-xs font-bold tabular-nums px-2 py-0.5 rounded-md bg-background border border-border-strong text-foreground shadow-2xs">
+                    <span
+                      dir="ltr"
+                      className="font-mono text-xs font-bold tabular-nums px-2 py-0.5 rounded-md bg-background border border-border-strong text-foreground shadow-2xs"
+                    >
                       {headerPosY}%
                     </span>
                   </div>
@@ -1855,7 +1955,10 @@ ${desc}${detailsBlock}
                     <span className="text-xs font-medium text-muted-foreground">
                       {isAr ? "ارتفاع الشعار" : "Logo height"}
                     </span>
-                    <span dir="ltr" className="font-mono text-xs font-bold tabular-nums px-2 py-0.5 rounded-md bg-background border border-border-strong text-foreground shadow-2xs">
+                    <span
+                      dir="ltr"
+                      className="font-mono text-xs font-bold tabular-nums px-2 py-0.5 rounded-md bg-background border border-border-strong text-foreground shadow-2xs"
+                    >
                       {headerLogoHeight}px
                     </span>
                   </div>
@@ -1876,7 +1979,10 @@ ${desc}${detailsBlock}
                     <span className="text-xs font-medium text-muted-foreground">
                       {isAr ? "مقياس الترويسة الكاملة" : "Overall header scale"}
                     </span>
-                    <span dir="ltr" className="font-mono text-xs font-bold tabular-nums px-2 py-0.5 rounded-md bg-background border border-border-strong text-foreground shadow-2xs">
+                    <span
+                      dir="ltr"
+                      className="font-mono text-xs font-bold tabular-nums px-2 py-0.5 rounded-md bg-background border border-border-strong text-foreground shadow-2xs"
+                    >
                       {Math.round(headerScale * 100)}%
                     </span>
                   </div>
@@ -1892,193 +1998,205 @@ ${desc}${detailsBlock}
                 </div>
               </div>
             </div>
-              {/* Headline */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between h-5">
-                  <Label htmlFor="studio-headline" className="text-xs font-bold text-foreground">
-                    {isAr ? "العنوان الرئيسي" : "Headline"}
-                  </Label>
-                  <span dir="ltr" className="font-mono text-xs text-muted-foreground tabular-nums">
-                    {headline.length}/64
-                  </span>
-                </div>
-                <Input
-                  id="studio-headline"
-                  value={headline}
-                  maxLength={64}
-                  onChange={(event) => setHeadline(event.target.value)}
-                  className="h-10 rounded-xl text-xs"
-                />
-                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+            {/* Headline */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between h-5">
+                <Label htmlFor="studio-headline" className="text-xs font-bold text-foreground">
+                  {isAr ? "العنوان الرئيسي" : "Headline"}
+                </Label>
+                <span dir="ltr" className="font-mono text-xs text-muted-foreground tabular-nums">
+                  {headline.length}/64
+                </span>
+              </div>
+              <Input
+                id="studio-headline"
+                value={headline}
+                maxLength={64}
+                onChange={(event) => setHeadline(event.target.value)}
+                className="h-10 rounded-xl text-xs"
+              />
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                <button
+                  type="button"
+                  onClick={() => setHeadline(productName)}
+                  className="inline-flex items-center gap-1 rounded-lg border border-border bg-background hover:bg-muted px-2.5 py-1 text-xs font-medium text-foreground transition-colors cursor-pointer shadow-2xs"
+                  title={isAr ? "تعيين اسم المنتج كعنوان" : "Set product name as headline"}
+                >
+                  <Sparkles className="size-3 text-primary" />
+                  <span>{isAr ? "اسم المنتج" : "Product Name"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setHeadline(isAr ? "صُممت لتبقى في الذاكرة" : "Designed to Remember")
+                  }
+                  className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/50 hover:bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
+                >
+                  <span>{isAr ? "صُممت لتبقى في الذاكرة" : "Designed to Remember"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHeadline(isAr ? "وصل حديثاً ✨" : "New Arrival ✨")}
+                  className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/50 hover:bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
+                >
+                  <span>{isAr ? "وصل حديثاً ✨" : "New Arrival ✨"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHeadline(isAr ? "الأكثر طلباً 🔥" : "Best Seller 🔥")}
+                  className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/50 hover:bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
+                >
+                  <span>{isAr ? "الأكثر طلباً 🔥" : "Best Seller 🔥"}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Body Copy */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between h-5">
+                <Label htmlFor="studio-body" className="text-xs font-bold text-foreground">
+                  {isAr ? "النص والوصف" : "Body copy"}
+                </Label>
+                <span dir="ltr" className="font-mono text-xs text-muted-foreground tabular-nums">
+                  {body.length}/160
+                </span>
+              </div>
+              <Textarea
+                id="studio-body"
+                value={body}
+                maxLength={160}
+                rows={3}
+                onChange={(event) => setBody(event.target.value)}
+                className="rounded-xl resize-none text-xs leading-relaxed"
+                placeholder={selectedDescription || ""}
+              />
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                {selectedDescription && (
                   <button
                     type="button"
-                    onClick={() => setHeadline(productName)}
+                    onClick={() => setBody(snappyDesc)}
                     className="inline-flex items-center gap-1 rounded-lg border border-border bg-background hover:bg-muted px-2.5 py-1 text-xs font-medium text-foreground transition-colors cursor-pointer shadow-2xs"
-                    title={isAr ? "تعيين اسم المنتج كعنوان" : "Set product name as headline"}
+                    title={isAr ? "اقتباس ذكي من أول الوصف" : "Smart excerpt from description"}
                   >
                     <Sparkles className="size-3 text-primary" />
-                    <span>{isAr ? "اسم المنتج" : "Product Name"}</span>
+                    <span>{isAr ? "مقتطف الوصف" : "Excerpt"}</span>
                   </button>
+                )}
+                {selectedDescription && (
                   <button
                     type="button"
-                    onClick={() => setHeadline(isAr ? "صُممت لتبقى في الذاكرة" : "Designed to Remember")}
+                    onClick={() => setBody(selectedDescription.slice(0, 160))}
                     className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/50 hover:bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
-                  >
-                    <span>{isAr ? "صُممت لتبقى في الذاكرة" : "Designed to Remember"}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setHeadline(isAr ? "وصل حديثاً ✨" : "New Arrival ✨")}
-                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/50 hover:bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
-                  >
-                    <span>{isAr ? "وصل حديثاً ✨" : "New Arrival ✨"}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setHeadline(isAr ? "الأكثر طلباً 🔥" : "Best Seller 🔥")}
-                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/50 hover:bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
-                  >
-                    <span>{isAr ? "الأكثر طلباً 🔥" : "Best Seller 🔥"}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Body Copy */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between h-5">
-                  <Label htmlFor="studio-body" className="text-xs font-bold text-foreground">
-                    {isAr ? "النص والوصف" : "Body copy"}
-                  </Label>
-                  <span dir="ltr" className="font-mono text-xs text-muted-foreground tabular-nums">
-                    {body.length}/160
-                  </span>
-                </div>
-                <Textarea
-                  id="studio-body"
-                  value={body}
-                  maxLength={160}
-                  rows={3}
-                  onChange={(event) => setBody(event.target.value)}
-                  className="rounded-xl resize-none text-xs leading-relaxed"
-                  placeholder={selectedDescription || ""}
-                />
-                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                  {selectedDescription && (
-                    <button
-                      type="button"
-                      onClick={() => setBody(snappyDesc)}
-                      className="inline-flex items-center gap-1 rounded-lg border border-border bg-background hover:bg-muted px-2.5 py-1 text-xs font-medium text-foreground transition-colors cursor-pointer shadow-2xs"
-                      title={isAr ? "اقتباس ذكي من أول الوصف" : "Smart excerpt from description"}
-                    >
-                      <Sparkles className="size-3 text-primary" />
-                      <span>{isAr ? "مقتطف الوصف" : "Excerpt"}</span>
-                    </button>
-                  )}
-                  {selectedDescription && (
-                    <button
-                      type="button"
-                      onClick={() => setBody(selectedDescription.slice(0, 160))}
-                      className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/50 hover:bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
-                      title={isAr ? "نسخ الوصف بالكامل (حتى 160 حرف)" : "Full description up to 160 chars"}
-                    >
-                      <span>{isAr ? "الوصف كاملاً" : "Full Desc"}</span>
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setBody(
-                        isAr
-                          ? "أناقة هادئة، وتفاصيل مدروسة لكل لحظة."
-                          : "Quiet elegance, thoughtful details for every moment.",
-                      )
+                    title={
+                      isAr ? "نسخ الوصف بالكامل (حتى 160 حرف)" : "Full description up to 160 chars"
                     }
-                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/50 hover:bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
                   >
-                    <span>{isAr ? "أناقة هادئة" : "Quiet Elegance"}</span>
+                    <span>{isAr ? "الوصف كاملاً" : "Full Desc"}</span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setBody(
-                        isAr
-                          ? "متوفرة الآن للطلب والتفصيل عبر متجرنا الإلكتروني."
-                          : "Available now to order online.",
-                      )
-                    }
-                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/50 hover:bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
-                  >
-                    <span>{isAr ? "جاهز للطلب" : "Ready to Order"}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Show price switch */}
-              <div className="flex items-center justify-between rounded-xl border border-border-strong bg-muted/20 px-3.5 py-2.5">
-                <Label htmlFor="studio-show-price" className="text-xs font-bold text-foreground cursor-pointer">
-                  {isAr ? "إظهار السعر على البطاقة" : "Show price on card"}
-                </Label>
-                <Switch
-                  id="studio-show-price"
-                  checked={showPrice}
-                  onCheckedChange={setShowPrice}
-                />
-              </div>
-
-              {/* Instagram auto-caption block */}
-              <div className="rounded-2xl border border-border-strong bg-muted/20 p-4 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold flex items-center gap-1.5 text-primary">
-                    <Sparkles className="size-3.5" />
-                    <span>{isAr ? "كابشن انستقرام التلقائي" : "Auto Instagram Caption"}</span>
-                  </span>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={handleCopyCaption}
-                    className="h-7 text-xs font-semibold gap-1 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80"
-                  >
-                    {copiedCaption ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
-                    <span>{copiedCaption ? (isAr ? "تم النسخ" : "Copied") : (isAr ? "نسخ" : "Copy")}</span>
-                  </Button>
-                </div>
-                <pre
-                  dir="rtl"
-                  className="whitespace-pre-wrap font-sans text-xs leading-relaxed text-muted-foreground bg-background/80 p-3 rounded-xl border border-border-subtle select-all"
+                )}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setBody(
+                      isAr
+                        ? "أناقة هادئة، وتفاصيل مدروسة لكل لحظة."
+                        : "Quiet elegance, thoughtful details for every moment.",
+                    )
+                  }
+                  className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/50 hover:bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
                 >
-                  {captionText}
-                </pre>
+                  <span>{isAr ? "أناقة هادئة" : "Quiet Elegance"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setBody(
+                      isAr
+                        ? "متوفرة الآن للطلب والتفصيل عبر متجرنا الإلكتروني."
+                        : "Available now to order online.",
+                    )
+                  }
+                  className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/50 hover:bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
+                >
+                  <span>{isAr ? "جاهز للطلب" : "Ready to Order"}</span>
+                </button>
               </div>
-
-              {/* Customer stories link */}
-              <Link
-                to="/admin/b/$slug/reviews"
-                params={{ slug }}
-                className="group flex items-center justify-between rounded-2xl border border-border-strong bg-muted/20 p-4 transition-all hover:bg-muted/40 hover:border-primary/40"
-              >
-                <span className="flex items-center gap-3">
-                  <span className="grid size-9 place-items-center rounded-xl bg-background border border-border-subtle text-primary shadow-2xs">
-                    <MessageSquareHeart className="size-4 text-primary" />
-                  </span>
-                  <span>
-                    <strong className="block text-xs font-bold text-foreground">
-                      {isAr ? "آراء وتقييمات العملاء" : "Customer stories"}
-                    </strong>
-                    <small className="text-xs text-muted-foreground">
-                      {isAr ? "تحويل أي تقييم إلى ستوري تسويقي" : "Turn any review into a story"}
-                    </small>
-                  </span>
-                </span>
-                <ArrowUpLeft className="size-4 text-muted-foreground transition-transform group-hover:-translate-x-0.5 group-hover:-translate-y-0.5" />
-              </Link>
             </div>
+
+            {/* Show price switch */}
+            <div className="flex items-center justify-between rounded-xl border border-border-strong bg-muted/20 px-3.5 py-2.5">
+              <Label
+                htmlFor="studio-show-price"
+                className="text-xs font-bold text-foreground cursor-pointer"
+              >
+                {isAr ? "إظهار السعر على البطاقة" : "Show price on card"}
+              </Label>
+              <Switch id="studio-show-price" checked={showPrice} onCheckedChange={setShowPrice} />
+            </div>
+
+            {/* Instagram auto-caption block */}
+            <div className="rounded-2xl border border-border-strong bg-muted/20 p-4 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold flex items-center gap-1.5 text-primary">
+                  <Sparkles className="size-3.5" />
+                  <span>{isAr ? "كابشن انستقرام التلقائي" : "Auto Instagram Caption"}</span>
+                </span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleCopyCaption}
+                  className="h-7 text-xs font-semibold gap-1 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80"
+                >
+                  {copiedCaption ? (
+                    <Check className="size-3.5 text-emerald-600" />
+                  ) : (
+                    <Copy className="size-3.5" />
+                  )}
+                  <span>
+                    {copiedCaption ? (isAr ? "تم النسخ" : "Copied") : isAr ? "نسخ" : "Copy"}
+                  </span>
+                </Button>
+              </div>
+              <pre
+                dir="rtl"
+                className="whitespace-pre-wrap font-sans text-xs leading-relaxed text-muted-foreground bg-background/80 p-3 rounded-xl border border-border-subtle select-all"
+              >
+                {captionText}
+              </pre>
+            </div>
+
+            {/* Customer stories link */}
+            <Link
+              to="/admin/b/$slug/reviews"
+              params={{ slug }}
+              className="group flex items-center justify-between rounded-2xl border border-border-strong bg-muted/20 p-4 transition-all hover:bg-muted/40 hover:border-primary/40"
+            >
+              <span className="flex items-center gap-3">
+                <span className="grid size-9 place-items-center rounded-xl bg-background border border-border-subtle text-primary shadow-2xs">
+                  <MessageSquareHeart className="size-4 text-primary" />
+                </span>
+                <span>
+                  <strong className="block text-xs font-bold text-foreground">
+                    {isAr ? "آراء وتقييمات العملاء" : "Customer stories"}
+                  </strong>
+                  <small className="text-xs text-muted-foreground">
+                    {isAr ? "تحويل أي تقييم إلى ستوري تسويقي" : "Turn any review into a story"}
+                  </small>
+                </span>
+              </span>
+              <ArrowUpLeft className="size-4 text-muted-foreground transition-transform group-hover:-translate-x-0.5 group-hover:-translate-y-0.5" />
+            </Link>
+          </div>
         </Card>
 
         {/* Live Preview Stage */}
-        <div className="rounded-[28px] border border-border-strong bg-muted/30 p-4 sm:p-7 xl:sticky xl:top-4 self-start shadow-xs">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
+        <div
+          id="studio-preview"
+          className="w-full min-w-0 max-w-full overflow-hidden rounded-2xl sm:rounded-[28px] border border-border-strong bg-muted/30 p-3 sm:p-7 xl:sticky xl:top-4 self-start shadow-xs"
+        >
+          <div className="mb-3 sm:mb-4 flex items-center justify-between gap-3">
+            <div className="min-w-0">
               <p
                 className={cn(
                   "text-xs font-bold text-muted-foreground",
@@ -2087,19 +2205,36 @@ ${desc}${detailsBlock}
               >
                 {isAr ? "معاينة مباشرة" : "Live preview"}
               </p>
-              <p className="mt-1 text-xs sm:text-sm font-semibold flex items-center gap-1 text-foreground">
+              <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm font-semibold flex items-center gap-1 text-foreground">
                 <span dir="ltr" className="font-mono tabular-nums">
                   {FORMATS[format].width} × {FORMATS[format].height} px
                 </span>
               </p>
             </div>
-            <span className="grid size-8 place-items-center rounded-xl bg-background/80 border border-border-subtle text-muted-foreground">
-              <ImageIcon className="size-4" />
-            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  document
+                    .getElementById("studio-controls")
+                    ?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="xl:hidden h-8 px-2.5 gap-1.5 text-xs font-semibold rounded-xl text-foreground border-border bg-background hover:bg-muted cursor-pointer"
+              >
+                <Sliders className="size-3.5" />
+                <span>{isAr ? "التعديل" : "Edit"}</span>
+              </Button>
+              <span className="grid size-8 place-items-center rounded-xl bg-background/80 border border-border-subtle text-muted-foreground">
+                <ImageIcon className="size-4" />
+              </span>
+            </div>
           </div>
           <div
             ref={stageViewportRef}
-            className="mx-auto max-w-[570px] overflow-hidden rounded-[22px] shadow-2xl"
+            dir="ltr"
+            className="mx-auto w-full max-w-[570px] overflow-hidden rounded-[22px] shadow-2xl relative"
             style={{
               // Reserves exactly the scaled-down footprint of the fixed-width
               // stage below, so shrinking it on a narrow screen doesn't leave
@@ -2113,7 +2248,7 @@ ${desc}${detailsBlock}
           >
             <div
               ref={stageRef}
-              className={cn("relative isolate overflow-hidden", FORMATS[format].ratio)}
+              className={cn("relative isolate overflow-hidden shrink-0", FORMATS[format].ratio)}
               style={{
                 background: palette.bg,
                 color: palette.ink,
@@ -2238,7 +2373,9 @@ ${desc}${detailsBlock}
                             ? "text-[12px] sm:text-sm"
                             : "text-xs sm:text-xs uppercase tracking-[.22em]",
                         )}
-                        style={editionIsAr ? { fontFamily: "Tahoma, Arial, sans-serif" } : undefined}
+                        style={
+                          editionIsAr ? { fontFamily: "Tahoma, Arial, sans-serif" } : undefined
+                        }
                       >
                         {editionLabel}
                       </span>

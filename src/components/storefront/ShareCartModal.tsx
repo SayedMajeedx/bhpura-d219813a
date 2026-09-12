@@ -10,11 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import {
-  buildCartShareUrl,
-  buildWhatsAppShareUrl,
-  createSharedCartLink,
-} from "@/lib/cart-sharing";
+import { buildCartShareUrl, buildWhatsAppShareUrl, createSharedCartLink } from "@/lib/cart-sharing";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
 
 interface ShareCartModalProps {
@@ -66,9 +62,7 @@ export function ShareCartModal({ open, onOpenChange }: ShareCartModalProps) {
     try {
       await navigator.clipboard.writeText(activeShareUrl);
       setCopied(true);
-      toast.success(
-        t("تم نسخ رابط السلة بنجاح!", "Cart link copied to clipboard!"),
-      );
+      toast.success(t("تم نسخ رابط السلة بنجاح!", "Cart link copied to clipboard!"));
       setTimeout(() => setCopied(false), 2500);
     } catch {
       toast.error(t("تعذر نسخ الرابط", "Failed to copy link"));
@@ -132,9 +126,7 @@ export function ShareCartModal({ open, onOpenChange }: ShareCartModalProps) {
                 {cart.length} {isAr ? (cart.length === 1 ? "منتج" : "منتجات") : "items"}
               </span>
             </span>
-            <span className="font-bold text-primary">
-              {totalFormatted}
-            </span>
+            <span className="font-bold text-primary">{totalFormatted}</span>
           </div>
 
           {/* Share Link Input */}

@@ -225,7 +225,8 @@ function BrandsPage() {
       if (pendingBrandIds.length === 0) return [];
       const { data } = await supabase
         .from("brand_subscriptions")
-        .select(`
+        .select(
+          `
           id,
           brand_id,
           billing_interval,
@@ -236,7 +237,8 @@ function BrandsPage() {
             name_ar,
             name_en
           )
-        `)
+        `,
+        )
         .in("brand_id", pendingBrandIds);
       return data ?? [];
     },
@@ -339,9 +341,11 @@ function BrandsPage() {
         <div className="flex flex-wrap items-center gap-2.5">
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="h-11 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
-                <Plus className="h-4 w-4 me-2" />{" "}
-                {lang === "ar" ? "إطلاق يدوي" : "Manual Setup"}
+              <Button
+                variant="outline"
+                className="h-11 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+              >
+                <Plus className="h-4 w-4 me-2" /> {lang === "ar" ? "إطلاق يدوي" : "Manual Setup"}
               </Button>
             </DialogTrigger>
             <NewBrandDialog
@@ -482,15 +486,22 @@ function BrandsPage() {
                         ) : b.subscription_status === "active" ? (
                           <Badge className="bg-emerald-500 text-white hover:bg-emerald-600 text-xs">
                             {b.plan_type === "monthly"
-                              ? lang === "ar" ? "شهري نشط" : "Monthly active"
-                              : lang === "ar" ? "سنوي نشط" : "Annual active"}
+                              ? lang === "ar"
+                                ? "شهري نشط"
+                                : "Monthly active"
+                              : lang === "ar"
+                                ? "سنوي نشط"
+                                : "Annual active"}
                           </Badge>
                         ) : b.subscription_status === "pending_verification" ? (
                           <Badge className="bg-amber-500 text-white hover:bg-amber-600 text-xs animate-pulse">
                             Pending
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-xs">
+                          <Badge
+                            variant="outline"
+                            className="bg-muted text-muted-foreground border-border text-xs"
+                          >
                             Unpaid
                           </Badge>
                         )}
@@ -500,36 +511,37 @@ function BrandsPage() {
                             {Math.max(
                               0,
                               Math.ceil(
-                                (new Date(b.trial_ends_at).getTime() - Date.now()) /
-                                  86400000,
+                                (new Date(b.trial_ends_at).getTime() - Date.now()) / 86400000,
                               ),
                             )}{" "}
                             {lang === "ar" ? "أيام تجريبية متبقية" : "trial days left"}
                           </span>
                         )}
-                        {b.subscription_expires_at && b.plan_type !== "lifetime" && b.plan_type !== "trial" && (
-                          <span className="text-xs text-muted-foreground font-semibold flex items-center gap-0.5">
-                            <ClockIcon className="h-2.5 w-2.5" />
-                            {Math.max(
-                              0,
-                              Math.ceil(
-                                (new Date(b.subscription_expires_at).getTime() - Date.now()) /
-                                  86400000,
-                              ),
-                            )}{" "}
-                            {lang === "ar" ? "يوم متبقٍ" : "days left"}
-                          </span>
-                        )}
+                        {b.subscription_expires_at &&
+                          b.plan_type !== "lifetime" &&
+                          b.plan_type !== "trial" && (
+                            <span className="text-xs text-muted-foreground font-semibold flex items-center gap-0.5">
+                              <ClockIcon className="h-2.5 w-2.5" />
+                              {Math.max(
+                                0,
+                                Math.ceil(
+                                  (new Date(b.subscription_expires_at).getTime() - Date.now()) /
+                                    86400000,
+                                ),
+                              )}{" "}
+                              {lang === "ar" ? "يوم متبقٍ" : "days left"}
+                            </span>
+                          )}
                         {b.renewal_intent && (
                           <Badge
                             className={
                               b.renewal_intent === "upgrade"
                                 ? "bg-emerald-600 text-white hover:bg-emerald-700 text-xs"
                                 : b.renewal_intent === "renew"
-                                ? "bg-blue-600 text-white hover:bg-blue-700 text-xs"
-                                : b.renewal_intent === "downgrade"
-                                ? "bg-amber-600 text-white hover:bg-amber-700 text-xs"
-                                : "bg-rose-600 text-white hover:bg-rose-700 text-xs"
+                                  ? "bg-blue-600 text-white hover:bg-blue-700 text-xs"
+                                  : b.renewal_intent === "downgrade"
+                                    ? "bg-amber-600 text-white hover:bg-amber-700 text-xs"
+                                    : "bg-rose-600 text-white hover:bg-rose-700 text-xs"
                             }
                           >
                             {b.renewal_intent === "upgrade"
@@ -537,16 +549,16 @@ function BrandsPage() {
                                 ? "طلب ترقية باقة"
                                 : "Upgrade Request"
                               : b.renewal_intent === "renew"
-                              ? lang === "ar"
-                                ? "يرغب بالتجديد"
-                                : "Wants to renew"
-                              : b.renewal_intent === "downgrade"
-                              ? lang === "ar"
-                                ? "طلب خفض باقة"
-                                : "Downgrade Request"
-                              : lang === "ar"
-                              ? "لن يجدد"
-                              : "Will not renew"}
+                                ? lang === "ar"
+                                  ? "يرغب بالتجديد"
+                                  : "Wants to renew"
+                                : b.renewal_intent === "downgrade"
+                                  ? lang === "ar"
+                                    ? "طلب خفض باقة"
+                                    : "Downgrade Request"
+                                  : lang === "ar"
+                                    ? "لن يجدد"
+                                    : "Will not renew"}
                           </Badge>
                         )}
                       </div>
@@ -691,10 +703,14 @@ function BrandsPage() {
                           const targetPlan =
                             saasPlans.find((p) => p.id === sub?.renewal_target_plan_id) ||
                             saasPlans.find((p) => p.code === "pro") ||
-                            saasPlans.find((p) => p.code !== "trial" && p.code !== "lifetime_founder") ||
+                            saasPlans.find(
+                              (p) => p.code !== "trial" && p.code !== "lifetime_founder",
+                            ) ||
                             saasPlans[0];
                           setApprovingPlanId(targetPlan?.id || "");
-                          setApprovingInterval(sub?.billing_interval === "monthly" ? "monthly" : "annual");
+                          setApprovingInterval(
+                            sub?.billing_interval === "monthly" ? "monthly" : "annual",
+                          );
                         }}
                       >
                         <CheckCircle className="h-4 w-4" />
@@ -741,7 +757,9 @@ function BrandsPage() {
                   {lang === "ar" ? "المحل المختار" : "Boutique Brand"}
                 </p>
                 <p className="font-display font-semibold mt-0.5 text-foreground text-sm">
-                  {lang === "ar" ? approvingBrand.name_ar || approvingBrand.name_en : approvingBrand.name_en}
+                  {lang === "ar"
+                    ? approvingBrand.name_ar || approvingBrand.name_en
+                    : approvingBrand.name_en}
                 </p>
               </div>
 
@@ -752,7 +770,9 @@ function BrandsPage() {
                 </Label>
                 <Select value={approvingPlanId} onValueChange={setApprovingPlanId}>
                   <SelectTrigger className="w-full bg-background/50 border-border-subtle">
-                    <SelectValue placeholder={lang === "ar" ? "اختر الباقة..." : "Select Plan..."} />
+                    <SelectValue
+                      placeholder={lang === "ar" ? "اختر الباقة..." : "Select Plan..."}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {saasPlans

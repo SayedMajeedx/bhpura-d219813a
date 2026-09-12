@@ -25,13 +25,7 @@ import {
   Check,
   Sparkles,
 } from "lucide-react";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -78,7 +72,9 @@ export function SuperOverridesManager() {
 
   const [selectedBrandId, setSelectedBrandId] = useState<string>("");
   const [featureKey, setFeatureKey] = useState<string>("products.limit");
-  const [overrideType, setOverrideType] = useState<"set_boolean" | "set_limit" | "increment_limit">("set_limit");
+  const [overrideType, setOverrideType] = useState<"set_boolean" | "set_limit" | "increment_limit">(
+    "set_limit",
+  );
   const [booleanValue, setBooleanValue] = useState<boolean>(true);
   const [numericValue, setNumericValue] = useState<number>(500);
   const [reason, setReason] = useState<string>("");
@@ -86,7 +82,9 @@ export function SuperOverridesManager() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch active overrides for selected brand
-  const { data: brandOverrides = [], isLoading: overridesLoading } = useQuery<BrandEntitlementOverride[]>({
+  const { data: brandOverrides = [], isLoading: overridesLoading } = useQuery<
+    BrandEntitlementOverride[]
+  >({
     queryKey: ["brand_overrides_view", selectedBrandId],
     queryFn: async () => {
       if (!selectedBrandId) return [];
@@ -103,12 +101,18 @@ export function SuperOverridesManager() {
   const handleApplyOverride = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBrandId || !featureKey || !reason.trim()) {
-      toast.error(isAr ? "يرجى تعبئة كافة الحقول المطلوبة وسبب الاستثناء" : "Please fill required fields and reason");
+      toast.error(
+        isAr
+          ? "يرجى تعبئة كافة الحقول المطلوبة وسبب الاستثناء"
+          : "Please fill required fields and reason",
+      );
       return;
     }
 
     setIsSubmitting(true);
-    const toastId = toast.loading(isAr ? "جاري تطبيق الاستثناء للمتجر..." : "Applying custom entitlement override...");
+    const toastId = toast.loading(
+      isAr ? "جاري تطبيق الاستثناء للمتجر..." : "Applying custom entitlement override...",
+    );
 
     try {
       await setBrandEntitlementOverride({
@@ -122,7 +126,9 @@ export function SuperOverridesManager() {
         },
       });
 
-      toast.success(isAr ? "تم تطبيق الاستثناء بنجاح!" : "Override applied successfully!", { id: toastId });
+      toast.success(isAr ? "تم تطبيق الاستثناء بنجاح!" : "Override applied successfully!", {
+        id: toastId,
+      });
       setReason("");
       void queryClient.invalidateQueries({ queryKey: ["brand_overrides_view", selectedBrandId] });
       void queryClient.invalidateQueries({ queryKey: ["super_saas_audit_logs"] });
@@ -212,17 +218,20 @@ export function SuperOverridesManager() {
                 <Label className="text-xs font-bold text-foreground">
                   {isAr ? "نوع التجاوز" : "Override Type"}
                 </Label>
-                <Select
-                  value={overrideType}
-                  onValueChange={(val: any) => setOverrideType(val)}
-                >
+                <Select value={overrideType} onValueChange={(val: any) => setOverrideType(val)}>
                   <SelectTrigger className="text-xs min-h-[44px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="set_limit">{isAr ? "تعيين حد رقمي محدد" : "Set Exact Limit"}</SelectItem>
-                    <SelectItem value="increment_limit">{isAr ? "إضافة سعة إضافية فوق الخطة" : "Increment Limit (+Amount)"}</SelectItem>
-                    <SelectItem value="set_boolean">{isAr ? "تفعيل أو تعطيل الميزة" : "Set Boolean Enable/Disable"}</SelectItem>
+                    <SelectItem value="set_limit">
+                      {isAr ? "تعيين حد رقمي محدد" : "Set Exact Limit"}
+                    </SelectItem>
+                    <SelectItem value="increment_limit">
+                      {isAr ? "إضافة سعة إضافية فوق الخطة" : "Increment Limit (+Amount)"}
+                    </SelectItem>
+                    <SelectItem value="set_boolean">
+                      {isAr ? "تفعيل أو تعطيل الميزة" : "Set Boolean Enable/Disable"}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -267,7 +276,11 @@ export function SuperOverridesManager() {
                 <Input
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  placeholder={isAr ? "مثال: اتفاقية شراكة خاصة / تعويض فني" : "e.g., Special enterprise agreement"}
+                  placeholder={
+                    isAr
+                      ? "مثال: اتفاقية شراكة خاصة / تعويض فني"
+                      : "e.g., Special enterprise agreement"
+                  }
                   className="text-xs min-h-[44px]"
                 />
               </div>
@@ -289,7 +302,11 @@ export function SuperOverridesManager() {
                 disabled={isSubmitting || !selectedBrandId || !reason.trim()}
                 className="w-full gap-2 font-bold min-h-[44px]"
               >
-                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
                 <span>{isAr ? "تطبيق الاستثناء الآن" : "Apply Override"}</span>
               </Button>
             </form>
@@ -302,7 +319,9 @@ export function SuperOverridesManager() {
             <CardTitle className="text-base font-bold text-foreground flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4.5 w-4.5 text-amber-500" />
-                <span>{isAr ? "الاستثناءات الحالية للمتجر المختار" : "Active Store Overrides"}</span>
+                <span>
+                  {isAr ? "الاستثناءات الحالية للمتجر المختار" : "Active Store Overrides"}
+                </span>
               </div>
               {selectedBrandId && (
                 <Badge variant="outline" className="font-mono text-xs">
@@ -319,7 +338,9 @@ export function SuperOverridesManager() {
           <CardContent className="p-0">
             {!selectedBrandId ? (
               <div className="p-12 text-center text-muted-foreground text-xs">
-                {isAr ? "يرجى اختيار متجر من القائمة لعرض الاستثناءات المطبقة عليه." : "Select a store to view and manage its active overrides."}
+                {isAr
+                  ? "يرجى اختيار متجر من القائمة لعرض الاستثناءات المطبقة عليه."
+                  : "Select a store to view and manage its active overrides."}
               </div>
             ) : overridesLoading ? (
               <div className="p-12 flex justify-center text-muted-foreground">
@@ -329,10 +350,14 @@ export function SuperOverridesManager() {
               <div className="p-12 text-center text-muted-foreground text-xs space-y-2">
                 <Check className="h-8 w-8 text-emerald-500 mx-auto" />
                 <p className="font-bold text-foreground">
-                  {isAr ? "لا توجد استثناءات خاصة لهذا المتجر" : "No custom overrides active for this store"}
+                  {isAr
+                    ? "لا توجد استثناءات خاصة لهذا المتجر"
+                    : "No custom overrides active for this store"}
                 </p>
                 <p className="text-xs">
-                  {isAr ? "يخضع المتجر لحدود ومزايا باقته الأساسية فقط." : "Store operates strictly within standard plan quotas."}
+                  {isAr
+                    ? "يخضع المتجر لحدود ومزايا باقته الأساسية فقط."
+                    : "Store operates strictly within standard plan quotas."}
                 </p>
               </div>
             ) : (
@@ -342,7 +367,9 @@ export function SuperOverridesManager() {
                     <tr className="bg-muted/40 text-muted-foreground border-b border-border-subtle">
                       <th className="p-3 text-start font-bold">{isAr ? "الميزة" : "Feature"}</th>
                       <th className="p-3 text-start font-bold">{isAr ? "نوع التجاوز" : "Type"}</th>
-                      <th className="p-3 text-start font-bold">{isAr ? "القيمة الممنوحة" : "Granted Value"}</th>
+                      <th className="p-3 text-start font-bold">
+                        {isAr ? "القيمة الممنوحة" : "Granted Value"}
+                      </th>
                       <th className="p-3 text-start font-bold">{isAr ? "السبب" : "Reason"}</th>
                       <th className="p-3 text-center font-bold">{isAr ? "إجراء" : "Action"}</th>
                     </tr>
@@ -350,7 +377,9 @@ export function SuperOverridesManager() {
                   <tbody>
                     {brandOverrides.map((ov) => (
                       <tr key={ov.id} className="border-b border-border-subtle hover:bg-muted/20">
-                        <td className="p-3 font-mono font-bold text-foreground">{ov.feature_key}</td>
+                        <td className="p-3 font-mono font-bold text-foreground">
+                          {ov.feature_key}
+                        </td>
                         <td className="p-3">
                           <Badge variant="outline" className="text-xs">
                             {ov.override_type}
@@ -375,7 +404,8 @@ export function SuperOverridesManager() {
                             size="icon"
                             onClick={() => handleRevokeOverride(ov.feature_key)}
                             className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                           aria-label="Delete">
+                            aria-label="Delete"
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </td>
@@ -394,7 +424,11 @@ export function SuperOverridesManager() {
         <CardHeader className="pb-3 border-b border-border-subtle">
           <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
             <FileText className="h-4.5 w-4.5 text-primary" />
-            <span>{isAr ? "سجل تدقيق تغييرات الاشتراكات والخطط (Audit Log)" : "SaaS Billing & Plans Audit Trail"}</span>
+            <span>
+              {isAr
+                ? "سجل تدقيق تغييرات الاشتراكات والخطط (Audit Log)"
+                : "SaaS Billing & Plans Audit Trail"}
+            </span>
           </CardTitle>
           <CardDescription className="text-xs">
             {isAr
@@ -416,11 +450,15 @@ export function SuperOverridesManager() {
               <table className="w-full text-xs">
                 <thead>
                   <tr className="bg-muted/40 text-muted-foreground border-b border-border-subtle sticky top-0 bg-background">
-                    <th className="p-3 text-start font-bold">{isAr ? "التاريخ والوقت" : "Timestamp"}</th>
+                    <th className="p-3 text-start font-bold">
+                      {isAr ? "التاريخ والوقت" : "Timestamp"}
+                    </th>
                     <th className="p-3 text-start font-bold">{isAr ? "المنفذ" : "Actor"}</th>
                     <th className="p-3 text-start font-bold">{isAr ? "نوع الحدث" : "Action"}</th>
                     <th className="p-3 text-start font-bold">{isAr ? "الهدف" : "Target"}</th>
-                    <th className="p-3 text-start font-bold">{isAr ? "تفاصيل التغيير" : "Payload / Changes"}</th>
+                    <th className="p-3 text-start font-bold">
+                      {isAr ? "تفاصيل التغيير" : "Payload / Changes"}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -434,7 +472,10 @@ export function SuperOverridesManager() {
                         <span>{log.actor_email || "System"}</span>
                       </td>
                       <td className="p-3">
-                        <Badge variant="outline" className="font-mono text-xs bg-primary/10 text-primary">
+                        <Badge
+                          variant="outline"
+                          className="font-mono text-xs bg-primary/10 text-primary"
+                        >
                           {log.action}
                         </Badge>
                       </td>

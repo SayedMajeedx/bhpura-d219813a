@@ -112,9 +112,7 @@ export default function OrderDetailScreen() {
     try {
       const { data: orderData, error: orderErr } = await supabase
         .from("orders")
-        .select(
-          "*, customers(id,name,phone,email)",
-        )
+        .select("*, customers(id,name,phone,email)")
         .eq("id", id)
         .maybeSingle();
 
@@ -184,7 +182,9 @@ export default function OrderDetailScreen() {
   }
 
   const customerName =
-    order.customer_name_snapshot || order.customers?.name || (isAr ? "عميل بدون اسم" : "Guest Customer");
+    order.customer_name_snapshot ||
+    order.customers?.name ||
+    (isAr ? "عميل بدون اسم" : "Guest Customer");
   const customerPhone = order.customer_phone_snapshot || order.customers?.phone || "";
   const formattedAddress = order.delivery_address || "—";
   const grandTotal = Number(order.total || order.total_amount || 0);
@@ -210,7 +210,10 @@ export default function OrderDetailScreen() {
   const handleCopyAddress = async () => {
     if (formattedAddress && formattedAddress !== "—") {
       await Clipboard.setStringAsync(formattedAddress);
-      Alert.alert(isAr ? "تم النسخ" : "Copied", isAr ? "تم نسخ عنوان التوصيل بنجاح" : "Address copied to clipboard");
+      Alert.alert(
+        isAr ? "تم النسخ" : "Copied",
+        isAr ? "تم نسخ عنوان التوصيل بنجاح" : "Address copied to clipboard",
+      );
     }
   };
 
@@ -287,8 +290,12 @@ export default function OrderDetailScreen() {
             ) : null}
             <Text style={styles.sectionTitle}>
               {order.fulfillment_method === "pickup"
-                ? (isAr ? "📍 الاستلام من الفرع" : "📍 In-Store Pickup")
-                : (isAr ? "🚚 عنوان التوصيل" : "🚚 Delivery Address")}
+                ? isAr
+                  ? "📍 الاستلام من الفرع"
+                  : "📍 In-Store Pickup"
+                : isAr
+                  ? "🚚 عنوان التوصيل"
+                  : "🚚 Delivery Address"}
             </Text>
           </View>
 
@@ -310,9 +317,7 @@ export default function OrderDetailScreen() {
             <Text style={styles.itemCountBadge}>
               {items.length} {isAr ? "منتجات" : "items"}
             </Text>
-            <Text style={styles.sectionTitle}>
-              {isAr ? "المنتجات المطلوبة" : "Ordered Items"}
-            </Text>
+            <Text style={styles.sectionTitle}>{isAr ? "المنتجات المطلوبة" : "Ordered Items"}</Text>
           </View>
 
           {items.length === 0 ? (
@@ -325,7 +330,8 @@ export default function OrderDetailScreen() {
                 const title = isAr
                   ? item.product_name_ar || item.product_name_en || item.description || "منتج"
                   : item.product_name_en || item.product_name_ar || item.description || "Product";
-                const lineTotal = item.line_total || item.total_price || item.unit_price * item.quantity;
+                const lineTotal =
+                  item.line_total || item.total_price || item.unit_price * item.quantity;
 
                 return (
                   <View
@@ -337,8 +343,12 @@ export default function OrderDetailScreen() {
                       {item.selected_variant ? (
                         <Text style={styles.itemVariant}>
                           {[
-                            item.selected_variant.size ? `${isAr ? "المقاس: " : "Size: "}${item.selected_variant.size}` : null,
-                            item.selected_variant.color ? `${isAr ? "اللون: " : "Color: "}${item.selected_variant.color}` : null,
+                            item.selected_variant.size
+                              ? `${isAr ? "المقاس: " : "Size: "}${item.selected_variant.size}`
+                              : null,
+                            item.selected_variant.color
+                              ? `${isAr ? "اللون: " : "Color: "}${item.selected_variant.color}`
+                              : null,
                             item.selected_variant.sku ? `SKU: ${item.selected_variant.sku}` : null,
                           ]
                             .filter(Boolean)
@@ -388,7 +398,8 @@ export default function OrderDetailScreen() {
             {Number(order.discount || 0) > 0 ? (
               <View style={styles.finRow}>
                 <Text style={styles.finLabel}>
-                  {isAr ? "الخصم" : "Discount"} {order.discount_code ? `(${order.discount_code})` : ""}
+                  {isAr ? "الخصم" : "Discount"}{" "}
+                  {order.discount_code ? `(${order.discount_code})` : ""}
                 </Text>
                 <Text style={[styles.finValue, { color: colors.success }]}>
                   - {formatMoney(order.discount, order.currency || currency)}
@@ -406,11 +417,19 @@ export default function OrderDetailScreen() {
             <View style={[styles.finRow, styles.finBalanceRow]}>
               <Text style={styles.finBalanceLabel}>
                 {isPaid
-                  ? (isAr ? "حالة السداد" : "Payment Status")
-                  : (isAr ? "المتبقي للتحصيل (COD)" : "Balance Due (COD)")}
+                  ? isAr
+                    ? "حالة السداد"
+                    : "Payment Status"
+                  : isAr
+                    ? "المتبقي للتحصيل (COD)"
+                    : "Balance Due (COD)"}
               </Text>
               <Text style={[styles.finBalanceValue, isPaid && { color: colors.success }]}>
-                {isPaid ? (isAr ? "مدفوع بالكامل" : "Fully Paid") : formatMoney(balanceDue, order.currency || currency)}
+                {isPaid
+                  ? isAr
+                    ? "مدفوع بالكامل"
+                    : "Fully Paid"
+                  : formatMoney(balanceDue, order.currency || currency)}
               </Text>
             </View>
           </View>
@@ -467,7 +486,10 @@ export default function OrderDetailScreen() {
             <Pressable
               key={opt.key}
               onPress={() => {
-                void updateOrderFields({ status: opt.key }, isAr ? `تم تحديث الحالة إلى: ${opt.label}` : `Status updated to ${opt.label}`);
+                void updateOrderFields(
+                  { status: opt.key },
+                  isAr ? `تم تحديث الحالة إلى: ${opt.label}` : `Status updated to ${opt.label}`,
+                );
                 setOrderStatusModal(false);
               }}
               style={[styles.modalOption, order.status === opt.key && styles.modalOptionSelected]}
@@ -480,7 +502,9 @@ export default function OrderDetailScreen() {
               >
                 {opt.label}
               </Text>
-              {order.status === opt.key ? <AppIcon name="checkmark" size={18} color={colors.primary} /> : null}
+              {order.status === opt.key ? (
+                <AppIcon name="checkmark" size={18} color={colors.primary} />
+              ) : null}
             </Pressable>
           ))}
         </View>
@@ -495,7 +519,11 @@ export default function OrderDetailScreen() {
         <View style={styles.modalOptionList}>
           {[
             { key: "paid", label: isAr ? "مدفوع بالكامل" : "Paid in Full", paidAmount: grandTotal },
-            { key: "cod_pending", label: isAr ? "الدفع عند الاستلام (COD)" : "Cash on Delivery (COD)", paidAmount: 0 },
+            {
+              key: "cod_pending",
+              label: isAr ? "الدفع عند الاستلام (COD)" : "Cash on Delivery (COD)",
+              paidAmount: 0,
+            },
             { key: "pending", label: isAr ? "في انتظار الدفع" : "Pending Payment", paidAmount: 0 },
             { key: "refunded", label: isAr ? "مسترجع" : "Refunded", paidAmount: 0 },
             { key: "failed", label: isAr ? "فشل الدفع" : "Failed", paidAmount: 0 },
@@ -541,9 +569,18 @@ export default function OrderDetailScreen() {
             { key: "pending", label: isAr ? "بانتظار التجهيز" : "Pending Preparation" },
             { key: "packing", label: isAr ? "جاري التجهيز والتغليف" : "Packing" },
             { key: "sent_to_tailor", label: isAr ? "عند الخياط للتفصيل" : "Sent to Tailor" },
-            { key: "received_from_tailor", label: isAr ? "مستلم من الخياط" : "Received from Tailor" },
-            { key: "ready_for_pickup", label: isAr ? "جاهز للاستلام من الفرع" : "Ready for Pickup" },
-            { key: "out_for_delivery", label: isAr ? "خرج مع المندوب للتوصيل" : "Out for Delivery" },
+            {
+              key: "received_from_tailor",
+              label: isAr ? "مستلم من الخياط" : "Received from Tailor",
+            },
+            {
+              key: "ready_for_pickup",
+              label: isAr ? "جاهز للاستلام من الفرع" : "Ready for Pickup",
+            },
+            {
+              key: "out_for_delivery",
+              label: isAr ? "خرج مع المندوب للتوصيل" : "Out for Delivery",
+            },
             { key: "delivered", label: isAr ? "تم تسليم الشحنة للعميل" : "Delivered" },
           ].map((opt) => (
             <Pressable
@@ -551,7 +588,9 @@ export default function OrderDetailScreen() {
               onPress={() => {
                 void updateOrderFields(
                   { fulfillment_status: opt.key },
-                  isAr ? `تم تحديث التجهيز إلى: ${opt.label}` : `Fulfillment updated to ${opt.label}`,
+                  isAr
+                    ? `تم تحديث التجهيز إلى: ${opt.label}`
+                    : `Fulfillment updated to ${opt.label}`,
                 );
                 setFulfillmentStatusModal(false);
               }}
@@ -623,9 +662,13 @@ export default function OrderDetailScreen() {
               setCustomerMessageModal(false);
             }}
           >
-            <Text style={styles.presetTitle}>✅ {isAr ? "تأكيد استلام الطلب" : "Order Confirmed"}</Text>
+            <Text style={styles.presetTitle}>
+              ✅ {isAr ? "تأكيد استلام الطلب" : "Order Confirmed"}
+            </Text>
             <Text style={styles.presetSubtitle}>
-              {isAr ? "إشعار العميل بتأكيد طلبه وبدء التجهيز" : "Notify customer of order confirmation"}
+              {isAr
+                ? "إشعار العميل بتأكيد طلبه وبدء التجهيز"
+                : "Notify customer of order confirmation"}
             </Text>
           </Pressable>
 
@@ -639,9 +682,13 @@ export default function OrderDetailScreen() {
               setCustomerMessageModal(false);
             }}
           >
-            <Text style={styles.presetTitle}>🚚 {isAr ? "خرج للتوصيل مع المندوب" : "Out for Delivery"}</Text>
+            <Text style={styles.presetTitle}>
+              🚚 {isAr ? "خرج للتوصيل مع المندوب" : "Out for Delivery"}
+            </Text>
             <Text style={styles.presetSubtitle}>
-              {isAr ? "إشعار العميل بأن الشحنة في الطريق إليه" : "Notify customer that courier is on the way"}
+              {isAr
+                ? "إشعار العميل بأن الشحنة في الطريق إليه"
+                : "Notify customer that courier is on the way"}
             </Text>
           </Pressable>
         </View>

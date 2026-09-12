@@ -66,9 +66,17 @@ export async function savePushPreferences(preferences: PushPreferences) {
 }
 
 export async function getStoredNotificationState() {
-  const values = await AsyncStorage.multiGet([NOTIFICATIONS_KEY, PUSH_TOKEN_KEY, PUSH_PREFERENCES_KEY]);
+  const values = await AsyncStorage.multiGet([
+    NOTIFICATIONS_KEY,
+    PUSH_TOKEN_KEY,
+    PUSH_PREFERENCES_KEY,
+  ]);
   let preferences = DEFAULT_PUSH_PREFERENCES;
-  try { preferences = { ...DEFAULT_PUSH_PREFERENCES, ...JSON.parse(values[2][1] || "{}") }; } catch { /* defaults */ }
+  try {
+    preferences = { ...DEFAULT_PUSH_PREFERENCES, ...JSON.parse(values[2][1] || "{}") };
+  } catch {
+    /* defaults */
+  }
   return {
     enabled: values[0][1] === "true",
     token: values[1][1] || null,

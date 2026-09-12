@@ -59,7 +59,10 @@ export const Route = createFileRoute("/api/admin/nabda-otp")({
         if (body.action === "send") {
           const rawPhone = String(body.phone || "").replace(/[^0-9]/g, "");
           if (!rawPhone || rawPhone.length < 8) {
-            return json({ ok: false, enabled: true, action: "send", error: "رقم هاتف غير صالح" }, 400);
+            return json(
+              { ok: false, enabled: true, action: "send", error: "رقم هاتف غير صالح" },
+              400,
+            );
           }
           const now = Date.now();
 
@@ -91,7 +94,10 @@ export const Route = createFileRoute("/api/admin/nabda-otp")({
               );
             }
             phoneRecord.lastSent = now;
-            phoneRecord.timestamps = [...phoneRecord.timestamps.filter((t) => now - t < 600_000), now];
+            phoneRecord.timestamps = [
+              ...phoneRecord.timestamps.filter((t) => now - t < 600_000),
+              now,
+            ];
           } else {
             otpPhoneAttempts.set(rawPhone, { lastSent: now, timestamps: [now] });
           }

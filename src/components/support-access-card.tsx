@@ -190,10 +190,7 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
                     );
 
                     return (
-                      <tr
-                        key={log.id}
-                        className="hover:bg-muted/50 transition-colors"
-                      >
+                      <tr key={log.id} className="hover:bg-muted/50 transition-colors">
                         <td className="p-3.5 ps-6 font-medium text-foreground">
                           <div>{log.operator?.name || "Boutq Support"}</div>
                           <div className="text-xs text-muted-foreground font-normal">

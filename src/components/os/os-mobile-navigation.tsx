@@ -433,7 +433,11 @@ export function OsMobileNavigation({
                   }}
                 >
                   <Fingerprint className="h-4 w-4 shrink-0" />
-                  <span>{lang === "ar" ? "أدوات تطبيق الآيفون (البصمة والإشعارات)" : "iPhone App Tools (Face ID & Push)"}</span>
+                  <span>
+                    {lang === "ar"
+                      ? "أدوات تطبيق الآيفون (البصمة والإشعارات)"
+                      : "iPhone App Tools (Face ID & Push)"}
+                  </span>
                 </Button>
               )}
 
@@ -573,11 +577,7 @@ export function OsMobileNavigation({
 
       {/* Mobile & Tablet Floating Island Dock */}
       {(activeSlug || isSuperAdmin) && (
-        <OsIslandDock
-          items={primaryTabItems}
-          lang={lang}
-          isHidden={isDetailPage}
-        />
+        <OsIslandDock items={primaryTabItems} lang={lang} isHidden={isDetailPage} />
       )}
 
       {/* Apps Hub Modal */}

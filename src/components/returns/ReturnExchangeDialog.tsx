@@ -65,7 +65,8 @@ export function ReturnExchangeDialog({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("product_variants")
-        .select(`
+        .select(
+          `
           id,
           variant_name,
           sku,
@@ -78,7 +79,8 @@ export function ReturnExchangeDialog({
             name_ar,
             base_price
           )
-        `)
+        `,
+        )
         .eq("brand_id", brandId)
         .order("created_at", { ascending: false });
 
@@ -135,7 +137,11 @@ export function ReturnExchangeDialog({
   const handleCreateExchange = async () => {
     const validItems = items.filter((i) => i.variantId && i.quantity > 0);
     if (validItems.length === 0) {
-      toast.error(isAr ? "يرجى اختيار منتج بديل واحد على الأقل" : "Please select at least one replacement item");
+      toast.error(
+        isAr
+          ? "يرجى اختيار منتج بديل واحد على الأقل"
+          : "Please select at least one replacement item",
+      );
       return;
     }
 
@@ -153,7 +159,9 @@ export function ReturnExchangeDialog({
       });
 
       if (!res.success) {
-        toast.error(res.error || (isAr ? "فشل إنشاء طلب الاستبدال" : "Failed to create replacement order"));
+        toast.error(
+          res.error || (isAr ? "فشل إنشاء طلب الاستبدال" : "Failed to create replacement order"),
+        );
         return;
       }
 
@@ -185,11 +193,15 @@ export function ReturnExchangeDialog({
           {/* Returned Value Header */}
           <div className="p-3 rounded-lg border border-border bg-muted/30 flex items-center justify-between text-xs">
             <div>
-              <span className="text-muted-foreground block">{isAr ? "رقم طلب الإرجاع:" : "Return Request:"}</span>
+              <span className="text-muted-foreground block">
+                {isAr ? "رقم طلب الإرجاع:" : "Return Request:"}
+              </span>
               <span className="font-mono font-bold text-foreground">{returnReq.return_number}</span>
             </div>
             <div className="text-end">
-              <span className="text-muted-foreground block">{isAr ? "قيمة المرتجع الأصلي:" : "Returned Value:"}</span>
+              <span className="text-muted-foreground block">
+                {isAr ? "قيمة المرتجع الأصلي:" : "Returned Value:"}
+              </span>
               <span className="font-mono font-bold text-foreground">
                 {formatMoney(returnedTotal, "BHD", isAr ? "ar-BH-u-nu-latn" : "en-US")}
               </span>
@@ -215,7 +227,11 @@ export function ReturnExchangeDialog({
                       disabled={loadingVariants}
                     >
                       <SelectTrigger className="h-9 text-xs">
-                        <SelectValue placeholder={isAr ? "اختر المنتج البديل..." : "Select replacement variant..."} />
+                        <SelectValue
+                          placeholder={
+                            isAr ? "اختر المنتج البديل..." : "Select replacement variant..."
+                          }
+                        />
                       </SelectTrigger>
                       <SelectContent className="max-h-60">
                         {variants.map((v) => {
@@ -232,8 +248,13 @@ export function ReturnExchangeDialog({
                               disabled={stock <= 0}
                               className="text-xs"
                             >
-                              {name} {varName} — {formatMoney(Number(v.selling_price || 0), "BHD", isAr ? "ar-BH-u-nu-latn" : "en-US")} (
-                              {isAr ? `مخزون: ${stock}` : `Stock: ${stock}`})
+                              {name} {varName} —{" "}
+                              {formatMoney(
+                                Number(v.selling_price || 0),
+                                "BHD",
+                                isAr ? "ar-BH-u-nu-latn" : "en-US",
+                              )}{" "}
+                              ({isAr ? `مخزون: ${stock}` : `Stock: ${stock}`})
                             </SelectItem>
                           );
                         })}
@@ -247,7 +268,8 @@ export function ReturnExchangeDialog({
                       size="icon"
                       onClick={() => handleRemoveRow(idx)}
                       className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                     aria-label={isAr ? "حذف" : "Delete"}>
+                      aria-label={isAr ? "حذف" : "Delete"}
+                    >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   )}
@@ -255,7 +277,9 @@ export function ReturnExchangeDialog({
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <Label className="text-xs text-muted-foreground">{isAr ? "الكمية" : "Quantity"}</Label>
+                    <Label className="text-xs text-muted-foreground">
+                      {isAr ? "الكمية" : "Quantity"}
+                    </Label>
                     <Input
                       type="number"
                       min={1}
@@ -267,7 +291,9 @@ export function ReturnExchangeDialog({
                     />
                   </div>
                   <div>
-                    <Label className="text-xs text-muted-foreground">{isAr ? "سعر القطعة (د.ب)" : "Unit Price (BHD)"}</Label>
+                    <Label className="text-xs text-muted-foreground">
+                      {isAr ? "سعر القطعة (د.ب)" : "Unit Price (BHD)"}
+                    </Label>
                     <Input
                       type="number"
                       step="0.001"

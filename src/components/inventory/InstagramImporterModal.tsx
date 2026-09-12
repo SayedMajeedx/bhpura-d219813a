@@ -207,7 +207,7 @@ export function InstagramImporterModal({
 
       // Poll until finished (up to 3 minutes)
       let pollCount = 0;
-      let datasetId = runInit.datasetId;
+      const datasetId = runInit.datasetId;
       let succeeded = false;
       const maxPolls = 60;
       while (pollCount < maxPolls) {
@@ -218,7 +218,11 @@ export function InstagramImporterModal({
           succeeded = true;
           break;
         }
-        if (check.status === "FAILED" || check.status === "ABORTED" || check.status === "TIMED-OUT") {
+        if (
+          check.status === "FAILED" ||
+          check.status === "ABORTED" ||
+          check.status === "TIMED-OUT"
+        ) {
           throw new Error(
             isAr
               ? `فشلت عملية السحب بحالة (${check.status}). تأكد من أن الحساب عام (Public).`
@@ -526,7 +530,8 @@ export function InstagramImporterModal({
                   size="icon"
                   onClick={() => setIsOpen(false)}
                   className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
-                 aria-label={isAr ? "إغلاق" : "Close"}>
+                  aria-label={isAr ? "إغلاق" : "Close"}
+                >
                   <X className="h-4 w-4" />
                 </Button>
               </div>
@@ -604,7 +609,9 @@ export function InstagramImporterModal({
                           }}
                           className="h-7 w-16 text-xs text-center font-bold font-mono rounded-lg"
                         />
-                        <span className="text-xs text-muted-foreground">{isAr ? "منشور" : "posts"}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {isAr ? "منشور" : "posts"}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -801,7 +808,9 @@ export function InstagramImporterModal({
                         key={draft.id}
                         className={cn(
                           "flex flex-col rounded-xl border bg-card overflow-hidden shadow-2xs transition-all",
-                          ready ? "border-border-strong" : "border-amber-500/40 bg-amber-500/[0.02]",
+                          ready
+                            ? "border-border-strong"
+                            : "border-amber-500/40 bg-amber-500/[0.02]",
                           draft.imageUploadStatus === "failed" &&
                             "border-destructive/60 bg-destructive/[0.02]",
                         )}

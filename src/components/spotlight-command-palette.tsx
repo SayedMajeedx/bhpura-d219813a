@@ -394,9 +394,7 @@ export function SpotlightCommandPalette({
           {activeSlug && (
             <CommandItem
               onSelect={() =>
-                handleSelect(() =>
-                  window.open(getStorefrontUrl(activeSlug), "_blank"),
-                )
+                handleSelect(() => window.open(getStorefrontUrl(activeSlug), "_blank"))
               }
               className="flex items-center gap-2 cursor-pointer"
             >

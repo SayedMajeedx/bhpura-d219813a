@@ -92,10 +92,7 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
   return (
     <>
       <div className="p-3.5 rounded-xl bg-card border border-border-subtle shadow-2xs space-y-2.5">
-        <div
-          className="flex items-start justify-between gap-3"
-          onClick={toggleExpand}
-        >
+        <div className="flex items-start justify-between gap-3" onClick={toggleExpand}>
           <div onClick={(event) => event.stopPropagation()}>
             <Checkbox
               checked={selected}

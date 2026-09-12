@@ -55,16 +55,14 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
 
   const saveTierMutation = useMutation({
     mutationFn: async (tier: LoyaltyTier) => {
-      const { error } = await (supabase as any)
-        .from("brand_loyalty_tiers")
-        .upsert(
-          {
-            ...tier,
-            brand_id: brandId,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "brand_id,tier_key" },
-        );
+      const { error } = await (supabase as any).from("brand_loyalty_tiers").upsert(
+        {
+          ...tier,
+          brand_id: brandId,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "brand_id,tier_key" },
+      );
       if (error) throw error;
     },
     onSuccess: () => {
@@ -134,7 +132,8 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
                     size="icon"
                     onClick={() => setEditingTier(tier)}
                     className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                   aria-label={isAr ? "تعديل" : "Edit"}>
+                    aria-label={isAr ? "تعديل" : "Edit"}
+                  >
                     <Edit2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
@@ -150,7 +149,9 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
                         {tier.min_spend} {isAr ? "د.ب إنفاق" : "BHD spend"}
                       </span>
                     ) : (
-                      <span>{isAr ? "بدون حد أدنى (مستوى البداية)" : "No minimum (Default tier)"}</span>
+                      <span>
+                        {isAr ? "بدون حد أدنى (مستوى البداية)" : "No minimum (Default tier)"}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -234,18 +235,14 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
                   <Label>{isAr ? "الاسم بالعربية" : "Name (Arabic)"}</Label>
                   <Input
                     value={editingTier.name_ar}
-                    onChange={(e) =>
-                      setEditingTier({ ...editingTier, name_ar: e.target.value })
-                    }
+                    onChange={(e) => setEditingTier({ ...editingTier, name_ar: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1.5">
                   <Label>{isAr ? "الاسم بالإنجليزية" : "Name (English)"}</Label>
                   <Input
                     value={editingTier.name_en}
-                    onChange={(e) =>
-                      setEditingTier({ ...editingTier, name_en: e.target.value })
-                    }
+                    onChange={(e) => setEditingTier({ ...editingTier, name_en: e.target.value })}
                   />
                 </div>
               </div>
@@ -322,9 +319,7 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
                 </div>
                 <Switch
                   checked={editingTier.free_shipping}
-                  onCheckedChange={(c) =>
-                    setEditingTier({ ...editingTier, free_shipping: c })
-                  }
+                  onCheckedChange={(c) => setEditingTier({ ...editingTier, free_shipping: c })}
                 />
               </div>
             </div>

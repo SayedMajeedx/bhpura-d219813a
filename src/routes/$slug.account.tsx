@@ -115,8 +115,7 @@ function statusMeta(
   const effectiveStatus = ful || status;
   const label = getInvoiceStatusLabel(effectiveStatus, isAr ? "ar" : "en");
 
-  let tone =
-    "bg-muted text-muted-foreground border border-border";
+  let tone = "bg-muted text-muted-foreground border border-border";
   if (ful === "SENT_TO_TAILOR") {
     tone =
       "bg-purple-50 text-purple-800 dark:bg-purple-950/30 dark:text-purple-400 border border-purple-200/50";

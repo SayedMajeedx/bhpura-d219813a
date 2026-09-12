@@ -96,7 +96,9 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
     }
     return rawExpenses.filter((e) => {
       const d = String(e.expense_date || "").slice(0, 10);
-      return (!activeRange.from || d >= activeRange.from) && (!activeRange.to || d <= activeRange.to);
+      return (
+        (!activeRange.from || d >= activeRange.from) && (!activeRange.to || d <= activeRange.to)
+      );
     });
   }, [rawExpenses, filterByDateRange, activeRange]);
 
@@ -158,7 +160,11 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
       qc.invalidateQueries({ queryKey: ["expenses", brandId] });
     } catch (err: any) {
       console.error("Expense delete error:", err);
-      toast.error(isAr ? "تعذر حذف المصروف، يرجى المحاولة مرة أخرى." : "Failed to delete expense. Please try again.");
+      toast.error(
+        isAr
+          ? "تعذر حذف المصروف، يرجى المحاولة مرة أخرى."
+          : "Failed to delete expense. Please try again.",
+      );
     }
   };
 
@@ -255,7 +261,11 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
       setModalOpen(false);
     } catch (err: any) {
       console.error("Expense save error:", err);
-      toast.error(isAr ? "تعذر حفظ المصروف، يرجى المحاولة مرة أخرى." : "Failed to save expense. Please try again.");
+      toast.error(
+        isAr
+          ? "تعذر حفظ المصروف، يرجى المحاولة مرة أخرى."
+          : "Failed to save expense. Please try again.",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -274,9 +284,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
                 : `Active Range: ${activeRange?.from} to ${activeRange?.to}`}
             </span>
             <Badge variant="outline" className="text-xs bg-background">
-              {filterByDateRange
-                ? (isAr ? "مفلتر" : "Filtered")
-                : (isAr ? "الكل" : "All Time")}
+              {filterByDateRange ? (isAr ? "مفلتر" : "Filtered") : isAr ? "الكل" : "All Time"}
             </Badge>
           </div>
           <Button
@@ -286,8 +294,12 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
             className="h-7 text-xs px-2.5 font-medium"
           >
             {filterByDateRange
-              ? (isAr ? "عرض جميع الفترات" : "Show All Time")
-              : (isAr ? "تطبيق فلترة الفترة" : "Filter by Active Range")}
+              ? isAr
+                ? "عرض جميع الفترات"
+                : "Show All Time"
+              : isAr
+                ? "تطبيق فلترة الفترة"
+                : "Filter by Active Range"}
           </Button>
         </div>
       )}

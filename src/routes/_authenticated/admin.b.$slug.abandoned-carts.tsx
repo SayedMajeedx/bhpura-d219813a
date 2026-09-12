@@ -95,7 +95,9 @@ function AbandonedCartsDashboardPage() {
       return data || [];
     },
   });
-  const abandonedCarts = carts.filter((c: any) => c.status === "abandoned" || c.status === "recovering");
+  const abandonedCarts = carts.filter(
+    (c: any) => c.status === "abandoned" || c.status === "recovering",
+  );
   const recoveredCarts = carts.filter((c: any) => c.status === "recovered");
 
   const totalAbandonedValue = abandonedCarts.reduce(
@@ -116,9 +118,7 @@ function AbandonedCartsDashboardPage() {
   const unreachableCartsCount = abandonedCarts.length - targetableAbandonedCarts.length;
 
   const recoveryRate =
-    totalActionableCarts > 0
-      ? Math.round((recoveredCarts.length / totalActionableCarts) * 100)
-      : 0;
+    totalActionableCarts > 0 ? Math.round((recoveredCarts.length / totalActionableCarts) * 100) : 0;
 
   return (
     <div className="space-y-6 pb-12">
@@ -163,7 +163,9 @@ function AbandonedCartsDashboardPage() {
               {recoveredRevenue.toFixed(3)} BHD
             </span>
             <span className="text-xs text-muted-foreground block mt-1">
-              {isAr ? `${recoveredCarts.length} سلة تم تحويلها لطلبات` : `${recoveredCarts.length} carts recovered`}
+              {isAr
+                ? `${recoveredCarts.length} سلة تم تحويلها لطلبات`
+                : `${recoveredCarts.length} carts recovered`}
             </span>
           </div>
         </Card>

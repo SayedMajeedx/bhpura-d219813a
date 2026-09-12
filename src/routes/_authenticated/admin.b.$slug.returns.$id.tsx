@@ -73,14 +73,19 @@ function ReturnDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
 
   // Fetch Return Details
-  const { data: returnReq, isLoading, refetch } = useQuery<ReturnRequest>({
+  const {
+    data: returnReq,
+    isLoading,
+    refetch,
+  } = useQuery<ReturnRequest>({
     queryKey: ["admin-return-detail", brandId, id],
     queryFn: async () => {
       if (!brandId || !id) return null as any;
 
       const { data, error } = await (supabase as any)
         .from("return_requests")
-        .select(`
+        .select(
+          `
           *,
           order:orders (
             id,
@@ -138,7 +143,8 @@ function ReturnDetailPage() {
               stock_quantity
             )
           )
-        `)
+        `,
+        )
         .eq("id", id)
         .eq("brand_id", brandId)
         .single();
@@ -235,7 +241,7 @@ function ReturnDetailPage() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => navigate({ to: (`/admin/b/${slug}/returns`) as any })}
+          onClick={() => navigate({ to: `/admin/b/${slug}/returns` as any })}
           className="gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -256,9 +262,10 @@ function ReturnDetailPage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate({ to: (`/admin/b/${slug}/returns`) as any })}
+            onClick={() => navigate({ to: `/admin/b/${slug}/returns` as any })}
             className="h-9 w-9 border border-border"
-           aria-label={isAr ? "تحديث" : "Refresh"}>
+            aria-label={isAr ? "تحديث" : "Refresh"}
+          >
             <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
           </Button>
           <div>
@@ -403,7 +410,8 @@ function ReturnDetailPage() {
 
             <div className="space-y-3">
               {returnReq.items?.map((item) => {
-                const condCfg = RETURN_CONDITION_CONFIG[item.condition] || RETURN_CONDITION_CONFIG.pending;
+                const condCfg =
+                  RETURN_CONDITION_CONFIG[item.condition] || RETURN_CONDITION_CONFIG.pending;
                 const isPending = item.condition === "pending";
 
                 return (
@@ -480,11 +488,13 @@ function ReturnDetailPage() {
                           }}
                           className="h-8 text-xs font-medium border-border"
                         >
-                          {isPending ? (
-                            isAr ? "فحص البند" : "Inspect Item"
-                          ) : (
-                            isAr ? "تعديل الفحص" : "Re-inspect"
-                          )}
+                          {isPending
+                            ? isAr
+                              ? "فحص البند"
+                              : "Inspect Item"
+                            : isAr
+                              ? "تعديل الفحص"
+                              : "Re-inspect"}
                         </Button>
                       )}
                     </div>
@@ -505,9 +515,7 @@ function ReturnDetailPage() {
                   {isAr ? "السبب الأساسي:" : "Main Reason:"} {returnReq.reason}
                 </span>
                 {returnReq.reason_details && (
-                  <p className="text-foreground leading-relaxed mt-1">
-                    {returnReq.reason_details}
-                  </p>
+                  <p className="text-foreground leading-relaxed mt-1">{returnReq.reason_details}</p>
                 )}
               </div>
 
@@ -539,7 +547,9 @@ function ReturnDetailPage() {
             <div className="flex items-center gap-2 pb-2 border-b border-border">
               <History className="h-4 w-4 text-primary" />
               <h3 className="text-sm font-bold text-foreground">
-                {isAr ? "سجل العمليات والنشاط غير القابل للتلاعب" : "Immutable Activity & Audit Trail"}
+                {isAr
+                  ? "سجل العمليات والنشاط غير القابل للتلاعب"
+                  : "Immutable Activity & Audit Trail"}
               </h3>
             </div>
             <div className="space-y-2">
@@ -552,9 +562,7 @@ function ReturnDetailPage() {
                     <span className="font-semibold text-foreground block">
                       {isAr ? log.message_ar || log.message_en : log.message_en || log.message_ar}
                     </span>
-                    <span className="text-xs text-muted-foreground font-mono">
-                      {log.action}
-                    </span>
+                    <span className="text-xs text-muted-foreground font-mono">{log.action}</span>
                   </div>
                   <span className="text-xs text-muted-foreground font-mono">
                     {formatDate(log.created_at, isAr ? "ar-BH" : "en-US")}
@@ -578,7 +586,9 @@ function ReturnDetailPage() {
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">{isAr ? "اسم العميل:" : "Customer:"}</span>
                 <span className="font-semibold text-foreground">
-                  {returnReq.customer?.name || returnReq.order?.customer_name_snapshot || (isAr ? "عميل زائر" : "Guest")}
+                  {returnReq.customer?.name ||
+                    returnReq.order?.customer_name_snapshot ||
+                    (isAr ? "عميل زائر" : "Guest")}
                 </span>
               </div>
 
@@ -593,7 +603,9 @@ function ReturnDetailPage() {
 
               {(returnReq.customer?.email || returnReq.order?.customer_email_snapshot) && (
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">{isAr ? "البريد الإلكتروني:" : "Email:"}</span>
+                  <span className="text-muted-foreground">
+                    {isAr ? "البريد الإلكتروني:" : "Email:"}
+                  </span>
                   <span className="text-foreground">
                     {returnReq.customer?.email || returnReq.order?.customer_email_snapshot}
                   </span>
@@ -601,7 +613,9 @@ function ReturnDetailPage() {
               )}
 
               <div className="pt-2 border-t border-border flex items-center justify-between">
-                <span className="text-muted-foreground">{isAr ? "إجمالي الفاتورة الأصلية:" : "Original Total:"}</span>
+                <span className="text-muted-foreground">
+                  {isAr ? "إجمالي الفاتورة الأصلية:" : "Original Total:"}
+                </span>
                 <span className="font-mono font-bold text-foreground">
                   {formatMoney(
                     Number(returnReq.order?.total || 0),
@@ -612,7 +626,9 @@ function ReturnDetailPage() {
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">{isAr ? "المدفوع من العميل:" : "Advance Paid:"}</span>
+                <span className="text-muted-foreground">
+                  {isAr ? "المدفوع من العميل:" : "Advance Paid:"}
+                </span>
                 <span className="font-mono font-semibold text-foreground">
                   {formatMoney(
                     Number(returnReq.order?.advance_paid || returnReq.order?.total || 0),
@@ -666,7 +682,8 @@ function ReturnDetailPage() {
                 <div className="flex items-center justify-between text-muted-foreground">
                   <span>{isAr ? "خصم ترويجي مستقطع:" : "Pro-rated Discount:"}</span>
                   <span className="font-mono text-destructive">
-                    -{formatMoney(
+                    -
+                    {formatMoney(
                       Number(returnReq.pro_rated_discount_deduction || 0),
                       currency,
                       isAr ? "ar-BH-u-nu-latn" : "en-US",
@@ -679,7 +696,8 @@ function ReturnDetailPage() {
                 <div className="flex items-center justify-between text-muted-foreground">
                   <span>{isAr ? "استرداد ضريبة (VAT):" : "Tax Refund:"}</span>
                   <span className="font-mono text-foreground">
-                    +{formatMoney(
+                    +
+                    {formatMoney(
                       Number(returnReq.tax_refund || 0),
                       currency,
                       isAr ? "ar-BH-u-nu-latn" : "en-US",
@@ -692,7 +710,8 @@ function ReturnDetailPage() {
                 <div className="flex items-center justify-between text-muted-foreground">
                   <span>{isAr ? "رسوم استرجاع الشحن:" : "Return Shipping Fee:"}</span>
                   <span className="font-mono text-destructive">
-                    -{formatMoney(
+                    -
+                    {formatMoney(
                       Number(returnReq.return_fee || 0),
                       currency,
                       isAr ? "ar-BH-u-nu-latn" : "en-US",
@@ -702,7 +721,9 @@ function ReturnDetailPage() {
               )}
 
               <div className="pt-2 border-t border-border flex items-center justify-between font-bold text-sm">
-                <span className="text-foreground">{isAr ? "صافي الاسترداد المستحق:" : "Net Refund Amount:"}</span>
+                <span className="text-foreground">
+                  {isAr ? "صافي الاسترداد المستحق:" : "Net Refund Amount:"}
+                </span>
                 <span className="font-mono text-emerald-600 dark:text-emerald-400">
                   {formatMoney(
                     Number(returnReq.net_refund_amount || 0),

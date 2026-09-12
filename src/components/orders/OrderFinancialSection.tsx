@@ -21,7 +21,8 @@ export const OrderFinancialSection: React.FC<OrderFinancialSectionProps> = ({
   onRejectBenefitReceipt,
 }) => {
   const isAr = lang === "ar";
-  const subtotal = order.subtotal ?? order.subtotal_amount ?? order.total ?? order.total_amount ?? 0;
+  const subtotal =
+    order.subtotal ?? order.subtotal_amount ?? order.total ?? order.total_amount ?? 0;
   const deliveryFee = order.shipping ?? order.delivery_fee ?? order.shipping_fee ?? 0;
   const discount = order.discount ?? order.discount_amount ?? 0;
   const grandTotal = order.total ?? order.total_amount ?? 0;

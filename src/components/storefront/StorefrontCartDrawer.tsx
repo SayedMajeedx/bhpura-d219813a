@@ -1,11 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import {
-  useStorefront,
-  formatPrice,
-  pickName,
-  readableOn,
-} from "@/lib/storefront-context";
+import { useStorefront, formatPrice, pickName, readableOn } from "@/lib/storefront-context";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,9 +43,15 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
     try {
       sessionStorage.setItem(
         "boutq_gift_details",
-        JSON.stringify({ is_gift: isGift, recipient_name: recipientName, gift_message: giftMessage }),
+        JSON.stringify({
+          is_gift: isGift,
+          recipient_name: recipientName,
+          gift_message: giftMessage,
+        }),
       );
-    } catch {}
+    } catch {
+      // sessionStorage can be unavailable (private mode, quota) — gift details just won't persist.
+    }
   }, [isGift, recipientName, giftMessage]);
 
   const navigate = useNavigate();

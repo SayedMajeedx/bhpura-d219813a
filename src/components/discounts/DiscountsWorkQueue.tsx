@@ -197,11 +197,14 @@ export function DiscountsWorkQueue({
                           <span>
                             {isAr ? "من:" : "From:"}{" "}
                             <b className="text-foreground" dir="ltr">
-                              {new Date(p.start_date).toLocaleDateString(isAr ? "ar-BH-u-nu-latn" : "en-GB", {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                              })}
+                              {new Date(p.start_date).toLocaleDateString(
+                                isAr ? "ar-BH-u-nu-latn" : "en-GB",
+                                {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                },
+                              )}
                             </b>
                           </span>
                         )}
@@ -209,11 +212,14 @@ export function DiscountsWorkQueue({
                           <span>
                             {isAr ? "إلى:" : "To:"}{" "}
                             <b className="text-foreground" dir="ltr">
-                              {new Date(p.end_date).toLocaleDateString(isAr ? "ar-BH-u-nu-latn" : "en-GB", {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                              })}
+                              {new Date(p.end_date).toLocaleDateString(
+                                isAr ? "ar-BH-u-nu-latn" : "en-GB",
+                                {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                },
+                              )}
                             </b>
                           </span>
                         )}
@@ -227,11 +233,18 @@ export function DiscountsWorkQueue({
                     <td className="p-3 align-middle text-center font-mono">
                       <div className="flex flex-col items-center gap-0.5">
                         <span className="font-bold text-foreground text-xs flex items-center justify-center gap-1">
-                          <span dir="ltr">{usage} {p.max_redemptions ? `/ ${p.max_redemptions}` : ""}</span>
-                          <span className="text-muted-foreground font-normal text-xs">{isAr ? "استخدام" : "redemptions"}</span>
+                          <span dir="ltr">
+                            {usage} {p.max_redemptions ? `/ ${p.max_redemptions}` : ""}
+                          </span>
+                          <span className="text-muted-foreground font-normal text-xs">
+                            {isAr ? "استخدام" : "redemptions"}
+                          </span>
                         </span>
                         {revenue > 0 && (
-                          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold" dir="ltr">
+                          <span
+                            className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold"
+                            dir="ltr"
+                          >
                             {formatMoney(revenue, currency)}
                           </span>
                         )}

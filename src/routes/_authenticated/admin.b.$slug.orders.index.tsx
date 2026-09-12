@@ -292,12 +292,7 @@ function OrdersList() {
     if (routeSearch?.tab === "completed") return "completed";
     return (
       (savedContext?.tabFilter as
-        | "all"
-        | "unpaid"
-        | "to_prepare"
-        | "action_required"
-        | "shipped"
-        | "completed") || "all"
+        "all" | "unpaid" | "to_prepare" | "action_required" | "shipped" | "completed") || "all"
     );
   }, [routeSearch, savedContext?.tabFilter]);
 
@@ -558,7 +553,10 @@ function OrdersList() {
 
   const [isBatchUpdating, setIsBatchUpdating] = useState(false);
 
-  const handleBatchFulfillmentUpdate = async (newFulfillmentStatus: string, newOrderStatus?: string) => {
+  const handleBatchFulfillmentUpdate = async (
+    newFulfillmentStatus: string,
+    newOrderStatus?: string,
+  ) => {
     const orderIds = [...selectedOrderIds];
     if (orderIds.length === 0) return;
     setIsBatchUpdating(true);
@@ -585,7 +583,9 @@ function OrdersList() {
       setSelectedOrderIds(new Set());
       await qc.invalidateQueries({ queryKey: ["orders", brandId] });
     } catch (error: any) {
-      toast.error(error?.message || (lang === "ar" ? "فشل تحديث الطلبات" : "Failed to update orders"));
+      toast.error(
+        error?.message || (lang === "ar" ? "فشل تحديث الطلبات" : "Failed to update orders"),
+      );
     } finally {
       setIsBatchUpdating(false);
     }
@@ -617,7 +617,9 @@ function OrdersList() {
       setSelectedOrderIds(new Set());
       await qc.invalidateQueries({ queryKey: ["orders", brandId] });
     } catch (error: any) {
-      toast.error(error?.message || (lang === "ar" ? "فشل تعيين المندوب" : "Failed to assign courier"));
+      toast.error(
+        error?.message || (lang === "ar" ? "فشل تعيين المندوب" : "Failed to assign courier"),
+      );
     } finally {
       setIsBatchUpdating(false);
     }
@@ -706,9 +708,14 @@ function OrdersList() {
       if (workflow.needsAttention) action_required++;
       if (
         !workflow.terminal &&
-        ["pending", "packing", "on_hold", "needs_packing", "received_from_tailor", "sent_to_tailor"].includes(
-          workflow.fulfillment,
-        ) &&
+        [
+          "pending",
+          "packing",
+          "on_hold",
+          "needs_packing",
+          "received_from_tailor",
+          "sent_to_tailor",
+        ].includes(workflow.fulfillment) &&
         (!workflow.awaitingPayment || workflow.isCod)
       ) {
         to_prepare++;
@@ -787,9 +794,14 @@ function OrdersList() {
         const wf = getOrderWorkflow(order);
         return (
           !wf.terminal &&
-          ["pending", "packing", "on_hold", "needs_packing", "received_from_tailor", "sent_to_tailor"].includes(
-            wf.fulfillment,
-          ) &&
+          [
+            "pending",
+            "packing",
+            "on_hold",
+            "needs_packing",
+            "received_from_tailor",
+            "sent_to_tailor",
+          ].includes(wf.fulfillment) &&
           (!wf.awaitingPayment || wf.isCod)
         );
       }
@@ -3345,7 +3357,8 @@ function OrderQuickInspectSheet({
                       navigator.clipboard.writeText(getPaymentGatewayReference(order)!);
                       toast.success(isAr ? "تم النسخ" : "Copied Reference");
                     }}
-                   aria-label={isAr ? "نسخ" : "Copy"}>
+                    aria-label={isAr ? "نسخ" : "Copy"}
+                  >
                     <Copy className="h-3 w-3" />
                   </Button>
                 </div>

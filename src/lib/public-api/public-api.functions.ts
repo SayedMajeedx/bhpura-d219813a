@@ -61,7 +61,8 @@ export const createBrandApiKeyFn = createServerFn({ method: "POST" })
         key_prefix: keyPrefix,
         key_hint: keyHint,
         key_hash: keyHash,
-        scopes: data.scopes && data.scopes.length > 0 ? data.scopes : ["products:read", "orders:read"],
+        scopes:
+          data.scopes && data.scopes.length > 0 ? data.scopes : ["products:read", "orders:read"],
         rate_limit_per_minute: data.rateLimitPerMinute || 120,
         expires_at: data.expiresAt || null,
         is_active: true,

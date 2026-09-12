@@ -13,7 +13,12 @@ interface CategoriesWorkQueueProps {
   onReorder: (id: string, dir: "up" | "down") => void;
 }
 
-function formatProductCount(count: number, isAr: boolean, total?: number, isSmart?: boolean): string {
+function formatProductCount(
+  count: number,
+  isAr: boolean,
+  total?: number,
+  isSmart?: boolean,
+): string {
   if (isSmart) {
     if (isAr) {
       if (count === 0) return "تلقائي (0 منتج)";
@@ -117,10 +122,7 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
                       </span>
                     )}
                   </div>
-                  <p
-                    className="mt-0.5 truncate font-mono text-xs text-muted-foreground"
-                    dir="ltr"
-                  >
+                  <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground" dir="ltr">
                     /{cat.slug || cat.id.slice(0, 8)}
                   </p>
                 </div>

@@ -2,11 +2,7 @@ import React, { useEffect, useRef, useState, useMemo } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { publicSupabase as supabase } from "@/integrations/supabase/client";
-import {
-  useStorefront,
-  formatPrice,
-  pickName,
-} from "@/lib/storefront-context";
+import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -813,9 +809,7 @@ function SearchBar() {
         }}
         onClick={() => setModalOpen(true)}
       >
-        <Search
-          className="pointer-events-none absolute top-1/2 -translate-y-1/2 h-4 w-4 opacity-70 start-3"
-        />
+        <Search className="pointer-events-none absolute top-1/2 -translate-y-1/2 h-4 w-4 opacity-70 start-3" />
         <span className="truncate opacity-80">{searchPlaceholder}</span>
       </Button>
 
@@ -934,7 +928,9 @@ function SearchBar() {
                       const price = p.product_variants?.[0]?.selling_price ?? 0;
                       const oldPrice = Number(p.product_variants?.[0]?.original_price ?? 0);
                       const imageUrl =
-                        p.image_url || p.media?.find((item: any) => item.type === "image")?.url || null;
+                        p.image_url ||
+                        p.media?.find((item: any) => item.type === "image")?.url ||
+                        null;
                       const discount =
                         oldPrice > price ? Math.round((1 - price / oldPrice) * 100) : 0;
 

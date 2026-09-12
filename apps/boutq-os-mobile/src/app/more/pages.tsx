@@ -1,12 +1,5 @@
 import React, { useState } from "react";
-import {
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppIcon } from "@/components/icons";
 import { Card, Field, ModalSheet, PrimaryButton } from "@/components/ui";
@@ -73,7 +66,10 @@ export default function PagesScreen() {
       ),
     );
     setEditingPage(null);
-    Alert.alert(isAr ? "تم الحفظ" : "Saved", isAr ? "تم حفظ محتوى الصفحة بنجاح" : "Page content updated successfully");
+    Alert.alert(
+      isAr ? "تم الحفظ" : "Saved",
+      isAr ? "تم حفظ محتوى الصفحة بنجاح" : "Page content updated successfully",
+    );
   };
 
   return (
@@ -98,10 +94,7 @@ export default function PagesScreen() {
 
             <Text style={styles.pageBody}>{text}</Text>
 
-            <Pressable
-              onPress={() => handleEdit(p)}
-              style={styles.editButton}
-            >
+            <Pressable onPress={() => handleEdit(p)} style={styles.editButton}>
               <AppIcon name="pencil" size={14} color={colors.primary} />
               <Text style={styles.editButtonText}>{t("common.edit")}</Text>
             </Pressable>
@@ -123,10 +116,7 @@ export default function PagesScreen() {
             multiline
             style={{ minHeight: 140 }}
           />
-          <PrimaryButton
-            title={t("common.save")}
-            onPress={handleSave}
-          />
+          <PrimaryButton title={t("common.save")} onPress={handleSave} />
         </View>
       </ModalSheet>
     </ScrollView>

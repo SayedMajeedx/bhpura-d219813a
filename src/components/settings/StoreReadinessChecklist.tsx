@@ -58,11 +58,11 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
 
   // 1. Logo
   const resolvedLogoUrl =
-    (input.logoUrl && input.logoUrl.trim().length > 0)
+    input.logoUrl && input.logoUrl.trim().length > 0
       ? input.logoUrl.trim()
-      : (bData?.logo_url && bData.logo_url.trim().length > 0)
+      : bData?.logo_url && bData.logo_url.trim().length > 0
         ? bData.logo_url.trim()
-        : (input.brandLogoUrl && input.brandLogoUrl.trim().length > 0)
+        : input.brandLogoUrl && input.brandLogoUrl.trim().length > 0
           ? input.brandLogoUrl.trim()
           : null;
   const hasLogo = Boolean(resolvedLogoUrl);
@@ -73,17 +73,18 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
 
   // 3. Payments
   const hasPayments = Boolean(
-    bData &&
-      (bData.cod_enabled || bData.card_enabled || bData.benefit_enabled),
+    bData && (bData.cod_enabled || bData.card_enabled || bData.benefit_enabled),
   );
 
   // 4. Fulfillment
   const hasFulfillment = Boolean(
     bData &&
-      (bData.delivery_enabled ||
-        bData.pickup_enabled ||
-        (Array.isArray(bData.shipping_zones) && bData.shipping_zones.length > 0) ||
-        (bData.delivery_fee != null && Number(bData.delivery_fee) >= 0 && bData.delivery_enabled !== false)),
+    (bData.delivery_enabled ||
+      bData.pickup_enabled ||
+      (Array.isArray(bData.shipping_zones) && bData.shipping_zones.length > 0) ||
+      (bData.delivery_fee != null &&
+        Number(bData.delivery_fee) >= 0 &&
+        bData.delivery_enabled !== false)),
   );
 
   // 5. CMS / Policy Pages
@@ -111,12 +112,12 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
       icon: Image,
       title: isAr ? "رفع شعار المتجر الرسمي" : "Upload official store logo",
       description: isAr
-        ? (hasLogo
-            ? "تم تعيين وتحديث شعار المتجر الرسمي بنجاح"
-            : "يظهر الشعار في ترويسة المتجر والفواتير والإيصالات الحرارية")
-        : (hasLogo
-            ? "Official store logo uploaded and configured"
-            : "Appears in storefront header, customer invoices, and receipts"),
+        ? hasLogo
+          ? "تم تعيين وتحديث شعار المتجر الرسمي بنجاح"
+          : "يظهر الشعار في ترويسة المتجر والفواتير والإيصالات الحرارية"
+        : hasLogo
+          ? "Official store logo uploaded and configured"
+          : "Appears in storefront header, customer invoices, and receipts",
       isComplete: hasLogo,
       actionType: "tab",
       tabId: "business",
@@ -128,12 +129,12 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
       icon: Package,
       title: isAr ? "إضافة وتفعيل منتج واحد على الأقل" : "Add and activate at least 1 product",
       description: isAr
-        ? (hasProducts
-            ? `${activeProducts} منتج نشط حالياً جاهز للبيع مباشرة`
-            : "أضف وتفعيل أول منتج لبدء استقبال الطلبات")
-        : (hasProducts
-            ? `${activeProducts} active product(s) ready for purchase`
-            : "Add and activate your first product to start selling"),
+        ? hasProducts
+          ? `${activeProducts} منتج نشط حالياً جاهز للبيع مباشرة`
+          : "أضف وتفعيل أول منتج لبدء استقبال الطلبات"
+        : hasProducts
+          ? `${activeProducts} active product(s) ready for purchase`
+          : "Add and activate your first product to start selling",
       isComplete: hasProducts,
       actionType: "link",
       actionLabel: isAr ? "إدارة المنتجات" : "Manage Products",
@@ -144,16 +145,16 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
       icon: CreditCard,
       title: isAr ? "تفعيل وسيلة دفع واحدة على الأقل" : "Configure at least 1 payment method",
       description: isAr
-        ? (hasPayments
-            ? (bData?.cod_enabled && bData?.card_enabled && bData?.benefit_enabled
-                ? "تم تفعيل الدفع عند الاستلام والبطاقات ومحفظة بنفت"
-                : bData?.cod_enabled && bData?.card_enabled
-                  ? "تم تفعيل الدفع عند الاستلام والبطاقات الائتمانية"
-                  : "تم تفعيل وتجهيز وسائل الدفع بنجاح")
-            : "تفعيل الدفع عند الاستلام (COD)، بطاقة، أو محفظة بنفت")
-        : (hasPayments
-            ? "Payment methods configured and active"
-            : "Enable Cash on Delivery (COD), Card, or BenefitPay"),
+        ? hasPayments
+          ? bData?.cod_enabled && bData?.card_enabled && bData?.benefit_enabled
+            ? "تم تفعيل الدفع عند الاستلام والبطاقات ومحفظة بنفت"
+            : bData?.cod_enabled && bData?.card_enabled
+              ? "تم تفعيل الدفع عند الاستلام والبطاقات الائتمانية"
+              : "تم تفعيل وتجهيز وسائل الدفع بنجاح"
+          : "تفعيل الدفع عند الاستلام (COD)، بطاقة، أو محفظة بنفت"
+        : hasPayments
+          ? "Payment methods configured and active"
+          : "Enable Cash on Delivery (COD), Card, or BenefitPay",
       isComplete: hasPayments,
       actionType: "tab",
       tabId: "payments",
@@ -165,16 +166,16 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
       icon: Truck,
       title: isAr ? "تحديد مناطق ورسوم الشحن والتوصيل" : "Define shipping zones and delivery fees",
       description: isAr
-        ? (hasFulfillment
-            ? (bData?.delivery_enabled && bData?.pickup_enabled
-                ? "تم تفعيل التوصيل والاستلام المحلي ومناطق الشحن"
-                : bData?.delivery_enabled
-                  ? "تم تفعيل التوصيل ورسوم الشحن بنجاح"
-                  : "تم إعداد خيارات التسليم والشحن")
-            : "حدد رسوم التوصيل المحلي أو الاستلام من الفرع")
-        : (hasFulfillment
-            ? "Delivery, pickup, and shipping zones active"
-            : "Specify local delivery fees, pickup locations, or zones"),
+        ? hasFulfillment
+          ? bData?.delivery_enabled && bData?.pickup_enabled
+            ? "تم تفعيل التوصيل والاستلام المحلي ومناطق الشحن"
+            : bData?.delivery_enabled
+              ? "تم تفعيل التوصيل ورسوم الشحن بنجاح"
+              : "تم إعداد خيارات التسليم والشحن"
+          : "حدد رسوم التوصيل المحلي أو الاستلام من الفرع"
+        : hasFulfillment
+          ? "Delivery, pickup, and shipping zones active"
+          : "Specify local delivery fees, pickup locations, or zones",
       isComplete: hasFulfillment,
       actionType: "tab",
       tabId: "checkout",
@@ -186,12 +187,12 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
       icon: FileText,
       title: isAr ? "نشر صفحة الشروط أو سياسة الإرجاع" : "Publish return policy or terms page",
       description: isAr
-        ? (hasPolicies
-            ? `${validPages.length} صفحات منشورة تشمل الشروط والسياسات`
-            : "توضيح حقوق العميل وسياسة الاستبدال يبني الثقة في المتجر")
-        : (hasPolicies
-            ? `${validPages.length} published page(s) with store policies`
-            : "Clear refund and delivery terms builds customer trust"),
+        ? hasPolicies
+          ? `${validPages.length} صفحات منشورة تشمل الشروط والسياسات`
+          : "توضيح حقوق العميل وسياسة الاستبدال يبني الثقة في المتجر"
+        : hasPolicies
+          ? `${validPages.length} published page(s) with store policies`
+          : "Clear refund and delivery terms builds customer trust",
       isComplete: hasPolicies,
       actionType: "link",
       actionLabel: isAr ? "إدارة الصفحات" : "Manage Pages",
@@ -349,12 +350,7 @@ export function StoreReadinessChecklist({
         </div>
 
         <div className="flex items-center gap-2 self-end sm:self-center">
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            className="h-8 gap-1.5 text-xs font-semibold"
-          >
+          <Button asChild variant="outline" size="sm" className="h-8 gap-1.5 text-xs font-semibold">
             <a href={`/${slug}`} target="_blank" rel="noopener noreferrer">
               <Store className="h-3.5 w-3.5 text-primary" />
               <span>{isAr ? "معاينة المتجر المباشر" : "Customer Preview"}</span>

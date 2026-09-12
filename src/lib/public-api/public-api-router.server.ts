@@ -1,13 +1,6 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import {
-  computeSha256Hex,
-  hasRequiredScope,
-  checkRateLimit,
-} from "./public-api-security";
-import {
-  computeRequestPayloadHash,
-  isValidIdempotencyKey,
-} from "./public-api-idempotency";
+import { computeSha256Hex, hasRequiredScope, checkRateLimit } from "./public-api-security";
+import { computeRequestPayloadHash, isValidIdempotencyKey } from "./public-api-idempotency";
 import { dispatchBrandWebhookEvent } from "../webhooks/webhook-dispatcher.server";
 import {
   hasFeature,
@@ -126,10 +119,9 @@ export async function handlePublicApiV1Request(
   const keyHash = await computeSha256Hex(rawToken);
 
   // Validate key in Supabase
-  const { data: keyValidation, error: keyErr } = await db.rpc(
-    "rpc_validate_api_key_hash",
-    { p_key_hash: keyHash },
-  );
+  const { data: keyValidation, error: keyErr } = await db.rpc("rpc_validate_api_key_hash", {
+    p_key_hash: keyHash,
+  });
 
   const authRow = keyValidation?.[0];
   if (keyErr || !authRow || !authRow.is_valid) {
@@ -171,10 +163,7 @@ export async function handlePublicApiV1Request(
   }
 
   // 4. Sliding Window Rate Limiting (Per-Minute)
-  const rateLimitResult = checkRateLimit(
-    authContext.apiKeyId,
-    authContext.rateLimitPerMinute,
-  );
+  const rateLimitResult = checkRateLimit(authContext.apiKeyId, authContext.rateLimitPerMinute);
 
   const rateLimitHeaders: Record<string, string> = {
     "X-RateLimit-Limit": authContext.rateLimitPerMinute.toString(),
@@ -214,19 +203,12 @@ export async function handlePublicApiV1Request(
   }
 
   // Consume 1 request in the meter asynchronously
-  void consumeBrandUsage(
-    db,
-    authContext.brandId,
-    "api.monthly_requests",
-    1,
-    `req_${requestId}`,
-    {
-      path,
-      method,
-      request_id: requestId,
-      api_key_id: authContext.apiKeyId,
-    },
-  );
+  void consumeBrandUsage(db, authContext.brandId, "api.monthly_requests", 1, `req_${requestId}`, {
+    path,
+    method,
+    request_id: requestId,
+    api_key_id: authContext.apiKeyId,
+  });
 
   // 4. Parse Request Body with 2MB limit
   let rawBodyText = "";
@@ -277,17 +259,14 @@ export async function handlePublicApiV1Request(
     }
 
     const requestHash = await computeRequestPayloadHash(method, path, rawBodyText);
-    const { data: idemResult } = await db.rpc(
-      "rpc_get_or_create_idempotency_record",
-      {
-        p_brand_id: authContext.brandId,
-        p_idempotency_key: idempotencyKey,
-        p_resource_path: path,
-        p_request_hash: requestHash,
-        p_status_code: null,
-        p_response_body: null,
-      },
-    );
+    const { data: idemResult } = await db.rpc("rpc_get_or_create_idempotency_record", {
+      p_brand_id: authContext.brandId,
+      p_idempotency_key: idempotencyKey,
+      p_resource_path: path,
+      p_request_hash: requestHash,
+      p_status_code: null,
+      p_response_body: null,
+    });
 
     const record = idemResult?.[0];
     if (record && !record.is_new) {
@@ -339,7 +318,8 @@ export async function handlePublicApiV1Request(
 
     // Fire background audit log record asynchronously
     const durationMs = Date.now() - startTime;
-    const clientIp = request.headers.get("CF-Connecting-IP") || request.headers.get("X-Forwarded-For") || null;
+    const clientIp =
+      request.headers.get("CF-Connecting-IP") || request.headers.get("X-Forwarded-For") || null;
     const userAgent = request.headers.get("User-Agent") || null;
 
     void Promise.resolve(
@@ -354,7 +334,7 @@ export async function handlePublicApiV1Request(
         p_ip_address: clientIp,
         p_user_agent: userAgent,
         p_duration_ms: durationMs,
-      })
+      }),
     ).catch(() => {});
 
     return jsonResponse(responseData, status, rateLimitHeaders, requestId);
@@ -366,7 +346,14 @@ export async function handlePublicApiV1Request(
     // ========================================================================
     if (path === "/api/v1/products" && method === "GET") {
       if (!requireScope("products:read")) {
-        return errorResponse("forbidden", "Scope 'products:read' required.", 403, null, requestId, rateLimitHeaders);
+        return errorResponse(
+          "forbidden",
+          "Scope 'products:read' required.",
+          403,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
       }
 
       const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
@@ -407,12 +394,27 @@ export async function handlePublicApiV1Request(
 
     if (path === "/api/v1/products" && method === "POST") {
       if (!requireScope("products:write")) {
-        return errorResponse("forbidden", "Scope 'products:write' required.", 403, null, requestId, rateLimitHeaders);
+        return errorResponse(
+          "forbidden",
+          "Scope 'products:write' required.",
+          403,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
       }
 
-      const { name, name_ar, description, price, category_id, is_active, variants } = parsedBody || {};
+      const { name, name_ar, description, price, category_id, is_active, variants } =
+        parsedBody || {};
       if (!name || price === undefined) {
-        return errorResponse("validation_error", "Product 'name' and 'price' are required.", 400, null, requestId, rateLimitHeaders);
+        return errorResponse(
+          "validation_error",
+          "Product 'name' and 'price' are required.",
+          400,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
       }
 
       const { data: product, error } = await db
@@ -445,10 +447,7 @@ export async function handlePublicApiV1Request(
           sku: v.sku || null,
           stock: Number(v.inventory_quantity || v.stock || 0),
         }));
-        const { data: vData } = await db
-          .from("product_variants")
-          .insert(variantPayloads)
-          .select();
+        const { data: vData } = await db.from("product_variants").insert(variantPayloads).select();
         createdVariants = vData || [];
       }
 
@@ -469,7 +468,14 @@ export async function handlePublicApiV1Request(
 
       if (method === "GET") {
         if (!requireScope("products:read")) {
-          return errorResponse("forbidden", "Scope 'products:read' required.", 403, null, requestId, rateLimitHeaders);
+          return errorResponse(
+            "forbidden",
+            "Scope 'products:read' required.",
+            403,
+            null,
+            requestId,
+            rateLimitHeaders,
+          );
         }
 
         const { data: product, error } = await db
@@ -480,7 +486,14 @@ export async function handlePublicApiV1Request(
           .single();
 
         if (error || !product) {
-          return errorResponse("not_found", "Product not found.", 404, null, requestId, rateLimitHeaders);
+          return errorResponse(
+            "not_found",
+            "Product not found.",
+            404,
+            null,
+            requestId,
+            rateLimitHeaders,
+          );
         }
 
         return finalizeResponse(200, {
@@ -492,7 +505,14 @@ export async function handlePublicApiV1Request(
 
       if (method === "PUT" || method === "PATCH") {
         if (!requireScope("products:write")) {
-          return errorResponse("forbidden", "Scope 'products:write' required.", 403, null, requestId, rateLimitHeaders);
+          return errorResponse(
+            "forbidden",
+            "Scope 'products:write' required.",
+            403,
+            null,
+            requestId,
+            rateLimitHeaders,
+          );
         }
 
         const updates: Record<string, any> = { updated_at: new Date().toISOString() };
@@ -511,7 +531,14 @@ export async function handlePublicApiV1Request(
           .single();
 
         if (error || !updated) {
-          return errorResponse("not_found", "Product not found or update failed.", 404, null, requestId, rateLimitHeaders);
+          return errorResponse(
+            "not_found",
+            "Product not found or update failed.",
+            404,
+            null,
+            requestId,
+            rateLimitHeaders,
+          );
         }
 
         return finalizeResponse(200, {
@@ -523,7 +550,14 @@ export async function handlePublicApiV1Request(
 
       if (method === "DELETE") {
         if (!requireScope("products:write")) {
-          return errorResponse("forbidden", "Scope 'products:write' required.", 403, null, requestId, rateLimitHeaders);
+          return errorResponse(
+            "forbidden",
+            "Scope 'products:write' required.",
+            403,
+            null,
+            requestId,
+            rateLimitHeaders,
+          );
         }
 
         const { error } = await db
@@ -547,7 +581,14 @@ export async function handlePublicApiV1Request(
     // ========================================================================
     if (path === "/api/v1/inventory" && method === "GET") {
       if (!requireScope("inventory:read")) {
-        return errorResponse("forbidden", "Scope 'inventory:read' required.", 403, null, requestId, rateLimitHeaders);
+        return errorResponse(
+          "forbidden",
+          "Scope 'inventory:read' required.",
+          403,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
       }
 
       const { data: variants, error } = await db
@@ -566,12 +607,26 @@ export async function handlePublicApiV1Request(
 
     if (path === "/api/v1/inventory/adjust" && method === "POST") {
       if (!requireScope("inventory:write")) {
-        return errorResponse("forbidden", "Scope 'inventory:write' required.", 403, null, requestId, rateLimitHeaders);
+        return errorResponse(
+          "forbidden",
+          "Scope 'inventory:write' required.",
+          403,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
       }
 
       const { variant_id, delta_quantity, reason } = parsedBody || {};
       if (!variant_id || delta_quantity === undefined) {
-        return errorResponse("validation_error", "'variant_id' and 'delta_quantity' (integer) are required.", 400, null, requestId, rateLimitHeaders);
+        return errorResponse(
+          "validation_error",
+          "'variant_id' and 'delta_quantity' (integer) are required.",
+          400,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
       }
 
       // Verify variant belongs to brand
@@ -583,7 +638,14 @@ export async function handlePublicApiV1Request(
         .single();
 
       if (vErr || !variant) {
-        return errorResponse("not_found", "Variant not found or access denied.", 404, null, requestId, rateLimitHeaders);
+        return errorResponse(
+          "not_found",
+          "Variant not found or access denied.",
+          404,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
       }
 
       const currentQty = (variant as any).stock || 0;
@@ -627,7 +689,14 @@ export async function handlePublicApiV1Request(
     // ========================================================================
     if (path === "/api/v1/orders" && method === "GET") {
       if (!requireScope("orders:read")) {
-        return errorResponse("forbidden", "Scope 'orders:read' required.", 403, null, requestId, rateLimitHeaders);
+        return errorResponse(
+          "forbidden",
+          "Scope 'orders:read' required.",
+          403,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
       }
 
       const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
@@ -664,12 +733,60 @@ export async function handlePublicApiV1Request(
 
     if (path === "/api/v1/orders" && method === "POST") {
       if (!requireScope("orders:write")) {
-        return errorResponse("forbidden", "Scope 'orders:write' required.", 403, null, requestId, rateLimitHeaders);
+        return errorResponse(
+          "forbidden",
+          "Scope 'orders:write' required.",
+          403,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
       }
 
-      const { customer_name, customer_phone, customer_email, address, items, subtotal, total, notes } = parsedBody || {};
+      const {
+        customer_name,
+        customer_phone,
+        customer_email,
+        address,
+        items,
+        subtotal,
+        total,
+        notes,
+      } = parsedBody || {};
       if (!items || !Array.isArray(items) || items.length === 0) {
-        return errorResponse("validation_error", "Order 'items' array is required.", 400, null, requestId, rateLimitHeaders);
+        return errorResponse(
+          "validation_error",
+          "Order 'items' array is required.",
+          400,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
+      }
+
+      // Validate that all specified products belong to the authenticated brand
+      const productIds = items
+        .map((it: any) => it.product_id)
+        .filter((id: any): id is string => typeof id === "string" && id.length > 0);
+
+      if (productIds.length > 0) {
+        const uniqueProductIds = Array.from(new Set(productIds));
+        const { data: validProducts, error: pCheckErr } = await db
+          .from("products")
+          .select("id")
+          .eq("brand_id", authContext.brandId)
+          .in("id", uniqueProductIds);
+
+        if (pCheckErr || !validProducts || validProducts.length !== uniqueProductIds.length) {
+          return errorResponse(
+            "validation_error",
+            "One or more products in 'items' do not exist or belong to another boutique brand.",
+            400,
+            null,
+            requestId,
+            rateLimitHeaders,
+          );
+        }
       }
       const { data: order, error: oErr } = await db
         .from("orders")
@@ -705,10 +822,7 @@ export async function handlePublicApiV1Request(
         total: Number((it.price || 0) * (it.quantity || 1)),
       }));
 
-      const { data: createdItems } = await db
-        .from("order_items")
-        .insert(itemRows)
-        .select();
+      const { data: createdItems } = await db.from("order_items").insert(itemRows).select();
 
       // Trigger Webhook Event
       dispatchBrandWebhookEvent({
@@ -737,7 +851,14 @@ export async function handlePublicApiV1Request(
     const orderMatch = path.match(/^\/api\/v1\/orders\/([a-zA-Z0-9_-]+)$/);
     if (orderMatch && method === "GET") {
       if (!requireScope("orders:read")) {
-        return errorResponse("forbidden", "Scope 'orders:read' required.", 403, null, requestId, rateLimitHeaders);
+        return errorResponse(
+          "forbidden",
+          "Scope 'orders:read' required.",
+          403,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
       }
 
       const orderId = orderMatch[1];
@@ -749,7 +870,14 @@ export async function handlePublicApiV1Request(
         .single();
 
       if (error || !order) {
-        return errorResponse("not_found", "Order not found.", 404, null, requestId, rateLimitHeaders);
+        return errorResponse(
+          "not_found",
+          "Order not found.",
+          404,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
       }
 
       return finalizeResponse(200, {
@@ -763,13 +891,27 @@ export async function handlePublicApiV1Request(
     const orderStatusMatch = path.match(/^\/api\/v1\/orders\/([a-zA-Z0-9_-]+)\/status$/);
     if (orderStatusMatch && (method === "PUT" || method === "PATCH")) {
       if (!requireScope("orders:write")) {
-        return errorResponse("forbidden", "Scope 'orders:write' required.", 403, null, requestId, rateLimitHeaders);
+        return errorResponse(
+          "forbidden",
+          "Scope 'orders:write' required.",
+          403,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
       }
 
       const orderId = orderStatusMatch[1];
       const { status } = parsedBody || {};
       if (!status) {
-        return errorResponse("validation_error", "'status' field is required.", 400, null, requestId, rateLimitHeaders);
+        return errorResponse(
+          "validation_error",
+          "'status' field is required.",
+          400,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
       }
 
       const { data: updated, error } = await db
@@ -781,7 +923,14 @@ export async function handlePublicApiV1Request(
         .single();
 
       if (error || !updated) {
-        return errorResponse("not_found", "Order not found or update failed.", 404, null, requestId, rateLimitHeaders);
+        return errorResponse(
+          "not_found",
+          "Order not found or update failed.",
+          404,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
       }
 
       // Determine webhook event
@@ -811,7 +960,14 @@ export async function handlePublicApiV1Request(
     // ========================================================================
     if (path === "/api/v1/customers" && method === "GET") {
       if (!requireScope("customers:read")) {
-        return errorResponse("forbidden", "Scope 'customers:read' required.", 403, null, requestId, rateLimitHeaders);
+        return errorResponse(
+          "forbidden",
+          "Scope 'customers:read' required.",
+          403,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
       }
 
       const limit = Math.min(100, Math.max(1, Number(url.searchParams.get("limit") || "20")));
@@ -843,7 +999,14 @@ export async function handlePublicApiV1Request(
     // ========================================================================
     if (path === "/api/v1/returns" && method === "GET") {
       if (!requireScope("returns:read")) {
-        return errorResponse("forbidden", "Scope 'returns:read' required.", 403, null, requestId, rateLimitHeaders);
+        return errorResponse(
+          "forbidden",
+          "Scope 'returns:read' required.",
+          403,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
       }
 
       const { data, error } = await db
@@ -868,10 +1031,35 @@ export async function handlePublicApiV1Request(
     const loyaltyBalanceMatch = path.match(/^\/api\/v1\/loyalty\/balance\/([a-zA-Z0-9_-]+)$/);
     if (loyaltyBalanceMatch && method === "GET") {
       if (!requireScope("loyalty:read")) {
-        return errorResponse("forbidden", "Scope 'loyalty:read' required.", 403, null, requestId, rateLimitHeaders);
+        return errorResponse(
+          "forbidden",
+          "Scope 'loyalty:read' required.",
+          403,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
       }
 
       const customerId = loyaltyBalanceMatch[1];
+      const { data: customerExists } = await db
+        .from("customers")
+        .select("id")
+        .eq("id", customerId)
+        .eq("brand_id", authContext.brandId)
+        .maybeSingle();
+
+      if (!customerExists) {
+        return errorResponse(
+          "not_found",
+          "Customer not found for this brand.",
+          404,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
+      }
+
       const { data: account } = await db
         .from("loyalty_accounts")
         .select("*")
@@ -894,12 +1082,44 @@ export async function handlePublicApiV1Request(
 
     if (path === "/api/v1/loyalty/adjust" && method === "POST") {
       if (!requireScope("loyalty:write")) {
-        return errorResponse("forbidden", "Scope 'loyalty:write' required.", 403, null, requestId, rateLimitHeaders);
+        return errorResponse(
+          "forbidden",
+          "Scope 'loyalty:write' required.",
+          403,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
       }
 
       const { customer_id, points, reason } = parsedBody || {};
       if (!customer_id || points === undefined) {
-        return errorResponse("validation_error", "'customer_id' and 'points' integer are required.", 400, null, requestId, rateLimitHeaders);
+        return errorResponse(
+          "validation_error",
+          "'customer_id' and 'points' integer are required.",
+          400,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
+      }
+
+      const { data: customerExists } = await db
+        .from("customers")
+        .select("id")
+        .eq("id", customer_id)
+        .eq("brand_id", authContext.brandId)
+        .maybeSingle();
+
+      if (!customerExists) {
+        return errorResponse(
+          "not_found",
+          "Customer not found for this brand.",
+          404,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
       }
 
       // Upsert account
@@ -959,7 +1179,14 @@ export async function handlePublicApiV1Request(
     // ========================================================================
     if (path === "/api/v1/categories" && method === "GET") {
       if (!requireScope("products:read")) {
-        return errorResponse("forbidden", "Scope 'products:read' required.", 403, null, requestId, rateLimitHeaders);
+        return errorResponse(
+          "forbidden",
+          "Scope 'products:read' required.",
+          403,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
       }
 
       const { data, error } = await db
@@ -979,7 +1206,14 @@ export async function handlePublicApiV1Request(
 
     if (path === "/api/v1/discounts" && method === "GET") {
       if (!requireScope("discounts:read")) {
-        return errorResponse("forbidden", "Scope 'discounts:read' required.", 403, null, requestId, rateLimitHeaders);
+        return errorResponse(
+          "forbidden",
+          "Scope 'discounts:read' required.",
+          403,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
       }
 
       const { data, error } = await db

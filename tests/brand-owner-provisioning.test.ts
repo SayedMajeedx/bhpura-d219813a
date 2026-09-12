@@ -16,7 +16,7 @@ describe("brand owner provisioning contract", () => {
     expect(userManagement).toContain('case "provision-brand"');
     expect(userManagement).toContain('role: "brand_admin"');
     expect(userManagement).toContain("linked_existing_identity");
-    expect(userManagement).toContain('brand_id: brandId');
+    expect(userManagement).toContain("brand_id: brandId");
   });
 
   it("uses the configured trial duration for manually provisioned brands", () => {

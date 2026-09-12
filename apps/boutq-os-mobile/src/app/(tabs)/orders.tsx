@@ -118,11 +118,7 @@ export default function OrdersScreen() {
       <AppTopBar title={t("nav.orders")} />
 
       <View style={styles.filterSection}>
-        <SearchInput
-          value={search}
-          onChangeText={setSearch}
-          placeholder={t("orders.searchPh")}
-        />
+        <SearchInput value={search} onChangeText={setSearch} placeholder={t("orders.searchPh")} />
 
         <SegmentedControl
           options={[
@@ -185,9 +181,7 @@ export default function OrdersScreen() {
                 </View>
 
                 {item.customer_phone_snapshot ? (
-                  <Text style={styles.phoneText}>
-                    📞 {item.customer_phone_snapshot}
-                  </Text>
+                  <Text style={styles.phoneText}>📞 {item.customer_phone_snapshot}</Text>
                 ) : null}
 
                 <View style={styles.cardFooter}>
@@ -196,8 +190,12 @@ export default function OrdersScreen() {
                     <Text style={styles.dot}>•</Text>
                     <Text style={styles.fulfillmentText}>
                       {item.fulfillment_method === "delivery"
-                        ? (isAr ? "🚗 توصيل" : "🚗 Delivery")
-                        : (isAr ? "🛍️ استلام" : "🛍️ Pickup")}
+                        ? isAr
+                          ? "🚗 توصيل"
+                          : "🚗 Delivery"
+                        : isAr
+                          ? "🛍️ استلام"
+                          : "🛍️ Pickup"}
                     </Text>
                   </View>
 

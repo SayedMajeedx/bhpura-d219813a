@@ -117,8 +117,12 @@ export const createTenantRequest = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let selectedPlan: any = null;
     let selectedVersion: any = null;
-    let billingInterval = data.requestType === "trial" ? "trial" : data.billingInterval;
-    if (data.requestType === "paid" && billingInterval !== "monthly" && billingInterval !== "annual") {
+    const billingInterval = data.requestType === "trial" ? "trial" : data.billingInterval;
+    if (
+      data.requestType === "paid" &&
+      billingInterval !== "monthly" &&
+      billingInterval !== "annual"
+    ) {
       throw new Error("INVALID_BILLING_INTERVAL");
     }
 
@@ -202,7 +206,9 @@ export const getPublicOnboardingPlans = createServerFn({ method: "GET" }).handle
   const globalMode = sysSettings?.billing_interval_mode || "both";
 
   const { data: plans, error } = await (supabaseAdmin.from("saas_plans" as never) as any)
-    .select("id,code,name_en,name_ar,description_en,description_ar,sort_order,trial_days,badge_color,billing_interval_mode")
+    .select(
+      "id,code,name_en,name_ar,description_en,description_ar,sort_order,trial_days,badge_color,billing_interval_mode",
+    )
     .eq("is_active", true)
     .eq("is_public", true)
     .order("sort_order", { ascending: true });
@@ -211,7 +217,9 @@ export const getPublicOnboardingPlans = createServerFn({ method: "GET" }).handle
   const result = [];
   for (const plan of plans ?? []) {
     const { data: version } = await (supabaseAdmin.from("saas_plan_versions" as never) as any)
-      .select("id,version_number,currency,price_monthly,price_annual,effective_from,effective_until")
+      .select(
+        "id,version_number,currency,price_monthly,price_annual,effective_from,effective_until",
+      )
       .eq("plan_id", plan.id)
       .eq("is_current", true)
       .lte("effective_from", now)
@@ -521,21 +529,22 @@ export const approveTenantRequest = createServerFn({ method: "POST" })
             : resolvedInterval === "monthly"
               ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
               : new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString();
-        const { error: subscriptionError } = await (context.supabase.from("brand_subscriptions" as never) as any)
-          .upsert(
-            {
-              brand_id: brandRow.id,
-              plan_id: resolvedPlanId,
-              plan_version_id: resolvedPlanVersionId,
-              billing_interval: resolvedInterval,
-              status: resolvedInterval === "trial" ? "trialing" : "active",
-              current_period_start: new Date().toISOString(),
-              current_period_end: periodEnd,
-              trial_ends_at: resolvedInterval === "trial" ? trialEndsAt : null,
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: "brand_id" },
-          );
+        const { error: subscriptionError } = await (
+          context.supabase.from("brand_subscriptions" as never) as any
+        ).upsert(
+          {
+            brand_id: brandRow.id,
+            plan_id: resolvedPlanId,
+            plan_version_id: resolvedPlanVersionId,
+            billing_interval: resolvedInterval,
+            status: resolvedInterval === "trial" ? "trialing" : "active",
+            current_period_start: new Date().toISOString(),
+            current_period_end: periodEnd,
+            trial_ends_at: resolvedInterval === "trial" ? trialEndsAt : null,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "brand_id" },
+        );
         if (subscriptionError) throw new Error("SUBSCRIPTION_ACTIVATION_FAILED");
       }
     }
@@ -593,7 +602,11 @@ const RegisterInstantTrialInput = z.object({
   brandName: z.string().min(2),
   nameEn: z.string().optional(),
   nameAr: z.string().optional(),
-  slug: z.string().min(2).max(32).regex(/^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/),
+  slug: z
+    .string()
+    .min(2)
+    .max(32)
+    .regex(/^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/),
   ownerName: z.string().min(2),
   contactNumber: z.string().min(6),
   email: z.string().email(),
@@ -624,59 +637,63 @@ export const registerInstantTrial = createServerFn({ method: "POST" })
       .eq("email", normalizedEmail)
       .maybeSingle();
 
-    if (existingProfile?.brand_id) {
-      const { data: userBrand } = await (supabaseAdmin.from("brands" as never) as any)
-        .select("id, slug, plan_type, trial_ends_at, subscription_status")
-        .eq("id", existingProfile.brand_id)
-        .maybeSingle();
+    if (existingProfile) {
+      if (existingProfile.brand_id) {
+        const { data: userBrand } = await (supabaseAdmin.from("brands" as never) as any)
+          .select("id, slug, plan_type, trial_ends_at, subscription_status")
+          .eq("id", existingProfile.brand_id)
+          .maybeSingle();
 
-      const isExpired =
-        userBrand &&
-        userBrand.plan_type === "trial" &&
-        userBrand.trial_ends_at &&
-        new Date(userBrand.trial_ends_at).getTime() <= Date.now() &&
-        userBrand.subscription_status !== "active_paid";
+        const isExpired =
+          userBrand &&
+          userBrand.plan_type === "trial" &&
+          userBrand.trial_ends_at &&
+          new Date(userBrand.trial_ends_at).getTime() <= Date.now() &&
+          userBrand.subscription_status !== "active_paid";
 
-      return {
-        alreadyRegistered: true,
-        isTrialExpired: Boolean(isExpired),
-        brandSlug: userBrand?.slug || null,
-        message: isExpired
-          ? "يوجد لديك حساب مسجل بالفعل بمتجر انتهت فترته التجريبية. يرجى تسجيل الدخول لترقية اشتراكك."
-          : "يوجد لديك حساب مسجل بالفعل. يرجى تسجيل الدخول للوصول إلى متجرك.",
-      };
-    }
-
-    // 3. Create or fetch Auth user
-    let userId: string;
-    if (existingProfile?.id) {
-      userId = existingProfile.id;
-    } else {
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email: normalizedEmail,
-        password: data.password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: data.ownerName.trim(),
-          phone: data.contactNumber.trim(),
-        },
-      });
-
-      if (authError || !authData?.user) {
-        // If auth user already exists in auth.users
-        const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
-        const found = listData?.users?.find(
-          (u) => u.email?.toLowerCase() === normalizedEmail,
-        );
-        if (found) {
-          userId = found.id;
-        } else {
-          throw new Error(authError?.message || "FAILED_TO_CREATE_USER");
-        }
+        return {
+          alreadyRegistered: true,
+          isTrialExpired: Boolean(isExpired),
+          brandSlug: userBrand?.slug || null,
+          message: isExpired
+            ? "يوجد لديك حساب مسجل بالفعل بمتجر انتهت فترته التجريبية. يرجى تسجيل الدخول لترقية اشتراكك."
+            : "يوجد لديك حساب مسجل بالفعل. يرجى تسجيل الدخول للوصول إلى متجرك.",
+        };
       } else {
-        userId = authData.user.id;
+        return {
+          alreadyRegistered: true,
+          isTrialExpired: false,
+          brandSlug: null,
+          message: "يوجد لديك حساب مسجل بالفعل. يرجى تسجيل الدخول أولاً.",
+        };
       }
     }
+
+    // 3. Create Auth user
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: normalizedEmail,
+      password: data.password,
+      email_confirm: true,
+      user_metadata: {
+        full_name: data.ownerName.trim(),
+        phone: data.contactNumber.trim(),
+      },
+    });
+
+    if (authError || !authData?.user) {
+      const errMsg = authError?.message?.toLowerCase() || "";
+      if (errMsg.includes("already registered") || errMsg.includes("already exists")) {
+        return {
+          alreadyRegistered: true,
+          isTrialExpired: false,
+          brandSlug: null,
+          message: "يوجد لديك حساب مسجل بالفعل. يرجى تسجيل الدخول أولاً.",
+        };
+      }
+      throw new Error(authError?.message || "FAILED_TO_CREATE_USER");
+    }
+
+    const userId = authData.user.id;
 
     // 4. Ensure profile exists
     await (supabaseAdmin.from("profiles" as never) as any).upsert(

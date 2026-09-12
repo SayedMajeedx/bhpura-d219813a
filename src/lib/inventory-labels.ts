@@ -21,12 +21,8 @@ export function stockUnitsLabel(
     if (totalStock === 2) {
       return status === "low" ? "وحدتان متبقيتان" : "وحدتان متوفرتان";
     }
-    return status === "low"
-      ? `${totalStock} وحدات متبقية`
-      : `${totalStock} وحدات متوفرة`;
+    return status === "low" ? `${totalStock} وحدات متبقية` : `${totalStock} وحدات متوفرة`;
   }
 
-  return status === "low"
-    ? `${totalStock} units remaining`
-    : `${totalStock} units available`;
+  return status === "low" ? `${totalStock} units remaining` : `${totalStock} units available`;
 }

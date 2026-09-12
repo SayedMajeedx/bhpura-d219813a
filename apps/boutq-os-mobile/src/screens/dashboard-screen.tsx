@@ -1,13 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { router, useFocusEffect } from "expo-router";
-import {
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppIcon } from "@/components/icons";
 import { AppTopBar } from "@/components/topbar";
@@ -158,10 +151,7 @@ export function DashboardScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <AppTopBar
-        showBrandSwitcher={true}
-        onOpenBrandSwitcher={() => setBrandModalVisible(true)}
-      />
+      <AppTopBar showBrandSwitcher={true} onOpenBrandSwitcher={() => setBrandModalVisible(true)} />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -271,10 +261,7 @@ export function DashboardScreen() {
         <Card style={styles.quickDock}>
           <Text style={styles.sectionHeaderTitle}>{t("dashboard.quickActions")}</Text>
           <View style={styles.quickActionsGrid}>
-            <Pressable
-              onPress={() => router.push("/(tabs)/orders")}
-              style={styles.quickActionItem}
-            >
+            <Pressable onPress={() => router.push("/(tabs)/orders")} style={styles.quickActionItem}>
               <View style={[styles.quickActionIcon, { backgroundColor: colors.brandSoft }]}>
                 <AppIcon name="receipt" size={20} color={colors.primary} />
               </View>
@@ -301,10 +288,7 @@ export function DashboardScreen() {
               <Text style={styles.quickActionLabel}>{t("nav.customers")}</Text>
             </Pressable>
 
-            <Pressable
-              onPress={() => router.push("/more/reports")}
-              style={styles.quickActionItem}
-            >
+            <Pressable onPress={() => router.push("/more/reports")} style={styles.quickActionItem}>
               <View style={[styles.quickActionIcon, { backgroundColor: colors.brandSoft }]}>
                 <AppIcon name="bar-chart" size={20} color={colors.primary} />
               </View>
@@ -324,7 +308,8 @@ export function DashboardScreen() {
             </View>
             <View style={styles.urgentTextWrapper}>
               <Text style={styles.urgentTitle}>
-                {metrics.pendingActionCount} {isAr ? "طلبات تتطلب إجراء وتجهيز" : "orders need action"}
+                {metrics.pendingActionCount}{" "}
+                {isAr ? "طلبات تتطلب إجراء وتجهيز" : "orders need action"}
               </Text>
               <Text style={styles.urgentSubtitle}>
                 {isAr ? "اضغط لعرض وفرز الطلبات المعلقة" : "Tap to view pending queue"}
@@ -342,7 +327,9 @@ export function DashboardScreen() {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>{t("dashboard.recentOrders")}</Text>
           <Pressable onPress={() => router.push("/(tabs)/orders")}>
-            <Text style={styles.viewAllText}>{t("common.all")} ({orders.length})</Text>
+            <Text style={styles.viewAllText}>
+              {t("common.all")} ({orders.length})
+            </Text>
           </Pressable>
         </View>
 
@@ -378,14 +365,16 @@ export function DashboardScreen() {
 
                   <View style={styles.orderCardFooter}>
                     <View style={styles.orderMetaRow}>
-                      <Text style={styles.orderTimeText}>
-                        {formatTimeAgo(order.created_at)}
-                      </Text>
+                      <Text style={styles.orderTimeText}>{formatTimeAgo(order.created_at)}</Text>
                       <Text style={styles.orderDot}>•</Text>
                       <Text style={styles.orderFulfillmentText}>
                         {order.fulfillment_method === "delivery"
-                          ? (isAr ? "🚗 توصيل" : "🚗 Delivery")
-                          : (isAr ? "🛍️ استلام" : "🛍️ Pickup")}
+                          ? isAr
+                            ? "🚗 توصيل"
+                            : "🚗 Delivery"
+                          : isAr
+                            ? "🛍️ استلام"
+                            : "🛍️ Pickup"}
                       </Text>
                     </View>
 
@@ -416,10 +405,7 @@ export function DashboardScreen() {
                   setActiveBrandId(b.id);
                   setBrandModalVisible(false);
                 }}
-                style={[
-                  styles.brandOption,
-                  isSelected && styles.brandOptionSelected,
-                ]}
+                style={[styles.brandOption, isSelected && styles.brandOptionSelected]}
               >
                 <BrandAvatar
                   name={(isAr ? b.name_ar || b.name_en : b.name_en || b.name_ar) || "Brand"}
@@ -432,9 +418,7 @@ export function DashboardScreen() {
                   </Text>
                   <Text style={styles.brandOptionSlug}>@{b.slug}</Text>
                 </View>
-                {isSelected && (
-                  <AppIcon name="checkmark-circle" size={20} color={colors.primary} />
-                )}
+                {isSelected && <AppIcon name="checkmark-circle" size={20} color={colors.primary} />}
               </Pressable>
             );
           })}

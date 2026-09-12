@@ -12,12 +12,7 @@ export type ReturnStatus =
   | "cancelled";
 
 export type ReturnItemCondition =
-  | "pending"
-  | "sellable"
-  | "damaged"
-  | "needs_inspection"
-  | "unsellable"
-  | "returned_to_vendor";
+  "pending" | "sellable" | "damaged" | "needs_inspection" | "unsellable" | "returned_to_vendor";
 
 export type CompensationMethod = "refund_original" | "store_credit" | "exchange";
 
@@ -114,7 +109,7 @@ export interface ReturnRequest {
   pickup_address: any | null;
   tracking_number: string | null;
   courier_name: string | null;
-  
+
   preferred_compensation: CompensationMethod;
   total_item_refund: number;
   pro_rated_discount_deduction: number;
@@ -125,12 +120,12 @@ export interface ReturnRequest {
   refund_status: "pending" | "processed" | "failed";
   refund_processed_at: string | null;
   refund_reference: string | null;
-  
+
   replacement_order_id: string | null;
   exchange_price_difference: number;
   exchange_difference_direction: "customer_pays" | "brand_refunds" | "even" | null;
   exchange_difference_status: string | null;
-  
+
   reviewed_at: string | null;
   reviewed_by: string | null;
   received_at: string | null;
@@ -140,7 +135,7 @@ export interface ReturnRequest {
   completed_at: string | null;
   created_at: string;
   updated_at: string;
-  
+
   // Joins
   order?: {
     id: string;
@@ -191,7 +186,8 @@ export interface InventoryMovementLog {
   quantity_before: number;
   quantity_changed: number;
   quantity_after: number;
-  movement_type: "return_restock" | "return_damaged_writeoff" | "exchange_dispatch" | "manual_adjustment";
+  movement_type:
+    "return_restock" | "return_damaged_writeoff" | "exchange_dispatch" | "manual_adjustment";
   item_condition: ReturnItemCondition;
   handled_by: string | null;
   reference_code: string;
@@ -345,10 +341,7 @@ export const RETURN_CONDITION_CONFIG: Record<
   },
 };
 
-export const RETURN_REASONS: Record<
-  ReturnReasonCode,
-  { labelAr: string; labelEn: string }
-> = {
+export const RETURN_REASONS: Record<ReturnReasonCode, { labelAr: string; labelEn: string }> = {
   defective: { labelAr: "منتج معيب / لا يعمل", labelEn: "Defective / Not working" },
   wrong_item: { labelAr: "استلمت منتجاً خاطئاً", labelEn: "Received wrong item" },
   size_fit: { labelAr: "المقاس أو الحجم غير مناسب", labelEn: "Size or fit issue" },

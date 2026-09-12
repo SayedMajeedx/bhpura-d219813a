@@ -311,13 +311,17 @@ function ItemTailoringCustomizer({
       (f) => f.key === `fit_passport_${selectedProfile}_${key}`,
     );
     if (direct?.value != null) {
-      return String(direct.value).replace(/[^\d.]/g, "").trim();
+      return String(direct.value)
+        .replace(/[^\d.]/g, "")
+        .trim();
     }
     const legacy = item.custom_field_values?.find(
       (f) => f.key === key || f.key.endsWith(`_${key}`),
     );
     if (legacy?.value != null) {
-      return String(legacy.value).replace(/[^\d.]/g, "").trim();
+      return String(legacy.value)
+        .replace(/[^\d.]/g, "")
+        .trim();
     }
     return "";
   };
@@ -354,7 +358,9 @@ function ItemTailoringCustomizer({
     onChange({
       selected_variant: {
         ...(item.selected_variant ?? {}),
-        size: item.selected_variant?.size || (isAr ? "تفصيل / قياسات Passport" : "Custom / Fit Passport"),
+        size:
+          item.selected_variant?.size ||
+          (isAr ? "تفصيل / قياسات Passport" : "Custom / Fit Passport"),
       },
       location: "custom",
       custom_field_values: cleaned,
@@ -445,9 +451,7 @@ function ItemTailoringCustomizer({
         <div className="flex items-center gap-1.5 font-bold text-primary">
           <Scissors className="h-4 w-4" />
           <span>
-            {isAr
-              ? "خيارات التخصيص والمقاسات (التفصيل)"
-              : "Customization & Tailoring Options"}
+            {isAr ? "خيارات التخصيص والمقاسات (التفصيل)" : "Customization & Tailoring Options"}
           </span>
         </div>
         <span className="text-xs text-muted-foreground font-normal">
@@ -465,7 +469,11 @@ function ItemTailoringCustomizer({
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-bold text-foreground">
-                  {(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.name_ar || "Fit"} Passport
+                  {(isAr ? brand.name_ar : brand.name_en) ||
+                    brand.name_en ||
+                    brand.name_ar ||
+                    "Fit"}{" "}
+                  Passport
                 </span>
                 {hasAppliedPassport && (
                   <span className="rounded-full bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 text-xs font-semibold">
@@ -952,7 +960,13 @@ function OrderDetail() {
   useEffect(() => {
     if (!order?.id) return;
     const scrollContainer = document.querySelector(".os-scrollbar");
-    const sectionIds = ["sec-overview", "sec-items", "sec-documents", "sec-invoice", "sec-activity"];
+    const sectionIds = [
+      "sec-overview",
+      "sec-items",
+      "sec-documents",
+      "sec-invoice",
+      "sec-activity",
+    ];
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -3101,7 +3115,10 @@ function OrderDetail() {
                           <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <PopoverContent
+                        className="w-[--radix-popover-trigger-width] p-0"
+                        align="start"
+                      >
                         <Command shouldFilter={false}>
                           <CommandInput
                             placeholder={
@@ -4215,7 +4232,8 @@ function OrderDetail() {
                                           quantity: Math.max(1, Number(it.quantity || 1) - 1),
                                         })
                                       }
-                                     aria-label={isAr ? "إنقاص" : "Decrease"}>
+                                      aria-label={isAr ? "إنقاص" : "Decrease"}
+                                    >
                                       <Minus className="h-4 w-4" />
                                     </Button>
                                     <Input
@@ -4239,7 +4257,8 @@ function OrderDetail() {
                                           quantity: Number(it.quantity || 1) + 1,
                                         })
                                       }
-                                     aria-label={isAr ? "إضافة" : "Add"}>
+                                      aria-label={isAr ? "إضافة" : "Add"}
+                                    >
                                       <Plus className="h-4 w-4" />
                                     </Button>
                                   </div>

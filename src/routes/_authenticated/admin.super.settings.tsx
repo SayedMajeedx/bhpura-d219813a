@@ -356,9 +356,7 @@ function SuperAdminSettings() {
                       <p className="text-xs font-semibold">
                         {lang === "ar" ? "اضغط لرفع الشعار الجديد" : "Click to select logo asset"}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        PNG, JPG, WEBP, SVG (Max 5MB)
-                      </p>
+                      <p className="text-xs text-muted-foreground">PNG, JPG, WEBP, SVG (Max 5MB)</p>
                     </div>
                   )}
                   <input
@@ -538,9 +536,7 @@ function SuperAdminSettings() {
                             ? "اضغط لرفع رمز الاستجابة السريع الجديد"
                             : "Click to select BenefitPay QR image"}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          PNG, JPG, WEBP (Max 5MB)
-                        </p>
+                        <p className="text-xs text-muted-foreground">PNG, JPG, WEBP (Max 5MB)</p>
                       </div>
                     )}
                     <input

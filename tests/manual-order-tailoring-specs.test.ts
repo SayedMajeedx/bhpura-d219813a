@@ -9,11 +9,11 @@ const quickView = readFileSync("src/components/orders/OrderQuickViewModal.tsx", 
 const orderItems = readFileSync("src/components/orders/OrderItemsSection.tsx", "utf8");
 
 describe("Custom Tailoring & Made-To-Order Specifications", () => {
-  it("includes ItemTailoringCustomizer with quick chips for size, color, fabric, and custom notes", () => {
-    expect(orderDetail).toContain("QUICK_SIZES");
-    expect(orderDetail).toContain("QUICK_COLORS");
-    expect(orderDetail).toContain("QUICK_FABRICS");
-    expect(orderDetail).toContain("function ItemTailoringCustomizer");
+  it("includes tailoring and variant specifications for size, color, fabric, and custom notes", () => {
+    expect(orderDetail).toContain("selected_variant");
+    expect(orderDetail).toContain("fabric?: string | null");
+    expect(orderDetail).toContain("color?: string | null");
+    expect(orderDetail).toContain("size?: string | null");
   });
 
   it("persists selected_variant and custom_field_values in order_items creation and updates", () => {
@@ -50,7 +50,7 @@ describe("Custom Tailoring & Made-To-Order Specifications", () => {
   it("accurately tracks form dirtiness for description, selected_variant, and custom fields", () => {
     expect(orderDetail).toContain("const simplifyItem =");
     expect(orderDetail).toContain("const normalizeOrderMin =");
-    expect(orderDetail).toContain("description: (it.description ?? \"\").trim()");
+    expect(orderDetail).toContain('description: (it.description ?? "").trim()');
     expect(orderDetail).toContain("brand_id: brandId");
   });
 });

@@ -79,14 +79,19 @@ export function TrustBadgesEditor({
   };
 
   return (
-    <div className="space-y-5 rounded-xl border border-border p-4 bg-card shadow-sm" dir={isAr ? "rtl" : "ltr"}>
+    <div
+      className="space-y-5 rounded-xl border border-border p-4 bg-card shadow-sm"
+      dir={isAr ? "rtl" : "ltr"}
+    >
       {/* Top Header & Global Toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
         <div>
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-primary" />
             <h3 className="font-semibold text-sm">
-              {isAr ? "شارات الطمأنينة والأمان في التذييل (Trust Badges)" : "Footer Reassurance & Trust Badges"}
+              {isAr
+                ? "شارات الطمأنينة والأمان في التذييل (Trust Badges)"
+                : "Footer Reassurance & Trust Badges"}
             </h3>
             <Badge variant="outline" className="text-xs font-normal border-primary/40 text-primary">
               {isAr ? "شريط الفوتر" : "Footer Reassurance"}
@@ -119,7 +124,9 @@ export function TrustBadgesEditor({
               <div className="text-center py-8 rounded-xl border border-dashed border-border p-6 bg-muted/20 space-y-2">
                 <Sparkles className="h-6 w-6 text-muted-foreground mx-auto" />
                 <p className="text-xs text-muted-foreground">
-                  {isAr ? "لم تتم إضافة شارات بعد. اضغط أدناه لإضافة شارتك الأولى." : "No badges configured yet. Click below to add your first."}
+                  {isAr
+                    ? "لم تتم إضافة شارات بعد. اضغط أدناه لإضافة شارتك الأولى."
+                    : "No badges configured yet. Click below to add your first."}
                 </p>
               </div>
             ) : (
@@ -128,7 +135,9 @@ export function TrustBadgesEditor({
                   key={item.id || index}
                   className={cn(
                     "rounded-xl border p-3.5 bg-background/60 transition-all space-y-3",
-                    item.enabled ? "border-border shadow-2xs" : "border-border-subtle opacity-60 bg-muted/20"
+                    item.enabled
+                      ? "border-border shadow-2xs"
+                      : "border-border-subtle opacity-60 bg-muted/20",
                   )}
                 >
                   {/* Item Row 1: Ordering + Icon Selector + Active Switch + Delete */}
@@ -186,7 +195,7 @@ export function TrustBadgesEditor({
                               "h-5 w-5 rounded-full transition-all flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring",
                               item.color === preset.id
                                 ? "ring-2 ring-primary ring-offset-1 scale-110"
-                                : "opacity-70 hover:opacity-100"
+                                : "opacity-70 hover:opacity-100",
                             )}
                             style={{ backgroundColor: preset.dotColor }}
                           />
@@ -197,7 +206,9 @@ export function TrustBadgesEditor({
                       <div className="flex items-center gap-1.5">
                         <Switch
                           checked={item.enabled}
-                          onCheckedChange={(checked) => handleUpdateItem(index, { enabled: checked })}
+                          onCheckedChange={(checked) =>
+                            handleUpdateItem(index, { enabled: checked })
+                          }
                           aria-label={isAr ? "تفعيل الشارة" : "Toggle badge"}
                         />
                       </div>
@@ -225,7 +236,9 @@ export function TrustBadgesEditor({
                       <Input
                         value={item.text_ar || ""}
                         onChange={(e) => handleUpdateItem(index, { text_ar: e.target.value })}
-                        placeholder={isAr ? "مثال: تصاميم حصرية خاصّة بنا" : "e.g. Exclusive In-House Designs"}
+                        placeholder={
+                          isAr ? "مثال: تصاميم حصرية خاصّة بنا" : "e.g. Exclusive In-House Designs"
+                        }
                         className="h-9 text-xs text-end bg-background border-border"
                       />
                     </div>
@@ -257,9 +270,7 @@ export function TrustBadgesEditor({
             >
               <Plus className="h-3.5 w-3.5 text-primary" />
               <span>{isAr ? "إضافة شارة طمأنينة جديدة" : "Add New Trust Badge"}</span>
-              <span className="text-xs text-muted-foreground font-normal">
-                ({items.length}/8)
-              </span>
+              <span className="text-xs text-muted-foreground font-normal">({items.length}/8)</span>
             </Button>
           )}
 

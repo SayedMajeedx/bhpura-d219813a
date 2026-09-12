@@ -84,7 +84,9 @@ export function verifyBoutqWebhook(rawBody, signatureHeader, secret) {
         <div className="flex items-center gap-2">
           <BookOpen className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-bold text-foreground">
-            {isAr ? "دليل توثيق المطورين (Public REST API & Webhooks Guide)" : "Developer Documentation & SDK"}
+            {isAr
+              ? "دليل توثيق المطورين (Public REST API & Webhooks Guide)"
+              : "Developer Documentation & SDK"}
           </h3>
           <Badge variant="outline" className="text-xs">
             v1.0.0
@@ -120,7 +122,9 @@ export function verifyBoutqWebhook(rawBody, signatureHeader, secret) {
                   GET /api/v1/products
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  {isAr ? "استرجاع قائمة المنتجات مع الفلترة والتصفح" : "List catalog products with pagination & search"}
+                  {isAr
+                    ? "استرجاع قائمة المنتجات مع الفلترة والتصفح"
+                    : "List catalog products with pagination & search"}
                 </CardDescription>
               </div>
               <Button
@@ -154,7 +158,9 @@ export function verifyBoutqWebhook(rawBody, signatureHeader, secret) {
                   POST /api/v1/orders (Idempotent)
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  {isAr ? "إنشاء طلب جديد مع Idempotency-Key لمنع تكرار الخصم" : "Create order safely with idempotency guarantee"}
+                  {isAr
+                    ? "إنشاء طلب جديد مع Idempotency-Key لمنع تكرار الخصم"
+                    : "Create order safely with idempotency guarantee"}
                 </CardDescription>
               </div>
               <Button
@@ -188,7 +194,9 @@ export function verifyBoutqWebhook(rawBody, signatureHeader, secret) {
                   HMAC SHA-256 Webhook Verification
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  {isAr ? "التحقق من توقيع X-Boutq-Signature ومنع هجمات الإعادة" : "Verify X-Boutq-Signature and prevent replay attacks"}
+                  {isAr
+                    ? "التحقق من توقيع X-Boutq-Signature ومنع هجمات الإعادة"
+                    : "Verify X-Boutq-Signature and prevent replay attacks"}
                 </CardDescription>
               </div>
               <Button
@@ -239,7 +247,9 @@ export function verifyBoutqWebhook(rawBody, signatureHeader, secret) {
                 </td>
               </tr>
               <tr>
-                <td className="px-4 py-2.5 text-emerald-600 dark:text-emerald-400 font-bold">POST</td>
+                <td className="px-4 py-2.5 text-emerald-600 dark:text-emerald-400 font-bold">
+                  POST
+                </td>
                 <td className="px-4 py-2.5 font-medium text-foreground">/api/v1/products</td>
                 <td className="px-4 py-2.5 text-muted-foreground">products:write</td>
                 <td className="px-4 py-2.5 font-sans text-muted-foreground">
@@ -255,8 +265,12 @@ export function verifyBoutqWebhook(rawBody, signatureHeader, secret) {
                 </td>
               </tr>
               <tr>
-                <td className="px-4 py-2.5 text-emerald-600 dark:text-emerald-400 font-bold">POST</td>
-                <td className="px-4 py-2.5 font-medium text-foreground">/api/v1/inventory/adjust</td>
+                <td className="px-4 py-2.5 text-emerald-600 dark:text-emerald-400 font-bold">
+                  POST
+                </td>
+                <td className="px-4 py-2.5 font-medium text-foreground">
+                  /api/v1/inventory/adjust
+                </td>
                 <td className="px-4 py-2.5 text-muted-foreground">inventory:write</td>
                 <td className="px-4 py-2.5 font-sans text-muted-foreground">
                   {isAr ? "تعديل كمية المخزون (زيادة/نقصان)" : "Adjust variant stock delta"}
@@ -271,7 +285,9 @@ export function verifyBoutqWebhook(rawBody, signatureHeader, secret) {
                 </td>
               </tr>
               <tr>
-                <td className="px-4 py-2.5 text-emerald-600 dark:text-emerald-400 font-bold">POST</td>
+                <td className="px-4 py-2.5 text-emerald-600 dark:text-emerald-400 font-bold">
+                  POST
+                </td>
                 <td className="px-4 py-2.5 font-medium text-foreground">/api/v1/orders</td>
                 <td className="px-4 py-2.5 text-muted-foreground">orders:write</td>
                 <td className="px-4 py-2.5 font-sans text-muted-foreground">
@@ -280,7 +296,9 @@ export function verifyBoutqWebhook(rawBody, signatureHeader, secret) {
               </tr>
               <tr>
                 <td className="px-4 py-2.5 text-amber-600 dark:text-amber-400 font-bold">PUT</td>
-                <td className="px-4 py-2.5 font-medium text-foreground">/api/v1/orders/:id/status</td>
+                <td className="px-4 py-2.5 font-medium text-foreground">
+                  /api/v1/orders/:id/status
+                </td>
                 <td className="px-4 py-2.5 text-muted-foreground">orders:write</td>
                 <td className="px-4 py-2.5 font-sans text-muted-foreground">
                   {isAr ? "تحديث حالة الطلب والشحن" : "Update order status"}
@@ -296,14 +314,18 @@ export function verifyBoutqWebhook(rawBody, signatureHeader, secret) {
               </tr>
               <tr>
                 <td className="px-4 py-2.5 text-blue-600 dark:text-blue-400 font-bold">GET</td>
-                <td className="px-4 py-2.5 font-medium text-foreground">/api/v1/loyalty/balance/:id</td>
+                <td className="px-4 py-2.5 font-medium text-foreground">
+                  /api/v1/loyalty/balance/:id
+                </td>
                 <td className="px-4 py-2.5 text-muted-foreground">loyalty:read</td>
                 <td className="px-4 py-2.5 font-sans text-muted-foreground">
                   {isAr ? "رصيد نقاط ولاء العميل" : "Customer loyalty balance"}
                 </td>
               </tr>
               <tr>
-                <td className="px-4 py-2.5 text-emerald-600 dark:text-emerald-400 font-bold">POST</td>
+                <td className="px-4 py-2.5 text-emerald-600 dark:text-emerald-400 font-bold">
+                  POST
+                </td>
                 <td className="px-4 py-2.5 font-medium text-foreground">/api/v1/loyalty/adjust</td>
                 <td className="px-4 py-2.5 text-muted-foreground">loyalty:write</td>
                 <td className="px-4 py-2.5 font-sans text-muted-foreground">

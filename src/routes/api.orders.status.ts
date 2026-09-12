@@ -92,7 +92,7 @@ export const Route = createFileRoute("/api/orders/status")({
             });
           }
 
-          if (!isSuperAdmin && profile.brand_id && order.brand_id !== profile.brand_id) {
+          if (!isSuperAdmin && (!profile.brand_id || order.brand_id !== profile.brand_id)) {
             return new Response(JSON.stringify({ error: "Forbidden" }), {
               status: 403,
               headers: { "Content-Type": "application/json" },

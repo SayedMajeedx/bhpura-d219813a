@@ -63,9 +63,7 @@ export default function DiscountsScreen() {
 
   const togglePromoActive = async (id: string, current: boolean) => {
     try {
-      setPromos((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, is_active: !current } : p)),
-      );
+      setPromos((prev) => prev.map((p) => (p.id === id ? { ...p, is_active: !current } : p)));
       const { error } = await supabase
         .from("promo_codes")
         .update({ is_active: !current })
@@ -232,10 +230,7 @@ export default function DiscountsScreen() {
             </Pressable>
             <Pressable
               onPress={() => setDiscountType("fixed")}
-              style={[
-                styles.typeOption,
-                discountType === "fixed" && styles.typeOptionSelected,
-              ]}
+              style={[styles.typeOption, discountType === "fixed" && styles.typeOptionSelected]}
             >
               <Text
                 style={[
@@ -272,11 +267,7 @@ export default function DiscountsScreen() {
             keyboardType="decimal-pad"
           />
 
-          <PrimaryButton
-            title={t("common.save")}
-            onPress={handleCreatePromo}
-            loading={saving}
-          />
+          <PrimaryButton title={t("common.save")} onPress={handleCreatePromo} loading={saving} />
         </View>
       </ModalSheet>
     </View>

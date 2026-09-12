@@ -149,9 +149,7 @@ export default function CustomerDetailScreen() {
               <Text style={styles.sectionHeader}>{t("customers.history")}</Text>
             </View>
           }
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>{t("dashboard.noOrders")}</Text>
-          }
+          ListEmptyComponent={<Text style={styles.emptyText}>{t("dashboard.noOrders")}</Text>}
           renderItem={({ item }) => (
             <Pressable
               onPress={() => router.push(`/order/${item.id}`)}
@@ -170,9 +168,7 @@ export default function CustomerDetailScreen() {
                       year: "numeric",
                     })}
                   </Text>
-                  <Text style={styles.amountText}>
-                    {formatMoney(item.total_amount, currency)}
-                  </Text>
+                  <Text style={styles.amountText}>{formatMoney(item.total_amount, currency)}</Text>
                 </View>
               </Card>
             </Pressable>

@@ -18,9 +18,13 @@ interface UseEntitlementsOptions {
 /**
  * Hook to fetch all effective entitlements for a brand.
  */
-export function useEntitlements(optionsOrBrandId: UseEntitlementsOptions | string | undefined | null) {
+export function useEntitlements(
+  optionsOrBrandId: UseEntitlementsOptions | string | undefined | null,
+) {
   const brandId =
-    typeof optionsOrBrandId === "string" || optionsOrBrandId === null || optionsOrBrandId === undefined
+    typeof optionsOrBrandId === "string" ||
+    optionsOrBrandId === null ||
+    optionsOrBrandId === undefined
       ? optionsOrBrandId
       : optionsOrBrandId.brandId;
 

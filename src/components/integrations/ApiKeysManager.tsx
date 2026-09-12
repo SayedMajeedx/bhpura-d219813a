@@ -174,7 +174,11 @@ export function ApiKeysManager({ brandId }: ApiKeysManagerProps) {
                 ? "ابدأ بإنشاء مفتاح API لربط متجرك بـ Zapier أو منصات التجارة أو تطبيق الجوال."
                 : "Create an API key to connect your store with third-party tools, mobile apps, or Zapier."}
             </p>
-            <Button onClick={() => setCreateOpen(true)} variant="outline" className="mt-4 min-h-[44px]">
+            <Button
+              onClick={() => setCreateOpen(true)}
+              variant="outline"
+              className="mt-4 min-h-[44px]"
+            >
               <Plus className="me-2 h-4 w-4" />
               {isAr ? "إنشاء أول مفتاح" : "Create First Key"}
             </Button>
@@ -187,13 +191,7 @@ export function ApiKeysManager({ brandId }: ApiKeysManagerProps) {
                   <div className="flex items-center gap-3">
                     <span className="font-semibold text-foreground text-base">{k.name}</span>
                     <Badge variant={k.is_active ? "default" : "secondary"} className="text-xs">
-                      {k.is_active
-                        ? isAr
-                          ? "نشط"
-                          : "Active"
-                        : isAr
-                          ? "معطل"
-                          : "Revoked"}
+                      {k.is_active ? (isAr ? "نشط" : "Active") : isAr ? "معطل" : "Revoked"}
                     </Badge>
                     <Badge variant="outline" className="text-xs font-mono">
                       {k.key_prefix}••••{k.key_hint}
@@ -214,7 +212,8 @@ export function ApiKeysManager({ brandId }: ApiKeysManagerProps) {
                   <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
                     <span className="flex items-center gap-1">
                       <Clock className="h-3.5 w-3.5" />
-                      {isAr ? "الحد:" : "Limit:"} {k.rate_limit_per_minute} {isAr ? "طلب/دقيقة" : "req/min"}
+                      {isAr ? "الحد:" : "Limit:"} {k.rate_limit_per_minute}{" "}
+                      {isAr ? "طلب/دقيقة" : "req/min"}
                     </span>
                     <span>•</span>
                     <span>
@@ -278,7 +277,9 @@ export function ApiKeysManager({ brandId }: ApiKeysManagerProps) {
               <Label htmlFor="key-name">{isAr ? "اسم المفتاح" : "Key Name"}</Label>
               <Input
                 id="key-name"
-                placeholder={isAr ? "مثال: تطبيق الجوال أو رابط المحاسبة" : "e.g. Mobile App, Shopify Sync"}
+                placeholder={
+                  isAr ? "مثال: تطبيق الجوال أو رابط المحاسبة" : "e.g. Mobile App, Shopify Sync"
+                }
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="min-h-[44px]"
@@ -309,7 +310,9 @@ export function ApiKeysManager({ brandId }: ApiKeysManagerProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="rate-limit">{isAr ? "الحد الأقصى للطلبات (في الدقيقة)" : "Rate Limit (req/min)"}</Label>
+                <Label htmlFor="rate-limit">
+                  {isAr ? "الحد الأقصى للطلبات (في الدقيقة)" : "Rate Limit (req/min)"}
+                </Label>
                 <Input
                   id="rate-limit"
                   type="number"
@@ -325,7 +328,9 @@ export function ApiKeysManager({ brandId }: ApiKeysManagerProps) {
             {/* Granular Scopes Checklist */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label className="text-sm font-semibold">{isAr ? "الصلاحيات الممنوحة (Scopes)" : "Granted Permissions (Scopes)"}</Label>
+                <Label className="text-sm font-semibold">
+                  {isAr ? "الصلاحيات الممنوحة (Scopes)" : "Granted Permissions (Scopes)"}
+                </Label>
                 <div className="flex gap-2">
                   <Button
                     type="button"
@@ -370,7 +375,9 @@ export function ApiKeysManager({ brandId }: ApiKeysManagerProps) {
                       />
                       <div className="space-y-0.5 text-xs">
                         <div className="font-mono font-medium text-foreground">{item.scope}</div>
-                        <div className="text-muted-foreground">{isAr ? item.labelAr : item.labelEn}</div>
+                        <div className="text-muted-foreground">
+                          {isAr ? item.labelAr : item.labelEn}
+                        </div>
                       </div>
                     </div>
                   );
@@ -380,11 +387,7 @@ export function ApiKeysManager({ brandId }: ApiKeysManagerProps) {
           </div>
 
           <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setCreateOpen(false)}
-              className="min-h-[44px]"
-            >
+            <Button variant="outline" onClick={() => setCreateOpen(false)} className="min-h-[44px]">
               {isAr ? "إلغاء" : "Cancel"}
             </Button>
             <Button
@@ -442,7 +445,9 @@ export function ApiKeysManager({ brandId }: ApiKeysManagerProps) {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">{isAr ? "المفتاح السري (Secret Key)" : "Secret Key"}</Label>
+              <Label className="text-xs text-muted-foreground">
+                {isAr ? "المفتاح السري (Secret Key)" : "Secret Key"}
+              </Label>
               <div className="flex items-center gap-2">
                 <Input
                   readOnly
@@ -453,8 +458,12 @@ export function ApiKeysManager({ brandId }: ApiKeysManagerProps) {
                   onClick={handleCopySecret}
                   className="min-h-[44px] min-w-[44px] px-3 gap-1.5"
                 >
-                  {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                  {copied ? (isAr ? "تم النسخ" : "Copied") : (isAr ? "نسخ" : "Copy")}
+                  {copied ? (
+                    <Check className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                  {copied ? (isAr ? "تم النسخ" : "Copied") : isAr ? "نسخ" : "Copy"}
                 </Button>
               </div>
             </div>

@@ -198,7 +198,12 @@ function TeamManagement() {
     const memberLimit = entitlements?.limits?.["team.members_limit"];
     const isUnlimited = memberLimit === -1;
     const currentMemberCount = (staffQ.data || []).length;
-    if (!isUnlimited && typeof memberLimit === "number" && memberLimit > 0 && currentMemberCount >= memberLimit) {
+    if (
+      !isUnlimited &&
+      typeof memberLimit === "number" &&
+      memberLimit > 0 &&
+      currentMemberCount >= memberLimit
+    ) {
       toast.error(
         isAr
           ? `لقد وصلت إلى الحد الأقصى لعدد أعضاء الفريق في باقتك الحالية (${memberLimit} أعضاء). يرجى ترقية باقتك لإضافة المزيد.`
@@ -801,7 +806,8 @@ function TeamManagement() {
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => openEdit(member)}
-                                 aria-label={isAr ? "تعديل" : "Edit"}>
+                                  aria-label={isAr ? "تعديل" : "Edit"}
+                                >
                                   <Pencil className="h-4 w-4" />
                                 </Button>
                                 {member.status === "active" && (
@@ -831,7 +837,8 @@ function TeamManagement() {
                                   size="icon"
                                   className="text-destructive hover:text-destructive hover:bg-destructive/10"
                                   onClick={() => setDeleteConfirm(member)}
-                                 aria-label={isAr ? "حذف" : "Delete"}>
+                                  aria-label={isAr ? "حذف" : "Delete"}
+                                >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </>

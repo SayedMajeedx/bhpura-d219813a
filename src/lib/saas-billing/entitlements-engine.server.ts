@@ -16,22 +16,97 @@ import type {
  */
 const DEFAULT_FALLBACK_ENTITLEMENTS: Partial<Record<SaaSFeatureKey, EffectiveEntitlement>> = {
   "products.limit": { enabled: true, limit_value: 50, is_unlimited: false, source: "plan_version" },
-  "orders.monthly_limit": { enabled: true, limit_value: 100, is_unlimited: false, source: "plan_version" },
-  "team.members_limit": { enabled: true, limit_value: 2, is_unlimited: false, source: "plan_version" },
-  "storage.bytes_limit": { enabled: true, limit_value: 2, is_unlimited: false, source: "plan_version" },
-  "returns.enabled": { enabled: true, limit_value: 15, is_unlimited: false, source: "plan_version" },
-  "loyalty.enabled": { enabled: false, limit_value: 0, is_unlimited: false, source: "plan_version" },
-  "abandoned_carts.enabled": { enabled: false, limit_value: 0, is_unlimited: false, source: "plan_version" },
+  "orders.monthly_limit": {
+    enabled: true,
+    limit_value: 100,
+    is_unlimited: false,
+    source: "plan_version",
+  },
+  "team.members_limit": {
+    enabled: true,
+    limit_value: 2,
+    is_unlimited: false,
+    source: "plan_version",
+  },
+  "storage.bytes_limit": {
+    enabled: true,
+    limit_value: 2,
+    is_unlimited: false,
+    source: "plan_version",
+  },
+  "returns.enabled": {
+    enabled: true,
+    limit_value: 15,
+    is_unlimited: false,
+    source: "plan_version",
+  },
+  "loyalty.enabled": {
+    enabled: false,
+    limit_value: 0,
+    is_unlimited: false,
+    source: "plan_version",
+  },
+  "abandoned_carts.enabled": {
+    enabled: false,
+    limit_value: 0,
+    is_unlimited: false,
+    source: "plan_version",
+  },
   "api.enabled": { enabled: false, limit_value: 0, is_unlimited: false, source: "plan_version" },
-  "api.monthly_requests": { enabled: true, limit_value: 2500, is_unlimited: false, source: "plan_version" },
-  "webhooks.enabled": { enabled: false, limit_value: 0, is_unlimited: false, source: "plan_version" },
-  "webhooks.monthly_deliveries": { enabled: true, limit_value: 5000, is_unlimited: false, source: "plan_version" },
-  "custom_domain.enabled": { enabled: false, limit_value: 0, is_unlimited: false, source: "plan_version" },
-  "white_label.enabled": { enabled: false, limit_value: 0, is_unlimited: false, source: "plan_version" },
-  "mobile_factory.enabled": { enabled: false, limit_value: 0, is_unlimited: false, source: "plan_version" },
-  "accounting.enabled": { enabled: true, limit_value: -1, is_unlimited: true, source: "plan_version" },
-  "incubators.enabled": { enabled: false, limit_value: 0, is_unlimited: false, source: "plan_version" },
-  "import_center.enabled": { enabled: false, limit_value: 0, is_unlimited: false, source: "plan_version" },
+  "api.monthly_requests": {
+    enabled: true,
+    limit_value: 2500,
+    is_unlimited: false,
+    source: "plan_version",
+  },
+  "webhooks.enabled": {
+    enabled: false,
+    limit_value: 0,
+    is_unlimited: false,
+    source: "plan_version",
+  },
+  "webhooks.monthly_deliveries": {
+    enabled: true,
+    limit_value: 5000,
+    is_unlimited: false,
+    source: "plan_version",
+  },
+  "custom_domain.enabled": {
+    enabled: false,
+    limit_value: 0,
+    is_unlimited: false,
+    source: "plan_version",
+  },
+  "white_label.enabled": {
+    enabled: false,
+    limit_value: 0,
+    is_unlimited: false,
+    source: "plan_version",
+  },
+  "mobile_factory.enabled": {
+    enabled: false,
+    limit_value: 0,
+    is_unlimited: false,
+    source: "plan_version",
+  },
+  "accounting.enabled": {
+    enabled: true,
+    limit_value: -1,
+    is_unlimited: true,
+    source: "plan_version",
+  },
+  "incubators.enabled": {
+    enabled: false,
+    limit_value: 0,
+    is_unlimited: false,
+    source: "plan_version",
+  },
+  "import_center.enabled": {
+    enabled: false,
+    limit_value: 0,
+    is_unlimited: false,
+    source: "plan_version",
+  },
 };
 
 /**
@@ -50,13 +125,19 @@ export async function evaluateBrandEntitlements(
     });
 
     if (error || !data || data.error) {
-      console.warn(`[EntitlementsEngine] RPC evaluation returned fallback for brand ${brandId}:`, error || data?.error);
+      console.warn(
+        `[EntitlementsEngine] RPC evaluation returned fallback for brand ${brandId}:`,
+        error || data?.error,
+      );
       return DEFAULT_FALLBACK_ENTITLEMENTS as EntitlementEvaluationMap;
     }
 
     return data as EntitlementEvaluationMap;
   } catch (err) {
-    console.error(`[EntitlementsEngine] Error calling rpc_evaluate_brand_entitlements for brand ${brandId}:`, err);
+    console.error(
+      `[EntitlementsEngine] Error calling rpc_evaluate_brand_entitlements for brand ${brandId}:`,
+      err,
+    );
     return DEFAULT_FALLBACK_ENTITLEMENTS as EntitlementEvaluationMap;
   }
 }
@@ -162,7 +243,10 @@ export async function consumeBrandUsage(
     });
 
     if (error || !data) {
-      console.error(`[EntitlementsEngine] rpc_consume_usage error for brand ${brandId}, metric ${metricKey}:`, error);
+      console.error(
+        `[EntitlementsEngine] rpc_consume_usage error for brand ${brandId}, metric ${metricKey}:`,
+        error,
+      );
       return {
         success: false,
         current_usage: 0,
@@ -189,7 +273,18 @@ export async function consumeBrandUsage(
 export async function getBrandUsageSummary(
   supabase: SupabaseClient,
   brandId: string,
-): Promise<Record<string, { current_usage: number; limit_value: number; is_unlimited: boolean; percent: number; warning_triggered: string | null }>> {
+): Promise<
+  Record<
+    string,
+    {
+      current_usage: number;
+      limit_value: number;
+      is_unlimited: boolean;
+      percent: number;
+      warning_triggered: string | null;
+    }
+  >
+> {
   const entitlements = await evaluateBrandEntitlements(supabase, brandId);
 
   // Fetch active billing period usage snapshots
@@ -200,18 +295,54 @@ export async function getBrandUsageSummary(
     .order("period_start", { ascending: false });
 
   // Map of known metrics to their entitlement keys
-  const metricMapping: Record<string, { entKey: SaaSFeatureKey; labelEn: string; labelAr: string }> = {
+  const metricMapping: Record<
+    string,
+    { entKey: SaaSFeatureKey; labelEn: string; labelAr: string }
+  > = {
     products: { entKey: "products.limit", labelEn: "Products", labelAr: "المنتجات" },
-    orders: { entKey: "orders.monthly_limit", labelEn: "Monthly Orders", labelAr: "الطلبات الشهرية" },
-    team_members: { entKey: "team.members_limit", labelEn: "Team Members", labelAr: "أعضاء الفريق" },
-    storage_bytes: { entKey: "storage.bytes_limit", labelEn: "Storage (GB)", labelAr: "المساحة السحابية" },
-    api_requests: { entKey: "api.monthly_requests", labelEn: "API Requests", labelAr: "استدعاءات API" },
-    abandoned_cart_messages: { entKey: "abandoned_carts.monthly_messages", labelEn: "Abandoned Cart Messages", labelAr: "رسائل السلات المتروكة" },
-    webhooks: { entKey: "webhooks.monthly_deliveries", labelEn: "Webhook Deliveries", labelAr: "إرساليات الويب هوك" },
+    orders: {
+      entKey: "orders.monthly_limit",
+      labelEn: "Monthly Orders",
+      labelAr: "الطلبات الشهرية",
+    },
+    team_members: {
+      entKey: "team.members_limit",
+      labelEn: "Team Members",
+      labelAr: "أعضاء الفريق",
+    },
+    storage_bytes: {
+      entKey: "storage.bytes_limit",
+      labelEn: "Storage (GB)",
+      labelAr: "المساحة السحابية",
+    },
+    api_requests: {
+      entKey: "api.monthly_requests",
+      labelEn: "API Requests",
+      labelAr: "استدعاءات API",
+    },
+    abandoned_cart_messages: {
+      entKey: "abandoned_carts.monthly_messages",
+      labelEn: "Abandoned Cart Messages",
+      labelAr: "رسائل السلات المتروكة",
+    },
+    webhooks: {
+      entKey: "webhooks.monthly_deliveries",
+      labelEn: "Webhook Deliveries",
+      labelAr: "إرساليات الويب هوك",
+    },
     returns: { entKey: "returns.monthly_limit", labelEn: "Returns", labelAr: "طلبات الإرجاع" },
   };
 
-  const result: Record<string, { current_usage: number; limit_value: number; is_unlimited: boolean; percent: number; warning_triggered: string | null }> = {};
+  const result: Record<
+    string,
+    {
+      current_usage: number;
+      limit_value: number;
+      is_unlimited: boolean;
+      percent: number;
+      warning_triggered: string | null;
+    }
+  > = {};
 
   // For products, orders, and team members, compute live count if snapshot not yet recorded
   for (const [metricKey, info] of Object.entries(metricMapping)) {
@@ -225,14 +356,23 @@ export async function getBrandUsageSummary(
       currentUsage = Number(snap.current_usage);
     } else if (metricKey === "products") {
       // Live count fallback
-      const { count } = await supabase.from("products").select("id", { count: "exact", head: true }).eq("brand_id", brandId);
+      const { count } = await supabase
+        .from("products")
+        .select("id", { count: "exact", head: true })
+        .eq("brand_id", brandId);
       currentUsage = count || 0;
     } else if (metricKey === "orders") {
       // Live count fallback for current store orders
-      const { count } = await supabase.from("orders").select("id", { count: "exact", head: true }).eq("brand_id", brandId);
+      const { count } = await supabase
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .eq("brand_id", brandId);
       currentUsage = count || 0;
     } else if (metricKey === "team_members") {
-      const { count } = await supabase.from("profiles").select("id", { count: "exact", head: true }).eq("brand_id", brandId);
+      const { count } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("brand_id", brandId);
       currentUsage = count || 0;
     }
 
