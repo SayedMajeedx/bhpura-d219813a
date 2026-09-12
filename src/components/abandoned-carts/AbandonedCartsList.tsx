@@ -20,13 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import {
-  Search,
-  MessageSquare,
-  Link2,
-  CheckCircle2,
-  RefreshCw,
-} from "lucide-react";
+import { Search, MessageSquare, Link2, CheckCircle2, RefreshCw } from "lucide-react";
 import type { AbandonedCart } from "@/lib/abandoned-carts.types";
 import { generateCartRecoveryCoupon } from "@/lib/abandoned-carts.functions";
 

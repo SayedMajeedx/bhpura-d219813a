@@ -314,10 +314,7 @@ function ExpensesPage() {
     [list, activeRange.from, activeRange.to, search, categoryFilter],
   );
   const currency = list[0]?.currency ?? "BHD";
-  useMemo(
-    () => filteredList.reduce((s, e) => s + Number(e.amount || 0), 0),
-    [filteredList],
-  );
+  useMemo(() => filteredList.reduce((s, e) => s + Number(e.amount || 0), 0), [filteredList]);
 
   const settingsQ = useQuery({
     queryKey: ["expenses-business-settings", brandId],

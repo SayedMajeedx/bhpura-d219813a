@@ -1,9 +1,4 @@
-import{
-  useEffect,
-  useState,
-  type ImgHTMLAttributes,
-  type VideoHTMLAttributes,
-} from "react";
+import { useEffect, useState, type ImgHTMLAttributes, type VideoHTMLAttributes } from "react";
 import {
   cloudflareImageSrcSet,
   cloudflareImageUrl,

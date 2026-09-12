@@ -3,14 +3,9 @@ import { getPublicInvoice } from "@/lib/public-invoice.functions";
 import { useState } from "react";
 import { formatDate, formatMoney } from "@/lib/format";
 import { formatAddressDetailed, regionLabel, type StructuredAddress } from "@/lib/bahrain-regions";
-import {
-  resolvePaymentStatus,
-  PAYMENT_BADGE_LABEL,
-} from "@/lib/payment-status";
+import { resolvePaymentStatus, PAYMENT_BADGE_LABEL } from "@/lib/payment-status";
 import { getInvoiceStatusLabel } from "@/lib/status-labels";
-import {
-  getOrderCustomerEmail,
-} from "@/lib/order-customer-snapshot";
+import { getOrderCustomerEmail } from "@/lib/order-customer-snapshot";
 
 import { getReadableTextColor } from "@/lib/color-utils";
 

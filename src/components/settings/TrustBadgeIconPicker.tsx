@@ -2,11 +2,7 @@ import { useState, useMemo } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  TRUST_ICON_CATALOG,
-  renderTrustBadgeIcon,
-  getColorPreset,
-} from "@/lib/trust-badges";
+import { TRUST_ICON_CATALOG, renderTrustBadgeIcon, getColorPreset } from "@/lib/trust-badges";
 import { Search, ChevronDown, Check, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 

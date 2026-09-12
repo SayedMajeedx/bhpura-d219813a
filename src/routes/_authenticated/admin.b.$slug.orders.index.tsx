@@ -49,10 +49,7 @@ import { OrdersToolbar } from "@/components/orders/OrdersToolbar";
 import { OrdersWorkQueue } from "@/components/orders/OrdersWorkQueue";
 import { OrderMobileCard } from "@/components/orders/OrderMobileCard";
 import { toast } from "sonner";
-import {
-  generateCourierWhatsAppUrl,
-  recordCourierNotified,
-} from "@/lib/courier-whatsapp";
+import { generateCourierWhatsAppUrl, recordCourierNotified } from "@/lib/courier-whatsapp";
 import { CourierWhatsAppModal } from "@/components/courier/CourierWhatsAppModal";
 import { useT, useI18n } from "@/lib/i18n";
 import { resolvePaymentStatus, PAYMENT_BADGE_CLASSES } from "@/lib/payment-status";

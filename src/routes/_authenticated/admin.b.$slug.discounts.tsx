@@ -1,10 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import {
-  Tags,
-  Calendar,
-} from "lucide-react";
+import { Tags, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";

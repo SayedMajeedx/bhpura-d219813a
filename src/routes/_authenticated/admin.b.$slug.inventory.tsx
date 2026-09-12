@@ -6013,10 +6013,7 @@ function VariantList({
     [variants],
   );
   useMemo(() => variants.some((v) => v.sku && v.sku.trim()), [variants]);
-  useMemo(
-    () => variants.some((v) => v.barcode && v.barcode.trim()),
-    [variants],
-  );
+  useMemo(() => variants.some((v) => v.barcode && v.barcode.trim()), [variants]);
 
   const renderImageCol = viewMode === "full" || (viewMode === "barcodes" && hasAnyImage);
   const renderSkuCol = viewMode === "full" || viewMode === "barcodes";

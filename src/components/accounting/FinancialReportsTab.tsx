@@ -6,13 +6,7 @@ import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Download,
-  Printer,
-  PieChart,
-  Calculator,
-  Info,
-} from "lucide-react";
+import { Download, Printer, PieChart, Calculator, Info } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { calculateIncomeStatement, calculateCashFlowStatement } from "@/lib/double-entry-ledger";
 

@@ -1,11 +1,4 @@
-import {
-  Pencil,
-  Trash2,
-  Tag,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
-} from "lucide-react";
+import { Pencil, Trash2, Tag, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/format";

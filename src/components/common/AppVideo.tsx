@@ -1,4 +1,4 @@
-import{ useRef, useState, useEffect, type VideoHTMLAttributes } from "react";
+import { useRef, useState, useEffect, type VideoHTMLAttributes } from "react";
 import { ResponsiveImage } from "@/components/responsive-media";
 
 export type VideoVariant = "hero" | "content" | "modal";

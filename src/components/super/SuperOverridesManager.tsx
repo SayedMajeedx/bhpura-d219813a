@@ -15,16 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { getFriendlyErrorMessage } from "@/lib/utils";
 import { toast } from "sonner";
-import {
-  ShieldAlert,
-  Plus,
-  Trash2,
-  FileText,
-  User,
-  Loader2,
-  Check,
-  Sparkles,
-} from "lucide-react";
+import { ShieldAlert, Plus, Trash2, FileText, User, Loader2, Check, Sparkles } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

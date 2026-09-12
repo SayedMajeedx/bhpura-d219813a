@@ -13,14 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Sliders,
-  Save,
-  Loader2,
-  Clock,
-  Truck,
-  FileText,
-} from "lucide-react";
+import { Sliders, Save, Loader2, Clock, Truck, FileText } from "lucide-react";
 import { toast } from "sonner";
 import type { BrandReturnPolicy, CompensationMethod } from "@/lib/returns.types";
 

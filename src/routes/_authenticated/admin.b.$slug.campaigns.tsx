@@ -47,9 +47,7 @@ import { buildCustomerCrmStats, type CustomerMetricOrder } from "@/lib/commerce-
 import { isMarketingEligible } from "@/lib/marketing-eligibility";
 
 import { CampaignsCommandHeader } from "@/components/campaigns/CampaignsCommandHeader";
-import {
-  CampaignsScopeSwitcher,
-} from "@/components/campaigns/CampaignsScopeSwitcher";
+import { CampaignsScopeSwitcher } from "@/components/campaigns/CampaignsScopeSwitcher";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/campaigns")({
   validateSearch: (search: Record<string, unknown>) => ({

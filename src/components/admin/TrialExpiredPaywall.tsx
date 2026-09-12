@@ -1,12 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import {
-  Check,
-  LogOut,
-  MessageCircle,
-  Building2,
-  ShieldAlert,
-} from "lucide-react";
+import { Check, LogOut, MessageCircle, Building2, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,

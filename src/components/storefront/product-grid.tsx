@@ -1,4 +1,4 @@
-import{ useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Grid2X2, Rows, PackageSearch } from "lucide-react";
 import { useStorefront } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";

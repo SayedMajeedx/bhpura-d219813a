@@ -30,11 +30,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StorefrontSuspended } from "@/components/storefront/StorefrontSuspended";
-import {
-  X,
-  ChevronDown,
-  Sparkles,
-} from "lucide-react";
+import { X, ChevronDown, Sparkles } from "lucide-react";
 import { faviconType, resolveBrandFavicon, useDynamicFavicon } from "@/lib/favicon";
 import { StorefrontAnalytics } from "@/components/storefront-analytics";
 

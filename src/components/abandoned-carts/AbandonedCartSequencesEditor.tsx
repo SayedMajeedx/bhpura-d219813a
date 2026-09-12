@@ -24,16 +24,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import {
-  Send,
-  MessageSquare,
-  Mail,
-  Bell,
-  Clock,
-  Sparkles,
-  Edit2,
-  Loader2,
-} from "lucide-react";
+import { Send, MessageSquare, Mail, Bell, Clock, Sparkles, Edit2, Loader2 } from "lucide-react";
 import type { AbandonedCartSequence, RecoveryChannel } from "@/lib/abandoned-carts.types";
 import { DEFAULT_ABANDONED_SEQUENCES } from "@/lib/abandoned-carts.types";
 

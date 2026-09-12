@@ -15,12 +15,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Building2,
-  Plus,
-  Phone,
-  Mail,
-} from "lucide-react";
+import { Building2, Plus, Phone, Mail } from "lucide-react";
 import { formatMoney, formatDate } from "@/lib/format";
 import { toast } from "sonner";
 

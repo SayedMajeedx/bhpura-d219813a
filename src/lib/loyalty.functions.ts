@@ -1,7 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import type {
-  BrandLoyaltyProgram,
-} from "./loyalty.types";
+import type { BrandLoyaltyProgram } from "./loyalty.types";
 
 /**
  * Pure function to calculate base and tiered loyalty points for an order.

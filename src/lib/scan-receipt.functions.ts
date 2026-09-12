@@ -1,8 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import {
-  requireSupabaseAuth,
-  getGeminiCredentials,
-} from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, getGeminiCredentials } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
 const Input = z.object({

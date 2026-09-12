@@ -8,11 +8,7 @@ import { useI18n } from "@/lib/i18n";
 import { formatMoney, formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  RotateCcw,
-  Search,
-  ArrowRight,
-} from "lucide-react";
+import { RotateCcw, Search, ArrowRight } from "lucide-react";
 import { ReturnsCommandHeader } from "@/components/returns/ReturnsCommandHeader";
 import { ReturnsScopeSwitcher, type ReturnsScope } from "@/components/returns/ReturnsScopeSwitcher";
 import { ReturnPolicyEditor } from "@/components/returns/ReturnPolicyEditor";

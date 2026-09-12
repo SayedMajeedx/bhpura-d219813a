@@ -2,7 +2,7 @@
 // BOUTQ OS: SUPER ADMIN SAAS PLANS & VERSIONING MANAGER
 // ==============================================================================
 
-import{ useState } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {

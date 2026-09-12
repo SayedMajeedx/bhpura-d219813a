@@ -15,14 +15,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Wallet,
-  Building,
-  ArrowRightLeft,
-  CheckCircle2,
-  Clock,
-  ShieldCheck,
-} from "lucide-react";
+import { Wallet, Building, ArrowRightLeft, CheckCircle2, Clock, ShieldCheck } from "lucide-react";
 import { formatMoney, formatDate } from "@/lib/format";
 import { toast } from "sonner";
 

@@ -15,16 +15,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Plus,
-  Pencil,
-  Trash2,
-  Receipt,
-  Calendar,
-  Sparkles,
-  Building2,
-  Repeat,
-} from "lucide-react";
+import { Plus, Pencil, Trash2, Receipt, Calendar, Sparkles, Building2, Repeat } from "lucide-react";
 import { formatMoney, formatDate } from "@/lib/format";
 import { toast } from "sonner";
 import { syncSingleExpenseToPackagingMaterial } from "@/lib/packaging-sync";

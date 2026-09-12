@@ -5,10 +5,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import {
-  evaluateBrandEntitlements,
-  getBrandUsageSummary,
-} from "./entitlements-engine.server";
+import { evaluateBrandEntitlements, getBrandUsageSummary } from "./entitlements-engine.server";
 import type {
   SaaSPlan,
   SaaSPlanVersion,

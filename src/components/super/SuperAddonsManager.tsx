@@ -2,21 +2,14 @@
 // BOUTQ OS: SUPER ADMIN MODULAR ADD-ONS MANAGER
 // ==============================================================================
 
-import{ useState } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { listAddons, upsertAddon } from "@/lib/saas-billing/saas-billing.functions";
 import type { SaaSAddon } from "@/lib/saas-billing/saas-billing.types";
 import { useI18n } from "@/lib/i18n";
 import { getFriendlyErrorMessage } from "@/lib/utils";
 import { toast } from "sonner";
-import {
-  PackagePlus,
-  Plus,
-  Edit2,
-  Loader2,
-  Check,
-  AlertTriangle,
-} from "lucide-react";
+import { PackagePlus, Plus, Edit2, Loader2, Check, AlertTriangle } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

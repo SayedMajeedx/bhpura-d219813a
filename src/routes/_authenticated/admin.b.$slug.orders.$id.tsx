@@ -76,25 +76,14 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import {
-  formatNotifiedTimeAgo,
-} from "@/lib/courier-whatsapp";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { formatNotifiedTimeAgo } from "@/lib/courier-whatsapp";
 import { CourierWhatsAppModal } from "@/components/courier/CourierWhatsAppModal";
 import { formatDate, formatMoney, formatOrderStatus } from "@/lib/format";
 import { queryKeys } from "@/lib/query-keys";
 import { useT, useI18n } from "@/lib/i18n";
-import {
-  getOrderCustomerName,
-  getOrderCustomerPhone,
-} from "@/lib/order-customer-snapshot";
-import {
-  regionLabel,
-  formatAddressLine,
-  type StructuredAddress,
-} from "@/lib/bahrain-regions";
+import { getOrderCustomerName, getOrderCustomerPhone } from "@/lib/order-customer-snapshot";
+import { regionLabel, formatAddressLine, type StructuredAddress } from "@/lib/bahrain-regions";
 import { printThermalReceipt } from "@/lib/thermal-print";
 import { cn, getFriendlyErrorMessage } from "@/lib/utils";
 import {
@@ -113,12 +102,8 @@ import { getBenefitReceiptViewUrl, rejectBenefitReceipt } from "@/lib/benefit-re
 import { DeliveryAddressCard } from "@/components/delivery-address-card";
 import { getOrderWorkflow } from "@/lib/order-workflow";
 import { detectOrderType } from "@/lib/order-type-detector";
-import {
-  calculateOrderPackagingCogs,
-} from "@/lib/bom-calculator";
-import {
-  getFulfillmentLabel,
-} from "@/lib/status-labels";
+import { calculateOrderPackagingCogs } from "@/lib/bom-calculator";
+import { getFulfillmentLabel } from "@/lib/status-labels";
 import { OrderUnifiedHeader } from "@/components/orders/OrderUnifiedHeader";
 import { OrderStickyBottomBar } from "@/components/orders/OrderStickyBottomBar";
 import { OrderSalesDocumentsCard } from "@/components/orders/OrderSalesDocumentsCard";

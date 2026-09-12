@@ -5,10 +5,7 @@ import {
   saveBrandConnectorFn,
   triggerConnectorSyncFn,
 } from "@/lib/public-api/public-api.functions";
-import {
-  AVAILABLE_CONNECTORS,
-  type ConnectorMetadata,
-} from "@/lib/connectors/connector-framework";
+import { AVAILABLE_CONNECTORS, type ConnectorMetadata } from "@/lib/connectors/connector-framework";
 import type { BrandConnector, ConnectorType } from "@/lib/public-api/public-api.types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

@@ -258,8 +258,7 @@ function OrderTimelineTracker({
 }
 
 function AccountPage() {
-  const { brand, session, isStoreMember, membershipLoading, t, lang, currency } =
-    useStorefront();
+  const { brand, session, isStoreMember, membershipLoading, t, lang, currency } = useStorefront();
   const isAr = lang === "ar";
   const [mounted, setMounted] = useState(false);
 

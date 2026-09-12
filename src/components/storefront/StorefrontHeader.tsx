@@ -1,4 +1,4 @@
-import{ useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { useStorefront } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
