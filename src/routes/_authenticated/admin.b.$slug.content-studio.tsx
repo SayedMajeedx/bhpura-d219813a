@@ -13,6 +13,7 @@ import {
   Sparkles,
   Move,
   Sliders,
+  Eye,
   RotateCcw,
   Video,
   Image as LucideImage,
