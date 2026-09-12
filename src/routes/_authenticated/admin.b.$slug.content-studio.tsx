@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Check,
@@ -72,6 +72,17 @@ const FORMATS = {
   portrait: { ar: "بوست 4:5", en: "Post 4:5", width: 1080, height: 1350, ratio: "aspect-[4/5]" },
   square: { ar: "مربع", en: "Square", width: 1080, height: 1080, ratio: "aspect-square" },
 } as const;
+
+/**
+ * The stage is laid out at this fixed CSS width always, then visually scaled
+ * to fit whatever space is actually available (see previewScale below). Every
+ * child element's sizing (text, padding, icons) is tuned against this exact
+ * reference width, so this is also the width the desktop preview already
+ * renders at today (`max-w-[570px]`) — keeping this fixed is what makes the
+ * mobile preview a proportionally identical, scaled-down copy of the desktop
+ * one instead of a re-flowed, disproportionate one.
+ */
+const PREVIEW_BASE_WIDTH = 570;
 
 const THEMES = {
   editorial: {
@@ -153,7 +164,14 @@ function ContentStudioPage() {
   const defaultEditionLabel = `The ${brandNameEn} Edit`;
 
   const stageRef = useRef<HTMLDivElement>(null);
+  const stageViewportRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  // Scales the fixed-width (PREVIEW_BASE_WIDTH) stage down to fit whatever
+  // width is actually available — capped at 1 so nothing changes on desktop,
+  // where the viewport is already >= PREVIEW_BASE_WIDTH. This is purely a
+  // display transform: it never touches offsetWidth/offsetHeight, so the
+  // html2canvas export scale math below is unaffected.
+  const [previewScale, setPreviewScale] = useState(1);
   const [format, setFormat] = useState<keyof typeof FORMATS>("story");
   const [theme, setTheme] = useState<keyof typeof THEMES>("editorial");
   const [productId, setProductId] = useState("");
@@ -353,6 +371,27 @@ function ContentStudioPage() {
   const effectivePrice =
     activeVariant?.selling_price != null ? activeVariant.selling_price : selected?.base_price ?? null;
 
+  // Keeps the mobile preview a scaled-down copy of the desktop one instead of
+  // a re-flowed, disproportionate one: the stage always lays out at a fixed
+  // PREVIEW_BASE_WIDTH, and this only ever shrinks it (never grows past 1) to
+  // fit the space actually available on screen.
+  useLayoutEffect(() => {
+    const viewportEl = stageViewportRef.current;
+    if (!viewportEl || typeof ResizeObserver === "undefined") return;
+
+    const updateScale = () => {
+      const availableWidth = viewportEl.offsetWidth;
+      if (availableWidth > 0) {
+        setPreviewScale(Math.min(1, availableWidth / PREVIEW_BASE_WIDTH));
+      }
+    };
+
+    updateScale();
+    const observer = new ResizeObserver(updateScale);
+    observer.observe(viewportEl);
+    return () => observer.disconnect();
+  }, []);
+
   const handleHeaderPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (exporting) return;
     e.preventDefault();
@@ -360,7 +399,10 @@ function ContentStudioPage() {
     const startY = e.clientY;
     const startPosY = headerPosY;
     const stageEl = stageRef.current;
-    const stageHeight = stageEl ? stageEl.offsetHeight : 1;
+    // getBoundingClientRect (not offsetHeight) so dragging feels the same at
+    // any preview size: it reflects the stage's actual visible/scaled
+    // height, matching the real screen pixels the pointer is moving across.
+    const stageHeight = stageEl ? stageEl.getBoundingClientRect().height : 1;
 
     const onPointerMove = (moveEv: PointerEvent) => {
       const deltaY = moveEv.clientY - startY;
@@ -454,6 +496,12 @@ function ContentStudioPage() {
   const exportImageCreative = async () => {
     if (!stageRef.current) return;
     setExporting(true);
+    // The mobile preview shrinks this element via a display-only CSS
+    // transform (see previewScale). Reset it to native size for the capture
+    // so exports are pixel-identical regardless of what device/screen size
+    // triggered them, then restore whatever the on-screen preview needs.
+    const originalStageTransform = stageRef.current.style.transform;
+    stageRef.current.style.transform = "scale(1)";
     try {
       const { default: html2canvas } = await import("html2canvas-pro");
       const target = FORMATS[format];
@@ -516,6 +564,7 @@ function ContentStudioPage() {
           : "Could not export. Check the product image.",
       );
     } finally {
+      if (stageRef.current) stageRef.current.style.transform = originalStageTransform;
       setExporting(false);
     }
   };
@@ -638,7 +687,11 @@ function ContentStudioPage() {
 
       // 3. Pre-render overlay without modifying video state or visibility
       const originalStageBg = stageRef.current.style.background;
+      const originalStageTransform = stageRef.current.style.transform;
       stageRef.current.style.background = "transparent";
+      // See exportImageCreative: reset the display-only mobile-preview scale
+      // for the capture so exports don't vary by screen size.
+      stageRef.current.style.transform = "scale(1)";
       let overlayCanvas: HTMLCanvasElement;
       try {
         const { default: html2canvas } = await import("html2canvas-pro");
@@ -651,6 +704,7 @@ function ContentStudioPage() {
         });
       } finally {
         stageRef.current.style.background = originalStageBg;
+        stageRef.current.style.transform = originalStageTransform;
       }
 
       // 4. Test CORS on video element to prevent tainted canvas crash
@@ -2046,11 +2100,33 @@ ${desc}${detailsBlock}
               <ImageIcon className="size-4" />
             </span>
           </div>
-          <div className="mx-auto max-w-[570px] overflow-hidden rounded-[22px] shadow-2xl">
+          <div
+            ref={stageViewportRef}
+            className="mx-auto max-w-[570px] overflow-hidden rounded-[22px] shadow-2xl"
+            style={{
+              // Reserves exactly the scaled-down footprint of the fixed-width
+              // stage below, so shrinking it on a narrow screen doesn't leave
+              // empty space (transform never affects layout/reserved space).
+              height: `${(
+                PREVIEW_BASE_WIDTH *
+                (FORMATS[format].height / FORMATS[format].width) *
+                previewScale
+              ).toFixed(2)}px`,
+            }}
+          >
             <div
               ref={stageRef}
-              className={cn("relative isolate w-full overflow-hidden", FORMATS[format].ratio)}
-              style={{ background: palette.bg, color: palette.ink }}
+              className={cn("relative isolate overflow-hidden", FORMATS[format].ratio)}
+              style={{
+                background: palette.bg,
+                color: palette.ink,
+                // Fixed reference width — see PREVIEW_BASE_WIDTH — then
+                // visually scaled to fit. Never touches offsetWidth, so the
+                // html2canvas export scale below is unaffected either way.
+                width: `${PREVIEW_BASE_WIDTH}px`,
+                transform: `scale(${previewScale})`,
+                transformOrigin: "top left",
+              }}
             >
               {photo ? (
                 isCurrentVideo ? (
