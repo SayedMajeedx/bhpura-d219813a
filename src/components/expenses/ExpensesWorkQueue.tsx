@@ -36,11 +36,11 @@ export function ExpensesWorkQueue({
   const isAr = lang === "ar";
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm shadow-sm">
+    <div className="overflow-hidden rounded-2xl border border-border-subtle bg-card shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full text-start text-xs border-collapse">
           <thead>
-            <tr className="border-b border-border/60 bg-muted/40 font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">
+            <tr className="border-b border-border-subtle bg-muted/40 font-semibold text-muted-foreground text-xs">
               <th className="p-3 text-start">{isAr ? "التاريخ" : "Date"}</th>
               <th className="p-3 text-start">{isAr ? "التصنيف" : "Category"}</th>
               <th className="p-3 text-start">{isAr ? "المتجر / المورد" : "Store / Vendor"}</th>
@@ -84,7 +84,7 @@ export function ExpensesWorkQueue({
 
                   {/* Category */}
                   <td className="p-3 align-middle font-medium">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-primary/10 text-primary border border-primary/20">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
                       <Receipt className="h-3 w-3 shrink-0" />
                       {e.category}
                     </span>
@@ -98,7 +98,7 @@ export function ExpensesWorkQueue({
                         <span>{e.store_name}</span>
                       </div>
                     ) : (
-                      <span className="text-muted-foreground/60">—</span>
+                      <span className="text-muted-foreground">—</span>
                     )}
                   </td>
 
@@ -111,12 +111,12 @@ export function ExpensesWorkQueue({
                         </span>
                       )}
                       {e.notes && (
-                        <span className="text-[11px] truncate text-muted-foreground">
+                        <span className="text-xs truncate text-muted-foreground">
                           {e.notes}
                         </span>
                       )}
                       {!e.description && !e.notes && (
-                        <span className="text-muted-foreground/60">—</span>
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </div>
                   </td>
@@ -131,7 +131,7 @@ export function ExpensesWorkQueue({
                         href={e.receipt_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
                         title={isAr ? "عرض الفاتورة" : "View Receipt"}
                       >
                         <FileText className="h-3.5 w-3.5" />
@@ -139,7 +139,7 @@ export function ExpensesWorkQueue({
                         <ExternalLink className="h-2.5 w-2.5 opacity-60" />
                       </a>
                     ) : (
-                      <span className="text-muted-foreground/50 text-[10px]">—</span>
+                      <span className="text-muted-foreground text-xs">—</span>
                     )}
                   </td>
 

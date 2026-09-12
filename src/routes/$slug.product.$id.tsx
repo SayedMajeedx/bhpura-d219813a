@@ -1230,7 +1230,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-3 sm:py-8 pb-28 md:pb-10">
       <div className="grid md:grid-cols-12 gap-6 lg:gap-10 items-start">
         <div className="md:col-span-5 max-w-[420px] mx-auto md:max-w-none w-full">
-          <div className="relative aspect-[3/4] max-h-[500px] bg-muted rounded-2xl overflow-hidden shadow-sm border border-border/40 mx-auto w-full">
+          <div className="relative aspect-[3/4] max-h-[500px] bg-muted rounded-2xl overflow-hidden shadow-sm border border-border-subtle mx-auto w-full">
             {media.length > 0 ? (
               <>
                 {media[mediaIdx % media.length].type === "video" ? (
@@ -1271,7 +1271,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                       variant="ghost"
                       size="icon"
                       onClick={() => setMediaIdx((i) => (i - 1 + media.length) % media.length)}
-                      className="absolute top-1/2 left-3 -translate-y-1/2 h-11 w-11 bg-background/90 hover:bg-background text-foreground rounded-full shadow-md border border-border/50 transition-transform active:scale-95 z-20"
+                      className="absolute top-1/2 left-3 -translate-y-1/2 h-11 w-11 bg-background/90 hover:bg-background text-foreground rounded-full shadow-md border border-border-subtle transition-transform active:scale-95 z-20"
                       aria-label="Previous media"
                     >
                       <ChevronLeft className="h-5 w-5" />
@@ -1281,7 +1281,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                       variant="ghost"
                       size="icon"
                       onClick={() => setMediaIdx((i) => (i + 1) % media.length)}
-                      className="absolute top-1/2 right-3 -translate-y-1/2 h-11 w-11 bg-background/90 hover:bg-background text-foreground rounded-full shadow-md border border-border/50 transition-transform active:scale-95 z-20"
+                      className="absolute top-1/2 right-3 -translate-y-1/2 h-11 w-11 bg-background/90 hover:bg-background text-foreground rounded-full shadow-md border border-border-subtle transition-transform active:scale-95 z-20"
                       aria-label="Next media"
                     >
                       <ChevronRight className="h-5 w-5" />
@@ -1305,7 +1305,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   className={`relative h-18 w-18 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${
                     i === mediaIdx % media.length
                       ? "ring-2 ring-primary border-primary shadow-sm opacity-100"
-                      : "border-border/60 hover:border-primary/50 opacity-75 hover:opacity-100"
+                      : "border-border-subtle hover:border-primary/50 opacity-75 hover:opacity-100"
                   }`}
                   style={i === mediaIdx % media.length ? { borderColor: primary } : undefined}
                 >
@@ -1319,7 +1319,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                         />
                       ) : null}
                       <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                        <div className="h-6 w-6 rounded-full bg-white/90 text-black flex items-center justify-center text-[10px] font-bold shadow-md">
+                        <div className="h-6 w-6 rounded-full bg-white/90 text-black flex items-center justify-center text-xs font-bold shadow-md">
                           ▶
                         </div>
                       </div>
@@ -1479,7 +1479,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                               )}
                             </span>
                           ) : (
-                            <span className="h-7 w-7 rounded-full border bg-muted flex items-center justify-center text-[10px] font-bold uppercase truncate shadow-inner relative overflow-hidden">
+                            <span className="h-7 w-7 rounded-full border bg-muted flex items-center justify-center text-xs font-bold uppercase truncate shadow-inner relative overflow-hidden">
                               {color.slice(0, 2)}
                               {oos && (
                                 <span className="absolute inset-0 w-full h-[2px] bg-destructive/80 rotate-45 origin-center top-1/2 -translate-y-1/2" />
@@ -1723,7 +1723,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                             {fitProfileType === "abaya" ? t("عباية", "Abaya") : t("فستان", "Dress")}
                           </p>
                           {isGuest && (
-                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
                               {t("طلب ضيف", "Guest order")}
                             </span>
                           )}
@@ -1812,7 +1812,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                           {required ? (
                             <span className="ms-1 text-destructive">*</span>
                           ) : (
-                            <span className="rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium leading-none text-muted-foreground">
+                            <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs font-medium leading-none text-muted-foreground">
                               {t("اختياري", "optional")}
                             </span>
                           )}
@@ -1833,7 +1833,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                             }
                             className="h-10 pe-9 bg-background"
                           />
-                          <span className="absolute end-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
+                          <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
                             {isGuest
                               ? guestUnit
                               : fitPassportQ.data?.preferred_length_unit ?? "in"}
@@ -1854,7 +1854,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   )}
 
                   {isGuest && !passportApplied && (
-                    <div className="mt-3.5 pt-3 border-t border-border/40 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                    <div className="mt-3.5 pt-3 border-t border-border-subtle flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
                       <span>
                         {t(
                           "لا يشترط إنشاء حساب لتفصيل هذه القطعة.",
@@ -1864,6 +1864,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                       <Link
                         to="/$slug/auth"
                         params={{ slug: brand.slug }}
+                        search={{
+                          redirect: typeof window !== "undefined" ? window.location.pathname : "",
+                        }}
                         className="text-primary hover:underline font-semibold"
                       >
                         {t(
@@ -1954,6 +1957,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                               size="icon"
                               className="text-muted-foreground hover:text-destructive shrink-0"
                               onClick={() => set("")}
+                              aria-label={t("إزالة", "Remove")}
+                              title={t("إزالة", "Remove")}
                             >
                               <X className="h-4 w-4" />
                             </Button>
@@ -2043,7 +2048,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               })}
 
               {/* 📝 Customer Tailoring & Workshop Notes Box */}
-              <div className="space-y-2 pt-3 border-t border-border/60">
+              <div className="space-y-2 pt-3 border-t border-border-subtle">
                 <div className="flex items-center justify-between">
                   <label className="flex items-center gap-2 text-xs sm:text-sm font-bold text-foreground">
                     <FileText className="h-4 w-4 text-primary shrink-0" />
@@ -2054,11 +2059,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                       )}
                     </span>
                   </label>
-                  <span className="text-[10px] sm:text-xs text-muted-foreground font-normal">
+                  <span className="text-xs sm:text-xs text-muted-foreground font-normal">
                     {t("تعليمات للمشغل", "Workshop notes")}
                   </span>
                 </div>
-                <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
+                <p className="text-xs sm:text-xs text-muted-foreground leading-relaxed">
                   {t(
                     "اكتبي هنا أي تفاصيل خاصة للتفصيل ترغبين بإبلاغ الخياط بها (مثل: تضييق الخصر، زيادة/إنقاص طول الكم، بطانة كاملة، شكل الأزرار...)",
                     "Add any specific tailoring instructions for the workshop (e.g. custom waist tightening, sleeve length adjust, full lining, button style...)",
@@ -2182,7 +2187,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         >
           <div className="mx-auto max-w-6xl flex items-center gap-2">
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground truncate">
+              <div className="text-xs uppercase tracking-wider text-muted-foreground truncate">
                 {variant
                   ? [
                       (showSizeModeToggle && sizeMode === "custom") ||

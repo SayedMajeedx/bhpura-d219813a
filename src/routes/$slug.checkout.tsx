@@ -1259,7 +1259,7 @@ function Checkout() {
                 }}
                 disabled={submitting}
               >
-                <CreditCard className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
+                <CreditCard className="w-4 h-4 me-2 rtl:ms-2 rtl:me-0" />
                 {t("إعادة المحاولة بالبطاقة", "Retry Payment")}
               </Button>
               <Button
@@ -1417,7 +1417,7 @@ function Checkout() {
             />
           </div>
           {session?.user && (
-            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/70 bg-muted/20 p-3">
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border-strong bg-muted/20 p-3">
               <Checkbox
                 className="mt-0.5"
                 checked={saveToProfile}
@@ -2003,7 +2003,7 @@ function Checkout() {
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <div className="flex h-full items-center justify-center px-1 text-center text-[9px] text-muted-foreground">
+                      <div className="flex h-full items-center justify-center px-1 text-center text-xs text-muted-foreground">
                         {t("لا توجد صورة", "No image")}
                       </div>
                     )}
@@ -2137,7 +2137,7 @@ function Checkout() {
                   <Coins className="h-4 w-4 text-amber-500" />
                   <span>{t("استخدام نقاط المكافآت", "Redeem Loyalty Points")}</span>
                 </div>
-                <span className="text-[11px] font-mono text-muted-foreground">
+                <span className="text-xs font-mono text-muted-foreground">
                   {t("متاح:", "Available:")} {loyaltyAccount?.active_points} {t("نقطة", "pts")}
                 </span>
               </div>
@@ -2201,7 +2201,7 @@ function Checkout() {
               {formatPrice(grandTotal, currency, lang)}
             </span>
           </div>
-          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/70 bg-muted/20 p-3">
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border-strong bg-muted/20 p-3">
             <Checkbox
               className="mt-0.5"
               checked={acceptedTerms}
@@ -2223,7 +2223,7 @@ function Checkout() {
             </span>
           </label>
 
-          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/70 bg-muted/20 p-3">
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border-strong bg-muted/20 p-3">
             <Checkbox
               className="mt-0.5"
               checked={marketingConsent}

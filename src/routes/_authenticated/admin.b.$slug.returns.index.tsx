@@ -221,7 +221,7 @@ function ReturnsIndexPage() {
                 <span className="text-xl font-bold font-mono text-foreground">
                   {returns.length}
                 </span>
-                <span className="text-[11px] text-muted-foreground font-mono">
+                <span className="text-xs text-muted-foreground font-mono">
                   ({counts.under_review} {isAr ? "معلق" : "pending"})
                 </span>
               </div>
@@ -246,7 +246,7 @@ function ReturnsIndexPage() {
                 <span className="text-xl font-bold font-mono text-cyan-600 dark:text-cyan-400">
                   {restockRecoveryRate}%
                 </span>
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-xs text-muted-foreground">
                   ({totalRestockedItems} {isAr ? "قطعة" : "items"})
                 </span>
               </div>
@@ -349,7 +349,7 @@ function ReturnsIndexPage() {
                           </td>
                           <td className="p-3.5">
                             <span className="font-semibold text-foreground block">{custName}</span>
-                            <span className="text-[11px] text-muted-foreground font-mono">
+                            <span className="text-xs text-muted-foreground font-mono">
                               {r.customer?.phone || r.order?.customer_phone_snapshot || ""}
                             </span>
                           </td>
@@ -357,12 +357,12 @@ function ReturnsIndexPage() {
                             <span className="font-medium text-foreground block">
                               {itemsCount} {isAr ? "قطع" : "items"}
                             </span>
-                            <span className="text-[11px] text-muted-foreground truncate max-w-[160px] block">
+                            <span className="text-xs text-muted-foreground truncate max-w-[160px] block">
                               {r.reason}
                             </span>
                           </td>
                           <td className="p-3.5">
-                            <span className="inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5 rounded-md bg-muted text-foreground border border-border">
+                            <span className="inline-flex items-center gap-1 font-semibold text-xs px-2 py-0.5 rounded-md bg-muted text-foreground border border-border">
                               {r.type === "exchange"
                                 ? isAr
                                   ? "استبدال"
@@ -385,12 +385,12 @@ function ReturnsIndexPage() {
                           </td>
                           <td className="p-3.5">
                             <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${statusCfg.badgeClass}`}
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${statusCfg.badgeClass}`}
                             >
                               {isAr ? statusCfg.labelAr : statusCfg.labelEn}
                             </span>
                           </td>
-                          <td className="p-3.5 text-muted-foreground font-mono text-[11px]">
+                          <td className="p-3.5 text-muted-foreground font-mono text-xs">
                             {formatDate(r.created_at, isAr ? "ar-BH" : "en-US")}
                           </td>
                           <td className="p-3.5 text-end">

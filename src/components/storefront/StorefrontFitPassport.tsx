@@ -167,7 +167,7 @@ export function StorefrontFitPassport({
     await qc.invalidateQueries({ queryKey: ["storefront-fit-passport", brandId, customerId] });
   };
   return (
-    <Card className="overflow-hidden rounded-2xl border-border/70 bg-card shadow-sm">
+    <Card className="overflow-hidden rounded-2xl border-border-strong bg-card shadow-sm">
       <div className="border-b bg-primary/[0.045] p-5 sm:p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
@@ -175,7 +175,7 @@ export function StorefrontFitPassport({
               <Ruler className="size-5" />
             </span>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[.16em] text-primary">
+              <p className="text-xs font-bold uppercase tracking-[.16em] text-primary">
                 {passportTitle}
               </p>
               <h3 className="mt-1 text-lg font-bold">
@@ -189,7 +189,7 @@ export function StorefrontFitPassport({
             </div>
           </div>
           {passportQ.data?.verified_at && (
-            <span className="flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
+            <span className="flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
               <CheckCircle2 className="size-3" />
               {isAr ? "موثّق" : "Verified"}
             </span>
@@ -269,7 +269,7 @@ export function StorefrontFitPassport({
                       }
                       className="h-11 pe-9 font-mono"
                     />
-                    <span className="absolute end-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
+                    <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
                       {unit}
                     </span>
                   </div>

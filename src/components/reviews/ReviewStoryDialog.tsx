@@ -1200,7 +1200,7 @@ export function ReviewStoryDialog({
                           />
                         )}
                         {m.type === "video" && (
-                          <span className="absolute bottom-1 end-1 rounded bg-black/60 px-1 py-0.5 text-[9px] font-bold text-white">
+                          <span className="absolute bottom-1 end-1 rounded bg-black/60 px-1 py-0.5 text-xs font-bold text-white">
                             فيديو
                           </span>
                         )}

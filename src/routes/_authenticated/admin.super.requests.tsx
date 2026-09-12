@@ -290,8 +290,8 @@ function SuperRequestsPage() {
         <SuperOverridesManager />
       ) : (
         <div className="w-full space-y-4">
-          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
-            <CardHeader className="pb-3 border-b border-border/60">
+          <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card">
+            <CardHeader className="pb-3 border-b border-border-subtle">
               <div className="flex justify-between items-center">
                 <div>
                   <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
@@ -339,23 +339,23 @@ function SuperRequestsPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                       <thead>
-                        <tr className="bg-muted/40 text-muted-foreground text-xs uppercase border-b border-border/60">
-                          <th className="p-4 text-left font-semibold">
+                        <tr className="bg-muted/40 text-muted-foreground text-xs uppercase border-b border-border-subtle">
+                          <th className="p-4 text-start font-semibold">
                             {lang === "ar" ? "صاحب المتجر" : "Owner Details"}
                           </th>
-                          <th className="p-4 text-left font-semibold">
+                          <th className="p-4 text-start font-semibold">
                             {lang === "ar" ? "الرابط المطلوب" : "Desired subdomain"}
                           </th>
-                          <th className="p-4 text-left font-semibold">
+                          <th className="p-4 text-start font-semibold">
                             {lang === "ar" ? "نوع الباقة" : "Plan Package"}
                           </th>
-                          <th className="p-4 text-left font-semibold">
+                          <th className="p-4 text-start font-semibold">
                             {lang === "ar" ? "نوع النشاط" : "Business Type"}
                           </th>
                           <th className="p-4 text-center font-semibold">
                             {lang === "ar" ? "إثبات الدفع" : "Benefit Receipt"}
                           </th>
-                          <th className="p-4 text-right font-semibold">
+                          <th className="p-4 text-end font-semibold">
                             {lang === "ar" ? "الإجراءات" : "Deployment Actions"}
                           </th>
                         </tr>
@@ -364,11 +364,11 @@ function SuperRequestsPage() {
                         {requestsQuery.data.map((request) => (
                           <tr
                             key={request.id}
-                            className="border-b border-border/40 hover:bg-muted/20 transition-colors"
+                            className="border-b border-border-subtle hover:bg-muted/20 transition-colors"
                           >
                             <td className="p-4 space-y-1">
-                              <div className="font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                                <User className="h-3.5 w-3.5 text-zinc-400" />
+                              <div className="font-semibold text-foreground flex items-center gap-1.5">
+                                <User className="h-3.5 w-3.5 text-muted-foreground" />
                                 <span>{request.full_name}</span>
                               </div>
                               <div className="text-xs text-muted-foreground flex flex-col gap-0.5 font-mono">
@@ -392,8 +392,8 @@ function SuperRequestsPage() {
                               <Badge
                                 className={
                                   request.request_type === "trial"
-                                    ? "bg-primary/10 text-primary border-none font-semibold text-[10px]"
-                                    : "bg-emerald-500/10 text-emerald-500 border-none font-semibold text-[10px]"
+                                    ? "bg-primary/10 text-primary border-none font-semibold text-xs"
+                                    : "bg-emerald-500/10 text-emerald-500 border-none font-semibold text-xs"
                                 }
                                 variant="outline"
                               >
@@ -407,14 +407,14 @@ function SuperRequestsPage() {
                                     (lang === "ar" ? "متجر مدفوع" : "Official Paid")}
                               </Badge>
                               {request.quoted_price != null && request.request_type === "paid" && (
-                                <p className="mt-1 text-[10px] font-semibold text-muted-foreground">
+                                <p className="mt-1 text-xs font-semibold text-muted-foreground">
                                   {request.quoted_price} {request.quoted_currency || "BHD"} · {request.billing_interval === "monthly" ? (lang === "ar" ? "شهري" : "monthly") : (lang === "ar" ? "سنوي" : "annual")}
                                 </p>
                               )}
                             </td>
 
                             <td className="p-4">
-                              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-300 border border-border">
+                              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-muted text-muted-foreground border border-border">
                                 {request.business_type || (lang === "ar" ? "أزياء" : "Fashion")}
                               </span>
                             </td>
@@ -433,7 +433,7 @@ function SuperRequestsPage() {
                                       <span>{lang === "ar" ? "معاينة الإيصال" : "View Receipt"}</span>
                                     </Button>
                                   </DialogTrigger>
-                                  <DialogContent className="sm:max-w-md bg-zinc-950 text-white border-zinc-900">
+                                  <DialogContent className="sm:max-w-md bg-card text-foreground border-border">
                                     <DialogHeader>
                                       <DialogTitle className="text-sm font-semibold flex items-center gap-1.5">
                                         <ClockIcon className="h-4.5 w-4.5 text-primary" />
@@ -446,7 +446,7 @@ function SuperRequestsPage() {
                                       {receiptLoading ? (
                                         <div className="flex flex-col items-center gap-2">
                                           <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                                          <span className="text-xs text-zinc-400">
+                                          <span className="text-xs text-muted-foreground">
                                             {lang === "ar"
                                               ? "جاري فك تشفير رابط الإيصال..."
                                               : "Generating secure viewer..."}
@@ -456,10 +456,10 @@ function SuperRequestsPage() {
                                         <img
                                           src={receiptViewUrl}
                                           alt="Benefit Payment Receipt"
-                                          className="max-h-[400px] w-auto rounded-lg object-contain border border-zinc-800"
+                                          className="max-h-[400px] w-auto rounded-lg object-contain border border-border"
                                         />
                                       ) : (
-                                        <div className="text-xs text-zinc-500">
+                                        <div className="text-xs text-muted-foreground">
                                           {lang === "ar" ? "تعذر تحميل الإيصال" : "Receipt unavailable"}
                                         </div>
                                       )}
@@ -471,7 +471,7 @@ function SuperRequestsPage() {
                               )}
                             </td>
 
-                            <td className="p-4 text-right">
+                            <td className="p-4 text-end">
                               <div className="flex items-center justify-end gap-2">
                                 <Button
                                   variant="ghost"
@@ -509,7 +509,7 @@ function SuperRequestsPage() {
 
       {/* Interactive Deployment Configuration Dialog */}
       <Dialog open={!!approvingRequest} onOpenChange={(open) => !open && setApprovingRequest(null)}>
-        <DialogContent className="max-w-md bg-background/95 backdrop-blur-md border border-border/60 text-foreground p-6 rounded-2xl shadow-xl">
+        <DialogContent className="max-w-md bg-background/95 backdrop-blur-md border border-border-subtle text-foreground p-6 rounded-2xl shadow-xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-display font-medium flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary shrink-0" />
@@ -520,7 +520,7 @@ function SuperRequestsPage() {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div className="p-3.5 bg-zinc-50 dark:bg-zinc-900/50 rounded-lg border border-zinc-100 dark:border-zinc-900 text-xs space-y-1 font-mono">
+            <div className="p-3.5 bg-muted/50 rounded-lg border border-border text-xs space-y-1 font-mono">
               <p className="flex justify-between">
                 <span className="text-muted-foreground">
                   {lang === "ar" ? "اسم المالك:" : "Owner Name:"}
@@ -538,7 +538,7 @@ function SuperRequestsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
+              <Label className="text-xs font-semibold text-muted-foreground block">
                 {lang === "ar" ? "اختر باقة تفعيل العميل" : "Select Deployment Access Plan"}
               </Label>
 
@@ -565,7 +565,7 @@ function SuperRequestsPage() {
                     <button key={plan.id} type="button" onClick={() => setSelectedPlanId(plan.id)} className={`w-full rounded-xl border p-4 text-start transition-all ${selectedPlanId === plan.id ? "border-primary bg-primary/[0.03] ring-1 ring-primary" : "border-border"}`}>
                       <div className="flex items-center justify-between gap-3">
                         <span className="flex items-center gap-2 text-sm font-semibold"><Crown className="h-4 w-4 text-amber-500" />{lang === "ar" ? plan.name_ar : plan.name_en}</span>
-                        <Badge variant="outline" className="text-[10px]">{selectedBillingInterval === "monthly" ? plan.version.price_monthly : plan.version.price_annual} {plan.version.currency}</Badge>
+                        <Badge variant="outline" className="text-xs">{selectedBillingInterval === "monthly" ? plan.version.price_monthly : plan.version.price_annual} {plan.version.currency}</Badge>
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">v{plan.version.version_number} · {plan.code}</p>
                     </button>

@@ -181,7 +181,7 @@ export function ConnectorsCatalog({ brandId }: ConnectorsCatalogProps) {
             <Card
               key={meta.type}
               className={`border transition-all flex flex-col justify-between ${
-                isConnected ? "border-primary/40 bg-card shadow-sm" : "border-border bg-card/60"
+                isConnected ? "border-primary/40 bg-card shadow-sm" : "border-border bg-card"
               }`}
             >
               <CardHeader className="p-5 pb-3">
@@ -210,7 +210,7 @@ export function ConnectorsCatalog({ brandId }: ConnectorsCatalogProps) {
 
               <CardContent className="p-5 pt-0 space-y-3">
                 {isConnected && (
-                  <div className="text-[11px] text-muted-foreground border-t border-border pt-2 flex items-center justify-between">
+                  <div className="text-xs text-muted-foreground border-t border-border pt-2 flex items-center justify-between">
                     <span>
                       {isAr ? "اتجاه المزامنة:" : "Sync:"}{" "}
                       {config?.sync_direction === "two_way"
@@ -284,7 +284,7 @@ export function ConnectorsCatalog({ brandId }: ConnectorsCatalogProps) {
                 <div key={field.key} className="space-y-1.5">
                   <Label htmlFor={field.key} className="text-xs">
                     {isAr ? field.labelAr : field.labelEn}
-                    {field.required && <span className="text-destructive ml-1">*</span>}
+                    {field.required && <span className="text-destructive ms-1">*</span>}
                   </Label>
                   <Input
                     id={field.key}

@@ -470,7 +470,7 @@ export function ImageCropperDialog({
                     type="button"
                     onClick={() => setContainBg("transparent")}
                     className={cn(
-                      "rounded-md px-2 py-1 text-[11px] font-medium transition-all",
+                      "rounded-md px-2 py-1 text-xs font-medium transition-all",
                       containBg === "transparent"
                         ? "bg-background text-foreground shadow-sm font-semibold"
                         : "text-muted-foreground hover:text-foreground",
@@ -482,7 +482,7 @@ export function ImageCropperDialog({
                     type="button"
                     onClick={() => setContainBg("white")}
                     className={cn(
-                      "rounded-md px-2 py-1 text-[11px] font-medium transition-all",
+                      "rounded-md px-2 py-1 text-xs font-medium transition-all",
                       containBg === "white"
                         ? "bg-background text-foreground shadow-sm font-semibold"
                         : "text-muted-foreground hover:text-foreground",
@@ -494,7 +494,7 @@ export function ImageCropperDialog({
                     type="button"
                     onClick={() => setContainBg("neutral")}
                     className={cn(
-                      "rounded-md px-2 py-1 text-[11px] font-medium transition-all",
+                      "rounded-md px-2 py-1 text-xs font-medium transition-all",
                       containBg === "neutral"
                         ? "bg-background text-foreground shadow-sm font-semibold"
                         : "text-muted-foreground hover:text-foreground",
@@ -506,7 +506,7 @@ export function ImageCropperDialog({
                     type="button"
                     onClick={() => setContainBg("blur")}
                     className={cn(
-                      "rounded-md px-2 py-1 text-[11px] font-medium transition-all",
+                      "rounded-md px-2 py-1 text-xs font-medium transition-all",
                       containBg === "blur"
                         ? "bg-background text-foreground shadow-sm font-semibold"
                         : "text-muted-foreground hover:text-foreground",
@@ -572,7 +572,7 @@ export function ImageCropperDialog({
                     />
                   </div>
 
-                  <span className="pointer-events-none absolute top-3 start-3 z-30 rounded-full bg-black/65 px-3 py-1 text-[11px] font-medium text-white backdrop-blur flex items-center gap-1.5">
+                  <span className="pointer-events-none absolute top-3 start-3 z-30 rounded-full bg-black/65 px-3 py-1 text-xs font-medium text-white backdrop-blur flex items-center gap-1.5">
                     <Check className="h-3 w-3 text-emerald-400" />
                     {containBg === "transparent"
                       ? isAr
@@ -611,13 +611,13 @@ export function ImageCropperDialog({
               </div>
             )}
             {fitMode === "cover" && (
-              <span className="pointer-events-none absolute bottom-3 start-3 z-30 rounded-full bg-black/65 px-3 py-1 text-[11px] font-medium text-white backdrop-blur">
+              <span className="pointer-events-none absolute bottom-3 start-3 z-30 rounded-full bg-black/65 px-3 py-1 text-xs font-medium text-white backdrop-blur">
                 {isAr ? "اسحب لتغيير الموضع" : "Drag to reposition"}
               </span>
             )}
             {resolvedOutputWidth && resolvedOutputHeight && (
               <span
-                className="pointer-events-none absolute bottom-3 end-3 z-30 rounded-full bg-black/65 px-3 py-1 font-mono text-[11px] text-white backdrop-blur"
+                className="pointer-events-none absolute bottom-3 end-3 z-30 rounded-full bg-black/65 px-3 py-1 font-mono text-xs text-white backdrop-blur"
                 dir="ltr"
               >
                 {resolvedOutputWidth} × {resolvedOutputHeight}
@@ -651,7 +651,7 @@ export function ImageCropperDialog({
                   className="h-9 w-9 shrink-0"
                   onClick={() => adjustZoom(-0.1)}
                   disabled={isBusy || zoom <= 1}
-                >
+                 aria-label={isAr ? "إنقاص" : "Decrease"}>
                   <Minus className="h-3.5 w-3.5" />
                 </Button>
                 <Slider
@@ -670,7 +670,7 @@ export function ImageCropperDialog({
                   className="h-9 w-9 shrink-0"
                   onClick={() => adjustZoom(0.1)}
                   disabled={isBusy || zoom >= 4}
-                >
+                 aria-label={isAr ? "إضافة" : "Add"}>
                   <Plus className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -697,7 +697,7 @@ export function ImageCropperDialog({
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {previewAspects.map((preview) => (
                   <div key={preview.labelEn} className="space-y-1">
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       {isAr ? preview.labelAr : preview.labelEn}
                     </span>
                     <div
@@ -724,7 +724,7 @@ export function ImageCropperDialog({
                                 {overlayTitle}
                               </h4>
                               {overlaySubtitle && (
-                                <p className="text-[10px] text-white/80 line-clamp-1">
+                                <p className="text-xs text-white/80 line-clamp-1">
                                   {overlaySubtitle}
                                 </p>
                               )}

@@ -720,7 +720,7 @@ function DiscountCodes() {
                 placeholder={ar ? "مثال: 500 مرة" : "e.g. 100 redemptions"}
                 className="h-11 font-mono"
               />
-              <p className="text-[11px] text-muted-foreground px-1">
+              <p className="text-xs text-muted-foreground px-1">
                 {ar
                   ? "يعطل الرمز تلقائياً بعد استخدامه بالكامل في الطلبيات."
                   : "Automatically pauses the code globally once the redemptions cap is met."}
@@ -784,7 +784,7 @@ function DiscountCodes() {
                 </div>
 
                 {/* Margin Threshold Safeguard */}
-                <div className="flex items-center justify-between gap-4 pt-1.5 border-t border-border/40">
+                <div className="flex items-center justify-between gap-4 pt-1.5 border-t border-border-subtle">
                   <Label className="font-normal text-xs text-muted-foreground">
                     {ar
                       ? "استبعاد المنتجات تلقائياً إذا انخفض هامش الربح"
@@ -796,7 +796,7 @@ function DiscountCodes() {
                   />
                 </div>
                 {form.exclude_low_margin && (
-                  <div className="mt-2 flex items-center gap-3 rounded-lg bg-secondary/30 p-2.5 border border-border/40 animate-slide-down justify-between">
+                  <div className="mt-2 flex items-center gap-3 rounded-lg bg-secondary/30 p-2.5 border border-border-subtle animate-slide-down justify-between">
                     <Label className="text-xs font-semibold">
                       {ar ? "الحد الأدنى لهامش الربح (%)" : "Margin floor threshold (%)"}
                     </Label>

@@ -85,7 +85,7 @@ export function TurnstileWidget({
         dir="ltr"
         className="flex min-h-[65px] w-full min-w-0 justify-center overflow-visible [&>div]:w-full [&_iframe]:max-w-full"
       />
-      <p className="text-center text-[10px] text-muted-foreground">
+      <p className="text-center text-xs text-muted-foreground">
         {language === "ar"
           ? "أكمل فحص الأمان قبل المتابعة."
           : "Complete the security check before continuing."}

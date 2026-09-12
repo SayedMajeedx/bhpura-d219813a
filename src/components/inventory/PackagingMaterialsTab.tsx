@@ -316,7 +316,7 @@ export function PackagingMaterialsTab() {
               </span>
               <span
                 className={cn(
-                  "text-[10px] font-bold px-2 py-0.5 rounded-full border",
+                  "text-xs font-bold px-2 py-0.5 rounded-full border",
                   bomEnabled
                     ? "bg-primary/10 text-primary border-primary/30"
                     : "bg-muted text-muted-foreground border-border",
@@ -337,7 +337,7 @@ export function PackagingMaterialsTab() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0 self-end sm:self-center bg-background/80 p-2 rounded-lg border border-border/60">
+        <div className="flex items-center gap-3 shrink-0 self-end sm:self-center bg-background/80 p-2 rounded-lg border border-border-subtle">
           <Label htmlFor="bom-toggle" className="text-xs font-semibold cursor-pointer select-none">
             {bomEnabled
               ? isAr
@@ -371,12 +371,12 @@ export function PackagingMaterialsTab() {
       {/* Search & Stats */}
       <div className="flex items-center justify-between gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute start-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder={isAr ? "بحث في مواد التغليف..." : "Search packaging materials..."}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 h-9 text-xs"
+            className="ps-8 h-9 text-xs"
           />
         </div>
 
@@ -402,7 +402,7 @@ export function PackagingMaterialsTab() {
               : "Add packaging items (Boxes, Bags, Cards) and link them to products for automated cost deduction."}
           </p>
           <Button onClick={handleOpenAdd} variant="outline" size="sm" className="text-xs mt-2">
-            <Plus className="h-3.5 w-3.5 mr-1" />
+            <Plus className="h-3.5 w-3.5 me-1" />
             {isAr ? "إضافة مادة الآن" : "Add Material Now"}
           </Button>
         </Card>
@@ -425,7 +425,7 @@ export function PackagingMaterialsTab() {
                         </h3>
                         <span
                           className={cn(
-                            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold border",
+                            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold border",
                             item.deduction_rule === "per_order"
                               ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
                               : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
@@ -441,13 +441,13 @@ export function PackagingMaterialsTab() {
                         </span>
                       </div>
                       {item.sku && (
-                        <span className="text-[11px] font-mono text-muted-foreground">
+                        <span className="text-xs font-mono text-muted-foreground">
                           SKU: {item.sku}
                         </span>
                       )}
                     </div>
                     {isLowStock && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-bold text-destructive">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-bold text-destructive">
                         <AlertTriangle className="h-3 w-3" />
                         {isAr ? "مخزون منخفض" : "Low Stock"}
                       </span>
@@ -456,7 +456,7 @@ export function PackagingMaterialsTab() {
 
                   <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted/40 p-2.5 text-xs">
                     <div>
-                      <span className="text-[11px] text-muted-foreground block">
+                      <span className="text-xs text-muted-foreground block">
                         {isAr ? "المخزون المتوفر" : "In Stock"}
                       </span>
                       <span className="font-extrabold text-foreground text-sm">
@@ -464,7 +464,7 @@ export function PackagingMaterialsTab() {
                       </span>
                     </div>
                     <div>
-                      <span className="text-[11px] text-muted-foreground block">
+                      <span className="text-xs text-muted-foreground block">
                         {isAr ? "تكلفة الوحدة" : "Unit Cost"}
                       </span>
                       <span className="font-extrabold text-primary text-sm">
@@ -474,7 +474,7 @@ export function PackagingMaterialsTab() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-border/40">
+                <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-border-subtle">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -536,12 +536,12 @@ export function PackagingMaterialsTab() {
                 value={nameAr}
                 onChange={(e) => setNameAr(e.target.value)}
                 placeholder="مثال: علبة هدايا فاخرة (وسط)"
-                className="h-9 text-xs text-right"
+                className="h-9 text-xs text-end"
               />
             </div>
 
             {/* Deduction Rule Selection */}
-            <div className="space-y-2 rounded-xl border border-border/80 bg-muted/20 p-3">
+            <div className="space-y-2 rounded-xl border border-border-strong bg-muted/20 p-3">
               <Label className="text-xs font-bold text-foreground block">
                 {isAr ? "طريقة الخصم والاستهلاك في الطلبات" : "Deduction Rule in Orders"}
               </Label>
@@ -550,7 +550,7 @@ export function PackagingMaterialsTab() {
                   type="button"
                   onClick={() => setDeductionRule("per_item")}
                   className={cn(
-                    "flex flex-col items-start gap-1 p-2.5 rounded-lg border text-right transition-all",
+                    "flex flex-col items-start gap-1 p-2.5 rounded-lg border text-end transition-all",
                     deductionRule === "per_item"
                       ? "border-primary bg-primary/10 text-primary ring-1 ring-primary"
                       : "border-border bg-background text-muted-foreground hover:bg-muted/50",
@@ -560,7 +560,7 @@ export function PackagingMaterialsTab() {
                     <span>👗</span>
                     <span>{isAr ? "لكل منتج / قطعة" : "Per Product Item"}</span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground leading-tight">
+                  <span className="text-xs text-muted-foreground leading-tight">
                     {isAr
                       ? "تُخصم بعدد المنتجات (مثل كيس بلاستيك فردي أو بطاقة تسعير لكل عباية)"
                       : "Deducts for each item (e.g. polybag/tag per abaya)"}
@@ -571,7 +571,7 @@ export function PackagingMaterialsTab() {
                   type="button"
                   onClick={() => setDeductionRule("per_order")}
                   className={cn(
-                    "flex flex-col items-start gap-1 p-2.5 rounded-lg border text-right transition-all",
+                    "flex flex-col items-start gap-1 p-2.5 rounded-lg border text-end transition-all",
                     deductionRule === "per_order"
                       ? "border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-1 ring-amber-500"
                       : "border-border bg-background text-muted-foreground hover:bg-muted/50",
@@ -581,7 +581,7 @@ export function PackagingMaterialsTab() {
                     <span>📦</span>
                     <span>{isAr ? "لكل طلب كامل" : "Per Entire Order"}</span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground leading-tight">
+                  <span className="text-xs text-muted-foreground leading-tight">
                     {isAr
                       ? "تُخصم قطعة واحدة فقط للطلب مهما كان عدد المنتجات (مثل كيس المحل الكبير أو كرتون الشحن)"
                       : "Deducts 1 unit per order regardless of items (e.g. boutique bag)"}

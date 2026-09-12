@@ -539,7 +539,7 @@ function Field({
         name={id}
         placeholder={placeholder}
         autoComplete={autocomplete}
-        className="h-11 bg-background border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-foreground placeholder:text-muted-foreground/60 rounded-xl transition-all font-normal"
+        className="h-11 bg-background border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-foreground placeholder:text-muted-foreground rounded-xl transition-all font-normal"
         type={type}
         value={value}
         disabled={disabled}

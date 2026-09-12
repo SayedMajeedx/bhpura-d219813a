@@ -720,7 +720,7 @@ function CampaignsPage() {
         counts={segmentCounts}
       />
 
-      <Card className="mb-3 space-y-4 overflow-hidden rounded-2xl border border-border/60 bg-card/40 p-3 shadow-lg backdrop-blur-sm sm:mb-6 sm:p-6">
+      <Card className="mb-3 space-y-4 overflow-hidden rounded-2xl border border-border-subtle bg-card p-3 shadow-lg sm:mb-6 sm:p-6">
         {/* Template picker + actions */}
         <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
           <div className="flex-1 min-w-0">
@@ -802,13 +802,13 @@ function CampaignsPage() {
                 onClick={() => insertPlaceholder(p.token)}
                 className="text-xs px-2.5 py-1 rounded-full bg-secondary/80 text-foreground hover:bg-primary hover:text-primary-foreground hover:scale-105 active:scale-95 transition-all duration-200"
               >
-                {p.label} <code className="opacity-70 font-mono text-[10px]">{p.token}</code>
+                {p.label} <code className="opacity-70 font-mono text-xs">{p.token}</code>
               </button>
             ))}
           </div>
         </div>
 
-        <div className="text-xs text-muted-foreground border-t border-border/50 pt-3">
+        <div className="text-xs text-muted-foreground border-t border-border-subtle pt-3">
           <span className="font-medium">{isAr ? "معاينة:" : "Preview:"}</span>{" "}
           <span className="text-foreground italic bg-secondary/20 px-2 py-1 rounded">
             {buildMessage(filtered[0]?.name ?? (isAr ? "العميل" : "Customer"))}
@@ -816,8 +816,8 @@ function CampaignsPage() {
         </div>
       </Card>
 
-      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
-        <div className="flex flex-col justify-between gap-3 border-b border-border/50 bg-primary/5 p-3 sm:flex-row sm:items-center sm:p-4">
+      <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card">
+        <div className="flex flex-col justify-between gap-3 border-b border-border-subtle bg-primary/5 p-3 sm:flex-row sm:items-center sm:p-4">
           <div className="relative w-full flex-1 sm:max-w-sm">
             <Search className="h-4 w-4 absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -898,7 +898,7 @@ function CampaignsPage() {
                 <span className="font-semibold">{isAr ? "تحديد الكل" : "Select All"}</span>
                 <input
                   type="checkbox"
-                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
+                  className="h-4 w-4 rounded border-input text-primary focus:ring-primary accent-primary cursor-pointer"
                   checked={
                     filtered.filter(
                       (c) =>
@@ -931,7 +931,7 @@ function CampaignsPage() {
                       <div className="flex items-start gap-2.5 min-w-0">
                         <input
                           type="checkbox"
-                          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="mt-1 h-4 w-4 rounded border-input text-primary focus:ring-primary accent-primary cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                           checked={isChecked}
                           onChange={() => toggleSelectCustomer(c)}
                           disabled={!eligibility.eligible}
@@ -947,12 +947,12 @@ function CampaignsPage() {
                           <div className="flex items-center gap-1.5 font-semibold text-foreground truncate flex-wrap">
                             <span className="truncate">{c.name}</span>
                             {c.marketing_consent !== true && (
-                              <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400 shrink-0">
+                              <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400 shrink-0">
                                 {isAr ? "بلا موافقة تسويقية" : "No consent"}
                               </span>
                             )}
                             {c.opted_out_at && (
-                              <span className="rounded bg-rose-500/15 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-400 shrink-0">
+                              <span className="rounded bg-rose-500/15 px-1.5 py-0.5 text-xs font-bold text-rose-700 dark:text-rose-400 shrink-0">
                                 {isAr ? "إلغاء اشتراك" : "Opted out"}
                               </span>
                             )}
@@ -964,21 +964,21 @@ function CampaignsPage() {
                       </div>
                       {stats?.badge && (
                         <span
-                          className={`inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                          className={`inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5 text-xs font-bold ${
                             stats.badge === "VIP"
                               ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
                               : stats.badge === "Churn Risk"
                                 ? "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400"
                                 : stats.badge === "New Buyer"
                                   ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
-                                  : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
+                                  : "bg-muted text-muted-foreground border border-border"
                           }`}
                         >
                           {stats.badge}
                         </span>
                       )}
                     </div>
-                    <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground border-t border-border/40 pt-2">
+                    <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground border-t border-border-subtle pt-2">
                       <div className="flex items-center gap-1.5">
                         <span>{isAr ? "إجمالي الطلبات:" : "Total orders:"}</span>
                         {orderCount === 0 ? (
@@ -998,7 +998,7 @@ function CampaignsPage() {
                         ) : (
                           <Button
                             size="sm"
-                            className="h-7 text-[11px]"
+                            className="h-7 text-xs"
                             variant="outline"
                             onClick={() => send(c)}
                             disabled={!eligibility.eligible}
@@ -1029,7 +1029,7 @@ function CampaignsPage() {
                     <th className="p-4 w-12 text-center">
                       <input
                         type="checkbox"
-                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
+                        className="h-4 w-4 rounded border-input text-primary focus:ring-primary accent-primary cursor-pointer"
                         checked={
                           filtered.filter(
                             (c) =>
@@ -1047,16 +1047,16 @@ function CampaignsPage() {
                         onChange={toggleSelectAll}
                       />
                     </th>
-                    <th className="p-4 font-semibold text-xs uppercase tracking-wider text-start">
+                    <th className="p-4 font-semibold text-xs text-start">
                       {isAr ? "الاسم" : "Name"}
                     </th>
-                    <th className="p-4 font-semibold text-xs uppercase tracking-wider text-start">
+                    <th className="p-4 font-semibold text-xs text-start">
                       {isAr ? "الهاتف" : "Phone"}
                     </th>
-                    <th className="p-4 font-semibold text-xs uppercase tracking-wider text-start">
+                    <th className="p-4 font-semibold text-xs text-start">
                       {isAr ? "فئة العملاء" : "Customer Segment"}
                     </th>
-                    <th className="p-4 font-semibold text-xs uppercase tracking-wider text-start">
+                    <th className="p-4 font-semibold text-xs text-start">
                       {isAr ? "إجمالي الطلبات" : "Total Orders"}
                     </th>
                     <th className="p-4"></th>
@@ -1079,7 +1079,7 @@ function CampaignsPage() {
                         <td className="p-4 text-center">
                           <input
                             type="checkbox"
-                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="h-4 w-4 rounded border-input text-primary focus:ring-primary accent-primary cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                             checked={isChecked}
                             onChange={() => toggleSelectCustomer(c)}
                             disabled={!eligibility.eligible}
@@ -1096,12 +1096,12 @@ function CampaignsPage() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <span>{c.name}</span>
                             {c.marketing_consent !== true && (
-                              <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400">
+                              <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400">
                                 {isAr ? "بلا موافقة تسويقية" : "No consent"}
                               </span>
                             )}
                             {c.opted_out_at && (
-                              <span className="rounded bg-rose-500/15 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-400">
+                              <span className="rounded bg-rose-500/15 px-1.5 py-0.5 text-xs font-bold text-rose-700 dark:text-rose-400">
                                 {isAr ? "إلغاء اشتراك" : "Opted out"}
                               </span>
                             )}
@@ -1120,7 +1120,7 @@ function CampaignsPage() {
                                     ? "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400"
                                     : stats.badge === "New Buyer"
                                       ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
-                                      : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
+                                      : "bg-muted text-muted-foreground border border-border"
                               }`}
                             >
                               {stats.badge}
@@ -1249,7 +1249,7 @@ function CampaignsPage() {
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             {/* Mode selection tabs */}
             <div>
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <Label className="text-xs font-semibold text-muted-foreground">
                 {isAr ? "طريقة التشغيل" : "Sender Mode"}
               </Label>
               <div className="grid grid-cols-2 gap-2 mt-2 p-1 bg-secondary rounded-lg">
@@ -1344,7 +1344,7 @@ function CampaignsPage() {
 
             {/* Recipient Queue Grid */}
             <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <Label className="text-xs font-semibold text-muted-foreground">
                 {isAr ? "قائمة المستلمين وقنواتهم" : "Recipient List Queue"}
               </Label>
               <div className="border rounded-lg overflow-hidden max-h-48 overflow-y-auto divide-y">
@@ -1359,30 +1359,30 @@ function CampaignsPage() {
                         <span className="text-muted-foreground font-mono w-5">#{idx + 1}</span>
                         <div>
                           <div className="font-medium">{c.name}</div>
-                          <div className="text-muted-foreground text-[10px] font-mono" dir="ltr">
+                          <div className="text-muted-foreground text-xs font-mono" dir="ltr">
                             {c.phone}
                           </div>
                         </div>
                       </div>
                       <div>
                         {status === "queued" && (
-                          <span className="text-muted-foreground bg-muted/60 px-2 py-0.5 rounded text-[10px] font-medium">
+                          <span className="text-muted-foreground bg-muted/60 px-2 py-0.5 rounded text-xs font-medium">
                             {isAr ? "في الانتظار" : "Queued"}
                           </span>
                         )}
                         {status === "sending" && (
-                          <span className="text-amber-700 bg-amber-500/10 px-2 py-0.5 rounded text-[10px] font-medium animate-pulse">
+                          <span className="text-amber-700 bg-amber-500/10 px-2 py-0.5 rounded text-xs font-medium animate-pulse">
                             {isAr ? "جاري الإرسال" : "Sending..."}
                           </span>
                         )}
                         {status === "sent" && (
-                          <span className="text-emerald-700 bg-emerald-500/10 px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1">
+                          <span className="text-emerald-700 bg-emerald-500/10 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
                             <Check className="h-2.5 w-2.5" />
                             {isAr ? "تم فتح الشات" : "Opened"}
                           </span>
                         )}
                         {status === "skipped" && (
-                          <span className="text-destructive bg-destructive/10 px-2 py-0.5 rounded text-[10px] font-medium">
+                          <span className="text-destructive bg-destructive/10 px-2 py-0.5 rounded text-xs font-medium">
                             {isAr ? "تخطي" : "Skipped"}
                           </span>
                         )}

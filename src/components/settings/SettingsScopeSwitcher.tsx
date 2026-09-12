@@ -84,7 +84,7 @@ export function SettingsScopeSwitcher({
   };
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-muted/40 p-1">
+    <div className="rounded-2xl border border-border-subtle bg-muted/40 p-1">
       <div className="grid grid-cols-[1fr_1fr_auto] gap-1 sm:hidden">
         {primary.map((tab) => tabButton(tab, true))}
         <DropdownMenu>

@@ -38,9 +38,9 @@ export const OrderFinancialLedgerCard: React.FC<OrderFinancialLedgerCardProps> =
   const isFullyPaid = totals.balanceDue <= 0.001;
 
   return (
-    <div className="rounded-2xl border border-border/70 bg-card p-3.5 sm:p-5 shadow-2xs space-y-4">
+    <div className="rounded-2xl border border-border-strong bg-card p-3.5 sm:p-5 shadow-2xs space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3 border-b border-border/60 pb-3">
+      <div className="flex items-center justify-between gap-3 border-b border-border-subtle pb-3">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
             <CreditCard className="h-4 w-4" />
@@ -66,7 +66,7 @@ export const OrderFinancialLedgerCard: React.FC<OrderFinancialLedgerCardProps> =
       {/* Financial Breakdown Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Left Sub-panel: Calculation Lines */}
-        <div className="space-y-2 text-xs border border-border/50 rounded-xl p-3 bg-muted/20">
+        <div className="space-y-2 text-xs border border-border-subtle rounded-xl p-3 bg-muted/20">
           <div className="flex justify-between items-center text-muted-foreground">
             <span>{isAr ? "المجموع الفرعي" : "Subtotal"}</span>
             <span className="font-mono font-bold text-foreground">
@@ -92,7 +92,7 @@ export const OrderFinancialLedgerCard: React.FC<OrderFinancialLedgerCardProps> =
             </div>
           )}
 
-          <div className="border-t border-border/60 pt-2 flex justify-between items-center text-sm font-extrabold text-foreground font-display">
+          <div className="border-t border-border-subtle pt-2 flex justify-between items-center text-sm font-extrabold text-foreground font-display">
             <span>{isAr ? "المبلغ الإجمالي" : "Grand Total"}</span>
             <span className="font-mono text-base tracking-tight">
               {formatMoney(totals.total, currency, lang)}
@@ -101,7 +101,7 @@ export const OrderFinancialLedgerCard: React.FC<OrderFinancialLedgerCardProps> =
         </div>
 
         {/* Right Sub-panel: Payment Status & Balance Ledger */}
-        <div className="space-y-2 text-xs border border-border/50 rounded-xl p-3 bg-muted/20 flex flex-col justify-between">
+        <div className="space-y-2 text-xs border border-border-subtle rounded-xl p-3 bg-muted/20 flex flex-col justify-between">
           <div className="space-y-2">
             <div className="flex justify-between items-center text-muted-foreground">
               <span>{isAr ? "المبلغ المدفوع (العربون)" : "Advance Paid"}</span>
@@ -125,14 +125,14 @@ export const OrderFinancialLedgerCard: React.FC<OrderFinancialLedgerCardProps> =
             </div>
           </div>
 
-          <div className="pt-2 border-t border-border/60">
+          <div className="pt-2 border-t border-border-subtle">
             {isFullyPaid ? (
-              <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg">
                 <CheckCircle2 className="h-4 w-4 shrink-0" />
                 <span>{isAr ? "الطلب مدفوع بالكامل ✅" : "Fully Paid & Settled ✅"}</span>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-lg">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-lg">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 <span>
                   {isAr

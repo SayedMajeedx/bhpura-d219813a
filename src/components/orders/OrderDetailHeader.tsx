@@ -33,15 +33,15 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
   const BackIcon = isAr ? ArrowRight : ArrowLeft;
 
   return (
-    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-card border border-border/60 shadow-2xs">
+    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-card border border-border-subtle shadow-2xs">
       {/* Left Group: Back Button + Order ID + Badges */}
       <div className="flex items-center gap-3">
         <Button
           variant="outline"
           size="icon"
-          className="h-9 w-9 border-border/70 text-foreground shrink-0"
+          className="h-9 w-9 border-border-strong text-foreground shrink-0"
           asChild
-        >
+         aria-label={isAr ? "إجراء" : "Action"}>
           <Link
             to="/admin/b/$slug/orders"
             params={{ slug }}
@@ -58,20 +58,20 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
             </h1>
             {paymentBadge && (
               <span
-                className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${paymentBadge.className}`}
+                className={`px-2 py-0.5 rounded-md text-xs font-bold ${paymentBadge.className}`}
               >
                 {paymentBadge.label}
               </span>
             )}
             {fulfillmentBadge && (
               <span
-                className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${fulfillmentBadge.classes}`}
+                className={`px-2 py-0.5 rounded-md text-xs font-bold ${fulfillmentBadge.classes}`}
               >
                 {fulfillmentBadge.label}
               </span>
             )}
           </div>
-          <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
+          <p className="text-xs text-muted-foreground font-mono mt-0.5">
             {formatDate(order.created_at, lang)}
           </p>
         </div>
@@ -91,7 +91,7 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon" className="h-9 w-9">
+            <Button variant="outline" size="icon" className="h-9 w-9" aria-label={isAr ? "خيارات" : "Options"}>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>

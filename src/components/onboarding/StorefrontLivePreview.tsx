@@ -62,7 +62,7 @@ export function StorefrontLivePreview({
         <div className="flex items-center gap-2">
           <Badge
             variant="outline"
-            className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold px-2.5 py-0.5 gap-1.5"
+            className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold px-2.5 py-0.5 gap-1.5"
           >
             <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>{isAr ? "تجربة حية تفاعلية" : "Interactive Live Demo"}</span>
@@ -70,7 +70,7 @@ export function StorefrontLivePreview({
         </div>
 
         {/* Device Mode Switcher */}
-        <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border/60">
+        <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border-subtle">
           <Button
             type="button"
             variant={device === "mobile" ? "default" : "ghost"}
@@ -147,8 +147,8 @@ export function StorefrontLivePreview({
               className="w-full h-[640px] sm:h-[690px] bg-card rounded-[38px] border-[5px] sm:border-[6px] border-border shadow-2xl overflow-hidden flex flex-col relative ring-1 ring-border/50"
             >
               {/* iOS Status Bar + Dynamic Island */}
-              <div className="h-8 w-full bg-background/95 backdrop-blur border-b border-border/30 px-5 flex items-center justify-between shrink-0 relative z-30 select-none">
-                <span className="text-[11px] font-semibold text-foreground tracking-tight font-mono">
+              <div className="h-8 w-full bg-background/95 backdrop-blur border-b border-border-subtle px-5 flex items-center justify-between shrink-0 relative z-30 select-none">
+                <span className="text-xs font-semibold text-foreground tracking-tight font-mono">
                   9:41
                 </span>
 
@@ -165,8 +165,8 @@ export function StorefrontLivePreview({
               </div>
 
               {/* iOS Safari Mock Address Pill */}
-              <div className="h-7 bg-muted/60 border-b border-border/50 px-3 flex items-center justify-center shrink-0">
-                <div className="w-full max-w-[240px] h-5 bg-background/90 rounded-md border border-border/60 px-2 flex items-center justify-center gap-1 text-[10px] text-muted-foreground font-mono truncate">
+              <div className="h-7 bg-muted/60 border-b border-border-subtle px-3 flex items-center justify-center shrink-0">
+                <div className="w-full max-w-[240px] h-5 bg-background/90 rounded-md border border-border-subtle px-2 flex items-center justify-center gap-1 text-xs text-muted-foreground font-mono truncate">
                   <Lock className="size-2.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                   <span className="truncate">{cleanSubdomain}.boutq.store</span>
                 </div>
@@ -182,7 +182,7 @@ export function StorefrontLivePreview({
                     <p className="text-xs font-bold text-foreground">
                       {isAr ? "جاري تحميل المتجر الحي..." : "Loading live boutique..."}
                     </p>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       {isAr ? "تصفح المنتجات والسلة بحرية" : "Browse products and cart live"}
                     </p>
                   </div>
@@ -209,7 +209,7 @@ export function StorefrontLivePreview({
               />
 
               {/* Home Indicator Bar */}
-              <div className="w-full py-1.5 bg-background flex justify-center items-center shrink-0 border-t border-border/40">
+              <div className="w-full py-1.5 bg-background flex justify-center items-center shrink-0 border-t border-border-subtle">
                 <div className="w-28 h-1 rounded-full bg-muted-foreground/30" />
               </div>
             </div>
@@ -229,7 +229,7 @@ export function StorefrontLivePreview({
               {/* URL Address Pill */}
               <div
                 dir="ltr"
-                className="flex-1 max-w-sm mx-auto h-6 bg-background rounded-md border border-border/80 px-2.5 flex items-center gap-1.5 text-[11px] text-muted-foreground font-mono truncate"
+                className="flex-1 max-w-sm mx-auto h-6 bg-background rounded-md border border-border-strong px-2.5 flex items-center gap-1.5 text-xs text-muted-foreground font-mono truncate"
               >
                 <Lock className="size-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span className="truncate">{cleanSubdomain}.boutq.store</span>

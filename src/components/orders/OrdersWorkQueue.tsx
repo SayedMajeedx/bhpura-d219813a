@@ -85,7 +85,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
 
   if (isLoading) {
     return (
-      <div className="p-8 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border/60">
+      <div className="p-8 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border-subtle">
         <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent mb-2" />
         <p>{isAr ? "جاري تحميل الطلبات..." : "Loading orders work queue..."}</p>
       </div>
@@ -103,7 +103,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
 
   if (orders.length === 0) {
     return (
-      <div className="p-12 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border/60 space-y-2">
+      <div className="p-12 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border-subtle space-y-2">
         <p className="font-bold text-sm text-foreground">
           {isAr ? "لا توجد طلبات مطابقة" : "No orders found"}
         </p>
@@ -117,11 +117,11 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
   }
 
   return (
-    <div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-2xs select-text">
+    <div className="rounded-xl border border-border-subtle bg-card overflow-hidden shadow-2xs select-text">
       <div className="overflow-x-auto">
         <table className="w-full text-start text-xs border-collapse">
           <thead>
-            <tr className="border-b border-border/60 bg-muted/40 font-bold text-muted-foreground uppercase text-[10px] tracking-wider">
+            <tr className="border-b border-border-subtle bg-muted/40 font-bold text-muted-foreground uppercase text-xs tracking-wider">
               <th className="w-10 p-3 text-center">
                 <Checkbox
                   checked={selectAllState}
@@ -198,7 +198,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                       #{order.invoice_number || order.id.slice(0, 8)}
                       <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </Link>
-                    <div className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                    <div className="text-xs text-muted-foreground font-mono mt-0.5">
                       {formatDate(order.created_at, lang)}
                     </div>
                   </td>
@@ -206,7 +206,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                   {/* Customer / PII Snapshot */}
                   <td className="p-3 align-middle">
                     {isGuest ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground/80 bg-muted/50 px-2 py-0.5 rounded-md">
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md">
                         <UserX className="h-3.5 w-3.5 text-muted-foreground" />
                         {isAr ? "عميل زائر" : "Guest Customer"}
                       </span>
@@ -219,7 +219,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                           <a
                             href={`tel:${customerPhone}`}
                             onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1 text-[10px] font-mono text-muted-foreground hover:text-primary mt-0.5"
+                            className="inline-flex items-center gap-1 text-xs font-mono text-muted-foreground hover:text-primary mt-0.5"
                           >
                             <Phone className="h-2.5 w-2.5" />
                             {maskPhoneForList(customerPhone)}
@@ -234,15 +234,15 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {paymentBadge && (
                         <span
-                          className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold ${paymentBadge.className}`}
+                          className={`inline-flex px-2 py-0.5 rounded-md text-xs font-bold ${paymentBadge.className}`}
                         >
                           {paymentBadge.label}
                         </span>
                       )}
                       <span
-                        className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-semibold ${
+                        className={`inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-semibold ${
                           paymentMethod.recognized
-                            ? "border-border/50 bg-muted/80 text-foreground"
+                            ? "border-border-subtle bg-muted/80 text-foreground"
                             : "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300"
                         }`}
                         title={paymentMethod.rawValue ?? undefined}
@@ -257,7 +257,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {fulfillmentBadge && (
                         <span
-                          className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold ${fulfillmentBadge.classes}`}
+                          className={`inline-flex px-2 py-0.5 rounded-md text-xs font-bold ${fulfillmentBadge.classes}`}
                         >
                           {fulfillmentBadge.label}
                         </span>
@@ -271,7 +271,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                         onClick={(e) => e.stopPropagation()}
                       >
                         {assignedCourier ? (
-                          <div className="inline-flex items-center gap-1 text-[10px] font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-md">
+                          <div className="inline-flex items-center gap-1 text-xs font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-md">
                             <Truck className="h-3 w-3 shrink-0 text-indigo-500" />
                             <span className="truncate max-w-[110px]">
                               {assignedCourier.name || assignedCourier.email}
@@ -295,7 +295,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                             onValueChange={(val) => onAssignCourier(order.id, val)}
                             defaultValue=""
                           >
-                            <SelectTrigger className="h-6 text-[10px] font-semibold w-28 bg-background/80 border-border/60">
+                            <SelectTrigger className="h-6 text-xs font-semibold w-28 bg-background/80 border-border-subtle">
                               <SelectValue
                                 placeholder={isAr ? "+ تعيين مندوب" : "+ Assign Courier"}
                               />

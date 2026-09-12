@@ -309,7 +309,7 @@ function CustomerReviewsPage() {
             </Card>
           ) : filtered.length === 0 ? (
             <Card className="rounded-md p-10 text-center">
-              <MessageSquareHeart className="mx-auto mb-3 size-10 text-muted-foreground/40" />
+              <MessageSquareHeart className="mx-auto mb-3 size-10 text-muted-foreground" />
               <h2 className="font-semibold">
                 {reviews.length
                   ? isAr
@@ -436,7 +436,7 @@ function ReviewCard({
                   "size-5",
                   value <= Number(review.rating)
                     ? "fill-primary text-primary"
-                    : "text-muted-foreground/25",
+                    : "text-muted-foreground",
                 )}
               />
             ))}

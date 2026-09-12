@@ -191,7 +191,7 @@ function ReportsCustomers() {
                       {customersData.top_customers.map((c: any, idx: number) => (
                         <article
                           key={`${c.customer_name}-${idx}`}
-                          className="rounded-xl border border-border/60 bg-background/70 p-3"
+                          className="rounded-xl border border-border-subtle bg-background/70 p-3"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <h3 className="min-w-0 truncate text-sm font-bold">
@@ -201,7 +201,7 @@ function ReportsCustomers() {
                               {formatMoney(c.total_pov, c.currency, lang)}
                             </strong>
                           </div>
-                          <p className="mt-2 text-[11px] text-muted-foreground">
+                          <p className="mt-2 text-xs text-muted-foreground">
                             {c.paid_order_count} {lang === "ar" ? "طلبات مدفوعة" : "paid orders"}
                           </p>
                         </article>
@@ -215,7 +215,7 @@ function ReportsCustomers() {
                             <TableHead className="text-center">
                               {lang === "ar" ? "الطلبات" : "Orders"}
                             </TableHead>
-                            <TableHead className="text-right">
+                            <TableHead className="text-end">
                               {lang === "ar" ? "إجمالي الإنفاق" : "Total Spent"}
                             </TableHead>
                           </TableRow>
@@ -225,7 +225,7 @@ function ReportsCustomers() {
                             <TableRow key={idx}>
                               <TableCell className="font-medium">{c.customer_name}</TableCell>
                               <TableCell className="text-center">{c.paid_order_count}</TableCell>
-                              <TableCell className="text-right">
+                              <TableCell className="text-end">
                                 {formatMoney(c.total_pov, c.currency, lang)}
                               </TableCell>
                             </TableRow>

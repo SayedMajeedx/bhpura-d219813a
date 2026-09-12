@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { type AdminNavItemConfig, DEFAULT_PINNED_IDS } from "@/config/admin-navigation";
+import { type AdminNavItemConfig, type MerchantJobCategory, DEFAULT_PINNED_IDS } from "@/config/admin-navigation";
 
 export interface OsAppsHubModalProps {
   open: boolean;
@@ -22,16 +22,7 @@ export interface OsAppsHubModalProps {
   onPinnedChange?: (pinnedIds: string[]) => void;
 }
 
-type CategoryTab =
-  | "all"
-  | "pinned"
-  | "products_stock"
-  | "customers_growth"
-  | "money_reports"
-  | "store_setup"
-  | "operations"
-  | "growth_finance"
-  | "storefront_settings";
+type CategoryTab = "all" | "pinned" | MerchantJobCategory;
 
 export function OsAppsHubModal({
   open,
@@ -127,25 +118,25 @@ export function OsAppsHubModal({
     {
       id: "products_stock" as const,
       label: isAr ? "المنتجات والمخزون" : "Products & Stock",
-      count: modularItems.filter((i) => (i.category || i.section) === "products_stock").length,
+      count: modularItems.filter((i) => i.category === "products_stock").length,
       icon: Boxes,
     },
     {
       id: "customers_growth" as const,
       label: isAr ? "العملاء والنمو" : "Customers & Growth",
-      count: modularItems.filter((i) => (i.category || i.section) === "customers_growth").length,
+      count: modularItems.filter((i) => i.category === "customers_growth").length,
       icon: Zap,
     },
     {
       id: "money_reports" as const,
       label: isAr ? "المالية والتقارير" : "Money & Reports",
-      count: modularItems.filter((i) => (i.category || i.section) === "money_reports").length,
+      count: modularItems.filter((i) => i.category === "money_reports").length,
       icon: Wallet,
     },
     {
       id: "store_setup" as const,
       label: isAr ? "إعداد المتجر" : "Store Setup",
-      count: modularItems.filter((i) => (i.category || i.section) === "store_setup").length,
+      count: modularItems.filter((i) => i.category === "store_setup").length,
       icon: Sliders,
     },
   ];
@@ -157,8 +148,7 @@ export function OsAppsHubModal({
       if (selectedCategory === "pinned") {
         if (!pinnedIds.includes(item.id)) return false;
       } else if (selectedCategory !== "all") {
-        const itemCat = item.category || item.section;
-        if (itemCat !== selectedCategory && item.section !== selectedCategory) {
+        if (item.category !== selectedCategory) {
           return false;
         }
       }
@@ -195,9 +185,9 @@ export function OsAppsHubModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         dir={isAr ? "rtl" : "ltr"}
-        className="flex h-[calc(100dvh-2rem)] max-h-[760px] w-[calc(100vw-1.5rem)] max-w-5xl flex-col overflow-hidden rounded-[24px] border-border/70 bg-background p-0 text-foreground shadow-2xl sm:w-[calc(100vw-3rem)]"
+        className="flex h-[calc(100dvh-2rem)] max-h-[760px] w-[calc(100vw-1.5rem)] max-w-5xl flex-col overflow-hidden rounded-[24px] border-border-strong bg-background p-0 text-foreground shadow-2xl sm:w-[calc(100vw-3rem)]"
       >
-        <DialogHeader className="border-b border-border/70 px-5 pb-5 pt-6 sm:px-7 sm:pb-6 sm:pt-7">
+        <DialogHeader className="border-b border-border-strong px-5 pb-5 pt-6 sm:px-7 sm:pb-6 sm:pt-7">
           <div className="flex items-start gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
               <Layers className="h-5 w-5" />
@@ -221,7 +211,7 @@ export function OsAppsHubModal({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={isAr ? "ابحث باسم الأداة أو وظيفتها" : "Search by tool name or function"}
-              className="h-12 rounded-xl border-border/80 bg-muted/25 pe-11 ps-11 text-sm shadow-none transition-colors placeholder:text-muted-foreground/70 focus-visible:border-primary/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/15"
+              className="h-12 rounded-xl border-border-strong bg-muted/25 pe-11 ps-11 text-sm shadow-none transition-colors placeholder:text-muted-foreground focus-visible:border-primary/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/15"
             />
             {searchQuery && (
               <button
@@ -237,7 +227,7 @@ export function OsAppsHubModal({
         </DialogHeader>
 
         <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-          <aside className="shrink-0 border-b border-border/70 bg-muted/15 p-3 md:w-60 md:border-b-0 md:border-e md:p-4">
+          <aside className="shrink-0 border-b border-border-strong bg-muted/15 p-3 md:w-60 md:border-b-0 md:border-e md:p-4">
             <div className="flex gap-1 overflow-x-auto scrollbar-none md:flex-col md:overflow-visible">
               {categories.map((cat) => {
                 const Icon = cat.icon;
@@ -256,7 +246,7 @@ export function OsAppsHubModal({
                   >
                     <Icon className={cn("h-4 w-4", isSelected && "text-primary")} />
                     <span>{cat.label}</span>
-                    <span className="ms-auto min-w-5 rounded-md bg-muted px-1.5 py-0.5 text-center font-mono text-[10px] text-muted-foreground">
+                    <span className="ms-auto min-w-5 rounded-md bg-muted px-1.5 py-0.5 text-center font-mono text-xs text-muted-foreground">
                       {cat.count}
                     </span>
                   </button>
@@ -316,7 +306,7 @@ export function OsAppsHubModal({
                           handleLaunch(item);
                         }
                       }}
-                      className="group relative flex min-h-28 cursor-pointer items-start gap-4 rounded-2xl border border-border/70 bg-card p-4 text-start shadow-xs transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                      className="group relative flex min-h-28 cursor-pointer items-start gap-4 rounded-2xl border border-border-strong bg-card p-4 text-start shadow-xs transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                     >
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                         <Icon className="h-5 w-5" />
@@ -324,7 +314,7 @@ export function OsAppsHubModal({
                       <div className="min-w-0 flex-1 pe-7">
                         <div className="flex items-center gap-1.5">
                           <h4 className="text-sm font-bold leading-6 text-foreground">{title}</h4>
-                          <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/0 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary rtl:rotate-[-90deg]" />
+                          <ArrowUpRight className="h-3.5 w-3.5 shrink-0 opacity-0 text-muted-foreground transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary rtl:rotate-[-90deg]" />
                         </div>
                         {description && (
                           <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
@@ -348,7 +338,7 @@ export function OsAppsHubModal({
                           "absolute end-3 top-3 flex h-8 w-8 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                           isPinned
                             ? "bg-amber-50 text-amber-500 dark:bg-amber-500/10"
-                            : "text-muted-foreground/50 hover:bg-muted hover:text-foreground",
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground",
                         )}
                         aria-label={
                           isPinned ? (isAr ? "إلغاء التثبيت" : "Unpin") : isAr ? "تثبيت" : "Pin"
@@ -364,7 +354,7 @@ export function OsAppsHubModal({
           </main>
         </div>
 
-        <footer className="flex min-h-14 items-center justify-between border-t border-border/70 bg-background px-5 sm:px-7">
+        <footer className="flex min-h-14 items-center justify-between border-t border-border-strong bg-background px-5 sm:px-7">
           <p className="flex items-center gap-2 text-xs text-muted-foreground">
             <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
             {isAr

@@ -119,32 +119,32 @@ function ReportsProducts() {
                   {productsData.map((p: any, idx: number) => (
                     <article
                       key={`${p.sku || p.product_name}-${idx}`}
-                      className="rounded-xl border border-border/60 bg-background/70 p-3 shadow-2xs"
+                      className="rounded-xl border border-border-subtle bg-background/70 p-3 shadow-2xs"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <h3 className="truncate text-sm font-bold">{p.product_name}</h3>
                           <p
-                            className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground"
+                            className="mt-0.5 truncate font-mono text-xs text-muted-foreground"
                             dir="ltr"
                           >
                             {p.sku || "—"}
                           </p>
                         </div>
-                        <span className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary">
+                        <span className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-xs font-bold text-primary">
                           {p.units_sold} {lang === "ar" ? "وحدة" : "units"}
                         </span>
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1">
                         {[p.color, p.size, p.fabric].filter(Boolean).map((value: string) => (
-                          <Badge key={value} variant="outline" className="text-[10px] font-normal">
+                          <Badge key={value} variant="outline" className="text-xs font-normal">
                             {value}
                           </Badge>
                         ))}
                       </div>
-                      <dl className="mt-3 grid grid-cols-2 gap-2 border-t border-border/50 pt-3 text-xs">
+                      <dl className="mt-3 grid grid-cols-2 gap-2 border-t border-border-subtle pt-3 text-xs">
                         <div>
-                          <dt className="text-[10px] text-muted-foreground">
+                          <dt className="text-xs text-muted-foreground">
                             {lang === "ar" ? "صافي المبيعات" : "Net sales"}
                           </dt>
                           <dd className="mt-0.5 font-mono font-bold">
@@ -152,7 +152,7 @@ function ReportsProducts() {
                           </dd>
                         </div>
                         <div>
-                          <dt className="text-[10px] text-muted-foreground">
+                          <dt className="text-xs text-muted-foreground">
                             {lang === "ar" ? "تكلفة البضاعة" : "COGS"}
                           </dt>
                           <dd className="mt-0.5 font-mono font-bold">
@@ -160,8 +160,8 @@ function ReportsProducts() {
                           </dd>
                         </div>
                       </dl>
-                      <div className="mt-3 flex items-center justify-between border-t border-border/50 pt-2.5">
-                        <span className="text-[11px] text-muted-foreground">
+                      <div className="mt-3 flex items-center justify-between border-t border-border-subtle pt-2.5">
+                        <span className="text-xs text-muted-foreground">
                           {lang === "ar" ? "المخزون الحالي" : "Current stock"}
                         </span>
                         {p.is_out_of_stock ? (
@@ -175,7 +175,7 @@ function ReportsProducts() {
                         )}
                       </div>
                       {p.is_missing_cost && (
-                        <p className="mt-2 rounded-lg bg-amber-50 px-2 py-1.5 text-[10px] font-semibold text-amber-800">
+                        <p className="mt-2 rounded-lg bg-amber-50 px-2 py-1.5 text-xs font-semibold text-amber-800">
                           {lang === "ar" ? "بيانات التكلفة غير متوفرة" : "Cost data is unavailable"}
                         </p>
                       )}
@@ -189,16 +189,16 @@ function ReportsProducts() {
                         <TableHead>{lang === "ar" ? "المنتج" : "Product"}</TableHead>
                         <TableHead>{lang === "ar" ? "SKU" : "SKU"}</TableHead>
                         <TableHead>{lang === "ar" ? "المتغير" : "Variant"}</TableHead>
-                        <TableHead className="text-right">
+                        <TableHead className="text-end">
                           {lang === "ar" ? "الوحدات المباعة" : "Units Sold"}
                         </TableHead>
-                        <TableHead className="text-right">
+                        <TableHead className="text-end">
                           {lang === "ar" ? "صافي المبيعات" : "Net Sales"}
                         </TableHead>
-                        <TableHead className="text-right">
+                        <TableHead className="text-end">
                           {lang === "ar" ? "تكلفة البضاعة" : "COGS"}
                         </TableHead>
-                        <TableHead className="text-right">
+                        <TableHead className="text-end">
                           {lang === "ar" ? "المخزون الحالي" : "Current Stock"}
                         </TableHead>
                       </TableRow>
@@ -211,7 +211,7 @@ function ReportsProducts() {
                             {p.is_missing_cost && (
                               <Badge
                                 variant="destructive"
-                                className="ml-2 mt-1 text-[10px]"
+                                className="ms-2 mt-1 text-xs"
                                 title={
                                   lang === "ar"
                                     ? "بيانات التكلفة مفقودة لهذا المنتج"
@@ -235,14 +235,14 @@ function ReportsProducts() {
                               )}
                             </div>
                           </TableCell>
-                          <TableCell className="text-right font-bold">{p.units_sold}</TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-end font-bold">{p.units_sold}</TableCell>
+                          <TableCell className="text-end">
                             {formatMoney(p.net_merch_sales, p.currency, lang)}
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-end">
                             {p.is_missing_cost ? "—" : formatMoney(p.known_cogs, p.currency, lang)}
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-end">
                             <div className="flex items-center justify-end gap-2">
                               {p.is_out_of_stock ? (
                                 <Badge variant="destructive" className="flex gap-1">

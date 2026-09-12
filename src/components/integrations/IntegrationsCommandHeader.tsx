@@ -23,19 +23,19 @@ export function IntegrationsCommandHeader({
 
       <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary tracking-wide">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary tracking-wide">
             <Plug className="h-3.5 w-3.5 shrink-0" />
             <span>
               {isAr ? "التكاملات والربط البرمجي WEBHOOKS" : "INTEGRATIONS & WEBHOOKS HUB"}
             </span>
-            <span className="ms-1 px-1.5 py-0.2 rounded-full bg-primary text-primary-foreground text-[10px] font-extrabold">
+            <span className="ms-1 px-1.5 py-0.2 rounded-full bg-primary text-primary-foreground text-xs font-extrabold">
               {brandName}
             </span>
           </div>
 
           <h1 className="text-xl font-extrabold tracking-tight text-foreground sm:text-2xl flex items-center gap-2">
             <span>{isAr ? "التكاملات وبوابات الربط" : "Integrations & API Keys"}</span>
-            <span className="inline-flex items-center px-2 py-0.5 text-xs font-bold bg-muted text-foreground border border-border/60 rounded-full">
+            <span className="inline-flex items-center px-2 py-0.5 text-xs font-bold bg-muted text-foreground border border-border-subtle rounded-full">
               {integrationCount} {isAr ? "تكاملات" : "integrations"}
             </span>
           </h1>

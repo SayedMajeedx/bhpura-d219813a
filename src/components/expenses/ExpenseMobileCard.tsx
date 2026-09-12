@@ -37,11 +37,11 @@ export function ExpenseMobileCard({
 
   return (
     <Card
-      className="p-3.5 border border-border/60 shadow-sm rounded-xl bg-card/60 backdrop-blur-sm space-y-2.5 transition-all duration-200 hover:border-primary/40 cursor-pointer"
+      className="p-3.5 border border-border-subtle shadow-sm rounded-xl bg-card space-y-2.5 transition-all duration-200 hover:border-primary/40 cursor-pointer"
       onClick={() => onEdit(e)}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-primary/10 text-primary border border-primary/20">
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
           <Receipt className="h-3 w-3 shrink-0" />
           {e.category}
         </span>
@@ -51,7 +51,7 @@ export function ExpenseMobileCard({
         </span>
       </div>
 
-      <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t border-border/40">
+      <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t border-border-subtle">
         <div className="flex items-center gap-1">
           <Calendar className="h-3.5 w-3.5 shrink-0" />
           <span>
@@ -75,7 +75,7 @@ export function ExpenseMobileCard({
       )}
 
       <div
-        className="flex items-center justify-between pt-2 border-t border-border/40"
+        className="flex items-center justify-between pt-2 border-t border-border-subtle"
         onClick={(event) => event.stopPropagation()}
       >
         {e.receipt_url ? (
@@ -83,7 +83,7 @@ export function ExpenseMobileCard({
             href={e.receipt_url}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
           >
             <FileText className="h-3.5 w-3.5" />
             <span>{isAr ? "الفاتورة" : "Receipt"}</span>

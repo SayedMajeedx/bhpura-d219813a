@@ -26,6 +26,24 @@ export const DESIGN_TOKENS = {
     accentForeground: "var(--accent-foreground)",
     destructive: "var(--destructive)",
     destructiveForeground: "var(--destructive-foreground)",
+    destructiveSubtle: "var(--destructive-subtle)",
+    /**
+     * Semantic status. Use these instead of raw Tailwind palettes — the app
+     * currently spends ~1,600 emerald/amber/rose literals saying what these
+     * four trios say, and the same meaning drifts hue between files.
+     * Each ships as mark / foreground / subtle: `bg-success-subtle
+     * text-success` for a pill, `bg-success text-success-foreground` for a
+     * solid mark.
+     */
+    success: "var(--success)",
+    successForeground: "var(--success-foreground)",
+    successSubtle: "var(--success-subtle)",
+    warning: "var(--warning)",
+    warningForeground: "var(--warning-foreground)",
+    warningSubtle: "var(--warning-subtle)",
+    info: "var(--info)",
+    infoForeground: "var(--info-foreground)",
+    infoSubtle: "var(--info-subtle)",
     background: "var(--background)",
     foreground: "var(--foreground)",
     card: "var(--card)",
@@ -33,6 +51,8 @@ export const DESIGN_TOKENS = {
     popover: "var(--popover)",
     popoverForeground: "var(--popover-foreground)",
     border: "var(--border)",
+    borderSubtle: "var(--border-subtle)",
+    borderStrong: "var(--border-strong)",
     input: "var(--input)",
     ring: "var(--ring)",
     sidebar: "var(--sidebar)",
@@ -54,17 +74,23 @@ export const DESIGN_TOKENS = {
     textSecondary: "var(--os-text-secondary)",
   },
 
-  /** Standardized Radii across Admin, Storefront, and Boutq OS */
+  /**
+   * Radii. Three roles carry the whole app — a thing is a control, a card, or
+   * an overlay. `control` / `card` / `overlay` are the names to reach for;
+   * `panel`, `window` and `dock` are retained aliases that now resolve to
+   * `overlay`, and sm/md/lg/xl remain only for the OsSurface `radius` prop.
+   */
   radii: {
-    sm: "calc(var(--radius) - 4px)", // 4px / 0.25rem
-    md: "calc(var(--radius) - 2px)", // 6px / 0.375rem (Admin Default)
-    lg: "var(--radius)", // 8px / 0.5rem
-    xl: "calc(var(--radius) + 4px)", // 12px / 0.75rem (Storefront Default)
-    control: "var(--os-radius-control)", // 10px / 0.625rem
-    card: "var(--os-radius-card)", // 18px / 1.125rem
-    panel: "var(--os-radius-panel)", // 22px / 1.375rem
-    window: "var(--os-radius-window)", // 24px / 1.5rem
-    dock: "var(--os-radius-dock)", // 28px / 1.75rem
+    sm: "calc(var(--radius) - 2px)", // 6px  / 0.375rem
+    md: "var(--os-radius-control)", // 8px  / 0.5rem
+    lg: "var(--os-radius-card)", // 12px / 0.75rem
+    xl: "var(--os-radius-panel)", // 16px / 1rem
+    control: "var(--os-radius-control)", // 8px  / 0.5rem  — buttons, inputs, chips
+    card: "var(--os-radius-card)", // 12px / 0.75rem — cards, panels, list rows
+    overlay: "var(--os-radius-panel)", // 16px / 1rem    — dialogs, sheets, docks
+    panel: "var(--os-radius-panel)", // alias of overlay
+    window: "var(--os-radius-window)", // alias of overlay
+    dock: "var(--os-radius-dock)", // alias of overlay
     full: "9999px",
   },
 

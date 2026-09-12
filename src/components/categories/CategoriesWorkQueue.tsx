@@ -2,6 +2,7 @@ import React from "react";
 import { Boxes, Pencil, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OsEmptyState } from "@/components/os/os-empty-state";
+import { OsSkeleton } from "@/components/os/os-skeleton";
 
 interface CategoriesWorkQueueProps {
   lang: "en" | "ar";
@@ -53,9 +54,25 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
 
   if (isLoading) {
     return (
-      <div className="p-8 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border/60">
-        <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent mb-2" />
-        <p>{isAr ? "جاري تحميل الأقسام..." : "Loading categories..."}</p>
+      <div className="rounded-xl border border-border-subtle bg-card overflow-hidden shadow-2xs p-4 space-y-3">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div
+            key={i}
+            className="flex items-center justify-between gap-4 py-2 border-b border-border-subtle last:border-0"
+          >
+            <div className="flex items-center gap-3">
+              <OsSkeleton variant="avatar" className="h-8 w-8 rounded-lg" />
+              <div className="space-y-1.5">
+                <OsSkeleton variant="text" className="h-4 w-36" />
+                <OsSkeleton variant="text" className="h-3 w-20" />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <OsSkeleton variant="button" className="h-8 w-16" />
+              <OsSkeleton variant="button" className="h-8 w-8" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
@@ -75,7 +92,7 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
   }
 
   return (
-    <div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-2xs">
+    <div className="rounded-xl border border-border-subtle bg-card overflow-hidden shadow-2xs">
       <div className="space-y-2 p-2 sm:hidden">
         {categories.map((cat, index) => {
           const name = isAr ? cat.name_ar || cat.name : cat.name_en || cat.name;
@@ -88,30 +105,30 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
           return (
             <article
               key={cat.id}
-              className="rounded-xl border border-border/60 bg-background/70 p-3 shadow-2xs"
+              className="rounded-xl border border-border-subtle bg-background/70 p-3 shadow-2xs"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
                     <h2 className="truncate text-sm font-bold text-foreground">{name}</h2>
                     {cat.is_smart && (
-                      <span className="shrink-0 rounded-md border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary">
+                      <span className="shrink-0 rounded-md border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary">
                         {isAr ? "ذكي" : "Smart"}
                       </span>
                     )}
                   </div>
                   <p
-                    className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground"
+                    className="mt-0.5 truncate font-mono text-xs text-muted-foreground"
                     dir="ltr"
                   >
                     /{cat.slug || cat.id.slice(0, 8)}
                   </p>
                 </div>
-                <span className="shrink-0 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary">
+                <span className="shrink-0 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
                   {countText}
                 </span>
               </div>
-              <div className="mt-3 flex items-center justify-between border-t border-border/50 pt-3">
+              <div className="mt-3 flex items-center justify-between border-t border-border-subtle pt-3">
                 <div
                   className="flex items-center gap-1"
                   aria-label={isAr ? "تغيير ترتيب القسم" : "Reorder category"}
@@ -164,7 +181,7 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
       <div className="hidden overflow-x-auto sm:block">
         <table className="w-full text-start text-xs border-collapse">
           <thead>
-            <tr className="border-b border-border/60 bg-muted/40 font-bold text-muted-foreground uppercase text-[10px] tracking-wider">
+            <tr className="border-b border-border-subtle bg-muted/40 font-bold text-muted-foreground uppercase text-xs tracking-wider">
               <th className="p-3 text-start">{isAr ? "اسم القسم" : "Category Name"}</th>
               <th className="p-3 text-start">{isAr ? "الرابط اللطيف (Slug)" : "Slug"}</th>
               <th className="p-3 text-start">{isAr ? "عدد المنتجات" : "Products"}</th>
@@ -188,17 +205,17 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
                     <div className="flex items-center gap-1.5">
                       <span>{name}</span>
                       {cat.is_smart && (
-                        <span className="shrink-0 rounded-md border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary">
+                        <span className="shrink-0 rounded-md border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary">
                           {isAr ? "قسم ذكي" : "Smart"}
                         </span>
                       )}
                     </div>
                   </td>
-                  <td className="p-3 align-middle font-mono text-[11px] text-muted-foreground">
+                  <td className="p-3 align-middle font-mono text-xs text-muted-foreground">
                     {cat.slug || cat.id.slice(0, 8)}
                   </td>
                   <td className="p-3 align-middle font-mono text-xs font-semibold">
-                    <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
+                    <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
                       {countText}
                     </span>
                   </td>
@@ -210,6 +227,8 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
                         className="h-7 w-7 text-muted-foreground"
                         disabled={index === 0}
                         onClick={() => onReorder(cat.id, "up")}
+                        aria-label={isAr ? "تحريك لأعلى" : "Move up"}
+                        title={isAr ? "تحريك لأعلى" : "Move up"}
                       >
                         <ArrowUp className="h-3.5 w-3.5" />
                       </Button>
@@ -219,6 +238,8 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
                         className="h-7 w-7 text-muted-foreground"
                         disabled={index === categories.length - 1}
                         onClick={() => onReorder(cat.id, "down")}
+                        aria-label={isAr ? "تحريك لأسفل" : "Move down"}
+                        title={isAr ? "تحريك لأسفل" : "Move down"}
                       >
                         <ArrowDown className="h-3.5 w-3.5" />
                       </Button>

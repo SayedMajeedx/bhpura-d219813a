@@ -211,9 +211,11 @@ export function printThermalReceipt(a: ThermalArgs) {
 
 export type DeliveryNoteArgs = {
   brand: string;
+  logoUrl?: string | null;
   orderNumber: string | number;
   orderDate: string;
   fulfillmentStatus?: string | null;
+  fulfillmentStatusLabel?: string | null;
   customerName?: string | null;
   customerPhone?: string | null;
   deliveryAddress?: string | null;
@@ -283,7 +285,7 @@ export function printDeliveryNote(a: DeliveryNoteArgs) {
   <style>
     @page { size: A4; margin: 15mm; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #111; margin: 0; padding: 20px; font-size: 13px; }
-    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 16px; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 16px; gap: 16px; }
     .brand { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
     .doc-title { font-size: 16px; font-weight: 700; color: #444; }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
@@ -297,13 +299,17 @@ export function printDeliveryNote(a: DeliveryNoteArgs) {
 </head>
 <body>
   <div class="header">
-    <div>
-      <div class="brand">${escapeHtml(a.brand)}</div>
-      <div style="font-size:12px;color:#6b7280;margin-top:2px;">${escapeHtml(a.orderDate)}</div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      ${a.logoUrl ? `<img src="${escapeHtml(a.logoUrl)}" alt="${escapeHtml(a.brand)}" style="max-height:48px;max-width:140px;object-fit:contain;border-radius:4px;" />` : ""}
+      <div>
+        <div class="brand">${escapeHtml(a.brand)}</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:2px;">${escapeHtml(a.orderDate)}</div>
+      </div>
     </div>
     <div style="text-align:${isRTL ? "left" : "right"};">
       <div class="doc-title">${isRTL ? "إذن تسليم وبوليصة شحن" : "DELIVERY NOTE"}</div>
       <div style="font-size:14px;font-weight:700;font-family:monospace;margin-top:2px;">#${escapeHtml(String(a.orderNumber))}</div>
+      ${a.fulfillmentStatusLabel ? `<div style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:4px;background:rgb(239, 246, 255);color:rgb(29, 78, 216);font-size:11px;font-weight:700;border:1px solid rgb(191, 219, 254);">${escapeHtml(a.fulfillmentStatusLabel)}</div>` : ""}
     </div>
   </div>
 

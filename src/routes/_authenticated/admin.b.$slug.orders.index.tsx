@@ -116,6 +116,7 @@ type OrdersSearch = {
   queue?: string;
   fulfillment_status?: string;
   filter?: string;
+  action?: string;
 };
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/orders/")({
@@ -126,6 +127,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/orders/")({
     if (typeof search.fulfillment_status === "string")
       result.fulfillment_status = search.fulfillment_status;
     if (typeof search.filter === "string") result.filter = search.filter;
+    if (typeof search.action === "string") result.action = search.action;
     return result;
   },
   component: OrdersList,
@@ -172,7 +174,7 @@ function deliveryStatusPresentation(status: string | null | undefined, lang: "en
     assigned: {
       en: "Assigned",
       ar: "تم التعيين",
-      className: "bg-slate-100 text-slate-800 border border-slate-300 font-semibold",
+      className: "bg-muted text-muted-foreground border border-border font-semibold",
     },
     out_for_delivery: {
       en: "Out for delivery",
@@ -183,16 +185,6 @@ function deliveryStatusPresentation(status: string | null | undefined, lang: "en
       en: "Delivered",
       ar: "تم التوصيل",
       className: "bg-emerald-100 text-emerald-900 border border-emerald-300 font-semibold",
-    },
-    failed: {
-      en: "Delivery failed",
-      ar: "فشل التوصيل",
-      className: "bg-rose-100 text-rose-900 border border-rose-300 font-semibold",
-    },
-    delivery_failed: {
-      en: "Delivery failed",
-      ar: "فشل التوصيل",
-      className: "bg-rose-100 text-rose-900 border border-rose-300 font-semibold",
     },
     returned: {
       en: "Returned",
@@ -227,7 +219,7 @@ function CustomerContactActions({ customer, lang }: { customer: any; lang: "en" 
       <a
         href={`tel:${cleanPhone}`}
         onClick={(e) => e.stopPropagation()}
-        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-md bg-slate-100 text-slate-800 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 transition-colors shadow-xs"
+        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-md bg-muted text-foreground hover:bg-muted/80 transition-colors shadow-xs"
       >
         <Phone className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0" />
         {lang === "ar" ? "اتصال" : "Call"}
@@ -298,7 +290,7 @@ function OrderItemsSummary({
   const truncated = descriptions.length > 35 ? descriptions.slice(0, 35) + "..." : descriptions;
 
   return (
-    <div className="mt-1.5 text-[11px] font-medium text-muted-foreground flex items-center gap-1.5 bg-secondary/50 px-2 py-0.5 rounded-md w-fit max-w-full">
+    <div className="mt-1.5 text-xs font-medium text-muted-foreground flex items-center gap-1.5 bg-secondary/50 px-2 py-0.5 rounded-md w-fit max-w-full">
       <Package className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
       <span className="font-bold text-foreground">
         {totalQty} {lang === "ar" ? "منتج" : totalQty === 1 ? "item" : "items"}
@@ -342,6 +334,16 @@ function OrdersList() {
 
   // Route search parameter integration for direct tab selection from dashboard
   const routeSearch = Route.useSearch();
+
+  useEffect(() => {
+    if (routeSearch?.action === "new_manual" || routeSearch?.action === "new") {
+      navigate({
+        to: "/admin/b/$slug/orders/$id",
+        params: { slug, id: "new" },
+        replace: true,
+      });
+    }
+  }, [routeSearch?.action, slug, navigate]);
 
   const initialTabFilter = useMemo<
     "all" | "unpaid" | "to_prepare" | "action_required" | "shipped" | "completed"
@@ -1061,7 +1063,7 @@ function OrdersList() {
 
     if (isCancelled || isRefunded) {
       return (
-        <span className="inline-flex items-center rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400">
+        <span className="inline-flex items-center rounded-md border border-border bg-muted/50 px-3 py-1.5 text-xs font-semibold text-muted-foreground">
           {isRefunded
             ? lang === "ar"
               ? "تم الاسترجاع"
@@ -1772,7 +1774,7 @@ function OrdersList() {
       {isAdmin && (
         <div
           className={cn(
-            "flex-col gap-2 rounded-xl border border-border/70 bg-card p-3 shadow-sm sm:flex sm:flex-row sm:items-center sm:justify-between",
+            "flex-col gap-2 rounded-xl border border-border-strong bg-card p-3 shadow-sm sm:flex sm:flex-row sm:items-center sm:justify-between",
             selectedOrderIds.size > 0 ? "flex" : "hidden",
           )}
         >
@@ -2017,7 +2019,7 @@ function OrdersList() {
       </div>
 
       {/* Pagination Controls */}
-      <div className="mt-4 flex flex-col items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card p-3 text-sm shadow-sm select-none sm:flex-row sm:p-4">
+      <div className="mt-4 flex flex-col items-center justify-between gap-3 rounded-2xl border border-border-strong bg-card p-3 text-sm shadow-sm select-none sm:flex-row sm:p-4">
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground text-xs sm:text-sm">
             {lang === "ar" ? "الطلبات لكل صفحة:" : "Orders per page:"}
@@ -2192,7 +2194,7 @@ function OrdersList() {
                 </div>
               </DialogHeader>
 
-              <div className="space-y-4 py-3 overflow-y-auto flex-1 pr-1 text-sm">
+              <div className="space-y-4 py-3 overflow-y-auto flex-1 pe-1 text-sm">
                 {/* Pick Checklist Header */}
                 {(() => {
                   const modalItems = selectedFulfillOrder.order_items ?? [];
@@ -2247,7 +2249,7 @@ function OrdersList() {
                             : "No item line details recorded for this order."}
                         </div>
                       ) : (
-                        <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                        <div className="space-y-2 max-h-[220px] overflow-y-auto pe-1">
                           {modalItems.map((item: any, idx: number) => {
                             const isChecked = Boolean(checkedItems[item.id]);
                             const imgUrl =
@@ -2309,7 +2311,7 @@ function OrdersList() {
                                         isChecked && "line-through text-muted-foreground",
                                       )}
                                     >
-                                      <span className="font-bold text-primary mr-1">
+                                      <span className="font-bold text-primary me-1">
                                         {item.quantity}x
                                       </span>{" "}
                                       {title}
@@ -2323,7 +2325,7 @@ function OrdersList() {
                                     </span>
                                   </div>
                                   {sku && (
-                                    <div className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                                    <div className="text-xs text-muted-foreground font-mono mt-0.5">
                                       SKU: {sku}
                                     </div>
                                   )}
@@ -2471,9 +2473,9 @@ function OrdersList() {
                   }}
                 >
                   {isFulfilling ? (
-                    <Loader2 className="animate-spin h-4 w-4 mr-1.5 inline" />
+                    <Loader2 className="animate-spin h-4 w-4 me-1.5 inline" />
                   ) : (
-                    <PackageCheck className="h-4 w-4 mr-1.5 inline" />
+                    <PackageCheck className="h-4 w-4 me-1.5 inline" />
                   )}
                   {lang === "ar" ? "تأكيد التعبئة والتجهيز للشحن" : "Confirm Packed & Dispatch"}
                 </Button>
@@ -2605,7 +2607,7 @@ function OrdersList() {
                   }}
                 >
                   {isSubmittingCash ? (
-                    <Loader2 className="animate-spin h-4 w-4 mr-1.5 inline" />
+                    <Loader2 className="animate-spin h-4 w-4 me-1.5 inline" />
                   ) : null}
                   {lang === "ar" ? "تأكيد التحصيل والتسليم" : "Confirm Cash & Complete"}
                 </Button>
@@ -2984,8 +2986,8 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
           {isAr ? "استيراد طلبات سابقة" : "Import Past Orders"}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-xl p-6 bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-100 dark:border-zinc-900 shadow-2xl">
-        <DialogHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-900">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-xl p-6 bg-card rounded-2xl border border-border shadow-2xl">
+        <DialogHeader className="pb-4 border-b border-border">
           <DialogTitle className="text-lg font-bold font-display flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
             {isAr ? "معالج ترحيل واستيراد الطلبات السابقة" : "Historical Orders Migration Engine"}
@@ -3013,16 +3015,16 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
                   className={`p-4 rounded-xl border text-start transition-all ${
                     preset === p.id
                       ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary"
-                      : "border-zinc-100 dark:border-zinc-900 hover:border-zinc-200 hover:bg-zinc-50/50"
+                      : "border-border hover:border-border hover:bg-muted/30"
                   }`}
                 >
                   <p className="text-xs font-semibold">{p.label}</p>
-                  <p className="text-[10px] text-muted-foreground mt-1">{p.desc}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{p.desc}</p>
                 </button>
               ))}
             </div>
 
-            <div className="pt-4 border-t border-zinc-100 dark:border-zinc-900 flex justify-between items-center">
+            <div className="pt-4 border-t border-border flex justify-between items-center">
               <Button
                 variant="ghost"
                 onClick={() => setPreset("custom")}
@@ -3048,7 +3050,7 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
                 : "Map your custom CSV file columns to match required fields in our historical sales engine."}
             </p>
 
-            <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
+            <div className="space-y-2.5 max-h-[300px] overflow-y-auto pe-1">
               {[
                 { key: "order_number", label: isAr ? "رقم الطلب" : "Order Number", required: true },
                 { key: "order_date", label: isAr ? "تاريخ الطلب" : "Order Date", required: true },
@@ -3082,7 +3084,7 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
               ].map((field) => (
                 <div
                   key={field.key}
-                  className="flex items-center justify-between gap-4 p-3 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border border-zinc-100 dark:border-zinc-800"
+                  className="flex items-center justify-between gap-4 p-3 bg-muted/40 rounded-xl border border-border"
                 >
                   <span className="text-xs font-semibold text-foreground">
                     {field.label} {field.required && <span className="text-rose-500">*</span>}
@@ -3109,7 +3111,7 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
               ))}
             </div>
 
-            <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-2">
+            <div className="pt-4 border-t border-border flex justify-end gap-2">
               <Button
                 variant="ghost"
                 onClick={() => setStep("preset")}
@@ -3222,7 +3224,7 @@ function OrderQuickInspectSheet({
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Customer Card */}
           <div className="rounded-xl border p-4 space-y-2 bg-card">
-            <h4 className="text-xs uppercase tracking-wider font-bold text-muted-foreground">
+            <h4 className="text-xs font-semibold text-muted-foreground">
               {isAr ? "معلومات العميل" : "Customer Overview"}
             </h4>
             <div className="text-sm font-semibold">
@@ -3236,10 +3238,10 @@ function OrderQuickInspectSheet({
 
           {/* Line Items Breakdown */}
           <div className="space-y-3">
-            <h4 className="text-xs uppercase tracking-wider font-bold text-muted-foreground">
+            <h4 className="text-xs font-semibold text-muted-foreground">
               {isAr ? "المنتجات والأصناف التفصيلية" : "Order Line Items Breakdown"}
             </h4>
-            <div className="divide-y border border-border/60 rounded-xl overflow-hidden bg-card shadow-2xs">
+            <div className="divide-y border border-border-subtle rounded-xl overflow-hidden bg-card shadow-2xs">
               {items.map((it: any, idx: number) => {
                 const itemTitle =
                   it.description ||
@@ -3284,11 +3286,11 @@ function OrderQuickInspectSheet({
                         {itemTitle}
                       </div>
                       {variantTitle && (
-                        <div className="text-[11px] text-muted-foreground font-mono mt-0.5 bg-muted/60 px-2 py-0.5 rounded w-fit border border-border/40">
+                        <div className="text-xs text-muted-foreground font-mono mt-0.5 bg-muted/60 px-2 py-0.5 rounded w-fit border border-border-subtle">
                           {variantTitle}
                         </div>
                       )}
-                      <div className="text-[10px] text-muted-foreground font-mono mt-1">
+                      <div className="text-xs text-muted-foreground font-mono mt-1">
                         {qty} × {formatMoney(unitPrice, order.currency || "BHD", locale)}
                       </div>
                     </div>
@@ -3339,8 +3341,8 @@ function OrderQuickInspectSheet({
             const codRemaining = Math.max(0, netTotal - advancePaid);
 
             return (
-              <div className="rounded-xl border border-border/60 p-4 space-y-2.5 bg-card/80 text-xs shadow-2xs">
-                <h4 className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground border-b border-border/40 pb-2">
+              <div className="rounded-xl border border-border-subtle p-4 space-y-2.5 bg-card/80 text-xs shadow-2xs">
+                <h4 className="text-xs font-semibold text-muted-foreground border-b border-border-subtle pb-2">
                   {isAr ? "تفاصيل الحساب المالي للفاتورة" : "Financial Price Breakdown"}
                 </h4>
 
@@ -3376,7 +3378,7 @@ function OrderQuickInspectSheet({
                   )}
 
                   {advancePaid > 0 && (
-                    <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 pt-1 border-t border-border/40">
+                    <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 pt-1 border-t border-border-subtle">
                       <span>
                         {isAr
                           ? "الدفعة المقدمة المدفوعة (Deposit Paid):"
@@ -3400,7 +3402,7 @@ function OrderQuickInspectSheet({
                   )}
                 </div>
 
-                <div className="flex justify-between items-center text-sm font-extrabold pt-2.5 border-t border-border/60 text-foreground">
+                <div className="flex justify-between items-center text-sm font-extrabold pt-2.5 border-t border-border-subtle text-foreground">
                   <span>{isAr ? "إجمالي الفاتورة النهائي:" : "Final Net Total:"}</span>
                   <span className="text-base text-primary font-mono font-extrabold">
                     {formatMoney(netTotal, currency, locale)}
@@ -3412,7 +3414,7 @@ function OrderQuickInspectSheet({
         </div>
 
         {isAdmin && getPaymentGatewayReference(order) ? (
-          <div className="mx-6 mb-6 rounded-xl border border-border/60 bg-card p-4 space-y-3">
+          <div className="mx-6 mb-6 rounded-xl border border-border-subtle bg-card p-4 space-y-3">
             <div className="flex items-center justify-between border-b pb-2">
               <div className="flex items-center gap-2">
                 <Lock className="h-4 w-4 text-primary" />
@@ -3435,7 +3437,7 @@ function OrderQuickInspectSheet({
                       navigator.clipboard.writeText(getPaymentGatewayReference(order)!);
                       toast.success(isAr ? "تم النسخ" : "Copied Reference");
                     }}
-                  >
+                   aria-label={isAr ? "نسخ" : "Copy"}>
                     <Copy className="h-3 w-3" />
                   </Button>
                 </div>

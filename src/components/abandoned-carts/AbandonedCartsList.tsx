@@ -3,6 +3,7 @@ import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { OsSkeleton } from "@/components/os/os-skeleton";
 import {
   Table,
   TableBody,
@@ -76,43 +77,43 @@ export function AbandonedCartsList({
     switch (status) {
       case "active":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
             {isAr ? "سلة نشطة حالياً" : "Active Session"}
           </span>
         );
       case "abandoned":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
             {isAr ? "متروكة" : "Abandoned"}
           </span>
         );
       case "recovering":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
             {isAr ? "قيد المتابعة" : "Recovering"}
           </span>
         );
       case "recovered":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
             {isAr ? "تمت الاستعادة بنجاح" : "Recovered"}
           </span>
         );
       case "expired":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground border border-border">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
             {isAr ? "تم إفراغها" : "Cleared"}
           </span>
         );
       case "unsubscribed":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
             {isAr ? "أوقف المتابعة" : "Unsubscribed"}
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground border border-border">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
             {status}
           </span>
         );
@@ -173,12 +174,12 @@ export function AbandonedCartsList({
       {/* Controls Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder={isAr ? "بحث بالعميل أو الهاتف أو البريد..." : "Search customer, phone, email..."}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 min-h-[44px] bg-background border-border"
+            className="ps-9 min-h-[44px] bg-background border-border"
           />
         </div>
 
@@ -203,6 +204,8 @@ export function AbandonedCartsList({
             size="icon"
             onClick={onRefresh}
             className="min-h-[44px] min-w-[44px] border-border"
+            aria-label={isAr ? "تحديث السلات" : "Refresh carts"}
+            title={isAr ? "تحديث السلات" : "Refresh carts"}
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
           </Button>
@@ -220,18 +223,37 @@ export function AbandonedCartsList({
                 <TableHead>{isAr ? "إجمالي السلة" : "Subtotal"}</TableHead>
                 <TableHead>{isAr ? "الحالة" : "Status"}</TableHead>
                 <TableHead>{isAr ? "آخر نشاط" : "Last Activity"}</TableHead>
-                <TableHead className="text-right">{isAr ? "الإجراءات" : "Actions"}</TableHead>
+                <TableHead className="text-end">{isAr ? "الإجراءات" : "Actions"}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredCarts.length === 0 ? (
+              {isLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <OsSkeleton variant="text" className="h-4 w-28" />
+                    </TableCell>
+                    <TableCell>
+                      <OsSkeleton variant="text" className="h-4 w-32" />
+                    </TableCell>
+                    <TableCell>
+                      <OsSkeleton variant="text" className="h-4 w-16" />
+                    </TableCell>
+                    <TableCell>
+                      <OsSkeleton variant="text" className="h-4 w-20" />
+                    </TableCell>
+                    <TableCell>
+                      <OsSkeleton variant="text" className="h-4 w-16" />
+                    </TableCell>
+                    <TableCell>
+                      <OsSkeleton variant="button" className="h-8 w-20 ms-auto" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : filteredCarts.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-10 text-muted-foreground text-sm">
-                    {isLoading
-                      ? isAr
-                        ? "جاري تحميل السلات المتروكة..."
-                        : "Loading abandoned carts..."
-                      : isAr
+                    {isAr
                       ? "لا توجد سلات متروكة مطابقة للبحث."
                       : "No abandoned carts found."}
                   </TableCell>
@@ -251,7 +273,7 @@ export function AbandonedCartsList({
                             {phone || cart.guest_email || cart.customers?.email || "—"}
                           </span>
                           {Boolean(cart.marketing_consent && (phone || cart.guest_email || cart.customers?.email)) && (
-                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1 mt-0.5">
+                            <span className="text-xs text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1 mt-0.5">
                               <CheckCircle2 className="h-2.5 w-2.5" />
                               {isAr ? "موافق على التسويق" : "Marketing consent"}
                             </span>
@@ -264,7 +286,7 @@ export function AbandonedCartsList({
                           <span className="text-xs font-medium text-foreground">
                             {items.length} {isAr ? "منتج" : "item(s)"}
                           </span>
-                          <span className="text-[11px] text-muted-foreground line-clamp-1">
+                          <span className="text-xs text-muted-foreground line-clamp-1">
                             {items.map((it: any) => it.title).join(", ")}
                           </span>
                         </div>
@@ -288,7 +310,7 @@ export function AbandonedCartsList({
                         )}
                       </TableCell>
 
-                      <TableCell className="text-right">
+                      <TableCell className="text-end">
                         <div className="flex items-center justify-end gap-1.5">
                           <Button
                             variant="ghost"

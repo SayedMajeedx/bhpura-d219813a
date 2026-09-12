@@ -462,7 +462,7 @@ function TeamManagement() {
                         <input
                           type="checkbox"
                           checked={checked}
-                          className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
+                          className="rounded border-input text-primary focus:ring-primary h-4 w-4"
                           onChange={() => {
                             const newPerms = checked
                               ? form.permissions.filter((x) => x !== p.id)
@@ -522,7 +522,7 @@ function TeamManagement() {
             {filteredStaff.map((member) => (
               <Card
                 key={member.id}
-                className="p-4 border-border/60 shadow-sm rounded-xl bg-card/80 backdrop-blur flex flex-col gap-3"
+                className="p-4 border-border-subtle shadow-sm rounded-xl bg-card flex flex-col gap-3"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex flex-col min-w-0">
@@ -534,10 +534,10 @@ function TeamManagement() {
                     </span>
                   </div>
                   <span
-                    className={`shrink-0 inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                    className={`shrink-0 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${
                       member.status === "active"
                         ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                        : "bg-neutral-500/15 text-neutral-700 dark:text-neutral-300"
+                        : "bg-muted text-muted-foreground border border-border"
                     }`}
                   >
                     {member.status === "active" ? (
@@ -596,7 +596,7 @@ function TeamManagement() {
 
                   {member.phone && (
                     <span
-                      className="inline-flex items-center gap-1 text-[10px] font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded-md"
+                      className="inline-flex items-center gap-1 text-xs font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded-md"
                       dir="ltr"
                     >
                       📱 {member.phone}
@@ -604,8 +604,8 @@ function TeamManagement() {
                   )}
                 </div>
 
-                <div className="pt-3 mt-1 border-t border-border/50 flex justify-between items-center">
-                  <span className="text-[10px] text-muted-foreground font-medium">
+                <div className="pt-3 mt-1 border-t border-border-subtle flex justify-between items-center">
+                  <span className="text-xs text-muted-foreground font-medium">
                     {new Date(member.created_at).toLocaleDateString(locale)}
                   </span>
 
@@ -618,7 +618,7 @@ function TeamManagement() {
                       const canManage = !isSelf && (!targetIsSuper || isSuperAdmin);
                       if (!canManage) {
                         return (
-                          <span className="text-[10px] text-muted-foreground font-semibold px-2">
+                          <span className="text-xs text-muted-foreground font-semibold px-2">
                             {isSelf ? (isAr ? "أنت" : "You") : isAr ? "محمي" : "Protected"}
                           </span>
                         );
@@ -673,7 +673,7 @@ function TeamManagement() {
           </div>
 
           {/* Desktop Table View */}
-          <Card className="hidden md:block overflow-hidden border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
+          <Card className="hidden md:block overflow-hidden border-border-subtle shadow-lg rounded-2xl bg-card">
             <div className="overflow-x-auto">
               <table className="w-full text-sm lg:min-w-[640px]">
                 <thead className="border-b bg-muted/40 font-semibold text-muted-foreground">
@@ -710,7 +710,7 @@ function TeamManagement() {
                             📱 {member.phone}
                           </span>
                         ) : (
-                          <span className="text-xs text-muted-foreground/60 italic">
+                          <span className="text-xs text-muted-foreground italic">
                             {isAr ? "غير محدد" : "None"}
                           </span>
                         )}
@@ -761,7 +761,7 @@ function TeamManagement() {
                           className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
                             member.status === "active"
                               ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                              : "bg-neutral-500/15 text-neutral-700 dark:text-neutral-300"
+                              : "bg-muted text-muted-foreground border border-border"
                           }`}
                         >
                           {member.status === "active" ? (
@@ -801,7 +801,7 @@ function TeamManagement() {
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => openEdit(member)}
-                                >
+                                 aria-label={isAr ? "تعديل" : "Edit"}>
                                   <Pencil className="h-4 w-4" />
                                 </Button>
                                 {member.status === "active" && (
@@ -831,7 +831,7 @@ function TeamManagement() {
                                   size="icon"
                                   className="text-destructive hover:text-destructive hover:bg-destructive/10"
                                   onClick={() => setDeleteConfirm(member)}
-                                >
+                                 aria-label={isAr ? "حذف" : "Delete"}>
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </>
@@ -973,7 +973,7 @@ function TeamManagement() {
                           <input
                             type="checkbox"
                             checked={checked}
-                            className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
+                            className="rounded border-input text-primary focus:ring-primary h-4 w-4"
                             onChange={() => {
                               const newPerms = checked
                                 ? memberPerms.filter((x: string) => x !== p.id)

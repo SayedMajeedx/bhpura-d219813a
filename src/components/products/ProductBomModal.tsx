@@ -270,12 +270,12 @@ export function ProductBomModal({
 
         <div className="space-y-5 py-2">
           {/* Direct Packaging Cost Fallback */}
-          <div className="rounded-lg border border-border/60 bg-muted/30 p-3.5 space-y-2">
+          <div className="rounded-lg border border-border-subtle bg-muted/30 p-3.5 space-y-2">
             <Label className="text-xs font-semibold text-foreground flex items-center justify-between">
               <span>
                 {isAr ? "تكلفة التغليف المباشرة (إدخال يدوي)" : "Direct Packaging Cost (Manual)"}
               </span>
-              <span className="text-[11px] text-muted-foreground">BHD</span>
+              <span className="text-xs text-muted-foreground">BHD</span>
             </Label>
             <Input
               type="number"
@@ -286,7 +286,7 @@ export function ProductBomModal({
               className="h-9 text-sm"
               placeholder="0.000"
             />
-            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
               <Info className="h-3 w-3 text-primary shrink-0" />
               {isAr
                 ? "استخدم هذا الحقل للإعداد السريع إذا لم تقم بإنشاء مواد تغليف في المخزون."
@@ -327,7 +327,7 @@ export function ProductBomModal({
                   : "No inventory materials attached to this product."}
               </div>
             ) : (
-              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-48 overflow-y-auto pe-1">
                 {selectedMaterials.map((item, index) => {
                   const mat = materials.find((m: any) => m.id === item.packaging_material_id);
                   const matCost = Number(mat?.unit_cost || 0);
@@ -360,7 +360,7 @@ export function ProductBomModal({
                         />
                       </div>
 
-                      <span className="text-[11px] font-semibold text-muted-foreground w-16 text-right">
+                      <span className="text-xs font-semibold text-muted-foreground w-16 text-end">
                         {formatMoney(matCost * item.quantity_per_unit, "BHD")}
                       </span>
 
@@ -370,7 +370,7 @@ export function ProductBomModal({
                         size="icon"
                         onClick={() => handleRemoveMaterialRow(index)}
                         className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                      >
+                       aria-label={isAr ? "حذف" : "Delete"}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>

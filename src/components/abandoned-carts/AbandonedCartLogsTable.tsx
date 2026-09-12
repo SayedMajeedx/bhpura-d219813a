@@ -1,5 +1,6 @@
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
+import { OsSkeleton } from "@/components/os/os-skeleton";
 import {
   Table,
   TableBody,
@@ -52,27 +53,27 @@ export function AbandonedCartLogsTable({ logs, isLoading }: AbandonedCartLogsTab
     switch (status) {
       case "sent":
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
             <CheckCircle2 className="h-3 w-3" />
             {isAr ? "تم الإرسال" : "Sent"}
           </span>
         );
       case "failed":
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
             <AlertTriangle className="h-3 w-3" />
             {isAr ? "فشل" : "Failed"}
           </span>
         );
       case "skipped_opt_out":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground border border-border">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
             {isAr ? "تم التخطي (عدم موافقة)" : "Opted-out"}
           </span>
         );
       case "skipped_recovered":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-sky-500/10 text-sky-600 border border-sky-500/20">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-sky-500/10 text-sky-600 border border-sky-500/20">
             {isAr ? "تم التخطي (اكتمل الطلب)" : "Order Placed"}
           </span>
         );
@@ -96,14 +97,21 @@ export function AbandonedCartLogsTable({ logs, isLoading }: AbandonedCartLogsTab
             </TableRow>
           </TableHeader>
           <TableBody>
-            {logs.length === 0 ? (
+            {isLoading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><OsSkeleton variant="text" className="h-4 w-20" /></TableCell>
+                  <TableCell><OsSkeleton variant="text" className="h-4 w-32" /></TableCell>
+                  <TableCell><OsSkeleton variant="text" className="h-4 w-16" /></TableCell>
+                  <TableCell><OsSkeleton variant="text" className="h-4 w-20" /></TableCell>
+                  <TableCell><OsSkeleton variant="text" className="h-4 w-16" /></TableCell>
+                  <TableCell><OsSkeleton variant="text" className="h-4 w-24" /></TableCell>
+                </TableRow>
+              ))
+            ) : logs.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-10 text-muted-foreground text-sm">
-                  {isLoading
-                    ? isAr
-                      ? "جاري تحميل سجل الإرسال..."
-                      : "Loading dispatch logs..."
-                    : isAr
+                  {isAr
                     ? "لا توجد رسائل استعادة مرسلة حتى الآن."
                     : "No recovery dispatch logs recorded yet."}
                 </TableCell>

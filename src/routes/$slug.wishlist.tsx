@@ -43,7 +43,7 @@ function WishlistPage() {
       </div>
       {!isLoading && data.length === 0 ? (
         <div className="rounded-2xl border bg-muted/15 px-6 py-12 text-center">
-          <Heart className="mx-auto h-10 w-10 text-muted-foreground/60" />
+          <Heart className="mx-auto h-10 w-10 text-muted-foreground" />
           <h2 className="mt-4 font-display text-xl">
             {t("مفضلتك بانتظار اختياراتك", "Your wishlist is ready for your favourites")}
           </h2>

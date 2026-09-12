@@ -49,7 +49,7 @@ export function DiscountsToolbar({
   }, []);
 
   return (
-    <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between p-3 bg-card/60 backdrop-blur-sm border border-border/60 rounded-xl shadow-2xs">
+    <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between p-3 bg-card border border-border-subtle rounded-xl shadow-2xs">
       <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
         {/* Search Bar */}
         <div className="relative flex-1 max-w-md">
@@ -80,7 +80,7 @@ export function DiscountsToolbar({
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 <span>{isAr ? "التصفية" : "Filters"}</span>
                 {activeFilterCount > 0 && (
-                  <span className="rounded-full bg-primary-foreground/20 px-1.5 py-0.2 text-[10px] font-bold">
+                  <span className="rounded-full bg-primary-foreground/20 px-1.5 py-0.2 text-xs font-bold">
                     {activeFilterCount}
                   </span>
                 )}
@@ -91,11 +91,11 @@ export function DiscountsToolbar({
                 {isAr ? "تصفية المتقدمة" : "Advanced Filters"}
               </div>
               <div className="space-y-1">
-                <label className="text-[11px] font-medium text-muted-foreground">
+                <label className="text-xs font-medium text-muted-foreground">
                   {isAr ? "نوع الخصم" : "Discount Type"}
                 </label>
                 <Select value={typeFilter} onValueChange={onTypeFilterChange}>
-                  <SelectTrigger className="h-8 text-xs bg-muted/30 border-border/60">
+                  <SelectTrigger className="h-8 text-xs bg-muted/30 border-border-subtle">
                     <SelectValue placeholder={isAr ? "جميع الأنواع" : "All Types"} />
                   </SelectTrigger>
                   <SelectContent>
@@ -124,7 +124,7 @@ export function DiscountsToolbar({
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 <span>{isAr ? "التصفية" : "Filters"}</span>
                 {activeFilterCount > 0 && (
-                  <span className="rounded-full bg-primary-foreground/20 px-1 py-0.2 text-[10px]">
+                  <span className="rounded-full bg-primary-foreground/20 px-1 py-0.2 text-xs">
                     {activeFilterCount}
                   </span>
                 )}
@@ -138,11 +138,11 @@ export function DiscountsToolbar({
               </SheetHeader>
               <div className="space-y-3">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-muted-foreground">
+                  <label className="text-xs font-medium text-muted-foreground">
                     {isAr ? "نوع الخصم" : "Discount Type"}
                   </label>
                   <Select value={typeFilter} onValueChange={onTypeFilterChange}>
-                    <SelectTrigger className="h-9 text-xs bg-muted/30 border-border/60">
+                    <SelectTrigger className="h-9 text-xs bg-muted/30 border-border-subtle">
                       <SelectValue placeholder={isAr ? "جميع الأنواع" : "All Types"} />
                     </SelectTrigger>
                     <SelectContent>

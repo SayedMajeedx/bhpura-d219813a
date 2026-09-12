@@ -33,7 +33,7 @@ export function BulkSelectionToolbar({
   return (
     <div
       className={cn(
-        "flex-wrap items-center justify-between gap-2 rounded-xl border border-border/60 bg-card px-3 py-2.5 shadow-2xs sm:flex",
+        "flex-wrap items-center justify-between gap-2 rounded-xl border border-border-subtle bg-card px-3 py-2.5 shadow-2xs sm:flex",
         selectedCount > 0 ? "flex" : "hidden",
       )}
     >

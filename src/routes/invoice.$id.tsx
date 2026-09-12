@@ -754,7 +754,7 @@ function PublicInvoice() {
                             {money(order.total)}
                           </span>
                           <span
-                            className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isRTL ? "" : "uppercase tracking-wider"}`}
+                            className={`text-xs px-2 py-0.5 rounded-full font-bold ${isRTL ? "" : "uppercase tracking-wider"}`}
                             style={{
                               backgroundColor: badgeBg,
                               color: badgeTextColor,

@@ -145,10 +145,10 @@ export function ReturnInspectionDialog({
                   ? item.product?.name_ar || item.product?.name_en
                   : item.product?.name_en || item.product?.name_ar}
               </h4>
-              <p className="text-[11px] text-muted-foreground truncate">
+              <p className="text-xs text-muted-foreground truncate">
                 {item.variant?.variant_name || item.variant?.sku || "Default Variant"}
               </p>
-              <div className="flex items-center gap-2 text-[11px] font-mono mt-0.5">
+              <div className="flex items-center gap-2 text-xs font-mono mt-0.5">
                 <span className="font-semibold text-foreground">
                   {isAr ? "الكمية المرتجعة:" : "Return Qty:"} {item.quantity}
                 </span>
@@ -185,7 +185,7 @@ export function ReturnInspectionDialog({
                   })}
               </SelectContent>
             </Select>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {isAr
                 ? RETURN_CONDITION_CONFIG[condition]?.descriptionAr
                 : RETURN_CONDITION_CONFIG[condition]?.descriptionEn}
@@ -243,7 +243,7 @@ export function ReturnInspectionDialog({
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 {isAr
                   ? "سيتم تسجيل حركة الاسترجاع وتخصيص البضاعة للفرع المختار لمنع عزل المخزون."
                   : "Restocked inventory will be officially tracked and credited to this branch."}

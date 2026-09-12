@@ -236,7 +236,7 @@ function CustomerProfilePage() {
   if (customerQ.isError) {
     return (
       <div className="mx-auto max-w-xl p-8 animate-fade-in">
-        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/80 backdrop-blur-sm p-8 text-center space-y-4">
+        <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-8 text-center space-y-4">
           <AlertTriangle className="mx-auto h-10 w-10 text-amber-500 animate-pulse" />
           <div className="space-y-1">
             <h1 className="font-display text-xl font-bold">
@@ -272,7 +272,7 @@ function CustomerProfilePage() {
   if (!customer) {
     return (
       <div className="mx-auto max-w-xl p-8 animate-fade-in">
-        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-8 text-center">
+        <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-8 text-center">
           <UserRound className="mx-auto mb-3 h-10 w-10 text-muted-foreground animate-pulse" />
           <h1 className="font-display text-2xl font-bold">
             {lang === "ar" ? "ملف العميل غير موجود" : "Customer profile not found"}
@@ -312,7 +312,7 @@ function CustomerProfilePage() {
             <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
             {lang === "ar" ? "العودة إلى العملاء" : "Back to customers"}
           </button>
-          <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
             {customer.name}
           </h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
@@ -405,8 +405,8 @@ function CustomerProfilePage() {
 
       <div className="grid items-start gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
         <div className="space-y-5">
-          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
-            <div className="bg-primary/5 p-5 border-b border-border/50">
+          <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card">
+            <div className="bg-primary/5 p-5 border-b border-border-subtle">
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <UserRound className="h-6 w-6" />
@@ -418,13 +418,17 @@ function CustomerProfilePage() {
                       totalOrders: activeOrders.length,
                       lifetimeSpend: totalSpent,
                       lastOrderDate,
-                      currency: brand.currency || "BHD",
+                      // Single-currency storefront: this admin Brand context
+                      // (brands table) never carries a currency column — that
+                      // lives on brand_storefront_settings — so this always
+                      // resolved to the fallback below anyway.
+                      currency: "BHD",
                     });
                     if (badge.segment === "lead") return null;
                     return (
                       <span
                         className={cn(
-                          "text-[10px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 shadow-2xs",
+                          "text-xs font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 shadow-2xs",
                           badge.classes,
                         )}
                       >
@@ -450,51 +454,51 @@ function CustomerProfilePage() {
                 {lang === "ar" ? "بيانات العميل" : "Customer Details"}
               </h2>
 
-              <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-border/40">
-                <div className="rounded-lg bg-background/70 border border-border/40 p-2 text-center">
-                  <span className="text-[10px] text-muted-foreground block font-medium">
+              <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-border-subtle">
+                <div className="rounded-lg bg-background/70 border border-border-subtle p-2 text-center">
+                  <span className="text-xs text-muted-foreground block font-medium">
                     {lang === "ar" ? "إجمالي المشتريات" : "Total Spend"}
                   </span>
                   <span className="text-xs font-bold font-mono text-primary">
                     {formatMoney(totalSpent, "BHD")}
                   </span>
                   {pendingCollection > 0 && (
-                    <span className="text-[9px] text-amber-600 dark:text-amber-400 block mt-0.5">
+                    <span className="text-xs text-amber-600 dark:text-amber-400 block mt-0.5">
                       {lang === "ar"
                         ? `(معلق: ${formatMoney(pendingCollection, "BHD")})`
                         : `(Pending: ${formatMoney(pendingCollection, "BHD")})`}
                     </span>
                   )}
                 </div>
-                <div className="rounded-lg bg-background/70 border border-border/40 p-2 text-center">
-                  <span className="text-[10px] text-muted-foreground block font-medium">
+                <div className="rounded-lg bg-background/70 border border-border-subtle p-2 text-center">
+                  <span className="text-xs text-muted-foreground block font-medium">
                     {lang === "ar" ? "المبالغ المحصّلة" : "Total Paid"}
                   </span>
                   <span className="text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400">
                     {formatMoney(totalPaid, "BHD")}
                   </span>
                 </div>
-                <div className="rounded-lg bg-background/70 border border-border/40 p-2 text-center">
-                  <span className="text-[10px] text-muted-foreground block font-medium">
+                <div className="rounded-lg bg-background/70 border border-border-subtle p-2 text-center">
+                  <span className="text-xs text-muted-foreground block font-medium">
                     {lang === "ar" ? "الطلبات المؤكدة" : "Total Orders"}
                   </span>
                   <span className="text-xs font-bold font-mono text-foreground">
                     {activeOrders.length}
                   </span>
                 </div>
-                <div className="rounded-lg bg-background/70 border border-border/40 p-2 text-center">
-                  <span className="text-[10px] text-muted-foreground block font-medium">
+                <div className="rounded-lg bg-background/70 border border-border-subtle p-2 text-center">
+                  <span className="text-xs text-muted-foreground block font-medium">
                     {lang === "ar" ? "متوسط الطلب" : "Avg Order (AOV)"}
                   </span>
                   <span className="text-xs font-bold font-mono text-foreground">
                     {formatMoney(aov, "BHD")}
                   </span>
                 </div>
-                <div className="rounded-lg bg-background/70 border border-border/40 p-2 text-center">
-                  <span className="text-[10px] text-muted-foreground block font-medium">
+                <div className="rounded-lg bg-background/70 border border-border-subtle p-2 text-center">
+                  <span className="text-xs text-muted-foreground block font-medium">
                     {lang === "ar" ? "آخر طلب" : "Last Order"}
                   </span>
-                  <span className="text-[11px] font-bold text-foreground truncate block">
+                  <span className="text-xs font-bold text-foreground truncate block">
                     {lastOrderDate
                       ? new Date(lastOrderDate).toLocaleDateString(
                           lang === "ar" ? "ar-BH" : "en-GB",
@@ -528,7 +532,7 @@ function CustomerProfilePage() {
             </div>
           </Card>
 
-          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5">
+          <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-5">
             <CustomerAddressManager
               addresses={addressesQ.data ?? []}
               loading={addressesQ.isLoading}
@@ -547,12 +551,15 @@ function CustomerProfilePage() {
         <div className="space-y-6">
           <CustomerFitPassport
             brandId={brand.id}
-            brandName={lang === "ar" ? (brand.name_ar || brand.name_en) : (brand.name_en || brand.name_ar)}
+            brandName={
+              (lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en || brand.name_ar) ??
+              undefined
+            }
             customerId={customerId}
             isAr={lang === "ar"}
           />
-          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
-            <div className="flex items-center justify-between gap-3 border-b border-border/50 p-5 bg-primary/5">
+          <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card">
+            <div className="flex items-center justify-between gap-3 border-b border-border-subtle p-5 bg-primary/5">
               <div>
                 <h2 className="font-display text-xl font-bold">
                   {lang === "ar" ? "سجل الطلبات" : "Order History"}
@@ -566,8 +573,16 @@ function CustomerProfilePage() {
               <ReceiptText className="h-6 w-6 text-primary" />
             </div>
             {ordersQ.isLoading ? (
-              <div className="p-8 text-center text-muted-foreground">
-                {lang === "ar" ? "جاري تحميل الطلبات…" : "Loading orders…"}
+              <div className="space-y-3 p-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center justify-between gap-4 py-2">
+                    <div className="space-y-1.5">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                    <Skeleton className="h-6 w-16 rounded-full" />
+                  </div>
+                ))}
               </div>
             ) : orders.length === 0 ? (
               <div className="p-12 text-center">
@@ -591,14 +606,14 @@ function CustomerProfilePage() {
                           params: { slug, id: order.id },
                         })
                       }
-                      className="w-full rounded-xl border border-border/60 bg-background/70 p-3 text-start transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                      className="w-full rounded-xl border border-border-subtle bg-background/70 p-3 text-start transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="font-mono text-sm font-bold text-primary">
                             #{order.invoice_number}
                           </p>
-                          <p className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                          <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                             <CalendarDays className="h-3.5 w-3.5" />
                             {new Date(order.order_date).toLocaleDateString(
                               lang === "ar" ? "ar-BH-u-nu-latn" : "en-BH",
@@ -609,13 +624,13 @@ function CustomerProfilePage() {
                           {formatMoney(Number(order.total), order.currency || "BHD")}
                         </p>
                       </div>
-                      <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/50 pt-2.5">
+                      <div className="mt-3 flex items-center justify-between gap-2 border-t border-border-subtle pt-2.5">
                         {(() => {
                           const badge = getOrderDisplayStatus(order, lang);
                           return (
                             <span
                               className={cn(
-                                "inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold",
+                                "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold",
                                 badge.classes,
                               )}
                             >
@@ -623,13 +638,13 @@ function CustomerProfilePage() {
                             </span>
                           );
                         })()}
-                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           {(() => {
                             const payBadge = getOrderPaymentBadge(order, lang);
                             return (
                               <span
                                 className={cn(
-                                  "inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold border",
+                                  "inline-flex px-1.5 py-0.5 rounded text-xs font-bold border",
                                   payBadge.className,
                                 )}
                               >
@@ -647,19 +662,19 @@ function CustomerProfilePage() {
                   <table className="w-full min-w-[680px] text-sm whitespace-nowrap">
                     <thead className="border-b bg-muted/40 font-semibold text-muted-foreground">
                       <tr>
-                        <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
+                        <th className="p-4 text-start font-semibold text-xs whitespace-nowrap">
                           {lang === "ar" ? "رقم الطلب" : "Order ID #"}
                         </th>
-                        <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
+                        <th className="p-4 text-start font-semibold text-xs whitespace-nowrap">
                           {lang === "ar" ? "التاريخ" : "Date"}
                         </th>
-                        <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
+                        <th className="p-4 text-start font-semibold text-xs whitespace-nowrap">
                           {lang === "ar" ? "الحالة" : "Status"}
                         </th>
-                        <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
+                        <th className="p-4 text-start font-semibold text-xs whitespace-nowrap">
                           {lang === "ar" ? "طريقة الدفع" : "Payment Method"}
                         </th>
-                        <th className="p-4 text-end font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
+                        <th className="p-4 text-end font-semibold text-xs whitespace-nowrap">
                           {lang === "ar" ? "الإجمالي" : "Total Amount"}
                         </th>
                       </tr>
@@ -723,7 +738,7 @@ function CustomerProfilePage() {
                                 return (
                                   <span
                                     className={cn(
-                                      "inline-flex px-2 py-0.5 rounded text-[10px] font-bold border",
+                                      "inline-flex px-2 py-0.5 rounded text-xs font-bold border",
                                       payBadge.className,
                                     )}
                                   >
@@ -747,7 +762,7 @@ function CustomerProfilePage() {
 
                 {/* Pagination Controls */}
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-between border-t border-border/60 bg-muted/20 px-4 py-3 text-xs">
+                  <div className="flex items-center justify-between border-t border-border-subtle bg-muted/20 px-4 py-3 text-xs">
                     <p className="text-muted-foreground font-medium">
                       {lang === "ar"
                         ? `عرض ${Math.min(orders.length, (currentPage - 1) * PAGE_SIZE + 1)}–${Math.min(orders.length, currentPage * PAGE_SIZE)} من إجمالي ${orders.length} طلب`

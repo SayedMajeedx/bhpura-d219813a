@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { OsSkeleton } from "@/components/os/os-skeleton";
 import { AlertCircle, Banknote, CreditCard, RefreshCw, ShoppingBag, Truck } from "lucide-react";
 import {
   Area,
@@ -272,7 +273,7 @@ function SalesTooltip({ active, payload, label, currency, lang }: any) {
   if (!active || !payload?.length) return null;
   return (
     <div className="min-w-52 rounded-xl border border-border bg-card p-4 shadow-xl">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <p className="mb-3 text-xs font-semibold text-muted-foreground">
         {label}
       </p>
       {payload.map((item: any) => (
@@ -357,10 +358,10 @@ function ReportSkeleton() {
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-36 animate-pulse rounded-2xl bg-muted" />
+          <OsSkeleton key={i} variant="card" className="h-36 rounded-2xl" />
         ))}
       </div>
-      <div className="h-[430px] animate-pulse rounded-2xl bg-muted" />
+      <OsSkeleton variant="panel" className="h-[430px] rounded-2xl" />
     </div>
   );
 }

@@ -53,7 +53,7 @@ export function SuperScopeSwitcher({
   ];
 
   return (
-    <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-muted/40 border border-border/60 rounded-2xl scrollbar-none">
+    <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-muted/40 border border-border-subtle rounded-2xl scrollbar-none">
       {scopes.map((s) => {
         const Icon = s.icon;
         const isActive = activeScope === s.id;
@@ -75,7 +75,7 @@ export function SuperScopeSwitcher({
             {s.badge !== undefined && (
               <span
                 className={cn(
-                  "ms-1 px-1.5 py-0.2 text-[10px] font-extrabold rounded-full",
+                  "ms-1 px-1.5 py-0.2 text-xs font-extrabold rounded-full",
                   isActive
                     ? "bg-white/20 text-white"
                     : "bg-amber-500/15 text-amber-700 dark:text-amber-300",

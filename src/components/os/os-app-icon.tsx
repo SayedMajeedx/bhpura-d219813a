@@ -37,7 +37,7 @@ export function OsAppIcon({
           sizeClasses[size],
           selected
             ? "bg-primary text-primary-foreground border-primary/20 shadow-md scale-105"
-            : "bg-muted/50 text-foreground border-border/60 hover:bg-muted/80 hover:border-border",
+            : "bg-muted/50 text-foreground border-border-subtle hover:bg-muted/80 hover:border-border",
           className,
         )}
       >
@@ -45,7 +45,7 @@ export function OsAppIcon({
       </div>
 
       {badge !== undefined && (
-        <span className="absolute -top-1 -end-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground shadow-sm">
+        <span className="absolute -top-1 -end-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-xs font-bold text-destructive-foreground shadow-sm">
           {badge}
         </span>
       )}

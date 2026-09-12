@@ -3,6 +3,7 @@ import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { OsSkeleton } from "@/components/os/os-skeleton";
 import {
   Table,
   TableBody,
@@ -77,32 +78,32 @@ export function LoyaltyLedgerTable({
     switch (status) {
       case "active":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
             {isAr ? "نشط" : "Active"}
           </span>
         );
       case "pending":
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
             <Clock className="h-3 w-3" />
             {isAr ? "معلق (انتظار)" : "Pending"}
           </span>
         );
       case "redeemed":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
             {isAr ? "مستخدم" : "Redeemed"}
           </span>
         );
       case "cancelled":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
             {isAr ? "ملغي" : "Cancelled"}
           </span>
         );
       case "expired":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground border border-border">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
             {isAr ? "منتهي" : "Expired"}
           </span>
         );
@@ -116,12 +117,12 @@ export function LoyaltyLedgerTable({
       {/* Controls Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder={isAr ? "بحث بالعميل أو الملاحظة أو الهاتف..." : "Search customer, note, phone..."}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 min-h-[44px] bg-background border-border"
+            className="ps-9 min-h-[44px] bg-background border-border"
           />
         </div>
 
@@ -146,6 +147,8 @@ export function LoyaltyLedgerTable({
             size="icon"
             onClick={onRefresh}
             className="min-h-[44px] min-w-[44px] border-border"
+            aria-label={isAr ? "تحديث سجل النقاط" : "Refresh ledger"}
+            title={isAr ? "تحديث سجل النقاط" : "Refresh ledger"}
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
           </Button>
@@ -167,14 +170,21 @@ export function LoyaltyLedgerTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredEntries.length === 0 ? (
+              {isLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><OsSkeleton variant="text" className="h-4 w-28" /></TableCell>
+                    <TableCell><OsSkeleton variant="text" className="h-4 w-36" /></TableCell>
+                    <TableCell><OsSkeleton variant="text" className="h-4 w-16" /></TableCell>
+                    <TableCell><OsSkeleton variant="text" className="h-4 w-20" /></TableCell>
+                    <TableCell><OsSkeleton variant="text" className="h-4 w-16" /></TableCell>
+                    <TableCell><OsSkeleton variant="text" className="h-4 w-24" /></TableCell>
+                  </TableRow>
+                ))
+              ) : filteredEntries.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-10 text-muted-foreground text-sm">
-                    {isLoading
-                      ? isAr
-                        ? "جاري تحميل سجل الولاء..."
-                        : "Loading loyalty ledger..."
-                      : isAr
+                    {isAr
                       ? "لا توجد حركات ولاء مسجلة حتى الآن."
                       : "No loyalty transactions recorded yet."}
                   </TableCell>
@@ -196,7 +206,7 @@ export function LoyaltyLedgerTable({
                       <span className="text-xs text-foreground block">
                         {isAr ? entry.reference_note_ar : entry.reference_note_en}
                       </span>
-                      <span className="text-[10px] font-mono text-muted-foreground block">
+                      <span className="text-xs font-mono text-muted-foreground block">
                         ID: {entry.idempotency_key}
                       </span>
                     </TableCell>

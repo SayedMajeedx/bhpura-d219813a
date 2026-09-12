@@ -194,7 +194,7 @@ export function ReturnPolicyEditor({ brandId, lang }: ReturnPolicyEditorProps) {
               }
               className="h-9 text-xs font-mono max-w-[140px]"
             />
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {isAr
                 ? "الحد الأقصى للأيام المسموح بها للعميل لتقديم طلب إرجاع بعد استلام الطلب"
                 : "Maximum days allowed from delivery for a customer to request a return"}
@@ -206,7 +206,7 @@ export function ReturnPolicyEditor({ brandId, lang }: ReturnPolicyEditorProps) {
               <Label className="text-xs font-semibold text-foreground block">
                 {isAr ? "السماح بالمرتجع الجزئي" : "Allow Partial Returns"}
               </Label>
-              <span className="text-[11px] text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 {isAr ? "إمكانية إرجاع بعض قطع الطلب دون إرجاع كامل الطلب" : "Allow returning specific items from an order"}
               </span>
             </div>
@@ -221,7 +221,7 @@ export function ReturnPolicyEditor({ brandId, lang }: ReturnPolicyEditorProps) {
               <Label className="text-xs font-semibold text-foreground block">
                 {isAr ? "السماح بإرجاع المنتجات المخفضة" : "Allow Discounted Items"}
               </Label>
-              <span className="text-[11px] text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 {isAr ? "تمكين إرجاع المنتجات المشتراة بخصم أو عروض" : "Allow returns on promotional or sale items"}
               </span>
             </div>
@@ -236,7 +236,7 @@ export function ReturnPolicyEditor({ brandId, lang }: ReturnPolicyEditorProps) {
               <Label className="text-xs font-semibold text-foreground block">
                 {isAr ? "إلزام العميل بإرفاق صور" : "Require Customer Photos"}
               </Label>
-              <span className="text-[11px] text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 {isAr ? "اشتراط رفع صور للمنتج عند تقديم الطلب" : "Require attaching photos when requesting return"}
               </span>
             </div>
@@ -332,7 +332,7 @@ export function ReturnPolicyEditor({ brandId, lang }: ReturnPolicyEditorProps) {
               <Label className="text-xs font-semibold text-foreground block">
                 {isAr ? "إشعارات العملاء التلقائية" : "Automated Notifications"}
               </Label>
-              <span className="text-[11px] text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 {isAr ? "إرسال تحديثات عند تغيير حالة الطلب" : "Send updates on return status change"}
               </span>
             </div>

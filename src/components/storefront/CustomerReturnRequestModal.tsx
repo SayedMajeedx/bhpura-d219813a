@@ -224,7 +224,7 @@ export function CustomerReturnRequestModal({
               <Label className="text-xs font-semibold text-foreground">
                 {isAr ? "اختر القطع المراد إرجاعها أو استبدالها" : "Select Items to Return or Exchange"}
               </Label>
-              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-48 overflow-y-auto pe-1">
                 {items.map((item, idx) => (
                   <div
                     key={item.orderItemId}
@@ -243,7 +243,7 @@ export function CustomerReturnRequestModal({
                       />
                       <div>
                         <h4 className="font-bold text-foreground">{item.description}</h4>
-                        <span className="text-[11px] font-mono text-muted-foreground">
+                        <span className="text-xs font-mono text-muted-foreground">
                           {formatMoney(item.unitPrice, "BHD", isAr ? "ar-BH-u-nu-latn" : "en-US")}
                         </span>
                       </div>
@@ -251,7 +251,7 @@ export function CustomerReturnRequestModal({
 
                     {item.selected && (
                       <div className="flex items-center gap-2">
-                        <Label className="text-[11px] text-muted-foreground">{isAr ? "الكمية:" : "Qty:"}</Label>
+                        <Label className="text-xs text-muted-foreground">{isAr ? "الكمية:" : "Qty:"}</Label>
                         <Input
                           type="number"
                           min={1}

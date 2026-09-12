@@ -78,7 +78,7 @@ export function BilingualField({
             type="button"
             onClick={() => run("ar->en")}
             disabled={busy === "ar->en" || !valueAr.trim()}
-            className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline disabled:opacity-40 disabled:no-underline"
+            className="inline-flex items-center gap-1 text-xs text-primary hover:underline disabled:opacity-40 disabled:no-underline"
             title={isAr ? "ترجمة تلقائية إلى الإنجليزية" : "Auto-translate to English"}
           >
             {busy === "ar->en" ? (
@@ -94,7 +94,7 @@ export function BilingualField({
             dir="rtl"
             value={valueAr}
             onChange={(e) => onChangeAr(e.target.value)}
-            className="text-right"
+            className="text-end"
             rows={rows}
             placeholder={placeholderAr}
           />
@@ -103,7 +103,7 @@ export function BilingualField({
             dir="rtl"
             value={valueAr}
             onChange={(e) => onChangeAr(e.target.value)}
-            className="text-right"
+            className="text-end"
             placeholder={placeholderAr}
           />
         )}
@@ -115,7 +115,7 @@ export function BilingualField({
             type="button"
             onClick={() => run("en->ar")}
             disabled={busy === "en->ar" || !valueEn.trim()}
-            className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline disabled:opacity-40 disabled:no-underline"
+            className="inline-flex items-center gap-1 text-xs text-primary hover:underline disabled:opacity-40 disabled:no-underline"
             title={isAr ? "ترجمة تلقائية إلى العربية" : "Auto-translate to Arabic"}
           >
             {busy === "en->ar" ? (

@@ -299,7 +299,7 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
               className="h-full w-full object-cover"
             />
             <div className="pointer-events-none absolute inset-x-[5%] top-1/2 h-[52%] -translate-y-1/2 rounded-lg border-[3px] border-white shadow-[0_0_0_999px_rgba(0,0,0,.28)]">
-              <span className="absolute -top-7 start-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/70 px-2 py-1 text-[11px] font-medium text-white">
+              <span className="absolute -top-7 start-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/70 px-2 py-1 text-xs font-medium text-white">
                 {isAr ? "باركود واحد داخل الإطار" : "One barcode inside the frame"}
               </span>
             </div>
@@ -310,6 +310,8 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
                 variant="secondary"
                 className="absolute end-2 top-2 h-9 w-9 rounded-full"
                 onClick={switchCamera}
+                aria-label="Switch camera"
+                title="Switch camera"
               >
                 <RefreshCw className="h-4 w-4" />
               </Button>

@@ -42,12 +42,12 @@ export function OsMobileTabBar({ items, className }: OsMobileTabBarProps) {
             <div className="relative">
               <Icon className="h-5 w-5 stroke-[1.75]" />
               {item.badge !== undefined && (
-                <span className="absolute -top-1.5 -end-2 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground">
+                <span className="absolute -top-1.5 -end-2 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-xs font-bold text-destructive-foreground">
                   {item.badge}
                 </span>
               )}
             </div>
-            <span className="text-[10px] font-medium tracking-tight truncate max-w-[64px]">
+            <span className="text-xs font-medium tracking-tight truncate max-w-[64px]">
               {item.label}
             </span>
           </button>

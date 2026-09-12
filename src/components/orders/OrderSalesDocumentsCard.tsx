@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,10 +18,17 @@ import {
 import { toast } from "sonner";
 import { printDeliveryNote } from "@/lib/thermal-print";
 
+import {
+  getFulfillmentBadgeDetails,
+  getFulfillmentMethodLabel,
+} from "@/lib/status-labels";
+import { RETURN_STATUS_CONFIG, type ReturnStatus } from "@/lib/returns.types";
+
 interface OrderSalesDocumentsCardProps {
   order: any;
   items: any[];
   brand: any;
+  settings?: any;
   currency: string;
   lang: "en" | "ar";
   slug: string;
@@ -29,10 +36,20 @@ interface OrderSalesDocumentsCardProps {
   onPrintInvoice?: () => void;
 }
 
+function getPaymentStatusLabel(status: string | null | undefined, currentLang: "ar" | "en") {
+  const s = String(status || "unpaid").toLowerCase();
+  if (s === "paid") return currentLang === "ar" ? "مدفوع بالكامل" : "Paid in Full";
+  if (s === "partial" || s === "partially_paid") return currentLang === "ar" ? "مدفوع جزئياً" : "Partially Paid";
+  if (s === "unpaid") return currentLang === "ar" ? "غير مدفوع" : "Unpaid";
+  if (s === "refunded") return currentLang === "ar" ? "مسترجع" : "Refunded";
+  return s;
+}
+
 export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = ({
   order,
   items,
   brand,
+  settings,
   currency,
   lang,
   slug,
@@ -42,6 +59,23 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
   const isAr = lang === "ar";
   const [copiedInvoice, setCopiedInvoice] = React.useState(false);
   const brandId = brand?.id || order?.brand_id;
+
+  const resolvedBrandName =
+    (isAr ? brand?.name_ar : brand?.name_en) ||
+    brand?.name_ar ||
+    brand?.name_en ||
+    settings?.business_name ||
+    brand?.name ||
+    (slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : "") ||
+    (isAr ? "المتجر" : "Store");
+
+  const resolvedLogoUrl = brand?.logo_url || settings?.logo_url || null;
+
+  const fulfillmentDetails = getFulfillmentBadgeDetails(
+    order?.fulfillment_status || order?.status,
+    lang,
+    order?.fulfillment_method,
+  );
 
   // 1. Fetch linked return requests for this order
   const returnRequestsQ = useQuery({
@@ -85,8 +119,8 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
     if (!publicInvoiceUrl) return;
     const customerPhone = (order.customer_phone_snapshot || order.phone || "").replace(/\D/g, "");
     const msg = isAr
-      ? `مرحباً، تفضل رابط فاتورة طلبك #${order.invoice_number || order.id?.slice(0, 8)} من ${brand?.name || "المتجر"}: ${publicInvoiceUrl}`
-      : `Hello, here is the invoice for your order #${order.invoice_number || order.id?.slice(0, 8)} from ${brand?.name || "the store"}: ${publicInvoiceUrl}`;
+      ? `مرحباً، تفضل رابط فاتورة طلبك #${order.invoice_number || order.id?.slice(0, 8)} من ${resolvedBrandName}: ${publicInvoiceUrl}`
+      : `Hello, here is the invoice for your order #${order.invoice_number || order.id?.slice(0, 8)} from ${resolvedBrandName}: ${publicInvoiceUrl}`;
     const url = customerPhone
       ? `https://wa.me/${customerPhone.startsWith("973") ? customerPhone : `973${customerPhone.replace(/^0+/, "")}`}?text=${encodeURIComponent(msg)}`
       : `https://wa.me/?text=${encodeURIComponent(msg)}`;
@@ -109,10 +143,12 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
     );
 
     printDeliveryNote({
-      brand: brand?.name || "Boutq Store",
+      brand: resolvedBrandName,
+      logoUrl: resolvedLogoUrl,
       orderNumber: order.invoice_number || order.id?.slice(0, 8) || "—",
       orderDate: formatDate(order.created_at || new Date().toISOString(), lang),
       fulfillmentStatus: order.fulfillment_status || order.status,
+      fulfillmentStatusLabel: fulfillmentDetails.label,
       customerName: order.customer_name_snapshot || order.customer_name || null,
       customerPhone: order.customer_phone_snapshot || order.customer_phone || order.phone || null,
       deliveryAddress: formattedAddress || null,
@@ -136,8 +172,8 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
   const isPaid = order?.payment_status === "paid" || balanceDue <= 0;
 
   return (
-    <Card id="sec-documents" className="scroll-mt-24 rounded-xl border border-border/70 bg-card p-4 sm:p-6 shadow-sm">
-      <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-b border-border/50 pb-4">
+    <Card id="sec-documents" className="scroll-mt-24 rounded-xl border border-border-strong bg-card p-4 sm:p-6 shadow-sm">
+      <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-b border-border-subtle pb-4">
         <div>
           <h3 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
@@ -153,7 +189,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Document 1: Sales Order */}
-        <div className="rounded-xl border border-border/60 bg-muted/20 p-4 flex flex-col justify-between hover:border-primary/40 transition-colors">
+        <div className="rounded-xl border border-border-subtle bg-muted/20 p-4 flex flex-col justify-between hover:border-primary/40 transition-colors">
           <div>
             <div className="flex items-center justify-between gap-2 mb-2">
               <div className="flex items-center gap-2">
@@ -190,7 +226,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 pt-2 border-t border-border/40">
+          <div className="flex items-center gap-2 pt-2 border-t border-border-subtle">
             {onPrintThermalReceipt && (
               <Button
                 variant="outline"
@@ -217,7 +253,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
         </div>
 
         {/* Document 2: Tax Invoice */}
-        <div className="rounded-xl border border-border/60 bg-muted/20 p-4 flex flex-col justify-between hover:border-primary/40 transition-colors">
+        <div className="rounded-xl border border-border-subtle bg-muted/20 p-4 flex flex-col justify-between hover:border-primary/40 transition-colors">
           <div>
             <div className="flex items-center justify-between gap-2 mb-2">
               <div className="flex items-center gap-2">
@@ -229,7 +265,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
                 </span>
               </div>
               <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                className={`text-xs font-bold px-2 py-0.5 rounded-md ${
                   isPaid
                     ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
                     : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20"
@@ -248,8 +284,8 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
             <div className="space-y-1 text-xs mb-4">
               <div className="flex justify-between text-muted-foreground">
                 <span>{isAr ? "حالة الدفع:" : "Payment status:"}</span>
-                <span className="font-semibold text-foreground capitalize">
-                  {order?.payment_status || "unpaid"}
+                <span className="font-semibold text-foreground">
+                  {getPaymentStatusLabel(order?.payment_status, lang)}
                 </span>
               </div>
               <div className="flex justify-between text-muted-foreground">
@@ -264,7 +300,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 pt-2 border-t border-border/40">
+          <div className="flex items-center gap-2 pt-2 border-t border-border-subtle">
             {publicInvoiceUrl ? (
               <>
                 <Button
@@ -299,7 +335,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
         </div>
 
         {/* Document 3: Delivery Note */}
-        <div className="rounded-xl border border-border/60 bg-muted/20 p-4 flex flex-col justify-between hover:border-primary/40 transition-colors">
+        <div className="rounded-xl border border-border-subtle bg-muted/20 p-4 flex flex-col justify-between hover:border-primary/40 transition-colors">
           <div>
             <div className="flex items-center justify-between gap-2 mb-2">
               <div className="flex items-center gap-2">
@@ -310,8 +346,8 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
                   {isAr ? "إذن التسليم وبوليصة الشحن" : "Delivery Note & Consignment"}
                 </span>
               </div>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
-                {order?.fulfillment_status || order?.status || "PENDING"}
+              <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
+                {fulfillmentDetails.label}
               </span>
             </div>
             <p className="text-xs text-muted-foreground mb-3">
@@ -328,19 +364,19 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>{isAr ? "طريقة الاستلام:" : "Fulfillment method:"}</span>
-                <span className="font-semibold text-foreground capitalize">
-                  {order?.fulfillment_method || "Delivery"}
+                <span className="font-semibold text-foreground">
+                  {getFulfillmentMethodLabel(order?.fulfillment_method, lang)}
                 </span>
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>{isAr ? "ملاحظات التوصيل:" : "Driver instructions:"}</span>
-                <span className="truncate max-w-[150px] font-mono text-[11px] text-foreground">
+                <span className="truncate max-w-[150px] font-mono text-xs text-foreground">
                   {order?.delivery_notes || (isAr ? "لا توجد ملاحظات" : "None")}
                 </span>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 pt-2 border-t border-border/40">
+          <div className="flex items-center gap-2 pt-2 border-t border-border-subtle">
             <Button
               variant="outline"
               size="sm"
@@ -354,7 +390,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
         </div>
 
         {/* Document 4: Return & Credit Note */}
-        <div className="rounded-xl border border-border/60 bg-muted/20 p-4 flex flex-col justify-between hover:border-primary/40 transition-colors">
+        <div className="rounded-xl border border-border-subtle bg-muted/20 p-4 flex flex-col justify-between hover:border-primary/40 transition-colors">
           <div>
             <div className="flex items-center justify-between gap-2 mb-2">
               <div className="flex items-center gap-2">
@@ -366,11 +402,11 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
                 </span>
               </div>
               {linkedReturns.length > 0 ? (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
                   {isAr ? `${linkedReturns.length} إرجاع مرتبط` : `${linkedReturns.length} return`}
                 </span>
               ) : (
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
                   {isAr ? "لا يوجد إرجاع" : "None"}
                 </span>
               )}
@@ -391,7 +427,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
                       <span className="font-mono font-bold text-foreground">
                         {ret.return_number || ret.id.slice(0, 8)}
                       </span>
-                      <div className="text-[10px] text-muted-foreground">
+                      <div className="text-xs text-muted-foreground">
                         {ret.reason || (isAr ? "طلب إرجاع" : "Return request")}
                       </div>
                     </div>
@@ -399,22 +435,24 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
                       <span className="font-mono font-bold text-destructive">
                         {formatMoney(ret.net_refund_amount || 0, currency, lang)}
                       </span>
-                      <div className="text-[10px] font-semibold text-muted-foreground uppercase">
-                        {ret.status}
+                      <div className="text-xs font-semibold text-muted-foreground">
+                        {isAr
+                          ? RETURN_STATUS_CONFIG[ret.status as ReturnStatus]?.labelAr || ret.status
+                          : RETURN_STATUS_CONFIG[ret.status as ReturnStatus]?.labelEn || ret.status}
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="rounded-lg border border-border/40 bg-background/50 p-3 text-xs text-muted-foreground mb-4 text-center">
+              <div className="rounded-lg border border-border-subtle bg-background/50 p-3 text-xs text-muted-foreground mb-4 text-center">
                 {isAr
                   ? "لم يتم تسجيل أي طلب إرجاع أو استبدال لهذا الطلب بعد"
                   : "No return or exchange requested for this order yet."}
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2 pt-2 border-t border-border/40">
+          <div className="flex items-center gap-2 pt-2 border-t border-border-subtle">
             <Button
               asChild
               variant="outline"

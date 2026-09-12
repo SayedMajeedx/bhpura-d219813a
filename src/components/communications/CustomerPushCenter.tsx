@@ -43,7 +43,7 @@ export function CustomerPushCenter({ brandId, isAr }: { brandId:string; isAr:boo
     setSending(true);
     const {error}=await (supabase as any).rpc("create_customer_push_campaign",{p_brand_id:brandId,p_title:title.trim(),p_body:body.trim(),p_customer_id:target==="all"?null:target,p_target_url:"https://pura.boutq.store"});
     setSending(false);
-    if(error) return toast.error(error.message);
+    if(error) return toast.error(isAr ? "تعذر جدولة الإشعار، يرجى المحاولة مرة أخرى." : "Failed to queue push notification. Please try again.");
     setTitle("");setBody("");setTarget("all");toast.success(isAr?"تمت جدولة الإشعار للإرسال":"Push notification queued");
     void qc.invalidateQueries({queryKey:["customer-push-events",brandId]});
   };
@@ -69,15 +69,15 @@ export function CustomerPushCenter({ brandId, isAr }: { brandId:string; isAr:boo
           </div>
         )}
         <div className="space-y-2"><Label>{isAr?"المستلم":"Recipient"}</Label><Select value={target} onValueChange={setTarget}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">{isAr?"كل العملاء المشتركين في العروض":"All marketing subscribers"}</SelectItem>{(customers.data??[]).filter(c=>installedCustomers.has(c.id)).map(c=><SelectItem key={c.id} value={c.id}>{c.name||c.phone||c.email||c.id}</SelectItem>)}</SelectContent></Select></div>
-        <div className="space-y-2"><Label>{isAr?"عنوان الإشعار":"Notification title"}</Label><Input value={title} maxLength={100} onChange={e=>setTitle(e.target.value)} placeholder={isAr?"وصل الجديد من Pura Line":"New at Pura Line"}/><p className="text-end text-[11px] text-muted-foreground">{title.length}/100</p></div>
-        <div className="space-y-2"><Label>{isAr?"الرسالة":"Message"}</Label><textarea className="flex min-h-28 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={body} maxLength={500} onChange={e=>setBody(e.target.value)} placeholder={isAr?"اكتب رسالة قصيرة وواضحة...":"Write a short, clear message..."}/><p className="text-end text-[11px] text-muted-foreground">{body.length}/500</p></div>
+        <div className="space-y-2"><Label>{isAr?"عنوان الإشعار":"Notification title"}</Label><Input value={title} maxLength={100} onChange={e=>setTitle(e.target.value)} placeholder={isAr?"وصل الجديد من Pura Line":"New at Pura Line"}/><p className="text-end text-xs text-muted-foreground">{title.length}/100</p></div>
+        <div className="space-y-2"><Label>{isAr?"الرسالة":"Message"}</Label><textarea className="flex min-h-28 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={body} maxLength={500} onChange={e=>setBody(e.target.value)} placeholder={isAr?"اكتب رسالة قصيرة وواضحة...":"Write a short, clear message..."}/><p className="text-end text-xs text-muted-foreground">{body.length}/500</p></div>
         <Button onClick={send} disabled={sending || !hasRecipients || !title.trim() || !body.trim()} className="w-full gap-2"><Send className="h-4 w-4"/>{sending?(isAr?"جاري الجدولة...":"Queueing..."):(isAr?"إرسال الإشعار":"Send notification")}</Button>
         <p className="text-xs text-muted-foreground">{isAr?"الإرسال الجماعي يصل فقط لمن فعّل «العروض والأخبار». تحديثات الطلبات تُرسل تلقائياً ولا تعتمد على هذا الخيار.":"Broadcasts reach only customers who enabled marketing. Order updates are automatic and independent."}</p>
       </div>
     </Card>
     <Card className="p-4 sm:p-6">
-      <div className="flex items-center justify-between"><h2 className="font-bold">{isAr?"آخر الإرسالات":"Recent sends"}</h2><Button variant="ghost" size="icon" onClick={()=>history.refetch()}><RefreshCw className={`h-4 w-4 ${history.isFetching?"animate-spin":""}`}/></Button></div>
-      <div className="mt-4 space-y-2">{!history.data?.length?<p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">{isAr?"لا توجد إشعارات مرسلة بعد":"No notifications sent yet"}</p>:history.data.map(row=><div key={row.id} className="rounded-xl border p-3"><div className="flex items-start justify-between gap-2"><p className="font-bold text-sm">{row.title}</p><span className="rounded-full bg-muted px-2 py-0.5 text-[10px]">{row.status}</span></div><p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{row.body}</p><p className="mt-2 text-[11px] text-muted-foreground">{new Date(row.created_at).toLocaleString(isAr?"ar-BH-u-nu-latn":"en-GB")} · {isAr?"وصل":"accepted"} {row.accepted_count}/{row.recipient_count}</p></div>)}</div>
+      <div className="flex items-center justify-between"><h2 className="font-bold">{isAr?"آخر الإرسالات":"Recent sends"}</h2><Button variant="ghost" size="icon" onClick={()=>history.refetch()} aria-label={isAr ? "تحديث السجل" : "Refresh history"} title={isAr ? "تحديث السجل" : "Refresh history"}><RefreshCw className={`h-4 w-4 ${history.isFetching?"animate-spin":""}`}/></Button></div>
+      <div className="mt-4 space-y-2">{!history.data?.length?<p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">{isAr?"لا توجد إشعارات مرسلة بعد":"No notifications sent yet"}</p>:history.data.map(row=><div key={row.id} className="rounded-xl border p-3"><div className="flex items-start justify-between gap-2"><p className="font-bold text-sm">{row.title}</p><span className="rounded-full bg-muted px-2 py-0.5 text-xs">{row.status}</span></div><p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{row.body}</p><p className="mt-2 text-xs text-muted-foreground">{new Date(row.created_at).toLocaleString(isAr?"ar-BH-u-nu-latn":"en-GB")} · {isAr?"وصل":"accepted"} {row.accepted_count}/{row.recipient_count}</p></div>)}</div>
     </Card>
   </div>;
 }

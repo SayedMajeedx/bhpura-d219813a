@@ -110,7 +110,7 @@ export function ShareCartModal({ open, onOpenChange }: ShareCartModalProps) {
         dir={isAr ? "rtl" : "ltr"}
         className="w-[92vw] max-w-md rounded-2xl p-5 sm:p-6"
       >
-        <DialogHeader className={isAr ? "text-right sm:text-right" : "text-left sm:text-left"}>
+        <DialogHeader className={isAr ? "text-end sm:text-end" : "text-start sm:text-start"}>
           <DialogTitle className="flex items-center gap-2 text-lg font-bold">
             <Share2 className="h-5 w-5 text-primary" />
             <span>{t("مشاركة سلة المشتريات", "Share Shopping Cart")}</span>
@@ -144,7 +144,7 @@ export function ShareCartModal({ open, onOpenChange }: ShareCartModalProps) {
                 {t("رابط السلة المختصر", "Short Cart Link")}
               </label>
               {generating && (
-                <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Loader2 className="h-3 w-3 animate-spin" />
                   <span>{t("جاري التجهيز...", "Generating...")}</span>
                 </span>

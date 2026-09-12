@@ -85,7 +85,7 @@ export function OsBrandSwitcher({
 
   return (
     <div className="p-3 border-b border-[var(--os-border)] space-y-2 bg-muted/20 backdrop-blur-xs rounded-xl mx-2 my-1">
-      <div className="flex items-center gap-2 px-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+      <div className="flex items-center gap-2 px-1 text-xs font-semibold text-muted-foreground">
         <Crown className="h-3.5 w-3.5 text-amber-500" />
         {lang === "ar" ? "المدير الأعلى" : "Super Admin"}
       </div>

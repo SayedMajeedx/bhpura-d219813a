@@ -16,7 +16,7 @@ export const CategoriesCommandHeader: React.FC<CategoriesCommandHeaderProps> = (
   const isAr = lang === "ar";
 
   return (
-    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl bg-card border border-border/60 shadow-2xs">
+    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl bg-card border border-border-subtle shadow-2xs">
       <div className="flex items-center gap-3">
         <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
           <Boxes className="h-4.5 w-4.5" />
@@ -26,7 +26,7 @@ export const CategoriesCommandHeader: React.FC<CategoriesCommandHeaderProps> = (
             <h1 className="font-display text-lg sm:text-xl font-bold tracking-tight text-foreground">
               {isAr ? "الأقسام والتصنيفات" : "Categories & Catalog Hierarchy"}
             </h1>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-primary/10 text-primary border border-primary/20">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
               {categoryCount} {isAr ? "قسم" : "categories"}
             </span>
           </div>

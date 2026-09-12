@@ -803,7 +803,7 @@ function HeroContentCarousel({
                       alt={title || ""}
                       className="pointer-events-none h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                       decoding="async"
-                      fetchPriority={slideIndex === 0 && prioritizeHero ? "high" : "auto"}
+                      fetchPriority={prioritizeHero && slideIndex === 0 ? "high" : "auto"}
                       loading={slideIndex === 0 ? "eager" : "lazy"}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent pointer-events-none" />
@@ -868,11 +868,7 @@ function HeroContentCarousel({
                         src={mediaUrl}
                         poster={posterUrl}
                         active={slideIndex === idx}
-                        preloadPriority={
-                          slideIndex === idx || slideIndex === preparedVideoIndex
-                            ? "high"
-                            : "metadata"
-                        }
+                        prepare={slideIndex === preparedVideoIndex}
                         wrapperClassName="pointer-events-none h-full w-full"
                         className="pointer-events-none h-full w-full object-cover"
                       />

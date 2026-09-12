@@ -50,6 +50,8 @@ interface InventoryMobileCardProps {
   selected?: boolean;
   onToggleSelected?: (productId: string) => void;
   currency?: string;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
 export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
@@ -69,9 +71,19 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
   selected = false,
   onToggleSelected = () => undefined,
   currency = "BHD",
+  isExpanded: controlledExpanded,
+  onToggleExpand: controlledOnToggleExpand,
 }) => {
   const isAr = lang === "ar";
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [internalExpanded, setInternalExpanded] = useState(false);
+  const isExpanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded;
+  const toggleExpand = () => {
+    if (controlledOnToggleExpand) {
+      controlledOnToggleExpand();
+    } else {
+      setInternalExpanded((prev) => !prev);
+    }
+  };
   const [deleteOpen, setDeleteOpen] = useState(false);
   const name = isAr ? product.name_ar || product.name : product.name_en || product.name;
   const isLowStock = totalStock > 0 && totalStock <= 5;
@@ -79,10 +91,10 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
 
   return (
     <>
-      <div className="p-3.5 rounded-xl bg-card border border-border/60 shadow-2xs space-y-2.5">
+      <div className="p-3.5 rounded-xl bg-card border border-border-subtle shadow-2xs space-y-2.5">
         <div
           className="flex items-start justify-between gap-3"
-          onClick={() => setIsExpanded(!isExpanded)}
+          onClick={toggleExpand}
         >
           <div onClick={(event) => event.stopPropagation()}>
             <Checkbox
@@ -92,11 +104,11 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
             />
           </div>
           <div className="flex items-center gap-3 min-w-0 cursor-pointer">
-            <div className="h-12 w-12 rounded-lg bg-muted border border-border/60 flex items-center justify-center overflow-hidden shrink-0">
+            <div className="h-12 w-12 rounded-lg bg-muted border border-border-subtle flex items-center justify-center overflow-hidden shrink-0">
               {product.image_url ? (
                 <img src={product.image_url} alt={name} className="h-full w-full object-cover" />
               ) : (
-                <Package className="h-6 w-6 text-muted-foreground/60" />
+                <Package className="h-6 w-6 text-muted-foreground" />
               )}
             </div>
             <div className="min-w-0">
@@ -108,7 +120,7 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
                   <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 )}
               </h3>
-              <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
+              <p className="text-xs text-muted-foreground font-mono mt-0.5">
                 {variantCountLabel(variants.length, lang)}
               </p>
             </div>
@@ -124,7 +136,7 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
         {/* Stock Status Badge */}
         <div className="flex items-center justify-between text-xs">
           <span
-            className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+            className={`px-2 py-0.5 rounded-md text-xs font-bold ${
               isOutOfStock
                 ? "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300"
                 : isLowStock
@@ -149,9 +161,9 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
           <div className="flex items-center gap-1">
             <Button
               size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
+              onClick={toggleExpand}
               variant="outline"
-              className="h-8 px-2 text-[11px] font-bold text-muted-foreground hover:text-foreground"
+              className="h-8 px-2 text-xs font-bold text-muted-foreground hover:text-foreground"
             >
               {isAr ? "المتغيرات" : "Variants"}
               {isExpanded ? (
@@ -224,7 +236,7 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
 
         {/* Expanded Variant Details Panel */}
         {isExpanded && renderVariantList && (
-          <div className="pt-2 border-t border-border/40 overflow-x-auto">
+          <div className="pt-2 border-t border-border-subtle overflow-x-auto">
             {renderVariantList(product)}
           </div>
         )}

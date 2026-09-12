@@ -70,7 +70,7 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
   return (
     <div className="space-y-6">
       {/* Support Access Control Toggle Card */}
-      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm relative">
+      <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card relative">
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="space-y-1">
@@ -107,7 +107,7 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-2.5 p-3 rounded-lg bg-zinc-100/50 dark:bg-zinc-900/50 border border-border text-xs text-muted-foreground">
+          <div className="flex items-center gap-2.5 p-3 rounded-lg bg-muted/50 border border-border text-xs text-muted-foreground">
             {accessEnabled ? (
               <>
                 <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
@@ -132,7 +132,7 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
       </Card>
 
       {/* Security & Auditing Logs Card */}
-      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
+      <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card">
         <CardHeader className="pb-3 border-b border-border">
           <CardTitle className="text-base font-display font-medium flex items-center gap-2">
             <History className="h-4.5 w-4.5 text-muted-foreground" />
@@ -167,22 +167,22 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
+              <table className="w-full text-start border-collapse text-xs">
                 <thead>
-                  <tr className="bg-zinc-50 dark:bg-zinc-900/50 border-b border-border text-muted-foreground font-medium">
-                    <th className="p-3.5 pl-6">
+                  <tr className="bg-muted/40 border-b border-border text-muted-foreground font-medium">
+                    <th className="p-3.5 ps-6">
                       {lang === "ar" ? "المهندس / المسؤول" : "Operator / Engineer"}
                     </th>
                     <th className="p-3.5">{lang === "ar" ? "نوع الإجراء" : "Action Type"}</th>
                     <th className="p-3.5">
                       {lang === "ar" ? "سبب الدخول" : "Troubleshooting Reason"}
                     </th>
-                    <th className="p-3.5 pr-6 text-right">
+                    <th className="p-3.5 pe-6 text-end">
                       {lang === "ar" ? "التاريخ والوقت" : "Date & Time"}
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80 font-mono text-[11px]">
+                <tbody className="divide-y divide-border font-mono text-xs">
                   {auditLogs.map((log: any) => {
                     const formattedDate = new Date(log.created_at).toLocaleString(
                       lang === "ar" ? "ar-BH-u-nu-latn" : "en-US",
@@ -192,17 +192,17 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
                     return (
                       <tr
                         key={log.id}
-                        className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors"
+                        className="hover:bg-muted/50 transition-colors"
                       >
-                        <td className="p-3.5 pl-6 font-medium text-foreground">
+                        <td className="p-3.5 ps-6 font-medium text-foreground">
                           <div>{log.operator?.name || "Boutq Support"}</div>
-                          <div className="text-[10px] text-muted-foreground font-normal">
+                          <div className="text-xs text-muted-foreground font-normal">
                             {log.operator?.email || "support@boutq.store"}
                           </div>
                         </td>
                         <td className="p-3.5">
                           <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium border ${
+                            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${
                               log.action_type === "impersonation_start"
                                 ? "bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400"
                                 : "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
@@ -216,7 +216,7 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
                         <td className="p-3.5 text-muted-foreground max-w-xs truncate font-sans">
                           {log.reason || "—"}
                         </td>
-                        <td className="p-3.5 pr-6 text-right text-muted-foreground whitespace-nowrap">
+                        <td className="p-3.5 pe-6 text-end text-muted-foreground whitespace-nowrap">
                           {formattedDate}
                         </td>
                       </tr>

@@ -19,8 +19,8 @@ export function OsStatusPill({
   ...props
 }: OsStatusPillProps) {
   const variantClasses: Record<OsStatusVariant, string> = {
-    default: "bg-muted text-muted-foreground border-border/60",
-    neutral: "bg-muted/80 text-muted-foreground border-border/50",
+    default: "bg-muted text-muted-foreground border-border-subtle",
+    neutral: "bg-muted/80 text-muted-foreground border-border-subtle",
     success:
       "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/80",
     warning:

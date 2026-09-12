@@ -92,7 +92,7 @@ export function TrustBadgeIconPicker({
           aria-label={isAr ? "اختر أيقونة الشارة" : "Choose badge icon"}
         >
           <div className={cn("flex items-center gap-2 overflow-hidden", isAr ? "flex-row-reverse" : "flex-row")}>
-            <div className={cn("flex h-7 w-7 items-center justify-center rounded-lg border border-border/60", colorPreset.bgClass)}>
+            <div className={cn("flex h-7 w-7 items-center justify-center rounded-lg border border-border-subtle", colorPreset.bgClass)}>
               {renderTrustBadgeIcon(value, "h-4 w-4", colorId)}
             </div>
             <span className="text-xs font-medium truncate max-w-[90px]">
@@ -119,17 +119,14 @@ export function TrustBadgeIconPicker({
               <Sparkles className="h-3.5 w-3.5 text-primary" />
               {isAr ? "اختيار أيقونة الشارة" : "Select Badge Icon"}
             </span>
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               {filteredIcons.length} {isAr ? "أيقونة متاحة" : "icons"}
             </span>
           </div>
 
           <div className="relative">
             <Search
-              className={cn(
-                "absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none",
-                isAr ? "right-3" : "left-3"
-              )}
+              className="absolute top-1/2 -translate-y-1/2 start-3 h-3.5 w-3.5 text-muted-foreground pointer-events-none"
             />
             <Input
               value={search}
@@ -139,10 +136,7 @@ export function TrustBadgeIconPicker({
                   ? "ابحث باسم الأيقونة أو الوصف (أمان، شحن، كاش، جودة)..."
                   : "Search by text or description (security, cash, fast)..."
               }
-              className={cn(
-                "h-9 text-xs bg-background border-border",
-                isAr ? "pr-8 pl-3" : "pl-8 pr-3"
-              )}
+              className="h-9 text-xs bg-background border-border ps-8 pe-3"
               autoFocus
             />
           </div>
@@ -156,7 +150,7 @@ export function TrustBadgeIconPicker({
                 variant={selectedCategory === cat.id ? "default" : "ghost"}
                 size="sm"
                 className={cn(
-                  "h-6 px-2 text-[11px] rounded-md shrink-0 font-normal",
+                  "h-6 px-2 text-xs rounded-md shrink-0 font-normal",
                   selectedCategory === cat.id && "font-semibold"
                 )}
                 onClick={() => setSelectedCategory(cat.id)}
@@ -193,13 +187,13 @@ export function TrustBadgeIconPicker({
                       "flex items-start gap-2.5 p-2 rounded-xl text-start transition-all border min-h-[56px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
                       isSelected
                         ? "border-primary bg-primary/10 text-foreground shadow-xs"
-                        : "border-border/60 hover:border-border hover:bg-muted/50 text-foreground"
+                        : "border-border-subtle hover:border-border hover:bg-muted/50 text-foreground"
                     )}
                   >
                     <div
                       className={cn(
                         "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border",
-                        isSelected ? "border-primary/40 bg-primary/20" : "border-border/70 bg-card",
+                        isSelected ? "border-primary/40 bg-primary/20" : "border-border-strong bg-card",
                         colorPreset.textClass
                       )}
                     >
@@ -213,7 +207,7 @@ export function TrustBadgeIconPicker({
                         </span>
                         {isSelected && <Check className="h-3 w-3 text-primary shrink-0" />}
                       </div>
-                      <p className="text-[10px] text-muted-foreground line-clamp-1 leading-snug">
+                      <p className="text-xs text-muted-foreground line-clamp-1 leading-snug">
                         {isAr ? item.description_ar : item.description_en}
                       </p>
                     </div>
@@ -225,7 +219,7 @@ export function TrustBadgeIconPicker({
         </div>
 
         {/* Footer tip */}
-        <div className="p-2 border-t border-border bg-muted/20 text-[10px] text-muted-foreground text-center">
+        <div className="p-2 border-t border-border bg-muted/20 text-xs text-muted-foreground text-center">
           {isAr
             ? "تلميح: يمكنك البحث بكلمات مثل 'بنفت'، 'تشفير'، 'توصيل'، 'عباية'"
             : "Tip: Search for keywords like 'benefit', 'ssl', 'courier', 'guarantee'"}

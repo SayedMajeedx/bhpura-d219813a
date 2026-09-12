@@ -129,7 +129,7 @@ export function SuperAddonsManager() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border/60">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border-subtle">
         <div>
           <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
             <PackagePlus className="h-5 w-5 text-primary" />
@@ -159,17 +159,17 @@ export function SuperAddonsManager() {
             key={addon.id}
             className="border border-border bg-card shadow-sm rounded-2xl flex flex-col justify-between"
           >
-            <CardHeader className="pb-3 border-b border-border/50">
+            <CardHeader className="pb-3 border-b border-border-subtle">
               <div className="flex items-center justify-between">
-                <Badge variant="outline" className="font-mono text-[10px]">
+                <Badge variant="outline" className="font-mono text-xs">
                   {addon.code}
                 </Badge>
                 {addon.is_active ? (
-                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 text-[10px]">
+                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 text-xs">
                     {isAr ? "مفعل" : "Active"}
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="bg-muted text-muted-foreground text-[10px]">
+                  <Badge variant="outline" className="bg-muted text-muted-foreground text-xs">
                     {isAr ? "معطل" : "Inactive"}
                   </Badge>
                 )}
@@ -183,18 +183,18 @@ export function SuperAddonsManager() {
             </CardHeader>
 
             <CardContent className="pt-4 space-y-4">
-              <div className="p-3 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between text-xs">
+              <div className="p-3 rounded-xl bg-muted/40 border border-border-subtle flex items-center justify-between text-xs">
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground block">
+                  <span className="text-xs uppercase font-bold text-muted-foreground block">
                     {isAr ? "الميزة المستهدفة" : "Target Feature"}
                   </span>
                   <span className="font-mono font-bold text-foreground">{addon.target_feature_key}</span>
                 </div>
-                <div className="text-right">
+                <div className="text-end">
                   <span className="font-mono font-bold text-foreground block">
                     {addon.price_monthly} BHD/m
                   </span>
-                  <span className="text-[10px] font-mono text-muted-foreground">
+                  <span className="text-xs font-mono text-muted-foreground">
                     {addon.price_annual} BHD/y
                   </span>
                 </div>

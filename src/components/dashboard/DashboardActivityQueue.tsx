@@ -58,7 +58,7 @@ export const DashboardActivityQueue = React.memo(function DashboardActivityQueue
       <div className="hidden md:block overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         <table className="w-full text-start text-xs border-collapse">
           <thead>
-            <tr className="border-b border-border bg-muted/40 text-muted-foreground font-bold uppercase tracking-wider">
+            <tr className="border-b border-border bg-muted/40 text-muted-foreground font-semibold">
               <th className="py-3 px-4 text-start">{isAr ? "رقم الفاتورة" : "Invoice #"}</th>
               <th className="py-3 px-4 text-start">{isAr ? "التاريخ والوقت" : "Date & Time"}</th>
               <th className="py-3 px-4 text-start">{isAr ? "العميل" : "Customer"}</th>
@@ -129,12 +129,12 @@ export const DashboardActivityQueue = React.memo(function DashboardActivityQueue
                 </OsStatusPill>
               </div>
 
-              <div className="flex items-center justify-between text-xs pt-1 border-t border-border/40">
+              <div className="flex items-center justify-between text-xs pt-1 border-t border-border-subtle">
                 <div className="space-y-0.5">
                   <p className="font-semibold text-foreground flex items-center gap-1">
                     <User className="h-3 w-3 text-muted-foreground" /> {custName}
                   </p>
-                  <p className="text-[10px] text-muted-foreground flex items-center gap-1 font-mono">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 font-mono">
                     <Calendar className="h-2.5 w-2.5" /> {formatDate(o.created_at, locale)}
                   </p>
                 </div>
@@ -146,7 +146,7 @@ export const DashboardActivityQueue = React.memo(function DashboardActivityQueue
                   <Link
                     to="/admin/b/$slug/orders/$id"
                     params={{ slug, id: o.id }}
-                    className="inline-flex items-center gap-0.5 text-[10px] font-bold text-primary hover:underline mt-0.5"
+                    className="inline-flex items-center gap-0.5 text-xs font-bold text-primary hover:underline mt-0.5"
                   >
                     <span>{isAr ? "عرض الطلب" : "View"}</span>
                     <ExternalLink className="h-2.5 w-2.5" />

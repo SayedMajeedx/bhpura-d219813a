@@ -60,6 +60,8 @@ interface InventoryWorkQueueProps {
     name_ar: string | null;
     slug: string | null;
   }>;
+  expandedProducts?: Record<string, boolean>;
+  onToggleExpand?: (productId: string) => void;
 }
 
 export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
@@ -82,9 +84,12 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
   onToggleAll = () => undefined,
   currency = "BHD",
   categories,
+  expandedProducts: controlledExpandedProducts,
+  onToggleExpand: controlledOnToggleExpand,
 }) => {
   const isAr = lang === "ar";
-  const [expandedProducts, setExpandedProducts] = useState<Record<string, boolean>>({});
+  const [internalExpandedProducts, setInternalExpandedProducts] = useState<Record<string, boolean>>({});
+  const expandedProducts = controlledExpandedProducts ?? internalExpandedProducts;
   const [pendingDelete, setPendingDelete] = useState<any | null>(null);
   const selectedOnPage = products.filter((product) => selectedProductIds.has(product.id)).length;
 
@@ -104,15 +109,19 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
   };
 
   const toggleExpand = (productId: string) => {
-    setExpandedProducts((prev) => ({
-      ...prev,
-      [productId]: !prev[productId],
-    }));
+    if (controlledOnToggleExpand) {
+      controlledOnToggleExpand(productId);
+    } else {
+      setInternalExpandedProducts((prev) => ({
+        ...prev,
+        [productId]: !prev[productId],
+      }));
+    }
   };
 
   if (isLoading) {
     return (
-      <div className="p-8 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border/60">
+      <div className="p-8 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border-subtle">
         <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent mb-2" />
         <p>{isAr ? "جاري تحميل كتالوج المنتجات..." : "Loading product catalog..."}</p>
       </div>
@@ -130,7 +139,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
 
   if (products.length === 0) {
     return (
-      <div className="p-12 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border/60 space-y-2">
+      <div className="p-12 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border-subtle space-y-2">
         <p className="font-bold text-sm text-foreground">
           {isAr ? "لا توجد منتجات مطابقة" : "No products found"}
         </p>
@@ -145,11 +154,11 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
 
   return (
     <>
-      <div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-2xs">
+      <div className="rounded-xl border border-border-subtle bg-card overflow-hidden shadow-2xs">
         <div className="overflow-x-auto">
           <table className="w-full text-start text-xs border-collapse">
             <thead>
-              <tr className="border-b border-border/60 bg-muted/40 font-bold text-muted-foreground uppercase text-[10px] tracking-wider">
+              <tr className="border-b border-border-subtle bg-muted/40 font-bold text-muted-foreground uppercase text-xs tracking-wider">
                 <th className="p-3 text-center w-12">
                   <Checkbox
                     checked={
@@ -259,6 +268,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                 return (
                   <React.Fragment key={product.id}>
                     <tr
+                      id={`product-row-${product.id}`}
                       className="hover:bg-muted/30 transition-colors group cursor-pointer"
                       onClick={() => toggleExpand(product.id)}
                     >
@@ -272,7 +282,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                       {/* Product Name & Image */}
                       <td className="p-3 align-middle font-medium">
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg bg-muted border border-border/60 flex items-center justify-center overflow-hidden shrink-0">
+                          <div className="h-10 w-10 rounded-lg bg-muted border border-border-subtle flex items-center justify-center overflow-hidden shrink-0">
                             {product.image_url ? (
                               <img
                                 src={product.image_url}
@@ -280,7 +290,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                                 className="h-full w-full object-cover"
                               />
                             ) : (
-                              <Package className="h-5 w-5 text-muted-foreground/60" />
+                              <Package className="h-5 w-5 text-muted-foreground" />
                             )}
                           </div>
                           <div className="min-w-0">
@@ -293,11 +303,11 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                               )}
                             </div>
                             {sku ? (
-                              <div className="text-[10px] text-muted-foreground font-mono">
+                              <div className="text-xs text-muted-foreground font-mono">
                                 SKU: {sku}
                               </div>
                             ) : barcode ? (
-                              <div className="text-[10px] text-muted-foreground font-mono">
+                              <div className="text-xs text-muted-foreground font-mono">
                                 BAR: {barcode}
                               </div>
                             ) : null}
@@ -306,12 +316,12 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                                 {attentionReasons.map((reason) => (
                                   <span
                                     key={reason.key}
-                                    className={`inline-flex items-center px-1.5 py-0.5 text-[9px] font-semibold rounded ${
+                                    className={`inline-flex items-center px-1.5 py-0.5 text-xs font-semibold rounded ${
                                       reason.tone === "danger"
                                         ? "bg-destructive/10 text-destructive border border-destructive/20"
                                         : reason.tone === "warning"
                                           ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20"
-                                          : "bg-muted text-muted-foreground border border-border/40"
+                                          : "bg-muted text-muted-foreground border border-border-subtle"
                                     }`}
                                   >
                                     {isAr ? reason.label_ar : reason.label_en}
@@ -326,11 +336,11 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                       {/* Category */}
                       <td className="p-3 align-middle font-medium">
                         {product.category && resolveCategoryName(product.category) ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] bg-muted/70 text-foreground border border-border/50">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-muted/70 text-foreground border border-border-subtle">
                             {resolveCategoryName(product.category)}
                           </span>
                         ) : (
-                          <span className="text-muted-foreground/50 text-[11px] italic">
+                          <span className="text-muted-foreground text-xs italic">
                             {isAr ? "بدون قسم" : "No category"}
                           </span>
                         )}
@@ -345,7 +355,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                             e.stopPropagation();
                             toggleExpand(product.id);
                           }}
-                          className="h-7 px-2 text-[11px] font-mono font-bold hover:bg-primary/10 hover:text-primary"
+                          className="h-7 px-2 text-xs font-mono font-bold hover:bg-primary/10 hover:text-primary"
                         >
                           {variantCountLabel(pVariants.length, lang)}
                           {isExpanded ? (
@@ -359,7 +369,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                       {/* Stock Level */}
                       <td className="p-3 align-middle">
                         <span
-                          className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                          className={`inline-flex px-2 py-0.5 rounded-md text-xs font-bold ${
                             isOutOfStock
                               ? "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300"
                               : isLowStock
@@ -471,10 +481,10 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
 
                     {/* Expanded Variant Detail Row */}
                     {isExpanded && renderVariantList && (
-                      <tr className="bg-muted/15 border-b border-border/60">
+                      <tr className="bg-muted/15 border-b border-border-subtle">
                         <td colSpan={8} className="p-3 sm:p-4">
                           <div
-                            className="bg-card rounded-lg border border-border/60 p-3 shadow-2xs"
+                            className="bg-card rounded-lg border border-border-subtle p-3 shadow-2xs"
                             onClick={(e) => e.stopPropagation()}
                           >
                             {renderVariantList(product)}

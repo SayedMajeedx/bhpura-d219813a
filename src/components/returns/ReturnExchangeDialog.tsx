@@ -251,7 +251,7 @@ export function ReturnExchangeDialog({
                       size="icon"
                       onClick={() => handleRemoveRow(idx)}
                       className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                    >
+                     aria-label={isAr ? "حذف" : "Delete"}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   )}
@@ -259,7 +259,7 @@ export function ReturnExchangeDialog({
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <Label className="text-[10px] text-muted-foreground">{isAr ? "الكمية" : "Quantity"}</Label>
+                    <Label className="text-xs text-muted-foreground">{isAr ? "الكمية" : "Quantity"}</Label>
                     <Input
                       type="number"
                       min={1}
@@ -271,7 +271,7 @@ export function ReturnExchangeDialog({
                     />
                   </div>
                   <div>
-                    <Label className="text-[10px] text-muted-foreground">{isAr ? "سعر القطعة (د.ب)" : "Unit Price (BHD)"}</Label>
+                    <Label className="text-xs text-muted-foreground">{isAr ? "سعر القطعة (د.ب)" : "Unit Price (BHD)"}</Label>
                     <Input
                       type="number"
                       step="0.001"
@@ -326,7 +326,7 @@ export function ReturnExchangeDialog({
                 {formatMoney(Math.abs(priceDiff), "BHD", isAr ? "ar-BH-u-nu-latn" : "en-US")}
               </span>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               {priceDiff > 0
                 ? isAr
                   ? "سيتم إنشاء طلب جديد بحالة دفع معلقة لفرق السعر، وخصم المخزون آلياً."

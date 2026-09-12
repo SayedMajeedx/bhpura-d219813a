@@ -55,7 +55,7 @@ export function UsageMeterBar({
       : "bg-primary";
 
   return (
-    <div className="space-y-2 p-3.5 rounded-2xl border border-border/80 bg-card/60 shadow-sm transition-all hover:border-border">
+    <div className="space-y-2 p-3.5 rounded-2xl border border-border-strong bg-card/60 shadow-sm transition-all hover:border-border">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           {Icon && (
@@ -70,27 +70,27 @@ export function UsageMeterBar({
 
         <div className="flex items-center gap-1.5">
           {isUnlimited ? (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
               <InfinityIcon className="h-3 w-3" />
               <span>{isAr ? "غير محدود" : "Unlimited"}</span>
             </span>
           ) : (
             <span className="text-xs font-mono font-bold text-foreground">
               {currentUsage.toLocaleString()} / {limitValue.toLocaleString()}{" "}
-              <span className="text-[10px] text-muted-foreground font-normal">
+              <span className="text-xs text-muted-foreground font-normal">
                 {isAr ? unitAr : unitEn}
               </span>
             </span>
           )}
 
           {is100 && (
-            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-extrabold bg-destructive/10 text-destructive">
+            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-extrabold bg-destructive/10 text-destructive">
               <AlertCircle className="h-3 w-3" />
               <span>100%</span>
             </span>
           )}
           {is80 && (
-            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500/10 text-amber-700 dark:text-amber-300">
+            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-500/10 text-amber-700 dark:text-amber-300">
               <AlertCircle className="h-3 w-3" />
               <span>80%+</span>
             </span>
@@ -106,7 +106,7 @@ export function UsageMeterBar({
               style={{ width: `${percent}%` }}
             />
           </div>
-          <div className="flex justify-between items-center text-[10px] text-muted-foreground">
+          <div className="flex justify-between items-center text-xs text-muted-foreground">
             <span>
               {is100
                 ? isAr

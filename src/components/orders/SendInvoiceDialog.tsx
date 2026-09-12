@@ -162,7 +162,7 @@ export function ManageTemplatesDialog({
           <div className="space-y-2">
             <div className="flex justify-end">
               <Button size="sm" onClick={startNew}>
-                <Plus className="h-3 w-3 mr-1" /> New template
+                <Plus className="h-3 w-3 me-1" /> New template
               </Button>
             </div>
             {templates.length === 0 && (
@@ -425,7 +425,7 @@ export default function SendInvoiceDialog({
             </p>
             <DialogFooter>
               <Button onClick={openWhatsApp}>
-                <Send className="h-4 w-4 mr-2" />{" "}
+                <Send className="h-4 w-4 me-2" />{" "}
                 {lang === "ar" ? "فتح الواتساب للإرسال" : "Open WhatsApp"}
               </Button>
             </DialogFooter>

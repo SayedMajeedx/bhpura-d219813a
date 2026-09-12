@@ -50,14 +50,14 @@ export const InventoryScopeSwitcher: React.FC<InventoryScopeSwitcherProps> = ({
           mobile ? "min-w-0 flex-1" : "shrink-0",
           isActive
             ? "bg-primary text-primary-foreground shadow-2xs"
-            : "border border-border/60 bg-card text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+            : "border border-border-subtle bg-card text-muted-foreground hover:bg-muted/60 hover:text-foreground",
         )}
       >
         <TabIcon className="h-3.5 w-3.5 shrink-0" />
         <span className="truncate">{label}</span>
         <span
           className={cn(
-            "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-extrabold tabular-nums",
+            "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-extrabold tabular-nums",
             isActive ? "bg-primary-foreground/20" : "bg-muted",
           )}
         >
@@ -72,7 +72,7 @@ export const InventoryScopeSwitcher: React.FC<InventoryScopeSwitcherProps> = ({
       <div className="hidden items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar select-none sm:flex">
         {tabs.map((tab) => renderTab(tab))}
       </div>
-      <div className="grid grid-cols-[repeat(2,minmax(0,1fr))_44px] gap-1.5 rounded-2xl border border-border/60 bg-muted/35 p-1 sm:hidden">
+      <div className="grid grid-cols-[repeat(2,minmax(0,1fr))_44px] gap-1.5 rounded-2xl border border-border-subtle bg-muted/35 p-1 sm:hidden">
         {mobileTabs.map((tab) => renderTab(tab, true))}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -80,7 +80,7 @@ export const InventoryScopeSwitcher: React.FC<InventoryScopeSwitcherProps> = ({
               type="button"
               aria-label={isAr ? "المزيد من حالات المخزون" : "More inventory scopes"}
               className={cn(
-                "flex min-h-10 items-center justify-center rounded-xl border border-border/60 bg-card text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/40",
+                "flex min-h-10 items-center justify-center rounded-xl border border-border-subtle bg-card text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/40",
                 activeOverflowTab && "border-primary/30 bg-primary/10 text-primary",
               )}
             >
@@ -102,7 +102,7 @@ export const InventoryScopeSwitcher: React.FC<InventoryScopeSwitcherProps> = ({
                 >
                   <Icon className="h-4 w-4" />
                   <span className="flex-1">{isAr ? tab.label_ar : tab.label_en}</span>
-                  <span className="rounded-full bg-muted px-2 text-[10px] font-bold tabular-nums">
+                  <span className="rounded-full bg-muted px-2 text-xs font-bold tabular-nums">
                     {tab.count}
                   </span>
                 </DropdownMenuItem>

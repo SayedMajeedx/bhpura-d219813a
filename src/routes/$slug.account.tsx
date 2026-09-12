@@ -118,7 +118,7 @@ function statusMeta(
   const label = getInvoiceStatusLabel(effectiveStatus, isAr ? "ar" : "en");
 
   let tone =
-    "bg-neutral-100 text-neutral-800 dark:bg-neutral-850 dark:text-neutral-300 border border-border";
+    "bg-muted text-muted-foreground border border-border";
   if (ful === "SENT_TO_TAILOR") {
     tone =
       "bg-purple-50 text-purple-800 dark:bg-purple-950/30 dark:text-purple-400 border border-purple-200/50";
@@ -216,10 +216,10 @@ function OrderTimelineTracker({
   }
 
   return (
-    <div className="mt-5 pt-5 border-t border-border/50">
+    <div className="mt-5 pt-5 border-t border-border-subtle">
       <div className="relative flex justify-between w-full">
         {/* Connection bar */}
-        <div className="absolute top-[14px] left-[5%] right-[5%] h-[2px] bg-muted dark:bg-zinc-800 -z-0">
+        <div className="absolute top-[14px] left-[5%] right-[5%] h-[2px] bg-muted -z-0">
           <div
             className="h-full bg-primary transition-all duration-500"
             style={{
@@ -240,13 +240,13 @@ function OrderTimelineTracker({
                 className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-300 ${
                   isCompleted
                     ? "bg-primary text-primary-foreground border-primary shadow-xs scale-105"
-                    : "bg-background text-muted-foreground border-muted dark:border-zinc-800"
+                    : "bg-background text-muted-foreground border-muted"
                 }`}
               >
                 {isCompleted ? "✓" : idx + 1}
               </div>
               <span
-                className={`text-[10px] sm:text-xs mt-2 font-semibold transition-colors ${
+                className={`text-xs sm:text-xs mt-2 font-semibold transition-colors ${
                   isActive ? "text-foreground" : "text-muted-foreground"
                 }`}
               >
@@ -371,7 +371,7 @@ function AccountPage() {
     if (totalSpent >= 150) {
       return {
         label: t("عضوية VIP الفضية", "Silver VIP Member"),
-        style: "bg-slate-50 text-slate-700 border-border dark:bg-slate-900/20 dark:text-slate-300",
+        style: "bg-muted text-muted-foreground border-border",
       };
     }
     return {
@@ -402,12 +402,12 @@ function AccountPage() {
   return (
     <section
       dir={isAr ? "rtl" : "ltr"}
-      className={`mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12 ${isAr ? "text-right" : "text-left"}`}
+      className={`mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12 ${isAr ? "text-end" : "text-start"}`}
     >
       {/* Editorial Header */}
       <div className="border-b pb-6 mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <span className="text-[10px] uppercase font-bold tracking-widest text-primary/80 block mb-1">
+          <span className="text-xs uppercase font-bold tracking-widest text-primary/80 block mb-1">
             {t("بوابة العميل", "Customer Portal")}
           </span>
           <h1 className="font-display text-3xl sm:text-4xl" style={{ color: "var(--sf-heading)" }}>
@@ -424,7 +424,7 @@ function AccountPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[290px_1fr] gap-8 items-start">
         {/* Luxury Profiler Side Panel */}
-        <Card className="p-6 text-center space-y-6 bg-card/60 backdrop-blur-md border border-border/70 rounded-2xl shadow-xs relative overflow-hidden">
+        <Card className="p-6 text-center space-y-6 bg-card border border-border-strong rounded-2xl shadow-xs relative overflow-hidden">
           <div className="space-y-4">
             {/* Elegant Monogram Monocle */}
             <div className="w-20 h-20 rounded-full mx-auto bg-primary/10 text-primary flex items-center justify-center font-display text-2xl font-bold border border-primary/20 shadow-inner relative">
@@ -454,7 +454,7 @@ function AccountPage() {
             {/* Store Credit Wallet Pill if Available */}
             {Number(storeCredit) > 0 && (
               <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
-                <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-700 dark:text-emerald-300 block flex items-center justify-center gap-1">
+                <span className="text-xs uppercase font-bold tracking-wider text-emerald-700 dark:text-emerald-300 block flex items-center justify-center gap-1">
                   <Wallet className="h-3 w-3" />
                   {t("رصيد المتجر (المحفظة)", "Store Credit")}
                 </span>
@@ -465,12 +465,12 @@ function AccountPage() {
             )}
           </div>
 
-          <hr className="border-border/50" />
+          <hr className="border-border-subtle" />
 
           {/* Core metrics panel */}
           <div className="grid grid-cols-3 gap-1 divide-x divide-border/40 rtl:divide-x-reverse text-center">
             <div className="px-1">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
                 {t("المشتريات", "Spent")}
               </p>
               <p
@@ -481,7 +481,7 @@ function AccountPage() {
               </p>
             </div>
             <div className="px-1">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
                 {t("الطلبات", "Orders")}
               </p>
               <p
@@ -492,7 +492,7 @@ function AccountPage() {
               </p>
             </div>
             <div className="px-1">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
                 {t("المرتجعات", "Returns")}
               </p>
               <p
@@ -504,7 +504,7 @@ function AccountPage() {
             </div>
           </div>
 
-          <hr className="border-border/50" />
+          <hr className="border-border-subtle" />
 
           {/* Quick Sign Out control */}
           <div className="pt-1">
@@ -516,9 +516,9 @@ function AccountPage() {
         <div className="space-y-6">
           <Tabs
             defaultValue="orders"
-            className="w-full rounded-2xl border bg-card/40 backdrop-blur-md p-4 shadow-xs sm:p-6 border-border/70"
+            className="w-full rounded-2xl border bg-card p-4 shadow-xs sm:p-6 border-border-strong"
           >
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-7 h-auto rounded-xl p-1 bg-muted/40 border border-border/40 mb-6 gap-1">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-7 h-auto rounded-xl p-1 bg-muted/40 border border-border-subtle mb-6 gap-1">
               <TabsTrigger
                 value="orders"
                 className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
@@ -540,7 +540,7 @@ function AccountPage() {
                 <RotateCcw className="h-4 w-4 text-primary" />
                 <span className="font-semibold text-xs">{t("المرتجعات", "Returns")}</span>
                 {customerReturns.length > 0 && (
-                  <span className="text-[10px] font-mono font-bold bg-primary/20 text-primary px-1.5 py-0.2 rounded-full">
+                  <span className="text-xs font-mono font-bold bg-primary/20 text-primary px-1.5 py-0.2 rounded-full">
                     {customerReturns.length}
                   </span>
                 )}
@@ -611,7 +611,10 @@ function AccountPage() {
             <TabsContent value="fit" className="mt-0 focus-visible:outline-none">
               <StorefrontFitPassport
                 brandId={brand.id}
-                brandName={isAr ? (brand.name_ar || brand.name_en) : (brand.name_en || brand.name_ar)}
+                brandName={
+                  (isAr ? brand.name_ar || brand.name_en : brand.name_en || brand.name_ar) ??
+                  undefined
+                }
                 customerId={customer?.id}
                 isAr={isAr}
               />
@@ -669,7 +672,7 @@ function SignOutButton() {
         navigate({ to: "/$slug", params: { slug: brand.slug }, replace: true });
       }}
     >
-      <LogOut className="h-3.5 w-3.5 mr-1" />
+      <LogOut className="h-3.5 w-3.5 me-1" />
       {t("تسجيل خروج", "Sign out")}
     </Button>
   );
@@ -789,7 +792,7 @@ function OrdersSection({
         return (
           <Card
             key={o.id}
-            className="p-5 border border-border/70 hover:border-primary/20 shadow-xs hover:shadow-md transition-all duration-300 rounded-xl bg-card"
+            className="p-5 border border-border-strong hover:border-primary/20 shadow-xs hover:shadow-md transition-all duration-300 rounded-xl bg-card"
           >
             {/* Header info bar */}
             <div className="flex flex-wrap items-start justify-between gap-4">
@@ -799,15 +802,15 @@ function OrdersSection({
                     {t("طلب رقم", "Order")} #{o.invoice_number}
                   </span>
                   <Badge
-                    className={`${st.tone} text-[10px] font-bold border-0 px-2.5 py-0.5 rounded-full`}
+                    className={`${st.tone} text-xs font-bold border-0 px-2.5 py-0.5 rounded-full`}
                   >
                     {st.label}
                   </Badge>
                 </div>
                 <div className="text-xs text-muted-foreground">{date}</div>
               </div>
-              <div className="text-right">
-                <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
+              <div className="text-end">
+                <p className="text-xs uppercase font-bold tracking-widest text-muted-foreground">
                   {t("الإجمالي", "Total Value")}
                 </p>
                 <p className="text-lg font-bold mt-0.5" style={{ color: "var(--sf-heading)" }}>
@@ -826,7 +829,7 @@ function OrdersSection({
             />
 
             {/* Expander list control */}
-            <div className="mt-5 pt-3 border-t border-border/40">
+            <div className="mt-5 pt-3 border-t border-border-subtle">
               <Button
                 variant="ghost"
                 size="sm"
@@ -842,16 +845,16 @@ function OrdersSection({
               </Button>
 
               {isExpanded && o.order_items && o.order_items.length > 0 && (
-                <div className="mt-3 bg-muted/30 dark:bg-zinc-900/30 rounded-lg p-3.5 space-y-2 border border-border/30">
+                <div className="mt-3 bg-muted/30 rounded-lg p-3.5 space-y-2 border border-border-subtle">
                   <ul className="space-y-2 text-xs">
                     {o.order_items.map((it) => (
                       <li
                         key={it.id}
-                        className="flex justify-between items-center gap-3 border-b border-dashed border-border/50 pb-2 last:border-0 last:pb-0"
+                        className="flex justify-between items-center gap-3 border-b border-dashed border-border-subtle pb-2 last:border-0 last:pb-0"
                       >
                         <span className="font-medium text-foreground">
                           {it.description}{" "}
-                          <span className="text-primary text-[10px] bg-primary/10 px-1.5 py-0.5 rounded ml-1">
+                          <span className="text-primary text-xs bg-primary/10 px-1.5 py-0.5 rounded ms-1">
                             × {it.quantity}
                           </span>
                         </span>
@@ -870,7 +873,7 @@ function OrdersSection({
             </div>
 
             {/* Actions Bar Footer */}
-            <div className="mt-4 pt-4 border-t border-border/40 flex flex-wrap gap-2 items-center justify-between">
+            <div className="mt-4 pt-4 border-t border-border-subtle flex flex-wrap gap-2 items-center justify-between">
               <div className="flex gap-2 flex-wrap">
                 <Button
                   variant="outline"
@@ -962,7 +965,7 @@ function CustomerReturnsSection({
         });
 
         return (
-          <Card key={r.id} className="p-5 border border-border/70 rounded-xl bg-card space-y-3">
+          <Card key={r.id} className="p-5 border border-border-strong rounded-xl bg-card space-y-3">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
@@ -970,11 +973,11 @@ function CustomerReturnsSection({
                     {r.return_number}
                   </span>
                   <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusCfg.badgeClass}`}
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${statusCfg.badgeClass}`}
                   >
                     {isAr ? statusCfg.labelAr : statusCfg.labelEn}
                   </span>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-muted text-foreground border border-border">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-muted text-foreground border border-border">
                     {r.type === "exchange"
                       ? isAr
                         ? "استبدال"
@@ -990,8 +993,8 @@ function CustomerReturnsSection({
                 </p>
               </div>
 
-              <div className="text-right">
-                <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground block">
+              <div className="text-end">
+                <span className="text-xs uppercase font-bold tracking-widest text-muted-foreground block">
                   {isAr ? "صافي الاسترداد" : "Net Refund"}
                 </span>
                 <span className="text-base font-bold font-mono text-emerald-600 dark:text-emerald-400">
@@ -1000,14 +1003,14 @@ function CustomerReturnsSection({
               </div>
             </div>
 
-            <div className="p-3 rounded-lg bg-muted/30 border border-border/40 text-xs text-muted-foreground">
+            <div className="p-3 rounded-lg bg-muted/30 border border-border-subtle text-xs text-muted-foreground">
               <span className="font-semibold text-foreground">{isAr ? "السبب:" : "Reason:"} </span>
               {r.reason}
             </div>
 
             {r.items && r.items.length > 0 && (
-              <div className="pt-2 border-t border-border/40 space-y-1 text-xs">
-                <span className="text-[11px] font-semibold text-muted-foreground">
+              <div className="pt-2 border-t border-border-subtle space-y-1 text-xs">
+                <span className="text-xs font-semibold text-muted-foreground">
                   {isAr ? "المنتجات المطلوب إرجاعها:" : "Returned items:"}
                 </span>
                 <ul className="divide-y divide-border/30">
@@ -1098,7 +1101,7 @@ function ProfileSection({
   return (
     <Card
       dir={isAr ? "rtl" : "ltr"}
-      className={`p-5 sm:p-6 space-y-5 max-w-2xl border border-border/70 rounded-xl bg-card ${isAr ? "text-right" : "text-left"}`}
+      className={`p-5 sm:p-6 space-y-5 max-w-2xl border border-border-strong rounded-xl bg-card ${isAr ? "text-end" : "text-start"}`}
     >
       <div className="border-b pb-3 mb-2">
         <h3 className="font-semibold text-base" style={{ color: "var(--sf-heading)" }}>
@@ -1116,7 +1119,7 @@ function ProfileSection({
         <div className="space-y-1.5">
           <Label
             htmlFor="account-name"
-            className={`text-xs font-bold ${isAr ? "block text-right" : "block text-left"}`}
+            className={`text-xs font-bold ${isAr ? "block text-end" : "block text-start"}`}
           >
             {t("الاسم الكامل", "Full name")}
           </Label>
@@ -1127,14 +1130,14 @@ function ProfileSection({
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             dir={isAr ? "rtl" : "ltr"}
-            className={`h-11 text-sm ${isAr ? "text-right" : "text-left"}`}
+            className={`h-11 text-sm ${isAr ? "text-end" : "text-start"}`}
             placeholder={t("اكتب اسمك الكامل", "Your full name")}
           />
         </div>
         <div className="space-y-1.5">
           <Label
             htmlFor="account-phone"
-            className={`text-xs font-bold ${isAr ? "block text-right" : "block text-left"}`}
+            className={`text-xs font-bold ${isAr ? "block text-end" : "block text-start"}`}
           >
             {t("رقم الهاتف", "Phone number")}
           </Label>
@@ -1149,7 +1152,7 @@ function ProfileSection({
         <div className="space-y-1.5">
           <Label
             htmlFor="account-email"
-            className={`text-xs font-bold ${isAr ? "block text-right" : "block text-left"}`}
+            className={`text-xs font-bold ${isAr ? "block text-end" : "block text-start"}`}
           >
             {t("البريد الإلكتروني", "Email")}
           </Label>
@@ -1161,7 +1164,7 @@ function ProfileSection({
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             type="email"
             dir="ltr"
-            className="text-left h-11 text-sm"
+            className="text-start h-11 text-sm"
             placeholder="you@example.com"
           />
         </div>
@@ -1173,7 +1176,7 @@ function ProfileSection({
           disabled={saving}
           className="h-11 text-xs font-semibold px-5 shadow-xs"
         >
-          {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+          {saving && <Loader2 className="h-4 w-4 me-1 animate-spin" />}
           {t("حفظ التغييرات", "Save changes")}
         </Button>
       </div>
@@ -1295,7 +1298,7 @@ function AddressesSection({
     <div className="space-y-4">
       {(!addresses || addresses.length === 0) && !adding && (
         <Card className="p-10 text-center text-muted-foreground bg-card/20 border border-dashed rounded-xl">
-          <MapPin className="h-8 w-8 mx-auto text-muted-foreground/60 mb-2" />
+          <MapPin className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
           <p className="font-semibold text-sm text-foreground">
             {t("لا توجد أي عناوين شحن محفوظة", "No saved addresses")}
           </p>
@@ -1313,7 +1316,7 @@ function AddressesSection({
           {addresses.map((a) => (
             <Card
               key={a.id}
-              className={`p-5 flex flex-col justify-between gap-4 border shadow-xs rounded-xl bg-card transition-all duration-300 ${a.is_default ? "border-primary/40 ring-1 ring-primary/10 bg-primary/[0.01]" : "border-border/70 hover:border-primary/20"}`}
+              className={`p-5 flex flex-col justify-between gap-4 border shadow-xs rounded-xl bg-card transition-all duration-300 ${a.is_default ? "border-primary/40 ring-1 ring-primary/10 bg-primary/[0.01]" : "border-border-strong hover:border-primary/20"}`}
             >
               <div>
                 <div className="flex items-center gap-2 mb-3">
@@ -1321,19 +1324,19 @@ function AddressesSection({
                     {a.label || t("عنوان توصيل", "Shipping destination")}
                   </span>
                   {a.is_default && (
-                    <Badge className="bg-primary/10 text-primary hover:bg-primary/15 border-0 font-bold text-[10px] px-2.5 py-0.5 rounded-full">
+                    <Badge className="bg-primary/10 text-primary hover:bg-primary/15 border-0 font-bold text-xs px-2.5 py-0.5 rounded-full">
                       {t("عنوان افتراضي", "Default")}
                     </Badge>
                   )}
                 </div>
                 <DeliveryAddressCard address={a} lang={lang} compact showLabel={false} />
               </div>
-              <div className="flex gap-2 justify-end pt-3 border-t border-border/40">
+              <div className="flex gap-2 justify-end pt-3 border-t border-border-subtle">
                 {!a.is_default && (
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 text-[11px] font-semibold"
+                    className="h-8 text-xs font-semibold"
                     onClick={() => setDefault(a.id)}
                   >
                     {t("تعيين افتراضي", "Set default")}
@@ -1355,7 +1358,7 @@ function AddressesSection({
       )}
 
       {adding ? (
-        <Card className="p-5 sm:p-6 space-y-4 border border-border/80 rounded-xl bg-card">
+        <Card className="p-5 sm:p-6 space-y-4 border border-border-strong rounded-xl bg-card">
           <div className="border-b pb-3 mb-2">
             <h3 className="font-semibold text-base" style={{ color: "var(--sf-heading)" }}>
               {t("إضافة عنوان شحن جديد", "New delivery destination")}
@@ -1507,7 +1510,7 @@ function AddressesSection({
               disabled={saving}
               className="h-11 text-xs font-semibold px-4 shadow-xs"
             >
-              {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+              {saving && <Loader2 className="h-4 w-4 me-1 animate-spin" />}
               {t("حفظ العنوان", "Save address")}
             </Button>
             <Button

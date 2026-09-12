@@ -14,8 +14,8 @@ import { OsSidebar } from "@/components/os/os-sidebar";
 import { OsMenuBar } from "@/components/os/os-menu-bar";
 import { OsAppWindow } from "@/components/os/os-app-window";
 import { OsMobileNavigation } from "@/components/os/os-mobile-navigation";
-import { OsRecentHistoryBar } from "@/components/os/os-recent-history-bar";
 import { cn } from "@/lib/utils";
+import { ThemeProvider } from "@/lib/theme-context";
 import { getStorefrontUrl } from "@/lib/storefront-url";
 import {
   customFontFaces,
@@ -32,7 +32,19 @@ type BrandRow = {
   is_active: boolean;
 };
 
+/**
+ * Theme is provided here rather than at the router root so the `.dark` class
+ * is scoped to admin. Storefront appearance is the merchant's own setting.
+ */
 export function AppShell({ children }: { children: React.ReactNode }) {
+  return (
+    <ThemeProvider>
+      <AdminWorkspace>{children}</AdminWorkspace>
+    </ThemeProvider>
+  );
+}
+
+function AdminWorkspace({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const router = useRouter();
   const navigate = useNavigate();
@@ -405,14 +417,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               : "We couldn't confirm your access role yet. Please contact the super admin to finish setting up your account."}
           </p>
           {profileError && (
-            <p className="text-xs text-muted-foreground/70">
+            <p className="text-xs text-muted-foreground">
               {lang === "ar"
                 ? "حدث خطأ أثناء التحقق."
                 : "There was an error verifying your account."}
             </p>
           )}
           <Button variant="outline" onClick={signOut}>
-            <LogOut className="h-4 w-4 mr-2" /> {t("nav.signOut")}
+            <LogOut className="h-4 w-4 me-2" /> {t("nav.signOut")}
           </Button>
         </div>
       </div>
@@ -442,7 +454,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             variant="destructive"
             size="sm"
             onClick={handleExitImpersonation}
-            className="bg-white hover:bg-white/90 text-rose-700 hover:text-rose-800 font-bold px-3 py-1 h-7 rounded text-[11px] shadow-sm uppercase tracking-wider shrink-0 transition-all border-none"
+            className="bg-white hover:bg-white/90 text-rose-700 hover:text-rose-800 font-bold px-3 py-1 h-7 rounded text-xs shadow-sm shrink-0 transition-all border-none"
           >
             {lang === "ar" ? "الخروج من وضع المحاكاة" : "Exit Impersonation Mode"}
           </Button>
@@ -515,6 +527,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               onSignOut={signOut}
               activeSlug={activeSlug}
               userEmail={profile?.email}
+              isFocusMode={isFocusMode}
+              onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
+              actions={
+                activeSlug && !isCourier ? (
+                  <a
+                    href={getStorefrontUrl(activeSlug)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 h-8 px-2.5 text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg transition-colors"
+                    title={lang === "ar" ? "عرض المتجر الإلكتروني" : "View Live Storefront"}
+                  >
+                    <Store className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline text-xs">
+                      {lang === "ar" ? "المتجر" : "Storefront"}
+                    </span>
+                  </a>
+                ) : undefined
+              }
             />
           )}
 
@@ -523,35 +553,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <OsAppWindow
               icon={activeNavItem?.icon}
               title={currentPageLabel || brandLabel}
-              subtitle={undefined}
               isFocusMode={isFocusMode}
               onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
               pageKey={pathname}
-              badge={
-                activeSlug && (
-                  <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
-                    {activeSlug.toUpperCase()}
-                  </span>
-                )
-              }
-              actions={
-                <div className="flex items-center gap-1.5">
-                  {activeSlug && !isCourier && (
-                    <a
-                      href={getStorefrontUrl(activeSlug)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 h-6.5 px-2 text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-md transition-colors"
-                      title={lang === "ar" ? "عرض المتجر الإلكتروني" : "View Live Storefront"}
-                    >
-                      <Store className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline text-[11px]">
-                        {lang === "ar" ? "المتجر" : "Storefront"}
-                      </span>
-                    </a>
-                  )}
-                </div>
-              }
             >
               {children}
             </OsAppWindow>

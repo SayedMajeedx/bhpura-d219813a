@@ -54,9 +54,8 @@ export function OsQuickActions({ slug, lang, className }: OsQuickActionsProps) {
       icon: ReceiptText,
       onClick: () =>
         navigate({
-          to: "/admin/b/$slug/orders",
-          params: { slug },
-          search: { action: "new_manual" } as any,
+          to: "/admin/b/$slug/orders/$id",
+          params: { slug, id: "new" },
         }),
     },
     {
@@ -132,7 +131,7 @@ export function OsQuickActions({ slug, lang, className }: OsQuickActionsProps) {
         sideOffset={6}
         className="w-64 p-1.5 rounded-xl border border-[var(--os-border)] os-glass shadow-xl select-none z-50 animate-in fade-in zoom-in-95 duration-150"
       >
-        <DropdownMenuLabel className="px-2.5 py-1.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+        <DropdownMenuLabel className="px-2.5 py-1.5 text-xs font-semibold text-muted-foreground">
           {isAr ? "⚡ إجراءات سريعة فورية" : "⚡ Global Quick Actions"}
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="my-1 bg-border/60" />
@@ -153,7 +152,7 @@ export function OsQuickActions({ slug, lang, className }: OsQuickActionsProps) {
                   <span className="text-xs font-bold text-foreground leading-tight">
                     {act.label}
                   </span>
-                  <span className="text-[10px] text-muted-foreground truncate leading-tight mt-0.5">
+                  <span className="text-xs text-muted-foreground truncate leading-tight mt-0.5">
                     {act.description}
                   </span>
                 </div>

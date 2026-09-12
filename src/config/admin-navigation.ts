@@ -58,8 +58,9 @@ export interface AdminNavItemConfig {
   icon: LucideIcon;
   permission?: string;
   adminOnly?: boolean;
-  section: "overview" | "operations" | "growth_finance" | "storefront_settings";
-  category?: MerchantJobCategory;
+  category: MerchantJobCategory;
+  /** @deprecated Use canonical `category` instead */
+  section?: "overview" | "operations" | "growth_finance" | "storefront_settings";
   tier?: NavItemTier;
   badge?: string | number;
 }

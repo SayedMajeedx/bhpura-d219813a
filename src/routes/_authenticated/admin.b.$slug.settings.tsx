@@ -307,12 +307,12 @@ function TypographyAdvancedControls({
     formatValue: (value: number) => string = String,
     help?: string,
   ) => (
-    <div className="space-y-2 rounded-lg border border-border/50 bg-background/60 p-3">
+    <div className="space-y-2 rounded-lg border border-border-subtle bg-background/60 p-3">
       <div className="flex items-start justify-between gap-3">
         <div>
           <Label className="text-sm font-medium">{label}</Label>
           {help && (
-            <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">{help}</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{help}</p>
           )}
         </div>
         <span className="rounded-md bg-muted px-2 py-1 text-xs font-semibold tabular-nums text-foreground">
@@ -332,7 +332,7 @@ function TypographyAdvancedControls({
   );
 
   return (
-    <div className="space-y-4 rounded-xl border border-border/70 bg-background/40 p-4">
+    <div className="space-y-4 rounded-xl border border-border-strong bg-background/40 p-4">
       {previewFaces && <style>{previewFaces}</style>}
       <div>
         <h4 className="text-sm font-semibold">{title}</h4>
@@ -502,12 +502,12 @@ function TypographyAdvancedControls({
             return (
               <div
                 key={axis}
-                className="space-y-2 rounded-lg border border-border/50 bg-background/60 p-3"
+                className="space-y-2 rounded-lg border border-border-subtle bg-background/60 p-3"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <Label className="text-sm font-medium">{axisCopy.label}</Label>
-                    <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
+                    <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
                       {axisCopy.help} <span dir="ltr">({axisCopy.technical})</span>
                     </p>
                   </div>
@@ -535,13 +535,13 @@ function TypographyAdvancedControls({
         </div>
       )}
       {hasHexp && (
-        <div className="space-y-2 rounded-lg border border-border/50 bg-background/60 p-3">
+        <div className="space-y-2 rounded-lg border border-border-subtle bg-background/60 p-3">
           <div className="flex items-start justify-between gap-3">
             <div>
               <Label className="text-sm font-medium">
                 {isAr ? "اتساع بنية الحروف العربية" : "Arabic letterform expansion"}
               </Label>
-              <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
+              <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
                 {isAr
                   ? "محور Readex Pro الحقيقي (HEXP): يوسّع بنية الحروف تدريجيًا مع الحفاظ على وضوح القراءة."
                   : "Readex Pro's native HEXP axis expands letterforms while preserving readability."}
@@ -568,10 +568,10 @@ function TypographyAdvancedControls({
         </div>
       )}
       {hasItalic && (
-        <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 p-3">
+        <div className="flex items-center justify-between gap-4 rounded-lg border border-border-subtle p-3">
           <div>
             <Label>{isAr ? "النمط المائل الحقيقي" : "True italic style"}</Label>
-            <p className="mt-1 text-[11px] text-muted-foreground">
+            <p className="mt-1 text-xs text-muted-foreground">
               {isAr
                 ? "يستخدم ملف Plus Jakarta Sans Italic الأصلي، وليس إمالة صناعية من المتصفح."
                 : "Uses the native Plus Jakarta Sans Italic variable font, not synthetic slanting."}
@@ -583,10 +583,10 @@ function TypographyAdvancedControls({
           />
         </div>
       )}
-      <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 p-3">
+      <div className="flex items-center justify-between gap-4 rounded-lg border border-border-subtle p-3">
         <div>
           <Label>{isAr ? "تحسين وضوح الخط تلقائيًا" : "Automatic optical optimization"}</Label>
-          <p className="mt-1 text-[11px] text-muted-foreground">
+          <p className="mt-1 text-xs text-muted-foreground">
             {isAr
               ? "يُحسّن تفاصيل الخط بحسب حجمه تلقائيًا عند دعم الخط لهذه الميزة."
               : "Optimizes font details for each size when the font supports it."}
@@ -936,7 +936,7 @@ function Settings() {
         className="w-full mt-2"
       >
         <TabsContent value="business" className="space-y-6 mt-0">
-          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-3 sm:p-6 space-y-4">
+          <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-3 sm:p-6 space-y-4">
             <h2 className="font-display text-xl font-bold">{t("settings.business")}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -1154,7 +1154,7 @@ function Settings() {
         </TabsContent>
 
         <TabsContent value="invoice" className="space-y-6 mt-0">
-          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-3 sm:p-6 space-y-4">
+          <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-3 sm:p-6 space-y-4">
             <h2 className="font-display text-xl">{t("settings.appearance")}</h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1194,6 +1194,8 @@ function Settings() {
                     size="icon"
                     onClick={() => fontInput.current?.click()}
                     disabled={uploading === "font"}
+                    aria-label={t("settings.uploadFont")}
+                    title={t("settings.uploadFont")}
                   >
                     <Upload className="h-4 w-4" />
                   </Button>
@@ -1627,7 +1629,7 @@ function Settings() {
           </Card>
 
           {f.logo_url && (
-            <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-3 sm:p-6 space-y-4">
+            <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-3 sm:p-6 space-y-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h2 className="font-display text-xl">Invoice logo position &amp; size</h2>
@@ -1674,7 +1676,7 @@ function Settings() {
                     }
                     bounds="parent"
                     lockAspectRatio
-                    className="border border-dashed border-neutral-300 hover:border-neutral-500"
+                    className="border border-dashed border-border hover:border-primary/50"
                   >
                     <img
                       src={f.logo_url}
@@ -1779,6 +1781,7 @@ type HeroSlide = {
   media_iframe_url_en?: string;
   media_iframe_url_ar?: string;
   media_poster_url_en?: string;
+  media_poster_url_ar?: string;
   button_en: string;
   button_ar: string;
   button_href: string;
@@ -1897,7 +1900,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
 
   if (isError) {
     return (
-      <Card className="overflow-hidden border border-destructive/30 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 text-center space-y-3">
+      <Card className="overflow-hidden border border-destructive/30 shadow-lg rounded-2xl bg-card p-6 text-center space-y-3">
         <p className="text-sm font-semibold text-destructive">
           {isAr ? "تعذر تحميل إعدادات طرق الدفع" : "Failed to load payment settings"}
         </p>
@@ -1910,7 +1913,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
 
   if (isLoading || !state) {
     return (
-      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+      <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-4">
         <div className="space-y-2">
           <Skeleton className="h-6 w-48" />
           <Skeleton className="h-4 w-72" />
@@ -1925,7 +1928,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
   }
 
   return (
-    <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-6">
+    <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-6">
       <div>
         <h2 className="font-display text-xl font-bold">
           {isAr ? "إعدادات الدفع" : "Payment Settings"}
@@ -1939,7 +1942,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
 
       <div className="space-y-4">
         {/* COD Block */}
-        <div className="overflow-hidden rounded-xl border border-border/40 p-5 space-y-4 bg-background/40 backdrop-blur-sm shadow-sm transition-all duration-300 hover:scale-[1.005] hover:border-primary/20">
+        <div className="overflow-hidden rounded-xl border border-border-subtle p-5 space-y-4 bg-background shadow-sm transition-all duration-300 hover:scale-[1.005] hover:border-primary/20">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold">
@@ -1959,7 +1962,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
         </div>
 
         {/* Card Payment Block */}
-        <div className="overflow-hidden rounded-xl border border-border/40 p-5 space-y-4 bg-background/40 backdrop-blur-sm shadow-sm transition-all duration-300 hover:scale-[1.005] hover:border-primary/20">
+        <div className="overflow-hidden rounded-xl border border-border-subtle p-5 space-y-4 bg-background shadow-sm transition-all duration-300 hover:scale-[1.005] hover:border-primary/20">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold">
@@ -1977,7 +1980,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
             />
           </div>
           {state.card_enabled && (
-            <div className="pt-4 border-t border-border/50 space-y-4 animate-in fade-in-50 duration-200">
+            <div className="pt-4 border-t border-border-subtle space-y-4 animate-in fade-in-50 duration-200">
               <div>
                 <Label className="text-xs font-semibold">
                   {isAr
@@ -1996,7 +1999,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
                   placeholder="2.50"
                   className="mt-1.5 bg-background/50 focus:bg-background transition-colors"
                 />
-                <p className="text-[11px] text-muted-foreground mt-1.5">
+                <p className="text-xs text-muted-foreground mt-1.5">
                   {isAr
                     ? "تستخدم هذه النسبة تلقائياً في حسابات الأرباح والخسائر والمصاريف التشغيلية لكل طلب"
                     : "Calculated automatically in your P&L expenses for card transactions"}
@@ -2045,7 +2048,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
         </div>
 
         {/* Benefit Pay Block */}
-        <div className="overflow-hidden rounded-xl border border-border/40 p-5 space-y-4 bg-background/40 backdrop-blur-sm shadow-sm transition-all duration-300 hover:scale-[1.005] hover:border-primary/20">
+        <div className="overflow-hidden rounded-xl border border-border-subtle p-5 space-y-4 bg-background shadow-sm transition-all duration-300 hover:scale-[1.005] hover:border-primary/20">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold">
@@ -2063,7 +2066,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
             />
           </div>
           {state.benefit_enabled && (
-            <div className="pt-4 border-t border-border/50 space-y-4 animate-in fade-in-50 duration-200">
+            <div className="pt-4 border-t border-border-subtle space-y-4 animate-in fade-in-50 duration-200">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-xs font-semibold">
@@ -2086,7 +2089,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
                     placeholder="1.00"
                     className="mt-1.5 bg-background/50 focus:bg-background transition-colors"
                   />
-                  <p className="text-[11px] text-muted-foreground mt-1.5">
+                  <p className="text-xs text-muted-foreground mt-1.5">
                     {isAr
                       ? "تستخدم لحساب تكاليف المعالجة تلقائياً"
                       : "Used to compute processing costs automatically"}
@@ -2444,7 +2447,7 @@ function BrandHeroCard({
   if (!state) return null;
 
   return (
-    <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+    <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-4">
       <div>
         <h2 className="font-display text-xl">{isAr ? "واجهة المتجر" : "Storefront Hero"}</h2>
         <p className="text-sm text-muted-foreground">
@@ -2467,7 +2470,7 @@ function BrandHeroCard({
         </div>
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_240px]">
           {state.background ? (
-            <div className="group relative aspect-video min-h-44 overflow-hidden rounded-2xl border bg-neutral-950 shadow-sm">
+            <div className="group relative aspect-video min-h-44 overflow-hidden rounded-2xl border bg-muted shadow-sm">
               {state.background.type === "video" ? (
                 <video
                   src={state.background.url}
@@ -2483,7 +2486,7 @@ function BrandHeroCard({
                 />
               )}
               <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between bg-gradient-to-b from-black/55 to-transparent p-3 text-white">
-                <span className="rounded-full bg-black/35 px-2.5 py-1 text-[11px] font-medium backdrop-blur">
+                <span className="rounded-full bg-black/35 px-2.5 py-1 text-xs font-medium backdrop-blur">
                   {state.background.type === "video"
                     ? isAr
                       ? "فيديو"
@@ -2531,7 +2534,7 @@ function BrandHeroCard({
               {isAr ? "الصور تفتح في محرر القص" : "Images open in the crop editor"}
             </span>
             <span
-              className="mt-2 rounded-full bg-background px-2.5 py-1 font-mono text-[10px] text-muted-foreground"
+              className="mt-2 rounded-full bg-background px-2.5 py-1 font-mono text-xs text-muted-foreground"
               dir="ltr"
             >
               1920 × 1080 · 16:9
@@ -2704,7 +2707,7 @@ function HeroSlidesEditor({
                   slides: state.slides.filter((_, itemIndex) => itemIndex !== index),
                 })
               }
-            >
+             aria-label={isAr ? "حذف" : "Delete"}>
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -3079,7 +3082,7 @@ function HeroSlideLivePreview({
       >
         {/* Sample Sale Badge preview */}
         <div
-          className="absolute top-2.5 start-2.5 z-20 px-2.5 py-1 text-[10px] font-bold text-white shadow-sm"
+          className="absolute top-2.5 start-2.5 z-20 px-2.5 py-1 text-xs font-bold text-white shadow-sm"
           style={{ backgroundColor: badgeBg, borderRadius: `calc(${radius} * 0.5)` }}
         >
           {isAr ? "خصم 20%" : "20% OFF"}
@@ -3301,7 +3304,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
 
   if (isError) {
     return (
-      <Card className="overflow-hidden border border-destructive/30 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 text-center space-y-3">
+      <Card className="overflow-hidden border border-destructive/30 shadow-lg rounded-2xl bg-card p-6 text-center space-y-3">
         <p className="text-sm font-semibold text-destructive">
           {isAr ? "تعذر تحميل إعدادات الشحن والتسليم" : "Failed to load shipping settings"}
         </p>
@@ -3314,7 +3317,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
 
   if (isLoading || !state) {
     return (
-      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+      <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-4">
         <div className="space-y-2">
           <Skeleton className="h-6 w-48" />
           <Skeleton className="h-4 w-72" />
@@ -3329,7 +3332,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
   }
 
   return (
-    <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+    <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-4">
       <div>
         <h2 className="font-display text-xl">{t("settings.shippingTitle")}</h2>
         <p className="text-sm text-muted-foreground">{t("settings.shippingSubtitle")}</p>
@@ -3382,7 +3385,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
           {/* Zones Table / List */}
           {zones.length > 0 ? (
             <div className="rounded-lg border border-border overflow-hidden bg-background">
-              <table className="w-full text-sm text-left rtl:text-right">
+              <table className="w-full text-sm text-start rtl:text-end">
                 <thead className="bg-secondary/10 text-xs font-semibold text-muted-foreground border-b border-border">
                   <tr>
                     <th className="p-3">{isAr ? "المنطقة (إنجليزي)" : "Zone Name (EN)"}</th>
@@ -3406,7 +3409,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
                           size="icon"
                           className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                           onClick={() => removeZone(z.id)}
-                        >
+                         aria-label={isAr ? "حذف" : "Delete"}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </td>
@@ -3425,7 +3428,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
 
           {/* Add New Zone Form */}
           <div className="rounded-lg border border-border p-4 bg-secondary/10 space-y-3">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <h4 className="text-xs font-semibold text-muted-foreground">
               {isAr ? "إضافة منطقة جديدة" : "Add New Shipping Zone"}
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -3448,7 +3451,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
                   }
                   value={newZone.name_ar}
                   onChange={(e) => setNewZone({ ...newZone, name_ar: e.target.value })}
-                  className="text-xs text-right"
+                  className="text-xs text-end"
                   dir="rtl"
                 />
               </div>
@@ -3489,7 +3492,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
               }
               className="mt-1"
             />
-            <p className="text-[11px] text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               {t("settings.deliveryFeeHint")}
             </p>
           </div>
@@ -3516,7 +3519,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
         </div>
 
         {state.delivery_estimate_enabled && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-border/50">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-border-subtle">
             <div>
               <Label className="text-xs font-medium">
                 {isAr ? "نص مدة التوصيل (بالعربية)" : "Delivery Estimate Text (Arabic)"}
@@ -3526,7 +3529,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
                 value={state.delivery_estimate_ar}
                 onChange={(e) => setState({ ...state, delivery_estimate_ar: e.target.value })}
                 placeholder="التوصيل المتوقع خلال 24 - 48 ساعة داخل البحرين"
-                className="text-xs mt-1 text-right"
+                className="text-xs mt-1 text-end"
                 dir="rtl"
               />
             </div>
@@ -3656,7 +3659,7 @@ function SectionBannerPicker({
       <div className="flex items-center justify-between">
         <div>
           <span className="text-xs font-semibold text-foreground">{title}</span>
-          {subtitle && <p className="text-[11px] text-muted-foreground">{subtitle}</p>}
+          {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
         </div>
         {imageUrl && (
           <Button
@@ -3735,7 +3738,7 @@ function SectionBannerPicker({
               <span className="text-xs font-medium text-foreground">
                 {isAr ? "اضغط لرفع صورة لافتة" : "Click to upload banner"}
               </span>
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 {isAr ? "أبعاد عريضة بنسبة 2:1 أو 21:9" : "Widescreen 2:1 or 21:9"}
               </span>
             </>
@@ -3833,7 +3836,7 @@ function StorefrontSeoCard({ brandId }: { brandId: string }) {
   };
 
   return (
-    <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+    <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-4">
       <div>
         <h2 className="font-display text-xl">
           {isAr ? "ظهور المتجر في محركات البحث" : "Storefront SEO"}
@@ -3924,7 +3927,7 @@ function FooterLivePreview({
           <span className="text-xs font-semibold">
             {isAr ? "معاينة فورية لتذييل المتجر (الفوتر)" : "Live Storefront Footer Preview"}
           </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
             📐 {clampedSize}px
           </span>
         </div>
@@ -3986,7 +3989,7 @@ function FooterLivePreview({
                 )}
               </div>
 
-              <div className="space-y-1.5 text-start border-b border-white/10 pb-2.5 text-[11px] opacity-80">
+              <div className="space-y-1.5 text-start border-b border-white/10 pb-2.5 text-xs opacity-80">
                 <div className="flex items-center justify-between py-1 border-b border-white/5">
                   <span>{isAr ? "عن المتجر" : "About Us"}</span>
                   <ChevronDown className="size-3 opacity-60" />
@@ -3997,7 +4000,7 @@ function FooterLivePreview({
                 </div>
               </div>
 
-              <div className="pt-1 text-[10px] opacity-60 flex items-center justify-center gap-1.5">
+              <div className="pt-1 text-xs opacity-60 flex items-center justify-center gap-1.5">
                 {showFooterName && <span className="font-semibold">{brandName}</span>}
                 <span>© {new Date().getFullYear()}</span>
               </div>
@@ -4024,7 +4027,7 @@ function FooterLivePreview({
                 </div>
               </div>
 
-              <div className="flex items-center justify-center gap-3 py-1.5 px-3 text-[10px] font-medium opacity-90 border-y border-white/10 rounded-lg bg-white/5">
+              <div className="flex items-center justify-center gap-3 py-1.5 px-3 text-xs font-medium opacity-90 border-y border-white/10 rounded-lg bg-white/5">
                 <span>✨ {isAr ? "تصاميم حصرية" : "Exclusive Designs"}</span>
                 <span className="opacity-30">•</span>
                 <span>💸 {isAr ? "الدفع عند الاستلام وبنفت" : "BenefitPay & COD"}</span>
@@ -4032,7 +4035,7 @@ function FooterLivePreview({
                 <span>🔒 {isAr ? "آمن ومشفّر" : "256-Bit SSL"}</span>
               </div>
 
-              <div className="flex items-center justify-center gap-2 text-[10px] opacity-60 pt-1 border-t border-white/10">
+              <div className="flex items-center justify-center gap-2 text-xs opacity-60 pt-1 border-t border-white/10">
                 {showFooterName && <span className="font-semibold">{brandName}</span>}
                 <span>© {new Date().getFullYear()} — {isAr ? "جميع الحقوق محفوظة" : "All rights reserved"}</span>
               </div>
@@ -4116,7 +4119,7 @@ function FooterLogoResizerControl({
 
         {/* Quick Presets */}
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[11px] text-muted-foreground me-1 font-medium">
+          <span className="text-xs text-muted-foreground me-1 font-medium">
             {isAr ? "أحجام جاهزة:" : "Presets:"}
           </span>
           {presets.map((p) => (
@@ -4651,7 +4654,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
 
   if (!state) {
     return (
-      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+      <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-4">
         <Skeleton className="h-7 w-56 bg-muted" />
         <Skeleton className="h-11 w-full bg-muted rounded-xl" />
         <Skeleton className="h-64 w-full bg-muted rounded-2xl" />
@@ -4661,7 +4664,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
 
   return (
     <Card
-      className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-6"
+      className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-6"
       dir={isAr ? "rtl" : "ltr"}
     >
       <div>
@@ -5066,7 +5069,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   <Label className="text-xs font-semibold cursor-pointer">
                     {isAr ? "تفعيل شارات التخفيضات التلقائية" : "Automatic Sale Badges"}
                   </Label>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  <p className="mt-0.5 text-xs text-muted-foreground">
                     {isAr
                       ? "إظهار شارة الخصم تلقائياً على كروت المنتجات المخفضة في المتجر"
                       : "Automatically show a discount badge on discounted product cards"}
@@ -5098,7 +5101,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   <div className="flex items-center justify-between">
                     <Label className="text-xs font-semibold">{isAr ? "الخط الإنجليزي" : "English Font"}</Label>
                     {state.storefront_font_en_url && (
-                      <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">
+                      <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">
                         {isAr ? "خط مخصص مرفوع" : "Custom uploaded"}
                       </span>
                     )}
@@ -5189,7 +5192,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   <div className="flex items-center justify-between">
                     <Label className="text-xs font-semibold">{isAr ? "الخط العربي" : "Arabic Font"}</Label>
                     {state.storefront_font_ar_url && (
-                      <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">
+                      <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">
                         {isAr ? "خط مخصص مرفوع" : "Custom uploaded"}
                       </span>
                     )}
@@ -5430,7 +5433,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               <Label>{isAr ? "عنوان الواجهة (بالعربية)" : "Hero title (Arabic)"}</Label>
               <Input
                 dir="rtl"
-                className="text-right"
+                className="text-end"
                 value={state.hero_title_ar ?? ""}
                 placeholder={isAr ? "فارغ يستخدم اسم العلامة بالعربية" : "Blank uses brand name"}
                 onChange={(e) => setState({ ...state, hero_title_ar: e.target.value || null })}
@@ -5440,7 +5443,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               <Label>{isAr ? "عنوان الواجهة (بالإنجليزية)" : "Hero title (English)"}</Label>
               <Input
                 dir="ltr"
-                className="text-left"
+                className="text-start"
                 value={state.hero_title_en ?? ""}
                 placeholder={isAr ? "فارغ يستخدم اسم العلامة بالإنجليزية" : "Blank uses brand name"}
                 onChange={(e) => setState({ ...state, hero_title_en: e.target.value || null })}
@@ -5516,7 +5519,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             <div className="sm:col-span-2" dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
               <Label>{contentLanguage === "ar" ? "نص الإعلان (بالعربية)" : "Announcement text (English)"}</Label>
               <Input
-                className={contentLanguage === "ar" ? "text-right" : "text-left"}
+                className={contentLanguage === "ar" ? "text-end" : "text-start"}
                 value={
                   (contentLanguage === "ar"
                     ? state.announcement_text_ar
@@ -5629,7 +5632,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               <div dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
                 <Label className="text-xs text-muted-foreground">{contentLanguage === "ar" ? "عنوان القسم المعروض" : "Displayed title"}</Label>
                 <Input
-                  className={`mt-1 h-9 text-xs ${contentLanguage === "ar" ? "text-right" : "text-left"}`}
+                  className={`mt-1 h-9 text-xs ${contentLanguage === "ar" ? "text-end" : "text-start"}`}
                   value={
                     (contentLanguage === "ar"
                       ? state.new_arrivals_title_ar
@@ -5672,7 +5675,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               <div dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
                 <Label className="text-xs text-muted-foreground">{contentLanguage === "ar" ? "عنوان القسم المعروض" : "Displayed title"}</Label>
                 <Input
-                  className={`mt-1 h-9 text-xs ${contentLanguage === "ar" ? "text-right" : "text-left"}`}
+                  className={`mt-1 h-9 text-xs ${contentLanguage === "ar" ? "text-end" : "text-start"}`}
                   value={
                     (contentLanguage === "ar"
                       ? state.best_sellers_title_ar
@@ -5704,7 +5707,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <Label className="cursor-pointer text-xs font-semibold">{isAr ? "قسم التنزيلات والعروض" : "Sale & Offers Section"}</Label>
-                  <p className="text-[11px] text-muted-foreground">{isAr ? "يعرض المنتجات المخفضة تلقائياً" : "Shows discounted items"}</p>
+                  <p className="text-xs text-muted-foreground">{isAr ? "يعرض المنتجات المخفضة تلقائياً" : "Shows discounted items"}</p>
                 </div>
                 <Switch
                   checked={state.homepage_editorial_sections?.sale?.enabled ?? true}
@@ -5739,7 +5742,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <Label className="cursor-pointer text-xs font-semibold">{isAr ? "قسم الرائج الآن" : "Trending Now Section"}</Label>
-                  <p className="text-[11px] text-muted-foreground">{isAr ? "يعرض المنتجات ذات الشعبية العالية" : "Shows trending products"}</p>
+                  <p className="text-xs text-muted-foreground">{isAr ? "يعرض المنتجات ذات الشعبية العالية" : "Shows trending products"}</p>
                 </div>
                 <Switch
                   checked={state.homepage_editorial_sections?.trending?.enabled ?? true}
@@ -5808,7 +5811,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                     <h4 className="font-medium text-sm">
                       {isAr ? `بطاقة ترويجية ${index + 1}` : `Promotion Card ${index + 1}`}
                     </h4>
-                    <p className="text-[11px] text-muted-foreground">1600 × 800 px · 2:1</p>
+                    <p className="text-xs text-muted-foreground">1600 × 800 px · 2:1</p>
                   </div>
                   {card.image_url && (
                     <img
@@ -5822,7 +5825,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   <div>
                     <Label className="text-xs">{contentLanguage === "ar" ? "العنوان" : "Title"}</Label>
                     <Input
-                      className={contentLanguage === "ar" ? "text-right" : "text-left"}
+                      className={contentLanguage === "ar" ? "text-end" : "text-start"}
                       value={contentLanguage === "ar" ? card.title_ar : card.title_en}
                       onChange={(e) =>
                         updatePromoCard(index, {
@@ -5834,7 +5837,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   <div>
                     <Label className="text-xs">{contentLanguage === "ar" ? "الوصف" : "Subtitle"}</Label>
                     <Input
-                      className={contentLanguage === "ar" ? "text-right" : "text-left"}
+                      className={contentLanguage === "ar" ? "text-end" : "text-start"}
                       value={contentLanguage === "ar" ? card.subtitle_ar : card.subtitle_en}
                       onChange={(e) =>
                         updatePromoCard(index, {
@@ -5921,7 +5924,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               <div className="flex items-center justify-between gap-4 rounded-xl border border-border p-3">
                 <div>
                   <Label className="cursor-pointer text-xs font-semibold">{isAr ? "تفعيل التأثير على الموبايل" : "Enable on mobile"}</Label>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  <p className="mt-0.5 text-xs text-muted-foreground">
                     {isAr
                       ? "عند الإيقاف تظل اللافتة ثابتة دون حركة على شاشات الهواتف."
                       : "When disabled, banners remain static on mobile screens."}
@@ -5976,7 +5979,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             <div dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
               <Label>{contentLanguage === "ar" ? "عنوان القائمة" : "Drawer menu title"}</Label>
               <Input
-                className={contentLanguage === "ar" ? "text-right" : "text-left"}
+                className={contentLanguage === "ar" ? "text-end" : "text-start"}
                 value={(contentLanguage === "ar" ? state.menu_title_ar : state.menu_title_en) ?? ""}
                 placeholder={contentLanguage === "ar" ? "فارغ يستخدم اسم المتجر" : "Blank uses brand name"}
                 onChange={(e) =>
@@ -6040,7 +6043,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               <div dir="rtl">
                 <Label>{isAr ? "عبارة التحميل (بالعربية)" : "Loading text (Arabic)"}</Label>
                 <Input
-                  className="text-right"
+                  className="text-end"
                   value={state.storefront_loader_text_ar ?? ""}
                   placeholder="جاري فتح المتجر الإلكتروني..."
                   onChange={(e) =>
@@ -6051,7 +6054,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               <div dir="ltr">
                 <Label>{isAr ? "عبارة التحميل (بالإنجليزية)" : "Loading text (English)"}</Label>
                 <Input
-                  className="text-left"
+                  className="text-start"
                   value={state.storefront_loader_text_en ?? ""}
                   placeholder="Loading boutique storefront..."
                   onChange={(e) =>
@@ -6064,7 +6067,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         )}
       </div>
 
-      <div className="sticky bottom-20 md:bottom-3 z-10 flex justify-end rounded-xl border border-border/70 bg-background/90 p-3 shadow-lg backdrop-blur-xl">
+      <div className="sticky bottom-20 md:bottom-3 z-10 flex justify-end rounded-xl border border-border-strong bg-background/90 p-3 shadow-lg backdrop-blur-xl">
         <Button onClick={save} disabled={saving}>
           {saving
             ? isAr
@@ -6154,7 +6157,7 @@ function BranchesCard({ brandId }: { brandId: string }) {
     qc.invalidateQueries({ queryKey: ["branches", brandId] });
   };
   return (
-    <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+    <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-4">
       <div>
         <h3 className="text-lg font-semibold">
           {isAr ? "الفروع (للاستلام)" : "Branches (for Pickup)"}
@@ -6446,7 +6449,7 @@ function EmailSettingsCard({ brandId }: { brandId: string }) {
           key={v.value}
           type="button"
           onClick={() => injectPlaceholder(ref, field, v.value)}
-          className="inline-flex items-center rounded-full bg-secondary/80 hover:bg-secondary border border-border px-2.5 py-0.5 text-[11px] font-medium text-foreground transition-colors shadow-xs cursor-pointer select-none"
+          className="inline-flex items-center rounded-full bg-secondary/80 hover:bg-secondary border border-border px-2.5 py-0.5 text-xs font-medium text-foreground transition-colors shadow-xs cursor-pointer select-none"
         >
           <span className="text-muted-foreground">{v.label}:</span>
           <span className="ms-1 font-mono text-primary font-semibold">{v.value}</span>
@@ -6458,7 +6461,7 @@ function EmailSettingsCard({ brandId }: { brandId: string }) {
   if (!state) return null;
 
   return (
-    <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+    <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-4">
       <div>
         <h3 className="text-lg font-semibold">
           {isAr ? "إعدادات بريد الطلبات" : "Order email settings"}

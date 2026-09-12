@@ -220,7 +220,7 @@ function AdminNotificationRecipientsCard({
 
   return (
     <Card
-      className="overflow-hidden rounded-2xl border-border/60 bg-card/40 p-3 shadow-lg backdrop-blur-sm sm:p-6"
+      className="overflow-hidden rounded-2xl border-border-subtle bg-card p-3 shadow-lg sm:p-6"
       dir={isAr ? "rtl" : "ltr"}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -531,7 +531,7 @@ function EmailActivityCard({ brandId, isAr }: { brandId: string; isAr: boolean }
 
   return (
     <Card
-      className="overflow-hidden border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6"
+      className="overflow-hidden border-border-subtle shadow-lg rounded-2xl bg-card p-6"
       dir={isAr ? "rtl" : "ltr"}
     >
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -587,7 +587,7 @@ function EmailActivityCard({ brandId, isAr }: { brandId: string; isAr: boolean }
             {paginatedRows.map((row) => (
               <article
                 key={row.id}
-                className="rounded-xl border border-border/70 bg-background/75 p-3 shadow-xs"
+                className="rounded-xl border border-border-strong bg-background/75 p-3 shadow-xs"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -602,7 +602,7 @@ function EmailActivityCard({ brandId, isAr }: { brandId: string; isAr: boolean }
                     {statusLabel(row.status)}
                   </span>
                 </div>
-                <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 border-t border-border/60 pt-3 text-xs">
+                <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 border-t border-border-subtle pt-3 text-xs">
                   <div>
                     <dt className="text-muted-foreground">{labels.channel}</dt>
                     <dd className="mt-0.5 font-semibold">

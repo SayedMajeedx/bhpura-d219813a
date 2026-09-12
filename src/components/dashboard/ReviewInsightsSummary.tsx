@@ -52,7 +52,7 @@ export function ReviewInsightsSummary({
                   : `${metrics.total} reviews • ${metrics.positiveRate.toFixed(0)}% positive`}
               </span>
               {metrics.total < 5 && (
-                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
                   {isAr ? "عينة محدودة" : "Small sample"}
                 </span>
               )}

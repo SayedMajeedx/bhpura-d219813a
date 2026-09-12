@@ -725,7 +725,7 @@ function IncubatorsPage() {
                               </td>
                               <td className="p-3 text-center font-bold">
                                 {isZero ? (
-                                  <span className="inline-flex items-center rounded-full bg-rose-500/10 px-2 py-0.5 text-[11px] font-bold text-destructive">
+                                  <span className="inline-flex items-center rounded-full bg-rose-500/10 px-2 py-0.5 text-xs font-bold text-destructive">
                                     {isAr ? "نافد" : "0"}
                                   </span>
                                 ) : (
@@ -1031,7 +1031,7 @@ function InlineCodeEditor({
         className="h-9 bg-background font-mono text-xs"
       />
       {saving && (
-        <span className="absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
+        <span className="absolute end-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
           {isAr ? "حفظ..." : "Saving..."}
         </span>
       )}

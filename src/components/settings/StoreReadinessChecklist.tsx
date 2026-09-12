@@ -305,7 +305,7 @@ export function StoreReadinessChecklist({
   const { completedCount, totalCount, progressPercent, isAllComplete } = evaluation;
 
   return (
-    <div className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs transition-all">
+    <div className="rounded-2xl border border-border-strong bg-card p-4 sm:p-5 shadow-xs transition-all">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
           <div
@@ -327,7 +327,7 @@ export function StoreReadinessChecklist({
                 {isAr ? "جاهزية المتجر للانطلاق المباشر" : "Store Launch Readiness"}
               </h3>
               <span
-                className={`text-[11px] font-bold px-2 py-0.5 rounded-full transition-colors ${
+                className={`text-xs font-bold px-2 py-0.5 rounded-full transition-colors ${
                   isAllComplete
                     ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
                     : "bg-amber-500/15 text-amber-800 dark:text-amber-200"
@@ -395,7 +395,7 @@ export function StoreReadinessChecklist({
 
       {/* Checklist items list */}
       {!collapsed && (
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-2 border-t border-border/40">
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-2 border-t border-border-subtle">
           {checklistItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -404,7 +404,7 @@ export function StoreReadinessChecklist({
                 className={`flex items-start justify-between gap-3 p-3 rounded-xl border transition-colors ${
                   item.isComplete
                     ? "border-emerald-500/20 bg-emerald-500/[0.03]"
-                    : "border-border/80 bg-muted/20 hover:border-primary/40"
+                    : "border-border-strong bg-muted/20 hover:border-primary/40"
                 }`}
               >
                 <div className="flex items-start gap-2.5 min-w-0">
@@ -425,7 +425,7 @@ export function StoreReadinessChecklist({
                     <span className="text-xs font-bold text-foreground block truncate">
                       {item.title}
                     </span>
-                    <span className="text-[11px] text-muted-foreground block line-clamp-1">
+                    <span className="text-xs text-muted-foreground block line-clamp-1">
                       {item.description}
                     </span>
                   </div>
@@ -434,7 +434,7 @@ export function StoreReadinessChecklist({
                 <div className="shrink-0 self-center">
                   {item.isComplete ? (
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded bg-emerald-500/10">
+                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded bg-emerald-500/10">
                         {isAr ? "مكتمل" : "Ready"}
                       </span>
                       {item.actionType === "tab" && item.tabId ? (
@@ -443,7 +443,7 @@ export function StoreReadinessChecklist({
                           variant="ghost"
                           size="sm"
                           onClick={() => onNavigateTab(item.tabId!)}
-                          className="h-6 px-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground"
+                          className="h-6 px-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
                           title={item.editLabel}
                         >
                           <span>{item.editLabel}</span>
@@ -453,7 +453,7 @@ export function StoreReadinessChecklist({
                           asChild
                           variant="ghost"
                           size="sm"
-                          className="h-6 px-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground"
+                          className="h-6 px-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
                           title={item.editLabel}
                         >
                           <Link to={item.href}>
@@ -468,7 +468,7 @@ export function StoreReadinessChecklist({
                       variant="outline"
                       size="sm"
                       onClick={() => onNavigateTab(item.tabId!)}
-                      className="h-7 text-[11px] font-bold px-2"
+                      className="h-7 text-xs font-bold px-2"
                     >
                       {item.actionLabel}
                     </Button>
@@ -477,7 +477,7 @@ export function StoreReadinessChecklist({
                       asChild
                       variant="outline"
                       size="sm"
-                      className="h-7 text-[11px] font-bold px-2"
+                      className="h-7 text-xs font-bold px-2"
                     >
                       <Link to={item.href}>
                         {item.actionLabel}

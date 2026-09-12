@@ -66,7 +66,7 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
 
   if (isLoading) {
     return (
-      <div className="p-8 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border/60">
+      <div className="p-8 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border-subtle">
         <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent mb-2" />
         <p>{isAr ? "جاري تحميل قاعدة بيانات العملاء..." : "Loading customer records..."}</p>
       </div>
@@ -86,8 +86,8 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
 
   if (customers.length === 0) {
     return (
-      <div className="p-12 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border/60 space-y-2">
-        <Users className="h-8 w-8 mx-auto text-muted-foreground/60 mb-2" />
+      <div className="p-12 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border-subtle space-y-2">
+        <Users className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
         <p className="font-bold text-sm text-foreground">
           {isAr ? "لا يوجد عملاء مطابقون" : "No matching customers found"}
         </p>
@@ -101,11 +101,11 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
   }
 
   return (
-    <div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-2xs">
+    <div className="rounded-xl border border-border-subtle bg-card overflow-hidden shadow-2xs">
       <div className="overflow-x-auto">
         <table className="w-full text-start text-xs border-collapse">
           <thead>
-            <tr className="border-b border-border/60 bg-muted/40 font-bold text-muted-foreground uppercase text-[10px] tracking-wider">
+            <tr className="border-b border-border-subtle bg-muted/40 font-bold text-muted-foreground uppercase text-xs tracking-wider">
               <th className="p-3 text-center w-12">
                 <Checkbox
                   checked={
@@ -167,19 +167,19 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
                         <div className="font-bold text-foreground truncate max-w-[180px] flex items-center gap-1.5">
                           <span>{c.name}</span>
                           {stats.badge === "VIP" && (
-                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-300/40">
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-300/40">
                               <Star className="h-2.5 w-2.5 fill-amber-500 text-amber-500" />
                               VIP
                             </span>
                           )}
                           {stats.badge === "Churn Risk" && (
-                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-300/40">
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-xs font-bold bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-300/40">
                               <AlertCircle className="h-2.5 w-2.5 text-rose-600 dark:text-rose-400" />
                               {isAr ? "راكد" : "Churn"}
                             </span>
                           )}
                           {stats.badge === "New Buyer" && (
-                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-300/40">
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-xs font-bold bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-300/40">
                               <UserPlus className="h-2.5 w-2.5 text-blue-600 dark:text-blue-400" />
                               {isAr ? "جديد" : "New"}
                             </span>
@@ -188,7 +188,7 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
                             (stats.totalOrders > 1 &&
                               stats.badge !== "VIP" &&
                               stats.badge !== "Churn Risk")) && (
-                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-300/40">
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-300/40">
                               <RefreshCw className="h-2.5 w-2.5 text-emerald-600 dark:text-emerald-400" />
                               {isAr ? "متكرر" : "Repeat"}
                             </span>
@@ -196,7 +196,7 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
                         </div>
                         {c.notes &&
                           !/(migrated_shopify|(?:^|\|)\s*(?:tags|notes):)/i.test(c.notes) && (
-                            <div className="text-[10px] text-muted-foreground truncate max-w-[180px]">
+                            <div className="text-xs text-muted-foreground truncate max-w-[180px]">
                               {c.notes}
                             </div>
                           )}
@@ -205,7 +205,7 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
                   </td>
 
                   {/* Contact Info (Phone & Email + WhatsApp Link) */}
-                  <td className="p-3 align-middle text-start text-muted-foreground font-mono text-[11px]">
+                  <td className="p-3 align-middle text-start text-muted-foreground font-mono text-xs">
                     <div className="flex flex-col gap-1 items-start">
                       {c.phone && (
                         <div className="inline-flex items-center gap-1.5 text-foreground">
@@ -246,7 +246,7 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
                         <span className="truncate font-medium">{regionText}</span>
                       </div>
                     ) : (
-                      <span className="text-muted-foreground/60 italic">—</span>
+                      <span className="text-muted-foreground italic">—</span>
                     )}
                   </td>
 
@@ -261,13 +261,13 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
                       {formatMoney(stats.lifetimeSpend, currency, lang)}
                     </div>
                     {stats.pendingAmount > 0 ? (
-                      <div className="text-[10px] text-amber-600 dark:text-amber-400 font-sans font-normal">
+                      <div className="text-xs text-amber-600 dark:text-amber-400 font-sans font-normal">
                         {isAr
                           ? `(معلق/استلام: ${formatMoney(stats.pendingAmount, currency, lang)})`
                           : `(Pending: ${formatMoney(stats.pendingAmount, currency, lang)})`}
                       </div>
                     ) : stats.lifetimeSpend > 0 ? (
-                      <div className="text-[10px] text-muted-foreground font-sans font-normal">
+                      <div className="text-xs text-muted-foreground font-sans font-normal">
                         {isAr ? "مدفوع بالكامل" : "Fully paid"}
                       </div>
                     ) : null}

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, useMemo, useCallback, useDeferredValue } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -126,6 +126,7 @@ const SIZE_UNITS = ["", "cm", "mm", "m", "inch", "ft", "kg", "g", "ml", "l"] as 
 type InventorySearch = {
   filter?: string;
   scope?: string;
+  action?: string;
 };
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/inventory")({
@@ -133,6 +134,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/inventory")(
     const result: InventorySearch = {};
     if (typeof search.filter === "string") result.filter = search.filter;
     if (typeof search.scope === "string") result.scope = search.scope;
+    if (typeof search.action === "string") result.action = search.action;
     return result;
   },
   component: Inventory,
@@ -398,7 +400,7 @@ function Inventory() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-4 p-1 sm:p-2 animate-fade-in">
-      <div className="flex p-1.5 gap-1.5 bg-muted/40 rounded-xl border border-border/40 backdrop-blur-sm max-w-lg">
+      <div className="flex p-1.5 gap-1.5 bg-muted/40 rounded-xl border border-border-subtle backdrop-blur-sm max-w-lg">
         <button
           className={`flex-1 rounded-lg py-2 px-3 text-sm font-semibold transition-all duration-200 ${tab === "products" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:bg-background/20"}`}
           onClick={() => setTab("products")}
@@ -422,6 +424,7 @@ function Inventory() {
       {tab === "products" ? (
         <ProductsSection
           initialFilter={searchParams.scope || searchParams.filter}
+          initialAction={searchParams.action}
           products={products.data ?? []}
           variants={variants.data ?? []}
           businessName={businessName.data?.business_name ?? null}
@@ -861,7 +864,7 @@ function ProductImporterModal({
       )}
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-xl border-zinc-100 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl">
+        <DialogContent className="max-w-xl border-border bg-card/95 backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 font-display text-xl">
               <Sparkles className="h-5 w-5 text-amber-500" />
@@ -913,7 +916,7 @@ function ProductImporterModal({
                   <button
                     key={item.id}
                     onClick={() => setPreset(item.id as any)}
-                    className={`flex flex-col items-start p-3.5 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 text-left transition-all ${item.color} ${
+                    className={`flex flex-col items-start p-3.5 rounded-xl border border-border bg-muted/30 text-start transition-all ${item.color} ${
                       preset === item.id
                         ? "border-primary ring-2 ring-primary/10 bg-primary/5 dark:bg-primary/5"
                         : ""
@@ -922,14 +925,14 @@ function ProductImporterModal({
                     <span className="text-sm font-semibold font-display text-foreground block">
                       {item.name}
                     </span>
-                    <span className="text-[10px] text-muted-foreground block mt-0.5">
+                    <span className="text-xs text-muted-foreground block mt-0.5">
                       {item.desc}
                     </span>
                   </button>
                 ))}
               </div>
 
-              <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
+              <div className="pt-4 border-t border-border flex justify-end">
                 <label className="relative cursor-pointer">
                   <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground font-semibold text-xs rounded-xl shadow-lg shadow-primary/10 hover:shadow-xl hover:bg-primary/95 transition-all">
                     <Upload className="h-4 w-4" />
@@ -945,14 +948,14 @@ function ProductImporterModal({
               </div>
 
               {(importHistoryQuery.data?.length ?? 0) > 0 && (
-                <div className="space-y-2 border-t border-border/60 pt-4">
+                <div className="space-y-2 border-t border-border-subtle pt-4">
                   <p className="text-xs font-semibold">
                     {isAr ? "آخر عمليات الاستيراد" : "Recent imports"}
                   </p>
                   {importHistoryQuery.data!.map((run: any) => (
                     <div
                       key={run.session_id}
-                      className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2 text-[11px]"
+                      className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2 text-xs"
                     >
                       <div>
                         <span className="font-semibold uppercase">{run.source}</span>
@@ -997,7 +1000,7 @@ function ProductImporterModal({
                 ].map((field) => (
                   <div
                     key={field.key}
-                    className="flex items-center justify-between gap-4 p-3 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border border-zinc-100 dark:border-zinc-800"
+                    className="flex items-center justify-between gap-4 p-3 bg-muted/40 rounded-xl border border-border"
                   >
                     <span className="text-xs font-semibold text-foreground">
                       {field.label} {field.required && <span className="text-rose-500">*</span>}
@@ -1026,7 +1029,7 @@ function ProductImporterModal({
                 ))}
               </div>
 
-              <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
+              <div className="rounded-xl border border-border-strong bg-muted/20 p-3">
                 <div className="mb-2 flex items-center justify-between text-xs font-semibold">
                   <span>{isAr ? "معاينة البيانات" : "Data preview"}</span>
                   <span className="text-muted-foreground">
@@ -1034,7 +1037,7 @@ function ProductImporterModal({
                   </span>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[420px] text-[11px]">
+                  <table className="w-full min-w-[420px] text-xs">
                     <thead>
                       <tr className="border-b">
                         {headers.slice(0, 5).map((header) => (
@@ -1062,7 +1065,7 @@ function ProductImporterModal({
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
+              <div className="pt-4 border-t border-border flex justify-end">
                 <Button
                   onClick={() => {
                     if (mappings.name === -1 || mappings.price === -1) {
@@ -1101,7 +1104,7 @@ function ProductImporterModal({
                   {progress}
                 </p>
               </div>
-              <div className="w-full max-w-xs bg-zinc-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+              <div className="w-full max-w-xs bg-muted h-1.5 rounded-full overflow-hidden">
                 <div
                   className="bg-primary h-full transition-all duration-300"
                   style={{ width: `${totalCount > 0 ? (successCount / totalCount) * 100 : 0}%` }}
@@ -1116,7 +1119,7 @@ function ProductImporterModal({
                 <Check className="h-7 w-7 animate-bounce" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-lg font-bold font-display text-zinc-900 dark:text-zinc-100">
+                <h3 className="text-lg font-bold font-display text-foreground">
                   {isAr ? "اكتمل استيراد الكتالوج بنجاح!" : "Catalog Migration Completed!"}
                 </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed max-w-sm">
@@ -1125,7 +1128,7 @@ function ProductImporterModal({
                     : `Imported ${successCount} products, skipped ${skippedCount} duplicates, and ${failedCount} failed.`}
                 </p>
                 {importIssues.length > 0 && (
-                  <p className="text-[11px] text-amber-600">
+                  <p className="text-xs text-amber-600">
                     {isAr
                       ? "يمكن مراجعة العناصر المتخطاة وتصحيح الملف ثم إعادة المحاولة بأمان."
                       : "Review skipped items, correct the file, and safely retry."}
@@ -1148,6 +1151,7 @@ function ProductImporterModal({
 
 function ProductsSection({
   initialFilter,
+  initialAction,
   products,
   variants,
   businessName,
@@ -1156,6 +1160,7 @@ function ProductsSection({
   salesHistory,
 }: {
   initialFilter?: string;
+  initialAction?: string;
   products: Product[];
   variants: Variant[];
   businessName: string | null;
@@ -1163,6 +1168,7 @@ function ProductsSection({
   onChanged: () => void;
   salesHistory: any[];
 }) {
+  const navigate = useNavigate();
   const t = useT();
   const brand = useBrand();
   const brandId = brand.id;
@@ -1171,6 +1177,22 @@ function ProductsSection({
   const [bomTargetProduct, setBomTargetProduct] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
   const [dialogSession, setDialogSession] = useState(0);
+
+  useEffect(() => {
+    if (initialAction === "new") {
+      setEditing(null);
+      setDialogSession((v) => v + 1);
+      setOpen(true);
+      navigate({
+        search: ((prev: any) => {
+          const next = { ...prev };
+          delete next.action;
+          return next;
+        }) as any,
+        replace: true,
+      });
+    }
+  }, [initialAction, navigate]);
   const [search, setSearch] = useState("");
   const [stockFilter, setStockFilter] = useState<"all" | "low" | "out">("all");
   const [visibilityFilter, setVisibilityFilter] = useState<"all" | "active" | "hidden">("all");
@@ -1796,7 +1818,7 @@ function ProductsSection({
         }}
         renderImporters={
           <div className="flex flex-col gap-1 p-1 min-w-[210px]">
-            <div className="px-2.5 py-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/40">
+            <div className="px-2.5 py-1 text-xs font-bold text-muted-foreground border-b border-border-subtle">
               {isAr ? "الاستيراد السريع" : "Quick Import"}
             </div>
             <Button
@@ -1810,7 +1832,7 @@ function ProductsSection({
             </Button>
             <ProductImporterModal brandId={brandId} onComplete={onChanged} />
 
-            <div className="px-2.5 pt-2 py-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/40">
+            <div className="px-2.5 pt-2 py-1 text-xs font-bold text-muted-foreground border-b border-border-subtle">
               {isAr ? "الباركود والطباعة" : "Barcodes & Print"}
             </div>
             <Button
@@ -1823,7 +1845,7 @@ function ProductsSection({
               {isAr ? "طباعة جميع الباركودات" : "Print All Barcodes"}
             </Button>
 
-            <div className="px-2.5 pt-2 py-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/40">
+            <div className="px-2.5 pt-2 py-1 text-xs font-bold text-muted-foreground border-b border-border-subtle">
               {isAr ? "العمليات المتقدمة" : "Advanced Operations"}
             </div>
             <Button
@@ -1958,56 +1980,59 @@ function ProductsSection({
               : Number(p.base_price || 0);
 
           return (
-            <InventoryMobileCard
-              key={p.id}
-              lang={isAr ? "ar" : "en"}
-              product={p}
-              variants={pVariants}
-              totalStock={totalStock}
-              minPrice={minPrice}
-              currency={currency}
-              onEdit={(prod) => {
-                setEditing(prod);
-                setDialogSession((v) => v + 1);
-                setOpen(true);
-              }}
-              onDelete={(id) => setProductToDelete(id)}
-              onPrintLabel={(prod) => {
-                const labels: LabelData[] = (variantsByProduct[prod.id] || [])
-                  .filter((v) => Boolean(v.barcode))
-                  .map((v) => ({
-                    code: v.barcode!,
-                    productName: prod.name,
-                    size: v.size,
-                    color: v.color,
-                    price: v.selling_price,
-                    businessName,
-                  }));
-                if (labels.length > 0) printLabels(labels);
-                else
-                  toast.error(isAr ? "لا يوجد باركود لهذا المنتج" : "No barcode for this product");
-              }}
-              onTransferToIncubator={(prod) => {
-                setIncubatorTransferProducts([prod]);
-                setIncubatorTransferModalOpen(true);
-              }}
-              onDuplicate={handleDuplicateProduct}
-              onPreview={handlePreviewProduct}
-              onShare={handleShareProduct}
-              renderVariantList={(prod) => (
-                <VariantList
-                  productId={prod.id}
-                  productName={prod.name}
-                  businessName={businessName}
-                  variants={variantsByProduct[prod.id] || []}
-                  onChanged={onChanged}
-                  salesByVariant={salesByVariant}
-                  product={prod}
-                />
-              )}
-              selected={selectedProductIds.has(p.id)}
-              onToggleSelected={toggleSelectedProduct}
-            />
+            <div id={`product-row-${p.id}`} key={p.id}>
+              <InventoryMobileCard
+                lang={isAr ? "ar" : "en"}
+                product={p}
+                variants={pVariants}
+                totalStock={totalStock}
+                minPrice={minPrice}
+                currency={currency}
+                onEdit={(prod) => {
+                  setEditing(prod);
+                  setDialogSession((v) => v + 1);
+                  setOpen(true);
+                }}
+                onDelete={(id) => setProductToDelete(id)}
+                onPrintLabel={(prod) => {
+                  const labels: LabelData[] = (variantsByProduct[prod.id] || [])
+                    .filter((v) => Boolean(v.barcode))
+                    .map((v) => ({
+                      code: v.barcode!,
+                      productName: prod.name,
+                      size: v.size,
+                      color: v.color,
+                      price: v.selling_price,
+                      businessName,
+                    }));
+                  if (labels.length > 0) printLabels(labels);
+                  else
+                    toast.error(isAr ? "لا يوجد باركود لهذا المنتج" : "No barcode for this product");
+                }}
+                onTransferToIncubator={(prod) => {
+                  setIncubatorTransferProducts([prod]);
+                  setIncubatorTransferModalOpen(true);
+                }}
+                onDuplicate={handleDuplicateProduct}
+                onPreview={handlePreviewProduct}
+                onShare={handleShareProduct}
+                renderVariantList={(prod) => (
+                  <VariantList
+                    productId={prod.id}
+                    productName={prod.name}
+                    businessName={businessName}
+                    variants={variantsByProduct[prod.id] || []}
+                    onChanged={onChanged}
+                    salesByVariant={salesByVariant}
+                    product={prod}
+                  />
+                )}
+                selected={selectedProductIds.has(p.id)}
+                onToggleSelected={toggleSelectedProduct}
+                isExpanded={Boolean(expandedProducts[p.id])}
+                onToggleExpand={() => toggleProduct(p.id)}
+              />
+            </div>
           );
         })}
       </div>
@@ -2022,6 +2047,8 @@ function ProductsSection({
           currency={currency}
           isLoading={false}
           isError={false}
+          expandedProducts={expandedProducts}
+          onToggleExpand={toggleProduct}
           onEdit={(prod) => {
             setEditing(prod);
             setDialogSession((v) => v + 1);
@@ -2137,7 +2164,7 @@ function ProductsSection({
                 {isAr ? "القسم المستهدف" : "Target Category"}
               </Label>
               <select
-                className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus:ring-1 focus:ring-primary outline-none"
+                className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
                 value={bulkSelectedCategory}
                 onChange={(e) => setBulkSelectedCategory(e.target.value)}
               >
@@ -2223,10 +2250,29 @@ function ProductsSection({
         <ProductDialog
           key={`${editing?.id ?? "new"}-${dialogSession}`}
           product={editing}
-          onSaved={() => {
+          onSaved={(newProductId?: string) => {
             setOpen(false);
             setEditing(null);
             onChanged();
+            if (newProductId) {
+              setExpandedProducts((prev) => ({ ...prev, [newProductId]: true }));
+              toast.success(
+                isAr
+                  ? "تم إنشاء المنتج بنجاح! تم فتح قسم المقاسات والألوان لإضافة خياراتك."
+                  : "Product created successfully! Variants panel opened to add sizes & colors.",
+                {
+                  action: {
+                    label: isAr ? "إضافة مقاسات وألوان" : "Add sizes & colors",
+                    onClick: () => {
+                      setExpandedProducts((prev) => ({ ...prev, [newProductId]: true }));
+                      const el = document.getElementById(`product-row-${newProductId}`);
+                      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    },
+                  },
+                  duration: 8000,
+                },
+              );
+            }
           }}
         />
       </Dialog>
@@ -2529,7 +2575,13 @@ function cleanPassportCustomFields(fields: CustomField[]) {
   );
 }
 
-function ProductDialog({ product, onSaved }: { product: Product | null; onSaved: () => void }) {
+function ProductDialog({
+  product,
+  onSaved,
+}: {
+  product: Product | null;
+  onSaved: (newProductId?: string) => void;
+}) {
   const t = useT();
   const { lang } = useI18n();
   const isAr = lang === "ar";
@@ -2545,7 +2597,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     cost_price: product?.cost_price ? String(product.cost_price) : "0",
     image_url: product?.image_url ?? "",
     is_active: product ? product.is_active : true,
-    initial_stock: "10",
+    initial_stock: "0",
     featured_trending: product?.featured_trending ?? false,
     show_sale_badge: product?.show_sale_badge ?? true,
     media: (product?.media ?? []) as MediaItem[],
@@ -2596,7 +2648,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       cost_price: product?.cost_price ? String(product.cost_price) : "0",
       image_url: product?.image_url ?? "",
       is_active: product ? product.is_active : true,
-      initial_stock: "10",
+      initial_stock: "0",
       featured_trending: product?.featured_trending ?? false,
       show_sale_badge: product?.show_sale_badge ?? true,
       media: (product?.media ?? []) as MediaItem[],
@@ -2738,6 +2790,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
 
     const legacyName = nameEn || nameAr;
     const legacyDesc = form.description_en.trim() || form.description_ar.trim() || null;
+    let createdProductId: string | undefined;
 
     if (product) {
       if (form.is_active) {
@@ -2748,7 +2801,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         if (variantCountError) return toast.error(variantCountError.message);
         if (!count) {
           // Smart default: Automatically create a standard default variant so merchant isn't blocked
-          const initialQty = Math.max(0, parseInt(form.initial_stock || "10", 10) || 0);
+          const initialQty = Math.max(0, parseInt(form.initial_stock || "0", 10) || 0);
           const baseP = form.base_price ? Number(form.base_price) : 0;
           const costP = form.cost_price ? Number(form.cost_price) : 0;
           await (supabase.from("product_variants") as any).insert({
@@ -2864,9 +2917,10 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         .single();
       if (error) return toast.error(error.message);
 
+      createdProductId = newProd?.id;
       // Auto-create default standard variant for instant purchaseability
       if (newProd?.id) {
-        const initialQty = Math.max(0, parseInt(form.initial_stock || "10", 10) || 0);
+        const initialQty = Math.max(0, parseInt(form.initial_stock || "0", 10) || 0);
         const baseP = form.base_price ? Number(form.base_price) : 0;
         const costP = form.cost_price ? Number(form.cost_price) : 0;
         await (supabase.from("product_variants") as any).insert({
@@ -2892,20 +2946,16 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     }
     removedCommittedMedia.current.clear();
     uncommittedUploads.current.clear();
-    toast.success(
-      !product
-        ? isAr
-          ? "تم إنشاء المنتج وتفعيله في المتجر بنجاح!"
-          : "Product created and published successfully!"
-        : t("common.save"),
-    );
-    onSaved();
+    if (product) {
+      toast.success(t("common.save"));
+    }
+    onSaved(createdProductId);
   };
 
   return (
-    <DialogContent className="max-h-[92vh] md:max-w-3xl p-0 flex flex-col rounded-2xl border border-border/80 shadow-2xl bg-background overflow-hidden">
+    <DialogContent className="max-h-[92vh] md:max-w-3xl p-0 flex flex-col rounded-2xl border border-border-strong shadow-2xl bg-background overflow-hidden">
       {/* Header with gradient bar and stepper indicators */}
-      <div className="relative border-b border-border/60 bg-secondary/20 p-5 pb-4">
+      <div className="relative border-b border-border-subtle bg-secondary/20 p-5 pb-4">
         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-indigo-500 to-purple-600" />
         <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
@@ -2997,7 +3047,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                   <button
                     type="button"
                     onClick={() => setForm({ ...form, category: "" })}
-                    className="text-[11px] text-destructive hover:underline font-medium"
+                    className="text-xs text-destructive hover:underline font-medium"
                   >
                     {isAr ? "إلغاء تعيين القسم (بدون قسم)" : "Clear category (No category)"}
                   </button>
@@ -3006,7 +3056,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
               <div>
                 {(categoriesQ.data ?? []).length > 0 ? (
                   <select
-                    className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus:ring-1 focus:ring-primary outline-none"
+                    className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
                     value={(() => {
                       if (!form.category) return "";
                       const match = (categoriesQ.data ?? []).find(
@@ -3179,7 +3229,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
               onChangeEn={(v) => setForm({ ...form, description_en: v })}
             />
 
-            <div className="flex items-center justify-between rounded-xl border border-border/80 p-4 bg-secondary/10 transition hover:bg-secondary/20">
+            <div className="flex items-center justify-between rounded-xl border border-border-strong p-4 bg-secondary/10 transition hover:bg-secondary/20">
               <div>
                 <p className="text-sm font-bold text-foreground">
                   {isAr ? "المنتج مفعّل في المتجر" : "Active in storefront"}
@@ -3213,7 +3263,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
               </div>
             )}
             {/* Step 3 (Collapsible): Advanced Details & Specifications */}
-            <div className="rounded-xl border border-border/80 bg-card overflow-hidden">
+            <div className="rounded-xl border border-border-strong bg-card overflow-hidden">
               <button
                 type="button"
                 onClick={() => setAdvancedOpen((prev) => !prev)}
@@ -3235,7 +3285,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
               </button>
 
               {advancedOpen && (
-                <div className="p-4 space-y-4 border-t border-border/50 animate-in fade-in duration-150">
+                <div className="p-4 space-y-4 border-t border-border-subtle animate-in fade-in duration-150">
                   {/* Fabric & Occasion */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -3257,7 +3307,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                       </Label>
                       <div className="mt-1">
                         <select
-                          className="w-full h-9.5 rounded-lg border border-input bg-background px-3 text-xs focus:ring-1 focus:ring-primary outline-none"
+                          className="w-full h-9.5 rounded-lg border border-input bg-background px-3 text-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
                           value={form.occasion}
                           onChange={(e) => setForm({ ...form, occasion: e.target.value })}
                         >
@@ -3273,12 +3323,12 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
 
                   {/* Feature & Sale Switches */}
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="flex items-center justify-between rounded-lg border border-border/60 p-3 bg-secondary/10">
+                    <div className="flex items-center justify-between rounded-lg border border-border-subtle p-3 bg-secondary/10">
                       <div>
                         <p className="text-xs font-bold text-foreground">
                           {isAr ? "إبراز في الرائج الآن" : "Feature in Trending now"}
                         </p>
-                        <p className="text-[11px] text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                           {isAr ? "أولوية في العرض للعملاء" : "Prioritizes this product for discovery"}
                         </p>
                       </div>
@@ -3287,12 +3337,12 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                         onCheckedChange={(v) => setForm({ ...form, featured_trending: v })}
                       />
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border border-border/60 p-3 bg-secondary/10">
+                    <div className="flex items-center justify-between rounded-lg border border-border-subtle p-3 bg-secondary/10">
                       <div>
                         <p className="text-xs font-bold text-foreground">
                           {isAr ? "إظهار شارة التنزيلات" : "Show Sale badge"}
                         </p>
-                        <p className="text-[11px] text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                           {isAr ? "تظهر عند وجود سعر أصلي أعلى" : "Shown when an original price is higher"}
                         </p>
                       </div>
@@ -3304,21 +3354,21 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                   </div>
 
                   {/* Custom Variant Labels */}
-                  <div className="rounded-lg border border-border/60 p-3.5 bg-secondary/5 space-y-3">
+                  <div className="rounded-lg border border-border-subtle p-3.5 bg-secondary/5 space-y-3">
                     <div>
                       <p className="text-xs font-bold text-foreground">
                         {isAr ? "🏷️ مسميات المتغيرات المخصصة" : "🏷️ Custom Variant Labels"}
                       </p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         {isAr
                           ? "تخصيص أسماء أعمدة المقاس، اللون، والخامة لصفحة عرض المنتج."
                           : "Override default column labels (Size, Color, Fabric) for the storefront."}
                       </p>
                     </div>
                     <div className="space-y-3">
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 border-b border-border/40 pb-2.5">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 border-b border-border-subtle pb-2.5">
                         <div>
-                          <Label className="text-[11px] font-bold text-muted-foreground">
+                          <Label className="text-xs font-bold text-muted-foreground">
                             {isAr ? "مسمى المقاس بالعربية" : "Custom Size Label — Arabic"}
                           </Label>
                           <Input
@@ -3331,7 +3381,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                           />
                         </div>
                         <div>
-                          <Label className="text-[11px] font-bold text-muted-foreground">
+                          <Label className="text-xs font-bold text-muted-foreground">
                             {isAr ? "مسمى المقاس بالإنجليزية" : "Custom Size Label — English"}
                           </Label>
                           <Input
@@ -3345,9 +3395,9 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 border-b border-border/40 pb-2.5">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 border-b border-border-subtle pb-2.5">
                         <div>
-                          <Label className="text-[11px] font-bold text-muted-foreground">
+                          <Label className="text-xs font-bold text-muted-foreground">
                             {isAr ? "مسمى اللون بالعربية" : "Custom Color Label — Arabic"}
                           </Label>
                           <Input
@@ -3360,7 +3410,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                           />
                         </div>
                         <div>
-                          <Label className="text-[11px] font-bold text-muted-foreground">
+                          <Label className="text-xs font-bold text-muted-foreground">
                             {isAr ? "مسمى اللون بالإنجليزية" : "Custom Color Label — English"}
                           </Label>
                           <Input
@@ -3376,7 +3426,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
 
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <div>
-                          <Label className="text-[11px] font-bold text-muted-foreground">
+                          <Label className="text-xs font-bold text-muted-foreground">
                             {isAr ? "مسمى الخامة بالعربية" : "Custom Fabric Label — Arabic"}
                           </Label>
                           <Input
@@ -3389,7 +3439,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                           />
                         </div>
                         <div>
-                          <Label className="text-[11px] font-bold text-muted-foreground">
+                          <Label className="text-xs font-bold text-muted-foreground">
                             {isAr ? "مسمى الخامة بالإنجليزية" : "Custom Fabric Label — English"}
                           </Label>
                           <Input
@@ -3452,7 +3502,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                           className="w-full h-full object-cover"
                         />
                       )}
-                      <span className="absolute top-2 start-2 bg-black/80 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">
+                      <span className="absolute top-2 start-2 bg-black/80 text-white text-xs font-bold px-2 py-0.5 rounded shadow">
                         {m.type === "video"
                           ? isAr
                             ? "🎬 فيديو"
@@ -3462,7 +3512,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                             : "📷 Image"}
                       </span>
                       {i === 0 && (
-                        <span className="absolute top-2 end-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded shadow">
+                        <span className="absolute top-2 end-2 bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded shadow">
                           {isAr ? "الغلاف" : "Cover"}
                         </span>
                       )}
@@ -3531,7 +3581,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                         <span className="text-xs font-bold block text-foreground">
                           {isAr ? "إضافة وسائط" : "Add media"}
                         </span>
-                        <span className="text-[10px] text-muted-foreground block">
+                        <span className="text-xs text-muted-foreground block">
                           {isAr ? "صور أو مقاطع فيديو" : "Images or Videos"}
                         </span>
                       </div>
@@ -3556,13 +3606,13 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         {activeDialogTab === "customizer" && (
           <div className="space-y-4 animate-in fade-in duration-200">
             <div className="rounded-xl border border-border p-5 bg-secondary/10 space-y-4 shadow-sm">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/50 pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border-subtle pb-4">
                 <div>
                   <div className="text-sm font-bold text-foreground flex items-center gap-1.5">
                     <span>
                       {isAr ? "⚙️ محرك تصميم وتخصيص المنتج" : "⚙️ Product Customization Engine"}
                     </span>
-                    <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary uppercase">
+                    <span className="rounded bg-primary/15 px-1.5 py-0.5 text-xs font-bold text-primary uppercase">
                       Unlimited
                     </span>
                   </div>
@@ -3665,12 +3715,12 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
               </div>
 
               {(form.custom_fields ?? []).length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground border-2 border-dashed border-border/70 rounded-xl bg-background/50">
+                <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground border-2 border-dashed border-border-strong rounded-xl bg-background/50">
                   <Sliders className="h-8 w-8 opacity-40 mb-2.5 text-muted-foreground" />
                   <span className="text-xs font-bold text-foreground">
                     {isAr ? "لا توجد خيارات مخصصة مفعلة" : "No custom options configured yet"}
                   </span>
-                  <span className="text-[10px] opacity-75 mt-1">
+                  <span className="text-xs opacity-75 mt-1">
                     {isAr
                       ? "استخدم النماذج السريعة بالأعلى لتعبئة الحقول بضغطة زر!"
                       : "Use the dropdown template presets above to populate in 1-click!"}
@@ -3729,7 +3779,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                           {FIT_PROFILE_FIELDS[passportType].map(([key, ar, en, required]) => (
                             <span
                               key={key}
-                              className="rounded-full border bg-background px-2.5 py-1 text-[11px]"
+                              className="rounded-full border bg-background px-2.5 py-1 text-xs"
                             >
                               {isAr ? ar : en} ·{" "}
                               {required
@@ -3825,9 +3875,9 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                           )}
 
                           {/* Real-time storefront preview block */}
-                          <div className="rounded-lg bg-muted/40 p-3 border border-dashed border-border/60 text-xs">
+                          <div className="rounded-lg bg-muted/40 p-3 border border-dashed border-border-subtle text-xs">
                             <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                              <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                                 {isAr
                                   ? "👁️ معاينة فورية لصفحة المنتج"
                                   : "👁️ Real-time Storefront Preview"}
@@ -3872,7 +3922,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                                       d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
                                     />
                                   </svg>
-                                  <span className="text-[10px] font-bold">
+                                  <span className="text-xs font-bold">
                                     {isAr
                                       ? "انقر لرفع ملف مخصص (.pdf, .png, .jpg)"
                                       : "Click to upload custom file (.pdf, .png, .jpg)"}
@@ -3882,14 +3932,14 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                               {f.type === "select" && (
                                 <div className="flex flex-wrap gap-1.5 pt-0.5">
                                   {(f.options ?? []).length === 0 ? (
-                                    <span className="text-[11px] text-muted-foreground italic">
+                                    <span className="text-xs text-muted-foreground italic">
                                       {isAr ? "لا توجد خيارات بعد" : "No options specified yet"}
                                     </span>
                                   ) : (
                                     (f.options ?? []).map((opt) => (
                                       <div
                                         key={opt}
-                                        className="rounded-md border border-border bg-background px-2.5 py-1 text-[11px] font-bold text-foreground shadow-sm"
+                                        className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-bold text-foreground shadow-sm"
                                       >
                                         {opt}
                                       </div>
@@ -3901,7 +3951,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                           </div>
 
                           <div
-                            className="flex items-center justify-between border-t border-border/40 pt-3 text-xs"
+                            className="flex items-center justify-between border-t border-border-subtle pt-3 text-xs"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="flex items-center gap-2 text-xs font-medium">
@@ -3954,7 +4004,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                                 type="button"
                                 size="sm"
                                 variant="ghost"
-                                className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 h-7 text-[11px] rounded font-bold touch-manipulation"
+                                className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 h-7 text-xs rounded font-bold touch-manipulation"
                                 onClick={(e) => {
                                   e.preventDefault();
                                   remove();
@@ -3975,7 +4025,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       </div>
 
       {/* Persistent Footer with back/next and global save actions */}
-      <div className="border-t border-border/60 bg-secondary/20 px-6 py-4.5 flex items-center justify-between">
+      <div className="border-t border-border-subtle bg-secondary/20 px-6 py-4.5 flex items-center justify-between">
         <div className="flex items-center gap-2">
           {activeDialogTab !== "basic" && (
             <Button
@@ -4411,7 +4461,7 @@ function BulkVariantDialog({
                 ? "صف المتغيرات بالعربية أو الإنجليزية (الذكاء الاصطناعي)"
                 : "Describe variants in English or Arabic (AI Parser)"}
             </Label>
-            <span className="text-[11px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               {isAr
                 ? "يدعم مقاسات العبايات، الملابس، الألوان، الأسعار، والمخزون"
                 : "Supports Abayas, Apparel, Shoes, Colors, Prices & Stock"}
@@ -4551,7 +4601,7 @@ function BulkVariantDialog({
               value={salePriceText}
               onChange={(e) => setSalePriceText(e.target.value)}
             />
-            <p className="mt-1 text-[10px] text-muted-foreground">
+            <p className="mt-1 text-xs text-muted-foreground">
               {isAr
                 ? "السعر الفعلي للبيع. اتركه مطابقاً للأساسي أو فارغاً إذا لم يكن هناك تخفيض."
                 : "The price customers actually pay. Leave blank if matching regular price."}
@@ -4799,7 +4849,7 @@ function BulkVariantDialog({
                           onClick={() =>
                             setRows((current) => current.filter((_, i) => i !== index))
                           }
-                        >
+                         aria-label={isAr ? "حذف" : "Delete"}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </td>
@@ -4910,7 +4960,7 @@ function StockStepper({ value, onChange }: { value: number; onChange: (val: numb
     >
       <button
         type="button"
-        className="w-8 h-full flex items-center justify-center hover:bg-muted active:scale-90 transition-all text-muted-foreground hover:text-foreground font-black text-sm border-r border-input"
+        className="w-8 h-full flex items-center justify-center hover:bg-muted active:scale-90 transition-all text-muted-foreground hover:text-foreground font-black text-sm border-e border-input"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -4931,7 +4981,7 @@ function StockStepper({ value, onChange }: { value: number; onChange: (val: numb
       />
       <button
         type="button"
-        className="w-8 h-full flex items-center justify-center hover:bg-muted active:scale-90 transition-all text-muted-foreground hover:text-foreground font-black text-sm border-l border-input"
+        className="w-8 h-full flex items-center justify-center hover:bg-muted active:scale-90 transition-all text-muted-foreground hover:text-foreground font-black text-sm border-s border-input"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -4972,7 +5022,7 @@ function PremiumCurrencyInput({
         type="number"
         step="0.001"
         placeholder={placeholder}
-        className={`w-full h-9.5 ${onClear && value ? "pl-7" : "pl-2.5"} pr-8 text-center font-mono font-bold bg-background border border-input rounded-xl outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-xs shadow-2xs transition-all disabled:cursor-not-allowed disabled:bg-muted/50 disabled:text-muted-foreground disabled:opacity-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${className}`}
+        className={`w-full h-9.5 ${onClear && value ? "ps-7" : "ps-2.5"} pe-8 text-center font-mono font-bold bg-background border border-input rounded-xl outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-xs shadow-2xs transition-all disabled:cursor-not-allowed disabled:bg-muted/50 disabled:text-muted-foreground disabled:opacity-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${className}`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onFocus={(e) => e.currentTarget.select()}
@@ -4991,7 +5041,7 @@ function PremiumCurrencyInput({
           <X className="h-3.5 w-3.5" />
         </button>
       )}
-      <span className="absolute end-2.5 text-[9px] font-black text-muted-foreground/60 pointer-events-none uppercase tracking-tight">
+      <span className="absolute end-2.5 text-xs font-black text-muted-foreground pointer-events-none uppercase tracking-tight">
         BHD
       </span>
     </div>
@@ -5113,7 +5163,7 @@ function VariantDesktopRow({
       <td className="px-2 py-3 text-center" onClick={(e) => e.stopPropagation()}>
         <input
           type="checkbox"
-          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer transition-all"
+          className="h-4 w-4 rounded border-input text-primary focus:ring-primary cursor-pointer transition-all"
           checked={isSelected}
           onChange={onToggleSelect}
         />
@@ -5125,7 +5175,7 @@ function VariantDesktopRow({
           <div className="flex flex-col gap-2.5 p-3 bg-card/95 backdrop-blur-md border border-primary/30 rounded-2xl w-[320px] sm:w-[350px] shadow-xl animate-in fade-in zoom-in-95 duration-150 relative z-40">
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
+                <span className="text-xs font-bold text-muted-foreground block mb-1">
                   {(isAr ? product?.variant_label_size_ar : product?.variant_label_size_en) ||
                     product?.variant_label_size_en ||
                     product?.variant_label_size_ar ||
@@ -5139,7 +5189,7 @@ function VariantDesktopRow({
                 />
               </div>
               <div>
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
+                <span className="text-xs font-bold text-muted-foreground block mb-1">
                   {isAr ? "الوحدة" : "Unit"}
                 </span>
                 <select
@@ -5157,7 +5207,7 @@ function VariantDesktopRow({
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
+                <span className="text-xs font-bold text-muted-foreground block mb-1">
                   {(isAr ? product?.variant_label_color_ar : product?.variant_label_color_en) ||
                     product?.variant_label_color_en ||
                     product?.variant_label_color_ar ||
@@ -5171,7 +5221,7 @@ function VariantDesktopRow({
                 />
               </div>
               <div>
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
+                <span className="text-xs font-bold text-muted-foreground block mb-1">
                   {(isAr ? product?.variant_label_fabric_ar : product?.variant_label_fabric_en) ||
                     product?.variant_label_fabric_en ||
                     product?.variant_label_fabric_ar ||
@@ -5185,8 +5235,8 @@ function VariantDesktopRow({
                 />
               </div>
             </div>
-            <div className="flex items-center justify-between pt-2 border-t border-border/60 mt-0.5">
-              <span className="text-[10px] text-muted-foreground font-medium">
+            <div className="flex items-center justify-between pt-2 border-t border-border-subtle mt-0.5">
+              <span className="text-xs text-muted-foreground font-medium">
                 {isAr ? "تعديل المتغير" : "Edit Variant Attributes"}
               </span>
               <div className="flex gap-1.5">
@@ -5219,13 +5269,13 @@ function VariantDesktopRow({
                   </span>
                 )}
                 {v.color && (
-                  <span className="inline-flex items-center bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 text-xs font-semibold px-2 py-0.5 border border-slate-200 dark:border-slate-700 rounded-md gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
+                  <span className="inline-flex items-center bg-muted text-foreground text-xs font-semibold px-2 py-0.5 border border-border rounded-md gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground shrink-0" />
                     {v.color}
                   </span>
                 )}
                 {v.fabric && (
-                  <span className="inline-flex items-center bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 text-xs font-semibold px-2 py-0.5 border border-zinc-200 dark:border-slate-700 rounded-md">
+                  <span className="inline-flex items-center bg-muted text-foreground text-xs font-semibold px-2 py-0.5 border border-border rounded-md">
                     {v.fabric}
                   </span>
                 )}
@@ -5237,7 +5287,7 @@ function VariantDesktopRow({
             )}
 
             {!renderBarcodeCol && (v.barcode || v.sku) && (
-              <span className="inline-flex items-center gap-1 font-mono text-[10px] text-muted-foreground/85 bg-muted/70 px-1.5 py-0.5 rounded-md border border-border/60 shrink-0">
+              <span className="inline-flex items-center gap-1 font-mono text-xs text-muted-foreground bg-muted/70 px-1.5 py-0.5 rounded-md border border-border-subtle shrink-0">
                 <Barcode className="h-3 w-3 text-primary/80" />
                 <span>{v.barcode || v.sku}</span>
               </span>
@@ -5245,7 +5295,7 @@ function VariantDesktopRow({
 
             <button
               type="button"
-              className="p-1 rounded hover:bg-muted text-muted-foreground/60 hover:text-foreground opacity-0 group-hover/v:opacity-100 transition-opacity"
+              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground opacity-0 group-hover/v:opacity-100 transition-opacity"
               onClick={() => setIsEditingAttrs(true)}
               title={isAr ? "تعديل الخصائص" : "Edit attributes"}
             >
@@ -5419,22 +5469,22 @@ function VariantDesktopRow({
           const dailyVelocity = qtySold / daysElapsed;
 
           let runRateText = isAr ? "لا مبيعات" : "No sales";
-          let runRateColor = "text-muted-foreground/60 text-[9px]";
+          let runRateColor = "text-muted-foreground text-xs";
 
           if (stock <= 0) {
             runRateText = isAr ? "نفد" : "Out of stock";
-            runRateColor = "text-rose-600 dark:text-rose-400 font-bold text-[9px]";
+            runRateColor = "text-rose-600 dark:text-rose-400 font-bold text-xs";
           } else if (dailyVelocity > 0) {
             const days = Math.ceil(stock / dailyVelocity);
             runRateText = isAr ? `ينفد في ${days} ي` : `${days} d left`;
             runRateColor =
               days <= 7
-                ? "text-amber-600 dark:text-amber-400 font-bold text-[9px]"
-                : "text-emerald-600 dark:text-emerald-400 font-medium text-[9px]";
+                ? "text-amber-600 dark:text-amber-400 font-bold text-xs"
+                : "text-emerald-600 dark:text-emerald-400 font-medium text-xs";
           }
 
           return (
-            <div className={`text-[9px] mt-0.5 whitespace-nowrap leading-none ${runRateColor}`}>
+            <div className={`text-xs mt-0.5 whitespace-nowrap leading-none ${runRateColor}`}>
               {runRateText}
             </div>
           );
@@ -5531,11 +5581,11 @@ function VariantMobileCard({
       className={`rounded-xl border p-4 space-y-3.5 shadow-sm transition-all bg-background ${isSelected ? "border-primary bg-primary/5/10" : "border-border"}`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 border-b border-border/50 pb-2.5">
+      <div className="flex items-center justify-between gap-2 border-b border-border-subtle pb-2.5">
         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
           <input
             type="checkbox"
-            className="h-4.5 w-4.5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer transition-all"
+            className="h-4.5 w-4.5 rounded border-input text-primary focus:ring-primary cursor-pointer transition-all"
             checked={isSelected}
             onChange={onToggleSelect}
           />
@@ -5543,17 +5593,17 @@ function VariantMobileCard({
             {[v.size, v.color, v.fabric].some(Boolean) ? (
               <>
                 {v.size && (
-                  <span className="inline-flex items-center bg-primary/5 text-primary text-[10px] font-bold px-1.5 py-0.5 border border-primary/10 rounded-sm">
+                  <span className="inline-flex items-center bg-primary/5 text-primary text-xs font-bold px-1.5 py-0.5 border border-primary/10 rounded-sm">
                     {v.size} {v.size_unit || ""}
                   </span>
                 )}
                 {v.color && (
-                  <span className="inline-flex items-center bg-slate-100 text-slate-800 text-[10px] font-bold px-1.5 py-0.5 border border-slate-200 rounded-sm">
+                  <span className="inline-flex items-center bg-muted text-foreground text-xs font-bold px-1.5 py-0.5 border border-border rounded-sm">
                     {v.color}
                   </span>
                 )}
                 {v.fabric && (
-                  <span className="inline-flex items-center bg-zinc-100 text-zinc-800 text-[10px] font-bold px-1.5 py-0.5 border border-zinc-200 rounded-sm">
+                  <span className="inline-flex items-center bg-muted text-foreground text-xs font-bold px-1.5 py-0.5 border border-border rounded-sm">
                     {v.fabric}
                   </span>
                 )}
@@ -5581,7 +5631,7 @@ function VariantMobileCard({
       >
         <div>
           <div className="flex items-center gap-1">
-            <Label className="text-[10px] font-black uppercase text-muted-foreground/85">
+            <Label className="text-xs font-black uppercase text-muted-foreground">
               {mainLabel}
             </Label>
             <TooltipProvider delayDuration={200}>
@@ -5608,7 +5658,7 @@ function VariantMobileCard({
         </div>
         <div>
           <div className="flex items-center gap-1">
-            <Label className="text-[10px] font-black uppercase text-muted-foreground/85">
+            <Label className="text-xs font-black uppercase text-muted-foreground">
               {incLabel}
             </Label>
             <TooltipProvider delayDuration={200}>
@@ -5636,7 +5686,7 @@ function VariantMobileCard({
       </div>
 
       <details
-        className="group rounded-xl border border-border/60 bg-muted/15"
+        className="group rounded-xl border border-border-subtle bg-muted/15"
         onClick={(e) => e.stopPropagation()}
       >
         <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between px-3 py-2 text-xs font-bold [&::-webkit-details-marker]:hidden">
@@ -5646,11 +5696,11 @@ function VariantMobileCard({
             {isAr ? "إغلاق" : "Close"}
           </span>
         </summary>
-        <div className="grid grid-cols-2 gap-3 border-t border-border/50 p-3">
+        <div className="grid grid-cols-2 gap-3 border-t border-border-subtle p-3">
           {/* Inherited cost and optional sale price */}
           {canViewFinancials && (
             <div>
-              <Label className="text-[10px] font-black uppercase text-muted-foreground/85">
+              <Label className="text-xs font-black uppercase text-muted-foreground">
                 {t("inventory.cost")}
               </Label>
               <div className="mt-1">
@@ -5665,7 +5715,7 @@ function VariantMobileCard({
             </div>
           )}
           <div>
-            <Label className="text-[10px] font-black uppercase text-muted-foreground/85">
+            <Label className="text-xs font-black uppercase text-muted-foreground">
               {isAr ? "السعر اللي يدفعه العميل" : "Customer Price"}
             </Label>
             <div className="mt-1">
@@ -5683,7 +5733,7 @@ function VariantMobileCard({
 
           {/* Dynamic image picker and regular price */}
           <div>
-            <Label className="text-[10px] font-black uppercase text-muted-foreground/85">
+            <Label className="text-xs font-black uppercase text-muted-foreground">
               {isAr ? "صورة المتغير" : "Variant Image"}
             </Label>
             <div className="mt-1">
@@ -5696,7 +5746,7 @@ function VariantMobileCard({
             </div>
           </div>
           <div>
-            <Label className="text-[10px] font-black uppercase text-muted-foreground/85">
+            <Label className="text-xs font-black uppercase text-muted-foreground">
               {isAr ? "السعر العادي" : "Regular Price"}
             </Label>
             <input
@@ -5711,20 +5761,20 @@ function VariantMobileCard({
 
           {/* SKU & Barcode */}
           <div>
-            <Label className="text-[10px] font-black uppercase text-muted-foreground/85">SKU</Label>
+            <Label className="text-xs font-black uppercase text-muted-foreground">SKU</Label>
             <input
-              className="mt-1 h-9 w-full rounded-lg border border-input bg-background px-2.5 text-xs font-mono outline-none focus:ring-1 focus:ring-primary"
+              className="mt-1 h-9 w-full rounded-lg border border-input bg-background px-2.5 text-xs font-mono outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               defaultValue={v.sku ?? ""}
               onBlur={(e) => update(v, { sku: e.target.value || null })}
               placeholder="—"
             />
           </div>
           <div>
-            <Label className="text-[10px] font-black uppercase text-muted-foreground/85">
+            <Label className="text-xs font-black uppercase text-muted-foreground">
               {barcodeLabel}
             </Label>
             <input
-              className="mt-1 h-9 w-full rounded-lg border border-input bg-background px-2.5 text-xs font-mono outline-none focus:ring-1 focus:ring-primary"
+              className="mt-1 h-9 w-full rounded-lg border border-input bg-background px-2.5 text-xs font-mono outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               defaultValue={v.barcode ?? ""}
               onBlur={(e) => update(v, { barcode: e.target.value.trim() || null })}
               placeholder="—"
@@ -5734,7 +5784,7 @@ function VariantMobileCard({
       </details>
 
       {/* Summary Footer */}
-      <div className="flex items-center justify-between rounded-xl bg-secondary/25 px-4 py-3 text-xs border border-border/45 font-semibold">
+      <div className="flex items-center justify-between rounded-xl bg-secondary/25 px-4 py-3 text-xs border border-border-subtle font-semibold">
         <span>
           {t("inventory.stock")}:{" "}
           <b className="text-sm font-black">{(v.stock_main ?? 0) + (v.stock_incubator ?? 0)}</b>
@@ -5757,7 +5807,7 @@ function VariantMobileCard({
           const dailyVelocity = qtySold / daysElapsed;
 
           let runRateText = isAr ? "لا مبيعات مؤخراً" : "No recent sales";
-          let runRateColor = "text-muted-foreground/80";
+          let runRateColor = "text-muted-foreground";
 
           if (stock <= 0) {
             runRateText = isAr ? "نفد المخزون" : "Out of stock";
@@ -6155,7 +6205,7 @@ function VariantList({
             </div>
             <div className="grid grid-cols-2 gap-3.5">
               <div>
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">
                   {(isAr ? product?.variant_label_size_ar : product?.variant_label_size_en) ||
                     product?.variant_label_size_en ||
                     product?.variant_label_size_ar ||
@@ -6168,11 +6218,11 @@ function VariantList({
                 />
               </div>
               <div>
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">
                   {isAr ? "الوحدة" : "Unit"}
                 </Label>
                 <select
-                  className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2.5 text-xs outline-none focus:ring-1 focus:ring-primary"
+                  className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2.5 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   value={row.size_unit}
                   onChange={(e) => setRow({ ...row, size_unit: e.target.value })}
                 >
@@ -6184,7 +6234,7 @@ function VariantList({
                 </select>
               </div>
               <div>
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">
                   {(isAr ? product?.variant_label_color_ar : product?.variant_label_color_en) ||
                     product?.variant_label_color_en ||
                     product?.variant_label_color_ar ||
@@ -6197,7 +6247,7 @@ function VariantList({
                 />
               </div>
               <div>
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">
                   {(isAr ? product?.variant_label_fabric_ar : product?.variant_label_fabric_en) ||
                     product?.variant_label_fabric_en ||
                     product?.variant_label_fabric_ar ||
@@ -6210,7 +6260,7 @@ function VariantList({
                 />
               </div>
               <div>
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">
                   {t("inventory.sku")}
                 </Label>
                 <Input
@@ -6220,7 +6270,7 @@ function VariantList({
                 />
               </div>
               <div>
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">
                   {barcodeLabel}
                 </Label>
                 <Input
@@ -6231,7 +6281,7 @@ function VariantList({
               </div>
               {canViewFinancials && (
                 <div>
-                  <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">
                     {t("inventory.cost")}
                   </Label>
                   <Input
@@ -6244,7 +6294,7 @@ function VariantList({
                 </div>
               )}
               <div>
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">
                   {isAr ? "السعر اللي يدفعه العميل" : "Customer Price"}
                 </Label>
                 <Input
@@ -6257,7 +6307,7 @@ function VariantList({
                 />
               </div>
               <div>
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                <Label className="text-xs font-bold text-muted-foreground uppercase">
                   {isAr ? "السعر الأساسي للمنتج" : "Base Price"}
                 </Label>
                 <Input
@@ -6271,7 +6321,7 @@ function VariantList({
               </div>
               <div>
                 <div className="flex items-center gap-1">
-                  <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">
                     {mainLabel}
                   </Label>
                   <TooltipProvider delayDuration={200}>
@@ -6296,7 +6346,7 @@ function VariantList({
               </div>
               <div>
                 <div className="flex items-center gap-1">
-                  <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">
                     {incLabel}
                   </Label>
                   <TooltipProvider delayDuration={200}>
@@ -6320,7 +6370,7 @@ function VariantList({
                 />
               </div>
               <div>
-                <Label className="text-[10px] font-bold text-muted-foreground block uppercase mb-1">
+                <Label className="text-xs font-bold text-muted-foreground block uppercase mb-1">
                   {isAr ? "صورة المتغير" : "Variant Image"}
                 </Label>
                 <div className="mt-1">
@@ -6333,7 +6383,7 @@ function VariantList({
                 </div>
               </div>
             </div>
-            <div className="flex justify-end gap-2 pt-2 border-t border-border/50">
+            <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
               <Button
                 type="button"
                 variant="ghost"
@@ -6361,10 +6411,10 @@ function VariantList({
       </div>
 
       {/* Desktop Redesigned Table View */}
-      <div className="hidden w-full md:block border border-border/75 rounded-2xl shadow-2xs bg-background overflow-hidden relative">
+      <div className="hidden w-full md:block border border-border-strong rounded-2xl shadow-2xs bg-background overflow-hidden relative">
         {/* View Mode Segmented Switcher Bar */}
-        <div className="flex items-center justify-between p-2 bg-muted/30 border-b border-border/60">
-          <div className="flex items-center gap-1.5 bg-background/80 p-1 rounded-xl border border-border/50 shadow-2xs">
+        <div className="flex items-center justify-between p-2 bg-muted/30 border-b border-border-subtle">
+          <div className="flex items-center gap-1.5 bg-background/80 p-1 rounded-xl border border-border-subtle shadow-2xs">
             <button
               type="button"
               onClick={() => setViewMode("quick")}
@@ -6376,7 +6426,7 @@ function VariantList({
             >
               <Zap className="h-3.5 w-3.5" />
               <span>{isAr ? "الأسعار والمخزون السريع" : "Quick Stock & Prices"}</span>
-              <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 ms-1">
+              <span className="text-xs font-black uppercase px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 ms-1">
                 {isAr ? "بدون تمرير" : "Zero Scroll"}
               </span>
             </button>
@@ -6408,7 +6458,7 @@ function VariantList({
             </button>
           </div>
 
-          <div className="text-[11px] font-bold text-muted-foreground px-2">
+          <div className="text-xs font-bold text-muted-foreground px-2">
             {variants.length} {isAr ? "متغيرات" : "variants"}
           </div>
         </div>
@@ -6419,20 +6469,20 @@ function VariantList({
             style={{ minWidth: totalTableWidth }}
           >
             <thead>
-              <tr className="text-start text-xs uppercase tracking-wider border-b bg-muted/40 font-semibold text-muted-foreground">
+              <tr className="text-start text-xs border-b bg-muted/40 font-semibold text-muted-foreground">
                 <th
                   className="px-2 py-3 text-center align-middle"
                   style={{ width: 44, minWidth: 44 }}
                 >
                   <input
                     type="checkbox"
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer transition-all"
+                    className="h-4 w-4 rounded border-input text-primary focus:ring-primary cursor-pointer transition-all"
                     checked={isAllSelected}
                     onChange={toggleSelectAll}
                   />
                 </th>
                 <th
-                  className="px-2 py-3 text-start font-black text-[10px]"
+                  className="px-2 py-3 text-start font-black text-xs"
                   style={{ width: 270, minWidth: 260 }}
                 >
                   {(() => {
@@ -6460,7 +6510,7 @@ function VariantList({
                 </th>
                 {renderImageCol && (
                   <th
-                    className="px-2 py-3 text-center font-black text-[10px]"
+                    className="px-2 py-3 text-center font-black text-xs"
                     style={{ width: 96, minWidth: 96 }}
                   >
                     {isAr ? "الصورة" : "Image"}
@@ -6468,7 +6518,7 @@ function VariantList({
                 )}
                 {renderSkuCol && (
                   <th
-                    className="px-2 py-3 text-start font-black text-[10px]"
+                    className="px-2 py-3 text-start font-black text-xs"
                     style={{ width: 120, minWidth: 110 }}
                   >
                     {t("inventory.sku")}
@@ -6476,7 +6526,7 @@ function VariantList({
                 )}
                 {renderBarcodeCol && (
                   <th
-                    className="px-2 py-3 text-start font-black text-[10px]"
+                    className="px-2 py-3 text-start font-black text-xs"
                     style={{ width: 190, minWidth: 180 }}
                   >
                     {barcodeLabel}
@@ -6484,34 +6534,34 @@ function VariantList({
                 )}
                 {canViewFinancials && (
                   <th
-                    className="px-2 py-3 text-center font-black text-[10px]"
+                    className="px-2 py-3 text-center font-black text-xs"
                     style={{ width: 110, minWidth: 100 }}
                   >
                     {t("inventory.cost")}
                   </th>
                 )}
                 <th
-                  className="px-2 py-3 text-center font-black text-[10px]"
+                  className="px-2 py-3 text-center font-black text-xs"
                   style={{ width: 110, minWidth: 105 }}
                 >
                   {isAr ? "السعر اللي يدفعه العميل" : "Customer Price"}
                 </th>
                 <th
-                  className="px-2 py-3 text-center font-black text-[10px]"
+                  className="px-2 py-3 text-center font-black text-xs"
                   style={{ width: 110, minWidth: 105 }}
                 >
                   {isAr ? "السعر الأساسي" : "Base Price"}
                 </th>
                 {canViewFinancials && (
                   <th
-                    className="px-2 py-3 text-center font-black text-[10px]"
+                    className="px-2 py-3 text-center font-black text-xs"
                     style={{ width: 96, minWidth: 90 }}
                   >
                     {t("inventory.margin")}
                   </th>
                 )}
                 <th
-                  className="px-2 py-3 text-center font-black text-[10px]"
+                  className="px-2 py-3 text-center font-black text-xs"
                   style={{ width: 115, minWidth: 105 }}
                 >
                   <div className="inline-flex items-center justify-center gap-1">
@@ -6531,7 +6581,7 @@ function VariantList({
                   </div>
                 </th>
                 <th
-                  className="px-2 py-3 text-center font-black text-[10px]"
+                  className="px-2 py-3 text-center font-black text-xs"
                   style={{ width: 115, minWidth: 105 }}
                 >
                   <div className="inline-flex items-center justify-center gap-1">
@@ -6551,7 +6601,7 @@ function VariantList({
                   </div>
                 </th>
                 <th
-                  className="px-2 py-3 text-center font-black text-[10px]"
+                  className="px-2 py-3 text-center font-black text-xs"
                   style={{ width: 88, minWidth: 80 }}
                 >
                   {t("inventory.stock")}
@@ -6710,13 +6760,13 @@ function VariantList({
                     <td className="px-2 py-3 text-center">
                       <div className="relative inline-flex items-center w-full max-w-[100px] shrink-0">
                         <Input
-                          className="h-8 w-full bg-muted/50 pl-2 pr-7 text-center text-xs font-bold text-muted-foreground disabled:cursor-not-allowed disabled:opacity-100"
+                          className="h-8 w-full bg-muted/50 ps-2 pe-7 text-center text-xs font-bold text-muted-foreground disabled:cursor-not-allowed disabled:opacity-100"
                           type="number"
                           step="0.001"
                           value={row.cost_price}
                           disabled
                         />
-                        <span className="absolute right-2 text-[8px] font-black text-muted-foreground/50 pointer-events-none uppercase">
+                        <span className="absolute end-2 text-xs font-black text-muted-foreground pointer-events-none uppercase">
                           BHD
                         </span>
                       </div>
@@ -6727,14 +6777,14 @@ function VariantList({
                   <td className="px-2 py-3 text-center">
                     <div className="relative inline-flex items-center w-full max-w-[100px] shrink-0">
                       <Input
-                        className="h-8 w-full pl-2 pr-7 text-center text-xs font-bold"
+                        className="h-8 w-full ps-2 pe-7 text-center text-xs font-bold"
                         type="number"
                         step="0.001"
                         value={row.selling_price}
                         placeholder={String(product?.base_price ?? "0.000")}
                         onChange={(e) => setRow({ ...row, selling_price: e.target.value })}
                       />
-                      <span className="absolute right-2 text-[8px] font-black text-muted-foreground/50 pointer-events-none uppercase">
+                      <span className="absolute end-2 text-xs font-black text-muted-foreground pointer-events-none uppercase">
                         BHD
                       </span>
                     </div>
@@ -6803,7 +6853,7 @@ function VariantList({
                           e.preventDefault();
                           setAdding(false);
                         }}
-                      >
+                       aria-label={isAr ? "إغلاق" : "Close"}>
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
@@ -6829,7 +6879,7 @@ function VariantList({
                 startAdding();
               }}
             >
-              <Plus className="h-3.5 w-3.5 mr-1" /> {t("inventory.addVariant")}
+              <Plus className="h-3.5 w-3.5 me-1" /> {t("inventory.addVariant")}
             </Button>
           )}
           <BulkVariantDialog
@@ -6845,8 +6895,8 @@ function VariantList({
       {/* FLOATING BULK ACTIONS TOOLBAR */}
       {selectedIds.size > 0 && (
         <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 max-w-[95vw] overflow-x-auto bg-white/85 dark:bg-black/75 backdrop-blur-2xl backdrop-saturate-200 border border-white/50 dark:border-white/15 shadow-2xl rounded-2xl py-2.5 px-4 flex items-center gap-3 z-55 animate-in slide-in-from-bottom-5 duration-200">
-          <div className="flex items-center gap-2 border-r border-border pr-4 shrink-0">
-            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center text-[10px] text-primary-foreground font-black">
+          <div className="flex items-center gap-2 border-e border-border pe-4 shrink-0">
+            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center text-xs text-primary-foreground font-black">
               {selectedIds.size}
             </div>
             <span className="text-xs font-bold text-muted-foreground">
@@ -6896,14 +6946,14 @@ function VariantList({
               className="h-8 text-xs font-bold rounded-lg px-2.5"
               onClick={bulkDelete}
             >
-              <Trash2 className="h-3 w-3 mr-1" />
+              <Trash2 className="h-3 w-3 me-1" />
               {isAr ? "حذف" : "Delete"}
             </Button>
           </div>
 
           <button
             type="button"
-            className="p-1 rounded-md hover:bg-muted text-muted-foreground/60 transition-colors ml-2"
+            className="p-1 rounded-md hover:bg-muted text-muted-foreground transition-colors ms-2"
             onClick={() => setSelectedIds(new Set())}
           >
             <X className="h-4 w-4" />
@@ -7030,7 +7080,7 @@ function CustomizationsSection({
 
   return (
     <div className="space-y-6">
-      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6">
+      <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6">
         <h3 className="font-bold text-base mb-1">
           {isAr ? "إضافة إضافات وتخصيصات جديدة" : "Add Customization Add-ons"}
         </h3>
@@ -7063,7 +7113,7 @@ function CustomizationsSection({
           </div>
         </div>
 
-        <div className="rounded-xl border border-border/60 bg-muted/20 p-4 mb-4 space-y-3">
+        <div className="rounded-xl border border-border-subtle bg-muted/20 p-4 mb-4 space-y-3">
           <Label className="text-xs font-bold text-foreground block">
             {isAr ? "نطاق التطبيق (المنتجات المتاحة فيها هذه الإضافة):" : "Applies to Products:"}
           </Label>
@@ -7094,7 +7144,7 @@ function CustomizationsSection({
           </div>
 
           {scope === "selected" && (
-            <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
+            <div className="mt-3 pt-3 border-t border-border-subtle space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <div className="relative flex-1">
                   <Search className="absolute start-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
@@ -7128,7 +7178,7 @@ function CustomizationsSection({
                 </Button>
               </div>
 
-              <div className="max-h-48 overflow-y-auto divide-y divide-border/40 rounded-lg border border-border/60 bg-background/80 p-1">
+              <div className="max-h-48 overflow-y-auto divide-y divide-border/40 rounded-lg border border-border-subtle bg-background/80 p-1">
                 {filteredProducts.length === 0 ? (
                   <p className="text-xs text-muted-foreground p-3 text-center">
                     {isAr ? "لا توجد منتجات مطابقة" : "No matching products found"}
@@ -7155,14 +7205,14 @@ function CustomizationsSection({
                             className="h-7 w-7 rounded object-cover border border-border"
                           />
                         ) : (
-                          <div className="h-7 w-7 rounded bg-muted flex items-center justify-center text-[10px]">
+                          <div className="h-7 w-7 rounded bg-muted flex items-center justify-center text-xs">
                             📦
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium truncate">{p.name}</p>
                           {p.category && (
-                            <p className="text-[10px] text-muted-foreground">{p.category}</p>
+                            <p className="text-xs text-muted-foreground">{p.category}</p>
                           )}
                         </div>
                       </label>
@@ -7182,7 +7232,7 @@ function CustomizationsSection({
           {items.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("inventory.noAddons")}</p>
           ) : (
-            <ul className="divide-y divide-border rounded-xl border border-border/60 bg-background/50 overflow-hidden">
+            <ul className="divide-y divide-border rounded-xl border border-border-subtle bg-background/50 overflow-hidden">
               {items.map((i) => {
                 const pIds = Array.isArray(i.product_ids) ? i.product_ids : [];
                 const isAll = pIds.length === 0;
@@ -7301,7 +7351,7 @@ function CustomizationsSection({
               </button>
             </div>
 
-            <div className="max-h-60 overflow-y-auto divide-y divide-border/40 rounded-xl border border-border/60 bg-card p-1">
+            <div className="max-h-60 overflow-y-auto divide-y divide-border/40 rounded-xl border border-border-subtle bg-card p-1">
               {filteredEditProducts.length === 0 ? (
                 <p className="text-xs text-muted-foreground p-4 text-center">
                   {isAr ? "لا توجد منتجات مطابقة" : "No matching products found"}
@@ -7335,7 +7385,7 @@ function CustomizationsSection({
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium truncate">{p.name}</p>
                         {p.category && (
-                          <p className="text-[10px] text-muted-foreground">{p.category}</p>
+                          <p className="text-xs text-muted-foreground">{p.category}</p>
                         )}
                       </div>
                     </label>

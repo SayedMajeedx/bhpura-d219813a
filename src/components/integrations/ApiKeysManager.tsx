@@ -176,7 +176,7 @@ export function ApiKeysManager({ brandId }: ApiKeysManagerProps) {
                 : "Create an API key to connect your store with third-party tools, mobile apps, or Zapier."}
             </p>
             <Button onClick={() => setCreateOpen(true)} variant="outline" className="mt-4 min-h-[44px]">
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="me-2 h-4 w-4" />
               {isAr ? "إنشاء أول مفتاح" : "Create First Key"}
             </Button>
           </Card>
@@ -249,7 +249,7 @@ export function ApiKeysManager({ brandId }: ApiKeysManagerProps) {
                     }}
                     className="text-destructive hover:text-destructive hover:bg-destructive/10 min-h-[44px]"
                   >
-                    <Trash2 className="h-4 w-4 mr-1.5" />
+                    <Trash2 className="h-4 w-4 me-1.5" />
                     {isAr ? "تعطيل المفتاح" : "Revoke Key"}
                   </Button>
                 )}

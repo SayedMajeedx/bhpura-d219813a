@@ -53,7 +53,27 @@ import {
   Store,
   Ruler,
   FileText,
+  ChevronsUpDown,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -201,7 +221,7 @@ function OrderErrorBoundary({ error }: { error?: Error }) {
   const { slug } = Route.useParams();
   return (
     <div className="p-8 max-w-lg mx-auto">
-      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-8 text-center space-y-3">
+      <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-8 text-center space-y-3">
         <h2 className="text-xl font-display">Order</h2>
         <p className="text-muted-foreground">
           {error?.message || "This order could not be loaded. It may have been deleted."}
@@ -478,14 +498,14 @@ function ItemTailoringCustomizer({
               : "Customization & Tailoring Options"}
           </span>
         </div>
-        <span className="text-[11px] text-muted-foreground font-normal">
+        <span className="text-xs text-muted-foreground font-normal">
           {isAr ? "تفصيل حسب الطلب" : "Made to order"}
         </span>
       </div>
 
       {/* 📏 Fit Passport Module */}
       <div className="rounded-xl border border-border bg-card p-3.5 space-y-3 shadow-2xs">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle pb-2.5">
           <div className="flex items-center gap-2">
             <span className="grid size-7 place-items-center rounded-lg bg-primary text-primary-foreground">
               <Ruler className="size-3.5" />
@@ -496,12 +516,12 @@ function ItemTailoringCustomizer({
                   {(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.name_ar || "Fit"} Passport
                 </span>
                 {hasAppliedPassport && (
-                  <span className="rounded-full bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 text-[10px] font-semibold">
+                  <span className="rounded-full bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 text-xs font-semibold">
                     {isAr ? "مطبّق على البند" : "Applied"}
                   </span>
                 )}
               </div>
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 {isAr ? "مقاسات الخياطة والتفصيل المعتمدة" : "Standard tailoring measurements"}
               </p>
             </div>
@@ -509,7 +529,7 @@ function ItemTailoringCustomizer({
 
           <div className="flex items-center gap-2">
             {/* Profile Selector (Abaya / Dress) */}
-            <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-[11px]">
+            <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-xs">
               <button
                 type="button"
                 onClick={() => setSelectedProfile("abaya")}
@@ -535,7 +555,7 @@ function ItemTailoringCustomizer({
             </div>
 
             {/* Unit Selector (in / cm) */}
-            <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-[11px]">
+            <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-xs">
               <button
                 type="button"
                 onClick={() => setUnit("in")}
@@ -572,12 +592,12 @@ function ItemTailoringCustomizer({
             }`}
           >
             <div>
-              <p className="font-bold text-[11px]">
+              <p className="font-bold text-xs">
                 {isAr
                   ? `مقاسات العميل المحفوظة متوفرة (إصدار V${passport.version})`
                   : `Saved customer measurements available (V${passport.version})`}
               </p>
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 {passportComplete
                   ? isAr
                     ? "يمكن تطبيق المقاسات المسجلة للعميل مباشرة"
@@ -602,9 +622,9 @@ function ItemTailoringCustomizer({
 
         {/* Measurements Input Grid */}
         <div className="space-y-1.5">
-          <Label className="text-[11px] font-semibold text-foreground flex items-center justify-between">
+          <Label className="text-xs font-semibold text-foreground flex items-center justify-between">
             <span>{isAr ? "قياسات التفصيل:" : "Tailoring Measurements:"}</span>
-            <span className="text-[10px] text-muted-foreground font-normal">
+            <span className="text-xs text-muted-foreground font-normal">
               {isAr ? `الوحدة: ${unit === "in" ? "بوصة (إنش)" : "سنتيمتر"}` : `Unit: ${unit}`}
             </span>
           </Label>
@@ -613,7 +633,7 @@ function ItemTailoringCustomizer({
               const val = getMeasurementVal(key);
               return (
                 <div key={key} className="space-y-1">
-                  <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-0.5">
+                  <span className="text-xs font-medium text-muted-foreground flex items-center gap-0.5">
                     {isAr ? ar : en}
                     {req && <span className="text-destructive font-bold">*</span>}
                   </span>
@@ -627,7 +647,7 @@ function ItemTailoringCustomizer({
                       placeholder={unit}
                       className="h-8 text-xs bg-background pe-7"
                     />
-                    <span className="absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none uppercase">
+                    <span className="absolute end-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none uppercase">
                       {unit}
                     </span>
                   </div>
@@ -641,15 +661,15 @@ function ItemTailoringCustomizer({
       {/* 📝 Tailoring Notes & Workshop Instructions ("بوكس ملاحظات") */}
       <div className="rounded-xl border border-border bg-card p-3.5 space-y-1.5 shadow-2xs">
         <div className="flex items-center justify-between">
-          <Label className="text-[11px] font-bold text-foreground flex items-center gap-1.5">
+          <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
             <FileText className="h-3.5 w-3.5 text-primary" />
             <span>{isAr ? "ملاحظات وتفاصيل التفصيل والخياط:" : "Tailoring & Workshop Notes:"}</span>
           </Label>
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-xs text-muted-foreground">
             {isAr ? "تعليمات للمشغل" : "Workshop instructions"}
           </span>
         </div>
-        <p className="text-[10px] text-muted-foreground leading-relaxed">
+        <p className="text-xs text-muted-foreground leading-relaxed">
           {isAr
             ? "دوّن أي تفاصيل خاصة للخياطة (مثل: بطانة كاملة، تعديل طول الكم، خياطة مخفية، فتحة أزرار، تضييق الخصر...)"
             : "Enter any workshop instructions (e.g., full lining, specific sleeve adjustment, hidden buttons)..."}
@@ -663,7 +683,7 @@ function ItemTailoringCustomizer({
               ? "مثال: الطول 54، دوران الصدر 22، طول الكم 28، تضييق بسيط عند الخصر، بطانة كاملة، قصة كلوش..."
               : "e.g. Length 54, Chest 22, Sleeves 28, slim waist, full lining..."
           }
-          className="text-xs bg-background resize-none leading-relaxed border-border/80 focus-visible:ring-2 focus-visible:ring-ring"
+          className="text-xs bg-background resize-none leading-relaxed border-border-strong focus-visible:ring-2 focus-visible:ring-ring"
         />
       </div>
     </div>
@@ -945,7 +965,28 @@ function OrderDetail() {
       } | null;
     },
   });
-  const [phoneSearch, setPhoneSearch] = useState("");
+  const [customerPickerOpen, setCustomerPickerOpen] = useState(false);
+  const [customerSearchQuery, setCustomerSearchQuery] = useState("");
+  const [outOfStockConfirmVariant, setOutOfStockConfirmVariant] = useState<any | null>(null);
+
+  const filteredCustomers = useMemo(() => {
+    const list = customersQ.data ?? [];
+    const q = customerSearchQuery.trim().toLowerCase();
+    if (!q) return list.slice(0, 50);
+    const qDigits = q.replace(/\D/g, "");
+    return list
+      .filter((c: any) => {
+        const name = (c.name || "").toLowerCase();
+        const email = (c.email || "").toLowerCase();
+        const phone = c.phone || "";
+        const phoneDigits = phone.replace(/\D/g, "");
+        const matchesName = name.includes(q);
+        const matchesEmail = email.includes(q);
+        const matchesPhone = qDigits.length > 0 && phoneDigits.includes(qDigits);
+        return matchesName || matchesEmail || matchesPhone;
+      })
+      .slice(0, 50);
+  }, [customersQ.data, customerSearchQuery]);
   const [editingUnlocked, setEditingUnlocked] = useState(false);
   const [invoicePreviewOpen, setInvoicePreviewOpen] = useState(false);
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
@@ -1228,7 +1269,17 @@ function OrderDetail() {
       .slice(0, 35);
   }, [productSearchQuery, variantsQ.data, productsQ.data]);
 
-  const handleSelectVariantFromModal = (variant: any) => {
+  const handleSelectVariantFromModal = (variant: any, force = false) => {
+    const mainStock = Number(variant.stock_main ?? 0);
+    const incStock = Number(variant.stock_incubator ?? 0);
+    const fallbackStock = Number(variant.stock ?? variant.quantity ?? 0);
+    const totalStock = mainStock + incStock > 0 ? mainStock + incStock : fallbackStock;
+
+    if (!force && totalStock <= 0) {
+      setOutOfStockConfirmVariant(variant);
+      return;
+    }
+
     const p = (productsQ.data ?? []).find((x: any) => x.id === variant.product_id);
     const isAr = lang === "ar";
     const sizeLabel = isAr ? "المقاس" : "Size";
@@ -2203,7 +2254,7 @@ function OrderDetail() {
 
     return (
       <div className="mx-auto max-w-2xl p-6 sm:p-8">
-        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+        <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-4">
           <h1 className="text-xl font-semibold">
             {lang === "ar" ? "تعذر فتح الطلب" : "Unable to open this order"}
           </h1>
@@ -2794,7 +2845,7 @@ function OrderDetail() {
 
   const renderMobileActionBar = () => (
     <div
-      className="mt-3 flex items-center gap-2 border-t border-border/60 pt-3"
+      className="mt-3 flex items-center gap-2 border-t border-border-subtle pt-3"
       aria-label={lang === "ar" ? "إجراءات الطلب" : "Order actions"}
     >
       {!isReadOnly && (isDirty || isCreationMode) ? (
@@ -2944,7 +2995,7 @@ function OrderDetail() {
         {/* Mobile workflow navigation. Creation mode must expose customer details too. */}
         <div
           className={cn(
-            "no-print my-3 grid gap-1 rounded-2xl border border-border/70 bg-muted/60 p-1.5 shadow-2xs select-none sm:hidden",
+            "no-print my-3 grid gap-1 rounded-2xl border border-border-strong bg-muted/60 p-1.5 shadow-2xs select-none sm:hidden",
             isCreationMode ? "grid-cols-2" : "grid-cols-3",
           )}
         >
@@ -2954,7 +3005,7 @@ function OrderDetail() {
             className={cn(
               "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-extrabold transition-all touch-manipulation min-h-10",
               mobileTab === "items"
-                ? "bg-card text-foreground shadow-xs border border-border/80 font-bold"
+                ? "bg-card text-foreground shadow-xs border border-border-strong font-bold"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
@@ -2967,7 +3018,7 @@ function OrderDetail() {
             className={cn(
               "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-extrabold transition-all touch-manipulation min-h-10",
               mobileTab === "customer"
-                ? "bg-card text-foreground shadow-xs border border-border/80 font-bold"
+                ? "bg-card text-foreground shadow-xs border border-border-strong font-bold"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
@@ -2981,7 +3032,7 @@ function OrderDetail() {
               className={cn(
                 "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-extrabold transition-all touch-manipulation min-h-10",
                 mobileTab === "activity"
-                  ? "bg-card text-foreground shadow-xs border border-border/80 font-bold"
+                  ? "bg-card text-foreground shadow-xs border border-border-strong font-bold"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
@@ -2993,7 +3044,7 @@ function OrderDetail() {
 
         {/* Desktop Section Navigation Bar (≥ 768px) */}
         {!isCreationMode && (
-          <div className="no-print mb-3 hidden sm:flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border/80 bg-card/90 p-1.5 shadow-sm select-none sm:mb-6 sm:rounded-xl">
+          <div className="no-print mb-3 hidden sm:flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border-strong bg-card/90 p-1.5 shadow-sm select-none sm:mb-6 sm:rounded-xl">
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -3110,90 +3161,131 @@ function OrderDetail() {
             >
               <Card
                 id="sec-overview"
-                className="scroll-mt-24 overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-4 shadow-sm backdrop-blur-sm sm:bg-card/40 sm:p-6 sm:shadow-lg"
+                className="scroll-mt-24 overflow-hidden rounded-2xl border border-border-subtle bg-card/60 p-4 shadow-sm sm:bg-card sm:p-6 sm:shadow-lg"
               >
-                <div className="mb-4">
-                  <Label className="flex items-center gap-2">
-                    <Search className="h-3 w-3" /> {t("customers.searchByPhone")}
-                  </Label>
-                  <Input
-                    className="text-start"
-                    placeholder={t("customers.searchByPhonePh")}
-                    value={phoneSearch}
-                    onChange={(e) => {
-                      const q = e.target.value;
-                      setPhoneSearch(q);
-                      const digits = q.replace(/\D/g, "");
-                      if (digits.length < 3) return;
-                      const match = (customersQ.data ?? []).find((c: any) =>
-                        (c.phone ?? "").replace(/\D/g, "").includes(digits),
-                      );
-                      if (match) {
-                        const def =
-                          (addressesQ.data ?? []).find(
-                            (a) => a.customer_id === match.id && a.is_default,
-                          ) ?? (addressesQ.data ?? []).find((a) => a.customer_id === match.id);
-                        setOrder({
-                          ...order,
-                          customer_id: match.id,
-                          shipping_address_id: def?.id ?? null,
-                        });
-                      }
-                    }}
-                  />
-                  {phoneSearch.replace(/\D/g, "").length >= 3 &&
-                    !(customersQ.data ?? []).some((c: any) =>
-                      (c.phone ?? "").replace(/\D/g, "").includes(phoneSearch.replace(/\D/g, "")),
-                    ) && (
-                      <p className="text-xs text-muted-foreground mt-1 italic">
-                        {t("customers.noMatch")}
-                      </p>
-                    )}
-                </div>
                 <div className="grid grid-cols-1 gap-4">
                   <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <Label>{t("orderDetail.customer")}</Label>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label className="font-semibold text-sm">{t("orderDetail.customer")}</Label>
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="h-6 px-2 text-[11px] font-semibold text-primary"
+                        className="h-7 px-2.5 text-xs font-semibold text-primary"
                         onClick={() => setNewCustomerOpen(true)}
                       >
-                        <Plus className="h-3 w-3 me-1" />
+                        <Plus className="h-3.5 w-3.5 me-1" />
                         {lang === "ar" ? "زبون جديد" : "New Customer"}
                       </Button>
                     </div>
-                    <Select
-                      value={order.customer_id ?? "none"}
-                      onValueChange={(v) => {
-                        const cid = v === "none" ? null : v;
-                        const def = cid
-                          ? ((addressesQ.data ?? []).find(
-                              (a) => a.customer_id === cid && a.is_default,
-                            ) ?? (addressesQ.data ?? []).find((a) => a.customer_id === cid))
-                          : null;
-                        setOrder({
-                          ...order,
-                          customer_id: cid,
-                          shipping_address_id: def?.id ?? null,
-                        });
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">{t("orderDetail.noCustomerOption")}</SelectItem>
-                        {(customersQ.data ?? []).map((c: any) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.name}
-                            {c.phone ? ` — ${c.phone}` : ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+
+                    <Popover open={customerPickerOpen} onOpenChange={setCustomerPickerOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={customerPickerOpen}
+                          className="w-full justify-between h-10 px-3 font-normal bg-background hover:bg-muted/40"
+                        >
+                          <span className="truncate">
+                            {order.customer_id
+                              ? (() => {
+                                  const c = (customersQ.data ?? []).find(
+                                    (x: any) => x.id === order.customer_id,
+                                  );
+                                  return c
+                                    ? `${c.name}${c.phone ? ` (${c.phone})` : ""}`
+                                    : t("orderDetail.customer");
+                                })()
+                              : t("orderDetail.noCustomerOption")}
+                          </span>
+                          <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                        <Command shouldFilter={false}>
+                          <CommandInput
+                            placeholder={
+                              lang === "ar"
+                                ? "بحث بالاسم أو الهاتف أو البريد..."
+                                : "Search customer by name, phone, or email..."
+                            }
+                            value={customerSearchQuery}
+                            onValueChange={setCustomerSearchQuery}
+                          />
+                          <CommandList className="max-h-60 overflow-y-auto">
+                            <CommandEmpty className="p-3 text-center text-xs text-muted-foreground">
+                              {lang === "ar" ? "لم يتم العثور على زبائن" : "No customers found"}
+                            </CommandEmpty>
+                            <CommandGroup>
+                              <CommandItem
+                                value="none"
+                                onSelect={() => {
+                                  setOrder({
+                                    ...order,
+                                    customer_id: null,
+                                    shipping_address_id: null,
+                                  });
+                                  setCustomerPickerOpen(false);
+                                  setCustomerSearchQuery("");
+                                }}
+                                className="cursor-pointer text-xs font-medium text-muted-foreground"
+                              >
+                                <Check
+                                  className={cn(
+                                    "me-2 h-4 w-4",
+                                    !order.customer_id ? "opacity-100 text-primary" : "opacity-0",
+                                  )}
+                                />
+                                {t("orderDetail.noCustomerOption")}
+                              </CommandItem>
+                              {filteredCustomers.map((c: any) => {
+                                const isSelected = order.customer_id === c.id;
+                                return (
+                                  <CommandItem
+                                    key={c.id}
+                                    value={c.id}
+                                    onSelect={() => {
+                                      const def =
+                                        (addressesQ.data ?? []).find(
+                                          (a) => a.customer_id === c.id && a.is_default,
+                                        ) ??
+                                        (addressesQ.data ?? []).find((a) => a.customer_id === c.id);
+                                      setOrder({
+                                        ...order,
+                                        customer_id: c.id,
+                                        shipping_address_id: def?.id ?? null,
+                                      });
+                                      setCustomerPickerOpen(false);
+                                      setCustomerSearchQuery("");
+                                    }}
+                                    className="cursor-pointer text-xs py-2"
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "me-2 h-4 w-4 shrink-0",
+                                        isSelected ? "opacity-100 text-primary" : "opacity-0",
+                                      )}
+                                    />
+                                    <div className="flex flex-col min-w-0">
+                                      <span className="font-semibold text-foreground truncate">
+                                        {c.name}
+                                      </span>
+                                      {(c.phone || c.email) && (
+                                        <span className="text-xs text-muted-foreground font-mono truncate">
+                                          {[c.phone, c.email].filter(Boolean).join(" • ")}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </CommandItem>
+                                );
+                              })}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
                 {order.customer_id &&
@@ -3208,7 +3300,7 @@ function OrderDetail() {
                     const legacyLines = formatDeliveryAddress(selected, lang);
                     return (
                       <div className="mt-4 pt-4 border-t border-border text-start">
-                        <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                        <p className="text-xs text-muted-foreground mb-1">
                           {order.fulfillment_method === "digital"
                             ? lang === "ar"
                               ? "بيانات العميل"
@@ -3302,7 +3394,7 @@ function OrderDetail() {
                     <div className="mt-5 overflow-hidden rounded-xl border bg-muted/20 text-start shadow-sm">
                       <div className="flex flex-col gap-2.5 border-b bg-muted/50 px-4 py-3">
                         <div>
-                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          <p className="text-xs font-semibold text-muted-foreground">
                             {lang === "ar" ? "طريقة التسليم" : "FULFILLMENT"}
                           </p>
                           <p className="text-base font-semibold leading-tight text-foreground mt-0.5">
@@ -3394,14 +3486,14 @@ function OrderDetail() {
                                 <div className="space-y-2 pt-2 border-t">
                                   <div className="flex flex-wrap items-center justify-between gap-2">
                                     {notifiedAgo ? (
-                                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800 text-[11px] font-bold px-2.5 py-1">
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800 text-xs font-bold px-2.5 py-1">
                                         🔔{" "}
                                         {lang === "ar"
                                           ? `تم الإشعار (${notifiedAgo})`
                                           : `Notified ${notifiedAgo}`}
                                       </span>
                                     ) : (
-                                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800 text-[11px] font-bold px-2.5 py-1">
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800 text-xs font-bold px-2.5 py-1">
                                         ⏳{" "}
                                         {lang === "ar"
                                           ? "لم يتم الإشعار عبر واتساب بعد"
@@ -3643,7 +3735,7 @@ function OrderDetail() {
               <Card
                 id="sec-items"
                 className={cn(
-                  "scroll-mt-24 overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-4 shadow-sm backdrop-blur-sm sm:bg-card/40 sm:p-6 sm:shadow-lg",
+                  "scroll-mt-24 overflow-hidden rounded-2xl border border-border-subtle bg-card/60 p-4 shadow-sm  sm:bg-card sm:p-6 sm:shadow-lg",
                   mobileTab !== "items" && "hidden sm:block",
                 )}
               >
@@ -3715,10 +3807,10 @@ function OrderDetail() {
                     return (
                       <div
                         key={idx}
-                        className="space-y-3 rounded-xl border border-border/80 bg-card p-3.5 shadow-xs transition-all"
+                        className="space-y-3 rounded-xl border border-border-strong bg-card p-3.5 shadow-xs transition-all"
                       >
                         {/* Item Thumbnail & SKU Header */}
-                        <div className="flex items-center gap-3 pb-2.5 border-b border-border/60">
+                        <div className="flex items-center gap-3 pb-2.5 border-b border-border-subtle">
                           <div className="h-12 w-12 rounded-lg border bg-muted/30 overflow-hidden shrink-0 flex items-center justify-center">
                             {imageUrl ? (
                               <img
@@ -3727,7 +3819,7 @@ function OrderDetail() {
                                 className="h-full w-full object-cover"
                               />
                             ) : (
-                              <ImageIcon className="h-5 w-5 text-muted-foreground/40" />
+                              <ImageIcon className="h-5 w-5 text-muted-foreground" />
                             )}
                           </div>
                           <div className="min-w-0 flex-1">
@@ -3736,11 +3828,11 @@ function OrderDetail() {
                                 (product?.name ?? (isAr ? "منتج مخصص" : "Custom Item"))}
                             </p>
                             {sku ? (
-                              <span className="inline-flex items-center text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-muted/80 text-muted-foreground border border-border/60 mt-1">
+                              <span className="inline-flex items-center text-xs font-mono font-medium px-2 py-0.5 rounded bg-muted/80 text-muted-foreground border border-border-subtle mt-1">
                                 SKU: {sku}
                               </span>
                             ) : (
-                              <span className="text-[11px] text-muted-foreground">
+                              <span className="text-xs text-muted-foreground">
                                 {(it.custom_field_values && it.custom_field_values.length > 0) ||
                                 String(it.selected_variant?.size ?? "").includes("تفصيل")
                                   ? isAr
@@ -3759,7 +3851,7 @@ function OrderDetail() {
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="h-8 text-xs font-semibold gap-1.5 shrink-0 rounded-lg border border-border/80 touch-manipulation"
+                            className="h-8 text-xs font-semibold gap-1.5 shrink-0 rounded-lg border border-border-strong touch-manipulation"
                             onClick={() => setEditingItemSheetIdx(idx)}
                           >
                             <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
@@ -3770,12 +3862,12 @@ function OrderDetail() {
                         {/* Mobile Read-Only Compact Summary Row (< 640px) */}
                         <div className="flex sm:hidden items-center justify-between gap-2 pt-1 pb-0.5">
                           <div className="flex items-center gap-1.5 text-xs font-semibold">
-                            <span className="bg-muted/80 text-foreground px-2.5 py-1 rounded-md border border-border/60">
+                            <span className="bg-muted/80 text-foreground px-2.5 py-1 rounded-md border border-border-subtle">
                               {it.quantity} × {formatMoney(it.unit_price, currency)}
                             </span>
                           </div>
                           <div className="text-end">
-                            <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">
+                            <span className="text-xs text-muted-foreground font-semibold block">
                               {isAr ? "المجموع" : "Total"}
                             </span>
                             <span className="font-extrabold text-sm text-foreground">
@@ -3838,7 +3930,7 @@ function OrderDetail() {
                                 className="text-xs leading-snug rounded-xl resize-none"
                               />
                             ) : (
-                              <div className="text-xs font-medium text-foreground bg-muted/20 border border-border/60 rounded-lg p-2.5 min-h-[42px] flex items-center">
+                              <div className="text-xs font-medium text-foreground bg-muted/20 border border-border-subtle rounded-lg p-2.5 min-h-[42px] flex items-center">
                                 {it.description ||
                                   (isAr ? "لا يوجد وصف إضافي" : "No additional description")}
                               </div>
@@ -3846,7 +3938,7 @@ function OrderDetail() {
                           </div>
                           <div className="sm:col-span-2">
                             <Label>{t("orderDetail.qty")}</Label>
-                            <div className="flex items-center rounded-lg border border-border/80 bg-background overflow-hidden h-9 shadow-2xs mt-1">
+                            <div className="flex items-center rounded-lg border border-border-strong bg-background overflow-hidden h-9 shadow-2xs mt-1">
                               <Button
                                 type="button"
                                 variant="ghost"
@@ -3899,7 +3991,7 @@ function OrderDetail() {
                                 className="h-9 text-xs font-bold rounded-xl"
                               />
                             ) : (
-                              <div className="text-xs font-bold text-foreground bg-muted/20 border border-border/60 rounded-lg p-2.5 min-h-[42px] flex items-center">
+                              <div className="text-xs font-bold text-foreground bg-muted/20 border border-border-subtle rounded-lg p-2.5 min-h-[42px] flex items-center">
                                 {formatMoney(it.unit_price, currency)}
                               </div>
                             )}
@@ -3940,12 +4032,12 @@ function OrderDetail() {
                                 </span>
                                 <div className="flex items-center gap-2">
                                   {it.unit_cost != null && Number(it.unit_cost) > 0 ? (
-                                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-800 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">
+                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-800 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">
                                       {isAr ? "التكلفة المسجلة:" : "Cost:"}{" "}
                                       {formatMoney(it.unit_cost, currency)}
                                     </span>
                                   ) : (
-                                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-800 dark:text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-md">
+                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-800 dark:text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-md">
                                       {isAr
                                         ? "بدون تكلفة مسجلة (اضغط تعديل لإضافتها)"
                                         : "No cost set (click edit to set)"}
@@ -3977,7 +4069,7 @@ function OrderDetail() {
                                   {it.selected_variant && (
                                     <div className="flex flex-wrap gap-2">
                                       {it.selected_variant.size && (
-                                        <span className="inline-flex items-center gap-1 bg-background border border-border/80 px-2.5 py-1 rounded-lg text-[11px] font-medium text-foreground">
+                                        <span className="inline-flex items-center gap-1 bg-background border border-border-strong px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
                                           <span className="text-muted-foreground">
                                             {isAr ? "المقاس:" : "Size:"}
                                           </span>
@@ -3993,7 +4085,7 @@ function OrderDetail() {
                                         </span>
                                       )}
                                       {it.selected_variant.color && (
-                                        <span className="inline-flex items-center gap-1.5 bg-background border border-border/80 px-2.5 py-1 rounded-lg text-[11px] font-medium text-foreground">
+                                        <span className="inline-flex items-center gap-1.5 bg-background border border-border-strong px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
                                           <span className="text-muted-foreground">
                                             {isAr ? "اللون:" : "Color:"}
                                           </span>
@@ -4001,7 +4093,7 @@ function OrderDetail() {
                                         </span>
                                       )}
                                       {it.selected_variant.fabric && (
-                                        <span className="inline-flex items-center gap-1 bg-background border border-border/80 px-2.5 py-1 rounded-lg text-[11px] font-medium text-foreground">
+                                        <span className="inline-flex items-center gap-1 bg-background border border-border-strong px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
                                           <span className="text-muted-foreground">
                                             {isAr ? "القماش:" : "Fabric:"}
                                           </span>
@@ -4011,9 +4103,9 @@ function OrderDetail() {
                                     </div>
                                   )}
                                   {it.custom_field_values && it.custom_field_values.length > 0 && (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 pt-1 border-t border-border/50">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 pt-1 border-t border-border-subtle">
                                       {it.custom_field_values.map((cf, i) => (
-                                        <div key={i} className="text-[11px]">
+                                        <div key={i} className="text-xs">
                                           <span className="font-bold text-muted-foreground">
                                             {isAr
                                               ? cf.label_ar || cf.label_en || cf.key
@@ -4141,8 +4233,8 @@ function OrderDetail() {
                           open={editingItemSheetIdx === idx}
                           onOpenChange={(open) => setEditingItemSheetIdx(open ? idx : null)}
                         >
-                          <DialogContent className="sm:max-w-[560px] w-[95vw] rounded-2xl p-6 font-sans border border-border/80 bg-card shadow-2xl space-y-5">
-                            <DialogHeader className="text-start pb-3 border-b border-border/60 pe-8 ps-0 space-y-1">
+                          <DialogContent className="sm:max-w-[560px] w-[95vw] rounded-2xl p-6 font-sans border border-border-strong bg-card shadow-2xl space-y-5">
+                            <DialogHeader className="text-start pb-3 border-b border-border-subtle pe-8 ps-0 space-y-1">
                               <DialogTitle className="text-lg font-extrabold text-foreground flex items-center gap-2">
                                 <Pencil className="h-4.5 w-4.5 text-primary shrink-0" />
                                 <span>{isAr ? "تعديل المنتج" : "Edit Product"}</span>
@@ -4225,7 +4317,7 @@ function OrderDetail() {
                                           quantity: Math.max(1, Number(it.quantity || 1) - 1),
                                         })
                                       }
-                                    >
+                                     aria-label={isAr ? "إنقاص" : "Decrease"}>
                                       <Minus className="h-4 w-4" />
                                     </Button>
                                     <Input
@@ -4249,7 +4341,7 @@ function OrderDetail() {
                                           quantity: Number(it.quantity || 1) + 1,
                                         })
                                       }
-                                    >
+                                     aria-label={isAr ? "إضافة" : "Add"}>
                                       <Plus className="h-4 w-4" />
                                     </Button>
                                   </div>
@@ -4291,7 +4383,7 @@ function OrderDetail() {
                               </div>
 
                               {/* Made-To-Order & Tailoring Specs Customizer */}
-                              <div className="pt-2 border-t border-border/60">
+                              <div className="pt-2 border-t border-border-subtle">
                                 <ItemTailoringCustomizer
                                   item={it}
                                   isAr={isAr}
@@ -4303,7 +4395,7 @@ function OrderDetail() {
                               </div>
                             </div>
 
-                            <DialogFooter className="flex flex-row justify-end items-center gap-2.5 pt-3 border-t border-border/60">
+                            <DialogFooter className="flex flex-row justify-end items-center gap-2.5 pt-3 border-t border-border-subtle">
                               <Button
                                 type="button"
                                 variant="outline"
@@ -4344,7 +4436,7 @@ function OrderDetail() {
               </div>
               <Card
                 className={cn(
-                  "overflow-hidden border border-border/60 shadow-xs rounded-2xl bg-card p-4 space-y-4",
+                  "overflow-hidden border border-border-subtle shadow-xs rounded-2xl bg-card p-4 space-y-4",
                   mobileTab !== "items" && "hidden sm:block",
                 )}
               >
@@ -4486,10 +4578,10 @@ function OrderDetail() {
                   </div>
                 )}
                 {/* Consolidated Financial Card Header with Toggle Button */}
-                <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
+                <div className="flex items-center justify-between border-b border-border-subtle pb-2.5">
                   <div className="flex items-center gap-2">
                     <CreditCard className="h-4 w-4 text-primary" />
-                    <span className="text-xs font-bold uppercase tracking-wider text-foreground">
+                    <span className="text-xs font-semibold text-foreground">
                       {lang === "ar" ? "الملخص المالي والرسوم" : "Financial Summary & Ledger"}
                     </span>
                   </div>
@@ -4499,7 +4591,7 @@ function OrderDetail() {
                       variant={isEditingFees ? "secondary" : "outline"}
                       size="sm"
                       onClick={() => setIsEditingFees(!isEditingFees)}
-                      className="h-7 px-2.5 text-xs font-bold rounded-xl gap-1.5 border-border/80"
+                      className="h-7 px-2.5 text-xs font-bold rounded-xl gap-1.5 border-border-strong"
                     >
                       <Pencil className="h-3 w-3" />
                       <span>
@@ -4518,7 +4610,7 @@ function OrderDetail() {
                 {/* Integrated Order & Payment Channel Summary Strip */}
                 <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted/40 p-2.5 text-xs">
                   <div>
-                    <span className="text-[11px] text-muted-foreground block font-medium">
+                    <span className="text-xs text-muted-foreground block font-medium">
                       {t("orderDetail.orderDate")}
                     </span>
                     <span className="font-bold text-foreground">
@@ -4527,13 +4619,13 @@ function OrderDetail() {
                   </div>
                   <div>
                     <div className="flex items-center justify-between gap-1">
-                      <span className="text-[11px] text-muted-foreground block font-medium">
+                      <span className="text-xs text-muted-foreground block font-medium">
                         {t("orderDetail.paymentMethod")}
                       </span>
                       <button
                         type="button"
                         onClick={() => setManagePaymentOpen(true)}
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline focus-visible:outline-none cursor-pointer"
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline focus-visible:outline-none cursor-pointer"
                         title={lang === "ar" ? "تعديل طريقة الدفع" : "Edit payment method"}
                       >
                         <Pencil className="h-2.5 w-2.5 shrink-0" />
@@ -4546,7 +4638,7 @@ function OrderDetail() {
                     </span>
                   </div>
                   {getPaymentGatewayReference(order) && (
-                    <div className="col-span-2 border-t border-border/40 pt-1.5 flex items-center justify-between font-mono text-[11px]">
+                    <div className="col-span-2 border-t border-border-subtle pt-1.5 flex items-center justify-between font-mono text-xs">
                       <span className="text-muted-foreground">Gateway Ref:</span>
                       <span className="font-bold text-foreground truncate max-w-[200px]">
                         {getPaymentGatewayReference(order)}
@@ -4578,6 +4670,8 @@ function OrderDetail() {
                             className="h-6 w-6 shrink-0"
                             onClick={removeAdminPromo}
                             disabled={isReadOnly}
+                            aria-label={lang === "ar" ? "إزالة الخصم" : "Remove discount"}
+                            title={lang === "ar" ? "إزالة الخصم" : "Remove discount"}
                           >
                             <X className="h-3.5 w-3.5" />
                           </Button>
@@ -4617,7 +4711,7 @@ function OrderDetail() {
                         <div className="flex items-center justify-between mb-1 text-xs">
                           <Label className="text-xs font-bold">{t("orderDetail.discount")}</Label>
                           {!appliedPromo && !isReadOnly && (
-                            <div className="flex items-center rounded-md border p-0.5 text-[10px] bg-background">
+                            <div className="flex items-center rounded-md border p-0.5 text-xs bg-background">
                               <button
                                 type="button"
                                 className={cn(
@@ -4672,7 +4766,7 @@ function OrderDetail() {
                               }}
                               className="h-8 text-xs font-mono"
                             />
-                            <span className="absolute right-2.5 top-2 text-xs text-muted-foreground font-bold">
+                            <span className="absolute end-2.5 top-2 text-xs text-muted-foreground font-bold">
                               %
                             </span>
                           </div>
@@ -4711,7 +4805,7 @@ function OrderDetail() {
                           {!isReadOnly && (
                             <button
                               type="button"
-                              className="text-[10px] text-primary font-bold hover:underline"
+                              className="text-xs text-primary font-bold hover:underline"
                               onClick={() => {
                                 if (Number(order.tax_rate) > 0) {
                                   setLastNonZeroTaxRate(Number(order.tax_rate));
@@ -4776,7 +4870,7 @@ function OrderDetail() {
                         {formatMoney(totals.total, currency)}
                       </span>
                       <span
-                        className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${PAYMENT_BADGE_CLASSES[paymentBadge]}`}
+                        className={`text-xs  px-2 py-0.5 rounded-full border ${PAYMENT_BADGE_CLASSES[paymentBadge]}`}
                       >
                         {t(`payStatus.${paymentBadge}`)}
                       </span>
@@ -4836,7 +4930,7 @@ function OrderDetail() {
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2 font-mono text-[11px] pt-1.5 border-t border-border/40 text-muted-foreground">
+                      <div className="grid grid-cols-2 gap-2 font-mono text-xs pt-1.5 border-t border-border-subtle text-muted-foreground">
                         <div>
                           <span>{isAr ? "تكلفة المنتجات:" : "Product Cost:"} </span>
                           <strong className="text-foreground">
@@ -4853,7 +4947,7 @@ function OrderDetail() {
 
                       <div
                         className={cn(
-                          "flex justify-between items-center text-xs font-extrabold pt-1.5 border-t border-border/40",
+                          "flex justify-between items-center text-xs font-extrabold pt-1.5 border-t border-border-subtle",
                           totals.remaining > 0
                             ? "text-amber-700 dark:text-amber-300"
                             : "text-emerald-600 dark:text-emerald-400",
@@ -4887,6 +4981,7 @@ function OrderDetail() {
               order={order}
               items={items}
               brand={brand}
+              settings={settingsQ.data}
               currency={currency}
               lang={lang}
               slug={slug}
@@ -4952,14 +5047,14 @@ function OrderDetail() {
             mobileTab !== "activity" && "hidden sm:block",
           )}
         >
-          <details className="group overflow-hidden rounded-2xl border border-border/60 bg-card/60 shadow-sm sm:hidden">
+          <details className="group overflow-hidden rounded-2xl border border-border-subtle bg-card/60 shadow-sm sm:hidden">
             <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-bold marker:content-none">
               <span>{lang === "ar" ? "سجل النشاطات" : "Activity history"}</span>
               <span className="text-lg text-muted-foreground transition-transform group-open:rotate-45">
                 +
               </span>
             </summary>
-            <div className="border-t border-border/60 p-4">
+            <div className="border-t border-border-subtle p-4">
               <ActivityLogList orderId={order.id} scope="order" brandId={brand.id} />
             </div>
           </details>
@@ -5060,7 +5155,7 @@ function OrderDetail() {
             </DialogHeader>
             <div className="p-4 space-y-3">
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute start-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   autoFocus
                   placeholder={
@@ -5075,7 +5170,7 @@ function OrderDetail() {
                 {productSearchQuery && (
                   <button
                     type="button"
-                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                    className="absolute end-3 top-3 text-muted-foreground hover:text-foreground"
                     onClick={() => setProductSearchQuery("")}
                   >
                     <X className="h-4 w-4" />
@@ -5121,7 +5216,7 @@ function OrderDetail() {
                     return (
                       <div
                         key={v.id}
-                        className="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-border/70 hover:border-primary/60 hover:bg-primary/5 cursor-pointer transition-all"
+                        className="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-border-strong hover:border-primary/60 hover:bg-primary/5 cursor-pointer transition-all"
                         onClick={() => handleSelectVariantFromModal(v)}
                       >
                         <div className="flex items-center gap-3 min-w-0">
@@ -5129,16 +5224,16 @@ function OrderDetail() {
                             {img ? (
                               <img src={img} alt={title} className="h-full w-full object-cover" />
                             ) : (
-                              <ImageIcon className="h-5 w-5 text-muted-foreground/30" />
+                              <ImageIcon className="h-5 w-5 text-muted-foreground" />
                             )}
                           </div>
                           <div className="min-w-0">
                             <p className="font-semibold text-xs sm:text-sm text-foreground truncate">
                               {title}
                             </p>
-                            <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-[11px] text-muted-foreground">
+                            <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
                               {sku && (
-                                <span className="font-mono bg-muted/80 px-1.5 py-0.5 rounded text-[10px]">
+                                <span className="font-mono bg-muted/80 px-1.5 py-0.5 rounded text-xs">
                                   {sku}
                                 </span>
                               )}
@@ -5155,7 +5250,7 @@ function OrderDetail() {
                           </p>
                           <span
                             className={cn(
-                              "text-[10px] font-semibold px-1.5 py-0.5 rounded inline-block mt-0.5",
+                              "text-xs font-semibold px-1.5 py-0.5 rounded inline-block mt-0.5",
                               totalStock > 0
                                 ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
                                 : "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300",
@@ -5176,6 +5271,43 @@ function OrderDetail() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Out-of-stock Variant Confirmation Dialog */}
+        <AlertDialog
+          open={Boolean(outOfStockConfirmVariant)}
+          onOpenChange={(open) => {
+            if (!open) setOutOfStockConfirmVariant(null);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {lang === "ar" ? "تنبيه: الصنف نافد من المخزون" : "Notice: Item is Out of Stock"}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {lang === "ar"
+                  ? "هذا الصنف رصيده الحالي 0 في المخزون. هل ترغب في إضافته إلى الطلب على أي حال؟"
+                  : "This item currently has 0 units in stock. Do you want to add it to the order anyway?"}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setOutOfStockConfirmVariant(null)}>
+                {lang === "ar" ? "إلغاء" : "Cancel"}
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => {
+                  if (outOfStockConfirmVariant) {
+                    handleSelectVariantFromModal(outOfStockConfirmVariant, true);
+                    setOutOfStockConfirmVariant(null);
+                  }
+                }}
+              >
+                {lang === "ar" ? "إضافة على أي حال" : "Add Anyway"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Inline New Customer Dialog */}
         <Dialog open={newCustomerOpen} onOpenChange={setNewCustomerOpen}>
@@ -5221,7 +5353,7 @@ function OrderDetail() {
                     {lang === "ar" ? "البريد الإلكتروني" : "Email Address"}
                   </Label>
                   <Input
-                    className="h-11 mt-1 text-sm text-left"
+                    className="h-11 mt-1 text-sm text-start"
                     dir="ltr"
                     type="email"
                     placeholder="ali@example.com"
@@ -5232,10 +5364,10 @@ function OrderDetail() {
               </div>
               <div className="border-t pt-3 space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <Label className="text-xs font-semibold text-muted-foreground">
                     {lang === "ar" ? "عنوان التوصيل الافتراضي" : "Default Delivery Address"}
                   </Label>
-                  <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                  <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
                     {lang === "ar" ? "اختياري" : "Optional"}
                   </span>
                 </div>
@@ -5557,9 +5689,9 @@ function ResendConfirmationEmailButton({
         title={title}
       >
         {sending ? (
-          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          <Loader2 className="h-4 w-4 me-2 animate-spin" />
         ) : (
-          <Mail className={`h-4 w-4 mr-2 ${color}`} />
+          <Mail className={`h-4 w-4 me-2 ${color}`} />
         )}
         {label}
       </DropdownMenuItem>
@@ -5569,9 +5701,9 @@ function ResendConfirmationEmailButton({
   return (
     <Button variant="outline" onClick={onClick} disabled={sending} title={title}>
       {sending ? (
-        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+        <Loader2 className="h-4 w-4 me-2 animate-spin" />
       ) : (
-        <Mail className={`h-4 w-4 mr-2 ${color}`} />
+        <Mail className={`h-4 w-4 me-2 ${color}`} />
       )}
       {label}
     </Button>

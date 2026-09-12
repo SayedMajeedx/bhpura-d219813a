@@ -174,7 +174,7 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
 
       {/* Endpoints List */}
       <div className="space-y-4">
-        <h4 className="text-sm font-semibold text-foreground uppercase tracking-wider">
+        <h4 className="text-sm font-semibold text-foreground">
           {isAr ? "الروابط المسجلة" : "Configured Endpoints"} ({endpoints.length})
         </h4>
 
@@ -196,7 +196,7 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
                 : "Register an HTTPS endpoint to automatically receive webhook dispatches."}
             </p>
             <Button onClick={() => setCreateOpen(true)} variant="outline" className="mt-4 min-h-[44px]">
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="me-2 h-4 w-4" />
               {isAr ? "إضافة أول رابط" : "Add Endpoint"}
             </Button>
           </Card>
@@ -214,7 +214,7 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
                         </Badge>
                         {ep.consecutive_failures > 0 && (
                           <Badge variant="outline" className="text-xs text-amber-500 border-amber-500/30">
-                            <AlertOctagon className="h-3 w-3 mr-1" />
+                            <AlertOctagon className="h-3 w-3 me-1" />
                             {ep.consecutive_failures} {isAr ? "فشل متتالي" : "consecutive failures"}
                           </Badge>
                         )}
@@ -252,7 +252,7 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
 
                   {/* Subscribed Events */}
                   <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-border">
-                    <span className="text-xs font-semibold text-muted-foreground mr-1">
+                    <span className="text-xs font-semibold text-muted-foreground me-1">
                       {isAr ? "الأحداث المشتركة:" : "Subscribed:"}
                     </span>
                     {ep.subscribed_events.map((ev) => (
@@ -296,8 +296,8 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
           </div>
         ) : (
           <div className="border border-border rounded-lg overflow-x-auto bg-card">
-            <table className="w-full text-xs text-left rtl:text-right">
-              <thead className="bg-muted text-muted-foreground uppercase text-[11px] font-semibold">
+            <table className="w-full text-xs text-start rtl:text-end">
+              <thead className="bg-muted text-muted-foreground uppercase text-xs font-semibold">
                 <tr>
                   <th className="px-4 py-3">{isAr ? "الحدث" : "Event"}</th>
                   <th className="px-4 py-3">{isAr ? "الحالة" : "Status"}</th>
@@ -331,7 +331,7 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
                         {log.response_status ? (
                           <Badge
                             variant={log.response_status < 300 ? "default" : "destructive"}
-                            className="text-[10px] px-1.5 py-0"
+                            className="text-xs px-1.5 py-0"
                           >
                             {log.response_status}
                           </Badge>

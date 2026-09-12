@@ -279,7 +279,7 @@ function OnboardPage() {
       className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/20 flex flex-col justify-between"
     >
       {/* 1. Minimalist Header */}
-      <header className="border-b border-border/60 bg-background/80 backdrop-blur sticky top-0 z-30">
+      <header className="border-b border-border-subtle bg-background/80 backdrop-blur sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link to="/" dir="ltr" className="flex items-center gap-2.5 group">
             <img
@@ -287,9 +287,9 @@ function OnboardPage() {
               alt="Boutq"
               className="size-8 rounded-xl shadow-sm object-contain"
             />
-            <div className="flex flex-col text-left">
+            <div className="flex flex-col text-start">
               <span className="font-black text-sm tracking-widest text-foreground font-mono leading-none">BOUTQ</span>
-              <span className="text-[9px] font-bold text-amber-600 dark:text-amber-500 tracking-widest leading-none mt-1">STORE • OS</span>
+              <span className="text-xs font-bold text-amber-600 dark:text-amber-500 tracking-widest leading-none mt-1">STORE • OS</span>
             </div>
           </Link>
 
@@ -361,7 +361,7 @@ function OnboardPage() {
                 <p className="text-xs font-bold text-foreground">
                   {isAr ? "شاهد تجربة حية لمتجرك" : "View Live Boutique Demo"}
                 </p>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {isAr ? "تصفح المنتجات والسلة كما يراها عميلك" : "Browse products & test the cart"}
                 </p>
               </div>
@@ -434,7 +434,7 @@ function OnboardPage() {
                           setSlug(transliterated);
                         }
                       }}
-                      className="h-10 text-xs placeholder:text-muted-foreground/35 placeholder:font-normal bg-background"
+                      className="h-10 text-xs placeholder:text-muted-foreground placeholder:font-normal bg-background"
                       autoComplete="off"
                       required
                     />
@@ -447,12 +447,12 @@ function OnboardPage() {
                         {isAr ? "رابط المتجر" : "Store Link"} *
                       </Label>
                       {slugStatus === "available" && (
-                        <span className="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
+                        <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">
                           <Check className="size-3" /> {isAr ? "متاح" : "Available"}
                         </span>
                       )}
                       {slugStatus === "taken" && (
-                        <span className="text-[11px] text-destructive font-medium">
+                        <span className="text-xs text-destructive font-medium">
                           {isAr ? "محجوز مسبقاً" : "Taken"}
                         </span>
                       )}
@@ -477,7 +477,7 @@ function OnboardPage() {
                           }
                           setSlug(raw.toLowerCase().replace(/[^a-z0-9-]/g, ""));
                         }}
-                        className="flex-1 min-w-0 bg-transparent px-3 text-xs text-foreground placeholder:text-muted-foreground/35 placeholder:font-normal focus:outline-none font-mono"
+                        className="flex-1 min-w-0 bg-transparent px-3 text-xs text-foreground placeholder:text-muted-foreground placeholder:font-normal focus:outline-none font-mono"
                         autoComplete="off"
                         required
                       />
@@ -488,13 +488,13 @@ function OnboardPage() {
                         .boutq.store
                       </span>
                     </div>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       {isAr
                         ? "يُقترح تلقائياً من اسم متجرك بحروف إنجليزية (مثال: dar-alanaqa)، ويمكنك تعديله."
                         : "Auto-suggested from your boutique name in English letters (e.g. dar-alanaqa)."}
                     </p>
                     {slugArabicWarning && (
-                      <p className="text-[11px] text-amber-600 dark:text-amber-500 font-medium">
+                      <p className="text-xs text-amber-600 dark:text-amber-500 font-medium">
                         {isAr
                           ? "تنبيه: الرابط يقبل الحروف الإنجليزية فقط (a-z والأرقام)."
                           : "Note: Store links only support English letters (a-z) and numbers."}
@@ -514,7 +514,7 @@ function OnboardPage() {
                       placeholder={isAr ? "الاسم الكامل" : "Your name"}
                       value={ownerName}
                       onChange={(e) => setOwnerName(e.target.value)}
-                      className="h-10 text-xs placeholder:text-muted-foreground/35 placeholder:font-normal bg-background"
+                      className="h-10 text-xs placeholder:text-muted-foreground placeholder:font-normal bg-background"
                       autoComplete="name"
                       required
                     />
@@ -542,7 +542,7 @@ function OnboardPage() {
                         placeholder="39955508"
                         value={contactNumber}
                         onChange={(e) => setContactNumber(e.target.value)}
-                        className="flex-1 min-w-0 bg-transparent px-3 text-xs text-foreground placeholder:text-muted-foreground/35 placeholder:font-normal focus:outline-none font-mono"
+                        className="flex-1 min-w-0 bg-transparent px-3 text-xs text-foreground placeholder:text-muted-foreground placeholder:font-normal focus:outline-none font-mono"
                         autoComplete="tel"
                         required
                       />
@@ -563,7 +563,7 @@ function OnboardPage() {
                       placeholder="name@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="h-10 text-xs placeholder:text-muted-foreground/35 placeholder:font-normal bg-background text-left"
+                      className="h-10 text-xs placeholder:text-muted-foreground placeholder:font-normal bg-background text-start"
                       autoComplete="email"
                       required
                     />
@@ -583,8 +583,8 @@ function OnboardPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className={cn(
-                          "h-10 text-xs rounded-xl pe-10 placeholder:text-muted-foreground/35 placeholder:font-normal bg-background font-mono",
-                          isAr ? "text-right" : "text-left",
+                          "h-10 text-xs rounded-xl pe-10 placeholder:text-muted-foreground placeholder:font-normal bg-background font-mono",
+                          isAr ? "text-end" : "text-start",
                         )}
                         autoComplete="new-password"
                         required
@@ -635,7 +635,7 @@ function OnboardPage() {
                     )}
                   </Button>
 
-                  <p className="text-[11px] text-center text-muted-foreground mt-3">
+                  <p className="text-xs text-center text-muted-foreground mt-3">
                     {isAr
                       ? "تفعيل فوري في ثوانٍ • بدون بطاقة بنكية • إمكانية الترقية أو الإلغاء في أي وقت"
                       : "Instant 5-second activation • No credit card needed • Cancel or upgrade anytime"}
@@ -662,7 +662,7 @@ function OnboardPage() {
       </div>
 
         {/* 4. Bottom Transparent Plans Overview */}
-        <div className="pt-12 border-t border-border/60 space-y-6">
+        <div className="pt-12 border-t border-border-subtle space-y-6">
           <div className="text-center space-y-2">
             <h2 className="text-xl font-bold text-foreground">
               {isAr ? "باقات اشتراك واضحة ومدروسة" : "Transparent, Predictable Plans"}
@@ -759,7 +759,7 @@ function OnboardPage() {
                   )}
                 >
                   {isPopular && (
-                    <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold bg-primary text-primary-foreground">
+                    <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-bold bg-primary text-primary-foreground">
                       {isAr ? "الأكثر شعبية" : "Most Popular"}
                     </Badge>
                   )}
@@ -770,12 +770,12 @@ function OnboardPage() {
                         {isAr ? plan.name_ar : plan.name_en}
                       </h3>
                       {plan.billing_interval_mode === "monthly_only" && (
-                        <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-md font-medium">
+                        <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-md font-medium">
                           {isAr ? "شهري فقط" : "Monthly Only"}
                         </span>
                       )}
                       {plan.billing_interval_mode === "annual_only" && (
-                        <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-md font-medium">
+                        <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-md font-medium">
                           {isAr ? "سنوي فقط" : "Annual Only"}
                         </span>
                       )}
@@ -831,7 +831,7 @@ function OnboardPage() {
       </main>
 
       {/* 5. Clean Footer */}
-      <footer className="border-t border-border/60 py-6 text-center text-xs text-muted-foreground">
+      <footer className="border-t border-border-subtle py-6 text-center text-xs text-muted-foreground">
         <p>
           {isAr
             ? "جميع الحقوق محفوظة © 2026 Boutq OS — منصة إدارة وتجارة البوتيكات الخليجية."

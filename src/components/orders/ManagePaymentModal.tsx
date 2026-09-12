@@ -138,8 +138,8 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md gap-4 rounded-2xl border-border/80 p-5 shadow-xl">
-        <DialogHeader className="space-y-1.5 border-b border-border/60 pb-3">
+      <DialogContent className="sm:max-w-md gap-4 rounded-2xl border-border-strong p-5 shadow-xl">
+        <DialogHeader className="space-y-1.5 border-b border-border-subtle pb-3">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
               <CreditCard className="h-4 w-4" />
@@ -173,7 +173,7 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
                       "flex items-center justify-center gap-1.5 rounded-xl border px-2.5 py-2 text-xs font-bold transition-all touch-manipulation",
                       isActive
                         ? `${PAYMENT_BADGE_CLASSES[st]} ring-2 ring-primary/30 shadow-2xs`
-                        : "bg-muted/30 border-border/70 text-muted-foreground hover:text-foreground hover:bg-muted/60",
+                        : "bg-muted/30 border-border-strong text-muted-foreground hover:text-foreground hover:bg-muted/60",
                     )}
                   >
                     <span>{PAYMENT_BADGE_LABEL[st]?.[lang]}</span>
@@ -189,7 +189,7 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
               {isAr ? "طريقة / وسيلة الدفع" : "Payment Channel / Method"}
             </Label>
             <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-              <SelectTrigger className="h-9 rounded-xl border-border/80 text-xs font-medium bg-background">
+              <SelectTrigger className="h-9 rounded-xl border-border-strong text-xs font-medium bg-background">
                 <SelectValue placeholder={isAr ? "اختر طريقة الدفع" : "Select Payment Method"} />
               </SelectTrigger>
               <SelectContent>
@@ -221,7 +221,7 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
               <Label className="text-xs font-bold text-foreground">
                 {isAr ? "المبلغ المستلم / العربون" : "Collected / Advance Amount"}
               </Label>
-              <span className="text-[11px] font-mono text-muted-foreground">
+              <span className="text-xs font-mono text-muted-foreground">
                 {isAr ? "الإجمالي:" : "Total:"} {formatMoney(totals.total, currency, lang)}
               </span>
             </div>
@@ -232,9 +232,9 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
                 min="0"
                 value={advanceAmount}
                 onChange={(e) => setAdvanceAmount(e.target.value)}
-                className="h-9 rounded-xl border-border/80 font-mono text-xs pe-12 bg-background font-bold text-foreground"
+                className="h-9 rounded-xl border-border-strong font-mono text-xs pe-12 bg-background font-bold text-foreground"
               />
-              <span className="absolute end-3 top-2 text-[11px] font-mono font-bold text-muted-foreground">
+              <span className="absolute end-3 top-2 text-xs font-mono font-bold text-muted-foreground">
                 {currency}
               </span>
             </div>
@@ -253,7 +253,7 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
                 }
                 value={paymentRef}
                 onChange={(e) => setPaymentRef(e.target.value)}
-                className="h-9 rounded-xl border-border/80 font-mono text-xs bg-background"
+                className="h-9 rounded-xl border-border-strong font-mono text-xs bg-background"
               />
             </div>
           </div>
@@ -263,7 +263,7 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
               <p className="font-bold">
                 {isAr ? "راجع التغييرات قبل التأكيد" : "Review changes before confirming"}
               </p>
-              <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 text-[11px]">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 text-xs">
                 <span className="truncate">
                   {PAYMENT_BADGE_LABEL[originalStatus]?.[lang]} ·{" "}
                   {formatMoney(originalAdvance, currency, lang)}
@@ -278,7 +278,7 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
           )}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0 border-t border-border/60 pt-3">
+        <DialogFooter className="gap-2 sm:gap-0 border-t border-border-subtle pt-3">
           <Button
             type="button"
             variant="outline"

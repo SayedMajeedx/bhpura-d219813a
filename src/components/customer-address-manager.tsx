@@ -217,7 +217,7 @@ export function CustomerAddressManager({
     }
 
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(isAr ? "تعذر حفظ العنوان، يرجى المحاولة مرة أخرى." : "Failed to save address. Please try again.");
     toast.success(
       editing
         ? isAr
@@ -241,7 +241,7 @@ export function CustomerAddressManager({
       .eq("id", deleting.id)
       .eq("customer_id", customerId)
       .eq("brand_id", brandId);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(isAr ? "تعذر حذف العنوان، يرجى المحاولة مرة أخرى." : "Failed to delete address. Please try again.");
 
     if (wasDefault) {
       const replacement = addresses.find((address) => address.id !== deleting.id);
@@ -252,7 +252,7 @@ export function CustomerAddressManager({
           .eq("id", replacement.id)
           .eq("customer_id", customerId)
           .eq("brand_id", brandId);
-        if (defaultError) toast.error(defaultError.message);
+        if (defaultError) toast.error(isAr ? "تعذر تعيين العنوان الافتراضي." : "Failed to set default address.");
       }
     }
 
@@ -281,8 +281,8 @@ export function CustomerAddressManager({
 
       toast.success(isAr ? "تم تعيين العنوان كعنوان افتراضي" : "Set as default address");
       onChanged();
-    } catch (e: any) {
-      toast.error(e.message || "Error updating default address");
+    } catch {
+      toast.error(isAr ? "تعذر تحديث العنوان الافتراضي، يرجى المحاولة مرة أخرى." : "Failed to update default address. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -333,8 +333,8 @@ export function CustomerAddressManager({
       } else {
         toast.info(isAr ? "لا توجد عناوين مكررة لتنظيفها" : "No duplicate addresses found");
       }
-    } catch (e: any) {
-      toast.error(e.message || "Error cleaning up duplicates");
+    } catch {
+      toast.error(isAr ? "تعذر تنظيف العناوين المكررة، يرجى المحاولة مرة أخرى." : "Failed to clean up duplicate addresses. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -401,13 +401,13 @@ export function CustomerAddressManager({
                 {/* Address Dropdown Picker if customer has multiple addresses */}
                 {addresses.length > 1 && (
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                    <label className="text-xs font-bold text-muted-foreground">
                       {isAr
                         ? `تحديد العنوان (${addresses.length})`
                         : `Select Address (${addresses.length})`}
                     </label>
                     <Select value={activeAddress.id} onValueChange={setSelectedAddressId}>
-                      <SelectTrigger className="w-full h-9 text-xs font-semibold rounded-xl bg-background border-border/80">
+                      <SelectTrigger className="w-full h-9 text-xs font-semibold rounded-xl bg-background border-border-strong">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -419,7 +419,7 @@ export function CustomerAddressManager({
                                 — {a.region || a.block || a.road}
                               </span>
                               {a.is_default && (
-                                <span className="ms-auto font-bold text-primary text-[10px]">
+                                <span className="ms-auto font-bold text-primary text-xs">
                                   ({isAr ? "الافتراضي" : "Default"})
                                 </span>
                               )}
@@ -449,13 +449,13 @@ export function CustomerAddressManager({
                         size="sm"
                         disabled={saving}
                         onClick={() => makeDefault(activeAddress.id)}
-                        className="h-7 px-2.5 text-[11px] font-bold gap-1 text-primary border-primary/30 bg-primary/5 hover:bg-primary/10 rounded-lg"
+                        className="h-7 px-2.5 text-xs font-bold gap-1 text-primary border-primary/30 bg-primary/5 hover:bg-primary/10 rounded-lg"
                       >
                         <Star className="h-3 w-3 fill-primary text-primary" />
                         <span>{isAr ? "تعيين كافتراضي" : "Set as Default"}</span>
                       </Button>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
                         <Check className="h-3 w-3" />
                         {isAr ? "العنوان الافتراضي" : "Default Address"}
                       </span>
@@ -466,7 +466,7 @@ export function CustomerAddressManager({
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="h-7 px-2 text-[11px] font-semibold gap-1 text-muted-foreground hover:text-foreground"
+                        className="h-7 px-2 text-xs font-semibold gap-1 text-muted-foreground hover:text-foreground"
                         onClick={() => startEdit(activeAddress)}
                       >
                         <Pencil className="h-3 w-3" />
@@ -476,7 +476,7 @@ export function CustomerAddressManager({
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="h-7 px-2 text-[11px] font-semibold gap-1 text-destructive hover:text-destructive"
+                        className="h-7 px-2 text-xs font-semibold gap-1 text-destructive hover:text-destructive"
                         onClick={() => setDeleting(activeAddress)}
                       >
                         <Trash2 className="h-3 w-3" />

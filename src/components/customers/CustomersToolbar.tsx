@@ -48,7 +48,7 @@ export const CustomersToolbar: React.FC<CustomersToolbarProps> = ({
   }, []);
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-2.5 rounded-xl bg-card border border-border/60 shadow-2xs">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-2.5 rounded-xl bg-card border border-border-subtle shadow-2xs">
       {/* Search Input */}
       <div className="relative min-w-0 flex-1 sm:min-w-[220px]">
         <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -59,7 +59,7 @@ export const CustomersToolbar: React.FC<CustomersToolbarProps> = ({
           placeholder={
             isAr ? "ابحث باسم العميل أو رقم الهاتف..." : "Search customer name, phone, or email..."
           }
-          className="ps-9 h-8 text-xs bg-muted/30 border-border/60 focus:bg-background"
+          className="ps-9 h-8 text-xs bg-muted/30 border-border-subtle focus:bg-background"
         />
         {search && (
           <button
@@ -86,7 +86,7 @@ export const CustomersToolbar: React.FC<CustomersToolbarProps> = ({
               <SlidersHorizontal className="h-3.5 w-3.5" />
               <span>{isAr ? "التصفية" : "Filters"}</span>
               {activeFilterCount > 0 && (
-                <span className="rounded-full bg-primary-foreground/20 px-1.5 py-0.2 text-[10px] font-bold">
+                <span className="rounded-full bg-primary-foreground/20 px-1.5 py-0.2 text-xs font-bold">
                   {activeFilterCount}
                 </span>
               )}
@@ -97,11 +97,11 @@ export const CustomersToolbar: React.FC<CustomersToolbarProps> = ({
               {isAr ? "تصفية المتقدمة" : "Advanced Filters"}
             </div>
             <div className="space-y-1">
-              <label className="text-[11px] font-medium text-muted-foreground">
+              <label className="text-xs font-medium text-muted-foreground">
                 {isAr ? "المنطقة" : "Region"}
               </label>
               <Select value={regionFilter} onValueChange={onRegionChange}>
-                <SelectTrigger className="h-8 text-xs bg-muted/30 border-border/60">
+                <SelectTrigger className="h-8 text-xs bg-muted/30 border-border-subtle">
                   <div className="flex items-center gap-1.5 truncate">
                     <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     <SelectValue />
@@ -133,7 +133,7 @@ export const CustomersToolbar: React.FC<CustomersToolbarProps> = ({
             >
               <SlidersHorizontal className="h-3.5 w-3.5" />
               {activeFilterCount > 0 && (
-                <span className="rounded-full bg-primary-foreground/20 px-1 py-0.2 text-[10px]">
+                <span className="rounded-full bg-primary-foreground/20 px-1 py-0.2 text-xs">
                   {activeFilterCount}
                 </span>
               )}
@@ -147,11 +147,11 @@ export const CustomersToolbar: React.FC<CustomersToolbarProps> = ({
             </SheetHeader>
             <div className="space-y-3">
               <div className="space-y-1">
-                <label className="text-[11px] font-medium text-muted-foreground">
+                <label className="text-xs font-medium text-muted-foreground">
                   {isAr ? "المنطقة" : "Region"}
                 </label>
                 <Select value={regionFilter} onValueChange={onRegionChange}>
-                  <SelectTrigger className="h-9 text-xs bg-muted/30 border-border/60">
+                  <SelectTrigger className="h-9 text-xs bg-muted/30 border-border-subtle">
                     <div className="flex items-center gap-1.5 truncate">
                       <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                       <SelectValue />

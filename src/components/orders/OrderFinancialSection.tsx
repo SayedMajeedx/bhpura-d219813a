@@ -29,12 +29,12 @@ export const OrderFinancialSection: React.FC<OrderFinancialSectionProps> = ({
   const isBenefit = paymentMethod.includes("benefit");
 
   return (
-    <div className="p-4 rounded-xl bg-card border border-border/60 shadow-2xs space-y-3">
-      <div className="flex items-center gap-2 border-b border-border/40 pb-3">
+    <div className="p-4 rounded-xl bg-card border border-border-subtle shadow-2xs space-y-3">
+      <div className="flex items-center gap-2 border-b border-border-subtle pb-3">
         <div className="h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
           <CreditCard className="h-4 w-4" />
         </div>
-        <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
+        <h2 className="text-xs font-semibold text-foreground">
           {isAr ? "الملخص المالي والدفع" : "Financial Breakdown"}
         </h2>
       </div>
@@ -56,7 +56,7 @@ export const OrderFinancialSection: React.FC<OrderFinancialSectionProps> = ({
             <span>-{formatMoney(discount, order.currency || "BHD", lang)}</span>
           </div>
         )}
-        <div className="pt-2 border-t border-border/60 flex justify-between font-extrabold text-sm text-foreground">
+        <div className="pt-2 border-t border-border-subtle flex justify-between font-extrabold text-sm text-foreground">
           <span>{isAr ? "الإجمالي الكلي" : "Grand Total"}</span>
           <span className="text-primary">
             {formatMoney(grandTotal, order.currency || "BHD", lang)}
@@ -66,8 +66,8 @@ export const OrderFinancialSection: React.FC<OrderFinancialSectionProps> = ({
 
       {/* BenefitPay Proof Verification Panel */}
       {isBenefit && isAdmin && onViewBenefitReceipt && (
-        <div className="pt-3 border-t border-border/40 space-y-2">
-          <div className="text-[11px] font-bold text-foreground">
+        <div className="pt-3 border-t border-border-subtle space-y-2">
+          <div className="text-xs font-bold text-foreground">
             {isAr ? "إثبات تحويل بنفت بي" : "BenefitPay Transfer Receipt"}
           </div>
           <div className="flex items-center gap-2">
@@ -75,7 +75,7 @@ export const OrderFinancialSection: React.FC<OrderFinancialSectionProps> = ({
               variant="outline"
               size="sm"
               onClick={onViewBenefitReceipt}
-              className="h-7 px-2.5 text-[10px] gap-1 font-bold"
+              className="h-7 px-2.5 text-xs gap-1 font-bold"
             >
               <Eye className="h-3 w-3" />
               {isAr ? "عرض الإيصال" : "View Receipt"}
@@ -85,7 +85,7 @@ export const OrderFinancialSection: React.FC<OrderFinancialSectionProps> = ({
                 variant="default"
                 size="sm"
                 onClick={onApproveBenefitReceipt}
-                className="h-7 px-2.5 text-[10px] gap-1 font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="h-7 px-2.5 text-xs gap-1 font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
               >
                 <CheckCircle2 className="h-3 w-3" />
                 {isAr ? "اعتماد الدفع" : "Approve"}
@@ -96,7 +96,7 @@ export const OrderFinancialSection: React.FC<OrderFinancialSectionProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={onRejectBenefitReceipt}
-                className="h-7 px-2 text-[10px] gap-1 font-bold text-rose-600 border-rose-200 hover:bg-rose-50"
+                className="h-7 px-2 text-xs gap-1 font-bold text-rose-600 border-rose-200 hover:bg-rose-50"
               >
                 <XCircle className="h-3 w-3" />
                 {isAr ? "رفض" : "Reject"}

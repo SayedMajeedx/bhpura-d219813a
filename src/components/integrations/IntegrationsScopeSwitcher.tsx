@@ -96,7 +96,7 @@ export function IntegrationsScopeSwitcher({
         {scope.badge !== undefined && (
           <span
             className={cn(
-              "rounded-full px-1.5 py-0.5 text-[10px] font-extrabold",
+              "rounded-full px-1.5 py-0.5 text-xs font-extrabold",
               isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-foreground",
             )}
           >
@@ -108,7 +108,7 @@ export function IntegrationsScopeSwitcher({
   };
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-muted/40 p-1">
+    <div className="rounded-2xl border border-border-subtle bg-muted/40 p-1">
       <div className="flex flex-wrap items-center gap-1.5">
         {primary.map((scope) => scopeButton(scope))}
         <DropdownMenu>

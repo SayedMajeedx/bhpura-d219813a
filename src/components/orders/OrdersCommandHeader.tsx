@@ -30,7 +30,7 @@ export const OrdersCommandHeader: React.FC<OrdersCommandHeaderProps> = ({
   const isAr = lang === "ar";
 
   return (
-    <header className="flex min-w-0 flex-col gap-3 rounded-xl border border-border/60 bg-card p-3.5 shadow-2xs sm:flex-row sm:items-center sm:justify-between sm:p-4">
+    <header className="flex min-w-0 flex-col gap-3 rounded-xl border border-border-subtle bg-card p-3.5 shadow-2xs sm:flex-row sm:items-center sm:justify-between sm:p-4">
       {/* Title + Icon + Context Badge */}
       <div className="flex min-w-0 items-center gap-3">
         <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
@@ -41,11 +41,11 @@ export const OrdersCommandHeader: React.FC<OrdersCommandHeaderProps> = ({
             <h1
               data-route-heading="orders"
               tabIndex={-1}
-              className="font-display text-lg sm:text-xl font-bold tracking-tight text-foreground"
+              className="text-2xl font-bold tracking-tight text-foreground"
             >
               {isAr ? "الطلبات والفواتير" : "Orders & Invoices"}
             </h1>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-primary/10 text-primary border border-primary/20">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
               {filteredCount} {isAr ? "طلب" : "orders"}
             </span>
           </div>
@@ -73,7 +73,7 @@ export const OrdersCommandHeader: React.FC<OrdersCommandHeaderProps> = ({
               <Button
                 variant="outline"
                 size="icon"
-                className="h-9 w-9 border-border/70 text-foreground hover:bg-muted"
+                className="h-9 w-9 border-border-strong text-foreground hover:bg-muted"
                 aria-label={isAr ? "خيارات إضافية" : "More options"}
               >
                 <MoreHorizontal className="h-4 w-4" />

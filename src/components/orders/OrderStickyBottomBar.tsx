@@ -139,16 +139,16 @@ export const OrderStickyBottomBar: React.FC<OrderStickyBottomBarProps> = ({
             align={isAr ? "start" : "end"}
             side="top"
             sideOffset={8}
-            className="w-56 font-sans rounded-xl p-1.5 shadow-xl border-border/80"
+            className="w-56 font-sans rounded-xl p-1.5 shadow-xl border-border-strong"
           >
-            <div className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
               {isAr ? "إجراءات إضافية" : "Secondary Actions"}
             </div>
             <DropdownMenuSeparator />
 
             {/* WhatsApp / Send Invoice */}
             {sendInvoiceDialogTrigger ? (
-              <div className="w-full text-left [&>button]:w-full [&>button]:justify-start [&>button]:h-9 [&>button]:px-2 [&>button]:text-xs [&>button]:font-medium">
+              <div className="w-full text-start [&>button]:w-full [&>button]:justify-start [&>button]:h-9 [&>button]:px-2 [&>button]:text-xs [&>button]:font-medium">
                 {sendInvoiceDialogTrigger}
               </div>
             ) : null}

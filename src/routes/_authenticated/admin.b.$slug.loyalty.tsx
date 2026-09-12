@@ -116,7 +116,7 @@ function LoyaltyDashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="p-4 border-border bg-card">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <span className="text-xs font-semibold text-muted-foreground">
               {isAr ? "النقاط النشطة المتداولة" : "Active Points Balance"}
             </span>
             <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
@@ -137,7 +137,7 @@ function LoyaltyDashboardPage() {
 
         <Card className="p-4 border-border bg-card">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <span className="text-xs font-semibold text-muted-foreground">
               {isAr ? "إجمالي النقاط المستردة" : "Total Redeemed Points"}
             </span>
             <div className="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
@@ -156,7 +156,7 @@ function LoyaltyDashboardPage() {
 
         <Card className="p-4 border-border bg-card">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <span className="text-xs font-semibold text-muted-foreground">
               {isAr ? "أعضاء برنامج الولاء" : "Loyalty Members"}
             </span>
             <div className="h-8 w-8 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center">
@@ -175,7 +175,7 @@ function LoyaltyDashboardPage() {
 
         <Card className="p-4 border-border bg-card">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <span className="text-xs font-semibold text-muted-foreground">
               {isAr ? "معدل كسب النقاط" : "Earning Multiplier"}
             </span>
             <div className="h-8 w-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">

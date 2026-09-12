@@ -18,7 +18,7 @@ export function RoutePendingSkeleton() {
         {[...Array(4)].map((_, i) => (
           <div
             key={i}
-            className="min-w-0 space-y-3 rounded-xl border border-border/40 bg-card/40 p-3 shadow-xs sm:p-4"
+            className="min-w-0 space-y-3 rounded-xl border border-border-subtle bg-card/40 p-3 shadow-xs sm:p-4"
           >
             <div className="h-3.5 w-20 bg-muted/50 rounded-xs" />
             <div className="h-6 w-28 max-w-full bg-muted/70 rounded-md" />
@@ -28,15 +28,15 @@ export function RoutePendingSkeleton() {
       </div>
 
       {/* Skeleton Content Table / List Area */}
-      <div className="min-w-0 space-y-4 rounded-xl border border-border/40 bg-card/30 p-3 sm:p-4">
-        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_5rem] gap-3 border-b border-border/30 pb-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
+      <div className="min-w-0 space-y-4 rounded-xl border border-border-subtle bg-card/30 p-3 sm:p-4">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_5rem] gap-3 border-b border-border-subtle pb-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
           <div className="h-9 w-64 max-w-full bg-muted/50 rounded-lg" />
           <div className="h-9 w-full bg-muted/40 rounded-lg" />
         </div>
         {[...Array(5)].map((_, i) => (
           <div
             key={i}
-            className="flex min-w-0 items-center justify-between gap-3 py-2 border-b border-border/20 last:border-0"
+            className="flex min-w-0 items-center justify-between gap-3 py-2 border-b border-border-subtle last:border-0"
           >
             <div className="flex min-w-0 items-center gap-3">
               <div className="h-8 w-8 rounded-lg bg-muted/60" />

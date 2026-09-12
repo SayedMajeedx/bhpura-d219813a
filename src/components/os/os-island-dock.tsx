@@ -34,8 +34,11 @@ export function OsIslandDock({
         "no-print fixed z-40 md:hidden",
         "inset-x-0 mx-auto w-fit max-w-[calc(100vw-1.5rem)]",
         "bottom-[max(0.85rem,calc(env(safe-area-inset-bottom,0px)+0.5rem))]",
-        // World-Class 2026 Seamless Frosted Glass (Enhanced Translucency)
-        "bg-background/45 dark:bg-zinc-950/45",
+        // Frosted glass over the canvas. bg-background already resolves the
+        // correct warm maroon-tinted dark value via the --background token —
+        // a dark:bg-zinc-950 override here would replace it with an
+        // unrelated cool grey, off the brand hue in dark mode.
+        "bg-background/45",
         "backdrop-blur-3xl backdrop-saturate-200",
         "border border-white/40 dark:border-white/10",
         "shadow-[0_12px_32px_-6px_rgba(0,0,0,0.1),0_4px_12px_-2px_rgba(0,0,0,0.04)]",
@@ -71,7 +74,7 @@ export function OsIslandDock({
               // Active vs Inactive state
               item.active
                 ? "bg-primary/10 dark:bg-primary/20 text-primary"
-                : "text-muted-foreground/75 hover:text-foreground hover:bg-foreground/[0.04] dark:hover:bg-white/[0.06] active:bg-foreground/[0.08] dark:active:bg-white/[0.1]",
+                : "text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04] dark:hover:bg-white/[0.06] active:bg-foreground/[0.08] dark:active:bg-white/[0.1]",
             )}
           >
             <div className="relative flex items-center justify-center">
@@ -84,7 +87,7 @@ export function OsIslandDock({
                 )}
               />
               {item.badge !== undefined && (
-                <span className="absolute -top-1 -end-2 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground shadow-xs border-2 border-background">
+                <span className="absolute -top-1 -end-2 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-xs font-bold text-destructive-foreground shadow-xs border-2 border-background">
                   {item.badge}
                 </span>
               )}
@@ -92,10 +95,10 @@ export function OsIslandDock({
 
             <span
               className={cn(
-                "text-[10px] tracking-tight leading-normal whitespace-nowrap mt-0.5 transition-colors duration-200",
+                "text-xs tracking-tight leading-normal whitespace-nowrap mt-0.5 transition-colors duration-200",
                 item.active
                   ? "font-semibold text-primary"
-                  : "font-medium text-muted-foreground/80",
+                  : "font-medium text-muted-foreground",
               )}
             >
               {item.label}

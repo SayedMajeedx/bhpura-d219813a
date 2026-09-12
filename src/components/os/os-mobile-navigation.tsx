@@ -16,14 +16,19 @@ import {
   Activity,
   Boxes,
   Fingerprint,
+  Sun,
+  Moon,
+  Monitor,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { OsMobileTabBar, type OsMobileTabItem } from "./os-mobile-tab-bar";
 import { OsIslandDock, type OsIslandDockItem } from "./os-island-dock";
 import { OsQuickActions } from "./os-quick-actions";
+import { OsThemeToggle } from "./os-theme-toggle";
 import { OsAppsHubModal } from "./os-apps-hub-modal";
 import { type AdminNavItemConfig } from "@/config/admin-navigation";
+import { useTheme } from "@/lib/theme-context";
 import { cn } from "@/lib/utils";
 
 export interface OsMobileNavigationProps {
@@ -54,6 +59,7 @@ export function OsMobileNavigation({
   onOpenChangeMobile,
 }: OsMobileNavigationProps) {
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   const [appsHubOpen, setAppsHubOpen] = React.useState(false);
 
   // Deep detail views (order detail, return detail, customer detail) require full vertical focus and hide the global dock
@@ -186,44 +192,49 @@ export function OsMobileNavigation({
   // Organize navigation items into iOS Control Center Groups
   const navGroups = React.useMemo(() => {
     if (!activeSlug && isSuperAdmin) {
+      const superItems: AdminNavItemConfig[] = [
+        {
+          id: "brands",
+          to: "/admin/brands",
+          labelEn: "Manage Brands & Tenants",
+          labelAr: "إدارة العلامات والمتاجر",
+          icon: Store,
+          category: "today",
+          section: "overview",
+        },
+        {
+          id: "requests",
+          to: "/admin/super/requests",
+          labelEn: "Tenant Requests",
+          labelAr: "طلبات الانضمام والاشتراكات",
+          icon: ClockIcon,
+          category: "today",
+          section: "overview",
+        },
+        {
+          id: "health",
+          to: "/admin/super/health",
+          labelEn: "System Health",
+          labelAr: "صحة النظام",
+          icon: Activity,
+          category: "today",
+          section: "overview",
+        },
+        {
+          id: "settings",
+          to: "/admin/super/settings",
+          labelEn: "Platform Settings",
+          labelAr: "إعدادات المنصة",
+          icon: Settings,
+          category: "today",
+          section: "overview",
+        },
+      ];
       return [
         {
           id: "super_admin",
           title: lang === "ar" ? "إدارة المنصة" : "Platform Management",
-          items: [
-            {
-              id: "brands",
-              to: "/admin/brands",
-              labelEn: "Manage Brands & Tenants",
-              labelAr: "إدارة العلامات والمتاجر",
-              icon: Store,
-              section: "overview" as const,
-            },
-            {
-              id: "requests",
-              to: "/admin/super/requests",
-              labelEn: "Tenant Requests",
-              labelAr: "طلبات الانضمام والاشتراكات",
-              icon: ClockIcon,
-              section: "overview" as const,
-            },
-            {
-              id: "health",
-              to: "/admin/super/health",
-              labelEn: "System Health",
-              labelAr: "صحة النظام",
-              icon: Activity,
-              section: "overview" as const,
-            },
-            {
-              id: "settings",
-              to: "/admin/super/settings",
-              labelEn: "Platform Settings",
-              labelAr: "إعدادات المنصة",
-              icon: Settings,
-              section: "overview" as const,
-            },
-          ],
+          items: superItems,
         },
       ];
     }
@@ -283,7 +294,7 @@ export function OsMobileNavigation({
           <SheetContent
             side={lang === "ar" ? "right" : "left"}
             hideDefaultClose
-            className="w-[85vw] sm:w-80 max-w-xs border-s border-border/80 p-0 flex flex-col bg-card dark:bg-slate-950 text-foreground shadow-2xl overflow-hidden z-50 admin-mobile-fast-transition"
+            className="w-[85vw] sm:w-80 max-w-xs border-s border-border-strong p-0 flex flex-col bg-card text-foreground shadow-2xl overflow-hidden z-50 admin-mobile-fast-transition"
           >
             {/* Ambient liquid background blur blobs */}
             <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-primary/20 blur-3xl pointer-events-none animate-pulse" />
@@ -292,15 +303,15 @@ export function OsMobileNavigation({
             <SheetTitle className="sr-only">{brandLabel}</SheetTitle>
 
             {/* iOS Style Sheet Header */}
-            <div className="p-4 sm:p-5 border-b border-border/40 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md flex items-center justify-between relative z-10">
+            <div className="p-4 sm:p-5 border-b border-border-subtle bg-card/40 backdrop-blur-md flex items-center justify-between relative z-10">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-primary/30 via-primary/20 to-amber-500/20 border border-border/40 text-primary font-heading font-black text-lg flex items-center justify-center shadow-xs shrink-0">
+                <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-primary/30 via-primary/20 to-amber-500/20 border border-border-subtle text-primary font-heading font-black text-lg flex items-center justify-center shadow-xs shrink-0">
                   {brandLabel.charAt(0)}
                 </div>
                 <div className="min-w-0">
                   <h2 className="text-base font-bold font-heading text-foreground truncate flex items-center gap-1.5">
                     <span className="truncate">{brandLabel}</span>
-                    <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25 shrink-0">
+                    <span className="text-xs font-mono uppercase px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25 shrink-0">
                       OS
                     </span>
                   </h2>
@@ -312,7 +323,7 @@ export function OsMobileNavigation({
               <SheetClose asChild>
                 <button
                   type="button"
-                  className="h-9 w-9 rounded-full bg-muted/80 hover:bg-muted text-foreground border border-border/60 flex items-center justify-center transition-transform active:scale-90 shadow-sm shrink-0"
+                  className="h-9 w-9 rounded-full bg-muted/80 hover:bg-muted text-foreground border border-border-subtle flex items-center justify-center transition-transform active:scale-90 shadow-sm shrink-0"
                   aria-label={lang === "ar" ? "إغلاق" : "Close"}
                 >
                   <X className="h-4 w-4" />
@@ -340,7 +351,7 @@ export function OsMobileNavigation({
                       <div className="text-xs font-bold font-heading">
                         {lang === "ar" ? "مركز الأدوات والتطبيقات" : "Apps & Tools Hub"}
                       </div>
-                      <div className="text-[10px] text-muted-foreground">
+                      <div className="text-xs text-muted-foreground">
                         {lang === "ar"
                           ? "استعرض وشاهد شرح وتفعيل كافة الأدوات"
                           : "Explore, guide, and manage all tools"}
@@ -357,12 +368,12 @@ export function OsMobileNavigation({
                 if (group.items.length === 0) return null;
                 return (
                   <div key={group.id} className="space-y-1.5">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 px-2 flex items-center gap-1.5">
+                    <div className="text-xs font-semibold text-muted-foreground px-2 flex items-center gap-1.5">
                       <span className="h-1.5 w-1.5 rounded-full bg-primary/60" />
                       <span>{group.title}</span>
                     </div>
 
-                    <div className="space-y-1 bg-white/30 dark:bg-slate-900/30 backdrop-blur-md rounded-2xl p-1.5 border border-border/40 shadow-2xs">
+                    <div className="space-y-1 bg-card/30 backdrop-blur-md rounded-2xl p-1.5 border border-border shadow-2xs">
                       {group.items.map((item) => {
                         const targetPath = item.to.replace("$slug", item.params?.slug ?? "");
                         const active = pathname.startsWith(targetPath);
@@ -379,7 +390,7 @@ export function OsMobileNavigation({
                               "flex items-center justify-between px-3 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 active:scale-[0.98]",
                               active
                                 ? "bg-primary text-primary-foreground font-semibold shadow-md border border-primary/30"
-                                : "text-foreground/90 hover:text-foreground hover:bg-white/40 dark:hover:bg-slate-800/40",
+                                : "text-foreground/90 hover:text-foreground hover:bg-card/40",
                             )}
                           >
                             <div className="flex items-center gap-3 min-w-0">
@@ -408,7 +419,7 @@ export function OsMobileNavigation({
             </nav>
 
             {/* iOS Liquid Control Center Footer */}
-            <div className="p-3.5 border-t border-border/40 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md space-y-2.5 relative z-10">
+            <div className="p-3.5 border-t border-border-subtle bg-card/40 backdrop-blur-md space-y-2.5 relative z-10">
               {/* Native App Tools Trigger (When in iPhone/Android Native App Wrapper) */}
               {typeof window !== "undefined" && Boolean((window as any).ReactNativeWebView) && (
                 <Button
@@ -427,36 +438,89 @@ export function OsMobileNavigation({
                 </Button>
               )}
 
-              {/* Language Segmented Pill Toggle */}
-              <div className="flex items-center justify-between bg-muted/60 p-1 rounded-2xl border border-border/40">
-                <span className="text-xs font-semibold px-3 text-muted-foreground">
-                  {lang === "ar" ? "اللغة" : "Language"}
-                </span>
-                <div className="inline-flex rounded-xl bg-background/80 p-0.5 border border-border/40 shadow-2xs">
-                  <button
+              {/* Theme / Appearance Segmented Pill Toggle */}
+              <div className="bg-muted/60 p-2 rounded-2xl border border-border space-y-1.5">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                    <Sun className="h-3.5 w-3.5" />
+                    {lang === "ar" ? "المظهر" : "Theme"}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-1 rounded-xl bg-background/80 p-0.5 border border-border shadow-2xs">
+                  <Button
                     type="button"
+                    size="sm"
+                    variant={theme === "light" ? "default" : "ghost"}
+                    onClick={() => setTheme("light")}
+                    className={cn(
+                      "h-8 px-1 text-xs font-bold rounded-lg transition-all gap-1.5 justify-center",
+                      theme !== "light" && "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <Sun className="h-3.5 w-3.5 shrink-0" />
+                    <span>{lang === "ar" ? "فاتح" : "Light"}</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={theme === "dark" ? "default" : "ghost"}
+                    onClick={() => setTheme("dark")}
+                    className={cn(
+                      "h-8 px-1 text-xs font-bold rounded-lg transition-all gap-1.5 justify-center",
+                      theme !== "dark" && "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <Moon className="h-3.5 w-3.5 shrink-0" />
+                    <span>{lang === "ar" ? "داكن" : "Dark"}</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={theme === "system" ? "default" : "ghost"}
+                    onClick={() => setTheme("system")}
+                    className={cn(
+                      "h-8 px-1 text-xs font-bold rounded-lg transition-all gap-1.5 justify-center",
+                      theme !== "system" && "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <Monitor className="h-3.5 w-3.5 shrink-0" />
+                    <span>{lang === "ar" ? "تلقائي" : "Auto"}</span>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Language Segmented Pill Toggle */}
+              <div className="bg-muted/60 p-2 rounded-2xl border border-border-subtle space-y-1.5">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-xs font-semibold text-muted-foreground">
+                    {lang === "ar" ? "اللغة" : "Language"}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-1 rounded-xl bg-background/80 p-0.5 border border-border-subtle shadow-2xs">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={lang === "en" ? "default" : "ghost"}
                     onClick={() => onSetLang("en")}
                     className={cn(
-                      "px-3 py-1 text-xs font-bold rounded-lg transition-all",
-                      lang === "en"
-                        ? "bg-primary text-primary-foreground shadow-xs"
-                        : "text-muted-foreground hover:text-foreground",
+                      "h-8 px-2 text-xs font-bold rounded-lg transition-all justify-center",
+                      lang !== "en" && "text-muted-foreground hover:text-foreground",
                     )}
                   >
                     EN
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    size="sm"
+                    variant={lang === "ar" ? "default" : "ghost"}
                     onClick={() => onSetLang("ar")}
                     className={cn(
-                      "px-3 py-1 text-xs font-bold rounded-lg transition-all",
-                      lang === "ar"
-                        ? "bg-primary text-primary-foreground shadow-xs"
-                        : "text-muted-foreground hover:text-foreground",
+                      "h-8 px-2 text-xs font-bold rounded-lg transition-all justify-center",
+                      lang !== "ar" && "text-muted-foreground hover:text-foreground",
                     )}
                   >
                     العربية
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -478,7 +542,7 @@ export function OsMobileNavigation({
             {brandLabel}
           </div>
           {currentPageLabel && (
-            <div className="truncate text-[10px] text-muted-foreground font-medium">
+            <div className="truncate text-xs text-muted-foreground font-medium">
               {currentPageLabel}
             </div>
           )}
@@ -486,6 +550,7 @@ export function OsMobileNavigation({
 
         <div className="flex items-center gap-1.5 shrink-0">
           <OsQuickActions slug={activeSlug} lang={lang} className="h-8.5 px-2 text-xs" />
+          <OsThemeToggle lang={lang} className="h-10 w-10 min-h-[44px] min-w-[44px] rounded-xl" />
           <Button
             variant="ghost"
             size="icon"
@@ -493,7 +558,7 @@ export function OsMobileNavigation({
             onClick={() => onSetLang(lang === "en" ? "ar" : "en")}
             aria-label={lang === "en" ? "تبديل إلى العربية" : "Switch to English"}
           >
-            <span className="text-[11px] font-bold uppercase">{lang === "en" ? "AR" : "EN"}</span>
+            <span className="text-xs font-bold uppercase">{lang === "en" ? "AR" : "EN"}</span>
           </Button>
           <Button
             variant="ghost"

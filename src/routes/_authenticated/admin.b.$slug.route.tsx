@@ -223,7 +223,7 @@ function BrandError() {
   const { lang } = useI18n();
   return (
     <div className="min-h-[50vh] flex items-center justify-center p-6 animate-fade-in">
-      <Card className="max-w-md w-full p-8 text-center space-y-4 shadow-lg border-border/60 rounded-2xl bg-card/80 backdrop-blur-md">
+      <Card className="max-w-md w-full p-8 text-center space-y-4 shadow-lg border-border-subtle rounded-2xl bg-card">
         <div className="h-12 w-12 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto">
           <AlertTriangle className="h-6 w-6" />
         </div>

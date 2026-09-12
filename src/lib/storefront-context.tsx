@@ -60,6 +60,7 @@ export type HeroContentSlide = {
   media_iframe_url_ar?: string;
   media_poster_url?: string;
   media_poster_url_en?: string;
+  media_poster_url_ar?: string;
   button_en: string;
   button_ar: string;
   button_href: string;
@@ -331,7 +332,11 @@ export function StorefrontProvider({
       const urlParams =
         typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
       const urlLang = urlParams?.get("lang");
+      // Declared at effect scope: the shared-cart callbacks below read this to
+      // pick a toast language, and they run after this block has returned.
+      let storedLang: string | null = null;
       if (urlLang === "en" || urlLang === "ar") {
+        storedLang = urlLang;
         setLangState(urlLang);
         try {
           localStorage.setItem(langKey, urlLang);
@@ -339,7 +344,7 @@ export function StorefrontProvider({
           /* ignore */
         }
       } else {
-        const storedLang = localStorage.getItem(langKey);
+        storedLang = localStorage.getItem(langKey);
         if (storedLang === "en" || storedLang === "ar") setLangState(storedLang);
       }
 

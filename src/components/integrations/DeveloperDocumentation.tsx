@@ -220,8 +220,8 @@ export function verifyBoutqWebhook(rawBody, signatureHeader, secret) {
           {isAr ? "فهرس نقاط النهاية (Endpoints Reference)" : "Available Endpoints Reference"}
         </h4>
         <div className="border border-border rounded-lg overflow-x-auto bg-card">
-          <table className="w-full text-xs text-left rtl:text-right">
-            <thead className="bg-muted text-muted-foreground uppercase text-[11px] font-semibold">
+          <table className="w-full text-xs text-start rtl:text-end">
+            <thead className="bg-muted text-muted-foreground uppercase text-xs font-semibold">
               <tr>
                 <th className="px-4 py-3">{isAr ? "الطريقة" : "Method"}</th>
                 <th className="px-4 py-3">{isAr ? "المسار" : "Endpoint"}</th>

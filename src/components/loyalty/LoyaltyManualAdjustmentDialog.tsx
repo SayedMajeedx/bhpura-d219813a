@@ -166,14 +166,14 @@ export function LoyaltyManualAdjustmentDialog({
           <div className="space-y-1.5">
             <Label>{isAr ? "مقدار النقاط" : "Points Amount"}</Label>
             <div className="relative">
-              <Coins className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Coins className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="number"
                 min="1"
                 step="1"
                 value={pointsAmount}
                 onChange={(e) => setPointsAmount(Number(e.target.value) || 0)}
-                className="pl-9 min-h-[44px] bg-background border-border"
+                className="ps-9 min-h-[44px] bg-background border-border"
               />
             </div>
           </div>

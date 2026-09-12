@@ -85,7 +85,7 @@ export const FULFILLMENT_STATUS_MAP: Record<string, StatusDefinition> = {
     ar: "قيد الانتظار",
     en: "On Hold",
     badgeClasses:
-      "bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-800 dark:text-slate-200",
+      "bg-muted text-muted-foreground border-border",
   },
   CANCELLED: {
     ar: "ملغى",
@@ -134,7 +134,7 @@ export const ORDER_STATUS_MAP: Record<string, StatusDefinition> = {
 
 export const FULFILLMENT_METHOD_MAP: Record<string, StatusDefinition> = {
   delivery: { ar: "توصيل للمنزل", en: "Home Delivery" },
-  pickup: { ar: "استلام", en: "Pickup" },
+  pickup: { ar: "استلام من الفرع", en: "Pickup" },
   digital: { ar: "منتج رقمي", en: "Digital Delivery" },
 };
 
@@ -210,7 +210,7 @@ export function getFulfillmentLabel(status: string | null | undefined, lang: Lan
  */
 export function getFulfillmentBadgeClasses(status: string | null | undefined): string {
   if (!status)
-    return "bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-800 dark:text-slate-200";
+    return "bg-muted text-muted-foreground border-border";
   const normalized = String(status).trim().toUpperCase();
   const def = FULFILLMENT_STATUS_MAP[normalized];
   return def?.badgeClasses || "bg-muted text-foreground border-border";
@@ -353,7 +353,7 @@ export function getFulfillmentBadgeDetails(
   // ON_HOLD / default
   return {
     label: lang === "ar" ? "قيد الانتظار" : "On Hold",
-    classes: "bg-slate-200 text-slate-800 border border-border font-semibold shadow-2xs dark:bg-slate-800 dark:text-slate-200",
+    classes: "bg-muted text-muted-foreground border border-border font-semibold shadow-2xs",
   };
 }
 

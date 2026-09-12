@@ -108,8 +108,8 @@ export function OrderQuickViewModal({
 
   return (
     <Dialog open={!!order} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto os-glass-card rounded-2xl p-6 border border-border/80 shadow-2xl">
-        <DialogHeader className="pb-3 border-b border-border/60">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto os-glass-card rounded-2xl p-6 border border-border-strong shadow-2xl">
+        <DialogHeader className="pb-3 border-b border-border-subtle">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <DialogTitle className="text-xl font-mono font-extrabold text-primary flex items-center gap-2">
@@ -147,7 +147,7 @@ export function OrderQuickViewModal({
         <div className="space-y-5 py-2">
           {/* Customer & Address Card */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-3.5 rounded-xl bg-muted/40 border border-border/60 space-y-1.5 text-xs">
+            <div className="p-3.5 rounded-xl bg-muted/40 border border-border-subtle space-y-1.5 text-xs">
               <div className="flex items-center gap-2 font-bold text-foreground">
                 <User className="h-4 w-4 text-primary shrink-0" />
                 <span>{contact.name || (isAr ? "عميل زائر" : "Guest Customer")}</span>
@@ -168,7 +168,7 @@ export function OrderQuickViewModal({
               )}
             </div>
 
-            <div className="p-3.5 rounded-xl bg-muted/40 border border-border/60 space-y-1.5 text-xs">
+            <div className="p-3.5 rounded-xl bg-muted/40 border border-border-subtle space-y-1.5 text-xs">
               <div className="flex items-center gap-2 font-bold text-foreground">
                 <MapPin className="h-4 w-4 text-amber-500 shrink-0" />
                 <span>{isAr ? "عنوان التوصيل:" : "Delivery Address:"}</span>
@@ -184,20 +184,20 @@ export function OrderQuickViewModal({
           {/* Payment & Courier Metadata Bar */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {isDelivery && (
-              <div className="p-3.5 rounded-xl bg-muted/40 border border-border/60 space-y-1 text-xs">
+              <div className="p-3.5 rounded-xl bg-muted/40 border border-border-subtle space-y-1 text-xs">
                 <div className="flex items-center gap-2 font-bold text-foreground">
                   <CreditCard className="h-4 w-4 text-emerald-500 shrink-0" />
                   <span>{isAr ? "طريقة وحالة الدفع:" : "Payment Method:"}</span>
                 </div>
                 <p className="font-semibold text-primary">{paymentMethodLabel}</p>
-                <p className="text-[11px] text-muted-foreground font-mono">
+                <p className="text-xs text-muted-foreground font-mono">
                   {isAr ? "حالة الدفع: " : "Status: "}
                   {order.payment_status || "pending"}
                 </p>
                 {isAdmin && getPaymentGatewayReference(order) && (
-                  <div className="mt-2 pt-2 border-t border-border/40">
-                    <p className="text-[10px] text-muted-foreground mb-0.5">Reference ID:</p>
-                    <p className="text-[11px] font-mono break-all">
+                  <div className="mt-2 pt-2 border-t border-border-subtle">
+                    <p className="text-xs text-muted-foreground mb-0.5">Reference ID:</p>
+                    <p className="text-xs font-mono break-all">
                       {getPaymentGatewayReference(order)}
                     </p>
                   </div>
@@ -205,7 +205,7 @@ export function OrderQuickViewModal({
               </div>
             )}
 
-            <div className="p-3.5 rounded-xl bg-muted/40 border border-border/60 space-y-1 text-xs">
+            <div className="p-3.5 rounded-xl bg-muted/40 border border-border-subtle space-y-1 text-xs">
               <div className="flex items-center gap-2 font-bold text-foreground">
                 <Truck className="h-4 w-4 text-indigo-500 shrink-0" />
                 <span>{isAr ? "مندوب التوصيل المعتمد:" : "Assigned Courier:"}</span>
@@ -219,7 +219,7 @@ export function OrderQuickViewModal({
                     <Button
                       size="xs"
                       variant="outline"
-                      className="h-6 gap-1 text-[10px] text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10"
+                      className="h-6 gap-1 text-xs text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10"
                       onClick={() => onWhatsAppCourier(order, assignedCourier)}
                     >
                       <MessageSquare className="h-3 w-3" />
@@ -247,9 +247,9 @@ export function OrderQuickViewModal({
               </span>
             </div>
 
-            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+            <div className="rounded-xl border border-border-subtle bg-card overflow-hidden">
               <table className="w-full text-xs text-start">
-                <thead className="bg-muted/50 border-b border-border/60 text-muted-foreground font-bold">
+                <thead className="bg-muted/50 border-b border-border-subtle text-muted-foreground font-bold">
                   <tr>
                     <th className="p-2.5 text-start">{isAr ? "المنتج" : "Item"}</th>
                     <th className="p-2.5 text-center">{isAr ? "الكمية" : "Qty"}</th>
@@ -308,12 +308,12 @@ export function OrderQuickViewModal({
                           <td className="p-2.5 font-semibold text-foreground">
                             <div>{itemTitle}</div>
                             {variantTitle && (
-                              <span className="text-[11px] text-muted-foreground block font-mono font-medium mt-0.5">
+                              <span className="text-xs text-muted-foreground block font-mono font-medium mt-0.5">
                                 {variantTitle}
                               </span>
                             )}
                             {customFields.length > 0 && (
-                              <div className="text-[10px] text-muted-foreground/90 mt-1 space-y-0.5">
+                              <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
                                 {customFields.map((cf: any, cfi: number) => (
                                   <div key={cfi} className="flex items-center gap-1">
                                     <span className="font-semibold">{isAr ? cf.label_ar || cf.label_en || cf.key : cf.label_en || cf.label_ar || cf.key}:</span>
@@ -387,8 +387,8 @@ export function OrderQuickViewModal({
 
             return (
               <div className="space-y-3">
-                <div className="rounded-xl border border-border/60 p-4 space-y-2 bg-card/80 text-xs shadow-2xs">
-                  <h4 className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground border-b border-border/40 pb-2">
+                <div className="rounded-xl border border-border-subtle p-4 space-y-2 bg-card/80 text-xs shadow-2xs">
+                  <h4 className="text-xs font-semibold text-muted-foreground border-b border-border-subtle pb-2">
                     {isAr ? "تفاصيل الحساب المالي للفاتورة" : "Financial Price Breakdown"}
                   </h4>
 
@@ -426,7 +426,7 @@ export function OrderQuickViewModal({
                     )}
 
                     {advancePaid > 0 && (
-                      <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 pt-1 border-t border-border/40">
+                      <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 pt-1 border-t border-border-subtle">
                         <span>
                           {isAr ? "الدفعة المقدمة (Deposit Paid):" : "Advance Paid / Deposit:"}
                         </span>
@@ -448,7 +448,7 @@ export function OrderQuickViewModal({
                     )}
                   </div>
 
-                  <div className="flex justify-between items-center text-sm font-extrabold pt-2 border-t border-border/60 text-foreground">
+                  <div className="flex justify-between items-center text-sm font-extrabold pt-2 border-t border-border-subtle text-foreground">
                     <span>{isAr ? "إجمالي الفاتورة النهائي:" : "Final Net Total:"}</span>
                     <span className="text-base text-primary font-mono font-extrabold">
                       {formatMoney(netTotal, currency, lang)}
@@ -472,7 +472,7 @@ export function OrderQuickViewModal({
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 font-mono text-[11px] pt-1.5 border-t border-border/40 text-muted-foreground">
+                  <div className="grid grid-cols-2 gap-2 font-mono text-xs pt-1.5 border-t border-border-subtle text-muted-foreground">
                     <div>
                       <span>{isAr ? "تكلفة المنتجات:" : "Product Cost:"} </span>
                       <strong className="text-foreground">
@@ -488,7 +488,7 @@ export function OrderQuickViewModal({
                   </div>
 
                   <div
-                    className={`flex justify-between items-center text-xs font-extrabold pt-1.5 border-t border-border/40 ${
+                    className={`flex justify-between items-center text-xs font-extrabold pt-1.5 border-t border-border-subtle ${
                       codRemaining > 0
                         ? "text-amber-700 dark:text-amber-300"
                         : "text-emerald-600 dark:text-emerald-400"
@@ -513,7 +513,7 @@ export function OrderQuickViewModal({
           })()}
 
           {/* Quick Action Footer Buttons */}
-          <div className="pt-3 border-t border-border/60 flex items-center justify-between gap-2 flex-wrap">
+          <div className="pt-3 border-t border-border-subtle flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-1.5">
               <Button
                 variant="outline"

@@ -323,13 +323,13 @@ function BrandsPage() {
       dir={lang === "ar" ? "rtl" : "ltr"}
     >
       {/* Header Panel */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/60 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border-subtle pb-6">
         <div>
-          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-primary mb-1">
+          <div className="flex items-center gap-2 text-xs text-primary mb-1">
             <Crown className="h-3.5 w-3.5 text-amber-500 animate-pulse" />{" "}
             {lang === "ar" ? "المدير الأعلى" : "Super Admin Cockpit"}
           </div>
-          <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
             {lang === "ar" ? "لوحة تحكم بوتيك" : "Boutq Dashboard"}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -359,12 +359,12 @@ function BrandsPage() {
       {/* Modern SaaS KPI Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* KPI: Total Brands */}
-        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 flex items-center gap-4 relative">
+        <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 flex items-center gap-4 relative">
           <div className="p-3 rounded-full bg-primary/5 text-primary">
             <Users className="h-6 w-6" />
           </div>
           <div>
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">
+            <span className="text-xs font-bold text-muted-foreground block">
               {lang === "ar" ? "إجمالي البوتيكات" : "Total Boutique Tenants"}
             </span>
             <span className="text-2xl font-bold font-display mt-0.5 block">{brands.length}</span>
@@ -372,12 +372,12 @@ function BrandsPage() {
         </Card>
 
         {/* KPI: Active SaaS Subscriptions */}
-        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 flex items-center gap-4 relative">
+        <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 flex items-center gap-4 relative">
           <div className="p-3 rounded-full bg-emerald-500/5 text-emerald-500">
             <TrendingUp className="h-6 w-6" />
           </div>
           <div>
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">
+            <span className="text-xs font-bold text-muted-foreground block">
               {lang === "ar" ? "الاشتراكات النشطة" : "Active SaaS Subscriptions"}
             </span>
             <span className="text-2xl font-bold font-display text-emerald-600 dark:text-emerald-500 mt-0.5 block">
@@ -387,12 +387,12 @@ function BrandsPage() {
         </Card>
 
         {/* KPI: annual subscription revenue */}
-        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 flex items-center gap-4 relative">
+        <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 flex items-center gap-4 relative">
           <div className="p-3 rounded-full bg-blue-500/5 text-blue-500">
             <DollarSign className="h-6 w-6" />
           </div>
           <div>
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">
+            <span className="text-xs font-bold text-muted-foreground block">
               {lang === "ar" ? "إيراد الاشتراكات السنوية" : "Annual Subscription Revenue"}
             </span>
             <span className="text-2xl font-bold font-display text-blue-600 dark:text-blue-500 mt-0.5 block">
@@ -411,7 +411,7 @@ function BrandsPage() {
           <TabsTrigger value="receipt-approvals" className="h-9 font-medium text-xs relative">
             {lang === "ar" ? "إيصالات الاشتراكات" : "Receipt Approvals"}
             {pendingApprovals.length > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-rose-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold animate-bounce">
+              <span className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-rose-500 text-white rounded-full text-xs flex items-center justify-center font-bold animate-bounce">
                 {pendingApprovals.length}
               </span>
             )}
@@ -439,7 +439,7 @@ function BrandsPage() {
               {brands.map((b) => (
                 <Card
                   key={b.id}
-                  className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 relative flex flex-col justify-between h-56 transition-all duration-200 hover:shadow-xl hover:scale-[1.01]"
+                  className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 relative flex flex-col justify-between h-56 transition-all duration-200 hover:shadow-xl hover:scale-[1.01]"
                 >
                   <div>
                     <div className="flex items-center gap-3 mb-3">
@@ -447,10 +447,10 @@ function BrandsPage() {
                         <img
                           src={b.logo_url}
                           alt={b.name_en}
-                          className="h-10 w-10 rounded object-contain bg-secondary border border-border/60"
+                          className="h-10 w-10 rounded object-contain bg-secondary border border-border-subtle"
                         />
                       ) : (
-                        <div className="h-10 w-10 rounded bg-secondary grid place-items-center border border-border/60">
+                        <div className="h-10 w-10 rounded bg-secondary grid place-items-center border border-border-subtle">
                           <Store className="h-5 w-5 text-muted-foreground" />
                         </div>
                       )}
@@ -468,36 +468,36 @@ function BrandsPage() {
                         {b.support_access_enabled === false && (
                           <Badge
                             variant="destructive"
-                            className="bg-rose-500 hover:bg-rose-600 text-white text-[9px] font-semibold py-0 h-4"
+                            className="bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold py-0 h-4"
                           >
                             {lang === "ar" ? "الخصوصية مفعلة" : "Privacy Lock"}
                           </Badge>
                         )}
                         {b.slug.toLowerCase() === "pura" || b.plan_type === "lifetime" ? (
-                          <Badge className="bg-violet-600 text-white hover:bg-violet-700 text-[10px]">
+                          <Badge className="bg-violet-600 text-white hover:bg-violet-700 text-xs">
                             {lang === "ar" ? "مشروع دائم" : "Permanent"}
                           </Badge>
                         ) : b.plan_type === "trial" || b.subscription_status === "trialing" ? (
-                          <Badge className="bg-amber-500 text-white hover:bg-amber-600 text-[10px]">
+                          <Badge className="bg-amber-500 text-white hover:bg-amber-600 text-xs">
                             {lang === "ar" ? "تجربة مجانية" : "Free Trial"}
                           </Badge>
                         ) : b.subscription_status === "active" ? (
-                          <Badge className="bg-emerald-500 text-white hover:bg-emerald-600 text-[10px]">
+                          <Badge className="bg-emerald-500 text-white hover:bg-emerald-600 text-xs">
                             {b.plan_type === "monthly"
                               ? lang === "ar" ? "شهري نشط" : "Monthly active"
                               : lang === "ar" ? "سنوي نشط" : "Annual active"}
                           </Badge>
                         ) : b.subscription_status === "pending_verification" ? (
-                          <Badge className="bg-amber-500 text-white hover:bg-amber-600 text-[10px] animate-pulse">
+                          <Badge className="bg-amber-500 text-white hover:bg-amber-600 text-xs animate-pulse">
                             Pending
                           </Badge>
                         ) : (
-                          <Badge className="bg-zinc-400 text-white hover:bg-zinc-500 text-[10px]">
+                          <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-xs">
                             Unpaid
                           </Badge>
                         )}
                         {b.plan_type === "trial" && b.trial_ends_at && (
-                          <span className="text-[9px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-0.5">
+                          <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-0.5">
                             <ClockIcon className="h-2.5 w-2.5" />
                             {Math.max(
                               0,
@@ -510,7 +510,7 @@ function BrandsPage() {
                           </span>
                         )}
                         {b.subscription_expires_at && b.plan_type !== "lifetime" && b.plan_type !== "trial" && (
-                          <span className="text-[9px] text-muted-foreground font-semibold flex items-center gap-0.5">
+                          <span className="text-xs text-muted-foreground font-semibold flex items-center gap-0.5">
                             <ClockIcon className="h-2.5 w-2.5" />
                             {Math.max(
                               0,
@@ -526,12 +526,12 @@ function BrandsPage() {
                           <Badge
                             className={
                               b.renewal_intent === "upgrade"
-                                ? "bg-emerald-600 text-white hover:bg-emerald-700 text-[10px]"
+                                ? "bg-emerald-600 text-white hover:bg-emerald-700 text-xs"
                                 : b.renewal_intent === "renew"
-                                ? "bg-blue-600 text-white hover:bg-blue-700 text-[10px]"
+                                ? "bg-blue-600 text-white hover:bg-blue-700 text-xs"
                                 : b.renewal_intent === "downgrade"
-                                ? "bg-amber-600 text-white hover:bg-amber-700 text-[10px]"
-                                : "bg-rose-600 text-white hover:bg-rose-700 text-[10px]"
+                                ? "bg-amber-600 text-white hover:bg-amber-700 text-xs"
+                                : "bg-rose-600 text-white hover:bg-rose-700 text-xs"
                             }
                           >
                             {b.renewal_intent === "upgrade"
@@ -555,7 +555,7 @@ function BrandsPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-1.5 border-t border-border/60 pt-3">
+                  <div className="flex flex-wrap gap-1.5 border-t border-border-subtle pt-3">
                     {b.support_access_enabled === false ? (
                       <div className="flex-1 flex flex-col gap-1">
                         <Button
@@ -564,7 +564,7 @@ function BrandsPage() {
                           className="w-full h-9 opacity-50 cursor-not-allowed"
                           disabled
                         >
-                          <Shield className="h-3.5 w-3.5 me-1 text-zinc-400" />
+                          <Shield className="h-3.5 w-3.5 me-1 text-muted-foreground" />
                           {lang === "ar" ? "المحاكاة معطلة" : "Impersonation Disabled"}
                         </Button>
                       </div>
@@ -636,21 +636,21 @@ function BrandsPage() {
                 return (
                   <Card
                     key={b.id}
-                    className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+                    className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
                   >
                     <div className="flex items-center gap-3">
                       <div className="h-11 w-11 rounded-full bg-amber-500/5 grid place-items-center text-amber-500">
                         <ClockIcon className="h-5 w-5 animate-pulse" />
                       </div>
                       <div>
-                        <h4 className="font-display font-medium text-base text-zinc-900 dark:text-zinc-100">
+                        <h4 className="font-display font-medium text-base text-foreground">
                           {lang === "ar" ? b.name_ar || b.name_en : b.name_en}
                         </h4>
                         <p className="text-xs text-muted-foreground font-mono">
                           /{b.slug} • ID: {b.id.substring(0, 8)}...
                         </p>
                         {b.payment_receipt_uploaded_at && (
-                          <p className="text-[10px] text-zinc-400 mt-1">
+                          <p className="text-xs text-muted-foreground mt-1">
                             {lang === "ar" ? "تم الرفع:" : "Uploaded:"}{" "}
                             {new Date(b.payment_receipt_uploaded_at).toLocaleString(
                               lang === "ar" ? "ar-BH-u-nu-latn" : "en-US",
@@ -730,7 +730,7 @@ function BrandsPage() {
       {/* DIALOG: Approve Subscription & Assign Plan/Interval */}
       {approvingBrand && (
         <Dialog open={!!approvingBrand} onOpenChange={(v) => !v && setApprovingBrand(null)}>
-          <DialogContent className="max-w-md bg-background/95 backdrop-blur-md border border-border/60 text-foreground p-6 rounded-2xl shadow-xl">
+          <DialogContent className="max-w-md bg-background/95 backdrop-blur-md border border-border-subtle text-foreground p-6 rounded-2xl shadow-xl">
             <DialogHeader>
               <DialogTitle className="font-display font-medium flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-emerald-500" />
@@ -738,7 +738,7 @@ function BrandsPage() {
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-3">
-              <div className="p-3 bg-muted/40 border border-border/40 rounded-xl font-mono text-xs">
+              <div className="p-3 bg-muted/40 border border-border-subtle rounded-xl font-mono text-xs">
                 <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">
                   {lang === "ar" ? "المحل المختار" : "Boutique Brand"}
                 </p>
@@ -753,7 +753,7 @@ function BrandsPage() {
                   {lang === "ar" ? "الباقة المراد تفعيلها" : "Target Subscription Plan"}
                 </Label>
                 <Select value={approvingPlanId} onValueChange={setApprovingPlanId}>
-                  <SelectTrigger className="w-full bg-background/50 border-border/60">
+                  <SelectTrigger className="w-full bg-background/50 border-border-subtle">
                     <SelectValue placeholder={lang === "ar" ? "اختر الباقة..." : "Select Plan..."} />
                   </SelectTrigger>
                   <SelectContent>
@@ -777,7 +777,7 @@ function BrandsPage() {
                   value={approvingInterval}
                   onValueChange={(val: "monthly" | "annual") => setApprovingInterval(val)}
                 >
-                  <SelectTrigger className="w-full bg-background/50 border-border/60">
+                  <SelectTrigger className="w-full bg-background/50 border-border-subtle">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -931,7 +931,7 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
   };
 
   return (
-    <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto bg-background/95 backdrop-blur-md border border-border/60 text-foreground p-6 rounded-2xl shadow-xl">
+    <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto bg-background/95 backdrop-blur-md border border-border-subtle text-foreground p-6 rounded-2xl shadow-xl">
       <DialogHeader>
         <DialogTitle className="font-display font-bold text-lg">
           {lang === "ar" ? "علامة تجارية جديدة" : "New Brand"}
@@ -1035,7 +1035,7 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
                 }
                 autoComplete="new-password"
               />
-              <p className="mt-1.5 text-[11px] leading-5 text-muted-foreground">
+              <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
                 {lang === "ar"
                   ? "إذا البريد مرتبط بحساب موجود، راح نربطه بدون تغيير كلمة مروره."
                   : "If the email already has an account, it will be linked without changing its password."}
@@ -1052,7 +1052,7 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
               className={`p-2.5 text-xs rounded border font-semibold text-center cursor-pointer transition-all ${
                 planType === "annual"
                   ? "border-primary bg-primary/[0.02] ring-1 ring-primary text-primary"
-                  : "border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                  : "border-border hover:bg-muted/50"
               }`}
             >
               {lang === "ar" ? "اشتراك سنوي" : "Annual Subscription"}
@@ -1063,7 +1063,7 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
               className={`p-2.5 text-xs rounded border font-semibold text-center cursor-pointer transition-all ${
                 planType === "trial"
                   ? "border-primary bg-primary/[0.02] ring-1 ring-primary text-primary"
-                  : "border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                  : "border-border hover:bg-muted/50"
               }`}
             >
               {lang === "ar" ? "تجربة مجانية" : "Free Trial"}
@@ -1154,7 +1154,7 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
   };
 
   return (
-    <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-background/95 backdrop-blur-md border border-border/60 text-foreground p-6 rounded-2xl shadow-xl">
+    <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-background/95 backdrop-blur-md border border-border-subtle text-foreground p-6 rounded-2xl shadow-xl">
       <DialogHeader>
         <DialogTitle className="font-display font-bold text-lg">
           {t("brands.editTitle")} — {brand.name_en}
@@ -1227,7 +1227,7 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
             />
           </div>
         </div>
-        <Card className="space-y-4 p-4 border border-border/60 shadow rounded-xl bg-card/40">
+        <Card className="space-y-4 p-4 border border-border-subtle shadow rounded-xl bg-card">
           <div>
             <div className="flex items-center justify-between gap-3">
               <Label>{isAr ? "عنوان محركات البحث" : "Meta Title"}</Label>
@@ -1264,7 +1264,7 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
             />
           </div>
         </Card>
-        <div className="flex items-center justify-between border border-border/60 rounded-xl p-3 bg-muted/20">
+        <div className="flex items-center justify-between border border-border-subtle rounded-xl p-3 bg-muted/20">
           <div>
             <p className="text-sm font-medium">{isAr ? "نشط" : "Active"}</p>
             <p className="text-xs text-muted-foreground">
@@ -1378,7 +1378,7 @@ function DeleteBrandDialog({ brand, onDone }: { brand: Brand; onDone: () => void
   };
 
   return (
-    <DialogContent className="max-w-md bg-background/95 backdrop-blur-md border border-border/60 text-foreground p-6 rounded-2xl shadow-xl">
+    <DialogContent className="max-w-md bg-background/95 backdrop-blur-md border border-border-subtle text-foreground p-6 rounded-2xl shadow-xl">
       <DialogHeader>
         <DialogTitle className="text-destructive flex items-center gap-2 font-display font-bold text-lg">
           <AlertTriangle className="h-5 w-5" /> {t("brands.delete")} — {brand.name_en}

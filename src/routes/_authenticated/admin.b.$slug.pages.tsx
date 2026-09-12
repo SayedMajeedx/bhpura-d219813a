@@ -349,16 +349,16 @@ function PagesAndPolicies() {
         dir="ltr"
         className="shrink-0"
       >
-        <TabsList className="grid h-11 w-full grid-cols-2 rounded-xl border bg-slate-100 p-1 dark:bg-slate-900/60 sm:w-64">
+        <TabsList className="grid h-11 w-full grid-cols-2 rounded-xl border border-border bg-muted p-1 sm:w-64">
           <TabsTrigger
             value="en"
-            className="rounded-lg text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-850 data-[state=active]:shadow-sm"
+            className="rounded-lg text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"
           >
             English (EN)
           </TabsTrigger>
           <TabsTrigger
             value="ar"
-            className="rounded-lg text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-850 data-[state=active]:shadow-sm"
+            className="rounded-lg text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"
           >
             العربية (AR)
           </TabsTrigger>
@@ -367,7 +367,7 @@ function PagesAndPolicies() {
 
       {activeScope === "socials" && (
         <>
-          <Card className="space-y-4 overflow-hidden rounded-2xl border-border/60 bg-card/40 p-3 shadow-lg backdrop-blur-sm sm:p-6">
+          <Card className="space-y-4 overflow-hidden rounded-2xl border-border-subtle bg-card p-3 shadow-lg sm:p-6">
             <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
               <div>
                 <h2 className="font-display text-xl font-bold">
@@ -440,7 +440,7 @@ function PagesAndPolicies() {
             </div>
           </Card>
 
-          <Card className="space-y-4 overflow-hidden rounded-2xl border-border/60 bg-card/40 p-3 shadow-lg backdrop-blur-sm sm:p-6">
+          <Card className="space-y-4 overflow-hidden rounded-2xl border-border-subtle bg-card p-3 shadow-lg sm:p-6">
             <div className="flex items-center gap-2">
               <MessageCircle className="h-5 w-5 text-emerald-500" />
               <h2 className="font-display text-xl font-bold">
@@ -465,7 +465,7 @@ function PagesAndPolicies() {
               />
             </div>
             <div>
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">
                 {isAr ? "رقم واتساب مع رمز الدولة" : "WhatsApp number with country code"}
               </Label>
               <Input
@@ -482,7 +482,7 @@ function PagesAndPolicies() {
 
       {activeScope === "pages" && (
         <section className="space-y-4">
-          <Card className="space-y-4 overflow-hidden rounded-2xl border-border/60 bg-card/40 p-4 shadow-md backdrop-blur-sm">
+          <Card className="space-y-4 overflow-hidden rounded-2xl border-border-subtle bg-card p-4 shadow-md">
             <div>
               <h3 className="text-base font-bold">
                 {isAr ? "عناوين مجموعات رابط التذييل" : "Footer accordion group headings"}
@@ -599,7 +599,7 @@ function PagesAndPolicies() {
                     if (draggedIndex !== null) movePage(draggedIndex, index);
                     setDraggedIndex(null);
                   }}
-                  className="overflow-hidden rounded-2xl border-border/60 bg-card/40 px-2 shadow-md backdrop-blur-sm transition-all duration-200 hover:shadow-lg sm:px-4"
+                  className="overflow-hidden rounded-2xl border-border-subtle bg-card/40 px-2 shadow-md backdrop-blur-sm transition-all duration-200 hover:shadow-lg sm:px-4"
                 >
                   <div className="flex items-center gap-2">
                     <button
@@ -653,7 +653,7 @@ function PagesAndPolicies() {
                               editorLanguage === "ar" ? "مثال: دليل المقاسات" : "e.g. Size Guide"
                             }
                             dir={editorLanguage === "ar" ? "rtl" : "ltr"}
-                            className={editorLanguage === "ar" ? "text-right" : "text-left"}
+                            className={editorLanguage === "ar" ? "text-end" : "text-start"}
                           />
                         </div>
                         <div>
@@ -747,7 +747,7 @@ function PagesAndPolicies() {
                               updatePage(index, { meta_title: event.target.value })
                             }
                             dir={editorLanguage === "ar" ? "rtl" : "ltr"}
-                            className={editorLanguage === "ar" ? "text-right" : "text-left"}
+                            className={editorLanguage === "ar" ? "text-end" : "text-start"}
                             placeholder={
                               editorLanguage === "ar"
                                 ? "عنوان واضح يظهر في نتائج البحث"
@@ -771,7 +771,7 @@ function PagesAndPolicies() {
                               updatePage(index, { meta_description: event.target.value })
                             }
                             dir={editorLanguage === "ar" ? "rtl" : "ltr"}
-                            className={editorLanguage === "ar" ? "text-right" : "text-left"}
+                            className={editorLanguage === "ar" ? "text-end" : "text-start"}
                             placeholder={
                               editorLanguage === "ar"
                                 ? "وصف مختصر وجذاب للصفحة"
@@ -927,7 +927,7 @@ function PagesAndPolicies() {
         </section>
       )}
 
-      <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+5rem)] z-10 flex justify-end rounded-2xl border border-border/60 bg-background/90 p-3 shadow-lg backdrop-blur-md sm:bottom-4 sm:p-4">
+      <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+5rem)] z-10 flex justify-end rounded-2xl border border-border-subtle bg-background/90 p-3 shadow-lg backdrop-blur-md sm:bottom-4 sm:p-4">
         <Button
           onClick={save}
           disabled={saving}

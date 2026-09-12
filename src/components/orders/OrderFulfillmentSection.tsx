@@ -19,12 +19,12 @@ export const OrderFulfillmentSection: React.FC<OrderFulfillmentSectionProps> = (
     order.courier_name || order.courier?.name || (isAr ? "لم يتم التعيين" : "Unassigned");
 
   return (
-    <div className="p-4 rounded-xl bg-card border border-border/60 shadow-2xs space-y-3">
-      <div className="flex items-center gap-2 border-b border-border/40 pb-3">
+    <div className="p-4 rounded-xl bg-card border border-border-subtle shadow-2xs space-y-3">
+      <div className="flex items-center gap-2 border-b border-border-subtle pb-3">
         <div className="h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
           <Truck className="h-4 w-4" />
         </div>
-        <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
+        <h2 className="text-xs font-semibold text-foreground">
           {isAr ? "الشحن والتنفيذ" : "Fulfillment & Courier"}
         </h2>
       </div>
@@ -40,7 +40,7 @@ export const OrderFulfillmentSection: React.FC<OrderFulfillmentSectionProps> = (
         </div>
 
         {onOpenCourierWhatsAppModal && (
-          <div className="pt-2 border-t border-border/40">
+          <div className="pt-2 border-t border-border-subtle">
             <Button
               variant="outline"
               size="sm"

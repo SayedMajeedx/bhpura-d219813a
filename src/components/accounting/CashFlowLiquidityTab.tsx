@@ -104,7 +104,8 @@ export function CashFlowLiquidityTab() {
       qc.invalidateQueries({ queryKey: ["orders-reconciliation", brandId] });
       qc.invalidateQueries({ queryKey: ["dashboard-orders-with-items", brandId] });
     } catch (err: any) {
-      toast.error(err.message || "Failed to update status");
+      console.error("Reconciliation update error:", err);
+      toast.error(isAr ? "تعذر تحديث حالة التسوية، يرجى المحاولة مرة أخرى." : "Failed to update reconciliation status. Please try again.");
     }
   };
 
@@ -145,7 +146,8 @@ export function CashFlowLiquidityTab() {
       setTransferAmount(0);
       setTransferNotes("");
     } catch (err: any) {
-      toast.error(err.message || "Failed to transfer funds");
+      console.error("Transfer error:", err);
+      toast.error(isAr ? "تعذر تحويل السيولة، يرجى المحاولة مرة أخرى." : "Failed to transfer funds. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -156,7 +158,7 @@ export function CashFlowLiquidityTab() {
       {/* Account Balances Header */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Cash Box */}
-        <Card className="p-4 border-border/80 bg-card flex flex-col justify-between">
+        <Card className="p-4 border-border-strong bg-card flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
               <Wallet className="h-4 w-4 text-amber-500" />
@@ -164,7 +166,7 @@ export function CashFlowLiquidityTab() {
             </span>
             <Badge
               variant="outline"
-              className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px]"
+              className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-xs"
             >
               Cash
             </Badge>
@@ -175,7 +177,7 @@ export function CashFlowLiquidityTab() {
         </Card>
 
         {/* Bank Account */}
-        <Card className="p-4 border-border/80 bg-card flex flex-col justify-between">
+        <Card className="p-4 border-border-strong bg-card flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
               <Building className="h-4 w-4 text-emerald-500" />
@@ -183,7 +185,7 @@ export function CashFlowLiquidityTab() {
             </span>
             <Badge
               variant="outline"
-              className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px]"
+              className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-xs"
             >
               Bank / BENEFIT
             </Badge>
@@ -194,7 +196,7 @@ export function CashFlowLiquidityTab() {
         </Card>
 
         {/* Total Liquidity & Transfer Button */}
-        <Card className="p-4 border-border/80 bg-primary/5 flex flex-col justify-between">
+        <Card className="p-4 border-border-strong bg-primary/5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-primary">
               {isAr ? "إجمالي السيولة المتاحة" : "Total Liquidity"}
@@ -202,7 +204,7 @@ export function CashFlowLiquidityTab() {
             <Button
               size="sm"
               onClick={() => setTransferModalOpen(true)}
-              className="h-7 text-[11px] font-bold gap-1 px-2"
+              className="h-7 text-xs font-bold gap-1 px-2"
             >
               <ArrowRightLeft className="h-3 w-3" />
               {isAr ? "تحويل سيولة" : "Transfer"}
@@ -261,7 +263,7 @@ export function CashFlowLiquidityTab() {
                         </span>
                         <span className="text-xs text-muted-foreground">• {customerName}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                         <span>{formatDate(o.created_at)}</span>
                         <span>•</span>
                         <span className="uppercase font-mono">{o.payment_method || "cash"}</span>
@@ -316,7 +318,7 @@ export function CashFlowLiquidityTab() {
 
           <div className="space-y-4 py-2 text-xs">
             <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-1">
-              <span className="text-[11px] text-muted-foreground block">
+              <span className="text-xs text-muted-foreground block">
                 {isAr ? "رصيد الصندوق المتاح:" : "Cash Box Balance:"}
               </span>
               <span className="font-bold text-sm text-foreground">

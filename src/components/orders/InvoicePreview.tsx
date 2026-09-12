@@ -379,7 +379,7 @@ export default function InvoicePreview({
               <div className="border-[6px] border-double border-emerald-600 text-emerald-600 font-extrabold text-2xl md:text-3xl tracking-widest uppercase py-2 px-6 rounded-xl font-sans flex flex-col items-center justify-center leading-none">
                 <span>{invoiceLang === "ar" ? "مدفوع" : "PAID"}</span>
                 {order.updated_at && (
-                  <span className="text-[10px] md:text-xs font-semibold tracking-normal mt-1 opacity-90 font-mono">
+                  <span className="text-xs md:text-xs font-semibold tracking-normal mt-1 opacity-90 font-mono">
                     {new Date(order.updated_at).toLocaleDateString(
                       invoiceLang === "ar" ? "ar-BH-u-nu-latn" : "en-BH",
                     )}
@@ -391,7 +391,7 @@ export default function InvoicePreview({
             <div className="absolute top-[10%] right-[10%] md:right-[15%] rotate-[-12deg] select-none pointer-events-none opacity-20 print:opacity-30 z-10">
               <div className="border-[6px] border-double border-rose-600 text-rose-600 font-extrabold text-2xl md:text-3xl tracking-widest uppercase py-2 px-6 rounded-xl font-sans flex flex-col items-center justify-center leading-none">
                 <span>{invoiceLang === "ar" ? "غير مدفوع" : "UNPAID"}</span>
-                <span className="text-[9px] md:text-[10px] font-semibold tracking-normal mt-1 uppercase font-mono text-center">
+                <span className="text-xs md:text-xs font-semibold tracking-normal mt-1 uppercase font-mono text-center">
                   {invoiceLang === "ar" ? "الرجاء التحويل البنكي" : "Bank Transfer Req."}
                 </span>
               </div>
@@ -489,7 +489,7 @@ export default function InvoicePreview({
               )}
               {getPaymentGatewayReference(order) && (
                 <p
-                  className="text-[10px] mt-1 break-all"
+                  className="text-xs mt-1 break-all"
                   style={{
                     opacity: 0.5,
                     maxWidth: "180px",
@@ -506,7 +506,7 @@ export default function InvoicePreview({
           {order.customers && (
             <div className="mb-8" style={{ textAlign: "start" }}>
               <p
-                className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`}
+                className={`text-xs mb-1 ${isRTL ? "" : ""}`}
                 style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
               >
                 {L.billTo}
@@ -544,7 +544,7 @@ export default function InvoicePreview({
                 return (
                   <div className="mt-3 pt-3 border-t border-border">
                     <p
-                      className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`}
+                      className={`text-xs mb-1 ${isRTL ? "" : ""}`}
                       style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
                     >
                       {isRTL ? "عنوان التوصيل" : "Delivery address"}
@@ -578,7 +578,7 @@ export default function InvoicePreview({
               >
                 <div>
                   <p
-                    className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`}
+                    className={`text-xs mb-1 ${isRTL ? "" : ""}`}
                     style={{
                       color: surfaceCardTextColor,
                       opacity: 0.7,
@@ -846,7 +846,7 @@ export default function InvoicePreview({
                   </span>
                   {paymentBadge && (
                     <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isRTL ? "" : "uppercase tracking-wider"}`}
+                      className={`text-xs px-2 py-0.5 rounded-full font-bold ${isRTL ? "" : ""}`}
                       style={{
                         backgroundColor: badgeBg,
                         color: badgeTextColor,

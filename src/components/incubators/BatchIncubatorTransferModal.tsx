@@ -467,7 +467,7 @@ export function BatchIncubatorTransferModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[92vh] flex flex-col p-0 overflow-hidden rounded-2xl border border-border shadow-2xl bg-card">
         {/* Header */}
-        <DialogHeader className="p-5 pb-4 border-b border-border/70 bg-secondary/15">
+        <DialogHeader className="p-5 pb-4 border-b border-border-strong bg-secondary/15">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -494,7 +494,7 @@ export function BatchIncubatorTransferModal({
         </DialogHeader>
 
         {/* Top Control Bar: Incubator Picker & Quick Presets */}
-        <div className="p-4 border-b border-border/60 bg-muted/20 space-y-3">
+        <div className="p-4 border-b border-border-subtle bg-muted/20 space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
             {/* Incubator Selector */}
             <div className="space-y-1.5">
@@ -578,7 +578,7 @@ export function BatchIncubatorTransferModal({
           {/* Search & Collapse Filter Bar */}
           <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-1">
             <div className="relative flex-1 w-full">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Search className="absolute end-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 type="text"
                 value={searchQuery}
@@ -588,11 +588,11 @@ export function BatchIncubatorTransferModal({
                     ? "بحث باسم المنتج، اللون، المقاس، أو الـ SKU..."
                     : "Search by product name, color, size, or SKU..."
                 }
-                className="h-8 text-xs pr-9 pl-3 w-full bg-background"
+                className="h-8 text-xs pe-9 ps-3 w-full bg-background"
               />
             </div>
             <div className="flex items-center gap-1.5 w-full sm:w-auto justify-between sm:justify-end">
-              <Badge variant="outline" className="text-[11px] font-mono px-2 py-1">
+              <Badge variant="outline" className="text-xs font-mono px-2 py-1">
                 {productGroups.length} {isAr ? "منتج" : "products"}
               </Badge>
               <div className="flex items-center gap-1">
@@ -601,9 +601,9 @@ export function BatchIncubatorTransferModal({
                   variant="ghost"
                   size="sm"
                   onClick={expandAll}
-                  className="h-7 text-[11px] px-2 text-muted-foreground hover:text-foreground"
+                  className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground"
                 >
-                  <ChevronDown className="h-3.5 w-3.5 mr-1" />
+                  <ChevronDown className="h-3.5 w-3.5 me-1" />
                   {isAr ? "توسيع الكل" : "Expand All"}
                 </Button>
                 <Button
@@ -611,9 +611,9 @@ export function BatchIncubatorTransferModal({
                   variant="ghost"
                   size="sm"
                   onClick={collapseAll}
-                  className="h-7 text-[11px] px-2 text-muted-foreground hover:text-foreground"
+                  className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground"
                 >
-                  <ChevronUp className="h-3.5 w-3.5 mr-1" />
+                  <ChevronUp className="h-3.5 w-3.5 me-1" />
                   {isAr ? "طي الكل" : "Collapse All"}
                 </Button>
               </div>
@@ -662,7 +662,7 @@ export function BatchIncubatorTransferModal({
               return (
                 <div
                   key={group.productId}
-                  className="border border-border/80 rounded-xl overflow-hidden bg-background shadow-2xs transition-all"
+                  className="border border-border-strong rounded-xl overflow-hidden bg-background shadow-2xs transition-all"
                 >
                   {/* Product Group Header / Dropdown Banner */}
                   <div className="p-3 bg-muted/30 hover:bg-muted/50 transition-colors flex items-center justify-between gap-3 select-none">
@@ -689,7 +689,7 @@ export function BatchIncubatorTransferModal({
                       <button
                         type="button"
                         onClick={() => toggleProductAccordion(group.productId)}
-                        className="flex items-center gap-2.5 text-right font-medium text-xs text-foreground hover:text-primary transition-colors cursor-pointer"
+                        className="flex items-center gap-2.5 text-end font-medium text-xs text-foreground hover:text-primary transition-colors cursor-pointer"
                       >
                         <Layers className="h-4 w-4 text-primary shrink-0" />
                         <span className="font-bold text-sm text-foreground">
@@ -698,7 +698,7 @@ export function BatchIncubatorTransferModal({
                         {group.category && (
                           <Badge
                             variant="secondary"
-                            className="text-[10px] px-1.5 py-0 font-normal hidden sm:inline-block"
+                            className="text-xs px-1.5 py-0 font-normal hidden sm:inline-block"
                           >
                             {group.category}
                           </Badge>
@@ -708,7 +708,7 @@ export function BatchIncubatorTransferModal({
 
                     {/* Group Metrics and Chevron */}
                     <div className="flex items-center gap-2 shrink-0">
-                      <div className="hidden sm:flex items-center gap-2 text-[11px]">
+                      <div className="hidden sm:flex items-center gap-2 text-xs">
                         <span className="text-muted-foreground font-mono">
                           {isAr ? "المتاح: " : "Avail: "}
                           <strong className="text-foreground">{groupTotalAvailable}</strong>
@@ -716,7 +716,7 @@ export function BatchIncubatorTransferModal({
                         <span>•</span>
                         <Badge
                           variant="secondary"
-                          className="font-mono text-[11px] font-bold px-2 py-0.5 bg-primary/10 text-primary border-primary/20"
+                          className="font-mono text-xs font-bold px-2 py-0.5 bg-primary/10 text-primary border-primary/20"
                         >
                           {groupTotalTransferQty} {isAr ? "محول" : "transferred"}
                         </Badge>
@@ -743,9 +743,9 @@ export function BatchIncubatorTransferModal({
 
                   {/* Collapsible Variants Table for this Product */}
                   {isExpanded && (
-                    <div className="border-t border-border/60">
-                      <table className="w-full text-xs text-right divide-y divide-border/40">
-                        <thead className="bg-muted/15 font-semibold text-muted-foreground text-[11px]">
+                    <div className="border-t border-border-subtle">
+                      <table className="w-full text-xs text-end divide-y divide-border/40">
+                        <thead className="bg-muted/15 font-semibold text-muted-foreground text-xs">
                           <tr>
                             <th className="p-2.5 w-8 text-center"></th>
                             <th className="p-2.5">{isAr ? "النسخة والرمز" : "Variant & SKU"}</th>
@@ -796,13 +796,13 @@ export function BatchIncubatorTransferModal({
                                     {row.color && (
                                       <Badge
                                         variant="outline"
-                                        className="text-[10px] px-1 py-0 font-normal"
+                                        className="text-xs px-1 py-0 font-normal"
                                       >
                                         {row.color}
                                       </Badge>
                                     )}
                                   </div>
-                                  <div className="text-[10px] font-mono text-muted-foreground mt-0.5">
+                                  <div className="text-xs font-mono text-muted-foreground mt-0.5">
                                     {row.sku}
                                   </div>
                                 </td>
@@ -812,7 +812,7 @@ export function BatchIncubatorTransferModal({
                                   <div className="inline-flex items-center gap-1 font-mono text-xs flex-wrap justify-center">
                                     <Badge
                                       variant="outline"
-                                      className={`px-1.5 py-0.5 text-[11px] font-bold ${
+                                      className={`px-1.5 py-0.5 text-xs font-bold ${
                                         isZeroStock
                                           ? "bg-amber-500/10 text-amber-700 border-amber-300 dark:text-amber-400"
                                           : "bg-emerald-500/10 text-emerald-700 border-emerald-300 dark:text-emerald-400"
@@ -822,7 +822,7 @@ export function BatchIncubatorTransferModal({
                                       {row.totalAvailable}
                                     </Badge>
                                     {row.unallocatedInc > 0 && row.stockMain > 0 && (
-                                      <span className="text-[10px] text-muted-foreground">
+                                      <span className="text-xs text-muted-foreground">
                                         ({row.stockMain} ر + {row.unallocatedInc} ح)
                                       </span>
                                     )}
@@ -857,13 +857,13 @@ export function BatchIncubatorTransferModal({
                                           transferQty: row.totalAvailable,
                                         })
                                       }
-                                      className="h-8 px-1.5 text-[10px] font-semibold text-primary hover:bg-primary/10"
+                                      className="h-8 px-1.5 text-xs font-semibold text-primary hover:bg-primary/10"
                                     >
                                       {isAr ? "الكل" : "Max"}
                                     </Button>
                                   </div>
                                   {isExceeding && (
-                                    <div className="text-[10px] text-destructive mt-0.5 text-center font-medium">
+                                    <div className="text-xs text-destructive mt-0.5 text-center font-medium">
                                       {isAr ? "تجاوز المخزون المتوفر!" : "Exceeds stock!"}
                                     </div>
                                   )}
@@ -885,7 +885,7 @@ export function BatchIncubatorTransferModal({
                                       }
                                       className="h-8 w-24 text-center font-mono text-xs"
                                     />
-                                    <span className="text-[10px] text-muted-foreground shrink-0 font-mono">
+                                    <span className="text-xs text-muted-foreground shrink-0 font-mono">
                                       د.ب
                                     </span>
                                   </div>
@@ -937,7 +937,7 @@ export function BatchIncubatorTransferModal({
         </div>
 
         {/* Footer: Summary Metrics & Action Buttons */}
-        <DialogFooter className="p-4 border-t border-border/80 bg-secondary/10 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <DialogFooter className="p-4 border-t border-border-strong bg-secondary/10 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-4 text-xs">
             <div className="flex items-center gap-1.5">
               <span className="text-muted-foreground">
