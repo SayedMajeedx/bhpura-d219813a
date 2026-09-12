@@ -44,9 +44,6 @@ import {
   Upload,
   Loader2,
   Check,
-  Filter,
-  CheckSquare,
-  Square,
   RefreshCw,
   FileText,
   Image as ImageIcon,
@@ -255,10 +252,10 @@ function Inventory() {
   const qc = useQueryClient();
   const brand = useBrand();
   const brandId = brand.id;
-  const { entitlements } = useEntitlements({ brandId });
+  useEntitlements({ brandId });
   const [tab, setTab] = useState<"products" | "customizations" | "packaging">("products");
 
-  const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  useState<string | null>(null);
 
   useRealtimeInvalidate(
     [
@@ -1194,8 +1191,8 @@ function ProductsSection({
     }
   }, [initialAction, navigate]);
   const [search, setSearch] = useState("");
-  const [stockFilter, setStockFilter] = useState<"all" | "low" | "out">("all");
-  const [visibilityFilter, setVisibilityFilter] = useState<"all" | "active" | "hidden">("all");
+  const [stockFilter] = useState<"all" | "low" | "out">("all");
+  const [visibilityFilter] = useState<"all" | "active" | "hidden">("all");
   const [expandedProducts, setExpandedProducts] = useState<Record<string, boolean>>({});
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
   const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
@@ -1386,40 +1383,12 @@ function ProductsSection({
   );
   const deferredSearch = useDeferredValue(search);
   const normalizedSearch = deferredSearch.trim().toLowerCase();
-  const filteredProducts = products.filter((product) => {
-    const productVariants = variants.filter((variant) => variant.product_id === product.id);
-    const searchable = [
-      product.name,
-      product.name_ar,
-      product.name_en,
-      product.category,
-      ...productVariants.flatMap((variant) => [
-        variant.sku,
-        variant.barcode,
-        variant.size,
-        variant.color,
-      ]),
-    ]
-      .join(" ")
-      .toLowerCase();
-    const stock = productStock(product.id);
-    return (
-      (!normalizedSearch || searchable.includes(normalizedSearch)) &&
-      (stockFilter === "all" ||
-        (stockFilter === "out" ? stock <= 0 : stock < productWeeklySales(product.id))) &&
-      (visibilityFilter === "all" ||
-        (visibilityFilter === "active" ? product.is_active : !product.is_active))
-    );
-  });
-  const totalUnits = products.reduce((sum, product) => sum + productStock(product.id), 0);
 
   const lowStock = products.filter((product) => {
     const stock = productStock(product.id);
     const weeklySales = productWeeklySales(product.id);
     return isLowStock(stock, weeklySales);
   }).length;
-
-  const deadStock = variants.filter((v) => (salesByVariant.get(v.id) || 0) === 0).length;
 
   const printAll = async () => {
     const labels: LabelData[] = [];
@@ -2618,7 +2587,7 @@ function ProductDialog({
   const [uploading, setUploading] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
-  const [pendingVideo, setPendingVideo] = useState<File | null>(null);
+  const [, setPendingVideo] = useState<File | null>(null);
   const uncommittedUploads = useRef(new Set<string>());
   const removedCommittedMedia = useRef(new Set<string>());
 
@@ -6027,8 +5996,8 @@ function VariantList({
     () => variants.some((v) => v.image_url && v.image_url.trim()),
     [variants],
   );
-  const hasAnySku = useMemo(() => variants.some((v) => v.sku && v.sku.trim()), [variants]);
-  const hasAnyBarcode = useMemo(
+  useMemo(() => variants.some((v) => v.sku && v.sku.trim()), [variants]);
+  useMemo(
     () => variants.some((v) => v.barcode && v.barcode.trim()),
     [variants],
   );

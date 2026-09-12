@@ -20,12 +20,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Plug,
-  Plus,
   Pencil,
   Trash2,
   Copy,
@@ -106,7 +104,7 @@ function IntegrationsPage() {
   const brand = useBrand();
   const brandId = brand.id;
   const qc = useQueryClient();
-  const { profile: currentUser, isAdmin, isSuperAdmin, isBrandAdmin } = useProfile();
+  const { isAdmin, isSuperAdmin, isBrandAdmin } = useProfile();
   const canRotateKeys = isSuperAdmin || isAdmin || isBrandAdmin;
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);

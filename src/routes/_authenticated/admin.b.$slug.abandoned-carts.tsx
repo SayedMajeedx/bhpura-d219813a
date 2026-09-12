@@ -6,7 +6,7 @@ import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ShoppingCart, RefreshCw, Send, CheckCircle2, TrendingUp, Sparkles, ShieldAlert } from "lucide-react";
+import { ShoppingCart, RefreshCw, Send, TrendingUp, Sparkles, ShieldAlert } from "lucide-react";
 import { AbandonedCartsCommandHeader } from "@/components/abandoned-carts/AbandonedCartsCommandHeader";
 import { AbandonedCartsList } from "@/components/abandoned-carts/AbandonedCartsList";
 import { AbandonedCartSequencesEditor } from "@/components/abandoned-carts/AbandonedCartSequencesEditor";
@@ -15,7 +15,6 @@ import { AbandonedCartLogsTable } from "@/components/abandoned-carts/AbandonedCa
 import type {
   BrandAbandonedCartSettings,
   AbandonedCartSequence,
-  AbandonedCart,
 } from "@/lib/abandoned-carts.types";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/abandoned-carts")({
@@ -24,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/abandoned-ca
 
 function AbandonedCartsDashboardPage() {
   const brand = useBrand();
-  const { lang, t } = useI18n();
+  const { lang } = useI18n();
   const isAr = lang === "ar";
 
   const [activeTab, setActiveTab] = useState<string>("carts");
@@ -96,9 +95,6 @@ function AbandonedCartsDashboardPage() {
       return data || [];
     },
   });
-
-  // Calculate KPIs
-  const activeCarts = carts.filter((c: any) => c.status === "active");
   const abandonedCarts = carts.filter((c: any) => c.status === "abandoned" || c.status === "recovering");
   const recoveredCarts = carts.filter((c: any) => c.status === "recovered");
 

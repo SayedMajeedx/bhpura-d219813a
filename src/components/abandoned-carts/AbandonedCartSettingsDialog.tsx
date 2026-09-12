@@ -39,7 +39,7 @@ export function AbandonedCartSettingsDialog({
   brandId,
   initialSettings,
 }: AbandonedCartSettingsDialogProps) {
-  const { lang, t } = useI18n();
+  const { lang } = useI18n();
   const isAr = lang === "ar";
   const queryClient = useQueryClient();
 

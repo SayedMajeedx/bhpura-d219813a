@@ -13,7 +13,6 @@ import {
   RotateCcw,
   ShieldCheck,
   Sparkles,
-  Star,
   Trash2,
   Upload,
   Video,
@@ -549,67 +548,6 @@ function drawStoryFast({
   }
 
   ctx.drawImage(fgCanvas, 0, 0);
-}
-
-function drawStory({
-  canvas,
-  template,
-  review,
-  comment,
-  brandName,
-  primary,
-  isAr,
-  showName,
-  showHighlights,
-  showDate,
-  orderDateText,
-  productImage,
-  showBrandContact,
-  brandPhone,
-  brandInstagram,
-  logoImage,
-}: {
-  canvas: HTMLCanvasElement;
-  template: StoryTemplate;
-  review: OrderReviewAdminRow;
-  comment: string;
-  brandName: string;
-  primary: string;
-  isAr: boolean;
-  showName: boolean;
-  showHighlights: boolean;
-  showDate?: boolean;
-  orderDateText?: string | null;
-  productImage?: HTMLImageElement | HTMLVideoElement | null;
-  showBrandContact?: boolean;
-  brandPhone?: string | null;
-  brandInstagram?: string | null;
-  logoImage?: HTMLImageElement | null;
-}) {
-  const { bgCanvas, fgCanvas } = prepareStoryLayers({
-    template,
-    review,
-    comment,
-    brandName,
-    primary,
-    isAr,
-    showName,
-    showHighlights,
-    showDate,
-    orderDateText,
-    showBrandContact,
-    brandPhone,
-    brandInstagram,
-    logoImage,
-    hasMedia: Boolean(productImage),
-  });
-
-  drawStoryFast({
-    canvas,
-    bgCanvas,
-    fgCanvas,
-    productImage,
-  });
 }
 
 export function ReviewStoryDialog({

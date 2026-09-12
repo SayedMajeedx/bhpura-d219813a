@@ -1,7 +1,6 @@
 import { Pencil, Trash2, Receipt, Store, Calendar, FileText, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/format";
-import { cn } from "@/lib/utils";
 
 type Expense = {
   id: string;

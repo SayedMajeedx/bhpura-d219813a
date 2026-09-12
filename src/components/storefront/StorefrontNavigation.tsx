@@ -1,17 +1,15 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
-import { Link, useNavigate, useLocation } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import {
   useStorefront,
   formatPrice,
   pickName,
-  readableOn,
 } from "@/lib/storefront-context";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { cloudflareImageUrl } from "@/lib/media-delivery";
 import { isColorDark, hexToRgba } from "@/components/storefront/storefront-utils";
 import {
@@ -21,11 +19,9 @@ import {
   PackageSearch,
   FileText,
   LogIn,
-  Heart,
   ChevronDown,
   Sparkles,
   X,
-  Coins,
   Languages,
   User,
   Grid2X2,

@@ -5,14 +5,11 @@ import { formatDate, formatMoney } from "@/lib/format";
 import { formatAddressDetailed, regionLabel, type StructuredAddress } from "@/lib/bahrain-regions";
 import {
   resolvePaymentStatus,
-  PAYMENT_BADGE_CLASSES,
   PAYMENT_BADGE_LABEL,
 } from "@/lib/payment-status";
-import { getInvoiceStatusLabel, getFulfillmentLabel } from "@/lib/status-labels";
+import { getInvoiceStatusLabel } from "@/lib/status-labels";
 import {
   getOrderCustomerEmail,
-  getOrderCustomerName,
-  getOrderCustomerPhone,
 } from "@/lib/order-customer-snapshot";
 
 import { getReadableTextColor } from "@/lib/color-utils";
@@ -115,16 +112,6 @@ const LABELS = {
     switchEn: "English",
   },
 } as const;
-
-const STATUS: Record<string, { en: string; ar: string }> = {
-  draft: { en: "Draft", ar: "مسودة" },
-  confirmed: { en: "Confirmed", ar: "مؤكدة" },
-  paid: { en: "Paid", ar: "مدفوعة" },
-  pending: { en: "Pending", ar: "قيد الانتظار" },
-  shipped: { en: "Shipped", ar: "تم الشحن" },
-  completed: { en: "Completed", ar: "مكتملة" },
-  cancelled: { en: "Cancelled", ar: "ملغاة" },
-};
 const PAY: Record<string, { en: string; ar: string }> = {
   cash: { en: "Cash", ar: "نقدًا" },
   card: { en: "Card", ar: "بطاقة" },

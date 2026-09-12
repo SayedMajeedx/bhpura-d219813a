@@ -14,7 +14,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -40,7 +39,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Plus,
-  Pencil,
   Trash2,
   Wallet,
   Sparkles,
@@ -275,9 +273,9 @@ function ExpensesPage() {
   const [mainTab, setMainTab] = useState<"opex_cogs" | "cash_flow" | "vendors_pos" | "reports">(
     "opex_cogs",
   );
-  const initialMonth = useMemo(() => presetRange("month"), []);
+  useMemo(() => presetRange("month"), []);
 
-  const [customRange, setCustomRange] = useState({ from: "", to: "" });
+  const [customRange] = useState({ from: "", to: "" });
   const fileRef = useRef<HTMLInputElement | null>(null);
   const scanFn = useServerFn(scanReceipt);
 
@@ -316,7 +314,7 @@ function ExpensesPage() {
     [list, activeRange.from, activeRange.to, search, categoryFilter],
   );
   const currency = list[0]?.currency ?? "BHD";
-  const total = useMemo(
+  useMemo(
     () => filteredList.reduce((s, e) => s + Number(e.amount || 0), 0),
     [filteredList],
   );
@@ -516,7 +514,7 @@ function ExpensesPage() {
     return (cogsQ.data ?? []).reduce((s, o) => s + Number(o.total || 0), 0);
   }, [cogsQ.data]);
 
-  const { productCogs, packagingBomCogs, totalCogs } = useMemo(() => {
+  const { totalCogs } = useMemo(() => {
     let prod = 0;
     let pkg = 0;
     const prods = productsQ.data ?? [];
@@ -1435,157 +1433,3 @@ type CogOrder = {
   fulfillment_status?: string | null;
   order_items: CogItem[];
 };
-
-// ============================================================================
-// COGS Section Component
-// ============================================================================
-function CogsSection({
-  orders,
-  loading,
-  currency,
-  locale,
-  lang,
-  onDownload,
-}: {
-  orders: CogOrder[];
-  loading: boolean;
-  currency: string;
-  locale: string;
-  lang: "en" | "ar";
-  onDownload: () => void;
-}) {
-  const [expanded, setExpanded] = useState(false);
-
-  const { totalCogs, ordersWithCogs } = useMemo(() => {
-    let totalCogs = 0;
-    const ordersWithCogs = orders
-      .map((order) => {
-        const items = (order.order_items ?? []).map((item) => {
-          const cost = Number(item.unit_cost ?? 0);
-          const itemCogs = cost * Number(item.quantity);
-          return { ...item, cost, itemCogs };
-        });
-        const orderCogs = items.reduce((s, i) => s + i.itemCogs, 0);
-        totalCogs += orderCogs;
-        return { ...order, items, orderCogs };
-      })
-      .filter((o) => o.orderCogs > 0);
-    return { totalCogs, ordersWithCogs };
-  }, [orders]);
-
-  const hasCogs = ordersWithCogs.length > 0;
-
-  return (
-    <Card className="mb-6 overflow-hidden">
-      <div className="flex items-center justify-between p-4 sm:p-5">
-        <button
-          type="button"
-          className="flex items-center gap-2 text-start flex-1"
-          onClick={() => setExpanded((v) => !v)}
-        >
-          <Package className="h-4 w-4 text-muted-foreground shrink-0" />
-          <div>
-            <p className="text-sm font-semibold">
-              {lang === "ar" ? "تكلفة البضاعة المباعة (COGS)" : "Cost of Goods Sold (COGS)"}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {lang === "ar"
-                ? "محسوبة تلقائياً من تكلفة المتغيرات في الطلبات المكتملة"
-                : "Auto-calculated from variant cost prices of completed orders"}
-            </p>
-          </div>
-          {expanded ? (
-            <ChevronDown className="h-4 w-4 ms-auto text-muted-foreground" />
-          ) : (
-            <ChevronRight className="h-4 w-4 ms-auto text-muted-foreground" />
-          )}
-        </button>
-        <div className="flex items-center gap-3 ms-4">
-          {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-          ) : (
-            <span className="text-xl font-display tabular-nums">
-              {formatMoney(totalCogs, currency, locale)}
-            </span>
-          )}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={!hasCogs}
-            onClick={onDownload}
-            className="shrink-0"
-          >
-            <Download className="h-3.5 w-3.5 me-1.5" />
-            {lang === "ar" ? "تنزيل CSV" : "Download CSV"}
-          </Button>
-        </div>
-      </div>
-
-      {expanded && (
-        <div className="border-t">
-          {!hasCogs && !loading && (
-            <p className="p-6 text-center text-sm text-muted-foreground">
-              {lang === "ar"
-                ? "لا توجد بيانات تكلفة للطلبات في هذه الفترة. تأكد من إدخال تكلفة المتغيرات في المخزون."
-                : "No cost data found for orders in this period. Make sure variant cost prices are set in Inventory."}
-            </p>
-          )}
-          {ordersWithCogs.map((order) => (
-            <div key={order.id} className="border-b last:border-b-0">
-              <div className="flex items-center justify-between px-4 py-2 bg-secondary/30">
-                <span className="text-xs font-semibold text-muted-foreground">
-                  #{order.invoice_number} &nbsp;·&nbsp;{" "}
-                  {new Date(order.created_at).toLocaleDateString(locale)}
-                </span>
-                <span className="text-xs font-bold tabular-nums">
-                  {formatMoney(order.orderCogs, order.currency, locale)}
-                </span>
-              </div>
-              <table className="w-full text-sm">
-                <thead className="text-xs text-muted-foreground">
-                  <tr>
-                    <th className="px-4 py-1.5 text-start font-medium">
-                      {lang === "ar" ? "المنتج" : "Product"}
-                    </th>
-                    <th className="px-4 py-1.5 text-center font-medium">
-                      {lang === "ar" ? "الكمية" : "Qty"}
-                    </th>
-                    <th className="px-4 py-1.5 text-end font-medium">
-                      {lang === "ar" ? "تكلفة الوحدة" : "Unit cost"}
-                    </th>
-                    <th className="px-4 py-1.5 text-end font-medium">
-                      {lang === "ar" ? "إجمالي التكلفة" : "Total cost"}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {order.items
-                    .filter((i) => i.itemCogs > 0)
-                    .map((item) => (
-                      <tr key={item.id} className="border-t">
-                        <td className="px-4 py-2 max-w-[200px] truncate">{item.description}</td>
-                        <td className="px-4 py-2 text-center tabular-nums">{item.quantity}</td>
-                        <td className="px-4 py-2 text-end tabular-nums">
-                          {formatMoney(item.cost, currency, locale)}
-                        </td>
-                        <td className="px-4 py-2 text-end tabular-nums font-medium">
-                          {formatMoney(item.itemCogs, currency, locale)}
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-          ))}
-          {hasCogs && (
-            <div className="flex justify-between items-center px-4 py-3 bg-secondary/20 font-bold text-sm">
-              <span>{lang === "ar" ? "إجمالي تكلفة البضاعة" : "Total COGS"}</span>
-              <span className="tabular-nums">{formatMoney(totalCogs, currency, locale)}</span>
-            </div>
-          )}
-        </div>
-      )}
-    </Card>
-  );
-}

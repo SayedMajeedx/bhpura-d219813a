@@ -10,8 +10,6 @@ const PRESET_WIDTHS: Record<ResponsiveImagePreset, number[]> = {
   content: [320, 480, 768, 1080],
 };
 
-const CLOUDFLARE_IMAGE_TRANSFORM_ORIGIN = "https://media.boutq.store";
-
 export function imageWidths(preset: ResponsiveImagePreset): number[] {
   return PRESET_WIDTHS[preset];
 }
@@ -47,34 +45,6 @@ export function cloudflareImageSrcSet(
     return undefined;
   }
   return widths.map((w, i) => `${urls[i]} ${w}w`).join(", ");
-}
-
-/**
- * Robust getter for the ImageKit URL endpoint, supporting both compiled VITE_ pre-bakes,
- * dynamic window environment variables injected during SSR layout script hydration,
- * and dynamic Cloudflare Page dashboard context lookups at server runtime.
- */
-function getImageKitEndpoint(): string {
-  // 1. Try static client-side build injection
-  const staticVal = (import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT || "").trim();
-  if (staticVal) return staticVal.replace(/\/+$/, "");
-
-  // 2. Try window global injected during SSR layout script dehydration
-  if (typeof window !== "undefined") {
-    const injectedVal = ((window as any).__PUBLIC_ENV__?.VITE_IMAGEKIT_URL_ENDPOINT || "").trim();
-    if (injectedVal) return injectedVal.replace(/\/+$/, "");
-  }
-
-  // 3. Try dynamic server-side worker context lookup
-  const dynamicVal = (
-    getEnvVariable("VITE_IMAGEKIT_URL_ENDPOINT") ||
-    getEnvVariable("IMAGEKIT_URL_ENDPOINT") ||
-    ""
-  ).trim();
-  if (dynamicVal) return dynamicVal.replace(/\/+$/, "");
-
-  // 4. Default fallback for Boutq brand storefronts to guarantee out-of-the-box operation
-  return "https://ik.imagekit.io/Boutq";
 }
 
 export function isLikelyImageUrl(source?: string | null): boolean {

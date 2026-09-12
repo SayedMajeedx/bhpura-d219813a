@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
+import{ useEffect, useState } from "react";
 import { Grid2X2, Rows, PackageSearch } from "lucide-react";
 import { useStorefront } from "@/lib/storefront-context";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OsEmptyState } from "@/components/os/os-empty-state";
@@ -19,12 +18,12 @@ export function ProductGrid({
   categoryEmpty: boolean;
   onViewAll: () => void;
 }) {
-  const { t, lang } = useStorefront();
+  const { t } = useStorefront();
 
   // [TECH ADVISOR #2]: Hydration guard. Initial render uses "2" columns.
   // Read preference from localStorage only in useEffect after mount to completely prevent hydration mismatches!
   const [mobileCols, setMobileCols] = useState("2");
-  const [mounted, setMounted] = useState(false);
+  const [, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);

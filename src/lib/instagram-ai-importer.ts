@@ -474,7 +474,7 @@ export const fetchScraperDataset = createServerFn({ method: "POST" })
       );
 
       if (!itemsResponse.ok) {
-        const errText = await itemsResponse.text();
+        await itemsResponse.text();
         throw new Error(`فشل استرجاع عناصر البيانات من Apify: (كود ${itemsResponse.status})`);
       }
 

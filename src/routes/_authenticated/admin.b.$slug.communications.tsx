@@ -42,7 +42,7 @@ import {
 } from "@/components/communications/CommunicationsScopeSwitcher";
 
 function CommunicationsPage() {
-  const t = useT();
+  useT();
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const brand = useBrand();

@@ -12,7 +12,6 @@ import {
   MessageSquare,
   AlertCircle,
   Truck,
-  CreditCard,
   Eye,
   Trash2,
 } from "lucide-react";

@@ -1,5 +1,4 @@
-import { LayoutDashboard, ReceiptText, Package } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { LayoutDashboard } from "lucide-react";
 
 interface DashboardCommandHeaderProps {
   lang: "ar" | "en";

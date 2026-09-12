@@ -2,17 +2,13 @@ import {
   Pencil,
   Trash2,
   Tag,
-  Calendar,
   CheckCircle2,
   AlertCircle,
   Clock,
-  Percent,
-  DollarSign,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/format";
-import { cn } from "@/lib/utils";
 
 type Promo = {
   id: string;

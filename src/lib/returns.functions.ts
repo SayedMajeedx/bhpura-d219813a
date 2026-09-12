@@ -1,8 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type {
   BrandReturnPolicy,
-  ReturnRequest,
-  ReturnItem,
   ReturnStatus,
   ReturnItemCondition,
   CompensationMethod,

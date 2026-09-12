@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +13,6 @@ import {
   CommandEmpty,
   CommandGroup,
   CommandItem,
-  CommandShortcut,
 } from "@/components/ui/command";
 import {
   LayoutDashboard,
@@ -28,7 +27,6 @@ import {
   Plus,
   Store,
   Languages,
-  Search,
   RotateCcw,
   Award,
   ShoppingCart,
@@ -43,7 +41,7 @@ export function SpotlightCommandPalette({
 }) {
   const navigate = useNavigate();
   const routeParams = useParams({ strict: false }) as { slug?: string };
-  const { lang, setLang, t } = useI18n();
+  const { lang, setLang } = useI18n();
   const brand = useBrandOptional();
   const isAr = lang === "ar";
   const [searchQuery, setSearchQuery] = useState("");

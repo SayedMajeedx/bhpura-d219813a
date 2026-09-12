@@ -10,7 +10,7 @@ import {
 } from "@/lib/order-customer-snapshot";
 import { getPaymentGatewayReference } from "@/lib/payment-reference";
 import { getReadableTextColor } from "@/lib/color-utils";
-import { getInvoiceStatusLabel, getFulfillmentLabel } from "@/lib/status-labels";
+import { getInvoiceStatusLabel } from "@/lib/status-labels";
 
 type SavedAddress = {
   id?: string;
@@ -174,13 +174,6 @@ function toArabicDigits(str: string) {
   const map = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
   return str.replace(/[0-9]/g, (d) => map[+d]);
 }
-
-const PAYMENT_BADGE_CLASSES = {
-  paid: "bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300",
-  partial: "bg-blue-100 text-blue-900 border-blue-300 dark:bg-blue-950/40 dark:text-blue-300",
-  unpaid: "bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300",
-  refunded: "bg-rose-100 text-rose-900 border-rose-300 dark:bg-rose-950/40 dark:text-rose-300",
-} as const;
 
 const PAYMENT_BADGE_LABEL = {
   paid: { ar: "مدفوع بالكامل", en: "Fully Paid" },

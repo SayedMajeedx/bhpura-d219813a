@@ -50,7 +50,6 @@ export function DiscountMobileCard({
   const isStarted = !p.start_date || new Date(p.start_date) <= now;
   const isExpired = p.end_date && new Date(p.end_date) < now;
   const usage = analyticsData?.[p.id]?.count || 0;
-  const revenue = analyticsData?.[p.id]?.revenue || 0;
   const isCapReached = p.max_redemptions != null && usage >= p.max_redemptions;
 
   let statusBadge = (

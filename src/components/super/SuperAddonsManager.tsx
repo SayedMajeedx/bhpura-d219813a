@@ -2,7 +2,7 @@
 // BOUTQ OS: SUPER ADMIN MODULAR ADD-ONS MANAGER
 // ==============================================================================
 
-import React, { useState } from "react";
+import{ useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { listAddons, upsertAddon } from "@/lib/saas-billing/saas-billing.functions";
 import type { SaaSAddon } from "@/lib/saas-billing/saas-billing.types";
@@ -13,7 +13,6 @@ import {
   PackagePlus,
   Plus,
   Edit2,
-  CheckCircle2,
   Loader2,
   Check,
   AlertTriangle,

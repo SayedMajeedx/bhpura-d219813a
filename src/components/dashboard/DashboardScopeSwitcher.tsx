@@ -1,4 +1,4 @@
-import { CalendarDays, TrendingUp, ShieldAlert, PackageCheck } from "lucide-react";
+import { CalendarDays, TrendingUp, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type DashboardViewScope = "financials" | "diagnostics" | "sales_series";

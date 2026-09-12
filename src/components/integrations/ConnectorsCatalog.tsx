@@ -8,7 +8,6 @@ import {
 import {
   AVAILABLE_CONNECTORS,
   type ConnectorMetadata,
-  transformRecordWithMapping,
 } from "@/lib/connectors/connector-framework";
 import type { BrandConnector, ConnectorType } from "@/lib/public-api/public-api.types";
 import { Button } from "@/components/ui/button";
@@ -40,12 +39,9 @@ import {
   FileSpreadsheet,
   Monitor,
   CheckCircle2,
-  AlertCircle,
   RefreshCw,
   Settings2,
   ArrowLeftRight,
-  ArrowRight,
-  ArrowLeft,
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -68,7 +64,7 @@ export function ConnectorsCatalog({ brandId }: ConnectorsCatalogProps) {
   const [fieldMappings, setFieldMappings] = useState<Record<string, string>>({});
 
   // Queries
-  const { data, isLoading } = useQuery({
+  const { data } = useQuery({
     queryKey: ["brand_connectors", brandId],
     queryFn: () => getBrandConnectorsFn({ data: { brandId } }),
   });

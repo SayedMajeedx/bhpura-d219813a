@@ -1,4 +1,4 @@
-import { Award, Sparkles, Plus, Settings2 } from "lucide-react";
+import { Award, Sparkles, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 
@@ -13,7 +13,7 @@ export function LoyaltyCommandHeader({
   onOpenAdjust,
   isEnabled,
 }: LoyaltyCommandHeaderProps) {
-  const { lang, t } = useI18n();
+  const { lang } = useI18n();
   const isAr = lang === "ar";
 
   return (

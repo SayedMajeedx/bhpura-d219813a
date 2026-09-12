@@ -142,8 +142,6 @@ function CategoryPage() {
 
   // URL Deep-Linking & Client-side filter State
   const [selectedSubCategorySlugs, setSelectedSubCategorySlugs] = useState<string[]>([]);
-  const selectedSubCategorySlug = selectedSubCategorySlugs[0] || null;
-  const selectedSubSubCategorySlug = selectedSubCategorySlugs[1] || null;
 
   useEffect(() => {
     setSelectedSubCategorySlugs([]);

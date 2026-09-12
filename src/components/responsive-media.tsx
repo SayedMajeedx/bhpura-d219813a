@@ -1,6 +1,5 @@
-import React, {
+import{
   useEffect,
-  useRef,
   useState,
   type ImgHTMLAttributes,
   type VideoHTMLAttributes,

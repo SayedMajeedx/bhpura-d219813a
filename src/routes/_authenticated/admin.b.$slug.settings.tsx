@@ -40,7 +40,7 @@ import { Rnd } from "react-rnd";
 import { useBrand } from "@/lib/brand-context";
 import { queryKeys } from "@/lib/query-keys";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { formatMoney } from "@/lib/format";
 import { PasskeySettings } from "@/components/passkey-settings";
@@ -805,18 +805,6 @@ function Settings() {
     f.font_family === "Custom (uploaded)"
       ? "'CustomFont', sans-serif"
       : `"${f.font_family}", sans-serif`;
-
-  const TABS: { value: string; ar: string; en: string }[] = [
-    { value: "business", ar: "الملف التجاري", en: "Business Profile" },
-    { value: "invoice", ar: "إعدادات الفاتورة", en: "Invoice Settings" },
-    { value: "storefront", ar: "إعدادات المتجر", en: "Storefront" },
-    { value: "checkout", ar: "الشحن والاستلام", en: "Checkout & Fulfillment" },
-    { value: "payments", ar: "طرق الدفع", en: "Payment Methods" },
-    { value: "emails", ar: "الإشعارات والبريد", en: "Notifications & Emails" },
-    { value: "security", ar: "الأمان والخصوصية", en: "Security & Privacy" },
-    { value: "apps", ar: "تطبيقات الجوال", en: "Mobile Applications" },
-    { value: "subscription", ar: "إدارة الاشتراك", en: "Platform Subscription" },
-  ];
   const TAB_HEADERS: Record<
     string,
     { en: string; enDescription: string; ar: string; arDescription: string }
@@ -4249,9 +4237,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     trust_badges: TrustBadgesConfig;
   } | null>(null);
 
-  const [hasLoaderColumns, setHasLoaderColumns] = useState(true);
+  const [hasLoaderColumns] = useState(true);
 
-  const { data, isLoading } = useQuery({
+  const { data } = useQuery({
     queryKey: ["business-settings-theme", brandId],
     queryFn: async () => {
       const { data, error } = await (supabase.from("business_settings") as any)

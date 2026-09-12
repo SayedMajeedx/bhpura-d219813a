@@ -1,4 +1,4 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,12 +22,10 @@ import {
   XCircle,
   Loader2,
   ExternalLink,
-  Building2,
   Sparkles,
   User,
   Mail,
   Phone,
-  LayoutGrid,
 } from "lucide-react";
 import {
   Dialog,
@@ -92,7 +90,7 @@ function SuperRequestsPage() {
   const [activeScope, setActiveScope] = useState<SuperScope>("requests");
 
   // Modal receipt viewer states
-  const [selectedReceiptKey, setSelectedReceiptKey] = useState<string | null>(null);
+  const [, setSelectedReceiptKey] = useState<string | null>(null);
   const [receiptLoading, setReceiptLoading] = useState(false);
   const [receiptViewUrl, setReceiptViewUrl] = useState<string | null>(null);
 

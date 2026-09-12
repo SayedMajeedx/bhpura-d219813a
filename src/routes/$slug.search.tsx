@@ -1,11 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
-import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useStorefront } from "@/lib/storefront-context";
 import { useEffect, useMemo, useState } from "react";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
-import { ResponsiveImage } from "@/components/responsive-media";
 import { ProductGrid } from "@/components/storefront/product-grid";
 import { Search } from "lucide-react";
 import { OsEmptyState } from "@/components/os/os-empty-state";
@@ -48,7 +45,7 @@ export const Route = createFileRoute("/$slug/search")({
 });
 
 function SearchPage() {
-  const { brand, currency, lang, t } = useStorefront();
+  const { brand, t } = useStorefront();
   const search = Route.useSearch();
   const loaderData = Route.useLoaderData();
   const term = String(search.q || "").trim();

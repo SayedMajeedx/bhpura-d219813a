@@ -1,13 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
-  Lock,
   Check,
-  Sparkles,
-  ArrowRight,
   LogOut,
   MessageCircle,
-  CreditCard,
   Building2,
   ShieldAlert,
 } from "lucide-react";
@@ -16,7 +12,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 interface TrialExpiredPaywallProps {
   brand: {
@@ -40,7 +35,7 @@ export const TrialExpiredPaywall: React.FC<TrialExpiredPaywallProps> = ({
   const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState<string>("growth");
   const [billingInterval, setBillingInterval] = useState<"monthly" | "annual">("monthly");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  useState(false);
 
   const brandName = brand.name_ar || brand.name_en || brand.slug;
 

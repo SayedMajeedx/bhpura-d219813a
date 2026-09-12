@@ -34,7 +34,7 @@ export function ProductBomModal({
   directPackagingCost: initialDirectCost,
   onSaved,
 }: ProductBomModalProps) {
-  const t = useT();
+  useT();
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const brand = useBrand();
@@ -48,7 +48,7 @@ export function ProductBomModal({
   const [isSaving, setIsSaving] = useState(false);
 
   // Fetch brand packaging materials
-  const { data: materials = [], isLoading: isLoadingMaterials } = useQuery({
+  const { data: materials = [] } = useQuery({
     queryKey: ["packaging-materials", brandId],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
@@ -63,7 +63,7 @@ export function ProductBomModal({
   });
 
   // Fetch current product BOM items
-  const { data: currentBom = [], isLoading: isLoadingBom } = useQuery({
+  const { data: currentBom = [] } = useQuery({
     queryKey: ["product-bom-items", brandId, productId],
     queryFn: async () => {
       const { data, error } = await (supabase as any)

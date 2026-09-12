@@ -8,7 +8,6 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   evaluateBrandEntitlements,
   getBrandUsageSummary,
-  consumeBrandUsage,
 } from "./entitlements-engine.server";
 import type {
   SaaSPlan,

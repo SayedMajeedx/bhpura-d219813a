@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
@@ -13,13 +13,8 @@ import {
   Sparkles,
   Check,
   ArrowRight,
-  ShieldCheck,
   Zap,
-  Lock,
-  Globe,
   Loader2,
-  Building2,
-  CheckCircle2,
   AlertCircle,
   Eye,
   EyeOff,
@@ -77,7 +72,7 @@ function OnboardPage() {
   const [trialDays, setTrialDays] = useState(3);
   const [billingInterval, setBillingInterval] = useState<"monthly" | "annual">("annual");
   const [platformBillingMode, setPlatformBillingMode] = useState<"both" | "monthly_only" | "annual_only">("both");
-  const [selectedPlan, setSelectedPlan] = useState<any>(null);
+  const [selectedPlan] = useState<any>(null);
 
   // Form Fields
   const [brandName, setBrandName] = useState("");
@@ -97,6 +92,7 @@ function OnboardPage() {
     setBillingInterval(interval);
   };
   const onSelectBilling = (interval: "monthly" | "annual") => chooseBillingInterval(interval);
+  void onSelectBilling;
 
   // Configure trial days from database
   useEffect(() => {

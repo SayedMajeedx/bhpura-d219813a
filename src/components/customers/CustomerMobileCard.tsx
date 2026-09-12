@@ -1,9 +1,7 @@
 import React from "react";
 import { formatMoney } from "@/lib/format";
 import {
-  Users,
   Star,
-  Phone,
   Mail,
   MapPin,
   ChevronRight,
@@ -12,7 +10,6 @@ import {
   UserPlus,
   AlertCircle,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { regionLabel } from "@/lib/bahrain-regions";
 import { maskPhoneForList } from "@/lib/privacy";

@@ -1,9 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type {
   BrandLoyaltyProgram,
-  LoyaltyTier,
-  LoyaltyAccount,
-  LoyaltyLedgerEntry,
 } from "./loyalty.types";
 
 /**

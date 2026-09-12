@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import {
   requireSupabaseAuth,
-  getEnvVariableAsync,
   getGeminiCredentials,
 } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";

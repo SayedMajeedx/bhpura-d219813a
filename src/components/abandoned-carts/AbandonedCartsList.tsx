@@ -22,17 +22,12 @@ import {
 import { toast } from "sonner";
 import {
   Search,
-  ShoppingCart,
   MessageSquare,
   Link2,
   CheckCircle2,
-  Clock,
-  Sparkles,
   RefreshCw,
-  Copy,
-  ExternalLink,
 } from "lucide-react";
-import type { AbandonedCart, CartLineSnapshot } from "@/lib/abandoned-carts.types";
+import type { AbandonedCart } from "@/lib/abandoned-carts.types";
 import { generateCartRecoveryCoupon } from "@/lib/abandoned-carts.functions";
 
 interface AbandonedCartsListProps {
@@ -54,7 +49,7 @@ export function AbandonedCartsList({
   isLoading,
   onRefresh,
 }: AbandonedCartsListProps) {
-  const { lang, t } = useI18n();
+  const { lang } = useI18n();
   const isAr = lang === "ar";
 
   const [search, setSearch] = useState("");

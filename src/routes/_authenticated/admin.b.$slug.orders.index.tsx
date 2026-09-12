@@ -3,15 +3,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getPaymentGatewayReference } from "@/lib/payment-reference";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Link as LinkIcon,
-  Plus,
   ReceiptText,
   Trash2,
-  Search,
   AlertCircle,
   Clock3,
   CircleDollarSign,
@@ -28,17 +24,12 @@ import {
   Square,
   Check,
   CheckCircle2,
-  MoreHorizontal,
   ExternalLink,
-  Printer,
   Copy,
   Lock,
-  MessageSquare,
   Phone,
   MessageCircle,
   MapPin,
-  SlidersHorizontal,
-  X,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -49,7 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { formatDate, formatMoney, formatOrderStatus } from "@/lib/format";
+import { formatDate, formatMoney } from "@/lib/format";
 import { buildWhatsAppLink, sanitizeGCCPhone } from "@/lib/os-formatting";
 import { parseCSV } from "@/lib/csv-parser";
 import { OrdersCommandHeader } from "@/components/orders/OrdersCommandHeader";
@@ -60,7 +51,6 @@ import { OrderMobileCard } from "@/components/orders/OrderMobileCard";
 import { toast } from "sonner";
 import {
   generateCourierWhatsAppUrl,
-  formatNotifiedTimeAgo,
   recordCourierNotified,
 } from "@/lib/courier-whatsapp";
 import { CourierWhatsAppModal } from "@/components/courier/CourierWhatsAppModal";
@@ -93,7 +83,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
 import { Sparkles, Upload, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -166,34 +155,6 @@ async function copyInvoiceLink(id: string, t: (k: string) => string) {
   } catch {
     toast.error(t("orders.linkFailed"));
   }
-}
-
-function deliveryStatusPresentation(status: string | null | undefined, lang: "en" | "ar") {
-  const normalized = String(status ?? "").toLowerCase();
-  const labels: Record<string, { en: string; ar: string; className: string }> = {
-    assigned: {
-      en: "Assigned",
-      ar: "تم التعيين",
-      className: "bg-muted text-muted-foreground border border-border font-semibold",
-    },
-    out_for_delivery: {
-      en: "Out for delivery",
-      ar: "خرج للتوصيل",
-      className: "bg-blue-100 text-blue-900 border border-blue-300 font-semibold",
-    },
-    delivered: {
-      en: "Delivered",
-      ar: "تم التوصيل",
-      className: "bg-emerald-100 text-emerald-900 border border-emerald-300 font-semibold",
-    },
-    returned: {
-      en: "Returned",
-      ar: "مرتجع",
-      className: "bg-amber-100 text-amber-900 border border-amber-300 font-semibold",
-    },
-  };
-  const item = labels[normalized];
-  return item ? { label: item[lang], className: item.className } : null;
 }
 
 function normalizedFulfillmentStage(order: any): string {
@@ -269,37 +230,6 @@ function DeliveryAddressSnapshot({ customer, lang }: { customer: any; lang: "en"
   );
 }
 
-function OrderItemsSummary({
-  items,
-  lang,
-}: {
-  items: any[] | undefined | null;
-  lang: "en" | "ar";
-}) {
-  if (!items || items.length === 0) return null;
-
-  const totalQty = items.reduce((sum: number, it: any) => sum + (Number(it.quantity) || 1), 0);
-  const descriptions = items
-    .map((it: any) => {
-      const name = it.description || it.products?.title || (lang === "ar" ? "منتج" : "Item");
-      const qty = Number(it.quantity) > 1 ? `${it.quantity}x ` : "";
-      return `${qty}${name}`;
-    })
-    .join(", ");
-
-  const truncated = descriptions.length > 35 ? descriptions.slice(0, 35) + "..." : descriptions;
-
-  return (
-    <div className="mt-1.5 text-xs font-medium text-muted-foreground flex items-center gap-1.5 bg-secondary/50 px-2 py-0.5 rounded-md w-fit max-w-full">
-      <Package className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
-      <span className="font-bold text-foreground">
-        {totalQty} {lang === "ar" ? "منتج" : totalQty === 1 ? "item" : "items"}
-      </span>
-      <span className="truncate text-muted-foreground">({truncated})</span>
-    </div>
-  );
-}
-
 function OrdersList() {
   const t = useT();
   const { lang } = useI18n();
@@ -330,7 +260,7 @@ function OrdersList() {
   );
   const [inspectOrder, setInspectOrder] = useState<any | null>(null);
   const [includeHistorical, setIncludeHistorical] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
+  useState(false);
 
   // Route search parameter integration for direct tab selection from dashboard
   const routeSearch = Route.useSearch();
@@ -929,27 +859,6 @@ function OrdersList() {
 
   const totalPages = Math.ceil(sortedOrders.length / pageSize) || 1;
 
-  const toggleSort = (field: typeof sortField) => {
-    if (sortField === field) {
-      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
-    } else {
-      setSortField(field);
-      setSortDirection("desc");
-    }
-  };
-
-  const renderSortIcon = (field: typeof sortField) => {
-    if (sortField !== field)
-      return (
-        <ArrowUpDown className="ms-1.5 h-3.5 w-3.5 opacity-50 shrink-0 inline text-muted-foreground" />
-      );
-    return sortDirection === "asc" ? (
-      <ArrowUp className="ms-1.5 h-3.5 w-3.5 text-primary shrink-0 inline" />
-    ) : (
-      <ArrowDown className="ms-1.5 h-3.5 w-3.5 text-primary shrink-0 inline" />
-    );
-  };
-
   const tabsList = [
     {
       id: "action_required",
@@ -1040,7 +949,6 @@ function OrdersList() {
     ].includes(ff);
 
     const method = String(o.payment_method || "").toLowerCase();
-    const isBenefit = ["benefit", "benefitpay", "benefit_pay", "bank_transfer"].includes(method);
     const isCod = ["cash", "cod"].includes(method);
 
     const isPickup = String(o.fulfillment_method || "").toLowerCase() === "pickup";

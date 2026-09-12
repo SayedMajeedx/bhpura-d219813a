@@ -32,7 +32,6 @@ import {
   Clock,
   Sparkles,
   Edit2,
-  CheckCircle2,
   Loader2,
 } from "lucide-react";
 import type { AbandonedCartSequence, RecoveryChannel } from "@/lib/abandoned-carts.types";
@@ -47,7 +46,7 @@ export function AbandonedCartSequencesEditor({
   brandId,
   sequences,
 }: AbandonedCartSequencesEditorProps) {
-  const { lang, t } = useI18n();
+  const { lang } = useI18n();
   const isAr = lang === "ar";
   const queryClient = useQueryClient();
 

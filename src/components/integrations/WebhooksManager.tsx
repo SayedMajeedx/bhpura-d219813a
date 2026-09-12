@@ -33,11 +33,9 @@ import {
   Send,
   CheckCircle2,
   XCircle,
-  Clock,
   Radio,
   Eye,
   AlertOctagon,
-  Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
@@ -62,7 +60,7 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
 
   // Logs / Payload Inspection Modal
   const [selectedLog, setSelectedLog] = useState<WebhookDeliveryLog | null>(null);
-  const [testResult, setTestResult] = useState<any | null>(null);
+  const [, setTestResult] = useState<any | null>(null);
 
   // Queries
   const { data: endpointsData, isLoading: endpointsLoading } = useQuery({

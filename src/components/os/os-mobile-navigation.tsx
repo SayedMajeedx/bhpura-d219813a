@@ -9,7 +9,6 @@ import {
   Users,
   Grid,
   X,
-  ShieldCheck,
   Store,
   Clock as ClockIcon,
   Settings,
@@ -22,7 +21,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/components/ui/sheet";
-import { OsMobileTabBar, type OsMobileTabItem } from "./os-mobile-tab-bar";
+import { type OsMobileTabItem } from "./os-mobile-tab-bar";
 import { OsIslandDock, type OsIslandDockItem } from "./os-island-dock";
 import { OsQuickActions } from "./os-quick-actions";
 import { OsThemeToggle } from "./os-theme-toggle";

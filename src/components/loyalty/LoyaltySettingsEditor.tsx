@@ -32,7 +32,7 @@ export function LoyaltySettingsEditor({
   brandId,
   initialSettings,
 }: LoyaltySettingsEditorProps) {
-  const { lang, t } = useI18n();
+  const { lang } = useI18n();
   const isAr = lang === "ar";
   const queryClient = useQueryClient();
 

@@ -7,11 +7,9 @@ import {
   Pin,
   PinOff,
   ChevronDown,
-  Sparkles,
   Search,
   Grid,
   Boxes,
-  Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getStorefrontUrl } from "@/lib/storefront-url";

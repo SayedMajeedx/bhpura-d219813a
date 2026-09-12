@@ -15,14 +15,11 @@ import {
 } from "@/components/ui/select";
 import {
   Sliders,
-  Shield,
   Save,
   Loader2,
   Clock,
   Truck,
   FileText,
-  BadgePercent,
-  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { BrandReturnPolicy, CompensationMethod } from "@/lib/returns.types";

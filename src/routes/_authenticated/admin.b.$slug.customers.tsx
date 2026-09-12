@@ -6,14 +6,12 @@ import { importCustomerDatabase } from "@/lib/customer-importer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -24,18 +22,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  ChevronLeft,
-  ChevronRight,
   Pencil,
   Plus,
-  Search,
   Trash2,
   Users,
   Star,
   Check,
   Loader2,
   Upload,
-  Sparkles,
   AlertTriangle,
   RefreshCw,
 } from "lucide-react";
@@ -43,7 +37,6 @@ import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
 import {
   BAHRAIN_REGIONS,
-  regionLabel,
   formatAddressLine,
   type StructuredAddress,
 } from "@/lib/bahrain-regions";
@@ -61,9 +54,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { formatMoney } from "@/lib/format";
 import { buildCustomerCrmStats, type CustomerMetricOrder } from "@/lib/commerce-metrics";
-import { cn } from "@/lib/utils";
 import { getNavFilterContext, saveNavFilterContext } from "@/lib/os-productivity";
 import { queryKeys } from "@/lib/query-keys";
 import { parseCSV } from "@/lib/csv-parser";
@@ -385,12 +376,6 @@ function CustomerImporterModal({
     const findHeaderIdx = (names: string[]) => {
       return headersList.findIndex((h) =>
         names.some((name) => h.trim().toLowerCase() === name.toLowerCase()),
-      );
-    };
-
-    const findHeaderIdxContains = (names: string[]) => {
-      return headersList.findIndex((h) =>
-        names.some((name) => h.trim().toLowerCase().includes(name.toLowerCase())),
       );
     };
 

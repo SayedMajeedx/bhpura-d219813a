@@ -1,5 +1,5 @@
 import { useRouterState, useNavigate, useParams, useRouter } from "@tanstack/react-router";
-import { LogOut, Shield, Store, Search } from "lucide-react";
+import { LogOut, Shield, Store } from "lucide-react";
 import { SpotlightCommandPalette } from "@/components/spotlight-command-palette";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";

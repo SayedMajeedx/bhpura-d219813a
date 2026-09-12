@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Loader2, ShieldCheck, CreditCard, Sparkles } from "lucide-react";
+import { Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import {
   PAYPAL_LIVE_CLIENT_ID,

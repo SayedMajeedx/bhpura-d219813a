@@ -6,7 +6,7 @@ import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Award, Coins, Users, ArrowUpRight, ShieldCheck, Sparkles } from "lucide-react";
+import { Award, Coins, Users, ArrowUpRight, Sparkles } from "lucide-react";
 import { LoyaltyCommandHeader } from "@/components/loyalty/LoyaltyCommandHeader";
 import { LoyaltyTiersManager } from "@/components/loyalty/LoyaltyTiersManager";
 import { LoyaltyLedgerTable } from "@/components/loyalty/LoyaltyLedgerTable";
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/loyalty")({
 
 function LoyaltyDashboardPage() {
   const brand = useBrand();
-  const { lang, t } = useI18n();
+  const { lang } = useI18n();
   const isAr = lang === "ar";
 
   const [activeTab, setActiveTab] = useState<string>("tiers");

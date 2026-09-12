@@ -1,5 +1,5 @@
 import React from "react";
-import { ExternalLink, ReceiptText, Calendar, User, CreditCard } from "lucide-react";
+import { ExternalLink, ReceiptText, Calendar, User } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { formatMoney, formatDate } from "@/lib/format";

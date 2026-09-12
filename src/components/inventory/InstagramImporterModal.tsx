@@ -21,7 +21,6 @@ import {
   RefreshCw,
   Video,
   Layers,
-  ChevronRight,
   Info,
   ExternalLink,
   Check,
@@ -39,7 +38,6 @@ import {
   retryImageRehostFn,
   bulkInsertProducts,
   RATE_LIMIT_INFO,
-  type InstagramPostPreview,
   type InstagramProductDraft,
 } from "@/lib/instagram-ai-importer";
 
@@ -296,19 +294,6 @@ export function InstagramImporterModal({
     }
   };
 
-  // Inline Draft Updating & Field Source Tracking
-  const updateDraft = (id: string, patch: Partial<InstagramProductDraft>) => {
-    setDrafts((prev) =>
-      prev.map((draft) => {
-        if (draft.id !== id) return draft;
-        return {
-          ...draft,
-          ...patch,
-        };
-      }),
-    );
-  };
-
   const handleFieldEdit = (
     draftId: string,
     field: "title" | "price" | "category" | "sizes" | "description",
@@ -462,7 +447,7 @@ export function InstagramImporterModal({
     }
 
     try {
-      const res = await bulkInsertProducts({
+      await bulkInsertProducts({
         data: {
           brandId,
           products: [draft],

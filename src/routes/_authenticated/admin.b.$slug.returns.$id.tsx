@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
 import { useProfile } from "@/lib/profile-context";
-import { useI18n, useT } from "@/lib/i18n";
+import { useI18n } from "@/lib/i18n";
 import { formatMoney, formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,17 +25,11 @@ import {
   SearchCheck,
   CircleDollarSign,
   ArrowLeftRight,
-  ReceiptText,
   User,
-  Phone,
-  Mail,
-  MapPin,
-  Clock,
   ShieldAlert,
   Loader2,
   ExternalLink,
   History,
-  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ReturnTimelineTracker } from "@/components/returns/ReturnTimelineTracker";
@@ -60,8 +54,8 @@ function ReturnDetailPage() {
   const brand = useBrand();
   const slug = brand?.slug;
   const { id } = useParams({ strict: false }) as { slug?: string; id?: string };
-  const { profile } = useProfile();
-  const { lang, t } = useI18n();
+  useProfile();
+  const { lang } = useI18n();
   const isAr = lang === "ar";
   const language = lang;
   const navigate = useNavigate();

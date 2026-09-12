@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, ArrowUpRight, ArrowDownLeft, Clock, AlertCircle, RefreshCw } from "lucide-react";
+import { Search, ArrowUpRight, ArrowDownLeft, Clock, RefreshCw } from "lucide-react";
 import type { LoyaltyLedgerEntry } from "@/lib/loyalty.types";
 
 interface LoyaltyLedgerTableProps {
@@ -35,7 +35,7 @@ export function LoyaltyLedgerTable({
   isLoading,
   onRefresh,
 }: LoyaltyLedgerTableProps) {
-  const { lang, t } = useI18n();
+  const { lang } = useI18n();
   const isAr = lang === "ar";
 
   const [search, setSearch] = useState("");

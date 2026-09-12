@@ -21,12 +21,9 @@ import { toast } from "sonner";
 import {
   Crown,
   Sparkles,
-  Calendar,
   Zap,
   CheckCircle2,
   AlertTriangle,
-  Plus,
-  ArrowUpRight,
   ArrowLeft,
   ArrowRight,
   ShieldCheck,
@@ -37,13 +34,11 @@ import {
   Loader2,
   Check,
   XCircle,
-  HelpCircle,
   Info,
   Clock,
   Copy,
   QrCode,
   UploadCloud,
-  FileImage,
   X,
 } from "lucide-react";
 import {
@@ -64,7 +59,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PayPalSubscriptionButton } from "./PayPalSubscriptionButton";
 
 interface BrandSubscriptionHubProps {
@@ -252,8 +246,6 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
     subscription = {} as any,
     currentPlan = {} as any,
     currentVersion,
-    activeAddons = [],
-    availableAddons = [],
     allPlans = [],
     usageSummary = {} as any,
     brand = {} as any,

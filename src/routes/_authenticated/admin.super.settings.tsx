@@ -24,7 +24,6 @@ import {
   Loader2,
   Image as ImageIcon,
   Check,
-  ArrowRight,
   ShieldAlert,
   Trash2,
   Globe,

@@ -40,10 +40,8 @@ import {
   Eye,
   CheckCircle,
   XCircle,
-  Sparkles,
   TrendingUp,
   Loader2,
-  CalendarRange,
   Shield,
   Smartphone,
 } from "lucide-react";
@@ -140,10 +138,10 @@ async function provisionBrandWithOwner(payload: Record<string, unknown>) {
 }
 
 function BrandsPage() {
-  const t = useT();
+  useT();
   const { lang } = useI18n();
   const qc = useQueryClient();
-  const navigate = useNavigate();
+  useNavigate();
   const [open, setOpen] = useState(false);
 
   const handleImpersonate = async (brandId: string, slug: string) => {

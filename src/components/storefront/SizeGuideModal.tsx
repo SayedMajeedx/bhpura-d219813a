@@ -7,7 +7,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Ruler, Sparkles, Info, Check } from "lucide-react";
+import { Ruler, Info, Check } from "lucide-react";
 
 interface SizeRow {
   size: string;

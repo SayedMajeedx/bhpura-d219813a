@@ -1,9 +1,7 @@
 import React from "react";
-import { Package, ShoppingBag, Plus, Minus, Trash2, ScanLine, Scissors, Tag } from "lucide-react";
+import { Package, ShoppingBag, Plus, Minus, Trash2, ScanLine, Scissors } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { formatMoney } from "@/lib/format";
-import { cn } from "@/lib/utils";
 
 interface OrderItemsWorkflowCardProps {
   lang: "en" | "ar";

@@ -39,7 +39,7 @@ export function safeStorefrontRedirect(redirect: string | undefined, slug: strin
 }
 
 function StorefrontAuth() {
-  const { brand, settings, t, lang, session, isStoreMember, membershipLoading, refreshMembership } =
+  const { brand, t, lang, session, isStoreMember, membershipLoading, refreshMembership } =
     useStorefront();
   const { redirect } = Route.useSearch();
   const navigate = useNavigate();

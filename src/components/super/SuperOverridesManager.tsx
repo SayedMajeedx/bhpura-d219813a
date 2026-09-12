@@ -20,11 +20,9 @@ import {
   Plus,
   Trash2,
   FileText,
-  Clock,
   User,
   Loader2,
   Check,
-  AlertTriangle,
   Sparkles,
 } from "lucide-react";
 import {

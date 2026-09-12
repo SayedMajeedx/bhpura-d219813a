@@ -1,7 +1,6 @@
 import React from "react";
-import { CreditCard, CheckCircle2, AlertCircle, DollarSign, Receipt, Plus } from "lucide-react";
+import { CreditCard, CheckCircle2, AlertCircle, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 

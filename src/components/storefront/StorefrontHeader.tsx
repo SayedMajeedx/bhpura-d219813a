@@ -1,17 +1,16 @@
-import React, { useEffect, useState } from "react";
+import{ useEffect, useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { useStorefront, readableOn } from "@/lib/storefront-context";
+import { useStorefront } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cloudflareImageUrl } from "@/lib/media-delivery";
 import { isColorDark } from "@/components/storefront/storefront-utils";
-import { StorefrontMenu, SearchBar, MobileStorefrontDropdown } from "@/components/storefront/StorefrontNavigation";
+import { SearchBar, MobileStorefrontDropdown } from "@/components/storefront/StorefrontNavigation";
 import { CartDrawer } from "@/components/storefront/StorefrontCartDrawer";
 import {
   ShoppingBag,
   Heart,
   User,
-  LogIn,
   Languages,
   X,
   Bell,
@@ -23,7 +22,6 @@ function StoreHeader() {
   const displayName = lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en;
   const align = settings.logo_align ?? "left";
   const logoSize = settings.logo_size || 40;
-  const isDarkHeader = isColorDark(settings.header_bg);
   const [mounted, setMounted] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   useEffect(() => {

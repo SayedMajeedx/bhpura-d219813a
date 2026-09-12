@@ -23,7 +23,7 @@ interface ShareCartModalProps {
 }
 
 export function ShareCartModal({ open, onOpenChange }: ShareCartModalProps) {
-  const { cart, cartTotal, currency, lang, t, brand, settings } = useStorefront();
+  const { cart, cartTotal, currency, lang, t, brand } = useStorefront();
   const [copied, setCopied] = useState(false);
   const [shortUrl, setShortUrl] = useState<string>("");
   const [generating, setGenerating] = useState(false);

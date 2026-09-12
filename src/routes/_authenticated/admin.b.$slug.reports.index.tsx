@@ -5,7 +5,6 @@ import { subDays, startOfDay, endOfDay } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { useI18n } from "@/lib/i18n";
 import { fetchReportingOverview } from "@/lib/reporting.functions";
-import { DatePickerWithRange } from "@/components/reports/date-range-picker";
 import { ReportsToolbar } from "@/components/reports/ReportsToolbar";
 import { KpiCard } from "@/components/reports/kpi-card";
 import { formatMoney } from "@/lib/format";
@@ -23,8 +22,6 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { OsSkeleton } from "@/components/os/os-skeleton";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 

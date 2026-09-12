@@ -18,7 +18,7 @@ interface AbandonedCartLogsTableProps {
 }
 
 export function AbandonedCartLogsTable({ logs, isLoading }: AbandonedCartLogsTableProps) {
-  const { lang, t } = useI18n();
+  const { lang } = useI18n();
   const isAr = lang === "ar";
 
   const getChannelBadge = (ch: string) => {

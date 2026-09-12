@@ -93,12 +93,6 @@ const Input = z.object({
     .max(100 * 1024 * 1024),
 });
 
-function requiredEnv(name: string): string {
-  const value = getPlatformEnv(name)?.trim();
-  if (!value) throw new Error(`Missing ${name}`);
-  return value;
-}
-
 function sanitizeValue(val: string | undefined): string | undefined {
   if (!val) return undefined;
   return val

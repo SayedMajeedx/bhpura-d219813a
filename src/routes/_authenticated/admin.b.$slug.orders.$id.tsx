@@ -18,24 +18,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  ArrowLeft,
   Plus,
   Minus,
   Check,
   Pencil,
   Trash2,
-  Copy,
   Printer,
   Save,
-  Send,
   Search,
   Receipt,
   Link as LinkIcon,
   ScanLine,
   Mail,
   Loader2,
-  Lock,
-  Unlock,
   X,
   Tag,
   CheckCircle2,
@@ -46,7 +41,6 @@ import {
   UserRound,
   Package,
   CreditCard,
-  MapPin,
   Scissors,
   PackageCheck,
   Box,
@@ -80,41 +74,25 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogTrigger,
   DialogDescription,
 } from "@/components/ui/dialog";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
-  generateCourierWhatsAppUrl,
   formatNotifiedTimeAgo,
-  recordCourierNotified,
 } from "@/lib/courier-whatsapp";
 import { CourierWhatsAppModal } from "@/components/courier/CourierWhatsAppModal";
 import { formatDate, formatMoney, formatOrderStatus } from "@/lib/format";
 import { queryKeys } from "@/lib/query-keys";
 import { useT, useI18n } from "@/lib/i18n";
 import {
-  getOrderCustomerEmail,
   getOrderCustomerName,
   getOrderCustomerPhone,
 } from "@/lib/order-customer-snapshot";
 import {
   regionLabel,
   formatAddressLine,
-  formatAddressDetailed,
   type StructuredAddress,
 } from "@/lib/bahrain-regions";
 import { printThermalReceipt } from "@/lib/thermal-print";
@@ -122,8 +100,6 @@ import { cn, getFriendlyErrorMessage } from "@/lib/utils";
 import {
   resolvePaymentStatus,
   PAYMENT_BADGE_CLASSES,
-  PAYMENT_BADGE_LABEL,
-  PAYMENT_BADGE_VALUES,
   type PaymentBadge,
 } from "@/lib/payment-status";
 import { logActivity, logActivityBatch } from "@/lib/activity-log";
@@ -136,25 +112,16 @@ import { useProfile } from "@/lib/profile-context";
 import { getBenefitReceiptViewUrl, rejectBenefitReceipt } from "@/lib/benefit-receipt.functions";
 import { DeliveryAddressCard } from "@/components/delivery-address-card";
 import { getOrderWorkflow } from "@/lib/order-workflow";
-import { detectOrderType, getOrderTypeLabel } from "@/lib/order-type-detector";
+import { detectOrderType } from "@/lib/order-type-detector";
 import {
   calculateOrderPackagingCogs,
-  deductOrderPackagingStock,
-  matchProductForItem,
 } from "@/lib/bom-calculator";
 import {
   getFulfillmentLabel,
-  getOrderStatusLabel,
-  getFulfillmentMethodLabel,
-  FULFILLMENT_STATUS_MAP,
 } from "@/lib/status-labels";
 import { OrderUnifiedHeader } from "@/components/orders/OrderUnifiedHeader";
-import { OrderMobileQuickActions } from "@/components/orders/OrderMobileQuickActions";
 import { OrderStickyBottomBar } from "@/components/orders/OrderStickyBottomBar";
-import { OrderItemsWorkflowCard } from "@/components/orders/OrderItemsWorkflowCard";
-import { OrderFinancialLedgerCard } from "@/components/orders/OrderFinancialLedgerCard";
 import { OrderSalesDocumentsCard } from "@/components/orders/OrderSalesDocumentsCard";
-import { OrderMetaSidePanel } from "@/components/orders/OrderMetaSidePanel";
 import {
   FIT_PROFILE_FIELDS,
   fitProfileForProduct,
@@ -301,21 +268,6 @@ function normalizeCustomFieldValues(value: unknown): Item["custom_field_values"]
     }));
   }
   return [];
-}
-
-function normalizeWhatsAppNumber(value: string | null | undefined) {
-  const digits = String(value ?? "").replace(/\D/g, "");
-  if (!digits) return "";
-  return digits.startsWith("973") ? digits : `973${digits.replace(/^0+/, "")}`;
-}
-
-function fillCourierMessage(template: string, order: any, brandName: string) {
-  return template
-    .replaceAll("{{customer_name}}", getOrderCustomerName(order) || "Customer")
-    .replaceAll("{{invoice_number}}", String(order.invoice_number ?? ""))
-    .replaceAll("{{brand_name}}", brandName)
-    .replaceAll("{{total}}", formatMoney(Number(order.total ?? 0), order.currency || "BHD"))
-    .replaceAll("{{customer_phone}}", getOrderCustomerPhone(order));
 }
 
 function ItemTailoringCustomizer({
@@ -993,7 +945,7 @@ function OrderDetail() {
   const [hasSavedDraft, setHasSavedDraft] = useState(false);
   const [saving, setSaving] = useState(false);
   const saveRef = useRef<() => Promise<unknown>>(async () => undefined);
-  const [adminOverrideChecked, setAdminOverrideChecked] = useState(false);
+  useState(false);
   const [promoInput, setPromoInput] = useState("");
   const [activeSection, setActiveSection] = useState<string>("sec-overview");
 
@@ -1608,7 +1560,7 @@ function OrderDetail() {
 
   const [managePaymentOpen, setManagePaymentOpen] = useState(false);
   const [isEditingFees, setIsEditingFees] = useState(false);
-  const [editingItems, setEditingItems] = useState<Record<number, boolean>>({});
+  const [editingItems] = useState<Record<number, boolean>>({});
   const [mobileTab, setMobileTab] = useState<"items" | "customer" | "activity">("items");
   const [editingItemSheetIdx, setEditingItemSheetIdx] = useState<number | null>(null);
 
@@ -1761,7 +1713,6 @@ function OrderDetail() {
     if (v.size) lines.push(`${sizeLabel}: ${v.size}`);
     if (v.color) lines.push(`${colorLabel}: ${v.color}`);
     if (v.fabric) lines.push(`${fabricLabel}: ${v.fabric}`);
-    const nextIdx = items.length;
     setItems([
       ...items,
       {
@@ -2389,9 +2340,6 @@ function OrderDetail() {
   };
 
   const method = String(order?.payment_method || "").toLowerCase();
-  const isCod = ["cash", "cod"].includes(method);
-  const isUnpaid = (order?.payment_status ?? "unpaid") === "unpaid";
-  const isPickup = String(order?.fulfillment_method || "").toLowerCase() === "pickup";
 
   const renderTopPrimaryAction = () => {
     if (isCreationMode || !order || isReadOnly) return null;
@@ -2842,56 +2790,6 @@ function OrderDetail() {
 
     return null;
   };
-
-  const renderMobileActionBar = () => (
-    <div
-      className="mt-3 flex items-center gap-2 border-t border-border-subtle pt-3"
-      aria-label={lang === "ar" ? "إجراءات الطلب" : "Order actions"}
-    >
-      {!isReadOnly && (isDirty || isCreationMode) ? (
-        <Button
-          onClick={save}
-          disabled={saving}
-          className="min-h-11 flex-1 rounded-xl font-bold shadow-md"
-        >
-          {saving ? (
-            <Loader2 className="me-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Save className="me-2 h-4 w-4" />
-          )}
-          {isCreationMode
-            ? lang === "ar"
-              ? "إنشاء وحفظ"
-              : "Create & save"
-            : lang === "ar"
-              ? "حفظ التغييرات"
-              : "Save changes"}
-        </Button>
-      ) : (
-        <div className="flex min-w-0 flex-1 [&>button]:min-h-11 [&>button]:w-full [&>button]:rounded-xl">
-          {renderTopPrimaryAction() || (
-            <Button
-              variant="outline"
-              onClick={() => scrollToSection("sec-overview")}
-              className="font-bold"
-            >
-              {lang === "ar" ? "عرض تفاصيل الطلب" : "Review order details"}
-            </Button>
-          )}
-        </div>
-      )}
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        className="h-11 w-11 shrink-0 rounded-xl bg-card"
-        onClick={() => setMobileActionsOpen(true)}
-        aria-label={lang === "ar" ? "المزيد من إجراءات الطلب" : "More order actions"}
-      >
-        <MoreHorizontal className="h-5 w-5" />
-      </Button>
-    </div>
-  );
 
   const handleDirectOrderStatusChange = async (newStatus: string, newFulfillmentStatus: string) => {
     if (!order) return;
@@ -5477,66 +5375,8 @@ function Row({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-
-const INVOICE_LABELS = {
-  en: {
-    invoice: "INVOICE",
-    invoiceNumber: "Invoice #",
-    date: "Date",
-    status: "Status",
-    billTo: "Bill to",
-    paymentMethod: "Payment method",
-    vatLabel: "VAT",
-    item: "Item",
-    description: "Description",
-    qty: "Qty",
-    unit: "Unit Price",
-    price: "Price",
-    total: "Total",
-    subtotal: "Subtotal",
-    discount: "Discount",
-    vat: "VAT",
-    shipping: "Shipping",
-    grandTotal: "Grand Total",
-    notes: "Notes",
-    warmRegards: "Warm regards",
-    language: "Language",
-    english: "English",
-    arabic: "العربية",
-  },
-  ar: {
-    invoice: "فاتورة",
-    invoiceNumber: "رقم الفاتورة",
-    date: "التاريخ",
-    status: "الحالة",
-    billTo: "فاتورة إلى",
-    paymentMethod: "طريقة الدفع",
-    vatLabel: "الرقم الضريبي",
-    item: "الصنف",
-    description: "الوصف",
-    qty: "الكمية",
-    unit: "سعر الوحدة",
-    price: "السعر",
-    total: "الإجمالي",
-    subtotal: "المجموع الفرعي",
-    discount: "الخصم",
-    vat: "ضريبة القيمة المضافة",
-    shipping: "الشحن",
-    grandTotal: "الإجمالي الكلي",
-    notes: "ملاحظات",
-    warmRegards: "مع أطيب التحيات",
-    language: "اللغة",
-    english: "English",
-    arabic: "العربية",
-  },
-} as const;
 const BRAND: Record<"en" | "ar", string> = { en: "Boutq", ar: "بوتيك" };
 const LEGACY_BRAND_NAMES = new Set(["Abaya Atelier", "أباية أتيليه"]);
-function brandFor(lang: "en" | "ar", stored?: string | null) {
-  const s = (stored ?? "").trim();
-  if (!s || LEGACY_BRAND_NAMES.has(s)) return BRAND[lang];
-  return s;
-}
 
 const STATUS_LABELS: Record<string, { en: string; ar: string }> = {
   draft: { en: "Draft", ar: "مسودة" },
@@ -5559,153 +5399,10 @@ const PAYMENT_LABELS: Record<string, { en: string; ar: string }> = {
   google_pay: { en: "Google Pay", ar: "جوجل باي" },
   cod: { en: "Cash on delivery", ar: "الدفع عند الاستلام" },
 };
-
-function tStatus(s: string | null | undefined, lang: "en" | "ar") {
-  if (!s) return "";
-  return STATUS_LABELS[s]?.[lang] ?? s;
-}
 function tPayment(s: string | null | undefined, lang: "en" | "ar") {
   if (!s) return "";
   return PAYMENT_LABELS[s]?.[lang] ?? s;
 }
 
-// Localize numerals (Arabic-Indic) inside a rendered money/number string
-function toArabicDigits(str: string) {
-  const map = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
-  return str.replace(/[0-9]/g, (d) => map[+d]);
-}
-
-function InvoiceBranchName({
-  brandId,
-  branchId,
-  isRTL,
-}: {
-  brandId: string;
-  branchId: string;
-  isRTL: boolean;
-}) {
-  const q = useQuery({
-    queryKey: ["branch", brandId, branchId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("branches" as any)
-        .select("name_ar, name_en, location_ar, location_en")
-        .eq("id", branchId)
-        .maybeSingle();
-      return data as any;
-    },
-    enabled: !!branchId,
-  });
-  const b = q.data;
-  if (!b) return null;
-  const name = isRTL ? b.name_ar || b.name_en : b.name_en || b.name_ar;
-  const loc = isRTL ? b.location_ar || b.location_en : b.location_en || b.location_ar;
-  return (
-    <p className="text-sm" style={{ opacity: 0.85 }}>
-      {name}
-      {loc ? ` — ${loc}` : ""}
-    </p>
-  );
-}
-
 const InvoicePreview = lazy(() => import("@/components/orders/InvoicePreview"));
 const SendInvoiceDialog = lazy(() => import("@/components/orders/SendInvoiceDialog"));
-
-function ResendConfirmationEmailButton({
-  order,
-  lang,
-  onDone,
-  asMenuItem = false,
-}: {
-  order: any;
-  lang: "ar" | "en";
-  onDone: () => void;
-  asMenuItem?: boolean;
-}) {
-  const [sending, setSending] = useState(false);
-  const status: string = order?.confirmation_email_status ?? "pending";
-  const sentAt = order?.confirmation_email_sent_at as string | null | undefined;
-  const err = order?.confirmation_email_error as string | null | undefined;
-
-  const color =
-    status === "sent"
-      ? "text-green-600"
-      : status === "failed"
-        ? "text-destructive"
-        : "text-muted-foreground";
-
-  const label =
-    lang === "ar"
-      ? status === "sent"
-        ? "إعادة إرسال البريد"
-        : status === "failed"
-          ? "إعادة المحاولة"
-          : "إرسال بريد التأكيد"
-      : status === "sent"
-        ? "Resend confirmation email"
-        : status === "failed"
-          ? "Retry confirmation email"
-          : "Send confirmation email";
-
-  const title = err
-    ? `${lang === "ar" ? "فشل: " : "Failed: "}${err}`
-    : sentAt
-      ? `${lang === "ar" ? "أُرسل: " : "Sent: "}${new Date(sentAt).toLocaleString()}`
-      : undefined;
-
-  const onClick = async () => {
-    if (!order?.id) return;
-    setSending(true);
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
-      const { data, error } = await supabase.functions.invoke("send-order-email", {
-        body: { order_id: order.id, lang, wait_for_delivery: true },
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
-      });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error(String((data as any).error));
-      toast.success(
-        lang === "ar"
-          ? "تم قبول بريد العميل للإرسال. راجع سجل المراسلات لمتابعة الحالة."
-          : "Customer email accepted by the provider. Track it in Communications.",
-      );
-    } catch (e: any) {
-      toast.error(e?.message ?? (lang === "ar" ? "فشل الإرسال" : "Failed to send"));
-    } finally {
-      setSending(false);
-      onDone();
-    }
-  };
-
-  if (asMenuItem) {
-    return (
-      <DropdownMenuItem
-        onSelect={(e) => {
-          e.preventDefault();
-          onClick();
-        }}
-        disabled={sending}
-        title={title}
-      >
-        {sending ? (
-          <Loader2 className="h-4 w-4 me-2 animate-spin" />
-        ) : (
-          <Mail className={`h-4 w-4 me-2 ${color}`} />
-        )}
-        {label}
-      </DropdownMenuItem>
-    );
-  }
-
-  return (
-    <Button variant="outline" onClick={onClick} disabled={sending} title={title}>
-      {sending ? (
-        <Loader2 className="h-4 w-4 me-2 animate-spin" />
-      ) : (
-        <Mail className={`h-4 w-4 me-2 ${color}`} />
-      )}
-      {label}
-    </Button>
-  );
-}

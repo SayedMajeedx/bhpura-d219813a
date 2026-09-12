@@ -1,6 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { ChevronDown, MapPin, Pencil, Plus, Trash2, Star, Check, Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { MapPin, Pencil, Plus, Trash2, Star, Check, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { DeliveryAddressCard } from "@/components/delivery-address-card";
 import { Button } from "@/components/ui/button";

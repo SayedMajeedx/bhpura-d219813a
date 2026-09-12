@@ -410,7 +410,7 @@ export async function handlePublicApiV1Request(
         return errorResponse("forbidden", "Scope 'products:write' required.", 403, null, requestId, rateLimitHeaders);
       }
 
-      const { name, name_ar, description, price, sku, category_id, is_active, variants } = parsedBody || {};
+      const { name, name_ar, description, price, category_id, is_active, variants } = parsedBody || {};
       if (!name || price === undefined) {
         return errorResponse("validation_error", "Product 'name' and 'price' are required.", 400, null, requestId, rateLimitHeaders);
       }
@@ -588,7 +588,7 @@ export async function handlePublicApiV1Request(
 
       const currentQty = (variant as any).stock || 0;
       const newQty = Math.max(0, currentQty + Number(delta_quantity));
-      const { data: updated, error: uErr } = await db
+      const { error: uErr } = await db
         .from("product_variants")
         .update({ stock: newQty, updated_at: new Date().toISOString() })
         .eq("id", variant_id)
@@ -671,8 +671,6 @@ export async function handlePublicApiV1Request(
       if (!items || !Array.isArray(items) || items.length === 0) {
         return errorResponse("validation_error", "Order 'items' array is required.", 400, null, requestId, rateLimitHeaders);
       }
-
-      const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
       const { data: order, error: oErr } = await db
         .from("orders")
         .insert({
@@ -874,7 +872,7 @@ export async function handlePublicApiV1Request(
       }
 
       const customerId = loyaltyBalanceMatch[1];
-      const { data: account, error } = await db
+      const { data: account } = await db
         .from("loyalty_accounts")
         .select("*")
         .eq("brand_id", authContext.brandId)

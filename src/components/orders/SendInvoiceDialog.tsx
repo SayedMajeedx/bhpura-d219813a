@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useT, useI18n } from "@/lib/i18n";
+import { useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
 import { queryKeys } from "@/lib/query-keys";
 import {

@@ -4,7 +4,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
-import { AlertCircle, CheckCircle2, Infinity as InfinityIcon } from "lucide-react";
+import { AlertCircle, Infinity as InfinityIcon } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 
 interface UsageMeterBarProps {
@@ -41,12 +41,6 @@ export function UsageMeterBar({
 
   const is80 = !isUnlimited && limitValue > 0 && percent >= 80 && percent < 100;
   const is100 = !isUnlimited && limitValue > 0 && percent >= 100;
-
-  const statusColor = is100
-    ? "bg-destructive text-destructive-foreground"
-    : is80
-      ? "bg-amber-500 text-white"
-      : "bg-primary text-primary-foreground";
 
   const barTrackColor = is100
     ? "bg-destructive"

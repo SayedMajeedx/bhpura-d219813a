@@ -42,7 +42,6 @@ import {
   X,
   UploadCloud,
   Coins,
-  Award,
   Sparkles,
   Share2,
   Gift,
@@ -54,7 +53,6 @@ import { ResponsiveImage } from "@/components/responsive-media";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   calculateOrderLoyaltyPoints,
-  calculatePointsRedemptionDiscount,
   redeemLoyaltyPoints,
   awardOrderLoyaltyPoints,
 } from "@/lib/loyalty.functions";

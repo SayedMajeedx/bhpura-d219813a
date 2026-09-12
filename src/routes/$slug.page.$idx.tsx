@@ -13,13 +13,10 @@ export const Route = createFileRoute("/$slug/page/$idx")({
 function PageView() {
   const { idx } = Route.useParams();
   const n = Number(idx);
-  const { settings, lang, brand, t } = useStorefront();
+  const { settings, lang } = useStorefront();
   if (!Number.isInteger(n) || n < 1 || n > settings.pages.length) throw notFound();
 
   const page = settings.pages[n - 1];
-  const title = lang === "ar" ? page.title_ar || page.title_en : page.title_en || page.title_ar;
-  const content =
-    lang === "ar" ? page.content_ar || page.content_en : page.content_en || page.content_ar;
   return <StorefrontPageContent page={page} />;
 }
 

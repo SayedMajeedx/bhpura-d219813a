@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -20,14 +19,11 @@ import {
   Plus,
   Pencil,
   Trash2,
-  Wallet,
   Receipt,
   Calendar,
-  Layers,
   Sparkles,
   Building2,
   Repeat,
-  Info,
 } from "lucide-react";
 import { formatMoney, formatDate } from "@/lib/format";
 import { toast } from "sonner";

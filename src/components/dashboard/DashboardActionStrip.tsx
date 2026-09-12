@@ -1,4 +1,4 @@
-import * as React from "react";
+
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,10 +8,7 @@ import {
   CheckCircle2,
   ArrowRight,
   ArrowLeft,
-  ChevronLeft,
-  ChevronRight,
   Sparkles,
-  Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 

@@ -1,4 +1,4 @@
-import { ShoppingCart, RefreshCw, Settings2, Sparkles, Send } from "lucide-react";
+import { ShoppingCart, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 
@@ -11,7 +11,7 @@ export function AbandonedCartsCommandHeader({
   onOpenSettings,
   isEnabled,
 }: AbandonedCartsCommandHeaderProps) {
-  const { lang, t } = useI18n();
+  const { lang } = useI18n();
   const isAr = lang === "ar";
 
   return (

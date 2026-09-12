@@ -7,15 +7,10 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  FileText,
   Download,
   Printer,
-  TrendingUp,
-  DollarSign,
   PieChart,
   Calculator,
-  ArrowUpRight,
-  ArrowDownRight,
   Info,
 } from "lucide-react";
 import { formatMoney } from "@/lib/format";

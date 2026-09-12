@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Check, Crop, Loader2, Maximize2, Minus, Plus, RotateCcw, Sparkles } from "lucide-react";
+import { Check, Crop, Loader2, Maximize2, Minus, Plus, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { getImageCropPreset, type ImageCropPresetKey } from "@/lib/image-crop-presets";

@@ -1,5 +1,5 @@
 import React from "react";
-import { UserRound, MapPin, Truck, History, Phone, Mail, ExternalLink, Send } from "lucide-react";
+import { UserRound, MapPin, Truck, History, Phone, Mail, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   getOrderCustomerName,
@@ -9,7 +9,6 @@ import {
 import { formatAddressDetailed } from "@/lib/bahrain-regions";
 import { getFulfillmentMethodLabel } from "@/lib/status-labels";
 import { ActivityLogList } from "@/components/activity-log-list";
-import { cn } from "@/lib/utils";
 
 interface OrderMetaSidePanelProps {
   lang: "en" | "ar";

@@ -5,20 +5,10 @@ import { subDays, startOfDay, endOfDay } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { useI18n, useT } from "@/lib/i18n";
 import { fetchReportingProducts } from "@/lib/reporting.functions";
-import { DatePickerWithRange } from "@/components/reports/date-range-picker";
 import { ReportsToolbar } from "@/components/reports/ReportsToolbar";
 import { formatMoney } from "@/lib/format";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -36,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports/prod
 
 function ReportsProducts() {
   const { lang } = useI18n();
-  const t = useT();
+  useT();
   const { slug } = Route.useParams();
 
   const [date, setDate] = useState<DateRange | undefined>({

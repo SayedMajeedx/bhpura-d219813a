@@ -16,8 +16,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Award, Sparkles, Check, Edit2, Shield, Truck, Percent, Loader2 } from "lucide-react";
-import type { LoyaltyTier, LoyaltyTierKey } from "@/lib/loyalty.types";
+import { Award, Sparkles, Check, Edit2, Truck, Loader2 } from "lucide-react";
+import type { LoyaltyTier } from "@/lib/loyalty.types";
 import { DEFAULT_LOYALTY_TIERS } from "@/lib/loyalty.types";
 
 interface LoyaltyTiersManagerProps {
@@ -26,7 +26,7 @@ interface LoyaltyTiersManagerProps {
 }
 
 export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps) {
-  const { lang, t } = useI18n();
+  const { lang } = useI18n();
   const isAr = lang === "ar";
   const queryClient = useQueryClient();
 

@@ -49,7 +49,6 @@ import { isMarketingEligible } from "@/lib/marketing-eligibility";
 import { CampaignsCommandHeader } from "@/components/campaigns/CampaignsCommandHeader";
 import {
   CampaignsScopeSwitcher,
-  type CampaignSegment,
 } from "@/components/campaigns/CampaignsScopeSwitcher";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/campaigns")({

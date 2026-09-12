@@ -1,4 +1,4 @@
-import { Clock, DollarSign, Layers, PackagePlus, ShieldAlert } from "lucide-react";
+import { Clock, Layers, PackagePlus, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type SuperScope = "requests" | "plans" | "addons" | "overrides";

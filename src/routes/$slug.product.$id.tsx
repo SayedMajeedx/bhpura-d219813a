@@ -32,7 +32,6 @@ import {
   Sparkles,
   Check,
   Truck,
-  Share2,
   FileText,
 } from "lucide-react";
 import { SizeGuideModal } from "@/components/storefront/SizeGuideModal";
@@ -976,7 +975,6 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   };
 
   const primary = settings.primary_color || "#111111";
-  const primaryFg = readableOn(primary);
 
   const scrollToOptions = () => {
     optionsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });

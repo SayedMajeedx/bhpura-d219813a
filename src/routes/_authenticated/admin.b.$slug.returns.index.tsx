@@ -1,29 +1,17 @@
 import { useState } from "react";
-import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
 import { useProfile } from "@/lib/profile-context";
-import { useI18n, useT } from "@/lib/i18n";
+import { useI18n } from "@/lib/i18n";
 import { formatMoney, formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   RotateCcw,
   Search,
-  SlidersHorizontal,
-  Package,
-  ReceiptText,
-  Clock,
   ArrowRight,
-  TrendingDown,
-  Sparkles,
-  Layers,
-  ArrowUpDown,
-  CircleDollarSign,
-  SearchCheck,
-  Building2,
-  ExternalLink,
 } from "lucide-react";
 import { ReturnsCommandHeader } from "@/components/returns/ReturnsCommandHeader";
 import { ReturnsScopeSwitcher, type ReturnsScope } from "@/components/returns/ReturnsScopeSwitcher";
@@ -31,7 +19,6 @@ import { ReturnPolicyEditor } from "@/components/returns/ReturnPolicyEditor";
 import {
   RETURN_STATUS_CONFIG,
   type ReturnRequest,
-  type ReturnStatus,
 } from "@/lib/returns.types";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/returns/")({
@@ -41,15 +28,15 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/returns/")({
 function ReturnsIndexPage() {
   const brand = useBrand();
   const slug = brand?.slug;
-  const { profile } = useProfile();
-  const { lang, t } = useI18n();
+  useProfile();
+  const { lang } = useI18n();
   const isAr = lang === "ar";
   const language = lang;
   const navigate = useNavigate();
 
   const [activeScope, setActiveScope] = useState<ReturnsScope>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  useState<string>("all");
 
   const brandId = brand?.id;
 
@@ -69,7 +56,7 @@ function ReturnsIndexPage() {
   const currency = settingsQ.data?.currency || (brand as any)?.currency || "BHD";
 
   // Fetch returns with related order, customer, and items
-  const { data: returns = [], isLoading, refetch } = useQuery<ReturnRequest[]>({
+  const { data: returns = [], isLoading } = useQuery<ReturnRequest[]>({
     queryKey: ["admin-returns-list", brandId],
     queryFn: async () => {
       if (!brandId) return [];

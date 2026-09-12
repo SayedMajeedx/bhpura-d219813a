@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { RotateCcw, Sliders, Plus, Sparkles, AlertCircle } from "lucide-react";
-import { useT } from "@/lib/i18n";
+import { RotateCcw, Sliders, Plus, AlertCircle } from "lucide-react";
 
 interface ReturnsCommandHeaderProps {
   lang: "en" | "ar";

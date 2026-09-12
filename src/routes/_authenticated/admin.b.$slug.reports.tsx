@@ -1,8 +1,7 @@
-import { createFileRoute, Outlet, redirect, Link, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
-import { BarChart3, TrendingUp, Package, Users, Download, Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { BarChart3, TrendingUp, Package, Users, Download } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports")({
   beforeLoad: async ({ context: { queryClient }, params }) => {
@@ -43,44 +42,6 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports")({
   },
   component: ReportsLayout,
 });
-
-const navItems = [
-  {
-    id: "overview",
-    path: "/admin/b/$slug/reports",
-    icon: BarChart3,
-    en: "Overview",
-    ar: "نظرة عامة",
-  },
-  {
-    id: "sales",
-    path: "/admin/b/$slug/reports/sales",
-    icon: TrendingUp,
-    en: "Sales",
-    ar: "المبيعات",
-  },
-  {
-    id: "products",
-    path: "/admin/b/$slug/reports/products",
-    icon: Package,
-    en: "Products",
-    ar: "المنتجات",
-  },
-  {
-    id: "customers",
-    path: "/admin/b/$slug/reports/customers",
-    icon: Users,
-    en: "Customers",
-    ar: "العملاء",
-  },
-  {
-    id: "export",
-    path: "/admin/b/$slug/reports/export",
-    icon: Download,
-    en: "Export",
-    ar: "التصدير",
-  },
-] as const;
 
 import { ReportsCommandHeader } from "@/components/reports/ReportsCommandHeader";
 import { ReportsScopeSwitcher } from "@/components/reports/ReportsScopeSwitcher";

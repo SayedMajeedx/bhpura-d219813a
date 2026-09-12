@@ -3,7 +3,6 @@ import { getApiRequestLogsFn } from "@/lib/public-api/public-api.functions";
 import type { ApiRequestLog } from "@/lib/public-api/public-api.types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Activity, Copy, Check, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";

@@ -5,12 +5,9 @@ import { subDays, startOfDay, endOfDay } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { useI18n } from "@/lib/i18n";
 import { fetchReportingSales, ReportInterval } from "@/lib/reporting.functions";
-import { DatePickerWithRange } from "@/components/reports/date-range-picker";
 import { ReportsToolbar } from "@/components/reports/ReportsToolbar";
 import { KpiCard } from "@/components/reports/kpi-card";
 import { formatMoney } from "@/lib/format";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,

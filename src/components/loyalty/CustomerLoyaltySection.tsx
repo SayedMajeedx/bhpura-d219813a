@@ -1,4 +1,4 @@
-import { useState } from "react";
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
@@ -12,10 +12,8 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Truck,
-  Percent,
   CheckCircle2,
   ShieldCheck,
-  AlertCircle,
 } from "lucide-react";
 import type {
   LoyaltyAccount,
@@ -36,11 +34,11 @@ export function CustomerLoyaltySection({
   customerId,
   currency,
 }: CustomerLoyaltySectionProps) {
-  const { lang, t } = useI18n();
+  const { lang } = useI18n();
   const isAr = lang === "ar";
 
   // 1. Fetch loyalty account
-  const { data: account, isLoading: loadingAccount } = useQuery<LoyaltyAccount | null>({
+  const { data: account } = useQuery<LoyaltyAccount | null>({
     queryKey: ["customer_loyalty_account", brandId, customerId],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
@@ -84,7 +82,7 @@ export function CustomerLoyaltySection({
   });
 
   // 4. Fetch customer's loyalty ledger history
-  const { data: ledger = [], isLoading: loadingLedger } = useQuery<LoyaltyLedgerEntry[]>({
+  const { data: ledger = [] } = useQuery<LoyaltyLedgerEntry[]>({
     queryKey: ["customer_loyalty_ledger", brandId, customerId],
     queryFn: async () => {
       const { data, error } = await (supabase as any)

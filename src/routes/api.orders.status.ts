@@ -143,8 +143,6 @@ export const Route = createFileRoute("/api/orders/status")({
           // Determine current vs updated payment and fulfillment statuses
           const currentPayment =
             payment_status !== undefined ? payment_status : order.payment_status;
-          const currentFulfillment =
-            fulfillment_status !== undefined ? fulfillment_status : order.fulfillment_status;
 
           const isUnpaid =
             !currentPayment ||

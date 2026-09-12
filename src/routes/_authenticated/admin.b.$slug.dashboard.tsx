@@ -9,20 +9,14 @@ import {
   ReceiptText,
   TrendingUp,
   CalendarDays,
-  Trophy,
   Wallet,
   PiggyBank,
-  AlertTriangle,
   AlertCircle,
   ArrowUpRight,
   ArrowDownRight,
-  ShieldCheck,
-  LayoutDashboard,
   Clock,
   CheckCircle2,
   ExternalLink,
-  ChevronRight,
-  Filter,
   Sparkles,
   Copy,
   X,
@@ -36,11 +30,10 @@ import { useI18n, useT } from "@/lib/i18n";
 import { useProfile } from "@/lib/profile-context";
 import { useBrand } from "@/lib/brand-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { getOrderCustomerName } from "@/lib/order-customer-snapshot";
 import { getOrderWorkflow } from "@/lib/order-workflow";
 import { isLowStock } from "@/lib/inventory-health";
-import { OsStatusPill } from "@/components/os/os-status-pill";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { getStorefrontUrl } from "@/lib/storefront-url";
 
@@ -560,15 +553,11 @@ function Dashboard() {
       0,
     );
     const opex = manualOpex + paymentProcessingFees + incubatorCommissions;
-    const totalExpenses = cogs + opex;
     const reportRevenue = Number(accountingRow?.net_revenue ?? revenue);
     const reportCogs = Number(accountingRow?.known_cogs_after_returns ?? accountingRow?.known_cogs ?? cogs);
     const reportOpex = Number(accountingRow?.expenses ?? opex);
     const netProfit = reportRevenue - reportCogs - reportOpex;
     const grossMarginPercent = reportRevenue > 0 ? ((reportRevenue - reportCogs) / reportRevenue) * 100 : 0;
-
-    // Period Comparison Deltas (Current 30 Days vs Prior 30 Days)
-    const nowMs = now.getTime();
     const current30Orders = orders;
     const prior30Orders = allOrders.filter((o) => {
       const timestamp = Date.parse(o.created_at);
@@ -578,9 +567,6 @@ function Dashboard() {
         timestamp < currentStart.getTime()
       );
     });
-
-    const revenueCurrent = current30Orders.reduce((sum, o) => sum + Number(o.total || 0), 0);
-    const currentIncubatorRevenue = incubatorRevenue;
     const priorIncubatorSales = allIncubatorSales.filter((sale: any) => {
       const timestamp = Date.parse(sale.sold_at);
       return (

@@ -1,11 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
-import { Card } from "@/components/ui/card";
+import { useStorefront } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState, useRef, useEffect, type AnchorHTMLAttributes } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, FileText, Grid2X2, Heart } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, FileText, Grid2X2 } from "lucide-react";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 import { ProductCard } from "@/components/storefront/product-card";
 import { ProductGrid } from "@/components/storefront/product-grid";
@@ -106,8 +105,6 @@ function StoreHome() {
   const loaderData = Route.useLoaderData();
   const [activeCategorySlugs, setActiveCategorySlugs] = useState<string[]>([]);
   const activeCat = activeCategorySlugs[0] || null;
-  const activeSubCat = activeCategorySlugs[1] || null;
-  const activeSubSubCat = activeCategorySlugs[2] || null;
 
   const productsSectionRef = useRef<HTMLDivElement>(null);
   const prevCatRef = useRef<string | null>(null);
@@ -120,26 +117,6 @@ function StoreHome() {
     }
     prevCatRef.current = activeCat;
   }, [activeCat]);
-
-  const handleSelectCat = (cat: string | null) => {
-    setActiveCategorySlugs(cat ? [cat] : []);
-  };
-
-  const handleSelectSubCat = (sub: string | null) => {
-    if (!sub) {
-      setActiveCategorySlugs(activeCategorySlugs.slice(0, 1));
-    } else {
-      setActiveCategorySlugs([activeCategorySlugs[0], sub]);
-    }
-  };
-
-  const handleSelectSubSubCat = (subsub: string | null) => {
-    if (!subsub) {
-      setActiveCategorySlugs(activeCategorySlugs.slice(0, 2));
-    } else {
-      setActiveCategorySlugs([activeCategorySlugs[0], activeCategorySlugs[1], subsub]);
-    }
-  };
 
   const { data: products, isLoading } = useQuery({
     queryKey: ["storefront", brand.slug, "products"],
@@ -613,7 +590,7 @@ function MerchandisingSection({
 }
 
 function HeroBanner() {
-  const { brand, settings, lang } = useStorefront();
+  const { brand, settings } = useStorefront();
   const prioritizeHero = !settings.home_promo_cards.some((card) => Boolean(card?.image_url));
   const background = brand.hero_media?.background;
   const slides = brand.hero_media?.slides?.length

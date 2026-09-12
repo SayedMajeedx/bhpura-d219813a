@@ -2,7 +2,7 @@
 // BOUTQ OS: SUPER ADMIN SAAS PLANS & VERSIONING MANAGER
 // ==============================================================================
 
-import React, { useState } from "react";
+import{ useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -16,8 +16,6 @@ import {
 } from "@/lib/saas-billing/saas-billing.functions";
 import type {
   SaaSPlan,
-  SaaSPlanVersion,
-  SaaSFeature,
   SaaSPlanFeature,
   BillingIntervalMode,
 } from "@/lib/saas-billing/saas-billing.types";
@@ -28,7 +26,6 @@ import {
   Layers,
   Plus,
   History,
-  CheckCircle2,
   Users,
   Sparkles,
   AlertTriangle,
@@ -43,9 +40,6 @@ import {
   Trash2,
   Edit3,
   MoreVertical,
-  Filter,
-  ShieldCheck,
-  Info,
   Clock,
 } from "lucide-react";
 import {

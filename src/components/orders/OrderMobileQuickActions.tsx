@@ -1,5 +1,5 @@
 import React from "react";
-import { Phone, Printer, Send, Copy, Receipt } from "lucide-react";
+import { Phone, Send, Copy, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface OrderMobileQuickActionsProps {

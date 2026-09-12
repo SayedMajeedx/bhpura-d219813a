@@ -36,12 +36,10 @@ import {
   Fingerprint,
   RotateCcw,
   Wallet,
-  CircleDollarSign,
-  CheckCircle2,
   Coins,
   Ruler,
 } from "lucide-react";
-import { BAHRAIN_REGIONS, regionLabel } from "@/lib/bahrain-regions";
+import { BAHRAIN_REGIONS } from "@/lib/bahrain-regions";
 import { DeliveryAddressCard } from "@/components/delivery-address-card";
 import { PhoneInput } from "@/components/phone-input";
 import { PasskeySettings } from "@/components/passkey-settings";
@@ -261,7 +259,7 @@ function OrderTimelineTracker({
 }
 
 function AccountPage() {
-  const { brand, settings, session, isStoreMember, membershipLoading, t, lang, currency } =
+  const { brand, session, isStoreMember, membershipLoading, t, lang, currency } =
     useStorefront();
   const isAr = lang === "ar";
   const [mounted, setMounted] = useState(false);

@@ -1,4 +1,4 @@
-import React from "react";
+
 import { Link } from "@tanstack/react-router";
 import { Heart } from "lucide-react";
 import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";

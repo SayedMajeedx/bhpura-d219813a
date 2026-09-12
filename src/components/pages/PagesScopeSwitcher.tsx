@@ -1,4 +1,4 @@
-import { Layout, Share2, MessageCircle } from "lucide-react";
+import { Layout, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type PagesScope = "pages" | "socials";

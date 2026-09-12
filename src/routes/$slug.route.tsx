@@ -3,18 +3,14 @@ import {
   Outlet,
   Link,
   notFound,
-  useNavigate,
   useLocation,
   useRouter,
 } from "@tanstack/react-router";
-import React, { useEffect, useRef, useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useEffect, useState } from "react";
 import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import {
   StorefrontProvider,
   useStorefront,
-  formatPrice,
-  pickName,
   type Brand,
   type PublicSettings,
   readableOn,
@@ -34,34 +30,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StorefrontSuspended } from "@/components/storefront/StorefrontSuspended";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  ShoppingBag,
-  Languages,
-  Minus,
-  Plus,
-  Trash2,
   X,
-  User,
-  Search,
-  Menu,
-  Home,
-  PackageSearch,
-  FileText,
-  LogIn,
-  Heart,
-  Bell,
-  Grid2X2,
   ChevronDown,
   Sparkles,
-  Share2,
-  Gift,
 } from "lucide-react";
-import { ShareCartModal } from "@/components/storefront/ShareCartModal";
-import { OsEmptyState } from "@/components/os/os-empty-state";
-import { Input } from "@/components/ui/input";
-import { cloudflareImageUrl } from "@/lib/media-delivery";
 import { faviconType, resolveBrandFavicon, useDynamicFavicon } from "@/lib/favicon";
 import { StorefrontAnalytics } from "@/components/storefront-analytics";
 
@@ -396,12 +369,11 @@ function isColorDark(hex: string | null | undefined): boolean {
 
 function StoreShell() {
   const { brand, settings, lang } = useStorefront();
-  const qc = useQueryClient();
-  const router = useRouter();
+  useQueryClient();
+  useRouter();
 
   const primary = settings.primary_color || brand.primary_color || "#3f121a";
   const headerBg = settings.header_bg ?? settings.background_color ?? "#ffffff";
-  const headerFg = settings.header_fg ?? readableOn(headerBg, settings.text_color);
   const footerBg = settings.footer_bg ?? settings.background_color ?? "#ffffff";
   const footerFg = settings.footer_fg ?? readableOn(footerBg, settings.text_color);
   const btnPrimaryBg = settings.btn_primary_bg ?? primary;

@@ -17,16 +17,9 @@ import {
 } from "@/components/ui/dialog";
 import {
   Building2,
-  FileSpreadsheet,
   Plus,
-  Pencil,
-  Trash2,
-  DollarSign,
   Phone,
   Mail,
-  Receipt,
-  CheckCircle2,
-  AlertCircle,
 } from "lucide-react";
 import { formatMoney, formatDate } from "@/lib/format";
 import { toast } from "sonner";

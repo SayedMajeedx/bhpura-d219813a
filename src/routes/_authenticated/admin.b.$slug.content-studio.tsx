@@ -14,12 +14,10 @@ import {
   Move,
   Sliders,
   RotateCcw,
-  Layers,
   Video,
   Image as LucideImage,
   Sun,
   Moon,
-  Eye,
   ChevronDown,
   ArrowUpLeft,
 } from "lucide-react";
@@ -159,7 +157,6 @@ function ContentStudioPage() {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const brandNameEn = brand.name_en || (brand as any).name || "Brand";
-  const brandNameDisplay = isAr ? brand.name_ar || (brand as any).name || brandNameEn : brandNameEn;
   const brandSlugClean = brand.slug || slug || "brand";
   const defaultEditionLabel = `The ${brandNameEn} Edit`;
 
@@ -260,7 +257,7 @@ function ContentStudioPage() {
   const [headerScale, setHeaderScale] = useState(1.0);
   const [headerLogoHeight, setHeaderLogoHeight] = useState(48);
   const [headerPosY, setHeaderPosY] = useState(4.5);
-  const [headerPosX, setHeaderPosX] = useState(0);
+  const [, setHeaderPosX] = useState(0);
   const [headerPlateStyle, setHeaderPlateStyle] = useState<"none" | "glass" | "solid">("none");
   const [headerPlateColor, setHeaderPlateColor] = useState("rgba(0, 0, 0, 0.48)");
   const [headerTextColor, setHeaderTextColor] = useState<"white" | "dark">("white");

@@ -6,7 +6,6 @@ import {
   CalendarDays,
   Mail,
   MessageCircle,
-  MapPin,
   Pencil,
   Phone,
   Plus,
@@ -25,7 +24,6 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n, useT } from "@/lib/i18n";
-import { formatAddressLine, regionLabel } from "@/lib/bahrain-regions";
 import { formatMoney } from "@/lib/format";
 import { getOrderWorkflow } from "@/lib/order-workflow";
 import {
@@ -55,12 +53,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import {
   CustomerAddressManager,
@@ -126,16 +118,12 @@ function getOrderPaymentBadge(order: CustomerOrder, lang: "en" | "ar") {
   };
 }
 
-function formatArabicOrderStatus(status: string | null | undefined, lang: "en" | "ar") {
-  return getFulfillmentBadgeDetails(status, lang).label;
-}
-
 function CustomerProfilePage() {
   const { slug, customerId } = Route.useParams();
   const { lang } = useI18n();
   const brand = useBrand();
   const router = useRouter();
-  const t = useT();
+  useT();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
