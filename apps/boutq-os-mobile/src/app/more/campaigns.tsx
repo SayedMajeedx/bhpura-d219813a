@@ -1,13 +1,5 @@
 import React, { useState } from "react";
-import {
-  Alert,
-  Linking,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppIcon } from "@/components/icons";
@@ -79,7 +71,10 @@ export default function CampaignsScreen() {
       .replace(/{كود_الخصم}|{discount_code}/g, "SUMMER15");
 
     await Clipboard.setStringAsync(filled);
-    Alert.alert(isAr ? "تم النسخ" : "Copied", isAr ? "تم نسخ نص الرسالة بنجاح" : "Template copied to clipboard");
+    Alert.alert(
+      isAr ? "تم النسخ" : "Copied",
+      isAr ? "تم نسخ نص الرسالة بنجاح" : "Template copied to clipboard",
+    );
   };
 
   const testWhatsApp = (text: string) => {
@@ -87,7 +82,9 @@ export default function CampaignsScreen() {
     if (!cleanPhone) {
       Alert.alert(
         isAr ? "رقم الهاتف مطلوب" : "Phone required",
-        isAr ? "يرجى كتابة رقم هاتف لإرسال الرسالة التجريبية" : "Enter a phone number to test WhatsApp message",
+        isAr
+          ? "يرجى كتابة رقم هاتف لإرسال الرسالة التجريبية"
+          : "Enter a phone number to test WhatsApp message",
       );
       return;
     }
@@ -142,14 +139,8 @@ export default function CampaignsScreen() {
             <Text style={styles.tmplText}>{text}</Text>
 
             <View style={styles.tmplActions}>
-              <SecondaryButton
-                title={t("common.copy")}
-                onPress={() => copyTemplate(text)}
-              />
-              <Pressable
-                onPress={() => testWhatsApp(text)}
-                style={styles.waButton}
-              >
+              <SecondaryButton title={t("common.copy")} onPress={() => copyTemplate(text)} />
+              <Pressable onPress={() => testWhatsApp(text)} style={styles.waButton}>
                 <AppIcon name="paper-plane" size={16} color="#FFFFFF" />
                 <Text style={styles.waButtonText}>{isAr ? "إرسال تجريبي" : "Send Test"}</Text>
               </Pressable>

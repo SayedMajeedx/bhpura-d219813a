@@ -74,9 +74,7 @@ export default function InventoryScreen() {
       // 2. Fetch variants
       const { data: vars, error: vErr } = await supabase
         .from("product_variants")
-        .select(
-          "id,product_id,size,color,sku,barcode,selling_price,cost_price,stock",
-        )
+        .select("id,product_id,size,color,sku,barcode,selling_price,cost_price,stock")
         .eq("brand_id", activeBrandId);
 
       if (vErr) throw vErr;
@@ -201,17 +199,11 @@ export default function InventoryScreen() {
 
       {/* Quick shortcuts to categories and incubators */}
       <View style={styles.quickShortcuts}>
-        <Pressable
-          onPress={() => router.push("/more/categories")}
-          style={styles.shortcutBtn}
-        >
+        <Pressable onPress={() => router.push("/more/categories")} style={styles.shortcutBtn}>
           <AppIcon name="tag" size={16} color={colors.primary} />
           <Text style={styles.shortcutText}>{t("nav.categories")}</Text>
         </Pressable>
-        <Pressable
-          onPress={() => router.push("/more/incubators")}
-          style={styles.shortcutBtn}
-        >
+        <Pressable onPress={() => router.push("/more/incubators")} style={styles.shortcutBtn}>
           <AppIcon name="cube" size={16} color={colors.primary} />
           <Text style={styles.shortcutText}>{t("nav.incubators")}</Text>
         </Pressable>
@@ -297,7 +289,8 @@ export default function InventoryScreen() {
                       <View key={v.id} style={styles.variantRow}>
                         <View style={styles.variantDetails}>
                           <Text style={styles.variantSpecs}>
-                            {[v.size, v.color].filter(Boolean).join(" / ") || (isAr ? "المقاس القياسي" : "Standard")}
+                            {[v.size, v.color].filter(Boolean).join(" / ") ||
+                              (isAr ? "المقاس القياسي" : "Standard")}
                           </Text>
                           {v.sku ? <Text style={styles.variantSku}>SKU: {v.sku}</Text> : null}
                           <Text style={styles.variantPrice}>

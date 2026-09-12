@@ -97,7 +97,9 @@ export function IntegrationsScopeSwitcher({
           <span
             className={cn(
               "rounded-full px-1.5 py-0.5 text-xs font-extrabold",
-              isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-foreground",
+              isActive
+                ? "bg-primary-foreground/20 text-primary-foreground"
+                : "bg-muted text-foreground",
             )}
           >
             {scope.badge}

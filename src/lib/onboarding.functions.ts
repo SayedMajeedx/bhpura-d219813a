@@ -117,8 +117,12 @@ export const createTenantRequest = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let selectedPlan: any = null;
     let selectedVersion: any = null;
-    let billingInterval = data.requestType === "trial" ? "trial" : data.billingInterval;
-    if (data.requestType === "paid" && billingInterval !== "monthly" && billingInterval !== "annual") {
+    const billingInterval = data.requestType === "trial" ? "trial" : data.billingInterval;
+    if (
+      data.requestType === "paid" &&
+      billingInterval !== "monthly" &&
+      billingInterval !== "annual"
+    ) {
       throw new Error("INVALID_BILLING_INTERVAL");
     }
 
@@ -202,7 +206,9 @@ export const getPublicOnboardingPlans = createServerFn({ method: "GET" }).handle
   const globalMode = sysSettings?.billing_interval_mode || "both";
 
   const { data: plans, error } = await (supabaseAdmin.from("saas_plans" as never) as any)
-    .select("id,code,name_en,name_ar,description_en,description_ar,sort_order,trial_days,badge_color,billing_interval_mode")
+    .select(
+      "id,code,name_en,name_ar,description_en,description_ar,sort_order,trial_days,badge_color,billing_interval_mode",
+    )
     .eq("is_active", true)
     .eq("is_public", true)
     .order("sort_order", { ascending: true });
@@ -211,7 +217,9 @@ export const getPublicOnboardingPlans = createServerFn({ method: "GET" }).handle
   const result = [];
   for (const plan of plans ?? []) {
     const { data: version } = await (supabaseAdmin.from("saas_plan_versions" as never) as any)
-      .select("id,version_number,currency,price_monthly,price_annual,effective_from,effective_until")
+      .select(
+        "id,version_number,currency,price_monthly,price_annual,effective_from,effective_until",
+      )
       .eq("plan_id", plan.id)
       .eq("is_current", true)
       .lte("effective_from", now)
@@ -521,21 +529,22 @@ export const approveTenantRequest = createServerFn({ method: "POST" })
             : resolvedInterval === "monthly"
               ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
               : new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString();
-        const { error: subscriptionError } = await (context.supabase.from("brand_subscriptions" as never) as any)
-          .upsert(
-            {
-              brand_id: brandRow.id,
-              plan_id: resolvedPlanId,
-              plan_version_id: resolvedPlanVersionId,
-              billing_interval: resolvedInterval,
-              status: resolvedInterval === "trial" ? "trialing" : "active",
-              current_period_start: new Date().toISOString(),
-              current_period_end: periodEnd,
-              trial_ends_at: resolvedInterval === "trial" ? trialEndsAt : null,
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: "brand_id" },
-          );
+        const { error: subscriptionError } = await (
+          context.supabase.from("brand_subscriptions" as never) as any
+        ).upsert(
+          {
+            brand_id: brandRow.id,
+            plan_id: resolvedPlanId,
+            plan_version_id: resolvedPlanVersionId,
+            billing_interval: resolvedInterval,
+            status: resolvedInterval === "trial" ? "trialing" : "active",
+            current_period_start: new Date().toISOString(),
+            current_period_end: periodEnd,
+            trial_ends_at: resolvedInterval === "trial" ? trialEndsAt : null,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "brand_id" },
+        );
         if (subscriptionError) throw new Error("SUBSCRIPTION_ACTIVATION_FAILED");
       }
     }
@@ -593,7 +602,11 @@ const RegisterInstantTrialInput = z.object({
   brandName: z.string().min(2),
   nameEn: z.string().optional(),
   nameAr: z.string().optional(),
-  slug: z.string().min(2).max(32).regex(/^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/),
+  slug: z
+    .string()
+    .min(2)
+    .max(32)
+    .regex(/^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/),
   ownerName: z.string().min(2),
   contactNumber: z.string().min(6),
   email: z.string().email(),
@@ -665,9 +678,7 @@ export const registerInstantTrial = createServerFn({ method: "POST" })
       if (authError || !authData?.user) {
         // If auth user already exists in auth.users
         const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
-        const found = listData?.users?.find(
-          (u) => u.email?.toLowerCase() === normalizedEmail,
-        );
+        const found = listData?.users?.find((u) => u.email?.toLowerCase() === normalizedEmail);
         if (found) {
           userId = found.id;
         } else {

@@ -18,13 +18,7 @@ import {
   Check,
   AlertTriangle,
 } from "lucide-react";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -44,7 +38,11 @@ export function SuperAddonsManager() {
   const isAr = lang === "ar";
   const queryClient = useQueryClient();
 
-  const { data: addons, isLoading, error } = useQuery({
+  const {
+    data: addons,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["super_saas_addons"],
     queryFn: () => listAddons(),
   });
@@ -56,7 +54,9 @@ export function SuperAddonsManager() {
     return (
       <div className="p-12 flex flex-col items-center justify-center text-muted-foreground gap-3">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="text-xs">{isAr ? "جاري تحميل قائمة الإضافات..." : "Loading SaaS add-ons..."}</span>
+        <span className="text-xs">
+          {isAr ? "جاري تحميل قائمة الإضافات..." : "Loading SaaS add-ons..."}
+        </span>
       </div>
     );
   }
@@ -65,7 +65,9 @@ export function SuperAddonsManager() {
     return (
       <div className="p-8 text-center text-destructive space-y-2">
         <AlertTriangle className="h-8 w-8 mx-auto" />
-        <p className="text-sm font-bold">{isAr ? "فشل تحميل الإضافات" : "Failed to load add-ons"}</p>
+        <p className="text-sm font-bold">
+          {isAr ? "فشل تحميل الإضافات" : "Failed to load add-ons"}
+        </p>
         <p className="text-xs text-muted-foreground">{getFriendlyErrorMessage(error)}</p>
       </div>
     );
@@ -94,7 +96,8 @@ export function SuperAddonsManager() {
   };
 
   const handleSaveAddon = async () => {
-    if (!editingAddon || !editingAddon.code || !editingAddon.name_en || !editingAddon.name_ar) return;
+    if (!editingAddon || !editingAddon.code || !editingAddon.name_en || !editingAddon.name_ar)
+      return;
     setIsSubmitting(true);
     const toastId = toast.loading(isAr ? "جاري حفظ الإضافة..." : "Saving add-on...");
 
@@ -133,7 +136,9 @@ export function SuperAddonsManager() {
         <div>
           <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
             <PackagePlus className="h-5 w-5 text-primary" />
-            <span>{isAr ? "إدارة الإضافات المستقلة (SaaS Add-ons)" : "Modular SaaS Add-ons Catalog"}</span>
+            <span>
+              {isAr ? "إدارة الإضافات المستقلة (SaaS Add-ons)" : "Modular SaaS Add-ons Catalog"}
+            </span>
           </h2>
           <p className="text-xs text-muted-foreground">
             {isAr
@@ -188,7 +193,9 @@ export function SuperAddonsManager() {
                   <span className="text-xs uppercase font-bold text-muted-foreground block">
                     {isAr ? "الميزة المستهدفة" : "Target Feature"}
                   </span>
-                  <span className="font-mono font-bold text-foreground">{addon.target_feature_key}</span>
+                  <span className="font-mono font-bold text-foreground">
+                    {addon.target_feature_key}
+                  </span>
                 </div>
                 <div className="text-end">
                   <span className="font-mono font-bold text-foreground block">
@@ -203,7 +210,8 @@ export function SuperAddonsManager() {
               <div className="text-xs text-muted-foreground font-medium">
                 {addon.grant_type === "numeric_increment" ? (
                   <span>
-                    +{addon.grant_numeric_amount.toLocaleString()} {isAr ? "إضافية للمتجر" : "capacity boost"}
+                    +{addon.grant_numeric_amount.toLocaleString()}{" "}
+                    {isAr ? "إضافية للمتجر" : "capacity boost"}
                   </span>
                 ) : (
                   <span>{isAr ? "فتح الميزة بالكامل" : "Full feature unlock"}</span>
@@ -227,7 +235,10 @@ export function SuperAddonsManager() {
 
       {/* Add / Edit Add-on Dialog Modal */}
       {editingAddon && (
-        <Dialog open={Boolean(editingAddon)} onOpenChange={(open) => !open && setEditingAddon(null)}>
+        <Dialog
+          open={Boolean(editingAddon)}
+          onOpenChange={(open) => !open && setEditingAddon(null)}
+        >
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle className="text-base font-bold flex items-center gap-2">
@@ -257,7 +268,9 @@ export function SuperAddonsManager() {
                   </Label>
                   <Input
                     value={editingAddon.name_ar || ""}
-                    onChange={(e) => setEditingAddon((prev) => ({ ...prev, name_ar: e.target.value }))}
+                    onChange={(e) =>
+                      setEditingAddon((prev) => ({ ...prev, name_ar: e.target.value }))
+                    }
                     className="text-xs"
                   />
                 </div>
@@ -267,7 +280,9 @@ export function SuperAddonsManager() {
                   </Label>
                   <Input
                     value={editingAddon.name_en || ""}
-                    onChange={(e) => setEditingAddon((prev) => ({ ...prev, name_en: e.target.value }))}
+                    onChange={(e) =>
+                      setEditingAddon((prev) => ({ ...prev, name_en: e.target.value }))
+                    }
                     className="text-xs"
                   />
                 </div>
@@ -284,7 +299,10 @@ export function SuperAddonsManager() {
                     step="0.5"
                     value={editingAddon.price_monthly ?? 0}
                     onChange={(e) =>
-                      setEditingAddon((prev) => ({ ...prev, price_monthly: parseFloat(e.target.value) || 0 }))
+                      setEditingAddon((prev) => ({
+                        ...prev,
+                        price_monthly: parseFloat(e.target.value) || 0,
+                      }))
                     }
                     className="font-mono text-xs"
                   />
@@ -299,7 +317,10 @@ export function SuperAddonsManager() {
                     step="1"
                     value={editingAddon.price_annual ?? 0}
                     onChange={(e) =>
-                      setEditingAddon((prev) => ({ ...prev, price_annual: parseFloat(e.target.value) || 0 }))
+                      setEditingAddon((prev) => ({
+                        ...prev,
+                        price_annual: parseFloat(e.target.value) || 0,
+                      }))
                     }
                     className="font-mono text-xs"
                   />
@@ -370,7 +391,11 @@ export function SuperAddonsManager() {
                 onClick={handleSaveAddon}
                 className="gap-2 font-bold min-h-[44px]"
               >
-                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
                 <span>{isAr ? "حفظ الإضافة" : "Save Add-on"}</span>
               </Button>
             </DialogFooter>

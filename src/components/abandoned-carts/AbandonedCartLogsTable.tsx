@@ -100,12 +100,24 @@ export function AbandonedCartLogsTable({ logs, isLoading }: AbandonedCartLogsTab
             {isLoading ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <TableRow key={i}>
-                  <TableCell><OsSkeleton variant="text" className="h-4 w-20" /></TableCell>
-                  <TableCell><OsSkeleton variant="text" className="h-4 w-32" /></TableCell>
-                  <TableCell><OsSkeleton variant="text" className="h-4 w-16" /></TableCell>
-                  <TableCell><OsSkeleton variant="text" className="h-4 w-20" /></TableCell>
-                  <TableCell><OsSkeleton variant="text" className="h-4 w-16" /></TableCell>
-                  <TableCell><OsSkeleton variant="text" className="h-4 w-24" /></TableCell>
+                  <TableCell>
+                    <OsSkeleton variant="text" className="h-4 w-20" />
+                  </TableCell>
+                  <TableCell>
+                    <OsSkeleton variant="text" className="h-4 w-32" />
+                  </TableCell>
+                  <TableCell>
+                    <OsSkeleton variant="text" className="h-4 w-16" />
+                  </TableCell>
+                  <TableCell>
+                    <OsSkeleton variant="text" className="h-4 w-20" />
+                  </TableCell>
+                  <TableCell>
+                    <OsSkeleton variant="text" className="h-4 w-16" />
+                  </TableCell>
+                  <TableCell>
+                    <OsSkeleton variant="text" className="h-4 w-24" />
+                  </TableCell>
                 </TableRow>
               ))
             ) : logs.length === 0 ? (

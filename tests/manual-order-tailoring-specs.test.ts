@@ -50,7 +50,7 @@ describe("Custom Tailoring & Made-To-Order Specifications", () => {
   it("accurately tracks form dirtiness for description, selected_variant, and custom fields", () => {
     expect(orderDetail).toContain("const simplifyItem =");
     expect(orderDetail).toContain("const normalizeOrderMin =");
-    expect(orderDetail).toContain("description: (it.description ?? \"\").trim()");
+    expect(orderDetail).toContain('description: (it.description ?? "").trim()');
     expect(orderDetail).toContain("brand_id: brandId");
   });
 });

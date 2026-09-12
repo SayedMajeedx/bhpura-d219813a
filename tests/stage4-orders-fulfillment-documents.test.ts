@@ -19,10 +19,15 @@ describe("Stage 4 - Order Progress Model & Sales Documents", () => {
     expect(wf1.awaitingPayment).toBe(false);
     expect(
       !wf1.terminal &&
-      ["pending", "packing", "on_hold", "needs_packing", "received_from_tailor", "sent_to_tailor"].includes(
-        wf1.fulfillment
-      ) &&
-      (!wf1.awaitingPayment || wf1.isCod)
+        [
+          "pending",
+          "packing",
+          "on_hold",
+          "needs_packing",
+          "received_from_tailor",
+          "sent_to_tailor",
+        ].includes(wf1.fulfillment) &&
+        (!wf1.awaitingPayment || wf1.isCod),
     ).toBe(true);
 
     // Case 2: COD unpaid order - still needs preparation because COD payment is collected on delivery
@@ -39,10 +44,15 @@ describe("Stage 4 - Order Progress Model & Sales Documents", () => {
     expect(wf2.isCod).toBe(true);
     expect(
       !wf2.terminal &&
-      ["pending", "packing", "on_hold", "needs_packing", "received_from_tailor", "sent_to_tailor"].includes(
-        wf2.fulfillment
-      ) &&
-      (!wf2.awaitingPayment || wf2.isCod)
+        [
+          "pending",
+          "packing",
+          "on_hold",
+          "needs_packing",
+          "received_from_tailor",
+          "sent_to_tailor",
+        ].includes(wf2.fulfillment) &&
+        (!wf2.awaitingPayment || wf2.isCod),
     ).toBe(true);
 
     // Case 3: Non-COD unpaid order - should await payment before preparation
@@ -59,10 +69,15 @@ describe("Stage 4 - Order Progress Model & Sales Documents", () => {
     expect(wf3.awaitingPayment).toBe(true);
     expect(
       !wf3.terminal &&
-      ["pending", "packing", "on_hold", "needs_packing", "received_from_tailor", "sent_to_tailor"].includes(
-        wf3.fulfillment
-      ) &&
-      (!wf3.awaitingPayment || wf3.isCod)
+        [
+          "pending",
+          "packing",
+          "on_hold",
+          "needs_packing",
+          "received_from_tailor",
+          "sent_to_tailor",
+        ].includes(wf3.fulfillment) &&
+        (!wf3.awaitingPayment || wf3.isCod),
     ).toBe(false);
   });
 

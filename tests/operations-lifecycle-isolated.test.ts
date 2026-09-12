@@ -269,9 +269,30 @@ describe("Batch 1: Isolated Real Operations Lifecycle", () => {
   describe("3. Inventory, Variants, and Customer CRM Isolation", () => {
     it("calculates multi-variant stock accurately and formats labels", () => {
       const variants = [
-        { id: "v1", title: "Small / Red", stock_main: 5, stock_incubator: 0, sku: "RED-S", barcode: "6291001" },
-        { id: "v2", title: "Medium / Red", stock_main: 8, stock_incubator: 4, sku: "RED-M", barcode: "6291002" },
-        { id: "v3", title: "Large / Red", stock_main: 0, stock_incubator: 0, sku: "RED-L", barcode: "6291003" },
+        {
+          id: "v1",
+          title: "Small / Red",
+          stock_main: 5,
+          stock_incubator: 0,
+          sku: "RED-S",
+          barcode: "6291001",
+        },
+        {
+          id: "v2",
+          title: "Medium / Red",
+          stock_main: 8,
+          stock_incubator: 4,
+          sku: "RED-M",
+          barcode: "6291002",
+        },
+        {
+          id: "v3",
+          title: "Large / Red",
+          stock_main: 0,
+          stock_incubator: 0,
+          sku: "RED-L",
+          barcode: "6291003",
+        },
       ];
 
       const totalStock = variants.reduce(

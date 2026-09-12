@@ -104,16 +104,12 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
           {paymentMethod.label}
         </span>
         {paymentBadge && (
-          <span
-            className={`px-2 py-0.5 rounded-md text-xs font-bold ${paymentBadge.className}`}
-          >
+          <span className={`px-2 py-0.5 rounded-md text-xs font-bold ${paymentBadge.className}`}>
             {paymentBadge.label}
           </span>
         )}
         {fulfillmentBadge && (
-          <span
-            className={`px-2 py-0.5 rounded-md text-xs font-bold ${fulfillmentBadge.classes}`}
-          >
+          <span className={`px-2 py-0.5 rounded-md text-xs font-bold ${fulfillmentBadge.classes}`}>
             {fulfillmentBadge.label}
           </span>
         )}

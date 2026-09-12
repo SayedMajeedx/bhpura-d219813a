@@ -11,4 +11,3 @@ export async function processAbandonedCarts(): Promise<{
     expired: Number(data?.expired ?? 0),
   };
 }
-

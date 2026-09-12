@@ -120,12 +120,14 @@ function Dashboard() {
         setIsPreviewed(true);
         try {
           localStorage.setItem(`boutq_onboarding_previewed_${brandId}`, "true");
-        } catch {}
+        } catch {
+          // localStorage can be unavailable (private mode, quota) — onboarding state just won't persist.
+        }
       }
       toast.success(
         isAr
           ? "تم نسخ رابط المتجر بنجاح واكتمال خطوة المعاينة والمشاركة!"
-          : "Store link copied! Sharing milestone completed."
+          : "Store link copied! Sharing milestone completed.",
       );
     } catch {
       toast.error(isAr ? "تعذر نسخ الرابط" : "Failed to copy link");
@@ -137,12 +139,14 @@ function Dashboard() {
       setIsPreviewed(true);
       try {
         localStorage.setItem(`boutq_onboarding_previewed_${brandId}`, "true");
-      } catch {}
+      } catch {
+        // localStorage can be unavailable (private mode, quota) — onboarding state just won't persist.
+      }
     }
     toast.success(
       isAr
         ? "تم تسجيل معاينة المتجر واكتمال الخطوة بنجاح!"
-        : "Storefront previewed! Milestone marked as completed."
+        : "Storefront previewed! Milestone marked as completed.",
     );
   };
 
@@ -150,7 +154,9 @@ function Dashboard() {
     setIsPreviewed(completed);
     try {
       localStorage.setItem(`boutq_onboarding_previewed_${brandId}`, String(completed));
-    } catch {}
+    } catch {
+      // localStorage can be unavailable (private mode, quota) — onboarding state just won't persist.
+    }
     toast.success(
       completed
         ? isAr
@@ -158,7 +164,7 @@ function Dashboard() {
           : "Storefront preview marked as complete!"
         : isAr
           ? "تم التراجع عن إكمال الخطوة"
-          : "Milestone marked as incomplete"
+          : "Milestone marked as incomplete",
     );
   };
 
@@ -166,7 +172,9 @@ function Dashboard() {
     setIsManualSaleCompleted(completed);
     try {
       localStorage.setItem(`boutq_onboarding_sale_done_${brandId}`, String(completed));
-    } catch {}
+    } catch {
+      // localStorage can be unavailable (private mode, quota) — onboarding state just won't persist.
+    }
     toast.success(
       completed
         ? isAr
@@ -174,7 +182,7 @@ function Dashboard() {
           : "First sale milestone marked as complete!"
         : isAr
           ? "تم التراجع عن إكمال الخطوة"
-          : "Milestone marked as incomplete"
+          : "Milestone marked as incomplete",
     );
   };
 
@@ -182,7 +190,9 @@ function Dashboard() {
     setIsOnboardingDismissed(true);
     try {
       localStorage.setItem(`boutq_onboarding_dismissed_${brandId}`, "true");
-    } catch {}
+    } catch {
+      // localStorage can be unavailable (private mode, quota) — onboarding state just won't persist.
+    }
     toast.success(isAr ? "تم إخفاء لوحة الإطلاق بنجاح" : "Onboarding checklist dismissed");
   };
 
@@ -190,7 +200,9 @@ function Dashboard() {
     setIsOnboardingDismissed(false);
     try {
       localStorage.removeItem(`boutq_onboarding_dismissed_${brandId}`);
-    } catch {}
+    } catch {
+      // localStorage can be unavailable (private mode, quota) — onboarding state just won't persist.
+    }
   };
 
   // 1. Fetch Business settings
@@ -221,14 +233,38 @@ function Dashboard() {
 
   // Use the exact same accounting engine as Reports so dashboard KPIs cannot drift.
   const reportingOverviewQ = useQuery({
-    queryKey: ["dashboard-reporting-overview", slug, dashboardPeriods.start.toISOString(), dashboardPeriods.end.toISOString(), reportingTimezone],
-    queryFn: () => fetchReportingOverview({ from: dashboardPeriods.start, to: dashboardPeriods.end }, reportingTimezone, false, slug),
+    queryKey: [
+      "dashboard-reporting-overview",
+      slug,
+      dashboardPeriods.start.toISOString(),
+      dashboardPeriods.end.toISOString(),
+      reportingTimezone,
+    ],
+    queryFn: () =>
+      fetchReportingOverview(
+        { from: dashboardPeriods.start, to: dashboardPeriods.end },
+        reportingTimezone,
+        false,
+        slug,
+      ),
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
   const previousReportingOverviewQ = useQuery({
-    queryKey: ["dashboard-reporting-overview-previous", slug, dashboardPeriods.previousStart.toISOString(), dashboardPeriods.previousEnd.toISOString(), reportingTimezone],
-    queryFn: () => fetchReportingOverview({ from: dashboardPeriods.previousStart, to: dashboardPeriods.previousEnd }, reportingTimezone, false, slug),
+    queryKey: [
+      "dashboard-reporting-overview-previous",
+      slug,
+      dashboardPeriods.previousStart.toISOString(),
+      dashboardPeriods.previousEnd.toISOString(),
+      reportingTimezone,
+    ],
+    queryFn: () =>
+      fetchReportingOverview(
+        { from: dashboardPeriods.previousStart, to: dashboardPeriods.previousEnd },
+        reportingTimezone,
+        false,
+        slug,
+      ),
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
@@ -429,9 +465,15 @@ function Dashboard() {
     reportingOverviewQ.isLoading ||
     previousReportingOverviewQ.isLoading;
   const accountingRows = Array.isArray(reportingOverviewQ.data) ? reportingOverviewQ.data : [];
-  const accountingRow: any = accountingRows.find((row: any) => row.currency === currency) ?? accountingRows[0];
-  const previousAccountingRows = Array.isArray(previousReportingOverviewQ.data) ? previousReportingOverviewQ.data : [];
-  const previousAccountingRow: any = previousAccountingRows.find((row: any) => row.currency === (accountingRow?.currency || currency)) ?? previousAccountingRows[0];
+  const accountingRow: any =
+    accountingRows.find((row: any) => row.currency === currency) ?? accountingRows[0];
+  const previousAccountingRows = Array.isArray(previousReportingOverviewQ.data)
+    ? previousReportingOverviewQ.data
+    : [];
+  const previousAccountingRow: any =
+    previousAccountingRows.find(
+      (row: any) => row.currency === (accountingRow?.currency || currency),
+    ) ?? previousAccountingRows[0];
 
   // Filter confirmed/completed orders for revenue reporting
   const validRevenueOrders = useMemo(() => {
@@ -562,10 +604,13 @@ function Dashboard() {
     const opex = manualOpex + paymentProcessingFees + incubatorCommissions;
     const totalExpenses = cogs + opex;
     const reportRevenue = Number(accountingRow?.net_revenue ?? revenue);
-    const reportCogs = Number(accountingRow?.known_cogs_after_returns ?? accountingRow?.known_cogs ?? cogs);
+    const reportCogs = Number(
+      accountingRow?.known_cogs_after_returns ?? accountingRow?.known_cogs ?? cogs,
+    );
     const reportOpex = Number(accountingRow?.expenses ?? opex);
     const netProfit = reportRevenue - reportCogs - reportOpex;
-    const grossMarginPercent = reportRevenue > 0 ? ((reportRevenue - reportCogs) / reportRevenue) * 100 : 0;
+    const grossMarginPercent =
+      reportRevenue > 0 ? ((reportRevenue - reportCogs) / reportRevenue) * 100 : 0;
 
     // Period Comparison Deltas (Current 30 Days vs Prior 30 Days)
     const nowMs = now.getTime();
@@ -590,14 +635,16 @@ function Dashboard() {
       );
     });
     const revenueWithIncubators = reportRevenue;
-    const revenuePrior = Number(previousAccountingRow?.net_revenue ?? (
-      prior30Orders.reduce((sum, o) => sum + Number(o.total || 0), 0) +
-      priorIncubatorSales.reduce((sum: number, sale: any) => sum + Number(sale.gross_amount || 0), 0)
-    ));
+    const revenuePrior = Number(
+      previousAccountingRow?.net_revenue ??
+        prior30Orders.reduce((sum, o) => sum + Number(o.total || 0), 0) +
+          priorIncubatorSales.reduce(
+            (sum: number, sale: any) => sum + Number(sale.gross_amount || 0),
+            0,
+          ),
+    );
     const revenueDeltaPct =
-      revenuePrior > 0
-        ? ((revenueWithIncubators - revenuePrior) / revenuePrior) * 100
-        : null;
+      revenuePrior > 0 ? ((revenueWithIncubators - revenuePrior) / revenuePrior) * 100 : null;
 
     const ordersCurrent =
       current30Orders.length +
@@ -606,14 +653,11 @@ function Dashboard() {
       prior30Orders.length +
       priorIncubatorSales.reduce((sum: number, sale: any) => sum + Number(sale.quantity || 0), 0);
     const ordersDeltaPct =
-      ordersPrior > 0
-        ? ((ordersCurrent - ordersPrior) / ordersPrior) * 100
-        : null;
+      ordersPrior > 0 ? ((ordersCurrent - ordersPrior) / ordersPrior) * 100 : null;
 
     const aovCurrent = ordersCurrent > 0 ? revenueWithIncubators / ordersCurrent : 0;
     const aovPrior = ordersPrior > 0 ? revenuePrior / ordersPrior : 0;
-    const aovDeltaPct =
-      aovPrior > 0 ? ((aovCurrent - aovPrior) / aovPrior) * 100 : null;
+    const aovDeltaPct = aovPrior > 0 ? ((aovCurrent - aovPrior) / aovPrior) * 100 : null;
 
     // 30-Day Daily Sales Time Series Chart Data
     const chartDataMap = new Map<string, { date: string; sales: number; orders: number }>();
@@ -906,7 +950,9 @@ function Dashboard() {
         <Card className="border-rose-200 bg-rose-50/70 p-8 text-center">
           <AlertCircle className="mx-auto h-9 w-9 text-rose-600" />
           <h2 className="mt-4 text-lg font-semibold">
-            {isAr ? "تعذر تحميل الأرقام المالية الموحّدة" : "Unified financial figures could not be loaded"}
+            {isAr
+              ? "تعذر تحميل الأرقام المالية الموحّدة"
+              : "Unified financial figures could not be loaded"}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
             {isAr
@@ -927,7 +973,8 @@ function Dashboard() {
 
   // Sales & Product status for guided onboarding milestones
   const totalOrdersCount = ordersQ.data?.length ?? 0;
-  const hasRealSales = totalOrdersCount > 0 || financials.ordersCurrent > 0 || validRevenueOrders.length > 0;
+  const hasRealSales =
+    totalOrdersCount > 0 || financials.ordersCurrent > 0 || validRevenueOrders.length > 0;
   const hasSales = hasRealSales;
   const hasProducts = (productsQ.data?.length ?? 0) > 0;
 
@@ -1428,7 +1475,9 @@ function Dashboard() {
                     )}
                     {!hasDelta && (
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {isAr ? "لا توجد بيانات للفترة السابقة للمقارنة" : "No prior period data for comparison"}
+                        {isAr
+                          ? "لا توجد بيانات للفترة السابقة للمقارنة"
+                          : "No prior period data for comparison"}
                       </p>
                     )}
                   </div>
@@ -1439,15 +1488,17 @@ function Dashboard() {
 
           {/* Middle Multi-Column Grid: Sales Trajectory & Action Feed */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
-            {canViewFinancials && (
-              !hasSales ? (
+            {canViewFinancials &&
+              (!hasSales ? (
                 <Card className="min-w-0 overflow-hidden lg:col-span-3 p-6 border border-dashed border-border rounded-2xl bg-card flex flex-col items-center justify-center text-center space-y-3 h-full min-h-[260px]">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                     <TrendingUp className="h-6 w-6" />
                   </div>
                   <div className="max-w-md space-y-1.5">
                     <h3 className="text-base font-bold text-foreground font-heading">
-                      {isAr ? "مخطط المبيعات اليومية بانتظار أول طلب" : "Sales Trajectory Awaiting First Order"}
+                      {isAr
+                        ? "مخطط المبيعات اليومية بانتظار أول طلب"
+                        : "Sales Trajectory Awaiting First Order"}
                     </h3>
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       {isAr
@@ -1532,8 +1583,7 @@ function Dashboard() {
                     )}
                   </div>
                 </Card>
-              )
-            )}
+              ))}
 
             {/* Action Needed Feed */}
             <Card

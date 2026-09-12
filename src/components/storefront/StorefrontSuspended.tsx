@@ -36,19 +36,13 @@ export const StorefrontSuspended: React.FC<StorefrontSuspendedProps> = ({
               <Store className="h-9 w-9" />
             </div>
           )}
-          <h1 className="text-xl font-bold tracking-tight text-foreground">
-            {brandName}
-          </h1>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">{brandName}</h1>
         </div>
 
         {/* Status Card */}
         <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
           <div className="mx-auto size-12 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
-            {isTrialExpired ? (
-              <Lock className="size-6" />
-            ) : (
-              <ShieldAlert className="size-6" />
-            )}
+            {isTrialExpired ? <Lock className="size-6" /> : <ShieldAlert className="size-6" />}
           </div>
 
           <div className="space-y-2">
@@ -66,11 +60,7 @@ export const StorefrontSuspended: React.FC<StorefrontSuspendedProps> = ({
             <p className="text-xs text-muted-foreground mb-3 font-medium">
               هل أنت صاحب هذا المتجر؟
             </p>
-            <Button
-              asChild
-              className="w-full font-bold shadow-sm"
-              size="default"
-            >
+            <Button asChild className="w-full font-bold shadow-sm" size="default">
               <Link to="/auth" search={{ redirect: `/admin/b/${brand.slug}` }}>
                 تسجيل الدخول وترقية المتجر
                 <ArrowRight className="size-4 ms-2 rtl:rotate-180" />

@@ -69,8 +69,12 @@ export function matchProductForItem(
   if (item.description) {
     const desc = String(item.description).trim().toLowerCase();
     const p = products.find((x) => {
-      const name = String(x.name || "").trim().toLowerCase();
-      const nameAr = String(x.name_ar || "").trim().toLowerCase();
+      const name = String(x.name || "")
+        .trim()
+        .toLowerCase();
+      const nameAr = String(x.name_ar || "")
+        .trim()
+        .toLowerCase();
       return (
         (name && (desc.includes(name) || name.includes(desc))) ||
         (nameAr && (desc.includes(nameAr) || nameAr.includes(desc)))
@@ -95,10 +99,7 @@ export function getItemPackagingCost(
   if (!item) return 0;
 
   // 1. Completed orders carry an immutable snapshot
-  if (
-    item.packaging_cost_snapshot != null &&
-    !isNaN(Number(item.packaging_cost_snapshot))
-  ) {
+  if (item.packaging_cost_snapshot != null && !isNaN(Number(item.packaging_cost_snapshot))) {
     return Number(Number(item.packaging_cost_snapshot).toFixed(3));
   }
 
@@ -191,7 +192,13 @@ export function calculateOrderPackagingCogs(
   if (hasSnapshots) {
     const total = items.reduce((sum, it) => {
       const qty = Number(it.quantity || it.qty || 1);
-      const unitPkgCost = getItemPackagingCost(it, products, variants, bomItems, packagingMaterials);
+      const unitPkgCost = getItemPackagingCost(
+        it,
+        products,
+        variants,
+        bomItems,
+        packagingMaterials,
+      );
       return sum + unitPkgCost * qty;
     }, 0);
     return Number(total.toFixed(3));
@@ -228,7 +235,9 @@ export async function deductOrderPackagingStock(
     if (productId) {
       const { data: bomItems, error } = await (supabase as any)
         .from("product_bom_items")
-        .select("packaging_material_id, quantity_per_unit, packaging_materials(id, stock_quantity, deduction_rule)")
+        .select(
+          "packaging_material_id, quantity_per_unit, packaging_materials(id, stock_quantity, deduction_rule)",
+        )
         .eq("product_id", productId)
         .eq("brand_id", brandId);
 
@@ -254,7 +263,9 @@ export async function deductOrderPackagingStock(
     // 2. If no productId or no specific BOM, deduct from brand's distinct packaging materials
     const { data: brandBoms } = await (supabase as any)
       .from("product_bom_items")
-      .select("packaging_material_id, quantity_per_unit, packaging_materials(id, stock_quantity, deduction_rule)")
+      .select(
+        "packaging_material_id, quantity_per_unit, packaging_materials(id, stock_quantity, deduction_rule)",
+      )
       .eq("brand_id", brandId);
 
     if (brandBoms && brandBoms.length > 0) {
@@ -292,7 +303,9 @@ export function calculateOrderPackagingBreakdown(
 ): { perItemCost: number; perOrderCost: number; totalCost: number } {
   const totalQty = orderItems.reduce((sum, item) => sum + Number(item.quantity || 1), 0);
 
-  const perItemMats = packagingMaterials.filter((m) => (m.deduction_rule || "per_item") === "per_item");
+  const perItemMats = packagingMaterials.filter(
+    (m) => (m.deduction_rule || "per_item") === "per_item",
+  );
   const perOrderMats = packagingMaterials.filter((m) => m.deduction_rule === "per_order");
 
   const perItemUnitCost = perItemMats.reduce((sum, m) => sum + Number(m.unit_cost || 0), 0);
@@ -306,4 +319,3 @@ export function calculateOrderPackagingBreakdown(
     totalCost: Number((perItemCost + perOrderCost).toFixed(3)),
   };
 }
-

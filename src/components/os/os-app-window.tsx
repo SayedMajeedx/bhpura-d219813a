@@ -52,9 +52,7 @@ export const OsAppWindow = React.forwardRef<HTMLDivElement, OsAppWindowProps>(
                 </div>
               )}
               <div className="min-w-0 flex items-center gap-2">
-                <span className="text-xs font-semibold text-foreground truncate">
-                  {title}
-                </span>
+                <span className="text-xs font-semibold text-foreground truncate">{title}</span>
                 {subtitle && (
                   <span className="hidden md:inline text-xs text-muted-foreground truncate">
                     — {subtitle}
@@ -96,4 +94,3 @@ export const OsAppWindow = React.forwardRef<HTMLDivElement, OsAppWindowProps>(
 );
 
 OsAppWindow.displayName = "OsAppWindow";
-

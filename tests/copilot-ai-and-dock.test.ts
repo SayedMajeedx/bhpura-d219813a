@@ -12,12 +12,7 @@ describe("Free Store AI Copilot Engine", () => {
   };
 
   it("provides deterministic fallback responses for store summary in Arabic", async () => {
-    const resSummary = await executeOfflineCopilot(
-      mockSupabase,
-      "brand-123",
-      "ملخص المتجر",
-      true,
-    );
+    const resSummary = await executeOfflineCopilot(mockSupabase, "brand-123", "ملخص المتجر", true);
 
     expect(resSummary).toBeDefined();
     expect(resSummary.reply).toContain("إحصائيات المتجر السريعة");

@@ -11,14 +11,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppIcon } from "@/components/icons";
-import {
-  Card,
-  EmptyState,
-  Field,
-  MetricCard,
-  ModalSheet,
-  PrimaryButton,
-} from "@/components/ui";
+import { Card, EmptyState, Field, MetricCard, ModalSheet, PrimaryButton } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { formatMoney } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
@@ -174,9 +167,7 @@ export default function ExpensesScreen() {
                   {item.expense_date || new Date(item.created_at).toLocaleDateString()}
                 </Text>
               </View>
-              <Text style={styles.expenseAmount}>
-                {formatMoney(item.amount, currency)}
-              </Text>
+              <Text style={styles.expenseAmount}>{formatMoney(item.amount, currency)}</Text>
             </View>
           </Card>
         )}
@@ -193,7 +184,9 @@ export default function ExpensesScreen() {
             label={t("expenses.category")}
             value={category}
             onChangeText={setCategory}
-            placeholder={isAr ? "مثال: أقمشة، خياطة، تسويق، شحن" : "e.g. Fabric, Tailoring, Marketing"}
+            placeholder={
+              isAr ? "مثال: أقمشة، خياطة، تسويق، شحن" : "e.g. Fabric, Tailoring, Marketing"
+            }
           />
           <Field
             label={t("expenses.amount")}
@@ -209,11 +202,7 @@ export default function ExpensesScreen() {
             placeholder={isAr ? "ملاحظات إضافية (اختياري)..." : "Additional details..."}
             multiline
           />
-          <PrimaryButton
-            title={t("common.save")}
-            onPress={handleAddExpense}
-            loading={saving}
-          />
+          <PrimaryButton title={t("common.save")} onPress={handleAddExpense} loading={saving} />
         </View>
       </ModalSheet>
     </View>

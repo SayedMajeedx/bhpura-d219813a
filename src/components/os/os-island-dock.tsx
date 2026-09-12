@@ -81,9 +81,7 @@ export function OsIslandDock({
               <Icon
                 className={cn(
                   "size-[18px] transition-transform duration-200",
-                  item.active
-                    ? "stroke-[2.2] scale-105 text-primary"
-                    : "stroke-[1.8] text-current",
+                  item.active ? "stroke-[2.2] scale-105 text-primary" : "stroke-[1.8] text-current",
                 )}
               />
               {item.badge !== undefined && (
@@ -96,9 +94,7 @@ export function OsIslandDock({
             <span
               className={cn(
                 "text-xs tracking-tight leading-normal whitespace-nowrap mt-0.5 transition-colors duration-200",
-                item.active
-                  ? "font-semibold text-primary"
-                  : "font-medium text-muted-foreground",
+                item.active ? "font-semibold text-primary" : "font-medium text-muted-foreground",
               )}
             >
               {item.label}

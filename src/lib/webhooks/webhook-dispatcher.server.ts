@@ -38,8 +38,9 @@ export async function dispatchBrandWebhookEvent(
     return [];
   }
 
-  const matchingEndpoints = endpoints.filter((ep) =>
-    ep.subscribed_events?.includes(eventName) || (ep.subscribed_events as any)?.includes("*"),
+  const matchingEndpoints = endpoints.filter(
+    (ep) =>
+      ep.subscribed_events?.includes(eventName) || (ep.subscribed_events as any)?.includes("*"),
   );
 
   const results: WebhookDispatchResult[] = [];
@@ -186,11 +187,7 @@ export async function sendTestWebhookPing(
     },
   });
 
-  const signature = await computeWebhookHmacSignature(
-    endpoint.secret,
-    timestamp,
-    samplePayload,
-  );
+  const signature = await computeWebhookHmacSignature(endpoint.secret, timestamp, samplePayload);
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",

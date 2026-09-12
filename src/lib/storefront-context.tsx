@@ -15,10 +15,7 @@ import { westernNumeralLocale } from "@/lib/format";
 import { decodeCartSharePayload, fetchSharedCartByCode } from "@/lib/cart-sharing";
 import { toast } from "sonner";
 import { syncStorefrontCartActivity } from "@/lib/abandoned-carts.functions";
-import {
-  getExistingCartSessionId,
-  getOrCreateCartSessionId,
-} from "@/lib/abandoned-cart-session";
+import { getExistingCartSessionId, getOrCreateCartSessionId } from "@/lib/abandoned-cart-session";
 
 export type StoreLang = "ar" | "en";
 export type HomePromoCard = {
@@ -598,7 +595,7 @@ export function StorefrontProvider({
         const existing = prev.find((c) => c.cart_line_id === lineId);
         const isCustomLine = Boolean(
           (Array.isArray(item.custom_fields) && item.custom_fields.length > 0) ||
-          item.max_stock >= 999
+          item.max_stock >= 999,
         );
         const usedByOtherConfigurations = isCustomLine
           ? 0
@@ -651,7 +648,7 @@ export function StorefrontProvider({
       if (!target) return prev;
       const isCustomLine = Boolean(
         (Array.isArray(target.custom_fields) && target.custom_fields.length > 0) ||
-        target.max_stock >= 999
+        target.max_stock >= 999,
       );
       const usedByOthers = isCustomLine
         ? 0

@@ -1,6 +1,17 @@
 import * as React from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowUpRight, Search, Star, Compass, Boxes, Zap, Sliders, X, Layers, Wallet } from "lucide-react";
+import {
+  ArrowUpRight,
+  Search,
+  Star,
+  Compass,
+  Boxes,
+  Zap,
+  Sliders,
+  X,
+  Layers,
+  Wallet,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +22,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { type AdminNavItemConfig, type MerchantJobCategory, DEFAULT_PINNED_IDS } from "@/config/admin-navigation";
+import {
+  type AdminNavItemConfig,
+  type MerchantJobCategory,
+  DEFAULT_PINNED_IDS,
+} from "@/config/admin-navigation";
 
 export interface OsAppsHubModalProps {
   open: boolean;

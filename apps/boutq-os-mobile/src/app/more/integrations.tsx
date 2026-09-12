@@ -59,9 +59,7 @@ export default function IntegrationsScreen() {
         </View>
       </Card>
 
-      <Text style={styles.sectionHeader}>
-        {isAr ? "البوابات النشطة" : "Active Gateways"}
-      </Text>
+      <Text style={styles.sectionHeader}>{isAr ? "البوابات النشطة" : "Active Gateways"}</Text>
 
       {gateways.map((g) => (
         <Card key={g.id} style={styles.gatewayCard}>
@@ -73,10 +71,7 @@ export default function IntegrationsScreen() {
               <Text style={styles.gatewayName}>{isAr ? g.nameAr : g.name}</Text>
               <Text style={styles.gatewayDesc}>{isAr ? g.descAr : g.descEn}</Text>
             </View>
-            <StatusPill
-              status="مكتمل"
-              customLabel={isAr ? "متصل ومفعّل" : "Active"}
-            />
+            <StatusPill status="مكتمل" customLabel={isAr ? "متصل ومفعّل" : "Active"} />
           </View>
         </Card>
       ))}

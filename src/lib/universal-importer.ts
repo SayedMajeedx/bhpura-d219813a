@@ -119,7 +119,8 @@ async function verifyBrandAccess(brandId: string, context: any) {
 
   // 2. Check for technical support impersonation token if standard access check fails
   try {
-    const { readImpersonationCookie, verifyImpersonationToken } = await import("@/lib/impersonation-cookies.server");
+    const { readImpersonationCookie, verifyImpersonationToken } =
+      await import("@/lib/impersonation-cookies.server");
     const cookieToken = await readImpersonationCookie();
     if (cookieToken) {
       const tokenPayload = await verifyImpersonationToken(cookieToken);

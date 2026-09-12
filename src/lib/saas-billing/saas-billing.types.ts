@@ -3,13 +3,7 @@
 // ==============================================================================
 
 export type SaaSPlanCode =
-  | "starter"
-  | "growth"
-  | "pro"
-  | "enterprise"
-  | "trial"
-  | "lifetime_founder"
-  | (string & {});
+  "starter" | "growth" | "pro" | "enterprise" | "trial" | "lifetime_founder" | (string & {});
 
 export type BillingIntervalMode = "both" | "monthly_only" | "annual_only";
 
@@ -121,13 +115,7 @@ export type SaaSAddon = {
 };
 
 export type SubscriptionStatus =
-  | "active"
-  | "trialing"
-  | "past_due"
-  | "grace_period"
-  | "paused"
-  | "cancelled"
-  | "expired";
+  "active" | "trialing" | "past_due" | "grace_period" | "paused" | "cancelled" | "expired";
 
 export type BillingInterval = "monthly" | "annual" | "lifetime" | "trial";
 

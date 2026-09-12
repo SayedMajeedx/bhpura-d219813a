@@ -12,7 +12,14 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
@@ -120,7 +127,8 @@ export const TrialExpiredPaywall: React.FC<TrialExpiredPaywallProps> = ({
   const handleUpgradeViaWhatsApp = (planId: string) => {
     const selected = plans.find((p) => p.id === planId);
     const planTitle = isAr ? selected?.nameAr : selected?.nameEn;
-    const intervalTitle = billingInterval === "annual" ? (isAr ? "سنوي" : "Annual") : (isAr ? "شهري" : "Monthly");
+    const intervalTitle =
+      billingInterval === "annual" ? (isAr ? "سنوي" : "Annual") : isAr ? "شهري" : "Monthly";
     const text = encodeURIComponent(
       `مرحباً فريق Boutq OS،\nأرغب بترقية وتفعيل متجري:\n- المتجر: ${brandName} (${brand.slug})\n- الباقة المطلوبة: ${planTitle} (${intervalTitle})\nيرجى تزويدي بطرق الدفع والتفعيل الفوري.`,
     );
@@ -254,7 +262,8 @@ export const TrialExpiredPaywall: React.FC<TrialExpiredPaywallProps> = ({
                   <div className="pt-4 flex items-baseline gap-1 font-mono">
                     <span className="text-2xl font-extrabold text-foreground">{price}</span>
                     <span className="text-xs font-semibold text-muted-foreground">
-                      {isAr ? "د.ب" : "BHD"} / {billingInterval === "annual" ? (isAr ? "سنة" : "yr") : (isAr ? "شهر" : "mo")}
+                      {isAr ? "د.ب" : "BHD"} /{" "}
+                      {billingInterval === "annual" ? (isAr ? "سنة" : "yr") : isAr ? "شهر" : "mo"}
                     </span>
                   </div>
                 </CardHeader>

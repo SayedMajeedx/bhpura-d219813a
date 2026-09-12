@@ -179,10 +179,7 @@ export default function CustomersScreen() {
                   {/* Action dock */}
                   {item.phone ? (
                     <View style={styles.quickActions}>
-                      <Pressable
-                        onPress={() => handleCall(item.phone!)}
-                        style={styles.iconAction}
-                      >
+                      <Pressable onPress={() => handleCall(item.phone!)} style={styles.iconAction}>
                         <AppIcon name="call" size={16} color={colors.primary} />
                       </Pressable>
                       <Pressable

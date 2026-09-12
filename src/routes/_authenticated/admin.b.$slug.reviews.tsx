@@ -73,7 +73,9 @@ function CustomerReviewsPage() {
     queryFn: async () => {
       if (!storyReview?.order_id) return null;
       const { data, error } = await (supabase.from("orders") as any)
-        .select("id, order_date, created_at, order_items(id, description, product_id, products(id, image_url, media))")
+        .select(
+          "id, order_date, created_at, order_items(id, description, product_id, products(id, image_url, media))",
+        )
         .eq("id", storyReview.order_id)
         .maybeSingle();
       if (error) {

@@ -7,21 +7,15 @@
  */
 export function getStorefrontUrl(
   brandOrSlug: string | { slug: string; custom_domain?: string | null } | null | undefined,
-  path = ""
+  path = "",
 ): string {
   if (!brandOrSlug) return "/";
 
-  const slug =
-    typeof brandOrSlug === "string" ? brandOrSlug : brandOrSlug.slug || "";
-  const customDomain =
-    typeof brandOrSlug === "object" ? brandOrSlug.custom_domain : null;
+  const slug = typeof brandOrSlug === "string" ? brandOrSlug : brandOrSlug.slug || "";
+  const customDomain = typeof brandOrSlug === "object" ? brandOrSlug.custom_domain : null;
 
   const cleanSlug = slug.trim().toLowerCase();
-  const normalizedPath = path
-    ? path.startsWith("/")
-      ? path
-      : `/${path}`
-    : "";
+  const normalizedPath = path ? (path.startsWith("/") ? path : `/${path}`) : "";
 
   if (
     typeof window !== "undefined" &&

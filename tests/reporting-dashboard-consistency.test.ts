@@ -8,7 +8,9 @@ const overview = read("src/routes/_authenticated/admin.b.$slug.reports.index.tsx
 const sales = read("src/routes/_authenticated/admin.b.$slug.reports.sales.tsx");
 const products = read("src/routes/_authenticated/admin.b.$slug.reports.products.tsx");
 const customers = read("src/routes/_authenticated/admin.b.$slug.reports.customers.tsx");
-const bomSnapshots = read("supabase/migrations/20260904220000_historical_order_bom_cogs_snapshots.sql");
+const bomSnapshots = read(
+  "supabase/migrations/20260904220000_historical_order_bom_cogs_snapshots.sql",
+);
 
 describe("dashboard and reporting consistency", () => {
   it("recognizes revenue from paid, non-cancelled orders everywhere", () => {
@@ -42,10 +44,10 @@ describe("dashboard and reporting consistency", () => {
   });
 
   it("uses the reporting accounting engine for dashboard financial KPIs", () => {
-    expect(dashboard).toContain('fetchReportingOverview');
-    expect(dashboard).toContain('accountingRow?.net_revenue');
-    expect(dashboard).toContain('accountingRow?.known_cogs_after_returns');
-    expect(dashboard).toContain('accountingRow?.expenses');
+    expect(dashboard).toContain("fetchReportingOverview");
+    expect(dashboard).toContain("accountingRow?.net_revenue");
+    expect(dashboard).toContain("accountingRow?.known_cogs_after_returns");
+    expect(dashboard).toContain("accountingRow?.expenses");
   });
 
   it("repairs historical product links and reports frozen packaging COGS", () => {

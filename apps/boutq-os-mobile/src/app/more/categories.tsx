@@ -61,9 +61,7 @@ export default function CategoriesScreen() {
 
   const toggleCategoryActive = async (id: string, current: boolean) => {
     try {
-      setCategories((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, is_active: !current } : c)),
-      );
+      setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, is_active: !current } : c)));
       const { error } = await supabase
         .from("categories")
         .update({ is_active: !current })
@@ -217,11 +215,7 @@ export default function CategoriesScreen() {
             placeholder="0"
             keyboardType="number-pad"
           />
-          <PrimaryButton
-            title={t("common.save")}
-            onPress={handleCreateCategory}
-            loading={saving}
-          />
+          <PrimaryButton title={t("common.save")} onPress={handleCreateCategory} loading={saving} />
         </View>
       </ModalSheet>
     </View>

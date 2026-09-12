@@ -60,13 +60,8 @@ export default function ReviewsScreen() {
 
   const toggleApproval = async (id: string, current: boolean) => {
     try {
-      setReviews((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, is_approved: !current } : r)),
-      );
-      await supabase
-        .from("order_reviews")
-        .update({ is_approved: !current })
-        .eq("id", id);
+      setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, is_approved: !current } : r)));
+      await supabase.from("order_reviews").update({ is_approved: !current }).eq("id", id);
     } catch (e) {
       console.error(e);
       void loadReviews();
@@ -136,7 +131,9 @@ export default function ReviewsScreen() {
               <View style={styles.cardHeader}>
                 <View>
                   <Text style={styles.customerName}>
-                    {item.customer_name || item.customer_phone || (isAr ? "عميل مميز" : "Verified Customer")}
+                    {item.customer_name ||
+                      item.customer_phone ||
+                      (isAr ? "عميل مميز" : "Verified Customer")}
                   </Text>
                   <View style={styles.starsRow}>
                     {[1, 2, 3, 4, 5].map((star) => (
@@ -152,7 +149,13 @@ export default function ReviewsScreen() {
                 </View>
                 <View style={styles.switchCol}>
                   <Text style={styles.switchLabel}>
-                    {item.is_approved !== false ? (isAr ? "معروض" : "Shown") : (isAr ? "مخفي" : "Hidden")}
+                    {item.is_approved !== false
+                      ? isAr
+                        ? "معروض"
+                        : "Shown"
+                      : isAr
+                        ? "مخفي"
+                        : "Hidden"}
                   </Text>
                   <Switch
                     value={item.is_approved !== false}
@@ -163,9 +166,7 @@ export default function ReviewsScreen() {
               </View>
 
               {item.comment || item.feedback ? (
-                <Text style={styles.commentText}>
-                  "{item.comment || item.feedback}"
-                </Text>
+                <Text style={styles.commentText}>"{item.comment || item.feedback}"</Text>
               ) : null}
 
               {item.created_at ? (

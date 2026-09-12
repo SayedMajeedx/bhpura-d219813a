@@ -31,9 +31,15 @@ for (const variant of testVariants) {
   }
 }
 
-assert.strictEqual(indexCollisionDetected, false, "Null barcodes must never trigger uniqueness conflicts!");
+assert.strictEqual(
+  indexCollisionDetected,
+  false,
+  "Null barcodes must never trigger uniqueness conflicts!",
+);
 assert.strictEqual(indexedEntries.size, 1, "Only non-null barcodes should be indexed");
-console.log("  PASSED: Multiple default variants with null barcode safely bypass partial unique index.\n");
+console.log(
+  "  PASSED: Multiple default variants with null barcode safely bypass partial unique index.\n",
+);
 
 // Test 2: In-memory barcode duplication check (barcodeInUse)
 console.log("Test 2: barcodeInUse validation");
@@ -85,19 +91,26 @@ console.log("  Initial State: In-Store (Main) = 15, Consignment (Incubator) = 0,
 const consignmentTransferQty = 5;
 const consignedVariant = createVariantStock(
   defaultVariant.stock_main - consignmentTransferQty,
-  defaultVariant.stock_incubator + consignmentTransferQty
+  defaultVariant.stock_incubator + consignmentTransferQty,
 );
 
 assert.strictEqual(consignedVariant.stock_main, 10);
 assert.strictEqual(consignedVariant.stock_incubator, 5);
 assert.strictEqual(consignedVariant.stock, 15);
-console.log("  Consignment Transfer: In-Store (Main) = 10, Consignment (Incubator) = 5, Total = 15.");
+console.log(
+  "  Consignment Transfer: In-Store (Main) = 10, Consignment (Incubator) = 5, Total = 15.",
+);
 
 // Simulating order deductions per location constraint (order_items_location_check)
 const orderLocations = ["main", "incubator"];
 for (const loc of orderLocations) {
-  assert.ok(["main", "incubator"].includes(loc), `Location ${loc} satisfies location check constraint`);
+  assert.ok(
+    ["main", "incubator"].includes(loc),
+    `Location ${loc} satisfies location check constraint`,
+  );
 }
-console.log("  PASSED: Multi-location stock and consignment triggers strictly preserved without conflict.\n");
+console.log(
+  "  PASSED: Multi-location stock and consignment triggers strictly preserved without conflict.\n",
+);
 
 console.log("All Simple Product & Incubator Consignment tests passed successfully!");

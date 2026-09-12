@@ -84,8 +84,7 @@ export const FULFILLMENT_STATUS_MAP: Record<string, StatusDefinition> = {
   ON_HOLD: {
     ar: "قيد الانتظار",
     en: "On Hold",
-    badgeClasses:
-      "bg-muted text-muted-foreground border-border",
+    badgeClasses: "bg-muted text-muted-foreground border-border",
   },
   CANCELLED: {
     ar: "ملغى",
@@ -209,8 +208,7 @@ export function getFulfillmentLabel(status: string | null | undefined, lang: Lan
  * Returns badge utility classes for fulfillment/workflow status with color mapping.
  */
 export function getFulfillmentBadgeClasses(status: string | null | undefined): string {
-  if (!status)
-    return "bg-muted text-muted-foreground border-border";
+  if (!status) return "bg-muted text-muted-foreground border-border";
   const normalized = String(status).trim().toUpperCase();
   const def = FULFILLMENT_STATUS_MAP[normalized];
   return def?.badgeClasses || "bg-muted text-foreground border-border";
@@ -279,31 +277,36 @@ export function getFulfillmentBadgeDetails(
   if (s === "SENT_TO_TAILOR") {
     return {
       label: lang === "ar" ? "تم الإرسال للخياط" : "Sent to Tailor",
-      classes: "bg-purple-100 text-purple-900 border border-purple-300/80 font-semibold shadow-2xs dark:bg-purple-950/40 dark:text-purple-300",
+      classes:
+        "bg-purple-100 text-purple-900 border border-purple-300/80 font-semibold shadow-2xs dark:bg-purple-950/40 dark:text-purple-300",
     };
   }
   if (s === "RECEIVED_FROM_TAILOR") {
     return {
       label: lang === "ar" ? "تم الاستلام من الخياط" : "Received from Tailor",
-      classes: "bg-teal-100 text-teal-900 border border-teal-300/80 font-semibold shadow-2xs dark:bg-teal-950/40 dark:text-teal-300",
+      classes:
+        "bg-teal-100 text-teal-900 border border-teal-300/80 font-semibold shadow-2xs dark:bg-teal-950/40 dark:text-teal-300",
     };
   }
   if (s === "PACKING") {
     return {
       label: lang === "ar" ? "قيد التعبئة والتغليف" : "Packing",
-      classes: "bg-amber-100 text-amber-900 border border-amber-300/80 font-semibold shadow-2xs dark:bg-amber-950/40 dark:text-amber-300",
+      classes:
+        "bg-amber-100 text-amber-900 border border-amber-300/80 font-semibold shadow-2xs dark:bg-amber-950/40 dark:text-amber-300",
     };
   }
   if (s === "NEEDS_PACKING") {
     return {
       label: lang === "ar" ? "بحاجة للتعبئة" : "Needs Packing",
-      classes: "bg-amber-100 text-amber-900 border border-amber-300/80 font-semibold shadow-2xs dark:bg-amber-950/40 dark:text-amber-300",
+      classes:
+        "bg-amber-100 text-amber-900 border border-amber-300/80 font-semibold shadow-2xs dark:bg-amber-950/40 dark:text-amber-300",
     };
   }
   if (s === "READY_FOR_PICKUP") {
     return {
       label: lang === "ar" ? "جاهز للاستلام" : "Ready for Pickup",
-      classes: "bg-indigo-100 text-indigo-900 border border-indigo-300/80 font-semibold shadow-2xs dark:bg-indigo-950/40 dark:text-indigo-300",
+      classes:
+        "bg-indigo-100 text-indigo-900 border border-indigo-300/80 font-semibold shadow-2xs dark:bg-indigo-950/40 dark:text-indigo-300",
     };
   }
   if (["SHIPPED", "ASSIGNED", "OUT_FOR_DELIVERY", "READY_FOR_DELIVERY"].includes(s)) {
@@ -316,7 +319,8 @@ export function getFulfillmentBadgeDetails(
           : lang === "ar"
             ? "خرج للتوصيل"
             : "Out for Delivery",
-      classes: "bg-sky-100 text-sky-900 border border-sky-300/80 font-semibold shadow-2xs dark:bg-sky-950/40 dark:text-sky-300",
+      classes:
+        "bg-sky-100 text-sky-900 border border-sky-300/80 font-semibold shadow-2xs dark:bg-sky-950/40 dark:text-sky-300",
     };
   }
   if (s === "COMPLETED" || s === "DELIVERED") {
@@ -347,7 +351,8 @@ export function getFulfillmentBadgeDetails(
             : lang === "ar"
               ? "ملغي"
               : "Cancelled",
-      classes: "bg-rose-100 text-rose-900 border border-rose-300/80 font-semibold shadow-2xs dark:bg-rose-950/40 dark:text-rose-300",
+      classes:
+        "bg-rose-100 text-rose-900 border border-rose-300/80 font-semibold shadow-2xs dark:bg-rose-950/40 dark:text-rose-300",
     };
   }
   // ON_HOLD / default
@@ -356,4 +361,3 @@ export function getFulfillmentBadgeDetails(
     classes: "bg-muted text-muted-foreground border border-border font-semibold shadow-2xs",
   };
 }
-

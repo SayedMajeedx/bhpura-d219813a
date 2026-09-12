@@ -1,0 +1,21 @@
+# Normalize all text files to LF, regardless of a contributor's local
+# core.autocrlf setting or OS. Without this, Windows checkouts (where
+# core.autocrlf defaults to true) diverge from what's actually committed,
+# and `prettier --check` / `eslint` results become checkout-dependent
+# instead of reflecting the real repository content.
+* text=auto eol=lf
+
+# Line-ending normalization doesn't apply to genuinely binary formats;
+# mark the common ones explicitly so git never attempts to diff/convert them.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.pdf binary
+*.zip binary

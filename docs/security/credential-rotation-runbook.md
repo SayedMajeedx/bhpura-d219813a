@@ -5,6 +5,7 @@
 All third-party credentials (API keys, webhook secrets, tokens) in Boutq OS are strictly stored inside **Supabase Vault** (`vault.decrypted_secrets`). Plaintext credentials are systematically prevented by check constraints (`integration_credentials_vault_only`) and zero plaintext keys are kept in `public.integration_credentials`.
 
 Whenever a merchant updates credentials via the Admin UI (`/admin/b/$slug/integrations`), Boutq OS executes `public.save_integration_credential`:
+
 1. Creates or updates the secret directly inside `vault.secrets`.
 2. Updates `last_rotated_at = now()` and `rotated_by = auth.uid()`.
 3. Sets `api_key = NULL` and `webhook_secret = NULL` in the base table.
@@ -15,6 +16,7 @@ Whenever a merchant updates credentials via the Admin UI (`/admin/b/$slug/integr
 ## Service Rotation Runbooks
 
 ### 1. Tap Payments (Payment Gateway)
+
 - **Primary Use**: Processing online payments, Apple Pay, BenefitPay, KNET, Card charges.
 - **Keys**: `api_key` (`sk_live_...`), `webhook_secret` (`whsec_...`).
 - **Rotation Frequency**: Every 90 days, or immediately upon staff departure / suspected exposure.
@@ -33,6 +35,7 @@ Whenever a merchant updates credentials via the Admin UI (`/admin/b/$slug/integr
 ---
 
 ### 2. WhatsApp / Meta Cloud API (Communications)
+
 - **Primary Use**: Order notifications, verification codes, marketing campaigns (opt-in only).
 - **Keys**: Permanent System User Access Token (`EAAB...`), Webhook Verification Token.
 - **Rotation Frequency**: Every 180 days.
@@ -49,6 +52,7 @@ Whenever a merchant updates credentials via the Admin UI (`/admin/b/$slug/integr
 ---
 
 ### 3. Resend (Customer & Transactional Email)
+
 - **Primary Use**: Customer order confirmations, receipts, and staff alerts.
 - **Keys**: `api_key` (`re_...`), Verified Sender Domain.
 - **Rotation Frequency**: Every 180 days.
@@ -65,6 +69,7 @@ Whenever a merchant updates credentials via the Admin UI (`/admin/b/$slug/integr
 ---
 
 ### 4. Google Gemini AI (Content Studio & Bilingual Catalog)
+
 - **Primary Use**: Automatic Arabic/English product descriptions, SEO tags, marketing copy.
 - **Keys**: Google AI Studio API Key (`AIzaSy...`).
 - **Rotation Frequency**: Every 180 days.
@@ -87,6 +92,7 @@ node scripts/security/audit-vault-credentials.mjs
 ```
 
 This verification script confirms:
+
 - Anonymous queries cannot access `integration_credentials`.
 - All credentials have valid `api_key_secret_id` Vault pointers.
 - No plaintext keys or secrets exist in the database.

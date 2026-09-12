@@ -93,10 +93,13 @@ export interface LoyaltyLedgerEntry {
   created_at: string;
 }
 
-export const DEFAULT_LOYALTY_PROGRAM: Omit<BrandLoyaltyProgram, "brand_id" | "created_at" | "updated_at"> = {
+export const DEFAULT_LOYALTY_PROGRAM: Omit<
+  BrandLoyaltyProgram,
+  "brand_id" | "created_at" | "updated_at"
+> = {
   is_enabled: true,
   points_per_currency_unit: 10,
-  redemption_rate: 0.010,
+  redemption_rate: 0.01,
   min_points_to_redeem: 100,
   max_redemption_percentage: 50,
   points_expiry_days: 365,
@@ -111,7 +114,10 @@ export const DEFAULT_LOYALTY_PROGRAM: Omit<BrandLoyaltyProgram, "brand_id" | "cr
   tier_multipliers_enabled: true,
 };
 
-export const DEFAULT_LOYALTY_TIERS: Omit<LoyaltyTier, "id" | "brand_id" | "created_at" | "updated_at">[] = [
+export const DEFAULT_LOYALTY_TIERS: Omit<
+  LoyaltyTier,
+  "id" | "brand_id" | "created_at" | "updated_at"
+>[] = [
   {
     tier_key: "bronze",
     name_ar: "المستوى البرونزي",
@@ -162,6 +168,11 @@ export const DEFAULT_LOYALTY_TIERS: Omit<LoyaltyTier, "id" | "brand_id" | "creat
     discount_percent: 15,
     badge_color: "#a855f7",
     perks_ar: ["مضاعف نقاط 2.0x", "شحن مجاني دائم", "خصم 15% حصري", "أولوية خدمة العملاء"],
-    perks_en: ["2.0x Points multiplier", "Permanent Free Shipping", "Exclusive 15% discount", "Priority Concierge"],
+    perks_en: [
+      "2.0x Points multiplier",
+      "Permanent Free Shipping",
+      "Exclusive 15% discount",
+      "Priority Concierge",
+    ],
   },
 ];

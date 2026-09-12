@@ -16,7 +16,9 @@ export function getEnvVariable(name: string): string | undefined {
       if (liveEnv[viteName]) return liveEnv[viteName];
       if (liveEnv[unprefixed]) return liveEnv[unprefixed];
     }
-  } catch {}
+  } catch {
+    // This source isn't available in the current runtime — move on to the next one.
+  }
 
   // 2. Try import.meta.env (Vite build-time injection)
   try {
@@ -24,14 +26,18 @@ export function getEnvVariable(name: string): string | undefined {
     if (metaEnv?.[name]) return metaEnv[name];
     if (metaEnv?.[viteName]) return metaEnv[viteName];
     if (metaEnv?.[unprefixed]) return metaEnv[unprefixed];
-  } catch {}
+  } catch {
+    // This source isn't available in the current runtime — move on to the next one.
+  }
 
   // 3. Fallback to standard process.env (which Vite rewrites statically at build time)
   try {
     if (process.env?.[name]) return process.env[name];
     if (process.env?.[viteName]) return process.env[viteName];
     if (process.env?.[unprefixed]) return process.env[unprefixed];
-  } catch {}
+  } catch {
+    // This source isn't available in the current runtime — move on to the next one.
+  }
 
   // 4. Try globalThis fallbacks
   try {
@@ -39,7 +45,9 @@ export function getEnvVariable(name: string): string | undefined {
     if (g?.[name]) return g[name];
     if (g?.[viteName]) return g[viteName];
     if (g?.[unprefixed]) return g[unprefixed];
-  } catch {}
+  } catch {
+    // This source isn't available in the current runtime — move on to the next one.
+  }
 
   return undefined;
 }
@@ -92,7 +100,9 @@ export async function getEnvDiagnostics(): Promise<{
       hasProcess = true;
       Object.keys(liveEnv).forEach((k) => keys.add(k));
     }
-  } catch {}
+  } catch {
+    // This source isn't available in the current runtime — move on to the next one.
+  }
 
   // 2. Cloudflare request context
   if (typeof window === "undefined") {
@@ -109,7 +119,9 @@ export async function getEnvDiagnostics(): Promise<{
         hasCloudflare = true;
         Object.keys(env).forEach((k) => keys.add(k));
       }
-    } catch {}
+    } catch {
+      // This source isn't available in the current runtime — move on to the next one.
+    }
   }
 
   // 3. Static process.env (Vite compilation will rewrite)
@@ -117,7 +129,9 @@ export async function getEnvDiagnostics(): Promise<{
     if (process.env) {
       Object.keys(process.env).forEach((k) => keys.add(k));
     }
-  } catch {}
+  } catch {
+    // This source isn't available in the current runtime — move on to the next one.
+  }
 
   // 4. import.meta.env
   try {
@@ -125,7 +139,9 @@ export async function getEnvDiagnostics(): Promise<{
     if (metaEnv) {
       Object.keys(metaEnv).forEach((k) => keys.add(k));
     }
-  } catch {}
+  } catch {
+    // This source isn't available in the current runtime — move on to the next one.
+  }
 
   // Filter out sensitive-looking keys for safety, but keep key schemas
   const filteredKeys = Array.from(keys).map((k) => {
@@ -260,7 +276,9 @@ function createSupabaseAuthMiddleware(options?: { allowImpersonationLifecycle?: 
               isImpersonating = true;
             }
           }
-        } catch {}
+        } catch {
+          // Best-effort impersonation check — ignore and treat as not impersonating.
+        }
       }
     }
 
@@ -406,7 +424,9 @@ export async function getGeminiCredentials(
               resolvedBrandId = abrand.id;
               traces.push(`[Referer Admin] resolved brand_id: ${resolvedBrandId}`);
             }
-          } catch {}
+          } catch {
+            // Best-effort brand resolution from the referer — ignore and fall through.
+          }
         }
       }
     }

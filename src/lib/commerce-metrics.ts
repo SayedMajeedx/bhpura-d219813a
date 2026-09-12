@@ -1,4 +1,4 @@
-export type CustomerMetricOrder = {
+export type CustomerMetricOrder = {
   customer_id: string | null;
   total: number | string | null;
   created_at: string;
@@ -73,7 +73,13 @@ export function resolveCustomerSegmentBadge(params: {
   currency?: string;
   nowMs?: number;
 }): CustomerSegmentBadgeDetails {
-  const { totalOrders, lifetimeSpend, lastOrderDate, currency = "BHD", nowMs = Date.now() } = params;
+  const {
+    totalOrders,
+    lifetimeSpend,
+    lastOrderDate,
+    currency = "BHD",
+    nowMs = Date.now(),
+  } = params;
   const vipThreshold = getVipThreshold(currency);
   const lastOrderMs = lastOrderDate ? Date.parse(lastOrderDate) : 0;
   const sixtyDaysMs = 60 * 24 * 60 * 60 * 1000;
@@ -178,7 +184,8 @@ export function buildCustomerCrmStats(
     const lastOrderMs = lastOrderDate ? Date.parse(lastOrderDate) : 0;
     let badge: CustomerCrmStats["badge"] = null;
     if (lifetimeSpend >= vipThreshold || (totalOrders >= 3 && lifetimeSpend >= 100)) badge = "VIP";
-    else if (totalOrders > 1 && lastOrderMs > 0 && nowMs - lastOrderMs > sixtyDaysMs) badge = "Churn Risk";
+    else if (totalOrders > 1 && lastOrderMs > 0 && nowMs - lastOrderMs > sixtyDaysMs)
+      badge = "Churn Risk";
     else if (totalOrders === 1) badge = "New Buyer";
     else if (totalOrders > 1) badge = "Regular";
 

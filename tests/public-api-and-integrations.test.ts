@@ -136,7 +136,10 @@ describe("HMAC-SHA256 Webhook Signatures & Replay Prevention", () => {
     const timestamp = Math.floor(Date.now() / 1000);
     const header = await computeWebhookHmacSignature(secret, timestamp, payload);
 
-    const tamperedPayload = JSON.stringify({ event: "order.created", order_id: "ord_1000_TAMPERED" });
+    const tamperedPayload = JSON.stringify({
+      event: "order.created",
+      order_id: "ord_1000_TAMPERED",
+    });
     const verification = await verifyWebhookHmacSignature(secret, header, tamperedPayload);
     expect(verification.isValid).toBe(false);
   });

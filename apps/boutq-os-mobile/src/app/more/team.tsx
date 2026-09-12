@@ -141,9 +141,7 @@ export default function TeamScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <View style={styles.nameRoleRow}>
-                  <Text style={styles.memberName}>
-                    {item.name || item.full_name || item.email}
-                  </Text>
+                  <Text style={styles.memberName}>{item.name || item.full_name || item.email}</Text>
                   {item.id === profile?.id ? (
                     <Text style={styles.youBadge}>({isAr ? "أنت" : "You"})</Text>
                   ) : null}
@@ -151,16 +149,22 @@ export default function TeamScreen() {
                 <Text style={styles.memberEmail}>{item.email}</Text>
                 <View style={styles.badgesRow}>
                   <StatusPill
-                    status={
-                      item.role === "admin" || item.role === "super_admin"
-                        ? "مكتمل"
-                        : "نشط"
-                    }
+                    status={item.role === "admin" || item.role === "super_admin" ? "مكتمل" : "نشط"}
                     customLabel={item.role?.toUpperCase()}
                   />
                   <StatusPill
-                    status={item.status === "inactive" || item.status === "disabled" ? "ملغى" : "مكتمل"}
-                    customLabel={item.status === "inactive" ? (isAr ? "معطّل" : "Inactive") : (isAr ? "نشط" : "Active")}
+                    status={
+                      item.status === "inactive" || item.status === "disabled" ? "ملغى" : "مكتمل"
+                    }
+                    customLabel={
+                      item.status === "inactive"
+                        ? isAr
+                          ? "معطّل"
+                          : "Inactive"
+                        : isAr
+                          ? "نشط"
+                          : "Active"
+                    }
                   />
                 </View>
               </View>
@@ -198,7 +202,9 @@ export default function TeamScreen() {
                 onPress={() => setRole("admin")}
                 style={[styles.roleChip, role === "admin" && styles.roleChipSelected]}
               >
-                <Text style={[styles.roleChipText, role === "admin" && styles.roleChipTextSelected]}>
+                <Text
+                  style={[styles.roleChipText, role === "admin" && styles.roleChipTextSelected]}
+                >
                   {t("team.admin")}
                 </Text>
               </Pressable>
@@ -206,7 +212,9 @@ export default function TeamScreen() {
                 onPress={() => setRole("staff")}
                 style={[styles.roleChip, role === "staff" && styles.roleChipSelected]}
               >
-                <Text style={[styles.roleChipText, role === "staff" && styles.roleChipTextSelected]}>
+                <Text
+                  style={[styles.roleChipText, role === "staff" && styles.roleChipTextSelected]}
+                >
                   {t("team.staff")}
                 </Text>
               </Pressable>
@@ -214,7 +222,9 @@ export default function TeamScreen() {
                 onPress={() => setRole("courier")}
                 style={[styles.roleChip, role === "courier" && styles.roleChipSelected]}
               >
-                <Text style={[styles.roleChipText, role === "courier" && styles.roleChipTextSelected]}>
+                <Text
+                  style={[styles.roleChipText, role === "courier" && styles.roleChipTextSelected]}
+                >
                   {t("team.courier")}
                 </Text>
               </Pressable>

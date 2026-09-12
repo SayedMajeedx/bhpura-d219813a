@@ -5,23 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatMoney, formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  FileText,
-  Truck,
-  RotateCcw,
-  Printer,
-  Copy,
-  Check,
-  Share2,
-  ArrowRight,
-} from "lucide-react";
+import { FileText, Truck, RotateCcw, Printer, Copy, Check, Share2, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { printDeliveryNote } from "@/lib/thermal-print";
 
-import {
-  getFulfillmentBadgeDetails,
-  getFulfillmentMethodLabel,
-} from "@/lib/status-labels";
+import { getFulfillmentBadgeDetails, getFulfillmentMethodLabel } from "@/lib/status-labels";
 import { RETURN_STATUS_CONFIG, type ReturnStatus } from "@/lib/returns.types";
 
 interface OrderSalesDocumentsCardProps {
@@ -39,7 +27,8 @@ interface OrderSalesDocumentsCardProps {
 function getPaymentStatusLabel(status: string | null | undefined, currentLang: "ar" | "en") {
   const s = String(status || "unpaid").toLowerCase();
   if (s === "paid") return currentLang === "ar" ? "مدفوع بالكامل" : "Paid in Full";
-  if (s === "partial" || s === "partially_paid") return currentLang === "ar" ? "مدفوع جزئياً" : "Partially Paid";
+  if (s === "partial" || s === "partially_paid")
+    return currentLang === "ar" ? "مدفوع جزئياً" : "Partially Paid";
   if (s === "unpaid") return currentLang === "ar" ? "غير مدفوع" : "Unpaid";
   if (s === "refunded") return currentLang === "ar" ? "مسترجع" : "Refunded";
   return s;
@@ -83,7 +72,9 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
     enabled: Boolean(brandId && order?.id && order.id !== "new"),
     queryFn: async () => {
       const { data, error } = await (supabase.from("return_requests") as any)
-        .select("id, return_number, type, status, refund_status, net_refund_amount, reason, created_at")
+        .select(
+          "id, return_number, type, status, refund_status, net_refund_amount, reason, created_at",
+        )
         .eq("brand_id", brandId)
         .eq("order_id", order.id)
         .order("created_at", { ascending: false });
@@ -172,7 +163,10 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
   const isPaid = order?.payment_status === "paid" || balanceDue <= 0;
 
   return (
-    <Card id="sec-documents" className="scroll-mt-24 rounded-xl border border-border-strong bg-card p-4 sm:p-6 shadow-sm">
+    <Card
+      id="sec-documents"
+      className="scroll-mt-24 rounded-xl border border-border-strong bg-card p-4 sm:p-6 shadow-sm"
+    >
       <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-b border-border-subtle pb-4">
         <div>
           <h3 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
@@ -272,8 +266,12 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
                 }`}
               >
                 {isPaid
-                  ? isAr ? "مدفوعة بالكامل" : "Paid in Full"
-                  : isAr ? `مستحق: ${formatMoney(balanceDue, currency, lang)}` : `Due: ${formatMoney(balanceDue, currency, lang)}`}
+                  ? isAr
+                    ? "مدفوعة بالكامل"
+                    : "Paid in Full"
+                  : isAr
+                    ? `مستحق: ${formatMoney(balanceDue, currency, lang)}`
+                    : `Due: ${formatMoney(balanceDue, currency, lang)}`}
               </span>
             </div>
             <p className="text-xs text-muted-foreground mb-3">
@@ -290,7 +288,9 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>{isAr ? "الضريبة (VAT):" : "Tax amount:"}</span>
-                <span className="font-mono">{formatMoney(Number(order?.tax_amount || 0), currency, lang)}</span>
+                <span className="font-mono">
+                  {formatMoney(Number(order?.tax_amount || 0), currency, lang)}
+                </span>
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>{isAr ? "المدفوع:" : "Paid advance:"}</span>
@@ -314,7 +314,13 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
                   ) : (
                     <Copy className="h-3.5 w-3.5 text-muted-foreground" />
                   )}
-                  {copiedInvoice ? (isAr ? "تم النسخ" : "Copied") : (isAr ? "نسخ الرابط" : "Copy Link")}
+                  {copiedInvoice
+                    ? isAr
+                      ? "تم النسخ"
+                      : "Copied"
+                    : isAr
+                      ? "نسخ الرابط"
+                      : "Copy Link"}
                 </Button>
                 <Button
                   variant="outline"
@@ -453,12 +459,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
             )}
           </div>
           <div className="flex items-center gap-2 pt-2 border-t border-border-subtle">
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className="h-8 w-full text-xs gap-1.5"
-            >
+            <Button asChild variant="outline" size="sm" className="h-8 w-full text-xs gap-1.5">
               <Link to="/admin/b/$slug/returns" params={{ slug }}>
                 <RotateCcw className="h-3.5 w-3.5 text-amber-600" />
                 {isAr ? "فتح مركز المرتجعات والاستبدال" : "Open Returns Center"}

@@ -91,7 +91,10 @@ export function CustomerReturnRequestModal({
   });
 
   // Check eligibility
-  const eligibility = checkOrderReturnEligibility(order || { created_at: new Date().toISOString(), status: "paid" }, policy);
+  const eligibility = checkOrderReturnEligibility(
+    order || { created_at: new Date().toISOString(), status: "paid" },
+    policy,
+  );
 
   // Initialize selectable items
   const [items, setItems] = useState<SelectedReturnItem[]>([]);
@@ -141,7 +144,9 @@ export function CustomerReturnRequestModal({
 
   const handleSubmit = async () => {
     if (selectedItems.length === 0) {
-      toast.error(isAr ? "يرجى تحديد قطعة واحدة على الأقل للإرجاع" : "Please select at least one item");
+      toast.error(
+        isAr ? "يرجى تحديد قطعة واحدة على الأقل للإرجاع" : "Please select at least one item",
+      );
       return;
     }
 
@@ -198,7 +203,9 @@ export function CustomerReturnRequestModal({
           <div className="p-4 rounded-xl border border-destructive/20 bg-destructive/5 space-y-2 text-xs">
             <div className="flex items-center gap-2 text-destructive font-bold">
               <AlertCircle className="h-4 w-4 shrink-0" />
-              <span>{isAr ? "الطلب غير مؤهل لتقديم طلب إرجاع" : "Order Not Eligible for Return"}</span>
+              <span>
+                {isAr ? "الطلب غير مؤهل لتقديم طلب إرجاع" : "Order Not Eligible for Return"}
+              </span>
             </div>
             <p className="text-muted-foreground">{eligibility.reason}</p>
           </div>
@@ -211,18 +218,25 @@ export function CustomerReturnRequestModal({
                   ? `فترة السماح: ${policy?.return_window_days ?? 14} يوماً من الشراء`
                   : `Return Window: ${policy?.return_window_days ?? 14} days from purchase`}
               </span>
-              {policy?.customer_shipping_fee_borne_by === "customer" && Number(policy.return_shipping_fee) > 0 && (
-                <span className="font-mono">
-                  {isAr ? "رسوم الشحن:" : "Shipping Fee:"}{" "}
-                  {formatMoney(Number(policy.return_shipping_fee), "BHD", isAr ? "ar-BH-u-nu-latn" : "en-US")}
-                </span>
-              )}
+              {policy?.customer_shipping_fee_borne_by === "customer" &&
+                Number(policy.return_shipping_fee) > 0 && (
+                  <span className="font-mono">
+                    {isAr ? "رسوم الشحن:" : "Shipping Fee:"}{" "}
+                    {formatMoney(
+                      Number(policy.return_shipping_fee),
+                      "BHD",
+                      isAr ? "ar-BH-u-nu-latn" : "en-US",
+                    )}
+                  </span>
+                )}
             </div>
 
             {/* Select items */}
             <div className="space-y-2">
               <Label className="text-xs font-semibold text-foreground">
-                {isAr ? "اختر القطع المراد إرجاعها أو استبدالها" : "Select Items to Return or Exchange"}
+                {isAr
+                  ? "اختر القطع المراد إرجاعها أو استبدالها"
+                  : "Select Items to Return or Exchange"}
               </Label>
               <div className="space-y-2 max-h-48 overflow-y-auto pe-1">
                 {items.map((item, idx) => (
@@ -251,7 +265,9 @@ export function CustomerReturnRequestModal({
 
                     {item.selected && (
                       <div className="flex items-center gap-2">
-                        <Label className="text-xs text-muted-foreground">{isAr ? "الكمية:" : "Qty:"}</Label>
+                        <Label className="text-xs text-muted-foreground">
+                          {isAr ? "الكمية:" : "Qty:"}
+                        </Label>
                         <Input
                           type="number"
                           min={1}
@@ -363,24 +379,43 @@ export function CustomerReturnRequestModal({
             <div className="p-3 rounded-lg border border-border bg-muted/20 text-xs space-y-1.5 font-mono">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span>{isAr ? "قيمة المنتجات المحددة:" : "Items Subtotal:"}</span>
-                <span>{formatMoney(financials.totalItemRefund, "BHD", isAr ? "ar-BH-u-nu-latn" : "en-US")}</span>
+                <span>
+                  {formatMoney(
+                    financials.totalItemRefund,
+                    "BHD",
+                    isAr ? "ar-BH-u-nu-latn" : "en-US",
+                  )}
+                </span>
               </div>
               {financials.proRatedDiscount > 0 && (
                 <div className="flex items-center justify-between text-muted-foreground">
                   <span>{isAr ? "خصم مستقطع:" : "Discount Deducted:"}</span>
-                  <span className="text-destructive">-{formatMoney(financials.proRatedDiscount, "BHD", isAr ? "ar-BH-u-nu-latn" : "en-US")}</span>
+                  <span className="text-destructive">
+                    -
+                    {formatMoney(
+                      financials.proRatedDiscount,
+                      "BHD",
+                      isAr ? "ar-BH-u-nu-latn" : "en-US",
+                    )}
+                  </span>
                 </div>
               )}
               {financials.returnFee > 0 && (
                 <div className="flex items-center justify-between text-muted-foreground">
                   <span>{isAr ? "رسوم الشحن:" : "Return Fee:"}</span>
-                  <span className="text-destructive">-{formatMoney(financials.returnFee, "BHD", isAr ? "ar-BH-u-nu-latn" : "en-US")}</span>
+                  <span className="text-destructive">
+                    -{formatMoney(financials.returnFee, "BHD", isAr ? "ar-BH-u-nu-latn" : "en-US")}
+                  </span>
                 </div>
               )}
               <div className="pt-1.5 border-t border-border flex items-center justify-between font-bold text-sm text-foreground">
                 <span>{isAr ? "صافي المستحق المقدر:" : "Estimated Refund:"}</span>
                 <span className="text-emerald-600 dark:text-emerald-400">
-                  {formatMoney(financials.netRefundAmount, "BHD", isAr ? "ar-BH-u-nu-latn" : "en-US")}
+                  {formatMoney(
+                    financials.netRefundAmount,
+                    "BHD",
+                    isAr ? "ar-BH-u-nu-latn" : "en-US",
+                  )}
                 </span>
               </div>
             </div>

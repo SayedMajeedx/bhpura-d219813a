@@ -62,8 +62,10 @@ export function ReturnPolicyEditor({ brandId, lang }: ReturnPolicyEditorProps) {
           allowed_compensation_methods: ["refund_original", "store_credit", "exchange"],
           require_images: false,
           auto_approve_policy: false,
-          policy_terms_ar: "يحق للعميل استرجاع أو استبدال المنتجات خلال 14 يوماً من تاريخ الاستلام بشرط أن تكون بحالتها الأصلية غير مستخدمة.",
-          policy_terms_en: "Customers may return or exchange items within 14 days of delivery provided they are unused and in original condition.",
+          policy_terms_ar:
+            "يحق للعميل استرجاع أو استبدال المنتجات خلال 14 يوماً من تاريخ الاستلام بشرط أن تكون بحالتها الأصلية غير مستخدمة.",
+          policy_terms_en:
+            "Customers may return or exchange items within 14 days of delivery provided they are unused and in original condition.",
           notify_on_status_change: true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -104,11 +106,9 @@ export function ReturnPolicyEditor({ brandId, lang }: ReturnPolicyEditorProps) {
         notify_on_status_change: form.notify_on_status_change ?? true,
       };
 
-      const { error } = await (supabase as any)
-        .from("brand_return_policies")
-        .upsert(payload, {
-          onConflict: "brand_id",
-        });
+      const { error } = await (supabase as any).from("brand_return_policies").upsert(payload, {
+        onConflict: "brand_id",
+      });
 
       if (error) throw error;
 
@@ -167,7 +167,11 @@ export function ReturnPolicyEditor({ brandId, lang }: ReturnPolicyEditorProps) {
           disabled={saving}
           className="gap-1.5 h-9 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
         >
-          {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+          {saving ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Save className="h-3.5 w-3.5" />
+          )}
           {isAr ? "حفظ التغييرات" : "Save Settings"}
         </Button>
       </div>
@@ -207,7 +211,9 @@ export function ReturnPolicyEditor({ brandId, lang }: ReturnPolicyEditorProps) {
                 {isAr ? "السماح بالمرتجع الجزئي" : "Allow Partial Returns"}
               </Label>
               <span className="text-xs text-muted-foreground">
-                {isAr ? "إمكانية إرجاع بعض قطع الطلب دون إرجاع كامل الطلب" : "Allow returning specific items from an order"}
+                {isAr
+                  ? "إمكانية إرجاع بعض قطع الطلب دون إرجاع كامل الطلب"
+                  : "Allow returning specific items from an order"}
               </span>
             </div>
             <Switch
@@ -222,7 +228,9 @@ export function ReturnPolicyEditor({ brandId, lang }: ReturnPolicyEditorProps) {
                 {isAr ? "السماح بإرجاع المنتجات المخفضة" : "Allow Discounted Items"}
               </Label>
               <span className="text-xs text-muted-foreground">
-                {isAr ? "تمكين إرجاع المنتجات المشتراة بخصم أو عروض" : "Allow returns on promotional or sale items"}
+                {isAr
+                  ? "تمكين إرجاع المنتجات المشتراة بخصم أو عروض"
+                  : "Allow returns on promotional or sale items"}
               </span>
             </div>
             <Switch
@@ -237,7 +245,9 @@ export function ReturnPolicyEditor({ brandId, lang }: ReturnPolicyEditorProps) {
                 {isAr ? "إلزام العميل بإرفاق صور" : "Require Customer Photos"}
               </Label>
               <span className="text-xs text-muted-foreground">
-                {isAr ? "اشتراط رفع صور للمنتج عند تقديم الطلب" : "Require attaching photos when requesting return"}
+                {isAr
+                  ? "اشتراط رفع صور للمنتج عند تقديم الطلب"
+                  : "Require attaching photos when requesting return"}
               </span>
             </div>
             <Switch
@@ -302,9 +312,21 @@ export function ReturnPolicyEditor({ brandId, lang }: ReturnPolicyEditorProps) {
             </Label>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { id: "refund_original" as CompensationMethod, labelAr: "استرداد مالي", labelEn: "Original Refund" },
-                { id: "store_credit" as CompensationMethod, labelAr: "رصيد متجر", labelEn: "Store Credit" },
-                { id: "exchange" as CompensationMethod, labelAr: "استبدال منتج", labelEn: "Exchange" },
+                {
+                  id: "refund_original" as CompensationMethod,
+                  labelAr: "استرداد مالي",
+                  labelEn: "Original Refund",
+                },
+                {
+                  id: "store_credit" as CompensationMethod,
+                  labelAr: "رصيد متجر",
+                  labelEn: "Store Credit",
+                },
+                {
+                  id: "exchange" as CompensationMethod,
+                  labelAr: "استبدال منتج",
+                  labelEn: "Exchange",
+                },
               ].map((m) => {
                 const isSelected = (form.allowed_compensation_methods || []).includes(m.id);
                 return (
@@ -333,7 +355,9 @@ export function ReturnPolicyEditor({ brandId, lang }: ReturnPolicyEditorProps) {
                 {isAr ? "إشعارات العملاء التلقائية" : "Automated Notifications"}
               </Label>
               <span className="text-xs text-muted-foreground">
-                {isAr ? "إرسال تحديثات عند تغيير حالة الطلب" : "Send updates on return status change"}
+                {isAr
+                  ? "إرسال تحديثات عند تغيير حالة الطلب"
+                  : "Send updates on return status change"}
               </span>
             </div>
             <Switch

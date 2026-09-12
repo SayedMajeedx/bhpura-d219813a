@@ -92,7 +92,7 @@ export function ReturnInspectionDialog({
         brandId,
         returnItemId: item.id,
         condition,
-        restockBranchId: isSellable ? (selectedBranchId || undefined) : undefined,
+        restockBranchId: isSellable ? selectedBranchId || undefined : undefined,
         inspectionNotes: inspectionNotes.trim() || undefined,
       });
 
@@ -228,10 +228,7 @@ export function ReturnInspectionDialog({
                 <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
                 {isAr ? "الفرع المستلم لإعادة إدراج المخزون" : "Destination Branch for Restock"}
               </Label>
-              <Select
-                value={selectedBranchId}
-                onValueChange={setSelectedBranchId}
-              >
+              <Select value={selectedBranchId} onValueChange={setSelectedBranchId}>
                 <SelectTrigger className="h-9 text-xs">
                   <SelectValue placeholder={isAr ? "اختر الفرع..." : "Select branch..."} />
                 </SelectTrigger>

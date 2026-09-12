@@ -184,10 +184,12 @@ export async function getCroppedBlob(
     options?.allowTransparency ||
     containBg === "transparent" ||
     options?.format === "image/png" ||
-    (containBg !== "blur" && containBg !== "white" && containBg !== "neutral" && isLikelyTransparent(imageSrc));
+    (containBg !== "blur" &&
+      containBg !== "white" &&
+      containBg !== "neutral" &&
+      isLikelyTransparent(imageSrc));
 
-  const outputFormat =
-    options?.format ?? (isTransparent ? "image/png" : "image/jpeg");
+  const outputFormat = options?.format ?? (isTransparent ? "image/png" : "image/jpeg");
 
   return await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
@@ -248,9 +250,7 @@ export function ImageCropperDialog({
     setZoom(1);
     setArea(null);
     const shouldDefaultTransparent =
-      preset === "logo" ||
-      allowTransparency ||
-      isLikelyTransparent(imageSrc);
+      preset === "logo" || allowTransparency || isLikelyTransparent(imageSrc);
 
     if (shouldDefaultTransparent) {
       setFitMode(defaultFitMode ?? "contain");
@@ -342,18 +342,12 @@ export function ImageCropperDialog({
         containBg === "transparent" ||
         isLikelyTransparent(imageSrc);
 
-      const blob = await getCroppedBlob(
-        imageSrc,
-        area,
-        resolvedOutputWidth,
-        resolvedOutputHeight,
-        {
-          fitMode,
-          containBg,
-          allowTransparency: isTransparent,
-          format: isTransparent ? "image/png" : "image/jpeg",
-        },
-      );
+      const blob = await getCroppedBlob(imageSrc, area, resolvedOutputWidth, resolvedOutputHeight, {
+        fitMode,
+        containBg,
+        allowTransparency: isTransparent,
+        format: isTransparent ? "image/png" : "image/jpeg",
+      });
       await onConfirm(blob);
     } catch {
       toast.error(
@@ -541,8 +535,8 @@ export function ImageCropperDialog({
                 : undefined
             }
           >
-            {imageSrc && (
-              fitMode === "contain" ? (
+            {imageSrc &&
+              (fitMode === "contain" ? (
                 <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
                   {containBg === "blur" && (
                     <img
@@ -595,8 +589,7 @@ export function ImageCropperDialog({
                   objectFit="contain"
                   showGrid
                 />
-              )
-            )}
+              ))}
             {overlayGradient && (
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-black/10 z-10" />
             )}
@@ -651,7 +644,8 @@ export function ImageCropperDialog({
                   className="h-9 w-9 shrink-0"
                   onClick={() => adjustZoom(-0.1)}
                   disabled={isBusy || zoom <= 1}
-                 aria-label={isAr ? "إنقاص" : "Decrease"}>
+                  aria-label={isAr ? "إنقاص" : "Decrease"}
+                >
                   <Minus className="h-3.5 w-3.5" />
                 </Button>
                 <Slider
@@ -670,7 +664,8 @@ export function ImageCropperDialog({
                   className="h-9 w-9 shrink-0"
                   onClick={() => adjustZoom(0.1)}
                   disabled={isBusy || zoom >= 4}
-                 aria-label={isAr ? "إضافة" : "Add"}>
+                  aria-label={isAr ? "إضافة" : "Add"}
+                >
                   <Plus className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -756,11 +751,15 @@ export function ImageCropperDialog({
                 className="min-h-11 gap-1.5 font-medium border"
                 onClick={handleSkip}
                 disabled={isBusy}
-                title={isAr ? "رفع الصورة الأصلية بدون أي قص أو تعديل" : "Upload original without cropping"}
+                title={
+                  isAr
+                    ? "رفع الصورة الأصلية بدون أي قص أو تعديل"
+                    : "Upload original without cropping"
+                }
               >
                 <Maximize2 className="h-4 w-4" />
                 {isAr
-                  ? (preset === "logo" || allowTransparency)
+                  ? preset === "logo" || allowTransparency
                     ? "استخدام الشعار الأصلي (شفاف)"
                     : "تخطي القص (الأصلية)"
                   : "Skip crop (Original)"}
@@ -777,12 +776,12 @@ export function ImageCropperDialog({
                   ? "جاري تجهيز الصورة…"
                   : "Preparing image…"
                 : isAr
-                  ? (preset === "logo" || containBg === "transparent")
+                  ? preset === "logo" || containBg === "transparent"
                     ? "اعتماد الشعار (بدون خلفية)"
                     : fitMode === "contain"
                       ? "اعتماد الصورة (كاملة)"
                       : "اعتماد الصورة"
-                  : (preset === "logo" || containBg === "transparent")
+                  : preset === "logo" || containBg === "transparent"
                     ? "Use Logo (Transparent)"
                     : fitMode === "contain"
                       ? "Use full image"

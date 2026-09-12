@@ -459,7 +459,8 @@ function CategoryPage() {
         style={{
           color: settings.category_banner_background_url
             ? "#ffffff"
-            : (settings.heading_color || "var(--sf-heading, var(--sf-header-fg, var(--foreground, #111111))"),
+            : settings.heading_color ||
+              "var(--sf-heading, var(--sf-header-fg, var(--foreground, #111111))",
         }}
         backgroundStyle={{
           backgroundColor: "var(--sf-header-bg, var(--background, #ffffff))",

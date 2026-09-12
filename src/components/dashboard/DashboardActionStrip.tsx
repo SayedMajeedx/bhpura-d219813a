@@ -220,11 +220,7 @@ export function DashboardActionStrip({
                     size="sm"
                     className="w-full justify-between h-9 text-xs font-semibold border-border-strong hover:bg-muted"
                   >
-                    <Link
-                      to={card.to as any}
-                      params={{ slug } as any}
-                      search={card.search as any}
-                    >
+                    <Link to={card.to as any} params={{ slug } as any} search={card.search as any}>
                       <span>{card.actionLabel}</span>
                       <ArrowIcon className="h-3.5 w-3.5 text-muted-foreground" />
                     </Link>
@@ -243,9 +239,7 @@ export function DashboardActionStrip({
             </div>
             <div>
               <p className="text-xs font-bold text-foreground">
-                {isAr
-                  ? "كل أمورك جاهزة ومنتظمة اليوم!"
-                  : "All operational queues are clear today!"}
+                {isAr ? "كل أمورك جاهزة ومنتظمة اليوم!" : "All operational queues are clear today!"}
               </p>
               <p className="text-xs text-muted-foreground">
                 {isAr
@@ -266,12 +260,7 @@ export function DashboardActionStrip({
                 {isAr ? "سجل الطلبات" : "Order History"}
               </Link>
             </Button>
-            <Button
-              asChild
-              variant="default"
-              size="sm"
-              className="h-8.5 text-xs font-medium"
-            >
+            <Button asChild variant="default" size="sm" className="h-8.5 text-xs font-medium">
               <Link to="/admin/b/$slug/inventory" params={{ slug } as any}>
                 {isAr ? "إدارة المخزون" : "Manage Stock"}
               </Link>

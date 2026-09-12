@@ -128,10 +128,13 @@ Deno.serve(async (req: Request) => {
 
       case "provision-brand": {
         if (!callerCtx.isSuperAdmin) {
-          return new Response(JSON.stringify({ error: "Only a super admin can provision brands" }), {
-            status: 403,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
+          return new Response(
+            JSON.stringify({ error: "Only a super admin can provision brands" }),
+            {
+              status: 403,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            },
+          );
         }
         const body = await req.json();
         return await handleProvisionBrand(supabase, body);
@@ -201,10 +204,14 @@ async function handleList(
 }
 
 async function handleProvisionBrand(supabase: any, body: any) {
-  const slug = String(body.slug ?? "").trim().toLowerCase();
+  const slug = String(body.slug ?? "")
+    .trim()
+    .toLowerCase();
   const nameEn = String(body.name_en ?? "").trim();
   const nameAr = String(body.name_ar ?? "").trim() || null;
-  const ownerEmail = String(body.owner_email ?? "").trim().toLowerCase();
+  const ownerEmail = String(body.owner_email ?? "")
+    .trim()
+    .toLowerCase();
   const ownerName = String(body.owner_name ?? "").trim();
   const ownerPhone = String(body.owner_phone ?? "").trim() || null;
   const ownerPassword = String(body.owner_password ?? "");

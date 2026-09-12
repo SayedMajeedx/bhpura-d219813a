@@ -357,7 +357,9 @@ export function OsSidebar({
                           <button
                             type="button"
                             onClick={(e) => togglePin(item.id, e)}
-                            title={isPinned ? (isAr ? "إلغاء التثبيت" : "Unpin") : (isAr ? "تثبيت" : "Pin")}
+                            title={
+                              isPinned ? (isAr ? "إلغاء التثبيت" : "Unpin") : isAr ? "تثبيت" : "Pin"
+                            }
                             className="absolute top-1/2 -translate-y-1/2 end-2.5 h-6 w-6 rounded-md flex items-center justify-center transition-opacity opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                           >
                             <PinOff className="h-3 w-3" />
@@ -420,7 +422,11 @@ export function OsSidebar({
                                   : "opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary hover:bg-primary/10",
                               )}
                             >
-                              {isPinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
+                              {isPinned ? (
+                                <PinOff className="h-3 w-3" />
+                              ) : (
+                                <Pin className="h-3 w-3" />
+                              )}
                             </button>
                           )}
                         </div>
@@ -650,7 +656,8 @@ export function OsSidebar({
                                 isPinned
                                   ? "text-primary hover:text-destructive"
                                   : "text-muted-foreground hover:text-primary",
-                                active && "text-primary-foreground hover:text-primary-foreground/80",
+                                active &&
+                                  "text-primary-foreground hover:text-primary-foreground/80",
                               )}
                             >
                               <Pin

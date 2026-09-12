@@ -85,7 +85,10 @@ function LoyaltyDashboardPage() {
           .eq("brand_id", brand.id);
         if (error) throw error;
 
-        const totalActive = (data || []).reduce((acc: number, row: any) => acc + (row.active_points || 0), 0);
+        const totalActive = (data || []).reduce(
+          (acc: number, row: any) => acc + (row.active_points || 0),
+          0,
+        );
         const totalRedeemed = (data || []).reduce(
           (acc: number, row: any) => acc + (row.lifetime_spent_points || 0),
           0,
@@ -99,7 +102,7 @@ function LoyaltyDashboardPage() {
       },
     });
 
-  const redemptionRate = program?.redemption_rate || 0.010;
+  const redemptionRate = program?.redemption_rate || 0.01;
   const estimatedActiveValue = (accountsSummary.totalActive * redemptionRate).toFixed(3);
   const totalRedeemedValue = (accountsSummary.totalRedeemed * redemptionRate).toFixed(3);
 

@@ -175,10 +175,15 @@ export function BoutqWebShell() {
     `);
   }, []);
 
-  const registerPushDevice = useCallback((token: string, enabled: boolean, preferences: PushPreferences) => {
-    const detail = JSON.stringify({ token, enabled, preferences, platform: Platform.OS });
-    webViewRef.current?.injectJavaScript(`window.dispatchEvent(new CustomEvent('boutq:native-push',{detail:${detail}}));true;`);
-  }, []);
+  const registerPushDevice = useCallback(
+    (token: string, enabled: boolean, preferences: PushPreferences) => {
+      const detail = JSON.stringify({ token, enabled, preferences, platform: Platform.OS });
+      webViewRef.current?.injectJavaScript(
+        `window.dispatchEvent(new CustomEvent('boutq:native-push',{detail:${detail}}));true;`,
+      );
+    },
+    [],
+  );
 
   if (unlocked !== true) {
     return (
@@ -239,7 +244,9 @@ export function BoutqWebShell() {
             } else if (data?.type === "DOWNLOAD_INVOICE") {
               downloadInvoice();
             }
-          } catch {}
+          } catch {
+            // Malformed message from the web view — ignore it.
+          }
         }}
         onLoadStart={() => {
           setFailure(null);

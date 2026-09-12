@@ -36,7 +36,8 @@ function ResetPasswordPage() {
       if (!isMounted) return;
       if (
         event === "PASSWORD_RECOVERY" ||
-        (session && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED"))
+        (session &&
+          (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED"))
       ) {
         setStatus("valid");
       }
@@ -243,10 +244,7 @@ function ResetPasswordPage() {
               </div>
 
               <div className="pt-2 space-y-3">
-                <Button
-                  asChild
-                  className="w-full h-11 font-semibold rounded-lg shadow-sm"
-                >
+                <Button asChild className="w-full h-11 font-semibold rounded-lg shadow-sm">
                   <Link to="/forgot-password">
                     {lang === "ar" ? "طلب رابط استعادة جديد" : "Request New Reset Link"}
                   </Link>
@@ -275,9 +273,7 @@ function ResetPasswordPage() {
                 <h2 className="text-xl font-bold font-display text-foreground">
                   {lang === "ar" ? "تم تحديث كلمة المرور!" : "Password Updated!"}
                 </h2>
-                <p className="text-xs text-muted-foreground">
-                  {t("auth.passwordUpdated")}
-                </p>
+                <p className="text-xs text-muted-foreground">{t("auth.passwordUpdated")}</p>
               </div>
             </div>
           )}

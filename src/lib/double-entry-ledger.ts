@@ -44,7 +44,15 @@ export function calculateIncomeStatement(
     const pSt = String(o.payment_status || "").toLowerCase();
     if (st === "cancelled" || st === "canceled" || st === "refunded") return false;
     return (
-      ["confirmed", "paid", "shipped", "completed", "delivered", "ready_for_pickup", "picked_up"].includes(st) ||
+      [
+        "confirmed",
+        "paid",
+        "shipped",
+        "completed",
+        "delivered",
+        "ready_for_pickup",
+        "picked_up",
+      ].includes(st) ||
       ["paid", "completed"].includes(pSt) ||
       ["completed", "delivered", "fulfilled", "shipped", "picked_up"].includes(fSt)
     );
