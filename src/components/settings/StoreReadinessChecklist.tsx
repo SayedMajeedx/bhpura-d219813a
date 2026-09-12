@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +16,7 @@ import {
   Truck,
   FileText,
   Image,
+  X,
 } from "lucide-react";
 import type { SettingsTabId } from "@/components/settings/SettingsScopeSwitcher";
 
@@ -237,7 +238,6 @@ export function StoreReadinessChecklist({
   onNavigateTab,
 }: StoreReadinessChecklistProps) {
   const isAr = lang === "ar";
-  const [collapsed, setCollapsed] = useState(false);
 
   // 1. Query active products count (using canonical is_active flag)
   const productsQ = useQuery({
@@ -305,8 +305,55 @@ export function StoreReadinessChecklist({
 
   const { completedCount, totalCount, progressPercent, isAllComplete } = evaluation;
 
+  // Option 3: Collapsed by default when 100% complete; expanded by default when incomplete
+  const [userCollapsed, setUserCollapsed] = useState<boolean | null>(null);
+  const collapsed = userCollapsed !== null ? userCollapsed : isAllComplete;
+
+  // Option 3: Dismiss capability with localStorage memory
+  const storageKey = `store-readiness-dismissed-${brandId}`;
+  const [dismissed, setDismissed] = useState<boolean>(() => {
+    try {
+      if (typeof window !== "undefined") {
+        return localStorage.getItem(storageKey) === "true";
+      }
+    } catch {
+      // ignore
+    }
+    return false;
+  });
+
+  // Auto-reappear if any requirement breaks in the future
+  useEffect(() => {
+    if (!isAllComplete && dismissed) {
+      setDismissed(false);
+      try {
+        localStorage.removeItem(storageKey);
+      } catch {
+        // ignore
+      }
+    }
+  }, [isAllComplete, dismissed, storageKey]);
+
+  // If 100% complete and merchant explicitly dismissed it, unmount completely
+  if (isAllComplete && dismissed) {
+    return null;
+  }
+
+  const handleDismiss = () => {
+    setDismissed(true);
+    try {
+      localStorage.setItem(storageKey, "true");
+    } catch {
+      // ignore
+    }
+  };
+
   return (
-    <div className="rounded-2xl border border-border-strong bg-card p-4 sm:p-5 shadow-xs transition-all">
+    <div
+      className={`rounded-2xl border border-border-strong bg-card shadow-xs transition-all ${
+        collapsed ? "p-3 sm:p-4" : "p-4 sm:p-5"
+      }`}
+    >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
           <div
@@ -349,7 +396,7 @@ export function StoreReadinessChecklist({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-end sm:self-center">
+        <div className="flex items-center gap-1.5 self-end sm:self-center">
           <Button asChild variant="outline" size="sm" className="h-8 gap-1.5 text-xs font-semibold">
             <a href={`/${slug}`} target="_blank" rel="noopener noreferrer">
               <Store className="h-3.5 w-3.5 text-primary" />
@@ -362,7 +409,7 @@ export function StoreReadinessChecklist({
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => setCollapsed(!collapsed)}
+            onClick={() => setUserCollapsed(!collapsed)}
             className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
             aria-label={
               collapsed
@@ -376,18 +423,34 @@ export function StoreReadinessChecklist({
           >
             {collapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
           </Button>
+
+          {isAllComplete && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleDismiss}
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+              title={isAr ? "إخفاء التنبيه نهائياً" : "Dismiss readiness card"}
+              aria-label={isAr ? "إخفاء التنبيه نهائياً" : "Dismiss readiness card"}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Progress Bar */}
-      <div className="mt-3.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
-        <div
-          className={`h-full transition-all duration-500 ${
-            isAllComplete ? "bg-emerald-500" : "bg-primary"
-          }`}
-          style={{ width: `${progressPercent}%` }}
-        />
-      </div>
+      {/* Progress Bar (shown when expanded or incomplete) */}
+      {!collapsed && (
+        <div className="mt-3.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+          <div
+            className={`h-full transition-all duration-500 ${
+              isAllComplete ? "bg-emerald-500" : "bg-primary"
+            }`}
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+      )}
 
       {/* Checklist items list */}
       {!collapsed && (

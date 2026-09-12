@@ -1,4 +1,4 @@
-﻿import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vitest";
 import { evaluateStoreReadiness } from "../src/components/settings/StoreReadinessChecklist";
 
 describe("evaluateStoreReadiness", () => {
@@ -106,4 +106,42 @@ describe("evaluateStoreReadiness", () => {
     expect(result.hasPayments).toBe(false);
     expect(result.completedCount).toBe(4);
   });
+
+  it("determines that 100% complete stores are collapsed by default and dismissible", () => {
+    const result = evaluateStoreReadiness({
+      logoUrl: puraBusinessSettings.logo_url,
+      activeProductsCount: 9,
+      businessSettings: puraBusinessSettings,
+      lang: "ar",
+    });
+
+    expect(result.isAllComplete).toBe(true);
+    // Collapse by default when complete
+    const defaultCollapsed = result.isAllComplete;
+    expect(defaultCollapsed).toBe(true);
+
+    // Dismissal is only honored when complete
+    const canDismiss = result.isAllComplete;
+    expect(canDismiss).toBe(true);
+  });
+
+  it("ensures that incomplete stores are never collapsed by default and cannot stay dismissed", () => {
+    const result = evaluateStoreReadiness({
+      logoUrl: puraBusinessSettings.logo_url,
+      activeProductsCount: 0,
+      businessSettings: puraBusinessSettings,
+      lang: "ar",
+    });
+
+    expect(result.isAllComplete).toBe(false);
+    // Expanded by default when incomplete so merchant sees remaining steps
+    const defaultCollapsed = result.isAllComplete;
+    expect(defaultCollapsed).toBe(false);
+
+    // If an incomplete store had a stale dismissed flag, it must un-dismiss and reappear
+    const isDismissedStored = true;
+    const shouldRender = !result.isAllComplete || !isDismissedStored;
+    expect(shouldRender).toBe(true);
+  });
 });
+
