@@ -269,12 +269,7 @@ function createSupabaseAuthMiddleware(options?: { allowImpersonationLifecycle?: 
           const { verifyImpersonationToken } = await import("@/lib/impersonation-cookies.server");
           const verified = await verifyImpersonationToken(match[2]);
           if (verified?.targetTenantId) {
-            // Only apply safeguard if the request originated from within a tenant brand workspace (/admin/b/:slug)
-            const referer = request.headers.get("referer");
-            const isInsideTenantWorkspace = referer ? /\/admin\/b\/[^/]+/.test(referer) : true;
-            if (isInsideTenantWorkspace) {
-              isImpersonating = true;
-            }
+            isImpersonating = true;
           }
         } catch {
           // Best-effort impersonation check — ignore and treat as not impersonating.

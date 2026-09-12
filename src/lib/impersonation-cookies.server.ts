@@ -13,11 +13,19 @@ function getImpersonationSecret(): string {
   try {
     const g = globalThis as any;
     const env = g["__CLOUDFLARE_ENV__"] || g["process"]?.["env"] || process.env;
-    return (
-      env?.SUPABASE_SERVICE_ROLE_KEY || env?.SESSION_SECRET || "boutq-impersonation-secret-fallback"
+    const secret = env?.SUPABASE_SERVICE_ROLE_KEY || env?.SESSION_SECRET || env?.AUTH_SECRET;
+    if (secret) return secret;
+    if (process.env.NODE_ENV === "test") {
+      return "test-impersonation-secret-at-least-32-chars-long";
+    }
+    throw new Error(
+      "Missing required server secret for impersonation cookie signing (SUPABASE_SERVICE_ROLE_KEY or SESSION_SECRET)",
     );
-  } catch {
-    return "boutq-impersonation-secret-fallback";
+  } catch (err) {
+    if (process.env.NODE_ENV === "test") {
+      return "test-impersonation-secret-at-least-32-chars-long";
+    }
+    throw err;
   }
 }
 

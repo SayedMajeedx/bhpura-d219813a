@@ -1466,7 +1466,7 @@ ${desc}${detailsBlock}
                       )}
                     >
                       <div className="flex items-center justify-between gap-1 w-full min-w-0">
-                        <span className="text-[11px] sm:text-xs font-bold text-foreground truncate">
+                        <span className="text-xs font-bold text-foreground truncate">
                           {isAr ? item.ar : item.en}
                         </span>
                         {isSelected && (
@@ -1477,7 +1477,7 @@ ${desc}${detailsBlock}
                       </div>
                       <span
                         dir="ltr"
-                        className="font-mono text-[10px] sm:text-xs text-muted-foreground tabular-nums truncate"
+                        className="font-mono text-xs text-muted-foreground tabular-nums truncate"
                       >
                         {item.width} × {item.height}
                       </span>
@@ -1524,7 +1524,7 @@ ${desc}${detailsBlock}
                           </span>
                         )}
                       </div>
-                      <span className="text-[11px] sm:text-xs font-bold text-foreground truncate mt-1">
+                      <span className="text-xs font-bold text-foreground truncate mt-1">
                         {isAr ? item.ar : item.en}
                       </span>
                     </button>
@@ -1559,7 +1559,7 @@ ${desc}${detailsBlock}
                       </span>
                     )}
                   </div>
-                  <span className="text-[11px] sm:text-xs text-muted-foreground mt-1 truncate">
+                  <span className="text-xs text-muted-foreground mt-1 truncate">
                     {isAr ? "تكبير الصورة لملء الخلفية" : "Fills canvas boundary"}
                   </span>
                 </button>
@@ -1583,7 +1583,7 @@ ${desc}${detailsBlock}
                       </span>
                     )}
                   </div>
-                  <span className="text-[11px] sm:text-xs text-muted-foreground mt-1 truncate">
+                  <span className="text-xs text-muted-foreground mt-1 truncate">
                     {isAr ? "حفظ كامل تفاصيل الصورة" : "Preserves full photo"}
                   </span>
                 </button>
@@ -1709,7 +1709,7 @@ ${desc}${detailsBlock}
                     type="button"
                     onClick={() => setHeaderPlateStyle("none")}
                     className={cn(
-                      "rounded-xl border p-2 text-center text-[11px] sm:text-xs font-bold transition-all cursor-pointer truncate min-w-0",
+                      "rounded-xl border p-2 text-center text-xs font-bold transition-all cursor-pointer truncate min-w-0",
                       headerPlateStyle === "none"
                         ? "border-primary bg-primary/[0.08] ring-1 ring-primary text-primary"
                         : "border-border bg-background/50 hover:border-primary/40 text-muted-foreground",
@@ -1725,7 +1725,7 @@ ${desc}${detailsBlock}
                         setHeaderPlateColor("rgba(0, 0, 0, 0.48)");
                     }}
                     className={cn(
-                      "rounded-xl border p-2 text-center text-[11px] sm:text-xs font-bold transition-all cursor-pointer truncate min-w-0",
+                      "rounded-xl border p-2 text-center text-xs font-bold transition-all cursor-pointer truncate min-w-0",
                       headerPlateStyle === "glass"
                         ? "border-primary bg-primary/[0.08] ring-1 ring-primary text-primary"
                         : "border-border bg-background/50 hover:border-primary/40 text-muted-foreground",
@@ -1740,7 +1740,7 @@ ${desc}${detailsBlock}
                       if (headerPlateColor.startsWith("rgba")) setHeaderPlateColor("#1a1a1a");
                     }}
                     className={cn(
-                      "rounded-xl border p-2 text-center text-[11px] sm:text-xs font-bold transition-all cursor-pointer truncate min-w-0",
+                      "rounded-xl border p-2 text-center text-xs font-bold transition-all cursor-pointer truncate min-w-0",
                       headerPlateStyle === "solid"
                         ? "border-primary bg-primary/[0.08] ring-1 ring-primary text-primary"
                         : "border-border bg-background/50 hover:border-primary/40 text-muted-foreground",

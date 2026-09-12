@@ -19,7 +19,7 @@ describe("Pura growth tools", () => {
     expect(studio).toContain("width: 1080, height: 1350");
     expect(studio).toContain("width: 1080, height: 1080");
     expect(studio).toContain(
-      'const fileName = `pura-${selected?.name || "creative"}-${format}.png`',
+      'const fileName = `${brandSlugClean}-${selected?.name || "creative"}-${format}.png`',
     );
     expect(studio).toContain("navigator.canShare?.({ files: [file] })");
     expect(studio).toContain("document.body.appendChild(link)");

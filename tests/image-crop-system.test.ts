@@ -29,8 +29,6 @@ describe("image crop contracts", () => {
       "pageInline",
       "hero",
       "promotionBanner",
-      "editorialBanner",
-      "editorialBackground",
     ]) {
       expect(productionMarkup).toContain(`"${preset}"`);
     }

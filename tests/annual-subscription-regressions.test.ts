@@ -30,6 +30,6 @@ describe("annual subscription lifecycle", () => {
     expect(card).toContain("copyIban");
     expect(card).toContain("Upload renewal receipt");
     expect(settings).toContain("setSubscriptionIban");
-    expect(brands).toContain("Approval extends the subscription by one calendar year");
+    expect(brands).toContain("Approve SaaS Subscription");
   });
 });

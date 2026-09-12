@@ -764,6 +764,31 @@ export async function handlePublicApiV1Request(
         );
       }
 
+      // Validate that all specified products belong to the authenticated brand
+      const productIds = items
+        .map((it: any) => it.product_id)
+        .filter((id: any): id is string => typeof id === "string" && id.length > 0);
+
+      if (productIds.length > 0) {
+        const uniqueProductIds = Array.from(new Set(productIds));
+        const { data: validProducts, error: pCheckErr } = await db
+          .from("products")
+          .select("id")
+          .eq("brand_id", authContext.brandId)
+          .in("id", uniqueProductIds);
+
+        if (pCheckErr || !validProducts || validProducts.length !== uniqueProductIds.length) {
+          return errorResponse(
+            "validation_error",
+            "One or more products in 'items' do not exist or belong to another boutique brand.",
+            400,
+            null,
+            requestId,
+            rateLimitHeaders,
+          );
+        }
+      }
+
       const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
       const { data: order, error: oErr } = await db
         .from("orders")
@@ -1019,6 +1044,25 @@ export async function handlePublicApiV1Request(
       }
 
       const customerId = loyaltyBalanceMatch[1];
+
+      const { data: customerExists } = await db
+        .from("customers")
+        .select("id")
+        .eq("id", customerId)
+        .eq("brand_id", authContext.brandId)
+        .maybeSingle();
+
+      if (!customerExists) {
+        return errorResponse(
+          "not_found",
+          "Customer not found for this brand.",
+          404,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
+      }
+
       const { data: account, error } = await db
         .from("loyalty_accounts")
         .select("*")
@@ -1057,6 +1101,24 @@ export async function handlePublicApiV1Request(
           "validation_error",
           "'customer_id' and 'points' integer are required.",
           400,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
+      }
+
+      const { data: customerExists } = await db
+        .from("customers")
+        .select("id")
+        .eq("id", customer_id)
+        .eq("brand_id", authContext.brandId)
+        .maybeSingle();
+
+      if (!customerExists) {
+        return errorResponse(
+          "not_found",
+          "Customer not found for this brand.",
+          404,
           null,
           requestId,
           rateLimitHeaders,

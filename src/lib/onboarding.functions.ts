@@ -637,57 +637,63 @@ export const registerInstantTrial = createServerFn({ method: "POST" })
       .eq("email", normalizedEmail)
       .maybeSingle();
 
-    if (existingProfile?.brand_id) {
-      const { data: userBrand } = await (supabaseAdmin.from("brands" as never) as any)
-        .select("id, slug, plan_type, trial_ends_at, subscription_status")
-        .eq("id", existingProfile.brand_id)
-        .maybeSingle();
+    if (existingProfile) {
+      if (existingProfile.brand_id) {
+        const { data: userBrand } = await (supabaseAdmin.from("brands" as never) as any)
+          .select("id, slug, plan_type, trial_ends_at, subscription_status")
+          .eq("id", existingProfile.brand_id)
+          .maybeSingle();
 
-      const isExpired =
-        userBrand &&
-        userBrand.plan_type === "trial" &&
-        userBrand.trial_ends_at &&
-        new Date(userBrand.trial_ends_at).getTime() <= Date.now() &&
-        userBrand.subscription_status !== "active_paid";
+        const isExpired =
+          userBrand &&
+          userBrand.plan_type === "trial" &&
+          userBrand.trial_ends_at &&
+          new Date(userBrand.trial_ends_at).getTime() <= Date.now() &&
+          userBrand.subscription_status !== "active_paid";
 
-      return {
-        alreadyRegistered: true,
-        isTrialExpired: Boolean(isExpired),
-        brandSlug: userBrand?.slug || null,
-        message: isExpired
-          ? "يوجد لديك حساب مسجل بالفعل بمتجر انتهت فترته التجريبية. يرجى تسجيل الدخول لترقية اشتراكك."
-          : "يوجد لديك حساب مسجل بالفعل. يرجى تسجيل الدخول للوصول إلى متجرك.",
-      };
-    }
-
-    // 3. Create or fetch Auth user
-    let userId: string;
-    if (existingProfile?.id) {
-      userId = existingProfile.id;
-    } else {
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email: normalizedEmail,
-        password: data.password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: data.ownerName.trim(),
-          phone: data.contactNumber.trim(),
-        },
-      });
-
-      if (authError || !authData?.user) {
-        // If auth user already exists in auth.users
-        const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
-        const found = listData?.users?.find((u) => u.email?.toLowerCase() === normalizedEmail);
-        if (found) {
-          userId = found.id;
-        } else {
-          throw new Error(authError?.message || "FAILED_TO_CREATE_USER");
-        }
+        return {
+          alreadyRegistered: true,
+          isTrialExpired: Boolean(isExpired),
+          brandSlug: userBrand?.slug || null,
+          message: isExpired
+            ? "يوجد لديك حساب مسجل بالفعل بمتجر انتهت فترته التجريبية. يرجى تسجيل الدخول لترقية اشتراكك."
+            : "يوجد لديك حساب مسجل بالفعل. يرجى تسجيل الدخول للوصول إلى متجرك.",
+        };
       } else {
-        userId = authData.user.id;
+        return {
+          alreadyRegistered: true,
+          isTrialExpired: false,
+          brandSlug: null,
+          message: "يوجد لديك حساب مسجل بالفعل. يرجى تسجيل الدخول أولاً.",
+        };
       }
     }
+
+    // 3. Create Auth user
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: normalizedEmail,
+      password: data.password,
+      email_confirm: true,
+      user_metadata: {
+        full_name: data.ownerName.trim(),
+        phone: data.contactNumber.trim(),
+      },
+    });
+
+    if (authError || !authData?.user) {
+      const errMsg = authError?.message?.toLowerCase() || "";
+      if (errMsg.includes("already registered") || errMsg.includes("already exists")) {
+        return {
+          alreadyRegistered: true,
+          isTrialExpired: false,
+          brandSlug: null,
+          message: "يوجد لديك حساب مسجل بالفعل. يرجى تسجيل الدخول أولاً.",
+        };
+      }
+      throw new Error(authError?.message || "FAILED_TO_CREATE_USER");
+    }
+
+    const userId = authData.user.id;
 
     // 4. Ensure profile exists
     await (supabaseAdmin.from("profiles" as never) as any).upsert(
