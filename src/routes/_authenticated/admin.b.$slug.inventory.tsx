@@ -342,8 +342,22 @@ function Inventory() {
     },
   });
 
-  if (products.isLoading || variants.isLoading) {
+  if (!brandId) {
     return <RoutePendingSkeleton />;
+  }
+
+  if (products.isLoading || variants.isLoading) {
+    return (
+      <div className="mx-auto max-w-7xl space-y-4 p-1 sm:p-2 animate-fade-in">
+        <InventoryCommandHeader
+          lang={lang === "ar" ? "ar" : "en"}
+          productCount={0}
+          isCourier={false}
+          onCreateNew={() => {}}
+        />
+        <RoutePendingSkeleton />
+      </div>
+    );
   }
 
   if (products.isError || variants.isError) {

@@ -44,11 +44,17 @@ playwright-report/
 # Temporary Scratch & Artifacts
 scratch/
 artifacts/
-.codex-*
-.tmp-*
 .wrangler-local/
 NUL
 .recovery/
+
+# Local dev & tooling ephemeral artifacts
+.codex-*
+.wrangler-*
+.tmp-*
+*.log
+.clinic/
+.supermaven/
 
 # Local Tools & Mobile Build Artifacts
 .local-tools/
