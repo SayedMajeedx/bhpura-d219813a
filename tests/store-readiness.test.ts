@@ -77,6 +77,44 @@ describe("evaluateStoreReadiness", () => {
     expect(result.isAllComplete).toBe(false);
   });
 
+  it("recognizes pages stored in { items: [...] } payload structure", () => {
+    const result = evaluateStoreReadiness({
+      logoUrl: "https://example.com/logo.png",
+      activeProductsCount: 5,
+      businessSettings: {
+        ...puraBusinessSettings,
+        pages: {
+          items: [
+            { slug: "terms", title_ar: "الشروط", content_ar: "نص الشروط" },
+            { slug: "privacy", title_ar: "الخصوصية", content_ar: "نص الخصوصية" },
+          ],
+          footer_titles: { company_ar: "الشركة", help_ar: "المساعدة" },
+        },
+      },
+      lang: "ar",
+    });
+
+    expect(result.hasPolicies).toBe(true);
+    expect(result.pagesCount).toBe(2);
+    expect(result.isAllComplete).toBe(true);
+  });
+
+  it("satisfies policy requirement when brand has configured return policy terms", () => {
+    const result = evaluateStoreReadiness({
+      logoUrl: "https://example.com/logo.png",
+      activeProductsCount: 5,
+      businessSettings: {
+        ...puraBusinessSettings,
+        pages: [],
+      },
+      lang: "ar",
+      hasReturnPolicy: true,
+    });
+
+    expect(result.hasPolicies).toBe(true);
+    expect(result.isAllComplete).toBe(true);
+  });
+
   it("detects incomplete products when activeProductsCount is 0", () => {
     const result = evaluateStoreReadiness({
       logoUrl: "https://example.com/logo.png",

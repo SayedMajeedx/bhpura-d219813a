@@ -33,6 +33,7 @@ import {
   Trash2,
   Upload,
   FileText,
+  Sparkles,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
@@ -97,6 +98,69 @@ const emptyPage = (): PageSlot => ({
 const normalizePlatform = (name: string) =>
   SOCIAL_PLATFORMS.find((platform) => platform.toLowerCase() === name.toLowerCase()) ??
   "Custom Link";
+
+const STANDARD_POLICY_PAGES: PageSlot[] = [
+  {
+    slug: "terms-conditions",
+    title_ar: "الشروط والأحكام",
+    title_en: "Terms & Conditions",
+    content_ar:
+      "<p>أهلاً بكم في متجرنا. باستخدامك للموقع، فإنك توافق على الالتزام بجميع الشروط والأحكام والسياسات المنصوص عليها هنا.</p><p>نلتزم بحماية خصوصية بياناتك وتوفير تجربة تسوق آمنة وموثوقة لجميع عملائنا.</p>",
+    content_en:
+      "<p>Welcome to our store. By using our website, you agree to comply with and be bound by all terms and conditions set forth herein.</p><p>We are dedicated to safeguarding your privacy and providing a seamless, secure shopping experience.</p>",
+    image_url: null,
+    menu_icon_url: null,
+    image_position: "top",
+    meta_title: "الشروط والأحكام",
+    meta_description: "شروط وأحكام استخدام المتجر وسياسة الخصوصية وحماية بيانات العملاء.",
+    group: "help",
+  },
+  {
+    slug: "returns-refunds",
+    title_ar: "سياسة الاستبدال والاسترجاع",
+    title_en: "Returns & Exchanges",
+    content_ar:
+      "<p>يحق للعميل استبدال أو استرجاع المنتجات خلال 14 يوماً من تاريخ الاستلام بشرط أن تكون بحالتها الأصلية غير مستخدمة ومع كامل ملحقاتها وتغليفها الأصلي.</p>",
+    content_en:
+      "<p>Customers may return or exchange products within 14 days of receipt, provided items are unused, in original condition with all original packaging and tags attached.</p>",
+    image_url: null,
+    menu_icon_url: null,
+    image_position: "top",
+    meta_title: "سياسة الاستبدال والاسترجاع",
+    meta_description: "سياسة استرجاع واستبدال المنتجات والضمان والشروط المعتمدة.",
+    group: "help",
+  },
+  {
+    slug: "shipping-delivery",
+    title_ar: "الشحن والتوصيل",
+    title_en: "Shipping & Delivery",
+    content_ar:
+      "<p>نوفر خدمة التوصيل السريع لجميع مناطق مملكة البحرين ودول مجلس التعاون الخليجي وفق أعلى معايير العناية والتغليف السليم.</p>",
+    content_en:
+      "<p>We offer fast local delivery across Bahrain and international shipping across the GCC with premium packaging and careful handling.</p>",
+    image_url: null,
+    menu_icon_url: null,
+    image_position: "top",
+    meta_title: "الشحن والتوصيل",
+    meta_description: "تفاصيل ورسوم التوصيل المحلي والشحن لدول مجلس التعاون الخليجي.",
+    group: "help",
+  },
+  {
+    slug: "about-us",
+    title_ar: "عن المتجر",
+    title_en: "About Us",
+    content_ar:
+      "<p>نسعى لتقديم تجربة تسوق فريدة ومميزة بمنتجات مختارة بعناية تلبي تطلعات عملائنا بأعلى معايير الجودة.</p>",
+    content_en:
+      "<p>We strive to provide a unique and refined shopping experience with premium curated products meeting the highest quality standards.</p>",
+    image_url: null,
+    menu_icon_url: null,
+    image_position: "top",
+    meta_title: "عن المتجر",
+    meta_description: "تعرف على متجرنا ورؤيتنا وقيمنا في تقديم أفضل المنتجات.",
+    group: "company",
+  },
+];
 
 function PagesAndPolicies() {
   const { lang } = useI18n();
@@ -194,6 +258,27 @@ function PagesAndPolicies() {
       const next = [...current, emptyPage()];
       setOpenPages([`page-${next.length - 1}`]);
       return next;
+    });
+  };
+
+  const loadStandardTemplates = () => {
+    setPages((current) => {
+      const existingSlugs = new Set(current.map((p) => p.slug.trim().toLowerCase()));
+      const newPages = STANDARD_POLICY_PAGES.filter(
+        (p) => !existingSlugs.has(p.slug.trim().toLowerCase()),
+      );
+      if (newPages.length === 0) {
+        toast.info(
+          isAr ? "جميع الصفحات النموذجية مضافة بالفعل" : "Standard policy pages are already loaded",
+        );
+        return current;
+      }
+      toast.success(
+        isAr
+          ? `تمت إضافة ${newPages.length} صفحات نموذجية — اضغط "حفظ التغييرات" لتفعيلها`
+          : `Added ${newPages.length} template pages — click "Save changes" to activate`,
+      );
+      return [...current, ...newPages];
     });
   };
 
@@ -541,36 +626,71 @@ function PagesAndPolicies() {
             </div>
           </Card>
 
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="font-display text-xl font-bold">
-                {isAr ? "صفحات المتجر" : "Storefront pages"}
+                {isAr ? "صفحات المتجر والسياسات" : "Storefront pages & policies"}
               </h2>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {isAr
-                  ? "اسحب المقبض لتغيير ترتيب الروابط في تذييل المتجر."
-                  : "Drag the handle to change link order in the storefront footer."}
+                  ? "إدارة صفحات المتجر وسياسات الشروط والاستبدال وتذييل الموقع."
+                  : "Manage store content, return terms, shipping policies, and footer links."}
               </p>
             </div>
-            <Button
-              type="button"
-              onClick={addPage}
-              size="sm"
-              className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              {isAr ? "صفحة جديدة" : "New page"}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={loadStandardTemplates}
+                size="sm"
+                className="gap-1.5 text-xs font-semibold"
+              >
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                {isAr ? "إضافة الصفحات النموذجية" : "Load Standard Templates"}
+              </Button>
+              <Button
+                type="button"
+                onClick={addPage}
+                size="sm"
+                className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                {isAr ? "صفحة جديدة" : "New page"}
+              </Button>
+            </div>
           </div>
 
           {pages.length === 0 && (
             <OsEmptyState
               icon={FileText}
-              title={isAr ? "لا توجد صفحات مضافة" : "No pages found"}
+              title={isAr ? "لا توجد صفحات مضافة بعد" : "No pages added yet"}
               description={
                 isAr
-                  ? "قم بإنشاء صفحات جديدة لمحتوى المتجر وسياسات الاستخدام والشروط."
-                  : "Create new custom pages for store content, terms, and policies."
+                  ? "ابدأ بإضافة الصفحات الأساسية (الشروط والأحكام، سياسة الاستبدال والاسترجاع، الشحن والتوصيل) بنقرة واحدة لتفعيل جاهزية المتجر فوراً."
+                  : "Get started by adding essential policy pages (Terms & Conditions, Returns, Shipping) in 1 click to complete store readiness."
+              }
+              action={
+                <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+                  <Button
+                    type="button"
+                    onClick={loadStandardTemplates}
+                    size="sm"
+                    className="gap-2 text-xs font-semibold"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    {isAr ? "إضافة الصفحات النموذجية فوراً" : "Add Standard Policies (1-Click)"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={addPage}
+                    size="sm"
+                    className="gap-2 text-xs"
+                  >
+                    <Plus className="h-4 w-4" />
+                    {isAr ? "صفحة فارغة مخصصة" : "Custom Blank Page"}
+                  </Button>
+                </div>
               }
             />
           )}
