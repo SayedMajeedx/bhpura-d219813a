@@ -127,6 +127,8 @@ export function CropUploadButton({
         className={className}
         disabled={busy}
         onClick={() => inputRef.current?.click()}
+        title={title}
+        aria-label={title || (isAr ? "رفع وقص صورة" : "Upload and crop image")}
       >
         {children ?? <ImagePlus className="h-4 w-4" />}
       </Button>

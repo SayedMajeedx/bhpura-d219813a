@@ -487,7 +487,7 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
         </div>
       )}
 
-      <div className="flex sm:hidden">
+      <div className="flex sm:hidden" aria-label={isAr ? "إجراءات الطلب" : "Order actions"}>
         {isReadOnly && canUnlockEditing && (
           <Button type="button" onClick={onUnlock} className="w-full min-h-11 font-bold rounded-xl">
             <Unlock className="h-4 w-4 me-1.5" />
@@ -503,6 +503,11 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
           >
             {isAr ? "إلغاء التعديل" : "Cancel Editing"}
           </Button>
+        )}
+        {!isEditing && (!isReadOnly || !canUnlockEditing) && (
+          <div className="flex min-w-0 flex-1 [&>button]:min-h-11 [&>button]:w-full [&>button]:rounded-xl">
+            {renderPrimaryAction()}
+          </div>
         )}
       </div>
 

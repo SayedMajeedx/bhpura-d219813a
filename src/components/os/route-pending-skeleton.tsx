@@ -1,6 +1,7 @@
 export function RoutePendingSkeleton() {
   return (
     <div className="h-full w-full min-w-0 space-y-6 overflow-hidden p-4 animate-pulse select-none md:p-6">
+      <h1 className="sr-only">Loading...</h1>
       {/* Skeleton Header / Title Bar */}
       <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0 space-y-2">

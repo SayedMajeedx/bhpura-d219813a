@@ -46,6 +46,37 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
 function AdminWorkspace({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const isRouterNavigating = useRouterState({
+    select: (r) => r.status === "pending" || r.isLoading,
+  });
+
+  const signalNavigationIntent = (event: {
+    target: EventTarget | null;
+    currentTarget: EventTarget & HTMLDivElement;
+  }) => {
+    if (!(event.target instanceof Element)) return;
+    const anchor = event.target.closest("a[href]");
+    if (!(anchor instanceof HTMLAnchorElement)) return;
+    if (anchor.target === "_blank" || anchor.hasAttribute("download")) return;
+
+    const target = new URL(anchor.href, window.location.origin);
+    if (target.origin !== window.location.origin) return;
+    if (!target.pathname.startsWith("/admin/")) return;
+    if (target.pathname === pathname) return;
+
+    const indicator = event.currentTarget.querySelector<HTMLElement>(
+      "[data-navigation-feedback-indicator]",
+    );
+    if (indicator) {
+      const feedbackAt = performance.now();
+      indicator.hidden = false;
+      indicator.dataset.navigationFeedback = "true";
+      indicator.dataset.navigationStartedAt = String(feedbackAt);
+      indicator.dataset.navigationTarget = target.pathname;
+      document.documentElement.dataset.navigationFeedbackAt = String(feedbackAt);
+    }
+  };
+
   const router = useRouter();
   const navigate = useNavigate();
   const { t, lang, setLang } = useI18n();
@@ -263,7 +294,7 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
         .eq("brand_id", activeBrand!.id)
         .maybeSingle();
       if (error) throw error;
-      return data?.admin_typography;
+      return data?.admin_typography ?? null;
     },
     enabled: Boolean(activeBrand?.id) && !isPlatformMode,
     staleTime: 5 * 60_000,
@@ -437,7 +468,22 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
     <div
       className="admin-typography h-screen h-[100dvh] max-h-[100dvh] flex flex-col os-canvas overflow-hidden select-none"
       style={adminTypographyVars as React.CSSProperties}
+      onPointerDownCapture={signalNavigationIntent}
+      onClickCapture={signalNavigationIntent}
     >
+      {/* Top Global Router Transition Progress Bar */}
+      <div
+        data-navigation-feedback-indicator="true"
+        data-navigation-feedback={isRouterNavigating ? "true" : "false"}
+        data-navigation-target={pathname}
+        hidden={!isRouterNavigating}
+        className="fixed top-0 inset-x-0 z-[100] h-0.5 bg-primary/20 overflow-hidden pointer-events-none"
+        role="status"
+        aria-label={lang === "ar" ? "جارٍ فتح التطبيق" : "Opening application"}
+      >
+        <div className="h-full bg-primary animate-pulse w-3/4 transition-all duration-300 shadow-sm" />
+      </div>
+
       {adminFontFaces && <style>{adminFontFaces}</style>}
       {/* Impersonation Warning Banner */}
       {isImpersonating && (

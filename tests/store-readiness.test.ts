@@ -144,4 +144,3 @@ describe("evaluateStoreReadiness", () => {
     expect(shouldRender).toBe(true);
   });
 });
-

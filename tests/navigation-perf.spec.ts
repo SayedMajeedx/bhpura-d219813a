@@ -146,6 +146,46 @@ test.describe("P0 - Strict Navigation Performance & Transition Timings", () => {
         ]),
       });
     });
+
+    await page.route("**/rest/v1/product_variants*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route("**/rest/v1/customization_options*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route("**/rest/v1/rpc/*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({}),
+      });
+    });
+
+    await page.route("**/rest/v1/return_requests*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route("**/rest/v1/customer_addresses*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    });
   });
 
   test("P0.4: Strict Primary App Navigation Latency Assertions (Feedback ≤100ms, Content ≤300ms)", async ({
