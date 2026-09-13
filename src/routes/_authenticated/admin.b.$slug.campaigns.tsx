@@ -573,7 +573,7 @@ function CampaignsPage() {
             );
             return;
           }
-        } catch (err) {
+        } catch (_err) {
           setBulkActive(false);
           setBulkSent((prev) => ({ ...prev, [customer.id]: "queued" }));
           toast.error(isAr ? "تعذر فتح واتساب" : "Could not open WhatsApp");
@@ -604,6 +604,8 @@ function CampaignsPage() {
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
+    // Intentionally omitted 'customerCrmStats': stats lookup is read on-demand per queued customer to avoid restarting the active campaign queue when stats refresh.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bulkActive, bulkMode, buildWhatsAppUrl, isAr]);
 
   // Handle visibility change tab resumes
@@ -666,7 +668,7 @@ function CampaignsPage() {
           }
           bulkWindowRef.current = win;
         }
-      } catch (err) {
+      } catch (_err) {
         setBulkSent((prev) => ({ ...prev, [customer.id]: "queued" }));
         toast.error(isAr ? "تعذر فتح واتساب" : "Could not open WhatsApp");
         return;

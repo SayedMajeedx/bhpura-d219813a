@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -33,7 +33,7 @@ export default function TeamScreen() {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"admin" | "staff" | "courier">("staff");
 
-  const loadTeam = async () => {
+  const loadTeam = useCallback(async () => {
     if (!activeBrandId) return;
     try {
       setLoading(true);
@@ -51,11 +51,11 @@ export default function TeamScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [activeBrandId]);
 
   useEffect(() => {
     void loadTeam();
-  }, [activeBrandId]);
+  }, [loadTeam]);
 
   const handleInviteStaff = async () => {
     if (!email.trim() || !name.trim()) {

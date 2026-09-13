@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  detectOrderType,
-  isTailoringItem,
-  getOrderTypeLabel,
-} from "../src/lib/order-type-detector";
+import { detectOrderType, isTailoringItem } from "../src/lib/order-type-detector";
 import { getOrderWorkflow } from "../src/lib/order-workflow";
 import { getInvoiceStatusLabel } from "../src/lib/status-labels";
 

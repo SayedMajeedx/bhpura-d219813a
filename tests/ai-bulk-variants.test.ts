@@ -3,7 +3,6 @@ import {
   expandSizeRange,
   formatSkuToken,
   makeEan13,
-  splitVariantValues,
   SIZING_PRESETS,
 } from "../src/lib/variant-sku-utils";
 import { extractVariantsHeuristically } from "../src/lib/generate-variants.functions";

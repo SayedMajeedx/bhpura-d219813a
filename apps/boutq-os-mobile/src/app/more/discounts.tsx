@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppIcon } from "@/components/icons";
-import { Card, EmptyState, Field, ModalSheet, PrimaryButton, StatusPill } from "@/components/ui";
+import { Card, EmptyState, Field, ModalSheet, PrimaryButton } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { formatMoney } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
@@ -37,7 +37,7 @@ export default function DiscountsScreen() {
   const [minOrder, setMinOrder] = useState("");
   const [maxDiscount, setMaxDiscount] = useState("");
 
-  const loadPromos = async () => {
+  const loadPromos = useCallback(async () => {
     if (!activeBrandId) return;
     try {
       setLoading(true);
@@ -55,11 +55,11 @@ export default function DiscountsScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [activeBrandId]);
 
   useEffect(() => {
     void loadPromos();
-  }, [activeBrandId]);
+  }, [loadPromos]);
 
   const togglePromoActive = async (id: string, current: boolean) => {
     try {
@@ -69,7 +69,7 @@ export default function DiscountsScreen() {
         .update({ is_active: !current })
         .eq("id", id);
       if (error) throw error;
-    } catch (e) {
+    } catch (_e) {
       Alert.alert(isAr ? "خطأ" : "Error", isAr ? "فشل تحديث الكود" : "Failed to update promo code");
       void loadPromos();
     }

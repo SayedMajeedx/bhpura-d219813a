@@ -136,7 +136,7 @@ function SuperRequestsPage() {
             .join(", ");
         }
       }
-    } catch (e) {
+    } catch (_e) {
       // ignore
     }
     return message;

@@ -4,11 +4,7 @@ import { render, screen } from "@testing-library/react";
 import { ShoppingBag } from "lucide-react";
 import {
   OsSurface,
-  OsPanel,
-  OsToolbar,
-  OsPage,
   OsPageHeader,
-  OsAppIcon,
   OsNavItem,
   OsStatusPill,
   OsEmptyState,
@@ -17,7 +13,7 @@ import {
 
 describe("Boutq OS Reusable Components", () => {
   test("OsSurface renders variant classes correctly", () => {
-    const { container } = render(
+    render(
       <OsSurface variant="glass" radius="panel" border interactive data-testid="surface">
         Test Content
       </OsSurface>,

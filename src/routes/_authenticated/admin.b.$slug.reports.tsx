@@ -1,7 +1,6 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
-import { BarChart3, TrendingUp, Package, Users, Download } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports")({
   beforeLoad: async ({ context: { queryClient }, params }) => {

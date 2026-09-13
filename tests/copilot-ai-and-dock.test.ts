@@ -3,7 +3,7 @@ import { executeOfflineCopilot } from "../src/lib/store-copilot.functions";
 
 describe("Free Store AI Copilot Engine", () => {
   const mockSupabase = {
-    from: (table: string) => ({
+    from: (_table: string) => ({
       select: () => ({
         eq: () => Promise.resolve({ count: 12, data: [] }),
       }),

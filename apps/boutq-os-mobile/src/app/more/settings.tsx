@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppIcon } from "@/components/icons";
@@ -6,7 +6,7 @@ import { Card, Field, PrimaryButton } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
-import { colors, radius } from "@/theme";
+import { colors } from "@/theme";
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -33,7 +33,7 @@ export default function SettingsScreen() {
     }
   }, [activeBrand]);
 
-  const loadBusinessSettings = async () => {
+  const loadBusinessSettings = useCallback(async () => {
     if (!activeBrandId) return;
     try {
       setLoading(true);
@@ -55,11 +55,11 @@ export default function SettingsScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeBrandId]);
 
   useEffect(() => {
     void loadBusinessSettings();
-  }, [activeBrandId]);
+  }, [loadBusinessSettings]);
 
   const handleSaveSettings = async () => {
     try {

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { calculateReviewMetrics, type OrderReviewAdminRow } from "../src/lib/order-reviews";
-import { getItemPackagingCost } from "../src/lib/bom-calculator";
 
 describe("Batch 2: Secondary Sections Business Logic Audit", () => {
   describe("1. Customer Reviews Analytics & Follow-up Filtering", () => {

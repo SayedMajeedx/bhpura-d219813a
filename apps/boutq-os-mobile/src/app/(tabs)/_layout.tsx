@@ -26,14 +26,14 @@ export default function TabLayout() {
         options={{
           title: t("nav.dashboard"),
           href: isCourier ? null : undefined,
-          tabBarIcon: ({ color, size }) => <AppIcon name="grid" size={22} color={color} />,
+          tabBarIcon: ({ color }) => <AppIcon name="grid" size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="orders"
         options={{
           title: t("nav.orders"),
-          tabBarIcon: ({ color, size }) => <AppIcon name="receipt" size={22} color={color} />,
+          tabBarIcon: ({ color }) => <AppIcon name="receipt" size={22} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -41,7 +41,7 @@ export default function TabLayout() {
         options={{
           title: t("nav.inventory"),
           href: isCourier ? null : undefined,
-          tabBarIcon: ({ color, size }) => <AppIcon name="cube" size={22} color={color} />,
+          tabBarIcon: ({ color }) => <AppIcon name="cube" size={22} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -49,14 +49,14 @@ export default function TabLayout() {
         options={{
           title: t("nav.customers"),
           href: isCourier ? null : undefined,
-          tabBarIcon: ({ color, size }) => <AppIcon name="people" size={22} color={color} />,
+          tabBarIcon: ({ color }) => <AppIcon name="people" size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="more"
         options={{
           title: t("nav.more"),
-          tabBarIcon: ({ color, size }) => <AppIcon name="menu" size={22} color={color} />,
+          tabBarIcon: ({ color }) => <AppIcon name="menu" size={22} color={color} />,
         }}
       />
       <Tabs.Screen

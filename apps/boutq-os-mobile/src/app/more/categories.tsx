@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -35,7 +35,7 @@ export default function CategoriesScreen() {
   const [slug, setSlug] = useState("");
   const [sortOrder, setSortOrder] = useState("0");
 
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     if (!activeBrandId) return;
     try {
       setLoading(true);
@@ -53,11 +53,11 @@ export default function CategoriesScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [activeBrandId]);
 
   useEffect(() => {
     void loadCategories();
-  }, [activeBrandId]);
+  }, [loadCategories]);
 
   const toggleCategoryActive = async (id: string, current: boolean) => {
     try {
@@ -67,7 +67,7 @@ export default function CategoriesScreen() {
         .update({ is_active: !current })
         .eq("id", id);
       if (error) throw error;
-    } catch (e) {
+    } catch (_e) {
       Alert.alert(isAr ? "خطأ" : "Error", isAr ? "فشل تحديث القسم" : "Failed to update category");
       void loadCategories();
     }

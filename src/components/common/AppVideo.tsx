@@ -58,6 +58,8 @@ export function AppVideo({
     if (active) {
       video.play().catch(() => {});
     }
+    // Intentionally omitted `active`: video element should only reload its source when media URLs change; play/pause toggling on active transitions is handled by the dedicated effect below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [src, resolvedMp4, resolvedWebm]);
 
   // Re-trigger play when active changes in carousels

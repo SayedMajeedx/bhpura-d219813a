@@ -82,6 +82,8 @@ export function InstagramImporterModal({
       setStatusMessage("");
       setProgressPercent(0);
     }
+    // Intentionally omitted `step`: only reset previous success state upon reopening the modal, without immediately wiping active success view.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   // Inputs
