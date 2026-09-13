@@ -20,12 +20,14 @@ import {
   Sparkles,
   Copy,
   X,
+  MessageCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
 import { formatDate, formatMoney } from "@/lib/format";
 import { getItemPackagingCost } from "@/lib/bom-calculator";
-import { fetchReportingOverview } from "@/lib/reporting.functions";
+import { fetchReportingOverview, fetchCatalogInquiriesReporting } from "@/lib/reporting.functions";
+import { isCatalogMode } from "@/lib/storefront-mode";
 import { useI18n, useT } from "@/lib/i18n";
 import { useProfile } from "@/lib/profile-context";
 import { useBrand } from "@/lib/brand-context";
@@ -204,7 +206,9 @@ function Dashboard() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("business_settings")
-        .select("business_name, currency, card_processing_fee, benefit_processing_fee, bom_enabled")
+        .select(
+          "business_name, currency, card_processing_fee, benefit_processing_fee, bom_enabled, storefront_mode",
+        )
         .eq("brand_id", brandId)
         .maybeSingle();
       if (error) throw error;
@@ -215,9 +219,21 @@ function Dashboard() {
           card_processing_fee: 0,
           benefit_processing_fee: 0,
           bom_enabled: true,
+          storefront_mode: "shop",
         }
       );
     },
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  const isCatalog = isCatalogMode(businessSettings.data);
+
+  // Fetch catalog inquiries metrics when store is in catalog mode
+  const catalogInquiriesQ = useQuery({
+    queryKey: ["dashboard-catalog-inquiries", brandId],
+    enabled: Boolean(brandId) && isCatalog,
+    queryFn: () => fetchCatalogInquiriesReporting(brandId),
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
@@ -971,54 +987,102 @@ function Dashboard() {
   const completedStepsCount = (step1Done ? 1 : 0) + (step2Done ? 1 : 0) + (step3Done ? 1 : 0);
   const isAllStepsCompleted = completedStepsCount === 3;
 
-  // Primary Financial KPIs
-  const primaryKpis = [
-    ...(canViewFinancials
-      ? [
-          {
-            label: isAr ? "الإيرادات وصافي الربح" : "Revenue & Net Profit",
-            value: formatMoney(financials.revenue, currency, locale),
-            subValue: `${isAr ? "صافي الربح" : "Net Profit"}: ${formatMoney(financials.netProfit, currency, locale)}`,
-            breakdown:
-              financials.incubatorRevenue > 0
-                ? isAr
-                  ? `(متجر: ${formatMoney(financials.storeRevenue, currency, locale)} | حاضنات: ${formatMoney(financials.incubatorRevenue, currency, locale)})`
-                  : `(Store: ${formatMoney(financials.storeRevenue, currency, locale)} | Incubators: ${formatMoney(financials.incubatorRevenue, currency, locale)})`
-                : null,
-            deltaPct: financials.revenueDeltaPct,
-            icon: TrendingUp,
-            color: "text-emerald-500",
-            border: "hover:border-emerald-500/20",
-          },
-          {
-            label: isAr ? "متوسط قيمة الطلب" : "Average Order Value (AOV)",
-            value: formatMoney(financials.aovCurrent, currency, locale),
-            subValue: `${isAr ? "إجمالي الطلبات" : "Total Orders"}: ${financials.ordersCurrent}`,
-            deltaPct: financials.aovDeltaPct,
-            icon: Wallet,
-            color: "text-sky-500",
-            border: "hover:border-sky-500/20",
-          },
-          {
-            label: isAr ? "نسبة هامش الربح الإجمالي" : "Gross Margin %",
-            value: `${financials.grossMarginPercent.toFixed(1)}%`,
-            subValue: `${isAr ? "تكلفة المبيعات" : "COGS"}: ${formatMoney(financials.cogs, currency, locale)}`,
-            icon: PiggyBank,
-            color: "text-blue-500",
-            border: "hover:border-blue-500/20",
-          },
-        ]
-      : []),
-    {
-      label: isAr ? "إجمالي عمليات البيع" : "Total Sales Transactions",
-      value: `${financials.ordersCurrent}`,
-      subValue: isAr ? "خلال الثلاثين يومًا الماضية" : "Over the last 30 days",
-      deltaPct: financials.ordersDeltaPct,
-      icon: ReceiptText,
-      color: "text-indigo-500",
-      border: "hover:border-indigo-500/20",
-    },
-  ];
+  // Primary Financial or Catalog KPIs
+  const primaryKpis = isCatalog
+    ? [
+        {
+          label: isAr ? "استفسارات واتساب" : "WhatsApp Inquiries",
+          value: `${catalogInquiriesQ.data?.totalInquiries ?? 0}`,
+          subValue: isAr
+            ? `معدل التحويل: ${(catalogInquiriesQ.data?.inquiryRate ?? 0).toFixed(1)}%`
+            : `Inquiry rate: ${(catalogInquiriesQ.data?.inquiryRate ?? 0).toFixed(1)}%`,
+          deltaPct: null,
+          icon: MessageCircle,
+          color: "text-emerald-500",
+          border: "hover:border-emerald-500/20",
+        },
+        {
+          label: isAr ? "مشاهدات المنتجات" : "Product Views",
+          value: `${catalogInquiriesQ.data?.totalViews ?? 0}`,
+          subValue: isAr
+            ? `النقرات: ${catalogInquiriesQ.data?.totalClicks ?? 0}`
+            : `Clicks: ${catalogInquiriesQ.data?.totalClicks ?? 0}`,
+          deltaPct: null,
+          icon: TrendingUp,
+          color: "text-sky-500",
+          border: "hover:border-sky-500/20",
+        },
+        {
+          label: isAr ? "أكثر المنتجات استفساراً" : "Top Inquired Product",
+          value:
+            catalogInquiriesQ.data?.productInquiries?.[0]?.productName ||
+            (isAr ? "لا توجد استفسارات بعد" : "No inquiries yet"),
+          subValue: catalogInquiriesQ.data?.productInquiries?.[0]
+            ? `${catalogInquiriesQ.data.productInquiries[0].inquiries} ${isAr ? "استفسار" : "inquiries"}`
+            : isAr
+              ? "عبر واتساب"
+              : "via WhatsApp",
+          icon: Package,
+          color: "text-blue-500",
+          border: "hover:border-blue-500/20",
+        },
+        {
+          label: isAr ? "إجمالي المبيعات المسجلة يدويًا" : "Manual Sales Recorded",
+          value: `${financials.ordersCurrent}`,
+          subValue: isAr ? "خلال الثلاثين يومًا الماضية" : "Over the last 30 days",
+          deltaPct: financials.ordersDeltaPct,
+          icon: ReceiptText,
+          color: "text-indigo-500",
+          border: "hover:border-indigo-500/20",
+        },
+      ]
+    : [
+        ...(canViewFinancials
+          ? [
+              {
+                label: isAr ? "الإيرادات وصافي الربح" : "Revenue & Net Profit",
+                value: formatMoney(financials.revenue, currency, locale),
+                subValue: `${isAr ? "صافي الربح" : "Net Profit"}: ${formatMoney(financials.netProfit, currency, locale)}`,
+                breakdown:
+                  financials.incubatorRevenue > 0
+                    ? isAr
+                      ? `(متجر: ${formatMoney(financials.storeRevenue, currency, locale)} | حاضنات: ${formatMoney(financials.incubatorRevenue, currency, locale)})`
+                      : `(Store: ${formatMoney(financials.storeRevenue, currency, locale)} | Incubators: ${formatMoney(financials.incubatorRevenue, currency, locale)})`
+                    : null,
+                deltaPct: financials.revenueDeltaPct,
+                icon: TrendingUp,
+                color: "text-emerald-500",
+                border: "hover:border-emerald-500/20",
+              },
+              {
+                label: isAr ? "متوسط قيمة الطلب" : "Average Order Value (AOV)",
+                value: formatMoney(financials.aovCurrent, currency, locale),
+                subValue: `${isAr ? "إجمالي الطلبات" : "Total Orders"}: ${financials.ordersCurrent}`,
+                deltaPct: financials.aovDeltaPct,
+                icon: Wallet,
+                color: "text-sky-500",
+                border: "hover:border-sky-500/20",
+              },
+              {
+                label: isAr ? "نسبة هامش الربح الإجمالي" : "Gross Margin %",
+                value: `${financials.grossMarginPercent.toFixed(1)}%`,
+                subValue: `${isAr ? "تكلفة المبيعات" : "COGS"}: ${formatMoney(financials.cogs, currency, locale)}`,
+                icon: PiggyBank,
+                color: "text-blue-500",
+                border: "hover:border-blue-500/20",
+              },
+            ]
+          : []),
+        {
+          label: isAr ? "إجمالي عمليات البيع" : "Total Sales Transactions",
+          value: `${financials.ordersCurrent}`,
+          subValue: isAr ? "خلال الثلاثين يومًا الماضية" : "Over the last 30 days",
+          deltaPct: financials.ordersDeltaPct,
+          icon: ReceiptText,
+          color: "text-indigo-500",
+          border: "hover:border-indigo-500/20",
+        },
+      ];
 
   return (
     <div className="mx-auto max-w-[1500px] space-y-3.5 p-1 sm:p-2">
@@ -1029,6 +1093,8 @@ function Dashboard() {
         brandName={(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug}
         salesTransactionCount={financials.ordersCurrent}
         periodLabel={reportingPeriodLabel}
+        isCatalog={isCatalog}
+        inquiryCount={catalogInquiriesQ.data?.totalInquiries ?? 0}
       />
 
       {/* 1.5 Merchant Action Strip: What Needs Attention Today */}
@@ -1474,7 +1540,78 @@ function Dashboard() {
 
           {/* Middle Multi-Column Grid: Sales Trajectory & Action Feed */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
-            {canViewFinancials &&
+            {isCatalog ? (
+              <Card className="min-w-0 overflow-hidden lg:col-span-3 p-5 border border-border shadow-xs rounded-2xl bg-card flex flex-col justify-between space-y-4 h-full">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border-subtle">
+                  <div>
+                    <h3 className="text-base font-bold font-heading flex items-center gap-2">
+                      <MessageCircle className="h-4.5 w-4.5 text-emerald-500" />
+                      {isAr ? "أكثر المنتجات طلباً عبر واتساب" : "Top Inquired Products (WhatsApp)"}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {isAr
+                        ? "المنتجات التي أبدى العملاء اهتماماً بها واستفسروا عنها خلال آخر 30 يوماً"
+                        : "Products with the highest customer inquiry volume over the last 30 days"}
+                    </p>
+                  </div>
+                  <span className="text-xs font-bold text-emerald-600 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 w-fit">
+                    {catalogInquiriesQ.data?.totalInquiries ?? 0}{" "}
+                    {isAr ? "استفسار إجمالي" : "Total Inquiries"}
+                  </span>
+                </div>
+
+                {(catalogInquiriesQ.data?.productInquiries?.length ?? 0) === 0 ? (
+                  <div className="p-8 text-center text-xs text-muted-foreground bg-secondary/10 rounded-xl border border-dashed border-border space-y-2 my-auto">
+                    <MessageCircle className="h-8 w-8 text-muted-foreground opacity-50 mx-auto" />
+                    <p className="font-bold text-foreground text-sm">
+                      {isAr
+                        ? "بانتظار استفسارات العملاء الأولى"
+                        : "Awaiting First Customer Inquiries"}
+                    </p>
+                    <p className="max-w-md mx-auto text-xs text-muted-foreground">
+                      {isAr
+                        ? "عندما يضغط العملاء على زر التواصل عبر واتساب في صفحات المنتجات، ستظهر هنا إحصائيات المنتجات الأكثر طلباً تلقائياً."
+                        : "When shoppers click WhatsApp inquiry on your product pages, the most popular items will appear here automatically."}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5 my-auto">
+                    {catalogInquiriesQ.data?.productInquiries.slice(0, 5).map((p, idx) => (
+                      <div
+                        key={p.productId}
+                        className="p-3 bg-background/80 border border-border-subtle rounded-xl flex items-center justify-between gap-3 text-xs hover:border-primary/40 transition-all shadow-2xs"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xs">
+                            {idx + 1}
+                          </span>
+                          <div className="min-w-0">
+                            <Link
+                              to="/admin/b/$slug/inventory"
+                              params={{ slug }}
+                              className="font-bold text-foreground hover:text-primary truncate block text-sm"
+                            >
+                              {p.productName || (isAr ? "منتج بدون اسم" : "Unnamed Product")}
+                            </Link>
+                            <span className="text-muted-foreground text-xs">
+                              {p.views} {isAr ? "مشاهدة" : "views"} • {p.clicks}{" "}
+                              {isAr ? "نقرة" : "clicks"}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-300/40">
+                            <MessageCircle className="h-3.5 w-3.5" />
+                            {p.inquiries} {isAr ? "استفسار" : "inquiries"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            ) : (
+              canViewFinancials &&
               (!hasSales ? (
                 <Card className="min-w-0 overflow-hidden lg:col-span-3 p-6 border border-dashed border-border rounded-2xl bg-card flex flex-col items-center justify-center text-center space-y-3 h-full min-h-[260px]">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -1558,7 +1695,7 @@ function Dashboard() {
                             type="monotone"
                             dataKey="sales"
                             stroke="#10b981"
-                            strokeWidth={2}
+                            strokeWidth={2.5}
                             fillOpacity={1}
                             fill="url(#salesGrad)"
                           />
@@ -1569,7 +1706,8 @@ function Dashboard() {
                     )}
                   </div>
                 </Card>
-              ))}
+              ))
+            )}
 
             {/* Action Needed Feed */}
             <Card
