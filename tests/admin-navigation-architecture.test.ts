@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   getAdminNavItems,
   MERCHANT_JOB_GROUPS,
@@ -66,5 +66,36 @@ describe("Admin Navigation Architecture & Merchant Job Categories", () => {
     expect(itemMap.get("expenses")?.category).toBe("money_reports");
     expect(itemMap.get("settings")?.category).toBe("store_setup");
     expect(itemMap.get("team")?.category).toBe("store_setup");
+  });
+
+  it("suppresses abandoned-carts, loyalty, and discounts in catalog mode while preserving orders and returns", () => {
+    const defaultItems = getAdminNavItems({
+      ...mockOptions,
+      storefrontMode: "shop",
+    });
+    const defaultIds = defaultItems.map((i) => i.id);
+    expect(defaultIds).toContain("abandoned-carts");
+    expect(defaultIds).toContain("loyalty");
+    expect(defaultIds).toContain("discounts");
+    expect(defaultIds).toContain("orders");
+    expect(defaultIds).toContain("returns");
+
+    const catalogItems = getAdminNavItems({
+      ...mockOptions,
+      storefrontMode: "catalog",
+    });
+    const catalogIds = catalogItems.map((i) => i.id);
+
+    // Filtered out
+    expect(catalogIds).not.toContain("abandoned-carts");
+    expect(catalogIds).not.toContain("loyalty");
+    expect(catalogIds).not.toContain("discounts");
+
+    // Retained
+    expect(catalogIds).toContain("orders");
+    expect(catalogIds).toContain("returns");
+    expect(catalogIds).toContain("inventory");
+    expect(catalogIds).toContain("settings");
+    expect(catalogIds).toContain("dashboard");
   });
 });

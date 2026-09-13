@@ -143,4 +143,60 @@ describe("evaluateStoreReadiness", () => {
     const shouldRender = !result.isAllComplete || !isDismissedStored;
     expect(shouldRender).toBe(true);
   });
+
+  it("evaluates a catalog mode store without requiring payments or fulfillment", () => {
+    const catalogSettings = {
+      ...puraBusinessSettings,
+      storefront_mode: "catalog",
+      cod_enabled: false,
+      card_enabled: false,
+      benefit_enabled: false,
+      delivery_enabled: false,
+      pickup_enabled: false,
+      shipping_zones: [],
+      whatsapp_number: "+97333000000",
+    };
+
+    const result = evaluateStoreReadiness({
+      logoUrl: catalogSettings.logo_url,
+      activeProductsCount: 5,
+      businessSettings: catalogSettings,
+      lang: "ar",
+    });
+
+    expect(result.isCatalog).toBe(true);
+    expect(result.totalCount).toBe(4);
+    expect(result.completedCount).toBe(4);
+    expect(result.progressPercent).toBe(100);
+    expect(result.isAllComplete).toBe(true);
+
+    const itemIds = result.items.map((i) => i.id);
+    expect(itemIds).toEqual(["logo", "products", "whatsapp", "policies"]);
+    expect(itemIds).not.toContain("payments");
+    expect(itemIds).not.toContain("fulfillment");
+  });
+
+  it("marks catalog store incomplete if whatsapp_number is missing", () => {
+    const catalogSettings = {
+      ...puraBusinessSettings,
+      storefront_mode: "catalog",
+      whatsapp_number: "",
+    };
+
+    const result = evaluateStoreReadiness({
+      logoUrl: catalogSettings.logo_url,
+      activeProductsCount: 5,
+      businessSettings: catalogSettings,
+      lang: "ar",
+    });
+
+    expect(result.isCatalog).toBe(true);
+    expect(result.hasWhatsApp).toBe(false);
+    expect(result.totalCount).toBe(4);
+    expect(result.completedCount).toBe(3);
+    expect(result.isAllComplete).toBe(false);
+
+    const whatsappItem = result.items.find((i) => i.id === "whatsapp");
+    expect(whatsappItem?.isComplete).toBe(false);
+  });
 });

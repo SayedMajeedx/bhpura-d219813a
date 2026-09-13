@@ -103,6 +103,7 @@ export interface GetNavItemsOptions {
   hasPermission: (permission: string) => boolean;
   t: (key: string) => string;
   lang: "en" | "ar";
+  storefrontMode?: "shop" | "catalog" | string | null;
 }
 
 export function getAdminNavItems({
@@ -112,6 +113,7 @@ export function getAdminNavItems({
   hasPermission,
   t,
   lang,
+  storefrontMode = "shop",
 }: GetNavItemsOptions): AdminNavItemConfig[] {
   if (!activeSlug) return [];
 
@@ -429,6 +431,11 @@ export function getAdminNavItems({
   return allItems.filter((item) => {
     if (item.adminOnly && !isAdmin) return false;
     if (item.permission && !hasPermission(item.permission)) return false;
+    if (storefrontMode === "catalog") {
+      if (item.id === "abandoned-carts" || item.id === "loyalty" || item.id === "discounts") {
+        return false;
+      }
+    }
     return true;
   });
 }

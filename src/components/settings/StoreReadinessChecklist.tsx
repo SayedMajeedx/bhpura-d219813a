@@ -17,8 +17,10 @@ import {
   FileText,
   Image,
   X,
+  MessageCircle,
 } from "lucide-react";
 import type { SettingsTabId } from "@/components/settings/SettingsScopeSwitcher";
+import { normalizeWhatsAppDigits } from "@/lib/storefront-mode";
 
 export interface BusinessSettingsData {
   logo_url?: string | null;
@@ -30,6 +32,8 @@ export interface BusinessSettingsData {
   delivery_fee?: number | string | null;
   shipping_zones?: any[] | null;
   pages?: any;
+  storefront_mode?: string | null;
+  whatsapp_number?: string | null;
 }
 
 export interface ReadinessEvaluationInput {
@@ -41,7 +45,7 @@ export interface ReadinessEvaluationInput {
 }
 
 export interface ReadinessItem {
-  id: "logo" | "products" | "payments" | "fulfillment" | "policies";
+  id: "logo" | "products" | "payments" | "fulfillment" | "policies" | "whatsapp";
   icon: React.ElementType;
   title: string;
   description: string;
@@ -107,99 +111,174 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
   );
   const hasPolicies = validPages.length > 0;
 
-  const items: ReadinessItem[] = [
-    {
-      id: "logo",
-      icon: Image,
-      title: isAr ? "رفع شعار المتجر الرسمي" : "Upload official store logo",
-      description: isAr
-        ? hasLogo
-          ? "تم تعيين وتحديث شعار المتجر الرسمي بنجاح"
-          : "يظهر الشعار في ترويسة المتجر والفواتير والإيصالات الحرارية"
-        : hasLogo
-          ? "Official store logo uploaded and configured"
-          : "Appears in storefront header, customer invoices, and receipts",
-      isComplete: hasLogo,
-      actionType: "tab",
-      tabId: "business",
-      actionLabel: isAr ? "إعداد الشعار" : "Configure Logo",
-      editLabel: isAr ? "تعديل" : "Edit",
-    },
-    {
-      id: "products",
-      icon: Package,
-      title: isAr ? "إضافة وتفعيل منتج واحد على الأقل" : "Add and activate at least 1 product",
-      description: isAr
-        ? hasProducts
-          ? `${activeProducts} منتج نشط حالياً جاهز للبيع مباشرة`
-          : "أضف وتفعيل أول منتج لبدء استقبال الطلبات"
-        : hasProducts
-          ? `${activeProducts} active product(s) ready for purchase`
-          : "Add and activate your first product to start selling",
-      isComplete: hasProducts,
-      actionType: "link",
-      actionLabel: isAr ? "إدارة المنتجات" : "Manage Products",
-      editLabel: isAr ? "عرض" : "View",
-    },
-    {
-      id: "payments",
-      icon: CreditCard,
-      title: isAr ? "تفعيل وسيلة دفع واحدة على الأقل" : "Configure at least 1 payment method",
-      description: isAr
-        ? hasPayments
-          ? bData?.cod_enabled && bData?.card_enabled && bData?.benefit_enabled
-            ? "تم تفعيل الدفع عند الاستلام والبطاقات ومحفظة بنفت"
-            : bData?.cod_enabled && bData?.card_enabled
-              ? "تم تفعيل الدفع عند الاستلام والبطاقات الائتمانية"
-              : "تم تفعيل وتجهيز وسائل الدفع بنجاح"
-          : "تفعيل الدفع عند الاستلام (COD)، بطاقة، أو محفظة بنفت"
-        : hasPayments
-          ? "Payment methods configured and active"
-          : "Enable Cash on Delivery (COD), Card, or BenefitPay",
-      isComplete: hasPayments,
-      actionType: "tab",
-      tabId: "payments",
-      actionLabel: isAr ? "إعداد الدفع" : "Setup Payments",
-      editLabel: isAr ? "تعديل" : "Edit",
-    },
-    {
-      id: "fulfillment",
-      icon: Truck,
-      title: isAr ? "تحديد مناطق ورسوم الشحن والتوصيل" : "Define shipping zones and delivery fees",
-      description: isAr
-        ? hasFulfillment
-          ? bData?.delivery_enabled && bData?.pickup_enabled
-            ? "تم تفعيل التوصيل والاستلام المحلي ومناطق الشحن"
-            : bData?.delivery_enabled
-              ? "تم تفعيل التوصيل ورسوم الشحن بنجاح"
-              : "تم إعداد خيارات التسليم والشحن"
-          : "حدد رسوم التوصيل المحلي أو الاستلام من الفرع"
-        : hasFulfillment
-          ? "Delivery, pickup, and shipping zones active"
-          : "Specify local delivery fees, pickup locations, or zones",
-      isComplete: hasFulfillment,
-      actionType: "tab",
-      tabId: "checkout",
-      actionLabel: isAr ? "إعداد الشحن" : "Configure Shipping",
-      editLabel: isAr ? "تعديل" : "Edit",
-    },
-    {
-      id: "policies",
-      icon: FileText,
-      title: isAr ? "نشر صفحة الشروط أو سياسة الإرجاع" : "Publish return policy or terms page",
-      description: isAr
-        ? hasPolicies
-          ? `${validPages.length} صفحات منشورة تشمل الشروط والسياسات`
-          : "توضيح حقوق العميل وسياسة الاستبدال يبني الثقة في المتجر"
-        : hasPolicies
-          ? `${validPages.length} published page(s) with store policies`
-          : "Clear refund and delivery terms builds customer trust",
-      isComplete: hasPolicies,
-      actionType: "link",
-      actionLabel: isAr ? "إدارة الصفحات" : "Manage Pages",
-      editLabel: isAr ? "إدارة" : "Manage",
-    },
-  ];
+  const isCatalog = bData?.storefront_mode === "catalog";
+  const whatsappDigits = normalizeWhatsAppDigits(bData?.whatsapp_number);
+  const hasWhatsApp = whatsappDigits.length > 0;
+
+  const items: ReadinessItem[] = isCatalog
+    ? [
+        {
+          id: "logo",
+          icon: Image,
+          title: isAr ? "رفع شعار المتجر الرسمي" : "Upload official store logo",
+          description: isAr
+            ? hasLogo
+              ? "تم تعيين وتحديث شعار المتجر الرسمي بنجاح"
+              : "يظهر الشعار في ترويسة المتجر والكتالوج"
+            : hasLogo
+              ? "Official store logo uploaded and configured"
+              : "Appears in storefront header and catalog",
+          isComplete: hasLogo,
+          actionType: "tab",
+          tabId: "business",
+          actionLabel: isAr ? "إعداد الشعار" : "Configure Logo",
+          editLabel: isAr ? "تعديل" : "Edit",
+        },
+        {
+          id: "products",
+          icon: Package,
+          title: isAr ? "إضافة وتفعيل منتج واحد على الأقل" : "Add and activate at least 1 product",
+          description: isAr
+            ? hasProducts
+              ? `${activeProducts} منتج نشط حالياً جاهز للعرض بالكتالوج`
+              : "أضف وتفعيل أول منتج للظهور في الكتالوج"
+            : hasProducts
+              ? `${activeProducts} active product(s) ready for showcase`
+              : "Add and activate your first product to showcase",
+          isComplete: hasProducts,
+          actionType: "link",
+          actionLabel: isAr ? "إدارة المنتجات" : "Manage Products",
+          editLabel: isAr ? "عرض" : "View",
+        },
+        {
+          id: "whatsapp",
+          icon: MessageCircle,
+          title: isAr ? "ربط وتفعيل رقم الواتساب" : "Configure official WhatsApp number",
+          description: isAr
+            ? hasWhatsApp
+              ? "تم ضبط رقم الواتساب المخصص لاستقبال استفسارات وطلبات الكتالوج"
+              : "أضف رقم الواتساب لتلقي استفسارات وطلبات العملاء مباشرة من الكتالوج"
+            : hasWhatsApp
+              ? "Official WhatsApp number configured for catalog inquiries"
+              : "Configure WhatsApp number to receive customer product inquiries",
+          isComplete: hasWhatsApp,
+          actionType: "tab",
+          tabId: "storefront",
+          actionLabel: isAr ? "إعداد الكتالوج" : "Catalog Settings",
+          editLabel: isAr ? "تعديل" : "Edit",
+        },
+        {
+          id: "policies",
+          icon: FileText,
+          title: isAr ? "نشر صفحة الشروط أو سياسة الإرجاع" : "Publish return policy or terms page",
+          description: isAr
+            ? hasPolicies
+              ? `${validPages.length} صفحات منشورة تشمل الشروط والسياسات`
+              : "توضيح حقوق العميل وسياسة الاستبدال يبني الثقة في المتجر"
+            : hasPolicies
+              ? `${validPages.length} published page(s) with store policies`
+              : "Clear refund and delivery terms builds customer trust",
+          isComplete: hasPolicies,
+          actionType: "link",
+          actionLabel: isAr ? "إدارة الصفحات" : "Manage Pages",
+          editLabel: isAr ? "إدارة" : "Manage",
+        },
+      ]
+    : [
+        {
+          id: "logo",
+          icon: Image,
+          title: isAr ? "رفع شعار المتجر الرسمي" : "Upload official store logo",
+          description: isAr
+            ? hasLogo
+              ? "تم تعيين وتحديث شعار المتجر الرسمي بنجاح"
+              : "يظهر الشعار في ترويسة المتجر والفواتير والإيصالات الحرارية"
+            : hasLogo
+              ? "Official store logo uploaded and configured"
+              : "Appears in storefront header, customer invoices, and receipts",
+          isComplete: hasLogo,
+          actionType: "tab",
+          tabId: "business",
+          actionLabel: isAr ? "إعداد الشعار" : "Configure Logo",
+          editLabel: isAr ? "تعديل" : "Edit",
+        },
+        {
+          id: "products",
+          icon: Package,
+          title: isAr ? "إضافة وتفعيل منتج واحد على الأقل" : "Add and activate at least 1 product",
+          description: isAr
+            ? hasProducts
+              ? `${activeProducts} منتج نشط حالياً جاهز للبيع مباشرة`
+              : "أضف وتفعيل أول منتج لبدء استقبال الطلبات"
+            : hasProducts
+              ? `${activeProducts} active product(s) ready for purchase`
+              : "Add and activate your first product to start selling",
+          isComplete: hasProducts,
+          actionType: "link",
+          actionLabel: isAr ? "إدارة المنتجات" : "Manage Products",
+          editLabel: isAr ? "عرض" : "View",
+        },
+        {
+          id: "payments",
+          icon: CreditCard,
+          title: isAr ? "تفعيل وسيلة دفع واحدة على الأقل" : "Configure at least 1 payment method",
+          description: isAr
+            ? hasPayments
+              ? bData?.cod_enabled && bData?.card_enabled && bData?.benefit_enabled
+                ? "تم تفعيل الدفع عند الاستلام والبطاقات ومحفظة بنفت"
+                : bData?.cod_enabled && bData?.card_enabled
+                  ? "تم تفعيل الدفع عند الاستلام والبطاقات الائتمانية"
+                  : "تم تفعيل وتجهيز وسائل الدفع بنجاح"
+              : "تفعيل الدفع عند الاستلام (COD)، بطاقة، أو محفظة بنفت"
+            : hasPayments
+              ? "Payment methods configured and active"
+              : "Enable Cash on Delivery (COD), Card, or BenefitPay",
+          isComplete: hasPayments,
+          actionType: "tab",
+          tabId: "payments",
+          actionLabel: isAr ? "إعداد الدفع" : "Setup Payments",
+          editLabel: isAr ? "تعديل" : "Edit",
+        },
+        {
+          id: "fulfillment",
+          icon: Truck,
+          title: isAr
+            ? "تحديد مناطق ورسوم الشحن والتوصيل"
+            : "Define shipping zones and delivery fees",
+          description: isAr
+            ? hasFulfillment
+              ? bData?.delivery_enabled && bData?.pickup_enabled
+                ? "تم تفعيل التوصيل والاستلام المحلي ومناطق الشحن"
+                : bData?.delivery_enabled
+                  ? "تم تفعيل التوصيل ورسوم الشحن بنجاح"
+                  : "تم إعداد خيارات التسليم والشحن"
+              : "حدد رسوم التوصيل المحلي أو الاستلام من الفرع"
+            : hasFulfillment
+              ? "Delivery, pickup, and shipping zones active"
+              : "Specify local delivery fees, pickup locations, or zones",
+          isComplete: hasFulfillment,
+          actionType: "tab",
+          tabId: "checkout",
+          actionLabel: isAr ? "إعداد الشحن" : "Configure Shipping",
+          editLabel: isAr ? "تعديل" : "Edit",
+        },
+        {
+          id: "policies",
+          icon: FileText,
+          title: isAr ? "نشر صفحة الشروط أو سياسة الإرجاع" : "Publish return policy or terms page",
+          description: isAr
+            ? hasPolicies
+              ? `${validPages.length} صفحات منشورة تشمل الشروط والسياسات`
+              : "توضيح حقوق العميل وسياسة الاستبدال يبني الثقة في المتجر"
+            : hasPolicies
+              ? `${validPages.length} published page(s) with store policies`
+              : "Clear refund and delivery terms builds customer trust",
+          isComplete: hasPolicies,
+          actionType: "link",
+          actionLabel: isAr ? "إدارة الصفحات" : "Manage Pages",
+          editLabel: isAr ? "إدارة" : "Manage",
+        },
+      ];
 
   const completedCount = items.filter((it) => it.isComplete).length;
   const totalCount = items.length;
@@ -213,6 +292,8 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
     hasPayments,
     hasFulfillment,
     hasPolicies,
+    hasWhatsApp,
+    isCatalog,
     pagesCount: validPages.length,
     items,
     completedCount,
@@ -261,7 +342,7 @@ export function StoreReadinessChecklist({
     queryFn: async () => {
       const { data, error } = await (supabase.from("business_settings") as any)
         .select(
-          "logo_url, cod_enabled, card_enabled, benefit_enabled, delivery_enabled, pickup_enabled, delivery_fee, shipping_zones, pages",
+          "logo_url, cod_enabled, card_enabled, benefit_enabled, delivery_enabled, pickup_enabled, delivery_fee, shipping_zones, pages, storefront_mode, whatsapp_number",
         )
         .eq("brand_id", brandId)
         .maybeSingle();
