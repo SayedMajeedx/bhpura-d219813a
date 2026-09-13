@@ -102,7 +102,7 @@ function CustomerReviewsPage() {
       .replace(/\/+$/, "")
       .replace(/^\/?@?/, "");
     return clean ? `@${clean}` : null;
-  }, [brandStyleQ.data?.socials]);
+  }, [brandStyleQ.data]);
 
   const productMedia = useMemo(() => {
     if (!orderDetailsQ.data?.order_items) return [];

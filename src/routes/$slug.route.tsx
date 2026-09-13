@@ -171,7 +171,7 @@ export const Route = createFileRoute("/$slug")({
             name_ar: String(z.name_ar || ""),
             fee: Number(z.fee ?? 0),
           }));
-        } catch (e) {
+        } catch (_e) {
           return [];
         }
       })(),
@@ -342,14 +342,14 @@ function StoreShell() {
   useQueryClient();
   useRouter();
 
+  const isCatalog = isCatalogMode(settings);
   useEffect(() => {
-    if (isCatalogMode(settings) && cart.length > 0) {
+    if (isCatalog && cart.length > 0) {
       clearCart();
     }
-  }, [settings.storefront_mode, cart.length, clearCart]);
+  }, [isCatalog, cart.length, clearCart]);
 
   const primary = settings.primary_color || brand.primary_color || "#3f121a";
-  const headerBg = settings.header_bg ?? settings.background_color ?? "#ffffff";
   const footerBg = settings.footer_bg ?? settings.background_color ?? "#ffffff";
   const footerFg = settings.footer_fg ?? readableOn(footerBg, settings.text_color);
   const btnPrimaryBg = settings.btn_primary_bg ?? primary;
@@ -406,7 +406,7 @@ function StoreShell() {
       if (storedB) {
         setLocalBadge(storedB);
       }
-    } catch (e) {
+    } catch (_e) {
       // localStorage fallback
     }
   }, []);

@@ -3251,7 +3251,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
             fee: Number(z.fee ?? 0),
           })),
         );
-      } catch (e) {
+      } catch (_e) {
         setZones([]);
       }
     }
@@ -4887,7 +4887,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
       localStorage.setItem("boutq_storefront_radius", state.storefront_radius || "1rem");
       localStorage.setItem("boutq_header_glass", String(state.header_glass ?? true));
       localStorage.setItem("boutq_badge_accent", state.badge_accent || "maroon");
-    } catch (e) {
+    } catch (_e) {
       // localStorage fallback
     }
 

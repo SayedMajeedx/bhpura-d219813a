@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -35,7 +35,7 @@ export default function ExpensesScreen() {
   const [amount, setAmount] = useState("");
   const [notes, setNotes] = useState("");
 
-  const loadExpenses = async () => {
+  const loadExpenses = useCallback(async () => {
     if (!activeBrandId) return;
     try {
       setLoading(true);
@@ -53,11 +53,11 @@ export default function ExpensesScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [activeBrandId]);
 
   useEffect(() => {
     void loadExpenses();
-  }, [activeBrandId]);
+  }, [loadExpenses]);
 
   const totalExpenses = useMemo(() => {
     return expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);

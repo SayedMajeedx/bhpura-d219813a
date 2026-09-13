@@ -1178,8 +1178,6 @@ function ProductsSection({
     }
   }, [initialAction, navigate]);
   const [search, setSearch] = useState("");
-  const [stockFilter] = useState<"all" | "low" | "out">("all");
-  const [visibilityFilter] = useState<"all" | "active" | "hidden">("all");
   const [expandedProducts, setExpandedProducts] = useState<Record<string, boolean>>({});
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
   const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
@@ -1214,26 +1212,29 @@ function ProductsSection({
     return map;
   }, [salesHistory]);
 
-  const productWeeklySales = (productId: string) => {
-    const pVariants = variants.filter((v) => v.product_id === productId);
-    const productDailyVelocity = pVariants.reduce((sum, v) => {
-      const qtySold = salesByVariant.get(v.id) || 0;
-      const variantCreatedAt = v.created_at ? new Date(v.created_at) : null;
-      const daysElapsed = variantCreatedAt
-        ? Math.max(
-            1,
-            Math.min(
-              45,
-              Math.ceil(
-                (new Date().getTime() - variantCreatedAt.getTime()) / (1000 * 60 * 60 * 24),
+  const productWeeklySales = useCallback(
+    (productId: string) => {
+      const pVariants = variants.filter((v) => v.product_id === productId);
+      const productDailyVelocity = pVariants.reduce((sum, v) => {
+        const qtySold = salesByVariant.get(v.id) || 0;
+        const variantCreatedAt = v.created_at ? new Date(v.created_at) : null;
+        const daysElapsed = variantCreatedAt
+          ? Math.max(
+              1,
+              Math.min(
+                45,
+                Math.ceil(
+                  (new Date().getTime() - variantCreatedAt.getTime()) / (1000 * 60 * 60 * 24),
+                ),
               ),
-            ),
-          )
-        : 45;
-      return sum + qtySold / daysElapsed;
-    }, 0);
-    return productDailyVelocity * 7;
-  };
+            )
+          : 45;
+        return sum + qtySold / daysElapsed;
+      }, 0);
+      return productDailyVelocity * 7;
+    },
+    [variants, salesByVariant],
+  );
 
   const del = async (id: string) => {
     const product = products.find((item) => item.id === id);
@@ -1653,6 +1654,7 @@ function ProductsSection({
     scopeFilter,
     sortBy,
     productStock,
+    productWeeklySales,
   ]);
 
   const filteredProductIds = filteredDisplayProducts.map((product) => product.id);
@@ -5032,7 +5034,7 @@ function PremiumCurrencyInput({
 function VariantDesktopRow({
   v,
   canViewFinancials,
-  barcodeLabel,
+  barcodeLabel: _barcodeLabel,
   SIZE_UNITS,
   salesByVariant,
   t,
@@ -5487,7 +5489,7 @@ function VariantMobileCard({
   v,
   canViewFinancials,
   barcodeLabel,
-  SIZE_UNITS,
+  SIZE_UNITS: _SIZE_UNITS,
   salesByVariant,
   t,
   isAr,

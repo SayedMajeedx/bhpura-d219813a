@@ -1,11 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import {
-  evaluateBrandEntitlements,
-  hasFeature,
-  getLimit,
-  checkEntitlement,
-  getBrandUsageSummary,
-} from "../src/lib/saas-billing/entitlements-engine.server";
+import { evaluateBrandEntitlements } from "../src/lib/saas-billing/entitlements-engine.server";
 import type {
   SaaSFeatureKey,
   EntitlementEvaluationMap,

@@ -13,9 +13,6 @@ import {
   CircleDollarSign,
   CreditCard,
   Truck,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
   ChevronLeft,
   ChevronRight,
   Package,
@@ -622,7 +619,7 @@ function OrdersList() {
     }
   };
 
-  const [sortField, setSortField] = useState<
+  const [sortField, _setSortField] = useState<
     "invoice_number" | "created_at" | "customer" | "status" | "total"
   >("created_at");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");

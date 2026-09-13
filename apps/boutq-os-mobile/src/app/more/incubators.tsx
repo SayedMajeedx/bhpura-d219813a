@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -35,7 +35,7 @@ export default function IncubatorsScreen() {
   const [phone, setPhone] = useState("");
   const [commissionRate, setCommissionRate] = useState("");
 
-  const loadIncubators = async () => {
+  const loadIncubators = useCallback(async () => {
     if (!activeBrandId) return;
     try {
       setLoading(true);
@@ -53,11 +53,11 @@ export default function IncubatorsScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [activeBrandId]);
 
   useEffect(() => {
     void loadIncubators();
-  }, [activeBrandId]);
+  }, [loadIncubators]);
 
   const handleCreateIncubator = async () => {
     if (!name.trim()) {

@@ -685,7 +685,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     },
   });
   const isGuest = !customerQ.data?.id;
-  const storedFitProfiles = normalizeFitProfiles(fitPassportQ.data?.measurements);
+  const storedFitProfiles = useMemo(
+    () => normalizeFitProfiles(fitPassportQ.data?.measurements),
+    [fitPassportQ.data?.measurements],
+  );
   const fitProfileValues = passportDraft;
 
   useEffect(() => {
@@ -723,6 +726,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     fitPassportQ.data?.tailoring_notes,
     fitProfileType,
     brand.slug,
+    storedFitProfiles,
   ]);
 
   const fitProfileComplete = Boolean(

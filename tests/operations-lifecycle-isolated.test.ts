@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getOrderWorkflow } from "../src/lib/order-workflow";
-import { resolvePaymentStatus } from "../src/lib/payment-status";
-import {
-  calculateReturnFinancials,
-  checkOrderReturnEligibility,
-} from "../src/lib/returns.functions";
+import { calculateReturnFinancials } from "../src/lib/returns.functions";
 import { stockUnitsLabel, variantCountLabel } from "../src/lib/inventory-labels";
 
 describe("Batch 1: Isolated Real Operations Lifecycle", () => {

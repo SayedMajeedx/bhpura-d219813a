@@ -76,7 +76,6 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { formatNotifiedTimeAgo } from "@/lib/courier-whatsapp";
 import { CourierWhatsAppModal } from "@/components/courier/CourierWhatsAppModal";
 import { formatDate, formatMoney, formatOrderStatus } from "@/lib/format";
@@ -1334,7 +1333,7 @@ function OrderDetail() {
             return;
           }
         }
-      } catch (e) {
+      } catch (_e) {
         // ignore cache read errors
       }
 
@@ -2337,8 +2336,6 @@ function OrderDetail() {
     });
     if (!ok) toast.error(t("orders.popupBlocked"));
   };
-
-  const method = String(order?.payment_method || "").toLowerCase();
 
   const renderTopPrimaryAction = () => {
     if (isCreationMode || !order || isReadOnly) return null;
@@ -5379,19 +5376,6 @@ function Row({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-const BRAND: Record<"en" | "ar", string> = { en: "Boutq", ar: "بوتيك" };
-const LEGACY_BRAND_NAMES = new Set(["Abaya Atelier", "أباية أتيليه"]);
-
-const STATUS_LABELS: Record<string, { en: string; ar: string }> = {
-  draft: { en: "Draft", ar: "مسودة" },
-  confirmed: { en: "Confirmed", ar: "مؤكدة" },
-  paid: { en: "Paid", ar: "مدفوعة" },
-  pending: { en: "Pending", ar: "قيد الانتظار" },
-  shipped: { en: "Shipped", ar: "تم الشحن" },
-  completed: { en: "Completed", ar: "مكتملة" },
-  cancelled: { en: "Cancelled", ar: "ملغاة" },
-  refunded: { en: "Refunded", ar: "مستردة" },
-};
 
 const PAYMENT_LABELS: Record<string, { en: string; ar: string }> = {
   cash: { en: "Cash", ar: "نقدًا" },

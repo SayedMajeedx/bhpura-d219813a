@@ -363,6 +363,8 @@ function ContentStudioPage() {
         : "Quiet elegance, thoughtful details for every moment.",
     );
     setBody(autoBody);
+    // Intentionally omitted `selected`: headline and body snippets should only initialize when switching products (by id) or language, without overwriting merchant manual edits on every product object change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id, isAr]);
 
   const handleSelectVariant = (variantId: string | null) => {
@@ -1103,7 +1105,15 @@ function ContentStudioPage() {
 ${desc}${detailsBlock}
 
 💰 ${priceFormatted} ${currencySymbol}`;
-  }, [selected, headline, body, selectedDescription, variantsQ.data, currencySymbol]);
+  }, [
+    selected,
+    headline,
+    body,
+    selectedDescription,
+    variantsQ.data,
+    currencySymbol,
+    effectivePrice,
+  ]);
 
   const handleCopyCaption = async () => {
     if (!captionText) return;

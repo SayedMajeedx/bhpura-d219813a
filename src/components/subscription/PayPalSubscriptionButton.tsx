@@ -44,6 +44,7 @@ export function PayPalSubscriptionButton({
 
   useEffect(() => {
     let isMounted = true;
+    const containerEl = containerRef.current;
 
     const renderButtons = () => {
       if (!isMounted || !containerRef.current) return;
@@ -184,7 +185,7 @@ export function PayPalSubscriptionButton({
       renderButtons();
       return () => {
         isMounted = false;
-        if (containerRef.current) containerRef.current.innerHTML = "";
+        if (containerEl) containerEl.innerHTML = "";
       };
     }
 
@@ -226,7 +227,7 @@ export function PayPalSubscriptionButton({
 
     return () => {
       isMounted = false;
-      if (containerRef.current) containerRef.current.innerHTML = "";
+      if (containerEl) containerEl.innerHTML = "";
     };
   }, [brandId, targetPlanId, billingInterval, isAr, onSuccess]);
 

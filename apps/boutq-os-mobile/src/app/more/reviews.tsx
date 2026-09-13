@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -25,7 +25,7 @@ export default function ReviewsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadReviews = async () => {
+  const loadReviews = useCallback(async () => {
     if (!activeBrandId) return;
     try {
       setLoading(true);
@@ -52,11 +52,11 @@ export default function ReviewsScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [activeBrandId]);
 
   useEffect(() => {
     void loadReviews();
-  }, [activeBrandId]);
+  }, [loadReviews]);
 
   const toggleApproval = async (id: string, current: boolean) => {
     try {

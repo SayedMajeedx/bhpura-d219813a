@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -31,7 +31,7 @@ export default function CustomerDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadCustomer = async () => {
+  const loadCustomer = useCallback(async () => {
     if (!id || !activeBrandId) return;
     try {
       setLoading(true);
@@ -58,11 +58,11 @@ export default function CustomerDetailScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [id, activeBrandId]);
 
   useEffect(() => {
     void loadCustomer();
-  }, [id, activeBrandId]);
+  }, [loadCustomer]);
 
   const handleCall = () => {
     if (!customer?.phone) return;

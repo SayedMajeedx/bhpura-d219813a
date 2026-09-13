@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   RefreshControl,
@@ -29,7 +29,7 @@ export default function ReportsScreen() {
   const [orders, setOrders] = useState<any[]>([]);
   const [orderItems, setOrderItems] = useState<any[]>([]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!activeBrandId) return;
     try {
       setLoading(true);
@@ -76,11 +76,11 @@ export default function ReportsScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [activeBrandId, period]);
 
   useEffect(() => {
     void loadData();
-  }, [activeBrandId, period]);
+  }, [loadData]);
 
   const stats = useMemo(() => {
     const totalSales = orders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);

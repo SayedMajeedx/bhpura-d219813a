@@ -78,20 +78,20 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
     },
   });
 
-  const rawExpenses: any[] = expensesQ.data ?? [];
   const vendors: any[] = vendorsQ.data ?? [];
 
   const rangeFilteredExpenses = useMemo(() => {
+    const raw = (expensesQ.data as any[]) ?? [];
     if (!filterByDateRange || !activeRange?.from || !activeRange?.to) {
-      return rawExpenses;
+      return raw;
     }
-    return rawExpenses.filter((e) => {
+    return raw.filter((e) => {
       const d = String(e.expense_date || "").slice(0, 10);
       return (
         (!activeRange.from || d >= activeRange.from) && (!activeRange.to || d <= activeRange.to)
       );
     });
-  }, [rawExpenses, filterByDateRange, activeRange]);
+  }, [expensesQ.data, filterByDateRange, activeRange]);
 
   const filteredExpenses = rangeFilteredExpenses.filter((e) => {
     if (activeTypeFilter === "all") return true;

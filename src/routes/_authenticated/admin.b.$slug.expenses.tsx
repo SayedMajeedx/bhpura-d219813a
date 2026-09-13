@@ -7,7 +7,6 @@ import { getItemPackagingCost } from "@/lib/bom-calculator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -52,10 +51,6 @@ import {
   UploadCloud,
   FileText,
   X,
-  Download,
-  ChevronDown,
-  ChevronRight,
-  Package,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
@@ -543,7 +538,14 @@ function ExpensesPage() {
       packagingBomCogs: Number(pkg.toFixed(3)),
       totalCogs: Number((prod + pkg).toFixed(3)),
     };
-  }, [cogsQ.data, productsQ.data, variantsQ.data, bomItemsQ.data, packagingMaterialsQ.data]);
+  }, [
+    cogsQ.data,
+    productsQ.data,
+    variantsQ.data,
+    bomItemsQ.data,
+    packagingMaterialsQ.data,
+    settingsQ.data,
+  ]);
 
   const cardFeePercent = Number((settingsQ.data as any)?.card_processing_fee ?? 0);
   const benefitFeePercent = Number((settingsQ.data as any)?.benefit_processing_fee ?? 0);
