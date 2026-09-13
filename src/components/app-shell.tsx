@@ -261,18 +261,6 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
     enabled: isSuperAdmin,
   });
 
-  // Build navigation items
-  const navItems = useMemo(() => {
-    return getAdminNavItems({
-      activeSlug,
-      isCourier,
-      isAdmin,
-      hasPermission,
-      t,
-      lang,
-    });
-  }, [activeSlug, isCourier, isAdmin, hasPermission, t, lang]);
-
   const signOut = async () => {
     await supabase.auth.signOut();
     navigate({ to: "/auth" });
@@ -286,6 +274,33 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
   const activeBrand = isPlatformMode
     ? undefined
     : (routeBrand ?? (profileBrandMatchesRoute ? profile?.brand : undefined));
+
+  const adminStorefrontModeQuery = useQuery({
+    queryKey: ["admin-storefront-mode", activeBrand?.id],
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("business_settings") as any)
+        .select("storefront_mode")
+        .eq("brand_id", activeBrand!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return (data?.storefront_mode ?? "shop") as "shop" | "catalog";
+    },
+    enabled: Boolean(activeBrand?.id) && !isPlatformMode,
+    staleTime: 60_000,
+  });
+
+  // Build navigation items
+  const navItems = useMemo(() => {
+    return getAdminNavItems({
+      activeSlug,
+      isCourier,
+      isAdmin,
+      hasPermission,
+      t,
+      lang,
+      storefrontMode: adminStorefrontModeQuery.data ?? "shop",
+    });
+  }, [activeSlug, isCourier, isAdmin, hasPermission, t, lang, adminStorefrontModeQuery.data]);
   const adminTypographyQuery = useQuery({
     queryKey: ["admin-typography", activeBrand?.id],
     queryFn: async () => {

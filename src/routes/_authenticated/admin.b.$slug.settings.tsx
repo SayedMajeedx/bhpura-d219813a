@@ -33,6 +33,10 @@ import {
   ChevronDown,
   Smartphone,
   Monitor,
+  ShoppingBag,
+  MessageCircle,
+  Info,
+  AlertCircle,
 } from "lucide-react";
 import { useT, useI18n } from "@/lib/i18n";
 import { PhoneInput } from "@/components/phone-input";
@@ -43,6 +47,12 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { formatMoney } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import {
+  DEFAULT_CATALOG_INQUIRY_MESSAGE_AR,
+  DEFAULT_CATALOG_INQUIRY_MESSAGE_EN,
+  renderInquiryMessage,
+} from "@/lib/storefront-mode";
 import { PasskeySettings } from "@/components/passkey-settings";
 import { SubscriptionCard } from "@/components/subscription-card";
 import { MobileAppDownloadsCard } from "@/components/mobile/MobileAppDownloadsCard";
@@ -1723,6 +1733,7 @@ function Settings() {
         </TabsContent>
 
         <TabsContent value="storefront" className="space-y-6 mt-0">
+          <StorefrontModeCard brandId={brandId} />
           <StorefrontCustomizerCard brandId={brandId} />
           <StorefrontSeoCard brandId={brandId} />
         </TabsContent>
@@ -4141,6 +4152,461 @@ function FooterLogoResizerControl({
         isAr={isAr}
       />
     </div>
+  );
+}
+
+function StorefrontModeCard({ brandId }: { brandId: string }) {
+  const brand = useBrand();
+  const { lang } = useI18n();
+  const isAr = lang === "ar";
+  const qc = useQueryClient();
+  const [saving, setSaving] = useState(false);
+
+  const inquiryArRef = useRef<HTMLTextAreaElement>(null);
+  const inquiryEnRef = useRef<HTMLTextAreaElement>(null);
+
+  const { data: rawSettings, isLoading } = useQuery({
+    queryKey: queryKeys.brand.businessSettings(brandId),
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("business_settings") as any)
+        .select("*")
+        .eq("brand_id", brandId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const [form, setForm] = useState<{
+    storefront_mode: "shop" | "catalog";
+    catalog_show_prices: boolean;
+    whatsapp_number: string;
+    catalog_inquiry_message_ar: string;
+    catalog_inquiry_message_en: string;
+  }>({
+    storefront_mode: "shop",
+    catalog_show_prices: true,
+    whatsapp_number: "",
+    catalog_inquiry_message_ar: DEFAULT_CATALOG_INQUIRY_MESSAGE_AR,
+    catalog_inquiry_message_en: DEFAULT_CATALOG_INQUIRY_MESSAGE_EN,
+  });
+
+  useEffect(() => {
+    if (rawSettings) {
+      setForm({
+        storefront_mode: rawSettings.storefront_mode === "catalog" ? "catalog" : "shop",
+        catalog_show_prices: rawSettings.catalog_show_prices !== false,
+        whatsapp_number: rawSettings.whatsapp_number ?? "",
+        catalog_inquiry_message_ar:
+          rawSettings.catalog_inquiry_message_ar || DEFAULT_CATALOG_INQUIRY_MESSAGE_AR,
+        catalog_inquiry_message_en:
+          rawSettings.catalog_inquiry_message_en || DEFAULT_CATALOG_INQUIRY_MESSAGE_EN,
+      });
+    }
+  }, [rawSettings]);
+
+  const injectToken = (
+    ref: React.RefObject<HTMLTextAreaElement | null>,
+    field: "catalog_inquiry_message_ar" | "catalog_inquiry_message_en",
+    token: string,
+  ) => {
+    const el = ref.current;
+    if (!el) return;
+    const start = el.selectionStart ?? el.value.length;
+    const end = el.selectionEnd ?? el.value.length;
+    const text = el.value;
+    const before = text.substring(0, start);
+    const after = text.substring(end);
+    const newValue = before + token + after;
+    setForm((prev) => ({ ...prev, [field]: newValue }));
+
+    setTimeout(() => {
+      el.focus();
+      const newCursorPos = start + token.length;
+      el.setSelectionRange(newCursorPos, newCursorPos);
+    }, 50);
+  };
+
+  const tokens = [
+    { value: "{brand_name}", label: isAr ? "اسم المتجر" : "Brand Name" },
+    { value: "{product_name}", label: isAr ? "اسم المنتج" : "Product Name" },
+    { value: "{product_url}", label: isAr ? "رابط المنتج" : "Product Link" },
+    { value: "{variant}", label: isAr ? "الخيار" : "Variant" },
+    { value: "{price}", label: isAr ? "السعر" : "Price" },
+  ];
+
+  const renderPills = (
+    ref: React.RefObject<HTMLTextAreaElement | null>,
+    field: "catalog_inquiry_message_ar" | "catalog_inquiry_message_en",
+  ) => (
+    <div className="flex flex-wrap gap-1.5 mt-2">
+      {tokens.map((t) => (
+        <button
+          key={t.value}
+          type="button"
+          onClick={() => injectToken(ref, field, t.value)}
+          className="inline-flex items-center rounded-full bg-secondary/80 hover:bg-secondary border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors shadow-xs cursor-pointer select-none"
+        >
+          <span className="text-muted-foreground">{t.label}:</span>
+          <span className="ms-1 font-mono text-primary font-semibold">{t.value}</span>
+        </button>
+      ))}
+    </div>
+  );
+
+  const brandDisplayName =
+    (isAr ? brand?.name_ar : brand?.name_en) || brand?.name_en || brand?.slug || "Boutique";
+  const sampleProductAr = "فستان سهرة كلاسيكي";
+  const sampleProductEn = "Classic Evening Dress";
+  const sampleVariantAr = "المقاس: M / اللون: أسود";
+  const sampleVariantEn = "Size: M / Color: Black";
+  const samplePrice = "38.000 BHD";
+  const sampleUrl = `https://boutq.app/${brand.slug}/p/sample-123`;
+
+  const previewAr = renderInquiryMessage(form.catalog_inquiry_message_ar, {
+    brandName: brandDisplayName,
+    productName: sampleProductAr,
+    productUrl: sampleUrl,
+    variantLabel: sampleVariantAr,
+    priceLabel: form.catalog_show_prices ? samplePrice : "",
+  });
+
+  const previewEn = renderInquiryMessage(form.catalog_inquiry_message_en, {
+    brandName: brandDisplayName,
+    productName: sampleProductEn,
+    productUrl: sampleUrl,
+    variantLabel: sampleVariantEn,
+    priceLabel: form.catalog_show_prices ? samplePrice : "",
+  });
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const { error } = await (supabase.from("business_settings") as any)
+        .update({
+          storefront_mode: form.storefront_mode,
+          catalog_show_prices: form.catalog_show_prices,
+          whatsapp_number: form.whatsapp_number,
+          catalog_inquiry_message_ar: form.catalog_inquiry_message_ar,
+          catalog_inquiry_message_en: form.catalog_inquiry_message_en,
+        })
+        .eq("brand_id", brandId);
+
+      if (error) throw error;
+
+      await qc.invalidateQueries({ queryKey: queryKeys.brand.businessSettings(brandId) });
+      await qc.invalidateQueries({ queryKey: ["admin-storefront-mode", brandId] });
+      await qc.invalidateQueries({ queryKey: ["readiness-business-settings", brandId] });
+
+      toast.success(
+        isAr ? "تم حفظ إعدادات وضع المتجر بنجاح" : "Storefront mode settings saved successfully",
+      );
+    } catch (err: any) {
+      toast.error(
+        err.message || (isAr ? "فشل حفظ إعدادات وضع المتجر" : "Failed to save storefront settings"),
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const isCatalog = form.storefront_mode === "catalog";
+  const hasWhatsApp = Boolean(
+    form.whatsapp_number && form.whatsapp_number.replace(/\D/g, "").length >= 8,
+  );
+
+  if (isLoading) {
+    return (
+      <Card className="p-6 space-y-4">
+        <Skeleton className="h-6 w-48" />
+        <Skeleton className="h-24 w-full" />
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="overflow-hidden border border-border shadow-xs rounded-md bg-card p-6 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h3 className="text-lg font-semibold text-foreground">
+            {isAr ? "وضع المتجر ونموذج البيع" : "Storefront Mode & Selling Model"}
+          </h3>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {isAr
+              ? "اختر بين نموذج البيع المباشر مع الدفع الإلكتروني، أو وضع الكتالوج واستقبال الطلبات عبر الواتساب."
+              : "Choose between direct online checkout or a catalog showcase with WhatsApp inquiries."}
+          </p>
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          onClick={handleSave}
+          disabled={saving}
+          className="self-start sm:self-center"
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin me-1.5" /> : null}
+          <span>{isAr ? "حفظ إعدادات الوضع" : "Save Mode Settings"}</span>
+        </Button>
+      </div>
+
+      {/* Mode selection radio cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Direct Sale (Shop) */}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => setForm((prev) => ({ ...prev, storefront_mode: "shop" }))}
+          onKeyDown={(e) => {
+            if (e.key === " " || e.key === "Enter") {
+              setForm((prev) => ({ ...prev, storefront_mode: "shop" }));
+            }
+          }}
+          className={cn(
+            "relative flex flex-col p-4 rounded-md border cursor-pointer transition-all min-h-[44px]",
+            !isCatalog
+              ? "border-primary bg-primary/5 ring-1 ring-primary"
+              : "border-border hover:border-muted-foreground/40 bg-card",
+          )}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2.5">
+              <div
+                className={cn(
+                  "p-2 rounded-md",
+                  !isCatalog
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground",
+                )}
+              >
+                <ShoppingBag className="h-4 w-4" />
+              </div>
+              <span className="font-semibold text-sm text-foreground">
+                {isAr ? "متجر بيع مباشر (Shop)" : "Direct E-Commerce Store (Shop)"}
+              </span>
+            </div>
+            <div
+              className={cn(
+                "h-4 w-4 rounded-full border flex items-center justify-center",
+                !isCatalog ? "border-primary bg-primary text-primary-foreground" : "border-border",
+              )}
+            >
+              {!isCatalog && <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />}
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {isAr
+              ? "سلة تسوق ودفع إلكتروني مباشر عبر المتجر مع تتبع تلقائي للطلبات والشحن وأكواد الخصم."
+              : "Full e-commerce checkout with cart, online payments, discount codes, and order tracking."}
+          </p>
+        </div>
+
+        {/* Catalog Mode */}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => setForm((prev) => ({ ...prev, storefront_mode: "catalog" }))}
+          onKeyDown={(e) => {
+            if (e.key === " " || e.key === "Enter") {
+              setForm((prev) => ({ ...prev, storefront_mode: "catalog" }));
+            }
+          }}
+          className={cn(
+            "relative flex flex-col p-4 rounded-md border cursor-pointer transition-all min-h-[44px]",
+            isCatalog
+              ? "border-primary bg-primary/5 ring-1 ring-primary"
+              : "border-border hover:border-muted-foreground/40 bg-card",
+          )}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2.5">
+              <div
+                className={cn(
+                  "p-2 rounded-md",
+                  isCatalog
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground",
+                )}
+              >
+                <MessageCircle className="h-4 w-4" />
+              </div>
+              <span className="font-semibold text-sm text-foreground">
+                {isAr
+                  ? "كتالوج واستفسارات واتساب (Catalog)"
+                  : "Catalog & WhatsApp Inquiries (Catalog)"}
+              </span>
+            </div>
+            <div
+              className={cn(
+                "h-4 w-4 rounded-full border flex items-center justify-center",
+                isCatalog ? "border-primary bg-primary text-primary-foreground" : "border-border",
+              )}
+            >
+              {isCatalog && <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />}
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {isAr
+              ? "عرض المنتجات ككتالوج أنيق مع زر استفسار وطلب مباشر عبر الواتساب بدون سلة أو دفع إلكتروني."
+              : "Showcase products in an elegant catalog with direct WhatsApp inquiry buttons instead of checkout."}
+          </p>
+        </div>
+      </div>
+
+      {/* Catalog Mode Options */}
+      {isCatalog && (
+        <div className="space-y-4 pt-2 border-t border-border">
+          {/* Info callout */}
+          <div className="flex items-start gap-2.5 p-3 rounded-md bg-muted/60 border border-border text-muted-foreground text-xs">
+            <Info className="h-4 w-4 shrink-0 text-primary mt-0.5" />
+            <div>
+              <span className="font-semibold text-foreground block">
+                {isAr ? "ميزات وضع الكتالوج" : "Catalog Mode Features"}
+              </span>
+              <span>
+                {isAr
+                  ? "يتم إخفاء سلة الشراء وصفحة الدفع وأكواد الخصم ونقاط الولاء في متجرك، واستبدال زر الشراء بزر تواصل عبر الواتساب. يمكنك تسجيل أي طلبات يدوياً في لوحة التحكم متى ما تم الاتفاق مع الزبون."
+                  : "Cart, checkout, coupon codes, and loyalty points are hidden on your storefront, replaced with direct WhatsApp inquiry. You can still record customer orders manually anytime."}
+              </span>
+            </div>
+          </div>
+
+          {/* WhatsApp phone warning if missing */}
+          {!hasWhatsApp && (
+            <div className="flex items-start gap-2.5 p-3 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs">
+              <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+              <div>
+                <span className="font-semibold block">
+                  {isAr ? "رقم الواتساب غير مضبوط" : "WhatsApp number not configured"}
+                </span>
+                <span>
+                  {isAr
+                    ? "يتطلب وضع الكتالوج وجود رقم واتساب فعال لربط زر استفسار المنتجات وتوجيه الزبائن إليك مباشرة."
+                    : "Catalog mode requires an active WhatsApp phone number so customer inquiry buttons can connect."}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* WhatsApp phone input */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold">
+              {isAr ? "رقم الواتساب لاستقبال الاستفسارات" : "WhatsApp Number for Inquiries"}
+            </Label>
+            <PhoneInput
+              value={form.whatsapp_number}
+              onChange={(val) => setForm((prev) => ({ ...prev, whatsapp_number: val }))}
+            />
+            <p className="text-xs text-muted-foreground">
+              {isAr
+                ? "يتم توجيه جميع استفسارات المنتجات إلى هذا الرقم تلقائياً."
+                : "All product inquiries from your catalog will be forwarded to this WhatsApp number."}
+            </p>
+          </div>
+
+          {/* Show prices switch */}
+          <div className="flex items-center justify-between rounded-md border border-border p-3.5 bg-card">
+            <div className="space-y-0.5">
+              <Label className="text-xs font-semibold text-foreground">
+                {isAr ? "إظهار أسعار المنتجات في الكتالوج" : "Show Product Prices in Catalog"}
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                {isAr
+                  ? "عند التفعيل، تظهر الأسعار مع زر الاستفسار. عند التعطيل، تظهر المنتجات بدون أسعار."
+                  : "When enabled, product prices are visible. When disabled, products are displayed without prices."}
+              </p>
+            </div>
+            <Switch
+              checked={form.catalog_show_prices}
+              onCheckedChange={(checked) =>
+                setForm((prev) => ({ ...prev, catalog_show_prices: checked }))
+              }
+            />
+          </div>
+
+          {/* Bilingual message templates */}
+          <div className="space-y-3 rounded-md border border-border p-4 bg-card">
+            <div>
+              <h4 className="text-sm font-semibold text-foreground">
+                {isAr ? "قوالب رسائل استفسار الواتساب" : "WhatsApp Inquiry Message Templates"}
+              </h4>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {isAr
+                  ? "انقر على المتغيرات أدناه لإدراجها في نص الرسالة عند موضع المؤشر:"
+                  : "Click on any token below to insert it into the message template at cursor position:"}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">
+                  {isAr ? "الرسالة بالعربية" : "Arabic Message"}
+                </Label>
+                <Textarea
+                  ref={inquiryArRef}
+                  dir="rtl"
+                  rows={3}
+                  value={form.catalog_inquiry_message_ar}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, catalog_inquiry_message_ar: e.target.value }))
+                  }
+                />
+                {renderPills(inquiryArRef, "catalog_inquiry_message_ar")}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">
+                  {isAr ? "الرسالة بالإنجليزية" : "English Message"}
+                </Label>
+                <Textarea
+                  ref={inquiryEnRef}
+                  dir="ltr"
+                  rows={3}
+                  value={form.catalog_inquiry_message_en}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, catalog_inquiry_message_en: e.target.value }))
+                  }
+                />
+                {renderPills(inquiryEnRef, "catalog_inquiry_message_en")}
+              </div>
+            </div>
+
+            {/* Live Message Preview */}
+            <div className="space-y-2 rounded-md border border-border bg-muted/30 p-3.5 mt-3">
+              <div className="flex items-center gap-2">
+                <MessageCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-xs font-semibold text-foreground">
+                  {isAr ? "معاينة حية لشكل الرسالة على الواتساب" : "Live WhatsApp Message Preview"}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div className="rounded-md border border-border bg-card p-3 shadow-xs space-y-1">
+                  <span className="text-xs font-medium text-muted-foreground block">
+                    {isAr ? "المعاينة بالعربية" : "Arabic Preview"}
+                  </span>
+                  <p
+                    className="whitespace-pre-wrap font-sans text-foreground leading-relaxed text-xs"
+                    dir="rtl"
+                  >
+                    {previewAr}
+                  </p>
+                </div>
+                <div className="rounded-md border border-border bg-card p-3 shadow-xs space-y-1">
+                  <span className="text-xs font-medium text-muted-foreground block">
+                    {isAr ? "المعاينة بالإنجليزية" : "English Preview"}
+                  </span>
+                  <p
+                    className="whitespace-pre-wrap font-sans text-foreground leading-relaxed text-xs"
+                    dir="ltr"
+                  >
+                    {previewEn}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </Card>
   );
 }
 
