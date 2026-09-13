@@ -263,7 +263,7 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
         .eq("brand_id", activeBrand!.id)
         .maybeSingle();
       if (error) throw error;
-      return data?.admin_typography;
+      return data?.admin_typography ?? null;
     },
     enabled: Boolean(activeBrand?.id) && !isPlatformMode,
     staleTime: 5 * 60_000,

@@ -1002,27 +1002,30 @@ function CustomersPage() {
 
   if (customersError || addressesQ.isError || ordersQ.isError) {
     return (
-      <OsEmptyState
-        icon={AlertTriangle}
-        title={isAr ? "تعذّر تحميل العملاء" : "Customers could not be loaded"}
-        description={
-          isAr
-            ? "لم يتم تغيير أي بيانات. تحقق من الاتصال ثم أعد المحاولة."
-            : "No data was changed. Check the connection and try again."
-        }
-        action={
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() =>
-              void Promise.all([refetchCustomers(), addressesQ.refetch(), ordersQ.refetch()])
-            }
-          >
-            <RefreshCw className="h-4 w-4 me-1.5" />
-            {isAr ? "إعادة المحاولة" : "Try again"}
-          </Button>
-        }
-      />
+      <div className="space-y-3.5">
+        <h1 className="sr-only">{isAr ? "العملاء" : "Customers"}</h1>
+        <OsEmptyState
+          icon={AlertTriangle}
+          title={isAr ? "تعذّر تحميل العملاء" : "Customers could not be loaded"}
+          description={
+            isAr
+              ? "لم يتم تغيير أي بيانات. تحقق من الاتصال ثم أعد المحاولة."
+              : "No data was changed. Check the connection and try again."
+          }
+          action={
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() =>
+                void Promise.all([refetchCustomers(), addressesQ.refetch(), ordersQ.refetch()])
+              }
+            >
+              <RefreshCw className="h-4 w-4 me-1.5" />
+              {isAr ? "إعادة المحاولة" : "Try again"}
+            </Button>
+          }
+        />
+      </div>
     );
   }
 

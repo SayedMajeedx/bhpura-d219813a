@@ -38,7 +38,6 @@ export function useEntitlements(
       });
 
       if (error || !data) {
-        console.warn("[useEntitlements] RPC failed:", error);
         return {} as EntitlementEvaluationMap;
       }
 
