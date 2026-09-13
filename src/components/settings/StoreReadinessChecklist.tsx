@@ -42,6 +42,7 @@ export interface ReadinessEvaluationInput {
   businessSettings?: BusinessSettingsData | null;
   brandLogoUrl?: string | null;
   lang?: "ar" | "en";
+  hasReturnPolicy?: boolean;
 }
 
 export interface ReadinessItem {
@@ -96,9 +97,11 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
   const rawPages = bData?.pages;
   const pagesList: any[] = Array.isArray(rawPages)
     ? rawPages
-    : Array.isArray((rawPages as any)?.pages)
-      ? (rawPages as any).pages
-      : [];
+    : Array.isArray((rawPages as any)?.items)
+      ? (rawPages as any).items
+      : Array.isArray((rawPages as any)?.pages)
+        ? (rawPages as any).pages
+        : [];
 
   const validPages = pagesList.filter(
     (p) =>
@@ -109,7 +112,7 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
         Boolean(p.content_ar) ||
         Boolean(p.content_en)),
   );
-  const hasPolicies = validPages.length > 0;
+  const hasPolicies = validPages.length > 0 || Boolean(input.hasReturnPolicy);
 
   const isCatalog = bData?.storefront_mode === "catalog";
   const whatsappDigits = normalizeWhatsAppDigits(bData?.whatsapp_number);
@@ -340,18 +343,57 @@ export function StoreReadinessChecklist({
     queryKey: ["readiness-business-settings", brandId],
     enabled: Boolean(brandId),
     queryFn: async () => {
-      const { data, error } = await (supabase.from("business_settings") as any)
-        .select(
-          "logo_url, cod_enabled, card_enabled, benefit_enabled, delivery_enabled, pickup_enabled, delivery_fee, shipping_zones, pages, storefront_mode, whatsapp_number",
-        )
-        .eq("brand_id", brandId)
-        .maybeSingle();
-      if (error) return null;
-      return data as BusinessSettingsData;
+      try {
+        const { data, error } = await (supabase.from("business_settings") as any)
+          .select(
+            "logo_url, cod_enabled, card_enabled, benefit_enabled, delivery_enabled, pickup_enabled, delivery_fee, shipping_zones, pages, storefront_mode, whatsapp_number",
+          )
+          .eq("brand_id", brandId)
+          .maybeSingle();
+
+        if (error) {
+          console.warn(
+            "[StoreReadinessChecklist] Extended query failed, falling back to base columns:",
+            error.message,
+          );
+          const fallback = await (supabase.from("business_settings") as any)
+            .select(
+              "logo_url, cod_enabled, card_enabled, benefit_enabled, delivery_enabled, pickup_enabled, delivery_fee, shipping_zones, pages",
+            )
+            .eq("brand_id", brandId)
+            .maybeSingle();
+
+          if (fallback.error) {
+            console.error("[StoreReadinessChecklist] Fallback query failed:", fallback.error);
+            return null;
+          }
+          return fallback.data as BusinessSettingsData;
+        }
+
+        return data as BusinessSettingsData;
+      } catch (err) {
+        console.error("[StoreReadinessChecklist] Query exception:", err);
+        return null;
+      }
     },
   });
 
-  // 3. Query brand logo fallback if needed
+  // 3. Query return policy terms as an alternative fulfillment for policy requirement
+  const returnPolicyQ = useQuery({
+    queryKey: ["readiness-return-policy", brandId],
+    enabled: Boolean(brandId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("brand_return_policies")
+        .select("id, policy_terms_ar, policy_terms_en")
+        .eq("brand_id", brandId)
+        .maybeSingle();
+      if (error) return false;
+      return Boolean(data?.policy_terms_ar || data?.policy_terms_en);
+    },
+  });
+
+  // 4. Query brand logo fallback if needed
   const brandQ = useQuery({
     queryKey: ["readiness-brand-logo", brandId],
     enabled: Boolean(brandId && !logoUrl && !businessSettingsQ.data?.logo_url),
@@ -372,6 +414,7 @@ export function StoreReadinessChecklist({
     businessSettings: businessSettingsQ.data,
     brandLogoUrl: brandQ.data,
     lang,
+    hasReturnPolicy: Boolean(returnPolicyQ.data),
   });
 
   const checklistItems = evaluation.items.map((item) => {
