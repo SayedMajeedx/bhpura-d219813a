@@ -79,7 +79,9 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
         .eq("order_id", order.id)
         .order("created_at", { ascending: false });
       if (error) {
-        console.warn("Could not query return_requests for order:", error);
+        if (error.code !== "PGRST301") {
+          console.warn("Could not query return_requests for order:", error);
+        }
         return [];
       }
       return data ?? [];

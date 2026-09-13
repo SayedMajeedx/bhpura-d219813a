@@ -61,16 +61,8 @@ export function OsMobileNavigation({
   const { theme, setTheme } = useTheme();
   const [appsHubOpen, setAppsHubOpen] = React.useState(false);
 
-  // Deep detail views (order detail, return detail, customer detail) require full vertical focus and hide the global dock
-  const isDetailPage = React.useMemo(() => {
-    if (!pathname) return false;
-    const cleanPath = pathname.split("?")[0].replace(/\/+$/, "");
-    return (
-      /\/orders\/[^/]+$/.test(cleanPath) ||
-      /\/returns\/[^/]+$/.test(cleanPath) ||
-      /\/customers\/[^/]+$/.test(cleanPath)
-    );
-  }, [pathname]);
+  // Mobile dock remains visible across views for constant accessible navigation
+  const isDetailPage = false;
 
   // Pick top items for quick mobile tabs + "More" item
   const primaryTabItems: OsIslandDockItem[] = React.useMemo(() => {

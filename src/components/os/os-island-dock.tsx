@@ -27,7 +27,7 @@ export function OsIslandDock({
   return (
     <nav
       role="navigation"
-      aria-label={lang === "ar" ? "شريط التنقل السريع" : "Island Dock Navigation"}
+      aria-label="Mobile Navigation"
       aria-hidden={isHidden}
       className={cn(
         // Viewport fixed positioning & safe area clearance
