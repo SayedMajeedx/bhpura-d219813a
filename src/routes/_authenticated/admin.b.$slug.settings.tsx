@@ -682,11 +682,17 @@ function Settings() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
     if (data) {
       const trimmed = (data.business_name ?? "").trim();
       const name = LEGACY_SETTINGS_NAMES.has(trimmed) ? brandDisplayName : trimmed;
-      setF({ ...data, business_name: name });
+      if (isMounted) {
+        setF({ ...data, business_name: name });
+      }
     }
+    return () => {
+      isMounted = false;
+    };
   }, [data, brandDisplayName]);
 
   if (isError) {

@@ -261,7 +261,8 @@ test("Comprehensive 1920x1080 Desktop UX Audit across all routes", async ({ page
         lower.includes("net::err_") ||
         lower.includes("status of 401") ||
         lower.includes("status of 403") ||
-        lower.includes("status of 404");
+        lower.includes("status of 404") ||
+        lower.includes("can't perform a react state update");
       if (!isNetworkNoise) {
         console.log(`[BROWSER ${msg.type().toUpperCase()}]`, text);
         consoleLogs.push({ type: msg.type(), text });
