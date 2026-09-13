@@ -342,23 +342,11 @@ function Inventory() {
     },
   });
 
-  if (
-    products.isLoading ||
-    variants.isLoading ||
-    customizations.isLoading ||
-    businessName.isLoading ||
-    salesHistory.isLoading
-  ) {
+  if (products.isLoading || variants.isLoading) {
     return <RoutePendingSkeleton />;
   }
 
-  if (
-    products.isError ||
-    variants.isError ||
-    customizations.isError ||
-    businessName.isError ||
-    salesHistory.isError
-  ) {
+  if (products.isError || variants.isError) {
     return (
       <OsEmptyState
         icon={AlertTriangle}
@@ -372,15 +360,7 @@ function Inventory() {
           <Button
             type="button"
             variant="outline"
-            onClick={() =>
-              void Promise.all([
-                products.refetch(),
-                variants.refetch(),
-                customizations.refetch(),
-                businessName.refetch(),
-                salesHistory.refetch(),
-              ])
-            }
+            onClick={() => void Promise.all([products.refetch(), variants.refetch()])}
           >
             <RefreshCw className="h-4 w-4 me-1.5" />
             {lang === "ar" ? "إعادة المحاولة" : "Try again"}
