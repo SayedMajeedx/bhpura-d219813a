@@ -6,6 +6,8 @@ interface DashboardCommandHeaderProps {
   brandName: string;
   salesTransactionCount: number;
   periodLabel: string;
+  isCatalog?: boolean;
+  inquiryCount?: number;
 }
 
 export function DashboardCommandHeader({
@@ -14,6 +16,8 @@ export function DashboardCommandHeader({
   brandName,
   salesTransactionCount,
   periodLabel,
+  isCatalog = false,
+  inquiryCount = 0,
 }: DashboardCommandHeaderProps) {
   const isAr = lang === "ar";
 
@@ -34,15 +38,25 @@ export function DashboardCommandHeader({
 
           <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
             <span>{isAr ? "نظرة عامة" : "Overview"}</span>
-            <span className="inline-flex items-center px-2 py-0.5 text-xs font-bold bg-muted text-foreground border border-border rounded-full">
-              {salesTransactionCount} {isAr ? "عملية بيع" : "sales"}
-            </span>
+            {isCatalog ? (
+              <span className="inline-flex items-center px-2 py-0.5 text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-300/40 rounded-full">
+                {inquiryCount} {isAr ? "استفسار واتساب" : "inquiries"}
+              </span>
+            ) : (
+              <span className="inline-flex items-center px-2 py-0.5 text-xs font-bold bg-muted text-foreground border border-border rounded-full">
+                {salesTransactionCount} {isAr ? "عملية بيع" : "sales"}
+              </span>
+            )}
           </h1>
 
           <p className="text-xs text-muted-foreground max-w-xl">
-            {isAr
-              ? `المبيعات المحصلة من الطلبات والحاضنات خلال ${periodLabel}. افتح صفحة الطلبات لعدد طلبات المتجر فقط.`
-              : `Collected order and incubator sales for ${periodLabel}. Open Orders for storefront orders only.`}
+            {isCatalog
+              ? isAr
+                ? `استفسارات العملاء عبر واتساب وتفاعلهم مع منتجات الكتالوج خلال ${periodLabel}.`
+                : `WhatsApp customer inquiries and catalog product engagement for ${periodLabel}.`
+              : isAr
+                ? `المبيعات المحصلة من الطلبات والحاضنات خلال ${periodLabel}. افتح صفحة الطلبات لعدد طلبات المتجر فقط.`
+                : `Collected order and incubator sales for ${periodLabel}. Open Orders for storefront orders only.`}
           </p>
         </div>
 

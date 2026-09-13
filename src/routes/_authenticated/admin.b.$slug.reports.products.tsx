@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { subDays, startOfDay, endOfDay } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { useI18n, useT } from "@/lib/i18n";
-import { fetchReportingProducts } from "@/lib/reporting.functions";
+import { fetchReportingProducts, fetchCatalogInquiriesReporting } from "@/lib/reporting.functions";
+import { useBrand } from "@/lib/brand-context";
 import { ReportsToolbar } from "@/components/reports/ReportsToolbar";
 import { formatMoney } from "@/lib/format";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AlertCircle, PackageX } from "lucide-react";
+import { AlertCircle, PackageX, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports/products")({
@@ -67,6 +68,50 @@ function ReportsProducts() {
     enabled: !!date?.from && !!date?.to,
   });
 
+  const brand = useBrand();
+
+  const { data: inquiriesData } = useQuery({
+    queryKey: [
+      "reports-products-inquiries",
+      brand?.id,
+      date?.from?.toISOString(),
+      date?.to?.toISOString(),
+    ],
+    queryFn: async () => {
+      if (!brand?.id) return null;
+      return await fetchCatalogInquiriesReporting(
+        brand.id,
+        date?.from?.toISOString(),
+        date?.to?.toISOString(),
+      );
+    },
+    enabled: !!brand?.id,
+  });
+
+  const inquiriesByProduct = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!inquiriesData?.productInquiries) return map;
+    for (const item of inquiriesData.productInquiries) {
+      if (item.productId) {
+        map.set(item.productId, item.inquiries);
+      }
+      if (item.productName) {
+        map.set(item.productName.toLowerCase().trim(), item.inquiries);
+      }
+    }
+    return map;
+  }, [inquiriesData]);
+
+  const getProductInquiries = (product: any): number => {
+    if (product.product_id && inquiriesByProduct.has(product.product_id)) {
+      return inquiriesByProduct.get(product.product_id) || 0;
+    }
+    if (product.product_name && inquiriesByProduct.has(product.product_name.toLowerCase().trim())) {
+      return inquiriesByProduct.get(product.product_name.toLowerCase().trim()) || 0;
+    }
+    return 0;
+  };
+
   return (
     <div className="space-y-6">
       <ReportsToolbar
@@ -110,71 +155,86 @@ function ReportsProducts() {
             {productsData.length > 0 ? (
               <>
                 <div className="space-y-2 sm:hidden">
-                  {productsData.map((p: any, idx: number) => (
-                    <article
-                      key={`${p.sku || p.product_name}-${idx}`}
-                      className="rounded-xl border border-border-subtle bg-background/70 p-3 shadow-2xs"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <h3 className="truncate text-sm font-bold">{p.product_name}</h3>
-                          <p
-                            className="mt-0.5 truncate font-mono text-xs text-muted-foreground"
-                            dir="ltr"
-                          >
-                            {p.sku || "—"}
+                  {productsData.map((p: any, idx: number) => {
+                    const inquiries = getProductInquiries(p);
+                    return (
+                      <article
+                        key={`${p.sku || p.product_name}-${idx}`}
+                        className="rounded-xl border border-border-subtle bg-background/70 p-3 shadow-2xs"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <h3 className="truncate text-sm font-bold">{p.product_name}</h3>
+                            <p
+                              className="mt-0.5 truncate font-mono text-xs text-muted-foreground"
+                              dir="ltr"
+                            >
+                              {p.sku || "—"}
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            <span className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-xs font-bold text-primary">
+                              {p.units_sold} {lang === "ar" ? "وحدة" : "units"}
+                            </span>
+                            {inquiries > 0 && (
+                              <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                                <MessageCircle className="h-3 w-3" />
+                                {inquiries} {lang === "ar" ? "استفسار" : "inq."}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {[p.color, p.size, p.fabric].filter(Boolean).map((value: string) => (
+                            <Badge key={value} variant="outline" className="text-xs font-normal">
+                              {value}
+                            </Badge>
+                          ))}
+                        </div>
+                        <dl className="mt-3 grid grid-cols-2 gap-2 border-t border-border-subtle pt-3 text-xs">
+                          <div>
+                            <dt className="text-xs text-muted-foreground">
+                              {lang === "ar" ? "صافي المبيعات" : "Net sales"}
+                            </dt>
+                            <dd className="mt-0.5 font-mono font-bold">
+                              {formatMoney(p.net_merch_sales, p.currency, lang)}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="text-xs text-muted-foreground">
+                              {lang === "ar" ? "تكلفة البضاعة" : "COGS"}
+                            </dt>
+                            <dd className="mt-0.5 font-mono font-bold">
+                              {p.is_missing_cost
+                                ? "—"
+                                : formatMoney(p.known_cogs, p.currency, lang)}
+                            </dd>
+                          </div>
+                        </dl>
+                        <div className="mt-3 flex items-center justify-between border-t border-border-subtle pt-2.5">
+                          <span className="text-xs text-muted-foreground">
+                            {lang === "ar" ? "المخزون الحالي" : "Current stock"}
+                          </span>
+                          {p.is_out_of_stock ? (
+                            <Badge variant="destructive">
+                              <PackageX className="me-1 h-3 w-3" />0
+                            </Badge>
+                          ) : (
+                            <Badge variant={p.is_low_stock ? "secondary" : "outline"}>
+                              {p.current_stock}
+                            </Badge>
+                          )}
+                        </div>
+                        {p.is_missing_cost && (
+                          <p className="mt-2 rounded-lg bg-amber-50 px-2 py-1.5 text-xs font-semibold text-amber-800">
+                            {lang === "ar"
+                              ? "بيانات التكلفة غير متوفرة"
+                              : "Cost data is unavailable"}
                           </p>
-                        </div>
-                        <span className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-xs font-bold text-primary">
-                          {p.units_sold} {lang === "ar" ? "وحدة" : "units"}
-                        </span>
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {[p.color, p.size, p.fabric].filter(Boolean).map((value: string) => (
-                          <Badge key={value} variant="outline" className="text-xs font-normal">
-                            {value}
-                          </Badge>
-                        ))}
-                      </div>
-                      <dl className="mt-3 grid grid-cols-2 gap-2 border-t border-border-subtle pt-3 text-xs">
-                        <div>
-                          <dt className="text-xs text-muted-foreground">
-                            {lang === "ar" ? "صافي المبيعات" : "Net sales"}
-                          </dt>
-                          <dd className="mt-0.5 font-mono font-bold">
-                            {formatMoney(p.net_merch_sales, p.currency, lang)}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt className="text-xs text-muted-foreground">
-                            {lang === "ar" ? "تكلفة البضاعة" : "COGS"}
-                          </dt>
-                          <dd className="mt-0.5 font-mono font-bold">
-                            {p.is_missing_cost ? "—" : formatMoney(p.known_cogs, p.currency, lang)}
-                          </dd>
-                        </div>
-                      </dl>
-                      <div className="mt-3 flex items-center justify-between border-t border-border-subtle pt-2.5">
-                        <span className="text-xs text-muted-foreground">
-                          {lang === "ar" ? "المخزون الحالي" : "Current stock"}
-                        </span>
-                        {p.is_out_of_stock ? (
-                          <Badge variant="destructive">
-                            <PackageX className="me-1 h-3 w-3" />0
-                          </Badge>
-                        ) : (
-                          <Badge variant={p.is_low_stock ? "secondary" : "outline"}>
-                            {p.current_stock}
-                          </Badge>
                         )}
-                      </div>
-                      {p.is_missing_cost && (
-                        <p className="mt-2 rounded-lg bg-amber-50 px-2 py-1.5 text-xs font-semibold text-amber-800">
-                          {lang === "ar" ? "بيانات التكلفة غير متوفرة" : "Cost data is unavailable"}
-                        </p>
-                      )}
-                    </article>
-                  ))}
+                      </article>
+                    );
+                  })}
                 </div>
                 <div className="hidden rounded-md border sm:block">
                   <Table>
@@ -185,6 +245,9 @@ function ReportsProducts() {
                         <TableHead>{lang === "ar" ? "المتغير" : "Variant"}</TableHead>
                         <TableHead className="text-end">
                           {lang === "ar" ? "الوحدات المباعة" : "Units Sold"}
+                        </TableHead>
+                        <TableHead className="text-end">
+                          {lang === "ar" ? "استفسارات واتساب" : "WhatsApp Inquiries"}
                         </TableHead>
                         <TableHead className="text-end">
                           {lang === "ar" ? "صافي المبيعات" : "Net Sales"}
@@ -198,64 +261,81 @@ function ReportsProducts() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {productsData.map((p: any, idx: number) => (
-                        <TableRow key={idx}>
-                          <TableCell className="font-medium">
-                            {p.product_name}
-                            {p.is_missing_cost && (
-                              <Badge
-                                variant="destructive"
-                                className="ms-2 mt-1 text-xs"
-                                title={
-                                  lang === "ar"
-                                    ? "بيانات التكلفة مفقودة لهذا المنتج"
-                                    : "Missing cost data for this product"
-                                }
-                              >
-                                {lang === "ar" ? "بدون تكلفة" : "No Cost"}
-                              </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>{p.sku || "—"}</TableCell>
-                          <TableCell>
-                            <div className="flex max-w-[220px] flex-wrap gap-1">
-                              {[p.color, p.size, p.fabric].filter(Boolean).map((value: string) => (
-                                <Badge key={value} variant="outline" className="font-normal">
-                                  {value}
-                                </Badge>
-                              ))}
-                              {![p.color, p.size, p.fabric].some(Boolean) && (
-                                <span className="text-muted-foreground">—</span>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-end font-bold">{p.units_sold}</TableCell>
-                          <TableCell className="text-end">
-                            {formatMoney(p.net_merch_sales, p.currency, lang)}
-                          </TableCell>
-                          <TableCell className="text-end">
-                            {p.is_missing_cost ? "—" : formatMoney(p.known_cogs, p.currency, lang)}
-                          </TableCell>
-                          <TableCell className="text-end">
-                            <div className="flex items-center justify-end gap-2">
-                              {p.is_out_of_stock ? (
-                                <Badge variant="destructive" className="flex gap-1">
-                                  <PackageX className="w-3 h-3" /> 0
-                                </Badge>
-                              ) : p.is_low_stock ? (
+                      {productsData.map((p: any, idx: number) => {
+                        const inquiries = getProductInquiries(p);
+                        return (
+                          <TableRow key={idx}>
+                            <TableCell className="font-medium">
+                              {p.product_name}
+                              {p.is_missing_cost && (
                                 <Badge
-                                  variant="secondary"
-                                  className="text-amber-500 border-amber-500/20 bg-amber-500/10"
+                                  variant="destructive"
+                                  className="ms-2 mt-1 text-xs"
+                                  title={
+                                    lang === "ar"
+                                      ? "بيانات التكلفة مفقودة لهذا المنتج"
+                                      : "Missing cost data for this product"
+                                  }
                                 >
-                                  {p.current_stock}
+                                  {lang === "ar" ? "بدون تكلفة" : "No Cost"}
                                 </Badge>
-                              ) : (
-                                <span>{p.current_stock}</span>
                               )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                            </TableCell>
+                            <TableCell>{p.sku || "—"}</TableCell>
+                            <TableCell>
+                              <div className="flex max-w-[220px] flex-wrap gap-1">
+                                {[p.color, p.size, p.fabric]
+                                  .filter(Boolean)
+                                  .map((value: string) => (
+                                    <Badge key={value} variant="outline" className="font-normal">
+                                      {value}
+                                    </Badge>
+                                  ))}
+                                {![p.color, p.size, p.fabric].some(Boolean) && (
+                                  <span className="text-muted-foreground">—</span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-end font-bold">{p.units_sold}</TableCell>
+                            <TableCell className="text-end">
+                              {inquiries > 0 ? (
+                                <span className="inline-flex items-center gap-1 font-mono font-bold text-xs text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                                  <MessageCircle className="h-3 w-3" />
+                                  {inquiries}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground text-xs">0</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-end">
+                              {formatMoney(p.net_merch_sales, p.currency, lang)}
+                            </TableCell>
+                            <TableCell className="text-end">
+                              {p.is_missing_cost
+                                ? "—"
+                                : formatMoney(p.known_cogs, p.currency, lang)}
+                            </TableCell>
+                            <TableCell className="text-end">
+                              <div className="flex items-center justify-end gap-2">
+                                {p.is_out_of_stock ? (
+                                  <Badge variant="destructive" className="flex gap-1">
+                                    <PackageX className="w-3 h-3" /> 0
+                                  </Badge>
+                                ) : p.is_low_stock ? (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-amber-500 border-amber-500/20 bg-amber-500/10"
+                                  >
+                                    {p.current_stock}
+                                  </Badge>
+                                ) : (
+                                  <span>{p.current_stock}</span>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>

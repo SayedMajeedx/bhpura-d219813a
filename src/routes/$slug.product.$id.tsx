@@ -2203,6 +2203,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 className="flex-1 h-12 font-semibold shadow-sm hover:opacity-90 bg-primary text-primary-foreground gap-2"
                 onClick={() => {
                   if (inquiryUrl) {
+                    void (supabase.rpc as any)("record_storefront_product_engagement", {
+                      p_brand_slug: brand.slug,
+                      p_product_id: product.id,
+                      p_event: "inquiry",
+                    });
                     window.open(inquiryUrl, "_blank", "noopener,noreferrer");
                   } else {
                     toast.error(
@@ -2291,6 +2296,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 className="h-11 px-4 font-semibold bg-primary text-primary-foreground gap-2"
                 onClick={() => {
                   if (inquiryUrl) {
+                    void (supabase.rpc as any)("record_storefront_product_engagement", {
+                      p_brand_slug: brand.slug,
+                      p_product_id: product.id,
+                      p_event: "inquiry",
+                    });
                     window.open(inquiryUrl, "_blank", "noopener,noreferrer");
                   } else {
                     toast.error(

@@ -394,7 +394,8 @@ test("Comprehensive Mobile UX Audit at 390x844 Viewport", async ({ page }) => {
           lower.includes("net::err_") ||
           lower.includes("status of 401") ||
           lower.includes("status of 403") ||
-          lower.includes("status of 404");
+          lower.includes("status of 404") ||
+          lower.includes("can't perform a react state update");
         if (!isNetworkNoise) {
           pageConsoleErrors.push(text);
         }

@@ -4280,6 +4280,7 @@ export type Database = {
           brand_id: string;
           click_count: number;
           event_date: string;
+          inquiry_count: number;
           product_id: string;
           view_count: number;
         };
@@ -4287,6 +4288,7 @@ export type Database = {
           brand_id: string;
           click_count?: number;
           event_date?: string;
+          inquiry_count?: number;
           product_id: string;
           view_count?: number;
         };
@@ -4294,6 +4296,7 @@ export type Database = {
           brand_id?: string;
           click_count?: number;
           event_date?: string;
+          inquiry_count?: number;
           product_id?: string;
           view_count?: number;
         };

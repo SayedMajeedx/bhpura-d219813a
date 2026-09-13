@@ -370,3 +370,102 @@ export async function exportReportData(
   if (error) throw error;
   return data;
 }
+
+// Catalog Inquiries Reporting
+export type CatalogInquirySummary = {
+  totalInquiries: number;
+  totalViews: number;
+  totalClicks: number;
+  inquiryRate: number;
+  productInquiries: Array<{
+    productId: string;
+    productName: string;
+    inquiries: number;
+    views: number;
+    clicks: number;
+  }>;
+};
+
+export async function fetchCatalogInquiriesReporting(
+  brandId: string,
+  startDate?: string,
+  endDate?: string,
+): Promise<CatalogInquirySummary> {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
+  const start = startDate || thirtyDaysAgo.toISOString().slice(0, 10);
+
+  let query = (supabase as any)
+    .from("product_engagement_daily")
+    .select("product_id, inquiry_count, view_count, click_count, event_date, products(name)")
+    .eq("brand_id", brandId)
+    .gte("event_date", start);
+
+  if (endDate) {
+    query = query.lte("event_date", endDate);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  const rows = (data || []) as Array<{
+    product_id: string;
+    inquiry_count: number | null;
+    view_count: number | null;
+    click_count: number | null;
+    products?: { name: string } | null;
+  }>;
+
+  let totalInquiries = 0;
+  let totalViews = 0;
+  let totalClicks = 0;
+  const productMap = new Map<
+    string,
+    {
+      productId: string;
+      productName: string;
+      inquiries: number;
+      views: number;
+      clicks: number;
+    }
+  >();
+
+  for (const row of rows) {
+    const inq = Number(row.inquiry_count || 0);
+    const views = Number(row.view_count || 0);
+    const clicks = Number(row.click_count || 0);
+
+    totalInquiries += inq;
+    totalViews += views;
+    totalClicks += clicks;
+
+    const existing = productMap.get(row.product_id) || {
+      productId: row.product_id,
+      productName: row.products?.name || "",
+      inquiries: 0,
+      views: 0,
+      clicks: 0,
+    };
+    existing.inquiries += inq;
+    existing.views += views;
+    existing.clicks += clicks;
+    if (!existing.productName && row.products?.name) {
+      existing.productName = row.products.name;
+    }
+    productMap.set(row.product_id, existing);
+  }
+
+  const productInquiries = Array.from(productMap.values()).sort(
+    (a, b) => b.inquiries - a.inquiries || b.views - a.views,
+  );
+
+  const inquiryRate = totalViews > 0 ? (totalInquiries / totalViews) * 100 : 0;
+
+  return {
+    totalInquiries,
+    totalViews,
+    totalClicks,
+    inquiryRate,
+    productInquiries,
+  };
+}
