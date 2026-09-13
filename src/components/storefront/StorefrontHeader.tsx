@@ -4,9 +4,9 @@ import { useStorefront } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cloudflareImageUrl } from "@/lib/media-delivery";
-import { isColorDark } from "@/components/storefront/storefront-utils";
 import { SearchBar, MobileStorefrontDropdown } from "@/components/storefront/StorefrontNavigation";
 import { CartDrawer } from "@/components/storefront/StorefrontCartDrawer";
+import { isCatalogMode } from "@/lib/storefront-mode";
 import { ShoppingBag, Heart, User, Languages, X, Bell } from "lucide-react";
 
 function StoreHeader() {
@@ -176,29 +176,31 @@ function StoreHeader() {
               </Link>
             </Button>
 
-            <CartDrawer>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="relative min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-white/80"
-                style={{ color: "var(--sf-header-fg)" }}
-                aria-label={t("سلة التسوق", "Shopping cart")}
-              >
-                <ShoppingBag className="h-5 w-5" />
-                <span className="hidden sm:inline">{t("السلة", "Cart")}</span>
-                {cartCount > 0 && (
-                  <span
-                    className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-xs font-semibold grid place-items-center"
-                    style={{
-                      backgroundColor: "var(--sf-btn-primary-bg)",
-                      color: "var(--sf-btn-primary-fg)",
-                    }}
-                  >
-                    {cartCount}
-                  </span>
-                )}
-              </Button>
-            </CartDrawer>
+            {!isCatalogMode(settings) && (
+              <CartDrawer>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="relative min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-white/80"
+                  style={{ color: "var(--sf-header-fg)" }}
+                  aria-label={t("سلة التسوق", "Shopping cart")}
+                >
+                  <ShoppingBag className="h-5 w-5" />
+                  <span className="hidden sm:inline">{t("السلة", "Cart")}</span>
+                  {cartCount > 0 && (
+                    <span
+                      className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-xs font-semibold grid place-items-center"
+                      style={{
+                        backgroundColor: "var(--sf-btn-primary-bg)",
+                        color: "var(--sf-btn-primary-fg)",
+                      }}
+                    >
+                      {cartCount}
+                    </span>
+                  )}
+                </Button>
+              </CartDrawer>
+            )}
           </div>
         </div>
 

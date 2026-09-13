@@ -63,6 +63,7 @@ import {
 } from "@/lib/abandoned-carts.functions";
 import type { BrandLoyaltyProgram, LoyaltyAccount, LoyaltyTier } from "@/lib/loyalty.types";
 import { getOrCreateCartSessionId } from "@/lib/abandoned-cart-session";
+import { isCatalogMode } from "@/lib/storefront-mode";
 
 export const Route = createFileRoute("/$slug/checkout")({
   component: Checkout,
@@ -74,6 +75,13 @@ function Checkout() {
   const { brand, settings, cart, cartTotal, currency, lang, t, clearCart, addToCart, session } =
     useStorefront();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isCatalogMode(settings)) {
+      void navigate({ to: "/$slug", params: { slug: brand.slug }, replace: true });
+    }
+  }, [brand.slug, navigate, settings]);
+
   const [submitting, setSubmitting] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [idempotencyKey] = useState(() => crypto.randomUUID());
@@ -1245,6 +1253,10 @@ function Checkout() {
       setSubmitting(false);
     }
   };
+
+  if (isCatalogMode(settings)) {
+    return null;
+  }
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 pt-8 pb-28 md:py-8 grid md:grid-cols-[1fr_360px] gap-6">

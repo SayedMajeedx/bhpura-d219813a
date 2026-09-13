@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { buildCartShareUrl, buildWhatsAppShareUrl, createSharedCartLink } from "@/lib/cart-sharing";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
+import { isCatalogMode } from "@/lib/storefront-mode";
 
 interface ShareCartModalProps {
   open: boolean;
@@ -19,7 +20,8 @@ interface ShareCartModalProps {
 }
 
 export function ShareCartModal({ open, onOpenChange }: ShareCartModalProps) {
-  const { cart, cartTotal, currency, lang, t, brand } = useStorefront();
+  const { cart, cartTotal, currency, lang, t, brand, settings } = useStorefront();
+
   const [copied, setCopied] = useState(false);
   const [shortUrl, setShortUrl] = useState<string>("");
   const [generating, setGenerating] = useState(false);
@@ -97,6 +99,10 @@ export function ShareCartModal({ open, onOpenChange }: ShareCartModalProps) {
     totalFormatted,
     isAr,
   });
+
+  if (isCatalogMode(settings)) {
+    return null;
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

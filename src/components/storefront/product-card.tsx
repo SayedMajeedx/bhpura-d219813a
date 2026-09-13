@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Heart } from "lucide-react";
 import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
+import { shouldShowPrices } from "@/lib/storefront-mode";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import { type ProductRow } from "@/routes/$slug.index";
@@ -63,6 +64,7 @@ export function ProductCard({
   let badgeLabel = "";
 
   if (
+    shouldShowPrices(settings) &&
     discountPercent > 0 &&
     settings.global_sale_badges_enabled &&
     product.show_sale_badge !== false
@@ -163,7 +165,11 @@ export function ProductCard({
             className="price-tag flex flex-wrap items-baseline gap-2 text-sm font-semibold mt-0.5"
             style={{ color: "var(--sf-price, var(--sf-heading))" }}
           >
-            {minPrice > 0 ? (
+            {!shouldShowPrices(settings) ? (
+              <span className="text-xs font-normal text-muted-foreground">
+                {t("تواصل معنا للسعر", "Contact us for price")}
+              </span>
+            ) : minPrice > 0 ? (
               minPrice === maxPrice ? (
                 <>
                   <span>{formatPrice(minPrice, currency, lang)}</span>
