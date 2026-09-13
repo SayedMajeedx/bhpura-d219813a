@@ -7,11 +7,13 @@ import { Input } from "@/components/ui/input";
 import { OsEmptyState } from "@/components/os/os-empty-state";
 import { ShareCartModal } from "@/components/storefront/ShareCartModal";
 import { cloudflareImageUrl } from "@/lib/media-delivery";
+import { isCatalogMode } from "@/lib/storefront-mode";
 import { ShoppingBag, Minus, Plus, Trash2, Gift, Share2 } from "lucide-react";
 
 export function CartDrawer({ children }: { children: React.ReactNode }) {
   const { cart, cartTotal, currency, lang, t, updateQty, removeFromCart, brand, settings } =
     useStorefront();
+
   const [open, setOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [isGift, setIsGift] = useState(() => {
@@ -64,6 +66,9 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
     settings.cart_drawer_checkout_fg ??
     settings.btn_checkout_fg ??
     readableOn(drawerCheckoutBg, "#ffffff");
+  if (isCatalogMode(settings)) {
+    return null;
+  }
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>

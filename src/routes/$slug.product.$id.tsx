@@ -4,13 +4,7 @@ import {
   publicSupabase as supabase,
   supabase as authenticatedSupabase,
 } from "@/integrations/supabase/client";
-import {
-  useStorefront,
-  formatPrice,
-  pickName,
-  pickDescription,
-  readableOn,
-} from "@/lib/storefront-context";
+import { useStorefront, formatPrice, pickName, pickDescription } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +27,9 @@ import {
   Check,
   Truck,
   FileText,
+  MessageCircle,
 } from "lucide-react";
+import { isCatalogMode, shouldShowPrices, buildWhatsAppInquiryUrl } from "@/lib/storefront-mode";
 import { SizeGuideModal } from "@/components/storefront/SizeGuideModal";
 import { ProductShareModal } from "@/components/storefront/ProductShareModal";
 import { toast } from "sonner";
@@ -1055,6 +1051,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   };
 
   const doAdd = (thenBuy = false) => {
+    if (isCatalogMode(settings)) return;
     const err = validate();
     if (err) {
       setErrorMsg(err);
@@ -1240,6 +1237,32 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       ? Math.round((1 - displayPrice / originalPriceWithAddons) * 100)
       : 0;
 
+  const inquiryUrl = isCatalogMode(settings)
+    ? buildWhatsAppInquiryUrl({
+        number: settings.whatsapp_number,
+        template:
+          lang === "ar" ? settings.catalog_inquiry_message_ar : settings.catalog_inquiry_message_en,
+        lang,
+        ctx: {
+          brandName: lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en,
+          productName: displayName,
+          productUrl: typeof window !== "undefined" ? window.location.href : "",
+          variantLabel: variant
+            ? [
+                (showSizeModeToggle && sizeMode === "custom") || (!hasReadySizes && hasCustomFields)
+                  ? t("تفصيل", "Custom Sizing")
+                  : formatSizeWithUnit(variant.size, variant.size_unit, lang),
+                variant.color,
+                variant.fabric,
+              ]
+                .filter(Boolean)
+                .join(" · ")
+            : null,
+          priceLabel: shouldShowPrices(settings) ? priceLabel : undefined,
+        },
+      })
+    : null;
+
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-3 sm:py-8 pb-28 md:pb-10">
       <div className="grid md:grid-cols-12 gap-6 lg:gap-10 items-start">
@@ -1385,16 +1408,24 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             className="mb-3 flex flex-wrap items-center gap-3 text-xl font-semibold sm:mb-4 sm:text-2xl"
             style={{ color: "var(--sf-price, var(--sf-heading))" }}
           >
-            <span>{priceLabel}</span>
-            {originalPrice > displayPrice && (
-              <span className="text-base font-normal text-muted-foreground line-through">
-                {formatPrice(originalPrice, currency, lang)}
+            {!shouldShowPrices(settings) ? (
+              <span className="text-base font-normal text-muted-foreground">
+                {t("تواصل معنا للسعر", "Contact us for price")}
               </span>
-            )}
-            {discountPercent > 0 && (
-              <span className="rounded-full bg-neutral-950 px-3 py-1 text-xs text-white">
-                {t(`وفر ${discountPercent}%`, `Save ${discountPercent}%`)}
-              </span>
+            ) : (
+              <>
+                <span>{priceLabel}</span>
+                {originalPrice > displayPrice && (
+                  <span className="text-base font-normal text-muted-foreground line-through">
+                    {formatPrice(originalPrice, currency, lang)}
+                  </span>
+                )}
+                {discountPercent > 0 && (
+                  <span className="rounded-full bg-neutral-950 px-3 py-1 text-xs text-white">
+                    {t(`وفر ${discountPercent}%`, `Save ${discountPercent}%`)}
+                  </span>
+                )}
+              </>
             )}
           </div>
           {displayDescription && (
@@ -1684,15 +1715,16 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                         </div>
                         <span className="text-sm truncate">{addon.name}</span>
                       </div>
-                      {delta > 0 ? (
-                        <span className="shrink-0 text-xs font-semibold dir-ltr">
-                          + {formatPrice(delta, currency, lang)}
-                        </span>
-                      ) : (
-                        <span className="shrink-0 text-xs text-muted-foreground font-medium">
-                          {t("مجاني", "Free")}
-                        </span>
-                      )}
+                      {shouldShowPrices(settings) &&
+                        (delta > 0 ? (
+                          <span className="shrink-0 text-xs font-semibold dir-ltr">
+                            + {formatPrice(delta, currency, lang)}
+                          </span>
+                        ) : (
+                          <span className="shrink-0 text-xs text-muted-foreground font-medium">
+                            {t("مجاني", "Free")}
+                          </span>
+                        ))}
                     </button>
                   );
                 })}
@@ -2102,7 +2134,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             </div>
           )}
 
-          {(variant || isTailoringActive) && (
+          {!isCatalogMode(settings) && (variant || isTailoringActive) && (
             <div className="mb-4 flex items-center">
               <div>
                 <div className="text-sm font-medium mb-2">{t("الكمية", "Quantity")}</div>
@@ -2164,28 +2196,52 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             </div>
           )}
 
-          <div className="hidden md:flex gap-2">
-            <Button
-              className="flex-1 h-12 font-semibold shadow-sm hover:opacity-90 bg-primary text-primary-foreground"
-              disabled={selectedVariantOutOfStock}
-              aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
-              onClick={() => doAdd(false)}
-            >
-              <ShoppingBag className="h-4 w-4 me-2" />
-              {t("أضف للسلة", "Add to cart")}
-            </Button>
-            <Button
-              variant="outline"
-              className="h-12 border-2 font-semibold hover:opacity-90"
-              disabled={selectedVariantOutOfStock}
-              aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
-              onClick={() => doAdd(true)}
-            >
-              {t("اشتر الآن", "Buy now")}
-            </Button>
-          </div>
+          {isCatalogMode(settings) ? (
+            <div className="hidden md:flex gap-2">
+              <Button
+                type="button"
+                className="flex-1 h-12 font-semibold shadow-sm hover:opacity-90 bg-primary text-primary-foreground gap-2"
+                onClick={() => {
+                  if (inquiryUrl) {
+                    window.open(inquiryUrl, "_blank", "noopener,noreferrer");
+                  } else {
+                    toast.error(
+                      t(
+                        "رقم التواصل عبر واتساب غير متوفر حالياً",
+                        "WhatsApp contact number is not available",
+                      ),
+                    );
+                  }
+                }}
+              >
+                <MessageCircle className="h-5 w-5" />
+                <span>{t("طلب عبر واتساب", "Inquire via WhatsApp")}</span>
+              </Button>
+            </div>
+          ) : (
+            <div className="hidden md:flex gap-2">
+              <Button
+                className="flex-1 h-12 font-semibold shadow-sm hover:opacity-90 bg-primary text-primary-foreground"
+                disabled={selectedVariantOutOfStock}
+                aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
+                onClick={() => doAdd(false)}
+              >
+                <ShoppingBag className="h-4 w-4 me-2" />
+                {t("أضف للسلة", "Add to cart")}
+              </Button>
+              <Button
+                variant="outline"
+                className="h-12 border-2 font-semibold hover:opacity-90"
+                disabled={selectedVariantOutOfStock}
+                aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
+                onClick={() => doAdd(true)}
+              >
+                {t("اشتر الآن", "Buy now")}
+              </Button>
+            </div>
+          )}
 
-          {settings.delivery_estimate_enabled !== false && (
+          {settings.delivery_estimate_enabled !== false && !isCatalogMode(settings) && (
             <div className="mt-4 flex items-center gap-2.5 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
               <Truck className="h-4 w-4 text-primary shrink-0" />
               <span className="font-medium text-foreground">
@@ -2220,27 +2276,58 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   : t("اختر الخيار", "Choose option")}
               </div>
               <div className="text-base font-semibold truncate" style={{ color: primary }}>
-                {priceLabel}
+                {!shouldShowPrices(settings) ? (
+                  <span className="text-xs font-normal text-muted-foreground">
+                    {t("تواصل معنا للسعر", "Contact us for price")}
+                  </span>
+                ) : (
+                  priceLabel
+                )}
               </div>
             </div>
-            <Button
-              className="h-11 px-3 font-semibold bg-primary text-primary-foreground"
-              disabled={selectedVariantOutOfStock}
-              aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
-              onClick={() => doAdd(false)}
-              aria-label={t("أضف للسلة", "Add to cart")}
-            >
-              <ShoppingBag className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              className="h-11 px-4 font-semibold border-2"
-              disabled={selectedVariantOutOfStock}
-              aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
-              onClick={() => doAdd(true)}
-            >
-              {t("اشتر الآن", "Buy now")}
-            </Button>
+            {isCatalogMode(settings) ? (
+              <Button
+                type="button"
+                className="h-11 px-4 font-semibold bg-primary text-primary-foreground gap-2"
+                onClick={() => {
+                  if (inquiryUrl) {
+                    window.open(inquiryUrl, "_blank", "noopener,noreferrer");
+                  } else {
+                    toast.error(
+                      t(
+                        "رقم التواصل عبر واتساب غير متوفر حالياً",
+                        "WhatsApp contact number is not available",
+                      ),
+                    );
+                  }
+                }}
+                aria-label={t("طلب عبر واتساب", "Inquire via WhatsApp")}
+              >
+                <MessageCircle className="h-4 w-4" />
+                <span>{t("طلب عبر واتساب", "Inquire")}</span>
+              </Button>
+            ) : (
+              <>
+                <Button
+                  className="h-11 px-3 font-semibold bg-primary text-primary-foreground"
+                  disabled={selectedVariantOutOfStock}
+                  aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
+                  onClick={() => doAdd(false)}
+                  aria-label={t("أضف للسلة", "Add to cart")}
+                >
+                  <ShoppingBag className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-11 px-4 font-semibold border-2"
+                  disabled={selectedVariantOutOfStock}
+                  aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
+                  onClick={() => doAdd(true)}
+                >
+                  {t("اشتر الآن", "Buy now")}
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -2272,7 +2359,7 @@ function RecommendationRail({
   title: string;
   products: RecommendationProduct[];
 }) {
-  const { brand, currency, lang, t } = useStorefront();
+  const { brand, currency, lang, t, settings } = useStorefront();
 
   return (
     <section aria-label={title}>
@@ -2334,11 +2421,19 @@ function RecommendationRail({
                     className="mt-1 flex flex-wrap items-baseline gap-x-2 text-xs font-semibold"
                     style={{ color: "var(--sf-heading)" }}
                   >
-                    <span>{formatPrice(Number(priced.selling_price), currency, lang)}</span>
-                    {Number(priced.original_price || 0) > Number(priced.selling_price) && (
-                      <span className="font-normal text-muted-foreground line-through">
-                        {formatPrice(Number(priced.original_price), currency, lang)}
+                    {!shouldShowPrices(settings) ? (
+                      <span className="font-normal text-muted-foreground">
+                        {t("تواصل معنا للسعر", "Contact us for price")}
                       </span>
+                    ) : (
+                      <>
+                        <span>{formatPrice(Number(priced.selling_price), currency, lang)}</span>
+                        {Number(priced.original_price || 0) > Number(priced.selling_price) && (
+                          <span className="font-normal text-muted-foreground line-through">
+                            {formatPrice(Number(priced.original_price), currency, lang)}
+                          </span>
+                        )}
+                      </>
                     )}
                   </div>
                 )}

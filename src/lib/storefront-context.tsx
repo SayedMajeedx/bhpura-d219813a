@@ -16,6 +16,7 @@ import { decodeCartSharePayload, fetchSharedCartByCode } from "@/lib/cart-sharin
 import { toast } from "sonner";
 import { syncStorefrontCartActivity } from "@/lib/abandoned-carts.functions";
 import { getExistingCartSessionId, getOrCreateCartSessionId } from "@/lib/abandoned-cart-session";
+import { isCatalogMode, type StorefrontMode } from "@/lib/storefront-mode";
 
 export type StoreLang = "ar" | "en";
 export type HomePromoCard = {
@@ -163,6 +164,10 @@ export type PublicSettings = {
   socials: Array<{ name: string; url: string }>;
   whatsapp_enabled: boolean;
   whatsapp_number: string | null;
+  storefront_mode?: StorefrontMode;
+  catalog_show_prices?: boolean;
+  catalog_inquiry_message_en?: string | null;
+  catalog_inquiry_message_ar?: string | null;
   menu_bg: string | null;
   menu_fg: string | null;
   menu_title_en: string | null;
@@ -443,7 +448,7 @@ export function StorefrontProvider({
   // Track the cart everywhere in the storefront, not only after the customer
   // reaches checkout. An empty cart closes an existing tracking session.
   useEffect(() => {
-    if (!storageHydrated) return;
+    if (!storageHydrated || isCatalogMode(settings)) return;
     const existingSessionId = getExistingCartSessionId(brand.id);
     if (cart.length === 0 && !existingSessionId) return;
 
@@ -476,7 +481,7 @@ export function StorefrontProvider({
     }, 1200);
 
     return () => window.clearTimeout(timer);
-  }, [brand.id, cart, session?.user.email, settings.currency, storageHydrated, trackingCustomer]);
+  }, [brand.id, cart, session?.user.email, settings, storageHydrated, trackingCustomer]);
 
   useEffect(() => {
     if (!storageHydrated) return;
@@ -590,6 +595,9 @@ export function StorefrontProvider({
 
   const addToCart = useCallback(
     (item: CartItem) => {
+      if (isCatalogMode(settings)) {
+        return;
+      }
       setCart((prev) => {
         const lineId = cartLineId(item);
         const existing = prev.find((c) => c.cart_line_id === lineId);
@@ -635,7 +643,7 @@ export function StorefrontProvider({
         ],
       });
     },
-    [settings.currency],
+    [settings],
   );
 
   const removeFromCart = useCallback((cart_line_id: string) => {

@@ -33,6 +33,7 @@ import { StorefrontSuspended } from "@/components/storefront/StorefrontSuspended
 import { X, ChevronDown, Sparkles } from "lucide-react";
 import { faviconType, resolveBrandFavicon, useDynamicFavicon } from "@/lib/favicon";
 import { StorefrontAnalytics } from "@/components/storefront-analytics";
+import { isCatalogMode } from "@/lib/storefront-mode";
 import { isColorDark, hexToRgba } from "@/components/storefront/storefront-utils";
 
 export const Route = createFileRoute("/$slug")({
@@ -213,6 +214,10 @@ export const Route = createFileRoute("/$slug")({
       socials: normalizedSocials,
       whatsapp_enabled: Boolean(s?.whatsapp_enabled),
       whatsapp_number: s?.whatsapp_number ?? null,
+      storefront_mode: s?.storefront_mode === "catalog" ? "catalog" : "shop",
+      catalog_show_prices: s?.catalog_show_prices ?? true,
+      catalog_inquiry_message_en: s?.catalog_inquiry_message_en ?? null,
+      catalog_inquiry_message_ar: s?.catalog_inquiry_message_ar ?? null,
       menu_bg: s?.menu_bg ?? null,
       menu_fg: s?.menu_fg ?? null,
       menu_title_en: s?.menu_title_en ?? null,
@@ -333,9 +338,15 @@ function StorefrontLayout() {
 }
 
 function StoreShell() {
-  const { brand, settings, lang } = useStorefront();
+  const { brand, settings, lang, cart, clearCart } = useStorefront();
   useQueryClient();
   useRouter();
+
+  useEffect(() => {
+    if (isCatalogMode(settings) && cart.length > 0) {
+      clearCart();
+    }
+  }, [settings.storefront_mode, cart.length, clearCart]);
 
   const primary = settings.primary_color || brand.primary_color || "#3f121a";
   const headerBg = settings.header_bg ?? settings.background_color ?? "#ffffff";

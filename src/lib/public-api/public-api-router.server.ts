@@ -743,6 +743,24 @@ export async function handlePublicApiV1Request(
         );
       }
 
+      // Check brand storefront mode
+      const { data: bSettings } = await db
+        .from("business_settings")
+        .select("storefront_mode")
+        .eq("brand_id", authContext.brandId)
+        .maybeSingle();
+
+      if (bSettings?.storefront_mode === "catalog") {
+        return errorResponse(
+          "STOREFRONT_CATALOG_MODE",
+          "This brand is in catalog mode; storefront orders are disabled.",
+          403,
+          null,
+          requestId,
+          rateLimitHeaders,
+        );
+      }
+
       const {
         customer_name,
         customer_phone,
