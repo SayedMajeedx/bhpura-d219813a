@@ -877,9 +877,7 @@ export function recommendSize(args: {
             ? (r.values[lengthCol.key] as number)
             : undefined;
         const bustVal =
-          typeof r.values[bustCol.key] === "number"
-            ? (r.values[bustCol.key] as number)
-            : undefined;
+          typeof r.values[bustCol.key] === "number" ? (r.values[bustCol.key] as number) : undefined;
 
         if (lenVal !== undefined && lenVal >= custLength - tolerance) {
           const diff = lenVal - custLength;

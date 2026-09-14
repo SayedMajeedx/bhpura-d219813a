@@ -1580,65 +1580,63 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               )}
 
               {/* 📏 Size Selection Pills */}
-              {uniqueSizes.length > 0 && resolvedAxes.size.visible && (!showSizeModeToggle || sizeMode === "ready") && (
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-sm font-semibold">
-                      {resolvedAxes.size.label}
+              {uniqueSizes.length > 0 &&
+                resolvedAxes.size.visible &&
+                (!showSizeModeToggle || sizeMode === "ready") && (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-sm font-semibold">{resolvedAxes.size.label}</div>
+                      <AddonSlot
+                        placement="storefront.product.optionsAside"
+                        props={{
+                          product,
+                          selectedSize,
+                          onSelectSize: (sz: string) => setSelectedSize(sz),
+                          uniqueSizes,
+                        }}
+                      />
                     </div>
-                    <AddonSlot
-                      placement="storefront.product.optionsAside"
-                      props={{
-                        product,
-                        selectedSize,
-                        onSelectSize: (sz: string) => setSelectedSize(sz),
-                        uniqueSizes,
-                      }}
-                    />
+                    <div className="flex flex-wrap gap-2">
+                      {uniqueSizes.map((sz) => {
+                        const active = selectedSize === sz;
+                        const oos =
+                          isSizeOutOfStock[sz] ||
+                          Number(
+                            variants
+                              .filter((v) => v.size === sz)
+                              .reduce(
+                                (acc, v) =>
+                                  acc + Number(v.stock_main || 0) + Number(v.stock_incubator || 0),
+                                0,
+                              ),
+                          ) <= 0;
+                        return (
+                          <Button
+                            key={sz}
+                            type="button"
+                            variant={active ? "default" : "outline"}
+                            onClick={() => {
+                              setSelectedSize(sz);
+                              setErrorMsg(null);
+                            }}
+                            className={`min-h-11 px-4 py-2 rounded-lg text-sm font-medium ${
+                              oos
+                                ? "line-through opacity-45 cursor-not-allowed bg-muted text-muted-foreground border-dashed"
+                                : ""
+                            }`}
+                          >
+                            {sz}
+                          </Button>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {uniqueSizes.map((sz) => {
-                      const active = selectedSize === sz;
-                      const oos =
-                        isSizeOutOfStock[sz] ||
-                        Number(
-                          variants
-                            .filter((v) => v.size === sz)
-                            .reduce(
-                              (acc, v) =>
-                                acc + Number(v.stock_main || 0) + Number(v.stock_incubator || 0),
-                              0,
-                            ),
-                        ) <= 0;
-                      return (
-                        <Button
-                          key={sz}
-                          type="button"
-                          variant={active ? "default" : "outline"}
-                          onClick={() => {
-                            setSelectedSize(sz);
-                            setErrorMsg(null);
-                          }}
-                          className={`min-h-11 px-4 py-2 rounded-lg text-sm font-medium ${
-                            oos
-                              ? "line-through opacity-45 cursor-not-allowed bg-muted text-muted-foreground border-dashed"
-                              : ""
-                          }`}
-                        >
-                          {sz}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                )}
 
               {/* 🧵 Fabric Selection Pills (if any) */}
               {uniqueFabrics.length > 0 && resolvedAxes.fabric.visible && (
                 <div>
-                  <div className="text-sm font-semibold mb-2">
-                    {resolvedAxes.fabric.label}
-                  </div>
+                  <div className="text-sm font-semibold mb-2">{resolvedAxes.fabric.label}</div>
                   <div className="flex flex-wrap gap-2">
                     {uniqueFabrics.map((fb) => {
                       const active = selectedFabric === fb;

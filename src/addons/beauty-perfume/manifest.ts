@@ -44,8 +44,18 @@ export const beautyPerfumeManifest: AddonManifest = {
       },
       run: async ({ brandId, db }) => {
         const defaultCats = [
-          { name_ar: "عطور نسائية", name_en: "Women's Perfumes", slug: "women-perfumes", sort_order: 1 },
-          { name_ar: "عطور رجالية", name_en: "Men's Perfumes", slug: "men-perfumes", sort_order: 2 },
+          {
+            name_ar: "عطور نسائية",
+            name_en: "Women's Perfumes",
+            slug: "women-perfumes",
+            sort_order: 1,
+          },
+          {
+            name_ar: "عطور رجالية",
+            name_en: "Men's Perfumes",
+            slug: "men-perfumes",
+            sort_order: 2,
+          },
           { name_ar: "دخون وعود", name_en: "Oud & Incense", slug: "oud-incense", sort_order: 3 },
         ];
 
