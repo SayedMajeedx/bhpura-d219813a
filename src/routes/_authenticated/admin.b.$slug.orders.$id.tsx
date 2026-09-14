@@ -1842,9 +1842,7 @@ function OrderDetail() {
       const wantByVariant = new Map<string, number>();
       for (const it of items) {
         if (!it.variant_id) continue;
-        const isCustom =
-          (it.custom_field_values && it.custom_field_values.length > 0) ||
-          (it.selected_variant?.size && String(it.selected_variant.size).includes("تفصيل"));
+        const isCustom = it.location === "custom" || !it.variant_id;
         if (isCustom) continue;
         wantByVariant.set(
           it.variant_id,
@@ -2075,9 +2073,7 @@ function OrderDetail() {
       if (nowDeducting) {
         for (const it of items) {
           if (!it.variant_id) continue;
-          const isCustom =
-            (it.custom_field_values && it.custom_field_values.length > 0) ||
-            (it.selected_variant?.size && String(it.selected_variant.size).includes("تفصيل"));
+          const isCustom = it.location === "custom" || !it.variant_id;
           if (isCustom) continue;
           wantByV.set(it.variant_id, (wantByV.get(it.variant_id) ?? 0) + Number(it.quantity));
         }
@@ -3737,8 +3733,7 @@ function OrderDetail() {
                               </span>
                             ) : (
                               <span className="text-xs text-muted-foreground">
-                                {(it.custom_field_values && it.custom_field_values.length > 0) ||
-                                String(it.selected_variant?.size ?? "").includes("تفصيل")
+                                {it.location === "custom" || !it.variant_id
                                   ? isAr
                                     ? "تفصيل خاص"
                                     : "Custom Tailoring"
@@ -3920,13 +3915,12 @@ function OrderDetail() {
                         </div>
 
                         {/* Custom Tailoring & Made-To-Order Specifications */}
-                        {!it.variant_id ||
-                        (it.selected_variant?.size &&
-                          String(it.selected_variant.size).includes("تفصيل")) ||
+                        {it.location === "custom" ||
+                        !it.variant_id ||
                         (it.custom_field_values && it.custom_field_values.length > 0) ||
                         editingItems[idx] ? (
                           <div className="space-y-2">
-                            {!it.variant_id && (
+                            {(!it.variant_id || it.location === "custom") && (
                               <div className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary flex flex-wrap items-center justify-between gap-2">
                                 <span className="flex items-center gap-1.5">
                                   <Scissors className="h-4 w-4" />
