@@ -30,16 +30,40 @@ export const jewelryManifest: AddonManifest = {
   contributions: {
     vocabulary: {
       workshop: { ar: "ورشة الصياغة", en: "Jeweler Workshop" },
+      sent_to_workshop: { ar: "قيد الصياغة والحفر", en: "In Crafting & Engraving" },
+      received_from_workshop: { ar: "جاهز للاستلام من الورشة", en: "Ready from Workshop" },
       sent_to_tailor: { ar: "قيد الصياغة والحفر", en: "In Crafting & Engraving" },
-      received_from_tailor: { ar: "جاهز للاستلام", en: "Ready for Collection" },
+      received_from_tailor: { ar: "جاهز للاستلام من الورشة", en: "Ready from Workshop" },
+      workshop_notes_label: { ar: "ملاحظات وتفاصيل الصياغة والحفر:", en: "Crafting & Engraving Notes:" },
+      workshop_instructions: { ar: "تعليمات لورشة الصياغة", en: "Jeweler workshop instructions" },
     },
     variantAxisDefaults: {
       size: { ar: "مقاس الخاتم", en: "Ring Size" },
       color: { ar: "نوع المعدن", en: "Metal Type" },
       fabric: null,
     },
-    sizingPresetOrder: ["ring_standard", "bracelet_standard"],
-    trustBadgeSuggestions: ["pure_metals", "handcrafted"],
+    sizingPresetOrder: ["rings_us"],
+    sizingPresets: [
+      {
+        id: "rings_us",
+        labelAr: "مقاسات الخواتم (5 - 10)",
+        labelEn: "Ring Sizes US (5 - 10)",
+        sizes: ["5", "6", "7", "8", "9", "10"],
+        unit: "",
+      },
+    ],
+    customFieldPresets: [
+      {
+        key: "jewelry",
+        label: { ar: "نموذج مجوهرات / حفر وتخصيص", en: "Jewelry / Engraving Preset" },
+        fields: [
+          { key: "engraving_text", label_ar: "نص الحفر", label_en: "Engraving Text", type: "text", options: [], required: false },
+          { key: "font_style", label_ar: "نوع الخط", label_en: "Font Style", type: "select", options: ["رقعة", "نسخ", "English Cursive", "English Block"], required: false },
+          { key: "material_swatch", label_ar: "المعدن", label_en: "Metal", type: "select", options: ["ذهب أصفر", "ذهب أبيض", "فضة 925"], required: false },
+        ],
+      },
+    ],
+    trustBadgeSuggestions: ["Gem", "Crown"],
     aiContext: ({ brandName, lang }) =>
       lang === "ar"
         ? `متجر "${brandName}" يقدم مجوهرات راقية وإكسسوارات مصاغة بعناية.`

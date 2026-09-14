@@ -107,6 +107,7 @@ import { getFulfillmentLabel } from "@/lib/status-labels";
 import { OrderUnifiedHeader } from "@/components/orders/OrderUnifiedHeader";
 import { OrderStickyBottomBar } from "@/components/orders/OrderStickyBottomBar";
 import { OrderSalesDocumentsCard } from "@/components/orders/OrderSalesDocumentsCard";
+import { useVocabulary } from "@/hooks/use-vocabulary";
 
 function formatDeliveryAddress(
   c:
@@ -260,6 +261,7 @@ function OrderDetail() {
   const { isAdmin, isCourier } = useProfile();
   const brandId = brand.id;
   const { profile: storeProfile } = useAdminStoreProfile(brandId);
+  const { vocabulary } = useVocabulary();
   const [approvingBenefit, setApprovingBenefit] = useState(false);
   const [rejectingBenefit, setRejectingBenefit] = useState(false);
   const [rejectReasonOpen, setRejectReasonOpen] = useState(false);
@@ -1954,7 +1956,10 @@ function OrderDetail() {
   const renderTopPrimaryAction = () => {
     if (isCreationMode || !order || isReadOnly) return null;
     const computedOrderType = detectOrderType(items, order?.order_type);
-    const workflow = getOrderWorkflow({ ...order, order_type: computedOrderType });
+    const workflow = getOrderWorkflow(
+      { ...order, order_type: computedOrderType },
+      { productionStages: storeProfile.modules.made_to_order },
+    );
 
     if (storeProfile.modules.made_to_order && workflow.nextAction === "send_to_tailor") {
       return (
@@ -1972,9 +1977,10 @@ function OrderDetail() {
                 .eq("id", order.id);
               if (error) throw error;
               toast.success(
-                lang === "ar"
-                  ? "تم تحويل الطلب للورشة / الخياط وتحديث الحالة"
-                  : "Sent to workshop / tailor",
+                vocabulary.sent_to_workshop_success[lang] ||
+                  (lang === "ar"
+                    ? "تم تحويل الطلب للورشة وتحديث الحالة"
+                    : "Sent to workshop"),
               );
               await logActivity({
                 action: "status_change",
@@ -1994,7 +2000,8 @@ function OrderDetail() {
           }}
         >
           <Scissors className="h-4 w-4 me-1.5" />
-          {lang === "ar" ? "إرسال للخياط" : "Send to Tailor"}
+          {vocabulary.sent_to_workshop[lang] ||
+            (lang === "ar" ? "إرسال للورشة" : "Send to Workshop")}
         </Button>
       );
     }
@@ -2015,13 +2022,16 @@ function OrderDetail() {
                 .eq("id", order.id);
               if (error) throw error;
               toast.success(
-                lang === "ar" ? "تم استلام الطلب من الخياط وتجهيزه" : "Received from tailor",
+                vocabulary.received_from_workshop_success[lang] ||
+                  (lang === "ar"
+                    ? "تم استلام الطلب من الورشة وتجهيزه"
+                    : "Received from workshop"),
               );
               await logActivity({
                 action: "status_change",
                 order_id: order.id,
-                en: "Received customized order from tailor",
-                ar: "تم استلام الطلب الجاهز من الخياط",
+                en: "Received customized order from workshop",
+                ar: "تم استلام الطلب الجاهز من الورشة",
               });
               await orderQ.refetch();
               qc.invalidateQueries({ queryKey: ["orders", brandId] });
@@ -2035,7 +2045,8 @@ function OrderDetail() {
           }}
         >
           <PackageCheck className="h-4 w-4 me-1.5" />
-          {lang === "ar" ? "استلام من الخياط" : "Receive from Tailor"}
+          {vocabulary.received_from_workshop[lang] ||
+            (lang === "ar" ? "استلام من الورشة" : "Receive from Workshop")}
         </Button>
       );
     }

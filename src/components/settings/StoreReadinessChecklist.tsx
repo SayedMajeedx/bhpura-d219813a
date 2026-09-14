@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import type { SettingsTabId } from "@/components/settings/SettingsScopeSwitcher";
 import { normalizeWhatsAppDigits } from "@/lib/storefront-mode";
+import { useAddons } from "@/components/addons/AddonsProvider";
+import { readinessChecksFrom } from "@/lib/addons/addon-registry";
 
 export interface BusinessSettingsData {
   logo_url?: string | null;
@@ -46,7 +48,7 @@ export interface ReadinessEvaluationInput {
 }
 
 export interface ReadinessItem {
-  id: "logo" | "products" | "payments" | "fulfillment" | "policies" | "whatsapp";
+  id: "logo" | "products" | "payments" | "fulfillment" | "policies" | "whatsapp" | (string & {});
   icon: React.ElementType;
   title: string;
   description: string;
@@ -408,6 +410,34 @@ export function StoreReadinessChecklist({
     },
   });
 
+  const { addons } = useAddons();
+  const addonChecks = React.useMemo(() => readinessChecksFrom(addons), [addons]);
+
+  const addonChecksQ = useQuery({
+    queryKey: [
+      "readiness-addon-checks",
+      brandId,
+      addons
+        .map((a) => a.addon_id)
+        .sort()
+        .join(","),
+    ],
+    enabled: Boolean(brandId && addonChecks.length > 0),
+    queryFn: async () => {
+      const results: Record<string, "ok" | "warn" | "missing"> = {};
+      for (const check of addonChecks) {
+        try {
+          const res = await check.evaluate({ brandId, db: supabase });
+          results[check.id] = res;
+        } catch (e) {
+          console.error(`Error running readiness check ${check.id}:`, e);
+          results[check.id] = "warn";
+        }
+      }
+      return results;
+    },
+  });
+
   const evaluation = evaluateStoreReadiness({
     logoUrl,
     activeProductsCount: productsQ.data ?? 0,
@@ -427,7 +457,29 @@ export function StoreReadinessChecklist({
     return item;
   });
 
-  const { completedCount, totalCount, progressPercent, isAllComplete } = evaluation;
+  const addonItems = React.useMemo(() => {
+    return addonChecks.map((check) => {
+      const status = addonChecksQ.data?.[check.id] ?? "warn";
+      const isComplete = status === "ok";
+      return {
+        id: `addon_${check.id}`,
+        icon: Sparkles,
+        title: isAr ? check.label.ar : check.label.en,
+        description: isAr ? check.description.ar : check.description.en,
+        isComplete,
+        actionType: "link" as const,
+        href: check.actionTo ? check.actionTo.replace("$slug", slug) : undefined,
+        actionLabel: isAr ? "إكمال الإعداد" : "Complete Setup",
+        editLabel: isAr ? "تعديل" : "Edit",
+      };
+    });
+  }, [addonChecks, addonChecksQ.data, isAr, slug]);
+
+  const allItems = [...checklistItems, ...addonItems];
+  const completedCount = allItems.filter((i) => i.isComplete).length;
+  const totalCount = allItems.length;
+  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 100;
+  const isAllComplete = completedCount === totalCount;
 
   // Option 3: Collapsed by default when 100% complete; expanded by default when incomplete
   const [userCollapsed, setUserCollapsed] = useState<boolean | null>(null);
@@ -579,7 +631,7 @@ export function StoreReadinessChecklist({
       {/* Checklist items list */}
       {!collapsed && (
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-2 border-t border-border-subtle">
-          {checklistItems.map((item) => {
+          {allItems.map((item) => {
             const Icon = item.icon;
             return (
               <div

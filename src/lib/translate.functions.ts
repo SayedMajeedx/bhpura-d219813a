@@ -10,6 +10,7 @@ const Input = z.object({
   text: z.string().min(1).max(4000),
   from: z.enum(["ar", "en"]),
   to: z.enum(["ar", "en"]),
+  brand_id: z.string().optional(),
 });
 
 // Trigger build to reload environment variables on Cloudflare Pages
@@ -74,11 +75,25 @@ export const translateProductText = createServerFn({ method: "POST" })
       finalModel = MODEL;
     }
 
+    let brandAiContextPrompt = "";
+    if (data.brand_id) {
+      try {
+        const { getBrandAiContext } = await import("@/lib/store-profile.server");
+        const aiCtx = await getBrandAiContext(data.brand_id, { lang: data.to });
+        if (aiCtx.combinedSystemPrompt) {
+          brandAiContextPrompt = `- Store activity & terminology context: ${aiCtx.combinedSystemPrompt}`;
+        }
+      } catch (err) {
+        console.warn("[translateProductText] Failed to load brand AI context:", err);
+      }
+    }
+
     const prompt = [
-      "You are a premium, luxury bilingual copywriter and translator specializing in high-end fashion, beauty, and retail boutique brands.",
+      "You are a premium, luxury bilingual copywriter and translator specializing in boutique e-commerce and retail brands.",
       `Your task is to translate the following product text from ${data.from === "ar" ? "Arabic" : "English"} to ${data.to === "ar" ? "Arabic" : "English"}.`,
       "Guidelines:",
-      "- Provide a beautifully localized, elegant, and natural translation that fits a premium luxury brand.",
+      "- Provide a beautifully localized, elegant, and natural translation that fits a premium brand.",
+      ...(brandAiContextPrompt ? [brandAiContextPrompt] : []),
       "- Avoid literal, mechanical, or robotic machine-translation phrasing.",
       "- Keep formatting, bullet points, line breaks, measurements (e.g. 50ml, cm, L), and brand names intact.",
       "- If translating to Arabic, use modern standard Arabic of high literary/retail quality suitable for boutique commerce (avoid casual slang, and avoid overly rigid Google-Translate-style literalisms).",

@@ -38,6 +38,7 @@ import {
 import { isCatalogMode, shouldShowPrices, buildWhatsAppInquiryUrl } from "@/lib/storefront-mode";
 import { AddonSlot } from "@/components/addons/AddonSlot";
 import { useAddons } from "@/components/addons/AddonsProvider";
+import { useVocabulary } from "@/hooks/use-vocabulary";
 import { variantAxisDefaultsFrom, resolveAllVariantAxes } from "@/lib/addons/addon-registry";
 import { ProductShareModal } from "@/components/storefront/ProductShareModal";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
@@ -331,6 +332,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const { brand, settings, currency, lang, t, addToCart, isWishlisted, toggleWishlist, session } =
     useStorefront();
   const { addons } = useAddons();
+  const { vocabulary } = useVocabulary();
   const modules = useStoreModules();
   const navigate = useNavigate();
   const [mediaIdx, setMediaIdx] = useState(0);
@@ -2166,30 +2168,35 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                     <label className="flex items-center gap-2 text-xs sm:text-sm font-bold text-foreground">
                       <FileText className="h-4 w-4 text-primary shrink-0" />
                       <span>
-                        {t(
-                          "ملاحظات وتفاصيل التفصيل والخياط (اختياري)",
-                          "Tailoring & Workshop Notes (Optional)",
-                        )}
+                        {vocabulary.workshop_notes_label?.[lang] ||
+                          t(
+                            "ملاحظات وتفاصيل التجهيز (اختياري)",
+                            "Production & Workshop Notes (Optional)",
+                          )}
                       </span>
                     </label>
                     <span className="text-xs sm:text-xs text-muted-foreground font-normal">
-                      {t("تعليمات للمشغل", "Workshop notes")}
+                      {vocabulary.workshop_instructions?.[lang] ||
+                        t("تعليمات للورشة", "Workshop notes")}
                     </span>
                   </div>
                   <p className="text-xs sm:text-xs text-muted-foreground leading-relaxed">
-                    {t(
-                      "اكتبي هنا أي تفاصيل خاصة للتفصيل ترغبين بإبلاغ الخياط بها (مثل: تضييق الخصر، زيادة/إنقاص طول الكم، بطانة كاملة، شكل الأزرار...)",
-                      "Add any specific tailoring instructions for the workshop (e.g. custom waist tightening, sleeve length adjust, full lining, button style...)",
-                    )}
+                    {vocabulary.workshop_notes_placeholder?.[lang]
+                      ? `${t("ملاحظات خاصة:", "Special instructions:")} ${vocabulary.workshop_notes_placeholder[lang]}`
+                      : t(
+                          "اكتب هنا أي تفاصيل خاصة للتجهيز ترغب بإبلاغ الورشة بها",
+                          "Add any specific production instructions for the workshop",
+                        )}
                   </p>
                   <Textarea
                     rows={3}
                     value={tailoringNotes}
                     onChange={(e) => setTailoringNotes(e.target.value)}
                     placeholder={
-                      lang === "ar"
-                        ? "مثال: الطول 54، دوران الصدر 22، طول الكم 28، تضييق بسيط عند الخصر، بطانة كاملة، قصة كلوش..."
-                        : "e.g. Length 54, Chest 22, Sleeves 28, slim waist, full lining..."
+                      vocabulary.workshop_notes_placeholder?.[lang] ||
+                      (lang === "ar"
+                        ? "أدخل الملاحظات والتعليمات الخاصة هنا..."
+                        : "Type any special requests or notes here...")
                     }
                     className="text-xs bg-background resize-none leading-relaxed rounded-xl border border-input shadow-2xs focus-visible:ring-2 focus-visible:ring-ring"
                   />

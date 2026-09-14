@@ -6,6 +6,7 @@ import { formatMoney, formatDate } from "@/lib/format";
 import { getDashboardOrderStatus } from "@/lib/dashboard-order-status";
 import { getOrderCustomerName } from "@/lib/order-customer-snapshot";
 import { OsStatusPill } from "@/components/os/os-status-pill";
+import { useVocabulary } from "@/hooks/use-vocabulary";
 
 interface RecentOrder {
   id: string;
@@ -40,6 +41,7 @@ export const DashboardActivityQueue = React.memo(function DashboardActivityQueue
   locale,
 }: DashboardActivityQueueProps) {
   const isAr = lang === "ar";
+  const { vocabulary } = useVocabulary();
 
   if (orders.length === 0) {
     return (
@@ -70,7 +72,7 @@ export const DashboardActivityQueue = React.memo(function DashboardActivityQueue
           <tbody className="divide-y divide-border/40">
             {orders.map((o) => {
               const custName = getOrderCustomerName(o) || (isAr ? "عميل جديد" : "Guest Customer");
-              const displayStatus = getDashboardOrderStatus(o, lang);
+              const displayStatus = getDashboardOrderStatus(o, lang, vocabulary);
 
               return (
                 <tr
@@ -113,7 +115,7 @@ export const DashboardActivityQueue = React.memo(function DashboardActivityQueue
       <div className="grid grid-cols-1 gap-2.5 md:hidden">
         {orders.map((o) => {
           const custName = getOrderCustomerName(o) || (isAr ? "عميل جديد" : "Guest Customer");
-          const displayStatus = getDashboardOrderStatus(o, lang);
+          const displayStatus = getDashboardOrderStatus(o, lang, vocabulary);
 
           return (
             <Card

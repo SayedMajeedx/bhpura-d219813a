@@ -32,6 +32,9 @@ import {
 import { formatDate } from "@/lib/format";
 import { getOrderTypeLabel, detectOrderType } from "@/lib/order-type-detector";
 import { getFulfillmentLabel, getFulfillmentBadgeClasses } from "@/lib/status-labels";
+import { useVocabulary } from "@/hooks/use-vocabulary";
+import { useAddons } from "@/components/addons/AddonsProvider";
+import { productionStagesFrom } from "@/lib/addons/addon-registry";
 import {
   PAYMENT_BADGE_CLASSES,
   formatPaymentBadgeDetail,
@@ -108,6 +111,10 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
 }) => {
   const router = useRouter();
   const isAr = lang === "ar";
+  const { vocabulary } = useVocabulary();
+  const { addons } = useAddons();
+  const hasProductionStages = productionStagesFrom(addons);
+
   const [pendingStatus, setPendingStatus] = useState<{
     status: string;
     fulfillmentStatus: string;
@@ -225,7 +232,7 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                       getFulfillmentBadgeClasses(order?.fulfillment_status),
                     )}
                   >
-                    <span>{getFulfillmentLabel(order?.fulfillment_status, lang)}</span>
+                    <span>{getFulfillmentLabel(order?.fulfillment_status, lang, vocabulary)}</span>
                     <ChevronDown className="h-3 w-3 opacity-70 shrink-0" />
                   </button>
                 </DropdownMenuTrigger>
@@ -235,45 +242,53 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                   </div>
                   <DropdownMenuSeparator />
 
-                  <DropdownMenuItem
-                    onClick={() =>
-                      setPendingStatus({
-                        status: "sent_to_tailor",
-                        fulfillmentStatus: "SENT_TO_TAILOR",
-                      })
-                    }
-                    className="cursor-pointer flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Scissors className="h-4 w-4 text-purple-600 shrink-0" />
-                      <span className="font-medium text-xs">
-                        {isAr ? "تم الإرسال للورشة / الخياط" : "Sent to Workshop / Tailor"}
-                      </span>
-                    </div>
-                    {order?.fulfillment_status === "SENT_TO_TAILOR" && (
-                      <Check className="h-3.5 w-3.5 text-primary" />
-                    )}
-                  </DropdownMenuItem>
+                  {(hasProductionStages ||
+                    order?.fulfillment_status === "SENT_TO_TAILOR" ||
+                    order?.fulfillment_status === "RECEIVED_FROM_TAILOR") && (
+                    <>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          setPendingStatus({
+                            status: "sent_to_tailor",
+                            fulfillmentStatus: "SENT_TO_TAILOR",
+                          })
+                        }
+                        className="cursor-pointer flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Scissors className="h-4 w-4 text-purple-600 shrink-0" />
+                          <span className="font-medium text-xs">
+                            {vocabulary.sent_to_workshop[lang] ||
+                              (isAr ? "تم الإرسال للورشة" : "Sent to Workshop")}
+                          </span>
+                        </div>
+                        {order?.fulfillment_status === "SENT_TO_TAILOR" && (
+                          <Check className="h-3.5 w-3.5 text-primary" />
+                        )}
+                      </DropdownMenuItem>
 
-                  <DropdownMenuItem
-                    onClick={() =>
-                      setPendingStatus({
-                        status: "received_from_tailor",
-                        fulfillmentStatus: "RECEIVED_FROM_TAILOR",
-                      })
-                    }
-                    className="cursor-pointer flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <PackageCheck className="h-4 w-4 text-teal-600 shrink-0" />
-                      <span className="font-medium text-xs">
-                        {isAr ? "تم الاستلام من الخياط" : "Receive from Tailor"}
-                      </span>
-                    </div>
-                    {order?.fulfillment_status === "RECEIVED_FROM_TAILOR" && (
-                      <Check className="h-3.5 w-3.5 text-primary" />
-                    )}
-                  </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          setPendingStatus({
+                            status: "received_from_tailor",
+                            fulfillmentStatus: "RECEIVED_FROM_TAILOR",
+                          })
+                        }
+                        className="cursor-pointer flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2">
+                          <PackageCheck className="h-4 w-4 text-teal-600 shrink-0" />
+                          <span className="font-medium text-xs">
+                            {vocabulary.received_from_workshop[lang] ||
+                              (isAr ? "تم الاستلام من الورشة" : "Receive from Workshop")}
+                          </span>
+                        </div>
+                        {order?.fulfillment_status === "RECEIVED_FROM_TAILOR" && (
+                          <Check className="h-3.5 w-3.5 text-primary" />
+                        )}
+                      </DropdownMenuItem>
+                    </>
+                  )}
 
                   <DropdownMenuItem
                     onClick={() =>
@@ -528,9 +543,9 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
               </span>
               {pendingStatus && (
                 <span className="block rounded-lg border border-border bg-muted/50 px-3 py-2 font-semibold text-foreground">
-                  {getFulfillmentLabel(order?.fulfillment_status, lang)}
+                  {getFulfillmentLabel(order?.fulfillment_status, lang, vocabulary)}
                   {" → "}
-                  {getFulfillmentLabel(pendingStatus.fulfillmentStatus, lang)}
+                  {getFulfillmentLabel(pendingStatus.fulfillmentStatus, lang, vocabulary)}
                 </span>
               )}
             </AlertDialogDescription>

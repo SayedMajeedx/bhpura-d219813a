@@ -12,6 +12,7 @@ import { getPaymentGatewayReference } from "@/lib/payment-reference";
 import { getReadableTextColor } from "@/lib/color-utils";
 import { getInvoiceStatusLabel } from "@/lib/status-labels";
 import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
+import { useVocabulary } from "@/hooks/use-vocabulary";
 
 type SavedAddress = {
   id?: string;
@@ -242,6 +243,7 @@ export default function InvoicePreview({
   const secondary = settings.invoice_secondary_color || `${color}10`;
 
   const [invoiceLang, setInvoiceLang] = useState<"en" | "ar">("en");
+  const { vocabulary } = useVocabulary();
   const L = INVOICE_LABELS[invoiceLang];
   const isRTL = invoiceLang === "ar";
   const locale = isRTL ? "ar-BH-u-nu-latn" : "en-US";
@@ -466,7 +468,7 @@ export default function InvoicePreview({
                     border: `1px solid ${badgeTextColor}40`,
                   }}
                 >
-                  {getInvoiceStatusLabel(rawStatus, invoiceLang)}
+                  {getInvoiceStatusLabel(rawStatus, invoiceLang, vocabulary)}
                 </span>
               </div>
               <p className="text-xs mt-2" style={{ opacity: 0.75 }}>

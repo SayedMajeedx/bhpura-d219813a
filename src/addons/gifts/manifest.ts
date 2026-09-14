@@ -21,7 +21,36 @@ export const giftsManifest: AddonManifest = {
   icon: "Gift",
   activities: ["gifts"],
   contributions: {
-    trustBadgeSuggestions: ["gift_ready", "handcrafted"],
+    variantAxisDefaults: {
+      size: { ar: "حجم الهدية / الباقة", en: "Gift Size / Bundle" },
+      color: { ar: "لون التغليف", en: "Wrapping Color" },
+      fabric: null,
+    },
+    customFieldPresets: [
+      {
+        key: "gift",
+        label: { ar: "نموذج هدايا / إهداء وتغليف", en: "Gift & Packaging Preset" },
+        fields: [
+          {
+            key: "gift_box",
+            label_ar: "نوع التغليف والصندوق",
+            label_en: "Gift Box Type",
+            type: "select",
+            options: ["صندوق مخمل فاخر", "تغليف كلاسيكي شريطة حرير", "صندوق هدايا خشبي"],
+            required: false,
+          },
+          {
+            key: "greeting_card",
+            label_ar: "نص كرت الإهداء",
+            label_en: "Gift Card Message",
+            type: "text",
+            options: [],
+            required: false,
+          },
+        ],
+      },
+    ],
+    trustBadgeSuggestions: ["Gift", "HeartHandshake"],
     aiContext: ({ brandName, lang }) =>
       lang === "ar"
         ? `متجر "${brandName}" يقدم هدايا مميزة وتغليفاً راقياً لمختلف المناسبات.`

@@ -2,6 +2,7 @@ import React from "react";
 import { Package, ShoppingBag, Plus, Minus, Trash2, ScanLine, Scissors } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/format";
+import { useVocabulary } from "@/hooks/use-vocabulary";
 
 interface OrderItemsWorkflowCardProps {
   lang: "en" | "ar";
@@ -29,6 +30,7 @@ export const OrderItemsWorkflowCard: React.FC<OrderItemsWorkflowCardProps> = ({
   children,
 }) => {
   const isAr = lang === "ar";
+  const { vocabulary } = useVocabulary();
 
   return (
     <div className="rounded-2xl border border-border-strong bg-card p-3.5 sm:p-5 shadow-2xs space-y-4">
@@ -155,7 +157,13 @@ export const OrderItemsWorkflowCard: React.FC<OrderItemsWorkflowCardProps> = ({
                           className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
                         >
                           <Scissors className="h-3 w-3" />
-                          <span>{isAr ? "+ تفاصيل التفصيل" : "+ Add Tailoring Specs"}</span>
+                          <span>
+                            {vocabulary.workshop_instructions?.[lang]
+                              ? `+ ${vocabulary.workshop_instructions[lang]}`
+                              : isAr
+                                ? "+ تفاصيل التجهيز"
+                                : "+ Add Production Specs"}
+                          </span>
                         </button>
                       )
                     )}

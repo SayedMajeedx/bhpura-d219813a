@@ -1,11 +1,16 @@
 import { getFulfillmentLabel, getOrderStatusLabel, type Lang } from "./status-labels";
+import type { StoreVocabulary } from "./store-vocabulary";
 
 export type DashboardOrderStatusInput = {
   status?: string | null;
   fulfillment_status?: string | null;
 };
 
-export function getDashboardOrderStatus(order: DashboardOrderStatusInput, lang: Lang) {
+export function getDashboardOrderStatus(
+  order: DashboardOrderStatusInput,
+  lang: Lang,
+  vocab?: Partial<StoreVocabulary> | StoreVocabulary,
+) {
   const fulfillmentStatus = String(order.fulfillment_status || "").trim();
   const rawStatus = String(order.status || "").trim();
   const effectiveStatus = (fulfillmentStatus || rawStatus).toLowerCase();
@@ -13,8 +18,8 @@ export function getDashboardOrderStatus(order: DashboardOrderStatusInput, lang: 
   return {
     effectiveStatus,
     label: fulfillmentStatus
-      ? getFulfillmentLabel(fulfillmentStatus, lang)
-      : getOrderStatusLabel(rawStatus, lang),
+      ? getFulfillmentLabel(fulfillmentStatus, lang, vocab)
+      : getOrderStatusLabel(rawStatus, lang, vocab),
     variant: (["completed", "delivered", "picked_up"] as string[]).includes(effectiveStatus)
       ? ("success" as const)
       : (["cancelled", "canceled", "failed", "returned"] as string[]).includes(effectiveStatus)
