@@ -29,7 +29,8 @@ import {
   type StoreModuleOverrides,
   type StoreModuleId,
 } from "@/lib/store-profile";
-import { Sparkles, RotateCcw, AlertTriangle, ArrowRight, ArrowLeft } from "lucide-react";
+import { resolveFitProfiles, type FitProfileDefinition } from "@/lib/fit-passport";
+import { Sparkles, RotateCcw, AlertTriangle, ArrowRight, ArrowLeft, Ruler } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
 export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: string }) {
@@ -42,7 +43,7 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
     queryKey: queryKeys.brand.businessSettings(brandId),
     queryFn: async () => {
       const { data, error } = await (supabase.from("business_settings") as any)
-        .select("store_vertical, store_modules")
+        .select("store_vertical, store_modules, fit_profiles")
         .eq("brand_id", brandId)
         .maybeSingle();
       if (error) throw error;
@@ -64,11 +65,13 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
 
   const [vertical, setVertical] = useState<StoreVertical>("fashion");
   const [modules, setModules] = useState<StoreModuleOverrides>({});
+  const [fitProfiles, setFitProfiles] = useState<FitProfileDefinition[] | null>(null);
 
   useEffect(() => {
     if (rawSettings) {
       setVertical(normalizeVertical(rawSettings.store_vertical ?? "fashion"));
       setModules(normalizeModuleOverrides(rawSettings.store_modules));
+      setFitProfiles(rawSettings.fit_profiles ?? null);
     }
   }, [rawSettings]);
 
@@ -76,6 +79,8 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
     store_vertical: vertical,
     store_modules: modules,
   });
+
+  const activeFitProfiles = resolveFitProfiles(fitProfiles);
 
   const handleModuleToggle = (id: StoreModuleId, checked: boolean) => {
     setModules((prev) => ({
@@ -93,6 +98,15 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
     );
   };
 
+  const handleResetFitProfiles = () => {
+    setFitProfiles(null);
+    toast.info(
+      isAr
+        ? "تمت استعادة قالب الأزياء الافتراضي لملفات المقاسات"
+        : "Reset to default fashion fit profiles template",
+    );
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -100,6 +114,7 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
         .update({
           store_vertical: vertical,
           store_modules: modules,
+          fit_profiles: fitProfiles,
           updated_at: new Date().toISOString(),
         })
         .eq("brand_id", brandId);
@@ -227,6 +242,87 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
             })}
           </div>
         </div>
+
+        {resolvedModules.fit_passport && (
+          <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <span className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                  <Ruler className="w-4 h-4" />
+                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm">
+                      {isAr ? "ملفات قياسات Fit Passport" : "Fit Passport Profiles"}
+                    </span>
+                    {fitProfiles ? (
+                      <Badge
+                        variant="outline"
+                        className="text-xs px-2 py-0 border-primary/30 text-primary"
+                      >
+                        {isAr ? "مخصص" : "Customized"}
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="text-xs px-2 py-0">
+                        {isAr ? "قالب الأزياء الافتراضي" : "Default Template"}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {isAr
+                      ? "الملفات المعرّفة للعملاء والطلبات والتفصيل ومقاسات المنتجات"
+                      : "Configured measurement profiles for customers, PDP, and order tailoring"}
+                  </p>
+                </div>
+              </div>
+              {fitProfiles !== null && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResetFitProfiles}
+                  className="gap-1 text-xs self-start sm:self-auto"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  {isAr ? "استعادة قالب الأزياء الافتراضي" : "Restore Fashion Template"}
+                </Button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {activeFitProfiles.map((profile) => (
+                <div
+                  key={profile.key}
+                  className="rounded-lg border border-border bg-card p-3 space-y-2 text-xs"
+                >
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="font-bold text-foreground">
+                      {isAr ? profile.label_ar : profile.label_en}
+                    </span>
+                    <Badge variant="outline" className="text-xs">
+                      {profile.fields.filter((f) => f.required).length}{" "}
+                      {isAr ? "حقول إجبارية" : "required"}
+                    </Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {profile.fields.map((f) => (
+                      <span
+                        key={f.key}
+                        className={`rounded px-1.5 py-0.5 text-xs ${
+                          f.required
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {isAr ? f.label_ar : f.label_en}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {Boolean(passportCount && passportCount > 0 && !resolvedModules.fit_passport) && (
           <div className="flex items-start gap-3 p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200 text-xs">

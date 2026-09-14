@@ -1,4 +1,5 @@
 import { formatDate, formatMoney } from "@/lib/format";
+import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
 
 type ThermalItem = {
   description: string;
@@ -74,10 +75,12 @@ export function printThermalReceipt(a: ThermalArgs) {
   const itemsHtml = a.items
     .map((it) => {
       const unit = Number(it.unit_price) + Number(it.customization_total);
+      const isPlaceholder = isPlaceholderVariant(it.selected_variant);
       const variantParts = [
         it.selected_variant?.color &&
           `${isRTL ? "اللون" : "Color"}: ${escapeHtml(it.selected_variant.color)}`,
         it.selected_variant?.size &&
+          !isPlaceholder &&
           `${isRTL ? "المقاس" : "Size"}: ${escapeHtml(it.selected_variant.size)}`,
         it.selected_variant?.fabric &&
           `${isRTL ? "القماش" : "Fabric"}: ${escapeHtml(it.selected_variant.fabric)}`,
@@ -253,10 +256,12 @@ export function printDeliveryNote(a: DeliveryNoteArgs) {
 
   const itemsRows = a.items
     .map((it, idx) => {
+      const isPlaceholder = isPlaceholderVariant(it.selected_variant);
       const variantParts = [
         it.selected_variant?.color &&
           `${isRTL ? "اللون" : "Color"}: ${escapeHtml(it.selected_variant.color)}`,
         it.selected_variant?.size &&
+          !isPlaceholder &&
           `${isRTL ? "المقاس" : "Size"}: ${escapeHtml(it.selected_variant.size)}`,
         it.selected_variant?.fabric &&
           `${isRTL ? "القماش" : "Fabric"}: ${escapeHtml(it.selected_variant.fabric)}`,

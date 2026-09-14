@@ -411,3 +411,45 @@ export function expandSizeRange(raw: string): string[] {
   // Default: split standard list
   return splitVariantValues(raw);
 }
+
+export const PLACEHOLDER_SIZE_VALUES = ["قياسي", "Standard"] as const;
+
+export function isPlaceholderVariant(
+  v?: {
+    size?: string | null;
+    color?: string | null;
+    fabric?: string | null;
+    option_four?: string | null;
+    option_five?: string | null;
+  } | null,
+): boolean {
+  if (!v || !v.size) return false;
+  const isPlaceholderSize = (PLACEHOLDER_SIZE_VALUES as readonly string[]).includes(v.size.trim());
+  if (!isPlaceholderSize) return false;
+  const hasColor = Boolean(v.color && v.color.trim());
+  const hasFabric = Boolean(v.fabric && v.fabric.trim());
+  const hasOptionFour = Boolean(v.option_four && v.option_four.trim());
+  const hasOptionFive = Boolean(v.option_five && v.option_five.trim());
+  return !hasColor && !hasFabric && !hasOptionFour && !hasOptionFive;
+}
+
+export function displayVariantParts(
+  v?: {
+    size?: string | null;
+    color?: string | null;
+    fabric?: string | null;
+    option_four?: string | null;
+    option_five?: string | null;
+  } | null,
+): string[] {
+  if (!v) return [];
+  const parts: string[] = [];
+  if (v.size && !(PLACEHOLDER_SIZE_VALUES as readonly string[]).includes(v.size.trim())) {
+    parts.push(v.size.trim());
+  }
+  if (v.color && v.color.trim()) parts.push(v.color.trim());
+  if (v.fabric && v.fabric.trim()) parts.push(v.fabric.trim());
+  if (v.option_four && v.option_four.trim()) parts.push(v.option_four.trim());
+  if (v.option_five && v.option_five.trim()) parts.push(v.option_five.trim());
+  return parts;
+}

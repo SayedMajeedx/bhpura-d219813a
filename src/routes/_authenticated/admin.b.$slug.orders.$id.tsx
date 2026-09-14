@@ -112,7 +112,7 @@ import {
   fitProfileForProduct,
   missingFitFields,
   normalizeFitProfiles,
-  type FitProfileType,
+  resolveFitProfiles,
 } from "@/lib/fit-passport";
 
 function formatDeliveryAddress(
@@ -273,18 +273,21 @@ function ItemTailoringCustomizer({
   onChange: (patch: Partial<Item>) => void;
 }) {
   const brand = useBrand();
+  const { profile: storeProfile } = useAdminStoreProfile(brand?.id);
+  const fitProfiles = resolveFitProfiles(storeProfile?.fitProfiles);
 
-  const detectedProfile = fitProfileForProduct(productCategory, productName);
+  const detectedProfile = fitProfileForProduct(fitProfiles, productCategory, productName);
   const existingProfileField = String(
     item.custom_field_values?.find((field) => field.key === "fit_passport_profile")?.value ?? "",
   ).toLowerCase();
-  const initialProfile: FitProfileType =
-    existingProfileField.includes("dress") || existingProfileField.includes("فستان")
-      ? "dress"
-      : existingProfileField.includes("abaya") || existingProfileField.includes("عباية")
-        ? "abaya"
-        : detectedProfile;
-  const [selectedProfile, setSelectedProfile] = useState<FitProfileType>(initialProfile);
+  const matchedFromField = fitProfiles.find(
+    (p) =>
+      existingProfileField.includes(p.key) ||
+      existingProfileField.includes(p.label_ar.toLowerCase()) ||
+      existingProfileField.includes(p.label_en.toLowerCase()),
+  );
+  const initialProfile = matchedFromField?.key ?? detectedProfile ?? fitProfiles[0]?.key ?? "abaya";
+  const [selectedProfile, setSelectedProfile] = useState<string>(initialProfile);
 
   const existingUnitField = item.custom_field_values?.find(
     (field) => field.key === "fit_passport_unit",
@@ -329,11 +332,16 @@ function ItemTailoringCustomizer({
     const cleaned = updated.filter(
       (f) => f.key !== "fit_passport_profile" && f.key !== "fit_passport_unit",
     );
+    const currentDef = fitProfiles.find((p) => p.key === selectedProfile);
     cleaned.push({
       key: "fit_passport_profile",
       label_ar: "ملف المقاس المستخدم",
       label_en: "Fit Passport profile",
-      value: selectedProfile === "abaya" ? "عباية / Abaya" : "فستان / Dress",
+      value: currentDef
+        ? `${currentDef.label_ar} / ${currentDef.label_en}`
+        : selectedProfile === "abaya"
+          ? "عباية / Abaya"
+          : "فستان / Dress",
     });
     cleaned.push({
       key: "fit_passport_unit",
@@ -354,9 +362,10 @@ function ItemTailoringCustomizer({
     });
   };
 
-  const passportValues = normalizeFitProfiles(passport?.measurements)[selectedProfile];
+  const passportValues =
+    normalizeFitProfiles(fitProfiles, passport?.measurements)[selectedProfile] ?? {};
   const passportComplete = Boolean(
-    passport && missingFitFields(selectedProfile, passportValues).length === 0,
+    passport && missingFitFields(fitProfiles, selectedProfile, passportValues).length === 0,
   );
 
   const applyCustomerPassport = () => {
@@ -366,12 +375,25 @@ function ItemTailoringCustomizer({
     const retained = (item.custom_field_values ?? []).filter(
       (field) => !field.key.startsWith("fit_passport_"),
     );
+    const currentDef = fitProfiles.find((p) => p.key === selectedProfile);
+    const currentFields =
+      currentDef?.fields ??
+      (FIT_PROFILE_FIELDS as any)[selectedProfile]?.map(([k, ar, en]: any[]) => ({
+        key: k,
+        label_ar: ar,
+        label_en: en,
+      })) ??
+      [];
     const snapshot: NonNullable<Item["custom_field_values"]> = [
       {
         key: "fit_passport_profile",
         label_ar: "ملف المقاس المستخدم",
         label_en: "Fit Passport profile",
-        value: selectedProfile === "abaya" ? "عباية / Abaya" : "فستان / Dress",
+        value: currentDef
+          ? `${currentDef.label_ar} / ${currentDef.label_en}`
+          : selectedProfile === "abaya"
+            ? "عباية / Abaya"
+            : "فستان / Dress",
       },
       {
         key: "fit_passport_unit",
@@ -379,13 +401,13 @@ function ItemTailoringCustomizer({
         label_en: "Length unit",
         value: prefUnit,
       },
-      ...FIT_PROFILE_FIELDS[selectedProfile]
-        .filter(([key]) => passportValues[key] != null && String(passportValues[key]).trim())
-        .map(([key, ar, en]) => ({
-          key: `fit_passport_${selectedProfile}_${key}`,
-          label_ar: `Passport — ${ar}`,
-          label_en: `Passport — ${en}`,
-          value: `${passportValues[key]} ${prefUnit}`,
+      ...currentFields
+        .filter((f: any) => passportValues[f.key] != null && String(passportValues[f.key]).trim())
+        .map((f: any) => ({
+          key: `fit_passport_${selectedProfile}_${f.key}`,
+          label_ar: `Passport — ${f.label_ar}`,
+          label_en: `Passport — ${f.label_en}`,
+          value: `${passportValues[f.key]} ${prefUnit}`,
         })),
       {
         key: "fit_passport_version",
@@ -476,30 +498,22 @@ function ItemTailoringCustomizer({
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Profile Selector (Abaya / Dress) */}
+              {/* Profile Selector */}
               <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setSelectedProfile("abaya")}
-                  className={`rounded-md px-2 py-1 font-semibold transition-colors ${
-                    selectedProfile === "abaya"
-                      ? "bg-primary text-primary-foreground shadow-2xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {isAr ? "عباية" : "Abaya"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedProfile("dress")}
-                  className={`rounded-md px-2 py-1 font-semibold transition-colors ${
-                    selectedProfile === "dress"
-                      ? "bg-primary text-primary-foreground shadow-2xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {isAr ? "فستان" : "Dress"}
-                </button>
+                {fitProfiles.map((p) => (
+                  <button
+                    key={p.key}
+                    type="button"
+                    onClick={() => setSelectedProfile(p.key)}
+                    className={`rounded-md px-2 py-1 font-semibold transition-colors ${
+                      selectedProfile === p.key
+                        ? "bg-primary text-primary-foreground shadow-2xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {isAr ? p.label_ar : p.label_en}
+                  </button>
+                ))}
               </div>
 
               {/* Unit Selector (in / cm) */}
@@ -577,7 +591,16 @@ function ItemTailoringCustomizer({
               </span>
             </Label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {FIT_PROFILE_FIELDS[selectedProfile].map(([key, ar, en, req]) => {
+              {(
+                fitProfiles.find((p) => p.key === selectedProfile)?.fields ??
+                (FIT_PROFILE_FIELDS as any)[selectedProfile]?.map(([key, ar, en, req]: any[]) => ({
+                  key,
+                  label_ar: ar,
+                  label_en: en,
+                  required: req,
+                })) ??
+                []
+              ).map(({ key, label_ar: ar, label_en: en, required: req }: any) => {
                 const val = getMeasurementVal(key);
                 return (
                   <div key={key} className="space-y-1">

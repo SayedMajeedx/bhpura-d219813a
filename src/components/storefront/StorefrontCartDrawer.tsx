@@ -8,6 +8,7 @@ import { OsEmptyState } from "@/components/os/os-empty-state";
 import { ShareCartModal } from "@/components/storefront/ShareCartModal";
 import { cloudflareImageUrl } from "@/lib/media-delivery";
 import { isCatalogMode } from "@/lib/storefront-mode";
+import { displayVariantParts } from "@/lib/variant-sku-utils";
 import { ShoppingBag, Minus, Plus, Trash2, Gift, Share2 } from "lucide-react";
 
 export function CartDrawer({ children }: { children: React.ReactNode }) {
@@ -123,7 +124,11 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
                       <div className="flex-1 min-w-0">
                         <div className="font-medium truncate">{displayName}</div>
                         <div className="text-xs text-muted-foreground">
-                          {[item.size, item.color, item.fabric].filter(Boolean).join(" · ")}
+                          {displayVariantParts({
+                            size: item.size,
+                            color: item.color,
+                            fabric: item.fabric,
+                          }).join(" · ")}
                         </div>
                         {(item.custom_fields ?? []).length > 0 && (
                           <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">

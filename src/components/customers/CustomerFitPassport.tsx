@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, History, Ruler, Save, ShieldCheck, Shirt } from "lucide-react";
+import { CheckCircle2, History, Ruler, Save, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,9 +11,10 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  FIT_PROFILE_FIELDS,
   missingFitFields,
   normalizeFitProfiles,
+  resolveFitProfiles,
+  type FitProfileDefinition,
   type FitProfileType,
   type FitProfiles,
 } from "@/lib/fit-passport";
@@ -37,19 +38,31 @@ type Passport = {
   updated_at: string;
 };
 
+const emptyProfiles = (defs: FitProfileDefinition[]): FitProfiles => {
+  const result: FitProfiles = {};
+  for (const def of defs) {
+    result[def.key] = {};
+  }
+  return result;
+};
+
 export function CustomerFitPassport({
   brandId,
   brandName,
   customerId,
   isAr,
+  profiles: customProfiles,
 }: {
   brandId: string;
   brandName?: string;
   customerId: string;
   isAr: boolean;
+  profiles?: FitProfileDefinition[];
 }) {
   const qc = useQueryClient();
+  const fitProfiles = resolveFitProfiles(customProfiles);
   const [saving, setSaving] = useState(false);
+
   const passportQ = useQuery({
     queryKey: ["fit-passport", brandId, customerId],
     queryFn: async () => {
@@ -63,6 +76,7 @@ export function CustomerFitPassport({
       return data as Passport | null;
     },
   });
+
   const historyQ = useQuery({
     queryKey: ["fit-passport-history", brandId, customerId],
     queryFn: async () => {
@@ -77,8 +91,9 @@ export function CustomerFitPassport({
       return (data ?? []) as { id: string; version: number; changed_at: string }[];
     },
   });
-  const [profile, setProfile] = useState<FitProfileType>("abaya");
-  const [measurements, setMeasurements] = useState<FitProfiles>({ abaya: {}, dress: {} });
+
+  const [profile, setProfile] = useState<FitProfileType>(fitProfiles[0]?.key ?? "abaya");
+  const [measurements, setMeasurements] = useState<FitProfiles>(() => emptyProfiles(fitProfiles));
   const [fit, setFit] = useState<Passport["fit_preference"]>("regular");
   const [unit, setUnit] = useState<Passport["preferred_length_unit"]>("in");
   const [notes, setNotes] = useState("");
@@ -86,23 +101,31 @@ export function CustomerFitPassport({
   const [verified, setVerified] = useState(false);
 
   useEffect(() => {
+    if (fitProfiles.length > 0 && !fitProfiles.some((p) => p.key === profile)) {
+      setProfile(fitProfiles[0].key);
+    }
+  }, [fitProfiles, profile]);
+
+  useEffect(() => {
     const p = passportQ.data;
     if (!p) return;
-    const normalized = normalizeFitProfiles(p.measurements);
-    setMeasurements({
-      abaya: Object.fromEntries(
-        Object.entries(normalized.abaya).map(([key, value]) => [key, String(value)]),
-      ),
-      dress: Object.fromEntries(
-        Object.entries(normalized.dress).map(([key, value]) => [key, String(value)]),
-      ),
-    });
+    const normalized = normalizeFitProfiles(fitProfiles, p.measurements);
+    const mapped: FitProfiles = {};
+    for (const def of fitProfiles) {
+      mapped[def.key] = Object.fromEntries(
+        Object.entries(normalized[def.key] ?? {}).map(([key, value]) => [key, String(value)]),
+      );
+    }
+    setMeasurements(mapped);
     setFit(p.fit_preference);
     setUnit(p.preferred_length_unit);
     setNotes(p.tailoring_notes ?? "");
     setConsent(p.consent_to_store);
     setVerified(Boolean(p.verified_at));
-  }, [passportQ.data]);
+  }, [passportQ.data, fitProfiles]);
+
+  const activeDef = fitProfiles.find((p) => p.key === profile) ?? fitProfiles[0];
+  const activeFields = activeDef?.fields ?? [];
 
   const save = async () => {
     if (!consent)
@@ -111,62 +134,68 @@ export function CustomerFitPassport({
           ? "يجب تسجيل موافقة صاحب الملف قبل حفظ المقاسات"
           : "Customer consent is required before saving measurements",
       );
-    if (missingFitFields(profile, measurements[profile]).length)
+    if (missingFitFields(fitProfiles, profile, measurements[profile] ?? {}).length)
       return toast.error(
         isAr
-          ? "أكمل الحقول الإجبارية المعلّمة بنجمة"
-          : "Complete the required fields marked with an asterisk",
+          ? "يرجى استكمال الحقول الإجبارية المؤشر عليها بنجمة"
+          : "Please complete required fields marked with an asterisk",
       );
-    setSaving(true);
-    const clean = Object.fromEntries(
+
+    const cleanMeasurements = Object.fromEntries(
       Object.entries(measurements).map(([kind, values]) => [
         kind,
         Object.fromEntries(
           Object.entries(values)
-            .filter(([, value]) => String(value).trim())
-            .map(([key, value]) => [key, Number(value)]),
+            .map(([k, v]): [string, number] => [k, Number(v)])
+            .filter(([, v]) => Number.isFinite(v) && v > 0),
         ),
       ]),
     );
-    const { error } = await (supabase as any).from("customer_fit_passports").upsert(
-      {
+
+    setSaving(true);
+    try {
+      const payload = {
         brand_id: brandId,
         customer_id: customerId,
-        measurements: clean,
+        measurements: cleanMeasurements,
         fit_preference: fit,
         preferred_length_unit: unit,
         tailoring_notes: notes.trim() || null,
         consent_to_store: consent,
-        verified_at: verified ? (passportQ.data?.verified_at ?? new Date().toISOString()) : null,
-      },
-      { onConflict: "brand_id,customer_id" },
-    );
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success(
-      isAr ? "تم حفظ Fit Passport وإصدار نسخة جديدة" : "Fit Passport saved as a new version",
-    );
-    await Promise.all([
-      qc.invalidateQueries({ queryKey: ["fit-passport", brandId, customerId] }),
-      qc.invalidateQueries({ queryKey: ["fit-passport-history", brandId, customerId] }),
-    ]);
+        verified_at: verified ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await (supabase as any)
+        .from("customer_fit_passports")
+        .upsert(payload, { onConflict: "brand_id,customer_id" });
+      if (error) throw error;
+
+      toast.success(isAr ? "تم حفظ جواز المقاسات بنجاح" : "Fit passport saved successfully");
+      qc.invalidateQueries({ queryKey: ["fit-passport", brandId, customerId] });
+      qc.invalidateQueries({ queryKey: ["fit-passport-history", brandId, customerId] });
+    } catch (error: any) {
+      toast.error(error?.message || (isAr ? "تعذر حفظ المقاسات" : "Failed to save passport"));
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <Card className="overflow-hidden rounded-2xl border-border-subtle shadow-lg">
-      <div className="flex items-start justify-between gap-4 border-b bg-primary/[0.04] p-5">
-        <div className="flex gap-3">
-          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
+    <Card className="rounded-2xl border-border bg-card">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b p-5">
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl border bg-primary/10 p-2 text-primary">
             <Ruler className="size-5" />
-          </span>
+          </div>
           <div>
-            <h2 className="font-display text-xl font-bold">
-              {brandName ? `${brandName} Fit Passport` : "Fit Passport"}
-            </h2>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <h3 className="text-base font-bold text-foreground">
+              {brandName ? `${brandName} Fit Passport` : isAr ? "جواز المقاسات" : "Fit Passport"}
+            </h3>
+            <p className="text-xs text-muted-foreground">
               {isAr
-                ? "مقاسات موثّقة يمكن إعادة استخدامها في الطلبات القادمة"
-                : "Verified measurements ready for every future order"}
+                ? "ملف قياسات العميل المعتمد للطلبات المخصصة والتفصيل"
+                : "Customer's official measurements for custom tailoring"}
             </p>
           </div>
         </div>
@@ -178,15 +207,22 @@ export function CustomerFitPassport({
       </div>
       <div className="space-y-5 p-5">
         <Tabs value={profile} onValueChange={(value) => setProfile(value as FitProfileType)}>
-          <TabsList className="grid h-auto w-full grid-cols-2 p-1">
-            <TabsTrigger value="abaya" className="gap-2 py-2.5">
-              <Ruler className="size-4" />
-              {isAr ? "ملف العباية" : "Abaya profile"}
-            </TabsTrigger>
-            <TabsTrigger value="dress" className="gap-2 py-2.5">
-              <Shirt className="size-4" />
-              {isAr ? "ملف الفستان" : "Dress profile"}
-            </TabsTrigger>
+          <TabsList
+            className="grid h-auto w-full p-1"
+            style={{
+              gridTemplateColumns: `repeat(${Math.max(1, fitProfiles.length)}, minmax(0, 1fr))`,
+            }}
+          >
+            {fitProfiles.map((p) => (
+              <TabsTrigger key={p.key} value={p.key} className="gap-2 py-2.5">
+                <Ruler className="size-4" />
+                {isAr
+                  ? p.label_ar.startsWith("ملف")
+                    ? p.label_ar
+                    : `ملف ${p.label_ar}`
+                  : `${p.label_en} profile`}
+              </TabsTrigger>
+            ))}
           </TabsList>
         </Tabs>
         <div className="flex flex-wrap items-end justify-between gap-3">
@@ -220,23 +256,23 @@ export function CustomerFitPassport({
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {FIT_PROFILE_FIELDS[profile].map(([key, ar, en, required]) => (
-            <div key={key}>
-              <Label htmlFor={`fit-${key}`} className="text-xs">
-                {isAr ? ar : en}
-                {required && <span className="ms-1 text-destructive">*</span>}
+          {activeFields.map((field) => (
+            <div key={field.key}>
+              <Label htmlFor={`fit-${field.key}`} className="text-xs">
+                {isAr ? field.label_ar : field.label_en}
+                {field.required && <span className="ms-1 text-destructive">*</span>}
               </Label>
               <div className="relative mt-1.5">
                 <Input
-                  id={`fit-${key}`}
+                  id={`fit-${field.key}`}
                   type="number"
                   min="0"
                   step="0.1"
-                  value={String(measurements[profile][key] ?? "")}
+                  value={String(measurements[profile]?.[field.key] ?? "")}
                   onChange={(event) =>
                     setMeasurements((current) => ({
                       ...current,
-                      [profile]: { ...current[profile], [key]: event.target.value },
+                      [profile]: { ...(current[profile] || {}), [field.key]: event.target.value },
                     }))
                   }
                   className="pe-9 font-mono"
@@ -273,7 +309,7 @@ export function CustomerFitPassport({
               <span className="mt-1 block text-xs text-muted-foreground">
                 {isAr
                   ? "تم تأكيد الموافقة على حفظ بيانات المقاس"
-                  : "Customer approved storing fit data"}
+                  : "Customer consented to storing fit data"}
               </span>
             </span>
             <Switch checked={consent} onCheckedChange={setConsent} />
@@ -281,36 +317,43 @@ export function CustomerFitPassport({
           <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border p-4">
             <span>
               <span className="flex items-center gap-2 text-sm font-semibold">
-                <CheckCircle2 className="size-4 text-primary" />
-                {isAr ? "تم التحقق" : "Fit verified"}
+                <CheckCircle2 className="size-4 text-emerald-500" />
+                {isAr ? "توثيق القياسات" : "Verified measurements"}
               </span>
               <span className="mt-1 block text-xs text-muted-foreground">
-                {isAr ? "تمت مراجعة المقاسات مع صاحب الملف" : "Measurements reviewed with customer"}
+                {isAr
+                  ? "تم أخذ المقاسات في البوتيك أو من خياط معتمد"
+                  : "Taken in-store or by a certified tailor"}
               </span>
             </span>
             <Switch checked={verified} onCheckedChange={setVerified} />
           </label>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <History className="size-4" />
-            {historyQ.data?.length
-              ? isAr
-                ? `${historyQ.data.length} نسخ محفوظة مؤخراً`
-                : `${historyQ.data.length} recent versions`
-              : isAr
-                ? "سيتم حفظ كل تعديل تلقائياً"
-                : "Every change will be versioned"}
+        {historyQ.data && historyQ.data.length > 0 && (
+          <div className="rounded-xl border bg-muted/30 p-3 text-xs text-muted-foreground">
+            <span className="mb-1.5 flex items-center gap-1.5 font-semibold text-foreground">
+              <History className="size-3.5" />
+              {isAr ? "سجل التعديلات السابقة:" : "Version history:"}
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {historyQ.data.map((h) => (
+                <span key={h.id} className="rounded-md border bg-background px-2 py-0.5">
+                  v{h.version} • {new Date(h.changed_at).toLocaleDateString()}
+                </span>
+              ))}
+            </div>
           </div>
-          <Button onClick={save} disabled={saving || passportQ.isLoading} className="gap-2">
+        )}
+        <div className="flex justify-end">
+          <Button onClick={save} disabled={saving} className="gap-2">
             <Save className="size-4" />
             {saving
               ? isAr
-                ? "جارٍ الحفظ…"
-                : "Saving…"
+                ? "جاري الحفظ..."
+                : "Saving..."
               : isAr
-                ? "حفظ Fit Passport"
-                : "Save Fit Passport"}
+                ? "حفظ المقاسات"
+                : "Save Passport"}
           </Button>
         </div>
       </div>

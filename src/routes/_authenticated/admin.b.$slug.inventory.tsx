@@ -86,6 +86,7 @@ import {
   splitVariantValues,
   SIZING_PRESETS,
   orderSizingPresetsForVertical,
+  PLACEHOLDER_SIZE_VALUES,
 } from "@/lib/variant-sku-utils";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
@@ -108,11 +109,7 @@ import { isLowStock, isOutOfStock } from "@/lib/inventory-health";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { OsEmptyState } from "@/components/os/os-empty-state";
 import { useEntitlements } from "@/lib/saas-billing/use-entitlements";
-import {
-  FIT_PROFILE_FIELDS,
-  matchCustomFieldToMeasurement,
-  type FitProfileType,
-} from "@/lib/fit-passport";
+import { matchCustomFieldToMeasurement, resolveFitProfiles } from "@/lib/fit-passport";
 
 /** Common measurement units the admin can pick from for a "size" variant. */
 const SIZE_UNITS = ["", "cm", "mm", "m", "inch", "ft", "kg", "g", "ml", "l"] as const;
@@ -2559,6 +2556,25 @@ function ProductDialog({
   const isAr = lang === "ar";
   const brand = useBrand();
   const { profile: storeProfile } = useAdminStoreProfile(brand.id);
+  const fitProfiles = useMemo(
+    () => resolveFitProfiles(storeProfile?.fitProfiles),
+    [storeProfile?.fitProfiles],
+  );
+  const passportPresets = useMemo(() => {
+    return fitProfiles.map((p) => ({
+      key: `passport_${p.key}`,
+      label_ar: `📏 مقاسات Passport — ${p.label_ar}`,
+      label_en: `📏 Fit Passport — ${p.label_en}`,
+      fields: p.fields.map((f) => ({
+        key: `passport_${p.key}_${f.key}`,
+        label_ar: f.label_ar,
+        label_en: f.label_en,
+        type: "number" as const,
+        options: [] as string[],
+        required: f.required,
+      })),
+    }));
+  }, [fitProfiles]);
   const { entitlements } = useEntitlements({ brandId: brand.id });
   const initialForm = {
     name_ar: product?.name_ar ?? "",
@@ -2808,7 +2824,7 @@ function ProductDialog({
             user_id: user.id,
             brand_id: brand.id,
             product_id: product.id,
-            size: isAr ? "قياسي" : "Standard",
+            size: isAr ? PLACEHOLDER_SIZE_VALUES[0] : PLACEHOLDER_SIZE_VALUES[1],
             color: null,
             fabric: (form.fabric_type || "").trim() || null,
             cost_price: costP,
@@ -2933,7 +2949,7 @@ function ProductDialog({
           user_id: user.id,
           brand_id: brand.id,
           product_id: newProd.id,
-          size: isAr ? "قياسي" : "Standard",
+          size: isAr ? PLACEHOLDER_SIZE_VALUES[0] : PLACEHOLDER_SIZE_VALUES[1],
           color: null,
           fabric: (form.fabric_type || "").trim() || null,
           cost_price: costP,
@@ -3693,16 +3709,20 @@ function ProductDialog({
                 >
                   <Select
                     onValueChange={(presetKey) => {
-                      const preset =
+                      const dynamicPassport = passportPresets.find((pr) => pr.key === presetKey);
+                      const staticPreset =
                         CUSTOMIZER_PRESETS[presetKey as keyof typeof CUSTOMIZER_PRESETS];
+                      const preset = dynamicPassport || staticPreset;
                       if (preset) {
                         const isPassportPreset =
-                          presetKey === "passport_abaya" || presetKey === "passport_dress";
+                          Boolean(dynamicPassport) ||
+                          presetKey === "passport_abaya" ||
+                          presetKey === "passport_dress";
                         const retainedFields = isPassportPreset
                           ? (form.custom_fields ?? []).filter(
                               (field) =>
                                 !field.key.includes("passport_") &&
-                                !matchCustomFieldToMeasurement(field),
+                                !matchCustomFieldToMeasurement(fitProfiles, field),
                             )
                           : (form.custom_fields ?? []);
                         setForm({
@@ -3737,12 +3757,11 @@ function ProductDialog({
                       <SelectItem value="fashion">
                         {isAr ? "عبايات وأزياء" : "Fashion / Abaya"}
                       </SelectItem>
-                      <SelectItem value="passport_abaya">
-                        {isAr ? "📏 مقاسات Passport — عباية" : "📏 Fit Passport — Abaya"}
-                      </SelectItem>
-                      <SelectItem value="passport_dress">
-                        {isAr ? "📏 مقاسات Passport — فستان" : "📏 Fit Passport — Dress"}
-                      </SelectItem>
+                      {passportPresets.map((pr) => (
+                        <SelectItem key={pr.key} value={pr.key}>
+                          {isAr ? pr.label_ar : pr.label_en}
+                        </SelectItem>
+                      ))}
                       <SelectItem value="gift">
                         {isAr ? "عطور وهدايا" : "Gift / Perfume"}
                       </SelectItem>
@@ -3814,16 +3833,12 @@ function ProductDialog({
               ) : (
                 <div className="space-y-4">
                   {(() => {
-                    const passportType: FitProfileType | null = (form.custom_fields ?? []).some(
-                      (field) => field.key.includes("passport_dress"),
-                    )
-                      ? "dress"
-                      : (form.custom_fields ?? []).some((field) =>
-                            field.key.includes("passport_abaya"),
-                          )
-                        ? "abaya"
-                        : null;
-                    if (!passportType) return null;
+                    const matchedProfile = fitProfiles.find((p) =>
+                      (form.custom_fields ?? []).some((field) =>
+                        field.key.includes(`passport_${p.key}`),
+                      ),
+                    );
+                    if (!matchedProfile) return null;
                     return (
                       <div className="rounded-2xl border border-primary/25 bg-primary/[0.045] p-4 shadow-sm">
                         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -3833,14 +3848,7 @@ function ProductDialog({
                                 brand.name_en ||
                                 brand.name_ar ||
                                 "Fit"}{" "}
-                              Passport ·{" "}
-                              {passportType === "abaya"
-                                ? isAr
-                                  ? "عباية"
-                                  : "Abaya"
-                                : isAr
-                                  ? "فستان"
-                                  : "Dress"}
+                              Passport · {isAr ? matchedProfile.label_ar : matchedProfile.label_en}
                             </p>
                             <p className="mt-1 text-xs text-muted-foreground">
                               {isAr
@@ -3865,13 +3873,13 @@ function ProductDialog({
                           </Button>
                         </div>
                         <div className="mt-3 flex flex-wrap gap-1.5">
-                          {FIT_PROFILE_FIELDS[passportType].map(([key, ar, en, required]) => (
+                          {matchedProfile.fields.map((f) => (
                             <span
-                              key={key}
+                              key={f.key}
                               className="rounded-full border bg-background px-2.5 py-1 text-xs"
                             >
-                              {isAr ? ar : en} ·{" "}
-                              {required
+                              {isAr ? f.label_ar : f.label_en} ·{" "}
+                              {f.required
                                 ? isAr
                                   ? "إجباري"
                                   : "Required"

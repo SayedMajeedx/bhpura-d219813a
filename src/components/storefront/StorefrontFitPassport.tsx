@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Loader2, Ruler, Save, ShieldCheck, Shirt } from "lucide-react";
+import { Loader2, Ruler, Save, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -18,12 +18,14 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  FIT_PROFILE_FIELDS,
   missingFitFields,
   normalizeFitProfiles,
+  resolveFitProfiles,
+  type FitProfileDefinition,
   type FitProfileType,
   type FitProfiles,
 } from "@/lib/fit-passport";
+import { useFitProfiles } from "@/lib/storefront-context";
 
 type Passport = {
   measurements: unknown;
@@ -34,28 +36,48 @@ type Passport = {
   verified_at: string | null;
   version: number;
 };
-const emptyProfiles = (): FitProfiles => ({ abaya: {}, dress: {} });
+
+const emptyProfiles = (defs: FitProfileDefinition[]): FitProfiles => {
+  const result: FitProfiles = {};
+  for (const def of defs) {
+    result[def.key] = {};
+  }
+  return result;
+};
 
 export function StorefrontFitPassport({
   brandId,
   brandName,
   customerId,
   isAr,
+  profiles: customProfiles,
 }: {
   brandId: string;
   brandName?: string;
   customerId?: string;
   isAr: boolean;
+  profiles?: FitProfileDefinition[];
 }) {
   const qc = useQueryClient();
+  const contextProfiles = useFitProfiles();
+  const fitProfiles = resolveFitProfiles(customProfiles ?? contextProfiles);
+
   const passportTitle = brandName ? `${brandName} Fit Passport` : "Fit Passport";
-  const [profile, setProfile] = useState<FitProfileType>("abaya");
-  const [measurements, setMeasurements] = useState<FitProfiles>(emptyProfiles);
+  const [profile, setProfile] = useState<FitProfileType>(fitProfiles[0]?.key ?? "abaya");
+  const [measurements, setMeasurements] = useState<FitProfiles>(() => emptyProfiles(fitProfiles));
   const [fit, setFit] = useState<Passport["fit_preference"]>("regular");
   const [unit, setUnit] = useState<Passport["preferred_length_unit"]>("in");
   const [notes, setNotes] = useState("");
   const [consent, setConsent] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Keep profile in sync if fitProfiles change
+  useEffect(() => {
+    if (fitProfiles.length > 0 && !fitProfiles.some((p) => p.key === profile)) {
+      setProfile(fitProfiles[0].key);
+    }
+  }, [fitProfiles, profile]);
+
   const passportQ = useQuery({
     queryKey: ["storefront-fit-passport", brandId, customerId],
     enabled: Boolean(customerId),
@@ -72,29 +94,23 @@ export function StorefrontFitPassport({
       return data as Passport | null;
     },
   });
+
   useEffect(() => {
     const p = passportQ.data;
     if (!p) {
       try {
-        const abayaRaw = localStorage.getItem(`pura_guest_fit_passport_pura_abaya`);
-        const dressRaw = localStorage.getItem(`pura_guest_fit_passport_pura_dress`);
-        const loaded: FitProfiles = { abaya: {}, dress: {} };
+        const loaded: FitProfiles = emptyProfiles(fitProfiles);
         let found = false;
-        if (abayaRaw) {
-          const parsed = JSON.parse(abayaRaw);
-          if (parsed?.draft) {
-            loaded.abaya = parsed.draft;
-            found = true;
+        for (const def of fitProfiles) {
+          const raw = localStorage.getItem(`pura_guest_fit_passport_pura_${def.key}`);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed?.draft) {
+              loaded[def.key] = parsed.draft;
+              found = true;
+            }
+            if (parsed?.unit === "in" || parsed?.unit === "cm") setUnit(parsed.unit);
           }
-          if (parsed?.unit === "in" || parsed?.unit === "cm") setUnit(parsed.unit);
-        }
-        if (dressRaw) {
-          const parsed = JSON.parse(dressRaw);
-          if (parsed?.draft) {
-            loaded.dress = parsed.draft;
-            found = true;
-          }
-          if (parsed?.unit === "in" || parsed?.unit === "cm") setUnit(parsed.unit);
         }
         if (found) {
           setMeasurements(loaded);
@@ -104,16 +120,20 @@ export function StorefrontFitPassport({
       }
       return;
     }
-    const n = normalizeFitProfiles(p.measurements);
-    setMeasurements({
-      abaya: Object.fromEntries(Object.entries(n.abaya).map(([k, v]) => [k, String(v)])),
-      dress: Object.fromEntries(Object.entries(n.dress).map(([k, v]) => [k, String(v)])),
-    });
+    const n = normalizeFitProfiles(fitProfiles, p.measurements);
+    const mapped: FitProfiles = {};
+    for (const def of fitProfiles) {
+      mapped[def.key] = Object.fromEntries(
+        Object.entries(n[def.key] ?? {}).map(([k, v]) => [k, String(v)]),
+      );
+    }
+    setMeasurements(mapped);
     setFit(p.fit_preference);
     setUnit(p.preferred_length_unit);
     setNotes(p.tailoring_notes ?? "");
     setConsent(p.consent_to_store);
-  }, [passportQ.data]);
+  }, [passportQ.data, fitProfiles]);
+
   if (!customerId)
     return (
       <Card className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
@@ -122,6 +142,10 @@ export function StorefrontFitPassport({
           : `Place your first order to activate your ${passportTitle}.`}
       </Card>
     );
+
+  const activeDef = fitProfiles.find((p) => p.key === profile) ?? fitProfiles[0];
+  const activeFields = activeDef?.fields ?? [];
+
   const save = async () => {
     if (!consent)
       return toast.error(
@@ -129,7 +153,7 @@ export function StorefrontFitPassport({
           ? "يرجى الموافقة على حفظ المقاسات قبل المتابعة."
           : "Please consent to storing your measurements.",
       );
-    if (missingFitFields(profile, measurements[profile]).length)
+    if (missingFitFields(fitProfiles, profile, measurements[profile] ?? {}).length)
       return toast.error(
         isAr
           ? "يرجى إكمال الحقول الإجبارية المعلّمة بنجمة."
@@ -140,63 +164,66 @@ export function StorefrontFitPassport({
         kind,
         Object.fromEntries(
           Object.entries(values)
-            .filter(([, v]) => String(v).trim())
-            .map(([k, v]) => [k, Number(v)]),
+            .map(([k, v]): [string, number] => [k, Number(v)])
+            .filter(([, v]) => Number.isFinite(v) && v > 0),
         ),
       ]),
     );
     setSaving(true);
-    const { error } = await (supabase as any).from("customer_fit_passports").upsert(
-      {
-        brand_id: brandId,
-        customer_id: customerId,
-        measurements: clean,
-        fit_preference: fit,
-        preferred_length_unit: unit,
-        tailoring_notes: notes.trim() || null,
-        consent_to_store: true,
-      },
-      { onConflict: "brand_id,customer_id" },
-    );
-    setSaving(false);
-    if (error)
-      return toast.error(
-        isAr ? "تعذر حفظ المقاسات. يرجى المحاولة مرة أخرى." : "Could not save your measurements.",
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      const { error } = await (supabase as any).from("customer_fit_passports").upsert(
+        {
+          brand_id: brandId,
+          customer_id: customerId,
+          auth_user_id: user?.id,
+          measurements: clean,
+          fit_preference: fit,
+          preferred_length_unit: unit,
+          tailoring_notes: notes.trim() || null,
+          consent_to_store: true,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "brand_id,customer_id" },
       );
-    toast.success(
-      isAr ? `تم حفظ ملف ${profile === "abaya" ? "العباية" : "الفستان"}` : "Fit profile saved",
-    );
-    await qc.invalidateQueries({ queryKey: ["storefront-fit-passport", brandId, customerId] });
+      if (error) throw error;
+      toast.success(isAr ? "تم حفظ المقاسات بنجاح" : "Measurements saved successfully");
+      qc.invalidateQueries({ queryKey: ["storefront-fit-passport", brandId, customerId] });
+    } catch (e: any) {
+      toast.error(e?.message || (isAr ? "تعذّر حفظ المقاسات" : "Failed to save measurements"));
+    } finally {
+      setSaving(false);
+    }
   };
+
   return (
-    <Card className="overflow-hidden rounded-2xl border-border-strong bg-card shadow-sm">
-      <div className="border-b bg-primary/[0.045] p-5 sm:p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <span className="grid size-11 place-items-center rounded-2xl bg-primary text-primary-foreground">
-              <Ruler className="size-5" />
-            </span>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[.16em] text-primary">
-                {passportTitle}
-              </p>
-              <h3 className="mt-1 text-lg font-bold">
-                {isAr ? "ملفان دقيقان لكل تفصيل" : "Two precise profiles for every custom order"}
-              </h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {isAr
-                  ? "مقاسات مستقلة للعبايات والفساتين، جاهزة للاستخدام عند الطلب."
-                  : "Separate abaya and dress measurements, ready when ordering."}
-              </p>
-            </div>
+    <Card className="overflow-hidden rounded-2xl border-border bg-card">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/30 p-5 sm:p-6">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="font-serif text-lg font-bold tracking-tight text-foreground sm:text-xl">
+              {passportTitle}
+            </h2>
+            {passportQ.data?.verified_at && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                <ShieldCheck className="size-3" />
+                {isAr ? "موثّق" : "Verified"}
+              </span>
+            )}
           </div>
-          {passportQ.data?.verified_at && (
-            <span className="flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
-              <CheckCircle2 className="size-3" />
-              {isAr ? "موثّق" : "Verified"}
-            </span>
-          )}
+          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+            {isAr
+              ? "مقاساتك وتفضيلاتك المحفوظة لتفصيل الطلبات القادمة بدقة وسرعة."
+              : "Your saved body measurements and tailoring preferences for quick and precise orders."}
+          </p>
         </div>
+        {passportQ.data && (
+          <span className="rounded-full border border-border bg-background px-3 py-1 text-xs font-semibold text-muted-foreground">
+            v{passportQ.data.version}
+          </span>
+        )}
       </div>
       {passportQ.isLoading ? (
         <div className="grid min-h-56 place-items-center">
@@ -205,15 +232,22 @@ export function StorefrontFitPassport({
       ) : (
         <div className="space-y-5 p-5 sm:p-6">
           <Tabs value={profile} onValueChange={(v) => setProfile(v as FitProfileType)}>
-            <TabsList className="grid h-auto w-full grid-cols-2 p-1">
-              <TabsTrigger value="abaya" className="gap-2 py-2.5">
-                <Ruler className="size-4" />
-                {isAr ? "مقاسات العباية" : "Abaya profile"}
-              </TabsTrigger>
-              <TabsTrigger value="dress" className="gap-2 py-2.5">
-                <Shirt className="size-4" />
-                {isAr ? "مقاسات الفستان" : "Dress profile"}
-              </TabsTrigger>
+            <TabsList
+              className="grid h-auto w-full p-1"
+              style={{
+                gridTemplateColumns: `repeat(${Math.max(1, fitProfiles.length)}, minmax(0, 1fr))`,
+              }}
+            >
+              {fitProfiles.map((p) => (
+                <TabsTrigger key={p.key} value={p.key} className="gap-2 py-2.5">
+                  <Ruler className="size-4" />
+                  {isAr
+                    ? p.label_ar.startsWith("مقاسات")
+                      ? p.label_ar
+                      : `مقاسات ${p.label_ar}`
+                    : `${p.label_en} profile`}
+                </TabsTrigger>
+              ))}
             </TabsList>
           </Tabs>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -250,11 +284,11 @@ export function StorefrontFitPassport({
                 : "Fields marked with * are required; the rest are optional."}
             </p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {FIT_PROFILE_FIELDS[profile].map(([key, ar, en, required]) => (
-                <div key={key}>
+              {activeFields.map((field) => (
+                <div key={field.key}>
                   <Label className="text-xs">
-                    {isAr ? ar : en}
-                    {required && <span className="ms-1 text-destructive">*</span>}
+                    {isAr ? field.label_ar : field.label_en}
+                    {field.required && <span className="ms-1 text-destructive">*</span>}
                   </Label>
                   <div className="relative mt-1.5">
                     <Input
@@ -262,16 +296,16 @@ export function StorefrontFitPassport({
                       type="number"
                       min="0"
                       step="0.1"
-                      value={String(measurements[profile][key] ?? "")}
+                      value={String(measurements[profile]?.[field.key] ?? "")}
                       onChange={(e) =>
                         setMeasurements((c) => ({
                           ...c,
-                          [profile]: { ...c[profile], [key]: e.target.value },
+                          [profile]: { ...(c[profile] || {}), [field.key]: e.target.value },
                         }))
                       }
-                      className="h-11 pe-9 font-mono"
+                      className="pe-9"
                     />
-                    <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                    <span className="pointer-events-none absolute inset-y-0 end-3 grid place-items-center text-xs text-muted-foreground">
                       {unit}
                     </span>
                   </div>
@@ -280,39 +314,39 @@ export function StorefrontFitPassport({
             </div>
           </div>
           <div>
-            <Label>{isAr ? "ملاحظات تساعد الخياط" : "Notes for your tailor"}</Label>
+            <Label>{isAr ? "ملاحظات تفصيل إضافية" : "Additional tailoring notes"}</Label>
             <Textarea
-              rows={3}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="mt-1.5"
+              placeholder={
+                isAr
+                  ? "مثال: أفضّل وسع إضافي في الصدر، بدون تقصير..."
+                  : "e.g. Prefer looser chest, no hem shortening..."
+              }
+              rows={3}
+              className="mt-1.5 resize-none text-xs"
             />
           </div>
-          <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border bg-muted/20 p-4">
-            <span className="flex gap-3">
-              <ShieldCheck className="size-5 text-primary" />
-              <span>
-                <strong className="block text-sm">
-                  {isAr ? "أوافق على حفظ مقاساتي" : "I consent to storing my measurements"}
-                </strong>
-                <small className="text-muted-foreground">
-                  {isAr ? "تُستخدم لتجهيز طلباتك فقط." : "Used only to prepare your orders."}
-                </small>
-              </span>
-            </span>
-            <Switch checked={consent} onCheckedChange={setConsent} />
-          </label>
-          <div className="flex items-center justify-between gap-3 border-t pt-4">
-            <span className="text-xs text-muted-foreground">
-              {passportQ.data
-                ? `${isAr ? "الإصدار" : "Version"} ${passportQ.data.version}`
-                : isAr
-                  ? "لم تُحفظ مقاسات بعد"
-                  : "No measurements saved yet"}
-            </span>
+          <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/20 p-4">
+            <Switch
+              checked={consent}
+              onCheckedChange={setConsent}
+              id="passport-consent"
+              className="mt-0.5"
+            />
+            <Label
+              htmlFor="passport-consent"
+              className="cursor-pointer text-xs leading-relaxed text-muted-foreground"
+            >
+              {isAr
+                ? "أوافق على حفظ مقاساتي في حسابي لإعادة استخدامها في طلبات التفصيل القادمة."
+                : "I consent to saving my measurements in my account for reuse in future made-to-order purchases."}
+            </Label>
+          </div>
+          <div className="flex justify-end pt-2">
             <Button onClick={save} disabled={saving} className="gap-2">
-              <Save className="size-4" />
-              {saving ? (isAr ? "جارٍ الحفظ…" : "Saving…") : isAr ? "حفظ الملف" : "Save profile"}
+              {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+              {isAr ? "حفظ جواز المقاسات" : "Save Fit Passport"}
             </Button>
           </div>
         </div>

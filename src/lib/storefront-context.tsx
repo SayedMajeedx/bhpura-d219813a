@@ -23,6 +23,7 @@ import {
   type StoreModuleOverrides,
 } from "@/lib/store-profile";
 import type { SizeGuide } from "@/lib/size-guide";
+import { resolveFitProfiles, type FitProfileDefinition } from "@/lib/fit-passport";
 
 export type StoreLang = "ar" | "en";
 export type HomePromoCard = {
@@ -176,6 +177,7 @@ export type PublicSettings = {
   catalog_inquiry_message_ar?: string | null;
   store_vertical?: StoreVertical;
   store_modules?: StoreModuleOverrides;
+  fit_profiles?: FitProfileDefinition[];
   menu_bg: string | null;
   menu_fg: string | null;
   menu_title_en: string | null;
@@ -765,6 +767,11 @@ export function useStoreModules() {
       }),
     [storeVertical, storeModules],
   );
+}
+
+export function useFitProfiles(): FitProfileDefinition[] {
+  const { settings } = useStorefront();
+  return useMemo(() => resolveFitProfiles(settings?.fit_profiles), [settings?.fit_profiles]);
 }
 
 export function formatPrice(amount: number, currency: string, lang: StoreLang) {

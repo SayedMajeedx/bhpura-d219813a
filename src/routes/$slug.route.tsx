@@ -222,6 +222,7 @@ export const Route = createFileRoute("/$slug")({
       catalog_inquiry_message_ar: s?.catalog_inquiry_message_ar ?? null,
       store_vertical: normalizeVertical(s?.store_vertical ?? "fashion"),
       store_modules: normalizeModuleOverrides(s?.store_modules),
+      fit_profiles: s?.fit_profiles ?? null,
       menu_bg: s?.menu_bg ?? null,
       menu_fg: s?.menu_fg ?? null,
       menu_title_en: s?.menu_title_en ?? null,
