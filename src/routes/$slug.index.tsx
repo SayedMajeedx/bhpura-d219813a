@@ -58,6 +58,7 @@ export type ProductRow = {
   created_at: string;
   featured_trending?: boolean;
   show_sale_badge?: boolean;
+  is_made_to_order?: boolean;
   custom_fields?: unknown;
   product_variants: Array<{
     id: string;
@@ -71,7 +72,7 @@ export type ProductRow = {
 };
 
 export function hasAvailableStock(product: ProductRow): boolean {
-  if (Array.isArray(product.custom_fields) && product.custom_fields.length > 0) {
+  if (product.is_made_to_order) {
     return true;
   }
   return product.product_variants.some(

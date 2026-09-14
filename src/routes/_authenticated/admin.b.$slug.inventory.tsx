@@ -176,6 +176,7 @@ type Product = {
   occasion?: string | null;
   size_guide_id?: string | null;
   size_guide_hidden?: boolean | null;
+  is_made_to_order?: boolean | null;
 };
 type Variant = {
   id: string;
@@ -2586,6 +2587,7 @@ function ProductDialog({
     occasion: (product as any)?.occasion ?? "",
     size_guide_id: product?.size_guide_id ?? null,
     size_guide_hidden: product?.size_guide_hidden ?? false,
+    is_made_to_order: product?.is_made_to_order ?? false,
   };
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState<{ name?: string; price?: string; cost?: string }>({});
@@ -2639,6 +2641,7 @@ function ProductDialog({
       occasion: (product as any)?.occasion ?? "",
       size_guide_id: product?.size_guide_id ?? null,
       size_guide_hidden: product?.size_guide_hidden ?? false,
+      is_made_to_order: product?.is_made_to_order ?? false,
     });
     setErrors({});
     setActiveDialogTab("basic");
@@ -2845,6 +2848,7 @@ function ProductDialog({
         occasion: (form.occasion || "").trim() || null,
         size_guide_id: form.size_guide_hidden ? null : form.size_guide_id || null,
         size_guide_hidden: Boolean(form.size_guide_hidden),
+        is_made_to_order: Boolean(form.is_made_to_order),
       };
       const { error } = await (supabase as any).from("products").update(patch).eq("id", product.id);
       if (error) return toast.error(error.message);
@@ -2911,6 +2915,7 @@ function ProductDialog({
         occasion: (form.occasion || "").trim() || null,
         size_guide_id: form.size_guide_hidden ? null : form.size_guide_id || null,
         size_guide_hidden: Boolean(form.size_guide_hidden),
+        is_made_to_order: Boolean(form.is_made_to_order),
       };
       const { data: newProd, error } = await (supabase.from("products") as any)
         .insert(payload)
@@ -3702,6 +3707,7 @@ function ProductDialog({
                           : (form.custom_fields ?? []);
                         setForm({
                           ...form,
+                          is_made_to_order: isPassportPreset ? true : form.is_made_to_order,
                           custom_fields: [
                             ...retainedFields,
                             ...preset.fields.map(
@@ -3772,6 +3778,25 @@ function ProductDialog({
                     {isAr ? "إضافة حقل" : "Add field"}
                   </Button>
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3.5 bg-background rounded-lg border border-border">
+                <div>
+                  <p className="text-xs font-bold text-foreground">
+                    {isAr
+                      ? "منتج حسب الطلب (لا يُخصم من المخزون)"
+                      : "Made to order (no stock deduction)"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {isAr
+                      ? "المنتجات المصنعة حسب الطلب لا تتطلب توفر مخزون جاهز ولا يتم خصمها من المخزون عند الشراء"
+                      : "Made-to-order items do not require ready physical stock and are not depleted on purchase"}
+                  </p>
+                </div>
+                <Switch
+                  checked={Boolean(form.is_made_to_order)}
+                  onCheckedChange={(checked) => setForm({ ...form, is_made_to_order: checked })}
+                />
               </div>
 
               {(form.custom_fields ?? []).length === 0 ? (

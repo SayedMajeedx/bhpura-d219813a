@@ -151,6 +151,7 @@ type Product = {
   product_variants: Variant[];
   base_price?: number | null;
   original_price?: number | null;
+  is_made_to_order?: boolean | null;
   variant_label_size_ar?: string | null;
   variant_label_size_en?: string | null;
   variant_label_color_ar?: string | null;
@@ -167,6 +168,7 @@ type RecommendationProduct = {
   category: string | null;
   image_url: string | null;
   media: unknown;
+  is_made_to_order?: boolean | null;
   product_variants: Array<{
     id: string;
     selling_price: number;
@@ -361,7 +363,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     initialData: loaderData?.product ?? undefined,
     queryFn: async () => {
       const primaryFields =
-        "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, base_price, size_guide_id, size_guide_hidden, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main, stock_incubator, image_url)";
+        "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, is_made_to_order, base_price, size_guide_id, size_guide_hidden, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main, stock_incubator, image_url)";
       const fullFields = `${primaryFields}, variant_label_size_ar, variant_label_size_en, variant_label_color_ar, variant_label_color_en, variant_label_fabric_ar, variant_label_fabric_en`;
 
       const fetchByTargetId = async (targetId: string) => {
@@ -1031,12 +1033,13 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     optionsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
+  const isMadeToOrder = Boolean(product?.is_made_to_order);
   const hasReadySizes = uniqueSizes.length > 0 || hasVariants;
   const hasCustomFields = customFields.length > 0;
-  const showSizeModeToggle = modules.made_to_order && hasReadySizes && hasCustomFields;
+  const showSizeModeToggle =
+    modules.made_to_order && hasReadySizes && hasCustomFields && isMadeToOrder;
   const isTailoringActive =
-    (showSizeModeToggle && sizeMode === "custom") ||
-    (!showSizeModeToggle && hasCustomFields && uniqueSizes.length === 0);
+    isMadeToOrder && ((showSizeModeToggle && sizeMode === "custom") || !showSizeModeToggle);
 
   const selectedVariantOutOfStock = Boolean(!isTailoringActive && variant && maxStock <= 0);
 
@@ -1219,7 +1222,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     const effectiveSize =
       showSizeModeToggle && sizeMode === "custom"
         ? t("تفصيل / قياسات خاصة", "Custom Tailoring")
-        : targetVariant?.size || (hasCustomFields ? t("تفصيل", "Custom Tailoring") : null);
+        : targetVariant?.size || (isTailoringActive ? t("تفصيل", "Custom Tailoring") : null);
 
     addToCart({
       cart_line_id: "",
@@ -1292,7 +1295,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           productUrl: typeof window !== "undefined" ? window.location.href : "",
           variantLabel: variant
             ? [
-                (showSizeModeToggle && sizeMode === "custom") || (!hasReadySizes && hasCustomFields)
+                (showSizeModeToggle && sizeMode === "custom") ||
+                (!hasReadySizes && isTailoringActive)
                   ? t("تفصيل", "Custom Sizing")
                   : formatSizeWithUnit(variant.size, variant.size_unit, lang),
                 variant.color,
@@ -1593,6 +1597,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                         product.variant_label_size_ar ||
                         t("المقاس / خيار", "Size / Option")}
                     </div>
+                    {/* modules.size_guide && <SizeGuideModal */}
                     {modules.size_guide && (
                       <SizeGuideModal
                         isAr={lang === "ar"}
@@ -2333,7 +2338,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 {variant
                   ? [
                       (showSizeModeToggle && sizeMode === "custom") ||
-                      (!hasReadySizes && hasCustomFields)
+                      (!hasReadySizes && isTailoringActive)
                         ? t("تفصيل", "Custom Sizing")
                         : formatSizeWithUnit(variant.size, variant.size_unit, lang),
                       variant.color,
