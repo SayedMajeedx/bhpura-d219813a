@@ -523,6 +523,25 @@ export const approveTenantRequest = createServerFn({ method: "POST" })
         console.error("Failed to update brand plan details upon request approval:", brandUpdateErr);
       }
 
+      // Install starter pack for approved tenant vertical
+      try {
+        const { installStarterPack } = await import("@/lib/addons/addons.functions");
+        const rawType = ((request as any).business_type || "general").toLowerCase();
+        const activity = rawType.includes("abaya")
+          ? "abayas"
+          : rawType.includes("fashion")
+            ? "fashion"
+            : "general";
+        await installStarterPack({
+          data: {
+            brandId: brandRow.id,
+            activity,
+          },
+        });
+      } catch (packErr) {
+        console.error("Failed to install starter pack upon request approval:", packErr);
+      }
+
       if (resolvedPlanId && resolvedPlanVersionId) {
         const periodEnd =
           resolvedInterval === "trial"
@@ -614,6 +633,7 @@ const RegisterInstantTrialInput = z.object({
   password: z.string().min(6),
   businessType: z.string().optional(),
   storeVertical: z.enum(STORE_VERTICALS),
+  selectedAddonIds: z.array(z.string()).optional(),
 });
 
 export const registerInstantTrial = createServerFn({ method: "POST" })
@@ -752,6 +772,20 @@ export const registerInstantTrial = createServerFn({ method: "POST" })
         updated_at: new Date().toISOString(),
       })
       .eq("brand_id", brandId);
+
+    // 6c. Install starter pack for chosen vertical and any selected add-ons
+    try {
+      const { installStarterPack } = await import("@/lib/addons/addons.functions");
+      await installStarterPack({
+        data: {
+          brandId,
+          activity: data.storeVertical,
+          selectedAddonIds: data.selectedAddonIds,
+        },
+      });
+    } catch (addonErr) {
+      console.error("Failed to install starter pack for new brand:", addonErr);
+    }
 
     // 7. Associate brand_id in profile
     await (supabaseAdmin.from("profiles" as never) as any)

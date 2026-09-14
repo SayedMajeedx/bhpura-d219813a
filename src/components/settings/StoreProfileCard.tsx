@@ -30,14 +30,24 @@ import {
   type StoreModuleId,
 } from "@/lib/store-profile";
 import { resolveFitProfiles, type FitProfileDefinition } from "@/lib/addons/addon-presets";
-import { Sparkles, RotateCcw, AlertTriangle, ArrowRight, ArrowLeft, Ruler } from "lucide-react";
+import {
+  Sparkles,
+  RotateCcw,
+  AlertTriangle,
+  ArrowRight,
+  ArrowLeft,
+  Ruler,
+  Puzzle,
+} from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { useBrandAddons } from "@/hooks/use-brand-addons";
 
 export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: string }) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
+  const { addons } = useBrandAddons(brandId);
 
   const { data: rawSettings, isLoading } = useQuery({
     queryKey: queryKeys.brand.businessSettings(brandId),
@@ -160,6 +170,41 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
         >
           <RotateCcw className="w-3.5 h-3.5" />
           {isAr ? "إعادة للافتراضيات" : "Reset to Defaults"}
+        </Button>
+      </div>
+
+      {/* Add-ons Platform Quick Access */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl border border-border bg-muted/20">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <Puzzle className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-sm">
+                {isAr ? "منصة إضافات المتجر" : "Store Add-ons Platform"}
+              </span>
+              <Badge variant="secondary" className="text-xs px-2 py-0">
+                {isAr ? `${addons.length} إضافات مثبتة` : `${addons.length} installed`}
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {isAr
+                ? "تثبيت وتخصيص إضافات الأنشطة وتوسيع إمكانيات متجرك"
+                : "Install and configure activity add-ons to extend your store"}
+            </p>
+          </div>
+        </div>
+        <Button
+          asChild
+          variant="outline"
+          size="sm"
+          className="shrink-0 gap-1.5 h-9 rounded-xl border-border"
+        >
+          <Link to={`/admin/b/${slug}/addons` as any}>
+            <Puzzle className="size-3.5 text-primary" />
+            <span>{isAr ? "إدارة الإضافات" : "Manage Add-ons"}</span>
+          </Link>
         </Button>
       </div>
 
