@@ -431,7 +431,7 @@ function IntegrationsPage() {
                             <p className="leading-normal">
                               {row.provider === "gemini"
                                 ? isAr
-                                  ? "يتم استخدام تكامل Gemini هذا مباشرةً لترجمة عناوين المنتجات والوصف تلقائياً وتفصيل مخرجات صياغة المحتوى الثنائي اللغة."
+                                  ? "يتم استخدام تكامل Gemini هذا مباشرةً لترجمة عناوين المنتجات والوصف تلقائياً وتوليد مخرجات صياغة المحتوى الثنائي اللغة."
                                   : "This Gemini integration is used directly for super-high-quality storefront translations and product copywriting."
                                 : isAr
                                   ? "يستخدم هذا المزود مباشرةً من خدمة البريد الآمنة في Boutق عبر اتصال بروتوكول HTTP الآمن. لا يلزم إعداد رابط Webhook لدى المزود."

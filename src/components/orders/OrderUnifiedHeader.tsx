@@ -135,7 +135,7 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
   };
 
   const orderType = detectOrderType(items, order?.order_type);
-  const orderTypeLabel = getOrderTypeLabel(orderType, lang);
+  const orderTypeLabel = getOrderTypeLabel(orderType, lang, vocabulary);
 
   return (
     <header className="no-print space-y-2">

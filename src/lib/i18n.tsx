@@ -562,7 +562,7 @@ const ar: Dict = {
   "inventory.description": "الوصف",
   "inventory.addVariant": "إضافة خيار (مقاس/لون)",
   "inventory.addonsIntro":
-    "إضافات جاهزة مثل التطريز وتفصيل المقاسات ونوع القماش. يمكن تحديدها لكل صنف في الطلب.",
+    "إضافات جاهزة مثل التطريز وتخصيص المقاسات ونوع القماش. يمكن تحديدها لكل صنف في الطلب.",
   "inventory.addonName": "اسم الإضافة (مثل: تطريز يدوي)",
   "inventory.addonPrice": "السعر",
   "inventory.noAddons": "لا توجد إضافات بعد.",

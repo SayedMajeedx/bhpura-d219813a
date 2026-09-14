@@ -1091,7 +1091,7 @@ function ContentStudioPage() {
     if (sizesFormatted) {
       details.push(`📏 المقاسات المتوفرة للبيع الفوري: ${sizesFormatted}`);
     } else if (storeProfile.modules.made_to_order) {
-      details.push("📏 المقاسات: متوفرة للتفصيل حسب الطلب");
+      details.push("📏 المقاسات: متوفرة حسب الطلب");
     }
     if (occasionFormatted && storeProfile.vertical === "fashion") {
       details.push(`👗 مناسبة لـ: ${occasionFormatted}`);
@@ -1100,7 +1100,7 @@ function ContentStudioPage() {
       details.push(`🧵 نوع القماش: ${fabricFormatted}`);
     }
     if (storeProfile.modules.made_to_order) {
-      details.push("✂️ متوفرة للتفصيل حسب الطلب: نعم");
+      details.push("✂️ متوفرة حسب الطلب: نعم");
     }
 
     const detailsBlock = details.length > 0 ? `\n\n${details.join("\n")}` : "";
@@ -2130,7 +2130,7 @@ ${desc}${detailsBlock}
                     setBody(
                       isAr
                         ? storeProfile.modules.made_to_order
-                          ? "متوفرة الآن للطلب والتفصيل عبر متجرنا الإلكتروني."
+                          ? "متوفرة الآن للطلب حسب الحاجة عبر متجرنا الإلكتروني."
                           : "متوفرة الآن للطلب عبر متجرنا الإلكتروني."
                         : "Available now to order online.",
                     )

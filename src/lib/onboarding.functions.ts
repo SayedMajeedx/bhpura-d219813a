@@ -526,12 +526,8 @@ export const approveTenantRequest = createServerFn({ method: "POST" })
       // Install starter pack for approved tenant vertical
       try {
         const { installStarterPack } = await import("@/lib/addons/addons.functions");
-        const rawType = ((request as any).business_type || "general").toLowerCase();
-        const activity = rawType.includes("abaya")
-          ? "abayas"
-          : rawType.includes("fashion")
-            ? "fashion"
-            : "general";
+        const { legacyBusinessTypeToVertical } = await import("@/lib/store-profile");
+        const activity = legacyBusinessTypeToVertical((request as any).business_type);
         await installStarterPack({
           data: {
             brandId: brandRow.id,

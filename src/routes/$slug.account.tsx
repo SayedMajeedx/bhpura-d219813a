@@ -780,7 +780,7 @@ function OrdersSection({
         icon={PackageSearch}
         title={t("لا توجد أي طلبات نشطة", "No orders placed yet")}
         description={t(
-          "لم تسجل أي مشتريات من هذا المتجر بعد. بمجرد إتمامك للشراء ستظهر طلباتك بالتفصيل هنا.",
+          "لم تسجل أي مشتريات من هذا المتجر بعد. بمجرد إتمامك للشراء ستظهر طلباتك هنا.",
           "All purchases you make on this store will appear detailed in this panel.",
         )}
       />

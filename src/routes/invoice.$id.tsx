@@ -809,8 +809,8 @@ function PublicInvoice() {
                     </p>
                     <p style={{ color: surfaceCardTextColor, opacity: 0.88 }}>
                       {isRTL
-                        ? "فترة الاستبدال والاسترجاع خلال 3 أيام من تاريخ الاستلام. القطع المفصلة خصيصاً غير قابلة للاسترجاع بعد البدء في التفصيل."
-                        : "Exchange and return policy valid within 3 days of receipt. Custom-tailored products are non-refundable once tailoring has commenced."}
+                        ? "فترة الاستبدال والاسترجاع خلال 3 أيام من تاريخ الاستلام. القطع المصنعة خصيصاً غير قابلة للاسترجاع بعد البدء في التنفيذ."
+                        : "Exchange and return policy valid within 3 days of receipt. Custom-made products are non-refundable once production has commenced."}
                     </p>
                   </div>
                 )}

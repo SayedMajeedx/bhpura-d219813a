@@ -3171,7 +3171,7 @@ function OrderQuickInspectSheet({
           {/* Line Items Breakdown */}
           <div className="space-y-3">
             <h4 className="text-xs font-semibold text-muted-foreground">
-              {isAr ? "المنتجات والأصناف التفصيلية" : "Order Line Items Breakdown"}
+              {isAr ? "المنتجات والأصناف المشمولة" : "Order Line Items Breakdown"}
             </h4>
             <div className="divide-y border border-border-subtle rounded-xl overflow-hidden bg-card shadow-2xs">
               {items.map((it: any, idx: number) => {

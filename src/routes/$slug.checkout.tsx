@@ -1158,8 +1158,8 @@ function Checkout() {
       } else if (msg.includes("order_items_location_check")) {
         toast.error(
           t(
-            "تعذر تجهيز طلب التفصيل حالياً. حدّث الصفحة وحاول مرة أخرى.",
-            "Custom tailoring checkout is temporarily unavailable. Refresh and try again.",
+            "تعذر تجهيز الطلب المخصص حالياً. حدّث الصفحة وحاول مرة أخرى.",
+            "Custom order checkout is temporarily unavailable. Refresh and try again.",
           ),
         );
       } else if (msg.includes("PAYMENT_METHOD_DISABLED")) {

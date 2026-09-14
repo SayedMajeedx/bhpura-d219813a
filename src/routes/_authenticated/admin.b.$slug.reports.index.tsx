@@ -318,7 +318,7 @@ function ReportsOverview() {
                   Number(data.missing_cost_item_count || 0),
                 ],
                 [
-                  lang === "ar" ? "عناصر يدوية (طلبات تفصيل)" : "Manual / bespoke items",
+                  lang === "ar" ? "عناصر يدوية (طلبات مخصصة)" : "Manual / bespoke items",
                   Number(data.missing_product_link_count || 0),
                 ],
                 [

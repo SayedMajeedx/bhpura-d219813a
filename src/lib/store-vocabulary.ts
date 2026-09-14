@@ -39,7 +39,7 @@ export const DEFAULT_VOCABULARY: StoreVocabulary = {
     en: "Enter any special production or adjustment notes...",
   },
   ready_made: { ar: "جاهز", en: "Ready-made" },
-  made_to_order: { ar: "تفصيل حسب الطلب", en: "Made to order" },
+  made_to_order: { ar: "صنع حسب الطلب", en: "Made to order" },
   sizing_guide: { ar: "دليل المقاسات", en: "Size Guide" },
 };
 

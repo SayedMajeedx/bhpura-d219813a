@@ -114,24 +114,29 @@ describe("Vanilla Core Guard Tests", () => {
     ).toEqual([]);
   });
 
-  it("verifies that fashion vertical keyword 'عباية' does not leak into vanilla core files", () => {
+  it("verifies that vertical keywords do not leak into vanilla core files", () => {
     const coreDirs = [
       path.join(srcDir, "components"),
       path.join(srcDir, "routes"),
       path.join(srcDir, "lib"),
+      path.join(srcDir, "config"),
     ];
 
+    const guardRegex = /عباي|abaya|الخياط|للخياط|Sent to Tailor|Fit Passport|passport_|تفصيل/i;
     const violations: { file: string; line: number; text: string }[] = [];
 
     for (const dir of coreDirs) {
       const files = getAllFiles(dir);
       for (const file of files) {
         const relPath = path.normalize(path.relative(rootDir, file));
-        // Skip addon bridge, onboarding activity definition, and legacy backward-compat sets
+
+        // Explicit allowlist:
+        // 1. Addons subsystem and preset providers
         if (
           relPath.startsWith(path.normalize("src/lib/addons/")) ||
-          relPath.endsWith("store-profile.ts") || // STORE_ACTIVITIES lists 'abayas' as a valid onboarding business type
-          relPath.endsWith("settings.tsx") // LEGACY_SETTINGS_NAMES backward-compatibility check
+          relPath.startsWith(path.normalize("src/addons/")) ||
+          // 2. Canonical store profile definition where vertical keys are defined
+          relPath.endsWith("store-profile.ts")
         ) {
           continue;
         }
@@ -139,16 +144,27 @@ describe("Vanilla Core Guard Tests", () => {
         const content = fs.readFileSync(file, "utf-8");
         const lines = content.split("\n");
         lines.forEach((line, idx) => {
-          // Check for Arabic 'عباية'
+          const trimmed = line.trim();
+          if (trimmed.startsWith("//") || trimmed.startsWith("/*") || trimmed.startsWith("*")) {
+            return;
+          }
+
+          // Allow backward-compatibility checks for legacy demo/seed brand names
           if (
-            line.includes("عباية") &&
-            !line.trim().startsWith("//") &&
-            !line.trim().startsWith("/*")
+            (trimmed.includes("LEGACY_BRAND_NAMES") || trimmed.includes("LEGACY_SETTINGS_NAMES")) &&
+            (relPath.includes("InvoicePreview") ||
+              relPath.includes("SendInvoiceDialog") ||
+              relPath.includes("settings.tsx") ||
+              relPath.includes("orders.$id.tsx"))
           ) {
+            return;
+          }
+
+          if (guardRegex.test(line)) {
             violations.push({
               file: relPath,
               line: idx + 1,
-              text: line.trim(),
+              text: trimmed,
             });
           }
         });

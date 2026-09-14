@@ -287,7 +287,7 @@ export function extractPriceByRegex(caption: string): {
         p = p / 1000;
       }
       // Common boutique sense check: Price in BHD is typically between 1.0 and 1500.0 BHD
-      // Exclude common abaya sizes if accidentally matched (like size 52, 54, 56, 58, 60 when no currency was around)
+      // Exclude common garment sizes if accidentally matched (like size 52, 54, 56, 58, 60 when no currency was around)
       if (p > 0 && p < 2000) {
         return { price: p, rawMatch: match[0], isExplicit: true };
       }

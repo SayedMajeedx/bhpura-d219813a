@@ -1413,7 +1413,7 @@ function Settings() {
                   </h4>
                   <p className="text-xs text-muted-foreground">
                     {lang === "ar"
-                      ? "تحديد ألوان مستقلة لشارات الحالة (مدفوع، غير مدفوع، قيد التنفيذ/التفصيل)."
+                      ? "تحديد ألوان مستقلة لشارات الحالة (مدفوع، غير مدفوع، قيد التنفيذ)."
                       : "Define independent colors for paid, unpaid, and in-progress status badges."}
                   </p>
                 </div>
@@ -1464,7 +1464,7 @@ function Settings() {
                   </div>
                   <div>
                     <Label className="text-xs">
-                      {lang === "ar" ? "قيد التنفيذ / جاري التفصيل" : "In Progress / Tailoring"}
+                      {lang === "ar" ? "قيد التنفيذ" : "In Progress"}
                     </Label>
                     <div className="flex gap-2 mt-1">
                       <input
@@ -5164,7 +5164,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               onClick={() => setThemeMode("advanced")}
               className="gap-1.5 h-8 text-xs font-semibold rounded-lg"
             >
-              <span>{isAr ? "تخصيص تفصيلي متقدم" : "Advanced Customizer"}</span>
+              <span>{isAr ? "تخصيص متقدم شامل" : "Advanced Customizer"}</span>
             </Button>
           </div>
           <span className="text-xs text-muted-foreground">

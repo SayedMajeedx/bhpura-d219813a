@@ -454,7 +454,7 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-sm">
-                        {isAr ? "ملفات قياسات Fit Passport" : "Fit Passport Profiles"}
+                        {isAr ? "ملفات القياسات المخصصة" : "Measurement Profiles"}
                       </span>
                       {fitProfiles ? (
                         <Badge
@@ -471,8 +471,8 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {isAr
-                        ? "الملفات المعرّفة للعملاء والطلبات والتفصيل ومقاسات المنتجات"
-                        : "Configured measurement profiles for customers, PDP, and order tailoring"}
+                        ? "الملفات المعرّفة للعملاء والطلبات وصنع المنتجات ومقاساتها"
+                        : "Configured measurement profiles for customers, PDP, and order production"}
                     </p>
                   </div>
                 </div>
@@ -535,7 +535,7 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
                 <p className="mt-0.5">
                   {isAr
                     ? `يوجد ${passportCount} ملف قياس محفوظ للعملاء. إيقاف الوحدة يخفي الواجهة فقط دون حذف أي بيانات.`
-                    : `There are ${passportCount} saved customer fit passports. Disabling this module only hides the UI and will not delete data.`}
+                    : `There are ${passportCount} saved customer measurement profiles. Disabling this module only hides the UI and will not delete data.`}
                 </p>
               </div>
             </div>
