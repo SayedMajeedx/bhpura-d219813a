@@ -7,7 +7,8 @@ export type ImageCropPresetKey =
   | "productPortrait"
   | "pageBanner"
   | "pageInline"
-  | "logo";
+  | "logo"
+  | "sizeGuideDiagram";
 
 export type ImageCropPreset = {
   aspect: number;
@@ -102,6 +103,14 @@ export const IMAGE_CROP_PRESETS: Record<ImageCropPresetKey, ImageCropPreset> = {
     previewAspects: [
       { labelEn: "Square Logo (1:1)", labelAr: "شعار مربع (1:1)", aspect: 1 },
       { labelEn: "Header Badge", labelAr: "شريط الهيدر", aspect: 1 },
+    ],
+  },
+  sizeGuideDiagram: {
+    aspect: 4 / 5,
+    outputWidth: 1200,
+    outputHeight: 1500,
+    previewAspects: [
+      { labelEn: "Portrait Diagram (4:5)", labelAr: "مخطط طولي (4:5)", aspect: 4 / 5 },
     ],
   },
 };

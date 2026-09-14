@@ -22,6 +22,7 @@ import {
   type StoreVertical,
   type StoreModuleOverrides,
 } from "@/lib/store-profile";
+import type { SizeGuide } from "@/lib/size-guide";
 
 export type StoreLang = "ar" | "en";
 export type HomePromoCard = {
@@ -286,6 +287,7 @@ type StoreCtx = {
   membershipLoading: boolean;
   refreshMembership: () => Promise<boolean>;
   signOut: () => Promise<void>;
+  sizeGuides: SizeGuide[];
 };
 
 const Ctx = createContext<StoreCtx | null>(null);
@@ -308,10 +310,12 @@ function cartLineId(
 export function StorefrontProvider({
   brand,
   settings,
+  sizeGuides = [],
   children,
 }: {
   brand: Brand;
   settings: PublicSettings;
+  sizeGuides?: SizeGuide[];
   children: ReactNode;
 }) {
   const cartKey = `storefront-cart:${brand.slug}`;
@@ -733,6 +737,7 @@ export function StorefrontProvider({
     membershipLoading,
     refreshMembership,
     signOut,
+    sizeGuides,
   };
 
   return (

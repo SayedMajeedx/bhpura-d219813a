@@ -37,6 +37,7 @@ type Category = {
   menu_icon_url: string | null;
   sort_order: number;
   is_active: boolean;
+  size_guide_id?: string | null;
   product_count?: number;
   total_product_count?: number;
   is_smart?: boolean;
@@ -289,10 +290,29 @@ function CategoryDialog({
     menu_icon_url: category?.menu_icon_url ?? "",
     sort_order: category?.sort_order ?? 0,
     is_active: category?.is_active ?? true,
+    size_guide_id: category?.size_guide_id ?? "",
   });
   const [uploading, setUploading] = useState(false);
   const [uploadingIcon, setUploadingIcon] = useState(false);
   const iconInput = useRef<HTMLInputElement>(null);
+
+  const { data: sizeGuides } = useQuery({
+    queryKey: ["admin-size-guides-list", brandId],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("size_guides")
+        .select("id, name_ar, name_en, is_default")
+        .eq("brand_id", brandId)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      return (data ?? []) as Array<{
+        id: string;
+        name_ar: string;
+        name_en: string;
+        is_default: boolean;
+      }>;
+    },
+  });
 
   useEffect(() => {
     setForm({
@@ -304,6 +324,7 @@ function CategoryDialog({
       menu_icon_url: category?.menu_icon_url ?? "",
       sort_order: category?.sort_order ?? 0,
       is_active: category?.is_active ?? true,
+      size_guide_id: category?.size_guide_id ?? "",
     });
   }, [category]);
 
@@ -344,6 +365,7 @@ function CategoryDialog({
       menu_icon_url: form.menu_icon_url || null,
       sort_order: Number(form.sort_order) || 0,
       is_active: form.is_active,
+      size_guide_id: form.size_guide_id || null,
     };
     const { error } = category
       ? await (supabase.from("categories") as any).update(payload).eq("id", category.id)
@@ -413,6 +435,31 @@ function CategoryDialog({
             ))}
           </select>
         </div>
+
+        {sizeGuides && sizeGuides.length > 0 && (
+          <div>
+            <Label>
+              {isAr ? "دليل المقاسات الافتراضي للقسم" : "Default Size Guide for this category"}
+            </Label>
+            <select
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              value={form.size_guide_id}
+              onChange={(e) => setForm({ ...form, size_guide_id: e.target.value })}
+            >
+              <option value="">
+                {isAr
+                  ? "تلقائي (يتبع القسم الأب أو الافتراضي للمتجر)"
+                  : "Automatic (Inherit from parent or store default)"}
+              </option>
+              {sizeGuides.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {isAr ? g.name_ar : g.name_en}{" "}
+                  {g.is_default ? (isAr ? "(الافتراضي)" : "(Default)") : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div>
           <Label>{isAr ? "صورة الغلاف" : "Cover image"}</Label>

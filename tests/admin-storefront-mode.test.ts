@@ -237,4 +237,48 @@ describe("Admin Storefront Mode — Settings Defaults & Inquiry Templates", () =
     expect(normalizeWhatsAppDigits("33112233")).toBe("97333112233");
     expect(normalizeWhatsAppDigits("")).toBe("");
   });
+
+  it("includes size-guides navigation item only when storeModules.size_guide is true", () => {
+    const navWithGuide = getAdminNavItems({
+      activeSlug: "pura",
+      isCourier: false,
+      isAdmin: true,
+      hasPermission: () => true,
+      t: (k) => k,
+      lang: "ar",
+      storefrontMode: "shop",
+      storeModules: {
+        size_guide: true,
+        fit_passport: false,
+        tailoring: false,
+        fabric_spec: false,
+        batch_expiry: false,
+        custom_dimensions: false,
+        backorders: false,
+      },
+    });
+
+    expect(navWithGuide.some((item) => item.id === "size-guides")).toBe(true);
+
+    const navWithoutGuide = getAdminNavItems({
+      activeSlug: "pura",
+      isCourier: false,
+      isAdmin: true,
+      hasPermission: () => true,
+      t: (k) => k,
+      lang: "ar",
+      storefrontMode: "shop",
+      storeModules: {
+        size_guide: false,
+        fit_passport: false,
+        tailoring: false,
+        fabric_spec: false,
+        batch_expiry: false,
+        custom_dimensions: false,
+        backorders: false,
+      },
+    });
+
+    expect(navWithoutGuide.some((item) => item.id === "size-guides")).toBe(false);
+  });
 });

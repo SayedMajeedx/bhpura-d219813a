@@ -19,6 +19,7 @@ import {
   Award,
   ShoppingCart,
   Palette,
+  Ruler,
   type LucideIcon,
 } from "lucide-react";
 
@@ -117,6 +118,7 @@ export function getAdminNavItems({
   t,
   lang,
   storefrontMode = "shop",
+  storeModules,
 }: GetNavItemsOptions): AdminNavItemConfig[] {
   if (!activeSlug) return [];
 
@@ -265,6 +267,21 @@ export function getAdminNavItems({
         "Organize products into main and sub-categories for intuitive storefront browsing",
       descriptionAr: "تنظيم المنتجات في أقسام وتصنيفات رئيسية وفرعية لتسهيل التصفح",
       icon: Tags,
+      permission: "manage_inventory",
+      section: "operations",
+      category: "products_stock",
+      tier: "modular",
+    },
+    {
+      id: "size-guides",
+      to: "/admin/b/$slug/size-guides",
+      params: { slug: activeSlug },
+      labelEn: "Size Guides",
+      labelAr: lang === "ar" ? "أدلة المقاسات" : "Size Guides",
+      descriptionEn:
+        "Custom multi-tier sizing charts, how-to-measure diagrams, and size recommender",
+      descriptionAr: "جداول القياس المخصصة، إرشادات أخذ القياس، ومُرشّح المقاس الذكي",
+      icon: Ruler,
       permission: "manage_inventory",
       section: "operations",
       category: "products_stock",
@@ -434,6 +451,7 @@ export function getAdminNavItems({
   return allItems.filter((item) => {
     if (item.adminOnly && !isAdmin) return false;
     if (item.permission && !hasPermission(item.permission)) return false;
+    if (item.id === "size-guides" && !storeModules?.size_guide) return false;
     if (storefrontMode === "catalog") {
       if (item.id === "abandoned-carts" || item.id === "loyalty" || item.id === "discounts") {
         return false;
