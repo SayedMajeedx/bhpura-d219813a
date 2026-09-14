@@ -339,6 +339,7 @@ function StorefrontLayout() {
       brand={brand}
       settings={settings}
       sizeGuides={bootstrapData?.size_guides ?? []}
+      addons={bootstrapData?.addons ?? []}
     >
       <StorefrontAnalytics />
       <StoreShell />

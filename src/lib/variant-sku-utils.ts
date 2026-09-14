@@ -216,7 +216,7 @@ export const SIZING_PRESETS = [
 ];
 
 export function orderSizingPresetsForVertical(vertical: StoreVertical) {
-  if (vertical === "fashion") {
+  if (vertical === "fashion" || vertical === "abayas") {
     return SIZING_PRESETS;
   }
   const abayaIds = new Set(["abaya_gulf", "abaya_extended"]);

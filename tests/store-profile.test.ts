@@ -11,6 +11,11 @@ import { orderSizingPresetsForVertical } from "../src/lib/variant-sku-utils";
 
 describe("store-profile pure library", () => {
   it("resolves default modules correctly for each vertical", () => {
+    expect(resolveStoreModules({ store_vertical: "abayas" })).toEqual({
+      size_guide: true,
+      fit_passport: true,
+      made_to_order: true,
+    });
     expect(resolveStoreModules({ store_vertical: "fashion" })).toEqual({
       size_guide: true,
       fit_passport: true,
@@ -53,6 +58,7 @@ describe("store-profile pure library", () => {
 
   it("normalizes unknown vertical to general", () => {
     expect(normalizeVertical("abaya")).toBe("general");
+    expect(normalizeVertical("abayas")).toBe("abayas");
     expect(normalizeVertical(undefined)).toBe("general");
     expect(normalizeVertical(null)).toBe("general");
     expect(normalizeVertical("")).toBe("general");
@@ -69,12 +75,17 @@ describe("store-profile pure library", () => {
   it("maps legacy business types to verticals correctly", () => {
     expect(legacyBusinessTypeToVertical("Cafe / Restaurant")).toBe("food");
     expect(legacyBusinessTypeToVertical("Digital store")).toBe("digital");
+    expect(legacyBusinessTypeToVertical("Abayas & Fashion")).toBe("abayas");
+    expect(legacyBusinessTypeToVertical("عبايات وتفصيل")).toBe("abayas");
     expect(legacyBusinessTypeToVertical("Boutique & Fashion")).toBe("fashion");
     expect(legacyBusinessTypeToVertical("Unknown")).toBe("general");
     expect(legacyBusinessTypeToVertical(null)).toBe("general");
   });
 
   it("reorders sizing presets to put abaya presets at the end for non-fashion verticals", () => {
+    const abayas = orderSizingPresetsForVertical("abayas");
+    expect(abayas[0].labelEn).toContain("Abayas");
+
     const fashion = orderSizingPresetsForVertical("fashion");
     expect(fashion[0].labelEn).toContain("Abayas");
 

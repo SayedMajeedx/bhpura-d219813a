@@ -24,6 +24,9 @@ import {
 } from "@/lib/store-profile";
 import type { SizeGuide } from "@/lib/size-guide";
 import { resolveFitProfiles, type FitProfileDefinition } from "@/lib/fit-passport";
+import { AddonsProvider } from "@/components/addons/AddonsProvider";
+import { modulesFromAddons } from "@/lib/addons/addon-compat";
+import type { BrandAddonRow } from "@/lib/addons/addon-types";
 
 export type StoreLang = "ar" | "en";
 export type HomePromoCard = {
@@ -290,6 +293,8 @@ type StoreCtx = {
   refreshMembership: () => Promise<boolean>;
   signOut: () => Promise<void>;
   sizeGuides: SizeGuide[];
+  addons: Array<{ addon_id: string; status: string; public_settings: Record<string, unknown> }>;
+  isAddonInstalled: (addonId: string) => boolean;
 };
 
 const Ctx = createContext<StoreCtx | null>(null);
@@ -313,11 +318,13 @@ export function StorefrontProvider({
   brand,
   settings,
   sizeGuides = [],
+  addons = [],
   children,
 }: {
   brand: Brand;
   settings: PublicSettings;
   sizeGuides?: SizeGuide[];
+  addons?: Array<{ addon_id: string; status: string; public_settings: Record<string, unknown> }>;
   children: ReactNode;
 }) {
   const cartKey = `storefront-cart:${brand.slug}`;
@@ -715,6 +722,27 @@ export function StorefrontProvider({
   }, []);
   const isWishlisted = useCallback((productId: string) => wishlist.includes(productId), [wishlist]);
 
+  const addonRows = useMemo<BrandAddonRow[]>(() => {
+    return (addons || []).map((a) => ({
+      brand_id: brand.id,
+      addon_id: a.addon_id as any,
+      status: (a.status || "installed") as any,
+      version: 1,
+      settings: {},
+      public_settings: a.public_settings || {},
+      seeded_keys: [],
+      source: "onboarding",
+      installed_at: "",
+      updated_at: "",
+    }));
+  }, [addons, brand.id]);
+
+  const isAddonInstalled = useCallback(
+    (addonId: string) =>
+      (addons || []).some((a) => a.addon_id === addonId && a.status === "installed"),
+    [addons],
+  );
+
   const value: StoreCtx = {
     brand,
     settings,
@@ -740,11 +768,15 @@ export function StorefrontProvider({
     refreshMembership,
     signOut,
     sizeGuides,
+    addons,
+    isAddonInstalled,
   };
 
   return (
     <Ctx.Provider value={value}>
-      <DirectionProvider dir={dir}>{children}</DirectionProvider>
+      <AddonsProvider addons={addonRows}>
+        <DirectionProvider dir={dir}>{children}</DirectionProvider>
+      </AddonsProvider>
     </Ctx.Provider>
   );
 }
@@ -756,17 +788,30 @@ export function useStorefront() {
 }
 
 export function useStoreModules() {
-  const { settings } = useStorefront();
+  const { settings, addons } = useStorefront();
   const storeVertical = settings?.store_vertical;
   const storeModules = settings?.store_modules;
-  return useMemo(
-    () =>
-      resolveStoreModules({
-        store_vertical: storeVertical,
-        store_modules: storeModules,
-      }),
-    [storeVertical, storeModules],
-  );
+  return useMemo(() => {
+    if (addons && addons.length > 0) {
+      const rows: BrandAddonRow[] = addons.map((a) => ({
+        brand_id: "",
+        addon_id: a.addon_id as any,
+        status: (a.status || "installed") as any,
+        version: 1,
+        settings: {},
+        public_settings: a.public_settings || {},
+        seeded_keys: [],
+        source: "onboarding",
+        installed_at: "",
+        updated_at: "",
+      }));
+      return modulesFromAddons(rows);
+    }
+    return resolveStoreModules({
+      store_vertical: storeVertical,
+      store_modules: storeModules,
+    });
+  }, [storeVertical, storeModules, addons]);
 }
 
 export function useFitProfiles(): FitProfileDefinition[] {
