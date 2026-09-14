@@ -163,8 +163,8 @@ function AuthPage() {
           <div className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
           <div className="text-xs font-semibold text-zinc-200">
             {lang === "ar"
-              ? "صوفيا آل خليفة • عباية حرير أورجانزا"
-              : "Sofia Al Khalifa • Organza Silk Abaya"}
+              ? "صوفيا آل خليفة • تصميم حرير أورجانزا"
+              : "Sofia Al Khalifa • Silk Organza Design"}
           </div>
           <span className="text-xs font-bold text-emerald-400">145.000 BHD</span>
         </div>

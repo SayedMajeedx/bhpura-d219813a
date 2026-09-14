@@ -48,7 +48,7 @@ import { CustomerReturnRequestModal } from "@/components/storefront/CustomerRetu
 import { CustomerLoyaltySection } from "@/components/loyalty/CustomerLoyaltySection";
 import { getCustomerStoreCreditBalance } from "@/lib/returns.functions";
 import { RETURN_STATUS_CONFIG, type ReturnStatus } from "@/lib/returns.types";
-import { StorefrontFitPassport } from "@/components/storefront/StorefrontFitPassport";
+import { AddonSlot } from "@/components/addons/AddonSlot";
 
 export const Route = createFileRoute("/$slug/account")({
   component: AccountPage,
@@ -615,14 +615,16 @@ function AccountPage() {
 
             {modules.fit_passport && (
               <TabsContent value="fit" className="mt-0 focus-visible:outline-none">
-                <StorefrontFitPassport
-                  brandId={brand.id}
-                  brandName={
-                    (isAr ? brand.name_ar || brand.name_en : brand.name_en || brand.name_ar) ??
-                    undefined
-                  }
-                  customerId={customer?.id}
-                  isAr={isAr}
+                <AddonSlot
+                  placement="storefront.account.tab"
+                  props={{
+                    brandId: brand.id,
+                    brandName:
+                      (isAr ? brand.name_ar || brand.name_en : brand.name_en || brand.name_ar) ??
+                      undefined,
+                    customerId: customer?.id,
+                    isAr: isAr,
+                  }}
                 />
               </TabsContent>
             )}

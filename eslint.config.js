@@ -66,5 +66,34 @@ export default tseslint.config(
       "@typescript-eslint/no-explicit-any": "off",
     },
   },
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: [
+      "src/addons/**",
+      "src/lib/addons/**",
+      "src/routes/$slug.size-guide.tsx",
+      "src/routes/_authenticated/admin.b.$slug.size-guides.tsx",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "@/addons",
+                "@/addons/*",
+                "../addons/*",
+                "../../addons/*",
+                "../../../addons/*",
+              ],
+              message:
+                "Core files must remain vanilla! Do not import directly from `@/addons/*`. Use <AddonSlot />, add-on extension points, or '@/lib/addons/*' presets bridge instead.",
+            },
+          ],
+        },
+      ],
+    },
+  },
   eslintPluginPrettier,
 );

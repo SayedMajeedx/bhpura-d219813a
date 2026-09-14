@@ -29,7 +29,7 @@ import {
   type StoreModuleOverrides,
   type StoreModuleId,
 } from "@/lib/store-profile";
-import { resolveFitProfiles, type FitProfileDefinition } from "@/lib/fit-passport";
+import { resolveFitProfiles, type FitProfileDefinition } from "@/lib/addons/addon-presets";
 import { Sparkles, RotateCcw, AlertTriangle, ArrowRight, ArrowLeft, Ruler } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 

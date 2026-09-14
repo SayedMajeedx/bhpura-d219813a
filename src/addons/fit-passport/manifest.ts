@@ -33,22 +33,21 @@ export const fitPassportManifest: AddonManifest = {
         addonId: "fit-passport",
         placement: "storefront.account.tab",
         order: 20,
-        component: React.lazy(() =>
-          import("@/components/storefront/StorefrontFitPassport").then((m) => ({
-            default: m.StorefrontFitPassport,
-          })),
-        ),
+        component: React.lazy(() => import("./components/storefront/StorefrontFitPassport")),
+      },
+      {
+        id: "storefront-fit-passport-product-slot",
+        addonId: "fit-passport",
+        placement: "storefront.product.afterOptions",
+        order: 10,
+        component: React.lazy(() => import("./components/storefront/ProductFitPassportSlot")),
       },
       {
         id: "admin-customer-fit-passport-panel",
         addonId: "fit-passport",
         placement: "admin.customer.panel",
         order: 20,
-        component: React.lazy(() =>
-          import("@/components/customers/CustomerFitPassport").then((m) => ({
-            default: m.CustomerFitPassport,
-          })),
-        ),
+        component: React.lazy(() => import("./components/admin/CustomerFitPassport")),
       },
     ],
   },

@@ -3,8 +3,8 @@ import {
   ALL_SIZE_GUIDE_TEMPLATES,
   ABAYA_GULF_TEMPLATE,
   getSizeGuideTemplate,
-} from "../src/lib/size-guide-templates";
-import { normalizeSizeGuide } from "../src/lib/size-guide";
+} from "../src/addons/size-guides/lib/size-guide-templates";
+import { normalizeSizeGuide } from "../src/addons/size-guides/lib/size-guide";
 import fs from "fs";
 import path from "path";
 

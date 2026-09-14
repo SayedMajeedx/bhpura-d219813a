@@ -109,7 +109,11 @@ import { isLowStock, isOutOfStock } from "@/lib/inventory-health";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { OsEmptyState } from "@/components/os/os-empty-state";
 import { useEntitlements } from "@/lib/saas-billing/use-entitlements";
-import { matchCustomFieldToMeasurement, resolveFitProfiles } from "@/lib/fit-passport";
+import {
+  matchCustomFieldToMeasurement,
+  resolveFitProfiles,
+  CUSTOMIZER_PRESETS,
+} from "@/lib/addons/addon-presets";
 
 /** Common measurement units the admin can pick from for a "size" variant. */
 const SIZE_UNITS = ["", "cm", "mm", "m", "inch", "ft", "kg", "g", "ml", "l"] as const;
@@ -2281,261 +2285,6 @@ function ProductsSection({
   );
 }
 
-const CUSTOMIZER_PRESETS = {
-  print: {
-    label_en: "Print / Stamp Shop Preset",
-    label_ar: "نموذج مطبعة / متجر أختام",
-    fields: [
-      {
-        key: "stamp_size",
-        label_ar: "مقاس الختم / الطباعة",
-        label_en: "Stamp/Print Size Swatches",
-        type: "select",
-        options: ["Q13 (13*49mm)", "Q20 (20*20mm)", "Q30 (30*30mm)"],
-        required: true,
-      },
-      {
-        key: "ink_color",
-        label_ar: "لون الحبر",
-        label_en: "Ink/Color Picker",
-        type: "select",
-        options: ["Black", "Blue", "Red", "Green"],
-        required: true,
-      },
-      {
-        key: "logo_upload",
-        label_ar: "تحميل شعار الختم / التصميم",
-        label_en: "Upload Logo File Input",
-        type: "file",
-        options: [],
-        required: false,
-      },
-      {
-        key: "custom_note",
-        label_ar: "نص الكتابة المطلوب للختم",
-        label_en: "Custom Note Text Area",
-        type: "text",
-        options: [],
-        required: false,
-      },
-    ],
-  },
-  fashion: {
-    label_en: "Fashion / Abaya Preset",
-    label_ar: "نموذج أزياء / عبايات",
-    fields: [
-      {
-        key: "length",
-        label_ar: "الطول",
-        label_en: "Length",
-        type: "text",
-        options: [],
-        required: false,
-      },
-      {
-        key: "bust",
-        label_ar: "الصدر",
-        label_en: "Bust",
-        type: "text",
-        options: [],
-        required: false,
-      },
-      {
-        key: "sleeve",
-        label_ar: "الكم",
-        label_en: "Sleeve",
-        type: "text",
-        options: [],
-        required: false,
-      },
-      {
-        key: "shoulder",
-        label_ar: "الكتف",
-        label_en: "Shoulder",
-        type: "text",
-        options: [],
-        required: false,
-      },
-    ],
-  },
-  passport_abaya: {
-    label_en: "Fit Passport — Abaya",
-    label_ar: "Fit Passport — عباية",
-    fields: [
-      {
-        key: "passport_abaya_length",
-        label_ar: "الطول",
-        label_en: "Length",
-        type: "number",
-        options: [],
-        required: true,
-      },
-      {
-        key: "passport_abaya_bust",
-        label_ar: "الصدر",
-        label_en: "Bust",
-        type: "number",
-        options: [],
-        required: true,
-      },
-      {
-        key: "passport_abaya_sleeve",
-        label_ar: "طول الكم",
-        label_en: "Sleeve length",
-        type: "number",
-        options: [],
-        required: true,
-      },
-      {
-        key: "passport_abaya_shoulder",
-        label_ar: "عرض الكتف",
-        label_en: "Shoulder",
-        type: "number",
-        options: [],
-        required: true,
-      },
-      {
-        key: "passport_abaya_waist",
-        label_ar: "الخصر (اختياري)",
-        label_en: "Waist (optional)",
-        type: "number",
-        options: [],
-        required: false,
-      },
-      {
-        key: "passport_abaya_hips",
-        label_ar: "الأرداف (اختياري)",
-        label_en: "Hips (optional)",
-        type: "number",
-        options: [],
-        required: false,
-      },
-      {
-        key: "passport_abaya_arm_width",
-        label_ar: "عرض الذراع (اختياري)",
-        label_en: "Arm width (optional)",
-        type: "number",
-        options: [],
-        required: false,
-      },
-    ],
-  },
-  passport_dress: {
-    label_en: "Fit Passport — Dress",
-    label_ar: "Fit Passport — فستان",
-    fields: [
-      {
-        key: "passport_dress_length",
-        label_ar: "الطول",
-        label_en: "Length",
-        type: "number",
-        options: [],
-        required: true,
-      },
-      {
-        key: "passport_dress_bust",
-        label_ar: "الصدر",
-        label_en: "Bust",
-        type: "number",
-        options: [],
-        required: true,
-      },
-      {
-        key: "passport_dress_waist",
-        label_ar: "الخصر",
-        label_en: "Waist",
-        type: "number",
-        options: [],
-        required: true,
-      },
-      {
-        key: "passport_dress_shoulder",
-        label_ar: "عرض الكتف",
-        label_en: "Shoulder",
-        type: "number",
-        options: [],
-        required: true,
-      },
-      {
-        key: "passport_dress_sleeve",
-        label_ar: "طول الكم (اختياري)",
-        label_en: "Sleeve length (optional)",
-        type: "number",
-        options: [],
-        required: false,
-      },
-      {
-        key: "passport_dress_hips",
-        label_ar: "الأرداف (اختياري)",
-        label_en: "Hips (optional)",
-        type: "number",
-        options: [],
-        required: false,
-      },
-      {
-        key: "passport_dress_arm_width",
-        label_ar: "عرض الذراع (اختياري)",
-        label_en: "Arm width (optional)",
-        type: "number",
-        options: [],
-        required: false,
-      },
-    ],
-  },
-  gift: {
-    label_en: "Gift / Perfume Preset",
-    label_ar: "نموذج هدايا / عطور",
-    fields: [
-      {
-        key: "gift_box",
-        label_ar: "إضافة صندوق هدايا فاخر",
-        label_en: "Gift Box Add-On (+X BHD)",
-        type: "select",
-        options: ["No / لا", "Yes (+2.000 BHD) / نعم (+2.000 د.ب)"],
-        required: true,
-      },
-      {
-        key: "greeting_card",
-        label_ar: "نص كرت الإهداء",
-        label_en: "Greeting Card Message Text Area",
-        type: "text",
-        options: [],
-        required: false,
-      },
-    ],
-  },
-  jewelry: {
-    label_en: "Jewelry / Engraving Preset",
-    label_ar: "نموذج مجوهرات / حفر",
-    fields: [
-      {
-        key: "engraving_text",
-        label_ar: "النص المطلوب للحفر",
-        label_en: "Custom Engraving Text",
-        type: "text",
-        options: [],
-        required: false,
-      },
-      {
-        key: "font_style",
-        label_ar: "خط الكتابة",
-        label_en: "Font Style Selector",
-        type: "select",
-        options: ["Arabic Calligraphy / ديواني", "Classic Serif", "Modern Sans-Serif"],
-        required: false,
-      },
-      {
-        key: "material_swatch",
-        label_ar: "نوع المعدن",
-        label_en: "Material/Metal Swatch",
-        type: "select",
-        options: ["Gold / ذهب", "Silver / فضة", "Rose Gold / روز جولد"],
-        required: true,
-      },
-    ],
-  },
-};
-
 function cleanPassportCustomFields(fields: CustomField[]) {
   const passportMode = fields.some((field) => field.key.includes("passport_"));
   if (!passportMode) return fields;
@@ -3715,9 +3464,7 @@ function ProductDialog({
                       const preset = dynamicPassport || staticPreset;
                       if (preset) {
                         const isPassportPreset =
-                          Boolean(dynamicPassport) ||
-                          presetKey === "passport_abaya" ||
-                          presetKey === "passport_dress";
+                          Boolean(dynamicPassport) || presetKey.startsWith("passport_");
                         const retainedFields = isPassportPreset
                           ? (form.custom_fields ?? []).filter(
                               (field) =>
@@ -3751,23 +3498,18 @@ function ProductDialog({
                       />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="print">
-                        {isAr ? "أختام وطباعة" : "Print / Stamp Shop"}
-                      </SelectItem>
-                      <SelectItem value="fashion">
-                        {isAr ? "عبايات وأزياء" : "Fashion / Abaya"}
-                      </SelectItem>
+                      {Object.entries(CUSTOMIZER_PRESETS)
+                        .filter(([k]) => !k.startsWith("passport_"))
+                        .map(([k, preset]) => (
+                          <SelectItem key={k} value={k}>
+                            {isAr ? preset.label_ar : preset.label_en}
+                          </SelectItem>
+                        ))}
                       {passportPresets.map((pr) => (
                         <SelectItem key={pr.key} value={pr.key}>
                           {isAr ? pr.label_ar : pr.label_en}
                         </SelectItem>
                       ))}
-                      <SelectItem value="gift">
-                        {isAr ? "عطور وهدايا" : "Gift / Perfume"}
-                      </SelectItem>
-                      <SelectItem value="jewelry">
-                        {isAr ? "مجوهرات وحفر" : "Jewelry / Engraving"}
-                      </SelectItem>
                     </SelectContent>
                   </Select>
 
@@ -4565,8 +4307,8 @@ function BulkVariantDialog({
             </Label>
             <span className="text-xs text-muted-foreground">
               {isAr
-                ? "يدعم مقاسات العبايات، الملابس، الألوان، الأسعار، والمخزون"
-                : "Supports Abayas, Apparel, Shoes, Colors, Prices & Stock"}
+                ? "يدعم المقاسات، الملابس، الألوان، الأسعار، والمخزون"
+                : "Supports Sizes, Colors, Prices & Stock"}
             </span>
           </div>
           <textarea
@@ -4575,8 +4317,8 @@ function BulkVariantDialog({
             onChange={(e) => setPrompt(e.target.value)}
             placeholder={
               isAr
-                ? "مثال: كود NP24، الألوان كحلي وعنابي وبيج، مقاسات العبايات من 52 إلى 60 زوجي، خامة كريب ملكي، السعر 25 د.ب والتخفيض 19 د.ب، المخزون 5 لكل مقاس"
-                : "Example: code DRS-01, colors Black, Olive and Burgundy, sizes S to XL, Fabric Linen, price 25 BHD, sale 19, stock 5 per variant"
+                ? "مثال: كود NP24، الألوان كحلي وعنابي وبيج، المقاسات من S إلى XL، السعر 25 د.ب والتخفيض 19 د.ب، المخزون 5 لكل خيار"
+                : "Example: code DRS-01, colors Black, Olive and Burgundy, sizes S to XL, price 25 BHD, sale 19, stock 5 per variant"
             }
           />
           <div className="flex items-center justify-between gap-2 flex-wrap">

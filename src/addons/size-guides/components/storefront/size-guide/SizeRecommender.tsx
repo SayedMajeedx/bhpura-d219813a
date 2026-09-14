@@ -10,7 +10,7 @@ import {
   type SizeGuideUnit,
   recommendSize,
   type SizeRecommendation,
-} from "@/lib/size-guide";
+} from "../../../lib/size-guide";
 
 interface SizeRecommenderProps {
   guide: SizeGuide;

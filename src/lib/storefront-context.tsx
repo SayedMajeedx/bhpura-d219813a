@@ -22,8 +22,11 @@ import {
   type StoreVertical,
   type StoreModuleOverrides,
 } from "@/lib/store-profile";
-import type { SizeGuide } from "@/lib/size-guide";
-import { resolveFitProfiles, type FitProfileDefinition } from "@/lib/fit-passport";
+import {
+  resolveFitProfiles,
+  type FitProfileDefinition,
+  type SizeGuide,
+} from "@/lib/addons/addon-presets";
 import { AddonsProvider } from "@/components/addons/AddonsProvider";
 import { modulesFromAddons } from "@/lib/addons/addon-compat";
 import type { BrandAddonRow } from "@/lib/addons/addon-types";

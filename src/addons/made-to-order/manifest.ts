@@ -1,3 +1,4 @@
+import React from "react";
 import type { AddonManifest } from "@/lib/addons/addon-types";
 
 export const madeToOrderManifest: AddonManifest = {
@@ -24,5 +25,21 @@ export const madeToOrderManifest: AddonManifest = {
   activities: ["abayas", "fashion", "print", "jewelry"],
   contributions: {
     productionStages: true,
+    slots: [
+      {
+        id: "admin-order-item-tailoring",
+        addonId: "made-to-order",
+        placement: "admin.order.itemPanel",
+        order: 10,
+        component: React.lazy(() => import("./components/admin/ItemTailoringCustomizer")),
+      },
+      {
+        id: "storefront-product-tailoring",
+        addonId: "made-to-order",
+        placement: "storefront.product.afterOptions",
+        order: 20,
+        component: React.lazy(() => import("./components/storefront/ProductTailoringSlot")),
+      },
+    ],
   },
 };

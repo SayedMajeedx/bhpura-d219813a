@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useStorefront } from "@/lib/storefront-context";
 import {
   missingFitFields,
   normalizeFitProfiles,
@@ -24,8 +25,7 @@ import {
   type FitProfileDefinition,
   type FitProfileType,
   type FitProfiles,
-} from "@/lib/fit-passport";
-import { useFitProfiles } from "@/lib/storefront-context";
+} from "../../lib/fit-passport";
 
 type Passport = {
   measurements: unknown;
@@ -59,7 +59,8 @@ export function StorefrontFitPassport({
   profiles?: FitProfileDefinition[];
 }) {
   const qc = useQueryClient();
-  const contextProfiles = useFitProfiles();
+  const { settings } = useStorefront();
+  const contextProfiles = resolveFitProfiles(settings?.fit_profiles);
   const fitProfiles = resolveFitProfiles(customProfiles ?? contextProfiles);
 
   const passportTitle = brandName ? `${brandName} Fit Passport` : "Fit Passport";
@@ -354,3 +355,5 @@ export function StorefrontFitPassport({
     </Card>
   );
 }
+
+export default StorefrontFitPassport;

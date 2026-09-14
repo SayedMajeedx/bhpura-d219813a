@@ -42,11 +42,21 @@ export const sizeGuidesManifest: AddonManifest = {
         addonId: "size-guides",
         placement: "storefront.product.optionsAside",
         order: 10,
-        component: React.lazy(() =>
-          import("@/components/storefront/SizeGuideModal").then((m) => ({
-            default: m.SizeGuideModal,
-          })),
-        ),
+        component: React.lazy(() => import("./components/storefront/SizeGuideModalSlot")),
+      },
+      {
+        id: "size-guide-inline",
+        addonId: "size-guides",
+        placement: "storefront.product.afterCta",
+        order: 10,
+        component: React.lazy(() => import("./components/storefront/SizeGuideInlineSlot")),
+      },
+      {
+        id: "size-guide-footer-link",
+        addonId: "size-guides",
+        placement: "storefront.footer.helpLink",
+        order: 20,
+        component: React.lazy(() => import("./components/storefront/SizeGuideFooterLink")),
       },
     ],
   },

@@ -24,6 +24,8 @@ export function getDashboardOrderStatus(order: DashboardOrderStatusInput, lang: 
                 "confirmed",
                 "needs_packing",
                 "packing",
+                "sent_to_workshop",
+                "received_from_workshop",
                 "sent_to_tailor",
                 "received_from_tailor",
               ] as string[]

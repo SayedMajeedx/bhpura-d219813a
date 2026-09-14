@@ -247,7 +247,7 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                     <div className="flex items-center gap-2">
                       <Scissors className="h-4 w-4 text-purple-600 shrink-0" />
                       <span className="font-medium text-xs">
-                        {isAr ? "تم الإرسال للخياط" : "Send to Tailor"}
+                        {isAr ? "تم الإرسال للورشة / الخياط" : "Sent to Workshop / Tailor"}
                       </span>
                     </div>
                     {order?.fulfillment_status === "SENT_TO_TAILOR" && (

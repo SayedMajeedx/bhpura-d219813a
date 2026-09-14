@@ -115,6 +115,8 @@ export const FULFILLMENT_STATUS_MAP: Record<string, StatusDefinition> = {
 export const ORDER_STATUS_MAP: Record<string, StatusDefinition> = {
   pending: { ar: "قيد الانتظار", en: "Pending" },
   packing: { ar: "قيد التعبئة والتغليف", en: "Packing" },
+  sent_to_workshop: { ar: "تم الإرسال للورشة", en: "Sent to Workshop" },
+  received_from_workshop: { ar: "تم الاستلام من الورشة", en: "Received from Workshop" },
   sent_to_tailor: { ar: "تم الإرسال للخياط", en: "Sent to Tailor" },
   received_from_tailor: { ar: "تم الاستلام من الخياط", en: "Received from Tailor" },
   ready_for_pickup: { ar: "جاهز للاستلام", en: "Ready for Pickup" },
@@ -166,8 +168,11 @@ export function getInvoiceStatusLabel(
     case "packing":
     case "needs_packing":
       return lang === "ar" ? "قيد التجهيز والتغليف" : "Under Preparation & Packaging";
+    case "sent_to_workshop":
+      return lang === "ar" ? "قيد التجهيز" : "In Production";
     case "sent_to_tailor":
       return lang === "ar" ? "قيد التفصيل بكل حب" : "Tailoring with Love";
+    case "received_from_workshop":
     case "received_from_tailor":
       return lang === "ar" ? "قيد التجهيز والتغليف" : "Under Preparation & Packaging";
     case "ready_for_pickup":
@@ -254,6 +259,8 @@ export function sanitizeActivityLogMessage(message: string, lang: Lang = "ar"): 
     .replace(/\bconfirmed\b/gi, "مؤكد")
     .replace(/\bcompleted\b/gi, "مكتمل")
     .replace(/\bshipped\b/gi, "تم الشحن")
+    .replace(/\bsent_to_workshop\b/gi, "تم الإرسال للورشة")
+    .replace(/\breceived_from_workshop\b/gi, "تم الاستلام من الورشة")
     .replace(/\bsent_to_tailor\b/gi, "تم الإرسال للخياط")
     .replace(/\breceived_from_tailor\b/gi, "تم الاستلام من الخياط")
     .replace(/\bpacking\b/gi, "قيد التعبئة والتغليف")

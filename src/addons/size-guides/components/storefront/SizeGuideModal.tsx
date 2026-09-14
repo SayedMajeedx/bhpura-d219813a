@@ -8,8 +8,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Ruler } from "lucide-react";
-import { type SizeGuide, type SizeGuideUnit } from "@/lib/size-guide";
-import { ABAYA_GULF_TEMPLATE } from "@/lib/size-guide-templates";
+import { type SizeGuide, type SizeGuideUnit } from "../../lib/size-guide";
+import { ABAYA_GULF_TEMPLATE } from "../../lib/size-guide-templates";
 import { SizeGuidePanel } from "./size-guide/SizeGuidePanel";
 
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";

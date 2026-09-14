@@ -1,4 +1,4 @@
-import type { StoreVertical } from "./store-profile";
+import type { StoreVertical } from "@/lib/store-profile";
 import type { SizeGuide } from "./size-guide";
 
 export type SizeGuideTemplate = {

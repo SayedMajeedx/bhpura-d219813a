@@ -103,7 +103,10 @@ describe("storefront & admin gating (source checks)", () => {
 
   it("gates SizeGuideModal on product page behind modules.size_guide", () => {
     const code = readFileSync(resolve(__dirname, "../src/routes/$slug.product.$id.tsx"), "utf-8");
-    expect(code).toContain("modules.size_guide && <SizeGuideModal");
+    expect(
+      code.includes("storefront.product.optionsAside") ||
+        code.includes("modules.size_guide && <SizeGuideModal"),
+    ).toBe(true);
   });
 
   it("migration adds columns and exposes them in public view", () => {

@@ -693,18 +693,18 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
     }
 
     const systemPrompt = [
-      "You are an expert GCC boutique and fashion e-commerce catalog migration assistant.",
+      "You are an expert GCC boutique e-commerce catalog migration assistant.",
       "Analyze each Instagram post using its caption. Never invent or hallucinate catalog data.",
       "CRITICAL TITLE & CODE RULES:",
       "1. NEVER use generic collection slogans, seasonal drops, year labels, or account handles as the product title (e.g. NEVER use 'NEW COLLECTION', 'SUMMER DROP 2026', 'minnaz.couture').",
-      "2. LOOK FOR PRODUCT CODES: Check for 'Code: MC5', 'كود: MC5', 'Model: 102', 'MC5'. If a code is found, format title as 'عباية MC5' or 'كود MC5'.",
-      "3. IF NO CODE: Find the substantive line describing the garment (e.g. 'عباية بشت حرير مغسول').",
-      "4. DESCRIPTION: Extract the rich Arabic or English text describing fabric, cut, and details. Exclude phone numbers, delivery terms, and hashtags.",
-      "5. CATEGORY: Infer category ONLY if explicitly stated in caption (e.g. 'فساتين', 'عبايات', 'جلابيات', 'قفاطين'). If not mentioned or unclear, return null. Never guess or force a default category.",
+      "2. LOOK FOR PRODUCT CODES: Check for 'Code: MC5', 'كود: MC5', 'Model: 102', 'MC5'. If a code is found, format title as 'منتج MC5' or 'كود MC5'.",
+      "3. IF NO CODE: Find the substantive line describing the item (e.g. 'فستان حرير' or product title).",
+      "4. DESCRIPTION: Extract the rich Arabic or English text describing materials, dimensions, and details. Exclude phone numbers, delivery terms, and hashtags.",
+      "5. CATEGORY: Infer category ONLY if explicitly stated in caption (e.g. 'فساتين', 'إكسسوارات', 'عطور'). If not mentioned or unclear, return null. Never guess or force a default category.",
       "STRICT PRICE RULES:",
       "6. CURRENCY: Explicitly look for prices in BHD, BD, bd, dinar, دينار, د.ب.",
       "7. IF NO PRICE OR UNCERTAIN: Return price: null. Do NOT guess.",
-      "8. EXCLUSIONS: Do NOT confuse abaya sizes (50 to 62) or phone numbers with prices.",
+      "8. EXCLUSIONS: Do NOT confuse sizing numbers or phone numbers with prices.",
       "CRITICAL CONFIDENCE SCORING (0.0 to 1.0 FOR EACH INDIVIDUAL FIELD):",
       "9. For EACH field ('name', 'price', 'description', 'sizes'), provide a separate numeric confidence score between 0.0 and 1.0:",
       "   - 0.9 to 1.0: Explicitly stated in caption with 100% clarity.",
@@ -890,7 +890,7 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
       // Fallback clean title
       let title = (parsed.title || "").trim();
       if (!title || title.length < 3) {
-        title = post.postType === "reel" ? "فيديو إنستغرام جديد" : "عباية أنيقة";
+        title = post.postType === "reel" ? "فيديو إنستغرام جديد" : "منتج جديد";
       }
 
       const description = (parsed.description || post.caption || "").trim();

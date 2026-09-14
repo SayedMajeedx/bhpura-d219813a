@@ -389,7 +389,7 @@ function CategoryDialog({
             <Input
               value={form.name_ar}
               onChange={(e) => setForm({ ...form, name_ar: e.target.value })}
-              placeholder={isAr ? "عبايات" : ""}
+              placeholder={isAr ? "المنتجات الأكثر طلباً" : ""}
             />
           </div>
           <div>
@@ -397,7 +397,7 @@ function CategoryDialog({
             <Input
               value={form.name_en}
               onChange={(e) => setForm({ ...form, name_en: e.target.value })}
-              placeholder="Abayas"
+              placeholder="e.g. Featured / Best Sellers"
             />
           </div>
         </div>

@@ -250,8 +250,12 @@ Be concise, practical, warm, and professional. Always answer in the merchant's l
       return {
         reply: textReply,
         suggestedPrompts: isAr
-          ? ["أضف فستان حرير بسعر 45", "أنشئ قسم العبايات اليومية", "كيف أزيد مبيعات انستقرام؟"]
-          : ["Add silk dress for 45", "Create Abayas category", "How to boost Instagram sales?"],
+          ? ["أضف منتج جديد بسعر 45", "أنشئ قسماً جديداً للمنتجات", "كيف أزيد مبيعات انستقرام؟"]
+          : [
+              "Add new product for 45",
+              "Create new product category",
+              "How to boost Instagram sales?",
+            ],
       };
     } catch {
       return executeOfflineCopilot(context.supabase, data.brandId, data.message, isAr);
@@ -280,7 +284,7 @@ export async function executeOfflineCopilot(
 ): Promise<CopilotResponse> {
   const msg = rawMsg.trim().toLowerCase();
 
-  // Pattern 1: Add product e.g. "أضف منتج عباية كريب بسعر 45" or "add product silk dress 50"
+  // Pattern 1: Add product e.g. "أضف منتج جديد بسعر 45" or "add product bag 50"
   const addProdMatch =
     rawMsg.match(/(?:أضف|انشئ|اضف)\s+(?:منتج\s+)?(.+?)\s+(?:بسعر|سعر)\s+([0-9.]+)/i) ||
     rawMsg.match(/(?:add|create)\s+(?:product\s+)?(.+?)\s+(?:price|at|for)\s+([0-9.]+)/i);
@@ -331,8 +335,8 @@ export async function executeOfflineCopilot(
   // Pattern 3: General greeting or advice
   return {
     reply: isAr
-      ? "أهلاً بك في Boutq Copilot! ✨\nأنا مساعد متجرك الذكي. يمكنك أن تطلب مني:\n• «أضف عباية حرير بسعر 55»\n• «اعطني ملخص المتجر»\n• استفسارات حول نمو مبيعاتك وتنسيق الحملات."
-      : 'Welcome to Boutq Copilot! ✨\nI am your store AI copilot. You can ask me to:\n• "Add linen dress for 45"\n• "Give me store summary"\n• Tips on improving conversions and seasonal promotions.',
+      ? "أهلاً بك في Boutq Copilot! ✨\nأنا مساعد متجرك الذكي. يمكنك أن تطلب مني:\n• «أضف منتج جديد بسعر 55»\n• «اعطني ملخص المتجر»\n• استفسارات حول نمو مبيعاتك وتنسيق الحملات."
+      : 'Welcome to Boutq Copilot! ✨\nI am your store AI copilot. You can ask me to:\n• "Add product for 45"\n• "Give me store summary"\n• Tips on improving conversions and seasonal promotions.',
     suggestedPrompts: isAr
       ? ["ملخص المتجر", "أضف منتج جديد", "أفكار عروض ترويجية"]
       : ["Store Summary", "Add New Product", "Promotion Ideas"],

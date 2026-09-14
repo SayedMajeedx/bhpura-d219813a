@@ -50,7 +50,7 @@ export const TrialExpiredPaywall: React.FC<TrialExpiredPaywallProps> = ({
       priceMonthly: "15",
       priceAnnual: "144",
       featuresAr: [
-        "إضافة حتى 50 عباية ومنتج",
+        "إضافة حتى 50 منتج",
         "واجهة متجر مخصصة وسريعة",
         "إشعارات الطلبات الفورية عبر واتساب",
         "تقارير المبيعات الأساسية",
