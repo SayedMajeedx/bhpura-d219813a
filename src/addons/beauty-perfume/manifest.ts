@@ -60,15 +60,17 @@ export const beautyPerfumeManifest: AddonManifest = {
         ];
 
         for (const cat of defaultCats) {
-          const { data: existing } = await db
+          const { data: existing, error: existErr } = await db
             .from("categories")
             .select("id")
             .eq("brand_id", brandId)
             .eq("slug", cat.slug)
             .maybeSingle();
 
+          if (existErr) throw existErr;
+
           if (!existing) {
-            await db.from("categories").insert({
+            const { error } = await db.from("categories").insert({
               brand_id: brandId,
               name_ar: cat.name_ar,
               name_en: cat.name_en,
@@ -76,6 +78,8 @@ export const beautyPerfumeManifest: AddonManifest = {
               sort_order: cat.sort_order,
               is_active: true,
             });
+
+            if (error) throw error;
           }
         }
       },

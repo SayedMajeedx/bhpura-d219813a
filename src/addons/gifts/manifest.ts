@@ -1,4 +1,5 @@
 import type { AddonManifest } from "@/lib/addons/addon-types";
+import { resolveBrandOwnerUserId } from "@/lib/addons/seed-helpers";
 
 export const giftsManifest: AddonManifest = {
   id: "gifts",
@@ -35,28 +36,30 @@ export const giftsManifest: AddonManifest = {
       },
       run: async ({ brandId, db }) => {
         const optionName = "تغليف هدية فاخر مع بطاقة إهداء";
-        const { data: existing } = await db
+        const { data: existing, error: existErr } = await db
           .from("customization_options")
           .select("id")
           .eq("brand_id", brandId)
           .eq("name", optionName)
           .maybeSingle();
 
-        if (!existing) {
-          const { data: brand } = await db
-            .from("brands")
-            .select("owner_id")
-            .eq("id", brandId)
-            .maybeSingle();
-          const userId = brand?.owner_id || "00000000-0000-0000-0000-000000000000";
+        if (existErr) throw existErr;
 
-          await db.from("customization_options").insert({
+        if (!existing) {
+          const userId = await resolveBrandOwnerUserId(db, brandId);
+          if (!userId) {
+            return;
+          }
+
+          const { error } = await db.from("customization_options").insert({
             brand_id: brandId,
             user_id: userId,
             name: optionName,
             price_delta: 1.5,
             product_ids: [],
           });
+
+          if (error) throw error;
         }
       },
     },

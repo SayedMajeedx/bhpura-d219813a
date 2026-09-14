@@ -42,15 +42,17 @@ export const abayaPackManifest: AddonManifest = {
         en: "Default Gulf abaya size guide",
       },
       run: async ({ brandId, db }) => {
-        const { data: existing } = await db
+        const { data: existing, error: existErr } = await db
           .from("size_guides")
           .select("id")
           .eq("brand_id", brandId)
           .eq("template_key", "abaya_gulf")
           .maybeSingle();
 
+        if (existErr) throw existErr;
+
         if (!existing) {
-          await db.from("size_guides").insert({
+          const { error } = await db.from("size_guides").insert({
             brand_id: brandId,
             name_ar: "دليل مقاسات العبايات",
             name_en: "Abaya Size Guide",
@@ -96,6 +98,8 @@ export const abayaPackManifest: AddonManifest = {
             ],
             is_default: true,
           });
+
+          if (error) throw error;
         }
       },
     },
@@ -106,17 +110,21 @@ export const abayaPackManifest: AddonManifest = {
         en: "Abaya and dress measurement profiles in Fit Passport",
       },
       run: async ({ brandId, db }) => {
-        const { data: bs } = await db
+        const { data: bs, error: bsErr } = await db
           .from("business_settings")
           .select("fit_profiles")
           .eq("brand_id", brandId)
           .maybeSingle();
 
+        if (bsErr) throw bsErr;
+
         if (!bs?.fit_profiles) {
-          await db
+          const { error } = await db
             .from("business_settings")
             .update({ fit_profiles: FASHION_FIT_PROFILES })
             .eq("brand_id", brandId);
+
+          if (error) throw error;
         }
       },
     },
