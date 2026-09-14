@@ -7,66 +7,75 @@ import {
   type StoreModules,
   type StoreVertical,
 } from "@/lib/store-profile";
-import {
-  resolveFitProfiles,
-  type FitProfileDefinition,
-  FASHION_FIT_PROFILES,
-} from "@/lib/addons/addon-presets";
-
+import { resolveFitProfiles, type FitProfileDefinition } from "@/lib/addons/addon-presets";
+import { isInstalled } from "@/lib/addons/addon-registry";
 import { modulesFromAddons } from "@/lib/addons/addon-compat";
 import type { BrandAddonRow } from "@/lib/addons/addon-types";
+import { useBrandAddons } from "@/hooks/use-brand-addons";
 
 export type AdminStoreProfile = {
   vertical: StoreVertical;
   modules: StoreModules;
   storefrontMode: "shop" | "catalog";
   fitProfiles: FitProfileDefinition[];
+  customFitProfiles?: FitProfileDefinition[] | null;
   addons?: BrandAddonRow[];
 };
 
 const TRANSITIONAL_FALLBACK: AdminStoreProfile = {
-  vertical: "abayas",
-  modules: resolveStoreModules({ store_vertical: "abayas" }),
+  vertical: "general",
+  modules: resolveStoreModules({ store_vertical: "general" }),
   storefrontMode: "shop",
-  fitProfiles: FASHION_FIT_PROFILES,
+  fitProfiles: [],
+  customFitProfiles: null,
   addons: [],
 };
 
 export function useAdminStoreProfile(brandId: string | null | undefined) {
+  const { addons = [], isLoading: isAddonsLoading } = useBrandAddons(brandId);
+
   const q = useQuery({
     queryKey: queryKeys.brand.storeProfile(brandId ?? ""),
     enabled: Boolean(brandId),
     staleTime: 60_000,
-    queryFn: async (): Promise<AdminStoreProfile> => {
-      const [settingsRes, addonsRes] = await Promise.all([
-        (supabase.from("business_settings") as any)
-          .select("storefront_mode, store_vertical, store_modules, fit_profiles")
-          .eq("brand_id", brandId!)
-          .maybeSingle(),
-        (supabase as any).from("brand_addons").select("*").eq("brand_id", brandId!),
-      ]);
+    queryFn: async (): Promise<{
+      storefront_mode: string | null;
+      store_vertical: string | null;
+      store_modules: unknown;
+      fit_profiles: unknown;
+    } | null> => {
+      const { data, error } = await (supabase.from("business_settings") as any)
+        .select("storefront_mode, store_vertical, store_modules, fit_profiles")
+        .eq("brand_id", brandId!)
+        .maybeSingle();
 
-      if (settingsRes.error) throw settingsRes.error;
-      const data = settingsRes.data;
-      const addons = (addonsRes.data || []) as BrandAddonRow[];
+      if (error) throw error;
+      return data;
+    },
+  });
 
-      const vertical = normalizeVertical(data?.store_vertical ?? "abayas");
-      const fallbackModules = resolveStoreModules({
-        ...data,
-        store_vertical: vertical,
-      });
+  const data = q.data;
+  const vertical = normalizeVertical(data?.store_vertical ?? "general");
+  const fallbackModules = resolveStoreModules({
+    ...data,
+    store_vertical: vertical,
+  });
 
-      // If brand has addon records, derive modules from installed addons; otherwise fallback to legacy resolution
-      const modules = addons.length > 0 ? modulesFromAddons(addons) : fallbackModules;
+  // If brand has addon records, derive modules from installed addons; otherwise fallback to legacy resolution
+  const modules = addons.length > 0 ? modulesFromAddons(addons) : fallbackModules;
+  const hasFitPassport =
+    addons.length > 0 ? isInstalled(addons, "fit-passport") : Boolean(fallbackModules.fit_passport);
 
-      return {
+  const profile: AdminStoreProfile = data
+    ? {
         vertical,
         modules,
         storefrontMode: data?.storefront_mode === "catalog" ? "catalog" : "shop",
-        fitProfiles: resolveFitProfiles(data?.fit_profiles),
+        fitProfiles: hasFitPassport ? resolveFitProfiles(data?.fit_profiles) : [],
+        customFitProfiles: (data?.fit_profiles as FitProfileDefinition[] | null) ?? null,
         addons,
-      };
-    },
-  });
-  return { profile: q.data ?? TRANSITIONAL_FALLBACK, isLoading: q.isLoading };
+      }
+    : TRANSITIONAL_FALLBACK;
+
+  return { profile, isLoading: q.isLoading || isAddonsLoading };
 }
