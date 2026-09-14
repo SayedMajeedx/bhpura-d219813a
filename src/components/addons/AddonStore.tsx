@@ -9,7 +9,7 @@ import type {
   AddonManifest,
   AddonSettingsField,
 } from "@/lib/addons/addon-types";
-import type { StoreVertical } from "@/lib/store-profile";
+import { VERTICAL_LABELS, type StoreVertical } from "@/lib/store-profile";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -293,8 +293,8 @@ export function AddonStore({ brandId, slug: _slug, storeVertical }: AddonStorePr
         </div>
       )}
 
-      {/* Starter Pack Recommendation Callout */}
-      {storeVertical && missingStarterCount > 0 && (
+      {/* Starter Pack Status Callout */}
+      {storeVertical && (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl border border-border bg-card">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -303,29 +303,45 @@ export function AddonStore({ brandId, slug: _slug, storeVertical }: AddonStorePr
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-sm text-foreground">
-                  {isAr ? "حزمة البداية المقترحة لنشاطك" : "Recommended Starter Pack"}
+                  {isAr ? "نشاطك الحالي:" : "Current Vertical:"}{" "}
+                  {isAr ? VERTICAL_LABELS[storeVertical]?.ar : VERTICAL_LABELS[storeVertical]?.en}
                 </span>
-                <Badge variant="outline" className="text-xs">
-                  {storeVertical}
+                <Badge
+                  variant={missingStarterCount === 0 ? "secondary" : "outline"}
+                  className="text-xs"
+                >
+                  {missingStarterCount === 0
+                    ? isAr
+                      ? "حزمة البداية مكتملة ✓"
+                      : "Starter pack complete ✓"
+                    : isAr
+                      ? `حزمة البداية ناقصة (${missingStarterCount})`
+                      : `Starter pack incomplete (${missingStarterCount})`}
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {isAr
-                  ? `متبقي ${missingStarterCount} إضافات أساسية مستحسنة لنشاط ${storeVertical}.`
-                  : `${missingStarterCount} essential add-on(s) remaining for your vertical.`}
+                {missingStarterCount === 0
+                  ? isAr
+                    ? "جميع الإضافات الأساسية الموصى بها لنشاطك مثبتة وجاهزة للاستخدام."
+                    : "All essential add-ons recommended for your store vertical are installed and active."
+                  : isAr
+                    ? `متبقي ${missingStarterCount} إضافات أساسية مستحسنة لنشاط ${isAr ? VERTICAL_LABELS[storeVertical]?.ar : VERTICAL_LABELS[storeVertical]?.en}.`
+                    : `${missingStarterCount} essential add-on(s) remaining for ${isAr ? VERTICAL_LABELS[storeVertical]?.ar : VERTICAL_LABELS[storeVertical]?.en}.`}
               </p>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleInstallStarterPack}
-            disabled={isMutating}
-            className="shrink-0 gap-1.5 border-border"
-          >
-            <Sparkles className="size-3.5 text-primary" />
-            <span>{isAr ? "تثبيت الإضافات المتبقية" : "Install Missing Add-ons"}</span>
-          </Button>
+          {missingStarterCount > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleInstallStarterPack}
+              disabled={isMutating}
+              className="shrink-0 gap-1.5 border-border"
+            >
+              <Sparkles className="size-3.5 text-primary" />
+              <span>{isAr ? "تثبيت الإضافات المتبقية" : "Install Missing Add-ons"}</span>
+            </Button>
+          )}
         </div>
       )}
 
