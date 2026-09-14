@@ -109,7 +109,7 @@ export function SizeRecommender({ guide, currentUnit, onRecommendSize }: SizeRec
               type="button"
               variant={selectedUnit === "cm" ? "default" : "ghost"}
               size="sm"
-              className="h-6 text-[11px] px-2.5 rounded-md"
+              className="h-6 text-xs px-2.5 rounded-md"
               onClick={() => {
                 setSelectedUnit("cm");
                 setHasCalculated(false);
@@ -121,7 +121,7 @@ export function SizeRecommender({ guide, currentUnit, onRecommendSize }: SizeRec
               type="button"
               variant={selectedUnit === "in" ? "default" : "ghost"}
               size="sm"
-              className="h-6 text-[11px] px-2.5 rounded-md"
+              className="h-6 text-xs px-2.5 rounded-md"
               onClick={() => {
                 setSelectedUnit("in");
                 setHasCalculated(false);
@@ -161,7 +161,7 @@ export function SizeRecommender({ guide, currentUnit, onRecommendSize }: SizeRec
                 className="h-9 text-xs bg-background"
               />
               {isLengthCol && isAbaya && selectedUnit === "in" && (
-                <p className="text-[10px] text-muted-foreground leading-tight">
+                <p className="text-xs text-muted-foreground leading-tight">
                   {isAr ? "طول العباية أو طول القامة بالسم" : "Abaya length or height in cm"}
                 </p>
               )}
@@ -323,4 +323,3 @@ export function SizeRecommender({ guide, currentUnit, onRecommendSize }: SizeRec
     </div>
   );
 }
-

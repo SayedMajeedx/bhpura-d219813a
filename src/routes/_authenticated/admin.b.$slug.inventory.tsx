@@ -114,10 +114,7 @@ import {
   resolveFitProfiles,
   CUSTOMIZER_PRESETS,
 } from "@/lib/addons/addon-presets";
-import {
-  variantAxisDefaultsFrom,
-  resolveVariantAxis,
-} from "@/lib/addons/addon-registry";
+import { variantAxisDefaultsFrom, resolveVariantAxis } from "@/lib/addons/addon-registry";
 
 /** Common measurement units the admin can pick from for a "size" variant. */
 const SIZE_UNITS = ["", "cm", "mm", "m", "inch", "ft", "kg", "g", "ml", "l"] as const;
@@ -3165,8 +3162,11 @@ function ProductDialog({
                             className="mt-1 h-8 rounded-md text-xs"
                             placeholder={
                               addonAxisDefaults?.size === null
-                                ? (isAr ? "معطّل افتراضياً (اكتب لتفعيله)" : "Disabled by default (type to enable)")
-                                : addonAxisDefaults?.size?.ar || (isAr ? "المقاس / خيار" : "Size / Option")
+                                ? isAr
+                                  ? "معطّل افتراضياً (اكتب لتفعيله)"
+                                  : "Disabled by default (type to enable)"
+                                : addonAxisDefaults?.size?.ar ||
+                                  (isAr ? "المقاس / خيار" : "Size / Option")
                             }
                             value={form.variant_label_size_ar || ""}
                             onChange={(e) =>
@@ -3202,7 +3202,9 @@ function ProductDialog({
                             className="mt-1 h-8 rounded-md text-xs"
                             placeholder={
                               addonAxisDefaults?.color === null
-                                ? (isAr ? "معطّل افتراضياً (اكتب لتفعيله)" : "Disabled by default (type to enable)")
+                                ? isAr
+                                  ? "معطّل افتراضياً (اكتب لتفعيله)"
+                                  : "Disabled by default (type to enable)"
                                 : addonAxisDefaults?.color?.ar || (isAr ? "اللون" : "Color")
                             }
                             value={form.variant_label_color_ar || ""}
@@ -3239,7 +3241,9 @@ function ProductDialog({
                             className="mt-1 h-8 rounded-md text-xs"
                             placeholder={
                               addonAxisDefaults?.fabric === null
-                                ? (isAr ? "معطّل افتراضياً (اكتب لتفعيله)" : "Disabled by default (type to enable)")
+                                ? isAr
+                                  ? "معطّل افتراضياً (اكتب لتفعيله)"
+                                  : "Disabled by default (type to enable)"
                                 : addonAxisDefaults?.fabric?.ar || (isAr ? "الخامة" : "Fabric")
                             }
                             value={form.variant_label_fabric_ar || ""}

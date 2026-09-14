@@ -385,7 +385,7 @@ export function resolveVariantAxis({
 }): VariantAxisConfig {
   const customAr = (product as any)?.[`variant_label_${axis}_ar`]?.trim();
   const customEn = (product as any)?.[`variant_label_${axis}_en`]?.trim();
-  const custom = lang === "ar" ? (customAr || customEn) : (customEn || customAr);
+  const custom = lang === "ar" ? customAr || customEn : customEn || customAr;
 
   if (custom) {
     return {
@@ -440,4 +440,3 @@ export function resolveAllVariantAxes({
     fabric: resolveVariantAxis({ axis: "fabric", product, addonDefaults, lang }),
   };
 }
-

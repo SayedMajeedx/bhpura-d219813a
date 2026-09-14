@@ -59,9 +59,7 @@ describe("Activity Packs & Variant Axes Resolution", () => {
     });
 
     it("resolves jewelry axis defaults (ring size, metal color, disabled fabric)", () => {
-      const defaults = variantAxisDefaultsFrom([
-        { addon_id: "jewelry", status: "installed" },
-      ]);
+      const defaults = variantAxisDefaultsFrom([{ addon_id: "jewelry", status: "installed" }]);
       expect(defaults).toBeDefined();
       expect(defaults?.size).toEqual({ ar: "مقاس الخاتم", en: "Ring Size" });
       expect(defaults?.color).toEqual({ ar: "نوع المعدن", en: "Metal Type" });

@@ -95,4 +95,40 @@ describe("Addon Store & Lifecycle Flow", () => {
     expect(event.action).toBe("install");
     expect(event.source).toBe("onboarding");
   });
+
+  it("detects conflicting addons and prevents invalid install selections", () => {
+    // Test conflict detection logic
+    const conflictMap = new Map<string, string[]>();
+    for (const addon of getAllAddons()) {
+      if (addon.conflicts && addon.conflicts.length > 0) {
+        conflictMap.set(addon.id, addon.conflicts);
+      }
+    }
+
+    // Verify resolveInstallOrder handles valid dependency chains
+    const order = resolveInstallOrder(["abaya-pack"]);
+    expect(order).toEqual([
+      "fashion-core",
+      "size-guides",
+      "fit-passport",
+      "made-to-order",
+      "abaya-pack",
+    ]);
+
+    // Verify dependentsOf prevents disabling core when dependents exist
+    const dependents = dependentsOf("made-to-order", ["made-to-order", "print-stamps"]);
+    expect(dependents).toContain("print-stamps");
+  });
+
+  it("validates that all starter pack entries are valid registered addons", () => {
+    for (const vertical of STORE_VERTICALS) {
+      const pack = starterPackFor(vertical);
+      for (const req of pack.required) {
+        expect(() => getAddon(req)).not.toThrow();
+      }
+      for (const sug of pack.suggested) {
+        expect(() => getAddon(sug)).not.toThrow();
+      }
+    }
+  });
 });

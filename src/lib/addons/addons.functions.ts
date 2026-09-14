@@ -3,7 +3,8 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { AddonId, BrandAddonRow, PlatformAddonPolicy, BrandAddonEvent } from "./addon-types";
 import { getAddon, resolveInstallOrder, dependentsOf, starterPackFor } from "./addon-registry";
-import type { StoreVertical } from "@/lib/store-profile";
+import { STORE_VERTICALS, type StoreVertical } from "@/lib/store-profile";
+import { withThrowOnError } from "./seed-helpers";
 
 async function requireBrandAccess(context: any, brandId: string) {
   const db = context.supabase as any;
@@ -76,42 +77,81 @@ export const installAddon = createServerFn({ method: "POST" })
     const targetAddonId = data.addonId as AddonId;
     const source = data.source || "manual";
 
-    // 1. Check platform policy
-    const { data: policy } = await db
-      .from("platform_addon_policies")
-      .select("*")
-      .eq("addon_id", targetAddonId)
-      .maybeSingle();
-
-    if (policy) {
-      if (policy.availability === "deprecated") {
-        throw new Error("ADDON_DEPRECATED");
-      }
-      if (policy.availability === "beta" || policy.availability === "internal") {
-        const allowed =
-          Array.isArray(policy.allowed_brand_ids) &&
-          policy.allowed_brand_ids.includes(data.brandId);
-        if (!allowed) {
-          const { data: isSuperAdmin } = await db.rpc("is_super_admin");
-          if (!isSuperAdmin) {
-            throw new Error("ADDON_NOT_AVAILABLE_FOR_BRAND");
-          }
-        }
-      }
-    }
+    // 1. Resolve topological install order including dependencies
+    const toInstall = resolveInstallOrder([targetAddonId]);
 
     // 2. Fetch existing brand addons to know what's already installed
-    const { data: existingRows } = await db
+    const { data: existingRows, error: fetchErr } = await db
       .from("brand_addons")
       .select("*")
       .eq("brand_id", data.brandId);
+
+    if (fetchErr) {
+      throw new Error(`FAILED_TO_FETCH_BRAND_ADDONS: ${fetchErr.message}`);
+    }
 
     const installedMap = new Map<string, BrandAddonRow>(
       (existingRows || []).map((r: BrandAddonRow) => [r.addon_id, r]),
     );
 
-    // 3. Resolve topological install order including dependencies
-    const toInstall = resolveInstallOrder([targetAddonId]);
+    // 3. Platform policy checks for ALL addons in toInstall
+    for (const id of toInstall) {
+      const { data: policy } = await db
+        .from("platform_addon_policies")
+        .select("*")
+        .eq("addon_id", id)
+        .maybeSingle();
+
+      if (policy) {
+        if (policy.availability === "deprecated") {
+          throw new Error("ADDON_DEPRECATED");
+        }
+        if (policy.availability === "beta" || policy.availability === "internal") {
+          const allowed =
+            Array.isArray(policy.allowed_brand_ids) &&
+            policy.allowed_brand_ids.includes(data.brandId);
+          if (!allowed) {
+            const { data: isSuperAdmin } = await db.rpc("is_super_admin");
+            if (!isSuperAdmin) {
+              throw new Error("ADDON_NOT_AVAILABLE_FOR_BRAND");
+            }
+          }
+        }
+      }
+    }
+
+    // 4. Conflict checks across toInstall and currently installed addons
+    for (const id of toInstall) {
+      const manifest = getAddon(id);
+      if (manifest.conflicts && manifest.conflicts.length > 0) {
+        for (const conflictId of manifest.conflicts) {
+          const installedConflict = installedMap.get(conflictId);
+          if (installedConflict && installedConflict.status === "installed") {
+            throw new Error("ADDON_CONFLICT");
+          }
+          if (toInstall.includes(conflictId)) {
+            throw new Error("ADDON_CONFLICT");
+          }
+        }
+      }
+    }
+
+    for (const [instId, instRow] of installedMap.entries()) {
+      if (instRow.status === "installed" && !toInstall.includes(instId as AddonId)) {
+        try {
+          const instManifest = getAddon(instId as AddonId);
+          if (instManifest.conflicts) {
+            for (const conflictId of instManifest.conflicts) {
+              if (toInstall.includes(conflictId)) {
+                throw new Error("ADDON_CONFLICT");
+              }
+            }
+          }
+        } catch {
+          // Ignore unknown manifests
+        }
+      }
+    }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -123,22 +163,41 @@ export const installAddon = createServerFn({ method: "POST" })
         continue;
       }
 
-      // Apply settingsPatchOnInstall if provided and not previously installed
-      if (!existing && manifest.contributions.settingsPatchOnInstall) {
-        await (supabaseAdmin.from("business_settings") as any)
-          .update(manifest.contributions.settingsPatchOnInstall)
-          .eq("brand_id", data.brandId);
+      const seededKeys = new Set<string>(existing?.seeded_keys || []);
+
+      // Apply settingsPatchOnInstall if provided, tracking in seededKeys
+      if (manifest.contributions.settingsPatchOnInstall) {
+        const patchEntries = Object.entries(manifest.contributions.settingsPatchOnInstall);
+        const unappliedPatch: Record<string, unknown> = {};
+        for (const [k, v] of patchEntries) {
+          if (!seededKeys.has(`patch:${k}`)) {
+            unappliedPatch[k] = v;
+          }
+        }
+
+        if (Object.keys(unappliedPatch).length > 0) {
+          const { error: patchErr } = await (supabaseAdmin.from("business_settings") as any)
+            .update(unappliedPatch)
+            .eq("brand_id", data.brandId);
+
+          if (patchErr) {
+            throw new Error(`SETTINGS_PATCH_FAILED: ${patchErr.message}`);
+          }
+
+          for (const k of Object.keys(unappliedPatch)) {
+            seededKeys.add(`patch:${k}`);
+          }
+        }
       }
 
-      // Run unexecuted seeds
-      const seededKeys = new Set<string>(existing?.seeded_keys || []);
+      // Run unexecuted seeds wrapped in withThrowOnError
       if (manifest.seeds && manifest.seeds.length > 0) {
         for (const seed of manifest.seeds) {
           if (!seededKeys.has(seed.key)) {
             try {
               await seed.run({
                 brandId: data.brandId,
-                db: supabaseAdmin,
+                db: withThrowOnError(supabaseAdmin),
                 lang: "ar",
                 settings: existing?.settings || {},
               });
@@ -202,11 +261,15 @@ export const disableAddon = createServerFn({ method: "POST" })
     const db = context.supabase as any;
     const targetAddonId = data.addonId as AddonId;
 
-    const { data: rows } = await db
+    const { data: rows, error: rowsErr } = await db
       .from("brand_addons")
       .select("addon_id, status")
       .eq("brand_id", data.brandId)
       .eq("status", "installed");
+
+    if (rowsErr) {
+      throw new Error(`FAILED_TO_FETCH_BRAND_ADDONS: ${rowsErr.message}`);
+    }
 
     const installedIds = (rows || []).map((r: any) => r.addon_id as AddonId);
     const dependents = dependentsOf(targetAddonId, installedIds);
@@ -259,12 +322,16 @@ export const enableAddon = createServerFn({ method: "POST" })
 
     // Verify dependencies are installed & active
     if (manifest.requires && manifest.requires.length > 0) {
-      const { data: rows } = await db
+      const { data: rows, error: rowsErr } = await db
         .from("brand_addons")
         .select("addon_id")
         .eq("brand_id", data.brandId)
         .eq("status", "installed")
         .in("addon_id", manifest.requires);
+
+      if (rowsErr) {
+        throw new Error(`FAILED_TO_FETCH_BRAND_ADDONS: ${rowsErr.message}`);
+      }
 
       const installedReqs = new Set((rows || []).map((r: any) => r.addon_id));
       const missing = manifest.requires.filter((req) => !installedReqs.has(req));
@@ -315,11 +382,15 @@ export const uninstallAddon = createServerFn({ method: "POST" })
     const db = context.supabase as any;
     const targetAddonId = data.addonId as AddonId;
 
-    const { data: rows } = await db
+    const { data: rows, error: rowsErr } = await db
       .from("brand_addons")
       .select("addon_id, settings")
       .eq("brand_id", data.brandId)
       .eq("status", "installed");
+
+    if (rowsErr) {
+      throw new Error(`FAILED_TO_FETCH_BRAND_ADDONS: ${rowsErr.message}`);
+    }
 
     const installedIds = (rows || []).map((r: any) => r.addon_id as AddonId);
     const dependents = dependentsOf(targetAddonId, installedIds);
@@ -337,7 +408,7 @@ export const uninstallAddon = createServerFn({ method: "POST" })
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         await manifest.purge({
           brandId: data.brandId,
-          db: supabaseAdmin,
+          db: withThrowOnError(supabaseAdmin),
           lang: "ar",
           settings: currentRow?.settings || {},
         });
@@ -458,37 +529,54 @@ export const upgradeBrandAddons = createServerFn({ method: "POST" })
     const db = context.supabase as any;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: rows } = await db.from("brand_addons").select("*").eq("brand_id", data.brandId);
+    const { data: rows, error: fetchErr } = await db
+      .from("brand_addons")
+      .select("*")
+      .eq("brand_id", data.brandId);
+
+    if (fetchErr) {
+      throw new Error(`FAILED_TO_FETCH_BRAND_ADDONS: ${fetchErr.message}`);
+    }
 
     const upgraded: string[] = [];
 
     for (const row of rows || []) {
       const manifest = getAddon(row.addon_id as AddonId);
       if (manifest && row.version < manifest.version) {
+        const seededKeys = new Set<string>(row.seeded_keys || []);
+
         // Execute pending upgrades if defined
         if (manifest.upgrades) {
           for (const upgrade of manifest.upgrades) {
             if (upgrade.toVersion > row.version && upgrade.toVersion <= manifest.version) {
               for (const seed of upgrade.seeds) {
-                await seed.run({
-                  brandId: data.brandId,
-                  db: supabaseAdmin,
-                  lang: "ar",
-                  settings: row.settings || {},
-                });
+                if (!seededKeys.has(seed.key)) {
+                  await seed.run({
+                    brandId: data.brandId,
+                    db: withThrowOnError(supabaseAdmin),
+                    lang: "ar",
+                    settings: row.settings || {},
+                  });
+                  seededKeys.add(seed.key);
+                }
               }
             }
           }
         }
 
-        await db
+        const { error: updateErr } = await db
           .from("brand_addons")
           .update({
             version: manifest.version,
+            seeded_keys: Array.from(seededKeys),
             updated_at: new Date().toISOString(),
           })
           .eq("brand_id", data.brandId)
           .eq("addon_id", row.addon_id);
+
+        if (updateErr) {
+          throw new Error(`FAILED_TO_UPGRADE_ADDON_${row.addon_id}: ${updateErr.message}`);
+        }
 
         await db.from("brand_addon_events").insert({
           brand_id: data.brandId,
@@ -520,8 +608,37 @@ export const installStarterPack = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await requireBrandAccess(context, data.brandId);
+
+    const validVerticals = STORE_VERTICALS as readonly string[];
+    if (!validVerticals.includes(data.activity)) {
+      throw new Error("INVALID_STARTER_SELECTION");
+    }
+
     const pack = starterPackFor(data.activity as StoreVertical);
+
+    if (data.selectedAddonIds) {
+      for (const id of data.selectedAddonIds) {
+        try {
+          getAddon(id as AddonId);
+        } catch {
+          throw new Error("INVALID_STARTER_SELECTION");
+        }
+      }
+    }
+
     const combined = Array.from(new Set([...pack.required, ...(data.selectedAddonIds || [])]));
+
+    // Check conflicts within starter pack selection
+    for (const id of combined) {
+      const manifest = getAddon(id as AddonId);
+      if (manifest.conflicts) {
+        for (const conflictId of manifest.conflicts) {
+          if (combined.includes(conflictId)) {
+            throw new Error("ADDON_CONFLICT");
+          }
+        }
+      }
+    }
 
     const installed: string[] = [];
     for (const addonId of combined) {

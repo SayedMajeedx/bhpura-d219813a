@@ -188,4 +188,3 @@ describe("Size Recommender Algorithm", () => {
     expect(recommendation?.confidence).toBe("low");
   });
 });
-

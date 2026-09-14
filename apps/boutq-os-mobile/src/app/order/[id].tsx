@@ -568,21 +568,21 @@ export default function OrderDetailScreen() {
           {[
             { key: "pending", label: isAr ? "بانتظار التجهيز" : "Pending Preparation" },
             { key: "packing", label: isAr ? "جاري التجهيز والتغليف" : "Packing" },
-            ...((isAddonInstalled("made-to-order") ||
+            ...(isAddonInstalled("made-to-order") ||
             order.fulfillment_status === "sent_to_tailor" ||
-            order.fulfillment_status === "received_from_tailor")
+            order.fulfillment_status === "received_from_tailor"
               ? [
                   {
                     key: "sent_to_tailor",
                     label: isAr
-                      ? (vocabulary?.sent_to_workshop?.ar || "عند الخياط للتفصيل")
-                      : (vocabulary?.sent_to_workshop?.en || "Sent to Tailor"),
+                      ? vocabulary?.sent_to_workshop?.ar || "عند الخياط للتفصيل"
+                      : vocabulary?.sent_to_workshop?.en || "Sent to Tailor",
                   },
                   {
                     key: "received_from_tailor",
                     label: isAr
-                      ? (vocabulary?.received_from_workshop?.ar || "مستلم من الخياط")
-                      : (vocabulary?.received_from_workshop?.en || "Received from Tailor"),
+                      ? vocabulary?.received_from_workshop?.ar || "مستلم من الخياط"
+                      : vocabulary?.received_from_workshop?.en || "Received from Tailor",
                   },
                 ]
               : []),

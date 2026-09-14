@@ -1,4 +1,5 @@
 import type { AddonManifest } from "@/lib/addons/addon-types";
+import { resolveBrandOwnerUserId } from "@/lib/addons/seed-helpers";
 
 export const jewelryManifest: AddonManifest = {
   id: "jewelry",
@@ -52,45 +53,50 @@ export const jewelryManifest: AddonManifest = {
         en: "Standard ring size guide",
       },
       run: async ({ brandId, db }) => {
-        const { data: existing } = await db
+        const { data: existing, error: existErr } = await db
           .from("size_guides")
           .select("id")
           .eq("brand_id", brandId)
-          .eq("template_key", "ring_standard")
+          .in("template_key", ["rings", "ring_standard"])
           .maybeSingle();
 
+        if (existErr) throw existErr;
+
         if (!existing) {
-          await db.from("size_guides").insert({
+          const { error } = await db.from("size_guides").insert({
             brand_id: brandId,
             name_ar: "دليل مقاسات الخواتم",
             name_en: "Ring Size Guide",
-            template_key: "ring_standard",
-            base_unit: "mm",
+            template_key: "rings",
+            base_unit: "none",
             columns: [
+              { key: "us", label_ar: "المقاس الأمريكي (US)", label_en: "US Size", kind: "text" },
               {
-                key: "inner_diameter",
+                key: "diameter",
                 label_ar: "القطر الداخلي (ملم)",
                 label_en: "Inner Diameter (mm)",
                 kind: "measurement",
-                measurement_key: "diameter",
+                measurement_key: "ring_diameter",
               },
               {
                 key: "circumference",
-                label_ar: "المحيط (ملم)",
+                label_ar: "محيط الإصبع (ملم)",
                 label_en: "Circumference (mm)",
                 kind: "measurement",
-                measurement_key: "circumference",
+                measurement_key: "ring_circumference",
               },
             ],
             rows: [
-              { size_label: "5", inner_diameter: "15.7", circumference: "49.3" },
-              { size_label: "6", inner_diameter: "16.5", circumference: "51.8" },
-              { size_label: "7", inner_diameter: "17.3", circumference: "54.4" },
-              { size_label: "8", inner_diameter: "18.1", circumference: "56.9" },
-              { size_label: "9", inner_diameter: "19.0", circumference: "59.5" },
+              { label: "US 5", values: { us: "5", diameter: 15.7, circumference: 49.3 } },
+              { label: "US 6", values: { us: "6", diameter: 16.5, circumference: 51.9 } },
+              { label: "US 7", values: { us: "7", diameter: 17.3, circumference: 54.4 } },
+              { label: "US 8", values: { us: "8", diameter: 18.1, circumference: 57.0 } },
+              { label: "US 9", values: { us: "9", diameter: 18.9, circumference: 59.5 } },
             ],
             is_active: true,
           });
+
+          if (error) throw error;
         }
       },
     },
@@ -102,28 +108,30 @@ export const jewelryManifest: AddonManifest = {
       },
       run: async ({ brandId, db }) => {
         const optionName = "نقش وحفر اسم أو تاريخ مخصص";
-        const { data: existing } = await db
+        const { data: existing, error: existErr } = await db
           .from("customization_options")
           .select("id")
           .eq("brand_id", brandId)
           .eq("name", optionName)
           .maybeSingle();
 
-        if (!existing) {
-          const { data: brand } = await db
-            .from("brands")
-            .select("owner_id")
-            .eq("id", brandId)
-            .maybeSingle();
-          const userId = brand?.owner_id || "00000000-0000-0000-0000-000000000000";
+        if (existErr) throw existErr;
 
-          await db.from("customization_options").insert({
+        if (!existing) {
+          const userId = await resolveBrandOwnerUserId(db, brandId);
+          if (!userId) {
+            return;
+          }
+
+          const { error } = await db.from("customization_options").insert({
             brand_id: brandId,
             user_id: userId,
             name: optionName,
             price_delta: 3.0,
             product_ids: [],
           });
+
+          if (error) throw error;
         }
       },
     },

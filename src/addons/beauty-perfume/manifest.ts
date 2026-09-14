@@ -44,21 +44,33 @@ export const beautyPerfumeManifest: AddonManifest = {
       },
       run: async ({ brandId, db }) => {
         const defaultCats = [
-          { name_ar: "عطور نسائية", name_en: "Women's Perfumes", slug: "women-perfumes", sort_order: 1 },
-          { name_ar: "عطور رجالية", name_en: "Men's Perfumes", slug: "men-perfumes", sort_order: 2 },
+          {
+            name_ar: "عطور نسائية",
+            name_en: "Women's Perfumes",
+            slug: "women-perfumes",
+            sort_order: 1,
+          },
+          {
+            name_ar: "عطور رجالية",
+            name_en: "Men's Perfumes",
+            slug: "men-perfumes",
+            sort_order: 2,
+          },
           { name_ar: "دخون وعود", name_en: "Oud & Incense", slug: "oud-incense", sort_order: 3 },
         ];
 
         for (const cat of defaultCats) {
-          const { data: existing } = await db
+          const { data: existing, error: existErr } = await db
             .from("categories")
             .select("id")
             .eq("brand_id", brandId)
             .eq("slug", cat.slug)
             .maybeSingle();
 
+          if (existErr) throw existErr;
+
           if (!existing) {
-            await db.from("categories").insert({
+            const { error } = await db.from("categories").insert({
               brand_id: brandId,
               name_ar: cat.name_ar,
               name_en: cat.name_en,
@@ -66,6 +78,8 @@ export const beautyPerfumeManifest: AddonManifest = {
               sort_order: cat.sort_order,
               is_active: true,
             });
+
+            if (error) throw error;
           }
         }
       },
