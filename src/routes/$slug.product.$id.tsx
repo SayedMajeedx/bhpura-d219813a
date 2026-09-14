@@ -57,8 +57,9 @@ import {
   matchCustomFieldToMeasurement,
   missingFitFields,
   normalizeFitProfiles,
-  type FitProfileType,
+  resolveFitProfiles,
 } from "@/lib/fit-passport";
+import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
 
 export const Route = createFileRoute("/$slug/product/$id")({
   loader: async ({ params }) => {
@@ -575,7 +576,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   }, [variants]);
 
   const uniqueSizes = useMemo(() => {
-    const sizes = variants.map((v) => v.size).filter(Boolean) as string[];
+    const allPlaceholder = variants.length > 0 && variants.every(isPlaceholderVariant);
+    const sizes = variants
+      .filter((v) => !allPlaceholder || !isPlaceholderVariant(v))
+      .map((v) => v.size)
+      .filter(Boolean) as string[];
     return Array.from(new Set(sizes));
   }, [variants]);
 
@@ -683,20 +688,24 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     () => (Array.isArray(product?.custom_fields) ? (product!.custom_fields as CustomField[]) : []),
     [product],
   );
-  const configuredPassportType = customFields.some((field) => field.key.includes("passport_dress"))
-    ? "dress"
-    : customFields.some((field) => field.key.includes("passport_abaya"))
-      ? "abaya"
-      : null;
+  const fitProfiles = useMemo(
+    () => resolveFitProfiles(settings?.fit_profiles),
+    [settings?.fit_profiles],
+  );
+  const matchedPassportProfile = fitProfiles.find((p) =>
+    customFields.some((field) => field.key.includes(`passport_${p.key}`)),
+  );
+  const configuredPassportType = matchedPassportProfile ? matchedPassportProfile.key : null;
   const passportConfigured = modules.fit_passport && configuredPassportType !== null;
   const visibleCustomFields = passportConfigured
     ? customFields.filter(
-        (field) => !field.key.includes("passport_") && !matchCustomFieldToMeasurement(field),
+        (field) =>
+          !field.key.includes("passport_") && !matchCustomFieldToMeasurement(fitProfiles, field),
       )
     : customFields;
-  const fitProfileType: FitProfileType =
+  const fitProfileType: string =
     configuredPassportType ??
-    fitProfileForProduct(product?.category, product ? pickName(lang, product) : null);
+    fitProfileForProduct(fitProfiles, product?.category, product ? pickName(lang, product) : null);
   const customerQ = useQuery({
     queryKey: ["product-fit-customer", brand.id, session?.user?.id],
     enabled: modules.fit_passport && Boolean(session?.user?.id),
@@ -731,8 +740,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   });
   const isGuest = !customerQ.data?.id;
   const storedFitProfiles = useMemo(
-    () => normalizeFitProfiles(fitPassportQ.data?.measurements),
-    [fitPassportQ.data?.measurements],
+    () => normalizeFitProfiles(fitProfiles, fitPassportQ.data?.measurements),
+    [fitProfiles, fitPassportQ.data?.measurements],
   );
   const fitProfileValues = passportDraft;
 
@@ -776,14 +785,14 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
 
   const fitProfileComplete = Boolean(
     (isGuest ? true : fitPassportQ.data?.consent_to_store) &&
-    missingFitFields(fitProfileType, fitProfileValues).length === 0,
+    missingFitFields(fitProfiles, fitProfileType, fitProfileValues).length === 0,
   );
 
   const applyFitPassport = () => {
     setCfValues((current) => {
       const next = { ...current };
       customFields.forEach((field) => {
-        const measurement = matchCustomFieldToMeasurement(field);
+        const measurement = matchCustomFieldToMeasurement(fitProfiles, field);
         if (measurement && fitProfileValues[measurement] != null)
           next[field.key] = String(fitProfileValues[measurement]);
       });
@@ -791,16 +800,17 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     });
     setPassportApplied(true);
     setErrorMsg(null);
+    const activeDef = fitProfiles.find((p) => p.key === fitProfileType);
     toast.success(
       t(
-        `تم تطبيق ملف ${fitProfileType === "abaya" ? "العباية" : "الفستان"}`,
+        `تم تطبيق ملف ${activeDef ? activeDef.label_ar : fitProfileType === "abaya" ? "العباية" : "الفستان"}`,
         "Fit Passport applied",
       ),
     );
   };
 
   const applyGuestFitPassport = () => {
-    if (missingFitFields(fitProfileType, passportDraft).length) {
+    if (missingFitFields(fitProfiles, fitProfileType, passportDraft).length) {
       toast.error(
         t(
           "يرجى إكمال المقاسات الإجبارية بقيم صحيحة أكبر من صفر",
@@ -824,7 +834,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     setCfValues((current) => {
       const next = { ...current };
       customFields.forEach((field) => {
-        const measurement = matchCustomFieldToMeasurement(field);
+        const measurement = matchCustomFieldToMeasurement(fitProfiles, field);
         if (measurement && passportDraft[measurement] != null)
           next[field.key] = String(passportDraft[measurement]);
       });
@@ -832,9 +842,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     });
     setPassportApplied(true);
     setErrorMsg(null);
+    const activeDef = fitProfiles.find((p) => p.key === fitProfileType);
     toast.success(
       t(
-        `تم تطبيق مقاسات ${fitProfileType === "abaya" ? "العباية" : "الفستان"} على هذا الطلب`,
+        `تم تطبيق مقاسات ${activeDef ? activeDef.label_ar : fitProfileType === "abaya" ? "العباية" : "الفستان"} على هذا الطلب`,
         "Fit Passport applied to this order",
       ),
     );
@@ -842,7 +853,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
 
   const saveAndApplyFitPassport = async () => {
     if (!customerQ.data?.id) return;
-    if (missingFitFields(fitProfileType, passportDraft).length) {
+    if (missingFitFields(fitProfiles, fitProfileType, passportDraft).length) {
       toast.error(
         t(
           "يرجى إكمال المقاسات الإجبارية بقيم صحيحة أكبر من صفر",
@@ -1145,15 +1156,32 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         ? String(fitPassportQ.data.version)
         : "guest";
 
+      const currentDef = fitProfiles.find((p) => p.key === fitProfileType);
       custom.push({
         key: "fit_passport_profile",
         label_ar: "ملف المقاس المستخدم",
         label_en: "Fit Passport profile",
-        value: fitProfileType === "abaya" ? "عباية / Abaya" : "فستان / Dress",
+        value: currentDef
+          ? `${currentDef.label_ar} / ${currentDef.label_en}`
+          : fitProfileType === "abaya"
+            ? "عباية / Abaya"
+            : "فستان / Dress",
         type: "text",
         price_delta: 0,
       });
-      FIT_PROFILE_FIELDS[fitProfileType].forEach(([key, labelAr, labelEn]) => {
+      const currentFields =
+        currentDef?.fields ??
+        (FIT_PROFILE_FIELDS as any)[fitProfileType]?.map(([k, ar, en, req]: any[]) => ({
+          key: k,
+          label_ar: ar,
+          label_en: en,
+          required: req,
+        })) ??
+        [];
+      currentFields.forEach((field: any) => {
+        const key = field.key;
+        const labelAr = field.label_ar;
+        const labelEn = field.label_en;
         const value = fitProfileValues[key];
         if (value == null || String(value).trim() === "") return;
         custom.push({
@@ -1912,7 +1940,18 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   </div>
 
                   <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-12">
-                    {FIT_PROFILE_FIELDS[fitProfileType].map(([key, ar, en, required]) => (
+                    {(
+                      fitProfiles.find((p) => p.key === fitProfileType)?.fields ??
+                      (FIT_PROFILE_FIELDS as any)[fitProfileType]?.map(
+                        ([k, ar, en, req]: any[]) => ({
+                          key: k,
+                          label_ar: ar,
+                          label_en: en,
+                          required: req,
+                        }),
+                      ) ??
+                      []
+                    ).map(({ key, label_ar: ar, label_en: en, required }: any) => (
                       <label
                         key={key}
                         className={`min-w-0 space-y-1.5 ${required ? "sm:col-span-3" : "sm:col-span-4"}`}

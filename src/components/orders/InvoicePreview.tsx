@@ -11,6 +11,7 @@ import {
 import { getPaymentGatewayReference } from "@/lib/payment-reference";
 import { getReadableTextColor } from "@/lib/color-utils";
 import { getInvoiceStatusLabel } from "@/lib/status-labels";
+import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
 
 type SavedAddress = {
   id?: string;
@@ -719,22 +720,24 @@ export default function InvoicePreview({
                         </ul>
                       )}
                       {it.selected_variant &&
-                        (it.selected_variant.size ||
-                          it.selected_variant.color ||
-                          it.selected_variant.fabric) && (
-                          <p className="mt-1 text-xs" style={{ opacity: 0.75 }}>
-                            {[
-                              it.selected_variant.color &&
-                                `${isRTL ? "اللون" : "Color"}: ${it.selected_variant.color}`,
-                              it.selected_variant.size &&
-                                `${isRTL ? "المقاس" : "Size"}: ${it.selected_variant.size}`,
-                              it.selected_variant.fabric &&
-                                `${isRTL ? "القماش" : "Fabric"}: ${it.selected_variant.fabric}`,
-                            ]
-                              .filter(Boolean)
-                              .join(" · ")}
-                          </p>
-                        )}
+                        (() => {
+                          const isPlaceholder = isPlaceholderVariant(it.selected_variant);
+                          const parts = [
+                            it.selected_variant.color &&
+                              `${isRTL ? "اللون" : "Color"}: ${it.selected_variant.color}`,
+                            it.selected_variant.size &&
+                              !isPlaceholder &&
+                              `${isRTL ? "المقاس" : "Size"}: ${it.selected_variant.size}`,
+                            it.selected_variant.fabric &&
+                              `${isRTL ? "القماش" : "Fabric"}: ${it.selected_variant.fabric}`,
+                          ].filter(Boolean);
+                          if (parts.length === 0) return null;
+                          return (
+                            <p className="mt-1 text-xs" style={{ opacity: 0.75 }}>
+                              {parts.join(" · ")}
+                            </p>
+                          );
+                        })()}
                       {it.custom_field_values && it.custom_field_values.length > 0 && (
                         <ul className="mt-1 text-xs space-y-0.5" style={{ opacity: 0.75 }}>
                           {it.custom_field_values.map((cf, ci) => (

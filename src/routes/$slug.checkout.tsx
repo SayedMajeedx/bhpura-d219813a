@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useStorefront, formatPrice } from "@/lib/storefront-context";
+import { displayVariantParts } from "@/lib/variant-sku-utils";
 import { BAHRAIN_REGIONS } from "@/lib/bahrain-regions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -2040,11 +2041,18 @@ function Checkout() {
                     <div className="truncate">
                       {c.name} × {c.qty}
                     </div>
-                    {[c.size, c.color, c.fabric].filter(Boolean).length > 0 && (
-                      <div className="truncate text-xs text-muted-foreground">
-                        {[c.size, c.color, c.fabric].filter(Boolean).join(" · ")}
-                      </div>
-                    )}
+                    {(() => {
+                      const parts = displayVariantParts({
+                        size: c.size,
+                        color: c.color,
+                        fabric: c.fabric,
+                      });
+                      return parts.length > 0 ? (
+                        <div className="truncate text-xs text-muted-foreground">
+                          {parts.join(" · ")}
+                        </div>
+                      ) : null;
+                    })()}
                     {(c.custom_fields ?? []).map((field) => (
                       <div
                         key={field.key}
