@@ -15,6 +15,7 @@ import {
   getPublicOnboardingPlans,
 } from "@/lib/onboarding.functions";
 import { getSubscriptionReceiptViewUrl } from "@/lib/saas-subscription.functions";
+import { VERTICAL_LABELS, legacyBusinessTypeToVertical } from "@/lib/store-profile";
 import {
   Clock as ClockIcon,
   Crown,
@@ -422,7 +423,11 @@ function SuperRequestsPage() {
 
                           <td className="p-4">
                             <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-muted text-muted-foreground border border-border">
-                              {request.business_type || (lang === "ar" ? "أزياء" : "Fashion")}
+                              {
+                                VERTICAL_LABELS[
+                                  legacyBusinessTypeToVertical(request.business_type)
+                                ][lang === "ar" ? "ar" : "en"]
+                              }
                             </span>
                           </td>
 

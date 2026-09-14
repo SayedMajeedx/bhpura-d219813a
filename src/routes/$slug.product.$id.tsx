@@ -4,7 +4,13 @@ import {
   publicSupabase as supabase,
   supabase as authenticatedSupabase,
 } from "@/integrations/supabase/client";
-import { useStorefront, formatPrice, pickName, pickDescription } from "@/lib/storefront-context";
+import {
+  useStorefront,
+  formatPrice,
+  pickName,
+  pickDescription,
+  useStoreModules,
+} from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -319,6 +325,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const id = splatId || params?.id || params?._splat || params?.["_"] || params?.["$"] || "";
   const { brand, settings, currency, lang, t, addToCart, isWishlisted, toggleWishlist, session } =
     useStorefront();
+  const modules = useStoreModules();
   const navigate = useNavigate();
   const [mediaIdx, setMediaIdx] = useState(0);
   const [variantId, setVariantId] = useState<string | null>(null);
@@ -644,7 +651,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     : customFields.some((field) => field.key.includes("passport_abaya"))
       ? "abaya"
       : null;
-  const passportConfigured = configuredPassportType !== null;
+  const passportConfigured = modules.fit_passport && configuredPassportType !== null;
   const visibleCustomFields = passportConfigured
     ? customFields.filter(
         (field) => !field.key.includes("passport_") && !matchCustomFieldToMeasurement(field),
@@ -655,7 +662,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     fitProfileForProduct(product?.category, product ? pickName(lang, product) : null);
   const customerQ = useQuery({
     queryKey: ["product-fit-customer", brand.id, session?.user?.id],
-    enabled: Boolean(session?.user?.id),
+    enabled: modules.fit_passport && Boolean(session?.user?.id),
     queryFn: async () => {
       const { data } = await (authenticatedSupabase as any)
         .from("customers")
@@ -668,7 +675,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   });
   const fitPassportQ = useQuery({
     queryKey: ["storefront-fit-passport", brand.id, customerQ.data?.id],
-    enabled: Boolean(customerQ.data?.id),
+    enabled: modules.fit_passport && Boolean(customerQ.data?.id),
     queryFn: async () => {
       const { data } = await (authenticatedSupabase as any)
         .from("customer_fit_passports")
@@ -991,7 +998,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
 
   const hasReadySizes = uniqueSizes.length > 0 || hasVariants;
   const hasCustomFields = customFields.length > 0;
-  const showSizeModeToggle = hasReadySizes && hasCustomFields;
+  const showSizeModeToggle = modules.made_to_order && hasReadySizes && hasCustomFields;
   const isTailoringActive =
     (showSizeModeToggle && sizeMode === "custom") ||
     (!showSizeModeToggle && hasCustomFields && uniqueSizes.length === 0);
@@ -1551,7 +1558,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                         product.variant_label_size_ar ||
                         t("المقاس / خيار", "Size / Option")}
                     </div>
-                    <SizeGuideModal isAr={lang === "ar"} />
+                    {modules.size_guide && <SizeGuideModal isAr={lang === "ar"} />}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {uniqueSizes.map((sz) => {
@@ -2099,39 +2106,41 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               })}
 
               {/* 📝 Customer Tailoring & Workshop Notes Box */}
-              <div className="space-y-2 pt-3 border-t border-border-subtle">
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-2 text-xs sm:text-sm font-bold text-foreground">
-                    <FileText className="h-4 w-4 text-primary shrink-0" />
-                    <span>
-                      {t(
-                        "ملاحظات وتفاصيل التفصيل والخياط (اختياري)",
-                        "Tailoring & Workshop Notes (Optional)",
-                      )}
+              {modules.made_to_order && (
+                <div className="space-y-2 pt-3 border-t border-border-subtle">
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-2 text-xs sm:text-sm font-bold text-foreground">
+                      <FileText className="h-4 w-4 text-primary shrink-0" />
+                      <span>
+                        {t(
+                          "ملاحظات وتفاصيل التفصيل والخياط (اختياري)",
+                          "Tailoring & Workshop Notes (Optional)",
+                        )}
+                      </span>
+                    </label>
+                    <span className="text-xs sm:text-xs text-muted-foreground font-normal">
+                      {t("تعليمات للمشغل", "Workshop notes")}
                     </span>
-                  </label>
-                  <span className="text-xs sm:text-xs text-muted-foreground font-normal">
-                    {t("تعليمات للمشغل", "Workshop notes")}
-                  </span>
+                  </div>
+                  <p className="text-xs sm:text-xs text-muted-foreground leading-relaxed">
+                    {t(
+                      "اكتبي هنا أي تفاصيل خاصة للتفصيل ترغبين بإبلاغ الخياط بها (مثل: تضييق الخصر، زيادة/إنقاص طول الكم، بطانة كاملة، شكل الأزرار...)",
+                      "Add any specific tailoring instructions for the workshop (e.g. custom waist tightening, sleeve length adjust, full lining, button style...)",
+                    )}
+                  </p>
+                  <Textarea
+                    rows={3}
+                    value={tailoringNotes}
+                    onChange={(e) => setTailoringNotes(e.target.value)}
+                    placeholder={
+                      lang === "ar"
+                        ? "مثال: الطول 54، دوران الصدر 22، طول الكم 28، تضييق بسيط عند الخصر، بطانة كاملة، قصة كلوش..."
+                        : "e.g. Length 54, Chest 22, Sleeves 28, slim waist, full lining..."
+                    }
+                    className="text-xs bg-background resize-none leading-relaxed rounded-xl border border-input shadow-2xs focus-visible:ring-2 focus-visible:ring-ring"
+                  />
                 </div>
-                <p className="text-xs sm:text-xs text-muted-foreground leading-relaxed">
-                  {t(
-                    "اكتبي هنا أي تفاصيل خاصة للتفصيل ترغبين بإبلاغ الخياط بها (مثل: تضييق الخصر، زيادة/إنقاص طول الكم، بطانة كاملة، شكل الأزرار...)",
-                    "Add any specific tailoring instructions for the workshop (e.g. custom waist tightening, sleeve length adjust, full lining, button style...)",
-                  )}
-                </p>
-                <Textarea
-                  rows={3}
-                  value={tailoringNotes}
-                  onChange={(e) => setTailoringNotes(e.target.value)}
-                  placeholder={
-                    lang === "ar"
-                      ? "مثال: الطول 54، دوران الصدر 22، طول الكم 28، تضييق بسيط عند الخصر، بطانة كاملة، قصة كلوش..."
-                      : "e.g. Length 54, Chest 22, Sleeves 28, slim waist, full lining..."
-                  }
-                  className="text-xs bg-background resize-none leading-relaxed rounded-xl border border-input shadow-2xs focus-visible:ring-2 focus-visible:ring-ring"
-                />
-              </div>
+              )}
             </div>
           )}
 

@@ -34,6 +34,7 @@ import { X, ChevronDown, Sparkles } from "lucide-react";
 import { faviconType, resolveBrandFavicon, useDynamicFavicon } from "@/lib/favicon";
 import { StorefrontAnalytics } from "@/components/storefront-analytics";
 import { isCatalogMode } from "@/lib/storefront-mode";
+import { normalizeVertical, normalizeModuleOverrides } from "@/lib/store-profile";
 import { isColorDark, hexToRgba } from "@/components/storefront/storefront-utils";
 
 export const Route = createFileRoute("/$slug")({
@@ -218,6 +219,8 @@ export const Route = createFileRoute("/$slug")({
       catalog_show_prices: s?.catalog_show_prices ?? true,
       catalog_inquiry_message_en: s?.catalog_inquiry_message_en ?? null,
       catalog_inquiry_message_ar: s?.catalog_inquiry_message_ar ?? null,
+      store_vertical: normalizeVertical(s?.store_vertical ?? "fashion"),
+      store_modules: normalizeModuleOverrides(s?.store_modules),
       menu_bg: s?.menu_bg ?? null,
       menu_fg: s?.menu_fg ?? null,
       menu_title_en: s?.menu_title_en ?? null,

@@ -1,7 +1,4 @@
-/**
- * Smart SKU generation, color transliteration, and range expansion utilities
- * Designed for GCC and International Fashion & Boutique E-Commerce.
- */
+import type { StoreVertical } from "@/lib/store-profile";
 
 export const COLOR_SKU_MAP: Record<string, string> = {
   // Arabic colors & common Khaleeji terms
@@ -217,6 +214,16 @@ export const SIZING_PRESETS = [
     unit: "" as const,
   },
 ];
+
+export function orderSizingPresetsForVertical(vertical: StoreVertical) {
+  if (vertical === "fashion") {
+    return SIZING_PRESETS;
+  }
+  const abayaIds = new Set(["abaya_gulf", "abaya_extended"]);
+  const nonAbaya = SIZING_PRESETS.filter((p) => !abayaIds.has(p.id));
+  const abaya = SIZING_PRESETS.filter((p) => abayaIds.has(p.id));
+  return [...nonAbaya, ...abaya];
+}
 
 /**
  * Normalizes and splits a string list of variant values (comma, newline, slash, or space separated if numeric/letters)

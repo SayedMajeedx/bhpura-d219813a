@@ -9,6 +9,7 @@ import { useI18n } from "@/lib/i18n";
 import { useProfile } from "@/lib/profile-context";
 import { toast } from "sonner";
 import { getAdminNavItems } from "@/config/admin-navigation";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { OsAppDockRail } from "@/components/os/os-app-dock-rail";
 import { OsSidebar } from "@/components/os/os-sidebar";
 import { OsMenuBar } from "@/components/os/os-menu-bar";
@@ -275,19 +276,9 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
     ? undefined
     : (routeBrand ?? (profileBrandMatchesRoute ? profile?.brand : undefined));
 
-  const adminStorefrontModeQuery = useQuery({
-    queryKey: ["admin-storefront-mode", activeBrand?.id],
-    queryFn: async () => {
-      const { data, error } = await (supabase.from("business_settings") as any)
-        .select("storefront_mode")
-        .eq("brand_id", activeBrand!.id)
-        .maybeSingle();
-      if (error) throw error;
-      return (data?.storefront_mode ?? "shop") as "shop" | "catalog";
-    },
-    enabled: Boolean(activeBrand?.id) && !isPlatformMode,
-    staleTime: 60_000,
-  });
+  const { profile: storeProfile } = useAdminStoreProfile(
+    isPlatformMode ? undefined : activeBrand?.id,
+  );
 
   // Build navigation items
   const navItems = useMemo(() => {
@@ -298,9 +289,19 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
       hasPermission,
       t,
       lang,
-      storefrontMode: adminStorefrontModeQuery.data ?? "shop",
+      storefrontMode: storeProfile.storefrontMode,
+      storeModules: storeProfile.modules,
     });
-  }, [activeSlug, isCourier, isAdmin, hasPermission, t, lang, adminStorefrontModeQuery.data]);
+  }, [
+    activeSlug,
+    isCourier,
+    isAdmin,
+    hasPermission,
+    t,
+    lang,
+    storeProfile.storefrontMode,
+    storeProfile.modules,
+  ]);
   const adminTypographyQuery = useQuery({
     queryKey: ["admin-typography", activeBrand?.id],
     queryFn: async () => {

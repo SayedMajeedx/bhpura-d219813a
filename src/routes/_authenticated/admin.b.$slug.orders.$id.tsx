@@ -96,6 +96,7 @@ import { ActivityLogList } from "@/components/activity-log-list";
 import { BarcodeScanner } from "@/components/barcode-scanner";
 import { PhoneInput } from "@/components/phone-input";
 import { useBrand } from "@/lib/brand-context";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useProfile } from "@/lib/profile-context";
 import { getBenefitReceiptViewUrl, rejectBenefitReceipt } from "@/lib/benefit-receipt.functions";
 import { DeliveryAddressCard } from "@/components/delivery-address-card";
@@ -260,6 +261,7 @@ function ItemTailoringCustomizer({
   passport,
   productCategory,
   productName,
+  fitPassportEnabled = true,
   onChange,
 }: {
   item: Item;
@@ -267,6 +269,7 @@ function ItemTailoringCustomizer({
   passport?: { measurements: unknown; preferred_length_unit: "in" | "cm"; version: number } | null;
   productCategory?: string | null;
   productName?: string | null;
+  fitPassportEnabled?: boolean;
   onChange: (patch: Partial<Item>) => void;
 }) {
   const brand = useBrand();
@@ -444,163 +447,165 @@ function ItemTailoringCustomizer({
       </div>
 
       {/* 📏 Fit Passport Module */}
-      <div className="rounded-xl border border-border bg-card p-3.5 space-y-3 shadow-2xs">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle pb-2.5">
-          <div className="flex items-center gap-2">
-            <span className="grid size-7 place-items-center rounded-lg bg-primary text-primary-foreground">
-              <Ruler className="size-3.5" />
-            </span>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold text-foreground">
-                  {(isAr ? brand.name_ar : brand.name_en) ||
-                    brand.name_en ||
-                    brand.name_ar ||
-                    "Fit"}{" "}
-                  Passport
-                </span>
-                {hasAppliedPassport && (
-                  <span className="rounded-full bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 text-xs font-semibold">
-                    {isAr ? "مطبّق على البند" : "Applied"}
+      {fitPassportEnabled && (
+        <div className="rounded-xl border border-border bg-card p-3.5 space-y-3 shadow-2xs">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle pb-2.5">
+            <div className="flex items-center gap-2">
+              <span className="grid size-7 place-items-center rounded-lg bg-primary text-primary-foreground">
+                <Ruler className="size-3.5" />
+              </span>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-foreground">
+                    {(isAr ? brand.name_ar : brand.name_en) ||
+                      brand.name_en ||
+                      brand.name_ar ||
+                      "Fit"}{" "}
+                    Passport
                   </span>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {isAr ? "مقاسات الخياطة والتفصيل المعتمدة" : "Standard tailoring measurements"}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Profile Selector (Abaya / Dress) */}
-            <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-xs">
-              <button
-                type="button"
-                onClick={() => setSelectedProfile("abaya")}
-                className={`rounded-md px-2 py-1 font-semibold transition-colors ${
-                  selectedProfile === "abaya"
-                    ? "bg-primary text-primary-foreground shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {isAr ? "عباية" : "Abaya"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedProfile("dress")}
-                className={`rounded-md px-2 py-1 font-semibold transition-colors ${
-                  selectedProfile === "dress"
-                    ? "bg-primary text-primary-foreground shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {isAr ? "فستان" : "Dress"}
-              </button>
-            </div>
-
-            {/* Unit Selector (in / cm) */}
-            <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-xs">
-              <button
-                type="button"
-                onClick={() => setUnit("in")}
-                className={`rounded-md px-2 py-1 font-semibold transition-colors ${
-                  unit === "in"
-                    ? "bg-primary text-primary-foreground shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {isAr ? "بوصة" : "in"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setUnit("cm")}
-                className={`rounded-md px-2 py-1 font-semibold transition-colors ${
-                  unit === "cm"
-                    ? "bg-primary text-primary-foreground shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {isAr ? "سم" : "cm"}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Saved Customer Passport banner if available */}
-        {passport && (
-          <div
-            className={`rounded-lg border p-2.5 flex flex-wrap items-center justify-between gap-2 ${
-              passportComplete
-                ? "border-primary/25 bg-primary/5"
-                : "border-amber-200 bg-amber-50/70 dark:border-amber-900/50 dark:bg-amber-950/20"
-            }`}
-          >
-            <div>
-              <p className="font-bold text-xs">
-                {isAr
-                  ? `مقاسات العميل المحفوظة متوفرة (إصدار V${passport.version})`
-                  : `Saved customer measurements available (V${passport.version})`}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {passportComplete
-                  ? isAr
-                    ? "يمكن تطبيق المقاسات المسجلة للعميل مباشرة"
-                    : "Customer profile complete, ready to apply"
-                  : isAr
-                    ? "ملف العميل غير مكتمل لبعض الحقول، يمكن إكمالها يدوياً"
-                    : "Some fields missing in customer profile, can be set manually"}
-              </p>
-            </div>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={applyCustomerPassport}
-              className="h-7 text-xs gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
-            >
-              <Check className="size-3.5" />
-              {isAr ? "تطبيق مقاسات العميل" : "Apply saved passport"}
-            </Button>
-          </div>
-        )}
-
-        {/* Measurements Input Grid */}
-        <div className="space-y-1.5">
-          <Label className="text-xs font-semibold text-foreground flex items-center justify-between">
-            <span>{isAr ? "قياسات التفصيل:" : "Tailoring Measurements:"}</span>
-            <span className="text-xs text-muted-foreground font-normal">
-              {isAr ? `الوحدة: ${unit === "in" ? "بوصة (إنش)" : "سنتيمتر"}` : `Unit: ${unit}`}
-            </span>
-          </Label>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {FIT_PROFILE_FIELDS[selectedProfile].map(([key, ar, en, req]) => {
-              const val = getMeasurementVal(key);
-              return (
-                <div key={key} className="space-y-1">
-                  <span className="text-xs font-medium text-muted-foreground flex items-center gap-0.5">
-                    {isAr ? ar : en}
-                    {req && <span className="text-destructive font-bold">*</span>}
-                  </span>
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      step="0.1"
-                      min="0.1"
-                      value={val}
-                      onChange={(e) => handleMeasurementChange(key, e.target.value, ar, en)}
-                      placeholder={unit}
-                      className="h-8 text-xs bg-background pe-7"
-                    />
-                    <span className="absolute end-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none uppercase">
-                      {unit}
+                  {hasAppliedPassport && (
+                    <span className="rounded-full bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 text-xs font-semibold">
+                      {isAr ? "مطبّق على البند" : "Applied"}
                     </span>
-                  </div>
+                  )}
                 </div>
-              );
-            })}
+                <p className="text-xs text-muted-foreground">
+                  {isAr ? "مقاسات الخياطة والتفصيل المعتمدة" : "Standard tailoring measurements"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Profile Selector (Abaya / Dress) */}
+              <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setSelectedProfile("abaya")}
+                  className={`rounded-md px-2 py-1 font-semibold transition-colors ${
+                    selectedProfile === "abaya"
+                      ? "bg-primary text-primary-foreground shadow-2xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {isAr ? "عباية" : "Abaya"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedProfile("dress")}
+                  className={`rounded-md px-2 py-1 font-semibold transition-colors ${
+                    selectedProfile === "dress"
+                      ? "bg-primary text-primary-foreground shadow-2xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {isAr ? "فستان" : "Dress"}
+                </button>
+              </div>
+
+              {/* Unit Selector (in / cm) */}
+              <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setUnit("in")}
+                  className={`rounded-md px-2 py-1 font-semibold transition-colors ${
+                    unit === "in"
+                      ? "bg-primary text-primary-foreground shadow-2xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {isAr ? "بوصة" : "in"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUnit("cm")}
+                  className={`rounded-md px-2 py-1 font-semibold transition-colors ${
+                    unit === "cm"
+                      ? "bg-primary text-primary-foreground shadow-2xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {isAr ? "سم" : "cm"}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Saved Customer Passport banner if available */}
+          {passport && (
+            <div
+              className={`rounded-lg border p-2.5 flex flex-wrap items-center justify-between gap-2 ${
+                passportComplete
+                  ? "border-primary/25 bg-primary/5"
+                  : "border-amber-200 bg-amber-50/70 dark:border-amber-900/50 dark:bg-amber-950/20"
+              }`}
+            >
+              <div>
+                <p className="font-bold text-xs">
+                  {isAr
+                    ? `مقاسات العميل المحفوظة متوفرة (إصدار V${passport.version})`
+                    : `Saved customer measurements available (V${passport.version})`}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {passportComplete
+                    ? isAr
+                      ? "يمكن تطبيق المقاسات المسجلة للعميل مباشرة"
+                      : "Customer profile complete, ready to apply"
+                    : isAr
+                      ? "ملف العميل غير مكتمل لبعض الحقول، يمكن إكمالها يدوياً"
+                      : "Some fields missing in customer profile, can be set manually"}
+                </p>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={applyCustomerPassport}
+                className="h-7 text-xs gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+              >
+                <Check className="size-3.5" />
+                {isAr ? "تطبيق مقاسات العميل" : "Apply saved passport"}
+              </Button>
+            </div>
+          )}
+
+          {/* Measurements Input Grid */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-foreground flex items-center justify-between">
+              <span>{isAr ? "قياسات التفصيل:" : "Tailoring Measurements:"}</span>
+              <span className="text-xs text-muted-foreground font-normal">
+                {isAr ? `الوحدة: ${unit === "in" ? "بوصة (إنش)" : "سنتيمتر"}` : `Unit: ${unit}`}
+              </span>
+            </Label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {FIT_PROFILE_FIELDS[selectedProfile].map(([key, ar, en, req]) => {
+                const val = getMeasurementVal(key);
+                return (
+                  <div key={key} className="space-y-1">
+                    <span className="text-xs font-medium text-muted-foreground flex items-center gap-0.5">
+                      {isAr ? ar : en}
+                      {req && <span className="text-destructive font-bold">*</span>}
+                    </span>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        step="0.1"
+                        min="0.1"
+                        value={val}
+                        onChange={(e) => handleMeasurementChange(key, e.target.value, ar, en)}
+                        placeholder={unit}
+                        className="h-8 text-xs bg-background pe-7"
+                      />
+                      <span className="absolute end-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none uppercase">
+                        {unit}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* 📝 Tailoring Notes & Workshop Instructions ("بوكس ملاحظات") */}
       <div className="rounded-xl border border-border bg-card p-3.5 space-y-1.5 shadow-2xs">
@@ -643,6 +648,7 @@ function OrderDetail() {
   const brand = useBrand();
   const { isAdmin, isCourier } = useProfile();
   const brandId = brand.id;
+  const { profile: storeProfile } = useAdminStoreProfile(brandId);
   const [approvingBenefit, setApprovingBenefit] = useState(false);
   const [rejectingBenefit, setRejectingBenefit] = useState(false);
   const [rejectReasonOpen, setRejectReasonOpen] = useState(false);
@@ -893,7 +899,8 @@ function OrderDetail() {
   const [items, setItems] = useState<Item[]>([]);
   const customerPassportQ = useQuery({
     queryKey: ["admin-order-fit-passport", brandId, order?.customer_id],
-    enabled: !isCourier && Boolean(order?.customer_id),
+    enabled:
+      Boolean(storeProfile.modules.fit_passport) && !isCourier && Boolean(order?.customer_id),
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("customer_fit_passports")
@@ -2342,7 +2349,7 @@ function OrderDetail() {
     const computedOrderType = detectOrderType(items, order?.order_type);
     const workflow = getOrderWorkflow({ ...order, order_type: computedOrderType });
 
-    if (workflow.nextAction === "send_to_tailor") {
+    if (storeProfile.modules.made_to_order && workflow.nextAction === "send_to_tailor") {
       return (
         <Button
           className="bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
@@ -2383,7 +2390,7 @@ function OrderDetail() {
       );
     }
 
-    if (workflow.nextAction === "receive_from_tailor") {
+    if (storeProfile.modules.made_to_order && workflow.nextAction === "receive_from_tailor") {
       return (
         <Button
           className="bg-teal-600 hover:bg-teal-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
@@ -3945,14 +3952,17 @@ function OrderDetail() {
                             )}
 
                             {editingItems[idx] ? (
-                              <ItemTailoringCustomizer
-                                item={it}
-                                isAr={isAr}
-                                passport={customerPassportQ.data}
-                                productCategory={product?.category}
-                                productName={product?.name}
-                                onChange={(patch) => updateItem(idx, patch)}
-                              />
+                              storeProfile.modules.made_to_order ? (
+                                <ItemTailoringCustomizer
+                                  item={it}
+                                  isAr={isAr}
+                                  passport={customerPassportQ.data}
+                                  productCategory={product?.category}
+                                  productName={product?.name}
+                                  fitPassportEnabled={storeProfile.modules.fit_passport}
+                                  onChange={(patch) => updateItem(idx, patch)}
+                                />
+                              ) : null
                             ) : (
                               (it.selected_variant ||
                                 (it.custom_field_values && it.custom_field_values.length > 0)) && (
@@ -4282,16 +4292,19 @@ function OrderDetail() {
                               </div>
 
                               {/* Made-To-Order & Tailoring Specs Customizer */}
-                              <div className="pt-2 border-t border-border-subtle">
-                                <ItemTailoringCustomizer
-                                  item={it}
-                                  isAr={isAr}
-                                  passport={customerPassportQ.data}
-                                  productCategory={product?.category}
-                                  productName={product?.name}
-                                  onChange={(patch) => updateItem(idx, patch)}
-                                />
-                              </div>
+                              {storeProfile.modules.made_to_order && (
+                                <div className="pt-2 border-t border-border-subtle">
+                                  <ItemTailoringCustomizer
+                                    item={it}
+                                    isAr={isAr}
+                                    passport={customerPassportQ.data}
+                                    productCategory={product?.category}
+                                    productName={product?.name}
+                                    fitPassportEnabled={storeProfile.modules.fit_passport}
+                                    onChange={(patch) => updateItem(idx, patch)}
+                                  />
+                                </div>
+                              )}
                             </div>
 
                             <DialogFooter className="flex flex-row justify-end items-center gap-2.5 pt-3 border-t border-border-subtle">

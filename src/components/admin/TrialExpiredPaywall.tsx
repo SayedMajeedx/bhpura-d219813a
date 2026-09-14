@@ -68,7 +68,7 @@ export const TrialExpiredPaywall: React.FC<TrialExpiredPaywallProps> = ({
       nameAr: "باقة النمو",
       nameEn: "Growth Plan",
       descAr: "الخيار الأكثر طلباً للبوتيكات المتوسعة التي تحتاج أدوات تسويقية متقدمة.",
-      descEn: "Most popular for growing fashion boutiques requiring advanced growth tools.",
+      descEn: "Most popular for growing boutiques requiring advanced growth tools.",
       priceMonthly: "35",
       priceAnnual: "336",
       featuresAr: [
@@ -92,7 +92,7 @@ export const TrialExpiredPaywall: React.FC<TrialExpiredPaywallProps> = ({
       nameAr: "الباقة الاحترافية",
       nameEn: "Pro Plan",
       descAr: "للبراندات الكبرى والمشاغل التي تتطلب تكاملاً كاملاً وأتمتة شاملة.",
-      descEn: "For established luxury fashion houses needing total automation.",
+      descEn: "For established luxury brands needing total automation.",
       priceMonthly: "60",
       priceAnnual: "576",
       featuresAr: [

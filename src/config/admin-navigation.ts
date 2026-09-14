@@ -96,6 +96,8 @@ export const CORE_NAV_IDS = [
 
 export const DEFAULT_PINNED_IDS = ["returns", "discounts", "campaigns"] as const;
 
+import type { StoreModules } from "@/lib/store-profile";
+
 export interface GetNavItemsOptions {
   activeSlug: string | null;
   isCourier: boolean;
@@ -104,6 +106,7 @@ export interface GetNavItemsOptions {
   t: (key: string) => string;
   lang: "en" | "ar";
   storefrontMode?: "shop" | "catalog" | string | null;
+  storeModules?: StoreModules;
 }
 
 export function getAdminNavItems({

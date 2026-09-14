@@ -19,6 +19,14 @@ import {
   Eye,
   EyeOff,
   Smartphone,
+  Shirt,
+  UtensilsCrossed,
+  Gift,
+  Printer,
+  Gem,
+  Home,
+  Download,
+  Store,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StorefrontLivePreview } from "@/components/onboarding/StorefrontLivePreview";
@@ -27,6 +35,25 @@ import {
   getPublicOnboardingPlans,
   getOnboardingTrialDays,
 } from "@/lib/onboarding.functions";
+import {
+  StoreVertical,
+  STORE_VERTICALS,
+  VERTICAL_LABELS,
+  verticalToLegacyBusinessType,
+} from "@/lib/store-profile";
+
+const VERTICAL_ICONS: Record<StoreVertical, React.ComponentType<{ className?: string }>> = {
+  fashion: Shirt,
+  beauty: Sparkles,
+  food: UtensilsCrossed,
+  gifts: Gift,
+  print: Printer,
+  jewelry: Gem,
+  home: Home,
+  electronics: Smartphone,
+  digital: Download,
+  general: Store,
+};
 
 function arabicToLatinSlug(text: string): string {
   const map: Record<string, string> = {
@@ -106,6 +133,7 @@ function OnboardPage() {
   const [selectedPlan] = useState<any>(null);
 
   // Form Fields
+  const [storeVertical, setStoreVertical] = useState<StoreVertical | null>(null);
   const [brandName, setBrandName] = useState("");
   const [slug, setSlug] = useState("");
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
@@ -209,6 +237,15 @@ function OnboardPage() {
       : null;
     void selectedPlanPayload;
 
+    if (!storeVertical) {
+      toast.error(
+        isAr
+          ? "يرجى اختيار نوع النشاط أولاً للمتابعة."
+          : "Please select your store vertical first.",
+      );
+      return;
+    }
+
     if (
       !brandName.trim() ||
       !cleanSlug ||
@@ -259,7 +296,8 @@ function OnboardPage() {
           contactNumber: cleanPhone,
           email: cleanEmail,
           password: password,
-          businessType: "Boutique & Fashion",
+          storeVertical: storeVertical!,
+          businessType: verticalToLegacyBusinessType(storeVertical!),
         },
       });
 
@@ -378,13 +416,13 @@ function OnboardPage() {
           </Badge>
 
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground leading-tight">
-            {isAr ? "إطلاق متجرك الإلكتروني في دقائق" : "Launch Your Fashion Boutique in Minutes"}
+            {isAr ? "إطلاق متجرك الإلكتروني في دقائق" : "Launch Your Boutique"}
           </h1>
 
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
             {isAr
               ? "المنصة المتكاملة لإدارة وتجارة البوتيكات. منصة متطورة تجمع بين المتجر الإلكتروني، وإدارة الطلبات، والمخزون في مكان واحد وبسهولة تامة."
-              : "The bespoke e-commerce platform for Gulf fashion houses. Manage your elegant storefront, orders, and inventory effortlessly."}
+              : "The bespoke e-commerce platform for Gulf boutiques. Manage your elegant storefront, orders, and inventory effortlessly."}
           </p>
         </div>
 
@@ -470,6 +508,45 @@ function OnboardPage() {
 
               <CardContent>
                 <form onSubmit={handleStartTrial} className="space-y-4">
+                  {/* Store Vertical Selection (Mandatory) */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-semibold">
+                        {isAr ? "نوع النشاط التجاري" : "Store Vertical"} *
+                      </Label>
+                      {!storeVertical && (
+                        <span className="text-xs text-muted-foreground">
+                          {isAr ? "اختر نوع نشاطك للمتابعة" : "Select store vertical to continue"}
+                        </span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                      {STORE_VERTICALS.map((v) => {
+                        const Icon = VERTICAL_ICONS[v];
+                        const isSelected = storeVertical === v;
+                        return (
+                          <Button
+                            key={v}
+                            type="button"
+                            variant={isSelected ? "default" : "outline"}
+                            onClick={() => setStoreVertical(v)}
+                            className={cn(
+                              "flex flex-col items-center justify-center gap-1.5 h-auto py-2.5 px-2 min-h-[44px] rounded-xl text-xs font-medium transition-all text-center",
+                              isSelected
+                                ? "bg-primary text-primary-foreground font-bold shadow-xs"
+                                : "hover:bg-muted text-muted-foreground hover:text-foreground",
+                            )}
+                          >
+                            <Icon className="size-4 shrink-0" />
+                            <span className="leading-tight text-xs">
+                              {VERTICAL_LABELS[v][isAr ? "ar" : "en"]}
+                            </span>
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Store Name */}
                     <div className="space-y-1.5">
@@ -673,7 +750,7 @@ function OnboardPage() {
                   <div className="pt-2">
                     <Button
                       type="submit"
-                      disabled={isSubmitting || slugStatus === "taken"}
+                      disabled={!storeVertical || isSubmitting || slugStatus === "taken"}
                       className="w-full font-bold text-xs min-h-[44px] shadow-sm gap-2"
                     >
                       {isSubmitting ? (
@@ -681,6 +758,10 @@ function OnboardPage() {
                           <Loader2 className="size-4 animate-spin" />
                           <span>{isAr ? "جاري التجهيز..." : "Launching..."}</span>
                         </>
+                      ) : !storeVertical ? (
+                        <span>
+                          {isAr ? "اختر نوع نشاطك للمتابعة" : "Select store vertical to continue"}
+                        </span>
                       ) : (
                         <>
                           <Zap className="size-4" />
@@ -903,7 +984,7 @@ function OnboardPage() {
         <p>
           {isAr
             ? "جميع الحقوق محفوظة © 2026 Boutq OS — منصة إدارة وتجارة البوتيكات الخليجية."
-            : "© 2026 Boutq OS. All rights reserved. E-commerce OS for GCC Fashion Boutiques."}
+            : "© 2026 Boutq OS. All rights reserved. E-commerce OS for GCC Boutiques."}
         </p>
       </footer>
     </div>

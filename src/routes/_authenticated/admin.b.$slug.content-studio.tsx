@@ -25,6 +25,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -162,6 +163,7 @@ function extractSnappySnippet(text: string | null | undefined, fallback: string)
 function ContentStudioPage() {
   const { slug } = Route.useParams();
   const brand = useBrand();
+  const { profile: storeProfile } = useAdminStoreProfile(brand.id);
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const brandNameEn = brand.name_en || (brand as any).name || "Brand";
@@ -1088,16 +1090,18 @@ function ContentStudioPage() {
     const details: string[] = [];
     if (sizesFormatted) {
       details.push(`📏 المقاسات المتوفرة للبيع الفوري: ${sizesFormatted}`);
-    } else {
+    } else if (storeProfile.modules.made_to_order) {
       details.push("📏 المقاسات: متوفرة للتفصيل حسب الطلب");
     }
-    if (occasionFormatted) {
+    if (occasionFormatted && storeProfile.vertical === "fashion") {
       details.push(`👗 مناسبة لـ: ${occasionFormatted}`);
     }
-    if (fabricFormatted) {
+    if (fabricFormatted && storeProfile.vertical === "fashion") {
       details.push(`🧵 نوع القماش: ${fabricFormatted}`);
     }
-    details.push("✂️ متوفرة للتفصيل حسب الطلب: نعم");
+    if (storeProfile.modules.made_to_order) {
+      details.push("✂️ متوفرة للتفصيل حسب الطلب: نعم");
+    }
 
     const detailsBlock = details.length > 0 ? `\n\n${details.join("\n")}` : "";
 
@@ -1113,6 +1117,8 @@ ${desc}${detailsBlock}
     variantsQ.data,
     currencySymbol,
     effectivePrice,
+    storeProfile.modules.made_to_order,
+    storeProfile.vertical,
   ]);
 
   const handleCopyCaption = async () => {
@@ -2123,7 +2129,9 @@ ${desc}${detailsBlock}
                   onClick={() =>
                     setBody(
                       isAr
-                        ? "متوفرة الآن للطلب والتفصيل عبر متجرنا الإلكتروني."
+                        ? storeProfile.modules.made_to_order
+                          ? "متوفرة الآن للطلب والتفصيل عبر متجرنا الإلكتروني."
+                          : "متوفرة الآن للطلب عبر متجرنا الإلكتروني."
                         : "Available now to order online.",
                     )
                   }

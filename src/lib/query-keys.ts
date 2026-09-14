@@ -12,6 +12,7 @@ export const queryKeys = {
     profile: (brandId: string) => ["brand", brandId] as const,
     settings: (brandId: string) => ["brand", brandId, "settings"] as const,
     businessSettings: (brandId: string) => ["business-settings", brandId] as const,
+    storeProfile: (brandId: string) => ["store-profile", brandId] as const,
   },
 
   // Orders

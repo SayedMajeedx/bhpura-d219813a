@@ -17,6 +17,11 @@ import { toast } from "sonner";
 import { syncStorefrontCartActivity } from "@/lib/abandoned-carts.functions";
 import { getExistingCartSessionId, getOrCreateCartSessionId } from "@/lib/abandoned-cart-session";
 import { isCatalogMode, type StorefrontMode } from "@/lib/storefront-mode";
+import {
+  resolveStoreModules,
+  type StoreVertical,
+  type StoreModuleOverrides,
+} from "@/lib/store-profile";
 
 export type StoreLang = "ar" | "en";
 export type HomePromoCard = {
@@ -168,6 +173,8 @@ export type PublicSettings = {
   catalog_show_prices?: boolean;
   catalog_inquiry_message_en?: string | null;
   catalog_inquiry_message_ar?: string | null;
+  store_vertical?: StoreVertical;
+  store_modules?: StoreModuleOverrides;
   menu_bg: string | null;
   menu_fg: string | null;
   menu_title_en: string | null;
@@ -739,6 +746,20 @@ export function useStorefront() {
   const v = useContext(Ctx);
   if (!v) throw new Error("useStorefront must be used within StorefrontProvider");
   return v;
+}
+
+export function useStoreModules() {
+  const { settings } = useStorefront();
+  const storeVertical = settings?.store_vertical;
+  const storeModules = settings?.store_modules;
+  return useMemo(
+    () =>
+      resolveStoreModules({
+        store_vertical: storeVertical,
+        store_modules: storeModules,
+      }),
+    [storeVertical, storeModules],
+  );
 }
 
 export function formatPrice(amount: number, currency: string, lang: StoreLang) {

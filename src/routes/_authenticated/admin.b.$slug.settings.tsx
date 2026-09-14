@@ -83,6 +83,7 @@ import { TrustBadgesEditor } from "@/components/settings/TrustBadgesEditor";
 import { type TrustBadgesConfig, DEFAULT_TRUST_BADGES } from "@/lib/trust-badges";
 import { StoreReadinessChecklist } from "@/components/settings/StoreReadinessChecklist";
 import { SettingsSearchBar } from "@/components/settings/SettingsSearchBar";
+import { StoreProfileCard } from "@/components/settings/StoreProfileCard";
 
 const SUPPORTED_CURRENCIES = [
   { code: "BHD", name_en: "BHD — Bahraini Dinar", name_ar: "د.ب — دينار بحريني" },
@@ -935,6 +936,7 @@ function Settings() {
         className="w-full mt-2"
       >
         <TabsContent value="business" className="space-y-6 mt-0">
+          <StoreProfileCard brandId={brandId} slug={brand.slug} />
           <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-3 sm:p-6 space-y-4">
             <h2 className="font-display text-xl font-bold">{t("settings.business")}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -4295,7 +4297,7 @@ function StorefrontModeCard({ brandId }: { brandId: string }) {
       if (error) throw error;
 
       await qc.invalidateQueries({ queryKey: queryKeys.brand.businessSettings(brandId) });
-      await qc.invalidateQueries({ queryKey: ["admin-storefront-mode", brandId] });
+      await qc.invalidateQueries({ queryKey: queryKeys.brand.storeProfile(brandId) });
       await qc.invalidateQueries({ queryKey: ["readiness-business-settings", brandId] });
 
       toast.success(

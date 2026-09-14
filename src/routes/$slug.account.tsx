@@ -2,7 +2,8 @@ import { createFileRoute, Link, useNavigate, Navigate } from "@tanstack/react-ro
 import { useEffect, useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useStorefront, formatPrice } from "@/lib/storefront-context";
+import { useStorefront, formatPrice, useStoreModules } from "@/lib/storefront-context";
+import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { OsEmptyState } from "@/components/os/os-empty-state";
@@ -259,6 +260,7 @@ function OrderTimelineTracker({
 
 function AccountPage() {
   const { brand, session, isStoreMember, membershipLoading, t, lang, currency } = useStorefront();
+  const modules = useStoreModules();
   const isAr = lang === "ar";
   const [mounted, setMounted] = useState(false);
 
@@ -514,7 +516,12 @@ function AccountPage() {
             defaultValue="orders"
             className="w-full rounded-2xl border bg-card p-4 shadow-xs sm:p-6 border-border-strong"
           >
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-7 h-auto rounded-xl p-1 bg-muted/40 border border-border-subtle mb-6 gap-1">
+            <TabsList
+              className={cn(
+                "grid w-full h-auto rounded-xl p-1 bg-muted/40 border border-border-subtle mb-6 gap-1",
+                modules.fit_passport ? "grid-cols-2 sm:grid-cols-7" : "grid-cols-2 sm:grid-cols-6",
+              )}
+            >
               <TabsTrigger
                 value="orders"
                 className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
@@ -541,13 +548,15 @@ function AccountPage() {
                   </span>
                 )}
               </TabsTrigger>
-              <TabsTrigger
-                value="fit"
-                className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
-              >
-                <Ruler className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-xs">{t("مقاساتي", "My fit")}</span>
-              </TabsTrigger>
+              {modules.fit_passport && (
+                <TabsTrigger
+                  value="fit"
+                  className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
+                >
+                  <Ruler className="h-4 w-4 text-primary" />
+                  <span className="font-semibold text-xs">{t("مقاساتي", "My fit")}</span>
+                </TabsTrigger>
+              )}
               <TabsTrigger
                 value="profile"
                 className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
@@ -604,17 +613,19 @@ function AccountPage() {
               <ProfileSection isAr={isAr} customer={customer} loadingCustomer={loadingCustomer} />
             </TabsContent>
 
-            <TabsContent value="fit" className="mt-0 focus-visible:outline-none">
-              <StorefrontFitPassport
-                brandId={brand.id}
-                brandName={
-                  (isAr ? brand.name_ar || brand.name_en : brand.name_en || brand.name_ar) ??
-                  undefined
-                }
-                customerId={customer?.id}
-                isAr={isAr}
-              />
-            </TabsContent>
+            {modules.fit_passport && (
+              <TabsContent value="fit" className="mt-0 focus-visible:outline-none">
+                <StorefrontFitPassport
+                  brandId={brand.id}
+                  brandName={
+                    (isAr ? brand.name_ar || brand.name_en : brand.name_en || brand.name_ar) ??
+                    undefined
+                  }
+                  customerId={customer?.id}
+                  isAr={isAr}
+                />
+              </TabsContent>
+            )}
 
             <TabsContent value="addresses" className="mt-0 focus-visible:outline-none">
               <AddressesSection

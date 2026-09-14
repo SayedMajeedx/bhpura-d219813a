@@ -85,7 +85,9 @@ import {
   makeEan13,
   splitVariantValues,
   SIZING_PRESETS,
+  orderSizingPresetsForVertical,
 } from "@/lib/variant-sku-utils";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 import { InventoryCommandHeader } from "@/components/inventory/InventoryCommandHeader";
 import {
@@ -2553,6 +2555,7 @@ function ProductDialog({
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const brand = useBrand();
+  const { profile: storeProfile } = useAdminStoreProfile(brand.id);
   const { entitlements } = useEntitlements({ brandId: brand.id });
   const initialForm = {
     name_ar: product?.name_ar ?? "",
@@ -3260,19 +3263,21 @@ function ProductDialog({
                 <div className="p-4 space-y-4 border-t border-border-subtle animate-in fade-in duration-150">
                   {/* Fabric & Occasion */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-xs font-bold text-muted-foreground">
-                        {isAr ? "نوع القماش" : "Fabric Type"}
-                      </Label>
-                      <Input
-                        className="mt-1 h-9.5 rounded-lg text-xs"
-                        placeholder={
-                          isAr ? "مثال: كريب ملكي، لينن، حرير..." : "e.g., Royal Crepe, Linen..."
-                        }
-                        value={form.fabric_type}
-                        onChange={(e) => setForm({ ...form, fabric_type: e.target.value })}
-                      />
-                    </div>
+                    {storeProfile.vertical === "fashion" && (
+                      <div>
+                        <Label className="text-xs font-bold text-muted-foreground">
+                          {isAr ? "نوع القماش" : "Fabric Type"}
+                        </Label>
+                        <Input
+                          className="mt-1 h-9.5 rounded-lg text-xs"
+                          placeholder={
+                            isAr ? "مثال: كريب ملكي، لينن، حرير..." : "e.g., Royal Crepe, Linen..."
+                          }
+                          value={form.fabric_type}
+                          onChange={(e) => setForm({ ...form, fabric_type: e.target.value })}
+                        />
+                      </div>
+                    )}
                     <div>
                       <Label className="text-xs font-bold text-muted-foreground">
                         {isAr ? "مناسبة لـ" : "Suitable for"}
@@ -4098,6 +4103,11 @@ function BulkVariantDialog({
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const brand = useBrand();
+  const { profile: storeProfile } = useAdminStoreProfile(brand.id);
+  const orderedPresets = useMemo(
+    () => orderSizingPresetsForVertical(storeProfile.vertical),
+    [storeProfile.vertical],
+  );
   const existingSku = variants.find((v) => v.sku)?.sku || "";
   const blank: VariantGenerationPlan = {
     base_sku: existingSku,
@@ -4487,7 +4497,7 @@ function BulkVariantDialog({
             {isAr ? "قوالب مقاسات جاهزة بنقرة واحدة:" : "1-Click Sizing Quick Presets:"}
           </Label>
           <div className="flex items-center gap-1.5 flex-wrap">
-            {SIZING_PRESETS.map((preset) => (
+            {orderedPresets.map((preset) => (
               <Button
                 key={preset.id}
                 type="button"
@@ -4528,14 +4538,16 @@ function BulkVariantDialog({
               placeholder={isAr ? "كحلي, عنابي, بيج" : "Black, Navy, Olive"}
             />
           </div>
-          <div>
-            <Label>{isAr ? "الخامة" : "Fabric"}</Label>
-            <Input
-              value={plan.fabric}
-              onChange={(e) => setPlan({ ...plan, fabric: e.target.value })}
-              placeholder={isAr ? "كريب ملكي / حرير" : "Silk / Linen / Crepe"}
-            />
-          </div>
+          {storeProfile.vertical === "fashion" && (
+            <div>
+              <Label>{isAr ? "الخامة" : "Fabric"}</Label>
+              <Input
+                value={plan.fabric}
+                onChange={(e) => setPlan({ ...plan, fabric: e.target.value })}
+                placeholder={isAr ? "كريب ملكي / حرير" : "Silk / Linen / Crepe"}
+              />
+            </div>
+          )}
           <div>
             <Label>{isAr ? "وحدة المقاس" : "Size unit"}</Label>
             <select

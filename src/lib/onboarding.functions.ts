@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { verifyOnboardingTurnstile } from "@/lib/turnstile.server";
+import { STORE_VERTICALS, verticalToLegacyBusinessType } from "@/lib/store-profile";
 
 const imageTypes: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -612,6 +613,7 @@ const RegisterInstantTrialInput = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   businessType: z.string().optional(),
+  storeVertical: z.enum(STORE_VERTICALS),
 });
 
 export const registerInstantTrial = createServerFn({ method: "POST" })
@@ -721,7 +723,7 @@ export const registerInstantTrial = createServerFn({ method: "POST" })
         p_name_ar: (data.nameAr || data.brandName).trim(),
         p_primary_color: "#800020",
         p_owner_id: userId,
-        p_business_type: data.businessType || "Abayas & Fashion",
+        p_business_type: data.businessType || verticalToLegacyBusinessType(data.storeVertical),
       },
     );
 
@@ -741,6 +743,15 @@ export const registerInstantTrial = createServerFn({ method: "POST" })
         updated_at: new Date().toISOString(),
       })
       .eq("id", brandId);
+
+    // 6b. Update business_settings with chosen vertical and empty module overrides
+    await (supabaseAdmin.from("business_settings" as never) as any)
+      .update({
+        store_vertical: data.storeVertical,
+        store_modules: {},
+        updated_at: new Date().toISOString(),
+      })
+      .eq("brand_id", brandId);
 
     // 7. Associate brand_id in profile
     await (supabaseAdmin.from("profiles" as never) as any)
