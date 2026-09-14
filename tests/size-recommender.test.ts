@@ -97,4 +97,95 @@ describe("Size Recommender Algorithm", () => {
     // When measurements clash, confidence should be lower than high
     expect(recommendation?.confidenceScore).toBeLessThan(95);
   });
+
+  it("handles the user screenshot case: length 145 cm entered in inches -> detects height and never returns 60", () => {
+    // Customer entered: length 145 (height in cm), bust 22, sleeve 20, shoulder 13 in inches guide
+    const recommendation = recommendSize({
+      guide,
+      userMeasurements: {
+        length: 145,
+        bust: 22,
+        sleeve: 20,
+        shoulder: 13,
+      },
+      inputUnit: "in",
+    });
+
+    expect(recommendation).not.toBeNull();
+    // Must NOT be 60!
+    expect(recommendation?.size).not.toBe("60");
+    // Height 145 cm mapped to 50 in, but bust 22 requires size 54 -> size 54
+    expect(recommendation?.size).toBe("54");
+    expect(recommendation?.autoDetectedHeight).toBeDefined();
+    expect(recommendation?.autoDetectedHeight?.heightCm).toBe(145);
+    expect(recommendation?.autoDetectedHeight?.convertedLengthInches).toBe(50);
+    expect(recommendation?.dimensionConflict).toBe(true);
+    expect(recommendation?.dimensionConflictNote_ar).toContain("50");
+    expect(recommendation?.dimensionConflictNote_ar).toContain("54");
+  });
+
+  it("recommends size 50 when only body height 145 cm is entered in inches field", () => {
+    const recommendation = recommendSize({
+      guide,
+      userMeasurements: {
+        length: 145,
+      },
+      inputUnit: "in",
+    });
+
+    expect(recommendation).not.toBeNull();
+    expect(recommendation?.size).toBe("50");
+    expect(recommendation?.confidence).toBe("high");
+    expect(recommendation?.autoDetectedHeight?.heightCm).toBe(145);
+  });
+
+  it("recommends size 54 when body height 160 cm is entered in inches field", () => {
+    const recommendation = recommendSize({
+      guide,
+      userMeasurements: {
+        length: 160,
+      },
+      inputUnit: "in",
+    });
+
+    expect(recommendation).not.toBeNull();
+    expect(recommendation?.size).toBe("54");
+    expect(recommendation?.confidence).toBe("high");
+  });
+
+  it("strictly returns size: null and oversize: true when measurements exceed chart (NEVER recommends 60)", () => {
+    const recommendation = recommendSize({
+      guide,
+      userMeasurements: {
+        length: 70, // Greater than max abaya length 60
+        bust: 32, // Greater than max bust 25
+      },
+      inputUnit: "in",
+    });
+
+    expect(recommendation).not.toBeNull();
+    // CRITICAL: size must be null so UI does not show selection button!
+    expect(recommendation?.size).toBeNull();
+    expect(recommendation?.oversize).toBe(true);
+    expect(recommendation?.maxAvailableSize).toBe("60");
+    expect(recommendation?.confidence).toBe("low");
+  });
+
+  it("strictly returns size: null and undersize: true when measurements are far below chart", () => {
+    const recommendation = recommendSize({
+      guide,
+      userMeasurements: {
+        length: 30, // Far below min length 50
+        bust: 12, // Far below min bust 20
+      },
+      inputUnit: "in",
+    });
+
+    expect(recommendation).not.toBeNull();
+    expect(recommendation?.size).toBeNull();
+    expect(recommendation?.undersize).toBe(true);
+    expect(recommendation?.minAvailableSize).toBe("50");
+    expect(recommendation?.confidence).toBe("low");
+  });
 });
+

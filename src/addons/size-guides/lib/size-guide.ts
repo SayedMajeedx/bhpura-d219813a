@@ -61,12 +61,58 @@ export type SizeRecommendation = {
   confidenceScore?: number;
   between?: [string, string];
   oversize?: boolean;
+  undersize?: boolean;
+  dimensionConflict?: boolean;
+  dimensionConflictNote_ar?: string;
+  dimensionConflictNote_en?: string;
+  autoDetectedHeight?: {
+    original: number;
+    heightCm: number;
+    convertedLengthInches: number;
+    suggestedAbayaSize: string;
+  };
+  maxAvailableSize?: string;
+  minAvailableSize?: string;
   reasons: Array<{
     column: SizeGuideColumn;
     customer: number;
     row: SizeGuideCell;
   }>;
 };
+
+/**
+ * Checks if a size guide is for Gulf Abayas (by template key, name, or size labels 50-60).
+ */
+export function isAbayaSizeGuide(guide: SizeGuide): boolean {
+  if (guide.template_key && guide.template_key.toLowerCase().includes("abaya")) return true;
+  const name = `${guide.name_ar} ${guide.name_en}`.toLowerCase();
+  if (name.includes("عباي") || name.includes("abaya")) return true;
+  const labels = guide.rows.map((r) => r.label.trim());
+  if (labels.includes("52") && labels.includes("54") && labels.includes("56")) return true;
+  return false;
+}
+
+/**
+ * Maps standard Gulf customer body height (in cm) to traditional abaya length (in inches).
+ * Standard Gulf Abaya Sizing Chart:
+ * 145 - 150 cm -> Size 50
+ * 151 - 155 cm -> Size 52
+ * 156 - 160 cm -> Size 54
+ * 161 - 165 cm -> Size 56
+ * 166 - 170 cm -> Size 58
+ * 171 - 176 cm -> Size 60
+ */
+export function heightCmToAbayaLengthInches(heightCm: number): {
+  abayaLengthInches: number;
+  sizeLabel: string;
+} {
+  if (heightCm <= 150) return { abayaLengthInches: 50, sizeLabel: "50" };
+  if (heightCm <= 155) return { abayaLengthInches: 52, sizeLabel: "52" };
+  if (heightCm <= 160) return { abayaLengthInches: 54, sizeLabel: "54" };
+  if (heightCm <= 165) return { abayaLengthInches: 56, sizeLabel: "56" };
+  if (heightCm <= 170) return { abayaLengthInches: 58, sizeLabel: "58" };
+  return { abayaLengthInches: 60, sizeLabel: "60" };
+}
 
 /**
  * Normalizes and validates a raw object conforming to SizeGuide with safe fallbacks.
@@ -584,10 +630,50 @@ export function recommendSize(args: {
     return null;
   }
 
-  // Convert customer measurements to guide base_unit
+  const isAbaya = isAbayaSizeGuide(guide);
+  let autoDetectedHeightInfo: SizeRecommendation["autoDetectedHeight"] | undefined;
+
+  // Convert customer measurements to guide base_unit with smart heuristics
   const convertedCustomer: Record<string, number> = {};
-  for (const [key, val] of Object.entries(validMeasurements)) {
-    convertedCustomer[key] = convertMeasurement(val, unit, guide.base_unit) as number;
+  for (const [key, rawVal] of Object.entries(validMeasurements)) {
+    let effectiveVal = rawVal;
+
+    // 1. Check if key is 'length' or 'height' in an abaya guide with unit === 'in':
+    // In Gulf abayas, total body height is almost universally entered in cm (135 - 200 cm).
+    // If entered into an "in" field with value >= 100, it is physically impossible to be inches (100 in = 2.54m!).
+    // The customer entered their body height in cm (e.g. 145, 150, 155, 160, 165 cm).
+    if (
+      (key === "length" || key === "height") &&
+      isAbaya &&
+      unit === "in" &&
+      rawVal >= 100 &&
+      rawVal <= 220
+    ) {
+      const heightMapping = heightCmToAbayaLengthInches(rawVal);
+      autoDetectedHeightInfo = {
+        original: rawVal,
+        heightCm: rawVal,
+        convertedLengthInches: heightMapping.abayaLengthInches,
+        suggestedAbayaSize: heightMapping.sizeLabel,
+      };
+      effectiveVal =
+        guide.base_unit === "in"
+          ? heightMapping.abayaLengthInches
+          : (convertMeasurement(heightMapping.abayaLengthInches, "in", guide.base_unit) as number);
+      convertedCustomer[key] = effectiveVal;
+      continue;
+    }
+
+    // 2. Sanity check: if unit is "in" and value is >= 90:
+    // No apparel measurement (bust, waist, sleeve, length) in inches exceeds 90 inches.
+    // The user typed cm into an inches field! Convert from cm to guide base_unit.
+    if (unit === "in" && rawVal >= 90) {
+      convertedCustomer[key] = convertMeasurement(rawVal, "cm", guide.base_unit) as number;
+      continue;
+    }
+
+    // Normal conversion
+    convertedCustomer[key] = convertMeasurement(effectiveVal, unit, guide.base_unit) as number;
   }
 
   // Find columns that have an active measurement_key matching customer measurements
@@ -603,6 +689,46 @@ export function recommendSize(args: {
   }
 
   const tolerance = guide.base_unit === "in" ? 0.4 : 1.0;
+  const largestRow = guide.rows[guide.rows.length - 1];
+  const smallestRow = guide.rows[0];
+  const maxAvailableSize = largestRow.size_label || largestRow.label;
+  const minAvailableSize = smallestRow.size_label || smallestRow.label;
+
+  // Check undersize: if for any critical measurement the customer measurement is significantly below the smallest row
+  let isUndersize = false;
+  for (const col of activeCols) {
+    const custVal = convertedCustomer[col.measurement_key!];
+    const cell = smallestRow.values[col.key];
+    let minVal: number | undefined;
+    if (typeof cell === "number") minVal = cell;
+    else if (cell && typeof cell === "object" && "min" in cell) minVal = cell.min;
+    else if (typeof cell === "string") {
+      const match = cell.match(/^(\d+(?:\.\d+)?)/);
+      if (match) minVal = parseFloat(match[1]);
+    }
+    const underThreshold = guide.base_unit === "in" ? 5 : 12;
+    if (minVal !== undefined && custVal < minVal - underThreshold) {
+      isUndersize = true;
+      break;
+    }
+  }
+
+  if (isUndersize) {
+    return {
+      size: null, // STRICTLY NULL! NEVER 50/60!
+      confidence: "low",
+      confidenceScore: 0,
+      undersize: true,
+      maxAvailableSize,
+      minAvailableSize,
+      autoDetectedHeight: autoDetectedHeightInfo,
+      reasons: activeCols.map((col) => ({
+        column: col,
+        customer: convertedCustomer[col.measurement_key!],
+        row: smallestRow.values[col.key] ?? null,
+      })),
+    };
+  }
 
   type CandidateRow = {
     row: SizeGuideRow;
@@ -673,19 +799,20 @@ export function recommendSize(args: {
 
   if (fittingRows.length === 0) {
     // Customer is larger than all available rows -> oversize
-    const largestRow = guide.rows[guide.rows.length - 1];
-    const reasons = activeCols.map((col) => ({
-      column: col,
-      customer: convertedCustomer[col.measurement_key!],
-      row: largestRow.values[col.key] ?? null,
-    }));
-
+    // CRITICAL FIX: Return size: null! NEVER recommend max size (e.g. 60) to out-of-bounds customers!
     return {
-      size: largestRow.size_label || largestRow.label || null,
+      size: null,
       confidence: "low",
-      confidenceScore: 30,
+      confidenceScore: 0,
       oversize: true,
-      reasons,
+      maxAvailableSize,
+      minAvailableSize,
+      autoDetectedHeight: autoDetectedHeightInfo,
+      reasons: activeCols.map((col) => ({
+        column: col,
+        customer: convertedCustomer[col.measurement_key!],
+        row: largestRow.values[col.key] ?? null,
+      })),
     };
   }
 
@@ -722,11 +849,83 @@ export function recommendSize(args: {
     confidenceScore = 92;
   }
 
+  // Check dimension conflict: e.g. length fits 50, but bust requires 54
+  let dimensionConflict = false;
+  let dimensionConflictNote_ar: string | undefined;
+  let dimensionConflictNote_en: string | undefined;
+
+  if (activeCols.length >= 2) {
+    const lengthCol = activeCols.find(
+      (c) => c.measurement_key === "length" || c.measurement_key === "height",
+    );
+    const bustCol = activeCols.find(
+      (c) => c.measurement_key === "bust" || c.measurement_key === "chest",
+    );
+
+    if (lengthCol && bustCol) {
+      const custLength = convertedCustomer[lengthCol.measurement_key!];
+      const custBust = convertedCustomer[bustCol.measurement_key!];
+
+      let bestLenRow: SizeGuideRow | undefined;
+      let minLenDiff = Infinity;
+      let bestBustRow: SizeGuideRow | undefined;
+      let minBustDiff = Infinity;
+
+      for (const r of guide.rows) {
+        const lenVal =
+          typeof r.values[lengthCol.key] === "number"
+            ? (r.values[lengthCol.key] as number)
+            : undefined;
+        const bustVal =
+          typeof r.values[bustCol.key] === "number"
+            ? (r.values[bustCol.key] as number)
+            : undefined;
+
+        if (lenVal !== undefined && lenVal >= custLength - tolerance) {
+          const diff = lenVal - custLength;
+          if (diff < minLenDiff) {
+            minLenDiff = diff;
+            bestLenRow = r;
+          }
+        }
+        if (bustVal !== undefined && bustVal >= custBust - tolerance) {
+          const diff = bustVal - custBust;
+          if (diff < minBustDiff) {
+            minBustDiff = diff;
+            bestBustRow = r;
+          }
+        }
+      }
+
+      const lenSizeLabel = bestLenRow?.size_label || bestLenRow?.label;
+      const bustSizeLabel = bestBustRow?.size_label || bestBustRow?.label;
+
+      if (lenSizeLabel && bustSizeLabel && lenSizeLabel !== bustSizeLabel) {
+        dimensionConflict = true;
+        if (isAbaya) {
+          dimensionConflictNote_ar = `حسب الطول مقاسك ${lenSizeLabel}، ولكن حسب محيط الصدر المقاس الأنسب هو ${bustSizeLabel} لضمان راحة تامة. ننصح باختيار مقاس ${bustSizeLabel} مع طلب تقصير الطول عند التفصيل، أو طلب تفصيل خاص.`;
+          dimensionConflictNote_en = `Based on length your size is ${lenSizeLabel}, but based on bust size ${bustSizeLabel} fits better for comfort. We recommend choosing size ${bustSizeLabel} with length alteration, or custom tailoring.`;
+        } else {
+          dimensionConflictNote_ar = `قياسات الطول تشير لمقاس ${lenSizeLabel} ومحيط الصدر يشير لمقاس ${bustSizeLabel}. ننصح باختيار ${bustSizeLabel} لراحة أكبر.`;
+          dimensionConflictNote_en = `Length suggests size ${lenSizeLabel} while bust suggests size ${bustSizeLabel}. We recommend size ${bustSizeLabel} for better comfort.`;
+        }
+        confidence = "medium";
+        confidenceScore = Math.min(confidenceScore, 70);
+      }
+    }
+  }
+
   return {
     size: recommendedSize,
     confidence,
     confidenceScore,
     between: betweenPair,
+    dimensionConflict,
+    dimensionConflictNote_ar,
+    dimensionConflictNote_en,
+    autoDetectedHeight: autoDetectedHeightInfo,
+    maxAvailableSize,
+    minAvailableSize,
     reasons: best.reasons,
   };
 }
