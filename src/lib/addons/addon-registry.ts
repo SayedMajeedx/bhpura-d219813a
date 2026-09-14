@@ -346,3 +346,98 @@ export function sizingPresetOrderFrom(rows: BrandAddonRow[] | null | undefined):
 
   return [];
 }
+
+export interface VariantAxisConfig {
+  label: string;
+  visible: boolean;
+  isCustom: boolean;
+}
+
+export interface ProductVariantLabels {
+  variant_label_size_ar?: string | null;
+  variant_label_size_en?: string | null;
+  variant_label_color_ar?: string | null;
+  variant_label_color_en?: string | null;
+  variant_label_fabric_ar?: string | null;
+  variant_label_fabric_en?: string | null;
+}
+
+export const GENERIC_AXIS_DEFAULTS = {
+  size: { ar: "المقاس / خيار", en: "Size / Option" },
+  color: { ar: "اللون", en: "Color" },
+  fabric: { ar: "الخامة", en: "Fabric" },
+} as const;
+
+export function resolveVariantAxis({
+  axis,
+  product,
+  addonDefaults,
+  lang,
+}: {
+  axis: "size" | "color" | "fabric";
+  product?: ProductVariantLabels | null;
+  addonDefaults?: {
+    size?: { ar: string; en: string } | null;
+    color?: { ar: string; en: string } | null;
+    fabric?: { ar: string; en: string } | null;
+  };
+  lang: "ar" | "en";
+}): VariantAxisConfig {
+  const customAr = (product as any)?.[`variant_label_${axis}_ar`]?.trim();
+  const customEn = (product as any)?.[`variant_label_${axis}_en`]?.trim();
+  const custom = lang === "ar" ? (customAr || customEn) : (customEn || customAr);
+
+  if (custom) {
+    return {
+      label: custom,
+      visible: true,
+      isCustom: true,
+    };
+  }
+
+  const addonAxis = addonDefaults?.[axis];
+  if (addonAxis === null) {
+    // Explicit null hides the axis unless custom label was set on product
+    return {
+      label: GENERIC_AXIS_DEFAULTS[axis][lang],
+      visible: false,
+      isCustom: false,
+    };
+  }
+
+  if (addonAxis) {
+    return {
+      label: addonAxis[lang] || addonAxis.en || addonAxis.ar,
+      visible: true,
+      isCustom: false,
+    };
+  }
+
+  // General vanilla fallback
+  return {
+    label: GENERIC_AXIS_DEFAULTS[axis][lang],
+    visible: true,
+    isCustom: false,
+  };
+}
+
+export function resolveAllVariantAxes({
+  product,
+  addonDefaults,
+  lang,
+}: {
+  product?: ProductVariantLabels | null;
+  addonDefaults?: {
+    size?: { ar: string; en: string } | null;
+    color?: { ar: string; en: string } | null;
+    fabric?: { ar: string; en: string } | null;
+  };
+  lang: "ar" | "en";
+}): Record<"size" | "color" | "fabric", VariantAxisConfig> {
+  return {
+    size: resolveVariantAxis({ axis: "size", product, addonDefaults, lang }),
+    color: resolveVariantAxis({ axis: "color", product, addonDefaults, lang }),
+    fabric: resolveVariantAxis({ axis: "fabric", product, addonDefaults, lang }),
+  };
+}
+

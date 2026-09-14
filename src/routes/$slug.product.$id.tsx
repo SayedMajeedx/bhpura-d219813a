@@ -37,6 +37,8 @@ import {
 } from "lucide-react";
 import { isCatalogMode, shouldShowPrices, buildWhatsAppInquiryUrl } from "@/lib/storefront-mode";
 import { AddonSlot } from "@/components/addons/AddonSlot";
+import { useAddons } from "@/components/addons/AddonsProvider";
+import { variantAxisDefaultsFrom, resolveAllVariantAxes } from "@/lib/addons/addon-registry";
 import { ProductShareModal } from "@/components/storefront/ProductShareModal";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { toast } from "sonner";
@@ -328,6 +330,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const id = splatId || params?.id || params?._splat || params?.["_"] || params?.["$"] || "";
   const { brand, settings, currency, lang, t, addToCart, isWishlisted, toggleWishlist, session } =
     useStorefront();
+  const { addons } = useAddons();
   const modules = useStoreModules();
   const navigate = useNavigate();
   const [mediaIdx, setMediaIdx] = useState(0);
@@ -416,6 +419,17 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     gcTime: 30 * 60_000,
     refetchOnWindowFocus: false,
   });
+
+  const addonAxisDefaults = useMemo(() => variantAxisDefaultsFrom(addons), [addons]);
+  const resolvedAxes = useMemo(
+    () =>
+      resolveAllVariantAxes({
+        product,
+        addonDefaults: addonAxisDefaults,
+        lang: lang === "ar" ? "ar" : "en",
+      }),
+    [product, addonAxisDefaults, lang],
+  );
 
   useEffect(() => {
     if (!product) return;
@@ -1510,18 +1524,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               )}
 
               {/* 🔵 Circular Color Swatches */}
-              {uniqueColors.length > 0 && (
+              {uniqueColors.length > 0 && resolvedAxes.color.visible && (
                 <div>
                   <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
-                    <span>
-                      {(lang === "ar"
-                        ? product.variant_label_color_ar
-                        : product.variant_label_color_en) ||
-                        product.variant_label_color_en ||
-                        product.variant_label_color_ar ||
-                        t("اللون", "Color")}
-                      :
-                    </span>
+                    <span>{resolvedAxes.color.label}:</span>
                     <span className="text-muted-foreground font-normal">{selectedColor}</span>
                   </div>
                   <div className="flex flex-wrap gap-2.5">
@@ -1574,16 +1580,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               )}
 
               {/* 📏 Size Selection Pills */}
-              {uniqueSizes.length > 0 && (!showSizeModeToggle || sizeMode === "ready") && (
+              {uniqueSizes.length > 0 && resolvedAxes.size.visible && (!showSizeModeToggle || sizeMode === "ready") && (
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <div className="text-sm font-semibold">
-                      {(lang === "ar"
-                        ? product.variant_label_size_ar
-                        : product.variant_label_size_en) ||
-                        product.variant_label_size_en ||
-                        product.variant_label_size_ar ||
-                        t("المقاس / خيار", "Size / Option")}
+                      {resolvedAxes.size.label}
                     </div>
                     <AddonSlot
                       placement="storefront.product.optionsAside"
@@ -1633,15 +1634,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               )}
 
               {/* 🧵 Fabric Selection Pills (if any) */}
-              {uniqueFabrics.length > 0 && (
+              {uniqueFabrics.length > 0 && resolvedAxes.fabric.visible && (
                 <div>
                   <div className="text-sm font-semibold mb-2">
-                    {(lang === "ar"
-                      ? product.variant_label_fabric_ar
-                      : product.variant_label_fabric_en) ||
-                      product.variant_label_fabric_en ||
-                      product.variant_label_fabric_ar ||
-                      t("الخامة", "Fabric")}
+                    {resolvedAxes.fabric.label}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {uniqueFabrics.map((fb) => {
@@ -1681,10 +1677,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 </div>
               )}
 
-              {/* Fallback general buttons if no properties could be isolated */}
-              {uniqueColors.length === 0 &&
-                uniqueSizes.length === 0 &&
-                uniqueFabrics.length === 0 &&
+              {/* Fallback general buttons if no properties could be isolated or visible */}
+              {(!resolvedAxes.color.visible || uniqueColors.length === 0) &&
+                (!resolvedAxes.size.visible || uniqueSizes.length === 0) &&
+                (!resolvedAxes.fabric.visible || uniqueFabrics.length === 0) &&
                 hasVariants &&
                 (!showSizeModeToggle || sizeMode === "ready") && (
                   <div>

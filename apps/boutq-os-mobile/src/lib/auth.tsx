@@ -10,6 +10,11 @@ import {
   type ReactNode,
 } from "react";
 import { supabase } from "@/lib/supabase";
+import {
+  resolveMobileVocabulary,
+  type MobileStoreVocabulary,
+  DEFAULT_MOBILE_VOCABULARY,
+} from "./store-vocabulary";
 
 export type StaffProfile = {
   id: string;
@@ -49,6 +54,10 @@ type AuthContextValue = {
   signIn: (email: string, password: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   refreshAuth: () => Promise<void>;
+  installedAddonIds: string[];
+  isAddonInstalled: (addonId: string) => boolean;
+  storeVertical: string | null;
+  vocabulary: MobileStoreVocabulary;
 };
 
 const ACTIVE_BRAND_KEY = "boutq_mobile_active_brand_id";
@@ -62,21 +71,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [brands, setBrands] = useState<AccessibleBrand[]>([]);
   const [activeBrandId, setActiveBrandIdState] = useState<string | null>(null);
   const [brandCurrency, setBrandCurrency] = useState<string>("BHD");
+  const [installedAddonIds, setInstalledAddonIds] = useState<string[]>([]);
+  const [storeVertical, setStoreVertical] = useState<string | null>(null);
+  const [customVocabulary, setCustomVocabulary] = useState<any>(null);
 
   const loadBrandSettings = useCallback(async (brandId: string) => {
     try {
-      const { data } = await supabase
-        .from("business_settings")
-        .select("currency")
-        .eq("brand_id", brandId)
-        .maybeSingle();
-      if (data?.currency) {
-        setBrandCurrency(data.currency.toUpperCase());
+      const [settingsRes, addonsRes] = await Promise.all([
+        supabase
+          .from("business_settings")
+          .select("currency, store_vertical, store_vocabulary")
+          .eq("brand_id", brandId)
+          .maybeSingle(),
+        supabase
+          .from("brand_addons")
+          .select("addon_id")
+          .eq("brand_id", brandId)
+          .eq("status", "installed"),
+      ]);
+
+      if (settingsRes.data?.currency) {
+        setBrandCurrency(settingsRes.data.currency.toUpperCase());
       } else {
         setBrandCurrency("BHD");
       }
+
+      setStoreVertical(settingsRes.data?.store_vertical ?? null);
+      setCustomVocabulary(settingsRes.data?.store_vocabulary ?? null);
+
+      const installedIds = ((addonsRes.data || []) as Array<{ addon_id: string }>).map(
+        (row) => row.addon_id,
+      );
+      setInstalledAddonIds(installedIds);
     } catch {
       setBrandCurrency("BHD");
+      setInstalledAddonIds([]);
+      setStoreVertical(null);
+      setCustomVocabulary(null);
     }
   }, []);
 
@@ -86,6 +117,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(null);
         setBrands([]);
         setActiveBrandIdState(null);
+        setInstalledAddonIds([]);
+        setStoreVertical(null);
+        setCustomVocabulary(null);
         return;
       }
       const { data, error: profileError } = await supabase
@@ -219,6 +253,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return hasPermission("view_financials");
   }, [profile, isAdmin, hasPermission]);
 
+  const isAddonInstalled = useCallback(
+    (addonId: string) => installedAddonIds.includes(addonId),
+    [installedAddonIds],
+  );
+
+  const vocabulary = useMemo(
+    () => resolveMobileVocabulary(installedAddonIds, storeVertical, customVocabulary),
+    [installedAddonIds, storeVertical, customVocabulary],
+  );
+
   const value = useMemo<AuthContextValue>(
     () => ({
       session,
@@ -250,11 +294,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(null);
         setActiveBrandIdState(null);
         setBrands([]);
+        setInstalledAddonIds([]);
+        setStoreVertical(null);
+        setCustomVocabulary(null);
       },
       refreshAuth: async () => {
         const { data } = await supabase.auth.getSession();
         await loadProfile(data.session);
       },
+      installedAddonIds,
+      isAddonInstalled,
+      storeVertical,
+      vocabulary,
     }),
     [
       session,
@@ -272,6 +323,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       hasPermission,
       setActiveBrandId,
       loadProfile,
+      installedAddonIds,
+      isAddonInstalled,
+      storeVertical,
+      vocabulary,
     ],
   );
 

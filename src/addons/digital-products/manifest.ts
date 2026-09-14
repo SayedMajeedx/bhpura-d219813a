@@ -31,6 +31,28 @@ export const digitalProductsManifest: AddonManifest = {
       color: null,
       fabric: null,
     },
+    settingsPatchOnInstall: {
+      digital_delivery_enabled: true,
+    },
+    readinessChecks: [
+      {
+        id: "digital_delivery_enabled_check",
+        label: { ar: "جاهزية التسليم الرقمي", en: "Digital Delivery Readiness" },
+        description: {
+          ar: "التحقق من تفعيل التسليم الرقمي التلقائي للملفات الرقمية.",
+          en: "Verify that automated digital delivery is enabled.",
+        },
+        actionTo: "/admin/b/$slug/settings?tab=business",
+        evaluate: async ({ brandId, db }) => {
+          const { data } = await db
+            .from("business_settings")
+            .select("digital_delivery_enabled")
+            .eq("brand_id", brandId)
+            .maybeSingle();
+          return data?.digital_delivery_enabled ? "ok" : "warn";
+        },
+      },
+    ],
     aiContext: ({ brandName, lang }) =>
       lang === "ar"
         ? `متجر "${brandName}" يبيع منتجات رقمية وملفات قابلة للتنزيل واشتراكات.`

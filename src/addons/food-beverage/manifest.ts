@@ -30,9 +30,65 @@ export const foodBeverageManifest: AddonManifest = {
       color: null,
       fabric: null,
     },
+    settingsPatchOnInstall: {
+      pickup_enabled: true,
+    },
+    readinessChecks: [
+      {
+        id: "food_pickup_branch_check",
+        label: { ar: "فرع الاستلام", en: "Pickup Branch" },
+        description: {
+          ar: "تأكد من وجود فرع استلام متاح لاستلام طلبات الطعام.",
+          en: "Ensure a pickup branch exists for food orders.",
+        },
+        actionTo: "/admin/b/$slug/settings?tab=business",
+        evaluate: async ({ brandId, db }) => {
+          const { count } = await db
+            .from("branches")
+            .select("id", { count: "exact", head: true })
+            .eq("brand_id", brandId);
+          return (count ?? 0) > 0 ? "ok" : "warn";
+        },
+      },
+    ],
     aiContext: ({ brandName, lang }) =>
       lang === "ar"
         ? `متجر "${brandName}" يقدم أطعمة ومشروبات ومأكولات طازجة ولذيذة.`
         : `Store "${brandName}" serves fresh foods and beverages.`,
   },
+  seeds: [
+    {
+      key: "food_extras_customization",
+      description: {
+        ar: "خيارات إضافات الوجبات والمشروبات الافتراضية",
+        en: "Default food & beverage customization extras",
+      },
+      run: async ({ brandId, db }) => {
+        const optionName = "إضافة صوص أو مقبلات إضافية";
+        const { data: existing } = await db
+          .from("customization_options")
+          .select("id")
+          .eq("brand_id", brandId)
+          .eq("name", optionName)
+          .maybeSingle();
+
+        if (!existing) {
+          const { data: brand } = await db
+            .from("brands")
+            .select("owner_id")
+            .eq("id", brandId)
+            .maybeSingle();
+          const userId = brand?.owner_id || "00000000-0000-0000-0000-000000000000";
+
+          await db.from("customization_options").insert({
+            brand_id: brandId,
+            user_id: userId,
+            name: optionName,
+            price_delta: 0.5,
+            product_ids: [],
+          });
+        }
+      },
+    },
+  ],
 };

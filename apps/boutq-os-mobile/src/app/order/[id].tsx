@@ -90,7 +90,7 @@ type OrderItem = {
 
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { activeBrand, currency } = useAuth();
+  const { activeBrand, currency, isAddonInstalled, vocabulary } = useAuth();
   const { t, isAr } = useI18n();
 
   const [order, setOrder] = useState<OrderDetail | null>(null);
@@ -568,11 +568,24 @@ export default function OrderDetailScreen() {
           {[
             { key: "pending", label: isAr ? "بانتظار التجهيز" : "Pending Preparation" },
             { key: "packing", label: isAr ? "جاري التجهيز والتغليف" : "Packing" },
-            { key: "sent_to_tailor", label: isAr ? "عند الخياط للتفصيل" : "Sent to Tailor" },
-            {
-              key: "received_from_tailor",
-              label: isAr ? "مستلم من الخياط" : "Received from Tailor",
-            },
+            ...((isAddonInstalled("made-to-order") ||
+            order.fulfillment_status === "sent_to_tailor" ||
+            order.fulfillment_status === "received_from_tailor")
+              ? [
+                  {
+                    key: "sent_to_tailor",
+                    label: isAr
+                      ? (vocabulary?.sent_to_workshop?.ar || "عند الخياط للتفصيل")
+                      : (vocabulary?.sent_to_workshop?.en || "Sent to Tailor"),
+                  },
+                  {
+                    key: "received_from_tailor",
+                    label: isAr
+                      ? (vocabulary?.received_from_workshop?.ar || "مستلم من الخياط")
+                      : (vocabulary?.received_from_workshop?.en || "Received from Tailor"),
+                  },
+                ]
+              : []),
             {
               key: "ready_for_pickup",
               label: isAr ? "جاهز للاستلام من الفرع" : "Ready for Pickup",
