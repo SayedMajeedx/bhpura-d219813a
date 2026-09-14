@@ -29,6 +29,12 @@ export const fashionCoreManifest: AddonManifest = {
   contributions: {
     vocabulary: FASHION_VOCABULARY,
     sizingPresetOrder: ["abaya_gulf", "apparel_alpha", "apparel_numeric"],
+    variantAxisDefaults: {
+      size: { ar: "المقاس", en: "Size" },
+      color: { ar: "اللون", en: "Color" },
+      fabric: { ar: "الخامة", en: "Fabric" },
+    },
+    trustBadgeSuggestions: ["quality_guarantee", "made_with_love"],
     aiContext: ({ brandName, lang }) =>
       lang === "ar"
         ? `متجر "${brandName}" متخصص في الأزياء والملابس.`

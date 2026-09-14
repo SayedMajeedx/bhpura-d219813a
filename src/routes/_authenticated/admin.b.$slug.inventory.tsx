@@ -114,6 +114,10 @@ import {
   resolveFitProfiles,
   CUSTOMIZER_PRESETS,
 } from "@/lib/addons/addon-presets";
+import {
+  variantAxisDefaultsFrom,
+  resolveVariantAxis,
+} from "@/lib/addons/addon-registry";
 
 /** Common measurement units the admin can pick from for a "size" variant. */
 const SIZE_UNITS = ["", "cm", "mm", "m", "inch", "ft", "kg", "g", "ml", "l"] as const;
@@ -2305,6 +2309,10 @@ function ProductDialog({
   const isAr = lang === "ar";
   const brand = useBrand();
   const { profile: storeProfile } = useAdminStoreProfile(brand.id);
+  const addonAxisDefaults = useMemo(
+    () => variantAxisDefaultsFrom(storeProfile?.addons),
+    [storeProfile?.addons],
+  );
   const fitProfiles = useMemo(
     () => resolveFitProfiles(storeProfile?.fitProfiles),
     [storeProfile?.fitProfiles],
@@ -3155,7 +3163,11 @@ function ProductDialog({
                           </Label>
                           <Input
                             className="mt-1 h-8 rounded-md text-xs"
-                            placeholder={isAr ? "المقاس / خيار" : "Size / Option"}
+                            placeholder={
+                              addonAxisDefaults?.size === null
+                                ? (isAr ? "معطّل افتراضياً (اكتب لتفعيله)" : "Disabled by default (type to enable)")
+                                : addonAxisDefaults?.size?.ar || (isAr ? "المقاس / خيار" : "Size / Option")
+                            }
                             value={form.variant_label_size_ar || ""}
                             onChange={(e) =>
                               setForm({ ...form, variant_label_size_ar: e.target.value })
@@ -3168,7 +3180,11 @@ function ProductDialog({
                           </Label>
                           <Input
                             className="mt-1 h-8 rounded-md text-xs"
-                            placeholder="Size / Option"
+                            placeholder={
+                              addonAxisDefaults?.size === null
+                                ? "Disabled by default (type to enable)"
+                                : addonAxisDefaults?.size?.en || "Size / Option"
+                            }
                             value={form.variant_label_size_en || ""}
                             onChange={(e) =>
                               setForm({ ...form, variant_label_size_en: e.target.value })
@@ -3184,7 +3200,11 @@ function ProductDialog({
                           </Label>
                           <Input
                             className="mt-1 h-8 rounded-md text-xs"
-                            placeholder={isAr ? "اللون" : "Color"}
+                            placeholder={
+                              addonAxisDefaults?.color === null
+                                ? (isAr ? "معطّل افتراضياً (اكتب لتفعيله)" : "Disabled by default (type to enable)")
+                                : addonAxisDefaults?.color?.ar || (isAr ? "اللون" : "Color")
+                            }
                             value={form.variant_label_color_ar || ""}
                             onChange={(e) =>
                               setForm({ ...form, variant_label_color_ar: e.target.value })
@@ -3197,7 +3217,11 @@ function ProductDialog({
                           </Label>
                           <Input
                             className="mt-1 h-8 rounded-md text-xs"
-                            placeholder="Color"
+                            placeholder={
+                              addonAxisDefaults?.color === null
+                                ? "Disabled by default (type to enable)"
+                                : addonAxisDefaults?.color?.en || "Color"
+                            }
                             value={form.variant_label_color_en || ""}
                             onChange={(e) =>
                               setForm({ ...form, variant_label_color_en: e.target.value })
@@ -3213,7 +3237,11 @@ function ProductDialog({
                           </Label>
                           <Input
                             className="mt-1 h-8 rounded-md text-xs"
-                            placeholder={isAr ? "الخامة" : "Fabric"}
+                            placeholder={
+                              addonAxisDefaults?.fabric === null
+                                ? (isAr ? "معطّل افتراضياً (اكتب لتفعيله)" : "Disabled by default (type to enable)")
+                                : addonAxisDefaults?.fabric?.ar || (isAr ? "الخامة" : "Fabric")
+                            }
                             value={form.variant_label_fabric_ar || ""}
                             onChange={(e) =>
                               setForm({ ...form, variant_label_fabric_ar: e.target.value })
@@ -3226,7 +3254,11 @@ function ProductDialog({
                           </Label>
                           <Input
                             className="mt-1 h-8 rounded-md text-xs"
-                            placeholder="Fabric"
+                            placeholder={
+                              addonAxisDefaults?.fabric === null
+                                ? "Disabled by default (type to enable)"
+                                : addonAxisDefaults?.fabric?.en || "Fabric"
+                            }
                             value={form.variant_label_fabric_en || ""}
                             onChange={(e) =>
                               setForm({ ...form, variant_label_fabric_en: e.target.value })
@@ -4984,6 +5016,30 @@ function VariantDesktopRow({
   const [colorVal, setColorVal] = useState(v.color ?? "");
   const [fabricVal, setFabricVal] = useState(v.fabric ?? "");
 
+  const { profile: storeProfile } = useAdminStoreProfile(brand.id);
+  const addonAxisDefaults = useMemo(
+    () => variantAxisDefaultsFrom(storeProfile?.addons),
+    [storeProfile?.addons],
+  );
+  const sizeAxis = resolveVariantAxis({
+    axis: "size",
+    product,
+    addonDefaults: addonAxisDefaults,
+    lang: isAr ? "ar" : "en",
+  });
+  const colorAxis = resolveVariantAxis({
+    axis: "color",
+    product,
+    addonDefaults: addonAxisDefaults,
+    lang: isAr ? "ar" : "en",
+  });
+  const fabricAxis = resolveVariantAxis({
+    axis: "fabric",
+    product,
+    addonDefaults: addonAxisDefaults,
+    lang: isAr ? "ar" : "en",
+  });
+
   // Sync back on external changes
   useEffect(() => {
     setSizeVal(v.size ?? "");
@@ -5023,16 +5079,13 @@ function VariantDesktopRow({
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <span className="text-xs font-bold text-muted-foreground block mb-1">
-                  {(isAr ? product?.variant_label_size_ar : product?.variant_label_size_en) ||
-                    product?.variant_label_size_en ||
-                    product?.variant_label_size_ar ||
-                    (isAr ? "المقاس" : "Size")}
+                  {sizeAxis.label}
                 </span>
                 <input
                   className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   value={sizeVal}
                   onChange={(e) => setSizeVal(e.target.value)}
-                  placeholder={isAr ? "المقاس" : "Size"}
+                  placeholder={sizeAxis.label}
                 />
               </div>
               <div>
@@ -5055,30 +5108,24 @@ function VariantDesktopRow({
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <span className="text-xs font-bold text-muted-foreground block mb-1">
-                  {(isAr ? product?.variant_label_color_ar : product?.variant_label_color_en) ||
-                    product?.variant_label_color_en ||
-                    product?.variant_label_color_ar ||
-                    (isAr ? "اللون" : "Color")}
+                  {colorAxis.label}
                 </span>
                 <input
                   className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   value={colorVal}
                   onChange={(e) => setColorVal(e.target.value)}
-                  placeholder={isAr ? "اللون" : "Color"}
+                  placeholder={colorAxis.label}
                 />
               </div>
               <div>
                 <span className="text-xs font-bold text-muted-foreground block mb-1">
-                  {(isAr ? product?.variant_label_fabric_ar : product?.variant_label_fabric_en) ||
-                    product?.variant_label_fabric_en ||
-                    product?.variant_label_fabric_ar ||
-                    (isAr ? "الخامة" : "Fabric")}
+                  {fabricAxis.label}
                 </span>
                 <input
                   className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   value={fabricVal}
                   onChange={(e) => setFabricVal(e.target.value)}
-                  placeholder={isAr ? "الخامة" : "Fabric"}
+                  placeholder={fabricAxis.label}
                 />
               </div>
             </div>
