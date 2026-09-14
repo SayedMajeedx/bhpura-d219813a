@@ -4,6 +4,7 @@ import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { shouldShowPrices } from "@/lib/storefront-mode";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { publicSupabase as supabase } from "@/integrations/supabase/client";
+import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { type ProductRow } from "@/routes/$slug.index";
 import { Button } from "@/components/ui/button";
 
@@ -109,11 +110,7 @@ export function ProductCard({
         preload="intent"
         className="block transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 sm:hover:-translate-y-1.5"
         onClick={() => {
-          void (supabase.rpc as any)("record_storefront_product_engagement", {
-            p_brand_slug: brand.slug,
-            p_product_id: product.id,
-            p_event: "click",
-          });
+          void trackProductEngagement(brand.slug, product.id, "click");
         }}
       >
         <div className="aspect-[3/4] rounded-xl overflow-hidden bg-muted relative">

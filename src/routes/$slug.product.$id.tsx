@@ -32,6 +32,7 @@ import {
 import { isCatalogMode, shouldShowPrices, buildWhatsAppInquiryUrl } from "@/lib/storefront-mode";
 import { SizeGuideModal } from "@/components/storefront/SizeGuideModal";
 import { ProductShareModal } from "@/components/storefront/ProductShareModal";
+import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { toast } from "sonner";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
@@ -855,11 +856,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     } catch {
       // Storage can be unavailable (private mode, quota) — safe to continue either way.
     }
-    void (supabase.rpc as any)("record_storefront_product_engagement", {
-      p_brand_slug: brand.slug,
-      p_product_id: product.id,
-      p_event: "view",
-    });
+    void trackProductEngagement(brand.slug, product.id, "view");
   }, [brand.slug, product?.id]);
 
   const { data: customizationOptions = [] } = useQuery({
@@ -2207,11 +2204,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 className="flex-1 h-12 font-semibold shadow-sm hover:opacity-90 bg-primary text-primary-foreground gap-2"
                 onClick={() => {
                   if (inquiryUrl) {
-                    void (supabase.rpc as any)("record_storefront_product_engagement", {
-                      p_brand_slug: brand.slug,
-                      p_product_id: product.id,
-                      p_event: "inquiry",
-                    });
+                    void trackProductEngagement(brand.slug, product.id, "inquiry");
                     window.open(inquiryUrl, "_blank", "noopener,noreferrer");
                   } else {
                     toast.error(
@@ -2300,11 +2293,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 className="h-11 px-4 font-semibold bg-primary text-primary-foreground gap-2"
                 onClick={() => {
                   if (inquiryUrl) {
-                    void (supabase.rpc as any)("record_storefront_product_engagement", {
-                      p_brand_slug: brand.slug,
-                      p_product_id: product.id,
-                      p_event: "inquiry",
-                    });
+                    void trackProductEngagement(brand.slug, product.id, "inquiry");
                     window.open(inquiryUrl, "_blank", "noopener,noreferrer");
                   } else {
                     toast.error(
@@ -2405,11 +2394,7 @@ function RecommendationRail({
               params={{ slug: brand.slug, id: item.id }}
               className="group w-[8.75rem] shrink-0 snap-start sm:w-[10.5rem]"
               onClick={() => {
-                void (supabase.rpc as any)("record_storefront_product_engagement", {
-                  p_brand_slug: brand.slug,
-                  p_product_id: item.id,
-                  p_event: "click",
-                });
+                void trackProductEngagement(brand.slug, item.id, "click");
               }}
             >
               <div className="aspect-[3/4] overflow-hidden rounded-xl bg-muted">

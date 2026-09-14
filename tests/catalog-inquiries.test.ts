@@ -59,7 +59,8 @@ describe("Catalog Inquiries — Analytics Aggregation Logic", () => {
 
     for (const r of rows) {
       const inq = Number(r.inquiry_count || 0);
-      const views = Number(r.view_count || 0);
+      // An inquiry implies a product view; views must be at least equal to inquiries
+      const views = Math.max(Number(r.view_count || 0), inq);
       const clicks = Number(r.click_count || 0);
 
       totalInquiries += inq;
@@ -86,13 +87,21 @@ describe("Catalog Inquiries — Analytics Aggregation Logic", () => {
     }
 
     const productInquiries = Array.from(productMap.values())
-      .map((p) => ({
-        ...p,
-        inquiryRate: p.views > 0 ? (p.inquiries / p.views) * 100 : 0,
-      }))
+      .map((p) => {
+        const effectiveProductViews = Math.max(p.views, p.inquiries);
+        return {
+          ...p,
+          inquiryRate:
+            effectiveProductViews > 0
+              ? Math.min(100, (p.inquiries / effectiveProductViews) * 100)
+              : 0,
+        };
+      })
       .sort((a, b) => b.inquiries - a.inquiries || b.views - a.views);
 
-    const overallRate = totalViews > 0 ? (totalInquiries / totalViews) * 100 : 0;
+    const effectiveViews = Math.max(totalViews, totalInquiries);
+    const overallRate =
+      effectiveViews > 0 ? Math.min(100, (totalInquiries / effectiveViews) * 100) : 0;
 
     return {
       totalInquiries,
@@ -156,7 +165,7 @@ describe("Catalog Inquiries — Analytics Aggregation Logic", () => {
     expect(result.productInquiries).toEqual([]);
   });
 
-  it("safely handles 0 views with inquiries without NaN or Infinity", () => {
+  it("guarantees views >= inquiries so conversion rate reflects true engagement without zero-view inconsistency", () => {
     const result = aggregateInquiryRows([
       {
         product_id: "prod-ghost",
@@ -166,8 +175,11 @@ describe("Catalog Inquiries — Analytics Aggregation Logic", () => {
         product: { name: "Ghost Item" },
       },
     ]);
-    expect(result.inquiryRate).toBe(0);
-    expect(result.productInquiries[0].inquiryRate).toBe(0);
+    expect(result.totalInquiries).toBe(2);
+    expect(result.totalViews).toBe(2);
+    expect(result.inquiryRate).toBe(100);
+    expect(result.productInquiries[0].views).toBe(2);
+    expect(result.productInquiries[0].inquiryRate).toBe(100);
   });
 });
 

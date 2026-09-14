@@ -432,7 +432,8 @@ export async function fetchCatalogInquiriesReporting(
 
   for (const row of rows) {
     const inq = Number(row.inquiry_count || 0);
-    const views = Number(row.view_count || 0);
+    // An inquiry implies a product view; ensure views are never less than inquiries
+    const views = Math.max(Number(row.view_count || 0), inq);
     const clicks = Number(row.click_count || 0);
 
     totalInquiries += inq;
@@ -459,7 +460,9 @@ export async function fetchCatalogInquiriesReporting(
     (a, b) => b.inquiries - a.inquiries || b.views - a.views,
   );
 
-  const inquiryRate = totalViews > 0 ? (totalInquiries / totalViews) * 100 : 0;
+  const effectiveViews = Math.max(totalViews, totalInquiries);
+  const inquiryRate =
+    effectiveViews > 0 ? Math.min(100, (totalInquiries / effectiveViews) * 100) : 0;
 
   return {
     totalInquiries,
