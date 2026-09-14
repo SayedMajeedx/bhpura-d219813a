@@ -557,13 +557,13 @@ export function PackagingMaterialsTab() {
                   )}
                 >
                   <div className="flex items-center gap-1.5 font-bold text-xs">
-                    <span>👗</span>
+                    <span>📦</span>
                     <span>{isAr ? "لكل منتج / قطعة" : "Per Product Item"}</span>
                   </div>
                   <span className="text-xs text-muted-foreground leading-tight">
                     {isAr
-                      ? "تُخصم بعدد المنتجات (مثل كيس بلاستيك فردي أو بطاقة تسعير لكل عباية)"
-                      : "Deducts for each item (e.g. polybag/tag per abaya)"}
+                      ? "تُخصم بعدد المنتجات (مثل كيس بلاستيك فردي أو بطاقة تسعير لكل قطعة)"
+                      : "Deducts for each item (e.g. polybag/tag per product item)"}
                   </span>
                 </button>
 

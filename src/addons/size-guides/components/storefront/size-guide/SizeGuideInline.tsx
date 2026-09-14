@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { type SizeGuide, type SizeGuideUnit } from "@/lib/size-guide";
+import { type SizeGuide, type SizeGuideUnit } from "../../../lib/size-guide";
 import { SizeGuidePanel } from "./SizeGuidePanel";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";

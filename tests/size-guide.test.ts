@@ -6,7 +6,7 @@ import {
   parseSizeGuidePaste,
   normalizeSizeGuide,
   type SizeGuide,
-} from "../src/lib/size-guide";
+} from "../src/addons/size-guides/lib/size-guide";
 
 describe("Size Guide Pure Library", () => {
   describe("convertMeasurement", () => {

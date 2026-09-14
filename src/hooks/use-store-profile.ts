@@ -11,7 +11,7 @@ import {
   resolveFitProfiles,
   type FitProfileDefinition,
   FASHION_FIT_PROFILES,
-} from "@/lib/fit-passport";
+} from "@/lib/addons/addon-presets";
 
 import { modulesFromAddons } from "@/lib/addons/addon-compat";
 import type { BrandAddonRow } from "@/lib/addons/addon-types";

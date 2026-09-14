@@ -58,8 +58,7 @@ import {
   CustomerAddressManager,
   type ManagedCustomerAddress,
 } from "@/components/customer-address-manager";
-import { CustomerFitPassport } from "@/components/customers/CustomerFitPassport";
-import { useAdminStoreProfile } from "@/hooks/use-store-profile";
+import { AddonSlot } from "@/components/addons/AddonSlot";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/customers/$customerId")({
   component: CustomerProfilePage,
@@ -123,7 +122,6 @@ function CustomerProfilePage() {
   const { slug, customerId } = Route.useParams();
   const { lang } = useI18n();
   const brand = useBrand();
-  const { profile: storeProfile } = useAdminStoreProfile(brand.id);
   const router = useRouter();
   useT();
   const qc = useQueryClient();
@@ -533,17 +531,17 @@ function CustomerProfilePage() {
         </div>
 
         <div className="space-y-6">
-          {storeProfile.modules.fit_passport && (
-            <CustomerFitPassport
-              brandId={brand.id}
-              brandName={
+          <AddonSlot
+            placement="admin.customer.panel"
+            props={{
+              brandId: brand.id,
+              brandName:
                 (lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en || brand.name_ar) ??
-                undefined
-              }
-              customerId={customerId}
-              isAr={lang === "ar"}
-            />
-          )}
+                undefined,
+              customerId,
+              isAr: lang === "ar",
+            }}
+          />
           <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card">
             <div className="flex items-center justify-between gap-3 border-b border-border-subtle p-5 bg-primary/5">
               <div>

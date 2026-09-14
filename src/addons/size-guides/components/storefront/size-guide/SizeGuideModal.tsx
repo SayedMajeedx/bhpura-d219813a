@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { type SizeGuide, type SizeGuideUnit } from "@/lib/size-guide";
+import { type SizeGuide, type SizeGuideUnit } from "../../../lib/size-guide";
 import { SizeGuidePanel } from "./SizeGuidePanel";
 import { useI18n } from "@/lib/i18n";
 

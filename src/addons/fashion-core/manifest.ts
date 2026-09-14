@@ -1,4 +1,5 @@
 import type { AddonManifest } from "@/lib/addons/addon-types";
+import { FASHION_VOCABULARY } from "./vocabulary";
 
 export const fashionCoreManifest: AddonManifest = {
   id: "fashion-core",
@@ -26,14 +27,7 @@ export const fashionCoreManifest: AddonManifest = {
   icon: "Shirt",
   activities: ["abayas", "fashion"],
   contributions: {
-    vocabulary: {
-      tailor: { ar: "الخياط", en: "Tailor" },
-      tailoring: { ar: "التفصيل", en: "Tailoring" },
-      fabric: { ar: "القماش", en: "Fabric" },
-      workshop: { ar: "الورشة", en: "Workshop" },
-      sent_to_tailor: { ar: "تم الإرسال للخياط", en: "Sent to Tailor" },
-      received_from_tailor: { ar: "تم الاستلام من الخياط", en: "Received from Tailor" },
-    },
+    vocabulary: FASHION_VOCABULARY,
     sizingPresetOrder: ["abaya_gulf", "apparel_alpha", "apparel_numeric"],
     aiContext: ({ brandName, lang }) =>
       lang === "ar"

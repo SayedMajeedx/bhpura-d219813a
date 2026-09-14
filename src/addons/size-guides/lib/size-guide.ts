@@ -1,4 +1,4 @@
-import { parseCSV } from "./csv-parser";
+import { parseCSV } from "@/lib/csv-parser";
 
 export type SizeGuideUnit = "cm" | "in" | "none";
 

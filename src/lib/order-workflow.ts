@@ -20,6 +20,8 @@ export type FulfillmentStage =
   | "on_hold"
   | "needs_packing"
   | "packing"
+  | "sent_to_workshop"
+  | "received_from_workshop"
   | "sent_to_tailor"
   | "received_from_tailor"
   | "assigned"
@@ -33,6 +35,8 @@ export type FulfillmentStage =
 export type OrderNextAction =
   | "validate_payment"
   | "start_packing"
+  | "send_to_workshop"
+  | "receive_from_workshop"
   | "send_to_tailor"
   | "receive_from_tailor"
   | "mark_ready_pickup"
@@ -101,14 +105,15 @@ export function getFulfillmentStage(order: OrderWorkflowInput): FulfillmentStage
   }
   // fulfillment_status is canonical. Prefer it over the legacy status column
   // so stale legacy data cannot keep showing the previous tailoring action.
-  if (fulfillment === "sent_to_tailor") {
+  if (fulfillment === "sent_to_workshop" || fulfillment === "sent_to_tailor") {
     return "sent_to_tailor";
   }
-  if (fulfillment === "received_from_tailor") {
+  if (fulfillment === "received_from_workshop" || fulfillment === "received_from_tailor") {
     return "received_from_tailor";
   }
-  if (status === "sent_to_tailor") return "sent_to_tailor";
-  if (status === "received_from_tailor") return "received_from_tailor";
+  if (status === "sent_to_workshop" || status === "sent_to_tailor") return "sent_to_tailor";
+  if (status === "received_from_workshop" || status === "received_from_tailor")
+    return "received_from_tailor";
   if (fulfillment === "on_hold" || status === "on_hold") {
     return "on_hold";
   }

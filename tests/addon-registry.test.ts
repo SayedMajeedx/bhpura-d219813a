@@ -159,7 +159,7 @@ describe("Addon Registry", () => {
     ];
 
     const vocab = vocabularyFrom(mockRows);
-    expect(vocab.tailor?.ar).toBe("الخياط");
+    expect(vocab.workshop?.ar).toBe("الخياط");
 
     const ai = aiContextFrom(mockRows, { brandName: "دار الأناقة", lang: "ar" });
     expect(ai).toContain("دار الأناقة");

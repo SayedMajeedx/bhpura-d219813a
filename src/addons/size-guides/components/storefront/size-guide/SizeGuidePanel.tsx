@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
-import { type SizeGuide, type SizeGuideUnit, formatCell } from "@/lib/size-guide";
+import { type SizeGuide, type SizeGuideUnit, formatCell } from "../../../lib/size-guide";
 import { SizeRecommender } from "./SizeRecommender";
 import { Ruler, HelpCircle, Video } from "lucide-react";
 

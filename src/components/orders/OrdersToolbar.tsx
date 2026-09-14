@@ -48,8 +48,12 @@ const PAYMENT_FILTER_OPTIONS = [
 const FULFILLMENT_STATUS_FILTER_OPTIONS = [
   { value: "all", ar: "الكل", en: "All" },
   { value: "on_hold", ar: "قيد الانتظار", en: "On Hold" },
-  { value: "sent_to_tailor", ar: "تم الإرسال للخياط", en: "Sent to Tailor" },
-  { value: "received_from_tailor", ar: "تم الاستلام من الخياط", en: "Received from Tailor" },
+  { value: "sent_to_tailor", ar: "تم الإرسال للورشة / الخياط", en: "Sent to Workshop / Tailor" },
+  {
+    value: "received_from_tailor",
+    ar: "تم الاستلام من الورشة / الخياط",
+    en: "Received from Workshop / Tailor",
+  },
   { value: "packing", ar: "قيد التعبئة والتغليف", en: "Packing" },
   { value: "ready_for_pickup", ar: "جاهز للاستلام", en: "Ready for Pickup" },
   { value: "out_for_delivery", ar: "خرج للتوصيل", en: "Out for Delivery" },

@@ -707,6 +707,8 @@ function OrdersList() {
           "packing",
           "on_hold",
           "needs_packing",
+          "received_from_workshop",
+          "sent_to_workshop",
           "received_from_tailor",
           "sent_to_tailor",
         ].includes(workflow.fulfillment) &&
@@ -793,6 +795,8 @@ function OrdersList() {
             "packing",
             "on_hold",
             "needs_packing",
+            "received_from_workshop",
+            "sent_to_workshop",
             "received_from_tailor",
             "sent_to_tailor",
           ].includes(wf.fulfillment) &&
@@ -1059,7 +1063,7 @@ function OrdersList() {
       );
     }
 
-    if (workflow.nextAction === "send_to_tailor") {
+    if (workflow.nextAction === "send_to_tailor" || workflow.nextAction === "send_to_workshop") {
       return (
         <Button
           size="sm"
@@ -1069,22 +1073,27 @@ function OrdersList() {
             e.stopPropagation();
             handleStatusUpdate(
               { fulfillment_status: "SENT_TO_TAILOR" },
-              lang === "ar" ? "تم الإرسال للخياط بنجاح!" : "Order sent to tailor!",
+              lang === "ar"
+                ? "تم الإرسال للورشة / الخياط بنجاح!"
+                : "Order sent to workshop / tailor!",
             );
           }}
         >
           {isUpdating ? (
             <Loader2 className="animate-spin h-3.5 w-3.5" />
           ) : lang === "ar" ? (
-            "إرسال للخياط"
+            "إرسال للورشة / الخياط"
           ) : (
-            "Send to Tailor"
+            "Send to Workshop / Tailor"
           )}
         </Button>
       );
     }
 
-    if (workflow.nextAction === "receive_from_tailor") {
+    if (
+      workflow.nextAction === "receive_from_tailor" ||
+      workflow.nextAction === "receive_from_workshop"
+    ) {
       return (
         <Button
           size="sm"
@@ -1094,16 +1103,18 @@ function OrdersList() {
             e.stopPropagation();
             handleStatusUpdate(
               { fulfillment_status: "RECEIVED_FROM_TAILOR" },
-              lang === "ar" ? "تم استلام الطلب من الخياط بنجاح!" : "Received from tailor!",
+              lang === "ar"
+                ? "تم استلام الطلب من الورشة / الخياط بنجاح!"
+                : "Received from workshop / tailor!",
             );
           }}
         >
           {isUpdating ? (
             <Loader2 className="animate-spin h-3.5 w-3.5" />
           ) : lang === "ar" ? (
-            "استلام من الخياط"
+            "استلام من الورشة / الخياط"
           ) : (
-            "Receive from Tailor"
+            "Receive from Workshop / Tailor"
           )}
         </Button>
       );

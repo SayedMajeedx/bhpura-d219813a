@@ -7,6 +7,7 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 import React, { useEffect, useState } from "react";
+import { AddonSlot } from "@/components/addons/AddonSlot";
 import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import {
   StorefrontProvider,
@@ -711,16 +712,14 @@ function StorefrontFooter() {
                   {p.title}
                 </Link>
               ))}
-              {showSizeGuideFooterLink && (
-                <Link
-                  to="/$slug/size-guide"
-                  params={{ slug: brand.slug }}
-                  className="inline-flex min-h-11 items-center py-0.5 hover:opacity-100 opacity-85 transition-opacity sm:min-h-0"
-                  style={{ color: "var(--sf-footer-fg)" }}
-                >
-                  {isAr ? "دليل المقاسات" : "Size Guide"}
-                </Link>
-              )}
+              <AddonSlot
+                placement="storefront.footer.helpLink"
+                props={{
+                  className:
+                    "inline-flex min-h-11 items-center py-0.5 hover:opacity-100 opacity-85 transition-opacity sm:min-h-0",
+                  style: { color: "var(--sf-footer-fg)" },
+                }}
+              />
             </nav>
           )}
 
@@ -879,16 +878,14 @@ function StorefrontFooter() {
                         {p.title}
                       </Link>
                     ))}
-                    {showSizeGuideFooterLink && (
-                      <Link
-                        to="/$slug/size-guide"
-                        params={{ slug: brand.slug }}
-                        className="flex min-h-[44px] items-center text-xs opacity-85 hover:opacity-100 py-1"
-                        style={{ color: "var(--sf-footer-fg)" }}
-                      >
-                        {isAr ? "دليل المقاسات" : "Size Guide"}
-                      </Link>
-                    )}
+                    <AddonSlot
+                      placement="storefront.footer.helpLink"
+                      props={{
+                        className:
+                          "flex min-h-[44px] items-center text-xs opacity-85 hover:opacity-100 py-1",
+                        style: { color: "var(--sf-footer-fg)" },
+                      }}
+                    />
                   </div>
                 </div>
               </div>

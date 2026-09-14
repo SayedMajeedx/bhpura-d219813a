@@ -1,5 +1,5 @@
 import type { AddonManifest } from "@/lib/addons/addon-types";
-import { FASHION_FIT_PROFILES } from "@/lib/fit-passport";
+import { FASHION_FIT_PROFILES } from "@/addons/fit-passport/lib/fit-passport";
 
 export const abayaPackManifest: AddonManifest = {
   id: "abaya-pack",

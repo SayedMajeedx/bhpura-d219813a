@@ -36,9 +36,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { isCatalogMode, shouldShowPrices, buildWhatsAppInquiryUrl } from "@/lib/storefront-mode";
-import { SizeGuideModal } from "@/components/storefront/SizeGuideModal";
-import { SizeGuideInline } from "@/components/storefront/size-guide/SizeGuideInline";
-import { resolveSizeGuideForProduct } from "@/lib/size-guide";
+import { AddonSlot } from "@/components/addons/AddonSlot";
 import { ProductShareModal } from "@/components/storefront/ProductShareModal";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { toast } from "sonner";
@@ -58,7 +56,7 @@ import {
   missingFitFields,
   normalizeFitProfiles,
   resolveFitProfiles,
-} from "@/lib/fit-passport";
+} from "@/lib/addons/addon-presets";
 import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
 
 export const Route = createFileRoute("/$slug/product/$id")({
@@ -328,18 +326,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     | undefined;
   const params = Route.useParams() as any;
   const id = splatId || params?.id || params?._splat || params?.["_"] || params?.["$"] || "";
-  const {
-    brand,
-    settings,
-    currency,
-    lang,
-    t,
-    addToCart,
-    isWishlisted,
-    toggleWishlist,
-    session,
-    sizeGuides,
-  } = useStorefront();
+  const { brand, settings, currency, lang, t, addToCart, isWishlisted, toggleWishlist, session } =
+    useStorefront();
   const modules = useStoreModules();
   const navigate = useNavigate();
   const [mediaIdx, setMediaIdx] = useState(0);
@@ -450,29 +438,6 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       product.id,
     );
   }, [product, currency, lang]);
-
-  const resolvedSizeGuide = useMemo(() => {
-    if (!product) return null;
-    return resolveSizeGuideForProduct({
-      product: product as any,
-      sizeGuides: sizeGuides ?? [],
-    });
-  }, [product, sizeGuides]);
-
-  const _showModalGuide = Boolean(
-    modules.size_guide &&
-    !(product as any)?.size_guide_hidden &&
-    (!resolvedSizeGuide ||
-      resolvedSizeGuide.placement === "modal" ||
-      resolvedSizeGuide.placement === "both"),
-  );
-
-  const showInlineGuide = Boolean(
-    modules.size_guide &&
-    !(product as any)?.size_guide_hidden &&
-    resolvedSizeGuide &&
-    (resolvedSizeGuide.placement === "inline" || resolvedSizeGuide.placement === "both"),
-  );
 
   const { data: recommendationCatalog = [] } = useQuery({
     queryKey: ["storefront", brand.slug, "product-recommendations"],
@@ -802,10 +767,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     setErrorMsg(null);
     const activeDef = fitProfiles.find((p) => p.key === fitProfileType);
     toast.success(
-      t(
-        `تم تطبيق ملف ${activeDef ? activeDef.label_ar : fitProfileType === "abaya" ? "العباية" : "الفستان"}`,
-        "Fit Passport applied",
-      ),
+      t(`تم تطبيق ملف ${activeDef ? activeDef.label_ar : "المقاسات"}`, "Fit Passport applied"),
     );
   };
 
@@ -845,7 +807,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     const activeDef = fitProfiles.find((p) => p.key === fitProfileType);
     toast.success(
       t(
-        `تم تطبيق مقاسات ${activeDef ? activeDef.label_ar : fitProfileType === "abaya" ? "العباية" : "الفستان"} على هذا الطلب`,
+        `تم تطبيق مقاسات ${activeDef ? activeDef.label_ar : "المقاسات"} على هذا الطلب`,
         "Fit Passport applied to this order",
       ),
     );
@@ -1163,9 +1125,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         label_en: "Fit Passport profile",
         value: currentDef
           ? `${currentDef.label_ar} / ${currentDef.label_en}`
-          : fitProfileType === "abaya"
-            ? "عباية / Abaya"
-            : "فستان / Dress",
+          : "الافتراضي / Default",
         type: "text",
         price_delta: 0,
       });
@@ -1625,20 +1585,15 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                         product.variant_label_size_ar ||
                         t("المقاس / خيار", "Size / Option")}
                     </div>
-                    {/* modules.size_guide && <SizeGuideModal */}
-                    {modules.size_guide && (
-                      <SizeGuideModal
-                        isAr={lang === "ar"}
-                        productName={
-                          lang === "ar"
-                            ? product.name_ar || product.name
-                            : product.name_en || product.name
-                        }
-                        guide={resolvedSizeGuide}
-                        selectedSize={selectedSize}
-                        onSelectSize={(sz) => setSelectedSize(sz)}
-                      />
-                    )}
+                    <AddonSlot
+                      placement="storefront.product.optionsAside"
+                      props={{
+                        product,
+                        selectedSize,
+                        onSelectSize: (sz: string) => setSelectedSize(sz),
+                        uniqueSizes,
+                      }}
+                    />
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {uniqueSizes.map((sz) => {
@@ -1820,6 +1775,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             </div>
           )}
 
+          <AddonSlot
+            placement="storefront.product.afterOptions"
+            props={{ product, customFields, cfValues, setCfValues, sizeMode }}
+          />
+
           {customFields.length > 0 && (!showSizeModeToggle || sizeMode === "custom") && (
             <div className="mb-6 space-y-4 rounded-xl border bg-card p-4 shadow-sm">
               {showSizeModeToggle && sizeMode === "custom" && (
@@ -1858,7 +1818,16 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                               brand.name_ar ||
                               "Fit"}{" "}
                             Passport ·{" "}
-                            {fitProfileType === "abaya" ? t("عباية", "Abaya") : t("فستان", "Dress")}
+                            {(() => {
+                              const activeDef = fitProfiles.find((p) => p.key === fitProfileType);
+                              return activeDef
+                                ? lang === "ar"
+                                  ? activeDef.label_ar
+                                  : activeDef.label_en
+                                : lang === "ar"
+                                  ? "المقاسات"
+                                  : "Measurements";
+                            })()}
                           </p>
                           {isGuest && (
                             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
@@ -2235,15 +2204,14 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             </div>
           )}
 
-          {showInlineGuide && resolvedSizeGuide && (
-            <div className="mb-6">
-              <SizeGuideInline
-                guide={resolvedSizeGuide}
-                selectedSize={selectedSize}
-                onSelectSize={(sz) => setSelectedSize(sz)}
-              />
-            </div>
-          )}
+          <AddonSlot
+            placement="storefront.product.afterCta"
+            props={{
+              product,
+              selectedSize,
+              onSelectSize: (sz: string) => setSelectedSize(sz),
+            }}
+          />
 
           {!isCatalogMode(settings) && (variant || isTailoringActive) && (
             <div className="mb-4 flex items-center">

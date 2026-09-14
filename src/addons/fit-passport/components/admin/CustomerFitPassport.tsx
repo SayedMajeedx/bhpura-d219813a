@@ -17,7 +17,7 @@ import {
   type FitProfileDefinition,
   type FitProfileType,
   type FitProfiles,
-} from "@/lib/fit-passport";
+} from "../../lib/fit-passport";
 import {
   Select,
   SelectContent,
@@ -360,3 +360,5 @@ export function CustomerFitPassport({
     </Card>
   );
 }
+
+export default CustomerFitPassport;

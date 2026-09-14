@@ -5,12 +5,15 @@ describe("storefront Fit Passport", () => {
   it("is available as a customer account tab", () => {
     const account = readFileSync("src/routes/$slug.account.tsx", "utf8");
     expect(account).toContain('value="fit"');
-    expect(account).toContain("<StorefrontFitPassport");
+    expect(account).toContain('placement="storefront.account.tab"');
     expect(account).toContain('t("مقاساتي", "My fit")');
   });
 
   it("requires consent and saves reusable measurements", () => {
-    const component = readFileSync("src/components/storefront/StorefrontFitPassport.tsx", "utf8");
+    const component = readFileSync(
+      "src/addons/fit-passport/components/storefront/StorefrontFitPassport.tsx",
+      "utf8",
+    );
     expect(component).toContain("if (!consent)");
     expect(component).toContain('from("customer_fit_passports").upsert');
     expect(component).toContain("consent_to_store: true");

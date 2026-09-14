@@ -8,7 +8,7 @@ import {
   missingFitFields,
   matchCustomFieldToMeasurement,
   type FitProfileDefinition,
-} from "../src/lib/fit-passport";
+} from "../src/addons/fit-passport/lib/fit-passport";
 import {
   PLACEHOLDER_SIZE_VALUES,
   isPlaceholderVariant,

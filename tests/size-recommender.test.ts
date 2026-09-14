@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { recommendSize } from "../src/lib/size-guide";
-import { ABAYA_GULF_TEMPLATE } from "../src/lib/size-guide-templates";
+import { recommendSize } from "../src/addons/size-guides/lib/size-guide";
+import { ABAYA_GULF_TEMPLATE } from "../src/addons/size-guides/lib/size-guide-templates";
 
 describe("Size Recommender Algorithm", () => {
   const guide = {

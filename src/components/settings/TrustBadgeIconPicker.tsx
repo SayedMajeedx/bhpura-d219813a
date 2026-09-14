@@ -225,7 +225,7 @@ export function TrustBadgeIconPicker({
         {/* Footer tip */}
         <div className="p-2 border-t border-border bg-muted/20 text-xs text-muted-foreground text-center">
           {isAr
-            ? "تلميح: يمكنك البحث بكلمات مثل 'بنفت'، 'تشفير'، 'توصيل'، 'عباية'"
+            ? "تلميح: يمكنك البحث بكلمات مثل 'بنفت'، 'تشفير'، 'توصيل'، 'ضمان'"
             : "Tip: Search for keywords like 'benefit', 'ssl', 'courier', 'guarantee'"}
         </div>
       </PopoverContent>

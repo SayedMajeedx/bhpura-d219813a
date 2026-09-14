@@ -933,6 +933,8 @@ function Dashboard() {
           "packing",
           "on_hold",
           "needs_packing",
+          "received_from_workshop",
+          "sent_to_workshop",
           "received_from_tailor",
           "sent_to_tailor",
         ].includes(workflow.fulfillment) &&
