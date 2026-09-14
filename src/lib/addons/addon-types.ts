@@ -97,11 +97,20 @@ export type AddonReadinessCheck = {
 
 export type StoreVocabulary = Record<string, Bilingual>;
 
+export type SizingPreset = {
+  id: string;
+  labelAr: string;
+  labelEn: string;
+  sizes: string[];
+  unit: string;
+};
+
 export type AddonContributions = {
   slots?: SlotComponent<any>[];
   navItems?: AddonNavItem[];
   customFieldPresets?: Array<{ key: string; label: Bilingual; fields: unknown[] }>;
-  sizingPresetOrder?: string[]; // ids من SIZING_PRESETS تُقدَّم أولاً
+  sizingPresetOrder?: string[]; // (deprecated) ids من SIZING_PRESETS تُقدَّم أولاً
+  sizingPresets?: SizingPreset[]; // قوالب مقاسات فعلية تسهم بها الحزمة
   vocabulary?: Partial<StoreVocabulary>;
   productionStages?: boolean; // يفعّل مراحل الورشة في الطلبات
   variantAxisDefaults?: {

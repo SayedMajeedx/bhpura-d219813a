@@ -86,6 +86,7 @@ import {
   splitVariantValues,
   SIZING_PRESETS,
   orderSizingPresetsForVertical,
+  UNIVERSAL_SIZING_PRESETS,
   PLACEHOLDER_SIZE_VALUES,
 } from "@/lib/variant-sku-utils";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
@@ -114,7 +115,13 @@ import {
   resolveFitProfiles,
   CUSTOMIZER_PRESETS,
 } from "@/lib/addons/addon-presets";
-import { variantAxisDefaultsFrom, resolveVariantAxis } from "@/lib/addons/addon-registry";
+import {
+  variantAxisDefaultsFrom,
+  resolveVariantAxis,
+  customFieldPresetsFrom,
+  sizingPresetsFrom,
+} from "@/lib/addons/addon-registry";
+import { useAddons } from "@/components/addons/AddonsProvider";
 
 /** Common measurement units the admin can pick from for a "size" variant. */
 const SIZE_UNITS = ["", "cm", "mm", "m", "inch", "ft", "kg", "g", "ml", "l"] as const;
@@ -2306,15 +2313,18 @@ function ProductDialog({
   const isAr = lang === "ar";
   const brand = useBrand();
   const { profile: storeProfile } = useAdminStoreProfile(brand.id);
+  const { addons, isInstalled } = useAddons();
+  const hasFitPassport = isInstalled("fit-passport");
   const addonAxisDefaults = useMemo(
-    () => variantAxisDefaultsFrom(storeProfile?.addons),
-    [storeProfile?.addons],
+    () => variantAxisDefaultsFrom(addons.length > 0 ? addons : storeProfile?.addons),
+    [addons, storeProfile?.addons],
   );
   const fitProfiles = useMemo(
     () => resolveFitProfiles(storeProfile?.fitProfiles),
     [storeProfile?.fitProfiles],
   );
   const passportPresets = useMemo(() => {
+    if (!hasFitPassport) return [];
     return fitProfiles.map((p) => ({
       key: `passport_${p.key}`,
       label_ar: `📏 مقاسات Passport — ${p.label_ar}`,
@@ -2328,7 +2338,16 @@ function ProductDialog({
         required: f.required,
       })),
     }));
-  }, [fitProfiles]);
+  }, [fitProfiles, hasFitPassport]);
+  const customFieldPresets = useMemo(() => {
+    const fromAddons = customFieldPresetsFrom(addons.length > 0 ? addons : storeProfile?.addons);
+    if (fromAddons.length > 0) return fromAddons;
+    return Object.entries(CUSTOMIZER_PRESETS).map(([k, p]) => ({
+      key: k,
+      label: { ar: p.label_ar, en: p.label_en },
+      fields: p.fields,
+    }));
+  }, [addons, storeProfile?.addons]);
   const { entitlements } = useEntitlements({ brandId: brand.id });
   const initialForm = {
     name_ar: product?.name_ar ?? "",
@@ -3066,8 +3085,13 @@ function ProductDialog({
               {advancedOpen && (
                 <div className="p-4 space-y-4 border-t border-border-subtle animate-in fade-in duration-150">
                   {/* Fabric & Occasion */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {storeProfile.vertical === "fashion" && (
+                  {resolveVariantAxis({
+                    axis: "fabric",
+                    product,
+                    addonDefaults: addonAxisDefaults,
+                    lang: isAr ? "ar" : "en",
+                  }).visible && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label className="text-xs font-bold text-muted-foreground">
                           {isAr ? "نوع القماش" : "Fabric Type"}
@@ -3081,28 +3105,28 @@ function ProductDialog({
                           onChange={(e) => setForm({ ...form, fabric_type: e.target.value })}
                         />
                       </div>
-                    )}
-                    <div>
-                      <Label className="text-xs font-bold text-muted-foreground">
-                        {isAr ? "مناسبة لـ" : "Suitable for"}
-                      </Label>
-                      <div className="mt-1">
-                        <select
-                          className="w-full h-9.5 rounded-lg border border-input bg-background px-3 text-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
-                          value={form.occasion}
-                          onChange={(e) => setForm({ ...form, occasion: e.target.value })}
-                        >
-                          <option value="">
-                            {isAr ? "اختر المناسبة..." : "Select occasion..."}
-                          </option>
-                          <option value="يومي">{isAr ? "يومي" : "Daily"}</option>
-                          <option value="سهرة">{isAr ? "سهرة" : "Evening"}</option>
-                          <option value="مناسبات">{isAr ? "مناسبات" : "Occasions"}</option>
-                          <option value="إطلالة رسمية">{isAr ? "إطلالة رسمية" : "Formal"}</option>
-                        </select>
+                      <div>
+                        <Label className="text-xs font-bold text-muted-foreground">
+                          {isAr ? "مناسبة لـ" : "Suitable for"}
+                        </Label>
+                        <div className="mt-1">
+                          <select
+                            className="w-full h-9.5 rounded-lg border border-input bg-background px-3 text-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
+                            value={form.occasion}
+                            onChange={(e) => setForm({ ...form, occasion: e.target.value })}
+                          >
+                            <option value="">
+                              {isAr ? "اختر المناسبة..." : "Select occasion..."}
+                            </option>
+                            <option value="يومي">{isAr ? "يومي" : "Daily"}</option>
+                            <option value="سهرة">{isAr ? "سهرة" : "Evening"}</option>
+                            <option value="مناسبات">{isAr ? "مناسبات" : "Occasions"}</option>
+                            <option value="إطلالة رسمية">{isAr ? "إطلالة رسمية" : "Formal"}</option>
+                          </select>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Feature & Sale Switches */}
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -3232,44 +3256,38 @@ function ProductDialog({
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        <div>
-                          <Label className="text-xs font-bold text-muted-foreground">
-                            {isAr ? "مسمى الخامة بالعربية" : "Custom Fabric Label — Arabic"}
-                          </Label>
-                          <Input
-                            className="mt-1 h-8 rounded-md text-xs"
-                            placeholder={
-                              addonAxisDefaults?.fabric === null
-                                ? isAr
-                                  ? "معطّل افتراضياً (اكتب لتفعيله)"
-                                  : "Disabled by default (type to enable)"
-                                : addonAxisDefaults?.fabric?.ar || (isAr ? "الخامة" : "Fabric")
-                            }
-                            value={form.variant_label_fabric_ar || ""}
-                            onChange={(e) =>
-                              setForm({ ...form, variant_label_fabric_ar: e.target.value })
-                            }
-                          />
+                      {addonAxisDefaults?.fabric !== null && (
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          <div>
+                            <Label className="text-xs font-bold text-muted-foreground">
+                              {isAr ? "مسمى الخامة بالعربية" : "Custom Fabric Label — Arabic"}
+                            </Label>
+                            <Input
+                              className="mt-1 h-8 rounded-md text-xs"
+                              placeholder={
+                                addonAxisDefaults?.fabric?.ar || (isAr ? "الخامة" : "Fabric")
+                              }
+                              value={form.variant_label_fabric_ar || ""}
+                              onChange={(e) =>
+                                setForm({ ...form, variant_label_fabric_ar: e.target.value })
+                              }
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs font-bold text-muted-foreground">
+                              {isAr ? "مسمى الخامة بالإنجليزية" : "Custom Fabric Label — English"}
+                            </Label>
+                            <Input
+                              className="mt-1 h-8 rounded-md text-xs"
+                              placeholder={addonAxisDefaults?.fabric?.en || "Fabric"}
+                              value={form.variant_label_fabric_en || ""}
+                              onChange={(e) =>
+                                setForm({ ...form, variant_label_fabric_en: e.target.value })
+                              }
+                            />
+                          </div>
                         </div>
-                        <div>
-                          <Label className="text-xs font-bold text-muted-foreground">
-                            {isAr ? "مسمى الخامة بالإنجليزية" : "Custom Fabric Label — English"}
-                          </Label>
-                          <Input
-                            className="mt-1 h-8 rounded-md text-xs"
-                            placeholder={
-                              addonAxisDefaults?.fabric === null
-                                ? "Disabled by default (type to enable)"
-                                : addonAxisDefaults?.fabric?.en || "Fabric"
-                            }
-                            value={form.variant_label_fabric_en || ""}
-                            onChange={(e) =>
-                              setForm({ ...form, variant_label_fabric_en: e.target.value })
-                            }
-                          />
-                        </div>
-                      </div>
+                      )}
                     </div>
                   </div>
 
@@ -3495,9 +3513,10 @@ function ProductDialog({
                   <Select
                     onValueChange={(presetKey) => {
                       const dynamicPassport = passportPresets.find((pr) => pr.key === presetKey);
+                      const addonPreset = customFieldPresets.find((pr) => pr.key === presetKey);
                       const staticPreset =
                         CUSTOMIZER_PRESETS[presetKey as keyof typeof CUSTOMIZER_PRESETS];
-                      const preset = dynamicPassport || staticPreset;
+                      const preset = dynamicPassport || addonPreset || staticPreset;
                       if (preset) {
                         const isPassportPreset =
                           Boolean(dynamicPassport) || presetKey.startsWith("passport_");
@@ -3514,7 +3533,7 @@ function ProductDialog({
                           custom_fields: [
                             ...retainedFields,
                             ...preset.fields.map(
-                              (f, index) =>
+                              (f: any, index: number) =>
                                 ({
                                   ...f,
                                   key: `f${Date.now()}-${index}-${f.key}`,
@@ -3534,18 +3553,17 @@ function ProductDialog({
                       />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.entries(CUSTOMIZER_PRESETS)
-                        .filter(([k]) => !k.startsWith("passport_"))
-                        .map(([k, preset]) => (
-                          <SelectItem key={k} value={k}>
-                            {isAr ? preset.label_ar : preset.label_en}
-                          </SelectItem>
-                        ))}
-                      {passportPresets.map((pr) => (
+                      {customFieldPresets.map((pr) => (
                         <SelectItem key={pr.key} value={pr.key}>
-                          {isAr ? pr.label_ar : pr.label_en}
+                          {isAr ? pr.label.ar : pr.label.en}
                         </SelectItem>
                       ))}
+                      {hasFitPassport &&
+                        passportPresets.map((pr) => (
+                          <SelectItem key={pr.key} value={pr.key}>
+                            {isAr ? pr.label_ar : pr.label_en}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
 
@@ -3992,10 +4010,15 @@ function BulkVariantDialog({
   const isAr = lang === "ar";
   const brand = useBrand();
   const { profile: storeProfile } = useAdminStoreProfile(brand.id);
-  const orderedPresets = useMemo(
-    () => orderSizingPresetsForVertical(storeProfile.vertical),
-    [storeProfile.vertical],
+  const { addons } = useAddons();
+  const addonAxisDefaults = useMemo(
+    () => variantAxisDefaultsFrom(addons.length > 0 ? addons : storeProfile?.addons),
+    [addons, storeProfile?.addons],
   );
+  const orderedPresets = useMemo(() => {
+    const fromAddons = sizingPresetsFrom(addons.length > 0 ? addons : storeProfile?.addons);
+    return [...fromAddons, ...UNIVERSAL_SIZING_PRESETS];
+  }, [addons, storeProfile?.addons]);
   const existingSku = variants.find((v) => v.sku)?.sku || "";
   const blank: VariantGenerationPlan = {
     base_sku: existingSku,
@@ -4036,10 +4059,10 @@ function BulkVariantDialog({
     setRows([]);
   };
 
-  const applyPreset = (preset: (typeof SIZING_PRESETS)[number]) => {
-    setSizesText(preset.sizes.join(", "));
-    if (preset.unit) {
-      setPlan((prev) => ({ ...prev, size_unit: preset.unit }));
+  const applyPreset = (preset: { sizes: string[] | readonly string[]; unit?: string }) => {
+    setSizesText(Array.from(preset.sizes).join(", "));
+    if (preset.unit !== undefined) {
+      setPlan((prev) => ({ ...prev, size_unit: (preset.unit || "") as VariantGenerationPlan["size_unit"] }));
     }
   };
 
@@ -4057,6 +4080,7 @@ function BulkVariantDialog({
           base_sku: plan.base_sku || existingSku,
           base_price: Number(product?.base_price ?? 0),
           cost_price: Number(product?.cost_price ?? 0),
+          brand_id: brand.id,
         },
       });
       applyPlan(result);
@@ -4426,7 +4450,12 @@ function BulkVariantDialog({
               placeholder={isAr ? "كحلي, عنابي, بيج" : "Black, Navy, Olive"}
             />
           </div>
-          {storeProfile.vertical === "fashion" && (
+          {resolveVariantAxis({
+            axis: "fabric",
+            product,
+            addonDefaults: addonAxisDefaults,
+            lang: isAr ? "ar" : "en",
+          }).visible && (
             <div>
               <Label>{isAr ? "الخامة" : "Fabric"}</Label>
               <Input
@@ -5021,9 +5050,10 @@ function VariantDesktopRow({
   const [fabricVal, setFabricVal] = useState(v.fabric ?? "");
 
   const { profile: storeProfile } = useAdminStoreProfile(brand.id);
+  const { addons } = useAddons();
   const addonAxisDefaults = useMemo(
-    () => variantAxisDefaultsFrom(storeProfile?.addons),
-    [storeProfile?.addons],
+    () => variantAxisDefaultsFrom(addons.length > 0 ? addons : storeProfile?.addons),
+    [addons, storeProfile?.addons],
   );
   const sizeAxis = resolveVariantAxis({
     axis: "size",
@@ -5080,59 +5110,71 @@ function VariantDesktopRow({
       <td className="px-2 py-3 text-start align-middle" onClick={(e) => e.stopPropagation()}>
         {isEditingAttrs ? (
           <div className="flex flex-col gap-2.5 p-3 bg-card/95 backdrop-blur-md border border-primary/30 rounded-2xl w-[320px] sm:w-[350px] shadow-xl animate-in fade-in zoom-in-95 duration-150 relative z-40">
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <span className="text-xs font-bold text-muted-foreground block mb-1">
-                  {sizeAxis.label}
-                </span>
-                <input
-                  className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                  value={sizeVal}
-                  onChange={(e) => setSizeVal(e.target.value)}
-                  placeholder={sizeAxis.label}
-                />
+            {sizeAxis.visible && (
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <span className="text-xs font-bold text-muted-foreground block mb-1">
+                    {sizeAxis.label}
+                  </span>
+                  <input
+                    className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    value={sizeVal}
+                    onChange={(e) => setSizeVal(e.target.value)}
+                    placeholder={sizeAxis.label}
+                  />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-muted-foreground block mb-1">
+                    {isAr ? "الوحدة" : "Unit"}
+                  </span>
+                  <select
+                    className="h-9 w-full px-2 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    value={sizeUnitVal}
+                    onChange={(e) => setSizeUnitVal(e.target.value)}
+                  >
+                    {SIZE_UNITS.map((u) => (
+                      <option key={u} value={u}>
+                        {u || "—"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div>
-                <span className="text-xs font-bold text-muted-foreground block mb-1">
-                  {isAr ? "الوحدة" : "Unit"}
-                </span>
-                <select
-                  className="h-9 w-full px-2 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                  value={sizeUnitVal}
-                  onChange={(e) => setSizeUnitVal(e.target.value)}
-                >
-                  {SIZE_UNITS.map((u) => (
-                    <option key={u} value={u}>
-                      {u || "—"}
-                    </option>
-                  ))}
-                </select>
+            )}
+            {(colorAxis.visible || fabricAxis.visible) && (
+              <div
+                className={`grid ${
+                  colorAxis.visible && fabricAxis.visible ? "grid-cols-2" : "grid-cols-1"
+                } gap-2`}
+              >
+                {colorAxis.visible && (
+                  <div>
+                    <span className="text-xs font-bold text-muted-foreground block mb-1">
+                      {colorAxis.label}
+                    </span>
+                    <input
+                      className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      value={colorVal}
+                      onChange={(e) => setColorVal(e.target.value)}
+                      placeholder={colorAxis.label}
+                    />
+                  </div>
+                )}
+                {fabricAxis.visible && (
+                  <div>
+                    <span className="text-xs font-bold text-muted-foreground block mb-1">
+                      {fabricAxis.label}
+                    </span>
+                    <input
+                      className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      value={fabricVal}
+                      onChange={(e) => setFabricVal(e.target.value)}
+                      placeholder={fabricAxis.label}
+                    />
+                  </div>
+                )}
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <span className="text-xs font-bold text-muted-foreground block mb-1">
-                  {colorAxis.label}
-                </span>
-                <input
-                  className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                  value={colorVal}
-                  onChange={(e) => setColorVal(e.target.value)}
-                  placeholder={colorAxis.label}
-                />
-              </div>
-              <div>
-                <span className="text-xs font-bold text-muted-foreground block mb-1">
-                  {fabricAxis.label}
-                </span>
-                <input
-                  className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                  value={fabricVal}
-                  onChange={(e) => setFabricVal(e.target.value)}
-                  placeholder={fabricAxis.label}
-                />
-              </div>
-            </div>
+            )}
             <div className="flex items-center justify-between pt-2 border-t border-border-subtle mt-0.5">
               <span className="text-xs text-muted-foreground font-medium">
                 {isAr ? "تعديل المتغير" : "Edit Variant Attributes"}
@@ -5159,20 +5201,24 @@ function VariantDesktopRow({
           </div>
         ) : (
           <div className="flex items-center gap-1.5 flex-wrap group/v">
-            {[v.size, v.color, v.fabric].some(Boolean) ? (
+            {[
+              sizeAxis.visible && v.size,
+              colorAxis.visible && v.color,
+              fabricAxis.visible && v.fabric,
+            ].some(Boolean) ? (
               <>
-                {v.size && (
+                {sizeAxis.visible && v.size && (
                   <span className="inline-flex items-center bg-primary/5 text-primary text-xs font-semibold px-2 py-0.5 border border-primary/10 rounded-md">
                     {v.size} {v.size_unit || ""}
                   </span>
                 )}
-                {v.color && (
+                {colorAxis.visible && v.color && (
                   <span className="inline-flex items-center bg-muted text-foreground text-xs font-semibold px-2 py-0.5 border border-border rounded-md gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground shrink-0" />
                     {v.color}
                   </span>
                 )}
-                {v.fabric && (
+                {fabricAxis.visible && v.fabric && (
                   <span className="inline-flex items-center bg-muted text-foreground text-xs font-semibold px-2 py-0.5 border border-border rounded-md">
                     {v.fabric}
                   </span>

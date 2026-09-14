@@ -104,8 +104,19 @@ export const executeCopilotChat = createServerFn({ method: "POST" })
       },
     ];
 
+    let brandAiContextPrompt = "";
+    try {
+      const { getBrandAiContext } = await import("@/lib/store-profile.server");
+      const aiCtx = await getBrandAiContext(data.brandId, { lang: isAr ? "ar" : "en" });
+      if (aiCtx.combinedSystemPrompt) {
+        brandAiContextPrompt = `\nStore context:\n${aiCtx.combinedSystemPrompt}`;
+      }
+    } catch (err) {
+      console.warn("[Copilot] Could not load brand AI context:", err);
+    }
+
     const systemPrompt = `You are "Boutq Copilot", an elite AI store operating copilot for GCC and luxury boutiques (Boutq OS).
-The merchant is communicating in ${isAr ? "Arabic" : "English"}.
+The merchant is communicating in ${isAr ? "Arabic" : "English"}.${brandAiContextPrompt}
 You have direct capability to execute actions like creating products, categories, or inspecting store metrics.
 Be concise, practical, warm, and professional. Always answer in the merchant's language (${isAr ? "Arabic" : "English"}).`;
 

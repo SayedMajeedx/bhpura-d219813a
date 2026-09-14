@@ -3,6 +3,8 @@
  * Single source of truth for order, fulfillment, and payment status labels.
  */
 
+import type { StoreVocabulary } from "./store-vocabulary";
+
 export type Lang = "ar" | "en";
 
 export type StatusDefinition = {
@@ -25,14 +27,26 @@ export const FULFILLMENT_STATUS_MAP: Record<string, StatusDefinition> = {
       "bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300",
   },
   SENT_TO_TAILOR: {
-    ar: "تم الإرسال للخياط",
-    en: "Sent to Tailor",
+    ar: "تم الإرسال للورشة",
+    en: "Sent to Workshop",
     badgeClasses:
       "bg-purple-100 text-purple-900 border-purple-300 dark:bg-purple-950/40 dark:text-purple-300",
   },
   RECEIVED_FROM_TAILOR: {
-    ar: "تم الاستلام من الخياط",
-    en: "Received from Tailor",
+    ar: "تم الاستلام من الورشة",
+    en: "Received from Workshop",
+    badgeClasses:
+      "bg-teal-100 text-teal-900 border-teal-300 dark:bg-teal-950/40 dark:text-teal-300",
+  },
+  SENT_TO_WORKSHOP: {
+    ar: "تم الإرسال للورشة",
+    en: "Sent to Workshop",
+    badgeClasses:
+      "bg-purple-100 text-purple-900 border-purple-300 dark:bg-purple-950/40 dark:text-purple-300",
+  },
+  RECEIVED_FROM_WORKSHOP: {
+    ar: "تم الاستلام من الورشة",
+    en: "Received from Workshop",
     badgeClasses:
       "bg-teal-100 text-teal-900 border-teal-300 dark:bg-teal-950/40 dark:text-teal-300",
   },
@@ -117,8 +131,8 @@ export const ORDER_STATUS_MAP: Record<string, StatusDefinition> = {
   packing: { ar: "قيد التعبئة والتغليف", en: "Packing" },
   sent_to_workshop: { ar: "تم الإرسال للورشة", en: "Sent to Workshop" },
   received_from_workshop: { ar: "تم الاستلام من الورشة", en: "Received from Workshop" },
-  sent_to_tailor: { ar: "تم الإرسال للخياط", en: "Sent to Tailor" },
-  received_from_tailor: { ar: "تم الاستلام من الخياط", en: "Received from Tailor" },
+  sent_to_tailor: { ar: "تم الإرسال للورشة", en: "Sent to Workshop" },
+  received_from_tailor: { ar: "تم الاستلام من الورشة", en: "Received from Workshop" },
   ready_for_pickup: { ar: "جاهز للاستلام", en: "Ready for Pickup" },
   shipped: { ar: "تم الشحن", en: "Shipped" },
   draft: { ar: "مسودة", en: "Draft" },
@@ -140,11 +154,11 @@ export const FULFILLMENT_METHOD_MAP: Record<string, StatusDefinition> = {
 };
 
 /**
- * Returns customer-facing Invoice Status label based on the user's specification table (Column C):
+ * Returns customer-facing Invoice Status label based on the user's specification table:
  * - Pending -> قيد الانتظار
  * - Packing -> قيد التجهيز والتغليف
- * - Sent_To_Tailor -> قيد التفصيل بكل حب
- * - Received_From_Tailor -> قيد التجهيز والتغليف
+ * - Sent_To_Workshop / Sent_To_Tailor -> قيد التجهيز بالورشة (أو حسب vocabulary)
+ * - Received_From_Workshop / Received_From_Tailor -> قيد التجهيز والتغليف
  * - Ready_For_Pickup -> جاهز للاستلام
  * - Shipped -> تم الشحن
  * - Completed -> مكتمل
@@ -153,6 +167,7 @@ export const FULFILLMENT_METHOD_MAP: Record<string, StatusDefinition> = {
 export function getInvoiceStatusLabel(
   status: string | null | undefined,
   lang: Lang = "ar",
+  vocab?: Partial<StoreVocabulary> | StoreVocabulary,
 ): string {
   if (!status) return lang === "ar" ? "قيد الانتظار" : "Pending";
   const s = String(status).trim().toLowerCase();
@@ -169,11 +184,16 @@ export function getInvoiceStatusLabel(
     case "needs_packing":
       return lang === "ar" ? "قيد التجهيز والتغليف" : "Under Preparation & Packaging";
     case "sent_to_workshop":
-      return lang === "ar" ? "قيد التجهيز" : "In Production";
     case "sent_to_tailor":
-      return lang === "ar" ? "قيد التفصيل بكل حب" : "Tailoring with Love";
+      if (vocab?.sent_to_workshop?.[lang]) {
+        return vocab.sent_to_workshop[lang];
+      }
+      return lang === "ar" ? "قيد التجهيز بالورشة" : "In Workshop Production";
     case "received_from_workshop":
     case "received_from_tailor":
+      if (vocab?.received_from_workshop?.[lang]) {
+        return vocab.received_from_workshop[lang];
+      }
       return lang === "ar" ? "قيد التجهيز والتغليف" : "Under Preparation & Packaging";
     case "ready_for_pickup":
     case "ready":
@@ -192,16 +212,32 @@ export function getInvoiceStatusLabel(
     case "canceled":
       return lang === "ar" ? "ملغي" : "Cancelled";
     default:
-      return getOrderStatusLabel(status, lang);
+      return getOrderStatusLabel(status, lang, vocab);
   }
 }
 
 /**
- * Returns localized label for fulfillment status with fallback handling.
+ * Returns localized label for fulfillment status with fallback handling and dynamic vocabulary support.
  */
-export function getFulfillmentLabel(status: string | null | undefined, lang: Lang = "ar"): string {
+export function getFulfillmentLabel(
+  status: string | null | undefined,
+  lang: Lang = "ar",
+  vocab?: Partial<StoreVocabulary> | StoreVocabulary,
+): string {
   if (!status) return lang === "ar" ? "قيد الانتظار" : "On Hold";
   const normalized = String(status).trim().toUpperCase();
+
+  if (normalized === "SENT_TO_TAILOR" || normalized === "SENT_TO_WORKSHOP") {
+    if (vocab?.sent_to_workshop?.[lang]) {
+      return vocab.sent_to_workshop[lang];
+    }
+  }
+  if (normalized === "RECEIVED_FROM_TAILOR" || normalized === "RECEIVED_FROM_WORKSHOP") {
+    if (vocab?.received_from_workshop?.[lang]) {
+      return vocab.received_from_workshop[lang];
+    }
+  }
+
   const def = FULFILLMENT_STATUS_MAP[normalized];
   if (def) return def[lang];
 
@@ -220,11 +256,27 @@ export function getFulfillmentBadgeClasses(status: string | null | undefined): s
 }
 
 /**
- * Returns localized label for order status with fallback handling.
+ * Returns localized label for order status with fallback handling and dynamic vocabulary support.
  */
-export function getOrderStatusLabel(status: string | null | undefined, lang: Lang = "ar"): string {
+export function getOrderStatusLabel(
+  status: string | null | undefined,
+  lang: Lang = "ar",
+  vocab?: Partial<StoreVocabulary> | StoreVocabulary,
+): string {
   if (!status) return lang === "ar" ? "مسودة" : "Draft";
   const normalized = String(status).trim().toLowerCase();
+
+  if (normalized === "sent_to_tailor" || normalized === "sent_to_workshop") {
+    if (vocab?.sent_to_workshop?.[lang]) {
+      return vocab.sent_to_workshop[lang];
+    }
+  }
+  if (normalized === "received_from_tailor" || normalized === "received_from_workshop") {
+    if (vocab?.received_from_workshop?.[lang]) {
+      return vocab.received_from_workshop[lang];
+    }
+  }
+
   const def = ORDER_STATUS_MAP[normalized];
   if (def) return def[lang];
 
@@ -279,18 +331,25 @@ export function getFulfillmentBadgeDetails(
   status: string | null | undefined,
   lang: "en" | "ar",
   fulfillmentMethod?: string | null,
+  vocab?: Partial<StoreVocabulary> | StoreVocabulary,
 ): { label: string; classes: string } {
   const s = String(status || "ON_HOLD").toUpperCase();
-  if (s === "SENT_TO_TAILOR") {
+  if (s === "SENT_TO_TAILOR" || s === "SENT_TO_WORKSHOP") {
+    const label =
+      vocab?.sent_to_workshop?.[lang] ||
+      (lang === "ar" ? "تم الإرسال للورشة" : "Sent to Workshop");
     return {
-      label: lang === "ar" ? "تم الإرسال للخياط" : "Sent to Tailor",
+      label,
       classes:
         "bg-purple-100 text-purple-900 border border-purple-300/80 font-semibold shadow-2xs dark:bg-purple-950/40 dark:text-purple-300",
     };
   }
-  if (s === "RECEIVED_FROM_TAILOR") {
+  if (s === "RECEIVED_FROM_TAILOR" || s === "RECEIVED_FROM_WORKSHOP") {
+    const label =
+      vocab?.received_from_workshop?.[lang] ||
+      (lang === "ar" ? "تم الاستلام من الورشة" : "Received from Workshop");
     return {
-      label: lang === "ar" ? "تم الاستلام من الخياط" : "Received from Tailor",
+      label,
       classes:
         "bg-teal-100 text-teal-900 border border-teal-300/80 font-semibold shadow-2xs dark:bg-teal-950/40 dark:text-teal-300",
     };

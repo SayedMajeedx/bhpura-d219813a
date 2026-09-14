@@ -28,13 +28,55 @@ export const fashionCoreManifest: AddonManifest = {
   activities: ["abayas", "fashion"],
   contributions: {
     vocabulary: FASHION_VOCABULARY,
-    sizingPresetOrder: ["abaya_gulf", "apparel_alpha", "apparel_numeric"],
+    sizingPresetOrder: ["apparel_standard", "apparel_compact"],
+    sizingPresets: [
+      {
+        id: "apparel_standard",
+        labelAr: "ملابس (XS - 2XL)",
+        labelEn: "Apparel (XS - 2XL)",
+        sizes: ["XS", "S", "M", "L", "XL", "2XL"],
+        unit: "",
+      },
+      {
+        id: "apparel_compact",
+        labelAr: "ملابس (S - XL)",
+        labelEn: "Apparel (S - XL)",
+        sizes: ["S", "M", "L", "XL"],
+        unit: "",
+      },
+      {
+        id: "shoes_women",
+        labelAr: "أحذية نسائية (36 - 41)",
+        labelEn: "Women Shoes (36 - 41)",
+        sizes: ["36", "37", "38", "39", "40", "41"],
+        unit: "",
+      },
+      {
+        id: "shoes_men",
+        labelAr: "أحذية رجالية (40 - 45)",
+        labelEn: "Men Shoes (40 - 45)",
+        sizes: ["40", "41", "42", "43", "44", "45"],
+        unit: "",
+      },
+    ],
+    customFieldPresets: [
+      {
+        key: "fashion",
+        label: { ar: "نموذج أزياء / ملابس", en: "Fashion / Apparel Preset" },
+        fields: [
+          { key: "length", label_ar: "الطول", label_en: "Length", type: "text", options: [], required: false },
+          { key: "bust", label_ar: "الصدر", label_en: "Bust", type: "text", options: [], required: false },
+          { key: "sleeve", label_ar: "الكم", label_en: "Sleeve", type: "text", options: [], required: false },
+          { key: "shoulder", label_ar: "الكتف", label_en: "Shoulder", type: "text", options: [], required: false },
+        ],
+      },
+    ],
     variantAxisDefaults: {
       size: { ar: "المقاس", en: "Size" },
       color: { ar: "اللون", en: "Color" },
       fabric: { ar: "الخامة", en: "Fabric" },
     },
-    trustBadgeSuggestions: ["quality_guarantee", "made_with_love"],
+    trustBadgeSuggestions: ["Shirt", "Scissors", "Leaf"],
     aiContext: ({ brandName, lang }) =>
       lang === "ar"
         ? `متجر "${brandName}" متخصص في الأزياء والملابس.`

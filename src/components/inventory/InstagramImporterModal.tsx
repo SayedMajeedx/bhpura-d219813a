@@ -282,6 +282,7 @@ export function InstagramImporterModal({
       const parseRes = await batchParseCaptionsWithAI({
         data: {
           posts: rehostRes.posts,
+          brandId,
         },
       });
 

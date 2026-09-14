@@ -10,6 +10,7 @@ const Input = z.object({
   base_sku: z.string().optional(),
   base_price: z.number().optional(),
   cost_price: z.number().optional(),
+  brand_id: z.string().optional(),
 });
 
 const ParsedVariantPlan = z.object({
@@ -74,6 +75,7 @@ export function extractVariantsHeuristically(
     base_sku?: string;
     base_price?: number;
     cost_price?: number;
+    installedAddonIds?: string[];
   },
 ): VariantGenerationPlan {
   const cleanPrompt = prompt.trim();
@@ -104,11 +106,16 @@ export function extractVariantsHeuristically(
     sizeUnit = "g";
   }
 
-  // Check if Abaya even sizing mentioned
-  if (
-    /(?:عباي|abaya|زوجي|even)/i.test(cleanPrompt) ||
-    /(?:50|52)\s*(?:إلى|الى|to|-)\s*(?:60|62)/i.test(cleanPrompt)
-  ) {
+  // Check if Abaya even sizing mentioned (only if explicitly requested in prompt or store has abaya-pack/fashion-core)
+  const isAbayaStore =
+    !context?.installedAddonIds ||
+    context.installedAddonIds.length === 0 ||
+    context.installedAddonIds.includes("abaya-pack") ||
+    context.installedAddonIds.includes("fashion-core");
+  const explicitAbayaInPrompt = /(?:عباي|abaya|زوجي|even)/i.test(cleanPrompt);
+  const sizeRangeMatches = /(?:50|52)\s*(?:إلى|الى|to|-)\s*(?:60|62)/i.test(cleanPrompt);
+
+  if (explicitAbayaInPrompt || (isAbayaStore && sizeRangeMatches)) {
     const abayaRange = expandSizeRange(cleanPrompt);
     if (abayaRange.length > 1) {
       sizes = abayaRange;
@@ -363,6 +370,21 @@ export const parseVariantPrompt = createServerFn({ method: "POST" })
     const requestedModel = creds.model?.trim();
     const primaryModel = requestedModel || PRIMARY_MODEL;
 
+    let installedAddonIds: string[] | undefined = undefined;
+    let brandAiContextPrompt = "";
+    if (data.brand_id) {
+      try {
+        const { getBrandAiContext } = await import("@/lib/store-profile.server");
+        const aiCtx = await getBrandAiContext(data.brand_id, { lang: data.language });
+        installedAddonIds = aiCtx.installedAddonIds;
+        if (aiCtx.combinedSystemPrompt) {
+          brandAiContextPrompt = `\nStore context: ${aiCtx.combinedSystemPrompt}`;
+        }
+      } catch (err) {
+        console.warn("[parseVariantPrompt] Failed to load brand AI context:", err);
+      }
+    }
+
     // 3. Offline Heuristic Fallback if credentials are unavailable or rate limited
     if (!apiKey || allowed === false) {
       console.info("[parseVariantPrompt] Using intelligent offline heuristic parser");
@@ -371,13 +393,15 @@ export const parseVariantPrompt = createServerFn({ method: "POST" })
         base_sku: data.base_sku,
         base_price: data.base_price,
         cost_price: data.cost_price,
+        installedAddonIds,
       });
     }
 
     // 4. Domain-Rich System Instruction
     const systemPrompt = [
-      "You are a world-class e-commerce and fashion inventory variant generator specialized in GCC (Gulf) boutiques, luxury fashion, abayas, kaftans, fragrances, and apparel.",
+      "You are a world-class e-commerce and retail inventory variant generator for GCC (Gulf) boutiques.",
       "Extract structured variant plans with 100% precision from merchant descriptions in Arabic or English.",
+      ...(brandAiContextPrompt ? [brandAiContextPrompt] : []),
       "CRITICAL SIZING & QUANTITY RULES:",
       "- If discrete sizes are listed (e.g. 'قياسات 58 56 55 58', 'مقاسات 50 52 54', 'sizes S M L'), extract all unique size tokens: ['50', '52', '54'] or ['55', '56', '58'].",
       "- If Abaya sizes are described as a range (e.g. '50 to 60', 'من 50 إلى 60 زوجي', '52-60'), expand into inclusive even numbers: ['50', '52', '54', '56', '58', '60']. Default size_unit for abayas is 'inch'.",

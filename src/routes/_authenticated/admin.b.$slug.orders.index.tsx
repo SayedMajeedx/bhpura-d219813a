@@ -93,6 +93,8 @@ import {
 import { getFulfillmentStage, getOrderWorkflow } from "@/lib/order-workflow";
 import { getFulfillmentBadgeDetails } from "@/lib/status-labels";
 import { orderRequiresCourier } from "@/lib/order-fulfillment";
+import { useVocabulary } from "@/hooks/use-vocabulary";
+import { useAddons } from "@/components/addons/AddonsProvider";
 
 type OrdersSearch = {
   tab?: string;
@@ -234,6 +236,9 @@ function OrdersList() {
   const brand = useBrand();
   const { isCourier, isAdmin } = useProfile();
   const brandId = brand.id;
+  const { vocabulary } = useVocabulary();
+  const { isInstalled } = useAddons();
+  const hasMadeToOrder = isInstalled("made-to-order");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -935,7 +940,7 @@ function OrdersList() {
   };
 
   const renderContextualButton = (o: any) => {
-    const workflow = getOrderWorkflow(o);
+    const workflow = getOrderWorkflow(o, { productionStages: hasMadeToOrder });
     const paymentBadge = resolvePaymentStatus(
       o.payment_status,
       o.status,
@@ -1073,18 +1078,18 @@ function OrdersList() {
             e.stopPropagation();
             handleStatusUpdate(
               { fulfillment_status: "SENT_TO_TAILOR" },
-              lang === "ar"
-                ? "تم الإرسال للورشة / الخياط بنجاح!"
-                : "Order sent to workshop / tailor!",
+              vocabulary.sent_to_workshop_success[lang] ||
+                (lang === "ar"
+                  ? "تم الإرسال للورشة بنجاح!"
+                  : "Order sent to workshop!"),
             );
           }}
         >
           {isUpdating ? (
             <Loader2 className="animate-spin h-3.5 w-3.5" />
-          ) : lang === "ar" ? (
-            "إرسال للورشة / الخياط"
           ) : (
-            "Send to Workshop / Tailor"
+            vocabulary.sent_to_workshop[lang] ||
+            (lang === "ar" ? "إرسال للورشة" : "Send to Workshop")
           )}
         </Button>
       );
@@ -1103,18 +1108,18 @@ function OrdersList() {
             e.stopPropagation();
             handleStatusUpdate(
               { fulfillment_status: "RECEIVED_FROM_TAILOR" },
-              lang === "ar"
-                ? "تم استلام الطلب من الورشة / الخياط بنجاح!"
-                : "Received from workshop / tailor!",
+              vocabulary.received_from_workshop_success[lang] ||
+                (lang === "ar"
+                  ? "تم استلام الطلب من الورشة بنجاح!"
+                  : "Received from workshop!"),
             );
           }}
         >
           {isUpdating ? (
             <Loader2 className="animate-spin h-3.5 w-3.5" />
-          ) : lang === "ar" ? (
-            "استلام من الورشة / الخياط"
           ) : (
-            "Receive from Workshop / Tailor"
+            vocabulary.received_from_workshop[lang] ||
+            (lang === "ar" ? "استلام من الورشة" : "Receive from Workshop")
           )}
         </Button>
       );
@@ -1837,9 +1842,10 @@ function OrdersList() {
             Number((o as any).advance_paid ?? 0),
           );
           const fulfillmentDetails = getFulfillmentBadgeDetails(
-            getOrderWorkflow(o).fulfillment,
+            getOrderWorkflow(o, { productionStages: hasMadeToOrder }).fulfillment,
             lang,
             (o as any).fulfillment_method,
+            vocabulary,
           );
 
           return (
@@ -1896,9 +1902,10 @@ function OrdersList() {
           }}
           getFulfillmentBadge={(o: any) =>
             getFulfillmentBadgeDetails(
-              getOrderWorkflow(o).fulfillment,
+              getOrderWorkflow(o, { productionStages: hasMadeToOrder }).fulfillment,
               lang,
               (o as any).fulfillment_method,
+              vocabulary,
             )
           }
           renderPrimaryAction={(o: any) => renderContextualButton(o)}

@@ -2,15 +2,17 @@ import { ADDON_MANIFESTS } from "@/addons/registry";
 import type {
   AddonId,
   AddonManifest,
+  AddonReadinessCheck,
   AddonSettingsField,
   BrandAddonRow,
+  SizingPreset,
   SlotComponent,
   SlotPlacement,
   StoreVocabulary,
 } from "./addon-types";
 import type { StoreVertical } from "@/lib/store-profile";
 
-export type { AddonManifest, AddonSettingsField };
+export type { AddonManifest, AddonReadinessCheck, AddonSettingsField, SizingPreset };
 
 const MANIFEST_MAP = new Map<AddonId, AddonManifest>(ADDON_MANIFESTS.map((m) => [m.id, m]));
 
@@ -331,6 +333,67 @@ export function customFieldPresetsFrom(
   }
 
   return presets;
+}
+
+export function sizingPresetsFrom(rows: BrandAddonRow[] | null | undefined): SizingPreset[] {
+  if (!rows || !Array.isArray(rows)) return [];
+  const installedIds = new Set(rows.filter((r) => r.status === "installed").map((r) => r.addon_id));
+
+  const presets: SizingPreset[] = [];
+  for (const manifest of ADDON_MANIFESTS) {
+    if (!installedIds.has(manifest.id)) continue;
+    if (manifest.contributions.sizingPresets) {
+      presets.push(...manifest.contributions.sizingPresets);
+    }
+  }
+
+  return presets;
+}
+
+export function readinessChecksFrom(
+  rows: BrandAddonRow[] | null | undefined,
+): AddonReadinessCheck[] {
+  if (!rows || !Array.isArray(rows)) return [];
+  const installedIds = new Set(rows.filter((r) => r.status === "installed").map((r) => r.addon_id));
+
+  const checks: AddonReadinessCheck[] = [];
+  for (const manifest of ADDON_MANIFESTS) {
+    if (!installedIds.has(manifest.id)) continue;
+    if (manifest.contributions.readinessChecks) {
+      checks.push(...manifest.contributions.readinessChecks);
+    }
+  }
+
+  return checks;
+}
+
+export function productionStagesFrom(rows: BrandAddonRow[] | null | undefined): boolean {
+  if (!rows || !Array.isArray(rows)) return false;
+  const installedIds = new Set(rows.filter((r) => r.status === "installed").map((r) => r.addon_id));
+
+  for (const manifest of ADDON_MANIFESTS) {
+    if (!installedIds.has(manifest.id)) continue;
+    if (manifest.contributions.productionStages) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export function trustBadgeSuggestionsFrom(rows: BrandAddonRow[] | null | undefined): string[] {
+  if (!rows || !Array.isArray(rows)) return [];
+  const installedIds = new Set(rows.filter((r) => r.status === "installed").map((r) => r.addon_id));
+
+  const suggestions: string[] = [];
+  for (const manifest of ADDON_MANIFESTS) {
+    if (!installedIds.has(manifest.id)) continue;
+    if (manifest.contributions.trustBadgeSuggestions) {
+      suggestions.push(...manifest.contributions.trustBadgeSuggestions);
+    }
+  }
+
+  return Array.from(new Set(suggestions));
 }
 
 export function sizingPresetOrderFrom(rows: BrandAddonRow[] | null | undefined): string[] {

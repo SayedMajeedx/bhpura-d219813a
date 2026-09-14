@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Sparkles } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { translateProductText } from "@/lib/translate.functions";
+import { useBrandOptional } from "@/lib/brand-context";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 
@@ -39,6 +40,7 @@ export function BilingualField({
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const translate = useServerFn(translateProductText);
+  const brand = useBrandOptional();
   const [busy, setBusy] = useState<"ar->en" | "en->ar" | null>(null);
 
   const run = async (direction: "ar->en" | "en->ar") => {
@@ -51,7 +53,9 @@ export function BilingualField({
     }
     setBusy(direction);
     try {
-      const { text } = await translate({ data: { text: source, from, to } });
+      const { text } = await translate({
+        data: { text: source, from, to, brand_id: brand?.id },
+      });
       const cleaned = text.trim();
       if (!cleaned) throw new Error("empty");
       if (to === "en") onChangeEn(cleaned);

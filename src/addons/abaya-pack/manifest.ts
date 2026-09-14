@@ -28,7 +28,54 @@ export const abayaPackManifest: AddonManifest = {
   activities: ["abayas"],
   requires: ["fashion-core", "size-guides", "fit-passport", "made-to-order"],
   contributions: {
-    sizingPresetOrder: ["abaya_gulf", "abaya_extended", "apparel_alpha"],
+    sizingPresetOrder: ["abaya_gulf", "abaya_extended", "apparel_standard"],
+    sizingPresets: [
+      {
+        id: "abaya_gulf",
+        labelAr: "عبايات (50 - 60 زوجي)",
+        labelEn: "Abayas (50 - 60 even)",
+        sizes: ["50", "52", "54", "56", "58", "60"],
+        unit: "inch",
+      },
+      {
+        id: "abaya_extended",
+        labelAr: "عبايات موسعة (48 - 62)",
+        labelEn: "Abayas Ext (48 - 62)",
+        sizes: ["48", "50", "52", "54", "56", "58", "60", "62"],
+        unit: "inch",
+      },
+    ],
+    variantAxisDefaults: {
+      size: { ar: "مقاس العباية", en: "Abaya Size" },
+      color: { ar: "اللون", en: "Color" },
+      fabric: { ar: "نوع القماش", en: "Fabric" },
+    },
+    vocabulary: {
+      workshop: { ar: "الخياط", en: "Tailor" },
+      sent_to_workshop: { ar: "تم الإرسال للخياط", en: "Sent to Tailor" },
+      received_from_workshop: { ar: "تم الاستلام من الخياط", en: "Received from Tailor" },
+      sent_to_workshop_success: { ar: "تم إرسال الطلب للخياط بنجاح!", en: "Order sent to tailor!" },
+      received_from_workshop_success: {
+        ar: "تم استلام الطلب من الخياط بنجاح!",
+        en: "Received from tailor!",
+      },
+      custom_order: { ar: "تفصيل", en: "Tailoring" },
+      custom_sizing: { ar: "تفصيل حسب الطلب", en: "Custom Tailoring" },
+      customization_options: {
+        ar: "خيارات التخصيص والمقاسات (التفصيل)",
+        en: "Customization & Tailoring Options",
+      },
+      workshop_instructions: { ar: "تعليمات للمشغل", en: "Workshop instructions" },
+      workshop_notes_label: {
+        ar: "ملاحظات وتفاصيل التفصيل والخياط:",
+        en: "Tailoring & Workshop Notes:",
+      },
+      workshop_notes_placeholder: {
+        ar: "دوّن أي تفاصيل خاصة للخياطة (مثل: بطانة كاملة، تعديل طول الكم، خياطة مخفية، فتحة أزرار، تضييق الخصر...)",
+        en: "Enter any workshop instructions (e.g., full lining, specific sleeve adjustment, hidden buttons)...",
+      },
+      made_to_order: { ar: "تفصيل حسب الطلب", en: "Made to order" },
+    },
     aiContext: ({ brandName, lang }) =>
       lang === "ar"
         ? `متجر "${brandName}" بوتيك عبايات خليجية وتفصيل راقٍ.`

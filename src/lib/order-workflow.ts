@@ -123,7 +123,10 @@ export function getFulfillmentStage(order: OrderWorkflowInput): FulfillmentStage
   return "pending";
 }
 
-export function getOrderWorkflow(order: OrderWorkflowInput): OrderWorkflow {
+export function getOrderWorkflow(
+  order: OrderWorkflowInput,
+  options?: { productionStages?: boolean },
+): OrderWorkflow {
   const orderStatus = normalize(order.status);
   const total = Number(order.total ?? 0);
   const rawPaid = Number(order.advance_paid ?? order.paid_amount ?? 0);
@@ -136,9 +139,10 @@ export function getOrderWorkflow(order: OrderWorkflowInput): OrderWorkflow {
   const fulfillmentMethod = normalize(order.fulfillment_method) || "delivery";
   const items = order.order_items ?? order.items ?? [];
   const detectedType = detectOrderType(items, order.order_type);
+
+  const productionStagesEnabled = options?.productionStages ?? true;
   const isTailoring =
-    detectedType === "tailoring" ||
-    detectedType === "mixed" ||
+    (productionStagesEnabled && (detectedType === "tailoring" || detectedType === "mixed")) ||
     fulfillment === "sent_to_tailor" ||
     fulfillment === "received_from_tailor";
 

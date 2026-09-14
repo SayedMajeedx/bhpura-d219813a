@@ -29,7 +29,16 @@ export const beautyPerfumeManifest: AddonManifest = {
       fabric: null,
     },
     sizingPresetOrder: ["perfume_volume"],
-    trustBadgeSuggestions: ["authentic_100", "fast_shipping"],
+    sizingPresets: [
+      {
+        id: "perfume_volume",
+        labelAr: "سعة العطر (30 - 100 مل)",
+        labelEn: "Perfume Bottle (30 - 100 ml)",
+        sizes: ["30ml", "50ml", "100ml"],
+        unit: "ml",
+      },
+    ],
+    trustBadgeSuggestions: ["Sparkles", "Award", "BadgeCheck"],
     aiContext: ({ brandName, lang }) =>
       lang === "ar"
         ? `متجر "${brandName}" متخصص في العطور الفاخرة ومنتجات العناية والتجميل.`

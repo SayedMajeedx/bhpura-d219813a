@@ -675,6 +675,7 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
     z
       .object({
         posts: z.array(z.any()),
+        brandId: z.string().optional(),
       })
       .parse(raw),
   )
@@ -692,9 +693,23 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
       model = "gemini-1.5-flash-latest";
     }
 
+    let brandAiContextPrompt = "";
+    if (data.brandId) {
+      try {
+        const { getBrandAiContext } = await import("@/lib/store-profile.server");
+        const aiCtx = await getBrandAiContext(data.brandId, { lang: "ar" });
+        if (aiCtx.combinedSystemPrompt) {
+          brandAiContextPrompt = `\nStore context: ${aiCtx.combinedSystemPrompt}`;
+        }
+      } catch (err) {
+        console.warn("[batchParseCaptionsWithAI] Failed to get brand AI context:", err);
+      }
+    }
+
     const systemPrompt = [
       "You are an expert GCC boutique e-commerce catalog migration assistant.",
       "Analyze each Instagram post using its caption. Never invent or hallucinate catalog data.",
+      ...(brandAiContextPrompt ? [brandAiContextPrompt] : []),
       "CRITICAL TITLE & CODE RULES:",
       "1. NEVER use generic collection slogans, seasonal drops, year labels, or account handles as the product title (e.g. NEVER use 'NEW COLLECTION', 'SUMMER DROP 2026', 'minnaz.couture').",
       "2. LOOK FOR PRODUCT CODES: Check for 'Code: MC5', 'كود: MC5', 'Model: 102', 'MC5'. If a code is found, format title as 'منتج MC5' or 'كود MC5'.",

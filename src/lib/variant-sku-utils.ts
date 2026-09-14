@@ -215,6 +215,23 @@ export const SIZING_PRESETS = [
   },
 ];
 
+export const UNIVERSAL_SIZING_PRESETS = [
+  {
+    id: "numbered_1_5",
+    labelAr: "أرقام (1 إلى 5)",
+    labelEn: "Numbered (1 to 5)",
+    sizes: ["1", "2", "3", "4", "5"],
+    unit: "" as const,
+  },
+  {
+    id: "free_size",
+    labelAr: "مقاس موحد (Free Size)",
+    labelEn: "Free Size",
+    sizes: ["Free Size"],
+    unit: "" as const,
+  },
+];
+
 export function orderSizingPresetsForVertical(vertical: StoreVertical) {
   if (vertical === "fashion" || vertical === "abayas") {
     return SIZING_PRESETS;

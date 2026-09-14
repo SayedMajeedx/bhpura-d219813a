@@ -23,8 +23,12 @@ export const foodBeverageManifest: AddonManifest = {
   contributions: {
     vocabulary: {
       workshop: { ar: "المطبخ", en: "Kitchen" },
-      sent_to_tailor: { ar: "قيد التحضير", en: "In Preparation" },
+      sent_to_workshop: { ar: "قيد التحضير بالمطبخ", en: "In Kitchen Preparation" },
+      received_from_workshop: { ar: "جاهز للتسليم", en: "Ready for Pickup" },
+      sent_to_tailor: { ar: "قيد التحضير بالمطبخ", en: "In Kitchen Preparation" },
       received_from_tailor: { ar: "جاهز للتسليم", en: "Ready for Pickup" },
+      workshop_notes_label: { ar: "ملاحظات وتفاصيل التحضير بالمطبخ:", en: "Kitchen Preparation Notes:" },
+      workshop_instructions: { ar: "تعليمات للمطبخ", en: "Kitchen instructions" },
     },
     variantAxisDefaults: {
       size: { ar: "الحجم", en: "Size" },

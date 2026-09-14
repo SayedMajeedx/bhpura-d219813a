@@ -1,3 +1,4 @@
+import React, { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +23,8 @@ import {
   Monitor,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAddons } from "@/components/addons/AddonsProvider";
+import { trustBadgeSuggestionsFrom } from "@/lib/addons/addon-registry";
 
 interface TrustBadgesEditorProps {
   value: TrustBadgesConfig;
@@ -40,6 +43,8 @@ export function TrustBadgesEditor({
 }: TrustBadgesEditorProps) {
   const items = value.items || [];
   const isEnabled = value.enabled ?? true;
+  const { addons } = useAddons();
+  const suggestedIcons = useMemo(() => trustBadgeSuggestionsFrom(addons), [addons]);
 
   const handleToggleGlobal = (enabled: boolean) => {
     onChange({ ...value, enabled });
@@ -271,6 +276,44 @@ export function TrustBadgesEditor({
               <span>{isAr ? "إضافة شارة طمأنينة جديدة" : "Add New Trust Badge"}</span>
               <span className="text-xs text-muted-foreground font-normal">({items.length}/8)</span>
             </Button>
+          )}
+
+          {/* Suggested Badges from Installed Addons */}
+          {suggestedIcons.length > 0 && items.length < 8 && (
+            <div className="rounded-xl border border-border-subtle bg-muted/20 p-3 space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                <span>
+                  {isAr ? "شارات مقترحة بناءً على الإضافات المثبتة:" : "Suggested for your installed add-ons:"}
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {suggestedIcons.map((iconName) => (
+                  <Button
+                    key={iconName}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (items.length >= 8) return;
+                      const newItem: TrustBadgeItem = {
+                        id: `badge-${Date.now()}-${iconName}`,
+                        icon: iconName,
+                        text_ar: isAr ? "جودة وأصالة مضمونة" : "Guaranteed Authenticity",
+                        text_en: "Guaranteed Authenticity & Quality",
+                        color: "amber",
+                        enabled: true,
+                      };
+                      onChange({ ...value, items: [...items, newItem] });
+                    }}
+                    className="h-8 text-xs gap-1.5 px-2.5 bg-background hover:bg-muted"
+                  >
+                    {renderTrustBadgeIcon(iconName, "h-3.5 w-3.5", "amber")}
+                    <span>{iconName}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
           )}
 
           {/* Live Storefront Preview */}
