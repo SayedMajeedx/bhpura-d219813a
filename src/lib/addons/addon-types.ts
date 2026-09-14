@@ -146,3 +146,24 @@ export type BrandAddonRow = {
   installed_at: string;
   updated_at: string;
 };
+
+export type PlatformAddonPolicy = {
+  addon_id: AddonId;
+  availability: "public" | "beta" | "internal" | "deprecated";
+  allowed_brand_ids?: string[] | null;
+  entitlement_key?: string | null;
+  default_for_activities?: StoreVertical[];
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type BrandAddonEvent = {
+  id: string;
+  brand_id: string;
+  addon_id: AddonId;
+  action: "install" | "disable" | "enable" | "remove" | "seed" | "upgrade" | "purge";
+  actor_user_id?: string | null;
+  source: string;
+  details: Record<string, any>;
+  created_at: string;
+};

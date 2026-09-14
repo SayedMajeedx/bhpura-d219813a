@@ -55,6 +55,7 @@ import { Route as ApiPublicPaymentsTapRedirectRouteImport } from './routes/api.p
 import { Route as ApiPublicWebhooksTapRouteImport } from './routes/api.public.webhooks.tap'
 import { Route as BrandsBrandIdKindFilenameRouteImport } from './routes/brands.$brandId.$kind.$filename'
 import { Route as AuthenticatedAdminBSlugAbandonedCartsRouteImport } from './routes/_authenticated/admin.b.$slug.abandoned-carts'
+import { Route as AuthenticatedAdminBSlugAddonsRouteImport } from './routes/_authenticated/admin.b.$slug.addons'
 import { Route as AuthenticatedAdminBSlugCampaignsRouteImport } from './routes/_authenticated/admin.b.$slug.campaigns'
 import { Route as AuthenticatedAdminBSlugCategoriesRouteImport } from './routes/_authenticated/admin.b.$slug.categories'
 import { Route as AuthenticatedAdminBSlugCommunicationsRouteImport } from './routes/_authenticated/admin.b.$slug.communications'
@@ -329,6 +330,12 @@ const AuthenticatedAdminBSlugAbandonedCartsRoute =
     path: '/abandoned-carts',
     getParentRoute: () => AuthenticatedAdminBSlugRouteRoute,
   } as any)
+const AuthenticatedAdminBSlugAddonsRoute =
+  AuthenticatedAdminBSlugAddonsRouteImport.update({
+    id: '/addons',
+    path: '/addons',
+    getParentRoute: () => AuthenticatedAdminBSlugRouteRoute,
+  } as any)
 const AuthenticatedAdminBSlugCampaignsRoute =
   AuthenticatedAdminBSlugCampaignsRouteImport.update({
     id: '/campaigns',
@@ -544,6 +551,7 @@ export interface FileRoutesByFullPath {
   '/api/public/webhooks/tap': typeof ApiPublicWebhooksTapRoute
   '/brands/$brandId/$kind/$filename': typeof BrandsBrandIdKindFilenameRoute
   '/admin/b/$slug/abandoned-carts': typeof AuthenticatedAdminBSlugAbandonedCartsRoute
+  '/admin/b/$slug/addons': typeof AuthenticatedAdminBSlugAddonsRoute
   '/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
   '/admin/b/$slug/categories': typeof AuthenticatedAdminBSlugCategoriesRoute
   '/admin/b/$slug/communications': typeof AuthenticatedAdminBSlugCommunicationsRoute
@@ -617,6 +625,7 @@ export interface FileRoutesByTo {
   '/api/public/webhooks/tap': typeof ApiPublicWebhooksTapRoute
   '/brands/$brandId/$kind/$filename': typeof BrandsBrandIdKindFilenameRoute
   '/admin/b/$slug/abandoned-carts': typeof AuthenticatedAdminBSlugAbandonedCartsRoute
+  '/admin/b/$slug/addons': typeof AuthenticatedAdminBSlugAddonsRoute
   '/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
   '/admin/b/$slug/categories': typeof AuthenticatedAdminBSlugCategoriesRoute
   '/admin/b/$slug/communications': typeof AuthenticatedAdminBSlugCommunicationsRoute
@@ -693,6 +702,7 @@ export interface FileRoutesById {
   '/api/public/webhooks/tap': typeof ApiPublicWebhooksTapRoute
   '/brands/$brandId/$kind/$filename': typeof BrandsBrandIdKindFilenameRoute
   '/_authenticated/admin/b/$slug/abandoned-carts': typeof AuthenticatedAdminBSlugAbandonedCartsRoute
+  '/_authenticated/admin/b/$slug/addons': typeof AuthenticatedAdminBSlugAddonsRoute
   '/_authenticated/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
   '/_authenticated/admin/b/$slug/categories': typeof AuthenticatedAdminBSlugCategoriesRoute
   '/_authenticated/admin/b/$slug/communications': typeof AuthenticatedAdminBSlugCommunicationsRoute
@@ -770,6 +780,7 @@ export interface FileRouteTypes {
     | '/api/public/webhooks/tap'
     | '/brands/$brandId/$kind/$filename'
     | '/admin/b/$slug/abandoned-carts'
+    | '/admin/b/$slug/addons'
     | '/admin/b/$slug/campaigns'
     | '/admin/b/$slug/categories'
     | '/admin/b/$slug/communications'
@@ -843,6 +854,7 @@ export interface FileRouteTypes {
     | '/api/public/webhooks/tap'
     | '/brands/$brandId/$kind/$filename'
     | '/admin/b/$slug/abandoned-carts'
+    | '/admin/b/$slug/addons'
     | '/admin/b/$slug/campaigns'
     | '/admin/b/$slug/categories'
     | '/admin/b/$slug/communications'
@@ -918,6 +930,7 @@ export interface FileRouteTypes {
     | '/api/public/webhooks/tap'
     | '/brands/$brandId/$kind/$filename'
     | '/_authenticated/admin/b/$slug/abandoned-carts'
+    | '/_authenticated/admin/b/$slug/addons'
     | '/_authenticated/admin/b/$slug/campaigns'
     | '/_authenticated/admin/b/$slug/categories'
     | '/_authenticated/admin/b/$slug/communications'
@@ -1293,6 +1306,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBSlugAbandonedCartsRouteImport
       parentRoute: typeof AuthenticatedAdminBSlugRouteRoute
     }
+    '/_authenticated/admin/b/$slug/addons': {
+      id: '/_authenticated/admin/b/$slug/addons'
+      path: '/addons'
+      fullPath: '/admin/b/$slug/addons'
+      preLoaderRoute: typeof AuthenticatedAdminBSlugAddonsRouteImport
+      parentRoute: typeof AuthenticatedAdminBSlugRouteRoute
+    }
     '/_authenticated/admin/b/$slug/campaigns': {
       id: '/_authenticated/admin/b/$slug/campaigns'
       path: '/campaigns'
@@ -1572,6 +1592,7 @@ const AuthenticatedAdminBSlugReportsRouteWithChildren =
 
 interface AuthenticatedAdminBSlugRouteRouteChildren {
   AuthenticatedAdminBSlugAbandonedCartsRoute: typeof AuthenticatedAdminBSlugAbandonedCartsRoute
+  AuthenticatedAdminBSlugAddonsRoute: typeof AuthenticatedAdminBSlugAddonsRoute
   AuthenticatedAdminBSlugCampaignsRoute: typeof AuthenticatedAdminBSlugCampaignsRoute
   AuthenticatedAdminBSlugCategoriesRoute: typeof AuthenticatedAdminBSlugCategoriesRoute
   AuthenticatedAdminBSlugCommunicationsRoute: typeof AuthenticatedAdminBSlugCommunicationsRoute
@@ -1600,6 +1621,7 @@ const AuthenticatedAdminBSlugRouteRouteChildren: AuthenticatedAdminBSlugRouteRou
   {
     AuthenticatedAdminBSlugAbandonedCartsRoute:
       AuthenticatedAdminBSlugAbandonedCartsRoute,
+    AuthenticatedAdminBSlugAddonsRoute: AuthenticatedAdminBSlugAddonsRoute,
     AuthenticatedAdminBSlugCampaignsRoute:
       AuthenticatedAdminBSlugCampaignsRoute,
     AuthenticatedAdminBSlugCategoriesRoute:

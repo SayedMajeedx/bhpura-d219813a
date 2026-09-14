@@ -40,6 +40,7 @@ describe("Progressive Disclosure & Modular Navigation", () => {
       "orders",
       "customers",
       "inventory",
+      "addons",
       "settings",
     ]);
 

@@ -83,5 +83,7 @@ export const queryKeys = {
   // Addons Platform
   addons: {
     all: (brandId: string) => ["addons", brandId] as const,
+    events: (brandId: string) => ["addons", "events", brandId] as const,
+    policies: () => ["addons", "policies"] as const,
   },
 } as const;

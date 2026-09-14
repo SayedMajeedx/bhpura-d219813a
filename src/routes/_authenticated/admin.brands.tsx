@@ -44,6 +44,7 @@ import {
   Loader2,
   Shield,
   Smartphone,
+  Puzzle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n, useT } from "@/lib/i18n";
@@ -598,6 +599,17 @@ function BrandsPage() {
                       <Link to="/$slug" params={{ slug: b.slug }}>
                         <ExternalLink className="h-3.5 w-3.5 me-1" />
                         {lang === "ar" ? "المتجر" : "Storefront"}
+                      </Link>
+                    </Button>
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="sm"
+                      className="h-9 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+                      title={lang === "ar" ? "إضافات المتجر" : "Store Add-ons"}
+                    >
+                      <Link to="/admin/b/$slug/addons" params={{ slug: b.slug }}>
+                        <Puzzle className="h-3.5 w-3.5 text-primary" />
                       </Link>
                     </Button>
                     <Button

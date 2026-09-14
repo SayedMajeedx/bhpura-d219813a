@@ -20,6 +20,7 @@ import {
   ShoppingCart,
   Palette,
   Ruler,
+  Puzzle,
   type LucideIcon,
 } from "lucide-react";
 
@@ -431,6 +432,20 @@ export function getAdminNavItems({
       section: "storefront_settings",
       category: "store_setup",
       tier: "modular",
+    },
+    {
+      id: "addons",
+      to: "/admin/b/$slug/addons",
+      params: { slug: activeSlug },
+      labelEn: "Add-ons",
+      labelAr: lang === "ar" ? "الإضافات" : "Add-ons",
+      descriptionEn: "Install, configure, and manage store add-ons and vertical extensions",
+      descriptionAr: "تثبيت وإدارة إضافات المتجر وتوسعات الأنشطة التجارية وتخصيصها",
+      icon: Puzzle,
+      permission: "manage_settings",
+      section: "storefront_settings",
+      category: "store_setup",
+      tier: "core",
     },
     {
       id: "settings",

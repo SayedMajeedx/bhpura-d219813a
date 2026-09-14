@@ -2,12 +2,15 @@ import { ADDON_MANIFESTS } from "@/addons/registry";
 import type {
   AddonId,
   AddonManifest,
+  AddonSettingsField,
   BrandAddonRow,
   SlotComponent,
   SlotPlacement,
   StoreVocabulary,
 } from "./addon-types";
 import type { StoreVertical } from "@/lib/store-profile";
+
+export type { AddonManifest, AddonSettingsField };
 
 const MANIFEST_MAP = new Map<AddonId, AddonManifest>(ADDON_MANIFESTS.map((m) => [m.id, m]));
 
@@ -22,6 +25,8 @@ export function getAddon(id: AddonId): AddonManifest {
 export function listAddons(): AddonManifest[] {
   return [...ADDON_MANIFESTS];
 }
+
+export const getAllAddons = listAddons;
 
 export function validateRegistry(): string[] {
   const errors: string[] = [];

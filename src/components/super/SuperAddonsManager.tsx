@@ -9,7 +9,8 @@ import type { SaaSAddon } from "@/lib/saas-billing/saas-billing.types";
 import { useI18n } from "@/lib/i18n";
 import { getFriendlyErrorMessage } from "@/lib/utils";
 import { toast } from "sonner";
-import { PackagePlus, Plus, Edit2, Loader2, Check, AlertTriangle } from "lucide-react";
+import { PackagePlus, Plus, Edit2, Loader2, Check, AlertTriangle, Puzzle } from "lucide-react";
+import { SuperAddonPoliciesManager } from "@/components/super/SuperAddonPoliciesManager";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +42,7 @@ export function SuperAddonsManager() {
 
   const [editingAddon, setEditingAddon] = useState<Partial<SaaSAddon> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [subTab, setSubTab] = useState<"policies" | "capacity">("policies");
 
   if (isLoading) {
     return (
@@ -124,275 +126,309 @@ export function SuperAddonsManager() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border-subtle">
-        <div>
-          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-            <PackagePlus className="h-5 w-5 text-primary" />
-            <span>
-              {isAr ? "إدارة الإضافات المستقلة (SaaS Add-ons)" : "Modular SaaS Add-ons Catalog"}
-            </span>
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            {isAr
-              ? "إضافات سحابية لزيادة الحصص وسعة التخزين دون الحاجة لترقية الخطة كاملة."
-              : "Modular capacity expansion add-ons for orders, products, storage and recovery."}
-          </p>
-        </div>
+      {/* Sub-tab Switcher */}
+      <div className="flex items-center gap-2 border-b border-border pb-2">
         <Button
-          type="button"
-          variant="default"
+          variant={subTab === "policies" ? "default" : "ghost"}
           size="sm"
-          onClick={() => handleOpenModal()}
-          className="gap-1.5 font-bold text-xs min-h-[44px]"
+          onClick={() => setSubTab("policies")}
+          className="gap-1.5 h-9 rounded-xl text-xs font-semibold"
         >
-          <Plus className="h-4 w-4" />
-          <span>{isAr ? "إضافة خيار جديد" : "New Add-on"}</span>
+          <Puzzle className="size-3.5" />
+          <span>{isAr ? "إضافات المنظومة البرمجية" : "Modular Add-on Policies"}</span>
+        </Button>
+        <Button
+          variant={subTab === "capacity" ? "default" : "ghost"}
+          size="sm"
+          onClick={() => setSubTab("capacity")}
+          className="gap-1.5 h-9 rounded-xl text-xs font-semibold"
+        >
+          <PackagePlus className="size-3.5" />
+          <span>{isAr ? "باقات السعة والتخزين (SaaS Add-ons)" : "Capacity & Quota Add-ons"}</span>
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {addons.map((addon) => (
-          <Card
-            key={addon.id}
-            className="border border-border bg-card shadow-sm rounded-2xl flex flex-col justify-between"
-          >
-            <CardHeader className="pb-3 border-b border-border-subtle">
-              <div className="flex items-center justify-between">
-                <Badge variant="outline" className="font-mono text-xs">
-                  {addon.code}
-                </Badge>
-                {addon.is_active ? (
-                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 text-xs">
-                    {isAr ? "مفعل" : "Active"}
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="bg-muted text-muted-foreground text-xs">
-                    {isAr ? "معطل" : "Inactive"}
-                  </Badge>
-                )}
-              </div>
-              <CardTitle className="text-base font-bold text-foreground mt-2">
-                {isAr ? addon.name_ar : addon.name_en}
-              </CardTitle>
-              <CardDescription className="text-xs line-clamp-2">
-                {isAr ? addon.description_ar : addon.description_en}
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent className="pt-4 space-y-4">
-              <div className="p-3 rounded-xl bg-muted/40 border border-border-subtle flex items-center justify-between text-xs">
-                <div>
-                  <span className="text-xs uppercase font-bold text-muted-foreground block">
-                    {isAr ? "الميزة المستهدفة" : "Target Feature"}
-                  </span>
-                  <span className="font-mono font-bold text-foreground">
-                    {addon.target_feature_key}
-                  </span>
-                </div>
-                <div className="text-end">
-                  <span className="font-mono font-bold text-foreground block">
-                    {addon.price_monthly} BHD/m
-                  </span>
-                  <span className="text-xs font-mono text-muted-foreground">
-                    {addon.price_annual} BHD/y
-                  </span>
-                </div>
-              </div>
-
-              <div className="text-xs text-muted-foreground font-medium">
-                {addon.grant_type === "numeric_increment" ? (
-                  <span>
-                    +{addon.grant_numeric_amount.toLocaleString()}{" "}
-                    {isAr ? "إضافية للمتجر" : "capacity boost"}
-                  </span>
-                ) : (
-                  <span>{isAr ? "فتح الميزة بالكامل" : "Full feature unlock"}</span>
-                )}
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => handleOpenModal(addon)}
-                className="w-full gap-1.5 font-bold text-xs min-h-[44px]"
-              >
-                <Edit2 className="h-3.5 w-3.5" />
-                <span>{isAr ? "تعديل الإضافة" : "Edit Add-on"}</span>
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Add / Edit Add-on Dialog Modal */}
-      {editingAddon && (
-        <Dialog
-          open={Boolean(editingAddon)}
-          onOpenChange={(open) => !open && setEditingAddon(null)}
-        >
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle className="text-base font-bold flex items-center gap-2">
-                <PackagePlus className="h-4 w-4 text-primary" />
+      {subTab === "policies" ? (
+        <SuperAddonPoliciesManager />
+      ) : (
+        <>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border-subtle">
+            <div>
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <PackagePlus className="h-5 w-5 text-primary" />
                 <span>
-                  {editingAddon.id
-                    ? isAr
-                      ? "تعديل الإضافة السحابية"
-                      : "Edit SaaS Add-on"
-                    : isAr
-                      ? "إنشاء إضافة سحابية جديدة"
-                      : "Create New SaaS Add-on"}
+                  {isAr ? "إدارة الإضافات المستقلة (SaaS Add-ons)" : "Modular SaaS Add-ons Catalog"}
                 </span>
-              </DialogTitle>
-              <DialogDescription className="text-xs">
+              </h2>
+              <p className="text-xs text-muted-foreground">
                 {isAr
-                  ? "تحديد أسعار الإضافة والميزة المستهدفة والكمية الممنوحة."
-                  : "Configure add-on pricing, target feature key, and granted boost amount."}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 py-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-foreground">
-                    {isAr ? "الاسم بالعربية" : "Arabic Name"}
-                  </Label>
-                  <Input
-                    value={editingAddon.name_ar || ""}
-                    onChange={(e) =>
-                      setEditingAddon((prev) => ({ ...prev, name_ar: e.target.value }))
-                    }
-                    className="text-xs"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-foreground">
-                    {isAr ? "الاسم بالإنجليزية" : "English Name"}
-                  </Label>
-                  <Input
-                    value={editingAddon.name_en || ""}
-                    onChange={(e) =>
-                      setEditingAddon((prev) => ({ ...prev, name_en: e.target.value }))
-                    }
-                    className="text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-foreground">
-                    {isAr ? "السعر الشهري (د.ب)" : "Monthly Price (BHD)"}
-                  </Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.5"
-                    value={editingAddon.price_monthly ?? 0}
-                    onChange={(e) =>
-                      setEditingAddon((prev) => ({
-                        ...prev,
-                        price_monthly: parseFloat(e.target.value) || 0,
-                      }))
-                    }
-                    className="font-mono text-xs"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-foreground">
-                    {isAr ? "السعر السنوي (د.ب)" : "Annual Price (BHD)"}
-                  </Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={editingAddon.price_annual ?? 0}
-                    onChange={(e) =>
-                      setEditingAddon((prev) => ({
-                        ...prev,
-                        price_annual: parseFloat(e.target.value) || 0,
-                      }))
-                    }
-                    className="font-mono text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-foreground">
-                    {isAr ? "الميزة المستهدفة" : "Target Feature Key"}
-                  </Label>
-                  <Input
-                    value={editingAddon.target_feature_key || ""}
-                    onChange={(e) =>
-                      setEditingAddon((prev) => ({ ...prev, target_feature_key: e.target.value }))
-                    }
-                    className="font-mono text-xs"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-foreground">
-                    {isAr ? "الكمية الممنوحة" : "Grant Boost Amount"}
-                  </Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={editingAddon.grant_numeric_amount ?? 0}
-                    onChange={(e) =>
-                      setEditingAddon((prev) => ({
-                        ...prev,
-                        grant_numeric_amount: parseInt(e.target.value, 10) || 0,
-                      }))
-                    }
-                    className="font-mono text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border">
-                <span className="text-xs font-bold text-foreground">
-                  {isAr ? "تفعيل الإضافة للشراء" : "Active & Available for Purchase"}
-                </span>
-                <Switch
-                  checked={editingAddon.is_active ?? true}
-                  onCheckedChange={(checked) =>
-                    setEditingAddon((prev) => ({ ...prev, is_active: checked }))
-                  }
-                />
-              </div>
+                  ? "إضافات سحابية لزيادة الحصص وسعة التخزين دون الحاجة لترقية الخطة كاملة."
+                  : "Modular capacity expansion add-ons for orders, products, storage and recovery."}
+              </p>
             </div>
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              onClick={() => handleOpenModal()}
+              className="gap-1.5 font-bold text-xs min-h-[44px]"
+            >
+              <Plus className="h-4 w-4" />
+              <span>{isAr ? "إضافة خيار جديد" : "New Add-on"}</span>
+            </Button>
+          </div>
 
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                type="button"
-                variant="outline"
-                size="default"
-                disabled={isSubmitting}
-                onClick={() => setEditingAddon(null)}
-                className="min-h-[44px]"
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {addons.map((addon) => (
+              <Card
+                key={addon.id}
+                className="border border-border bg-card shadow-sm rounded-2xl flex flex-col justify-between"
               >
-                {isAr ? "إلغاء" : "Cancel"}
-              </Button>
-              <Button
-                type="button"
-                variant="default"
-                size="default"
-                disabled={isSubmitting || !editingAddon.name_en || !editingAddon.name_ar}
-                onClick={handleSaveAddon}
-                className="gap-2 font-bold min-h-[44px]"
-              >
-                {isSubmitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Check className="h-4 w-4" />
-                )}
-                <span>{isAr ? "حفظ الإضافة" : "Save Add-on"}</span>
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+                <CardHeader className="pb-3 border-b border-border-subtle">
+                  <div className="flex items-center justify-between">
+                    <Badge variant="outline" className="font-mono text-xs">
+                      {addon.code}
+                    </Badge>
+                    {addon.is_active ? (
+                      <Badge
+                        variant="outline"
+                        className="bg-emerald-500/10 text-emerald-600 text-xs"
+                      >
+                        {isAr ? "مفعل" : "Active"}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-muted text-muted-foreground text-xs">
+                        {isAr ? "معطل" : "Inactive"}
+                      </Badge>
+                    )}
+                  </div>
+                  <CardTitle className="text-base font-bold text-foreground mt-2">
+                    {isAr ? addon.name_ar : addon.name_en}
+                  </CardTitle>
+                  <CardDescription className="text-xs line-clamp-2">
+                    {isAr ? addon.description_ar : addon.description_en}
+                  </CardDescription>
+                </CardHeader>
+
+                <CardContent className="pt-4 space-y-4">
+                  <div className="p-3 rounded-xl bg-muted/40 border border-border-subtle flex items-center justify-between text-xs">
+                    <div>
+                      <span className="text-xs uppercase font-bold text-muted-foreground block">
+                        {isAr ? "الميزة المستهدفة" : "Target Feature"}
+                      </span>
+                      <span className="font-mono font-bold text-foreground">
+                        {addon.target_feature_key}
+                      </span>
+                    </div>
+                    <div className="text-end">
+                      <span className="font-mono font-bold text-foreground block">
+                        {addon.price_monthly} BHD/m
+                      </span>
+                      <span className="text-xs font-mono text-muted-foreground">
+                        {addon.price_annual} BHD/y
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="text-xs text-muted-foreground font-medium">
+                    {addon.grant_type === "numeric_increment" ? (
+                      <span>
+                        +{addon.grant_numeric_amount.toLocaleString()}{" "}
+                        {isAr ? "إضافية للمتجر" : "capacity boost"}
+                      </span>
+                    ) : (
+                      <span>{isAr ? "فتح الميزة بالكامل" : "Full feature unlock"}</span>
+                    )}
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleOpenModal(addon)}
+                    className="w-full gap-1.5 font-bold text-xs min-h-[44px]"
+                  >
+                    <Edit2 className="h-3.5 w-3.5" />
+                    <span>{isAr ? "تعديل الإضافة" : "Edit Add-on"}</span>
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Add / Edit Add-on Dialog Modal */}
+          {editingAddon && (
+            <Dialog
+              open={Boolean(editingAddon)}
+              onOpenChange={(open) => !open && setEditingAddon(null)}
+            >
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle className="text-base font-bold flex items-center gap-2">
+                    <PackagePlus className="h-4 w-4 text-primary" />
+                    <span>
+                      {editingAddon.id
+                        ? isAr
+                          ? "تعديل الإضافة السحابية"
+                          : "Edit SaaS Add-on"
+                        : isAr
+                          ? "إنشاء إضافة سحابية جديدة"
+                          : "Create New SaaS Add-on"}
+                    </span>
+                  </DialogTitle>
+                  <DialogDescription className="text-xs">
+                    {isAr
+                      ? "تحديد أسعار الإضافة والميزة المستهدفة والكمية الممنوحة."
+                      : "Configure add-on pricing, target feature key, and granted boost amount."}
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4 py-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-foreground">
+                        {isAr ? "الاسم بالعربية" : "Arabic Name"}
+                      </Label>
+                      <Input
+                        value={editingAddon.name_ar || ""}
+                        onChange={(e) =>
+                          setEditingAddon((prev) => ({ ...prev, name_ar: e.target.value }))
+                        }
+                        className="text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-foreground">
+                        {isAr ? "الاسم بالإنجليزية" : "English Name"}
+                      </Label>
+                      <Input
+                        value={editingAddon.name_en || ""}
+                        onChange={(e) =>
+                          setEditingAddon((prev) => ({ ...prev, name_en: e.target.value }))
+                        }
+                        className="text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-foreground">
+                        {isAr ? "السعر الشهري (د.ب)" : "Monthly Price (BHD)"}
+                      </Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        value={editingAddon.price_monthly ?? 0}
+                        onChange={(e) =>
+                          setEditingAddon((prev) => ({
+                            ...prev,
+                            price_monthly: parseFloat(e.target.value) || 0,
+                          }))
+                        }
+                        className="font-mono text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-foreground">
+                        {isAr ? "السعر السنوي (د.ب)" : "Annual Price (BHD)"}
+                      </Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={editingAddon.price_annual ?? 0}
+                        onChange={(e) =>
+                          setEditingAddon((prev) => ({
+                            ...prev,
+                            price_annual: parseFloat(e.target.value) || 0,
+                          }))
+                        }
+                        className="font-mono text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-foreground">
+                        {isAr ? "الميزة المستهدفة" : "Target Feature Key"}
+                      </Label>
+                      <Input
+                        value={editingAddon.target_feature_key || ""}
+                        onChange={(e) =>
+                          setEditingAddon((prev) => ({
+                            ...prev,
+                            target_feature_key: e.target.value,
+                          }))
+                        }
+                        className="font-mono text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-foreground">
+                        {isAr ? "الكمية الممنوحة" : "Grant Boost Amount"}
+                      </Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={editingAddon.grant_numeric_amount ?? 0}
+                        onChange={(e) =>
+                          setEditingAddon((prev) => ({
+                            ...prev,
+                            grant_numeric_amount: parseInt(e.target.value, 10) || 0,
+                          }))
+                        }
+                        className="font-mono text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border">
+                    <span className="text-xs font-bold text-foreground">
+                      {isAr ? "تفعيل الإضافة للشراء" : "Active & Available for Purchase"}
+                    </span>
+                    <Switch
+                      checked={editingAddon.is_active ?? true}
+                      onCheckedChange={(checked) =>
+                        setEditingAddon((prev) => ({ ...prev, is_active: checked }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                <DialogFooter className="gap-2 sm:gap-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="default"
+                    disabled={isSubmitting}
+                    onClick={() => setEditingAddon(null)}
+                    className="min-h-[44px]"
+                  >
+                    {isAr ? "إلغاء" : "Cancel"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="default"
+                    disabled={isSubmitting || !editingAddon.name_en || !editingAddon.name_ar}
+                    onClick={handleSaveAddon}
+                    className="gap-2 font-bold min-h-[44px]"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                    <span>{isAr ? "حفظ الإضافة" : "Save Add-on"}</span>
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
+        </>
       )}
     </div>
   );

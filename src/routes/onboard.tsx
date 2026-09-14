@@ -27,6 +27,8 @@ import {
   Home,
   Download,
   Store,
+  Lock,
+  Puzzle,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StorefrontLivePreview } from "@/components/onboarding/StorefrontLivePreview";
@@ -41,6 +43,7 @@ import {
   VERTICAL_LABELS,
   verticalToLegacyBusinessType,
 } from "@/lib/store-profile";
+import { starterPackFor, getAddon } from "@/lib/addons/addon-registry";
 
 const VERTICAL_ICONS: Record<StoreVertical, React.ComponentType<{ className?: string }>> = {
   abayas: Shirt,
@@ -135,6 +138,7 @@ function OnboardPage() {
 
   // Form Fields
   const [storeVertical, setStoreVertical] = useState<StoreVertical | null>(null);
+  const [selectedOptionalAddons, setSelectedOptionalAddons] = useState<string[]>([]);
   const [brandName, setBrandName] = useState("");
   const [slug, setSlug] = useState("");
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
@@ -147,6 +151,15 @@ function OnboardPage() {
   const [slugStatus, setSlugStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
   const [existingAccountWarning, setExistingAccountWarning] = useState<string | null>(null);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
+
+  useEffect(() => {
+    if (storeVertical) {
+      const pack = starterPackFor(storeVertical);
+      setSelectedOptionalAddons(pack.suggested);
+    } else {
+      setSelectedOptionalAddons([]);
+    }
+  }, [storeVertical]);
 
   const chooseBillingInterval = (interval: "monthly" | "annual") => {
     setBillingInterval(interval);
@@ -289,6 +302,9 @@ function OnboardPage() {
         ? contactNumber.trim()
         : `+973${contactNumber.trim().replace(/^0+/, "")}`;
 
+      const pack = storeVertical ? starterPackFor(storeVertical) : { required: [], suggested: [] };
+      const selectedAddonIds = Array.from(new Set([...pack.required, ...selectedOptionalAddons]));
+
       const res = await registerInstantTrial({
         data: {
           brandName: brandName.trim(),
@@ -299,6 +315,7 @@ function OnboardPage() {
           password: password,
           storeVertical: storeVertical!,
           businessType: verticalToLegacyBusinessType(storeVertical!),
+          selectedAddonIds,
         },
       });
 
@@ -546,6 +563,88 @@ function OnboardPage() {
                         );
                       })}
                     </div>
+
+                    {/* Starter Pack Add-ons Card */}
+                    {storeVertical && (
+                      <div className="rounded-xl border border-border bg-muted/30 p-3.5 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                            <Puzzle className="size-3.5 text-primary" />
+                            <span>
+                              {isAr
+                                ? "سيُفعَّل لمتجرك مجاناً (حزمة البداية):"
+                                : "Included free with your store:"}
+                            </span>
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className="text-xs py-0 h-5 border-border text-muted-foreground"
+                          >
+                            {isAr ? "إضافات مخصصة" : "Add-ons"}
+                          </Badge>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                          {starterPackFor(storeVertical).required.map((addonId) => {
+                            const addon = getAddon(addonId);
+                            return (
+                              <div
+                                key={addonId}
+                                className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-background border border-border text-xs text-foreground min-h-[40px]"
+                              >
+                                <div className="size-4 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                                  <Lock className="size-2.5" />
+                                </div>
+                                <span className="font-medium truncate">
+                                  {isAr ? addon.name.ar : addon.name.en}
+                                </span>
+                                <Badge
+                                  variant="secondary"
+                                  className="ms-auto text-xs h-4 py-0 shrink-0"
+                                >
+                                  {isAr ? "أساسي" : "Core"}
+                                </Badge>
+                              </div>
+                            );
+                          })}
+
+                          {starterPackFor(storeVertical).suggested.map((addonId) => {
+                            const addon = getAddon(addonId);
+                            const isChecked = selectedOptionalAddons.includes(addonId);
+                            return (
+                              <label
+                                key={addonId}
+                                className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-background border border-border text-xs text-foreground cursor-pointer hover:bg-muted/50 transition-colors min-h-[40px]"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedOptionalAddons((prev) => [...prev, addonId]);
+                                    } else {
+                                      setSelectedOptionalAddons((prev) =>
+                                        prev.filter((id) => id !== addonId),
+                                      );
+                                    }
+                                  }}
+                                  className="rounded border-border text-primary focus:ring-primary size-3.5"
+                                />
+                                <span className="font-medium truncate">
+                                  {isAr ? addon.name.ar : addon.name.en}
+                                </span>
+                                <Badge
+                                  variant="outline"
+                                  className="ms-auto text-xs h-4 py-0 shrink-0 text-muted-foreground"
+                                >
+                                  {isAr ? "اختياري" : "Optional"}
+                                </Badge>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

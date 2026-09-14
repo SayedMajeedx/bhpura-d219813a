@@ -11,6 +11,7 @@ import {
   X,
   Layers,
   Wallet,
+  Puzzle,
 } from "lucide-react";
 import {
   Dialog,
@@ -268,6 +269,25 @@ export function OsAppsHubModal({
                 );
               })}
             </div>
+            {activeSlug && (
+              <div className="mt-4 pt-3 border-t border-border-strong hidden md:block">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    onOpenChange(false);
+                    navigate({
+                      to: "/admin/b/$slug/addons" as any,
+                      params: { slug: activeSlug } as any,
+                    });
+                  }}
+                  className="w-full justify-start gap-2 h-10 text-xs rounded-xl border-border bg-background hover:bg-muted font-medium text-foreground"
+                >
+                  <Puzzle className="h-4 w-4 text-primary shrink-0" />
+                  <span>{isAr ? "متجر الإضافات" : "Add-ons Store"}</span>
+                </Button>
+              </div>
+            )}
           </aside>
 
           <main className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6">
