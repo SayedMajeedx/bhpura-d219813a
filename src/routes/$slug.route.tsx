@@ -11,6 +11,7 @@ import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import {
   StorefrontProvider,
   useStorefront,
+  useStoreModules,
   type Brand,
   type PublicSettings,
   readableOn,
@@ -322,7 +323,7 @@ export const Route = createFileRoute("/$slug")({
 
 function StorefrontLayout() {
   const loaderData = Route.useLoaderData() as any;
-  const { brand, settings, isSuspended, suspensionReason } = loaderData;
+  const { brand, settings, bootstrapData, isSuspended, suspensionReason } = loaderData;
 
   // Must run unconditionally, before the early return below — React hooks
   // can't be called conditionally. It safely handles undefined inputs.
@@ -333,7 +334,11 @@ function StorefrontLayout() {
   }
 
   return (
-    <StorefrontProvider brand={brand} settings={settings}>
+    <StorefrontProvider
+      brand={brand}
+      settings={settings}
+      sizeGuides={bootstrapData?.size_guides ?? []}
+    >
       <StorefrontAnalytics />
       <StoreShell />
     </StorefrontProvider>
@@ -601,6 +606,8 @@ function StorefrontSocialIcon({ platform }: { platform: string }) {
 
 function StorefrontFooter() {
   const { brand, settings, lang, t } = useStorefront();
+  const storeModules = useStoreModules();
+  const showSizeGuideFooterLink = Boolean(storeModules?.size_guide);
   const isAr = lang === "ar";
   const [openCompany, setOpenCompany] = useState(false);
   const [openHelp, setOpenHelp] = useState(false);
@@ -689,7 +696,7 @@ function StorefrontFooter() {
               />
             </div>
           )}
-          {pageLinks.length > 0 && (
+          {(pageLinks.length > 0 || showSizeGuideFooterLink) && (
             <nav className="flex flex-wrap justify-center items-center gap-x-5 gap-y-1 text-xs font-medium tracking-wide">
               {pageLinks.map((p) => (
                 <Link
@@ -702,6 +709,16 @@ function StorefrontFooter() {
                   {p.title}
                 </Link>
               ))}
+              {showSizeGuideFooterLink && (
+                <Link
+                  to="/$slug/size-guide"
+                  params={{ slug: brand.slug }}
+                  className="inline-flex min-h-11 items-center py-0.5 hover:opacity-100 opacity-85 transition-opacity sm:min-h-0"
+                  style={{ color: "var(--sf-footer-fg)" }}
+                >
+                  {isAr ? "دليل المقاسات" : "Size Guide"}
+                </Link>
+              )}
             </nav>
           )}
 
@@ -827,7 +844,7 @@ function StorefrontFooter() {
             )}
 
             {/* Group B: Help */}
-            {helpPages.length > 0 && (
+            {(helpPages.length > 0 || showSizeGuideFooterLink) && (
               <div className="border-b border-white/10 last:border-0">
                 <button
                   type="button"
@@ -860,6 +877,16 @@ function StorefrontFooter() {
                         {p.title}
                       </Link>
                     ))}
+                    {showSizeGuideFooterLink && (
+                      <Link
+                        to="/$slug/size-guide"
+                        params={{ slug: brand.slug }}
+                        className="flex min-h-[44px] items-center text-xs opacity-85 hover:opacity-100 py-1"
+                        style={{ color: "var(--sf-footer-fg)" }}
+                      >
+                        {isAr ? "دليل المقاسات" : "Size Guide"}
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>

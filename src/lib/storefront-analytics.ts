@@ -1,5 +1,11 @@
 export type StorefrontEvent =
-  "page_view" | "view_item" | "add_to_cart" | "begin_checkout" | "purchase" | "search";
+  | "page_view"
+  | "view_item"
+  | "add_to_cart"
+  | "begin_checkout"
+  | "purchase"
+  | "search"
+  | "view_size_guide";
 
 type AnalyticsConfig = {
   brandId: string;
@@ -38,6 +44,7 @@ export function trackStorefrontEvent(
       begin_checkout: "InitiateCheckout",
       purchase: "Purchase",
       search: "Search",
+      view_size_guide: "ViewContent",
     };
     w.fbq("trackSingle", config.metaId, names[event], payload);
   }

@@ -174,6 +174,8 @@ type Product = {
   variant_label_fabric_en?: string | null;
   fabric_type?: string | null;
   occasion?: string | null;
+  size_guide_id?: string | null;
+  size_guide_hidden?: boolean | null;
 };
 type Variant = {
   id: string;
@@ -2582,6 +2584,8 @@ function ProductDialog({
     variant_label_fabric_en: product?.variant_label_fabric_en ?? "",
     fabric_type: (product as any)?.fabric_type ?? "",
     occasion: (product as any)?.occasion ?? "",
+    size_guide_id: product?.size_guide_id ?? null,
+    size_guide_hidden: product?.size_guide_hidden ?? false,
   };
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState<{ name?: string; price?: string; cost?: string }>({});
@@ -2633,6 +2637,8 @@ function ProductDialog({
       variant_label_fabric_en: product?.variant_label_fabric_en ?? "",
       fabric_type: (product as any)?.fabric_type ?? "",
       occasion: (product as any)?.occasion ?? "",
+      size_guide_id: product?.size_guide_id ?? null,
+      size_guide_hidden: product?.size_guide_hidden ?? false,
     });
     setErrors({});
     setActiveDialogTab("basic");
@@ -2652,6 +2658,25 @@ function ProductDialog({
         name_en: string;
         name_ar: string | null;
         slug: string | null;
+      }>;
+    },
+  });
+
+  const sizeGuidesQ = useQuery({
+    queryKey: ["admin-size-guides-list", brand.id],
+    enabled: Boolean(storeProfile?.modules?.size_guide),
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("size_guides")
+        .select("id, name_ar, name_en, is_default")
+        .eq("brand_id", brand.id)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      return (data ?? []) as Array<{
+        id: string;
+        name_ar: string;
+        name_en: string;
+        is_default: boolean;
       }>;
     },
   });
@@ -2818,8 +2843,10 @@ function ProductDialog({
         variant_label_fabric_en: (form.variant_label_fabric_en || "").trim() || null,
         fabric_type: (form.fabric_type || "").trim() || null,
         occasion: (form.occasion || "").trim() || null,
+        size_guide_id: form.size_guide_hidden ? null : form.size_guide_id || null,
+        size_guide_hidden: Boolean(form.size_guide_hidden),
       };
-      const { error } = await supabase.from("products").update(patch).eq("id", product.id);
+      const { error } = await (supabase as any).from("products").update(patch).eq("id", product.id);
       if (error) return toast.error(error.message);
       const { error: variantDefaultsError } = await (supabase.from("product_variants") as any)
         .update({ cost_price: patch.cost_price })
@@ -2882,6 +2909,8 @@ function ProductDialog({
         variant_label_fabric_en: (form.variant_label_fabric_en || "").trim() || null,
         fabric_type: (form.fabric_type || "").trim() || null,
         occasion: (form.occasion || "").trim() || null,
+        size_guide_id: form.size_guide_hidden ? null : form.size_guide_id || null,
+        size_guide_hidden: Boolean(form.size_guide_hidden),
       };
       const { data: newProd, error } = await (supabase.from("products") as any)
         .insert(payload)
@@ -3437,6 +3466,54 @@ function ProductDialog({
                       </div>
                     </div>
                   </div>
+
+                  {storeProfile?.modules?.size_guide && (
+                    <div className="rounded-lg border border-border-subtle p-3.5 bg-secondary/5 space-y-3">
+                      <div>
+                        <p className="text-xs font-bold text-foreground">
+                          {isAr ? "📏 دليل المقاسات لهذا المنتج" : "📏 Product Size Guide"}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {isAr
+                            ? "حدد دليل مقاسات خاص بهذا المنتج، أو اتركه يتبع القسم / الافتراضي للمتجر."
+                            : "Assign a dedicated size guide or inherit from category / store default."}
+                        </p>
+                      </div>
+                      <div>
+                        <select
+                          className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs ring-offset-background file:border-0 file:bg-transparent file:text-xs file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          value={form.size_guide_hidden ? "__hidden__" : form.size_guide_id || ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === "__hidden__") {
+                              setForm({ ...form, size_guide_hidden: true, size_guide_id: null });
+                            } else if (val === "") {
+                              setForm({ ...form, size_guide_hidden: false, size_guide_id: null });
+                            } else {
+                              setForm({ ...form, size_guide_hidden: false, size_guide_id: val });
+                            }
+                          }}
+                        >
+                          <option value="">
+                            {isAr
+                              ? "تلقائي (يتبع تصنيف المنتج أو الافتراضي للمتجر)"
+                              : "Automatic (Inherit from category or store default)"}
+                          </option>
+                          <option value="__hidden__">
+                            {isAr
+                              ? "🚫 إخفاء دليل المقاسات لهذا المنتج"
+                              : "🚫 Hide size guide for this product"}
+                          </option>
+                          {(sizeGuidesQ.data ?? []).map((g) => (
+                            <option key={g.id} value={g.id}>
+                              {isAr ? g.name_ar : g.name_en}{" "}
+                              {g.is_default ? (isAr ? "(الافتراضي)" : "(Default)") : ""}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

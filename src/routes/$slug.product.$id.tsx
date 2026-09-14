@@ -37,6 +37,8 @@ import {
 } from "lucide-react";
 import { isCatalogMode, shouldShowPrices, buildWhatsAppInquiryUrl } from "@/lib/storefront-mode";
 import { SizeGuideModal } from "@/components/storefront/SizeGuideModal";
+import { SizeGuideInline } from "@/components/storefront/size-guide/SizeGuideInline";
+import { resolveSizeGuideForProduct } from "@/lib/size-guide";
 import { ProductShareModal } from "@/components/storefront/ProductShareModal";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { toast } from "sonner";
@@ -323,8 +325,18 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     | undefined;
   const params = Route.useParams() as any;
   const id = splatId || params?.id || params?._splat || params?.["_"] || params?.["$"] || "";
-  const { brand, settings, currency, lang, t, addToCart, isWishlisted, toggleWishlist, session } =
-    useStorefront();
+  const {
+    brand,
+    settings,
+    currency,
+    lang,
+    t,
+    addToCart,
+    isWishlisted,
+    toggleWishlist,
+    session,
+    sizeGuides,
+  } = useStorefront();
   const modules = useStoreModules();
   const navigate = useNavigate();
   const [mediaIdx, setMediaIdx] = useState(0);
@@ -349,7 +361,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     initialData: loaderData?.product ?? undefined,
     queryFn: async () => {
       const primaryFields =
-        "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, base_price, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main, stock_incubator, image_url)";
+        "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, base_price, size_guide_id, size_guide_hidden, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main, stock_incubator, image_url)";
       const fullFields = `${primaryFields}, variant_label_size_ar, variant_label_size_en, variant_label_color_ar, variant_label_color_en, variant_label_fabric_ar, variant_label_fabric_en`;
 
       const fetchByTargetId = async (targetId: string) => {
@@ -435,6 +447,29 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       product.id,
     );
   }, [product, currency, lang]);
+
+  const resolvedSizeGuide = useMemo(() => {
+    if (!product) return null;
+    return resolveSizeGuideForProduct({
+      product: product as any,
+      sizeGuides: sizeGuides ?? [],
+    });
+  }, [product, sizeGuides]);
+
+  const _showModalGuide = Boolean(
+    modules.size_guide &&
+    !(product as any)?.size_guide_hidden &&
+    (!resolvedSizeGuide ||
+      resolvedSizeGuide.placement === "modal" ||
+      resolvedSizeGuide.placement === "both"),
+  );
+
+  const showInlineGuide = Boolean(
+    modules.size_guide &&
+    !(product as any)?.size_guide_hidden &&
+    resolvedSizeGuide &&
+    (resolvedSizeGuide.placement === "inline" || resolvedSizeGuide.placement === "both"),
+  );
 
   const { data: recommendationCatalog = [] } = useQuery({
     queryKey: ["storefront", brand.slug, "product-recommendations"],
@@ -1558,7 +1593,19 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                         product.variant_label_size_ar ||
                         t("المقاس / خيار", "Size / Option")}
                     </div>
-                    {modules.size_guide && <SizeGuideModal isAr={lang === "ar"} />}
+                    {modules.size_guide && (
+                      <SizeGuideModal
+                        isAr={lang === "ar"}
+                        productName={
+                          lang === "ar"
+                            ? product.name_ar || product.name
+                            : product.name_en || product.name
+                        }
+                        guide={resolvedSizeGuide}
+                        selectedSize={selectedSize}
+                        onSelectSize={(sz) => setSelectedSize(sz)}
+                      />
+                    )}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {uniqueSizes.map((sz) => {
@@ -2141,6 +2188,16 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   />
                 </div>
               )}
+            </div>
+          )}
+
+          {showInlineGuide && resolvedSizeGuide && (
+            <div className="mb-6">
+              <SizeGuideInline
+                guide={resolvedSizeGuide}
+                selectedSize={selectedSize}
+                onSelectSize={(sz) => setSelectedSize(sz)}
+              />
             </div>
           )}
 
