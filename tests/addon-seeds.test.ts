@@ -31,7 +31,7 @@ function createMockDb(initialState?: {
       customizationOptions,
     },
     from: (table: string) => {
-      let filters: Array<{ col: string; val: any; isArray?: boolean }> = [];
+      const filters: Array<{ col: string; val: any; isArray?: boolean }> = [];
 
       const queryBuilder = {
         select: (_cols?: string) => queryBuilder,
