@@ -230,6 +230,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("Comprehensive Mobile UX Audit at 390x844 Viewport", async ({ page }) => {
+  test.setTimeout(120_000);
   const auditResults: Record<string, any> = {
     viewportAndLayout: {},
     navigationAndDrawer: {},

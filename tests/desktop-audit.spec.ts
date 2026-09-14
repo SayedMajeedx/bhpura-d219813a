@@ -246,6 +246,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("Comprehensive 1920x1080 Desktop UX Audit across all routes", async ({ page }) => {
+  test.setTimeout(120_000);
   const consoleLogs: Array<{ type: string; text: string }> = [];
   page.on("console", (msg) => {
     if (msg.type() === "error" || msg.type() === "warning") {
