@@ -1,4 +1,5 @@
 export const STORE_VERTICALS = [
+  "abayas",
   "fashion",
   "beauty",
   "food",
@@ -21,6 +22,7 @@ export type StoreModules = Record<StoreModuleId, boolean>;
 export type StoreModuleOverrides = Partial<StoreModules>;
 
 export const VERTICAL_MODULE_DEFAULTS: Record<StoreVertical, StoreModules> = {
+  abayas: { size_guide: true, fit_passport: true, made_to_order: true },
   fashion: { size_guide: true, fit_passport: true, made_to_order: true },
   beauty: { size_guide: false, fit_passport: false, made_to_order: false },
   food: { size_guide: false, fit_passport: false, made_to_order: false },
@@ -34,7 +36,8 @@ export const VERTICAL_MODULE_DEFAULTS: Record<StoreVertical, StoreModules> = {
 };
 
 export const VERTICAL_LABELS: Record<StoreVertical, { ar: string; en: string }> = {
-  fashion: { ar: "أزياء وعبايات", en: "Fashion & Abayas" },
+  abayas: { ar: "عبايات", en: "Abayas" },
+  fashion: { ar: "أزياء", en: "Fashion" },
   beauty: { ar: "عطور وتجميل", en: "Beauty & Perfume" },
   food: { ar: "مأكولات ومشروبات", en: "Food & Beverage" },
   gifts: { ar: "هدايا وحرف", en: "Gifts & Crafts" },
@@ -116,7 +119,8 @@ export function legacyBusinessTypeToVertical(
   const t = (businessType ?? "").toLowerCase();
   if (/cafe|restaurant|food|مطعم|كافيه/.test(t)) return "food";
   if (/digital|رقمي/.test(t)) return "digital";
-  if (/abaya|fashion|boutique|عباي|أزياء|بوتيك/.test(t)) return "fashion";
+  if (/abaya|عباي/.test(t)) return "abayas";
+  if (/fashion|boutique|أزياء|بوتيك/.test(t)) return "fashion";
   if (/perfume|beauty|عطر|تجميل/.test(t)) return "beauty";
   if (/print|stamp|طباعة|أختام/.test(t)) return "print";
   if (/jewel|gold|مجوهرات|ذهب/.test(t)) return "jewelry";
@@ -128,6 +132,7 @@ export function legacyBusinessTypeToVertical(
 export function verticalToLegacyBusinessType(v: StoreVertical): string {
   if (v === "food") return "Cafe / Restaurant";
   if (v === "digital") return "Digital store";
-  if (v === "fashion") return "Abayas & Fashion";
+  if (v === "abayas") return "Abayas & Fashion";
+  if (v === "fashion") return "Fashion";
   return VERTICAL_LABELS[v].en;
 }

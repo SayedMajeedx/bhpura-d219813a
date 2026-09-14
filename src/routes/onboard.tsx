@@ -43,7 +43,8 @@ import {
 } from "@/lib/store-profile";
 
 const VERTICAL_ICONS: Record<StoreVertical, React.ComponentType<{ className?: string }>> = {
-  fashion: Shirt,
+  abayas: Shirt,
+  fashion: Sparkles,
   beauty: Sparkles,
   food: UtensilsCrossed,
   gifts: Gift,

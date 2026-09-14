@@ -79,4 +79,9 @@ export const queryKeys = {
   storefront: {
     all: (slug: string) => ["storefront", slug] as const,
   },
+
+  // Addons Platform
+  addons: {
+    all: (brandId: string) => ["addons", brandId] as const,
+  },
 } as const;

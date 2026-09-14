@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RotateCw, AlertTriangle, ArrowLeft } from "lucide-react";
 import { TrialExpiredPaywall } from "@/components/admin/TrialExpiredPaywall";
+import { AddonsProvider } from "@/components/addons/AddonsProvider";
+import { useBrandAddons } from "@/hooks/use-brand-addons";
 
 function getImpersonationToken(request?: Request): string | null {
   if (typeof document !== "undefined") {
@@ -213,8 +215,19 @@ function BrandLayout() {
 
   return (
     <BrandProvider brand={brand}>
-      <Outlet />
+      <AdminAddonsBridge brandId={brand.id}>
+        <Outlet />
+      </AdminAddonsBridge>
     </BrandProvider>
+  );
+}
+
+function AdminAddonsBridge({ brandId, children }: { brandId: string; children: React.ReactNode }) {
+  const { addons, isLoading } = useBrandAddons(brandId);
+  return (
+    <AddonsProvider addons={addons} isLoading={isLoading}>
+      {children}
+    </AddonsProvider>
   );
 }
 
