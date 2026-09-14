@@ -200,7 +200,7 @@ export function StorefrontFitPassport({
 
   return (
     <Card className="overflow-hidden rounded-2xl border-border bg-card">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 bg-muted/30 p-5 sm:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/30 p-5 sm:p-6">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="font-serif text-lg font-bold tracking-tight text-foreground sm:text-xl">
@@ -327,7 +327,7 @@ export function StorefrontFitPassport({
               className="mt-1.5 resize-none text-xs"
             />
           </div>
-          <div className="flex items-start gap-3 rounded-xl border border-border/60 bg-muted/20 p-4">
+          <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/20 p-4">
             <Switch
               checked={consent}
               onCheckedChange={setConsent}
