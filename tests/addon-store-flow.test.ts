@@ -107,7 +107,13 @@ describe("Addon Store & Lifecycle Flow", () => {
 
     // Verify resolveInstallOrder handles valid dependency chains
     const order = resolveInstallOrder(["abaya-pack"]);
-    expect(order).toEqual(["fashion-core", "size-guides", "fit-passport", "made-to-order", "abaya-pack"]);
+    expect(order).toEqual([
+      "fashion-core",
+      "size-guides",
+      "fit-passport",
+      "made-to-order",
+      "abaya-pack",
+    ]);
 
     // Verify dependentsOf prevents disabling core when dependents exist
     const dependents = dependentsOf("made-to-order", ["made-to-order", "print-stamps"]);

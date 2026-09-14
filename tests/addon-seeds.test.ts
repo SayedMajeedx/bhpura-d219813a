@@ -137,9 +137,7 @@ describe("Addon Seeds Platform Integrity", () => {
       printStampsManifest,
     ];
 
-    expect(addonsWithSeeds.map((a) => a.id).sort()).toEqual(
-      manifests.map((m) => m.id).sort(),
-    );
+    expect(addonsWithSeeds.map((a) => a.id).sort()).toEqual(manifests.map((m) => m.id).sort());
   });
 
   describe("abaya-pack seeds", () => {
@@ -341,9 +339,9 @@ describe("Addon Seeds Platform Integrity", () => {
       };
 
       const proxied = withThrowOnError(mockClientWithError);
-      await expect(
-        proxied.from("brands").select().eq("id", "123").maybeSingle(),
-      ).rejects.toThrow("Simulated PostgreSQL connection failure");
+      await expect(proxied.from("brands").select().eq("id", "123").maybeSingle()).rejects.toThrow(
+        "Simulated PostgreSQL connection failure",
+      );
     });
   });
 });
