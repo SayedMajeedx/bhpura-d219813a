@@ -348,45 +348,6 @@ function Checkout() {
     }
   };
 
-  const availableMethods: Array<{
-    id: "cod" | "card" | "benefit";
-    ar: string;
-    en: string;
-    icon: any;
-  }> = [
-    settings.cod_enabled && {
-      id: "cod" as const,
-      ar: "الدفع عند الاستلام",
-      en: "Cash on delivery",
-      icon: Banknote,
-    },
-    settings.card_enabled && {
-      id: "card" as const,
-      ar: "الدفع بالبطاقة",
-      en: "Card payment",
-      icon: CreditCard,
-    },
-    settings.benefit_enabled && {
-      id: "benefit" as const,
-      ar: "عن طريق البنفت",
-      en: "Benefit Pay",
-      icon: QrCode,
-    },
-  ].filter(Boolean) as any;
-
-  const [method, setMethod] = useState<"cod" | "card" | "benefit" | "">(() => {
-    if (typeof window !== "undefined") {
-      const saved = sessionStorage.getItem("checkout_method");
-      if (saved) return saved as any;
-    }
-    return "";
-  });
-  useEffect(() => {
-    if (!method && availableMethods.length > 0) {
-      setMethod(availableMethods[0]?.id ?? "");
-    }
-  }, [method, availableMethods]);
-
   const fulfillmentOptions = useMemo(() => {
     const opts: Array<{ id: Fulfillment; ar: string; en: string; icon: any; fee: number }> = [];
     if (settings.delivery_enabled)
@@ -433,6 +394,116 @@ function Checkout() {
       setFulfillment(fulfillmentOptions[0].id);
     }
   }, [fulfillmentOptions, fulfillment]);
+
+  // Delivery destination: "BH" (default domestic) or zone ID
+  const [selectedDestination, setSelectedDestination] = useState<string>("BH");
+  const zones = useMemo(() => (settings.shipping_zones ?? []) as ShippingZone[], [settings.shipping_zones]);
+
+  // Selected country code (when international destination is chosen)
+  const [selectedCountryCode, setSelectedCountryCode] = useState<string>("BH");
+
+  const selectedZone = useMemo(() => {
+    if (selectedDestination === "BH") return undefined;
+    return zones.find((z) => z.id === selectedDestination);
+  }, [zones, selectedDestination]);
+
+  useEffect(() => {
+    if (selectedDestination === "BH") {
+      setSelectedCountryCode("BH");
+    } else if (selectedZone && selectedZone.countries && selectedZone.countries.length > 0) {
+      if (!selectedZone.countries.includes(selectedCountryCode)) {
+        setSelectedCountryCode(selectedZone.countries[0]);
+      }
+    }
+  }, [selectedDestination, selectedZone]);
+
+  const availableMethods = useMemo(() => {
+    const base: Array<{
+      id: "cod" | "card" | "benefit";
+      ar: string;
+      en: string;
+      icon: any;
+    }> = [
+      settings.cod_enabled && {
+        id: "cod" as const,
+        ar: "الدفع عند الاستلام",
+        en: "Cash on delivery",
+        icon: Banknote,
+      },
+      settings.card_enabled && {
+        id: "card" as const,
+        ar: "الدفع بالبطاقة",
+        en: "Card payment",
+        icon: CreditCard,
+      },
+      settings.benefit_enabled && {
+        id: "benefit" as const,
+        ar: "عن طريق البنفت",
+        en: "Benefit Pay",
+        icon: QrCode,
+      },
+    ].filter(Boolean) as any;
+
+    // Restrict payment methods based on destination zone (admin-configurable)
+    if (fulfillment === "delivery" && selectedDestination !== "BH") {
+      const allowed = Array.isArray(selectedZone?.allowed_payment_methods)
+        ? selectedZone.allowed_payment_methods
+        : ["card", "benefit"];
+      return base.filter((m) => allowed.includes(m.id));
+    }
+
+    return base;
+  }, [
+    settings.cod_enabled,
+    settings.card_enabled,
+    settings.benefit_enabled,
+    fulfillment,
+    selectedDestination,
+    selectedZone,
+  ]);
+
+  const [method, setMethod] = useState<"cod" | "card" | "benefit" | "">(() => {
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem("checkout_method");
+      if (saved) return saved as any;
+    }
+    return "";
+  });
+
+  useEffect(() => {
+    if (availableMethods.length > 0) {
+      if (!method || !availableMethods.some((m) => m.id === method)) {
+        setMethod(availableMethods[0]?.id ?? "");
+      }
+    }
+  }, [method, availableMethods]);
+
+  const estimatedDeliveryText = useMemo(() => {
+    if (fulfillment === "pickup") {
+      return lang === "ar" ? "بعد إشعار جاهزية الطلب" : "After your ready notification";
+    }
+    if (fulfillment === "digital") {
+      return lang === "ar" ? "فوري بعد إتمام الطلب" : "Instant upon order completion";
+    }
+    if (selectedDestination === "BH") {
+      return lang === "ar"
+        ? settings.delivery_estimate_ar || "خلال 24 - 48 ساعة داخل البحرين"
+        : settings.delivery_estimate_en || "Within 24 - 48 hours in Bahrain";
+    }
+    if (selectedZone) {
+      return lang === "ar"
+        ? selectedZone.estimate_ar || "خلال 3 - 5 أيام عمل"
+        : selectedZone.estimate_en || "3 - 5 business days";
+    }
+    return lang === "ar" ? "خلال 3 - 5 أيام عمل" : "3 - 5 business days";
+  }, [
+    fulfillment,
+    selectedDestination,
+    selectedZone,
+    settings.delivery_estimate_ar,
+    settings.delivery_estimate_en,
+    lang,
+  ]);
 
   const [branches, setBranches] = useState<
     Array<{
@@ -497,32 +568,10 @@ function Checkout() {
   const branchLoc = (b: (typeof branches)[number]) =>
     lang === "ar" ? b.location_ar || b.location_en || "" : b.location_en || b.location_ar || "";
 
-  // Delivery destination: "BH" (default domestic) or zone ID
-  const [selectedDestination, setSelectedDestination] = useState<string>("BH");
-  const zones = useMemo(() => (settings.shipping_zones ?? []) as ShippingZone[], [settings.shipping_zones]);
-
-  // Selected country code (when international destination is chosen)
-  const [selectedCountryCode, setSelectedCountryCode] = useState<string>("BH");
-
   // Total quantity of items in cart for per-piece / bundle shipping formula
   const totalCartQuantity = useMemo(() => {
     return cart.reduce((sum, item) => sum + (item.qty || 1), 0);
   }, [cart]);
-
-  const selectedZone = useMemo(() => {
-    if (selectedDestination === "BH") return undefined;
-    return zones.find((z) => z.id === selectedDestination);
-  }, [zones, selectedDestination]);
-
-  useEffect(() => {
-    if (selectedDestination === "BH") {
-      setSelectedCountryCode("BH");
-    } else if (selectedZone && selectedZone.countries && selectedZone.countries.length > 0) {
-      if (!selectedZone.countries.includes(selectedCountryCode)) {
-        setSelectedCountryCode(selectedZone.countries[0]);
-      }
-    }
-  }, [selectedDestination, selectedZone]);
 
   const shipping = useMemo(() => {
     if (fulfillment !== "delivery") return 0;
@@ -1575,10 +1624,8 @@ function Checkout() {
               <div className="flex items-center gap-2 text-xs text-muted-foreground bg-primary/5 rounded-lg px-3 py-2 border border-primary/10 mt-2">
                 <Truck className="h-4 w-4 text-primary shrink-0" />
                 <span>
-                  {lang === "ar"
-                    ? settings.delivery_estimate_ar ||
-                      "التوصيل المتوقع خلال 24 - 48 ساعة داخل البحرين"
-                    : settings.delivery_estimate_en || "Estimated delivery within 24 - 48 hours"}
+                  <strong className="text-foreground font-semibold">{t("التوصيل المتوقع", "Estimated delivery")}:</strong>{" "}
+                  {estimatedDeliveryText}
                 </span>
               </div>
             )}
@@ -1745,7 +1792,7 @@ function Checkout() {
               <Label className="font-semibold text-sm mb-1.5 block">
                 {t("وجهة التوصيل والشحن", "Delivery Destination")} *
               </Label>
-              <div className={`grid gap-3 ${zones.length > 0 ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"}`}>
+              <div className="grid grid-cols-1 gap-2.5">
                 {/* 1. Bahrain Domestic (Default) */}
                 <div
                   role="button"
@@ -1762,6 +1809,19 @@ function Checkout() {
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
+                      {/* Radio Circle */}
+                      <div
+                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                          selectedDestination === "BH"
+                            ? "border-primary"
+                            : "border-muted-foreground/40"
+                        }`}
+                      >
+                        {selectedDestination === "BH" && (
+                          <div className="w-2 h-2 rounded-full bg-primary" />
+                        )}
+                      </div>
+
                       <CountryFlag
                         code="BH"
                         className="w-7 h-5 rounded-xs object-cover border border-border/40 shadow-xs shrink-0"
@@ -1812,7 +1872,7 @@ function Checkout() {
                     totalCartQuantity,
                     Number(settings.delivery_fee || 0),
                   );
-                  const countryCodes = (z.countries || []).slice(0, 4);
+                  const countryCodes = (z.countries || []).slice(0, 5);
 
                   return (
                     <div
@@ -1831,6 +1891,17 @@ function Checkout() {
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3 min-w-0">
+                          {/* Radio Circle */}
+                          <div
+                            className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                              active
+                                ? "border-primary"
+                                : "border-muted-foreground/40"
+                            }`}
+                          >
+                            {active && <div className="w-2 h-2 rounded-full bg-primary" />}
+                          </div>
+
                           <div className="flex items-center -space-x-1.5 rtl:space-x-reverse shrink-0">
                             {countryCodes.map((c) => (
                               <CountryFlag
@@ -1841,7 +1912,7 @@ function Checkout() {
                             ))}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-semibold text-foreground text-sm truncate">
+                            <p className="font-semibold text-foreground text-sm">
                               {lang === "ar" ? z.name_ar : z.name_en}
                             </p>
                             <p className="text-xs text-muted-foreground mt-0.5">
@@ -2174,6 +2245,15 @@ function Checkout() {
             })}
           </div>
 
+          {fulfillment === "delivery" && selectedDestination !== "BH" && (
+            <p className="text-[11px] text-muted-foreground pt-1">
+              {t(
+                "طرق الدفع المتاحة مخصصة بحسب وجهة الشحن المختارة.",
+                "Available payment methods correspond to your selected shipping destination.",
+              )}
+            </p>
+          )}
+
           {method === "benefit" && (
             <div className="mt-3 p-4 border rounded-lg bg-muted/40 text-center">
               <p className="text-sm mb-3">
@@ -2422,13 +2502,13 @@ function Checkout() {
                 <span className="text-muted-foreground">
                   {t("التوصيل المتوقع", "Estimated delivery")}
                 </span>
-                <span>{t("خلال 1–3 أيام عمل", "Within 1–3 business days")}</span>
+                <span className="font-medium text-foreground text-end">{estimatedDeliveryText}</span>
               </div>
             )}
             {fulfillment === "pickup" && (
               <div className="flex justify-between gap-3">
                 <span className="text-muted-foreground">{t("موعد الاستلام", "Pickup timing")}</span>
-                <span>{t("بعد إشعار جاهزية الطلب", "After your ready notification")}</span>
+                <span className="font-medium text-foreground text-end">{estimatedDeliveryText}</span>
               </div>
             )}
             <div className="flex justify-between">

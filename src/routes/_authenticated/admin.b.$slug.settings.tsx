@@ -43,6 +43,9 @@ import {
   Layers,
   Check,
   X,
+  Banknote,
+  CreditCard,
+  QrCode,
 } from "lucide-react";
 import {
   type ShippingZone,
@@ -3235,6 +3238,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
     bundle_size: number;
     estimate_ar: string;
     estimate_en: string;
+    allowed_payment_methods: Array<"cod" | "card" | "benefit">;
   }>({
     name_en: "",
     name_ar: "",
@@ -3244,6 +3248,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
     bundle_size: 2,
     estimate_ar: "",
     estimate_en: "",
+    allowed_payment_methods: ["card", "benefit"],
   });
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -3289,6 +3294,9 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
             bundle_size: Number(z.bundle_size || 2),
             estimate_ar: String(z.estimate_ar || ""),
             estimate_en: String(z.estimate_en || ""),
+            allowed_payment_methods: Array.isArray(z.allowed_payment_methods)
+              ? (z.allowed_payment_methods as Array<"cod" | "card" | "benefit">)
+              : ["card", "benefit"],
           })),
         );
       } catch (_e) {
@@ -3394,6 +3402,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
         newZone.pricing_type === "bundle" ? Math.max(1, Number(newZone.bundle_size || 2)) : undefined,
       estimate_ar: newZone.estimate_ar.trim() || undefined,
       estimate_en: newZone.estimate_en.trim() || undefined,
+      allowed_payment_methods: newZone.allowed_payment_methods,
     };
     setZones([...zones, zone]);
     setNewZone({
@@ -3405,8 +3414,48 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
       bundle_size: 2,
       estimate_ar: "",
       estimate_en: "",
+      allowed_payment_methods: ["card", "benefit"],
     });
     toast.success(isAr ? "تمت إضافة منطقة الشحن بنجاح" : "Shipping zone added successfully");
+  };
+
+  const toggleZonePaymentMethod = (zoneId: string, method: "cod" | "card" | "benefit") => {
+    setZones((prev) =>
+      prev.map((z) => {
+        if (z.id !== zoneId) return z;
+        const current = Array.isArray(z.allowed_payment_methods)
+          ? z.allowed_payment_methods
+          : ["card", "benefit"];
+        const exists = current.includes(method);
+        const next = exists ? current.filter((m) => m !== method) : [...current, method];
+        if (next.length === 0) {
+          toast.error(
+            isAr
+              ? "يجب إبقاء وسيلة دفع واحدة على الأقل مفعلة لهذه المنطقة"
+              : "At least one payment method must remain active for this zone",
+          );
+          return z;
+        }
+        return { ...z, allowed_payment_methods: next };
+      }),
+    );
+  };
+
+  const toggleNewZonePaymentMethod = (method: "cod" | "card" | "benefit") => {
+    setNewZone((prev) => {
+      const current = prev.allowed_payment_methods;
+      const exists = current.includes(method);
+      const next = exists ? current.filter((m) => m !== method) : [...current, method];
+      if (next.length === 0) {
+        toast.error(
+          isAr
+            ? "يجب إبقاء وسيلة دفع واحدة على الأقل"
+            : "At least one payment method is required",
+        );
+        return prev;
+      }
+      return { ...prev, allowed_payment_methods: next };
+    });
   };
 
   const removeZone = (id: string) => {
@@ -3662,6 +3711,59 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
                             <span>{isAr ? z.estimate_ar : z.estimate_en}</span>
                           </p>
                         )}
+
+                        {/* Allowed Payment Methods */}
+                        <div className="pt-2 border-t border-border/40 mt-1">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="text-[11px] font-semibold text-foreground">
+                              {isAr ? "طرق الدفع المقبولة لهذه المنطقة:" : "Accepted payment methods for this zone:"}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {isAr ? "(انقر للتفعيل / الإلغاء)" : "(click to toggle)"}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {[
+                              { id: "card" as const, ar: "الدفع بالبطاقة", en: "Card payment", icon: CreditCard },
+                              { id: "benefit" as const, ar: "بنفت", en: "Benefit", icon: QrCode },
+                              { id: "cod" as const, ar: "الدفع عند الاستلام", en: "Cash on delivery", icon: Banknote },
+                            ].map((m) => {
+                              const allowedList = Array.isArray(z.allowed_payment_methods)
+                                ? z.allowed_payment_methods
+                                : ["card", "benefit"];
+                              const isAllowed = allowedList.includes(m.id);
+                              return (
+                                <button
+                                  key={m.id}
+                                  type="button"
+                                  onClick={() => toggleZonePaymentMethod(z.id, m.id)}
+                                  className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-all ${
+                                    isAllowed
+                                      ? "bg-primary/10 text-primary border-primary/30 font-medium shadow-2xs"
+                                      : "bg-muted/40 text-muted-foreground border-border opacity-50 hover:opacity-90"
+                                  }`}
+                                  title={
+                                    isAr
+                                      ? isAllowed
+                                        ? "انقر لتعطيل طريقة الدفع لهذه المنطقة"
+                                        : "انقر لتفعيل طريقة الدفع لهذه المنطقة"
+                                      : isAllowed
+                                        ? "Click to disable for this zone"
+                                        : "Click to enable for this zone"
+                                  }
+                                >
+                                  <m.icon className="w-3.5 h-3.5 shrink-0" />
+                                  <span>{isAr ? m.ar : m.en}</span>
+                                  <span
+                                    className={`w-1.5 h-1.5 rounded-full ${
+                                      isAllowed ? "bg-primary" : "bg-muted-foreground/40"
+                                    }`}
+                                  />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
                       </div>
 
                       <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0">
@@ -3976,6 +4078,47 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
                     className="text-xs bg-background"
                   />
                 </div>
+              </div>
+
+              {/* Payment Methods Selection for this Zone */}
+              <div className="space-y-1.5 pt-1">
+                <Label className="text-xs font-semibold block">
+                  {isAr ? "طرق الدفع المسموحة لهذه المنطقة" : "Accepted payment methods for this zone"}
+                </Label>
+                <div className="flex flex-wrap items-center gap-2">
+                  {[
+                    { id: "card" as const, ar: "الدفع بالبطاقة", en: "Card payment", icon: CreditCard },
+                    { id: "benefit" as const, ar: "بنفت", en: "Benefit", icon: QrCode },
+                    { id: "cod" as const, ar: "الدفع عند الاستلام", en: "Cash on delivery", icon: Banknote },
+                  ].map((m) => {
+                    const isAllowed = newZone.allowed_payment_methods.includes(m.id);
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => toggleNewZonePaymentMethod(m.id)}
+                        className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border transition-all ${
+                          isAllowed
+                            ? "bg-primary/10 text-primary border-primary/30 font-medium"
+                            : "bg-muted/40 text-muted-foreground border-border opacity-50 hover:opacity-90"
+                        }`}
+                      >
+                        <m.icon className="w-3.5 h-3.5 shrink-0" />
+                        <span>{isAr ? m.ar : m.en}</span>
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            isAllowed ? "bg-primary" : "bg-muted-foreground/40"
+                          }`}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  {isAr
+                    ? "افتراضياً يتم تعطيل الدفع عند الاستلام للشحن الخارجي إلا إذا رغبت بتفعيله صراحة."
+                    : "Cash on delivery is disabled by default for cross-border shipping unless explicitly enabled."}
+                </p>
               </div>
 
               {/* Dynamic Live Formula Preview */}

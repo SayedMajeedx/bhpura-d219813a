@@ -47,6 +47,7 @@ export interface ShippingZone {
   bundle_size?: number; // e.g. 1 for per_piece, 2 or custom for bundle
   estimate_ar?: string;
   estimate_en?: string;
+  allowed_payment_methods?: Array<"cod" | "card" | "benefit">;
 }
 
 /**
