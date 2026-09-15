@@ -11,7 +11,7 @@ import {
   vocabularyFrom,
   aiContextFrom,
 } from "../src/lib/addons/addon-registry";
-import type { BrandAddonRow } from "../src/lib/addons/addon-types";
+import type { BrandAddonRow, PlatformAddonPolicy } from "../src/lib/addons/addon-types";
 import { STORE_VERTICALS } from "../src/lib/store-profile";
 
 describe("Addon Registry", () => {
@@ -164,5 +164,28 @@ describe("Addon Registry", () => {
     const ai = aiContextFrom(mockRows, { brandName: "دار الأناقة", lang: "ar" });
     expect(ai).toContain("دار الأناقة");
     expect(ai).toContain("الأزياء");
+  });
+
+  it("starterPackFor respects platform_addon_policies default_for_activities overrides", () => {
+    const policies: PlatformAddonPolicy[] = [
+      {
+        id: "pol-1",
+        addon_id: "gifts",
+        is_default_for_all: false,
+        default_for_activities: ["fashion", "abayas"],
+        availability: "general",
+        min_tier: "free",
+        allowed_brand_ids: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ];
+
+    const result = starterPackFor("fashion", policies);
+    expect(result.required).toEqual(["gifts"]);
+
+    // If no policy matches the activity, falls back to static defaults
+    const fallbackResult = starterPackFor("digital", policies);
+    expect(fallbackResult.required).toEqual(["digital-products"]);
   });
 });

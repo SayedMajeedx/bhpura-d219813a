@@ -574,6 +574,94 @@ export type Database = {
           },
         ];
       };
+      brand_addon_events: {
+        Row: {
+          action: string;
+          actor_user_id: string | null;
+          addon_id: string;
+          brand_id: string;
+          created_at: string;
+          details: Json;
+          id: string;
+          source: string;
+        };
+        Insert: {
+          action: string;
+          actor_user_id?: string | null;
+          addon_id: string;
+          brand_id: string;
+          created_at?: string;
+          details?: Json;
+          id?: string;
+          source?: string;
+        };
+        Update: {
+          action?: string;
+          actor_user_id?: string | null;
+          addon_id?: string;
+          brand_id?: string;
+          created_at?: string;
+          details?: Json;
+          id?: string;
+          source?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "brand_addon_events_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      brand_addons: {
+        Row: {
+          addon_id: string;
+          brand_id: string;
+          installed_at: string;
+          public_settings: Json;
+          seeded_keys: string[];
+          settings: Json;
+          source: string;
+          status: string;
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          addon_id: string;
+          brand_id: string;
+          installed_at?: string;
+          public_settings?: Json;
+          seeded_keys?: string[];
+          settings?: Json;
+          source?: string;
+          status: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          addon_id?: string;
+          brand_id?: string;
+          installed_at?: string;
+          public_settings?: Json;
+          seeded_keys?: string[];
+          settings?: Json;
+          source?: string;
+          status?: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "brand_addons_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       brand_email_notifications: {
         Row: {
           brand_id: string;
@@ -682,6 +770,65 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "saas_features";
             referencedColumns: ["key"];
+          },
+        ];
+      };
+      brand_instagram_connections: {
+        Row: {
+          brand_id: string;
+          created_at: string;
+          expires_at: string;
+          id: string;
+          instagram_user_id: string | null;
+          instagram_username: string | null;
+          is_active: boolean;
+          last_refreshed_at: string | null;
+          refresh_error: string | null;
+          scope: string | null;
+          token_secret_id: string | null;
+          token_type: string | null;
+          updated_at: string;
+          user_id: string | null;
+        };
+        Insert: {
+          brand_id: string;
+          created_at?: string;
+          expires_at: string;
+          id?: string;
+          instagram_user_id?: string | null;
+          instagram_username?: string | null;
+          is_active?: boolean;
+          last_refreshed_at?: string | null;
+          refresh_error?: string | null;
+          scope?: string | null;
+          token_secret_id?: string | null;
+          token_type?: string | null;
+          updated_at?: string;
+          user_id?: string | null;
+        };
+        Update: {
+          brand_id?: string;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          instagram_user_id?: string | null;
+          instagram_username?: string | null;
+          is_active?: boolean;
+          last_refreshed_at?: string | null;
+          refresh_error?: string | null;
+          scope?: string | null;
+          token_secret_id?: string | null;
+          token_type?: string | null;
+          updated_at?: string;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "brand_instagram_connections_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: true;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
           },
         ];
       };
@@ -1248,6 +1395,9 @@ export type Database = {
           card_secret_key: string | null;
           cart_drawer_checkout_bg: string | null;
           cart_drawer_checkout_fg: string | null;
+          catalog_inquiry_message_ar: string | null;
+          catalog_inquiry_message_en: string | null;
+          catalog_show_prices: boolean;
           category_banner_background_url: string | null;
           cod_enabled: boolean;
           courier_out_for_delivery_message_ar: string | null;
@@ -1268,11 +1418,13 @@ export type Database = {
           email_intro_en: string | null;
           email_sender_name: string | null;
           favicon_url: string | null;
+          fit_profiles: Json | null;
           font_family: string;
           font_size: number;
           font_url: string | null;
           footer_bg: string | null;
           footer_fg: string | null;
+          footer_logo_size: number | null;
           footer_note: string | null;
           global_sale_badges_enabled: boolean;
           header_bg: string | null;
@@ -1323,7 +1475,9 @@ export type Database = {
           pages: Json;
           phone: string | null;
           pickup_enabled: boolean;
+          price_color: string | null;
           primary_color: string;
+          product_title_color: string | null;
           secondary_banner_parallax_breakpoint: number;
           secondary_banner_parallax_enabled: boolean;
           secondary_banner_parallax_mobile_enabled: boolean;
@@ -1335,6 +1489,8 @@ export type Database = {
           show_hero_title: boolean;
           show_new_arrivals: boolean;
           socials: Json;
+          store_modules: Json;
+          store_vertical: string;
           storefront_accent_color: string | null;
           storefront_background_color: string | null;
           storefront_font_ar: string;
@@ -1343,18 +1499,19 @@ export type Database = {
           storefront_font_en_url: string | null;
           storefront_loader_text_ar: string | null;
           storefront_loader_text_en: string | null;
+          storefront_mode: string;
           storefront_radius: string | null;
           storefront_text_color: string | null;
           storefront_typography: Json;
           text_color: string;
           trending_banner_background_url: string | null;
+          trust_badges: Json | null;
           updated_at: string;
           user_id: string;
           vat_inclusive: boolean;
           vat_number: string | null;
           whatsapp_enabled: boolean;
           whatsapp_number: string | null;
-          trust_badges?: Json | null;
         };
         Insert: {
           address?: string | null;
@@ -1392,6 +1549,9 @@ export type Database = {
           card_secret_key?: string | null;
           cart_drawer_checkout_bg?: string | null;
           cart_drawer_checkout_fg?: string | null;
+          catalog_inquiry_message_ar?: string | null;
+          catalog_inquiry_message_en?: string | null;
+          catalog_show_prices?: boolean;
           category_banner_background_url?: string | null;
           cod_enabled?: boolean;
           courier_out_for_delivery_message_ar?: string | null;
@@ -1412,11 +1572,13 @@ export type Database = {
           email_intro_en?: string | null;
           email_sender_name?: string | null;
           favicon_url?: string | null;
+          fit_profiles?: Json | null;
           font_family?: string;
           font_size?: number;
           font_url?: string | null;
           footer_bg?: string | null;
           footer_fg?: string | null;
+          footer_logo_size?: number | null;
           footer_note?: string | null;
           global_sale_badges_enabled?: boolean;
           header_bg?: string | null;
@@ -1467,7 +1629,9 @@ export type Database = {
           pages?: Json;
           phone?: string | null;
           pickup_enabled?: boolean;
+          price_color?: string | null;
           primary_color?: string;
+          product_title_color?: string | null;
           secondary_banner_parallax_breakpoint?: number;
           secondary_banner_parallax_enabled?: boolean;
           secondary_banner_parallax_mobile_enabled?: boolean;
@@ -1479,6 +1643,8 @@ export type Database = {
           show_hero_title?: boolean;
           show_new_arrivals?: boolean;
           socials?: Json;
+          store_modules?: Json;
+          store_vertical?: string;
           storefront_accent_color?: string | null;
           storefront_background_color?: string | null;
           storefront_font_ar?: string;
@@ -1487,18 +1653,19 @@ export type Database = {
           storefront_font_en_url?: string | null;
           storefront_loader_text_ar?: string | null;
           storefront_loader_text_en?: string | null;
+          storefront_mode?: string;
           storefront_radius?: string | null;
           storefront_text_color?: string | null;
           storefront_typography?: Json;
           text_color?: string;
           trending_banner_background_url?: string | null;
+          trust_badges?: Json | null;
           updated_at?: string;
           user_id: string;
           vat_inclusive?: boolean;
           vat_number?: string | null;
           whatsapp_enabled?: boolean;
           whatsapp_number?: string | null;
-          trust_badges?: Json | null;
         };
         Update: {
           address?: string | null;
@@ -1536,6 +1703,9 @@ export type Database = {
           card_secret_key?: string | null;
           cart_drawer_checkout_bg?: string | null;
           cart_drawer_checkout_fg?: string | null;
+          catalog_inquiry_message_ar?: string | null;
+          catalog_inquiry_message_en?: string | null;
+          catalog_show_prices?: boolean;
           category_banner_background_url?: string | null;
           cod_enabled?: boolean;
           courier_out_for_delivery_message_ar?: string | null;
@@ -1556,11 +1726,13 @@ export type Database = {
           email_intro_en?: string | null;
           email_sender_name?: string | null;
           favicon_url?: string | null;
+          fit_profiles?: Json | null;
           font_family?: string;
           font_size?: number;
           font_url?: string | null;
           footer_bg?: string | null;
           footer_fg?: string | null;
+          footer_logo_size?: number | null;
           footer_note?: string | null;
           global_sale_badges_enabled?: boolean;
           header_bg?: string | null;
@@ -1611,7 +1783,9 @@ export type Database = {
           pages?: Json;
           phone?: string | null;
           pickup_enabled?: boolean;
+          price_color?: string | null;
           primary_color?: string;
+          product_title_color?: string | null;
           secondary_banner_parallax_breakpoint?: number;
           secondary_banner_parallax_enabled?: boolean;
           secondary_banner_parallax_mobile_enabled?: boolean;
@@ -1623,6 +1797,8 @@ export type Database = {
           show_hero_title?: boolean;
           show_new_arrivals?: boolean;
           socials?: Json;
+          store_modules?: Json;
+          store_vertical?: string;
           storefront_accent_color?: string | null;
           storefront_background_color?: string | null;
           storefront_font_ar?: string;
@@ -1631,18 +1807,19 @@ export type Database = {
           storefront_font_en_url?: string | null;
           storefront_loader_text_ar?: string | null;
           storefront_loader_text_en?: string | null;
+          storefront_mode?: string;
           storefront_radius?: string | null;
           storefront_text_color?: string | null;
           storefront_typography?: Json;
           text_color?: string;
           trending_banner_background_url?: string | null;
+          trust_badges?: Json | null;
           updated_at?: string;
           user_id?: string;
           vat_inclusive?: boolean;
           vat_number?: string | null;
           whatsapp_enabled?: boolean;
           whatsapp_number?: string | null;
-          trust_badges?: Json | null;
         };
         Relationships: [
           {
@@ -1703,6 +1880,7 @@ export type Database = {
           name_ar: string | null;
           name_en: string | null;
           parent_id: string | null;
+          size_guide_id: string | null;
           slug: string | null;
           sort_order: number;
           updated_at: string;
@@ -1717,6 +1895,7 @@ export type Database = {
           name_ar?: string | null;
           name_en?: string | null;
           parent_id?: string | null;
+          size_guide_id?: string | null;
           slug?: string | null;
           sort_order?: number;
           updated_at?: string;
@@ -1731,6 +1910,7 @@ export type Database = {
           name_ar?: string | null;
           name_en?: string | null;
           parent_id?: string | null;
+          size_guide_id?: string | null;
           slug?: string | null;
           sort_order?: number;
           updated_at?: string;
@@ -1748,6 +1928,13 @@ export type Database = {
             columns: ["parent_id"];
             isOneToOne: false;
             referencedRelation: "categories";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "categories_size_guide_id_fkey";
+            columns: ["size_guide_id"];
+            isOneToOne: false;
+            referencedRelation: "size_guides";
             referencedColumns: ["id"];
           },
         ];
@@ -2168,8 +2355,10 @@ export type Database = {
           flat: string | null;
           house: string | null;
           id: string;
+          marketing_consent: boolean;
           name: string;
           notes: string | null;
+          opted_out_at: string | null;
           phone: string | null;
           region: string | null;
           road: string | null;
@@ -2187,8 +2376,10 @@ export type Database = {
           flat?: string | null;
           house?: string | null;
           id?: string;
+          marketing_consent?: boolean;
           name: string;
           notes?: string | null;
+          opted_out_at?: string | null;
           phone?: string | null;
           region?: string | null;
           road?: string | null;
@@ -2206,8 +2397,10 @@ export type Database = {
           flat?: string | null;
           house?: string | null;
           id?: string;
+          marketing_consent?: boolean;
           name?: string;
           notes?: string | null;
+          opted_out_at?: string | null;
           phone?: string | null;
           region?: string | null;
           road?: string | null;
@@ -2948,8 +3141,10 @@ export type Database = {
           created_by: string | null;
           id: string;
           is_active: boolean;
+          last_rotated_at: string | null;
           notes: string | null;
           provider: string;
+          rotated_by: string | null;
           updated_at: string;
           webhook_secret: string | null;
           webhook_secret_secret_id: string | null;
@@ -2963,8 +3158,10 @@ export type Database = {
           created_by?: string | null;
           id?: string;
           is_active?: boolean;
+          last_rotated_at?: string | null;
           notes?: string | null;
           provider: string;
+          rotated_by?: string | null;
           updated_at?: string;
           webhook_secret?: string | null;
           webhook_secret_secret_id?: string | null;
@@ -2978,8 +3175,10 @@ export type Database = {
           created_by?: string | null;
           id?: string;
           is_active?: boolean;
+          last_rotated_at?: string | null;
           notes?: string | null;
           provider?: string;
+          rotated_by?: string | null;
           updated_at?: string;
           webhook_secret?: string | null;
           webhook_secret_secret_id?: string | null;
@@ -4099,6 +4298,36 @@ export type Database = {
           },
         ];
       };
+      platform_addon_policies: {
+        Row: {
+          addon_id: string;
+          allowed_brand_ids: string[] | null;
+          availability: string;
+          created_at: string;
+          default_for_activities: string[] | null;
+          entitlement_key: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          addon_id: string;
+          allowed_brand_ids?: string[] | null;
+          availability?: string;
+          created_at?: string;
+          default_for_activities?: string[] | null;
+          entitlement_key?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          addon_id?: string;
+          allowed_brand_ids?: string[] | null;
+          availability?: string;
+          created_at?: string;
+          default_for_activities?: string[] | null;
+          entitlement_key?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       players: {
         Row: {
           avatar_color: string;
@@ -4451,6 +4680,7 @@ export type Database = {
       };
       products: {
         Row: {
+          auto_deactivated_out_of_stock: boolean | null;
           base_price: number | null;
           brand_id: string;
           category: string | null;
@@ -4466,12 +4696,15 @@ export type Database = {
           id: string;
           image_url: string | null;
           is_active: boolean;
+          is_made_to_order: boolean;
           media: Json;
           name: string;
           name_ar: string | null;
           name_en: string | null;
           occasion: string | null;
           show_sale_badge: boolean;
+          size_guide_hidden: boolean;
+          size_guide_id: string | null;
           tracks_inventory: boolean | null;
           updated_at: string;
           user_id: string | null;
@@ -4491,6 +4724,7 @@ export type Database = {
           vendor_id: string | null;
         };
         Insert: {
+          auto_deactivated_out_of_stock?: boolean | null;
           base_price?: number | null;
           brand_id: string;
           category?: string | null;
@@ -4506,12 +4740,15 @@ export type Database = {
           id?: string;
           image_url?: string | null;
           is_active?: boolean;
+          is_made_to_order?: boolean;
           media?: Json;
           name: string;
           name_ar?: string | null;
           name_en?: string | null;
           occasion?: string | null;
           show_sale_badge?: boolean;
+          size_guide_hidden?: boolean;
+          size_guide_id?: string | null;
           tracks_inventory?: boolean | null;
           updated_at?: string;
           user_id?: string | null;
@@ -4531,6 +4768,7 @@ export type Database = {
           vendor_id?: string | null;
         };
         Update: {
+          auto_deactivated_out_of_stock?: boolean | null;
           base_price?: number | null;
           brand_id?: string;
           category?: string | null;
@@ -4546,12 +4784,15 @@ export type Database = {
           id?: string;
           image_url?: string | null;
           is_active?: boolean;
+          is_made_to_order?: boolean;
           media?: Json;
           name?: string;
           name_ar?: string | null;
           name_en?: string | null;
           occasion?: string | null;
           show_sale_badge?: boolean;
+          size_guide_hidden?: boolean;
+          size_guide_id?: string | null;
           tracks_inventory?: boolean | null;
           updated_at?: string;
           user_id?: string | null;
@@ -4576,6 +4817,13 @@ export type Database = {
             columns: ["brand_id"];
             isOneToOne: false;
             referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "products_size_guide_id_fkey";
+            columns: ["size_guide_id"];
+            isOneToOne: false;
+            referencedRelation: "size_guides";
             referencedColumns: ["id"];
           },
         ];
@@ -5709,6 +5957,7 @@ export type Database = {
       saas_plans: {
         Row: {
           badge_color: string | null;
+          billing_interval_mode: string;
           code: string;
           created_at: string;
           description_ar: string | null;
@@ -5724,6 +5973,7 @@ export type Database = {
         };
         Insert: {
           badge_color?: string | null;
+          billing_interval_mode?: string;
           code: string;
           created_at?: string;
           description_ar?: string | null;
@@ -5739,6 +5989,7 @@ export type Database = {
         };
         Update: {
           badge_color?: string | null;
+          billing_interval_mode?: string;
           code?: string;
           created_at?: string;
           description_ar?: string | null;
@@ -5873,6 +6124,83 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "shared_carts_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      size_guides: {
+        Row: {
+          base_unit: string;
+          brand_id: string;
+          columns: Json;
+          created_at: string;
+          diagram_url: string | null;
+          how_to_measure: Json;
+          id: string;
+          is_active: boolean;
+          is_default: boolean;
+          name_ar: string;
+          name_en: string;
+          notes_ar: string | null;
+          notes_en: string | null;
+          placement: string;
+          recommender_enabled: boolean;
+          rows: Json;
+          sort_order: number;
+          template_key: string | null;
+          updated_at: string;
+          video_url: string | null;
+        };
+        Insert: {
+          base_unit?: string;
+          brand_id: string;
+          columns?: Json;
+          created_at?: string;
+          diagram_url?: string | null;
+          how_to_measure?: Json;
+          id?: string;
+          is_active?: boolean;
+          is_default?: boolean;
+          name_ar: string;
+          name_en: string;
+          notes_ar?: string | null;
+          notes_en?: string | null;
+          placement?: string;
+          recommender_enabled?: boolean;
+          rows?: Json;
+          sort_order?: number;
+          template_key?: string | null;
+          updated_at?: string;
+          video_url?: string | null;
+        };
+        Update: {
+          base_unit?: string;
+          brand_id?: string;
+          columns?: Json;
+          created_at?: string;
+          diagram_url?: string | null;
+          how_to_measure?: Json;
+          id?: string;
+          is_active?: boolean;
+          is_default?: boolean;
+          name_ar?: string;
+          name_en?: string;
+          notes_ar?: string | null;
+          notes_en?: string | null;
+          placement?: string;
+          recommender_enabled?: boolean;
+          rows?: Json;
+          sort_order?: number;
+          template_key?: string | null;
+          updated_at?: string;
+          video_url?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "size_guides_brand_id_fkey";
             columns: ["brand_id"];
             isOneToOne: false;
             referencedRelation: "brands";
@@ -6059,6 +6387,7 @@ export type Database = {
         Row: {
           base_price_bhd: number;
           benefit_pay_qr_url: string | null;
+          billing_interval_mode: string;
           discount_price_bhd: number | null;
           id: number;
           merchant_account_name: string;
@@ -6071,6 +6400,7 @@ export type Database = {
         Insert: {
           base_price_bhd?: number;
           benefit_pay_qr_url?: string | null;
+          billing_interval_mode?: string;
           discount_price_bhd?: number | null;
           id?: number;
           merchant_account_name?: string;
@@ -6083,6 +6413,7 @@ export type Database = {
         Update: {
           base_price_bhd?: number;
           benefit_pay_qr_url?: string | null;
+          billing_interval_mode?: string;
           discount_price_bhd?: number | null;
           id?: number;
           merchant_account_name?: string;
@@ -6670,6 +7001,24 @@ export type Database = {
       };
     };
     Views: {
+      brand_public_addons: {
+        Row: {
+          addon_id: string | null;
+          brand_id: string | null;
+          public_settings: Json | null;
+          status: string | null;
+          version: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "brand_addons_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       brand_public_settings: {
         Row: {
           announcement_audience: string | null;
@@ -6699,6 +7048,9 @@ export type Database = {
           card_enabled: boolean | null;
           cart_drawer_checkout_bg: string | null;
           cart_drawer_checkout_fg: string | null;
+          catalog_inquiry_message_ar: string | null;
+          catalog_inquiry_message_en: string | null;
+          catalog_show_prices: boolean | null;
           category_banner_background_url: string | null;
           cod_enabled: boolean | null;
           currency: string | null;
@@ -6706,10 +7058,12 @@ export type Database = {
           delivery_fee: number | null;
           digital_delivery_enabled: boolean | null;
           favicon_url: string | null;
+          fit_profiles: Json | null;
           font_family: string | null;
           font_url: string | null;
           footer_bg: string | null;
           footer_fg: string | null;
+          footer_logo_size: number | null;
           footer_note: string | null;
           global_sale_badges_enabled: boolean | null;
           header_bg: string | null;
@@ -6739,7 +7093,9 @@ export type Database = {
           new_arrivals_title_en: string | null;
           pages: Json | null;
           pickup_enabled: boolean | null;
+          price_color: string | null;
           primary_color: string | null;
+          product_title_color: string | null;
           secondary_banner_parallax_breakpoint: number | null;
           secondary_banner_parallax_enabled: boolean | null;
           secondary_banner_parallax_mobile_enabled: boolean | null;
@@ -6751,6 +7107,8 @@ export type Database = {
           show_hero_title: boolean | null;
           show_new_arrivals: boolean | null;
           socials: Json | null;
+          store_modules: Json | null;
+          store_vertical: string | null;
           storefront_accent_color: string | null;
           storefront_background_color: string | null;
           storefront_font_ar: string | null;
@@ -6759,11 +7117,13 @@ export type Database = {
           storefront_font_en_url: string | null;
           storefront_loader_text_ar: string | null;
           storefront_loader_text_en: string | null;
+          storefront_mode: string | null;
           storefront_radius: string | null;
           storefront_text_color: string | null;
           storefront_typography: Json | null;
           text_color: string | null;
           trending_banner_background_url: string | null;
+          trust_badges: Json | null;
           vat_inclusive: boolean | null;
           whatsapp_enabled: boolean | null;
           whatsapp_number: string | null;
@@ -7161,9 +7521,39 @@ export type Database = {
         Returns: string;
       };
       get_all_admin_quizzes: { Args: never; Returns: Json };
+      get_brand_categories_with_counts: {
+        Args: { p_brand_id: string };
+        Returns: {
+          id: string;
+          image_url: string;
+          is_active: boolean;
+          is_smart: boolean;
+          menu_icon_url: string;
+          name_ar: string;
+          name_en: string;
+          parent_id: string;
+          product_count: number;
+          slug: string;
+          sort_order: number;
+          total_product_count: number;
+        }[];
+      };
       get_courier_delivery_message: {
         Args: { p_order_id: string };
         Returns: Json;
+      };
+      get_instagram_connection_status: {
+        Args: { p_brand_id: string };
+        Returns: {
+          days_until_expiry: number;
+          expires_at: string;
+          instagram_user_id: string;
+          instagram_username: string;
+          is_active: boolean;
+          is_connected: boolean;
+          last_refreshed_at: string;
+          refresh_error: string;
+        }[];
       };
       get_integration_credential_secret: {
         Args: { p_brand_id: string; p_provider: string };
@@ -7226,6 +7616,24 @@ export type Database = {
         SetofOptions: {
           from: "*";
           to: "rooms";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      get_shared_cart_by_code: {
+        Args: { _code: string };
+        Returns: {
+          brand_id: string | null;
+          brand_slug: string;
+          code: string;
+          created_at: string;
+          expires_at: string;
+          id: string;
+          items: Json;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "shared_carts";
           isOneToOne: false;
           isSetofReturn: true;
         };
@@ -7329,6 +7737,7 @@ export type Database = {
           has_webhook_secret: boolean;
           id: string;
           is_active: boolean;
+          last_rotated_at: string;
           notes: string;
           provider: string;
           updated_at: string;
@@ -7692,6 +8101,16 @@ export type Database = {
           p_inspection_notes?: string;
           p_restock_branch_id?: string;
           p_return_item_id: string;
+        };
+        Returns: Json;
+      };
+      rpc_manual_adjust_loyalty_points: {
+        Args: {
+          p_brand_id: string;
+          p_customer_id: string;
+          p_points_delta: number;
+          p_reason_ar: string;
+          p_reason_en?: string;
         };
         Returns: Json;
       };

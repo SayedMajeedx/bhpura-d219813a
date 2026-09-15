@@ -10,7 +10,10 @@ import type {
   SlotPlacement,
   StoreVocabulary,
 } from "./addon-types";
-import type { StoreVertical } from "@/lib/store-profile";
+import { TRUST_ICON_CATALOG } from "@/lib/trust-badges";
+import { starterPackFor } from "./starter-packs";
+
+export { starterPackFor };
 
 export type { AddonManifest, AddonReadinessCheck, AddonSettingsField, SizingPreset };
 
@@ -34,6 +37,30 @@ export function validateRegistry(): string[] {
   const errors: string[] = [];
   const seenIds = new Set<string>();
   const seenSlotIds = new Set<string>();
+
+  const validTrustBadgeIds = new Set<string>(TRUST_ICON_CATALOG.map((item) => item.id));
+  const validSlotPlacements = new Set<string>([
+    "storefront.product.optionsAside",
+    "storefront.product.afterOptions",
+    "storefront.product.afterCta",
+    "storefront.account.tab",
+    "storefront.footer.helpLink",
+    "admin.settings.card",
+    "admin.product.editorPanel",
+    "admin.order.itemPanel",
+    "admin.order.headerActions",
+    "admin.customer.panel",
+    "admin.readiness.check",
+  ]);
+
+  const allKnownPresetIds = new Set<string>();
+  for (const m of ADDON_MANIFESTS) {
+    if (m.contributions.sizingPresets) {
+      for (const p of m.contributions.sizingPresets) {
+        allKnownPresetIds.add(p.id);
+      }
+    }
+  }
 
   for (const manifest of ADDON_MANIFESTS) {
     // Unique addon id
@@ -71,13 +98,41 @@ export function validateRegistry(): string[] {
       }
     }
 
-    // Unique slot ids across all slots
+    // Unique slot ids across all slots & valid placement
     if (manifest.contributions.slots) {
       for (const slot of manifest.contributions.slots) {
         if (seenSlotIds.has(slot.id)) {
           errors.push(`Duplicate slot id found: "${slot.id}" in addon "${manifest.id}"`);
         }
         seenSlotIds.add(slot.id);
+
+        if (!validSlotPlacements.has(slot.placement)) {
+          errors.push(
+            `Addon "${manifest.id}" has invalid slot placement "${slot.placement}" in slot "${slot.id}"`,
+          );
+        }
+      }
+    }
+
+    // Sizing preset order references must exist in registered presets
+    if (manifest.contributions.sizingPresetOrder) {
+      for (const presetId of manifest.contributions.sizingPresetOrder) {
+        if (!allKnownPresetIds.has(presetId)) {
+          errors.push(
+            `Addon "${manifest.id}" references non-existent sizing preset id "${presetId}" in sizingPresetOrder`,
+          );
+        }
+      }
+    }
+
+    // Trust badge suggestions must exist in TRUST_ICON_CATALOG
+    if (manifest.contributions.trustBadgeSuggestions) {
+      for (const badgeId of manifest.contributions.trustBadgeSuggestions) {
+        if (!validTrustBadgeIds.has(badgeId)) {
+          errors.push(
+            `Addon "${manifest.id}" references non-existent trust badge id "${badgeId}" in trustBadgeSuggestions`,
+          );
+        }
       }
     }
 
@@ -167,62 +222,6 @@ export function dependentsOf(id: AddonId, installed: AddonId[]): AddonId[] {
   }
 
   return dependents;
-}
-
-export function starterPackFor(activity: StoreVertical): {
-  required: AddonId[];
-  suggested: AddonId[];
-} {
-  switch (activity) {
-    case "abayas":
-      return {
-        required: ["fashion-core", "size-guides", "fit-passport", "made-to-order", "abaya-pack"],
-        suggested: [],
-      };
-    case "fashion":
-      return {
-        required: ["fashion-core", "size-guides", "fit-passport", "made-to-order"],
-        suggested: [],
-      };
-    case "beauty":
-      return {
-        required: ["beauty-perfume"],
-        suggested: [],
-      };
-    case "food":
-      return {
-        required: ["food-beverage"],
-        suggested: ["made-to-order"],
-      };
-    case "digital":
-      return {
-        required: ["digital-products"],
-        suggested: [],
-      };
-    case "gifts":
-      return {
-        required: ["gifts"],
-        suggested: [],
-      };
-    case "print":
-      return {
-        required: ["made-to-order", "print-stamps"],
-        suggested: [],
-      };
-    case "jewelry":
-      return {
-        required: ["size-guides", "made-to-order", "jewelry"],
-        suggested: [],
-      };
-    case "home":
-    case "electronics":
-    case "general":
-    default:
-      return {
-        required: [],
-        suggested: [],
-      };
-  }
 }
 
 export function isInstalled(rows: BrandAddonRow[] | null | undefined, id: AddonId): boolean {
@@ -400,14 +399,25 @@ export function sizingPresetOrderFrom(rows: BrandAddonRow[] | null | undefined):
   if (!rows || !Array.isArray(rows)) return [];
   const installedIds = new Set(rows.filter((r) => r.status === "installed").map((r) => r.addon_id));
 
+  const candidates: AddonManifest[] = [];
   for (const manifest of ADDON_MANIFESTS) {
-    if (!installedIds.has(manifest.id)) continue;
-    if (manifest.contributions.sizingPresetOrder) {
-      return manifest.contributions.sizingPresetOrder;
+    if (installedIds.has(manifest.id) && manifest.contributions.sizingPresetOrder) {
+      candidates.push(manifest);
     }
   }
 
-  return [];
+  if (candidates.length === 0) return [];
+  if (candidates.length === 1) return candidates[0].contributions.sizingPresetOrder!;
+
+  // If multiple candidates, pick the most specific one (one that requires others)
+  candidates.sort((a, b) => {
+    const aRequiresB = a.requires?.includes(b.id) ? 1 : 0;
+    const bRequiresA = b.requires?.includes(a.id) ? 1 : 0;
+    if (aRequiresB !== bRequiresA) return bRequiresA - aRequiresB;
+    return (b.requires?.length || 0) - (a.requires?.length || 0);
+  });
+
+  return candidates[0].contributions.sizingPresetOrder!;
 }
 
 export interface VariantAxisConfig {
