@@ -115,9 +115,12 @@ import {
   customFieldPresetsFrom,
   sizingPresetsFrom,
   sizingPresetOrderFrom,
-  listAddons,
 } from "@/lib/addons/addon-registry";
-import type { StoreVertical } from "@/lib/store-profile";
+import {
+  getVerticalSizingPresets,
+  getVerticalAiPromptPlaceholder,
+  getVerticalAxisPlaceholders,
+} from "@/lib/addons/vertical-inventory";
 import { useAddons } from "@/components/addons/AddonsProvider";
 
 /** Common measurement units the admin can pick from for a "size" variant. */
@@ -3904,7 +3907,7 @@ function BulkVariantDialog({
     () => variantAxisDefaultsFrom(addons.length > 0 ? addons : storeProfile?.addons),
     [addons, storeProfile?.addons],
   );
-  const currentVertical = (storeProfile?.vertical as StoreVertical) || "general";
+  const currentVertical = storeProfile?.vertical || "general";
 
   const sizeAxis = resolveVariantAxis({
     axis: "size",
@@ -3929,94 +3932,18 @@ function BulkVariantDialog({
     const rows = addons.length > 0 ? addons : storeProfile?.addons;
     const fromAddons = sizingPresetsFrom(rows);
     const order = sizingPresetOrderFrom(rows);
-
-    // Pull presets from manifest contributions matching this vertical
-    const manifestPresets = listAddons()
-      .filter((m) => m.activities.includes(currentVertical))
-      .flatMap((m) => m.contributions?.sizingPresets || []);
-
-    const existingIds = new Set(fromAddons.map((p) => p.id));
-    const verticalAdditions = manifestPresets.filter((p) => !existingIds.has(p.id));
-
-    // If apparel (abayas or fashion), keep universal apparel presets.
-    // Otherwise filter out apparel-only presets (abayas, shoes, alpha)
-    const isApparel = currentVertical === "abayas" || currentVertical === "fashion";
-    const universalFiltered = isApparel
-      ? UNIVERSAL_SIZING_PRESETS
-      : UNIVERSAL_SIZING_PRESETS.filter(
-          (p) => !["abayas_standard", "shoes_eu", "womens_alpha", "mens_alpha"].includes(p.id),
-        );
-
-    const combined = [...fromAddons, ...verticalAdditions, ...universalFiltered];
-    if (order.length === 0) return combined;
-    return combined.sort((a, b) => {
-      const idxA = order.indexOf(a.id);
-      const idxB = order.indexOf(b.id);
-      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-      if (idxA !== -1) return -1;
-      if (idxB !== -1) return 1;
-      return 0;
-    });
+    return getVerticalSizingPresets(currentVertical, fromAddons, order);
   }, [addons, storeProfile?.addons, currentVertical]);
 
-  const aiPromptPlaceholder = useMemo(() => {
-    switch (currentVertical) {
-      case "food":
-        return isAr
-          ? "مثال: وجبة برجر دجاج، الأحجام عادي وكبير، السعر 2.5 د.ب والتخفيض 2.0 د.ب، المخزون 50 لكل حجم"
-          : "Example: Chicken burger meal, sizes Regular and Large, price 2.5 BHD, sale 2.0 BHD, stock 50 per size";
-      case "print":
-        return isAr
-          ? "مثال: ختم شخصي دائري، المقاسات 25mm و 30mm، حبر أزرق وأسود، السعر 4.5 د.ب، المخزون 10"
-          : "Example: Round personal stamp, sizes 25mm and 30mm, ink Blue and Black, price 4.5 BHD, stock 10";
-      case "gifts":
-        return isAr
-          ? "مثال: بوكس ورد فاخر، الأحجام صغير ووسط و VIP، السعر 15 د.ب، المخزون 5 لكل حجم"
-          : "Example: Luxury gift box, sizes Small, Medium, VIP, price 15 BHD, stock 5 each";
-      case "beauty":
-        return isAr
-          ? "مثال: عطر مسك، الأحجام 50ml و 100ml، السعر 20 د.ب، المخزون 15 لكل حجم"
-          : "Example: Musk perfume, sizes 50ml and 100ml, price 20 BHD, stock 15 each";
-      case "abayas":
-        return isAr
-          ? "مثال: كود AB10، الألوان أسود وكحلي، مقاسات 52 إلى 58، السعر 35 د.ب، المخزون 3 لكل مقاس"
-          : "Example: code AB10, colors Black and Navy, sizes 52 to 58, price 35 BHD, stock 3 per size";
-      default:
-        return isAr
-          ? "مثال: كود NP24، الألوان كحلي وعنابي وبيج، المقاسات من S إلى XL، السعر 25 د.ب والتخفيض 19 د.ب، المخزون 5 لكل خيار"
-          : "Example: code DRS-01, colors Black, Olive and Burgundy, sizes S to XL, price 25 BHD, sale 19, stock 5 per variant";
-    }
-  }, [currentVertical, isAr]);
+  const aiPromptPlaceholder = useMemo(
+    () => getVerticalAiPromptPlaceholder(currentVertical, isAr),
+    [currentVertical, isAr],
+  );
 
-  const sizePlaceholder = useMemo(() => {
-    switch (currentVertical) {
-      case "food":
-        return isAr ? "صغير, وسط, كبير" : "Small, Medium, Large";
-      case "print":
-        return isAr ? "A4, A3, 25mm, 30mm" : "A4, A3, 25mm, 30mm";
-      case "gifts":
-        return isAr ? "صغير, متوسط, كبير, VIP" : "Small, Medium, Large, VIP";
-      case "beauty":
-        return isAr ? "30ml, 50ml, 100ml" : "30ml, 50ml, 100ml";
-      case "abayas":
-        return isAr ? "52, 54, 56, 58, 60" : "52, 54, 56, 58, 60";
-      default:
-        return isAr ? "S, M, L, XL" : "S, M, L, XL";
-    }
-  }, [currentVertical, isAr]);
-
-  const colorPlaceholder = useMemo(() => {
-    switch (currentVertical) {
-      case "print":
-        return isAr ? "أزرق, أسود, أحمر (لون الحبر أو الخامة)" : "Blue, Black, Red";
-      case "food":
-        return isAr ? "عادي, حار, صوص خاص (النوع أو النكهة)" : "Regular, Spicy, Special (Flavor/Option)";
-      case "beauty":
-        return isAr ? "ذهبي, شفاف, ميني" : "Gold, Clear, Mini";
-      default:
-        return isAr ? "كحلي, عنابي, بيج" : "Black, Navy, Olive";
-    }
-  }, [currentVertical, isAr]);
+  const { sizePlaceholder, colorPlaceholder } = useMemo(
+    () => getVerticalAxisPlaceholders(currentVertical, isAr),
+    [currentVertical, isAr],
+  );
   const existingSku = variants.find((v) => v.sku)?.sku || "";
   const blank: VariantGenerationPlan = {
     base_sku: existingSku,
