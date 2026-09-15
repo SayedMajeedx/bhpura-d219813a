@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { queryKeys } from "@/lib/query-keys";
@@ -34,7 +34,14 @@ import {
   type StoreModuleId,
 } from "@/lib/store-profile";
 import { resolveFitProfiles, type FitProfileDefinition } from "@/lib/addons/addon-presets";
-import { starterPackFor, getAddon, dependentsOf, isInstalled } from "@/lib/addons/addon-registry";
+import {
+  listAddons,
+  starterPackFor,
+  getAddon,
+  dependentsOf,
+  isInstalled,
+} from "@/lib/addons/addon-registry";
+import { syncBrandVerticalCategories } from "@/lib/addons/vertical-categories";
 import type { AddonId } from "@/lib/addons/addon-types";
 import {
   Sparkles,
@@ -45,6 +52,15 @@ import {
   Ruler,
   Puzzle,
   CheckCircle2,
+  FolderSync,
+  UtensilsCrossed,
+  Printer,
+  Scissors,
+  Shirt,
+  Gem,
+  Gift,
+  Download,
+  Boxes,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
@@ -55,6 +71,33 @@ const MODULE_TO_ADDON: Record<StoreModuleId, AddonId> = {
   fit_passport: "fit-passport",
   made_to_order: "made-to-order",
 };
+
+function renderAddonIcon(iconName: string) {
+  switch (iconName) {
+    case "UtensilsCrossed":
+      return <UtensilsCrossed className="w-4 h-4" />;
+    case "Printer":
+      return <Printer className="w-4 h-4" />;
+    case "Sparkles":
+      return <Sparkles className="w-4 h-4" />;
+    case "Scissors":
+      return <Scissors className="w-4 h-4" />;
+    case "Shirt":
+      return <Shirt className="w-4 h-4" />;
+    case "Gem":
+      return <Gem className="w-4 h-4" />;
+    case "Gift":
+      return <Gift className="w-4 h-4" />;
+    case "Download":
+      return <Download className="w-4 h-4" />;
+    case "Ruler":
+      return <Ruler className="w-4 h-4" />;
+    case "Boxes":
+      return <Boxes className="w-4 h-4" />;
+    default:
+      return <Puzzle className="w-4 h-4" />;
+  }
+}
 
 export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: string }) {
   const { lang } = useI18n();
@@ -95,6 +138,7 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
   const [pendingVertical, setPendingVertical] = useState<StoreVertical | null>(null);
   const [showVerticalChangeDialog, setShowVerticalChangeDialog] = useState(false);
   const [addonsToDisableSelection, setAddonsToDisableSelection] = useState<AddonId[]>([]);
+  const [syncCategoriesOnVerticalChange, setSyncCategoriesOnVerticalChange] = useState(true);
 
   // Dialog state for reset to defaults confirmation
   const [showResetConfirmDialog, setShowResetConfirmDialog] = useState(false);
@@ -102,10 +146,44 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
   const hasFitPassport = isInstalled(addons, "fit-passport");
   const activeFitProfiles = resolveFitProfiles(fitProfiles);
 
+  const verticalModules = useMemo(() => {
+    const starter = starterPackFor(vertical);
+    const set = new Set<AddonId>();
+
+    for (const id of starter.required) set.add(id);
+    for (const id of starter.suggested) set.add(id);
+
+    for (const m of listAddons()) {
+      if (m.activities.includes(vertical)) {
+        set.add(m.id);
+      }
+    }
+
+    for (const row of addons || []) {
+      if (row.status === "installed") {
+        set.add(row.addon_id as AddonId);
+      }
+    }
+
+    return Array.from(set)
+      .map((id) => getAddon(id))
+      .filter((m): m is NonNullable<typeof m> => Boolean(m))
+      .sort((a, b) => {
+        const aReq = starter.required.includes(a.id) ? 1 : 0;
+        const bReq = starter.required.includes(b.id) ? 1 : 0;
+        if (aReq !== bReq) return bReq - aReq;
+
+        const aRec = starter.suggested.includes(a.id) ? 1 : 0;
+        const bRec = starter.suggested.includes(b.id) ? 1 : 0;
+        return bRec - aRec;
+      });
+  }, [vertical, addons]);
+
   const handleSelectVertical = (newVertical: StoreVertical) => {
     if (newVertical === vertical) return;
     setPendingVertical(newVertical);
     setAddonsToDisableSelection([]);
+    setSyncCategoriesOnVerticalChange(true);
     setShowVerticalChangeDialog(true);
   };
 
@@ -135,7 +213,19 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
         await disableAddon({ addonId });
       }
 
-      // 4. Invalidate profile and addons caches
+      // 4. Synchronize categories for the new vertical if requested
+      if (syncCategoriesOnVerticalChange) {
+        await syncBrandVerticalCategories({
+          db: supabase,
+          brandId,
+          newVertical: pendingVertical,
+          replaceEmptyOldCategories: true,
+        });
+        await qc.invalidateQueries({ queryKey: queryKeys.categories.all(brandId) });
+        await qc.invalidateQueries({ queryKey: queryKeys.categories.overview(brandId) });
+      }
+
+      // 5. Invalidate profile and addons caches
       await qc.invalidateQueries({ queryKey: queryKeys.brand.storeProfile(brandId) });
       await qc.invalidateQueries({ queryKey: queryKeys.addons.all(brandId) });
 
@@ -157,16 +247,15 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
     }
   };
 
-  const handleModuleToggle = async (id: StoreModuleId, checked: boolean) => {
-    const addonId = MODULE_TO_ADDON[id];
+  const handleToggleAddon = async (addonId: AddonId, checked: boolean) => {
     if (checked) {
       try {
         await installAddon({ addonId, withDependencies: true });
         toast.success(
-          isAr ? "تم تثبيت وتفعيل الوحدة بنجاح" : "Module installed and enabled successfully",
+          isAr ? "تم تثبيت وتفعيل الإضافة بنجاح" : "Addon installed and enabled successfully",
         );
       } catch (err: any) {
-        toast.error(err.message || (isAr ? "فشل تفعيل الوحدة" : "Failed to enable module"));
+        toast.error(err.message || (isAr ? "فشل تفعيل الإضافة" : "Failed to enable addon"));
       }
     } else {
       // Check dependents before disabling
@@ -180,19 +269,24 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
           .join(", ");
         toast.error(
           isAr
-            ? `لا يمكن تعطيل هذه الوحدة لأن الإضافات التالية تعتمد عليها: ${depNames}`
-            : `Cannot disable this module because the following add-ons depend on it: ${depNames}`,
+            ? `لا يمكن تعطيل هذه الإضافة لأن الإضافات التالية تعتمد عليها: ${depNames}`
+            : `Cannot disable this addon because the following addons depend on it: ${depNames}`,
         );
         return;
       }
 
       try {
         await disableAddon({ addonId });
-        toast.success(isAr ? "تم إيقاف الوحدة بنجاح" : "Module disabled successfully");
+        toast.success(isAr ? "تم إيقاف الإضافة بنجاح" : "Addon disabled successfully");
       } catch (err: any) {
-        toast.error(err.message || (isAr ? "فشل إيقاف الوحدة" : "Failed to disable module"));
+        toast.error(err.message || (isAr ? "فشل إيقاف الإضافة" : "Failed to disable addon"));
       }
     }
+  };
+
+  const handleModuleToggle = async (id: StoreModuleId, checked: boolean) => {
+    const addonId = MODULE_TO_ADDON[id];
+    return handleToggleAddon(addonId, checked);
   };
 
   const handleConfirmResetDefaults = async () => {
@@ -225,14 +319,24 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
         }
       }
 
+      // Sync categories for this vertical
+      await syncBrandVerticalCategories({
+        db: supabase,
+        brandId,
+        newVertical: vertical,
+        replaceEmptyOldCategories: true,
+      });
+
       await qc.invalidateQueries({ queryKey: queryKeys.brand.storeProfile(brandId) });
       await qc.invalidateQueries({ queryKey: queryKeys.addons.all(brandId) });
+      await qc.invalidateQueries({ queryKey: queryKeys.categories.all(brandId) });
+      await qc.invalidateQueries({ queryKey: queryKeys.categories.overview(brandId) });
 
       setShowResetConfirmDialog(false);
       toast.success(
         isAr
-          ? "تمت استعادة الوحدات الافتراضية للنشاط بنجاح"
-          : "Restored vertical default modules successfully",
+          ? "تمت استعادة الوحدات والأقسام الافتراضية للنشاط بنجاح"
+          : "Restored vertical default modules and categories successfully",
       );
     } catch (err: any) {
       toast.error(
@@ -387,34 +491,69 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
           </div>
 
           <div className="space-y-3 pt-2">
-            <Label className="text-sm font-semibold">
-              {isAr ? "الوحدات والميزات التخصصية" : "Specialized Store Modules"}
-            </Label>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm font-semibold text-foreground">
+                  {isAr ? "الوحدات والميزات التخصصية" : "Specialized Store Modules"}
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {isAr
+                    ? `الوحدات المخصصة والمقترحة لنشاط ${VERTICAL_LABELS[vertical]?.ar || ""}`
+                    : `Specialized modules tailored for ${VERTICAL_LABELS[vertical]?.en || ""}`}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground hover:text-foreground gap-1.5 h-8"
+                onClick={() => setShowResetConfirmDialog(true)}
+                disabled={isLoading || saving}
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>{isAr ? "استعادة الافتراضيات" : "Reset Defaults"}</span>
+              </Button>
+            </div>
+
             <div className="grid grid-cols-1 gap-3">
-              {STORE_MODULES.map((id) => {
-                const meta = MODULE_LABELS[id];
-                const addonId = MODULE_TO_ADDON[id];
-                const isEnabled = isInstalled(addons, addonId);
-                const isDefaultRecommended = starterPackFor(vertical).required.includes(addonId);
+              {verticalModules.map((m) => {
+                const isEnabled = isInstalled(addons, m.id);
+                const isRequired = starterPackFor(vertical).required.includes(m.id);
+                const isRecommended = starterPackFor(vertical).suggested.includes(m.id);
 
                 return (
                   <div
-                    key={id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-border bg-muted/30"
+                    key={m.id}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-border bg-card shadow-2xs hover:border-primary/30 transition-colors"
                   >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">{isAr ? meta.ar : meta.en}</span>
-                        {isDefaultRecommended && (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex items-center justify-center size-7 rounded-lg bg-primary/10 text-primary shrink-0">
+                          {renderAddonIcon(m.icon)}
+                        </div>
+                        <span className="font-semibold text-sm text-foreground">
+                          {isAr ? m.name.ar : m.name.en}
+                        </span>
+                        {isRequired && (
+                          <Badge variant="secondary" className="text-xs px-2 py-0 bg-primary/10 text-primary font-medium">
+                            {isAr ? "أساسي لنشاطك" : "Essential"}
+                          </Badge>
+                        )}
+                        {!isRequired && isRecommended && (
                           <Badge variant="secondary" className="text-xs px-2 py-0">
                             {isAr ? "موصى به لنشاطك" : "Recommended"}
                           </Badge>
                         )}
+                        {isEnabled && (
+                          <Badge variant="outline" className="text-xs px-2 py-0 border-emerald-500/30 text-emerald-600 bg-emerald-500/10">
+                            {isAr ? "مفعّل" : "Active"}
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {isAr ? meta.hintAr : meta.hintEn}
+                        {isAr ? m.description.ar : m.description.en}
                       </p>
-                      {id === "size_guide" && isEnabled && (
+                      {m.id === "size-guides" && isEnabled && (
                         <div className="pt-1">
                           <Link
                             to={`/admin/b/${slug}/size-guides` as any}
@@ -430,12 +569,12 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center self-end sm:self-auto">
+                    <div className="flex items-center self-end sm:self-auto shrink-0">
                       <Switch
                         checked={isEnabled}
-                        onCheckedChange={(checked) => handleModuleToggle(id, checked)}
-                        disabled={isLoading || saving}
-                        aria-label={isAr ? meta.ar : meta.en}
+                        onCheckedChange={(checked) => handleToggleAddon(m.id, checked)}
+                        disabled={isLoading || saving || isMutating}
+                        aria-label={isAr ? m.name.ar : m.name.en}
                       />
                     </div>
                   </div>
@@ -686,6 +825,32 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
                 </div>
               </div>
             )}
+
+            {/* Automatic Category Sync Option */}
+            <div className="space-y-2 pt-2 border-t border-border">
+              <label className="flex items-start gap-3 p-3 rounded-xl border border-primary/20 bg-primary/5 text-xs cursor-pointer hover:bg-primary/10 transition-colors">
+                <Checkbox
+                  checked={syncCategoriesOnVerticalChange}
+                  onCheckedChange={(checked) => setSyncCategoriesOnVerticalChange(Boolean(checked))}
+                  className="mt-0.5"
+                />
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 font-medium text-foreground">
+                    <FolderSync className="size-3.5 text-primary" />
+                    <span>
+                      {isAr
+                        ? "تحديث أقسام المتجر تلقائياً لتناسب النشاط الجديد"
+                        : "Sync store categories automatically for the new vertical"}
+                    </span>
+                  </div>
+                  <p className="text-muted-foreground text-xs leading-relaxed">
+                    {isAr
+                      ? "استبدال الأقسام الافتراضية السابقة الخالية (0 منتجات) بأقسام مقترحة لهذا النشاط، مع الحفاظ التام على أي قسم يحتوي على منتجات حالية."
+                      : "Replaces empty default categories (0 products) with suggested categories for this vertical, while strictly preserving any category that has active products."}
+                  </p>
+                </div>
+              </label>
+            </div>
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">

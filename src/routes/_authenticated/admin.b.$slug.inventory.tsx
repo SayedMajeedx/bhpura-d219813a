@@ -115,7 +115,9 @@ import {
   customFieldPresetsFrom,
   sizingPresetsFrom,
   sizingPresetOrderFrom,
+  listAddons,
 } from "@/lib/addons/addon-registry";
+import type { StoreVertical } from "@/lib/store-profile";
 import { useAddons } from "@/components/addons/AddonsProvider";
 
 /** Common measurement units the admin can pick from for a "size" variant. */
@@ -3902,11 +3904,50 @@ function BulkVariantDialog({
     () => variantAxisDefaultsFrom(addons.length > 0 ? addons : storeProfile?.addons),
     [addons, storeProfile?.addons],
   );
+  const currentVertical = (storeProfile?.vertical as StoreVertical) || "general";
+
+  const sizeAxis = resolveVariantAxis({
+    axis: "size",
+    product,
+    addonDefaults: addonAxisDefaults,
+    lang: isAr ? "ar" : "en",
+  });
+  const colorAxis = resolveVariantAxis({
+    axis: "color",
+    product,
+    addonDefaults: addonAxisDefaults,
+    lang: isAr ? "ar" : "en",
+  });
+  const fabricAxis = resolveVariantAxis({
+    axis: "fabric",
+    product,
+    addonDefaults: addonAxisDefaults,
+    lang: isAr ? "ar" : "en",
+  });
+
   const orderedPresets = useMemo(() => {
     const rows = addons.length > 0 ? addons : storeProfile?.addons;
     const fromAddons = sizingPresetsFrom(rows);
     const order = sizingPresetOrderFrom(rows);
-    const combined = [...fromAddons, ...UNIVERSAL_SIZING_PRESETS];
+
+    // Pull presets from manifest contributions matching this vertical
+    const manifestPresets = listAddons()
+      .filter((m) => m.activities.includes(currentVertical))
+      .flatMap((m) => m.contributions?.sizingPresets || []);
+
+    const existingIds = new Set(fromAddons.map((p) => p.id));
+    const verticalAdditions = manifestPresets.filter((p) => !existingIds.has(p.id));
+
+    // If apparel (abayas or fashion), keep universal apparel presets.
+    // Otherwise filter out apparel-only presets (abayas, shoes, alpha)
+    const isApparel = currentVertical === "abayas" || currentVertical === "fashion";
+    const universalFiltered = isApparel
+      ? UNIVERSAL_SIZING_PRESETS
+      : UNIVERSAL_SIZING_PRESETS.filter(
+          (p) => !["abayas_standard", "shoes_eu", "womens_alpha", "mens_alpha"].includes(p.id),
+        );
+
+    const combined = [...fromAddons, ...verticalAdditions, ...universalFiltered];
     if (order.length === 0) return combined;
     return combined.sort((a, b) => {
       const idxA = order.indexOf(a.id);
@@ -3916,7 +3957,66 @@ function BulkVariantDialog({
       if (idxB !== -1) return 1;
       return 0;
     });
-  }, [addons, storeProfile?.addons]);
+  }, [addons, storeProfile?.addons, currentVertical]);
+
+  const aiPromptPlaceholder = useMemo(() => {
+    switch (currentVertical) {
+      case "food":
+        return isAr
+          ? "مثال: وجبة برجر دجاج، الأحجام عادي وكبير، السعر 2.5 د.ب والتخفيض 2.0 د.ب، المخزون 50 لكل حجم"
+          : "Example: Chicken burger meal, sizes Regular and Large, price 2.5 BHD, sale 2.0 BHD, stock 50 per size";
+      case "print":
+        return isAr
+          ? "مثال: ختم شخصي دائري، المقاسات 25mm و 30mm، حبر أزرق وأسود، السعر 4.5 د.ب، المخزون 10"
+          : "Example: Round personal stamp, sizes 25mm and 30mm, ink Blue and Black, price 4.5 BHD, stock 10";
+      case "gifts":
+        return isAr
+          ? "مثال: بوكس ورد فاخر، الأحجام صغير ووسط و VIP، السعر 15 د.ب، المخزون 5 لكل حجم"
+          : "Example: Luxury gift box, sizes Small, Medium, VIP, price 15 BHD, stock 5 each";
+      case "beauty":
+        return isAr
+          ? "مثال: عطر مسك، الأحجام 50ml و 100ml، السعر 20 د.ب، المخزون 15 لكل حجم"
+          : "Example: Musk perfume, sizes 50ml and 100ml, price 20 BHD, stock 15 each";
+      case "abayas":
+        return isAr
+          ? "مثال: كود AB10، الألوان أسود وكحلي، مقاسات 52 إلى 58، السعر 35 د.ب، المخزون 3 لكل مقاس"
+          : "Example: code AB10, colors Black and Navy, sizes 52 to 58, price 35 BHD, stock 3 per size";
+      default:
+        return isAr
+          ? "مثال: كود NP24، الألوان كحلي وعنابي وبيج، المقاسات من S إلى XL، السعر 25 د.ب والتخفيض 19 د.ب، المخزون 5 لكل خيار"
+          : "Example: code DRS-01, colors Black, Olive and Burgundy, sizes S to XL, price 25 BHD, sale 19, stock 5 per variant";
+    }
+  }, [currentVertical, isAr]);
+
+  const sizePlaceholder = useMemo(() => {
+    switch (currentVertical) {
+      case "food":
+        return isAr ? "صغير, وسط, كبير" : "Small, Medium, Large";
+      case "print":
+        return isAr ? "A4, A3, 25mm, 30mm" : "A4, A3, 25mm, 30mm";
+      case "gifts":
+        return isAr ? "صغير, متوسط, كبير, VIP" : "Small, Medium, Large, VIP";
+      case "beauty":
+        return isAr ? "30ml, 50ml, 100ml" : "30ml, 50ml, 100ml";
+      case "abayas":
+        return isAr ? "52, 54, 56, 58, 60" : "52, 54, 56, 58, 60";
+      default:
+        return isAr ? "S, M, L, XL" : "S, M, L, XL";
+    }
+  }, [currentVertical, isAr]);
+
+  const colorPlaceholder = useMemo(() => {
+    switch (currentVertical) {
+      case "print":
+        return isAr ? "أزرق, أسود, أحمر (لون الحبر أو الخامة)" : "Blue, Black, Red";
+      case "food":
+        return isAr ? "عادي, حار, صوص خاص (النوع أو النكهة)" : "Regular, Spicy, Special (Flavor/Option)";
+      case "beauty":
+        return isAr ? "ذهبي, شفاف, ميني" : "Gold, Clear, Mini";
+      default:
+        return isAr ? "كحلي, عنابي, بيج" : "Black, Navy, Olive";
+    }
+  }, [currentVertical, isAr]);
   const existingSku = variants.find((v) => v.sku)?.sku || "";
   const blank: VariantGenerationPlan = {
     base_sku: existingSku,
@@ -4276,11 +4376,7 @@ function BulkVariantDialog({
             className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder={
-              isAr
-                ? "مثال: كود NP24، الألوان كحلي وعنابي وبيج، المقاسات من S إلى XL، السعر 25 د.ب والتخفيض 19 د.ب، المخزون 5 لكل خيار"
-                : "Example: code DRS-01, colors Black, Olive and Burgundy, sizes S to XL, price 25 BHD, sale 19, stock 5 per variant"
-            }
+            placeholder={aiPromptPlaceholder}
           />
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <Button type="button" onClick={parseWithAi} disabled={parsing}>
@@ -4307,7 +4403,7 @@ function BulkVariantDialog({
         {/* QUICK SIZING PRESET PILLS */}
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">
-            {isAr ? "قوالب مقاسات جاهزة بنقرة واحدة:" : "1-Click Sizing Quick Presets:"}
+            {isAr ? "قوالب مقاسات وخيارات جاهزة بنقرة واحدة:" : "1-Click Sizing Quick Presets:"}
           </Label>
           <div className="flex items-center gap-1.5 flex-wrap">
             {orderedPresets.map((preset) => (
@@ -4336,21 +4432,23 @@ function BulkVariantDialog({
             />
           </div>
           <div>
-            <Label>{isAr ? "المقاسات (بفاصلة)" : "Sizes (comma separated)"}</Label>
+            <Label>{sizeAxis.label} {isAr ? "(بفاصلة)" : "(comma separated)"}</Label>
             <Input
               value={sizesText}
               onChange={(e) => setSizesText(e.target.value)}
-              placeholder={isAr ? "52, 54, 56, 58, 60" : "S, M, L, XL"}
+              placeholder={sizePlaceholder}
             />
           </div>
-          <div>
-            <Label>{isAr ? "الألوان (بفاصلة)" : "Colors (comma separated)"}</Label>
-            <Input
-              value={colorsText}
-              onChange={(e) => setColorsText(e.target.value)}
-              placeholder={isAr ? "كحلي, عنابي, بيج" : "Black, Navy, Olive"}
-            />
-          </div>
+          {colorAxis.visible && (
+            <div>
+              <Label>{colorAxis.label} {isAr ? "(بفاصلة)" : "(comma separated)"}</Label>
+              <Input
+                value={colorsText}
+                onChange={(e) => setColorsText(e.target.value)}
+                placeholder={colorPlaceholder}
+              />
+            </div>
+          )}
           {resolveVariantAxis({
             axis: "fabric",
             product,

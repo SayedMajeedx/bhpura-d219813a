@@ -1,10 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { abayaPackManifest } from "../src/addons/abaya-pack/manifest";
 import { beautyPerfumeManifest } from "../src/addons/beauty-perfume/manifest";
-import { foodBeverageManifest } from "../src/addons/food-beverage/manifest";
-import { giftsManifest } from "../src/addons/gifts/manifest";
 import { jewelryManifest } from "../src/addons/jewelry/manifest";
-import { printStampsManifest } from "../src/addons/print-stamps/manifest";
 import { withThrowOnError, resolveBrandOwnerUserId } from "../src/lib/addons/seed-helpers";
 import { getAllAddons } from "../src/lib/addons/addon-registry";
 
@@ -131,10 +128,7 @@ describe("Addon Seeds Platform Integrity", () => {
     const manifests = [
       abayaPackManifest,
       beautyPerfumeManifest,
-      foodBeverageManifest,
-      giftsManifest,
       jewelryManifest,
-      printStampsManifest,
     ];
 
     expect(addonsWithSeeds.map((a) => a.id).sort()).toEqual(manifests.map((m) => m.id).sort());
@@ -193,57 +187,6 @@ describe("Addon Seeds Platform Integrity", () => {
     });
   });
 
-  describe("food-beverage seeds", () => {
-    test("skips gracefully when brand owner cannot be resolved", async () => {
-      const db = createMockDb(); // No brands or business_settings
-      const seed = foodBeverageManifest.seeds!.find((s) => s.key === "food_extras_customization")!;
-
-      // Should not throw and should not insert zero UUID
-      await seed.run({ brandId, db: withThrowOnError(db) as any, lang: "ar", settings: {} });
-      expect(db._state.customizationOptions.length).toBe(0);
-    });
-
-    test("inserts customization option when brand owner exists and is idempotent", async () => {
-      const db = createMockDb({
-        brands: [{ id: brandId, created_by: userId }],
-      });
-      const seed = foodBeverageManifest.seeds!.find((s) => s.key === "food_extras_customization")!;
-
-      await seed.run({ brandId, db: withThrowOnError(db) as any, lang: "ar", settings: {} });
-      expect(db._state.customizationOptions.length).toBe(1);
-      expect(db._state.customizationOptions[0].user_id).toBe(userId);
-
-      // Second run
-      await seed.run({ brandId, db: withThrowOnError(db) as any, lang: "ar", settings: {} });
-      expect(db._state.customizationOptions.length).toBe(1);
-    });
-  });
-
-  describe("gifts seeds", () => {
-    test("skips gracefully when brand owner cannot be resolved", async () => {
-      const db = createMockDb();
-      const seed = giftsManifest.seeds!.find((s) => s.key === "gift_wrapping_options")!;
-
-      await seed.run({ brandId, db: withThrowOnError(db) as any, lang: "ar", settings: {} });
-      expect(db._state.customizationOptions.length).toBe(0);
-    });
-
-    test("inserts customization option when brand owner exists and is idempotent", async () => {
-      const db = createMockDb({
-        brands: [{ id: brandId, created_by: userId }],
-      });
-      const seed = giftsManifest.seeds!.find((s) => s.key === "gift_wrapping_options")!;
-
-      await seed.run({ brandId, db: withThrowOnError(db) as any, lang: "ar", settings: {} });
-      expect(db._state.customizationOptions.length).toBe(1);
-      expect(db._state.customizationOptions[0].user_id).toBe(userId);
-
-      // Second run
-      await seed.run({ brandId, db: withThrowOnError(db) as any, lang: "ar", settings: {} });
-      expect(db._state.customizationOptions.length).toBe(1);
-    });
-  });
-
   describe("jewelry seeds", () => {
     test("jewelry_ring_guide satisfies base_unit constraint ('none') and is idempotent", async () => {
       const db = createMockDb();
@@ -261,45 +204,36 @@ describe("Addon Seeds Platform Integrity", () => {
       await seed.run({ brandId, db: withThrowOnError(db) as any, lang: "ar", settings: {} });
       expect(db._state.sizeGuides.length).toBe(1);
     });
-
-    test("jewelry_engraving_option skips when no owner and inserts when owner exists", async () => {
-      const db = createMockDb();
-      const seed = jewelryManifest.seeds!.find((s) => s.key === "jewelry_engraving_option")!;
-
-      // No owner -> skip
-      await seed.run({ brandId, db: withThrowOnError(db) as any, lang: "ar", settings: {} });
-      expect(db._state.customizationOptions.length).toBe(0);
-
-      // Owner exists -> insert
-      db._state.brands.push({ id: brandId, created_by: userId });
-      await seed.run({ brandId, db: withThrowOnError(db) as any, lang: "ar", settings: {} });
-      expect(db._state.customizationOptions.length).toBe(1);
-      expect(db._state.customizationOptions[0].user_id).toBe(userId);
-
-      // Second run
-      await seed.run({ brandId, db: withThrowOnError(db) as any, lang: "ar", settings: {} });
-      expect(db._state.customizationOptions.length).toBe(1);
-    });
   });
 
-  describe("print-stamps seeds", () => {
-    test("print_stamps_customization skips when no owner and inserts when owner exists", async () => {
-      const db = createMockDb();
-      const seed = printStampsManifest.seeds!.find((s) => s.key === "print_stamps_customization")!;
+  describe("customization options policy: always merchant-controlled (never auto-seeded)", () => {
+    test("no addon manifest contains seeds for customization_options", () => {
+      const addons = getAllAddons();
+      for (const addon of addons) {
+        if (!addon.seeds) continue;
+        for (const seed of addon.seeds) {
+          expect(seed.key).not.toContain("customization");
+          expect(seed.key).not.toContain("engraving_option");
+        }
+      }
+    });
 
-      // No owner -> skip
-      await seed.run({ brandId, db: withThrowOnError(db) as any, lang: "ar", settings: {} });
+    test("customization options table remains empty by default across all seed executions", async () => {
+      const db = createMockDb({
+        brands: [{ id: brandId, created_by: userId }],
+        businessSettings: [{ brand_id: brandId, user_id: userId }],
+      });
+
+      const addons = getAllAddons();
+      for (const addon of addons) {
+        if (!addon.seeds) continue;
+        for (const seed of addon.seeds) {
+          await seed.run({ brandId, db: withThrowOnError(db) as any, lang: "ar", settings: {} });
+        }
+      }
+
+      // Strict user rule: customization_options must be left empty for merchant
       expect(db._state.customizationOptions.length).toBe(0);
-
-      // Owner exists via business_settings -> insert
-      db._state.businessSettings.push({ brand_id: brandId, user_id: userId });
-      await seed.run({ brandId, db: withThrowOnError(db) as any, lang: "ar", settings: {} });
-      expect(db._state.customizationOptions.length).toBe(1);
-      expect(db._state.customizationOptions[0].user_id).toBe(userId);
-
-      // Second run
-      await seed.run({ brandId, db: withThrowOnError(db) as any, lang: "ar", settings: {} });
-      expect(db._state.customizationOptions.length).toBe(1);
     });
   });
 

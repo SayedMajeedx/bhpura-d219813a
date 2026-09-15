@@ -46,6 +46,12 @@ export const queryKeys = {
     detail: (brandId: string, productId: string) => ["products", brandId, productId] as const,
   },
 
+  // Categories & Catalog Hierarchy
+  categories: {
+    all: (brandId: string) => ["categories", brandId] as const,
+    overview: (brandId: string) => ["admin-categories-overview", brandId] as const,
+  },
+
   // Variants & Options
   variants: {
     all: (brandId: string) => ["variants", brandId] as const,

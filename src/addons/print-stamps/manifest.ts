@@ -1,5 +1,4 @@
 import type { AddonManifest } from "@/lib/addons/addon-types";
-import { resolveBrandOwnerUserId } from "@/lib/addons/seed-helpers";
 
 export const printStampsManifest: AddonManifest = {
   id: "print-stamps",
@@ -86,46 +85,39 @@ export const printStampsManifest: AddonManifest = {
       },
     ],
     trustBadgeSuggestions: ["Palette", "PackageCheck"],
+    sizingPresets: [
+      {
+        id: "print_paper_sizes",
+        labelAr: "مقاسات الأوراق والمطبوعات (A5, A4, A3, A2)",
+        labelEn: "Paper & Print Sizes (A5, A4, A3, A2)",
+        sizes: ["A5", "A4", "A3", "A2"],
+        unit: "paper",
+      },
+      {
+        id: "round_stamps",
+        labelAr: "أختام دائرية (25mm, 30mm, 40mm, 50mm)",
+        labelEn: "Round Stamp Diameters (25mm, 30mm, 40mm, 50mm)",
+        sizes: ["25mm", "30mm", "40mm", "50mm"],
+        unit: "mm",
+      },
+      {
+        id: "rect_stamps",
+        labelAr: "أختام مستطيلة (20x50mm, 25x65mm, 30x70mm)",
+        labelEn: "Rectangular Stamps (20x50mm, 25x65mm, 30x70mm)",
+        sizes: ["20x50mm", "25x65mm", "30x70mm"],
+        unit: "mm",
+      },
+      {
+        id: "cards_count",
+        labelAr: "كميات الكروت المطبوعة (100, 250, 500, 1000)",
+        labelEn: "Card Quantities (100, 250, 500, 1000)",
+        sizes: ["100 كرت", "250 كرت", "500 كرت", "1000 كرت"],
+        unit: "count",
+      },
+    ],
     aiContext: ({ brandName, lang }) =>
       lang === "ar"
         ? `متجر "${brandName}" يقدم خدمات الطباعة الحرارية والأختام والتصاميم المخصصة.`
         : `Store "${brandName}" provides bespoke printing and stamping services.`,
   },
-  seeds: [
-    {
-      key: "print_stamps_customization",
-      description: {
-        ar: "خيارات تخصيص الطباعة والأختام الافتراضية",
-        en: "Default printing and stamping customization options",
-      },
-      run: async ({ brandId, db }) => {
-        const optionName = "تخصيص الاسم أو الشعار المطبوع";
-        const { data: existing, error: existErr } = await db
-          .from("customization_options")
-          .select("id")
-          .eq("brand_id", brandId)
-          .eq("name", optionName)
-          .maybeSingle();
-
-        if (existErr) throw existErr;
-
-        if (!existing) {
-          const userId = await resolveBrandOwnerUserId(db, brandId);
-          if (!userId) {
-            return;
-          }
-
-          const { error } = await db.from("customization_options").insert({
-            brand_id: brandId,
-            user_id: userId,
-            name: optionName,
-            price_delta: 2.0,
-            product_ids: [],
-          });
-
-          if (error) throw error;
-        }
-      },
-    },
-  ],
 };
