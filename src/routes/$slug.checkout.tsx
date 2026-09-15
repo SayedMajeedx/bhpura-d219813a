@@ -72,6 +72,7 @@ import {
   getCountryByCode,
   calculateShippingFee,
 } from "@/lib/shipping";
+import { CountryFlag } from "@/components/ui/country-flag";
 
 export const Route = createFileRoute("/$slug/checkout")({
   component: Checkout,
@@ -1744,7 +1745,7 @@ function Checkout() {
               <Label className="font-semibold text-sm mb-1.5 block">
                 {t("وجهة التوصيل والشحن", "Delivery Destination")} *
               </Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className={`grid gap-3 ${zones.length > 0 ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"}`}>
                 {/* 1. Bahrain Domestic (Default) */}
                 <div
                   role="button"
@@ -1753,19 +1754,24 @@ function Checkout() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") setSelectedDestination("BH");
                   }}
-                  className={`flex flex-col justify-between p-3.5 rounded-xl border text-sm transition-all text-start cursor-pointer hover:bg-secondary/10 ${
+                  className={`p-3.5 sm:p-4 rounded-xl border text-sm transition-all text-start cursor-pointer hover:bg-secondary/10 flex flex-col justify-between ${
                     selectedDestination === "BH"
                       ? "border-primary bg-primary/10 ring-1 ring-primary shadow-sm"
                       : "border-border bg-card"
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">🇧🇭</span>
-                      <div>
-                        <div className="font-semibold text-foreground flex items-center gap-1.5">
-                          <span>{t("التوصيل داخل البحرين", "Bahrain (Domestic)")}</span>
-                          <span className="text-[10px] bg-primary/20 text-primary font-bold px-1.5 py-0.5 rounded-full">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <CountryFlag
+                        code="BH"
+                        className="w-7 h-5 rounded-xs object-cover border border-border/40 shadow-xs shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-foreground text-sm">
+                            {t("التوصيل داخل البحرين", "Bahrain (Domestic)")}
+                          </span>
+                          <span className="text-[10px] bg-primary/20 text-primary font-bold px-2 py-0.5 rounded-full shrink-0">
                             {t("الافتراضي", "Default")}
                           </span>
                         </div>
@@ -1774,19 +1780,21 @@ function Checkout() {
                         </p>
                       </div>
                     </div>
-                    <div className="text-end font-mono font-semibold text-sm">
-                      {Number(settings.delivery_fee || 0) > 0 ? (
-                        formatPrice(Number(settings.delivery_fee || 0), currency, lang)
-                      ) : (
-                        <span className="text-emerald-600 font-bold">{t("مجانًا", "Free")}</span>
-                      )}
+                    <div className="text-end shrink-0 ps-2">
+                      <span className="font-mono font-bold text-sm text-foreground">
+                        {Number(settings.delivery_fee || 0) > 0 ? (
+                          formatPrice(Number(settings.delivery_fee || 0), currency, lang)
+                        ) : (
+                          <span className="text-emerald-600 font-bold">{t("مجانًا", "Free")}</span>
+                        )}
+                      </span>
                     </div>
                   </div>
 
                   {settings.delivery_estimate_enabled &&
                     (settings.delivery_estimate_ar || settings.delivery_estimate_en) && (
-                      <div className="mt-2 text-[11px] text-muted-foreground bg-background/60 rounded px-2 py-1 flex items-center gap-1">
-                        <Truck className="h-3 w-3 text-primary flex-shrink-0" />
+                      <div className="mt-2.5 pt-2 border-t border-border/40 text-[11px] text-muted-foreground flex items-center gap-1.5">
+                        <Truck className="h-3.5 w-3.5 text-primary shrink-0" />
                         <span>
                           {lang === "ar"
                             ? settings.delivery_estimate_ar
@@ -1804,11 +1812,7 @@ function Checkout() {
                     totalCartQuantity,
                     Number(settings.delivery_fee || 0),
                   );
-                  const flags = (z.countries || [])
-                    .map((code) => getCountryByCode(code)?.flag)
-                    .filter(Boolean)
-                    .slice(0, 5)
-                    .join(" ");
+                  const countryCodes = (z.countries || []).slice(0, 4);
 
                   return (
                     <div
@@ -1819,17 +1823,25 @@ function Checkout() {
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") setSelectedDestination(z.id);
                       }}
-                      className={`flex flex-col justify-between p-3.5 rounded-xl border text-sm transition-all text-start cursor-pointer hover:bg-secondary/10 ${
+                      className={`p-3.5 sm:p-4 rounded-xl border text-sm transition-all text-start cursor-pointer hover:bg-secondary/10 flex flex-col justify-between ${
                         active
                           ? "border-primary bg-primary/10 ring-1 ring-primary shadow-sm"
                           : "border-border bg-card"
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl">{flags || "🌍"}</span>
-                          <div>
-                            <p className="font-semibold text-foreground">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="flex items-center -space-x-1.5 rtl:space-x-reverse shrink-0">
+                            {countryCodes.map((c) => (
+                              <CountryFlag
+                                key={c}
+                                code={c}
+                                className="w-5 h-3.5 rounded-2xs object-cover border border-background shadow-xs shrink-0"
+                              />
+                            ))}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-foreground text-sm truncate">
                               {lang === "ar" ? z.name_ar : z.name_en}
                             </p>
                             <p className="text-xs text-muted-foreground mt-0.5">
@@ -1847,18 +1859,20 @@ function Checkout() {
                             </p>
                           </div>
                         </div>
-                        <div className="text-end font-mono font-semibold text-sm">
-                          {zoneShippingFee > 0 ? (
-                            formatPrice(zoneShippingFee, currency, lang)
-                          ) : (
-                            <span className="text-emerald-600 font-bold">{t("مجانًا", "Free")}</span>
-                          )}
+                        <div className="text-end shrink-0 ps-2">
+                          <span className="font-mono font-bold text-sm text-foreground">
+                            {zoneShippingFee > 0 ? (
+                              formatPrice(zoneShippingFee, currency, lang)
+                            ) : (
+                              <span className="text-emerald-600 font-bold">{t("مجانًا", "Free")}</span>
+                            )}
+                          </span>
                         </div>
                       </div>
 
                       {(z.estimate_ar || z.estimate_en) && (
-                        <div className="mt-2 text-[11px] text-muted-foreground bg-background/60 rounded px-2 py-1 flex items-center gap-1">
-                          <Truck className="h-3 w-3 text-primary flex-shrink-0" />
+                        <div className="mt-2.5 pt-2 border-t border-border/40 text-[11px] text-muted-foreground flex items-center gap-1.5">
+                          <Truck className="h-3.5 w-3.5 text-primary shrink-0" />
                           <span>{lang === "ar" ? z.estimate_ar : z.estimate_en}</span>
                         </div>
                       )}
@@ -1887,12 +1901,17 @@ function Checkout() {
                       const cData = getCountryByCode(cCode);
                       return (
                         <SelectItem key={cCode} value={cCode}>
-                          <span className="me-2">{cData?.flag || "🌍"}</span>
-                          <span>
-                            {lang === "ar"
-                              ? cData?.name_ar || cCode
-                              : cData?.name_en || cCode}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <CountryFlag
+                              code={cCode}
+                              className="w-4 h-3 rounded-2xs object-cover border border-border/40 shrink-0"
+                            />
+                            <span>
+                              {lang === "ar"
+                                ? cData?.name_ar || cCode
+                                : cData?.name_en || cCode}
+                            </span>
+                          </div>
                         </SelectItem>
                       );
                     })}
@@ -1905,8 +1924,11 @@ function Checkout() {
             {selectedDestination === "BH" ? (
               // Bahrain Local Address Form
               <div className="space-y-3">
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                  <span>🇧🇭</span>
+                <div className="text-xs font-semibold text-foreground/80 tracking-wider flex items-center gap-2 pb-1">
+                  <CountryFlag
+                    code="BH"
+                    className="w-4.5 h-3 rounded-xs object-cover border border-border/40 shrink-0"
+                  />
                   <span>{t("تفاصيل العنوان داخل مملكة البحرين", "Address Details in Bahrain")}</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -2016,11 +2038,13 @@ function Checkout() {
             ) : (
               // International Address Form
               <div className="space-y-3">
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                  <span>🌍</span>
+                <div className="text-xs font-semibold text-foreground/80 tracking-wider flex items-center gap-2 pb-1">
+                  <CountryFlag
+                    code={selectedCountryCode}
+                    className="w-4.5 h-3 rounded-xs object-cover border border-border/40 shrink-0"
+                  />
                   <span>
                     {t("تفاصيل عنوان الشحن الدولي إلى", "International Shipping Address to")}{" "}
-                    {getCountryByCode(selectedCountryCode)?.flag}{" "}
                     {lang === "ar"
                       ? getCountryByCode(selectedCountryCode)?.name_ar || selectedCountryCode
                       : getCountryByCode(selectedCountryCode)?.name_en || selectedCountryCode}

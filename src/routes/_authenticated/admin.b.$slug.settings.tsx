@@ -53,6 +53,7 @@ import {
   formatCountryName,
   getShippingPricingDescription,
 } from "@/lib/shipping";
+import { CountryFlag } from "@/components/ui/country-flag";
 import { useT, useI18n } from "@/lib/i18n";
 import { PhoneInput } from "@/components/phone-input";
 import { Rnd } from "react-rnd";
@@ -3239,7 +3240,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
     name_ar: "",
     countries: [],
     pricing_type: "flat",
-    fee: "",
+    fee: "5",
     bundle_size: 2,
     estimate_ar: "",
     estimate_en: "",
@@ -3344,6 +3345,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
       countries: GCC_NON_BH_CODES,
       name_ar: prev.name_ar || "دول الخليج العربي",
       name_en: prev.name_en || "GCC Countries",
+      fee: prev.fee !== "" ? prev.fee : "5",
       estimate_ar: prev.estimate_ar || "خلال 3 - 5 أيام عمل",
       estimate_en: prev.estimate_en || "3 - 5 business days",
     }));
@@ -3355,16 +3357,17 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
       countries: ARAB_CODES,
       name_ar: prev.name_ar || "الدول العربية",
       name_en: prev.name_en || "Arab Countries",
+      fee: prev.fee !== "" ? prev.fee : "7",
       estimate_ar: prev.estimate_ar || "خلال 5 - 7 أيام عمل",
       estimate_en: prev.estimate_en || "5 - 7 business days",
     }));
   };
 
   const addZone = () => {
-    if (!newZone.name_en.trim() || !newZone.name_ar.trim() || newZone.fee === "") {
-      toast.error(
-        isAr ? "الرجاء كتابة اسم المنطقة وتحديد الرسوم" : "Please enter zone name and delivery fee",
-      );
+    const nameAr = newZone.name_ar.trim() || newZone.name_en.trim();
+    const nameEn = newZone.name_en.trim() || newZone.name_ar.trim();
+    if (!nameAr) {
+      toast.error(isAr ? "الرجاء كتابة اسم المنطقة" : "Please enter zone name");
       return;
     }
     if (newZone.countries.length === 0) {
@@ -3375,13 +3378,18 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
       );
       return;
     }
+    const feeNum = newZone.fee === "" ? 5 : Number(newZone.fee);
+    if (isNaN(feeNum) || feeNum < 0) {
+      toast.error(isAr ? "الرجاء تحديد رسوم شحن صحيحة" : "Please specify a valid shipping fee");
+      return;
+    }
     const zone: ShippingZone = {
       id: crypto.randomUUID(),
-      name_en: newZone.name_en.trim(),
-      name_ar: newZone.name_ar.trim(),
+      name_en: nameEn,
+      name_ar: nameAr,
       countries: newZone.countries,
       pricing_type: newZone.pricing_type,
-      fee: Math.max(0, Number(newZone.fee)),
+      fee: feeNum,
       bundle_size:
         newZone.pricing_type === "bundle" ? Math.max(1, Number(newZone.bundle_size || 2)) : undefined,
       estimate_ar: newZone.estimate_ar.trim() || undefined,
@@ -3393,7 +3401,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
       name_ar: "",
       countries: [],
       pricing_type: "flat",
-      fee: "",
+      fee: "5",
       bundle_size: 2,
       estimate_ar: "",
       estimate_en: "",
@@ -3484,8 +3492,11 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
           {/* SECTION 1: Anchored Bahrain Domestic Delivery */}
           <div className="rounded-xl border-2 border-primary/20 bg-primary/5 p-4 sm:p-5 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-primary/10 pb-3">
-              <div className="flex items-center gap-2.5">
-                <span className="text-2xl">🇧🇭</span>
+              <div className="flex items-center gap-3">
+                <CountryFlag
+                  code="BH"
+                  className="w-9 h-6 rounded-xs object-cover border border-border/40 shadow-xs shrink-0"
+                />
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="text-base font-semibold text-foreground">
@@ -3518,7 +3529,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
                     onChange={(e) =>
                       setState({ ...state, delivery_fee: Math.max(0, Number(e.target.value)) })
                     }
-                    className="font-mono h-10 pr-12 text-sm bg-background"
+                    className="font-mono h-10 pe-14 ps-3 text-sm bg-background"
                   />
                   <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground pointer-events-none">
                     {currency}
@@ -3633,9 +3644,12 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
                           {countryObjects.map((c, i) => (
                             <span
                               key={i}
-                              className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-border/80 bg-secondary/30"
+                              className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border border-border/80 bg-secondary/30"
                             >
-                              <span>{c?.flag || "🌐"}</span>
+                              <CountryFlag
+                                code={c?.code || ""}
+                                className="w-4 h-3 rounded-2xs object-cover border border-border/40 shrink-0"
+                              />
                               <span>{isAr ? c?.name_ar : c?.name_en}</span>
                             </span>
                           ))}
@@ -3676,27 +3690,27 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
                 })}
               </div>
             ) : (
-              <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground bg-secondary/10">
-                <Globe className="h-8 w-8 text-muted-foreground/60 mx-auto mb-2" />
+              <div className="rounded-xl border border-dashed border-border p-6 text-center text-muted-foreground text-xs space-y-1">
+                <Globe className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
                 <p className="font-medium text-foreground">
-                  {isAr ? "لم تقم بإضافة مناطق شحن دولية بعد" : "No international shipping zones yet"}
+                  {isAr ? "لم تتم إضافة مناطق شحن دولية بعد" : "No international shipping zones added yet"}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
+                <p>
                   {isAr
-                    ? "يمكنك الآن إضافة دول الخليج أو دول محددة بضغطة زر واحدة واختيار طريقة التسعير المناسبة."
-                    : "Add GCC countries or custom international regions with a single click and pick your pricing formula."}
+                    ? "إذا كنت تشحن لدول أخرى (مثل السعودية والإمارات)، يمكنك إضافتها بسهولة من النموذج أدناه."
+                    : "If you ship abroad (e.g. GCC or Arab countries), configure destination zones below."}
                 </p>
               </div>
             )}
 
             {/* Add New Zone Builder Card */}
             <div className="rounded-xl border border-border p-4 sm:p-5 bg-secondary/10 space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <h4 className="text-sm font-semibold flex items-center gap-2">
                   <Plus className="h-4 w-4 text-primary" />
                   <span>{isAr ? "إضافة منطقة شحن جديدة" : "Add New Shipping Zone"}</span>
                 </h4>
-                <div className="flex items-center gap-1.5 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs text-muted-foreground me-1 hidden sm:inline">
                     {isAr ? "قوالب سريعة:" : "Presets:"}
                   </span>
@@ -3704,19 +3718,25 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-7 text-xs px-2.5 rounded-full"
+                    className="h-8 text-xs px-3 rounded-full flex items-center gap-1.5 hover:border-primary hover:bg-primary/5 transition-colors"
                     onClick={applyGccPreset}
                   >
-                    🇸🇦 🇦🇪 {isAr ? "دول الخليج العربي" : "GCC Countries"}
+                    <div className="flex items-center -space-x-1 rtl:space-x-reverse shrink-0">
+                      <CountryFlag code="SA" className="w-3.5 h-2.5 rounded-2xs object-cover border border-background shadow-xs" />
+                      <CountryFlag code="AE" className="w-3.5 h-2.5 rounded-2xs object-cover border border-background shadow-xs" />
+                      <CountryFlag code="KW" className="w-3.5 h-2.5 rounded-2xs object-cover border border-background shadow-xs" />
+                    </div>
+                    <span>{isAr ? "دول الخليج العربي" : "GCC Countries"}</span>
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-7 text-xs px-2.5 rounded-full"
+                    className="h-8 text-xs px-3 rounded-full flex items-center gap-1.5 hover:border-primary hover:bg-primary/5 transition-colors"
                     onClick={applyArabPreset}
                   >
-                    🌍 {isAr ? "الدول العربية" : "Arab Countries"}
+                    <Globe className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <span>{isAr ? "الدول العربية" : "Arab Countries"}</span>
                   </Button>
                 </div>
               </div>
@@ -3736,7 +3756,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
                           key={code}
                           className="inline-flex items-center gap-1.5 text-xs bg-primary/10 text-primary border border-primary/20 px-2.5 py-1 rounded-full font-medium"
                         >
-                          <span>{c?.flag || "🌐"}</span>
+                          <CountryFlag code={code} className="w-4 h-3 rounded-2xs object-cover border border-border/40 shrink-0" />
                           <span>{isAr ? c?.name_ar : c?.name_en}</span>
                           <button
                             type="button"
@@ -3777,10 +3797,12 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
                       return (
                         <SelectItem key={c.code} value={c.code} className="text-xs">
                           <div className="flex items-center justify-between w-full gap-2">
-                            <span>
-                              {c.flag} {isAr ? c.name_ar : c.name_en} ({c.name_en})
-                            </span>
-                            {isSelected && <Check className="h-3.5 w-3.5 text-primary ms-2" />}
+                            <div className="flex items-center gap-2">
+                              <CountryFlag code={c.code} className="w-4 h-3 rounded-2xs object-cover border border-border/40 shrink-0" />
+                              <span>{isAr ? c.name_ar : c.name_en}</span>
+                              <span className="text-muted-foreground text-[11px]">({c.name_en})</span>
+                            </div>
+                            {isSelected && <Check className="h-3.5 w-3.5 text-primary ms-2 shrink-0" />}
                           </div>
                         </SelectItem>
                       );
@@ -3906,7 +3928,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
                       placeholder="5.000"
                       value={newZone.fee}
                       onChange={(e) => setNewZone({ ...newZone, fee: e.target.value })}
-                      className="font-mono text-xs bg-background pr-12"
+                      className="font-mono text-xs bg-background pe-14 ps-3"
                     />
                     <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground pointer-events-none">
                       {currency}
@@ -3982,7 +4004,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
                 <Button
                   type="button"
                   size="sm"
-                  className="bg-primary text-primary-foreground font-semibold px-4"
+                  className="bg-primary text-primary-foreground font-semibold px-5 h-9 rounded-lg shadow-sm hover:opacity-95"
                   onClick={addZone}
                 >
                   <Plus className="h-4 w-4 me-1.5" />
