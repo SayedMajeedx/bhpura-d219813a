@@ -1,6 +1,6 @@
 import type { StoreVertical } from "@/lib/store-profile";
-import { UNIVERSAL_SIZING_PRESETS, type SizingPreset } from "@/lib/variant-sku-utils";
-import { listAddons } from "./addon-registry";
+import { UNIVERSAL_SIZING_PRESETS } from "@/lib/variant-sku-utils";
+import { listAddons, type SizingPreset } from "./addon-registry";
 
 /**
  * Returns sizing presets tailored for the current store vertical.
