@@ -40,6 +40,7 @@ import { AddonSlot } from "@/components/addons/AddonSlot";
 import { useAddons } from "@/components/addons/AddonsProvider";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { variantAxisDefaultsFrom, resolveAllVariantAxes } from "@/lib/addons/addon-registry";
+import { formatCustomField } from "@/lib/addons/custom-fields";
 import { ProductShareModal } from "@/components/storefront/ProductShareModal";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { toast } from "sonner";
@@ -927,14 +928,18 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     if (measurementsApplied) {
       Object.entries(cfValues).forEach(([k, v]) => {
         if (isMeasurementField(k) && v && !custom.some((c) => c.key === k)) {
-          custom.push({
-            key: k,
-            label_ar: k === "fit_profile" ? "ملف المقاس المستخدم" : k,
-            label_en: k === "fit_profile" ? "Applied measurement profile" : k,
-            value: String(v),
-            type: "text",
-            price_delta: 0,
-          });
+          const fmtAr = formatCustomField({ key: k, value: String(v) }, "ar");
+          const fmtEn = formatCustomField({ key: k, value: String(v) }, "en");
+          if (fmtAr && fmtEn) {
+            custom.push({
+              key: k,
+              label_ar: fmtAr.label,
+              label_en: fmtEn.label,
+              value: lang === "ar" ? fmtAr.value : fmtEn.value,
+              type: "text",
+              price_delta: 0,
+            });
+          }
         }
       });
     }

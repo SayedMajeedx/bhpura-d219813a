@@ -172,7 +172,12 @@ export const Route = createFileRoute("/$slug")({
             id: String(z.id || ""),
             name_en: String(z.name_en || ""),
             name_ar: String(z.name_ar || ""),
+            countries: Array.isArray(z.countries) ? z.countries : [],
+            pricing_type: (z.pricing_type || "flat") as "flat" | "per_piece" | "bundle",
             fee: Number(z.fee ?? 0),
+            bundle_size: Number(z.bundle_size || (z.pricing_type === "bundle" ? 2 : 1)),
+            estimate_ar: String(z.estimate_ar || ""),
+            estimate_en: String(z.estimate_en || ""),
           }));
         } catch (_e) {
           return [];

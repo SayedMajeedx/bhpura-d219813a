@@ -65,6 +65,13 @@ import {
 import type { BrandLoyaltyProgram, LoyaltyAccount, LoyaltyTier } from "@/lib/loyalty.types";
 import { getOrCreateCartSessionId } from "@/lib/abandoned-cart-session";
 import { isCatalogMode } from "@/lib/storefront-mode";
+import { formatCustomFieldsList } from "@/lib/addons/custom-fields";
+import {
+  type ShippingZone,
+  COUNTRIES_DATABASE,
+  getCountryByCode,
+  calculateShippingFee,
+} from "@/lib/shipping";
 
 export const Route = createFileRoute("/$slug/checkout")({
   component: Checkout,
@@ -489,22 +496,37 @@ function Checkout() {
   const branchLoc = (b: (typeof branches)[number]) =>
     lang === "ar" ? b.location_ar || b.location_en || "" : b.location_en || b.location_ar || "";
 
-  const [selectedZoneId, setSelectedZoneId] = useState<string>("");
-  const zones = useMemo(() => settings.shipping_zones ?? [], [settings.shipping_zones]);
+  // Delivery destination: "BH" (default domestic) or zone ID
+  const [selectedDestination, setSelectedDestination] = useState<string>("BH");
+  const zones = useMemo(() => (settings.shipping_zones ?? []) as ShippingZone[], [settings.shipping_zones]);
+
+  // Selected country code (when international destination is chosen)
+  const [selectedCountryCode, setSelectedCountryCode] = useState<string>("BH");
+
+  // Total quantity of items in cart for per-piece / bundle shipping formula
+  const totalCartQuantity = useMemo(() => {
+    return cart.reduce((sum, item) => sum + (item.qty || 1), 0);
+  }, [cart]);
+
+  const selectedZone = useMemo(() => {
+    if (selectedDestination === "BH") return undefined;
+    return zones.find((z) => z.id === selectedDestination);
+  }, [zones, selectedDestination]);
+
   useEffect(() => {
-    if (zones.length > 0) {
-      setSelectedZoneId((cur) => cur || zones[0].id);
+    if (selectedDestination === "BH") {
+      setSelectedCountryCode("BH");
+    } else if (selectedZone && selectedZone.countries && selectedZone.countries.length > 0) {
+      if (!selectedZone.countries.includes(selectedCountryCode)) {
+        setSelectedCountryCode(selectedZone.countries[0]);
+      }
     }
-  }, [zones]);
+  }, [selectedDestination, selectedZone]);
 
-  const selectedZone = zones.find((z) => z.id === selectedZoneId);
-
-  const shipping =
-    fulfillment === "delivery"
-      ? zones.length > 0
-        ? (selectedZone?.fee ?? 0)
-        : Number(settings.delivery_fee || 0)
-      : 0;
+  const shipping = useMemo(() => {
+    if (fulfillment !== "delivery") return 0;
+    return calculateShippingFee(selectedZone, totalCartQuantity, Number(settings.delivery_fee || 0));
+  }, [fulfillment, selectedZone, totalCartQuantity, settings.delivery_fee]);
 
   // 1. Fetch Loyalty Program and Customer Account
   useEffect(() => {
@@ -918,9 +940,26 @@ function Checkout() {
       return;
     }
     if (fulfillment === "delivery") {
-      if (!form.region || !form.block.trim() || !form.road.trim() || !form.house.trim()) {
-        toast.error(t("يرجى تعبئة كامل عنوان التوصيل", "Please complete the delivery address"));
-        return;
+      if (selectedDestination === "BH") {
+        if (!form.region || !form.block.trim() || !form.road.trim() || !form.house.trim()) {
+          toast.error(
+            t(
+              "يرجى تعبئة كامل عنوان التوصيل داخل البحرين",
+              "Please complete the delivery address in Bahrain",
+            ),
+          );
+          return;
+        }
+      } else {
+        if (!form.region.trim() || !form.road.trim() || !form.house.trim()) {
+          toast.error(
+            t(
+              "يرجى إدخال المدينة، والحي، وتفاصيل العنوان للشحن الدولي",
+              "Please enter city, district, and street address for international shipping",
+            ),
+          );
+          return;
+        }
       }
     }
     if (!method) {
@@ -974,7 +1013,15 @@ function Checkout() {
             name: form.name,
             phone: form.phone,
             email: customerEmail,
-            label: form.label,
+            label:
+              selectedDestination === "BH"
+                ? form.label
+                : [
+                    getCountryByCode(selectedCountryCode)?.name_en || selectedCountryCode,
+                    form.label,
+                  ]
+                    .filter(Boolean)
+                    .join(" - "),
             region: form.region,
             block: form.block,
             road: form.road,
@@ -1007,23 +1054,20 @@ function Checkout() {
           p_digital_contact: fulfillment === "digital" ? digitalContact.trim() : null,
           p_promo_code: appliedPromo?.code ?? null,
           p_benefit_receipt_id: benefitReceiptId,
-          p_shipping_fee:
-            fulfillment === "delivery"
-              ? zones.length > 0
-                ? (selectedZone?.fee ?? 0)
-                : Number(settings.delivery_fee || 0)
-              : 0,
+          p_shipping_fee: shipping,
           p_shipping_zone:
             fulfillment === "delivery"
-              ? zones.length > 0
-                ? selectedZone
+              ? selectedDestination === "BH"
+                ? lang === "ar"
+                  ? "البحرين - توصيل محلي"
+                  : "Bahrain - Local Delivery"
+                : selectedZone
                   ? lang === "ar"
-                    ? selectedZone.name_ar
-                    : selectedZone.name_en
-                  : null
-                : lang === "ar"
-                  ? "توصيل"
-                  : "Delivery"
+                    ? `${selectedZone.name_ar} (${getCountryByCode(selectedCountryCode)?.name_ar || selectedCountryCode})`
+                    : `${selectedZone.name_en} (${getCountryByCode(selectedCountryCode)?.name_en || selectedCountryCode})`
+                  : lang === "ar"
+                    ? "شحن دولي"
+                    : "International Shipping"
               : null,
           p_idempotency_key: idempotencyKey,
         } as any);
@@ -1695,144 +1739,386 @@ function Checkout() {
               </div>
             )}
 
-            {zones.length > 0 && (
-              <div className="mb-4">
-                <Label className="font-semibold text-sm mb-1.5 block">
-                  {t("منطقة الشحن والتوصيل", "Shipping & Delivery Zone")} *
-                </Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {zones.map((z) => {
-                    const active = z.id === selectedZoneId;
-                    return (
-                      <Button
-                        key={z.id}
-                        type="button"
-                        variant={active ? "outline" : "ghost"}
-                        onClick={() => setSelectedZoneId(z.id)}
-                        className={`flex items-center justify-between p-3 rounded-lg border text-sm transition-all text-start cursor-pointer hover:bg-secondary/5 h-auto ${
-                          active ? "border-primary bg-primary/10" : "border-border"
-                        }`}
-                      >
-                        <div>
-                          <p className="font-medium">{lang === "ar" ? z.name_ar : z.name_en}</p>
-                        </div>
-                        <div
-                          className={`text-end font-mono font-semibold ${
-                            active ? "text-primary" : ""
-                          }`}
-                        >
-                          {z.fee > 0 ? formatPrice(z.fee, currency, lang) : t("مجانًا", "Free")}
-                        </div>
-                      </Button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="checkout-address-label">{t("لقب العنوان", "Address label")}</Label>
-                <Input
-                  id="checkout-address-label"
-                  name="address-label"
-                  autoComplete="address-level3"
-                  className="h-11"
-                  placeholder={t("مثل: المنزل، المكتب", "e.g. Home, Work")}
-                  value={form.label}
-                  onChange={(e) => {
-                    setSelectedAddressId("manual");
-                    setForm({ ...form, label: e.target.value });
+            {/* Delivery Destination Options */}
+            <div className="space-y-2 mb-4">
+              <Label className="font-semibold text-sm mb-1.5 block">
+                {t("وجهة التوصيل والشحن", "Delivery Destination")} *
+              </Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {/* 1. Bahrain Domestic (Default) */}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedDestination("BH")}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") setSelectedDestination("BH");
                   }}
-                />
-              </div>
-              <div>
-                <Label htmlFor="checkout-region">{t("المنطقة", "Region")} *</Label>
-                <Select
-                  name="region"
-                  value={form.region}
-                  onValueChange={(v) => {
-                    setSelectedAddressId("manual");
-                    setForm({ ...form, region: v });
-                  }}
+                  className={`flex flex-col justify-between p-3.5 rounded-xl border text-sm transition-all text-start cursor-pointer hover:bg-secondary/10 ${
+                    selectedDestination === "BH"
+                      ? "border-primary bg-primary/10 ring-1 ring-primary shadow-sm"
+                      : "border-border bg-card"
+                  }`}
                 >
-                  <SelectTrigger id="checkout-region" className="h-11">
-                    <SelectValue placeholder={t("اختر المنطقة", "Select region")} />
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">🇧🇭</span>
+                      <div>
+                        <div className="font-semibold text-foreground flex items-center gap-1.5">
+                          <span>{t("التوصيل داخل البحرين", "Bahrain (Domestic)")}</span>
+                          <span className="text-[10px] bg-primary/20 text-primary font-bold px-1.5 py-0.5 rounded-full">
+                            {t("الافتراضي", "Default")}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {t("توصيل لكافة مناطق مملكة البحرين", "Delivery across all Bahrain regions")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-end font-mono font-semibold text-sm">
+                      {Number(settings.delivery_fee || 0) > 0 ? (
+                        formatPrice(Number(settings.delivery_fee || 0), currency, lang)
+                      ) : (
+                        <span className="text-emerald-600 font-bold">{t("مجانًا", "Free")}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {settings.delivery_estimate_enabled &&
+                    (settings.delivery_estimate_ar || settings.delivery_estimate_en) && (
+                      <div className="mt-2 text-[11px] text-muted-foreground bg-background/60 rounded px-2 py-1 flex items-center gap-1">
+                        <Truck className="h-3 w-3 text-primary flex-shrink-0" />
+                        <span>
+                          {lang === "ar"
+                            ? settings.delivery_estimate_ar
+                            : settings.delivery_estimate_en}
+                        </span>
+                      </div>
+                    )}
+                </div>
+
+                {/* 2. International Zones */}
+                {zones.map((z) => {
+                  const active = z.id === selectedDestination;
+                  const zoneShippingFee = calculateShippingFee(
+                    z,
+                    totalCartQuantity,
+                    Number(settings.delivery_fee || 0),
+                  );
+                  const flags = (z.countries || [])
+                    .map((code) => getCountryByCode(code)?.flag)
+                    .filter(Boolean)
+                    .slice(0, 5)
+                    .join(" ");
+
+                  return (
+                    <div
+                      key={z.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setSelectedDestination(z.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") setSelectedDestination(z.id);
+                      }}
+                      className={`flex flex-col justify-between p-3.5 rounded-xl border text-sm transition-all text-start cursor-pointer hover:bg-secondary/10 ${
+                        active
+                          ? "border-primary bg-primary/10 ring-1 ring-primary shadow-sm"
+                          : "border-border bg-card"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">{flags || "🌍"}</span>
+                          <div>
+                            <p className="font-semibold text-foreground">
+                              {lang === "ar" ? z.name_ar : z.name_en}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {z.pricing_type === "per_piece"
+                                ? lang === "ar"
+                                  ? `${formatPrice(z.fee, currency, lang)} لكل قطعة`
+                                  : `${formatPrice(z.fee, currency, lang)}/piece`
+                                : z.pricing_type === "bundle"
+                                  ? lang === "ar"
+                                    ? `${formatPrice(z.fee, currency, lang)} لكل ${z.bundle_size || 2} قطع`
+                                    : `${formatPrice(z.fee, currency, lang)} per ${z.bundle_size || 2} pcs`
+                                  : lang === "ar"
+                                    ? "شحن دولي محدد"
+                                    : "International shipping"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-end font-mono font-semibold text-sm">
+                          {zoneShippingFee > 0 ? (
+                            formatPrice(zoneShippingFee, currency, lang)
+                          ) : (
+                            <span className="text-emerald-600 font-bold">{t("مجانًا", "Free")}</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {(z.estimate_ar || z.estimate_en) && (
+                        <div className="mt-2 text-[11px] text-muted-foreground bg-background/60 rounded px-2 py-1 flex items-center gap-1">
+                          <Truck className="h-3 w-3 text-primary flex-shrink-0" />
+                          <span>{lang === "ar" ? z.estimate_ar : z.estimate_en}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* If an international zone is selected and has countries, show country picker */}
+            {selectedZone && selectedZone.countries && selectedZone.countries.length > 0 && (
+              <div className="p-3 bg-secondary/30 rounded-xl border border-border/60 mb-2">
+                <Label htmlFor="checkout-country" className="font-semibold text-sm mb-1.5 block">
+                  {t("دولة الشحن والتوصيل", "Destination Country")} *
+                </Label>
+                <Select
+                  name="destination-country"
+                  value={selectedCountryCode}
+                  onValueChange={(v) => setSelectedCountryCode(v)}
+                >
+                  <SelectTrigger id="checkout-country" className="h-11 bg-background">
+                    <SelectValue placeholder={t("اختر الدولة", "Select country")} />
                   </SelectTrigger>
                   <SelectContent>
-                    {BAHRAIN_REGIONS.map((r) => (
-                      <SelectItem key={r.value} value={r.value}>
-                        {lang === "ar" ? r.ar : r.en}
-                      </SelectItem>
-                    ))}
+                    {selectedZone.countries.map((cCode) => {
+                      const cData = getCountryByCode(cCode);
+                      return (
+                        <SelectItem key={cCode} value={cCode}>
+                          <span className="me-2">{cData?.flag || "🌍"}</span>
+                          <span>
+                            {lang === "ar"
+                              ? cData?.name_ar || cCode
+                              : cData?.name_en || cCode}
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="checkout-block">{t("المجمع", "Block")} *</Label>
-                <Input
-                  id="checkout-block"
-                  name="block"
-                  inputMode="numeric"
-                  autoComplete="address-level2"
-                  className="h-11"
-                  placeholder={t("مثال: 428", "e.g. 428")}
-                  value={form.block}
-                  onChange={(e) => {
-                    setSelectedAddressId("manual");
-                    setForm({ ...form, block: e.target.value });
-                  }}
-                />
+            )}
+
+            {/* Address fields */}
+            {selectedDestination === "BH" ? (
+              // Bahrain Local Address Form
+              <div className="space-y-3">
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                  <span>🇧🇭</span>
+                  <span>{t("تفاصيل العنوان داخل مملكة البحرين", "Address Details in Bahrain")}</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="checkout-address-label">{t("لقب العنوان", "Address label")}</Label>
+                    <Input
+                      id="checkout-address-label"
+                      name="address-label"
+                      autoComplete="address-level3"
+                      className="h-11"
+                      placeholder={t("مثل: المنزل، المكتب", "e.g. Home, Work")}
+                      value={form.label}
+                      onChange={(e) => {
+                        setSelectedAddressId("manual");
+                        setForm({ ...form, label: e.target.value });
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="checkout-region">{t("المنطقة", "Region")} *</Label>
+                    <Select
+                      name="region"
+                      value={form.region}
+                      onValueChange={(v) => {
+                        setSelectedAddressId("manual");
+                        setForm({ ...form, region: v });
+                      }}
+                    >
+                      <SelectTrigger id="checkout-region" className="h-11">
+                        <SelectValue placeholder={t("اختر المنطقة", "Select region")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {BAHRAIN_REGIONS.map((r) => (
+                          <SelectItem key={r.value} value={r.value}>
+                            {lang === "ar" ? r.ar : r.en}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="checkout-block">{t("المجمع", "Block")} *</Label>
+                    <Input
+                      id="checkout-block"
+                      name="block"
+                      inputMode="numeric"
+                      autoComplete="address-level2"
+                      className="h-11"
+                      placeholder={t("مثال: 428", "e.g. 428")}
+                      value={form.block}
+                      onChange={(e) => {
+                        setSelectedAddressId("manual");
+                        setForm({ ...form, block: e.target.value });
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="checkout-road">{t("الطريق / الشارع", "Road / Avenue")} *</Label>
+                    <Input
+                      id="checkout-road"
+                      name="road"
+                      inputMode="numeric"
+                      autoComplete="street-address"
+                      className="h-11"
+                      placeholder={t("مثال: 2825", "e.g. 2825")}
+                      value={form.road}
+                      onChange={(e) => {
+                        setSelectedAddressId("manual");
+                        setForm({ ...form, road: e.target.value });
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="checkout-house">{t("منزل / بناية", "House / Building")} *</Label>
+                    <Input
+                      id="checkout-house"
+                      name="house"
+                      inputMode="numeric"
+                      autoComplete="address-line1"
+                      className="h-11"
+                      placeholder={t("مثال: 12", "e.g. 12")}
+                      value={form.house}
+                      onChange={(e) => {
+                        setSelectedAddressId("manual");
+                        setForm({ ...form, house: e.target.value });
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="checkout-flat">{t("شقة (اختياري)", "Flat (optional)")}</Label>
+                    <Input
+                      id="checkout-flat"
+                      name="flat"
+                      inputMode="numeric"
+                      autoComplete="address-line2"
+                      className="h-11"
+                      placeholder={t("مثال: 4", "e.g. 4")}
+                      value={form.flat}
+                      onChange={(e) => {
+                        setSelectedAddressId("manual");
+                        setForm({ ...form, flat: e.target.value });
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
-              <div>
-                <Label htmlFor="checkout-road">{t("الطريق / الشارع", "Road / Avenue")} *</Label>
-                <Input
-                  id="checkout-road"
-                  name="road"
-                  inputMode="numeric"
-                  autoComplete="street-address"
-                  className="h-11"
-                  placeholder={t("مثال: 2825", "e.g. 2825")}
-                  value={form.road}
-                  onChange={(e) => {
-                    setSelectedAddressId("manual");
-                    setForm({ ...form, road: e.target.value });
-                  }}
-                />
+            ) : (
+              // International Address Form
+              <div className="space-y-3">
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                  <span>🌍</span>
+                  <span>
+                    {t("تفاصيل عنوان الشحن الدولي إلى", "International Shipping Address to")}{" "}
+                    {getCountryByCode(selectedCountryCode)?.flag}{" "}
+                    {lang === "ar"
+                      ? getCountryByCode(selectedCountryCode)?.name_ar || selectedCountryCode
+                      : getCountryByCode(selectedCountryCode)?.name_en || selectedCountryCode}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="checkout-intl-city">{t("المدينة / الإمارة", "City / State")} *</Label>
+                    <Input
+                      id="checkout-intl-city"
+                      name="intl-city"
+                      autoComplete="address-level2"
+                      className="h-11"
+                      placeholder={t("مثال: الرياض، دبي، الكويت", "e.g. Riyadh, Dubai, Kuwait City")}
+                      value={form.region}
+                      onChange={(e) => {
+                        setSelectedAddressId("manual");
+                        setForm({ ...form, region: e.target.value });
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="checkout-intl-district">{t("الحي / المنطقة", "District / Area")} *</Label>
+                    <Input
+                      id="checkout-intl-district"
+                      name="intl-district"
+                      autoComplete="address-level3"
+                      className="h-11"
+                      placeholder={t("مثال: حي النرجس، حي الياسمين", "e.g. Al Narjis, Downtown")}
+                      value={form.road}
+                      onChange={(e) => {
+                        setSelectedAddressId("manual");
+                        setForm({ ...form, road: e.target.value });
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="checkout-intl-street">{t("اسم الشارع ورقم المبنى", "Street & Building")} *</Label>
+                    <Input
+                      id="checkout-intl-street"
+                      name="intl-street"
+                      autoComplete="street-address"
+                      className="h-11"
+                      placeholder={t("مثال: طريق الملك فهد، مبنى 12", "e.g. King Fahd Rd, Bldg 12")}
+                      value={form.house}
+                      onChange={(e) => {
+                        setSelectedAddressId("manual");
+                        setForm({ ...form, house: e.target.value });
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="checkout-intl-postal">{t("الرمز البريدي (اختياري)", "Postal / Zip Code (optional)")}</Label>
+                    <Input
+                      id="checkout-intl-postal"
+                      name="intl-postal"
+                      autoComplete="postal-code"
+                      className="h-11"
+                      placeholder={t("مثال: 12345", "e.g. 12345")}
+                      value={form.block}
+                      onChange={(e) => {
+                        setSelectedAddressId("manual");
+                        setForm({ ...form, block: e.target.value });
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="checkout-intl-flat">{t("رقم الشقة / الجناح (اختياري)", "Apt / Suite (optional)")}</Label>
+                    <Input
+                      id="checkout-intl-flat"
+                      name="intl-flat"
+                      autoComplete="address-line2"
+                      className="h-11"
+                      placeholder={t("مثال: شقة 304", "e.g. Apt 304")}
+                      value={form.flat}
+                      onChange={(e) => {
+                        setSelectedAddressId("manual");
+                        setForm({ ...form, flat: e.target.value });
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="checkout-intl-label">{t("لقب العنوان (اختياري)", "Address label (optional)")}</Label>
+                    <Input
+                      id="checkout-intl-label"
+                      name="intl-label"
+                      className="h-11"
+                      placeholder={t("مثال: المنزل، المكتب", "e.g. Home, Office")}
+                      value={form.label}
+                      onChange={(e) => {
+                        setSelectedAddressId("manual");
+                        setForm({ ...form, label: e.target.value });
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
-              <div>
-                <Label htmlFor="checkout-house">{t("منزل / بناية", "House / Building")} *</Label>
-                <Input
-                  id="checkout-house"
-                  name="house"
-                  inputMode="numeric"
-                  autoComplete="address-line1"
-                  className="h-11"
-                  placeholder={t("مثال: 12", "e.g. 12")}
-                  value={form.house}
-                  onChange={(e) => {
-                    setSelectedAddressId("manual");
-                    setForm({ ...form, house: e.target.value });
-                  }}
-                />
-              </div>
-              <div>
-                <Label htmlFor="checkout-flat">{t("شقة (اختياري)", "Flat (optional)")}</Label>
-                <Input
-                  id="checkout-flat"
-                  name="flat"
-                  inputMode="numeric"
-                  autoComplete="address-line2"
-                  className="h-11"
-                  placeholder={t("مثال: 4", "e.g. 4")}
-                  value={form.flat}
-                  onChange={(e) => {
-                    setSelectedAddressId("manual");
-                    setForm({ ...form, flat: e.target.value });
-                  }}
-                />
-              </div>
-            </div>
+            )}
           </Card>
         )}
 
@@ -2053,31 +2339,42 @@ function Checkout() {
                         </div>
                       ) : null;
                     })()}
-                    {(c.custom_fields ?? []).map((field) => (
-                      <div
-                        key={field.key}
-                        className="text-xs text-muted-foreground break-words flex flex-wrap items-center gap-1"
-                      >
-                        <span>
-                          {lang === "ar"
-                            ? field.label_ar || field.label_en || field.key
-                            : field.label_en || field.label_ar || field.key}
-                          :
-                        </span>
-                        {field.value.startsWith("http") ? (
-                          <a
-                            href={field.value}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-primary hover:underline font-semibold inline-flex items-center gap-0.5"
-                          >
-                            📎 {lang === "ar" ? "عرض الملف" : "View File"}
-                          </a>
-                        ) : (
-                          <span>{field.value}</span>
-                        )}
-                      </div>
-                    ))}
+                    {(() => {
+                      const formattedFields = formatCustomFieldsList(c.custom_fields, lang);
+                      if (formattedFields.length === 0) return null;
+                      return (
+                        <div className="mt-2 rounded-lg bg-secondary/40 border border-border/60 p-2 space-y-1">
+                          <p className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
+                            <span>✨</span>
+                            <span>{lang === "ar" ? "خيارات ومقاسات مخصصة" : "Custom Options & Sizing"}</span>
+                          </p>
+                          <div className="grid grid-cols-1 gap-1 text-[11px]">
+                            {formattedFields.map((field) => (
+                              <div
+                                key={field.key}
+                                className="flex items-center justify-between gap-2 text-muted-foreground"
+                              >
+                                <span>{field.label}:</span>
+                                {field.isUrl ? (
+                                  <a
+                                    href={field.value}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-primary hover:underline font-semibold inline-flex items-center gap-0.5"
+                                  >
+                                    📎 {lang === "ar" ? "عرض الملف" : "View File"}
+                                  </a>
+                                ) : (
+                                  <span className="font-medium text-foreground dir-ltr text-end">
+                                    {field.value}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
                 <span className="flex flex-col items-end">
