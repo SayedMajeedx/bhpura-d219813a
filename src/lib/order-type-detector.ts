@@ -2,9 +2,11 @@
  * Order Type Detector
  * Automatically classifies whether an order is:
  * - "ready_stock" (مخزون جاهز)
- * - "tailoring" (تفصيل حسب الطلب)
- * - "mixed" (جاهز وتفصيل معاً)
+ * - "tailoring" (حسب الطلب / مخصص)
+ * - "mixed" (جاهز وحسب الطلب معاً)
  */
+
+import type { StoreVocabulary } from "./store-vocabulary";
 
 export type OrderType = "ready_stock" | "tailoring" | "mixed";
 
@@ -60,8 +62,6 @@ export function isTailoringItem(item: OrderItemForTypeDetection): boolean {
   ).toLowerCase();
 
   const keywords = [
-    "تفصيل",
-    "تفصيل خاص",
     "بدون مخزون",
     "tailor",
     "custom",
@@ -112,14 +112,18 @@ export function detectOrderType(
   return "ready_stock";
 }
 
-export function getOrderTypeLabel(type: OrderType, lang: "ar" | "en" = "ar"): string {
+export function getOrderTypeLabel(
+  type: OrderType,
+  lang: "ar" | "en" = "ar",
+  vocab?: Partial<StoreVocabulary> | StoreVocabulary,
+): string {
   switch (type) {
     case "tailoring":
-      return lang === "ar" ? "تفصيل" : "Tailoring";
+      return vocab?.custom_order?.[lang] || (lang === "ar" ? "حسب الطلب" : "Custom Order");
     case "mixed":
-      return lang === "ar" ? "جاهز وتفصيل" : "Mixed";
+      return lang === "ar" ? `جاهز و${vocab?.custom_order?.[lang] || "حسب الطلب"}` : "Mixed";
     case "ready_stock":
     default:
-      return lang === "ar" ? "جاهز" : "Ready Stock";
+      return vocab?.ready_made?.[lang] || (lang === "ar" ? "جاهز" : "Ready Stock");
   }
 }

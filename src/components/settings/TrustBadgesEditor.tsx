@@ -284,7 +284,9 @@ export function TrustBadgesEditor({
               <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <Sparkles className="h-3.5 w-3.5 text-primary" />
                 <span>
-                  {isAr ? "شارات مقترحة بناءً على الإضافات المثبتة:" : "Suggested for your installed add-ons:"}
+                  {isAr
+                    ? "شارات مقترحة بناءً على الإضافات المثبتة:"
+                    : "Suggested for your installed add-ons:"}
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-2">

@@ -1909,7 +1909,7 @@ function Dashboard() {
               <div>
                 <h3 className="text-lg font-extrabold flex items-center gap-2 text-foreground">
                   <CalendarDays className="h-5 w-5 text-emerald-500" />
-                  {isAr ? "مخطط حركة المبيعات اليومية التفصيلي" : "Daily Sales Trajectory Chart"}
+                  {isAr ? "مخطط حركة المبيعات اليومية" : "Daily Sales Trajectory Chart"}
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   {isAr

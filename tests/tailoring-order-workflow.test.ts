@@ -128,7 +128,7 @@ describe("Ready Stock vs Tailoring Order Workflow", () => {
 
   it("returns customer-facing invoice status labels correctly", () => {
     expect(getInvoiceStatusLabel("pending", "ar")).toBe("قيد الانتظار");
-    expect(getInvoiceStatusLabel("sent_to_tailor", "ar")).toBe("قيد التفصيل بكل حب");
+    expect(getInvoiceStatusLabel("sent_to_tailor", "ar")).toBe("قيد التجهيز بالورشة");
     expect(getInvoiceStatusLabel("packing", "ar")).toBe("قيد التجهيز والتغليف");
     expect(getInvoiceStatusLabel("received_from_tailor", "ar")).toBe("قيد التجهيز والتغليف");
     expect(getInvoiceStatusLabel("ready_for_pickup", "ar")).toBe("جاهز للاستلام");

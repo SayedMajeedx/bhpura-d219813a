@@ -1896,10 +1896,14 @@ function OrderDetail() {
 
   const printReceipt = () => {
     const settings: any = settingsQ.data ?? {};
-    const LEGACY = new Set(["Abaya Atelier", "أباية أتيليه"]);
+    const LEGACY_BRAND_NAMES = new Set(["Abaya Atelier", "أباية أتيليه"]);
     const rawBrand = (settings.business_name ?? "").trim();
     const brand =
-      !rawBrand || LEGACY.has(rawBrand) ? (lang === "ar" ? "بوتيك" : "Boutq") : rawBrand;
+      !rawBrand || LEGACY_BRAND_NAMES.has(rawBrand)
+        ? lang === "ar"
+          ? "بوتيك"
+          : "Boutq"
+        : rawBrand;
 
     const paymentLabel = order.payment_method ? t(`payment.${order.payment_method}`) : "";
     const statusLabel = formatOrderStatus(order.status, order.fulfillment_method, lang);
@@ -1978,9 +1982,7 @@ function OrderDetail() {
               if (error) throw error;
               toast.success(
                 vocabulary.sent_to_workshop_success[lang] ||
-                  (lang === "ar"
-                    ? "تم تحويل الطلب للورشة وتحديث الحالة"
-                    : "Sent to workshop"),
+                  (lang === "ar" ? "تم تحويل الطلب للورشة وتحديث الحالة" : "Sent to workshop"),
               );
               await logActivity({
                 action: "status_change",
@@ -2023,9 +2025,7 @@ function OrderDetail() {
               if (error) throw error;
               toast.success(
                 vocabulary.received_from_workshop_success[lang] ||
-                  (lang === "ar"
-                    ? "تم استلام الطلب من الورشة وتجهيزه"
-                    : "Received from workshop"),
+                  (lang === "ar" ? "تم استلام الطلب من الورشة وتجهيزه" : "Received from workshop"),
               );
               await logActivity({
                 action: "status_change",
@@ -3358,9 +3358,8 @@ function OrderDetail() {
                             ) : (
                               <span className="text-xs text-muted-foreground">
                                 {it.location === "custom" || !it.variant_id
-                                  ? isAr
-                                    ? "تفصيل خاص"
-                                    : "Custom Tailoring"
+                                  ? vocabulary.custom_order?.[lang] ||
+                                    (isAr ? "طلب مخصص" : "Custom Order")
                                   : variant
                                     ? `${variant.size || ""} ${variant.color || ""}`.trim() ||
                                       (isAr ? "خيار" : "Variant")
@@ -3418,9 +3417,11 @@ function OrderDetail() {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="custom">
-                                  {isAr
-                                    ? "تفصيل خاص / بدون مخزون جاهز"
-                                    : "Custom Tailoring / No Ready Stock"}
+                                  {vocabulary.custom_sizing?.[lang]
+                                    ? `${vocabulary.custom_sizing[lang]} / ${isAr ? "بدون مخزون جاهز" : "No Ready Stock"}`
+                                    : isAr
+                                      ? "طلب مخصص / بدون مخزون جاهز"
+                                      : "Custom Order / No Ready Stock"}
                                 </SelectItem>
                                 {(variantsQ.data ?? []).map((v: any) => {
                                   const p = productsQ.data?.find((x: any) => x.id === v.product_id);
@@ -3548,9 +3549,11 @@ function OrderDetail() {
                               <div className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary flex flex-wrap items-center justify-between gap-2">
                                 <span className="flex items-center gap-1.5">
                                   <Scissors className="h-4 w-4" />
-                                  {isAr
-                                    ? "طلب تفصيل خاص / بند يدوي (لا يخصم من المخزون)"
-                                    : "Custom Tailoring / Manual Item (No Ready Stock Deduction)"}
+                                  {vocabulary.custom_order?.[lang]
+                                    ? `${vocabulary.custom_order[lang]} / ${isAr ? "بند يدوي (لا يخصم من المخزون)" : "Manual Item (No Ready Stock Deduction)"}`
+                                    : isAr
+                                      ? "طلب مخصص / بند يدوي (لا يخصم من المخزون)"
+                                      : "Custom Order / Manual Item (No Ready Stock Deduction)"}
                                 </span>
                                 <div className="flex items-center gap-2">
                                   {it.unit_cost != null && Number(it.unit_cost) > 0 ? (
@@ -3591,7 +3594,8 @@ function OrderDetail() {
                                   <div className="font-bold text-xs text-foreground flex items-center gap-1.5">
                                     <Scissors className="h-3.5 w-3.5 text-primary" />
                                     <span>
-                                      {isAr ? "المواصفات والتفصيل" : "Tailoring Specifications"}
+                                      {vocabulary.customization_options?.[lang] ||
+                                        (isAr ? "المواصفات والخيارات" : "Specifications & Options")}
                                     </span>
                                   </div>
                                   {it.selected_variant && (
@@ -3603,11 +3607,16 @@ function OrderDetail() {
                                           </span>
                                           <b>
                                             {String(it.selected_variant?.size ?? "").includes(
-                                              "تفصيل",
+                                              "custom",
+                                            ) ||
+                                            String(it.selected_variant?.size ?? "").includes(
+                                              "خاص",
+                                            ) ||
+                                            String(it.selected_variant?.size ?? "").includes(
+                                              vocabulary.custom_order?.[lang] || "custom",
                                             )
-                                              ? isAr
-                                                ? "تفصيل / قياسات خاصة"
-                                                : "Custom Tailoring"
+                                              ? vocabulary.custom_sizing?.[lang] ||
+                                                (isAr ? "قياسات خاصة" : "Custom Sizing")
                                               : it.selected_variant.size}
                                           </b>
                                         </span>
@@ -3794,9 +3803,11 @@ function OrderDetail() {
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="custom">
-                                      {isAr
-                                        ? "تفصيل خاص / بدون مخزون جاهز"
-                                        : "Custom Tailoring / No Ready Stock"}
+                                      {vocabulary.custom_sizing?.[lang]
+                                        ? `${vocabulary.custom_sizing[lang]} / ${isAr ? "بدون مخزون جاهز" : "No Ready Stock"}`
+                                        : isAr
+                                          ? "طلب مخصص / بدون مخزون جاهز"
+                                          : "Custom Order / No Ready Stock"}
                                     </SelectItem>
                                     {(variantsQ.data ?? []).map((v: any) => {
                                       const p = productsQ.data?.find(

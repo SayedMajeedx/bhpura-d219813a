@@ -40,7 +40,7 @@ export const fitPassportManifest: AddonManifest = {
         addonId: "fit-passport",
         placement: "storefront.product.afterOptions",
         order: 10,
-        component: React.lazy(() => import("./components/storefront/ProductFitPassportSlot")),
+        component: React.lazy(() => import("./components/storefront/ProductFitPassportSection")),
       },
       {
         id: "admin-customer-fit-passport-panel",
@@ -48,6 +48,49 @@ export const fitPassportManifest: AddonManifest = {
         placement: "admin.customer.panel",
         order: 20,
         component: React.lazy(() => import("./components/admin/CustomerFitPassport")),
+      },
+    ],
+    customFieldPresets: [
+      {
+        key: "fit_measurements",
+        label: {
+          ar: "📏 قياسات تفصيلية مخصصة",
+          en: "📏 Custom Detailed Measurements",
+        },
+        fields: [
+          {
+            key: "length",
+            label_ar: "الطول",
+            label_en: "Length",
+            type: "number",
+            options: [],
+            required: true,
+          },
+          {
+            key: "bust",
+            label_ar: "الصدر",
+            label_en: "Bust",
+            type: "number",
+            options: [],
+            required: true,
+          },
+          {
+            key: "sleeve",
+            label_ar: "طول الكم",
+            label_en: "Sleeve length",
+            type: "number",
+            options: [],
+            required: true,
+          },
+          {
+            key: "shoulder",
+            label_ar: "عرض الكتف",
+            label_en: "Shoulder",
+            type: "number",
+            options: [],
+            required: true,
+          },
+        ],
       },
     ],
   },

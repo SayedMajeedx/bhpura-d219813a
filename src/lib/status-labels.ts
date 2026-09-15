@@ -313,8 +313,8 @@ export function sanitizeActivityLogMessage(message: string, lang: Lang = "ar"): 
     .replace(/\bshipped\b/gi, "تم الشحن")
     .replace(/\bsent_to_workshop\b/gi, "تم الإرسال للورشة")
     .replace(/\breceived_from_workshop\b/gi, "تم الاستلام من الورشة")
-    .replace(/\bsent_to_tailor\b/gi, "تم الإرسال للخياط")
-    .replace(/\breceived_from_tailor\b/gi, "تم الاستلام من الخياط")
+    .replace(/\bsent_to_tailor\b/gi, "تم الإرسال للورشة")
+    .replace(/\breceived_from_tailor\b/gi, "تم الاستلام من الورشة")
     .replace(/\bpacking\b/gi, "قيد التعبئة والتغليف")
     .replace(/\bneeds_packing\b/gi, "قيد التعبئة والتغليف")
     .replace(/\bREADY_FOR_PICKUP\b/g, "جاهز للاستلام")
@@ -336,8 +336,7 @@ export function getFulfillmentBadgeDetails(
   const s = String(status || "ON_HOLD").toUpperCase();
   if (s === "SENT_TO_TAILOR" || s === "SENT_TO_WORKSHOP") {
     const label =
-      vocab?.sent_to_workshop?.[lang] ||
-      (lang === "ar" ? "تم الإرسال للورشة" : "Sent to Workshop");
+      vocab?.sent_to_workshop?.[lang] || (lang === "ar" ? "تم الإرسال للورشة" : "Sent to Workshop");
     return {
       label,
       classes:

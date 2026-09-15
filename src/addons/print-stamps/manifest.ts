@@ -34,7 +34,10 @@ export const printStampsManifest: AddonManifest = {
       received_from_workshop: { ar: "تمت الطباعة", en: "Printing Complete" },
       sent_to_tailor: { ar: "قيد الطباعة", en: "In Printing" },
       received_from_tailor: { ar: "تمت الطباعة", en: "Printing Complete" },
-      workshop_notes_label: { ar: "ملاحظات وتفاصيل الطباعة والختم:", en: "Printing & Stamping Notes:" },
+      workshop_notes_label: {
+        ar: "ملاحظات وتفاصيل الطباعة والختم:",
+        en: "Printing & Stamping Notes:",
+      },
       workshop_instructions: { ar: "تعليمات للمطبعة", en: "Printing instructions" },
     },
     variantAxisDefaults: {

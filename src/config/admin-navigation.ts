@@ -163,7 +163,7 @@ export function getAdminNavItems({
       labelAr: lang === "ar" ? "التقارير" : "Reports",
       descriptionEn:
         "Comprehensive financial accounting, VAT reports, sales, and profit margin analysis",
-      descriptionAr: "التقارير المحاسبية التفصيلية، المبيعات، ضريبة القيمة المضافة، والربحية",
+      descriptionAr: "التقارير المحاسبية الشاملة، المبيعات، ضريبة القيمة المضافة، والربحية",
       icon: BarChart,
       permission: "manage_orders",
       section: "overview",

@@ -53,8 +53,8 @@ describe("Full Invoice System Functional & Layout Audit", () => {
     expect(getInvoiceStatusLabel("pending", "ar")).toBe("قيد الانتظار");
     expect(getInvoiceStatusLabel("pending", "en")).toBe("Pending");
 
-    expect(getInvoiceStatusLabel("sent_to_tailor", "ar")).toBe("قيد التفصيل بكل حب");
-    expect(getInvoiceStatusLabel("sent_to_tailor", "en")).toBe("Tailoring with Love");
+    expect(getInvoiceStatusLabel("sent_to_tailor", "ar")).toBe("قيد التجهيز بالورشة");
+    expect(getInvoiceStatusLabel("sent_to_tailor", "en")).toBe("In Workshop Production");
 
     expect(getInvoiceStatusLabel("received_from_tailor", "ar")).toBe("قيد التجهيز والتغليف");
     expect(getInvoiceStatusLabel("received_from_tailor", "en")).toBe(

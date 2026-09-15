@@ -106,19 +106,18 @@ export function extractVariantsHeuristically(
     sizeUnit = "g";
   }
 
-  // Check if Abaya even sizing mentioned (only if explicitly requested in prompt or store has abaya-pack/fashion-core)
-  const isAbayaStore =
+  // Check if even numeric sizing mentioned (only if explicitly requested in prompt or store has fashion addons)
+  const isFashionStore =
     !context?.installedAddonIds ||
     context.installedAddonIds.length === 0 ||
-    context.installedAddonIds.includes("abaya-pack") ||
-    context.installedAddonIds.includes("fashion-core");
-  const explicitAbayaInPrompt = /(?:عباي|abaya|زوجي|even)/i.test(cleanPrompt);
+    context.installedAddonIds.some((id) => id.includes("fashion") || id.endsWith("-pack"));
+  const explicitEvenInPrompt = /(?:زوجي|even)/i.test(cleanPrompt);
   const sizeRangeMatches = /(?:50|52)\s*(?:إلى|الى|to|-)\s*(?:60|62)/i.test(cleanPrompt);
 
-  if (explicitAbayaInPrompt || (isAbayaStore && sizeRangeMatches)) {
-    const abayaRange = expandSizeRange(cleanPrompt);
-    if (abayaRange.length > 1) {
-      sizes = abayaRange;
+  if (explicitEvenInPrompt || (isFashionStore && sizeRangeMatches)) {
+    const evenRange = expandSizeRange(cleanPrompt);
+    if (evenRange.length > 1) {
+      sizes = evenRange;
       if (!sizeUnit) sizeUnit = "inch";
     }
   }
@@ -404,7 +403,7 @@ export const parseVariantPrompt = createServerFn({ method: "POST" })
       ...(brandAiContextPrompt ? [brandAiContextPrompt] : []),
       "CRITICAL SIZING & QUANTITY RULES:",
       "- If discrete sizes are listed (e.g. 'قياسات 58 56 55 58', 'مقاسات 50 52 54', 'sizes S M L'), extract all unique size tokens: ['50', '52', '54'] or ['55', '56', '58'].",
-      "- If Abaya sizes are described as a range (e.g. '50 to 60', 'من 50 إلى 60 زوجي', '52-60'), expand into inclusive even numbers: ['50', '52', '54', '56', '58', '60']. Default size_unit for abayas is 'inch'.",
+      "- If sizes are described as an even range (e.g. '50 to 60', 'من 50 إلى 60 زوجي', '52-60'), expand into inclusive even numbers: ['50', '52', '54', '56', '58', '60']. Default size_unit for even apparel ranges is 'inch'.",
       "- If apparel letter sizes are described as ranges (e.g. 'XS to 2XL', 'S إلى XL'), expand into standard apparel letter sequences: ['XS', 'S', 'M', 'L', 'XL', '2XL'].",
       "- If numbered sizes (e.g. '1 to 5', 'من 1 إلى 4'), expand into inclusive list ['1', '2', '3', '4', '5'].",
       "- If shoe sizes (e.g. '36 to 41', '36-41'), expand into ['36', '37', '38', '39', '40', '41'].",

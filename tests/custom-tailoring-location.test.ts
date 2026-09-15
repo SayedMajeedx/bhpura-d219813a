@@ -25,6 +25,6 @@ describe("custom tailoring order location", () => {
   it("does not expose the database constraint name to shoppers", () => {
     const checkout = readFileSync("src/routes/$slug.checkout.tsx", "utf8");
     expect(checkout).toContain('msg.includes("order_items_location_check")');
-    expect(checkout).toContain("تعذر تجهيز طلب التفصيل حالياً");
+    expect(checkout).toContain("تعذر تجهيز الطلب المخصص حالياً");
   });
 });

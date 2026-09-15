@@ -84,8 +84,6 @@ import {
   formatSkuToken,
   makeEan13,
   splitVariantValues,
-  SIZING_PRESETS,
-  orderSizingPresetsForVertical,
   UNIVERSAL_SIZING_PRESETS,
   PLACEHOLDER_SIZE_VALUES,
 } from "@/lib/variant-sku-utils";
@@ -110,11 +108,7 @@ import { isLowStock, isOutOfStock } from "@/lib/inventory-health";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { OsEmptyState } from "@/components/os/os-empty-state";
 import { useEntitlements } from "@/lib/saas-billing/use-entitlements";
-import {
-  matchCustomFieldToMeasurement,
-  resolveFitProfiles,
-  CUSTOMIZER_PRESETS,
-} from "@/lib/addons/addon-presets";
+import { CUSTOMIZER_PRESETS } from "@/lib/addons/addon-presets";
 import {
   variantAxisDefaultsFrom,
   resolveVariantAxis,
@@ -2294,11 +2288,7 @@ function ProductsSection({
 }
 
 function cleanPassportCustomFields(fields: CustomField[]) {
-  const passportMode = fields.some((field) => field.key.includes("passport_"));
-  if (!passportMode) return fields;
-  return fields.filter(
-    (field) => field.key.includes("passport_") || !matchCustomFieldToMeasurement(field),
-  );
+  return fields;
 }
 
 function ProductDialog({
@@ -2313,32 +2303,11 @@ function ProductDialog({
   const isAr = lang === "ar";
   const brand = useBrand();
   const { profile: storeProfile } = useAdminStoreProfile(brand.id);
-  const { addons, isInstalled } = useAddons();
-  const hasFitPassport = isInstalled("fit-passport");
+  const { addons } = useAddons();
   const addonAxisDefaults = useMemo(
     () => variantAxisDefaultsFrom(addons.length > 0 ? addons : storeProfile?.addons),
     [addons, storeProfile?.addons],
   );
-  const fitProfiles = useMemo(
-    () => resolveFitProfiles(storeProfile?.fitProfiles),
-    [storeProfile?.fitProfiles],
-  );
-  const passportPresets = useMemo(() => {
-    if (!hasFitPassport) return [];
-    return fitProfiles.map((p) => ({
-      key: `passport_${p.key}`,
-      label_ar: `📏 مقاسات Passport — ${p.label_ar}`,
-      label_en: `📏 Fit Passport — ${p.label_en}`,
-      fields: p.fields.map((f) => ({
-        key: `passport_${p.key}_${f.key}`,
-        label_ar: f.label_ar,
-        label_en: f.label_en,
-        type: "number" as const,
-        options: [] as string[],
-        required: f.required,
-      })),
-    }));
-  }, [fitProfiles, hasFitPassport]);
   const customFieldPresets = useMemo(() => {
     const fromAddons = customFieldPresetsFrom(addons.length > 0 ? addons : storeProfile?.addons);
     if (fromAddons.length > 0) return fromAddons;
@@ -3512,26 +3481,17 @@ function ProductDialog({
                 >
                   <Select
                     onValueChange={(presetKey) => {
-                      const dynamicPassport = passportPresets.find((pr) => pr.key === presetKey);
                       const addonPreset = customFieldPresets.find((pr) => pr.key === presetKey);
                       const staticPreset =
                         CUSTOMIZER_PRESETS[presetKey as keyof typeof CUSTOMIZER_PRESETS];
-                      const preset = dynamicPassport || addonPreset || staticPreset;
+                      const preset = addonPreset || staticPreset;
                       if (preset) {
-                        const isPassportPreset =
-                          Boolean(dynamicPassport) || presetKey.startsWith("passport_");
-                        const retainedFields = isPassportPreset
-                          ? (form.custom_fields ?? []).filter(
-                              (field) =>
-                                !field.key.includes("passport_") &&
-                                !matchCustomFieldToMeasurement(fitProfiles, field),
-                            )
-                          : (form.custom_fields ?? []);
+                        const isCustomPreset = Boolean(preset.fields && preset.fields.length > 0);
                         setForm({
                           ...form,
-                          is_made_to_order: isPassportPreset ? true : form.is_made_to_order,
+                          is_made_to_order: isCustomPreset ? true : form.is_made_to_order,
                           custom_fields: [
-                            ...retainedFields,
+                            ...(form.custom_fields ?? []),
                             ...preset.fields.map(
                               (f: any, index: number) =>
                                 ({
@@ -3558,12 +3518,6 @@ function ProductDialog({
                           {isAr ? pr.label.ar : pr.label.en}
                         </SelectItem>
                       ))}
-                      {hasFitPassport &&
-                        passportPresets.map((pr) => (
-                          <SelectItem key={pr.key} value={pr.key}>
-                            {isAr ? pr.label_ar : pr.label_en}
-                          </SelectItem>
-                        ))}
                     </SelectContent>
                   </Select>
 
@@ -3628,76 +3582,8 @@ function ProductDialog({
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {(() => {
-                    const matchedProfile = fitProfiles.find((p) =>
-                      (form.custom_fields ?? []).some((field) =>
-                        field.key.includes(`passport_${p.key}`),
-                      ),
-                    );
-                    if (!matchedProfile) return null;
-                    return (
-                      <div className="rounded-2xl border border-primary/25 bg-primary/[0.045] p-4 shadow-sm">
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div>
-                            <p className="font-bold text-primary">
-                              {(isAr ? brand.name_ar : brand.name_en) ||
-                                brand.name_en ||
-                                brand.name_ar ||
-                                "Fit"}{" "}
-                              Passport · {isAr ? matchedProfile.label_ar : matchedProfile.label_en}
-                            </p>
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              {isAr
-                                ? "هذا المنتج يستخدم ملف المقاسات المحفوظ، ولا يعرض حقول قياس مكررة للعميل."
-                                : "This product uses the saved fit profile without showing duplicate measurement fields."}
-                            </p>
-                          </div>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              setForm({
-                                ...form,
-                                custom_fields: (form.custom_fields ?? []).filter(
-                                  (field) => !field.key.includes("passport_"),
-                                ),
-                              })
-                            }
-                          >
-                            {isAr ? "إزالة Passport" : "Remove Passport"}
-                          </Button>
-                        </div>
-                        <div className="mt-3 flex flex-wrap gap-1.5">
-                          {matchedProfile.fields.map((f) => (
-                            <span
-                              key={f.key}
-                              className="rounded-full border bg-background px-2.5 py-1 text-xs"
-                            >
-                              {isAr ? f.label_ar : f.label_en} ·{" "}
-                              {f.required
-                                ? isAr
-                                  ? "إجباري"
-                                  : "Required"
-                                : isAr
-                                  ? "اختياري"
-                                  : "Optional"}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })()}
                   {(form.custom_fields ?? [])
                     .map((field, index) => ({ field, index }))
-                    .filter(
-                      ({ field }) =>
-                        !field.key.includes("passport_") &&
-                        (!(form.custom_fields ?? []).some((entry) =>
-                          entry.key.includes("passport_"),
-                        ) ||
-                          !matchCustomFieldToMeasurement(field)),
-                    )
                     .map(({ field: f, index: i }) => {
                       const upd = (patch: Partial<CustomField>) => {
                         const next = [...form.custom_fields];
@@ -4062,7 +3948,10 @@ function BulkVariantDialog({
   const applyPreset = (preset: { sizes: string[] | readonly string[]; unit?: string }) => {
     setSizesText(Array.from(preset.sizes).join(", "));
     if (preset.unit !== undefined) {
-      setPlan((prev) => ({ ...prev, size_unit: (preset.unit || "") as VariantGenerationPlan["size_unit"] }));
+      setPlan((prev) => ({
+        ...prev,
+        size_unit: (preset.unit || "") as VariantGenerationPlan["size_unit"],
+      }));
     }
   };
 

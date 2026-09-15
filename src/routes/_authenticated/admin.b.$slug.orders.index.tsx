@@ -1079,9 +1079,7 @@ function OrdersList() {
             handleStatusUpdate(
               { fulfillment_status: "SENT_TO_TAILOR" },
               vocabulary.sent_to_workshop_success[lang] ||
-                (lang === "ar"
-                  ? "تم الإرسال للورشة بنجاح!"
-                  : "Order sent to workshop!"),
+                (lang === "ar" ? "تم الإرسال للورشة بنجاح!" : "Order sent to workshop!"),
             );
           }}
         >
@@ -1109,9 +1107,7 @@ function OrdersList() {
             handleStatusUpdate(
               { fulfillment_status: "RECEIVED_FROM_TAILOR" },
               vocabulary.received_from_workshop_success[lang] ||
-                (lang === "ar"
-                  ? "تم استلام الطلب من الورشة بنجاح!"
-                  : "Received from workshop!"),
+                (lang === "ar" ? "تم استلام الطلب من الورشة بنجاح!" : "Received from workshop!"),
             );
           }}
         >
@@ -3171,7 +3167,7 @@ function OrderQuickInspectSheet({
           {/* Line Items Breakdown */}
           <div className="space-y-3">
             <h4 className="text-xs font-semibold text-muted-foreground">
-              {isAr ? "المنتجات والأصناف التفصيلية" : "Order Line Items Breakdown"}
+              {isAr ? "المنتجات والأصناف المشمولة" : "Order Line Items Breakdown"}
             </h4>
             <div className="divide-y border border-border-subtle rounded-xl overflow-hidden bg-card shadow-2xs">
               {items.map((it: any, idx: number) => {

@@ -128,3 +128,74 @@ export function getCustomizerPresets(
 }
 
 export const CUSTOMIZER_PRESETS = getCustomizerPresets();
+
+import type { StoreVertical } from "@/lib/store-profile";
+
+export const SIZING_PRESETS = [
+  {
+    id: "abaya_gulf",
+    labelAr: "عبايات (50 - 60 زوجي)",
+    labelEn: "Abayas (50 - 60 even)",
+    sizes: ["50", "52", "54", "56", "58", "60"],
+    unit: "inch" as const,
+  },
+  {
+    id: "abaya_extended",
+    labelAr: "عبايات موسعة (48 - 62)",
+    labelEn: "Abayas Ext (48 - 62)",
+    sizes: ["48", "50", "52", "54", "56", "58", "60", "62"],
+    unit: "inch" as const,
+  },
+  {
+    id: "apparel_standard",
+    labelAr: "ملابس (XS - 2XL)",
+    labelEn: "Apparel (XS - 2XL)",
+    sizes: ["XS", "S", "M", "L", "XL", "2XL"],
+    unit: "" as const,
+  },
+  {
+    id: "apparel_compact",
+    labelAr: "ملابس (S - XL)",
+    labelEn: "Apparel (S - XL)",
+    sizes: ["S", "M", "L", "XL"],
+    unit: "" as const,
+  },
+  {
+    id: "numbered_1_5",
+    labelAr: "أرقام (1 إلى 5)",
+    labelEn: "Numbered (1 to 5)",
+    sizes: ["1", "2", "3", "4", "5"],
+    unit: "" as const,
+  },
+  {
+    id: "shoes_women",
+    labelAr: "أحذية نسائية (36 - 41)",
+    labelEn: "Women Shoes (36 - 41)",
+    sizes: ["36", "37", "38", "39", "40", "41"],
+    unit: "" as const,
+  },
+  {
+    id: "shoes_men",
+    labelAr: "أحذية رجالية (40 - 45)",
+    labelEn: "Men Shoes (40 - 45)",
+    sizes: ["40", "41", "42", "43", "44", "45"],
+    unit: "" as const,
+  },
+  {
+    id: "free_size",
+    labelAr: "مقاس موحد (Free Size)",
+    labelEn: "Free Size",
+    sizes: ["Free Size"],
+    unit: "" as const,
+  },
+];
+
+export function orderSizingPresetsForVertical(vertical: StoreVertical) {
+  if (vertical === "fashion" || vertical === "abayas") {
+    return SIZING_PRESETS;
+  }
+  const abayaIds = new Set(["abaya_gulf", "abaya_extended"]);
+  const nonAbaya = SIZING_PRESETS.filter((p) => !abayaIds.has(p.id));
+  const abaya = SIZING_PRESETS.filter((p) => abayaIds.has(p.id));
+  return [...nonAbaya, ...abaya];
+}

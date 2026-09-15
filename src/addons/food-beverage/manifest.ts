@@ -27,7 +27,10 @@ export const foodBeverageManifest: AddonManifest = {
       received_from_workshop: { ar: "جاهز للتسليم", en: "Ready for Pickup" },
       sent_to_tailor: { ar: "قيد التحضير بالمطبخ", en: "In Kitchen Preparation" },
       received_from_tailor: { ar: "جاهز للتسليم", en: "Ready for Pickup" },
-      workshop_notes_label: { ar: "ملاحظات وتفاصيل التحضير بالمطبخ:", en: "Kitchen Preparation Notes:" },
+      workshop_notes_label: {
+        ar: "ملاحظات وتفاصيل التحضير بالمطبخ:",
+        en: "Kitchen Preparation Notes:",
+      },
       workshop_instructions: { ar: "تعليمات للمطبخ", en: "Kitchen instructions" },
     },
     variantAxisDefaults: {

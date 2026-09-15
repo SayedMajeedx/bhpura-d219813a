@@ -1,5 +1,3 @@
-import type { StoreVertical } from "@/lib/store-profile";
-
 export const COLOR_SKU_MAP: Record<string, string> = {
   // Arabic colors & common Khaleeji terms
   أسود: "BLK",
@@ -153,67 +151,7 @@ export const APPAREL_SIZE_SEQUENCE = [
   "5XL",
 ] as const;
 
-/**
- * Standard 1-Click Sizing Quick Presets
- */
-export const SIZING_PRESETS = [
-  {
-    id: "abaya_gulf",
-    labelAr: "عبايات (50 - 60 زوجي)",
-    labelEn: "Abayas (50 - 60 even)",
-    sizes: ["50", "52", "54", "56", "58", "60"],
-    unit: "inch" as const,
-  },
-  {
-    id: "abaya_extended",
-    labelAr: "عبايات موسعة (48 - 62)",
-    labelEn: "Abayas Ext (48 - 62)",
-    sizes: ["48", "50", "52", "54", "56", "58", "60", "62"],
-    unit: "inch" as const,
-  },
-  {
-    id: "apparel_standard",
-    labelAr: "ملابس (XS - 2XL)",
-    labelEn: "Apparel (XS - 2XL)",
-    sizes: ["XS", "S", "M", "L", "XL", "2XL"],
-    unit: "" as const,
-  },
-  {
-    id: "apparel_compact",
-    labelAr: "ملابس (S - XL)",
-    labelEn: "Apparel (S - XL)",
-    sizes: ["S", "M", "L", "XL"],
-    unit: "" as const,
-  },
-  {
-    id: "numbered_1_5",
-    labelAr: "أرقام (1 إلى 5)",
-    labelEn: "Numbered (1 to 5)",
-    sizes: ["1", "2", "3", "4", "5"],
-    unit: "" as const,
-  },
-  {
-    id: "shoes_women",
-    labelAr: "أحذية نسائية (36 - 41)",
-    labelEn: "Women Shoes (36 - 41)",
-    sizes: ["36", "37", "38", "39", "40", "41"],
-    unit: "" as const,
-  },
-  {
-    id: "shoes_men",
-    labelAr: "أحذية رجالية (40 - 45)",
-    labelEn: "Men Shoes (40 - 45)",
-    sizes: ["40", "41", "42", "43", "44", "45"],
-    unit: "" as const,
-  },
-  {
-    id: "free_size",
-    labelAr: "مقاس موحد (Free Size)",
-    labelEn: "Free Size",
-    sizes: ["Free Size"],
-    unit: "" as const,
-  },
-];
+export { SIZING_PRESETS, orderSizingPresetsForVertical } from "./addons/addon-presets";
 
 export const UNIVERSAL_SIZING_PRESETS = [
   {
@@ -231,16 +169,6 @@ export const UNIVERSAL_SIZING_PRESETS = [
     unit: "" as const,
   },
 ];
-
-export function orderSizingPresetsForVertical(vertical: StoreVertical) {
-  if (vertical === "fashion" || vertical === "abayas") {
-    return SIZING_PRESETS;
-  }
-  const abayaIds = new Set(["abaya_gulf", "abaya_extended"]);
-  const nonAbaya = SIZING_PRESETS.filter((p) => !abayaIds.has(p.id));
-  const abaya = SIZING_PRESETS.filter((p) => abayaIds.has(p.id));
-  return [...nonAbaya, ...abaya];
-}
 
 /**
  * Normalizes and splits a string list of variant values (comma, newline, slash, or space separated if numeric/letters)
@@ -359,14 +287,14 @@ export function expandSizeRange(raw: string): string[] {
   const text = raw.trim();
   if (!text) return [];
 
-  // 1. Abaya even numbers range: "50-60 even", "50 إلى 60 زوجي", "52 to 60"
-  const abayaEvenMatch = text.match(
-    /(?:من\s*)?(\d{2})\s*(?:إلى|الى|to|-)\s*(\d{2})(?:\s*(?:زوجي|even|إيفن|مقاسات عبايات))?/i,
+  // 1. Even numbers range: "50-60 even", "50 إلى 60 زوجي", "52 to 60"
+  const evenMatch = text.match(
+    /(?:من\s*)?(\d{2})\s*(?:إلى|الى|to|-)\s*(\d{2})(?:\s*(?:زوجي|even|إيفن))?/i,
   );
-  if (abayaEvenMatch) {
-    const start = parseInt(abayaEvenMatch[1], 10);
-    const end = parseInt(abayaEvenMatch[2], 10);
-    const isEvenMentioned = /زوجي|even|عباي/i.test(text);
+  if (evenMatch) {
+    const start = parseInt(evenMatch[1], 10);
+    const end = parseInt(evenMatch[2], 10);
+    const isEvenMentioned = /زوجي|even/i.test(text);
 
     if (start >= 48 && end <= 64 && (isEvenMentioned || (start % 2 === 0 && end % 2 === 0))) {
       const result: string[] = [];

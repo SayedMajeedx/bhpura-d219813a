@@ -46,7 +46,7 @@ import {
 import { starterPackFor, getAddon } from "@/lib/addons/addon-registry";
 
 const VERTICAL_ICONS: Record<StoreVertical, React.ComponentType<{ className?: string }>> = {
-  abayas: Shirt,
+  [STORE_VERTICALS[0]]: Shirt,
   fashion: Sparkles,
   beauty: Sparkles,
   food: UtensilsCrossed,
