@@ -3574,6 +3574,22 @@ function ProductDialog({
                 />
               </div>
 
+              {Boolean(form.is_made_to_order) && (
+                <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 text-xs text-muted-foreground leading-relaxed flex items-start gap-2.5">
+                  <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold text-foreground block mb-0.5">
+                      {isAr ? "وضع تنفيذ المنتج في المتجر:" : "Storefront execution mode:"}
+                    </span>
+                    <span>
+                      {isAr
+                        ? "إذا أضفت مقاسات جاهزة بجدول المتغيرات، سيتيح المتجر للعميل الاختيار بين (مقاس جاهز) أو (صنع حسب الطلب). أما إذا لم تضف مقاسات جاهزة، فسيتحول المنتج تلقائياً إلى (حصري حسب الطلب) بدون خيارات مقاسات عادية."
+                        : "If you add ready sizes in the variants table, customers can choose between ready-to-wear and made-to-order. If no ready sizes are added, it will automatically present as Made-to-Order Only."}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {(form.custom_fields ?? []).length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground border-2 border-dashed border-border-strong rounded-xl bg-background/50">
                   <Sliders className="h-8 w-8 opacity-40 mb-2.5 text-muted-foreground" />
