@@ -1899,7 +1899,11 @@ function OrderDetail() {
     const LEGACY_BRAND_NAMES = new Set(["Abaya Atelier", "أباية أتيليه"]);
     const rawBrand = (settings.business_name ?? "").trim();
     const brand =
-      !rawBrand || LEGACY_BRAND_NAMES.has(rawBrand) ? (lang === "ar" ? "بوتيك" : "Boutq") : rawBrand;
+      !rawBrand || LEGACY_BRAND_NAMES.has(rawBrand)
+        ? lang === "ar"
+          ? "بوتيك"
+          : "Boutq"
+        : rawBrand;
 
     const paymentLabel = order.payment_method ? t(`payment.${order.payment_method}`) : "";
     const statusLabel = formatOrderStatus(order.status, order.fulfillment_method, lang);
@@ -1978,9 +1982,7 @@ function OrderDetail() {
               if (error) throw error;
               toast.success(
                 vocabulary.sent_to_workshop_success[lang] ||
-                  (lang === "ar"
-                    ? "تم تحويل الطلب للورشة وتحديث الحالة"
-                    : "Sent to workshop"),
+                  (lang === "ar" ? "تم تحويل الطلب للورشة وتحديث الحالة" : "Sent to workshop"),
               );
               await logActivity({
                 action: "status_change",
@@ -2023,9 +2025,7 @@ function OrderDetail() {
               if (error) throw error;
               toast.success(
                 vocabulary.received_from_workshop_success[lang] ||
-                  (lang === "ar"
-                    ? "تم استلام الطلب من الورشة وتجهيزه"
-                    : "Received from workshop"),
+                  (lang === "ar" ? "تم استلام الطلب من الورشة وتجهيزه" : "Received from workshop"),
               );
               await logActivity({
                 action: "status_change",
@@ -3606,9 +3606,15 @@ function OrderDetail() {
                                             {isAr ? "المقاس:" : "Size:"}
                                           </span>
                                           <b>
-                                            {String(it.selected_variant?.size ?? "").includes("custom") ||
-                                            String(it.selected_variant?.size ?? "").includes("خاص") ||
-                                            String(it.selected_variant?.size ?? "").includes(vocabulary.custom_order?.[lang] || "custom")
+                                            {String(it.selected_variant?.size ?? "").includes(
+                                              "custom",
+                                            ) ||
+                                            String(it.selected_variant?.size ?? "").includes(
+                                              "خاص",
+                                            ) ||
+                                            String(it.selected_variant?.size ?? "").includes(
+                                              vocabulary.custom_order?.[lang] || "custom",
+                                            )
                                               ? vocabulary.custom_sizing?.[lang] ||
                                                 (isAr ? "قياسات خاصة" : "Custom Sizing")
                                               : it.selected_variant.size}

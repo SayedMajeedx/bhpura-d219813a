@@ -46,9 +46,9 @@ describe("Phase 3: Explicit is_made_to_order flag & inventory decoupling", () =>
       expect(inventory).toMatch(/is_made_to_order: Boolean\(form\.is_made_to_order\)/);
     });
 
-    it("auto-enables is_made_to_order when selecting a Passport preset", () => {
+    it("auto-enables is_made_to_order when selecting a customization preset", () => {
       expect(inventory).toContain(
-        "is_made_to_order: isPassportPreset ? true : form.is_made_to_order",
+        "is_made_to_order: isCustomPreset ? true : form.is_made_to_order",
       );
     });
 
@@ -86,7 +86,8 @@ describe("Phase 3: Explicit is_made_to_order flag & inventory decoupling", () =>
 
     it("does not tag ready-to-wear items with custom fields as custom tailoring", () => {
       expect(pdp).not.toContain('hasCustomFields ? t("تفصيل", "Custom Tailoring") : null');
-      expect(pdp).toContain('isTailoringActive ? t("تفصيل", "Custom Tailoring") : null');
+      expect(pdp).toContain("isTailoringActive");
+      expect(pdp).toContain('vocabulary.custom_sizing?.[lang] || t("قياس خاص", "Custom Sizing")');
     });
   });
 

@@ -336,8 +336,7 @@ export function getFulfillmentBadgeDetails(
   const s = String(status || "ON_HOLD").toUpperCase();
   if (s === "SENT_TO_TAILOR" || s === "SENT_TO_WORKSHOP") {
     const label =
-      vocab?.sent_to_workshop?.[lang] ||
-      (lang === "ar" ? "تم الإرسال للورشة" : "Sent to Workshop");
+      vocab?.sent_to_workshop?.[lang] || (lang === "ar" ? "تم الإرسال للورشة" : "Sent to Workshop");
     return {
       label,
       classes:

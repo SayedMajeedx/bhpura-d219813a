@@ -118,7 +118,14 @@ export function ProductFitPassportSection({
         // LocalStorage fallback
       }
     }
-  }, [customerId, fitPassportQ.data?.measurements, fitProfileType, brand?.slug, isGuest, storedFitProfiles]);
+  }, [
+    customerId,
+    fitPassportQ.data?.measurements,
+    fitProfileType,
+    brand?.slug,
+    isGuest,
+    storedFitProfiles,
+  ]);
 
   if (!passportConfigured) return null;
 

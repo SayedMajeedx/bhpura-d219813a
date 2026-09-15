@@ -1079,9 +1079,7 @@ function OrdersList() {
             handleStatusUpdate(
               { fulfillment_status: "SENT_TO_TAILOR" },
               vocabulary.sent_to_workshop_success[lang] ||
-                (lang === "ar"
-                  ? "تم الإرسال للورشة بنجاح!"
-                  : "Order sent to workshop!"),
+                (lang === "ar" ? "تم الإرسال للورشة بنجاح!" : "Order sent to workshop!"),
             );
           }}
         >
@@ -1109,9 +1107,7 @@ function OrdersList() {
             handleStatusUpdate(
               { fulfillment_status: "RECEIVED_FROM_TAILOR" },
               vocabulary.received_from_workshop_success[lang] ||
-                (lang === "ar"
-                  ? "تم استلام الطلب من الورشة بنجاح!"
-                  : "Received from workshop!"),
+                (lang === "ar" ? "تم استلام الطلب من الورشة بنجاح!" : "Received from workshop!"),
             );
           }}
         >

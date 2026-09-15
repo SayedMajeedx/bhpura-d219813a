@@ -1,5 +1,3 @@
-import type { StoreVertical } from "@/lib/store-profile";
-
 export const COLOR_SKU_MAP: Record<string, string> = {
   // Arabic colors & common Khaleeji terms
   أسود: "BLK",

@@ -1280,7 +1280,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                       }`}
                     >
                       <Scissors className="h-4 w-4" />
-                      <span>{vocabulary.custom_sizing?.[lang] || t("مقاس مخصص", "Custom Size")}</span>
+                      <span>
+                        {vocabulary.custom_sizing?.[lang] || t("مقاس مخصص", "Custom Size")}
+                      </span>
                     </Button>
                   </div>
                 </div>

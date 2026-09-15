@@ -121,9 +121,7 @@ export function getOrderTypeLabel(
     case "tailoring":
       return vocab?.custom_order?.[lang] || (lang === "ar" ? "حسب الطلب" : "Custom Order");
     case "mixed":
-      return lang === "ar"
-        ? `جاهز و${vocab?.custom_order?.[lang] || "حسب الطلب"}`
-        : "Mixed";
+      return lang === "ar" ? `جاهز و${vocab?.custom_order?.[lang] || "حسب الطلب"}` : "Mixed";
     case "ready_stock":
     default:
       return vocab?.ready_made?.[lang] || (lang === "ar" ? "جاهز" : "Ready Stock");

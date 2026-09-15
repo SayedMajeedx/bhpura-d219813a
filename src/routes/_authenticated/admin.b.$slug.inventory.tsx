@@ -84,8 +84,6 @@ import {
   formatSkuToken,
   makeEan13,
   splitVariantValues,
-  SIZING_PRESETS,
-  orderSizingPresetsForVertical,
   UNIVERSAL_SIZING_PRESETS,
   PLACEHOLDER_SIZE_VALUES,
 } from "@/lib/variant-sku-utils";
@@ -3488,8 +3486,10 @@ function ProductDialog({
                         CUSTOMIZER_PRESETS[presetKey as keyof typeof CUSTOMIZER_PRESETS];
                       const preset = addonPreset || staticPreset;
                       if (preset) {
+                        const isCustomPreset = Boolean(preset.fields && preset.fields.length > 0);
                         setForm({
                           ...form,
+                          is_made_to_order: isCustomPreset ? true : form.is_made_to_order,
                           custom_fields: [
                             ...(form.custom_fields ?? []),
                             ...preset.fields.map(
@@ -3948,7 +3948,10 @@ function BulkVariantDialog({
   const applyPreset = (preset: { sizes: string[] | readonly string[]; unit?: string }) => {
     setSizesText(Array.from(preset.sizes).join(", "));
     if (preset.unit !== undefined) {
-      setPlan((prev) => ({ ...prev, size_unit: (preset.unit || "") as VariantGenerationPlan["size_unit"] }));
+      setPlan((prev) => ({
+        ...prev,
+        size_unit: (preset.unit || "") as VariantGenerationPlan["size_unit"],
+      }));
     }
   };
 

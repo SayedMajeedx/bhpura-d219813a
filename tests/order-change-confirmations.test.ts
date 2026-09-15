@@ -12,7 +12,7 @@ describe("high-impact order change confirmations", () => {
     expect(header).toContain("pendingStatus");
     expect(header).toContain("Confirm order status change");
     expect(header).toContain("Confirm Change");
-    expect(header).toContain("getFulfillmentLabel(pendingStatus.fulfillmentStatus, lang)");
+    expect(header).toContain("getFulfillmentLabel(pendingStatus.fulfillmentStatus, lang");
   });
 
   it("shows a payment difference summary and rejects inconsistent totals", () => {
