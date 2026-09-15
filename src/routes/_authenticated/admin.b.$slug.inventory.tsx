@@ -116,6 +116,11 @@ import {
   sizingPresetsFrom,
   sizingPresetOrderFrom,
 } from "@/lib/addons/addon-registry";
+import {
+  getVerticalSizingPresets,
+  getVerticalAiPromptPlaceholder,
+  getVerticalAxisPlaceholders,
+} from "@/lib/addons/vertical-inventory";
 import { useAddons } from "@/components/addons/AddonsProvider";
 
 /** Common measurement units the admin can pick from for a "size" variant. */
@@ -3569,6 +3574,22 @@ function ProductDialog({
                 />
               </div>
 
+              {Boolean(form.is_made_to_order) && (
+                <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 text-xs text-muted-foreground leading-relaxed flex items-start gap-2.5">
+                  <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold text-foreground block mb-0.5">
+                      {isAr ? "وضع تنفيذ المنتج في المتجر:" : "Storefront execution mode:"}
+                    </span>
+                    <span>
+                      {isAr
+                        ? "إذا أضفت مقاسات جاهزة بجدول المتغيرات، سيتيح المتجر للعميل الاختيار بين (مقاس جاهز) أو (صنع حسب الطلب). أما إذا لم تضف مقاسات جاهزة، فسيتحول المنتج تلقائياً إلى (حصري حسب الطلب) بدون خيارات مقاسات عادية."
+                        : "If you add ready sizes in the variants table, customers can choose between ready-to-wear and made-to-order. If no ready sizes are added, it will automatically present as Made-to-Order Only."}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {(form.custom_fields ?? []).length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground border-2 border-dashed border-border-strong rounded-xl bg-background/50">
                   <Sliders className="h-8 w-8 opacity-40 mb-2.5 text-muted-foreground" />
@@ -3902,21 +3923,43 @@ function BulkVariantDialog({
     () => variantAxisDefaultsFrom(addons.length > 0 ? addons : storeProfile?.addons),
     [addons, storeProfile?.addons],
   );
+  const currentVertical = storeProfile?.vertical || "general";
+
+  const sizeAxis = resolveVariantAxis({
+    axis: "size",
+    product,
+    addonDefaults: addonAxisDefaults,
+    lang: isAr ? "ar" : "en",
+  });
+  const colorAxis = resolveVariantAxis({
+    axis: "color",
+    product,
+    addonDefaults: addonAxisDefaults,
+    lang: isAr ? "ar" : "en",
+  });
+  const fabricAxis = resolveVariantAxis({
+    axis: "fabric",
+    product,
+    addonDefaults: addonAxisDefaults,
+    lang: isAr ? "ar" : "en",
+  });
+
   const orderedPresets = useMemo(() => {
     const rows = addons.length > 0 ? addons : storeProfile?.addons;
     const fromAddons = sizingPresetsFrom(rows);
     const order = sizingPresetOrderFrom(rows);
-    const combined = [...fromAddons, ...UNIVERSAL_SIZING_PRESETS];
-    if (order.length === 0) return combined;
-    return combined.sort((a, b) => {
-      const idxA = order.indexOf(a.id);
-      const idxB = order.indexOf(b.id);
-      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-      if (idxA !== -1) return -1;
-      if (idxB !== -1) return 1;
-      return 0;
-    });
-  }, [addons, storeProfile?.addons]);
+    return getVerticalSizingPresets(currentVertical, fromAddons, order);
+  }, [addons, storeProfile?.addons, currentVertical]);
+
+  const aiPromptPlaceholder = useMemo(
+    () => getVerticalAiPromptPlaceholder(currentVertical, isAr),
+    [currentVertical, isAr],
+  );
+
+  const { sizePlaceholder, colorPlaceholder } = useMemo(
+    () => getVerticalAxisPlaceholders(currentVertical, isAr),
+    [currentVertical, isAr],
+  );
   const existingSku = variants.find((v) => v.sku)?.sku || "";
   const blank: VariantGenerationPlan = {
     base_sku: existingSku,
@@ -4276,11 +4319,7 @@ function BulkVariantDialog({
             className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder={
-              isAr
-                ? "مثال: كود NP24، الألوان كحلي وعنابي وبيج، المقاسات من S إلى XL، السعر 25 د.ب والتخفيض 19 د.ب، المخزون 5 لكل خيار"
-                : "Example: code DRS-01, colors Black, Olive and Burgundy, sizes S to XL, price 25 BHD, sale 19, stock 5 per variant"
-            }
+            placeholder={aiPromptPlaceholder}
           />
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <Button type="button" onClick={parseWithAi} disabled={parsing}>
@@ -4307,7 +4346,7 @@ function BulkVariantDialog({
         {/* QUICK SIZING PRESET PILLS */}
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">
-            {isAr ? "قوالب مقاسات جاهزة بنقرة واحدة:" : "1-Click Sizing Quick Presets:"}
+            {isAr ? "قوالب مقاسات وخيارات جاهزة بنقرة واحدة:" : "1-Click Sizing Quick Presets:"}
           </Label>
           <div className="flex items-center gap-1.5 flex-wrap">
             {orderedPresets.map((preset) => (
@@ -4336,21 +4375,23 @@ function BulkVariantDialog({
             />
           </div>
           <div>
-            <Label>{isAr ? "المقاسات (بفاصلة)" : "Sizes (comma separated)"}</Label>
+            <Label>{sizeAxis.label} {isAr ? "(بفاصلة)" : "(comma separated)"}</Label>
             <Input
               value={sizesText}
               onChange={(e) => setSizesText(e.target.value)}
-              placeholder={isAr ? "52, 54, 56, 58, 60" : "S, M, L, XL"}
+              placeholder={sizePlaceholder}
             />
           </div>
-          <div>
-            <Label>{isAr ? "الألوان (بفاصلة)" : "Colors (comma separated)"}</Label>
-            <Input
-              value={colorsText}
-              onChange={(e) => setColorsText(e.target.value)}
-              placeholder={isAr ? "كحلي, عنابي, بيج" : "Black, Navy, Olive"}
-            />
-          </div>
+          {colorAxis.visible && (
+            <div>
+              <Label>{colorAxis.label} {isAr ? "(بفاصلة)" : "(comma separated)"}</Label>
+              <Input
+                value={colorsText}
+                onChange={(e) => setColorsText(e.target.value)}
+                placeholder={colorPlaceholder}
+              />
+            </div>
+          )}
           {resolveVariantAxis({
             axis: "fabric",
             product,

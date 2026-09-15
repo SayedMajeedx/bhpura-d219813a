@@ -45,13 +45,6 @@ export const sizeGuidesManifest: AddonManifest = {
         component: React.lazy(() => import("./components/storefront/SizeGuideModalSlot")),
       },
       {
-        id: "size-guide-inline",
-        addonId: "size-guides",
-        placement: "storefront.product.afterCta",
-        order: 10,
-        component: React.lazy(() => import("./components/storefront/SizeGuideInlineSlot")),
-      },
-      {
         id: "size-guide-footer-link",
         addonId: "size-guides",
         placement: "storefront.footer.helpLink",

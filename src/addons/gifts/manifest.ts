@@ -1,5 +1,4 @@
 import type { AddonManifest } from "@/lib/addons/addon-types";
-import { resolveBrandOwnerUserId } from "@/lib/addons/seed-helpers";
 
 export const giftsManifest: AddonManifest = {
   id: "gifts",
@@ -51,46 +50,18 @@ export const giftsManifest: AddonManifest = {
       },
     ],
     trustBadgeSuggestions: ["Gift", "HeartHandshake"],
+    sizingPresets: [
+      {
+        id: "gift_box_sizes",
+        labelAr: "أحجام الصناديق والباقات (صغير، متوسط، كبير، VIP)",
+        labelEn: "Gift Box Sizes (Small, Medium, Large, VIP)",
+        sizes: ["صغير", "متوسط", "كبير", "فاخر VIP"],
+        unit: "box",
+      },
+    ],
     aiContext: ({ brandName, lang }) =>
       lang === "ar"
         ? `متجر "${brandName}" يقدم هدايا مميزة وتغليفاً راقياً لمختلف المناسبات.`
         : `Store "${brandName}" creates curated gifts and premium packaging.`,
   },
-  seeds: [
-    {
-      key: "gift_wrapping_options",
-      description: {
-        ar: "خيارات تغليف الهدايا وبطاقات الإهداء الافتراضية",
-        en: "Default gift wrapping and greeting card options",
-      },
-      run: async ({ brandId, db }) => {
-        const optionName = "تغليف هدية فاخر مع بطاقة إهداء";
-        const { data: existing, error: existErr } = await db
-          .from("customization_options")
-          .select("id")
-          .eq("brand_id", brandId)
-          .eq("name", optionName)
-          .maybeSingle();
-
-        if (existErr) throw existErr;
-
-        if (!existing) {
-          const userId = await resolveBrandOwnerUserId(db, brandId);
-          if (!userId) {
-            return;
-          }
-
-          const { error } = await db.from("customization_options").insert({
-            brand_id: brandId,
-            user_id: userId,
-            name: optionName,
-            price_delta: 1.5,
-            product_ids: [],
-          });
-
-          if (error) throw error;
-        }
-      },
-    },
-  ],
 };

@@ -127,7 +127,7 @@ export function ProductFitPassportSection({
     storedFitProfiles,
   ]);
 
-  if (!passportConfigured) return null;
+  if (!passportConfigured || sizeMode === "ready") return null;
 
   const currentUnit = isGuest ? guestUnit : (fitPassportQ.data?.preferred_length_unit ?? "in");
 

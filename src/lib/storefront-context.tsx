@@ -22,6 +22,7 @@ import {
   type StoreVertical,
   type StoreModuleOverrides,
 } from "@/lib/store-profile";
+import type { ShippingZone } from "@/lib/shipping";
 import {
   resolveFitProfiles,
   type FitProfileDefinition,
@@ -214,7 +215,7 @@ export type PublicSettings = {
   cart_drawer_checkout_bg: string | null;
   cart_drawer_checkout_fg: string | null;
   vat_inclusive?: boolean;
-  shipping_zones?: Array<{ id: string; name_en: string; name_ar: string; fee: number }>;
+  shipping_zones?: ShippingZone[];
   google_analytics_enabled: boolean;
   google_analytics_id: string | null;
   meta_pixel_enabled: boolean;

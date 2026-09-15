@@ -40,6 +40,7 @@ import { AddonSlot } from "@/components/addons/AddonSlot";
 import { useAddons } from "@/components/addons/AddonsProvider";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { variantAxisDefaultsFrom, resolveAllVariantAxes } from "@/lib/addons/addon-registry";
+import { formatCustomField } from "@/lib/addons/custom-fields";
 import { ProductShareModal } from "@/components/storefront/ProductShareModal";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { toast } from "sonner";
@@ -813,12 +814,18 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   };
 
   const isMadeToOrder = Boolean(product?.is_made_to_order);
-  const hasReadySizes = uniqueSizes.length > 0 || hasVariants;
+  const hasReadySizes = uniqueSizes.length > 0;
   const hasCustomFields = customFields.length > 0;
   const showSizeModeToggle =
     modules.made_to_order && hasReadySizes && hasCustomFields && isMadeToOrder;
   const isTailoringActive =
     isMadeToOrder && ((showSizeModeToggle && sizeMode === "custom") || !showSizeModeToggle);
+
+  useEffect(() => {
+    if (isMadeToOrder && !hasReadySizes) {
+      setSizeMode("custom");
+    }
+  }, [isMadeToOrder, hasReadySizes]);
 
   const selectedVariantOutOfStock = Boolean(!isTailoringActive && variant && maxStock <= 0);
 
@@ -921,14 +928,18 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     if (measurementsApplied) {
       Object.entries(cfValues).forEach(([k, v]) => {
         if (isMeasurementField(k) && v && !custom.some((c) => c.key === k)) {
-          custom.push({
-            key: k,
-            label_ar: k === "fit_profile" ? "ملف المقاس المستخدم" : k,
-            label_en: k === "fit_profile" ? "Applied measurement profile" : k,
-            value: String(v),
-            type: "text",
-            price_delta: 0,
-          });
+          const fmtAr = formatCustomField({ key: k, value: String(v) }, "ar");
+          const fmtEn = formatCustomField({ key: k, value: String(v) }, "en");
+          if (fmtAr && fmtEn) {
+            custom.push({
+              key: k,
+              label_ar: fmtAr.label,
+              label_en: fmtEn.label,
+              value: lang === "ar" ? fmtAr.value : fmtEn.value,
+              type: "text",
+              price_delta: 0,
+            });
+          }
         }
       });
     }
@@ -984,10 +995,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     const effectiveSize =
       showSizeModeToggle && sizeMode === "custom"
         ? vocabulary.custom_sizing?.[lang] || t("قياسات خاصة / حسب الطلب", "Custom Sizing")
-        : targetVariant?.size ||
-          (isTailoringActive
-            ? vocabulary.custom_order?.[lang] || t("حسب الطلب", "Made to order")
-            : null);
+        : targetVariant?.size && !isPlaceholderVariant(targetVariant)
+          ? targetVariant.size
+          : isTailoringActive
+            ? vocabulary.custom_sizing?.[lang] || vocabulary.custom_order?.[lang] || t("حسب الطلب", "Made to order")
+            : targetVariant?.size || null;
 
     addToCart({
       cart_line_id: "",
@@ -1260,6 +1272,16 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                       onClick={() => {
                         setSizeMode("ready");
                         setErrorMsg(null);
+                        setCfValues((prev) => {
+                          const next = { ...prev };
+                          Object.keys(next).forEach((k) => {
+                            if (isMeasurementField(k)) {
+                              delete next[k];
+                            }
+                          });
+                          return next;
+                        });
+                        setMeasurementsApplied(false);
                       }}
                       className={`h-11 rounded-lg font-semibold flex items-center justify-center gap-2 ${
                         sizeMode === "ready" ? "shadow-sm" : ""
@@ -1284,6 +1306,41 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                         {vocabulary.custom_sizing?.[lang] || t("مقاس مخصص", "Custom Size")}
                       </span>
                     </Button>
+                  </div>
+                </div>
+              )}
+
+              {!showSizeModeToggle && isMadeToOrder && !hasReadySizes && (
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-primary shrink-0" />
+                      <span className="text-sm font-bold text-foreground">
+                        {vocabulary.made_to_order?.[lang] || t("صنع حسب الطلب", "Made to Order")}
+                      </span>
+                    </div>
+                    <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                      {vocabulary.custom_order?.[lang] || t("خاص", "Bespoke")}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {t(
+                      "يتم تجهيز هذه القطعة خصيصاً على قياساتكِ الفردية لضمان أفضل ملاءمة وأناقة.",
+                      "This piece is tailored specifically to your personal measurements for a perfect fit.",
+                    )}
+                  </p>
+                  <div className="pt-2 flex items-center justify-between border-t border-primary/10">
+                    <span className="text-xs text-muted-foreground">
+                      {t("تحتاجين مساعدة في القياسات؟", "Need measuring guidance?")}
+                    </span>
+                    <AddonSlot
+                      placement="storefront.product.optionsAside"
+                      props={{
+                        product,
+                        selectedSize: null,
+                        uniqueSizes: [],
+                      }}
+                    />
                   </div>
                 </div>
               )}
@@ -1445,7 +1502,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 (!resolvedAxes.size.visible || uniqueSizes.length === 0) &&
                 (!resolvedAxes.fabric.visible || uniqueFabrics.length === 0) &&
                 hasVariants &&
-                (!showSizeModeToggle || sizeMode === "ready") && (
+                (!showSizeModeToggle || sizeMode === "ready") &&
+                !isTailoringActive &&
+                !variants.every(isPlaceholderVariant) && (
                   <div>
                     <div className="text-sm font-medium mb-2">{t("الخيارات", "Options")}</div>
                     <div className="flex flex-wrap gap-2">
@@ -1870,13 +1929,25 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           ) : (
             <div className="hidden md:flex gap-2">
               <Button
-                className="flex-1 h-12 font-semibold shadow-sm hover:opacity-90 bg-primary text-primary-foreground"
+                className="flex-1 h-12 font-semibold shadow-sm hover:opacity-90 bg-primary text-primary-foreground gap-2"
                 disabled={selectedVariantOutOfStock}
                 aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
                 onClick={() => doAdd(false)}
               >
-                <ShoppingBag className="h-4 w-4 me-2" />
-                {t("أضف للسلة", "Add to cart")}
+                {isTailoringActive ? (
+                  <Sparkles className="h-4 w-4" />
+                ) : (
+                  <ShoppingBag className="h-4 w-4" />
+                )}
+                <span>
+                  {isTailoringActive
+                    ? vocabulary.custom_order?.[lang]
+                      ? lang === "ar"
+                        ? `طلب ${vocabulary.custom_order[lang]} القطعة`
+                        : `Order ${vocabulary.custom_order[lang]} Piece`
+                      : t("طلب تجهيز القطعة", "Order Custom Piece")
+                    : t("أضف للسلة", "Add to cart")}
+                </span>
               </Button>
               <Button
                 variant="outline"
@@ -1885,7 +1956,13 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
                 onClick={() => doAdd(true)}
               >
-                {t("اشتر الآن", "Buy now")}
+                {isTailoringActive
+                  ? vocabulary.custom_order?.[lang]
+                    ? lang === "ar"
+                      ? `إتمام طلب ال${vocabulary.custom_order[lang]}`
+                      : `Complete ${vocabulary.custom_order[lang]}`
+                    : t("إتمام الطلب الآن", "Complete Order Now")
+                  : t("اشتر الآن", "Buy now")}
               </Button>
             </div>
           )}
@@ -1963,9 +2040,21 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   disabled={selectedVariantOutOfStock}
                   aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
                   onClick={() => doAdd(false)}
-                  aria-label={t("أضف للسلة", "Add to cart")}
+                  aria-label={
+                    isTailoringActive
+                      ? vocabulary.custom_order?.[lang]
+                        ? lang === "ar"
+                          ? `طلب ${vocabulary.custom_order[lang]} القطعة`
+                          : `Order ${vocabulary.custom_order[lang]} Piece`
+                        : t("طلب تجهيز القطعة", "Order Custom Piece")
+                      : t("أضف للسلة", "Add to cart")
+                  }
                 >
-                  <ShoppingBag className="h-4 w-4" />
+                  {isTailoringActive ? (
+                    <Sparkles className="h-4 w-4" />
+                  ) : (
+                    <ShoppingBag className="h-4 w-4" />
+                  )}
                 </Button>
                 <Button
                   variant="outline"
@@ -1974,7 +2063,13 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
                   onClick={() => doAdd(true)}
                 >
-                  {t("اشتر الآن", "Buy now")}
+                  {isTailoringActive
+                    ? vocabulary.custom_order?.[lang]
+                      ? lang === "ar"
+                        ? `إتمام طلب ال${vocabulary.custom_order[lang]}`
+                        : `Complete ${vocabulary.custom_order[lang]}`
+                      : t("إتمام الطلب", "Complete Order")
+                    : t("اشتر الآن", "Buy now")}
                 </Button>
               </>
             )}

@@ -37,7 +37,26 @@ import {
   MessageCircle,
   Info,
   AlertCircle,
+  Plus,
+  Globe,
+  Package,
+  Layers,
+  Check,
+  X,
+  Banknote,
+  CreditCard,
+  QrCode,
 } from "lucide-react";
+import {
+  type ShippingZone,
+  COUNTRIES_DATABASE,
+  GCC_NON_BH_CODES,
+  ARAB_CODES,
+  getCountryByCode,
+  formatCountryName,
+  getShippingPricingDescription,
+} from "@/lib/shipping";
+import { CountryFlag } from "@/components/ui/country-flag";
 import { useT, useI18n } from "@/lib/i18n";
 import { PhoneInput } from "@/components/phone-input";
 import { Rnd } from "react-rnd";
@@ -3209,10 +3228,28 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
     delivery_estimate_ar: string;
     delivery_estimate_en: string;
   } | null>(null);
-  const [zones, setZones] = useState<
-    Array<{ id: string; name_en: string; name_ar: string; fee: number }>
-  >([]);
-  const [newZone, setNewZone] = useState({ name_en: "", name_ar: "", fee: "" });
+  const [zones, setZones] = useState<ShippingZone[]>([]);
+  const [newZone, setNewZone] = useState<{
+    name_en: string;
+    name_ar: string;
+    countries: string[];
+    pricing_type: "flat" | "per_piece" | "bundle";
+    fee: string;
+    bundle_size: number;
+    estimate_ar: string;
+    estimate_en: string;
+    allowed_payment_methods: Array<"cod" | "card" | "benefit">;
+  }>({
+    name_en: "",
+    name_ar: "",
+    countries: [],
+    pricing_type: "flat",
+    fee: "5",
+    bundle_size: 2,
+    estimate_ar: "",
+    estimate_en: "",
+    allowed_payment_methods: ["card", "benefit"],
+  });
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["business-settings-shipping", brandId],
@@ -3229,6 +3266,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
     },
   });
   const currency = (data as any)?.currency ?? "BHD";
+
   useEffect(() => {
     if (data) {
       setState({
@@ -3250,7 +3288,15 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
             id: z.id || crypto.randomUUID(),
             name_en: String(z.name_en || ""),
             name_ar: String(z.name_ar || ""),
+            countries: Array.isArray(z.countries) ? z.countries : [],
+            pricing_type: (z.pricing_type || "flat") as "flat" | "per_piece" | "bundle",
             fee: Number(z.fee ?? 0),
+            bundle_size: Number(z.bundle_size || 2),
+            estimate_ar: String(z.estimate_ar || ""),
+            estimate_en: String(z.estimate_en || ""),
+            allowed_payment_methods: Array.isArray(z.allowed_payment_methods)
+              ? (z.allowed_payment_methods as Array<"cod" | "card" | "benefit">)
+              : ["card", "benefit"],
           })),
         );
       } catch (_e) {
@@ -3279,26 +3325,137 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
     setSaving(false);
     if (error) toast.error(error.message);
     else {
-      toast.success(isAr ? "تم الحفظ" : "Saved");
+      toast.success(isAr ? "تم حفظ إعدادات الشحن والتوصيل" : "Shipping settings saved");
       qc.invalidateQueries({ queryKey: ["business-settings-shipping", brandId] });
     }
   };
 
+  const toggleCountry = (code: string) => {
+    setNewZone((prev) => {
+      const exists = prev.countries.includes(code);
+      const next = exists ? prev.countries.filter((c) => c !== code) : [...prev.countries, code];
+      let autoAr = prev.name_ar;
+      let autoEn = prev.name_en;
+      if (!exists && prev.countries.length === 0) {
+        const country = getCountryByCode(code);
+        if (country) {
+          autoAr = country.name_ar;
+          autoEn = country.name_en;
+        }
+      }
+      return { ...prev, countries: next, name_ar: autoAr, name_en: autoEn };
+    });
+  };
+
+  const applyGccPreset = () => {
+    setNewZone((prev) => ({
+      ...prev,
+      countries: GCC_NON_BH_CODES,
+      name_ar: prev.name_ar || "دول الخليج العربي",
+      name_en: prev.name_en || "GCC Countries",
+      fee: prev.fee !== "" ? prev.fee : "5",
+      estimate_ar: prev.estimate_ar || "خلال 3 - 5 أيام عمل",
+      estimate_en: prev.estimate_en || "3 - 5 business days",
+    }));
+  };
+
+  const applyArabPreset = () => {
+    setNewZone((prev) => ({
+      ...prev,
+      countries: ARAB_CODES,
+      name_ar: prev.name_ar || "الدول العربية",
+      name_en: prev.name_en || "Arab Countries",
+      fee: prev.fee !== "" ? prev.fee : "7",
+      estimate_ar: prev.estimate_ar || "خلال 5 - 7 أيام عمل",
+      estimate_en: prev.estimate_en || "5 - 7 business days",
+    }));
+  };
+
   const addZone = () => {
-    if (!newZone.name_en.trim() || !newZone.name_ar.trim() || newZone.fee === "") {
+    const nameAr = newZone.name_ar.trim() || newZone.name_en.trim();
+    const nameEn = newZone.name_en.trim() || newZone.name_ar.trim();
+    if (!nameAr) {
+      toast.error(isAr ? "الرجاء كتابة اسم المنطقة" : "Please enter zone name");
+      return;
+    }
+    if (newZone.countries.length === 0) {
       toast.error(
-        isAr ? "الرجاء تعبئة جميع الحقول لإضافة منطقة" : "Please fill all fields to add a zone",
+        isAr
+          ? "الرجاء اختيار دولة واحدة على الأقل لهذه المنطقة"
+          : "Please select at least one country for this zone",
       );
       return;
     }
-    const zone = {
+    const feeNum = newZone.fee === "" ? 5 : Number(newZone.fee);
+    if (isNaN(feeNum) || feeNum < 0) {
+      toast.error(isAr ? "الرجاء تحديد رسوم شحن صحيحة" : "Please specify a valid shipping fee");
+      return;
+    }
+    const zone: ShippingZone = {
       id: crypto.randomUUID(),
-      name_en: newZone.name_en.trim(),
-      name_ar: newZone.name_ar.trim(),
-      fee: Math.max(0, Number(newZone.fee)),
+      name_en: nameEn,
+      name_ar: nameAr,
+      countries: newZone.countries,
+      pricing_type: newZone.pricing_type,
+      fee: feeNum,
+      bundle_size:
+        newZone.pricing_type === "bundle" ? Math.max(1, Number(newZone.bundle_size || 2)) : undefined,
+      estimate_ar: newZone.estimate_ar.trim() || undefined,
+      estimate_en: newZone.estimate_en.trim() || undefined,
+      allowed_payment_methods: newZone.allowed_payment_methods,
     };
     setZones([...zones, zone]);
-    setNewZone({ name_en: "", name_ar: "", fee: "" });
+    setNewZone({
+      name_en: "",
+      name_ar: "",
+      countries: [],
+      pricing_type: "flat",
+      fee: "5",
+      bundle_size: 2,
+      estimate_ar: "",
+      estimate_en: "",
+      allowed_payment_methods: ["card", "benefit"],
+    });
+    toast.success(isAr ? "تمت إضافة منطقة الشحن بنجاح" : "Shipping zone added successfully");
+  };
+
+  const toggleZonePaymentMethod = (zoneId: string, method: "cod" | "card" | "benefit") => {
+    setZones((prev) =>
+      prev.map((z) => {
+        if (z.id !== zoneId) return z;
+        const current = Array.isArray(z.allowed_payment_methods)
+          ? z.allowed_payment_methods
+          : ["card", "benefit"];
+        const exists = current.includes(method);
+        const next = exists ? current.filter((m) => m !== method) : [...current, method];
+        if (next.length === 0) {
+          toast.error(
+            isAr
+              ? "يجب إبقاء وسيلة دفع واحدة على الأقل مفعلة لهذه المنطقة"
+              : "At least one payment method must remain active for this zone",
+          );
+          return z;
+        }
+        return { ...z, allowed_payment_methods: next };
+      }),
+    );
+  };
+
+  const toggleNewZonePaymentMethod = (method: "cod" | "card" | "benefit") => {
+    setNewZone((prev) => {
+      const current = prev.allowed_payment_methods;
+      const exists = current.includes(method);
+      const next = exists ? current.filter((m) => m !== method) : [...current, method];
+      if (next.length === 0) {
+        toast.error(
+          isAr
+            ? "يجب إبقاء وسيلة دفع واحدة على الأقل"
+            : "At least one payment method is required",
+        );
+        return prev;
+      }
+      return { ...prev, allowed_payment_methods: next };
+    });
   };
 
   const removeZone = (id: string) => {
@@ -3335,225 +3492,676 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
   }
 
   return (
-    <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-4">
+    <Card className="overflow-hidden border border-border shadow-lg rounded-2xl bg-card p-6 space-y-6">
       <div>
         <h2 className="font-display text-xl">{t("settings.shippingTitle")}</h2>
         <p className="text-sm text-muted-foreground">{t("settings.shippingSubtitle")}</p>
       </div>
 
-      <div className="flex items-center justify-between rounded-md border border-border p-3">
-        <p className="text-sm font-medium">{t("settings.deliveryEnabled")}</p>
-        <Switch
-          checked={state.delivery_enabled}
-          onCheckedChange={(v) => setState({ ...state, delivery_enabled: v })}
-        />
-      </div>
-      <div className="flex items-center justify-between rounded-md border border-border p-3">
-        <p className="text-sm font-medium">{t("settings.pickupEnabled")}</p>
-        <Switch
-          checked={state.pickup_enabled}
-          onCheckedChange={(v) => setState({ ...state, pickup_enabled: v })}
-        />
-      </div>
-      <div className="flex items-center justify-between rounded-md border border-border p-3">
-        <div>
-          <p className="text-sm font-medium">
-            {isAr ? "تفعيل التسليم الرقمي" : "Enable digital delivery"}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {isAr
-              ? "إرسال المنتج عبر البريد الإلكتروني أو واتساب"
-              : "Send products by email or WhatsApp"}
-          </p>
+      {/* Main Delivery & Pickup Toggles */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="flex items-center justify-between rounded-xl border border-border p-3.5 bg-background">
+          <div>
+            <p className="text-sm font-medium">{t("settings.deliveryEnabled")}</p>
+            <p className="text-xs text-muted-foreground">{isAr ? "توصيل للعنوان" : "Home delivery"}</p>
+          </div>
+          <Switch
+            checked={state.delivery_enabled}
+            onCheckedChange={(v) => setState({ ...state, delivery_enabled: v })}
+          />
         </div>
-        <Switch
-          checked={state.digital_delivery_enabled}
-          onCheckedChange={(v) => setState({ ...state, digital_delivery_enabled: v })}
-        />
+        <div className="flex items-center justify-between rounded-xl border border-border p-3.5 bg-background">
+          <div>
+            <p className="text-sm font-medium">{t("settings.pickupEnabled")}</p>
+            <p className="text-xs text-muted-foreground">{isAr ? "استلام من الفرع" : "In-store pickup"}</p>
+          </div>
+          <Switch
+            checked={state.pickup_enabled}
+            onCheckedChange={(v) => setState({ ...state, pickup_enabled: v })}
+          />
+        </div>
+        <div className="flex items-center justify-between rounded-xl border border-border p-3.5 bg-background">
+          <div>
+            <p className="text-sm font-medium">
+              {isAr ? "التسليم الرقمي" : "Digital delivery"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {isAr ? "إرسال عبر واتساب/إيميل" : "Via Email/WhatsApp"}
+            </p>
+          </div>
+          <Switch
+            checked={state.digital_delivery_enabled}
+            onCheckedChange={(v) => setState({ ...state, digital_delivery_enabled: v })}
+          />
+        </div>
       </div>
 
       {state.delivery_enabled && (
-        <div className="space-y-4 border-t border-border pt-4 animate-in fade-in-50 duration-200">
-          <div>
-            <h3 className="text-sm font-semibold mb-2">
-              {isAr ? "مناطق تسعير التوصيل والشحن" : "Shipping & Delivery Pricing Zones"}
-            </h3>
-            <p className="text-xs text-muted-foreground mb-4">
-              {isAr
-                ? "أنشئ مناطق توصيل مخصصة بأسعار مختلفة (مثال: البحرين محلي، شحن السعودية، دولي مجلس التعاون). سيختار العميل منطقته عند الدفع."
-                : "Create custom shipping zones with distinct fees. Customers will select their zone during checkout."}
-            </p>
+        <div className="space-y-6 border-t border-border pt-6">
+          {/* SECTION 1: Anchored Bahrain Domestic Delivery */}
+          <div className="rounded-xl border-2 border-primary/20 bg-primary/5 p-4 sm:p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-primary/10 pb-3">
+              <div className="flex items-center gap-3">
+                <CountryFlag
+                  code="BH"
+                  className="w-9 h-6 rounded-xs object-cover border border-border/40 shadow-xs shrink-0"
+                />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-semibold text-foreground">
+                      {isAr ? "التوصيل داخل البحرين (الافتراضي)" : "Domestic Delivery - Bahrain (Default)"}
+                    </h3>
+                    <span className="text-[11px] font-medium bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                      {isAr ? "الوجهة التلقائية للعميل" : "Default Destination"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {isAr
+                      ? "تظهر البحرين تلقائياً كخيار أول ومحدد مسبقاً لجميع العملاء عند إتمام الطلب."
+                      : "Bahrain is preselected automatically for every customer upon entering checkout."}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+              <div>
+                <Label className="text-xs font-semibold block mb-1.5">
+                  {isAr ? "سعر التوصيل داخل البحرين" : "Bahrain Delivery Fee"} ({currency})
+                </Label>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    step="0.05"
+                    min={0}
+                    value={state.delivery_fee}
+                    onChange={(e) =>
+                      setState({ ...state, delivery_fee: Math.max(0, Number(e.target.value)) })
+                    }
+                    className="font-mono h-10 pe-14 ps-3 text-sm bg-background"
+                  />
+                  <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground pointer-events-none">
+                    {currency}
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  {state.delivery_fee === 0
+                    ? isAr
+                      ? "التوصيل مجاني لعملاء البحرين"
+                      : "Delivery is free for Bahrain customers"
+                    : isAr
+                      ? `سعر ثابت لجميع مناطق البحرين: ${formatMoney(state.delivery_fee, currency, lang)}`
+                      : `Fixed fee for all Bahrain: ${formatMoney(state.delivery_fee, currency, lang)}`}
+                </p>
+              </div>
+
+              <div className="md:col-span-2 space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold">
+                    {isAr ? "مدة التوصيل المتوقعة داخل البحرين" : "Estimated Transit Time (Bahrain)"}
+                  </Label>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-muted-foreground">
+                      {state.delivery_estimate_enabled
+                        ? isAr
+                          ? "مُفعل"
+                          : "Enabled"
+                        : isAr
+                          ? "معطل"
+                          : "Disabled"}
+                    </span>
+                    <Switch
+                      checked={state.delivery_estimate_enabled}
+                      onCheckedChange={(v) => setState({ ...state, delivery_estimate_enabled: v })}
+                    />
+                  </div>
+                </div>
+
+                {state.delivery_estimate_enabled && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <Input
+                      type="text"
+                      value={state.delivery_estimate_ar}
+                      onChange={(e) => setState({ ...state, delivery_estimate_ar: e.target.value })}
+                      placeholder="التوصيل خلال 24 - 48 ساعة داخل البحرين"
+                      className="text-xs bg-background text-end"
+                      dir="rtl"
+                    />
+                    <Input
+                      type="text"
+                      value={state.delivery_estimate_en}
+                      onChange={(e) => setState({ ...state, delivery_estimate_en: e.target.value })}
+                      placeholder="Estimated delivery within 24 - 48 hours"
+                      className="text-xs bg-background"
+                      dir="ltr"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Zones Table / List */}
-          {zones.length > 0 ? (
-            <div className="rounded-lg border border-border overflow-hidden bg-background">
-              <table className="w-full text-sm text-start rtl:text-end">
-                <thead className="bg-secondary/10 text-xs font-semibold text-muted-foreground border-b border-border">
-                  <tr>
-                    <th className="p-3">{isAr ? "المنطقة (إنجليزي)" : "Zone Name (EN)"}</th>
-                    <th className="p-3">{isAr ? "المنطقة (عربي)" : "Zone Name (AR)"}</th>
-                    <th className="p-3 w-32">{isAr ? "رسوم التوصيل" : "Fee"}</th>
-                    <th className="p-3 w-12"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {zones.map((z) => (
-                    <tr key={z.id} className="hover:bg-secondary/5 transition-colors">
-                      <td className="p-3 font-medium">{z.name_en}</td>
-                      <td className="p-3 font-medium">{z.name_ar}</td>
-                      <td className="p-3 font-mono font-semibold">
-                        {formatMoney(z.fee, currency, lang)}
-                      </td>
-                      <td className="p-3 text-center">
+          {/* SECTION 2: International / Multi-Country Shipping Zones */}
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="text-base font-semibold flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-primary" />
+                  <span>{isAr ? "مناطق الشحن خارج البحرين (الدولي والخليجي)" : "International & Regional Shipping Zones"}</span>
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {isAr
+                    ? "حدد أسعار الشحن للبلدان الأخرى بدقة: سعر ثابت للطلب، أو سعر لكل قطعة، أو سعر لكل مجموعة قطع (مثال: كل قطعتين 5 دينار)."
+                    : "Configure shipping rules for other countries: flat per order, per piece, or bundle pricing (e.g. 5 BHD every 2 pieces)."}
+                </p>
+              </div>
+            </div>
+
+            {/* Existing Zones List */}
+            {zones.length > 0 ? (
+              <div className="grid grid-cols-1 gap-3">
+                {zones.map((z) => {
+                  const countryObjects = (z.countries ?? []).map((code) => getCountryByCode(code));
+                  return (
+                    <div
+                      key={z.id}
+                      className="rounded-xl border border-border bg-background p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-border/80 transition-all shadow-sm"
+                    >
+                      <div className="space-y-2 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-sm text-foreground">
+                            {isAr ? z.name_ar : z.name_en}
+                          </span>
+                          <span className="text-xs text-muted-foreground">({z.name_en})</span>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium bg-secondary text-secondary-foreground px-2 py-0.5 rounded-md">
+                            {z.pricing_type === "bundle"
+                              ? isAr
+                                ? `كل ${z.bundle_size || 2} قطع`
+                                : `Every ${z.bundle_size || 2} items`
+                              : z.pricing_type === "per_piece"
+                                ? isAr
+                                  ? "لكل قطعة"
+                                  : "Per item"
+                                : isAr
+                                  ? "سعر ثابت للطلب"
+                                  : "Flat per order"}
+                          </span>
+                        </div>
+
+                        {/* Country Badges */}
+                        <div className="flex flex-wrap gap-1.5">
+                          {countryObjects.map((c, i) => (
+                            <span
+                              key={i}
+                              className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border border-border/80 bg-secondary/30"
+                            >
+                              <CountryFlag
+                                code={c?.code || ""}
+                                className="w-4 h-3 rounded-2xs object-cover border border-border/40 shrink-0"
+                              />
+                              <span>{isAr ? c?.name_ar : c?.name_en}</span>
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Transit Estimate */}
+                        {(z.estimate_ar || z.estimate_en) && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                            <Truck className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span>{isAr ? z.estimate_ar : z.estimate_en}</span>
+                          </p>
+                        )}
+
+                        {/* Allowed Payment Methods */}
+                        <div className="pt-2 border-t border-border/40 mt-1">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="text-[11px] font-semibold text-foreground">
+                              {isAr ? "طرق الدفع المقبولة لهذه المنطقة:" : "Accepted payment methods for this zone:"}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {isAr ? "(انقر للتفعيل / الإلغاء)" : "(click to toggle)"}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {[
+                              { id: "card" as const, ar: "الدفع بالبطاقة", en: "Card payment", icon: CreditCard },
+                              { id: "benefit" as const, ar: "بنفت", en: "Benefit", icon: QrCode },
+                              { id: "cod" as const, ar: "الدفع عند الاستلام", en: "Cash on delivery", icon: Banknote },
+                            ].map((m) => {
+                              const allowedList = Array.isArray(z.allowed_payment_methods)
+                                ? z.allowed_payment_methods
+                                : ["card", "benefit"];
+                              const isAllowed = allowedList.includes(m.id);
+                              return (
+                                <button
+                                  key={m.id}
+                                  type="button"
+                                  onClick={() => toggleZonePaymentMethod(z.id, m.id)}
+                                  className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-all ${
+                                    isAllowed
+                                      ? "bg-primary/10 text-primary border-primary/30 font-medium shadow-2xs"
+                                      : "bg-muted/40 text-muted-foreground border-border opacity-50 hover:opacity-90"
+                                  }`}
+                                  title={
+                                    isAr
+                                      ? isAllowed
+                                        ? "انقر لتعطيل طريقة الدفع لهذه المنطقة"
+                                        : "انقر لتفعيل طريقة الدفع لهذه المنطقة"
+                                      : isAllowed
+                                        ? "Click to disable for this zone"
+                                        : "Click to enable for this zone"
+                                  }
+                                >
+                                  <m.icon className="w-3.5 h-3.5 shrink-0" />
+                                  <span>{isAr ? m.ar : m.en}</span>
+                                  <span
+                                    className={`w-1.5 h-1.5 rounded-full ${
+                                      isAllowed ? "bg-primary" : "bg-muted-foreground/40"
+                                    }`}
+                                  />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0">
+                        <div className="text-end">
+                          <div className="text-base font-bold font-mono text-primary">
+                            {formatMoney(z.fee, currency, lang)}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground">
+                            {getShippingPricingDescription(z, currency, lang)}
+                          </div>
+                        </div>
+
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          className="h-9 w-9 text-destructive hover:bg-destructive/10 rounded-lg"
                           onClick={() => removeZone(z.id)}
-                          aria-label={isAr ? "حذف" : "Delete"}
+                          aria-label={isAr ? "حذف المنطقة" : "Delete zone"}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground bg-secondary/5">
-              {isAr
-                ? "لا توجد مناطق شحن معرفة بعد. سيتم استخدام السعر الافتراضي أدناه لجميع الطلبات."
-                : "No shipping zones defined yet. The default delivery fee below will be used as a fallback."}
-            </div>
-          )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-border p-6 text-center text-muted-foreground text-xs space-y-1">
+                <Globe className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
+                <p className="font-medium text-foreground">
+                  {isAr ? "لم تتم إضافة مناطق شحن دولية بعد" : "No international shipping zones added yet"}
+                </p>
+                <p>
+                  {isAr
+                    ? "إذا كنت تشحن لدول أخرى (مثل السعودية والإمارات)، يمكنك إضافتها بسهولة من النموذج أدناه."
+                    : "If you ship abroad (e.g. GCC or Arab countries), configure destination zones below."}
+                </p>
+              </div>
+            )}
 
-          {/* Add New Zone Form */}
-          <div className="rounded-lg border border-border p-4 bg-secondary/10 space-y-3">
-            <h4 className="text-xs font-semibold text-muted-foreground">
-              {isAr ? "إضافة منطقة جديدة" : "Add New Shipping Zone"}
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <Input
-                  type="text"
-                  placeholder={
-                    isAr ? "الاسم بالإنجليزي (مثال: KSA Shipping)" : "EN Name (e.g. KSA Shipping)"
-                  }
-                  value={newZone.name_en}
-                  onChange={(e) => setNewZone({ ...newZone, name_en: e.target.value })}
-                  className="text-xs"
-                />
+            {/* Add New Zone Builder Card */}
+            <div className="rounded-xl border border-border p-4 sm:p-5 bg-secondary/10 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <h4 className="text-sm font-semibold flex items-center gap-2">
+                  <Plus className="h-4 w-4 text-primary" />
+                  <span>{isAr ? "إضافة منطقة شحن جديدة" : "Add New Shipping Zone"}</span>
+                </h4>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-muted-foreground me-1 hidden sm:inline">
+                    {isAr ? "قوالب سريعة:" : "Presets:"}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs px-3 rounded-full flex items-center gap-1.5 hover:border-primary hover:bg-primary/5 transition-colors"
+                    onClick={applyGccPreset}
+                  >
+                    <div className="flex items-center -space-x-1 rtl:space-x-reverse shrink-0">
+                      <CountryFlag code="SA" className="w-3.5 h-2.5 rounded-2xs object-cover border border-background shadow-xs" />
+                      <CountryFlag code="AE" className="w-3.5 h-2.5 rounded-2xs object-cover border border-background shadow-xs" />
+                      <CountryFlag code="KW" className="w-3.5 h-2.5 rounded-2xs object-cover border border-background shadow-xs" />
+                    </div>
+                    <span>{isAr ? "دول الخليج العربي" : "GCC Countries"}</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs px-3 rounded-full flex items-center gap-1.5 hover:border-primary hover:bg-primary/5 transition-colors"
+                    onClick={applyArabPreset}
+                  >
+                    <Globe className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <span>{isAr ? "الدول العربية" : "Arab Countries"}</span>
+                  </Button>
+                </div>
               </div>
-              <div>
-                <Input
-                  type="text"
-                  placeholder={
-                    isAr ? "الاسم بالعربي (مثال: شحن السعودية)" : "AR Name (e.g. شحن السعودية)"
-                  }
-                  value={newZone.name_ar}
-                  onChange={(e) => setNewZone({ ...newZone, name_ar: e.target.value })}
-                  className="text-xs text-end"
-                  dir="rtl"
-                />
+
+              {/* Country Selection Chips & Dropdown */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold block">
+                  {isAr ? "الدول التابعة لهذه المنطقة" : "Countries in this zone"} *
+                </Label>
+
+                {newZone.countries.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 p-2 rounded-lg bg-background border border-border">
+                    {newZone.countries.map((code) => {
+                      const c = getCountryByCode(code);
+                      return (
+                        <span
+                          key={code}
+                          className="inline-flex items-center gap-1.5 text-xs bg-primary/10 text-primary border border-primary/20 px-2.5 py-1 rounded-full font-medium"
+                        >
+                          <CountryFlag code={code} className="w-4 h-3 rounded-2xs object-cover border border-border/40 shrink-0" />
+                          <span>{isAr ? c?.name_ar : c?.name_en}</span>
+                          <button
+                            type="button"
+                            onClick={() => toggleCountry(code)}
+                            className="text-primary/70 hover:text-primary hover:bg-primary/20 rounded-full p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Dropdown to add more countries */}
+                <Select
+                  value=""
+                  onValueChange={(val) => {
+                    if (val) toggleCountry(val);
+                  }}
+                >
+                  <SelectTrigger className="text-xs h-9 bg-background">
+                    <SelectValue
+                      placeholder={
+                        newZone.countries.length === 0
+                          ? isAr
+                            ? "اختر دولة لإضافتها إلى المنطقة..."
+                            : "Select a country to add..."
+                          : isAr
+                            ? "+ إضافة دولة أخرى إلى نفس المنطقة..."
+                            : "+ Add another country to this zone..."
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {COUNTRIES_DATABASE.filter((c) => c.code !== "BH").map((c) => {
+                      const isSelected = newZone.countries.includes(c.code);
+                      return (
+                        <SelectItem key={c.code} value={c.code} className="text-xs">
+                          <div className="flex items-center justify-between w-full gap-2">
+                            <div className="flex items-center gap-2">
+                              <CountryFlag code={c.code} className="w-4 h-3 rounded-2xs object-cover border border-border/40 shrink-0" />
+                              <span>{isAr ? c.name_ar : c.name_en}</span>
+                              <span className="text-muted-foreground text-[11px]">({c.name_en})</span>
+                            </div>
+                            {isSelected && <Check className="h-3.5 w-3.5 text-primary ms-2 shrink-0" />}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="flex gap-2">
-                <Input
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  placeholder={isAr ? "الرسوم" : "Fee"}
-                  value={newZone.fee}
-                  onChange={(e) => setNewZone({ ...newZone, fee: e.target.value })}
-                  className="text-xs"
-                />
+
+              {/* Zone Names */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs font-semibold block mb-1">
+                    {isAr ? "اسم المنطقة (بالعربية)" : "Zone Name (Arabic)"} *
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder={isAr ? "مثال: شحن دول الخليج العربي" : "e.g. شحن دول الخليج العربي"}
+                    value={newZone.name_ar}
+                    onChange={(e) => setNewZone({ ...newZone, name_ar: e.target.value })}
+                    className="text-xs bg-background text-end"
+                    dir="rtl"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold block mb-1">
+                    {isAr ? "اسم المنطقة (بالإنجليزية)" : "Zone Name (English)"} *
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder="e.g. GCC Express Shipping"
+                    value={newZone.name_en}
+                    onChange={(e) => setNewZone({ ...newZone, name_en: e.target.value })}
+                    className="text-xs bg-background"
+                    dir="ltr"
+                  />
+                </div>
+              </div>
+
+              {/* Pricing Model & Fees */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold block">
+                  {isAr ? "طريقة احتساب رسوم الشحن" : "Pricing Model"} *
+                </Label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNewZone({ ...newZone, pricing_type: "flat" })}
+                    className={`p-3 rounded-xl border text-start transition-all cursor-pointer ${
+                      newZone.pricing_type === "flat"
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-background hover:bg-secondary/40 text-foreground"
+                    }`}
+                  >
+                    <div className="font-semibold text-xs flex items-center gap-1.5">
+                      <Package className="h-3.5 w-3.5" />
+                      <span>{isAr ? "سعر ثابت للطلب" : "Flat per order"}</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      {isAr ? "مبلغ ثابت للشحنة بالكامل بغض النظر عن عدد القطع" : "Fixed fee regardless of quantity"}
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setNewZone({ ...newZone, pricing_type: "per_piece" })}
+                    className={`p-3 rounded-xl border text-start transition-all cursor-pointer ${
+                      newZone.pricing_type === "per_piece"
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-background hover:bg-secondary/40 text-foreground"
+                    }`}
+                  >
+                    <div className="font-semibold text-xs flex items-center gap-1.5">
+                      <Truck className="h-3.5 w-3.5" />
+                      <span>{isAr ? "سعر لكل قطعة" : "Per piece"}</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      {isAr ? "مثال: 5 د.ب. لكل قطعة (قطعتين = 10 د.ب.)" : "e.g. 5 BHD each (2 items = 10 BHD)"}
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setNewZone({ ...newZone, pricing_type: "bundle" })}
+                    className={`p-3 rounded-xl border text-start transition-all cursor-pointer ${
+                      newZone.pricing_type === "bundle"
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-background hover:bg-secondary/40 text-foreground"
+                    }`}
+                  >
+                    <div className="font-semibold text-xs flex items-center gap-1.5">
+                      <Layers className="h-3.5 w-3.5" />
+                      <span>{isAr ? "سعر لكل مجموعة قطع" : "Per bundle of items"}</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      {isAr ? "مثال: 5 د.ب. لكل قطعتين (1-2=5، 3-4=10)" : "e.g. 5 BHD every 2 pieces"}
+                    </p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Fee Input & Bundle Size (if applicable) */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                <div>
+                  <Label className="text-xs font-semibold block mb-1">
+                    {newZone.pricing_type === "flat"
+                      ? isAr
+                        ? "رسوم الشحن الثابتة"
+                        : "Flat Shipping Fee"
+                      : newZone.pricing_type === "per_piece"
+                        ? isAr
+                          ? "سعر الشحن للقطعة الواحدة"
+                          : "Fee Per Piece"
+                        : isAr
+                          ? "رسوم المجموعة"
+                          : "Fee Per Bundle"}{" "}
+                    ({currency}) *
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min={0}
+                      placeholder="5.000"
+                      value={newZone.fee}
+                      onChange={(e) => setNewZone({ ...newZone, fee: e.target.value })}
+                      className="font-mono text-xs bg-background pe-14 ps-3"
+                    />
+                    <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground pointer-events-none">
+                      {currency}
+                    </span>
+                  </div>
+                </div>
+
+                {newZone.pricing_type === "bundle" && (
+                  <div>
+                    <Label className="text-xs font-semibold block mb-1">
+                      {isAr ? "حجم المجموعة (عدد القطع)" : "Items per bundle"} *
+                    </Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={newZone.bundle_size}
+                      onChange={(e) =>
+                        setNewZone({ ...newZone, bundle_size: Math.max(1, Number(e.target.value || 1)) })
+                      }
+                      className="font-mono text-xs bg-background"
+                      placeholder="2"
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {isAr ? `يحسب كل ${newZone.bundle_size} قطع بمبلغ واحد` : `Charged per ${newZone.bundle_size} items`}
+                    </p>
+                  </div>
+                )}
+
+                <div className={newZone.pricing_type === "bundle" ? "" : "sm:col-span-2"}>
+                  <Label className="text-xs font-semibold block mb-1">
+                    {isAr ? "مدة التوصيل للمنطقة (اختياري)" : "Transit Estimate (Optional)"}
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder={isAr ? "مثال: خلال 3 - 5 أيام عمل" : "e.g. 3 - 5 business days"}
+                    value={isAr ? newZone.estimate_ar : newZone.estimate_en}
+                    onChange={(e) =>
+                      setNewZone(
+                        isAr
+                          ? { ...newZone, estimate_ar: e.target.value, estimate_en: e.target.value }
+                          : { ...newZone, estimate_en: e.target.value },
+                      )
+                    }
+                    className="text-xs bg-background"
+                  />
+                </div>
+              </div>
+
+              {/* Payment Methods Selection for this Zone */}
+              <div className="space-y-1.5 pt-1">
+                <Label className="text-xs font-semibold block">
+                  {isAr ? "طرق الدفع المسموحة لهذه المنطقة" : "Accepted payment methods for this zone"}
+                </Label>
+                <div className="flex flex-wrap items-center gap-2">
+                  {[
+                    { id: "card" as const, ar: "الدفع بالبطاقة", en: "Card payment", icon: CreditCard },
+                    { id: "benefit" as const, ar: "بنفت", en: "Benefit", icon: QrCode },
+                    { id: "cod" as const, ar: "الدفع عند الاستلام", en: "Cash on delivery", icon: Banknote },
+                  ].map((m) => {
+                    const isAllowed = newZone.allowed_payment_methods.includes(m.id);
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => toggleNewZonePaymentMethod(m.id)}
+                        className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border transition-all ${
+                          isAllowed
+                            ? "bg-primary/10 text-primary border-primary/30 font-medium"
+                            : "bg-muted/40 text-muted-foreground border-border opacity-50 hover:opacity-90"
+                        }`}
+                      >
+                        <m.icon className="w-3.5 h-3.5 shrink-0" />
+                        <span>{isAr ? m.ar : m.en}</span>
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            isAllowed ? "bg-primary" : "bg-muted-foreground/40"
+                          }`}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  {isAr
+                    ? "افتراضياً يتم تعطيل الدفع عند الاستلام للشحن الخارجي إلا إذا رغبت بتفعيله صراحة."
+                    : "Cash on delivery is disabled by default for cross-border shipping unless explicitly enabled."}
+                </p>
+              </div>
+
+              {/* Dynamic Live Formula Preview */}
+              {Number(newZone.fee || 0) > 0 && (
+                <div className="rounded-lg bg-primary/10 border border-primary/20 p-3 text-xs text-foreground flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Info className="h-4 w-4 text-primary shrink-0" />
+                    <span>
+                      {newZone.pricing_type === "flat"
+                        ? isAr
+                          ? `يدفع العميل ${formatMoney(Number(newZone.fee), currency, lang)} دائماً مهما كان عدد المنتجات في سلته.`
+                          : `The customer always pays ${formatMoney(Number(newZone.fee), currency, lang)} regardless of cart item quantity.`
+                        : newZone.pricing_type === "per_piece"
+                          ? isAr
+                            ? `إذا كان في السلة 3 قطع، ستكون رسوم الشحن: 3 × ${formatMoney(Number(newZone.fee), currency, lang)} = ${formatMoney(3 * Number(newZone.fee), currency, lang)}`
+                            : `If the cart contains 3 items, shipping fee = 3 × ${formatMoney(Number(newZone.fee), currency, lang)} = ${formatMoney(3 * Number(newZone.fee), currency, lang)}`
+                          : isAr
+                            ? `إذا كان في السلة 3 قطع، ستكون الرسوم ${formatMoney(Math.ceil(3 / (newZone.bundle_size || 2)) * Number(newZone.fee), currency, lang)} (كل ${newZone.bundle_size || 2} قطع بسعر ${formatMoney(Number(newZone.fee), currency, lang)}).`
+                            : `If the cart contains 3 items, shipping fee = ${formatMoney(Math.ceil(3 / (newZone.bundle_size || 2)) * Number(newZone.fee), currency, lang)} (${formatMoney(Number(newZone.fee), currency, lang)} per ${newZone.bundle_size || 2} items).`}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end pt-2">
                 <Button
                   type="button"
                   size="sm"
-                  className="shrink-0 text-xs bg-primary hover:bg-primary/90"
+                  className="bg-primary text-primary-foreground font-semibold px-5 h-9 rounded-lg shadow-sm hover:opacity-95"
                   onClick={addZone}
                 >
-                  {isAr ? "إضافة" : "Add"}
+                  <Plus className="h-4 w-4 me-1.5" />
+                  {isAr ? "إضافة هذه المنطقة إلى قائمة الشحن" : "Add Shipping Zone"}
                 </Button>
               </div>
             </div>
           </div>
-
-          {/* Default / Fallback Delivery Fee */}
-          <div className="pt-3 border-t border-border">
-            <Label className="text-xs font-semibold">
-              {isAr ? "رسوم التوصيل الافتراضية / الاحتياطية" : "Default / Fallback Delivery Fee"}
-            </Label>
-            <Input
-              type="number"
-              step="0.01"
-              min={0}
-              value={state.delivery_fee}
-              onChange={(e) =>
-                setState({ ...state, delivery_fee: Math.max(0, Number(e.target.value)) })
-              }
-              className="mt-1"
-            />
-            <p className="text-xs text-muted-foreground mt-1">{t("settings.deliveryFeeHint")}</p>
-          </div>
         </div>
       )}
 
-      {/* Estimated Delivery Notice Settings */}
-      <div className="rounded-lg border border-border p-4 bg-secondary/5 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold">
-              {isAr ? "مؤشر مدة التوصيل التقديرية" : "Estimated Delivery Notice"}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {isAr
-                ? "يظهر للعميل في صفحة المنتج وسلة الشراء لطمأنته حول موعد استلام الطلب"
-                : "Appears on product page and cart to assure customers of delivery timelines"}
-            </p>
-          </div>
-          <Switch
-            checked={state.delivery_estimate_enabled}
-            onCheckedChange={(v) => setState({ ...state, delivery_estimate_enabled: v })}
-          />
-        </div>
-
-        {state.delivery_estimate_enabled && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-border-subtle">
-            <div>
-              <Label className="text-xs font-medium">
-                {isAr ? "نص مدة التوصيل (بالعربية)" : "Delivery Estimate Text (Arabic)"}
-              </Label>
-              <Input
-                type="text"
-                value={state.delivery_estimate_ar}
-                onChange={(e) => setState({ ...state, delivery_estimate_ar: e.target.value })}
-                placeholder="التوصيل المتوقع خلال 24 - 48 ساعة داخل البحرين"
-                className="text-xs mt-1 text-end"
-                dir="rtl"
-              />
-            </div>
-            <div>
-              <Label className="text-xs font-medium">
-                {isAr ? "نص مدة التوصيل (بالإنجليزية)" : "Delivery Estimate Text (English)"}
-              </Label>
-              <Input
-                type="text"
-                value={state.delivery_estimate_en}
-                onChange={(e) => setState({ ...state, delivery_estimate_en: e.target.value })}
-                placeholder="Estimated delivery within 24 - 48 hours"
-                className="text-xs mt-1"
-                dir="ltr"
-              />
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="flex justify-end pt-2">
-        <Button size="sm" onClick={save} disabled={saving}>
+      <div className="flex justify-end pt-4 border-t border-border">
+        <Button size="default" onClick={save} disabled={saving} className="min-w-32">
+          {saving ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : null}
           {t("settings.save")}
         </Button>
       </div>
