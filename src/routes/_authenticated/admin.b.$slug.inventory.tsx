@@ -114,6 +114,7 @@ import {
   resolveVariantAxis,
   customFieldPresetsFrom,
   sizingPresetsFrom,
+  sizingPresetOrderFrom,
 } from "@/lib/addons/addon-registry";
 import { useAddons } from "@/components/addons/AddonsProvider";
 
@@ -3902,8 +3903,19 @@ function BulkVariantDialog({
     [addons, storeProfile?.addons],
   );
   const orderedPresets = useMemo(() => {
-    const fromAddons = sizingPresetsFrom(addons.length > 0 ? addons : storeProfile?.addons);
-    return [...fromAddons, ...UNIVERSAL_SIZING_PRESETS];
+    const rows = addons.length > 0 ? addons : storeProfile?.addons;
+    const fromAddons = sizingPresetsFrom(rows);
+    const order = sizingPresetOrderFrom(rows);
+    const combined = [...fromAddons, ...UNIVERSAL_SIZING_PRESETS];
+    if (order.length === 0) return combined;
+    return combined.sort((a, b) => {
+      const idxA = order.indexOf(a.id);
+      const idxB = order.indexOf(b.id);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return 0;
+    });
   }, [addons, storeProfile?.addons]);
   const existingSku = variants.find((v) => v.sku)?.sku || "";
   const blank: VariantGenerationPlan = {
