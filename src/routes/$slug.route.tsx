@@ -178,6 +178,9 @@ export const Route = createFileRoute("/$slug")({
             bundle_size: Number(z.bundle_size || (z.pricing_type === "bundle" ? 2 : 1)),
             estimate_ar: String(z.estimate_ar || ""),
             estimate_en: String(z.estimate_en || ""),
+            allowed_payment_methods: Array.isArray(z.allowed_payment_methods)
+              ? (z.allowed_payment_methods as Array<"cod" | "card" | "benefit">)
+              : ["card", "benefit"],
           }));
         } catch (_e) {
           return [];

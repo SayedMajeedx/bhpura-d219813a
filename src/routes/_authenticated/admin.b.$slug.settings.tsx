@@ -31,6 +31,7 @@ import {
   Trash2,
   Crop,
   ChevronDown,
+  ChevronUp,
   Smartphone,
   Monitor,
   ShoppingBag,
@@ -3250,6 +3251,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
     estimate_en: "",
     allowed_payment_methods: ["card", "benefit"],
   });
+  const [isAddZoneOpen, setIsAddZoneOpen] = useState(false);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["business-settings-shipping", brandId],
@@ -3348,6 +3350,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
   };
 
   const applyGccPreset = () => {
+    setIsAddZoneOpen(true);
     setNewZone((prev) => ({
       ...prev,
       countries: GCC_NON_BH_CODES,
@@ -3360,6 +3363,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
   };
 
   const applyArabPreset = () => {
+    setIsAddZoneOpen(true);
     setNewZone((prev) => ({
       ...prev,
       countries: ARAB_CODES,
@@ -3371,7 +3375,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
     }));
   };
 
-  const addZone = () => {
+  const addZone = async () => {
     const nameAr = newZone.name_ar.trim() || newZone.name_en.trim();
     const nameEn = newZone.name_en.trim() || newZone.name_ar.trim();
     if (!nameAr) {
@@ -3404,7 +3408,8 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
       estimate_en: newZone.estimate_en.trim() || undefined,
       allowed_payment_methods: newZone.allowed_payment_methods,
     };
-    setZones([...zones, zone]);
+    const nextZones = [...zones, zone];
+    setZones(nextZones);
     setNewZone({
       name_en: "",
       name_ar: "",
@@ -3416,36 +3421,68 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
       estimate_en: "",
       allowed_payment_methods: ["card", "benefit"],
     });
-    toast.success(isAr ? "تمت إضافة منطقة الشحن بنجاح" : "Shipping zone added successfully");
+    setIsAddZoneOpen(false);
+
+    const { error } = await supabase
+      .from("business_settings")
+      .update({ shipping_zones: nextZones as any })
+      .eq("brand_id", brandId);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      qc.invalidateQueries({ queryKey: ["business-settings-shipping", brandId] });
+      toast.success(
+        isAr ? "تمت إضافة منطقة الشحن وحفظها بنجاح" : "Shipping zone added and saved successfully",
+      );
+    }
   };
 
-  const toggleZonePaymentMethod = (zoneId: string, method: "cod" | "card" | "benefit") => {
-    setZones((prev) =>
-      prev.map((z) => {
-        if (z.id !== zoneId) return z;
-        const current = Array.isArray(z.allowed_payment_methods)
-          ? z.allowed_payment_methods
-          : ["card", "benefit"];
-        const exists = current.includes(method);
-        const next = exists ? current.filter((m) => m !== method) : [...current, method];
-        if (next.length === 0) {
-          toast.error(
-            isAr
-              ? "يجب إبقاء وسيلة دفع واحدة على الأقل مفعلة لهذه المنطقة"
-              : "At least one payment method must remain active for this zone",
-          );
-          return z;
-        }
-        return { ...z, allowed_payment_methods: next };
-      }),
+  const toggleZonePaymentMethod = async (zoneId: string, method: "cod" | "card" | "benefit") => {
+    const target = zones.find((z) => z.id === zoneId);
+    if (!target) return;
+    const current = Array.isArray(target.allowed_payment_methods)
+      ? target.allowed_payment_methods
+      : ["card", "benefit"];
+    const exists = current.includes(method);
+    const next = (
+      exists ? current.filter((m) => m !== method) : [...current, method]
+    ) as Array<"cod" | "card" | "benefit">;
+    if (next.length === 0) {
+      toast.error(
+        isAr
+          ? "يجب إبقاء وسيلة دفع واحدة على الأقل مفعلة لهذه المنطقة"
+          : "At least one payment method must remain active for this zone",
+      );
+      return;
+    }
+    const nextZones: ShippingZone[] = zones.map((z) =>
+      z.id === zoneId ? { ...z, allowed_payment_methods: next } : z,
     );
+    setZones(nextZones);
+
+    const { error } = await supabase
+      .from("business_settings")
+      .update({ shipping_zones: nextZones as any })
+      .eq("brand_id", brandId);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      qc.invalidateQueries({ queryKey: ["business-settings-shipping", brandId] });
+      toast.success(
+        isAr
+          ? "تم تحديث وحفظ طرق الدفع لهذه المنطقة"
+          : "Zone payment methods updated and saved",
+      );
+    }
   };
 
   const toggleNewZonePaymentMethod = (method: "cod" | "card" | "benefit") => {
     setNewZone((prev) => {
       const current = prev.allowed_payment_methods;
       const exists = current.includes(method);
-      const next = exists ? current.filter((m) => m !== method) : [...current, method];
+      const next = (
+        exists ? current.filter((m) => m !== method) : [...current, method]
+      ) as Array<"cod" | "card" | "benefit">;
       if (next.length === 0) {
         toast.error(
           isAr
@@ -3458,8 +3495,19 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
     });
   };
 
-  const removeZone = (id: string) => {
-    setZones(zones.filter((z) => z.id !== id));
+  const removeZone = async (id: string) => {
+    const nextZones = zones.filter((z) => z.id !== id);
+    setZones(nextZones);
+    const { error } = await supabase
+      .from("business_settings")
+      .update({ shipping_zones: nextZones as any })
+      .eq("brand_id", brandId);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      qc.invalidateQueries({ queryKey: ["business-settings-shipping", brandId] });
+      toast.success(isAr ? "تم حذف المنطقة وحفظ التغييرات" : "Shipping zone removed");
+    }
   };
 
   if (isError) {
@@ -3806,16 +3854,24 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
             )}
 
             {/* Add New Zone Builder Card */}
-            <div className="rounded-xl border border-border p-4 sm:p-5 bg-secondary/10 space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <h4 className="text-sm font-semibold flex items-center gap-2">
-                  <Plus className="h-4 w-4 text-primary" />
-                  <span>{isAr ? "إضافة منطقة شحن جديدة" : "Add New Shipping Zone"}</span>
-                </h4>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs text-muted-foreground me-1 hidden sm:inline">
-                    {isAr ? "قوالب سريعة:" : "Presets:"}
-                  </span>
+            {!isAddZoneOpen ? (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-dashed border-border bg-muted/20 hover:bg-muted/30 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <Plus className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">
+                      {isAr ? "إضافة منطقة شحن جديدة" : "Add New Shipping Zone"}
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
+                      {isAr
+                        ? "حدد أسعار شحن مخصصة وطرق دفع للدول الأخرى (مثل دول الخليج أو الدول العربية)"
+                        : "Define custom shipping rates and payment options for other countries"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
                   <Button
                     type="button"
                     variant="outline"
@@ -3828,20 +3884,67 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
                       <CountryFlag code="AE" className="w-3.5 h-2.5 rounded-2xs object-cover border border-background shadow-xs" />
                       <CountryFlag code="KW" className="w-3.5 h-2.5 rounded-2xs object-cover border border-background shadow-xs" />
                     </div>
-                    <span>{isAr ? "دول الخليج العربي" : "GCC Countries"}</span>
+                    <span>{isAr ? "دول الخليج" : "GCC"}</span>
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-8 text-xs px-3 rounded-full flex items-center gap-1.5 hover:border-primary hover:bg-primary/5 transition-colors"
-                    onClick={applyArabPreset}
+                    onClick={() => setIsAddZoneOpen(true)}
+                    className="gap-1.5 h-8 text-xs font-semibold rounded-lg shrink-0"
                   >
-                    <Globe className="h-3.5 w-3.5 text-primary shrink-0" />
-                    <span>{isAr ? "الدول العربية" : "Arab Countries"}</span>
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>{isAr ? "إضافة منطقة" : "Add Zone"}</span>
                   </Button>
                 </div>
               </div>
+            ) : (
+              <div className="rounded-xl border border-border p-4 sm:p-5 bg-secondary/10 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/40 pb-3">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <Plus className="h-4 w-4 text-primary" />
+                    <span>{isAr ? "إضافة منطقة شحن جديدة" : "Add New Shipping Zone"}</span>
+                  </h4>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs text-muted-foreground me-1 hidden sm:inline">
+                      {isAr ? "قوالب سريعة:" : "Presets:"}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs px-3 rounded-full flex items-center gap-1.5 hover:border-primary hover:bg-primary/5 transition-colors"
+                      onClick={applyGccPreset}
+                    >
+                      <div className="flex items-center -space-x-1 rtl:space-x-reverse shrink-0">
+                        <CountryFlag code="SA" className="w-3.5 h-2.5 rounded-2xs object-cover border border-background shadow-xs" />
+                        <CountryFlag code="AE" className="w-3.5 h-2.5 rounded-2xs object-cover border border-background shadow-xs" />
+                        <CountryFlag code="KW" className="w-3.5 h-2.5 rounded-2xs object-cover border border-background shadow-xs" />
+                      </div>
+                      <span>{isAr ? "دول الخليج العربي" : "GCC Countries"}</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs px-3 rounded-full flex items-center gap-1.5 hover:border-primary hover:bg-primary/5 transition-colors"
+                      onClick={applyArabPreset}
+                    >
+                      <Globe className="h-3.5 w-3.5 text-primary shrink-0" />
+                      <span>{isAr ? "الدول العربية" : "Arab Countries"}</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsAddZoneOpen(false)}
+                      className="h-8 text-xs text-muted-foreground hover:text-foreground gap-1 ms-auto sm:ms-2"
+                    >
+                      <ChevronUp className="h-3.5 w-3.5" />
+                      <span>{isAr ? "طي النموذج" : "Collapse"}</span>
+                    </Button>
+                  </div>
+                </div>
 
               {/* Country Selection Chips & Dropdown */}
               <div className="space-y-2">
@@ -4143,7 +4246,16 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
                 </div>
               )}
 
-              <div className="flex justify-end pt-2">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/40">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 text-xs rounded-lg"
+                  onClick={() => setIsAddZoneOpen(false)}
+                >
+                  {isAr ? "إلغاء" : "Cancel"}
+                </Button>
                 <Button
                   type="button"
                   size="sm"
@@ -4151,10 +4263,11 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
                   onClick={addZone}
                 >
                   <Plus className="h-4 w-4 me-1.5" />
-                  {isAr ? "إضافة هذه المنطقة إلى قائمة الشحن" : "Add Shipping Zone"}
+                  {isAr ? "إضافة هذه المنطقة وحفظها" : "Add & Save Zone"}
                 </Button>
               </div>
             </div>
+            )}
           </div>
         </div>
       )}
