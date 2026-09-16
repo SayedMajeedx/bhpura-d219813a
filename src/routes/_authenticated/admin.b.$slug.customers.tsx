@@ -226,13 +226,19 @@ const CUSTOMER_HEADER_MAPS = {
 function CustomerImporterModal({
   brandId,
   onComplete,
+  isOpen: controlledIsOpen,
+  onOpenChange: setControlledIsOpen,
   renderTrigger,
 }: {
   brandId: string;
   onComplete: () => void;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
   renderTrigger?: (onClick: () => void) => React.ReactNode;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
+  const setIsOpen = setControlledIsOpen || setInternalIsOpen;
   const [step, setStep] = useState<"preset" | "mapper" | "importing" | "success">("preset");
 
   const handleOpen = () => {
@@ -521,7 +527,7 @@ function CustomerImporterModal({
     <>
       {renderTrigger ? (
         renderTrigger(handleOpen)
-      ) : (
+      ) : controlledIsOpen !== undefined ? null : (
         <Button
           variant="outline"
           onClick={handleOpen}
@@ -778,6 +784,7 @@ function CustomersPage() {
   const { slug } = Route.useParams();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [isCustomerImporterOpen, setIsCustomerImporterOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -1037,21 +1044,15 @@ function CustomersPage() {
         customerCount={(data ?? []).length}
         onCreateNew={() => setOpen(true)}
         renderImporters={
-          <CustomerImporterModal
-            brandId={brandId}
-            onComplete={() => qc.invalidateQueries({ queryKey: queryKeys.customers.all(brandId) })}
-            renderTrigger={(openImporter) => (
-              <DropdownMenuItem
-                onClick={openImporter}
-                className="cursor-pointer gap-2 py-2 text-xs font-semibold text-primary"
-              >
-                <Users className="h-4 w-4 shrink-0 text-primary" />
-                <span>
-                  {isAr ? "استيراد العملاء وجهات الاتصال" : "Universal Customer Migration"}
-                </span>
-              </DropdownMenuItem>
-            )}
-          />
+          <DropdownMenuItem
+            onClick={() => setIsCustomerImporterOpen(true)}
+            className="cursor-pointer gap-2 py-2 text-xs font-semibold text-primary"
+          >
+            <Users className="h-4 w-4 shrink-0 text-primary" />
+            <span>
+              {isAr ? "استيراد العملاء وجهات الاتصال" : "Universal Customer Migration"}
+            </span>
+          </DropdownMenuItem>
         }
       />
 
@@ -1285,6 +1286,13 @@ function CustomersPage() {
           }}
         />
       </Dialog>
+
+      <CustomerImporterModal
+        brandId={brandId}
+        isOpen={isCustomerImporterOpen}
+        onOpenChange={setIsCustomerImporterOpen}
+        onComplete={() => qc.invalidateQueries({ queryKey: queryKeys.customers.all(brandId) })}
+      />
     </div>
   );
 }

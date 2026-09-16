@@ -64,6 +64,7 @@ import { Route as AuthenticatedAdminBSlugCustomersRouteImport } from './routes/_
 import { Route as AuthenticatedAdminBSlugDashboardRouteImport } from './routes/_authenticated/admin.b.$slug.dashboard'
 import { Route as AuthenticatedAdminBSlugDiscountsRouteImport } from './routes/_authenticated/admin.b.$slug.discounts'
 import { Route as AuthenticatedAdminBSlugExpensesRouteImport } from './routes/_authenticated/admin.b.$slug.expenses'
+import { Route as AuthenticatedAdminBSlugImportRouteImport } from './routes/_authenticated/admin.b.$slug.import'
 import { Route as AuthenticatedAdminBSlugIncubatorsRouteImport } from './routes/_authenticated/admin.b.$slug.incubators'
 import { Route as AuthenticatedAdminBSlugIntegrationsRouteImport } from './routes/_authenticated/admin.b.$slug.integrations'
 import { Route as AuthenticatedAdminBSlugInventoryRouteImport } from './routes/_authenticated/admin.b.$slug.inventory'
@@ -384,6 +385,12 @@ const AuthenticatedAdminBSlugExpensesRoute =
     path: '/expenses',
     getParentRoute: () => AuthenticatedAdminBSlugRouteRoute,
   } as any)
+const AuthenticatedAdminBSlugImportRoute =
+  AuthenticatedAdminBSlugImportRouteImport.update({
+    id: '/import',
+    path: '/import',
+    getParentRoute: () => AuthenticatedAdminBSlugRouteRoute,
+  } as any)
 const AuthenticatedAdminBSlugIncubatorsRoute =
   AuthenticatedAdminBSlugIncubatorsRouteImport.update({
     id: '/incubators',
@@ -560,6 +567,7 @@ export interface FileRoutesByFullPath {
   '/admin/b/$slug/dashboard': typeof AuthenticatedAdminBSlugDashboardRoute
   '/admin/b/$slug/discounts': typeof AuthenticatedAdminBSlugDiscountsRoute
   '/admin/b/$slug/expenses': typeof AuthenticatedAdminBSlugExpensesRoute
+  '/admin/b/$slug/import': typeof AuthenticatedAdminBSlugImportRoute
   '/admin/b/$slug/incubators': typeof AuthenticatedAdminBSlugIncubatorsRoute
   '/admin/b/$slug/integrations': typeof AuthenticatedAdminBSlugIntegrationsRoute
   '/admin/b/$slug/inventory': typeof AuthenticatedAdminBSlugInventoryRoute
@@ -634,6 +642,7 @@ export interface FileRoutesByTo {
   '/admin/b/$slug/dashboard': typeof AuthenticatedAdminBSlugDashboardRoute
   '/admin/b/$slug/discounts': typeof AuthenticatedAdminBSlugDiscountsRoute
   '/admin/b/$slug/expenses': typeof AuthenticatedAdminBSlugExpensesRoute
+  '/admin/b/$slug/import': typeof AuthenticatedAdminBSlugImportRoute
   '/admin/b/$slug/incubators': typeof AuthenticatedAdminBSlugIncubatorsRoute
   '/admin/b/$slug/integrations': typeof AuthenticatedAdminBSlugIntegrationsRoute
   '/admin/b/$slug/inventory': typeof AuthenticatedAdminBSlugInventoryRoute
@@ -711,6 +720,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/b/$slug/dashboard': typeof AuthenticatedAdminBSlugDashboardRoute
   '/_authenticated/admin/b/$slug/discounts': typeof AuthenticatedAdminBSlugDiscountsRoute
   '/_authenticated/admin/b/$slug/expenses': typeof AuthenticatedAdminBSlugExpensesRoute
+  '/_authenticated/admin/b/$slug/import': typeof AuthenticatedAdminBSlugImportRoute
   '/_authenticated/admin/b/$slug/incubators': typeof AuthenticatedAdminBSlugIncubatorsRoute
   '/_authenticated/admin/b/$slug/integrations': typeof AuthenticatedAdminBSlugIntegrationsRoute
   '/_authenticated/admin/b/$slug/inventory': typeof AuthenticatedAdminBSlugInventoryRoute
@@ -789,6 +799,7 @@ export interface FileRouteTypes {
     | '/admin/b/$slug/dashboard'
     | '/admin/b/$slug/discounts'
     | '/admin/b/$slug/expenses'
+    | '/admin/b/$slug/import'
     | '/admin/b/$slug/incubators'
     | '/admin/b/$slug/integrations'
     | '/admin/b/$slug/inventory'
@@ -863,6 +874,7 @@ export interface FileRouteTypes {
     | '/admin/b/$slug/dashboard'
     | '/admin/b/$slug/discounts'
     | '/admin/b/$slug/expenses'
+    | '/admin/b/$slug/import'
     | '/admin/b/$slug/incubators'
     | '/admin/b/$slug/integrations'
     | '/admin/b/$slug/inventory'
@@ -939,6 +951,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/b/$slug/dashboard'
     | '/_authenticated/admin/b/$slug/discounts'
     | '/_authenticated/admin/b/$slug/expenses'
+    | '/_authenticated/admin/b/$slug/import'
     | '/_authenticated/admin/b/$slug/incubators'
     | '/_authenticated/admin/b/$slug/integrations'
     | '/_authenticated/admin/b/$slug/inventory'
@@ -1369,6 +1382,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBSlugExpensesRouteImport
       parentRoute: typeof AuthenticatedAdminBSlugRouteRoute
     }
+    '/_authenticated/admin/b/$slug/import': {
+      id: '/_authenticated/admin/b/$slug/import'
+      path: '/import'
+      fullPath: '/admin/b/$slug/import'
+      preLoaderRoute: typeof AuthenticatedAdminBSlugImportRouteImport
+      parentRoute: typeof AuthenticatedAdminBSlugRouteRoute
+    }
     '/_authenticated/admin/b/$slug/incubators': {
       id: '/_authenticated/admin/b/$slug/incubators'
       path: '/incubators'
@@ -1601,6 +1621,7 @@ interface AuthenticatedAdminBSlugRouteRouteChildren {
   AuthenticatedAdminBSlugDashboardRoute: typeof AuthenticatedAdminBSlugDashboardRoute
   AuthenticatedAdminBSlugDiscountsRoute: typeof AuthenticatedAdminBSlugDiscountsRoute
   AuthenticatedAdminBSlugExpensesRoute: typeof AuthenticatedAdminBSlugExpensesRoute
+  AuthenticatedAdminBSlugImportRoute: typeof AuthenticatedAdminBSlugImportRoute
   AuthenticatedAdminBSlugIncubatorsRoute: typeof AuthenticatedAdminBSlugIncubatorsRoute
   AuthenticatedAdminBSlugIntegrationsRoute: typeof AuthenticatedAdminBSlugIntegrationsRoute
   AuthenticatedAdminBSlugInventoryRoute: typeof AuthenticatedAdminBSlugInventoryRoute
@@ -1637,6 +1658,7 @@ const AuthenticatedAdminBSlugRouteRouteChildren: AuthenticatedAdminBSlugRouteRou
     AuthenticatedAdminBSlugDiscountsRoute:
       AuthenticatedAdminBSlugDiscountsRoute,
     AuthenticatedAdminBSlugExpensesRoute: AuthenticatedAdminBSlugExpensesRoute,
+    AuthenticatedAdminBSlugImportRoute: AuthenticatedAdminBSlugImportRoute,
     AuthenticatedAdminBSlugIncubatorsRoute:
       AuthenticatedAdminBSlugIncubatorsRoute,
     AuthenticatedAdminBSlugIntegrationsRoute:

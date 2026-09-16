@@ -37,8 +37,6 @@ export type AddonShowcaseItem = {
   tagline: Bilingual;
   categoryLabel: Bilingual;
   badge?: Bilingual;
-  rating: number;
-  reviewsCount: number;
   publisher: Bilingual;
   highlights: Bilingual[];
   fullOverview: Bilingual;
@@ -63,8 +61,6 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
       ar: "الأكثر طلباً",
       en: "Most Popular",
     },
-    rating: 4.9,
-    reviewsCount: 142,
     publisher: {
       ar: "فريق Boutq المعتمد",
       en: "Boutq Official Studio",
@@ -225,8 +221,6 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
       ar: "تجربة عميل مميزة",
       en: "Customer Delight",
     },
-    rating: 4.8,
-    reviewsCount: 89,
     publisher: {
       ar: "فريق Boutq المعتمد",
       en: "Boutq Official Studio",
@@ -375,8 +369,6 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
       ar: "موصى به للعبايات والأزياء",
       en: "Boutique Essential",
     },
-    rating: 4.95,
-    reviewsCount: 165,
     publisher: {
       ar: "فريق Boutq المعتمد",
       en: "Boutq Official Studio",
@@ -525,8 +517,6 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
       ar: "حزمة شاملة",
       en: "Complete Pack",
     },
-    rating: 5.0,
-    reviewsCount: 210,
     publisher: {
       ar: "فريق Boutq المعتمد",
       en: "Boutq Official Studio",
@@ -671,8 +661,6 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
       ar: "حزمة نشاط متخصصة",
       en: "Vertical Business Pack",
     },
-    rating: 4.85,
-    reviewsCount: 114,
     publisher: {
       ar: "فريق Boutq المعتمد",
       en: "Boutq Official Studio",
@@ -817,8 +805,6 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
       ar: "حزمة نشاط متخصصة",
       en: "Vertical Business Pack",
     },
-    rating: 4.9,
-    reviewsCount: 78,
     publisher: {
       ar: "فريق Boutq المعتمد",
       en: "Boutq Official Studio",
@@ -963,8 +949,6 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
       ar: "حزمة نشاط متخصصة",
       en: "Vertical Business Pack",
     },
-    rating: 4.8,
-    reviewsCount: 65,
     publisher: {
       ar: "فريق Boutq المعتمد",
       en: "Boutq Official Studio",
@@ -1109,8 +1093,6 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
       ar: "ميزة متخصصة",
       en: "Specialized Feature",
     },
-    rating: 4.75,
-    reviewsCount: 52,
     publisher: {
       ar: "فريق Boutq المعتمد",
       en: "Boutq Official Studio",
@@ -1259,8 +1241,6 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
       ar: "رفع قيمة السلة",
       en: "AOV Booster",
     },
-    rating: 4.9,
-    reviewsCount: 96,
     publisher: {
       ar: "فريق Boutq المعتمد",
       en: "Boutq Official Studio",
@@ -1405,8 +1385,6 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
       ar: "حزمة نشاط متخصصة",
       en: "Vertical Business Pack",
     },
-    rating: 4.7,
-    reviewsCount: 38,
     publisher: {
       ar: "فريق Boutq المعتمد",
       en: "Boutq Official Studio",
@@ -1555,8 +1533,6 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
       ar: "فخامة وأصالة",
       en: "Prestige Luxury",
     },
-    rating: 4.95,
-    reviewsCount: 147,
     publisher: {
       ar: "فريق Boutq المعتمد",
       en: "Boutq Official Studio",

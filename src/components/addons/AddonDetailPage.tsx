@@ -6,7 +6,6 @@ import { Switch } from "@/components/ui/switch";
 import {
   ArrowLeft,
   ArrowRight,
-  Star,
   Check,
   ShieldCheck,
   Sparkles,
@@ -134,9 +133,6 @@ export function AddonDetailPage({
     }
   };
 
-  const rating = showcase?.rating || 4.9;
-  const reviewsCount = showcase?.reviewsCount || 100;
-
   return (
     <div className="space-y-8 animate-in fade-in-50 duration-200">
       {/* Top Breadcrumb & Back Bar */}
@@ -223,25 +219,19 @@ export function AddonDetailPage({
                 </span>
               </div>
 
-              {/* Rating & Reviews */}
-              <div className="flex items-center gap-2 pt-1 text-xs">
-                <div className="flex items-center text-amber-500">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={cn(
-                        "h-3.5 w-3.5",
-                        i < Math.floor(rating)
-                          ? "fill-amber-400 text-amber-400"
-                          : "fill-muted text-muted"
-                      )}
-                    />
-                  ))}
-                </div>
-                <span className="font-bold text-foreground text-sm">{rating}</span>
-                <span className="text-muted-foreground">
-                  ({reviewsCount} {isAr ? "تقييم من التجار" : "merchant reviews"})
-                </span>
+              {/* Platform Reliability & Support */}
+              <div className="flex items-center gap-2 pt-1.5 text-xs text-muted-foreground flex-wrap">
+                <Badge
+                  variant="outline"
+                  className="text-xs h-5 px-2 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/5 font-medium flex items-center gap-1"
+                >
+                  <Check className="h-3 w-3" />
+                  <span>{isAr ? "جاهزة للعمل الفوري" : "Production Ready"}</span>
+                </Badge>
+                <span>•</span>
+                <span>{isAr ? "دعم ثنائي اللغة (عربي / إنجليزي)" : "Full Bilingual Support"}</span>
+                <span>•</span>
+                <span>{isAr ? "تحديثات مستمرة مشمولة" : "Automated Platform Updates"}</span>
               </div>
             </div>
           </div>

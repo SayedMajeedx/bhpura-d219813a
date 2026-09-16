@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Star,
+  ShieldCheck,
   Check,
   ArrowUpCircle,
   MoreVertical,
@@ -66,8 +66,6 @@ export function AddonCardMicrosoftStore({
   const hasUpdate = isInstalled && (installedRow?.version || 0) < manifest.version;
 
   const showcase = ADDON_SHOWCASE_DATA[manifest.id];
-  const rating = showcase?.rating || 4.8;
-  const reviewsCount = showcase?.reviewsCount || 40;
   const publisher = showcase?.publisher
     ? isAr
       ? showcase.publisher.ar
@@ -220,13 +218,15 @@ export function AddonCardMicrosoftStore({
           )}
         </div>
 
-        {/* Rating and Reviews */}
+        {/* Category & Badge */}
         <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-          <div className="flex items-center text-amber-500">
-            <Star className="h-3 w-3 fill-amber-400" />
-          </div>
-          <span className="font-semibold text-foreground text-xs">{rating}</span>
-          <span className="text-[11px]">({reviewsCount})</span>
+          <Badge
+            variant="outline"
+            className="text-[10px] h-4 py-0 px-1.5 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/5 font-medium flex items-center gap-1"
+          >
+            <ShieldCheck className="h-2.5 w-2.5" />
+            <span>{isAr ? "إضافة رسمية" : "Official"}</span>
+          </Badge>
           {showcase?.categoryLabel && (
             <>
               <span className="text-muted-foreground/60">•</span>

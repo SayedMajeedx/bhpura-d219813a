@@ -8,7 +8,7 @@ import {
   Check,
   ChevronRight,
   ChevronLeft,
-  Star,
+  ShieldCheck,
   Ruler,
   Scissors,
   Layers,
@@ -122,11 +122,10 @@ export function AddonStoreHero({
               </Badge>
             )}
 
-            <div className="flex items-center gap-1 text-xs text-muted-foreground me-2">
-              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
-              <span className="font-bold text-foreground">{currentShowcase.rating}</span>
-              <span>({currentShowcase.reviewsCount} {isAr ? "تقييم" : "reviews"})</span>
-            </div>
+            <Badge variant="outline" className="px-2.5 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/5">
+              <ShieldCheck className="h-3.5 w-3.5 me-1 text-emerald-500" />
+              <span>{isAr ? "إضافة رسمية موثقة" : "Official Extension"}</span>
+            </Badge>
           </div>
 
           {/* Main Title & Tagline */}

@@ -491,13 +491,19 @@ const PRODUCT_HEADER_MAPS = {
 function ProductImporterModal({
   brandId,
   onComplete,
+  isOpen: controlledIsOpen,
+  onOpenChange: setControlledIsOpen,
   renderTrigger,
 }: {
   brandId: string;
   onComplete: () => void;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
   renderTrigger?: (onClick: () => void) => React.ReactNode;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
+  const setIsOpen = setControlledIsOpen || setInternalIsOpen;
   const [step, setStep] = useState<"preset" | "mapper" | "importing" | "success">("preset");
   const [preset, setPreset] = useState<"shopify" | "salla" | "zid" | "woocommerce" | "custom">(
     "custom",
@@ -852,7 +858,7 @@ function ProductImporterModal({
     <>
       {renderTrigger ? (
         renderTrigger(handleOpen)
-      ) : (
+      ) : controlledIsOpen !== undefined ? null : (
         <Button
           variant="outline"
           onClick={handleOpen}
@@ -1203,6 +1209,7 @@ function ProductsSection({
   const [incubatorTransferModalOpen, setIncubatorTransferModalOpen] = useState(false);
   const [incubatorTransferProducts, setIncubatorTransferProducts] = useState<Product[]>([]);
   const [isInstagramModalOpen, setIsInstagramModalOpen] = useState(false);
+  const [isProductImporterOpen, setIsProductImporterOpen] = useState(false);
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
 
@@ -1807,7 +1814,15 @@ function ProductsSection({
               <Instagram className="h-4 w-4 me-2 text-primary" />
               {isAr ? "استيراد كتالوج إنستغرام" : "Import from Instagram"}
             </Button>
-            <ProductImporterModal brandId={brandId} onComplete={onChanged} />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsProductImporterOpen(true)}
+              className="justify-start text-xs font-medium h-9"
+            >
+              <Upload className="h-4 w-4 me-2 text-primary" />
+              {isAr ? "استيراد كتالوج المنتجات" : "Import Product Catalog"}
+            </Button>
 
             <div className="px-2.5 pt-2 py-1 text-xs font-bold text-muted-foreground border-b border-border-subtle">
               {isAr ? "الباركود والطباعة" : "Barcodes & Print"}
@@ -2287,6 +2302,12 @@ function ProductsSection({
         brandId={brandId}
         open={isInstagramModalOpen}
         onOpenChange={setIsInstagramModalOpen}
+        onComplete={onChanged}
+      />
+      <ProductImporterModal
+        brandId={brandId}
+        isOpen={isProductImporterOpen}
+        onOpenChange={setIsProductImporterOpen}
         onComplete={onChanged}
       />
     </div>

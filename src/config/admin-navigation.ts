@@ -21,6 +21,7 @@ import {
   Palette,
   Ruler,
   Puzzle,
+  Upload,
   type LucideIcon,
 } from "lucide-react";
 
@@ -283,6 +284,21 @@ export function getAdminNavItems({
         "Custom multi-tier sizing charts, how-to-measure diagrams, and size recommender",
       descriptionAr: "جداول القياس المخصصة، إرشادات أخذ القياس، ومُرشّح المقاس الذكي",
       icon: Ruler,
+      permission: "manage_inventory",
+      section: "operations",
+      category: "products_stock",
+      tier: "modular",
+    },
+    {
+      id: "import",
+      to: "/admin/b/$slug/import",
+      params: { slug: activeSlug },
+      labelEn: "Import & Migration",
+      labelAr: lang === "ar" ? "مركز الاستيراد والترحيل" : "Import & Migration",
+      descriptionEn:
+        "Universal importer for products, customer CRM, legacy orders, and Instagram catalog",
+      descriptionAr: "الاستيراد الشامل لكتالوج المنتجات، جهات اتصال العملاء، الطلبات السابقة، وإنستغرام",
+      icon: Upload,
       permission: "manage_inventory",
       section: "operations",
       category: "products_stock",
