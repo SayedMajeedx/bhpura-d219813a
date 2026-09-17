@@ -68,6 +68,10 @@ export function getVerticalAiPromptPlaceholder(
       return isAr
         ? "مثال: عطر مسك، الأحجام 50ml و 100ml، السعر 20 د.ب، المخزون 15 لكل حجم"
         : "Example: Musk perfume, sizes 50ml and 100ml, price 20 BHD, stock 15 each";
+    case "coffee":
+      return isAr
+        ? "مثال: محصول إثيوبيا شلشلي مجفف، الأوزان 250g و 1kg، خيارات الطحن (حبوب كاملة، فلتر V60، إسبريسو)، السعر 6.5 د.ب، المخزون 20 لكل وزن"
+        : "Example: Ethiopia Chelchele natural coffee beans, sizes 250g and 1kg, grinds (Whole Beans, Filter V60, Espresso), price 6.5 BHD, stock 20 each";
     case "abayas":
       return isAr
         ? "مثال: كود AB10، الألوان أسود وكحلي، مقاسات 52 إلى 58، السعر 35 د.ب، المخزون 3 لكل مقاس"
@@ -90,6 +94,10 @@ export function getVerticalAxisPlaceholders(
   let colorPlaceholder = isAr ? "كحلي, عنابي, بيج" : "Black, Navy, Olive";
 
   switch (vertical) {
+    case "coffee":
+      sizePlaceholder = isAr ? "250g, 500g, 1kg, بوكس أظرف" : "250g, 500g, 1kg, Drip Box";
+      colorPlaceholder = isAr ? "حبوب كاملة, طحنة فلتر V60, طحنة إسبريسو" : "Whole Beans, Filter V60, Espresso";
+      break;
     case "food":
       sizePlaceholder = isAr ? "صغير, وسط, كبير" : "Small, Medium, Large";
       colorPlaceholder = isAr ? "عادي, حار, صوص خاص (النوع أو النكهة)" : "Regular, Spicy, Special (Flavor/Option)";

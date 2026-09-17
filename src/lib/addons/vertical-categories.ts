@@ -11,6 +11,12 @@ export interface DefaultCategorySpec {
 export const PURA_BRAND_ID = "b2f628c9-cfeb-444b-befe-5dbbb9d5c9e6";
 
 export const DEFAULT_VERTICAL_CATEGORIES: Record<StoreVertical, DefaultCategorySpec[]> = {
+  coffee: [
+    { name_ar: "محاصيل القهوة المختصة", name_en: "Specialty Coffee Beans", slug: "specialty-beans", sort_order: 1 },
+    { name_ar: "أظرف التقطير سريعة التحضير", name_en: "Drip Bags", slug: "drip-bags", sort_order: 2 },
+    { name_ar: "أدوات ومكائن التحضير", name_en: "Brewing Tools & Gear", slug: "brewing-tools", sort_order: 3 },
+    { name_ar: "أكواب وإكسسوارات المحمصة", name_en: "Cups & Merchandise", slug: "cups-merchandise", sort_order: 4 },
+  ],
   food: [
     { name_ar: "وجبات رئيسية", name_en: "Main Dishes", slug: "main-dishes", sort_order: 1 },
     { name_ar: "مقبلات وسلطات", name_en: "Appetizers & Salads", slug: "appetizers-salads", sort_order: 2 },

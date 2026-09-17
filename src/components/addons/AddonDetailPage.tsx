@@ -25,6 +25,7 @@ import {
   Crown,
   Shirt,
   Coffee,
+  UtensilsCrossed,
   Download,
   Gift,
   Printer,
@@ -118,8 +119,10 @@ export function AddonDetailPage({
         return <Shirt className="h-10 w-10" />;
       case "beauty-perfume":
         return <Sparkles className="h-10 w-10" />;
-      case "food-beverage":
+      case "coffee-roastery":
         return <Coffee className="h-10 w-10" />;
+      case "food-beverage":
+        return <UtensilsCrossed className="h-10 w-10" />;
       case "digital-products":
         return <Download className="h-10 w-10" />;
       case "gifts":

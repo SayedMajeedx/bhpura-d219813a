@@ -1193,10 +1193,15 @@ function OrderDetail() {
     const oldMethod = order.payment_method;
     const oldAdvance = order.advance_paid;
 
+    const finalMethod =
+      !updatedFields.payment_method || updatedFields.payment_method === "unspecified"
+        ? null
+        : updatedFields.payment_method;
+
     const nextOrder = {
       ...order,
       payment_status: updatedFields.payment_status,
-      payment_method: updatedFields.payment_method,
+      payment_method: finalMethod,
       advance_paid: updatedFields.advance_paid,
       payment_reference: updatedFields.payment_reference || order.payment_reference,
     };
@@ -1208,7 +1213,7 @@ function OrderDetail() {
         .from("orders")
         .update({
           payment_status: updatedFields.payment_status,
-          payment_method: updatedFields.payment_method,
+          payment_method: finalMethod,
           advance_paid: updatedFields.advance_paid,
           payment_reference: updatedFields.payment_reference || order.payment_reference,
         } as any)
@@ -1219,16 +1224,34 @@ function OrderDetail() {
         throw error;
       }
 
+      // Keep initialSnapshot in sync so isDirty is computed accurately
+      if (initialSnapshotRef.current) {
+        initialSnapshotRef.current = {
+          ...initialSnapshotRef.current,
+          order: {
+            ...initialSnapshotRef.current.order,
+            payment_status: updatedFields.payment_status,
+            payment_method: finalMethod,
+            advance_paid: updatedFields.advance_paid,
+            payment_reference: updatedFields.payment_reference || order.payment_reference,
+          },
+        };
+      }
+
       // Log Activity Entry
       await logActivity({
         action: "payment_update",
         order_id: order.id,
-        en: `Updated payment status to ${updatedFields.payment_status.toUpperCase()} (${updatedFields.payment_method.toUpperCase()}), Advance: BHD ${updatedFields.advance_paid.toFixed(3)}`,
-        ar: `تحديث حالة الدفع إلى ${updatedFields.payment_status} (${updatedFields.payment_method})، المبلغ المستلم: ${updatedFields.advance_paid.toFixed(3)} د.ب`,
-        metadata: { oldStatus, oldMethod, oldAdvance, ...updatedFields },
+        en: `Updated payment status to ${updatedFields.payment_status.toUpperCase()} (${(finalMethod || "unspecified").toUpperCase()}), Advance: BHD ${updatedFields.advance_paid.toFixed(3)}`,
+        ar: `تحديث حالة الدفع إلى ${updatedFields.payment_status} (${finalMethod || "غير محدد"})، المبلغ المستلم: ${updatedFields.advance_paid.toFixed(3)} د.ب`,
+        metadata: { oldStatus, oldMethod, oldAdvance, ...updatedFields, payment_method: finalMethod },
       });
 
       qc.invalidateQueries({ queryKey: ["activity_logs"] });
+      qc.invalidateQueries({ queryKey: ["order", order.id] });
+      qc.invalidateQueries({ queryKey: ["orders", brandId] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      await orderQ.refetch();
     }
   };
 

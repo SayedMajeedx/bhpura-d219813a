@@ -41,6 +41,7 @@ export type PostImageItem = {
   url: string; // Original Instagram CDN URL (temporary)
   r2Url: string | null; // Permanent Cloudflare R2 URL
   isCover: boolean;
+  selected?: boolean; // Selected by merchant to be saved to product gallery
   status: "pending" | "success" | "failed";
   errorMessage?: string;
 };
@@ -549,6 +550,7 @@ export const fetchScraperDataset = createServerFn({ method: "POST" })
             url,
             r2Url: null,
             isCover: i === 0,
+            selected: true,
             status: "pending",
           }));
 
@@ -619,6 +621,7 @@ export const batchRehostAllMedia = createServerFn({ method: "POST" })
             ...img,
             r2Url: res.r2Url,
             status: "success",
+            selected: img.selected !== false,
             errorMessage: undefined,
           });
         } else {
@@ -626,6 +629,7 @@ export const batchRehostAllMedia = createServerFn({ method: "POST" })
             ...img,
             r2Url: null,
             status: "failed",
+            selected: false,
             errorMessage: res.error || "فشل تحميل الصورة",
           });
         }
@@ -960,44 +964,54 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
     return { drafts };
   });
 
-const productDraftItemSchema = z.object({
-  id: z.string(),
-  url: z.string(),
-  isSoldOut: z.boolean(),
-  isVideo: z.boolean().optional(),
-  postType: z.enum(["image", "carousel", "reel"]).default("image"),
-  images: z.array(
-    z.object({
-      url: z.string(),
-      r2Url: z.string().nullable(),
-      isCover: z.boolean(),
-      status: z.enum(["pending", "success", "failed"]),
-      errorMessage: z.string().optional(),
+const productDraftItemSchema = z
+  .object({
+    id: z.string(),
+    url: z.string(),
+    isSoldOut: z.boolean(),
+    isVideo: z.boolean().optional(),
+    postType: z.enum(["image", "carousel", "reel"]).default("image"),
+    images: z.array(
+      z.object({
+        url: z.string(),
+        r2Url: z.string().nullable(),
+        isCover: z.boolean(),
+        selected: z.boolean().optional(),
+        status: z.enum(["pending", "success", "failed"]),
+        errorMessage: z.string().optional(),
+      }),
+    ),
+    coverImageUrl: z.string(),
+    imageUploadStatus: z.enum(["all_success", "partial_success", "failed"]),
+    title: z.string(),
+    price: z.number().nullable(),
+    description: z.string(),
+    sizes: z.array(z.string()),
+    colors: z.array(z.string()).default([]),
+    category: z.string().nullable().optional(),
+    fieldConfidence: z.object({
+      name: z.number(),
+      price: z.number(),
+      description: z.number(),
+      sizes: z.number(),
     }),
-  ),
-  coverImageUrl: z.string(),
-  imageUploadStatus: z.enum(["all_success", "partial_success", "failed"]),
-  title: z.string(),
-  price: z.number().nullable(),
-  description: z.string(),
-  sizes: z.array(z.string()),
-  colors: z.array(z.string()).default([]),
-  category: z.string(),
-  fieldConfidence: z.object({
-    name: z.number(),
-    price: z.number(),
-    description: z.number(),
-    sizes: z.number(),
-  }),
-  fieldSources: z.object({
-    name: z.enum(["ai", "manual"]),
-    price: z.enum(["ai", "manual"]),
-    description: z.enum(["ai", "manual"]),
-    sizes: z.enum(["ai", "manual"]),
-    category: z.enum(["ai", "manual"]),
-  }),
-  issues: z.array(z.string()).default([]),
-});
+    fieldSources: z.object({
+      name: z.enum(["ai", "manual"]),
+      price: z.enum(["ai", "manual"]),
+      description: z.enum(["ai", "manual"]),
+      sizes: z.enum(["ai", "manual"]),
+      category: z.enum(["ai", "manual"]),
+    }),
+    priceConflict: z
+      .object({
+        geminiPrice: z.number().nullable().optional(),
+        regexPrice: z.number().nullable().optional(),
+        reason: z.string(),
+      })
+      .optional(),
+    issues: z.array(z.string()).default([]),
+  })
+  .passthrough();
 
 // 7. Bulk Database Insertion as DRAFTS (is_active: false)
 export const bulkInsertProducts = createServerFn({ method: "POST" })
@@ -1056,18 +1070,31 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
       let insertedCount = 0;
 
       for (const p of newProducts) {
-        // Collect all successful R2 images
-        const validMedia = p.images
-          .filter((img) => img.r2Url && img.status === "success")
-          .map((img) => ({
-            type: "image",
-            url: img.r2Url as string,
-            is_cover: img.isCover,
-          }));
+        // Collect all selected and successful R2 images
+        const selectedImages = (p.images || []).filter(
+          (img) => img.selected !== false && img.r2Url && img.status === "success",
+        );
+
+        // Fallback to all successful images if none specifically marked
+        const mediaSource =
+          selectedImages.length > 0
+            ? selectedImages
+            : (p.images || []).filter((img) => img.r2Url && img.status === "success");
+
+        // Order: Cover image first, then remaining selected images
+        const coverImg = mediaSource.find((img) => img.isCover) || mediaSource[0];
+        const otherImgs = mediaSource.filter((img) => img !== coverImg);
+        const orderedMedia = coverImg ? [coverImg, ...otherImgs] : mediaSource;
+
+        const validMedia = orderedMedia.map((img) => ({
+          type: "image" as const,
+          url: img.r2Url as string,
+          is_cover: img === coverImg,
+        }));
 
         // Fallback to cover if media array is empty
         if (validMedia.length === 0 && p.coverImageUrl) {
-          validMedia.push({ type: "image", url: p.coverImageUrl, is_cover: true });
+          validMedia.push({ type: "image" as const, url: p.coverImageUrl, is_cover: true });
         }
 
         const customFieldsArray = [
@@ -1113,7 +1140,7 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
               p.category && String(p.category).trim() !== "" && p.category !== "عام"
                 ? String(p.category).trim()
                 : null,
-            image_url: p.coverImageUrl || (validMedia[0]?.url ?? null),
+            image_url: coverImg?.r2Url || p.coverImageUrl || (validMedia[0]?.url ?? null),
             is_active: false, // MANDATORY: Always saved as draft!
             featured_trending: false,
             show_sale_badge: false,

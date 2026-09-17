@@ -23,6 +23,7 @@ import {
   Shirt,
   Sparkles,
   Coffee,
+  UtensilsCrossed,
   Download,
   Gift,
   Printer,
@@ -88,8 +89,10 @@ export function AddonCardMicrosoftStore({
         return <Shirt className="h-6 w-6" />;
       case "beauty-perfume":
         return <Sparkles className="h-6 w-6" />;
-      case "food-beverage":
+      case "coffee-roastery":
         return <Coffee className="h-6 w-6" />;
+      case "food-beverage":
+        return <UtensilsCrossed className="h-6 w-6" />;
       case "digital-products":
         return <Download className="h-6 w-6" />;
       case "gifts":

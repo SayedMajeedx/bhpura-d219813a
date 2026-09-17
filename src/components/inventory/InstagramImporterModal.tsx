@@ -25,6 +25,7 @@ import {
   ExternalLink,
   Check,
   X,
+  Star,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
@@ -118,11 +119,11 @@ export function InstagramImporterModal({
     if (typeof draft.price !== "number" || draft.price <= 0 || isNaN(draft.price)) {
       return false;
     }
-    // 2. Must have at least one successfully uploaded R2 image
-    if (
-      draft.imageUploadStatus === "failed" ||
-      !draft.images.some((img) => img.r2Url && img.status === "success")
-    ) {
+    // 2. Must have at least one successfully uploaded R2 image that is selected
+    const hasSelectedValidImage = draft.images.some(
+      (img) => img.selected !== false && img.r2Url && img.status === "success",
+    );
+    if (draft.imageUploadStatus === "failed" || !hasSelectedValidImage) {
       return false;
     }
     // 3. Price confidence must be high (>= 0.8) or manually edited
@@ -347,8 +348,67 @@ export function InstagramImporterModal({
         const updatedImages = draft.images.map((img, idx) => ({
           ...img,
           isCover: idx === imageIndex,
+          // Designating as cover automatically marks it as selected to be saved
+          selected: idx === imageIndex ? true : img.selected !== false,
         }));
         const cover = updatedImages[imageIndex];
+        return {
+          ...draft,
+          images: updatedImages,
+          coverImageUrl: cover?.r2Url || cover?.url || draft.coverImageUrl,
+        };
+      }),
+    );
+  };
+
+  // Toggle single image selection
+  const handleToggleSelectImage = (draftId: string, imageIndex: number) => {
+    setDrafts((prev) =>
+      prev.map((draft) => {
+        if (draft.id !== draftId) return draft;
+        const targetImage = draft.images[imageIndex];
+        const newSelected = targetImage.selected === false ? true : false;
+
+        let updatedImages = draft.images.map((img, idx) =>
+          idx === imageIndex ? { ...img, selected: newSelected } : img,
+        );
+
+        // If we deselected the current cover image, reassign cover to another selected image
+        if (!newSelected && targetImage.isCover) {
+          const nextCoverIndex = updatedImages.findIndex((img) => img.selected !== false);
+          updatedImages = updatedImages.map((img, idx) => ({
+            ...img,
+            isCover: idx === nextCoverIndex,
+          }));
+        }
+
+        const activeCover =
+          updatedImages.find((img) => img.isCover) ||
+          updatedImages.find((img) => img.selected !== false) ||
+          updatedImages[0];
+
+        return {
+          ...draft,
+          images: updatedImages,
+          coverImageUrl: activeCover?.r2Url || activeCover?.url || draft.coverImageUrl,
+        };
+      }),
+    );
+  };
+
+  // Select all or deselect all images in draft
+  const handleSelectAllImages = (draftId: string, selectAll: boolean) => {
+    setDrafts((prev) =>
+      prev.map((draft) => {
+        if (draft.id !== draftId) return draft;
+        const updatedImages = draft.images.map((img, idx) => ({
+          ...img,
+          selected: selectAll,
+          isCover: selectAll ? img.isCover || idx === 0 : false,
+        }));
+        const cover =
+          updatedImages.find((img) => img.isCover) ||
+          (selectAll ? updatedImages[0] : null);
         return {
           ...draft,
           images: updatedImages,
@@ -801,6 +861,10 @@ export function InstagramImporterModal({
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredDrafts.map((draft) => {
                     const ready = isDraftReady(draft);
+                    const selectedImages = draft.images.filter(
+                      (img) => img.selected !== false,
+                    );
+                    const selectedCount = selectedImages.length;
                     const priceConfidence = draft.fieldConfidence.price;
                     const isPriceLow =
                       draft.fieldSources.price !== "manual" &&
@@ -895,40 +959,159 @@ export function InstagramImporterModal({
 
                         {/* Carousel Thumbnails Gallery (if multiple images) */}
                         {draft.images.length > 1 && (
-                          <div className="flex items-center gap-1.5 p-2 bg-muted/20 border-b border-border overflow-x-auto">
-                            {draft.images.map((img, idx) => (
-                              <button
-                                key={idx}
+                          <div className="flex flex-col border-b border-border bg-muted/20">
+                            {/* Gallery Header Bar */}
+                            <div className="flex items-center justify-between px-2.5 py-1.5 bg-muted/40 border-b border-border/60 text-xs">
+                              <div className="flex items-center gap-1.5 font-medium text-foreground">
+                                <Layers className="h-3.5 w-3.5 text-primary" />
+                                <span>
+                                  {isAr
+                                    ? `${selectedCount} من ${draft.images.length} صور محددة`
+                                    : `${selectedCount} of ${draft.images.length} selected`}
+                                </span>
+                              </div>
+                              <Button
                                 type="button"
-                                onClick={() => handleSelectCover(draft.id, idx)}
-                                className={cn(
-                                  "relative h-10 w-10 shrink-0 rounded-md overflow-hidden border-2 transition-all",
-                                  img.isCover
-                                    ? "border-primary ring-1 ring-primary"
-                                    : "border-border-subtle opacity-60 hover:opacity-100",
-                                )}
-                                title={
-                                  img.isCover
-                                    ? isAr
-                                      ? "الغلاف الرئيسي"
-                                      : "Main Cover"
-                                    : isAr
-                                      ? "تعيين كغلاف رئيسي"
-                                      : "Set as cover"
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-1.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+                                onClick={() =>
+                                  handleSelectAllImages(
+                                    draft.id,
+                                    selectedCount < draft.images.length,
+                                  )
                                 }
                               >
-                                <img
-                                  src={img.r2Url || img.url}
-                                  alt={`thumb-${idx}`}
-                                  className="h-full w-full object-cover"
-                                />
-                                {img.isCover && (
-                                  <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                                    <Check className="h-3 w-3 text-white drop-shadow-md" />
+                                {selectedCount === draft.images.length
+                                  ? isAr
+                                    ? "إلغاء التحديد"
+                                    : "Deselect All"
+                                  : isAr
+                                    ? "تحديد الكل"
+                                    : "Select All"}
+                              </Button>
+                            </div>
+
+                            {/* Thumbnails Row */}
+                            <div className="flex items-center gap-2 p-2 overflow-x-auto scrollbar-thin">
+                              {draft.images.map((img, idx) => {
+                                const isSelected = img.selected !== false;
+                                const isCover = img.isCover;
+                                return (
+                                  <div
+                                    key={idx}
+                                    className={cn(
+                                      "relative h-14 w-14 shrink-0 rounded-lg overflow-hidden border-2 transition-all select-none group/thumb",
+                                      isCover
+                                        ? "border-primary ring-2 ring-primary/40 shadow-xs"
+                                        : isSelected
+                                          ? "border-primary/60 hover:border-primary"
+                                          : "border-border opacity-40 grayscale hover:grayscale-0 hover:opacity-80",
+                                    )}
+                                  >
+                                    {/* Thumbnail Image Button */}
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (!isSelected) {
+                                          handleToggleSelectImage(draft.id, idx);
+                                        } else {
+                                          handleSelectCover(draft.id, idx);
+                                        }
+                                      }}
+                                      className="h-full w-full cursor-pointer focus:outline-hidden"
+                                      title={
+                                        isCover
+                                          ? isAr
+                                            ? "الغلاف الرئيسي الحالي"
+                                            : "Main Cover Photo"
+                                          : isSelected
+                                            ? isAr
+                                              ? "انقر لتعيينه كغلاف رئيسي"
+                                              : "Click to set as main cover"
+                                            : isAr
+                                              ? "انقر لتضمين الصورة وحفظها"
+                                              : "Click to include photo"
+                                      }
+                                    >
+                                      <img
+                                        src={img.r2Url || img.url}
+                                        alt={`thumb-${idx}`}
+                                        className="h-full w-full object-cover"
+                                      />
+                                    </button>
+
+                                    {/* Selection Checkbox (Top-Start) */}
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleToggleSelectImage(draft.id, idx);
+                                      }}
+                                      className={cn(
+                                        "absolute top-1 start-1 h-4 w-4 rounded flex items-center justify-center transition-transform hover:scale-110 cursor-pointer",
+                                        isSelected
+                                          ? "bg-primary text-primary-foreground shadow-xs"
+                                          : "bg-black/60 text-white border border-white/60 hover:border-white",
+                                      )}
+                                      title={
+                                        isSelected
+                                          ? isAr
+                                            ? "إلغاء حفظ هذه الصورة"
+                                            : "Exclude this photo"
+                                          : isAr
+                                            ? "حفظ هذه الصورة مع المنتج"
+                                            : "Save this photo with product"
+                                      }
+                                    >
+                                      {isSelected ? (
+                                        <Check className="h-3 w-3 stroke-[3]" />
+                                      ) : (
+                                        <div className="h-2 w-2" />
+                                      )}
+                                    </button>
+
+                                    {/* Cover Star Button (Top-End) */}
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleSelectCover(draft.id, idx);
+                                      }}
+                                      className={cn(
+                                        "absolute top-1 end-1 h-4 w-4 rounded-full flex items-center justify-center transition-all cursor-pointer",
+                                        isCover
+                                          ? "bg-amber-500 text-white shadow-xs"
+                                          : "bg-black/50 text-white/80 opacity-0 group-hover/thumb:opacity-100 hover:bg-amber-500 hover:text-white",
+                                      )}
+                                      title={
+                                        isCover
+                                          ? isAr
+                                            ? "الغلاف الرئيسي"
+                                            : "Main Cover"
+                                          : isAr
+                                            ? "تعيين كغلاف رئيسي"
+                                            : "Set as main cover"
+                                      }
+                                    >
+                                      <Star
+                                        className={cn(
+                                          "h-2.5 w-2.5",
+                                          isCover ? "fill-white" : "",
+                                        )}
+                                      />
+                                    </button>
+
+                                    {/* Bottom Cover Label Badge */}
+                                    {isCover && (
+                                      <div className="absolute inset-x-0 bottom-0 bg-primary text-primary-foreground text-[9px] font-bold py-0.5 text-center leading-none pointer-events-none">
+                                        {isAr ? "الغلاف" : "Cover"}
+                                      </div>
+                                    )}
                                   </div>
-                                )}
-                              </button>
-                            ))}
+                                );
+                              })}
+                            </div>
                           </div>
                         )}
 
@@ -1072,22 +1255,30 @@ export function InstagramImporterModal({
                           </div>
 
                           {/* Individual Card Action */}
-                          <div className="pt-2 mt-auto border-t border-border flex items-center justify-between">
-                            <span className="text-xs text-muted-foreground font-semibold">
-                              {ready
-                                ? isAr
-                                  ? "جاهز للاعتماد كمسودة"
-                                  : "Ready to save"
-                                : isAr
-                                  ? "يتطلب إدخال السعر"
-                                  : "Requires price"}
+                          <div className="pt-2 mt-auto border-t border-border flex items-center justify-between gap-2">
+                            <span className="text-xs text-muted-foreground font-semibold truncate">
+                              {!ready
+                                ? selectedCount === 0
+                                  ? isAr
+                                    ? "⚠️ حدد صورة واحدة على الأقل"
+                                    : "⚠️ Select at least 1 photo"
+                                  : isAr
+                                    ? "يتطلب إدخال السعر"
+                                    : "Requires price"
+                                : selectedCount > 1
+                                  ? isAr
+                                    ? `✓ سيحفظ ${selectedCount} صور بالمعرض`
+                                    : `✓ Saves ${selectedCount} gallery photos`
+                                  : isAr
+                                    ? "جاهز للاعتماد كمسودة"
+                                    : "Ready to save"}
                             </span>
                             <Button
                               type="button"
                               size="sm"
                               disabled={!ready}
                               onClick={() => handleSingleApprove(draft)}
-                              className="h-7 px-3 text-xs font-bold rounded-lg gap-1"
+                              className="h-7 px-3 text-xs font-bold rounded-lg gap-1 shrink-0"
                             >
                               <Check className="h-3.5 w-3.5" />
                               {isAr ? "اعتماد" : "Approve"}

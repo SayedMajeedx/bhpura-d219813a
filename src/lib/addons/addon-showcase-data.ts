@@ -1666,4 +1666,153 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
       },
     },
   },
+  "coffee-roastery": {
+    id: "coffee-roastery",
+    tagline: {
+      ar: "باقة متكاملة للمحامص والمقاهي المختصة تشمل خيارات الطحن، أوزان المحاصيل، ومفردات التحميص والتحضير",
+      en: "Comprehensive solution for specialty roasteries featuring bean grind options, bag weights, and roasting terminology",
+    },
+    categoryLabel: {
+      ar: "القهوة والمحامص المختصة",
+      en: "Specialty Coffee & Roastery",
+    },
+    badge: {
+      ar: "محاصيل مختصة",
+      en: "Specialty Coffee",
+    },
+    publisher: {
+      ar: "فريق Boutq OS",
+      en: "Boutq OS Team",
+    },
+    highlights: [
+      { ar: "محاور مخصصة: الوزن، نوع الطحنة، والمعالجة", en: "Custom axes: Weight, Grind Type, and Process" },
+      { ar: "نماذج أوزان المحاصيل (250g، 500g، 1kg) وأظرف التقطير", en: "Standard bag weights (250g, 500g, 1kg) & Drip bags" },
+      { ar: "مفردات المحمصة وملاحظات التحضير والباريسـتا", en: "Roastery vocabulary, barista & preparation notes" },
+      { ar: "سياق ذكاء اصطناعي متخصص لإيحاءات ومعالجات البن", en: "Specialized AI catalog context for origin and tasting notes" },
+    ],
+    fullOverview: {
+      ar: "تم تصميم حزمة القهوة والمحامص المختصة لتمنح متاجر القهوة تجربة استثنائية من اليوم الأول. تشمل الحزمة درجات الطحن الجاهزة (حبوب كاملة، فلتر V60، إسبريسو، كيمكس، كولد برو)، أوزان المحاصيل الشائعة، بوكسات أظرف القهوة سريعة التحضير، ومفردات خاصة بالمحمصة في إدارة الطلبات وتتبع خطوط التجهيز.",
+      en: "Designed specifically for specialty coffee roasteries and cafes. Out of the box, it provides standardized grind options (Whole Bean, Filter V60, Espresso, Chemex, Cold Brew), package weights, drip bags bundles, and tailored roastery vocabulary across order fulfillment.",
+    },
+    keyFeatures: [
+      {
+        icon: "Coffee",
+        title: { ar: "درجات طحن مسبقة الإعداد", en: "Ready-to-use Grind Options" },
+        description: {
+          ar: "تمكّن العميل من تحديد درجة الطحن المناسبة لأداته (حبوب كاملة، V60، إسبريسو، فرنش بريس).",
+          en: "Allow customers to choose the exact grind size suited for their brewing method.",
+        },
+      },
+      {
+        icon: "Boxes",
+        title: { ar: "أوزان وبوكسات المحاصيل", en: "Package Weights & Bundles" },
+        description: {
+          ar: "قوالب سريعة لأوزان أكياس البن (250 جم، 500 جم، 1 كجم) وبوكسات أظرف التقطير سريعة التحضير.",
+          en: "Presets for coffee bags (250g, 500g, 1kg) and instant drip bag boxes.",
+        },
+      },
+      {
+        icon: "Sparkles",
+        title: { ar: "ذكاء اصطناعي يفهم القهوة المختصة", en: "Coffee-Aware AI Catalog Engine" },
+        description: {
+          ar: "يستخرج تلقائياً الدولة المصدر، الارتفاع، المعالجة، وإيحاءات التذوق عند استيراد المحاصيل.",
+          en: "Automatically detects origin, elevation, processing method, and tasting notes during import.",
+        },
+      },
+      {
+        icon: "Clock",
+        title: { ar: "مفردات التحميص والتجهيز", en: "Roasting & Prep Vocabulary" },
+        description: {
+          ar: "استبدال مصطلحات الورشة بـ 'المحمصة' وحالات الطلب إلى 'قيد التجهيز / التحميص' و 'جاهز للتسليم'.",
+          en: "Adapts system labels to 'Roastery', 'In Roasting / Prep', and 'Ready for Pickup'.",
+        },
+      },
+    ],
+    workflowSteps: [
+      {
+        step: 1,
+        title: { ar: "تفعيل الحزمة لمتجر القهوة", en: "Activate Coffee Pack" },
+        description: {
+          ar: "تتفعّل الحزمة تلقائياً عند اختيار نشاط 'محاصيل وقهوة مختصة' أثناء التسجيل، أو بضغطة زر من متجر الإضافات.",
+          en: "Activates automatically during roastery onboarding or via one-click in Addon Store.",
+        },
+      },
+      {
+        step: 2,
+        title: { ar: "إضافة محاصيل البن والمنتجات", en: "Add Coffee Beans & Products" },
+        description: {
+          ar: "استفد من خيارات الطحن الجاهزة والأوزان القياسية لإضافة محاصيلك بسرعة وبدون إدخال يدوي مكرر.",
+          en: "Leverage ready grind and weight presets to add coffee beans with zero manual setup overhead.",
+        },
+      },
+      {
+        step: 3,
+        title: { ar: "استقبال الطلبات وتجهيز التحميص", en: "Receive Orders & Fulfill" },
+        description: {
+          ar: "تظهر تفاصيل الطحن ودرجة التحميص واضحة في بوليصة الشحن وفاتورة الطلب لموظفي المحمصة.",
+          en: "Grind selection and roastery notes display clearly on invoices and packing slips.",
+        },
+      },
+    ],
+    faqs: [
+      {
+        q: {
+          ar: "هل تناسب الحزمة محامص القهوة ومتاجر بيع البن؟",
+          en: "Is this pack suitable for roasteries and bean merchants?",
+        },
+        a: {
+          ar: "نعم، صُممت خصيصاً للمحامص والمتاجر التي تبيع محاصيل البن المختص مع خيارات طحن وأوزان مختلفة.",
+          en: "Yes, tailored for roasteries selling specialty coffee beans with varied grind and weight choices.",
+        },
+      },
+      {
+        q: {
+          ar: "هل يمكنني تعديل درجات الطحن أو إضافة أوزان خاصة بي؟",
+          en: "Can I customize grind sizes or add proprietary weights?",
+        },
+        a: {
+          ar: "بالتأكيد، يمكنك إضافة أي درجات طحن إضافية أو تعديل خيارات الأوزان بما يتناسب مع خطوط إنتاجك.",
+          en: "Absolutely, you can freely add custom grinds or weight variations matching your product line.",
+        },
+      },
+      {
+        q: {
+          ar: "هل تدعم خيارات الاستلام من الفرع والتوصيل السريع؟",
+          en: "Does it support in-store pickup and quick delivery?",
+        },
+        a: {
+          ar: "نعم، يتم تفعيل الاستلام الذاتي من المحمصة/المقهى والتوصيل السريع تلقائياً.",
+          en: "Yes, in-store roastery pickup and delivery options are auto-configured on installation.",
+        },
+      },
+    ],
+    previewMockup: {
+      storefront: {
+        title: { ar: "اختيار وزن المحصول ودرجة الطحن", en: "Bean Weight & Grind Selection" },
+        subtitle: {
+          ar: "واجهة أنيقة تعرض أوزان المحصول (250g، 1kg) مع تحديد خيار الطحن المطلوب (فلتر، إسبريسو)",
+          en: "Elegant selector showing bean weights (250g, 1kg) and grind size preference",
+        },
+        bullets: [
+          { ar: "أزرار اختيار الوزن: 250g أو 1kg", en: "Weight pills: 250g or 1kg" },
+          { ar: "قائمة خيارات الطحن: حبوب كاملة، فلتر V60، إسبريسو", en: "Grind options: Whole Bean, Filter V60, Espresso" },
+          { ar: "عرض إيحاءات التذوق: ياسمين، دراق، شوكولاتة", en: "Tasting notes chips: Jasmine, Peach, Chocolate" },
+        ],
+        tag: { ar: "واجهة المتجر", en: "Storefront" },
+      },
+      admin: {
+        title: { ar: "إدارة تفاصيل المحصول وطلبات المحمصة", en: "Roastery Specs & Order Queue" },
+        subtitle: {
+          ar: "متابعة تجهيز الطلبات مع توضيح درجة الطحن وملاحظات التحميص في بطاقة الطلب",
+          en: "Track roastery orders with grind specs and barista notes clearly displayed",
+        },
+        bullets: [
+          { ar: "قوالب أوزان ودرجات طحن قياسية", en: "Standardized weight and grind presets" },
+          { ar: "توضيح درجة الطحن في بطاقة الطلب", en: "Clear grind size badge on order cards" },
+          { ar: "توجيه ذكاء اصطناعي لقراءة تفاصيل المحاصيل", en: "AI-assisted extraction for origin & process" },
+        ],
+        tag: { ar: "لوحة التحكم", en: "Admin Panel" },
+      },
+    },
+  },
 };

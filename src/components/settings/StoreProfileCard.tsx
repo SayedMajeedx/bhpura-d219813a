@@ -61,6 +61,7 @@ import {
   Gift,
   Download,
   Boxes,
+  Coffee,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
@@ -74,6 +75,8 @@ const MODULE_TO_ADDON: Record<StoreModuleId, AddonId> = {
 
 function renderAddonIcon(iconName: string) {
   switch (iconName) {
+    case "Coffee":
+      return <Coffee className="w-4 h-4" />;
     case "UtensilsCrossed":
       return <UtensilsCrossed className="w-4 h-4" />;
     case "Printer":

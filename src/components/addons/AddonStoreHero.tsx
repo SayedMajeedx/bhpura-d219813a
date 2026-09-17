@@ -53,6 +53,9 @@ export function AddonStoreHero({
     if (storeVertical === "jewelry") {
       return ["jewelry", "gifts", "made-to-order"];
     }
+    if (storeVertical === "coffee") {
+      return ["coffee-roastery", "gifts", "made-to-order"];
+    }
     if (storeVertical === "food") {
       return ["food-beverage", "gifts", "digital-products"];
     }
