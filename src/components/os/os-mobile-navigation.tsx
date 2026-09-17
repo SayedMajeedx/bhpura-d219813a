@@ -18,6 +18,7 @@ import {
   Sun,
   Moon,
   Monitor,
+  Crown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/components/ui/sheet";
@@ -199,6 +200,15 @@ export function OsMobileNavigation({
           labelEn: "Tenant Requests",
           labelAr: "طلبات الانضمام والاشتراكات",
           icon: ClockIcon,
+          category: "today",
+          section: "overview",
+        },
+        {
+          id: "grants",
+          to: "/admin/super/grants",
+          labelEn: "Grant Surveys",
+          labelAr: "مبادرة الـ 6 شهور",
+          icon: Crown,
           category: "today",
           section: "overview",
         },

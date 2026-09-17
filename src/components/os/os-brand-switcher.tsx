@@ -132,6 +132,18 @@ export function OsBrandSwitcher({
           {lang === "ar" ? "طلبات التسجيل" : "Tenant Requests"}
         </Link>
         <Link
+          to="/admin/super/grants"
+          className={cn(
+            "flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors",
+            pathname === "/admin/super/grants"
+              ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+              : "hover:bg-muted/80 text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <Crown className="h-3.5 w-3.5" />
+          {lang === "ar" ? "مبادرة الـ 6 شهور" : "Grant Surveys"}
+        </Link>
+        <Link
           to="/admin/super/health"
           className={cn(
             "flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors",

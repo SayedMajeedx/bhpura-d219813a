@@ -1,7 +1,7 @@
-import { Clock, Layers, PackagePlus, ShieldAlert } from "lucide-react";
+import { Clock, Layers, PackagePlus, ShieldAlert, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type SuperScope = "requests" | "plans" | "addons" | "overrides";
+export type SuperScope = "requests" | "plans" | "addons" | "overrides" | "grants";
 
 interface SuperScopeSwitcherProps {
   lang: "ar" | "en";
@@ -31,6 +31,12 @@ export function SuperScopeSwitcher({
       labelAr: "طلبات الانضمام المعلقة",
       labelEn: "Pending Requests",
       badge: pendingCount,
+    },
+    {
+      id: "grants",
+      icon: Crown,
+      labelAr: "مبادرة الـ 6 شهور (الاستبيانات)",
+      labelEn: "Grant Surveys",
     },
     {
       id: "plans",

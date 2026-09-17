@@ -41,6 +41,7 @@ import { SuperScopeSwitcher, type SuperScope } from "@/components/super/SuperSco
 import { SuperPlansManager } from "@/components/super/SuperPlansManager";
 import { SuperAddonsManager } from "@/components/super/SuperAddonsManager";
 import { SuperOverridesManager } from "@/components/super/SuperOverridesManager";
+import { SuperGrantsManager } from "@/components/super/SuperGrantsManager";
 
 export const Route = createFileRoute("/_authenticated/admin/super/requests")({
   beforeLoad: async () => {
@@ -283,7 +284,9 @@ function SuperRequestsPage() {
         pendingCount={pendingRequests.length}
       />
 
-      {activeScope === "plans" ? (
+      {activeScope === "grants" ? (
+        <SuperGrantsManager />
+      ) : activeScope === "plans" ? (
         <SuperPlansManager />
       ) : activeScope === "addons" ? (
         <SuperAddonsManager />

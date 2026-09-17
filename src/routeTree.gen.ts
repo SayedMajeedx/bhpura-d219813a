@@ -14,6 +14,7 @@ import { Route as SlugRouteRouteImport } from './routes/$slug.route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as GrantRouteImport } from './routes/grant'
 import { Route as OnboardRouteImport } from './routes/onboard'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SlugIndexRouteImport } from './routes/$slug.index'
@@ -47,6 +48,7 @@ import { Route as ApiAdminNabdaOtpRouteImport } from './routes/api.admin.nabda-o
 import { Route as ApiCronCleanupBenefitReceiptsRouteImport } from './routes/api.cron.cleanup-benefit-receipts'
 import { Route as ApiOrdersStatusRouteImport } from './routes/api.orders.status'
 import { Route as AuthenticatedAdminBSlugRouteRouteImport } from './routes/_authenticated/admin.b.$slug.route'
+import { Route as AuthenticatedAdminSuperGrantsRouteImport } from './routes/_authenticated/admin.super.grants'
 import { Route as AuthenticatedAdminSuperHealthRouteImport } from './routes/_authenticated/admin.super.health'
 import { Route as AuthenticatedAdminSuperRequestsRouteImport } from './routes/_authenticated/admin.super.requests'
 import { Route as AuthenticatedAdminSuperSettingsRouteImport } from './routes/_authenticated/admin.super.settings'
@@ -109,6 +111,11 @@ const AuthRoute = AuthRouteImport.update({
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GrantRoute = GrantRouteImport.update({
+  id: '/grant',
+  path: '/grant',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardRoute = OnboardRouteImport.update({
@@ -283,6 +290,12 @@ const AuthenticatedAdminBSlugRouteRoute =
   AuthenticatedAdminBSlugRouteRouteImport.update({
     id: '/b/$slug',
     path: '/b/$slug',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminSuperGrantsRoute =
+  AuthenticatedAdminSuperGrantsRouteImport.update({
+    id: '/super/grants',
+    path: '/super/grants',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminSuperHealthRoute =
@@ -524,6 +537,7 @@ export interface FileRoutesByFullPath {
   '/$slug': typeof SlugRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/grant': typeof GrantRoute
   '/onboard': typeof OnboardRoute
   '/reset-password': typeof ResetPasswordRoute
   '/$slug/$category': typeof SlugCategoryRoute
@@ -557,6 +571,7 @@ export interface FileRoutesByFullPath {
   '/api/orders/status': typeof ApiOrdersStatusRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/b/$slug': typeof AuthenticatedAdminBSlugRouteRouteWithChildren
+  '/admin/super/grants': typeof AuthenticatedAdminSuperGrantsRoute
   '/admin/super/health': typeof AuthenticatedAdminSuperHealthRoute
   '/admin/super/requests': typeof AuthenticatedAdminSuperRequestsRoute
   '/admin/super/settings': typeof AuthenticatedAdminSuperSettingsRoute
@@ -601,6 +616,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/grant': typeof GrantRoute
   '/onboard': typeof OnboardRoute
   '/reset-password': typeof ResetPasswordRoute
   '/$slug/$category': typeof SlugCategoryRoute
@@ -633,6 +649,7 @@ export interface FileRoutesByTo {
   '/api/orders/status': typeof ApiOrdersStatusRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/b/$slug': typeof AuthenticatedAdminBSlugRouteRouteWithChildren
+  '/admin/super/grants': typeof AuthenticatedAdminSuperGrantsRoute
   '/admin/super/health': typeof AuthenticatedAdminSuperHealthRoute
   '/admin/super/requests': typeof AuthenticatedAdminSuperRequestsRoute
   '/admin/super/settings': typeof AuthenticatedAdminSuperSettingsRoute
@@ -679,6 +696,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/grant': typeof GrantRoute
   '/onboard': typeof OnboardRoute
   '/reset-password': typeof ResetPasswordRoute
   '/$slug/$category': typeof SlugCategoryRoute
@@ -712,6 +730,7 @@ export interface FileRoutesById {
   '/api/orders/status': typeof ApiOrdersStatusRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/b/$slug': typeof AuthenticatedAdminBSlugRouteRouteWithChildren
+  '/_authenticated/admin/super/grants': typeof AuthenticatedAdminSuperGrantsRoute
   '/_authenticated/admin/super/health': typeof AuthenticatedAdminSuperHealthRoute
   '/_authenticated/admin/super/requests': typeof AuthenticatedAdminSuperRequestsRoute
   '/_authenticated/admin/super/settings': typeof AuthenticatedAdminSuperSettingsRoute
@@ -759,6 +778,7 @@ export interface FileRouteTypes {
     | '/$slug'
     | '/auth'
     | '/forgot-password'
+    | '/grant'
     | '/onboard'
     | '/reset-password'
     | '/$slug/$category'
@@ -792,6 +812,7 @@ export interface FileRouteTypes {
     | '/api/orders/status'
     | '/admin/'
     | '/admin/b/$slug'
+    | '/admin/super/grants'
     | '/admin/super/health'
     | '/admin/super/requests'
     | '/admin/super/settings'
@@ -836,6 +857,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/forgot-password'
+    | '/grant'
     | '/onboard'
     | '/reset-password'
     | '/$slug/$category'
@@ -868,6 +890,7 @@ export interface FileRouteTypes {
     | '/api/orders/status'
     | '/admin'
     | '/admin/b/$slug'
+    | '/admin/super/grants'
     | '/admin/super/health'
     | '/admin/super/requests'
     | '/admin/super/settings'
@@ -913,6 +936,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/forgot-password'
+    | '/grant'
     | '/onboard'
     | '/reset-password'
     | '/$slug/$category'
@@ -946,6 +970,7 @@ export interface FileRouteTypes {
     | '/api/orders/status'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/b/$slug'
+    | '/_authenticated/admin/super/grants'
     | '/_authenticated/admin/super/health'
     | '/_authenticated/admin/super/requests'
     | '/_authenticated/admin/super/settings'
@@ -993,6 +1018,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
+  GrantRoute: typeof GrantRoute
   OnboardRoute: typeof OnboardRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   BSlugRoute: typeof BSlugRoute
@@ -1043,6 +1069,13 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/grant': {
+      id: '/grant'
+      path: '/grant'
+      fullPath: '/grant'
+      preLoaderRoute: typeof GrantRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboard': {
@@ -1274,6 +1307,13 @@ declare module '@tanstack/react-router' {
       path: '/b/$slug'
       fullPath: '/admin/b/$slug'
       preLoaderRoute: typeof AuthenticatedAdminBSlugRouteRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/super/grants': {
+      id: '/_authenticated/admin/super/grants'
+      path: '/super/grants'
+      fullPath: '/admin/super/grants'
+      preLoaderRoute: typeof AuthenticatedAdminSuperGrantsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/super/health': {
@@ -1721,6 +1761,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminTeamRoute: typeof AuthenticatedAdminTeamRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminBSlugRouteRoute: typeof AuthenticatedAdminBSlugRouteRouteWithChildren
+  AuthenticatedAdminSuperGrantsRoute: typeof AuthenticatedAdminSuperGrantsRoute
   AuthenticatedAdminSuperHealthRoute: typeof AuthenticatedAdminSuperHealthRoute
   AuthenticatedAdminSuperRequestsRoute: typeof AuthenticatedAdminSuperRequestsRoute
   AuthenticatedAdminSuperSettingsRoute: typeof AuthenticatedAdminSuperSettingsRoute
@@ -1738,6 +1779,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAdminBSlugRouteRoute:
     AuthenticatedAdminBSlugRouteRouteWithChildren,
+  AuthenticatedAdminSuperGrantsRoute: AuthenticatedAdminSuperGrantsRoute,
   AuthenticatedAdminSuperHealthRoute: AuthenticatedAdminSuperHealthRoute,
   AuthenticatedAdminSuperRequestsRoute: AuthenticatedAdminSuperRequestsRoute,
   AuthenticatedAdminSuperSettingsRoute: AuthenticatedAdminSuperSettingsRoute,
@@ -1763,6 +1805,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
+  GrantRoute: GrantRoute,
   OnboardRoute: OnboardRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   BSlugRoute: BSlugRoute,
