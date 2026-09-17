@@ -161,7 +161,21 @@ function GrantSurveyPage() {
 
       <div className="relative mx-auto max-w-2xl px-4 py-8 sm:py-14 space-y-8">
         {/* Brand Header */}
-        <header className="text-center space-y-3">
+        <header className="text-center space-y-4">
+          {/* Official Boutq Logo */}
+          <div className="flex justify-center pb-1">
+            <div className="inline-flex items-center justify-center p-1 rounded-2xl bg-card/80 border border-border shadow-md transition-all duration-300 hover:shadow-primary/10 hover:border-primary/40">
+              <img
+                src="/boutq-grant-banner.png"
+                alt="BOUTQ STORE • OS"
+                className="h-11 sm:h-14 w-auto object-contain rounded-xl"
+                width={1024}
+                height={320}
+                loading="eager"
+              />
+            </div>
+          </div>
+
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3.5 py-1 text-xs font-bold text-primary shadow-xs">
             <Crown className="size-3.5" />
             <span>مبادرة دعم المشاريع والبراندات المحلية</span>
