@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -90,6 +90,7 @@ function downloadTemplate(type: ImportType) {
 function ImportCenterPage() {
   const brand = useBrand();
   const brandId = brand.id;
+  const brandSlug = brand.slug;
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const qc = useQueryClient();
@@ -148,6 +149,16 @@ function ImportCenterPage() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          <Link to="/admin/b/$slug/export" params={{ slug: brandSlug }}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 gap-1.5 text-xs font-semibold"
+            >
+              <Download className="h-3.5 w-3.5" />
+              {isAr ? "مركز التصدير والنسخ" : "Export & Backup"}
+            </Button>
+          </Link>
           <Button
             variant="outline"
             size="sm"

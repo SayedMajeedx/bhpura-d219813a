@@ -9,6 +9,7 @@ import {
   ReceiptText,
   Trash2,
   AlertCircle,
+  Download,
   Clock3,
   CircleDollarSign,
   CreditCard,
@@ -1610,13 +1611,27 @@ function OrdersList() {
         onCreateNew={create}
         onRefresh={() => qc.invalidateQueries({ queryKey: ["orders", brandId] })}
         renderImporter={
-          <div
-            onClick={() => setIsOrderImporterOpen(true)}
-            className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-xs font-semibold text-primary hover:bg-muted"
-          >
-            <Sparkles className="h-4 w-4 shrink-0 text-primary" />
-            <span>{lang === "ar" ? "استيراد طلبات سابقة" : "Import Past Orders"}</span>
-          </div>
+          <>
+            <div
+              onClick={() => setIsOrderImporterOpen(true)}
+              className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-xs font-semibold text-primary hover:bg-muted"
+            >
+              <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+              <span>{lang === "ar" ? "استيراد طلبات سابقة" : "Import Past Orders"}</span>
+            </div>
+            <Link
+              to="/admin/b/$slug/export"
+              params={{ slug }}
+              className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-xs font-semibold text-primary hover:bg-muted"
+            >
+              <Download className="h-4 w-4 shrink-0 text-primary" />
+              <span>
+                {lang === "ar"
+                  ? "تصدير الطلبات (إكسل / كشف حساب)"
+                  : "Export Orders (Excel / Ledger)"}
+              </span>
+            </Link>
+          </>
         }
       />
 

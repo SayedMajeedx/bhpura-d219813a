@@ -22,6 +22,7 @@ import {
   Ruler,
   Puzzle,
   Upload,
+  Download,
   type LucideIcon,
 } from "lucide-react";
 
@@ -299,6 +300,21 @@ export function getAdminNavItems({
         "Universal importer for products, customer CRM, legacy orders, and Instagram catalog",
       descriptionAr: "الاستيراد الشامل لكتالوج المنتجات، جهات اتصال العملاء، الطلبات السابقة، وإنستغرام",
       icon: Upload,
+      permission: "manage_inventory",
+      section: "operations",
+      category: "products_stock",
+      tier: "modular",
+    },
+    {
+      id: "export",
+      to: "/admin/b/$slug/export",
+      params: { slug: activeSlug },
+      labelEn: "Export & Backup",
+      labelAr: lang === "ar" ? "مركز التصدير والنسخ الاحتياطي" : "Export & Backup",
+      descriptionEn:
+        "High-fidelity Excel & CSV data exports with formula injection defense and disaster recovery backup",
+      descriptionAr: "تصدير عالي الدقة لملفات إكسل وCSV مع درع حماية الصيغ ونسخ احتياطي شامل",
+      icon: Download,
       permission: "manage_inventory",
       section: "operations",
       category: "products_stock",

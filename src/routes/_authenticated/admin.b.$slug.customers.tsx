@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, useRouterState, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, useMemo, useDeferredValue } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,6 +30,7 @@ import {
   Check,
   Loader2,
   Upload,
+  Download,
   AlertTriangle,
   RefreshCw,
 } from "lucide-react";
@@ -1044,15 +1045,25 @@ function CustomersPage() {
         customerCount={(data ?? []).length}
         onCreateNew={() => setOpen(true)}
         renderImporters={
-          <DropdownMenuItem
-            onClick={() => setIsCustomerImporterOpen(true)}
-            className="cursor-pointer gap-2 py-2 text-xs font-semibold text-primary"
-          >
-            <Users className="h-4 w-4 shrink-0 text-primary" />
-            <span>
-              {isAr ? "استيراد العملاء وجهات الاتصال" : "Universal Customer Migration"}
-            </span>
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuItem
+              onClick={() => setIsCustomerImporterOpen(true)}
+              className="cursor-pointer gap-2 py-2 text-xs font-semibold text-primary"
+            >
+              <Users className="h-4 w-4 shrink-0 text-primary" />
+              <span>
+                {isAr ? "استيراد العملاء وجهات الاتصال" : "Universal Customer Migration"}
+              </span>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="cursor-pointer gap-2 py-2 text-xs font-semibold">
+              <Link to="/admin/b/$slug/export" params={{ slug: brand.slug }}>
+                <Download className="h-4 w-4 shrink-0 text-primary" />
+                <span>
+                  {isAr ? "تصدير العملاء (إكسل / واتساب)" : "Export Customers (Excel / WhatsApp)"}
+                </span>
+              </Link>
+            </DropdownMenuItem>
+          </>
         }
       />
 

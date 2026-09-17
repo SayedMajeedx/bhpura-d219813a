@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, useMemo, useCallback, useDeferredValue } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,6 +37,7 @@ import {
   ChevronDown,
   Sparkles,
   Upload,
+  Download,
   Loader2,
   Check,
   RefreshCw,
@@ -1823,6 +1824,16 @@ function ProductsSection({
               <Upload className="h-4 w-4 me-2 text-primary" />
               {isAr ? "استيراد كتالوج المنتجات" : "Import Product Catalog"}
             </Button>
+            <Link to="/admin/b/$slug/export" params={{ slug: brand.slug }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start text-xs font-medium h-9"
+              >
+                <Download className="h-4 w-4 me-2 text-primary" />
+                {isAr ? "تصدير الكتالوج (إكسل / CSV)" : "Export Catalog (Excel / CSV)"}
+              </Button>
+            </Link>
 
             <div className="px-2.5 pt-2 py-1 text-xs font-bold text-muted-foreground border-b border-border-subtle">
               {isAr ? "الباركود والطباعة" : "Barcodes & Print"}
