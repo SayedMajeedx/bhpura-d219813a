@@ -238,10 +238,10 @@ export function SuperGrantsManager() {
         <div className="relative flex-1">
           <Search className="absolute start-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
-            placeholder="بحث باسم المتجر، حساب الإنستغرام، أو رقم الهاتف..."
+            placeholder="بحث بالمتجر أو الحساب أو الهاتف..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="ps-9 text-xs sm:text-sm rounded-lg min-h-10"
+            className="ps-9 text-xs sm:text-sm rounded-lg min-h-10 placeholder:text-muted-foreground/45 placeholder:opacity-50"
           />
         </div>
 
@@ -496,8 +496,9 @@ export function SuperGrantsManager() {
               rows={4}
               value={notesDraft}
               onChange={(e) => setNotesDraft(e.target.value)}
-              placeholder="مثال: تم التواصل معهم وتأكيد الجاهزية، صور العبايات احترافية جداً ومناسبة للـ Case study..."
-              className="text-xs sm:text-sm rounded-xl leading-relaxed"
+              placeholder="مثال: صور المنتجات ممتازة وجاهزة للبدء..."
+              dir="rtl"
+              className="text-xs sm:text-sm rounded-xl leading-relaxed text-right placeholder:text-muted-foreground/45 placeholder:opacity-50"
             />
           </div>
           <DialogFooter className="flex gap-2 sm:justify-start">

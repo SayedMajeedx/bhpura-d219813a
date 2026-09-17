@@ -77,6 +77,7 @@ function GrantSurveyPage() {
   // Form State
   const [businessName, setBusinessName] = useState("");
   const [instagramHandle, setInstagramHandle] = useState("");
+  const [countryCode, setCountryCode] = useState("+973");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [productCategory, setProductCategory] = useState<string>("");
   const [readinessStatus, setReadinessStatus] = useState<string>("");
@@ -124,10 +125,13 @@ function GrantSurveyPage() {
 
     setSubmitting(true);
     try {
+      const cleanPhone = whatsappNumber.trim().replace(/[^\d+]/g, "").replace(/^0+/, "");
+      const fullPhone = cleanPhone.startsWith("+") ? cleanPhone : `${countryCode}${cleanPhone}`;
+
       const { data, error } = await (publicSupabase.rpc as any)("submit_grant_application", {
         p_business_name: businessName.trim(),
-        p_instagram_handle: instagramHandle.trim(),
-        p_whatsapp_number: whatsappNumber.trim(),
+        p_instagram_handle: instagramHandle.trim().replace(/^@/, ""),
+        p_whatsapp_number: fullPhone,
         p_product_category: productCategory,
         p_readiness_status: readinessStatus,
         p_current_sales_channel: currentSalesChannel,
@@ -234,7 +238,9 @@ function GrantSurveyPage() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span>رقم التواصل:</span>
-                  <span className="font-bold text-foreground" dir="ltr">{whatsappNumber}</span>
+                  <span className="font-bold text-foreground" dir="ltr">
+                    {whatsappNumber.startsWith("+") ? whatsappNumber : `${countryCode} ${whatsappNumber}`}
+                  </span>
                 </div>
               </div>
 
@@ -292,60 +298,79 @@ function GrantSurveyPage() {
 
                   <div className="space-y-4">
                     <div className="space-y-1.5">
-                      <Label htmlFor="businessName" className="text-sm font-semibold flex items-center gap-1.5">
+                      <Label htmlFor="businessName" className="text-sm font-semibold flex items-center gap-1.5 text-foreground">
                         <Store className="size-4 text-primary" />
                         اسم المشروع أو البراند التجاري <span className="text-destructive">*</span>
                       </Label>
                       <Input
                         id="businessName"
-                        placeholder="مثال: لافندر بوتيك، أورورا ديزاين..."
+                        placeholder="مثال: بوتيك لافندر"
                         value={businessName}
                         onChange={(e) => setBusinessName(e.target.value)}
                         required
-                        className="min-h-11 rounded-xl text-sm"
+                        dir="rtl"
+                        className="min-h-11 rounded-xl text-sm text-right placeholder:text-muted-foreground/45 placeholder:opacity-50 placeholder:font-normal focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       />
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label htmlFor="instagramHandle" className="text-sm font-semibold flex items-center gap-1.5">
+                      <Label htmlFor="instagramHandle" className="text-sm font-semibold flex items-center gap-1.5 text-foreground">
                         <Instagram className="size-4 text-primary" />
                         حساب الإنستغرام للمتجر <span className="text-destructive">*</span>
                       </Label>
-                      <div className="relative">
-                        <Input
-                          id="instagramHandle"
-                          placeholder="مثال: yourbrand"
-                          value={instagramHandle}
-                          onChange={(e) => setInstagramHandle(e.target.value)}
-                          required
-                          dir="ltr"
-                          className="min-h-11 rounded-xl text-sm text-left ps-8"
-                        />
-                        <span className="absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-sm">
+                      <div className="relative flex rounded-xl border border-input bg-card shadow-xs focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-all overflow-hidden min-h-11">
+                        <span className="inline-flex items-center justify-center px-3.5 bg-muted/40 border-e border-border text-muted-foreground/70 font-bold text-sm select-none shrink-0">
                           @
                         </span>
+                        <input
+                          id="instagramHandle"
+                          type="text"
+                          dir="rtl"
+                          placeholder="yourbrand"
+                          value={instagramHandle}
+                          onChange={(e) => setInstagramHandle(e.target.value.replace(/^@/, "").trim())}
+                          required
+                          className="flex-1 bg-transparent px-3.5 text-sm text-foreground placeholder:text-muted-foreground/45 placeholder:opacity-50 placeholder:font-normal focus:outline-none text-right"
+                        />
                       </div>
-                      <p className="text-[11px] text-muted-foreground">
+                      <p className="text-[11px] text-muted-foreground/75">
                         سنقوم بمراجعة حسابك لمعاينة صور وتفاعل المتجر.
                       </p>
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label htmlFor="whatsappNumber" className="text-sm font-semibold flex items-center gap-1.5">
+                      <Label htmlFor="whatsappNumber" className="text-sm font-semibold flex items-center gap-1.5 text-foreground">
                         <Phone className="size-4 text-primary" />
                         رقم الواتساب للتواصل <span className="text-destructive">*</span>
                       </Label>
-                      <Input
-                        id="whatsappNumber"
-                        placeholder="مثال: 97339000000 أو 0501234567"
-                        value={whatsappNumber}
-                        onChange={(e) => setWhatsappNumber(e.target.value)}
-                        required
-                        dir="ltr"
-                        type="tel"
-                        className="min-h-11 rounded-xl text-sm text-left"
-                      />
-                      <p className="text-[11px] text-muted-foreground">
+                      <div className="relative flex rounded-xl border border-input bg-card shadow-xs focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-all overflow-hidden min-h-11">
+                        <select
+                          value={countryCode}
+                          onChange={(e) => setCountryCode(e.target.value)}
+                          className="bg-muted/40 px-3 text-xs sm:text-sm font-bold text-foreground border-e border-border focus:outline-none cursor-pointer shrink-0 py-2.5"
+                          dir="ltr"
+                          aria-label="مفتاح الدولة"
+                        >
+                          <option value="+973">🇧🇭 +973</option>
+                          <option value="+966">🇸🇦 +966</option>
+                          <option value="+971">🇦🇪 +971</option>
+                          <option value="+965">🇰🇼 +965</option>
+                          <option value="+974">🇶🇦 +974</option>
+                          <option value="+968">🇴🇲 +968</option>
+                        </select>
+                        <input
+                          id="whatsappNumber"
+                          type="tel"
+                          inputMode="tel"
+                          placeholder="39000000"
+                          value={whatsappNumber}
+                          onChange={(e) => setWhatsappNumber(e.target.value.replace(/[^\d+]/g, ""))}
+                          required
+                          dir="rtl"
+                          className="flex-1 bg-transparent px-3.5 text-sm text-foreground placeholder:text-muted-foreground/45 placeholder:opacity-50 placeholder:font-normal focus:outline-none text-right"
+                        />
+                      </div>
+                      <p className="text-[11px] text-muted-foreground/75">
                         سنرسل نتائج الاختيار والعروض المخصصة عبر الواتساب.
                       </p>
                     </div>
@@ -511,17 +536,18 @@ function GrantSurveyPage() {
 
                   {/* Biggest Challenge */}
                   <div className="space-y-1.5">
-                    <Label htmlFor="biggestChallenge" className="text-sm font-semibold flex items-center justify-between">
+                    <Label htmlFor="biggestChallenge" className="text-sm font-semibold flex items-center justify-between text-foreground">
                       <span>ما هو أكبر تحدٍ يواجهك في إدارة مبيعاتك وطلباتك؟</span>
-                      <span className="text-[11px] font-normal text-muted-foreground">(اختياري)</span>
+                      <span className="text-[11px] font-normal text-muted-foreground/75">(اختياري)</span>
                     </Label>
                     <Textarea
                       id="biggestChallenge"
                       rows={3}
-                      placeholder="مثال: ضياع تفاصيل الطلبات، تتبع التحويلات البنكية يدوياً، صعوبة جرد المخزون، أو الوقت الطويل المستغرق في الرد على الواتساب..."
+                      placeholder="مثال: صعوبة تتبع الطلبات في محادثات الواتساب..."
                       value={biggestChallenge}
                       onChange={(e) => setBiggestChallenge(e.target.value)}
-                      className="rounded-xl text-sm leading-relaxed"
+                      dir="rtl"
+                      className="rounded-xl text-sm leading-relaxed text-right placeholder:text-muted-foreground/45 placeholder:opacity-50 placeholder:font-normal focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     />
                   </div>
 
