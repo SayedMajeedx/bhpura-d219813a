@@ -223,7 +223,7 @@ function GrantSurveyPage() {
                   شكراً لمشاركتنا شغفك ومشروعك 🌟
                 </h2>
                 <p className="text-muted-foreground text-sm sm:text-base max-w-md mx-auto leading-relaxed">
-                  سعيدون جداً باهتمامك يا فريق <span className="font-bold text-foreground">{businessName}</span>. سنقوم بمراجعة حسابكم والتواصل معكم عبر الواتساب في الموعد المحدد.
+                  سعيدون جداً باهتمامك، سنقوم بمراجعة حسابكم والتواصل معكم عبر الواتساب في الموعد المحدد.
                 </p>
               </div>
 
@@ -244,24 +244,15 @@ function GrantSurveyPage() {
                 </div>
               </div>
 
-              <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
+              <div className="pt-2 flex justify-center">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={copyShareLink}
-                  className="min-h-11 gap-2 font-bold"
+                  className="min-h-11 gap-2 font-bold px-6"
                 >
                   <Share2 className="size-4" />
                   مشاركة المبادرة مع صديق
-                </Button>
-                <Button
-                  asChild
-                  className="min-h-11 gap-2 font-bold bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  <a href={`https://instagram.com/${instagramHandle.replace(/^@/, "")}`} target="_blank" rel="noreferrer">
-                    <Instagram className="size-4" />
-                    معاينة الحساب
-                  </a>
                 </Button>
               </div>
             </CardContent>

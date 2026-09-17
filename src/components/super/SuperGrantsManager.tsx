@@ -22,6 +22,7 @@ import {
   AlertCircle,
   HelpCircle,
   RefreshCw,
+  Eye,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -99,6 +100,7 @@ export function SuperGrantsManager() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [readinessFilter, setReadinessFilter] = useState<string>("all");
   const [selectedApp, setSelectedApp] = useState<GrantApplication | null>(null);
+  const [detailsApp, setDetailsApp] = useState<GrantApplication | null>(null);
   const [notesDraft, setNotesDraft] = useState("");
 
   const { data: apps = [], isLoading, refetch } = useQuery({
@@ -339,17 +341,29 @@ export function SuperGrantsManager() {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-heading text-base font-bold text-foreground">
+                          <h3
+                            onClick={() => {
+                              setDetailsApp(app);
+                              setNotesDraft(app.admin_notes || "");
+                            }}
+                            className="font-heading text-base font-bold text-foreground hover:text-primary cursor-pointer transition-colors"
+                            title="انقر لفتح تفاصيل الاستبيان بالكامل"
+                          >
                             {app.business_name}
                           </h3>
                           <Badge variant="outline" className={cn("text-[10px] px-2 py-0.5", readinessInfo.color)}>
                             {readinessInfo.label}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                        <div className="flex flex-wrap items-center gap-2.5 text-xs text-muted-foreground mt-0.5">
                           <span>{categoryInfo.label}</span>
                           <span>•</span>
                           <span>قناة البيع: {CHANNEL_MAP[app.current_sales_channel] || app.current_sales_channel}</span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1 font-mono font-bold text-foreground" dir="ltr">
+                            <Phone className="size-3 text-muted-foreground" />
+                            {app.whatsapp_number}
+                          </span>
                           <span>•</span>
                           <span className="flex items-center gap-1">
                             <Clock className="size-3" />
@@ -398,8 +412,23 @@ export function SuperGrantsManager() {
 
                   {/* Actions Bar */}
                   <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                    {/* External links */}
+                    {/* External links & Full view */}
                     <div className="flex flex-wrap items-center gap-2">
+                      {/* View full survey details */}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setDetailsApp(app);
+                          setNotesDraft(app.admin_notes || "");
+                        }}
+                        className="h-8 text-xs gap-1.5 rounded-lg border-primary/30 text-primary hover:bg-primary/10 font-bold"
+                      >
+                        <Eye className="size-3.5" />
+                        عرض تفاصيل الاستبيان
+                      </Button>
+
                       {/* Instagram profile link */}
                       <Button
                         asChild
@@ -479,6 +508,219 @@ export function SuperGrantsManager() {
           })}
         </div>
       )}
+
+      {/* Full Survey Details Modal */}
+      <Dialog open={Boolean(detailsApp)} onOpenChange={(open) => !open && setDetailsApp(null)}>
+        <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto" dir="rtl">
+          {detailsApp && (
+            <div className="space-y-5">
+              <DialogHeader className="border-b border-border/60 pb-3 text-right">
+                <div className="flex items-center justify-between gap-2">
+                  <DialogTitle className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
+                    <Store className="size-5 text-primary" />
+                    استبيان: {detailsApp.business_name}
+                  </DialogTitle>
+                  <Badge variant="outline" className={cn("text-xs font-bold", (STATUS_MAP[detailsApp.status] || STATUS_MAP.pending).color)}>
+                    {(STATUS_MAP[detailsApp.status] || STATUS_MAP.pending).label}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  تاريخ وتوقيت التقديم: {new Date(detailsApp.created_at).toLocaleDateString("ar-BH", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </DialogHeader>
+
+              {/* Contact Information */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
+                    <Instagram className="size-4 text-pink-500" />
+                    حساب الإنستغرام
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono font-bold text-sm text-foreground" dir="ltr">
+                      @{detailsApp.instagram_handle.replace(/^@/, "")}
+                    </span>
+                    <Button asChild size="sm" variant="outline" className="h-7 text-[11px] gap-1 rounded-lg">
+                      <a
+                        href={`https://instagram.com/${detailsApp.instagram_handle.replace(/^@/, "")}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        زيارة الحساب
+                        <ExternalLink className="size-3" />
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
+                    <Phone className="size-4 text-emerald-500" />
+                    رقم الواتساب للتواصل
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono font-bold text-sm text-foreground" dir="ltr">
+                      {detailsApp.whatsapp_number}
+                    </span>
+                    <Button asChild size="sm" variant="outline" className="h-7 text-[11px] gap-1 rounded-lg border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10">
+                      <a
+                        href={`https://wa.me/${normalizePhoneForWhatsApp(detailsApp.whatsapp_number)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        محادثة واتساب
+                        <ExternalLink className="size-3" />
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Store & Readiness Answers */}
+              <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-3">
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  إجابات الاستبيان حول المتجر
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <div className="bg-card p-2.5 rounded-lg border border-border/60">
+                    <span className="text-muted-foreground block text-[11px] mb-1">مجال المنتجات</span>
+                    <span className="font-bold text-foreground">
+                      {(CATEGORY_MAP[detailsApp.product_category] || {}).label || detailsApp.product_category}
+                    </span>
+                  </div>
+
+                  <div className="bg-card p-2.5 rounded-lg border border-border/60">
+                    <span className="text-muted-foreground block text-[11px] mb-1">حالة الجاهزية والتصوير</span>
+                    <span className="font-bold text-foreground">
+                      {(READINESS_MAP[detailsApp.readiness_status] || {}).label || detailsApp.readiness_status}
+                    </span>
+                  </div>
+
+                  <div className="bg-card p-2.5 rounded-lg border border-border/60">
+                    <span className="text-muted-foreground block text-[11px] mb-1">قناة البيع الحالية</span>
+                    <span className="font-bold text-foreground">
+                      {CHANNEL_MAP[detailsApp.current_sales_channel] || detailsApp.current_sales_channel}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* The Biggest Challenge */}
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-primary">
+                  <Sparkles className="size-4" />
+                  أكبر تحدٍ يواجه التاجر في المبيعات والعمليات:
+                </div>
+                <p className="text-xs sm:text-sm text-foreground leading-relaxed font-medium">
+                  {detailsApp.biggest_challenge ? (
+                    `"${detailsApp.biggest_challenge}"`
+                  ) : (
+                    <span className="text-muted-foreground italic">لم يذكر التاجر أي تحدٍ محدد (حقل اختياري).</span>
+                  )}
+                </p>
+              </div>
+
+              {/* Admin Notes & Status Selector */}
+              <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <Edit3 className="size-4 text-primary" />
+                    ملاحظات المشرف وتحديث الحالة
+                  </h4>
+                  <div className="w-[150px]">
+                    <Select
+                      value={detailsApp.status}
+                      onValueChange={(val) => {
+                        const newStatus = val as GrantApplication["status"];
+                        handleStatusChange(detailsApp, newStatus);
+                        setDetailsApp((prev) => prev ? { ...prev, status: newStatus } : null);
+                      }}
+                    >
+                      <SelectTrigger className="h-8 text-xs font-bold border rounded-lg">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">معلّق ⏳</SelectItem>
+                        <SelectItem value="reviewed">تمت المراجعة 👁️</SelectItem>
+                        <SelectItem value="shortlisted">مرشح بالقائمة ⭐</SelectItem>
+                        <SelectItem value="selected">فائز 6 شهور 🏆</SelectItem>
+                        <SelectItem value="offered_3_months">عرض 3 شهور 🎁</SelectItem>
+                        <SelectItem value="rejected">مستبعد ✖</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <Textarea
+                  rows={3}
+                  value={notesDraft}
+                  onChange={(e) => setNotesDraft(e.target.value)}
+                  placeholder="اكتب ملاحظاتك الداخلية عن هذا المتجر..."
+                  dir="rtl"
+                  className="text-xs sm:text-sm rounded-xl leading-relaxed text-right placeholder:text-muted-foreground/45 placeholder:opacity-50"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    updateMutation.mutate({
+                      id: detailsApp.id,
+                      updates: { admin_notes: notesDraft },
+                    });
+                    setDetailsApp((prev) => prev ? { ...prev, admin_notes: notesDraft } : null);
+                  }}
+                  disabled={updateMutation.isPending}
+                  className="text-xs font-bold h-8"
+                >
+                  حفظ الملاحظة
+                </Button>
+              </div>
+
+              {/* WhatsApp Action Buttons */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/60">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    asChild
+                    size="sm"
+                    className="h-8 text-xs gap-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 font-bold"
+                  >
+                    <a href={getWhatsAppLink(detailsApp, "winner_6m")} target="_blank" rel="noreferrer">
+                      <Crown className="size-3.5" />
+                      تهنئة الـ 6 شهور
+                    </a>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs gap-1.5 rounded-lg border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 font-bold"
+                  >
+                    <a href={getWhatsAppLink(detailsApp, "special_3m")} target="_blank" rel="noreferrer">
+                      <Gift className="size-3.5" />
+                      إهداء الـ 3 شهور
+                    </a>
+                  </Button>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDetailsApp(null)}
+                  className="h-8 text-xs font-bold"
+                >
+                  إغلاق
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Notes Dialog */}
       <Dialog open={Boolean(selectedApp)} onOpenChange={(open) => !open && setSelectedApp(null)}>
