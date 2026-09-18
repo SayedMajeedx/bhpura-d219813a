@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SlugRouteRouteImport } from './routes/$slug.route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as FirstLoginRouteImport } from './routes/first-login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as GrantRouteImport } from './routes/grant'
 import { Route as OnboardRouteImport } from './routes/onboard'
@@ -106,6 +107,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FirstLoginRoute = FirstLoginRouteImport.update({
+  id: '/first-login',
+  path: '/first-login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -536,6 +542,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$slug': typeof SlugRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/first-login': typeof FirstLoginRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/grant': typeof GrantRoute
   '/onboard': typeof OnboardRoute
@@ -615,6 +622,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/first-login': typeof FirstLoginRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/grant': typeof GrantRoute
   '/onboard': typeof OnboardRoute
@@ -695,6 +703,7 @@ export interface FileRoutesById {
   '/$slug': typeof SlugRouteRouteWithChildren
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/first-login': typeof FirstLoginRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/grant': typeof GrantRoute
   '/onboard': typeof OnboardRoute
@@ -777,6 +786,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$slug'
     | '/auth'
+    | '/first-login'
     | '/forgot-password'
     | '/grant'
     | '/onboard'
@@ -856,6 +866,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/first-login'
     | '/forgot-password'
     | '/grant'
     | '/onboard'
@@ -935,6 +946,7 @@ export interface FileRouteTypes {
     | '/$slug'
     | '/_authenticated'
     | '/auth'
+    | '/first-login'
     | '/forgot-password'
     | '/grant'
     | '/onboard'
@@ -1017,6 +1029,7 @@ export interface RootRouteChildren {
   SlugRouteRoute: typeof SlugRouteRouteWithChildren
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  FirstLoginRoute: typeof FirstLoginRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   GrantRoute: typeof GrantRoute
   OnboardRoute: typeof OnboardRoute
@@ -1062,6 +1075,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/first-login': {
+      id: '/first-login'
+      path: '/first-login'
+      fullPath: '/first-login'
+      preLoaderRoute: typeof FirstLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -1804,6 +1824,7 @@ const rootRouteChildren: RootRouteChildren = {
   SlugRouteRoute: SlugRouteRouteWithChildren,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  FirstLoginRoute: FirstLoginRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   GrantRoute: GrantRoute,
   OnboardRoute: OnboardRoute,

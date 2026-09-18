@@ -172,7 +172,7 @@ async function handleList(
   let query = supabase
     .from("profiles")
     .select(
-      "id, email, name, phone, role, status, brand_id, created_at, updated_at, brand:brands(id, slug, name_en, name_ar, logo_url, is_active)",
+      "id, email, name, phone, role, status, brand_id, must_change_password, created_at, updated_at, brand:brands(id, slug, name_en, name_ar, logo_url, is_active)",
     )
     .order("created_at", { ascending: false });
 
@@ -455,11 +455,17 @@ async function handleCreate(
         },
       );
     }
+    const mustChangePassword =
+      body.must_change_password !== undefined ? Boolean(body.must_change_password) : true;
+
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: normalizedEmail,
       password,
       email_confirm: true,
-      user_metadata: { name: name || normalizedEmail.split("@")[0] },
+      user_metadata: {
+        name: name || normalizedEmail.split("@")[0],
+        must_change_password: mustChangePassword,
+      },
     });
     if (authError) {
       return new Response(JSON.stringify({ error: authError.message }), {
@@ -478,6 +484,9 @@ async function handleCreate(
     });
   }
 
+  const mustChangePassword =
+    body.must_change_password !== undefined ? Boolean(body.must_change_password) : true;
+
   const updatePayload: Record<string, any> = {
     id: userId,
     email: normalizedEmail,
@@ -485,6 +494,7 @@ async function handleCreate(
     phone: phone ? String(phone).trim() : null,
     role: userRole,
     status: "active",
+    must_change_password: createdAuthUser ? mustChangePassword : false,
   };
   if (userRole !== "super_admin") {
     updatePayload.brand_id = brand_id ?? null;
@@ -589,11 +599,21 @@ async function handleUpdate(
     });
   }
 
+  const mustChangePassword =
+    body.must_change_password !== undefined ? Boolean(body.must_change_password) : undefined;
+
   // 1. If password is provided, update the auth password directly
   if (password !== undefined && String(password).trim().length > 0) {
-    const { error: authUpdateError } = await supabase.auth.admin.updateUserById(userId, {
+    const authUpdatePayload: Record<string, any> = {
       password: String(password).trim(),
-    });
+    };
+    if (mustChangePassword !== undefined) {
+      authUpdatePayload.user_metadata = { must_change_password: mustChangePassword };
+    }
+    const { error: authUpdateError } = await supabase.auth.admin.updateUserById(
+      userId,
+      authUpdatePayload,
+    );
     if (authUpdateError) {
       return new Response(
         JSON.stringify({ error: `Failed to update password in auth: ${authUpdateError.message}` }),
@@ -603,6 +623,10 @@ async function handleUpdate(
         },
       );
     }
+  } else if (mustChangePassword !== undefined) {
+    await supabase.auth.admin.updateUserById(userId, {
+      user_metadata: { must_change_password: mustChangePassword },
+    });
   }
 
   const validRoles = ctx.isSuperAdmin
@@ -610,6 +634,9 @@ async function handleUpdate(
     : ["staff", "courier"];
 
   const updates: Record<string, any> = {};
+  if (mustChangePassword !== undefined) {
+    updates.must_change_password = mustChangePassword;
+  }
   if (role !== undefined) {
     if (!validRoles.includes(role)) {
       return new Response(

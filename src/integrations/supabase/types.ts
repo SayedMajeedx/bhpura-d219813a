@@ -4849,6 +4849,7 @@ export type Database = {
           email: string | null;
           full_name: string | null;
           id: string;
+          must_change_password: boolean | null;
           name: string | null;
           permissions: Json | null;
           phone: string | null;
@@ -4864,6 +4865,7 @@ export type Database = {
           email?: string | null;
           full_name?: string | null;
           id: string;
+          must_change_password?: boolean | null;
           name?: string | null;
           permissions?: Json | null;
           phone?: string | null;
@@ -4879,6 +4881,7 @@ export type Database = {
           email?: string | null;
           full_name?: string | null;
           id?: string;
+          must_change_password?: boolean | null;
           name?: string | null;
           permissions?: Json | null;
           phone?: string | null;
@@ -7347,6 +7350,10 @@ export type Database = {
       };
     };
     Functions: {
+      complete_first_sign_in_password_change: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
       activate_storefront_membership: {
         Args: { p_brand_slug: string; p_name?: string; p_phone?: string };
         Returns: Json;
