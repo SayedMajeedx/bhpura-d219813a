@@ -3,7 +3,6 @@ import { useNavigate } from "@tanstack/react-router";
 import {
   ArrowUpRight,
   Search,
-  Star,
   Compass,
   Boxes,
   Zap,
@@ -25,8 +24,6 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
   type AdminNavItemConfig,
-  type MerchantJobCategory,
-  DEFAULT_PINNED_IDS,
 } from "@/config/admin-navigation";
 
 export interface OsAppsHubModalProps {
@@ -40,7 +37,6 @@ export interface OsAppsHubModalProps {
 
 type CategoryTab =
   | "all"
-  | "pinned"
   | "operations"
   | "catalog"
   | "growth"
@@ -53,64 +49,11 @@ export function OsAppsHubModal({
   activeSlug,
   navItems,
   lang,
-  onPinnedChange,
 }: OsAppsHubModalProps) {
   const isAr = lang === "ar";
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState<CategoryTab>("all");
-
-  // Read pinned state from localStorage
-  const [pinnedIds, setPinnedIds] = React.useState<string[]>(() => {
-    if (!activeSlug || typeof window === "undefined") {
-      return [...DEFAULT_PINNED_IDS];
-    }
-    try {
-      const saved = localStorage.getItem(`boutq_pinned_nav_${activeSlug}`);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      }
-    } catch {
-      // ignore
-    }
-    return [...DEFAULT_PINNED_IDS];
-  });
-
-  // Re-sync when activeSlug or modal opens
-  React.useEffect(() => {
-    if (!activeSlug || typeof window === "undefined") return;
-    try {
-      const saved = localStorage.getItem(`boutq_pinned_nav_${activeSlug}`);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          setPinnedIds(parsed);
-          return;
-        }
-      }
-    } catch {
-      // ignore
-    }
-    setPinnedIds([...DEFAULT_PINNED_IDS]);
-  }, [activeSlug, open]);
-
-  const togglePin = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setPinnedIds((prev) => {
-      const next = prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id];
-      try {
-        if (activeSlug) {
-          localStorage.setItem(`boutq_pinned_nav_${activeSlug}`, JSON.stringify(next));
-        }
-      } catch {
-        // ignore
-      }
-      onPinnedChange?.(next);
-      return next;
-    });
-  };
 
   // Modular items only (tier === 'modular' or unassigned to core)
   const modularItems = React.useMemo(() => {
@@ -121,10 +64,6 @@ export function OsAppsHubModal({
     });
   }, [navItems]);
 
-  const pinnedCount = React.useMemo(() => {
-    return modularItems.filter((i) => pinnedIds.includes(i.id)).length;
-  }, [modularItems, pinnedIds]);
-
   // Categories config
   const categories = [
     {
@@ -132,12 +71,6 @@ export function OsAppsHubModal({
       label: isAr ? "الكل" : "All",
       count: modularItems.length,
       icon: Compass,
-    },
-    {
-      id: "pinned" as const,
-      label: isAr ? "المثبتة" : "Pinned",
-      count: pinnedCount,
-      icon: Star,
     },
     {
       id: "operations" as const,
@@ -175,9 +108,7 @@ export function OsAppsHubModal({
   const filteredItems = React.useMemo(() => {
     return modularItems.filter((item) => {
       // Category match
-      if (selectedCategory === "pinned") {
-        if (!pinnedIds.includes(item.id)) return false;
-      } else if (selectedCategory !== "all") {
+      if (selectedCategory !== "all") {
         if ((item.workspace || item.category) !== selectedCategory) {
           return false;
         }
@@ -200,7 +131,7 @@ export function OsAppsHubModal({
         item.id.toLowerCase().includes(q)
       );
     });
-  }, [modularItems, selectedCategory, searchQuery, pinnedIds]);
+  }, [modularItems, selectedCategory, searchQuery]);
 
   const handleLaunch = (item: AdminNavItemConfig) => {
     onOpenChange(false);
@@ -224,12 +155,12 @@ export function OsAppsHubModal({
             </div>
             <div className="min-w-0 pt-0.5">
               <DialogTitle className="font-heading text-xl font-bold tracking-tight sm:text-2xl">
-                {isAr ? "الأدوات والتطبيقات" : "Apps and tools"}
+                {isAr ? "دليل مساحات العمل والأدوات" : "Workspaces & Tools Directory"}
               </DialogTitle>
               <DialogDescription className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
                 {isAr
-                  ? "كل ما تحتاجه لإدارة المتجر، في مكان واحد. ثبّت أدواتك الأكثر استخداماً للوصول إليها بسرعة."
-                  : "Everything you need to run your store in one place. Pin your most-used tools for faster access."}
+                  ? "دليل شامل لجميع مساحات العمل والأدوات التشغيلية في متجرك."
+                  : "Comprehensive directory for all workspaces and operational tools in your store."}
               </DialogDescription>
             </div>
           </div>
@@ -339,7 +270,6 @@ export function OsAppsHubModal({
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 {filteredItems.map((item) => {
                   const Icon = item.icon;
-                  const isPinned = pinnedIds.includes(item.id);
                   const title = isAr ? item.labelAr : item.labelEn;
                   const description = isAr ? item.descriptionAr || "" : item.descriptionEn || "";
 
@@ -355,12 +285,12 @@ export function OsAppsHubModal({
                           handleLaunch(item);
                         }
                       }}
-                      className="group relative flex min-h-28 cursor-pointer items-start gap-4 rounded-2xl border border-border-strong bg-card p-4 text-start shadow-xs transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                      className="group relative flex min-h-24 cursor-pointer items-start gap-4 rounded-2xl border border-border-strong bg-card p-4 text-start shadow-xs transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                     >
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                         <Icon className="h-5 w-5" />
                       </div>
-                      <div className="min-w-0 flex-1 pe-7">
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
                           <h4 className="text-sm font-bold leading-6 text-foreground">{title}</h4>
                           <ArrowUpRight className="h-3.5 w-3.5 shrink-0 opacity-0 text-muted-foreground transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary rtl:rotate-[-90deg]" />
@@ -371,30 +301,6 @@ export function OsAppsHubModal({
                           </p>
                         )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={(e) => togglePin(item.id, e)}
-                        title={
-                          isPinned
-                            ? isAr
-                              ? "إلغاء التثبيت من الشريط الجانبي"
-                              : "Unpin from sidebar"
-                            : isAr
-                              ? "تثبيت في الشريط الجانبي"
-                              : "Pin to sidebar"
-                        }
-                        className={cn(
-                          "absolute end-3 top-3 flex h-8 w-8 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                          isPinned
-                            ? "bg-amber-50 text-amber-500 dark:bg-amber-500/10"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                        )}
-                        aria-label={
-                          isPinned ? (isAr ? "إلغاء التثبيت" : "Unpin") : isAr ? "تثبيت" : "Pin"
-                        }
-                      >
-                        <Star className={cn("h-4 w-4", isPinned && "fill-current")} />
-                      </button>
                     </div>
                   );
                 })}
@@ -405,10 +311,10 @@ export function OsAppsHubModal({
 
         <footer className="flex min-h-14 items-center justify-between border-t border-border-strong bg-background px-5 sm:px-7">
           <p className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
+            <Compass className="h-3.5 w-3.5 text-primary" />
             {isAr
-              ? `${pinnedCount} أدوات مثبتة في الشريط الجانبي`
-              : `${pinnedCount} tools pinned to the sidebar`}
+              ? "اختر أي أداة للانتقال الفوري إلى مساحة العمل الخاصة بها"
+              : "Select any tool to navigate directly to its workspace"}
           </p>
           <Button
             type="button"
