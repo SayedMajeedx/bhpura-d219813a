@@ -9,6 +9,7 @@ export interface OsAppWindowProps extends Omit<React.HTMLAttributes<HTMLDivEleme
   subtitle?: React.ReactNode;
   actions?: React.ReactNode;
   badge?: React.ReactNode;
+  workspaceTabs?: React.ReactNode;
   isFocusMode?: boolean;
   onToggleFocusMode?: () => void;
   pageKey?: string;
@@ -23,6 +24,7 @@ export const OsAppWindow = React.forwardRef<HTMLDivElement, OsAppWindowProps>(
       subtitle,
       actions,
       badge,
+      workspaceTabs,
       isFocusMode = false,
       onToggleFocusMode,
       pageKey,
@@ -42,6 +44,7 @@ export const OsAppWindow = React.forwardRef<HTMLDivElement, OsAppWindowProps>(
         )}
         {...props}
       >
+        {workspaceTabs}
         {/* Optional Titlebar Region (only if explicitly opted-in) */}
         {showTitlebar && (
           <div className="no-print h-11 px-4 border-b border-border bg-card flex items-center justify-between gap-3 shrink-0 select-none">

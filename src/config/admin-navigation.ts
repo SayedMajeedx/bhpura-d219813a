@@ -29,7 +29,16 @@ import {
 export type NavItemTier = "core" | "modular";
 
 export type MerchantJobCategory =
-  "today" | "products_stock" | "customers_growth" | "money_reports" | "store_setup";
+  | "today"
+  | "products_stock"
+  | "customers_growth"
+  | "money_reports"
+  | "store_setup"
+  // Modern workspace aliases
+  | "operations"
+  | "catalog"
+  | "growth"
+  | "finance";
 
 export interface MerchantJobGroup {
   id: MerchantJobCategory;
@@ -39,6 +48,7 @@ export interface MerchantJobGroup {
   shortLabelAr: string;
 }
 
+/** 5 Canonical Merchant Job Groups (Preserves existing test & domain contracts) */
 export const MERCHANT_JOB_GROUPS: MerchantJobGroup[] = [
   { id: "today", labelEn: "Today", labelAr: "اليوم", shortLabelEn: "Today", shortLabelAr: "اليوم" },
   {
@@ -71,6 +81,89 @@ export const MERCHANT_JOB_GROUPS: MerchantJobGroup[] = [
   },
 ];
 
+/** The 6 Unified Master Workspaces */
+export type AdminWorkspaceId =
+  | "today"
+  | "operations"
+  | "catalog"
+  | "growth"
+  | "finance"
+  | "store_setup";
+
+export interface AdminWorkspaceGroup {
+  id: AdminWorkspaceId;
+  labelEn: string;
+  labelAr: string;
+  shortLabelEn: string;
+  shortLabelAr: string;
+  icon: LucideIcon;
+  rootPath: string;
+  defaultNavId: string;
+}
+
+export const ADMIN_WORKSPACES: AdminWorkspaceGroup[] = [
+  {
+    id: "today",
+    labelEn: "Today",
+    labelAr: "الرئيسية واليوم",
+    shortLabelEn: "Today",
+    shortLabelAr: "اليوم",
+    icon: LayoutDashboard,
+    rootPath: "/admin/b/$slug/dashboard",
+    defaultNavId: "dashboard",
+  },
+  {
+    id: "operations",
+    labelEn: "Operations",
+    labelAr: "الطلبات والعمليات",
+    shortLabelEn: "Ops",
+    shortLabelAr: "العمليات",
+    icon: ReceiptText,
+    rootPath: "/admin/b/$slug/orders",
+    defaultNavId: "orders",
+  },
+  {
+    id: "catalog",
+    labelEn: "Catalog & Stock",
+    labelAr: "الكتالوج والمخزون",
+    shortLabelEn: "Catalog",
+    shortLabelAr: "الكتالوج",
+    icon: Package,
+    rootPath: "/admin/b/$slug/inventory",
+    defaultNavId: "inventory",
+  },
+  {
+    id: "growth",
+    labelEn: "Customers & Growth",
+    labelAr: "العملاء والنمو",
+    shortLabelEn: "Growth",
+    shortLabelAr: "النمو",
+    icon: Users,
+    rootPath: "/admin/b/$slug/customers",
+    defaultNavId: "customers",
+  },
+  {
+    id: "finance",
+    labelEn: "Finance & Reports",
+    labelAr: "المالية والتقارير",
+    shortLabelEn: "Finance",
+    shortLabelAr: "المالية",
+    icon: BarChart,
+    rootPath: "/admin/b/$slug/reports",
+    defaultNavId: "reports",
+  },
+  {
+    id: "store_setup",
+    labelEn: "Store Setup",
+    labelAr: "إعداد المتجر",
+    shortLabelEn: "Setup",
+    shortLabelAr: "الإعدادات",
+    icon: Settings,
+    rootPath: "/admin/b/$slug/settings",
+    defaultNavId: "settings",
+  },
+];
+
 export interface AdminNavItemConfig {
   id: string;
   to: string;
@@ -83,7 +176,8 @@ export interface AdminNavItemConfig {
   permission?: string;
   adminOnly?: boolean;
   category: MerchantJobCategory;
-  /** @deprecated Use canonical `category` instead */
+  workspace?: AdminWorkspaceId;
+  /** @deprecated Use canonical `category` or `workspace` instead */
   section?: "overview" | "operations" | "growth_finance" | "storefront_settings";
   tier?: NavItemTier;
   badge?: string | number;
@@ -138,12 +232,13 @@ export function getAdminNavItems({
         icon: ReceiptText,
         section: "operations",
         category: "money_reports",
+        workspace: "operations",
       },
     ];
   }
 
   const allItems: AdminNavItemConfig[] = [
-    // Group 1: OVERVIEW / TODAY
+    // 1. TODAY / PULSE
     {
       id: "dashboard",
       to: "/admin/b/$slug/dashboard",
@@ -155,25 +250,11 @@ export function getAdminNavItems({
       icon: LayoutDashboard,
       section: "overview",
       category: "today",
-      tier: "core",
-    },
-    {
-      id: "reports",
-      to: "/admin/b/$slug/reports",
-      params: { slug: activeSlug },
-      labelEn: "Reports",
-      labelAr: lang === "ar" ? "التقارير" : "Reports",
-      descriptionEn:
-        "Comprehensive financial accounting, VAT reports, sales, and profit margin analysis",
-      descriptionAr: "التقارير المحاسبية الشاملة، المبيعات، ضريبة القيمة المضافة، والربحية",
-      icon: BarChart,
-      permission: "manage_orders",
-      section: "overview",
-      category: "money_reports",
+      workspace: "today",
       tier: "core",
     },
 
-    // Group 2: OPERATIONS
+    // 2. OPERATIONS (Orders, Abandoned Carts, Returns)
     {
       id: "orders",
       to: "/admin/b/$slug/orders",
@@ -186,7 +267,23 @@ export function getAdminNavItems({
       permission: "manage_orders",
       section: "operations",
       category: "money_reports",
+      workspace: "operations",
       tier: "core",
+    },
+    {
+      id: "abandoned-carts",
+      to: "/admin/b/$slug/abandoned-carts",
+      params: { slug: activeSlug },
+      labelEn: "Abandoned Carts",
+      labelAr: lang === "ar" ? "السلات المتروكة" : "Abandoned Carts",
+      descriptionEn: "Track abandoned checkouts and recover lost sales with automated follow-ups",
+      descriptionAr: "متابعة السلات غير المكتملة وتذكير العملاء لإتمام الشراء بالواتساب",
+      icon: ShoppingCart,
+      permission: "manage_orders",
+      section: "operations",
+      category: "customers_growth",
+      workspace: "operations",
+      tier: "modular",
     },
     {
       id: "returns",
@@ -201,36 +298,11 @@ export function getAdminNavItems({
       permission: "manage_orders",
       section: "operations",
       category: "money_reports",
+      workspace: "operations",
       tier: "modular",
     },
-    {
-      id: "customers",
-      to: "/admin/b/$slug/customers",
-      params: { slug: activeSlug },
-      labelEn: "Customers",
-      labelAr: t("nav.customers"),
-      descriptionEn: "Customer CRM, purchasing history, VIP segments, and delivery addresses",
-      descriptionAr: "قاعدة بيانات العملاء، سجل المشتريات، والعناوين المفضلة",
-      icon: Users,
-      permission: "manage_customers",
-      section: "operations",
-      category: "customers_growth",
-      tier: "core",
-    },
-    {
-      id: "reviews",
-      to: "/admin/b/$slug/reviews",
-      params: { slug: activeSlug },
-      labelEn: "Customer Reviews",
-      labelAr: lang === "ar" ? "تقييمات العملاء" : "Customer Reviews",
-      descriptionEn: "Review customer ratings, testimonials, and moderate public feedback",
-      descriptionAr: "إدارة ومراجعة تقييمات العملاء وآرائهم على المنتجات وتفعيل ظهورها",
-      icon: MessageSquareHeart,
-      permission: "manage_customers",
-      section: "operations",
-      category: "customers_growth",
-      tier: "modular",
-    },
+
+    // 3. CATALOG & STOCK (Products, Categories, Consignment, Sizing, Import/Export)
     {
       id: "inventory",
       to: "/admin/b/$slug/inventory",
@@ -243,22 +315,8 @@ export function getAdminNavItems({
       permission: "manage_inventory",
       section: "operations",
       category: "products_stock",
+      workspace: "catalog",
       tier: "core",
-    },
-    {
-      id: "incubators",
-      to: "/admin/b/$slug/incubators",
-      params: { slug: activeSlug },
-      labelEn: "Incubators & Consignment",
-      labelAr: lang === "ar" ? "الحاضنات والعُهد" : "Incubators & Consignment",
-      descriptionEn:
-        "Consignment inventory tracking, vendor payouts, and profit-sharing management",
-      descriptionAr: "إدارة بضائع الأمانة، الموردين الخارجيين، ونسب الأرباح المشتركة",
-      icon: Building2,
-      permission: "manage_inventory",
-      section: "operations",
-      category: "products_stock",
-      tier: "modular",
     },
     {
       id: "categories",
@@ -273,6 +331,23 @@ export function getAdminNavItems({
       permission: "manage_inventory",
       section: "operations",
       category: "products_stock",
+      workspace: "catalog",
+      tier: "modular",
+    },
+    {
+      id: "incubators",
+      to: "/admin/b/$slug/incubators",
+      params: { slug: activeSlug },
+      labelEn: "Incubators & Consignment",
+      labelAr: lang === "ar" ? "الحاضنات والعُهد" : "Incubators & Consignment",
+      descriptionEn:
+        "Consignment inventory tracking, vendor payouts, and profit-sharing management",
+      descriptionAr: "إدارة بضائع الأمانة، الموردين الخارجيين، ونسب الأرباح المشتركة",
+      icon: Building2,
+      permission: "manage_inventory",
+      section: "operations",
+      category: "products_stock",
+      workspace: "catalog",
       tier: "modular",
     },
     {
@@ -288,6 +363,7 @@ export function getAdminNavItems({
       permission: "manage_inventory",
       section: "operations",
       category: "products_stock",
+      workspace: "catalog",
       tier: "modular",
     },
     {
@@ -303,6 +379,7 @@ export function getAdminNavItems({
       permission: "manage_inventory",
       section: "operations",
       category: "products_stock",
+      workspace: "catalog",
       tier: "modular",
     },
     {
@@ -318,22 +395,39 @@ export function getAdminNavItems({
       permission: "manage_inventory",
       section: "operations",
       category: "products_stock",
+      workspace: "catalog",
       tier: "modular",
     },
 
-    // Group 3: GROWTH & FINANCE
+    // 4. CUSTOMERS & GROWTH (CRM, Reviews, Campaigns, Discounts, Loyalty, Content Studio)
     {
-      id: "content-studio",
-      to: "/admin/b/$slug/content-studio",
+      id: "customers",
+      to: "/admin/b/$slug/customers",
       params: { slug: activeSlug },
-      labelEn: "Content Studio",
-      labelAr: lang === "ar" ? "استديو المحتوى" : "Content Studio",
-      descriptionEn: "Create on-brand product stories and social posts ready to publish",
-      descriptionAr: "صمّم ستوريات ومنشورات احترافية من صور ومنتجات متجرك",
-      icon: Palette,
-      permission: "manage_inventory",
-      section: "growth_finance",
+      labelEn: "Customers",
+      labelAr: t("nav.customers"),
+      descriptionEn: "Customer CRM, purchasing history, VIP segments, and delivery addresses",
+      descriptionAr: "قاعدة بيانات العملاء، سجل المشتريات، والعناوين المفضلة",
+      icon: Users,
+      permission: "manage_customers",
+      section: "operations",
       category: "customers_growth",
+      workspace: "growth",
+      tier: "core",
+    },
+    {
+      id: "reviews",
+      to: "/admin/b/$slug/reviews",
+      params: { slug: activeSlug },
+      labelEn: "Customer Reviews",
+      labelAr: lang === "ar" ? "تقييمات العملاء" : "Customer Reviews",
+      descriptionEn: "Review customer ratings, testimonials, and moderate public feedback",
+      descriptionAr: "إدارة ومراجعة تقييمات العملاء وآرائهم على المنتجات وتفعيل ظهورها",
+      icon: MessageSquareHeart,
+      permission: "manage_customers",
+      section: "operations",
+      category: "customers_growth",
+      workspace: "growth",
       tier: "modular",
     },
     {
@@ -348,6 +442,7 @@ export function getAdminNavItems({
       permission: "manage_orders",
       section: "growth_finance",
       category: "customers_growth",
+      workspace: "growth",
       tier: "modular",
     },
     {
@@ -362,6 +457,7 @@ export function getAdminNavItems({
       permission: "manage_settings",
       section: "growth_finance",
       category: "customers_growth",
+      workspace: "growth",
       tier: "modular",
     },
     {
@@ -376,21 +472,41 @@ export function getAdminNavItems({
       permission: "manage_settings",
       section: "growth_finance",
       category: "customers_growth",
+      workspace: "growth",
       tier: "modular",
     },
     {
-      id: "abandoned-carts",
-      to: "/admin/b/$slug/abandoned-carts",
+      id: "content-studio",
+      to: "/admin/b/$slug/content-studio",
       params: { slug: activeSlug },
-      labelEn: "Abandoned Carts",
-      labelAr: lang === "ar" ? "السلات المتروكة" : "Abandoned Carts",
-      descriptionEn: "Track abandoned checkouts and recover lost sales with automated follow-ups",
-      descriptionAr: "متابعة السلات غير المكتملة وتذكير العملاء لإتمام الشراء بالواتساب",
-      icon: ShoppingCart,
-      permission: "manage_orders",
+      labelEn: "Content Studio",
+      labelAr: lang === "ar" ? "استديو المحتوى" : "Content Studio",
+      descriptionEn: "Create on-brand product stories and social posts ready to publish",
+      descriptionAr: "صمّم ستوريات ومنشورات احترافية من صور ومنتجات متجرك",
+      icon: Palette,
+      permission: "manage_inventory",
       section: "growth_finance",
       category: "customers_growth",
+      workspace: "growth",
       tier: "modular",
+    },
+
+    // 5. FINANCE & REPORTS (Reports, Expenses)
+    {
+      id: "reports",
+      to: "/admin/b/$slug/reports",
+      params: { slug: activeSlug },
+      labelEn: "Reports",
+      labelAr: lang === "ar" ? "التقارير" : "Reports",
+      descriptionEn:
+        "Comprehensive financial accounting, VAT reports, sales, and profit margin analysis",
+      descriptionAr: "التقارير المحاسبية الشاملة، المبيعات، ضريبة القيمة المضافة، والربحية",
+      icon: BarChart,
+      permission: "manage_orders",
+      section: "overview",
+      category: "money_reports",
+      workspace: "finance",
+      tier: "core",
     },
     {
       id: "expenses",
@@ -404,10 +520,41 @@ export function getAdminNavItems({
       permission: "view_financials",
       section: "growth_finance",
       category: "money_reports",
+      workspace: "finance",
       tier: "modular",
     },
 
-    // Group 4: STOREFRONT & SETTINGS
+    // 6. STORE SETUP & SETTINGS (Settings, Team, Integrations, Comms, Pages, Add-ons)
+    {
+      id: "settings",
+      to: "/admin/b/$slug/settings",
+      params: { slug: activeSlug },
+      labelEn: "Settings",
+      labelAr: t("nav.settings"),
+      descriptionEn: "Store profile, currency, branding, working hours, and checkout preferences",
+      descriptionAr: "إعدادات المتجر، العملة، الهوية البصرية، أوقات العمل، وخيارات الدفع",
+      icon: Settings,
+      permission: "manage_settings",
+      section: "storefront_settings",
+      category: "store_setup",
+      workspace: "store_setup",
+      tier: "core",
+    },
+    {
+      id: "team",
+      to: "/admin/b/$slug/team",
+      params: { slug: activeSlug },
+      labelEn: "Team & Permissions",
+      labelAr: lang === "ar" ? "فريق العمل والصلاحيات" : "Team & Permissions",
+      descriptionEn: "Manage team members, staff invites, and granular permission access",
+      descriptionAr: "إضافة الموظفين وتعيين الصلاحيات وأدوار الإدارة لكل عضو في الفريق",
+      icon: Shield,
+      permission: "manage_team",
+      section: "storefront_settings",
+      category: "store_setup",
+      workspace: "store_setup",
+      tier: "modular",
+    },
     {
       id: "integrations",
       to: "/admin/b/$slug/integrations",
@@ -420,6 +567,7 @@ export function getAdminNavItems({
       adminOnly: true,
       section: "storefront_settings",
       category: "store_setup",
+      workspace: "store_setup",
       tier: "modular",
     },
     {
@@ -435,6 +583,7 @@ export function getAdminNavItems({
       permission: "manage_settings",
       section: "storefront_settings",
       category: "store_setup",
+      workspace: "store_setup",
       tier: "modular",
     },
     {
@@ -449,20 +598,7 @@ export function getAdminNavItems({
       permission: "manage_settings",
       section: "storefront_settings",
       category: "store_setup",
-      tier: "modular",
-    },
-    {
-      id: "team",
-      to: "/admin/b/$slug/team",
-      params: { slug: activeSlug },
-      labelEn: "Team & Permissions",
-      labelAr: lang === "ar" ? "فريق العمل والصلاحيات" : "Team & Permissions",
-      descriptionEn: "Manage team members, staff invites, and granular permission access",
-      descriptionAr: "إضافة الموظفين وتعيين الصلاحيات وأدوار الإدارة لكل عضو في الفريق",
-      icon: Shield,
-      permission: "manage_team",
-      section: "storefront_settings",
-      category: "store_setup",
+      workspace: "store_setup",
       tier: "modular",
     },
     {
@@ -477,20 +613,7 @@ export function getAdminNavItems({
       permission: "manage_settings",
       section: "storefront_settings",
       category: "store_setup",
-      tier: "core",
-    },
-    {
-      id: "settings",
-      to: "/admin/b/$slug/settings",
-      params: { slug: activeSlug },
-      labelEn: "Settings",
-      labelAr: t("nav.settings"),
-      descriptionEn: "Store profile, currency, branding, working hours, and checkout preferences",
-      descriptionAr: "إعدادات المتجر، العملة، الهوية البصرية، أوقات العمل، وخيارات الدفع",
-      icon: Settings,
-      permission: "manage_settings",
-      section: "storefront_settings",
-      category: "store_setup",
+      workspace: "store_setup",
       tier: "core",
     },
   ];
@@ -507,3 +630,43 @@ export function getAdminNavItems({
     return true;
   });
 }
+
+export function getWorkspaceCategory(
+  pathname: string,
+  navItems: AdminNavItemConfig[],
+): AdminWorkspaceId | MerchantJobCategory | null {
+  for (const item of navItems) {
+    const targetPath = item.to.replace("$slug", item.params?.slug ?? "");
+    if (pathname.startsWith(targetPath)) {
+      return item.workspace || item.category;
+    }
+  }
+  return null;
+}
+
+export function getWorkspaceGroup(
+  workspaceId: AdminWorkspaceId | MerchantJobCategory | null | undefined,
+): (AdminWorkspaceGroup | MerchantJobGroup) & { icon?: LucideIcon } | undefined {
+  if (!workspaceId) return undefined;
+  const ws = ADMIN_WORKSPACES.find((w) => w.id === workspaceId);
+  if (ws) return ws;
+  return MERCHANT_JOB_GROUPS.find((g) => g.id === workspaceId);
+}
+
+export function getWorkspaceSubTabs(
+  navItems: AdminNavItemConfig[],
+  workspaceId: AdminWorkspaceId | MerchantJobCategory | string,
+  pathname: string,
+  slug?: string | null,
+): {
+  items: AdminNavItemConfig[];
+  activeItem?: AdminNavItemConfig;
+} {
+  const items = navItems.filter((item) => (item.workspace || item.category) === workspaceId);
+  const activeItem = items.find((item) => {
+    const targetPath = item.to.replace("$slug", item.params?.slug ?? slug ?? "");
+    return pathname.startsWith(targetPath);
+  });
+  return { items, activeItem };
+}
+

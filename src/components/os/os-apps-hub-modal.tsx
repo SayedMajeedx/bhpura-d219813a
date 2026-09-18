@@ -38,7 +38,14 @@ export interface OsAppsHubModalProps {
   onPinnedChange?: (pinnedIds: string[]) => void;
 }
 
-type CategoryTab = "all" | "pinned" | MerchantJobCategory;
+type CategoryTab =
+  | "all"
+  | "pinned"
+  | "operations"
+  | "catalog"
+  | "growth"
+  | "finance"
+  | "store_setup";
 
 export function OsAppsHubModal({
   open,
@@ -88,29 +95,30 @@ export function OsAppsHubModal({
     setPinnedIds([...DEFAULT_PINNED_IDS]);
   }, [activeSlug, open]);
 
-  const togglePin = (itemId: string, e?: React.MouseEvent) => {
-    if (e) {
-      e.stopPropagation();
-    }
+  const togglePin = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
     setPinnedIds((prev) => {
-      const isPinned = prev.includes(itemId);
-      const next = isPinned ? prev.filter((id) => id !== itemId) : [...prev, itemId];
-      if (activeSlug && typeof window !== "undefined") {
-        try {
+      const next = prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id];
+      try {
+        if (activeSlug) {
           localStorage.setItem(`boutq_pinned_nav_${activeSlug}`, JSON.stringify(next));
-          window.dispatchEvent(new Event("boutq-pinned-nav-updated"));
-        } catch {
-          // ignore
         }
+      } catch {
+        // ignore
       }
       onPinnedChange?.(next);
       return next;
     });
   };
 
-  // Modular items only
+  // Modular items only (tier === 'modular' or unassigned to core)
   const modularItems = React.useMemo(() => {
-    return navItems.filter((item) => item.tier === "modular");
+    return navItems.filter((item) => {
+      if (item.tier === "modular") return true;
+      if (item.id === "dashboard") return false;
+      return true;
+    });
   }, [navItems]);
 
   const pinnedCount = React.useMemo(() => {
@@ -132,27 +140,33 @@ export function OsAppsHubModal({
       icon: Star,
     },
     {
-      id: "products_stock" as const,
-      label: isAr ? "المنتجات والمخزون" : "Products & Stock",
-      count: modularItems.filter((i) => i.category === "products_stock").length,
+      id: "operations" as const,
+      label: isAr ? "العمليات والطلبات" : "Operations",
+      count: modularItems.filter((i) => (i.workspace || i.category) === "operations").length,
+      icon: Layers,
+    },
+    {
+      id: "catalog" as const,
+      label: isAr ? "الكتالوج والمخزون" : "Catalog & Stock",
+      count: modularItems.filter((i) => (i.workspace || i.category) === "catalog").length,
       icon: Boxes,
     },
     {
-      id: "customers_growth" as const,
+      id: "growth" as const,
       label: isAr ? "العملاء والنمو" : "Customers & Growth",
-      count: modularItems.filter((i) => i.category === "customers_growth").length,
+      count: modularItems.filter((i) => (i.workspace || i.category) === "growth").length,
       icon: Zap,
     },
     {
-      id: "money_reports" as const,
-      label: isAr ? "المالية والتقارير" : "Money & Reports",
-      count: modularItems.filter((i) => i.category === "money_reports").length,
+      id: "finance" as const,
+      label: isAr ? "المالية والتقارير" : "Finance & Reports",
+      count: modularItems.filter((i) => (i.workspace || i.category) === "finance").length,
       icon: Wallet,
     },
     {
       id: "store_setup" as const,
       label: isAr ? "إعداد المتجر" : "Store Setup",
-      count: modularItems.filter((i) => i.category === "store_setup").length,
+      count: modularItems.filter((i) => (i.workspace || i.category) === "store_setup").length,
       icon: Sliders,
     },
   ];
@@ -164,7 +178,7 @@ export function OsAppsHubModal({
       if (selectedCategory === "pinned") {
         if (!pinnedIds.includes(item.id)) return false;
       } else if (selectedCategory !== "all") {
-        if (item.category !== selectedCategory) {
+        if ((item.workspace || item.category) !== selectedCategory) {
           return false;
         }
       }

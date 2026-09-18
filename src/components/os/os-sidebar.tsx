@@ -17,6 +17,7 @@ import { OsNavItem } from "./os-nav-item";
 import { OsBrandSwitcher, type BrandRow } from "./os-brand-switcher";
 import { OsAppsHubModal } from "./os-apps-hub-modal";
 import {
+  ADMIN_WORKSPACES,
   DEFAULT_PINNED_IDS,
   MERCHANT_JOB_GROUPS,
   type AdminNavItemConfig,
@@ -180,8 +181,8 @@ export function OsSidebar({
 
   const jobGroups = React.useMemo(() => {
     if (isPlatformMode || isCourier) return [];
-    return MERCHANT_JOB_GROUPS.map((group) => {
-      const items = navItems.filter((i) => (i.category || "today") === group.id);
+    return ADMIN_WORKSPACES.map((group) => {
+      const items = navItems.filter((i) => (i.workspace || i.category || "today") === group.id);
       return {
         ...group,
         items,
@@ -369,15 +370,33 @@ export function OsSidebar({
                 </div>
               )}
 
-              {/* 5 Job Groups */}
-              {jobGroups.map((group) => (
-                <div key={group.id} className="space-y-1">
-                  <div className="flex items-center justify-between px-3 mt-1.5 mb-1">
-                    <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                      {isAr ? group.labelAr : group.labelEn}
-                    </span>
-                  </div>
-                  <div className="flex flex-col gap-1">
+              {/* 6 Master Workspaces */}
+              {jobGroups.map((group) => {
+                const GroupIcon = group.icon;
+                const isCurrentWorkspace = group.items.some((i) => {
+                  const targetPath = i.to.replace("$slug", i.params?.slug ?? "");
+                  return pathname.startsWith(targetPath);
+                });
+
+                return (
+                  <div key={group.id} className="space-y-1">
+                    <div
+                      className={cn(
+                        "flex items-center justify-between px-3 py-1 rounded-lg text-xs font-bold tracking-wider transition-colors",
+                        isCurrentWorkspace
+                          ? "text-primary bg-primary/10"
+                          : "text-muted-foreground",
+                      )}
+                    >
+                      <span className="flex items-center gap-1.5 truncate uppercase">
+                        {GroupIcon && <GroupIcon className="h-3 w-3 shrink-0" />}
+                        <span>{isAr ? group.labelAr : group.labelEn}</span>
+                      </span>
+                      <span className="text-[10px] font-semibold opacity-70 px-1.5 py-0.5 rounded bg-muted/60">
+                        {group.items.length}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-1">
                     {group.items.map((item) => {
                       const targetPath = item.to.replace("$slug", item.params?.slug ?? "");
                       const active = pathname.startsWith(targetPath);
@@ -432,9 +451,10 @@ export function OsSidebar({
                     })}
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (
+              );
+            })}
+          </div>
+        ) : (
             /* Focus Mode (or Collapsed / Courier / Platform Mode) */
             <>
               {/* Core Daily Essentials */}
