@@ -74,6 +74,94 @@ export function formatOrderStatus(
   return getOrderStatusLabel(status, lang);
 }
 
+export interface SplitCompositeSizeResult {
+  isComposite: boolean;
+  size: string;
+  unit: string;
+  option: string;
+  cleanLabelAr: string;
+  cleanLabelEn: string;
+}
+
+/**
+ * Detects composite variant strings entered into the size field
+ * (e.g. "700 - عادية", "700g - بدون سكر", "500 / فستق")
+ * and extracts the clean numeric size, resolved unit, and option label.
+ */
+export function splitCompositeVariantSize(
+  rawSize?: string | null,
+  rawUnit?: string | null,
+): SplitCompositeSizeResult {
+  const str = (rawSize ?? "").trim();
+  const fallbackUnit = (rawUnit ?? "").trim();
+
+  if (!str) {
+    return {
+      isComposite: false,
+      size: "",
+      unit: fallbackUnit,
+      option: "",
+      cleanLabelAr: "",
+      cleanLabelEn: "",
+    };
+  }
+
+  const compositeMatch = str.match(
+    /^(\d+(?:\.\d+)?)\s*(g|kg|ml|l|cm|mm|غرام|جرام|كيلوغرام|كغ|مل|لتر)?\s*[-–—/:]\s*(.+)$/i,
+  );
+
+  if (compositeMatch) {
+    const sizeNum = compositeMatch[1];
+    const embeddedUnit = compositeMatch[2] ? compositeMatch[2].toLowerCase() : "";
+    const optionText = compositeMatch[3].trim();
+
+    let resolvedUnit = fallbackUnit;
+    if (embeddedUnit) {
+      if (["غرام", "جرام", "g"].includes(embeddedUnit)) resolvedUnit = "g";
+      else if (["كيلوغرام", "كغ", "kg"].includes(embeddedUnit)) resolvedUnit = "kg";
+      else if (["مل", "ml"].includes(embeddedUnit)) resolvedUnit = "ml";
+      else if (["لتر", "l"].includes(embeddedUnit)) resolvedUnit = "l";
+      else if (["سم", "cm"].includes(embeddedUnit)) resolvedUnit = "cm";
+    }
+
+    const unitLabelAr =
+      resolvedUnit === "g"
+        ? "غرام"
+        : resolvedUnit === "kg"
+          ? "كيلوغرام"
+          : resolvedUnit === "ml"
+            ? "مل"
+            : resolvedUnit === "l"
+              ? "لتر"
+              : resolvedUnit;
+
+    const cleanLabelAr = unitLabelAr
+      ? `${sizeNum} ${unitLabelAr} · ${optionText}`
+      : `${sizeNum} · ${optionText}`;
+    const cleanLabelEn = resolvedUnit
+      ? `${sizeNum}${resolvedUnit} · ${optionText}`
+      : `${sizeNum} · ${optionText}`;
+
+    return {
+      isComposite: true,
+      size: sizeNum,
+      unit: resolvedUnit,
+      option: optionText,
+      cleanLabelAr,
+      cleanLabelEn,
+    };
+  }
+
+  return {
+    isComposite: false,
+    size: str,
+    unit: fallbackUnit,
+    option: "",
+    cleanLabelAr: str,
+    cleanLabelEn: str,
+  };
+}
+
 /** Format a size value with an optional unit, translating known units to Arabic. */
 export function formatSizeWithUnit(
   size: string | null | undefined,
@@ -83,6 +171,13 @@ export function formatSizeWithUnit(
   const s = (size ?? "").trim();
   if (!s) return "";
   const u = (unit ?? "").trim();
+
+  // If size has composite pattern like "700 - عادية", format cleanly as "700 غرام · عادية"
+  const split = splitCompositeVariantSize(s, u);
+  if (split.isComposite) {
+    return lang === "ar" ? split.cleanLabelAr : split.cleanLabelEn;
+  }
+
   if (!u) return s;
 
   const key = u.toLowerCase();

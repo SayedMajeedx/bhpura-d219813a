@@ -54,7 +54,7 @@ import {
   Instagram,
 } from "lucide-react";
 import { toast } from "sonner";
-import { formatMoney, formatSizeWithUnit } from "@/lib/format";
+import { formatMoney, formatSizeWithUnit, splitCompositeVariantSize } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
 import { ActivityLogList } from "@/components/activity-log-list";
 import { PrintLabelButton, printLabels, type LabelData } from "@/components/barcode-label";
@@ -5071,10 +5071,21 @@ function VariantDesktopRow({
   }, [v.size, v.size_unit, v.color, v.fabric]);
 
   const saveAttributes = () => {
+    const split = splitCompositeVariantSize(sizeVal, sizeUnitVal);
+    let finalSize = sizeVal || null;
+    let finalUnit = sizeUnitVal || null;
+    let finalColor = colorVal || null;
+
+    if (split.isComposite && !finalColor) {
+      finalSize = split.size;
+      finalUnit = split.unit;
+      finalColor = split.option;
+    }
+
     update(v, {
-      size: sizeVal || null,
-      size_unit: sizeUnitVal || null,
-      color: colorVal || null,
+      size: finalSize,
+      size_unit: finalUnit,
+      color: finalColor,
       fabric: fabricVal || null,
     });
     setIsEditingAttrs(false);
@@ -5189,34 +5200,45 @@ function VariantDesktopRow({
           </div>
         ) : (
           <div className="flex items-center gap-1.5 flex-wrap group/v">
-            {[
-              sizeAxis.visible && v.size,
-              colorAxis.visible && v.color,
-              fabricAxis.visible && v.fabric,
-            ].some(Boolean) ? (
-              <>
-                {sizeAxis.visible && v.size && (
-                  <span className="inline-flex items-center bg-primary/5 text-primary text-xs font-semibold px-2 py-0.5 border border-primary/10 rounded-md">
-                    {formatSizeWithUnit(v.size, v.size_unit, isAr ? "ar" : "en")}
+            {(() => {
+              const split = splitCompositeVariantSize(v.size, v.size_unit);
+              const hasAttributes = Boolean(v.size || v.color || v.fabric);
+
+              if (!hasAttributes) {
+                return (
+                  <span className="text-muted-foreground text-xs italic">
+                    {isAr ? "متغير قياسي" : "Standard Variant"}
                   </span>
-                )}
-                {colorAxis.visible && v.color && (
-                  <span className="inline-flex items-center bg-muted text-foreground text-xs font-semibold px-2 py-0.5 border border-border rounded-md gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground shrink-0" />
-                    {v.color}
-                  </span>
-                )}
-                {fabricAxis.visible && v.fabric && (
-                  <span className="inline-flex items-center bg-muted text-foreground text-xs font-semibold px-2 py-0.5 border border-border rounded-md">
-                    {v.fabric}
-                  </span>
-                )}
-              </>
-            ) : (
-              <span className="text-muted-foreground text-xs italic">
-                {isAr ? "متغير قياسي" : "Standard Variant"}
-              </span>
-            )}
+                );
+              }
+
+              return (
+                <>
+                  {v.size && (
+                    <span className="inline-flex items-center bg-primary/5 text-primary text-xs font-semibold px-2 py-0.5 border border-primary/10 rounded-md">
+                      {split.isComposite ? `${split.size} ${isAr ? (split.unit === "g" ? "غرام" : split.unit) : split.unit}` : formatSizeWithUnit(v.size, v.size_unit, isAr ? "ar" : "en")}
+                    </span>
+                  )}
+                  {split.isComposite && !v.color && split.option && (
+                    <span className="inline-flex items-center bg-primary/10 text-primary text-xs font-semibold px-2 py-0.5 border border-primary/20 rounded-md gap-1">
+                      <Sparkles className="h-3 w-3" />
+                      {split.option}
+                    </span>
+                  )}
+                  {v.color && (
+                    <span className="inline-flex items-center bg-muted text-foreground text-xs font-semibold px-2 py-0.5 border border-border rounded-md gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground shrink-0" />
+                      {v.color}
+                    </span>
+                  )}
+                  {v.fabric && (
+                    <span className="inline-flex items-center bg-muted text-foreground text-xs font-semibold px-2 py-0.5 border border-border rounded-md">
+                      {v.fabric}
+                    </span>
+                  )}
+                </>
+              );
+            })()}
 
             {!renderBarcodeCol && (v.barcode || v.sku) && (
               <span className="inline-flex items-center gap-1 font-mono text-xs text-muted-foreground bg-muted/70 px-1.5 py-0.5 rounded-md border border-border-subtle shrink-0">
@@ -5532,29 +5554,44 @@ function VariantMobileCard({
             onChange={onToggleSelect}
           />
           <div className="flex items-center gap-1.5 flex-wrap">
-            {[isSizeVis && v.size, isColorVis && v.color, isFabricVis && v.fabric].some(Boolean) ? (
-              <>
-                {isSizeVis && v.size && (
-                  <span className="inline-flex items-center bg-primary/5 text-primary text-xs font-bold px-1.5 py-0.5 border border-primary/10 rounded-sm">
-                    {formatSizeWithUnit(v.size, v.size_unit, isAr ? "ar" : "en")}
+            {(() => {
+              const split = splitCompositeVariantSize(v.size, v.size_unit);
+              const hasAttributes = Boolean(v.size || v.color || v.fabric);
+
+              if (!hasAttributes) {
+                return (
+                  <span className="text-muted-foreground text-xs italic font-semibold">
+                    {isAr ? "متغير قياسي" : "Standard Variant"}
                   </span>
-                )}
-                {isColorVis && v.color && (
-                  <span className="inline-flex items-center bg-muted text-foreground text-xs font-bold px-1.5 py-0.5 border border-border rounded-sm">
-                    {v.color}
-                  </span>
-                )}
-                {isFabricVis && v.fabric && (
-                  <span className="inline-flex items-center bg-muted text-foreground text-xs font-bold px-1.5 py-0.5 border border-border rounded-sm">
-                    {v.fabric}
-                  </span>
-                )}
-              </>
-            ) : (
-              <span className="text-muted-foreground text-xs italic font-semibold">
-                {isAr ? "متغير قياسي" : "Standard Variant"}
-              </span>
-            )}
+                );
+              }
+
+              return (
+                <>
+                  {v.size && (
+                    <span className="inline-flex items-center bg-primary/5 text-primary text-xs font-bold px-1.5 py-0.5 border border-primary/10 rounded-sm">
+                      {split.isComposite ? `${split.size} ${isAr ? (split.unit === "g" ? "غرام" : split.unit) : split.unit}` : formatSizeWithUnit(v.size, v.size_unit, isAr ? "ar" : "en")}
+                    </span>
+                  )}
+                  {split.isComposite && !v.color && split.option && (
+                    <span className="inline-flex items-center bg-primary/10 text-primary text-xs font-bold px-1.5 py-0.5 border border-primary/20 rounded-sm gap-1">
+                      <Sparkles className="h-2.5 w-2.5" />
+                      {split.option}
+                    </span>
+                  )}
+                  {v.color && (
+                    <span className="inline-flex items-center bg-muted text-foreground text-xs font-bold px-1.5 py-0.5 border border-border rounded-sm">
+                      {v.color}
+                    </span>
+                  )}
+                  {v.fabric && (
+                    <span className="inline-flex items-center bg-muted text-foreground text-xs font-bold px-1.5 py-0.5 border border-border rounded-sm">
+                      {v.fabric}
+                    </span>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
         <div onClick={(e) => e.stopPropagation()}>
@@ -5807,18 +5844,81 @@ function VariantList({
     addonDefaults: addonAxisDefaults,
     lang: isAr ? "ar" : "en",
   });
-  const colorAxis = resolveVariantAxis({
+  const rawColorAxis = resolveVariantAxis({
     axis: "color",
     product,
     addonDefaults: addonAxisDefaults,
     lang: isAr ? "ar" : "en",
   });
+  const hasVariantColors = useMemo(
+    () => variants.some((v) => Boolean(v.color && v.color.trim())),
+    [variants],
+  );
+  const colorAxis = useMemo(
+    () => ({
+      ...rawColorAxis,
+      visible: rawColorAxis.visible || hasVariantColors,
+    }),
+    [rawColorAxis, hasVariantColors],
+  );
   const fabricAxis = resolveVariantAxis({
     axis: "fabric",
     product,
     addonDefaults: addonAxisDefaults,
     lang: isAr ? "ar" : "en",
   });
+
+  // 1-Click Auto-Healer: Detect variants where size contains merged attributes (e.g. "700 - عادية" with color null)
+  const [isHealing, setIsHealing] = useState(false);
+  const compositeVariants = useMemo(() => {
+    return variants.filter((v) => {
+      if (v.color && v.color.trim()) return false;
+      const split = splitCompositeVariantSize(v.size, v.size_unit);
+      return split.isComposite;
+    });
+  }, [variants]);
+
+  const handleAutoHealCompositeVariants = async () => {
+    if (compositeVariants.length === 0) return;
+    setIsHealing(true);
+    try {
+      for (const v of compositeVariants) {
+        const split = splitCompositeVariantSize(v.size, v.size_unit);
+        if (split.isComposite) {
+          const { error: vErr } = await (supabase.from("product_variants") as any)
+            .update({
+              size: split.size,
+              size_unit: split.unit || v.size_unit || "g",
+              color: split.option,
+            })
+            .eq("id", v.id);
+          if (vErr) throw vErr;
+        }
+      }
+
+      if (!product?.variant_label_color_ar) {
+        const { error: pErr } = await (supabase.from("products") as any)
+          .update({
+            variant_label_color_ar: colorAxis.label || "النكهة / الخيار",
+            variant_label_color_en: "Flavor / Option",
+          })
+          .eq("id", productId);
+        if (pErr) console.warn("Could not update product axis label:", pErr);
+      }
+
+      toast.success(
+        isAr
+          ? `تم بنجاح فرز وتصحيح ${compositeVariants.length} متغيرات وتفعيل محور النكهات!`
+          : `Successfully healed ${compositeVariants.length} variants into clean sizes & options!`,
+      );
+      onChanged();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to auto-heal variants");
+    } finally {
+      setIsHealing(false);
+    }
+  };
+
   const [adding, setAdding] = useState(false);
   const empty = {
     size: "",
@@ -5884,13 +5984,25 @@ function VariantList({
       );
       return;
     }
+
+    const split = splitCompositeVariantSize(row.size, row.size_unit);
+    let finalSize = row.size;
+    let finalUnit = row.size_unit;
+    let finalColor = row.color;
+
+    if (split.isComposite && !finalColor) {
+      finalSize = split.size;
+      finalUnit = split.unit;
+      finalColor = split.option;
+    }
+
     const { error } = await (supabase.from("product_variants") as any).insert({
       user_id: user.id,
       brand_id: brand.id,
       product_id: productId,
-      size: (sizeAxis.visible ? row.size : null) || null,
-      size_unit: (sizeAxis.visible ? row.size_unit : null) || null,
-      color: (colorAxis.visible ? row.color : null) || null,
+      size: (sizeAxis.visible ? finalSize : null) || null,
+      size_unit: (sizeAxis.visible ? finalUnit : null) || null,
+      color: (colorAxis.visible || finalColor ? finalColor : null) || null,
       fabric: (fabricAxis.visible ? row.fabric : null) || null,
       sku: row.sku || null,
       barcode: row.barcode.trim() || null,
@@ -5908,6 +6020,16 @@ function VariantList({
       image_url: row.image_url || null,
     });
     if (error) return toast.error(error.message);
+
+    if (finalColor && !product?.variant_label_color_ar) {
+      await (supabase.from("products") as any)
+        .update({
+          variant_label_color_ar: colorAxis.label || "النكهة / الخيار",
+          variant_label_color_en: "Flavor / Option",
+        })
+        .eq("id", productId);
+    }
+
     if (variants.length === 0) {
       const { error: activationError } = await supabase
         .from("products")
@@ -6135,6 +6257,51 @@ function VariantList({
 
   return (
     <div className="mt-4 border-t border-border pt-4">
+      {/* 1-Click Smart Split & Auto-Healer Banner */}
+      {compositeVariants.length > 0 && (
+        <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="flex items-start sm:items-center gap-2.5">
+            <span className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0 mt-0.5 sm:mt-0">
+              <Sparkles className="h-4 w-4" />
+            </span>
+            <div className="text-xs">
+              <span className="font-bold text-foreground block sm:inline">
+                {isAr
+                  ? `رصد النظام دمجاً للوزن والنكهة في (${compositeVariants.length}) متغيرات:`
+                  : `Detected merged size and flavor in (${compositeVariants.length}) variants:`}
+              </span>{" "}
+              <span className="text-muted-foreground">
+                {compositeVariants
+                  .slice(0, 3)
+                  .map((v) => `"${v.size}"`)
+                  .join("، ")}
+                {isAr
+                  ? " — هل ترغب في فرزها وتوزيعها تلقائياً إلى محورين مستقلين؟"
+                  : " — Would you like to automatically split them into separate weight and flavor axes?"}
+              </span>
+            </div>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            disabled={isHealing}
+            onClick={handleAutoHealCompositeVariants}
+            className="shrink-0 h-8 text-xs font-bold gap-1.5 w-full sm:w-auto"
+          >
+            {isHealing ? (
+              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Zap className="h-3.5 w-3.5" />
+            )}
+            <span>
+              {isAr
+                ? "فرز وتصحيح المتغيرات تلقائياً (بنقرة واحدة)"
+                : "Auto-Heal & Split Variants (1-Click)"}
+            </span>
+          </Button>
+        </div>
+      )}
+
       {/* Mobile Stacked Card View */}
       <div className="space-y-4 md:hidden">
         {variants.map((v) => (

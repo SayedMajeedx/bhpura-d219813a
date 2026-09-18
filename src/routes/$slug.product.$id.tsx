@@ -615,6 +615,26 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     );
   }, [uniqueFabrics, selectedColor, selectedSize, variants]);
 
+  const isVisualColorAxis = useMemo(() => {
+    const label = (resolvedAxes.color.label || "").toLowerCase();
+    const isColorLabel = label.includes("لون") || label.includes("color");
+    const hasHexMatch = uniqueColors.some((c) => Boolean(resolveColorHex(c)));
+    return isColorLabel && hasHexMatch;
+  }, [resolvedAxes.color.label, uniqueColors]);
+
+  // Pre-select single options if an axis has only 1 choice available
+  useEffect(() => {
+    if (uniqueSizes.length === 1 && !selectedSize) {
+      setSelectedSize(uniqueSizes[0]);
+    }
+  }, [uniqueSizes, selectedSize]);
+
+  useEffect(() => {
+    if (uniqueColors.length === 1 && !selectedColor) {
+      setSelectedColor(uniqueColors[0]);
+    }
+  }, [uniqueColors, selectedColor]);
+
   // Auto-initialize attributes only when a single variant is available
   useEffect(() => {
     if (variants.length === 1 && !variantId) {
@@ -1346,61 +1366,90 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 </div>
               )}
 
-              {/* 🔵 Circular Color Swatches */}
-              {uniqueColors.length > 0 && resolvedAxes.color.visible && (
-                <div>
-                  <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
-                    <span>{resolvedAxes.color.label}:</span>
-                    <span className="text-muted-foreground font-normal">{selectedColor}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2.5">
-                    {uniqueColors.map((color) => {
-                      const active = selectedColor === color;
-                      const oos = !isTailoringActive && Boolean(isColorOutOfStock[color]);
-                      const hex = resolveColorHex(color);
-                      const ringStyle = active ? { borderColor: primary } : {};
-                      return (
-                        <Button
-                          key={color}
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setSelectedColor(color);
-                            setErrorMsg(null);
-                          }}
-                          className={`h-11 w-11 rounded-full border-2 p-0 relative ${
-                            active ? "scale-110 shadow-sm" : "border-transparent hover:scale-105"
-                          } ${oos ? "opacity-45 cursor-not-allowed" : ""}`}
-                          style={ringStyle}
-                          title={
-                            color + (oos ? ` (${t("غير متوفر جاهز", "out of ready stock")})` : "")
-                          }
-                          aria-label={color}
-                        >
-                          {hex ? (
-                            <span
-                              className="h-7 w-7 rounded-full border shadow-inner block relative overflow-hidden"
-                              style={{ backgroundColor: hex }}
+              {/* 🔵 Circular Color Swatches OR 🏷️ Option Pills (Flavors / Types / Roasts) */}
+              {uniqueColors.length > 0 &&
+                (resolvedAxes.color.visible || uniqueColors.length > 1) && (
+                  <div>
+                    <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+                      <span>{resolvedAxes.color.label || (lang === "ar" ? "الخيار" : "Option")}:</span>
+                      <span className="text-muted-foreground font-normal">{selectedColor}</span>
+                    </div>
+                    {isVisualColorAxis ? (
+                      <div className="flex flex-wrap gap-2.5">
+                        {uniqueColors.map((color) => {
+                          const active = selectedColor === color;
+                          const oos = !isTailoringActive && Boolean(isColorOutOfStock[color]);
+                          const hex = resolveColorHex(color);
+                          const ringStyle = active ? { borderColor: primary } : {};
+                          return (
+                            <Button
+                              key={color}
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setSelectedColor(color);
+                                setErrorMsg(null);
+                              }}
+                              className={`h-11 w-11 rounded-full border-2 p-0 relative ${
+                                active ? "scale-110 shadow-sm" : "border-transparent hover:scale-105"
+                              } ${oos ? "opacity-45 cursor-not-allowed" : ""}`}
+                              style={ringStyle}
+                              title={
+                                color +
+                                (oos ? ` (${t("غير متوفر جاهز", "out of ready stock")})` : "")
+                              }
+                              aria-label={color}
                             >
-                              {oos && (
-                                <span className="absolute inset-0 w-full h-[2px] bg-destructive/80 rotate-45 origin-center top-1/2 -translate-y-1/2" />
+                              {hex ? (
+                                <span
+                                  className="h-7 w-7 rounded-full border shadow-inner block relative overflow-hidden"
+                                  style={{ backgroundColor: hex }}
+                                >
+                                  {oos && (
+                                    <span className="absolute inset-0 w-full h-[2px] bg-destructive/80 rotate-45 origin-center top-1/2 -translate-y-1/2" />
+                                  )}
+                                </span>
+                              ) : (
+                                <span className="h-7 w-7 rounded-full border bg-muted flex items-center justify-center text-xs font-bold uppercase truncate shadow-inner relative overflow-hidden">
+                                  {color.slice(0, 2)}
+                                  {oos && (
+                                    <span className="absolute inset-0 w-full h-[2px] bg-destructive/80 rotate-45 origin-center top-1/2 -translate-y-1/2" />
+                                  )}
+                                </span>
                               )}
-                            </span>
-                          ) : (
-                            <span className="h-7 w-7 rounded-full border bg-muted flex items-center justify-center text-xs font-bold uppercase truncate shadow-inner relative overflow-hidden">
-                              {color.slice(0, 2)}
-                              {oos && (
-                                <span className="absolute inset-0 w-full h-[2px] bg-destructive/80 rotate-45 origin-center top-1/2 -translate-y-1/2" />
-                              )}
-                            </span>
-                          )}
-                        </Button>
-                      );
-                    })}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {uniqueColors.map((color) => {
+                          const active = selectedColor === color;
+                          const oos = !isTailoringActive && Boolean(isColorOutOfStock[color]);
+                          return (
+                            <Button
+                              key={color}
+                              type="button"
+                              variant={active ? "default" : "outline"}
+                              onClick={() => {
+                                setSelectedColor(color);
+                                setErrorMsg(null);
+                              }}
+                              className={`min-h-11 px-4 py-2 rounded-lg text-sm font-medium ${
+                                oos
+                                  ? "line-through opacity-45 cursor-not-allowed bg-muted text-muted-foreground border-dashed"
+                                  : ""
+                              }`}
+                            >
+                              {color}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
+                )}
 
               {/* 📏 Size Selection Pills (if any) */}
               {uniqueSizes.length > 0 &&

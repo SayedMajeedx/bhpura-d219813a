@@ -144,7 +144,7 @@ export function extractVariantsHeuristically(
     });
   }
 
-  // Also extract single size mentions across the prompt (e.g. "لسايز 50", "لمقاس 52", "سايز 54", "size 56")
+  // Extract single size mentions across the prompt (e.g. "لسايز 50", "لمقاس 52", "سايز 54", "size 56")
   const singleSizeMatches = Array.from(
     cleanPrompt.matchAll(
       /(?:لسايز|لمقاس|لقياس|لـ\s*سايز|لـ\s*مقاس|سايز|مقاس)\s*(\d{1,3}|[A-Za-z]{1,4})\b/gi,
@@ -154,6 +154,24 @@ export function extractVariantsHeuristically(
     const val = m[1].toUpperCase();
     if (/^\d{1,3}$/.test(val) || /^(?:XXS|XS|S|M|L|XL|XXL|2XL|3XL|4XL|5XL)$/i.test(val)) {
       if (!sizes.includes(val)) sizes.push(val);
+    }
+  }
+
+  // Also extract weight / volume quantities (e.g. 700 غرام, 700g, 250 مل, 1 كغ)
+  const weightMatches = Array.from(
+    cleanPrompt.matchAll(
+      /(?:الوزن|وزن|الحجم|حجم|سعة|weight|size|ثنينهم|اثنينهم|كلاهما)?\s*(\d+(?:\.\d+)?)\s*(غرام|جرام|كيلوغرام|كغ|مل|لتر|g|kg|ml|l)(?=[\s,،_/:.-]|$)/gi,
+    ),
+  );
+  for (const m of weightMatches) {
+    const num = m[1];
+    const uRaw = m[2].toLowerCase();
+    if (!sizes.includes(num)) sizes.push(num);
+    if (!sizeUnit) {
+      if (["غرام", "جرام", "g"].includes(uRaw)) sizeUnit = "g";
+      else if (["كيلوغرام", "كغ", "kg"].includes(uRaw)) sizeUnit = "kg";
+      else if (["مل", "ml"].includes(uRaw)) sizeUnit = "ml";
+      else if (["لتر", "l"].includes(uRaw)) sizeUnit = "l";
     }
   }
 
@@ -171,7 +189,7 @@ export function extractVariantsHeuristically(
     sizes.sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
   }
 
-  // 3. Colors Extraction
+  // 3. Colors & Flavors / Options Extraction
   const detectedColors: string[] = [];
   const knownColors = Object.keys(COLOR_SKU_MAP);
 
@@ -179,7 +197,13 @@ export function extractVariantsHeuristically(
   const colorClause = cleanPrompt.match(
     /(?:الألوان|الالوان|لون|ألوان|colors?|colours?|colour)[\s:]*([^\n\r;.!]+)/i,
   );
-  const searchCorpus = colorClause ? colorClause[1] : cleanPrompt;
+  // Check for explicit flavors/types/options clause
+  const flavorClause = cleanPrompt.match(
+    /(?:النكهات|النكهة|نكهات|نكهة|الأنواع|النوع|أنواع|نوع|الخيارات|الخيار|خيارات|خيار|flavors?|flavours?|types?|options?)[\s:]*([^\n\r;.!]+)/i,
+  );
+  const searchCorpus = [colorClause?.[1], flavorClause?.[1], cleanPrompt]
+    .filter(Boolean)
+    .join(" ");
 
   for (const color of knownColors) {
     // Avoid short 2-letter false positives in English
@@ -195,6 +219,24 @@ export function extractVariantsHeuristically(
         language === "ar" ? color : color.charAt(0).toUpperCase() + color.slice(1);
       if (!detectedColors.includes(displayColor)) {
         detectedColors.push(displayColor);
+      }
+    }
+  }
+
+  // Parse discrete flavor expressions if not already matched
+  if (flavorClause && flavorClause[1]) {
+    const rawFlavors = flavorClause[1]
+      .split(/(?:[\n\r,،;&+]|\s+(?:و|أو|and|or)\s+)/)
+      .map((f) => f.trim())
+      .filter(
+        (f) =>
+          f.length > 1 &&
+          !/(?:سعر|تكلفة|مخزون|وزن|غرام|كيلو|price|stock|cost|gram|kg)/i.test(f),
+      );
+    for (const f of rawFlavors) {
+      const cleanF = f.replace(/^(?:نكهة|نوع|طعم)\s+/i, "").trim();
+      if (cleanF && !detectedColors.includes(cleanF)) {
+        detectedColors.push(cleanF);
       }
     }
   }
@@ -407,11 +449,13 @@ export const parseVariantPrompt = createServerFn({ method: "POST" })
       "- If apparel letter sizes are described as ranges (e.g. 'XS to 2XL', 'S إلى XL'), expand into standard apparel letter sequences: ['XS', 'S', 'M', 'L', 'XL', '2XL'].",
       "- If numbered sizes (e.g. '1 to 5', 'من 1 إلى 4'), expand into inclusive list ['1', '2', '3', '4', '5'].",
       "- If shoe sizes (e.g. '36 to 41', '36-41'), expand into ['36', '37', '38', '39', '40', '41'].",
+      "- If food, sweets, bakery, roastery, or perfume weights/volumes are given (e.g. '700 غرام', '700g', '250g', '500g', '1000g', '1kg', '50ml', '100ml'), extract clean numeric values into 'sizes' and set appropriate 'size_unit' ('g', 'kg', 'ml', 'l').",
       "- If 'Free size' or 'مقاس موحد', return ['Free Size'] or ['مقاس موحد'].",
       "- Extract default stock: 'قطعة وحدة لكل قياس' / '1 pc each' -> stock_main = 1.",
       "- If specific sizes have custom quantities (e.g. 'و 4 قطع لسايز 50', '2 pcs for size L'), add to size_stock_map: {'50': 4} or {'L': 2} and ensure that size is in sizes list.",
-      "COLORS & FABRICS:",
+      "COLORS, FLAVORS & OPTIONS:",
       "- Extract Arabic colors in Arabic (كحلي, عنابي, زيتي, بيج, سكري, أسود, رمادي, خردلي, موف, تيفاني, etc.) and English in English (Navy, Burgundy, Olive, Beige, Off-White, Black, Grey, Mustard, Mauve, Tiffany).",
+      "- For sweets, food, bakery, and roastery products, extract flavors and options into the 'colors' array (e.g. 'نكهة عادية وبدون سكر' -> ['عادية', 'بدون سكر'], 'فستق وزعفران' -> ['فستق', 'زعفران'], 'حبوب كاملة وفلتر' -> ['حبوب كاملة', 'فلتر'], 'Regular & Sugar Free' -> ['Regular', 'Sugar Free']).",
       "- Extract luxury fabrics (كريب ملكي, حرير مغسول, كتان طبيعي, شيفون, قطن, مخمل, ساتان, صوف, Silk, Linen, Crepe, Cotton, Velvet).",
       "PRICES & CODES:",
       "- Extract base_sku (alphanumeric code or SKU prefix like NP24, AB-10, S79, DRS-01).",

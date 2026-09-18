@@ -33,11 +33,18 @@ export const foodBeverageManifest: AddonManifest = {
       workshop_instructions: { ar: "تعليمات للمطبخ", en: "Kitchen instructions" },
     },
     variantAxisDefaults: {
-      size: { ar: "الحجم", en: "Size" },
-      color: null,
+      size: { ar: "الوزن / الحجم", en: "Weight / Size" },
+      color: { ar: "النكهة / الخيار", en: "Flavor / Option" },
       fabric: null,
     },
     sizingPresets: [
+      {
+        id: "sweets_bakery_weights",
+        labelAr: "أوزان الحلويات والمخبوزات (250غ، 500غ، 700غ، 1كغ)",
+        labelEn: "Sweets & Bakery Weights (250g, 500g, 700g, 1kg)",
+        sizes: ["250", "500", "700", "1000"],
+        unit: "g",
+      },
       {
         id: "food_portions",
         labelAr: "أحجام الوجبات (صغير، وسط، كبير)",
