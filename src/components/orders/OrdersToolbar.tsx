@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { Search, SlidersHorizontal, X, ArrowUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useCommandShortcutLabel } from "@/lib/platform-shortcut";
+import { useAddons } from "@/components/addons/AddonsProvider";
 
 export type PaymentMethodFilter = "all" | "benefit" | "cod" | "card";
 
@@ -88,8 +89,19 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
   onClearFilters,
 }) => {
   const isAr = lang === "ar";
+  const { isInstalled } = useAddons();
+  const hasMadeToOrder = isInstalled("made-to-order");
   const shortcutLabel = useCommandShortcutLabel();
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const fulfillmentOptions = useMemo(() => {
+    return FULFILLMENT_STATUS_FILTER_OPTIONS.filter((opt) => {
+      if (opt.value === "sent_to_tailor" || opt.value === "received_from_tailor") {
+        return hasMadeToOrder;
+      }
+      return true;
+    });
+  }, [hasMadeToOrder]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -177,7 +189,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {FULFILLMENT_STATUS_FILTER_OPTIONS.map((opt) => (
+                    {fulfillmentOptions.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
                         {isAr ? opt.ar : opt.en}
                       </SelectItem>
@@ -268,7 +280,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {FULFILLMENT_STATUS_FILTER_OPTIONS.map((opt) => (
+                      {fulfillmentOptions.map((opt) => (
                         <SelectItem key={opt.value} value={opt.value}>
                           {isAr ? opt.ar : opt.en}
                         </SelectItem>

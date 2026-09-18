@@ -136,4 +136,30 @@ describe("Ready Stock vs Tailoring Order Workflow", () => {
     expect(getInvoiceStatusLabel("completed", "ar")).toBe("مكتمل");
     expect(getInvoiceStatusLabel("cancelled", "ar")).toBe("ملغي");
   });
+
+  it("correctly treats single-variant products without variants as ready stock", () => {
+    // E.g., Coffee bean bags, bottled cold brew, accessories with variant_id = null
+    const coffeeItems = [
+      {
+        product_id: "prod-colombian",
+        product_name: "Colombian Geisha 250g",
+        variant_id: null,
+        description: "Specialty whole bean coffee",
+      },
+    ];
+    expect(isTailoringItem(coffeeItems[0])).toBe(false);
+    expect(detectOrderType(coffeeItems)).toBe("ready_stock");
+
+    const coffeeOrder = {
+      status: "pending",
+      fulfillment_status: "pending",
+      order_items: coffeeItems,
+      advance_paid: 10,
+      total: 10,
+    };
+    // For non-tailoring stores (options.productionStages = false)
+    const wf = getOrderWorkflow(coffeeOrder, { productionStages: false });
+    expect(wf.nextAction).toBe("start_packing");
+    expect(wf.isTailoring).toBe(false);
+  });
 });

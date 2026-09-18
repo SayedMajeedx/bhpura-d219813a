@@ -33,8 +33,8 @@ export function isTailoringItem(item: OrderItemForTypeDetection): boolean {
   if (item.is_tailoring === true) return true;
   if (item.item_type?.toLowerCase() === "tailoring") return true;
 
-  // Custom item explicitly created without a variant (variant_id === null or "custom")
-  if (item.variant_id === null || item.variant_id === "custom") return true;
+  // Custom item explicitly created as a bespoke line item
+  if (item.variant_id === "custom") return true;
 
   // Check custom fields or measurements
   const fields = item.custom_fields ?? item.custom_field_values ?? [];
@@ -62,6 +62,7 @@ export function isTailoringItem(item: OrderItemForTypeDetection): boolean {
   ).toLowerCase();
 
   const keywords = [
+    "تفصيل",
     "بدون مخزون",
     "tailor",
     "custom",

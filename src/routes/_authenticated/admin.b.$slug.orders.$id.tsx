@@ -43,6 +43,7 @@ import {
   Package,
   CreditCard,
   Scissors,
+  SlidersHorizontal,
   PackageCheck,
   Box,
   Store,
@@ -3577,21 +3578,26 @@ function OrderDetail() {
                           </div>
                         </div>
 
-                        {/* Custom Tailoring & Made-To-Order Specifications */}
-                        {it.location === "custom" ||
-                        !it.variant_id ||
+                        {/* Custom Item / Specifications */}
+                        {((!it.product_id || it.location === "custom" || it.variant_id === "custom") ||
                         (it.custom_field_values && it.custom_field_values.length > 0) ||
-                        editingItems[idx] ? (
+                        editingItems[idx]) ? (
                           <div className="space-y-2">
-                            {(!it.variant_id || it.location === "custom") && (
+                            {(!it.product_id || it.location === "custom" || it.variant_id === "custom") && (
                               <div className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary flex flex-wrap items-center justify-between gap-2">
                                 <span className="flex items-center gap-1.5">
-                                  <Scissors className="h-4 w-4" />
-                                  {vocabulary.custom_order?.[lang]
-                                    ? `${vocabulary.custom_order[lang]} / ${isAr ? "بند يدوي (لا يخصم من المخزون)" : "Manual Item (No Ready Stock Deduction)"}`
-                                    : isAr
-                                      ? "طلب مخصص / بند يدوي (لا يخصم من المخزون)"
-                                      : "Custom Order / Manual Item (No Ready Stock Deduction)"}
+                                  {storeProfile.modules.made_to_order ? (
+                                    <Scissors className="h-4 w-4" />
+                                  ) : (
+                                    <FileText className="h-4 w-4" />
+                                  )}
+                                  {storeProfile.modules.made_to_order
+                                    ? (vocabulary.custom_order?.[lang]
+                                        ? `${vocabulary.custom_order[lang]} / ${isAr ? "بند يدوي (لا يخصم من المخزون)" : "Manual Item (No Ready Stock Deduction)"}`
+                                        : isAr
+                                          ? "طلب مخصص / بند يدوي (لا يخصم من المخزون)"
+                                          : "Custom Order / Manual Item (No Ready Stock Deduction)")
+                                    : (isAr ? "بند يدوي إضافي (لا يخصم من المخزون)" : "Manual Item (No Ready Stock Deduction)")}
                                 </span>
                                 <div className="flex items-center gap-2">
                                   {it.unit_cost != null && Number(it.unit_cost) > 0 ? (
@@ -3630,7 +3636,11 @@ function OrderDetail() {
                                 (it.custom_field_values && it.custom_field_values.length > 0)) && (
                                 <div className="rounded-xl border border-border bg-muted/30 p-3 text-xs space-y-2">
                                   <div className="font-bold text-xs text-foreground flex items-center gap-1.5">
-                                    <Scissors className="h-3.5 w-3.5 text-primary" />
+                                    {storeProfile.modules.made_to_order ? (
+                                      <Scissors className="h-3.5 w-3.5 text-primary" />
+                                    ) : (
+                                      <SlidersHorizontal className="h-3.5 w-3.5 text-primary" />
+                                    )}
                                     <span>
                                       {vocabulary.customization_options?.[lang] ||
                                         (isAr ? "المواصفات والخيارات" : "Specifications & Options")}

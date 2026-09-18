@@ -158,8 +158,8 @@ function normalizedFulfillmentStage(order: any): string {
   return getFulfillmentStage(order);
 }
 
-function orderNeedsOperatorAction(order: any): boolean {
-  return getOrderWorkflow(order).needsAttention;
+function orderNeedsOperatorAction(order: any, hasMadeToOrder?: boolean): boolean {
+  return getOrderWorkflow(order, { productionStages: hasMadeToOrder }).needsAttention;
 }
 
 function CustomerContactActions({ customer, lang }: { customer: any; lang: "en" | "ar" }) {
@@ -701,7 +701,7 @@ function OrdersList() {
         continue;
       }
 
-      const workflow = getOrderWorkflow(order);
+      const workflow = getOrderWorkflow(order, { productionStages: hasMadeToOrder });
 
       all++;
       if (workflow.awaitingPayment) unpaid++;
@@ -713,10 +713,14 @@ function OrdersList() {
           "packing",
           "on_hold",
           "needs_packing",
-          "received_from_workshop",
-          "sent_to_workshop",
-          "received_from_tailor",
-          "sent_to_tailor",
+          ...(hasMadeToOrder
+            ? [
+                "received_from_workshop",
+                "sent_to_workshop",
+                "received_from_tailor",
+                "sent_to_tailor",
+              ]
+            : []),
         ].includes(workflow.fulfillment) &&
         (!workflow.awaitingPayment || workflow.isCod)
       ) {
@@ -727,7 +731,7 @@ function OrdersList() {
     }
 
     return { all, unpaid, action_required, to_prepare, shipped, completed };
-  }, [orders, includeHistorical]);
+  }, [orders, includeHistorical, hasMadeToOrder]);
 
   // Combined search, standard drop-down filters, and our premium quick tab filter
   const filteredOrders = useMemo(() => {
@@ -787,13 +791,13 @@ function OrdersList() {
 
       // Quick tab routing
       if (tabFilter === "unpaid") {
-        return getOrderWorkflow(order).awaitingPayment;
+        return getOrderWorkflow(order, { productionStages: hasMadeToOrder }).awaitingPayment;
       }
       if (tabFilter === "action_required") {
-        return orderNeedsOperatorAction(order);
+        return orderNeedsOperatorAction(order, hasMadeToOrder);
       }
       if (tabFilter === "to_prepare") {
-        const wf = getOrderWorkflow(order);
+        const wf = getOrderWorkflow(order, { productionStages: hasMadeToOrder });
         return (
           !wf.terminal &&
           [
@@ -801,10 +805,14 @@ function OrdersList() {
             "packing",
             "on_hold",
             "needs_packing",
-            "received_from_workshop",
-            "sent_to_workshop",
-            "received_from_tailor",
-            "sent_to_tailor",
+            ...(hasMadeToOrder
+              ? [
+                  "received_from_workshop",
+                  "sent_to_workshop",
+                  "received_from_tailor",
+                  "sent_to_tailor",
+                ]
+              : []),
           ].includes(wf.fulfillment) &&
           (!wf.awaitingPayment || wf.isCod)
         );
@@ -827,6 +835,7 @@ function OrdersList() {
     gatewayFilter,
     tabFilter,
     includeHistorical,
+    hasMadeToOrder,
   ]);
 
   const sortedOrders = useMemo(() => {
@@ -1069,7 +1078,7 @@ function OrdersList() {
       );
     }
 
-    if (workflow.nextAction === "send_to_tailor" || workflow.nextAction === "send_to_workshop") {
+    if (hasMadeToOrder && (workflow.nextAction === "send_to_tailor" || workflow.nextAction === "send_to_workshop")) {
       return (
         <Button
           size="sm"
@@ -1095,8 +1104,9 @@ function OrdersList() {
     }
 
     if (
-      workflow.nextAction === "receive_from_tailor" ||
-      workflow.nextAction === "receive_from_workshop"
+      hasMadeToOrder &&
+      (workflow.nextAction === "receive_from_tailor" ||
+        workflow.nextAction === "receive_from_workshop")
     ) {
       return (
         <Button
@@ -1659,8 +1669,12 @@ function OrdersList() {
               </span>
               <span className="opacity-80 ms-1.5 hidden sm:inline">
                 {lang === "ar"
-                  ? "(تحصيل عند الاستلام، تسليم غير مكتمل، أو قياسات خياطة)"
-                  : "(COD collection, failed delivery, or tailoring measurements)"}
+                  ? hasMadeToOrder
+                    ? "(تحصيل عند الاستلام، تسليم غير مكتمل، أو تفاصيل الطلب)"
+                    : "(تحصيل عند الاستلام، تسليم غير مكتمل، أو تأكيد الدفع)"
+                  : hasMadeToOrder
+                    ? "(COD collection, failed delivery, or custom specifications)"
+                    : "(COD collection, failed delivery, or payment verification)"}
               </span>
             </div>
           </div>

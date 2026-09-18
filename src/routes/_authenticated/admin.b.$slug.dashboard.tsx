@@ -38,6 +38,7 @@ import { getOrderWorkflow } from "@/lib/order-workflow";
 import { isLowStock } from "@/lib/inventory-health";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { getStorefrontUrl } from "@/lib/storefront-url";
+import { useAddons } from "@/components/addons/AddonsProvider";
 
 import { DashboardCommandHeader } from "@/components/dashboard/DashboardCommandHeader";
 import {
@@ -58,6 +59,8 @@ function Dashboard() {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const { canViewFinancials } = useProfile();
+  const { isInstalled } = useAddons();
+  const hasMadeToOrder = isInstalled("made-to-order");
   const { slug } = Route.useParams();
   const brand = useBrand();
   const brandId = brand.id;
@@ -500,11 +503,11 @@ function Dashboard() {
   const actionNeededOrders = useMemo(() => {
     return (ordersQ.data ?? [])
       .filter((o) => {
-        const wf = getOrderWorkflow(o);
+        const wf = getOrderWorkflow(o, { productionStages: hasMadeToOrder });
         return wf.needsAttention && !wf.terminal;
       })
       .slice(0, 5);
-  }, [ordersQ.data]);
+  }, [ordersQ.data, hasMadeToOrder]);
 
   // Financial intelligence aggregations
   const financials = useMemo(() => {
@@ -928,7 +931,7 @@ function Dashboard() {
   // Orders awaiting merchant preparation & fulfillment (synchronized with orders page to_prepare tab)
   const unfulfilledOrdersCount = useMemo(() => {
     return (ordersQ.data ?? []).filter((o: any) => {
-      const workflow = getOrderWorkflow(o);
+      const workflow = getOrderWorkflow(o, { productionStages: hasMadeToOrder });
       return (
         !workflow.terminal &&
         [
@@ -936,15 +939,19 @@ function Dashboard() {
           "packing",
           "on_hold",
           "needs_packing",
-          "received_from_workshop",
-          "sent_to_workshop",
-          "received_from_tailor",
-          "sent_to_tailor",
+          ...(hasMadeToOrder
+            ? [
+                "received_from_workshop",
+                "sent_to_workshop",
+                "received_from_tailor",
+                "sent_to_tailor",
+              ]
+            : []),
         ].includes(workflow.fulfillment) &&
         (!workflow.awaitingPayment || workflow.isCod)
       );
     }).length;
-  }, [ordersQ.data]);
+  }, [ordersQ.data, hasMadeToOrder]);
 
   // Loading skeleton placeholder
   if (isLoading) {
