@@ -43,7 +43,7 @@ export function SettingsStickySaveBar({
       dir={isAr ? "rtl" : "ltr"}
       aria-live="polite"
       className={cn(
-        "fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ease-out",
+        "fixed bottom-6 end-6 sm:bottom-6 sm:end-8 z-50 transition-all duration-300 ease-out",
         isVisible
           ? "translate-y-0 opacity-100 pointer-events-auto scale-100"
           : "translate-y-12 opacity-0 pointer-events-none scale-95",

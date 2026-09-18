@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import {
   AlertTriangle,
   Save,
+  Undo2,
   Eye,
   EyeOff,
   RefreshCw,
@@ -1053,6 +1054,83 @@ function getComparableSettings(s: Settings | null): string {
   };
   const activeHeader = TAB_HEADERS[activeTab] ?? TAB_HEADERS.business;
 
+  const renderSectionHeaderAction = () => {
+    if (!isCurrentTabDirty) return null;
+    return (
+      <Button
+        type="button"
+        size="sm"
+        onClick={(e) => {
+          e.stopPropagation();
+          void handleUnifiedSave();
+        }}
+        disabled={saving || tabSaving}
+        className="h-7 px-2.5 text-xs gap-1.5 shadow-xs bg-primary text-primary-foreground hover:bg-primary/90 animate-in fade-in duration-150"
+      >
+        {saving || tabSaving ? (
+          <Loader2 className="h-3 w-3 animate-spin" />
+        ) : (
+          <Save className="h-3 w-3" />
+        )}
+        <span>{saving || tabSaving ? (lang === "ar" ? "حفظ..." : "Saving...") : (lang === "ar" ? "حفظ" : "Save")}</span>
+      </Button>
+    );
+  };
+
+  const renderSectionSaveBanner = (sectionName?: string) => {
+    if (!isCurrentTabDirty) return null;
+    return (
+      <div className="flex items-center justify-between p-3 mt-4 rounded-lg bg-primary/5 border border-primary/20 animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className="flex items-center gap-2 text-xs font-medium text-foreground">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+          </span>
+          <span>
+            {lang === "ar"
+              ? `توجد تعديلات غير محفوظة${sectionName ? ` في ${sectionName}` : ""}`
+              : `Unsaved changes${sectionName ? ` in ${sectionName}` : ""}`}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleDiscard}
+            disabled={saving || tabSaving}
+            className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <Undo2 className="h-3.5 w-3.5 me-1" />
+            <span>{lang === "ar" ? "تراجع" : "Discard"}</span>
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleUnifiedSave}
+            disabled={saving || tabSaving}
+            className="h-8 px-3.5 text-xs gap-1.5 shadow-sm"
+          >
+            {saving || tabSaving ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Save className="h-3.5 w-3.5" />
+            )}
+            <span>
+              {saving || tabSaving
+                ? lang === "ar"
+                  ? "جارٍ الحفظ..."
+                  : "Saving..."
+                : lang === "ar"
+                  ? "حفظ التغييرات"
+                  : "Save Changes"}
+            </span>
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4 pb-44">
       {f.font_url && (
@@ -1161,6 +1239,7 @@ function getComparableSettings(s: Settings | null): string {
             id="biz-details"
             open={openSections["biz-details"] ?? false}
             onOpenChange={() => toggleSection("biz-details")}
+            headerActions={renderSectionHeaderAction()}
             title={lang === "ar" ? "بيانات المتجر والاتصال والضريبة والعملة" : "Store Profile, Contact, Tax & Currency"}
             description={
               lang === "ar"
@@ -1384,6 +1463,7 @@ function getComparableSettings(s: Settings | null): string {
                 onChange={(e) => setF({ ...f, footer_note: e.target.value })}
               />
             </div>
+            {renderSectionSaveBanner(lang === "ar" ? "بيانات المتجر والملف التجاري" : "Store Profile & Details")}
             </div>
           </SettingsCollapsibleCard>
         </TabsContent>
@@ -1428,6 +1508,7 @@ function getComparableSettings(s: Settings | null): string {
             id="inv-design"
             open={openSections["inv-design"] ?? false}
             onOpenChange={() => toggleSection("inv-design")}
+            headerActions={renderSectionHeaderAction()}
             title={lang === "ar" ? "تصميم وقالب الفاتورة" : "Invoice Design & Template"}
             description={
               lang === "ar"
@@ -1902,6 +1983,7 @@ function getComparableSettings(s: Settings | null): string {
                 </div>
                 <p className="text-xs opacity-75">{t("settings.previewText")}</p>
               </div>
+              {renderSectionSaveBanner(lang === "ar" ? "تصميم وقالب الفاتورة" : "Invoice Design & Template")}
             </div>
           </SettingsCollapsibleCard>
 
@@ -1910,6 +1992,7 @@ function getComparableSettings(s: Settings | null): string {
             id="inv-typography"
             open={openSections["inv-typography"] ?? false}
             onOpenChange={() => toggleSection("inv-typography")}
+            headerActions={renderSectionHeaderAction()}
             title={lang === "ar" ? "تخصيص الخطوط والطباعة" : "Invoice Typography & Fonts"}
             description={
               lang === "ar"
@@ -2188,6 +2271,7 @@ function getComparableSettings(s: Settings | null): string {
                   </div>
                 </div>
               </div>
+              {renderSectionSaveBanner(lang === "ar" ? "الخطوط والطباعة" : "Typography & Fonts")}
             </div>
           </SettingsCollapsibleCard>
 
@@ -2196,6 +2280,7 @@ function getComparableSettings(s: Settings | null): string {
             id="inv-terms"
             open={openSections["inv-terms"] ?? false}
             onOpenChange={() => toggleSection("inv-terms")}
+            headerActions={renderSectionHeaderAction()}
             title={lang === "ar" ? "الشروط والأحكام وملاحظات التذييل" : "Terms, Conditions & Footer Notes"}
             description={
               lang === "ar"
@@ -2395,6 +2480,7 @@ function getComparableSettings(s: Settings | null): string {
                   </div>
                 </div>
               )}
+              {renderSectionSaveBanner(lang === "ar" ? "الشروط والتذييل" : "Terms & Conditions")}
             </div>
           </SettingsCollapsibleCard>
 
@@ -2403,6 +2489,7 @@ function getComparableSettings(s: Settings | null): string {
             id="inv-logo"
             open={openSections["inv-logo"] ?? false}
             onOpenChange={() => toggleSection("inv-logo")}
+            headerActions={renderSectionHeaderAction()}
             title={lang === "ar" ? "أبعاد وموضع الشعار على الفاتورة" : "Invoice Logo Position & Size"}
             description={
               lang === "ar"
@@ -2462,14 +2549,14 @@ function getComparableSettings(s: Settings | null): string {
                           height: Math.max(24, f.logo_height || f.logo_size || 64),
                         }}
                         position={{
-                          x: Math.max(0, f.logo_x || 0),
-                          y: Math.max(0, f.logo_y || 0),
+                          x: Number(f.logo_x) || 0,
+                          y: Number(f.logo_y) || 0,
                         }}
                         onDragStop={(_e, d) =>
                           setF({
                             ...f,
-                            logo_x: Math.max(0, Math.round(d.x)),
-                            logo_y: Math.max(0, Math.round(d.y)),
+                            logo_x: Math.round(d.x),
+                            logo_y: Math.round(d.y),
                           })
                         }
                         onResizeStop={(_e, _dir, ref, _delta, pos) => {
@@ -2480,11 +2567,10 @@ function getComparableSettings(s: Settings | null): string {
                             logo_width: w,
                             logo_height: h,
                             logo_size: h,
-                            logo_x: Math.max(0, Math.round(pos.x)),
-                            logo_y: Math.max(0, Math.round(pos.y)),
+                            logo_x: Math.round(pos.x),
+                            logo_y: Math.round(pos.y),
                           });
                         }}
-                        bounds="parent"
                         lockAspectRatio
                         className="border border-dashed border-primary/60 hover:border-primary rounded cursor-move"
                       >
@@ -2508,11 +2594,13 @@ function getComparableSettings(s: Settings | null): string {
                       <Label className="text-xs">X (الموضع الأفقي)</Label>
                       <Input
                         type="number"
-                        min={0}
-                        value={f.logo_x}
-                        onChange={(e) =>
-                          setF({ ...f, logo_x: Math.max(0, Number(e.target.value)) })
-                        }
+                        min={-500}
+                        max={500}
+                        value={f.logo_x ?? 0}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setF({ ...f, logo_x: v === "" || v === "-" ? (v as any) : Number(v) });
+                        }}
                         className="h-9 font-mono"
                       />
                     </div>
@@ -2520,11 +2608,13 @@ function getComparableSettings(s: Settings | null): string {
                       <Label className="text-xs">Y (الموضع الرأسي)</Label>
                       <Input
                         type="number"
-                        min={0}
-                        value={f.logo_y}
-                        onChange={(e) =>
-                          setF({ ...f, logo_y: Math.max(0, Number(e.target.value)) })
-                        }
+                        min={-500}
+                        max={500}
+                        value={f.logo_y ?? 0}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setF({ ...f, logo_y: v === "" || v === "-" ? (v as any) : Number(v) });
+                        }}
                         className="h-9 font-mono"
                       />
                     </div>
@@ -2574,6 +2664,7 @@ function getComparableSettings(s: Settings | null): string {
                   </Button>
                 </div>
               )}
+              {renderSectionSaveBanner(lang === "ar" ? "أبعاد وموضع الشعار" : "Logo Position & Dimensions")}
             </div>
           </SettingsCollapsibleCard>
         </TabsContent>

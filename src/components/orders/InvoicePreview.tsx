@@ -234,8 +234,8 @@ export default function InvoicePreview({
   const color = settings.primary_color || "#8b6f47";
   const bg = settings.background_color || "#ffffff";
   const text = settings.text_color || "#1a1a1a";
-  const logoX = Math.max(0, Number(settings.logo_x) || 0);
-  const logoY = Math.max(0, Number(settings.logo_y) || 0);
+  const logoX = Number(settings.logo_x) || 0;
+  const logoY = Number(settings.logo_y) || 0;
   const logoW = Math.max(20, Number(settings.logo_width) || 160);
   const logoH = Math.max(20, Number(settings.logo_height) || 64);
   const template = settings.invoice_template || "modern";
@@ -401,7 +401,7 @@ export default function InvoicePreview({
               {settings.logo_url && (
                 <div
                   className="pdf-brand-logo-wrap relative mb-3 flex"
-                  style={{ height: logoH + logoY + 8, justifyContent: "flex-start" }}
+                  style={{ height: Math.max(20, logoH + Math.max(0, logoY) + 8), justifyContent: "flex-start" }}
                 >
                   <img
                     src={settings.logo_url}

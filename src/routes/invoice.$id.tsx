@@ -136,8 +136,8 @@ function PublicInvoice() {
   const showContact = settings?.invoice_show_customer_contact !== false;
   const showFulfillment = settings?.invoice_show_fulfillment !== false;
   const showNotes = settings?.invoice_show_notes !== false;
-  const logoX = Math.max(0, Number(settings?.logo_x) || 0);
-  const logoY = Math.max(0, Number(settings?.logo_y) || 0);
+  const logoX = Number(settings?.logo_x) || 0;
+  const logoY = Number(settings?.logo_y) || 0;
   const logoW = Math.max(20, Number(settings?.logo_width) || 160);
   const logoH = Math.max(20, Number(settings?.logo_height) || 64);
   const invoiceTitle =
@@ -325,7 +325,7 @@ function PublicInvoice() {
                 {settings?.logo_url && (
                   <div
                     className="pdf-brand-logo-wrap relative mb-3 flex"
-                    style={{ height: logoH + logoY + 8, justifyContent: "flex-start" }}
+                    style={{ height: Math.max(20, logoH + Math.max(0, logoY) + 8), justifyContent: "flex-start" }}
                   >
                     <img
                       src={settings.logo_url}
