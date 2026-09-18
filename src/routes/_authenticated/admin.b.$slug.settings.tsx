@@ -719,6 +719,8 @@ function Settings() {
   const [saving, setSaving] = useState(false);
   const [tabSaving, setTabSaving] = useState(false);
   const tabSaveHandlersRef = useRef<Record<string, () => Promise<void> | void>>({});
+  const storefrontModeSaveRef = useRef<(() => Promise<void> | void) | null>(null);
+  const storefrontCustomizerSaveRef = useRef<(() => Promise<void> | void) | null>(null);
 
   const registerTabSave = useCallback((tab: string, handler: () => Promise<void> | void) => {
     tabSaveHandlersRef.current[tab] = handler;
@@ -827,9 +829,6 @@ function Settings() {
       setSaving(false);
     }
   };
-
-  const storefrontModeSaveRef = useRef<(() => Promise<void> | void) | null>(null);
-  const storefrontCustomizerSaveRef = useRef<(() => Promise<void> | void) | null>(null);
 
   const handleUnifiedSave = async () => {
     if (activeTab === "business" || activeTab === "invoice") {
@@ -4946,6 +4945,7 @@ function StorefrontModeCard({
 
   const inquiryArRef = useRef<HTMLTextAreaElement>(null);
   const inquiryEnRef = useRef<HTMLTextAreaElement>(null);
+  const handleSaveRef = useRef<(() => Promise<void>) | null>(null);
 
   const { data: rawSettings, isLoading } = useQuery({
     queryKey: queryKeys.brand.businessSettings(brandId),
@@ -5092,11 +5092,11 @@ function StorefrontModeCard({
     }
   };
 
+  handleSaveRef.current = handleSave;
+
   useEffect(() => {
-    if (onRegisterSave) {
-      onRegisterSave(handleSave);
-    }
-  }, [onRegisterSave, handleSave]);
+    onRegisterSave?.(() => handleSaveRef.current?.());
+  }, [onRegisterSave]);
 
   const isCatalog = form.storefront_mode === "catalog";
   const hasWhatsApp = Boolean(
