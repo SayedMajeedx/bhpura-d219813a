@@ -25,6 +25,7 @@ import {
 } from "@/lib/typography";
 import {
   renderTrustBadgeIcon,
+  getDynamicTrustBadges,
   DEFAULT_TRUST_BADGES,
   type TrustBadgesConfig,
 } from "@/lib/trust-badges";
@@ -623,11 +624,19 @@ function StorefrontFooter() {
   const [openCompany, setOpenCompany] = useState(false);
   const [openHelp, setOpenHelp] = useState(false);
 
-  const rawTrustBadges = (settings as any).trust_badges;
+  const rawTrustBadges = (settings as any)?.trust_badges;
+  const storeVertical = normalizeVertical(
+    (settings as any)?.store_vertical ?? (brand as any)?.store_vertical ?? "general",
+  );
   const trustBadgesConfig: TrustBadgesConfig =
     rawTrustBadges && typeof rawTrustBadges === "object" && Array.isArray(rawTrustBadges.items)
       ? rawTrustBadges
-      : DEFAULT_TRUST_BADGES;
+      : getDynamicTrustBadges({
+          vertical: storeVertical,
+          settings,
+          currency: (settings as any)?.currency ?? (brand as any)?.currency,
+          brandName: isAr ? brand?.name_ar : brand?.name_en,
+        });
 
   const activeBadges =
     (trustBadgesConfig.enabled ?? true)

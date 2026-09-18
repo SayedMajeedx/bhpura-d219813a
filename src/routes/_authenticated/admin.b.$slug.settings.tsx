@@ -1,6 +1,6 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner";
 import {
   AlertTriangle,
+  Save,
   Eye,
   EyeOff,
   RefreshCw,
@@ -100,7 +101,12 @@ import {
   type FontMoodPreset,
 } from "@/components/settings/QuickThemeCustomizer";
 import { TrustBadgesEditor } from "@/components/settings/TrustBadgesEditor";
-import { type TrustBadgesConfig, DEFAULT_TRUST_BADGES } from "@/lib/trust-badges";
+import {
+  type TrustBadgesConfig,
+  DEFAULT_TRUST_BADGES,
+  getDynamicTrustBadges,
+} from "@/lib/trust-badges";
+import { SettingsStickySaveBar } from "@/components/settings/SettingsStickySaveBar";
 import { StoreReadinessChecklist } from "@/components/settings/StoreReadinessChecklist";
 import { SettingsSearchBar } from "@/components/settings/SettingsSearchBar";
 import { StoreProfileCard } from "@/components/settings/StoreProfileCard";
@@ -711,6 +717,12 @@ function Settings() {
   const [f, setF] = useState<Settings | null>(null);
   const [activeTab, setActiveTab] = useState<SettingsTabId>("business");
   const [saving, setSaving] = useState(false);
+  const [tabSaving, setTabSaving] = useState(false);
+  const tabSaveHandlersRef = useRef<Record<string, () => Promise<void> | void>>({});
+
+  const registerTabSave = useCallback((tab: string, handler: () => Promise<void> | void) => {
+    tabSaveHandlersRef.current[tab] = handler;
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -816,6 +828,31 @@ function Settings() {
     }
   };
 
+  const handleUnifiedSave = async () => {
+    if (activeTab === "business" || activeTab === "invoice") {
+      await save();
+    } else {
+      const handler = tabSaveHandlersRef.current[activeTab];
+      if (handler) {
+        setTabSaving(true);
+        try {
+          await handler();
+        } finally {
+          setTabSaving(false);
+        }
+      }
+    }
+  };
+
+  const isActionableTab = [
+    "business",
+    "invoice",
+    "storefront",
+    "checkout",
+    "payments",
+    "emails",
+  ].includes(activeTab);
+
   const handleUpload = async (file: File | Blob, kind: "logo" | "favicon" | "font") => {
     try {
       setUploading(kind);
@@ -910,9 +947,9 @@ function Settings() {
         lang={lang === "ar" ? "ar" : "en"}
         brandName={brandDisplayName}
         activeTabLabel={lang === "ar" ? activeHeader.ar : activeHeader.en}
-        saving={saving}
-        onSave={save}
-        showSave={activeTab === "business" || activeTab === "invoice"}
+        saving={saving || tabSaving}
+        onSave={handleUnifiedSave}
+        showSave={isActionableTab}
       />
 
       {/* 1b. Search & Customer Preview Bar */}
@@ -1756,20 +1793,32 @@ function Settings() {
 
         <TabsContent value="storefront" className="space-y-6 mt-0">
           <StorefrontModeCard brandId={brandId} />
-          <StorefrontCustomizerCard brandId={brandId} />
+          <StorefrontCustomizerCard
+            brandId={brandId}
+            onRegisterSave={(fn) => registerTabSave("storefront", fn)}
+          />
           <StorefrontSeoCard brandId={brandId} />
         </TabsContent>
 
         <TabsContent value="checkout" className="space-y-6 mt-0">
-          <CheckoutFulfillmentSection brandId={brandId} />
+          <CheckoutFulfillmentSection
+            brandId={brandId}
+            onRegisterSave={(fn) => registerTabSave("checkout", fn)}
+          />
         </TabsContent>
 
         <TabsContent value="payments" className="space-y-6 mt-0">
-          <PaymentSettingsCard brandId={brandId} />
+          <PaymentSettingsCard
+            brandId={brandId}
+            onRegisterSave={(fn) => registerTabSave("payments", fn)}
+          />
         </TabsContent>
 
         <TabsContent value="emails" className="space-y-6 mt-0">
-          <EmailSettingsCard brandId={brandId} />
+          <EmailSettingsCard
+            brandId={brandId}
+            onRegisterSave={(fn) => registerTabSave("emails", fn)}
+          />
         </TabsContent>
 
         <TabsContent value="security" className="space-y-6 mt-0">
@@ -1785,6 +1834,13 @@ function Settings() {
           <SubscriptionCard brand={brand} />
         </TabsContent>
       </Tabs>
+
+      <SettingsStickySaveBar
+        activeTab={activeTab}
+        isSaving={saving || tabSaving}
+        onSave={handleUnifiedSave}
+        isAr={lang === "ar"}
+      />
     </div>
   );
 }
@@ -1847,7 +1903,13 @@ async function heroVideoDuration(file: File): Promise<number> {
   }
 }
 
-function PaymentSettingsCard({ brandId }: { brandId: string }) {
+function PaymentSettingsCard({
+  brandId,
+  onRegisterSave,
+}: {
+  brandId: string;
+  onRegisterSave?: (fn: () => Promise<void> | void) => void;
+}) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const qc = useQueryClient();
@@ -1908,6 +1970,12 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
       qc.invalidateQueries({ queryKey: ["business-settings-payments", brandId] });
     }
   };
+
+  const saveRef = useRef(save);
+  saveRef.current = save;
+  useEffect(() => {
+    onRegisterSave?.(() => saveRef.current());
+  }, [onRegisterSave]);
 
   const uploadQr = async (file: File) => {
     try {
@@ -2188,12 +2256,13 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
 
       <div className="flex justify-end pt-2">
         <Button
-          size="sm"
+          size="default"
           onClick={save}
           disabled={saving}
-          className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+          className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2"
         >
-          {saving ? "…" : isAr ? "حفظ إعدادات الدفع" : "Save payment settings"}
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          <span>{saving ? (isAr ? "جارٍ الحفظ..." : "Saving...") : isAr ? "حفظ إعدادات الدفع" : "Save payment settings"}</span>
         </Button>
       </div>
     </Card>
@@ -2650,12 +2719,6 @@ function BrandHeroCard({
             onChange={(e) => setState({ ...state, about_en: e.target.value })}
           />
         </div>
-      </div>
-
-      <div className="flex justify-end">
-        <Button size="sm" onClick={save} disabled={saving}>
-          {isAr ? "حفظ واجهة المتجر" : "Save storefront hero"}
-        </Button>
       </div>
     </Card>
   );
@@ -3214,7 +3277,13 @@ function HeroSlideLivePreview({
   );
 }
 
-function ShippingSettingsCard({ brandId }: { brandId: string }) {
+function ShippingSettingsCard({
+  brandId,
+  onRegisterSave,
+}: {
+  brandId: string;
+  onRegisterSave?: (fn: () => Promise<void> | void) => void;
+}) {
   const t = useT();
   const { lang } = useI18n();
   const isAr = lang === "ar";
@@ -3331,6 +3400,12 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
       qc.invalidateQueries({ queryKey: ["business-settings-shipping", brandId] });
     }
   };
+
+  const saveRef = useRef(save);
+  saveRef.current = save;
+  useEffect(() => {
+    onRegisterSave?.(() => saveRef.current());
+  }, [onRegisterSave]);
 
   const toggleCountry = (code: string) => {
     setNewZone((prev) => {
@@ -4273,9 +4348,9 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
       )}
 
       <div className="flex justify-end pt-4 border-t border-border">
-        <Button size="default" onClick={save} disabled={saving} className="min-w-32">
-          {saving ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : null}
-          {t("settings.save")}
+        <Button size="default" onClick={save} disabled={saving} className="min-w-32 gap-2 shadow-sm">
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          <span>{saving ? (isAr ? "جارٍ الحفظ..." : "Saving...") : isAr ? "حفظ إعدادات الشحن والتوصيل" : "Save Shipping Settings"}</span>
         </Button>
       </div>
     </Card>
@@ -5333,7 +5408,13 @@ function StorefrontModeCard({ brandId }: { brandId: string }) {
   );
 }
 
-function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
+function StorefrontCustomizerCard({
+  brandId,
+  onRegisterSave,
+}: {
+  brandId: string;
+  onRegisterSave?: (fn: () => Promise<void> | void) => void;
+}) {
   const brand = useBrand();
   const heroSaveRef = useRef<(() => Promise<void>) | null>(null);
   const { lang } = useI18n();
@@ -5585,9 +5666,17 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         trust_badges:
           data.trust_badges && typeof data.trust_badges === "object"
             ? (data.trust_badges as any)
-            : DEFAULT_TRUST_BADGES,
+            : {
+                enabled: true,
+                items: getDynamicTrustBadges({
+                  vertical: (brand as any)?.store_vertical,
+                  settings: data,
+                  currency: (data as any)?.currency,
+                  brandName: brandDisplayName,
+                }),
+              },
       });
-  }, [data]);
+  }, [data, brand, brandDisplayName]);
 
   const save = async () => {
     if (!state) return;
@@ -5661,6 +5750,12 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
       await router.invalidate();
     }
   };
+
+  const saveRef = useRef(save);
+  saveRef.current = save;
+  useEffect(() => {
+    onRegisterSave?.(() => saveRef.current());
+  }, [onRegisterSave]);
 
   const updatePromoCard = (index: number, patch: Partial<HomePromoCard>) =>
     setState((current) =>
@@ -6671,6 +6766,8 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           isAr={isAr}
           footerBg={state.footer_bg}
           footerFg={state.footer_fg}
+          vertical={(brand as any)?.store_vertical}
+          settings={state}
         />
 
         {/* Hero Title Customization Card */}
@@ -7411,15 +7508,15 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         )}
       </div>
 
-      <div className="sticky bottom-20 md:bottom-3 z-10 flex justify-end rounded-xl border border-border-strong bg-background/90 p-3 shadow-lg backdrop-blur-xl">
-        <Button onClick={save} disabled={saving}>
-          {saving
-            ? isAr
-              ? "جارٍ الحفظ..."
-              : "Saving..."
-            : isAr
-              ? "حفظ إعدادات المتجر"
-              : "Save storefront settings"}
+      <div className="flex justify-end pt-4 border-t border-border">
+        <Button
+          size="default"
+          onClick={save}
+          disabled={saving}
+          className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2"
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          <span>{saving ? (isAr ? "جارٍ الحفظ..." : "Saving...") : isAr ? "حفظ إعدادات المتجر" : "Save storefront settings"}</span>
         </Button>
       </div>
     </Card>
@@ -7642,10 +7739,25 @@ function BranchesCard({ brandId }: { brandId: string }) {
   );
 }
 
-function CheckoutFulfillmentSection({ brandId }: { brandId: string }) {
+function CheckoutFulfillmentSection({
+  brandId,
+  onRegisterSave,
+}: {
+  brandId: string;
+  onRegisterSave?: (fn: () => Promise<void> | void) => void;
+}) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const [subTab, setSubTab] = useState<"shipping" | "branches">("shipping");
+  const shippingSaveRef = useRef<(() => Promise<void> | void) | null>(null);
+
+  useEffect(() => {
+    onRegisterSave?.(async () => {
+      if (shippingSaveRef.current) {
+        await shippingSaveRef.current();
+      }
+    });
+  }, [onRegisterSave]);
 
   return (
     <div className="space-y-6">
@@ -7675,7 +7787,12 @@ function CheckoutFulfillmentSection({ brandId }: { brandId: string }) {
       </div>
 
       {subTab === "shipping" ? (
-        <ShippingSettingsCard brandId={brandId} />
+        <ShippingSettingsCard
+          brandId={brandId}
+          onRegisterSave={(fn) => {
+            shippingSaveRef.current = fn;
+          }}
+        />
       ) : (
         <BranchesCard brandId={brandId} />
       )}
@@ -7684,7 +7801,13 @@ function CheckoutFulfillmentSection({ brandId }: { brandId: string }) {
 }
 
 // ---------------- Email Settings ----------------
-function EmailSettingsCard({ brandId }: { brandId: string }) {
+function EmailSettingsCard({
+  brandId,
+  onRegisterSave,
+}: {
+  brandId: string;
+  onRegisterSave?: (fn: () => Promise<void> | void) => void;
+}) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const [state, setState] = useState<{
@@ -7748,6 +7871,12 @@ function EmailSettingsCard({ brandId }: { brandId: string }) {
     if (error) toast.error(error.message);
     else toast.success(isAr ? "تم الحفظ" : "Saved");
   };
+
+  const saveRef = useRef(save);
+  saveRef.current = save;
+  useEffect(() => {
+    onRegisterSave?.(() => saveRef.current());
+  }, [onRegisterSave]);
 
   const injectPlaceholder = (
     ref: React.RefObject<HTMLTextAreaElement | null>,
@@ -7905,8 +8034,14 @@ function EmailSettingsCard({ brandId }: { brandId: string }) {
         </div>
       </div>
       <div className="flex justify-end pt-2">
-        <Button size="sm" onClick={save} disabled={saving}>
-          {isAr ? "حفظ إعدادات البريد" : "Save email settings"}
+        <Button
+          size="default"
+          onClick={save}
+          disabled={saving}
+          className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2"
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          <span>{saving ? (isAr ? "جارٍ الحفظ..." : "Saving...") : isAr ? "حفظ إعدادات البريد" : "Save email settings"}</span>
         </Button>
       </div>
     </Card>
