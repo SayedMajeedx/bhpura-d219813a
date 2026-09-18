@@ -103,10 +103,10 @@ function ExportCenterPage() {
       const { data, error } = await supabase
         .from("orders")
         .select(`
-          id, invoice_number, order_date, total, subtotal, delivery_fee, tax_amount,
-          payment_method, payment_status, status, channel, notes, created_at, customer_id,
+          id, invoice_number, total, subtotal, shipping, discount, tax_amount,
+          payment_method, payment_status, status, fulfillment_status, delivery_notes, created_at, customer_id,
           order_items (
-            id, name, sku, quantity, price, total
+            id, description, quantity, unit_price, unit_cost, line_total
           )
         `)
         .eq("brand_id", brandId)
@@ -1214,16 +1214,16 @@ function OrderExportSection({
         } else {
           items.forEach((it: any) => {
             const qty = Number(it.quantity) || 1;
-            const price = Number(it.price) || 0;
+            const price = Number(it.unit_price ?? it.price) || 0;
             out.push({
               invoice_number: invoiceNo,
               order_date: orderDateStr,
               customer_name: custName,
-              product_name: it.name || "Product",
+              product_name: it.description || it.name || "Product",
               sku: it.sku || "—",
               quantity: qty,
               unit_price: price,
-              item_total: it.total != null ? Number(it.total) : price * qty,
+              item_total: it.line_total != null ? Number(it.line_total) : (it.total != null ? Number(it.total) : price * qty),
               payment_status: o.payment_status || "paid",
               order_status: o.status || "completed",
             });
@@ -1231,9 +1231,9 @@ function OrderExportSection({
         }
       } else if (selectedPresetId === "accounting_ledger") {
         const totalPaid = Number(o.total) || 0;
-        const shipping = Number(o.delivery_fee) || 0;
+        const shipping = Number(o.shipping ?? o.delivery_fee) || 0;
         const vat = Number(o.tax_amount) || 0;
-        const discount = Number(o.discount_amount) || 0;
+        const discount = Number(o.discount ?? o.discount_amount) || 0;
         const taxable = totalPaid - shipping;
         const gross = taxable + discount;
 
@@ -1260,8 +1260,8 @@ function OrderExportSection({
           customer_phone: custPhone,
           items_count: items.reduce((acc: number, it: any) => acc + (Number(it.quantity) || 1), items.length || 1),
           subtotal: Number(o.subtotal) || Number(o.total) || 0,
-          discount_amount: Number(o.discount_amount) || 0,
-          delivery_fee: Number(o.delivery_fee) || 0,
+          discount_amount: Number(o.discount ?? o.discount_amount) || 0,
+          delivery_fee: Number(o.shipping ?? o.delivery_fee) || 0,
           tax_amount: Number(o.tax_amount) || 0,
           total: Number(o.total) || 0,
           payment_method: o.payment_method || "BenefitPay / Card",

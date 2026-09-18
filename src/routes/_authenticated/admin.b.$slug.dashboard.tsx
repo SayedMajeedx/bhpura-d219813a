@@ -68,10 +68,9 @@ function Dashboard() {
     const start = new Date(end);
     start.setDate(start.getDate() - 29);
     start.setHours(0, 0, 0, 0);
+    const periodDurationMs = end.getTime() - start.getTime();
     const previousEnd = new Date(start.getTime() - 1);
-    const previousStart = new Date(previousEnd);
-    previousStart.setDate(previousStart.getDate() - 29);
-    previousStart.setHours(0, 0, 0, 0);
+    const previousStart = new Date(previousEnd.getTime() - periodDurationMs);
     return { start, end, previousStart, previousEnd };
   }, []);
   const reportingTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -612,13 +611,17 @@ function Dashboard() {
     );
     const opex = manualOpex + paymentProcessingFees + incubatorCommissions;
     const reportRevenue = Number(accountingRow?.net_revenue ?? revenue);
+    const reportMerchRevenue = Number(
+      accountingRow?.net_merchandise_after_returns ?? accountingRow?.net_merch_sales ?? revenue,
+    );
     const reportCogs = Number(
       accountingRow?.known_cogs_after_returns ?? accountingRow?.known_cogs ?? cogs,
     );
     const reportOpex = Number(accountingRow?.expenses ?? opex);
-    const netProfit = reportRevenue - reportCogs - reportOpex;
+    const grossProfit = reportMerchRevenue - reportCogs;
+    const netProfit = grossProfit - reportOpex;
     const grossMarginPercent =
-      reportRevenue > 0 ? ((reportRevenue - reportCogs) / reportRevenue) * 100 : 0;
+      reportMerchRevenue > 0 ? (grossProfit / reportMerchRevenue) * 100 : 0;
     const current30Orders = orders;
     const prior30Orders = allOrders.filter((o) => {
       const timestamp = Date.parse(o.created_at);

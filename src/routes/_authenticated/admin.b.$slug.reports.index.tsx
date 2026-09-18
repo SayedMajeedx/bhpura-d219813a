@@ -95,11 +95,14 @@ function ReportsOverview() {
   const data = rows.find((row: any) => row.currency === effectiveCurrency) as any;
   const money = (value: unknown) => formatMoney(Number(value || 0), data?.currency || "BHD", lang);
   const netRevenue = Number(data?.net_revenue ?? data?.paid_order_value ?? 0);
+  const netMerchandise = Number(
+    data?.net_merchandise_after_returns ?? data?.net_merch_sales ?? 0,
+  );
   const grossProfit =
-    Number(data?.net_merchandise_after_returns ?? data?.net_merch_sales ?? 0) -
+    netMerchandise -
     Number(data?.known_cogs_after_returns ?? data?.known_cogs ?? 0);
   const netProfit = grossProfit - Number(data?.expenses || 0);
-  const grossMargin = netRevenue > 0 ? (grossProfit / netRevenue) * 100 : 0;
+  const grossMargin = netMerchandise > 0 ? (grossProfit / netMerchandise) * 100 : 0;
   const averageOrderValue =
     Number(data?.paid_order_count || 0) > 0 ? netRevenue / Number(data.paid_order_count) : 0;
   const previousRows = Array.isArray(previousQuery.data) ? previousQuery.data : [];
