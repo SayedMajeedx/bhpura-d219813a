@@ -234,13 +234,14 @@ export default function InvoicePreview({
   const color = settings.primary_color || "#8b6f47";
   const bg = settings.background_color || "#ffffff";
   const text = settings.text_color || "#1a1a1a";
-  const fontSize = Number(settings.font_size) || 14;
-  const logoX = Number(settings.logo_x) || 0;
-  const logoY = Number(settings.logo_y) || 0;
-  const logoW = Number(settings.logo_width) || 160;
-  const logoH = Number(settings.logo_height) || 64;
+  const logoX = Math.max(0, Number(settings.logo_x) || 0);
+  const logoY = Math.max(0, Number(settings.logo_y) || 0);
+  const logoW = Math.max(20, Number(settings.logo_width) || 160);
+  const logoH = Math.max(20, Number(settings.logo_height) || 64);
   const template = settings.invoice_template || "modern";
   const secondary = settings.invoice_secondary_color || `${color}10`;
+  const showBusinessName = (settings as any).invoice_show_business_name !== false;
+  const showTerms = (settings as any).invoice_show_terms !== false;
 
   const [invoiceLang, setInvoiceLang] = useState<"en" | "ar">("en");
   const { vocabulary } = useVocabulary();
@@ -253,6 +254,7 @@ export default function InvoicePreview({
   };
   const num = (n: number | string) => (isRTL ? toArabicDigits(String(n)) : String(n));
 
+  const fontSize = Number(settings.font_size) || 14;
   const arabicFont = (settings as any).invoice_arabic_font_family || "Cairo";
   const family = isRTL
     ? `"${arabicFont}", "Tajawal", "Cairo", sans-serif`
@@ -417,7 +419,7 @@ export default function InvoicePreview({
                   />
                 </div>
               )}
-              <p className="font-semibold">{settings.business_name}</p>
+              {showBusinessName && <p className="font-semibold">{settings.business_name}</p>}
               {settings.invoice_show_business_details !== false && (
                 <div className="text-xs mt-1 space-y-0.5" style={{ opacity: 0.7 }}>
                   {settings.address && <p>{settings.address}</p>}
@@ -890,11 +892,12 @@ export default function InvoicePreview({
                   {order.notes}
                 </p>
               )}
-              {settings.footer_note ? (
+              {settings.footer_note && (
                 <p className="italic" style={{ color: text, opacity: 0.85 }}>
                   {settings.footer_note}
                 </p>
-              ) : (
+              )}
+              {showTerms && (
                 <div
                   className="space-y-1 rounded-md p-3 text-xs leading-relaxed"
                   style={{ backgroundColor: secondary }}
@@ -904,8 +907,10 @@ export default function InvoicePreview({
                   </p>
                   <p style={{ color: surfaceCardTextColor, opacity: 0.88 }}>
                     {isRTL
-                      ? "فترة الاستبدال والاسترجاع خلال 3 أيام من تاريخ الاستلام. القطع المصنعة خصيصاً غير قابلة للاسترجاع بعد البدء في التنفيذ."
-                      : "Exchange and return policy valid within 3 days of receipt. Custom-made products are non-refundable once production has commenced."}
+                      ? (settings as any).invoice_terms_ar ||
+                        "شكراً لتعاملكم معنا. لأي استفسارات أو تفاصيل إضافية، يسعدنا تواصلكم."
+                      : (settings as any).invoice_terms_en ||
+                        "Thank you for your business. For any inquiries, please feel free to reach out to us."}
                   </p>
                 </div>
               )}

@@ -32,7 +32,7 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
     const { data: settings } = await supabaseAdmin
       .from("business_settings")
       .select(
-        "business_name, logo_url, address, phone, email, vat_number, currency, footer_note, primary_color, background_color, text_color, font_family, font_url, invoice_template, invoice_secondary_color, invoice_show_business_details, invoice_show_customer_contact, invoice_show_fulfillment, invoice_show_notes, invoice_title_en, invoice_title_ar, invoice_arabic_font_family, invoice_status_paid_color, invoice_status_unpaid_color, invoice_status_progress_color, invoice_table_header_bg, invoice_table_header_fg, invoice_divider_color",
+        "business_name, logo_url, logo_x, logo_y, logo_width, logo_height, logo_size, font_size, address, phone, email, vat_number, currency, footer_note, primary_color, background_color, text_color, font_family, font_url, invoice_template, invoice_secondary_color, invoice_show_business_details, invoice_show_business_name, invoice_show_customer_contact, invoice_show_fulfillment, invoice_show_notes, invoice_show_terms, invoice_terms_ar, invoice_terms_en, invoice_title_en, invoice_title_ar, invoice_arabic_font_family, invoice_status_paid_color, invoice_status_unpaid_color, invoice_status_progress_color, invoice_table_header_bg, invoice_table_header_fg, invoice_divider_color",
       )
       .eq("brand_id", order.brand_id)
       .maybeSingle();

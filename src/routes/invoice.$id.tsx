@@ -131,9 +131,15 @@ function PublicInvoice() {
   const secondaryColor = settings?.invoice_secondary_color || `${color}10`;
   const template = settings?.invoice_template || "modern";
   const showBusiness = settings?.invoice_show_business_details !== false;
+  const showBusinessName = settings?.invoice_show_business_name !== false;
+  const showTerms = settings?.invoice_show_terms !== false;
   const showContact = settings?.invoice_show_customer_contact !== false;
   const showFulfillment = settings?.invoice_show_fulfillment !== false;
   const showNotes = settings?.invoice_show_notes !== false;
+  const logoX = Math.max(0, Number(settings?.logo_x) || 0);
+  const logoY = Math.max(0, Number(settings?.logo_y) || 0);
+  const logoW = Math.max(20, Number(settings?.logo_width) || 160);
+  const logoH = Math.max(20, Number(settings?.logo_height) || 64);
   const invoiceTitle =
     (isRTL ? settings?.invoice_title_ar : settings?.invoice_title_en) || L.invoice;
   const items = order.order_items ?? [];
@@ -292,6 +298,7 @@ function PublicInvoice() {
                   : `8px solid ${color}`,
             backgroundColor: bgColor,
             color: textColor,
+            fontSize: settings?.font_size ? `${settings.font_size}px` : undefined,
             fontFamily: settings?.font_url
               ? `'PublicInvoiceCustom', sans-serif`
               : isRTL
@@ -316,14 +323,27 @@ function PublicInvoice() {
             <div className="pdf-invoice-header flex flex-row justify-between items-start gap-4 mb-8">
               <div className="pdf-brand-block w-[48%] min-w-0" style={{ textAlign: "start" }}>
                 {settings?.logo_url && (
-                  <img
-                    src={settings.logo_url}
-                    alt="logo"
-                    className="pdf-brand-logo h-12 sm:h-14 max-w-full object-contain mb-2"
-                    style={{ marginInlineEnd: "auto" }}
-                  />
+                  <div
+                    className="pdf-brand-logo-wrap relative mb-3 flex"
+                    style={{ height: logoH + logoY + 8, justifyContent: "flex-start" }}
+                  >
+                    <img
+                      src={settings.logo_url}
+                      alt="logo"
+                      className="pdf-brand-logo"
+                      draggable={false}
+                      style={{
+                        position: "absolute",
+                        insetInlineStart: logoX,
+                        top: logoY,
+                        width: logoW,
+                        height: logoH,
+                        objectFit: "contain",
+                      }}
+                    />
+                  </div>
                 )}
-                <p className="font-semibold">{settings?.business_name}</p>
+                {showBusinessName && <p className="font-semibold">{settings?.business_name}</p>}
                 {showBusiness && (
                   <div className="text-xs mt-1 space-y-0.5" style={{ opacity: 0.72 }}>
                     {settings?.address && <p>{settings.address}</p>}
@@ -795,11 +815,12 @@ function PublicInvoice() {
                     {order.notes}
                   </p>
                 )}
-                {settings?.footer_note ? (
+                {settings?.footer_note && (
                   <p className="italic" style={{ color: textColor, opacity: 0.85 }}>
                     {settings.footer_note}
                   </p>
-                ) : (
+                )}
+                {showTerms && (
                   <div
                     className="space-y-1 rounded-md p-3 text-xs leading-relaxed"
                     style={{ backgroundColor: secondaryColor }}
@@ -809,8 +830,10 @@ function PublicInvoice() {
                     </p>
                     <p style={{ color: surfaceCardTextColor, opacity: 0.88 }}>
                       {isRTL
-                        ? "فترة الاستبدال والاسترجاع خلال 3 أيام من تاريخ الاستلام. القطع المصنعة خصيصاً غير قابلة للاسترجاع بعد البدء في التنفيذ."
-                        : "Exchange and return policy valid within 3 days of receipt. Custom-made products are non-refundable once production has commenced."}
+                        ? (settings as any)?.invoice_terms_ar ||
+                          "شكراً لتعاملكم معنا. لأي استفسارات أو تفاصيل إضافية، يسعدنا تواصلكم."
+                        : (settings as any)?.invoice_terms_en ||
+                          "Thank you for your business. For any inquiries, please feel free to reach out to us."}
                     </p>
                   </div>
                 )}
