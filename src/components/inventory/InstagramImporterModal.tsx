@@ -1234,6 +1234,11 @@ export function InstagramImporterModal({
                                     .filter(Boolean);
                                   handleFieldEdit(draft.id, "sizes", parsedSizes);
                                 }}
+                                placeholder={
+                                  isAr
+                                    ? "مثال: 52, 54, 56 (اختياري)"
+                                    : "e.g. S, M, L (optional)"
+                                }
                                 className="h-7 text-xs rounded-lg font-mono"
                               />
                             </div>

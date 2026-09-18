@@ -724,8 +724,12 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
       "6. CURRENCY: Explicitly look for prices in BHD, BD, bd, dinar, دينار, د.ب.",
       "7. IF NO PRICE OR UNCERTAIN: Return price: null. Do NOT guess.",
       "8. EXCLUSIONS: Do NOT confuse sizing numbers or phone numbers with prices.",
+      "SIZES & COLORS RULES:",
+      "9. Extract sizes ONLY if explicitly stated in the caption (e.g. '52, 54, 56', 'S, M, L, XL', 'مقاسات: 50-60').",
+      "10. If no sizes are explicitly mentioned in the caption, return sizes: []. NEVER assume or hallucinate default sizes.",
+      "11. Extract colors ONLY if explicitly stated in the caption. Otherwise return colors: [].",
       "CRITICAL CONFIDENCE SCORING (0.0 to 1.0 FOR EACH INDIVIDUAL FIELD):",
-      "9. For EACH field ('name', 'price', 'description', 'sizes'), provide a separate numeric confidence score between 0.0 and 1.0:",
+      "12. For EACH field ('name', 'price', 'description', 'sizes'), provide a separate numeric confidence score between 0.0 and 1.0:",
       "   - 0.9 to 1.0: Explicitly stated in caption with 100% clarity.",
       "   - 0.6 to 0.8: Strongly inferred but has minor ambiguity.",
       "   - 0.0 to 0.5: Uncertain, ambiguous, or field was missing in caption (price MUST be 0.0 if not mentioned).",
@@ -914,8 +918,13 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
 
       const description = (parsed.description || post.caption || "").trim();
       const sizes =
-        Array.isArray(parsed.sizes) && parsed.sizes.length > 0 ? parsed.sizes : ["52", "54", "56"];
-      const colors = Array.isArray(parsed.colors) ? parsed.colors : [];
+        Array.isArray(parsed.sizes) && parsed.sizes.length > 0
+          ? parsed.sizes.map((s: string) => String(s).trim()).filter(Boolean)
+          : [];
+      const colors =
+        Array.isArray(parsed.colors) && parsed.colors.length > 0
+          ? parsed.colors.map((c: string) => String(c).trim()).filter(Boolean)
+          : [];
       const category =
         parsed.category && String(parsed.category).trim() !== ""
           ? String(parsed.category).trim()
@@ -926,7 +935,9 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
         0,
         Math.min(1, Number(parsed.confidence?.description) || 0.75),
       );
-      const sizesConfidence = Math.max(0, Math.min(1, Number(parsed.confidence?.sizes) || 0.7));
+      const sizesConfidence = sizes.length > 0
+        ? Math.max(0, Math.min(1, Number(parsed.confidence?.sizes) || 0.8))
+        : 1.0;
 
       return {
         id: post.id,
@@ -1049,17 +1060,44 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
         throw new Error(`Failed to check existing imports: ${existingError.message}`);
 
       const existingPostIds = new Set<string>();
-      if (Array.isArray(existingProducts)) {
-        for (const row of existingProducts) {
-          if (Array.isArray(row.custom_fields)) {
-            const field = row.custom_fields.find((f: any) => f?.key === "instagram_post_id");
-            if (field?.value) existingPostIds.add(String(field.value));
-          } else if (row.custom_fields && typeof row.custom_fields === "object") {
-            if (row.custom_fields.instagram_post_id) {
-              existingPostIds.add(String(row.custom_fields.instagram_post_id));
+
+      // Check import_runs for previous Instagram imports
+      try {
+        const { data: existingRuns } = await (supabaseAdmin.from("import_runs" as never) as any)
+          .select("issues")
+          .eq("brand_id", brandId)
+          .eq("source", "instagram");
+        if (Array.isArray(existingRuns)) {
+          for (const run of existingRuns) {
+            const ids = run?.issues?.imported_post_ids;
+            if (Array.isArray(ids)) {
+              ids.forEach((id: string) => existingPostIds.add(String(id)));
             }
           }
         }
+      } catch (err) {
+        console.warn("Could not query import_runs for existing Instagram posts:", err);
+      }
+
+      // Also check legacy products with instagram_post_id in custom_fields
+      try {
+        const { data: existingProducts } = await (supabaseAdmin.from("products" as never) as any)
+          .select("id, custom_fields")
+          .eq("brand_id", brandId);
+        if (Array.isArray(existingProducts)) {
+          for (const row of existingProducts) {
+            if (Array.isArray(row.custom_fields)) {
+              const field = row.custom_fields.find((f: any) => f?.key === "instagram_post_id");
+              if (field?.value) existingPostIds.add(String(field.value));
+            } else if (row.custom_fields && typeof row.custom_fields === "object") {
+              if (row.custom_fields.instagram_post_id) {
+                existingPostIds.add(String(row.custom_fields.instagram_post_id));
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Could not query legacy custom_fields:", err);
       }
 
       const newProducts = data.products.filter((product) => !existingPostIds.has(product.id));
@@ -1068,6 +1106,7 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
       }
 
       let insertedCount = 0;
+      const insertedPostIds: string[] = [];
 
       for (const p of newProducts) {
         // Collect all selected and successful R2 images
@@ -1097,33 +1136,9 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
           validMedia.push({ type: "image" as const, url: p.coverImageUrl, is_cover: true });
         }
 
-        const customFieldsArray = [
-          {
-            key: "instagram_post_id",
-            value: p.id,
-            label_ar: "منشور انستقرام",
-            label_en: "Instagram Post ID",
-          },
-          {
-            key: "instagram_permalink",
-            value: p.url,
-            label_ar: "رابط المنشور",
-            label_en: "Post Permalink",
-          },
-          {
-            key: "extraction_confidence",
-            value: JSON.stringify(p.fieldConfidence),
-            label_ar: "درجة ثقة الاستخراج",
-            label_en: "Extraction Confidence",
-          },
-          {
-            key: "field_sources",
-            value: JSON.stringify(p.fieldSources),
-            label_ar: "مصدر الحقول",
-            label_en: "Field Sources",
-          },
-        ];
+        const price = typeof p.price === "number" && !isNaN(p.price) ? p.price : 0;
 
+        // Insert product: custom_fields MUST be empty [] so customer customization engine is clean
         const { data: prodData, error: prodErr } = await (
           supabaseAdmin.from("products" as never) as any
         )
@@ -1145,7 +1160,8 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
             featured_trending: false,
             show_sale_badge: false,
             media: validMedia,
-            custom_fields: customFieldsArray,
+            base_price: price, // Set base_price directly on products table
+            custom_fields: [], // Clean empty array - never pollute customer customization engine!
           })
           .select("id")
           .single();
@@ -1156,28 +1172,59 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
         }
 
         insertedCount++;
+        if (p.id) insertedPostIds.push(p.id);
 
-        const sizes = Array.isArray(p.sizes) && p.sizes.length > 0 ? p.sizes : [""];
-        const colors = Array.isArray(p.colors) && p.colors.length > 0 ? p.colors : [""];
-        const price = typeof p.price === "number" && !isNaN(p.price) ? p.price : 0;
+        const sizes = Array.isArray(p.sizes)
+          ? p.sizes.map((s: string) => String(s).trim()).filter(Boolean)
+          : [];
+        const colors = Array.isArray(p.colors)
+          ? p.colors.map((c: string) => String(c).trim()).filter(Boolean)
+          : [];
 
-        const variantRows = sizes
-          .flatMap((size: string) => colors.map((color: string) => ({ size, color })))
-          .map(({ size, color }) => ({
-            user_id: userId,
-            brand_id: brandId,
-            product_id: prodData.id,
-            size,
-            size_unit: "",
-            color,
-            fabric: "",
-            sku: `IG-${prodData.id.slice(0, 5).toUpperCase()}-${size ? size + "-" : ""}${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
-            barcode: null,
-            cost_price: 0,
-            selling_price: price,
-            stock_main: 0,
-            stock_incubator: 0,
-          }));
+        let variantRows: any[] = [];
+
+        if (sizes.length > 0 || colors.length > 0) {
+          const effectiveSizes = sizes.length > 0 ? sizes : [""];
+          const effectiveColors = colors.length > 0 ? colors : [""];
+          variantRows = effectiveSizes
+            .flatMap((size: string) => effectiveColors.map((color: string) => ({ size, color })))
+            .map(({ size, color }) => ({
+              user_id: userId,
+              brand_id: brandId,
+              product_id: prodData.id,
+              size: size || null,
+              size_unit: "",
+              color: color || null,
+              fabric: "",
+              sku: `IG-${prodData.id.slice(0, 5).toUpperCase()}-${size ? size + "-" : ""}${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
+              barcode: null,
+              cost_price: 0,
+              selling_price: price,
+              stock_main: 0,
+              stock_incubator: 0,
+              stock: 0,
+            }));
+        } else {
+          // Standard single product with no size or color options
+          variantRows = [
+            {
+              user_id: userId,
+              brand_id: brandId,
+              product_id: prodData.id,
+              size: null,
+              size_unit: "",
+              color: null,
+              fabric: "",
+              sku: `IG-${prodData.id.slice(0, 5).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
+              barcode: null,
+              cost_price: 0,
+              selling_price: price,
+              stock_main: 0,
+              stock_incubator: 0,
+              stock: 0,
+            },
+          ];
+        }
 
         if (variantRows.length > 0) {
           const { error: varErr } = await (
@@ -1188,6 +1235,28 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
             console.error("Failed to insert product variants:", varErr);
             throw new Error(`فشل إدخال متغيرات المنتج: ${varErr.message}`);
           }
+        }
+      }
+
+      // Record completed import run for audit trail and deduplication
+      if (insertedCount > 0) {
+        try {
+          await (supabaseAdmin.from("import_runs" as never) as any).insert({
+            brand_id: brandId,
+            created_by: userId,
+            source: "instagram",
+            entity_type: "products",
+            status: "completed",
+            total_count: data.products.length,
+            success_count: insertedCount,
+            skipped_count: data.products.length - insertedCount,
+            failed_count: 0,
+            issues: {
+              imported_post_ids: insertedPostIds,
+            },
+          });
+        } catch (auditErr) {
+          console.warn("Non-blocking import_runs creation notice:", auditErr);
         }
       }
 

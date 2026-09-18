@@ -116,6 +116,7 @@ import {
   customFieldPresetsFrom,
   sizingPresetsFrom,
   sizingPresetOrderFrom,
+  type VariantAxisConfig,
 } from "@/lib/addons/addon-registry";
 import {
   getVerticalSizingPresets,
@@ -5431,11 +5432,12 @@ function VariantMobileCard({
   brand,
   update,
   del,
-  mainLabel,
-  incLabel,
   isSelected,
   onToggleSelect,
   product,
+  sizeAxis,
+  colorAxis,
+  fabricAxis,
 }: {
   v: Variant;
   canViewFinancials: boolean;
@@ -5452,6 +5454,9 @@ function VariantMobileCard({
   isSelected: boolean;
   onToggleSelect: () => void;
   product?: Product;
+  sizeAxis?: VariantAxisConfig;
+  colorAxis?: VariantAxisConfig;
+  fabricAxis?: VariantAxisConfig;
 }) {
   const [costVal, setCostVal] = useState(String(v.cost_price));
   const [sellingVal, setSellingVal] = useState(
@@ -5494,6 +5499,10 @@ function VariantMobileCard({
     update(v, { selling_price: salePrice });
   };
 
+  const isSizeVis = sizeAxis ? sizeAxis.visible : true;
+  const isColorVis = colorAxis ? colorAxis.visible : true;
+  const isFabricVis = fabricAxis ? fabricAxis.visible : true;
+
   return (
     <div
       className={`rounded-xl border p-4 space-y-3.5 shadow-sm transition-all bg-background ${isSelected ? "border-primary bg-primary/5/10" : "border-border"}`}
@@ -5508,19 +5517,19 @@ function VariantMobileCard({
             onChange={onToggleSelect}
           />
           <div className="flex items-center gap-1.5 flex-wrap">
-            {[v.size, v.color, v.fabric].some(Boolean) ? (
+            {[isSizeVis && v.size, isColorVis && v.color, isFabricVis && v.fabric].some(Boolean) ? (
               <>
-                {v.size && (
+                {isSizeVis && v.size && (
                   <span className="inline-flex items-center bg-primary/5 text-primary text-xs font-bold px-1.5 py-0.5 border border-primary/10 rounded-sm">
                     {v.size} {v.size_unit || ""}
                   </span>
                 )}
-                {v.color && (
+                {isColorVis && v.color && (
                   <span className="inline-flex items-center bg-muted text-foreground text-xs font-bold px-1.5 py-0.5 border border-border rounded-sm">
                     {v.color}
                   </span>
                 )}
-                {v.fabric && (
+                {isFabricVis && v.fabric && (
                   <span className="inline-flex items-center bg-muted text-foreground text-xs font-bold px-1.5 py-0.5 border border-border rounded-sm">
                     {v.fabric}
                   </span>
@@ -5771,6 +5780,30 @@ function VariantList({
   const isAr = lang === "ar";
   const { canViewFinancials } = useProfile();
   const brand = useBrand();
+  const { profile: storeProfile } = useAdminStoreProfile(brand.id);
+  const { addons } = useAddons();
+  const addonAxisDefaults = useMemo(
+    () => variantAxisDefaultsFrom(addons.length > 0 ? addons : storeProfile?.addons),
+    [addons, storeProfile?.addons],
+  );
+  const sizeAxis = resolveVariantAxis({
+    axis: "size",
+    product,
+    addonDefaults: addonAxisDefaults,
+    lang: isAr ? "ar" : "en",
+  });
+  const colorAxis = resolveVariantAxis({
+    axis: "color",
+    product,
+    addonDefaults: addonAxisDefaults,
+    lang: isAr ? "ar" : "en",
+  });
+  const fabricAxis = resolveVariantAxis({
+    axis: "fabric",
+    product,
+    addonDefaults: addonAxisDefaults,
+    lang: isAr ? "ar" : "en",
+  });
   const [adding, setAdding] = useState(false);
   const empty = {
     size: "",
@@ -5840,10 +5873,10 @@ function VariantList({
       user_id: user.id,
       brand_id: brand.id,
       product_id: productId,
-      size: row.size || null,
-      size_unit: row.size_unit || null,
-      color: row.color || null,
-      fabric: row.fabric || null,
+      size: (sizeAxis.visible ? row.size : null) || null,
+      size_unit: (sizeAxis.visible ? row.size_unit : null) || null,
+      color: (colorAxis.visible ? row.color : null) || null,
+      fabric: (fabricAxis.visible ? row.fabric : null) || null,
       sku: row.sku || null,
       barcode: row.barcode.trim() || null,
       cost_price: Number(product?.cost_price ?? 0),
@@ -6107,6 +6140,9 @@ function VariantList({
             isSelected={selectedIds.has(v.id)}
             onToggleSelect={() => toggleSelect(v.id)}
             product={product}
+            sizeAxis={sizeAxis}
+            colorAxis={colorAxis}
+            fabricAxis={fabricAxis}
           />
         ))}
 
@@ -6117,61 +6153,63 @@ function VariantList({
               {t("inventory.addVariant")}
             </div>
             <div className="grid grid-cols-2 gap-3.5">
-              <div>
-                <Label className="text-xs font-bold text-muted-foreground uppercase">
-                  {(isAr ? product?.variant_label_size_ar : product?.variant_label_size_en) ||
-                    product?.variant_label_size_en ||
-                    product?.variant_label_size_ar ||
-                    t("inventory.size")}
-                </Label>
-                <Input
-                  className="mt-1 h-9 rounded-md text-xs"
-                  value={row.size}
-                  onChange={(e) => setRow({ ...row, size: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label className="text-xs font-bold text-muted-foreground uppercase">
-                  {isAr ? "الوحدة" : "Unit"}
-                </Label>
-                <select
-                  className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2.5 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                  value={row.size_unit}
-                  onChange={(e) => setRow({ ...row, size_unit: e.target.value })}
-                >
-                  {SIZE_UNITS.map((u) => (
-                    <option key={u} value={u}>
-                      {u || "—"}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <Label className="text-xs font-bold text-muted-foreground uppercase">
-                  {(isAr ? product?.variant_label_color_ar : product?.variant_label_color_en) ||
-                    product?.variant_label_color_en ||
-                    product?.variant_label_color_ar ||
-                    t("inventory.color")}
-                </Label>
-                <Input
-                  className="mt-1 h-9 rounded-md text-xs"
-                  value={row.color}
-                  onChange={(e) => setRow({ ...row, color: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label className="text-xs font-bold text-muted-foreground uppercase">
-                  {(isAr ? product?.variant_label_fabric_ar : product?.variant_label_fabric_en) ||
-                    product?.variant_label_fabric_en ||
-                    product?.variant_label_fabric_ar ||
-                    t("inventory.fabric")}
-                </Label>
-                <Input
-                  className="mt-1 h-9 rounded-md text-xs"
-                  value={row.fabric}
-                  onChange={(e) => setRow({ ...row, fabric: e.target.value })}
-                />
-              </div>
+              {sizeAxis.visible && (
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">
+                    {sizeAxis.label}
+                  </Label>
+                  <Input
+                    className="mt-1 h-9 rounded-md text-xs"
+                    value={row.size}
+                    placeholder={sizeAxis.label}
+                    onChange={(e) => setRow({ ...row, size: e.target.value })}
+                  />
+                </div>
+              )}
+              {sizeAxis.visible && (
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">
+                    {isAr ? `وحدة ${sizeAxis.label}` : "Unit"}
+                  </Label>
+                  <select
+                    className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2.5 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    value={row.size_unit}
+                    onChange={(e) => setRow({ ...row, size_unit: e.target.value })}
+                  >
+                    {SIZE_UNITS.map((u) => (
+                      <option key={u} value={u}>
+                        {u || "—"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {colorAxis.visible && (
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">
+                    {colorAxis.label}
+                  </Label>
+                  <Input
+                    className="mt-1 h-9 rounded-md text-xs"
+                    value={row.color}
+                    placeholder={colorAxis.label}
+                    onChange={(e) => setRow({ ...row, color: e.target.value })}
+                  />
+                </div>
+              )}
+              {fabricAxis.visible && (
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">
+                    {fabricAxis.label}
+                  </Label>
+                  <Input
+                    className="mt-1 h-9 rounded-md text-xs"
+                    value={row.fabric}
+                    placeholder={fabricAxis.label}
+                    onChange={(e) => setRow({ ...row, fabric: e.target.value })}
+                  />
+                </div>
+              )}
               <div>
                 <Label className="text-xs font-bold text-muted-foreground uppercase">
                   {t("inventory.sku")}
@@ -6405,26 +6443,20 @@ function VariantList({
                   style={{ width: 270, minWidth: 260 }}
                 >
                   {(() => {
-                    const sizeLbl =
-                      (isAr ? product?.variant_label_size_ar : product?.variant_label_size_en) ||
-                      product?.variant_label_size_en ||
-                      product?.variant_label_size_ar ||
-                      (isAr ? "المقاس" : "Size");
-                    const colorLbl =
-                      (isAr ? product?.variant_label_color_ar : product?.variant_label_color_en) ||
-                      product?.variant_label_color_en ||
-                      product?.variant_label_color_ar ||
-                      (isAr ? "اللون" : "Color");
-                    const fabricLbl =
-                      (isAr
-                        ? product?.variant_label_fabric_ar
-                        : product?.variant_label_fabric_en) ||
-                      product?.variant_label_fabric_en ||
-                      product?.variant_label_fabric_ar ||
-                      (isAr ? "الخامة" : "Fabric");
+                    const visibleLabels = [
+                      sizeAxis.visible ? sizeAxis.label : null,
+                      colorAxis.visible ? colorAxis.label : null,
+                      fabricAxis.visible ? fabricAxis.label : null,
+                    ].filter(Boolean);
+                    const axisSummary =
+                      visibleLabels.length > 0
+                        ? visibleLabels.join(" / ")
+                        : isAr
+                          ? "الخصائص"
+                          : "Attributes";
                     return isAr
-                      ? `المتغير (${sizeLbl} / ${colorLbl} / ${fabricLbl})`
-                      : `Variant (${sizeLbl} / ${colorLbl} / ${fabricLbl})`;
+                      ? `المتغير (${axisSummary})`
+                      : `Variant (${axisSummary})`;
                   })()}
                 </th>
                 {renderImageCol && (
@@ -6571,61 +6603,54 @@ function VariantList({
                   {/* Variant (combined attributes inputs) */}
                   <td className="px-2 py-3 align-middle">
                     <div className="flex flex-col gap-1.5 w-full max-w-[260px]">
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <div className="flex gap-1 min-w-0">
-                          <Input
-                            className="h-8 flex-1 min-w-0 text-start text-xs font-semibold"
-                            value={row.size}
-                            onChange={(e) => setRow({ ...row, size: e.target.value })}
-                            placeholder={
-                              (isAr
-                                ? product?.variant_label_size_ar
-                                : product?.variant_label_size_en) ||
-                              product?.variant_label_size_en ||
-                              product?.variant_label_size_ar ||
-                              (isAr ? "المقاس" : "Size")
-                            }
-                          />
-                          <select
-                            className="h-8 rounded-md border border-input bg-background px-1 text-xs outline-none shrink-0"
-                            value={row.size_unit}
-                            onChange={(e) => setRow({ ...row, size_unit: e.target.value })}
-                            title={isAr ? "وحدة المقاس" : "Size unit"}
-                          >
-                            {SIZE_UNITS.map((u) => (
-                              <option key={u} value={u}>
-                                {u === "" ? "—" : u}
-                              </option>
-                            ))}
-                          </select>
+                      {(sizeAxis.visible || colorAxis.visible) && (
+                        <div
+                          className={`grid gap-1.5 ${
+                            sizeAxis.visible && colorAxis.visible
+                              ? "grid-cols-2"
+                              : "grid-cols-1"
+                          }`}
+                        >
+                          {sizeAxis.visible && (
+                            <div className="flex gap-1 min-w-0">
+                              <Input
+                                className="h-8 flex-1 min-w-0 text-start text-xs font-semibold"
+                                value={row.size}
+                                onChange={(e) => setRow({ ...row, size: e.target.value })}
+                                placeholder={sizeAxis.label}
+                              />
+                              <select
+                                className="h-8 rounded-md border border-input bg-background px-1 text-xs outline-none shrink-0"
+                                value={row.size_unit}
+                                onChange={(e) => setRow({ ...row, size_unit: e.target.value })}
+                                title={isAr ? `وحدة ${sizeAxis.label}` : `${sizeAxis.label} unit`}
+                              >
+                                {SIZE_UNITS.map((u) => (
+                                  <option key={u} value={u}>
+                                    {u === "" ? "—" : u}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+                          {colorAxis.visible && (
+                            <Input
+                              className="h-8 w-full min-w-0 text-xs font-semibold"
+                              value={row.color}
+                              onChange={(e) => setRow({ ...row, color: e.target.value })}
+                              placeholder={colorAxis.label}
+                            />
+                          )}
                         </div>
+                      )}
+                      {fabricAxis.visible && (
                         <Input
                           className="h-8 w-full min-w-0 text-xs font-semibold"
-                          value={row.color}
-                          onChange={(e) => setRow({ ...row, color: e.target.value })}
-                          placeholder={
-                            (isAr
-                              ? product?.variant_label_color_ar
-                              : product?.variant_label_color_en) ||
-                            product?.variant_label_color_en ||
-                            product?.variant_label_color_ar ||
-                            (isAr ? "اللون" : "Color")
-                          }
+                          value={row.fabric}
+                          onChange={(e) => setRow({ ...row, fabric: e.target.value })}
+                          placeholder={fabricAxis.label}
                         />
-                      </div>
-                      <Input
-                        className="h-8 w-full min-w-0 text-xs font-semibold"
-                        value={row.fabric}
-                        onChange={(e) => setRow({ ...row, fabric: e.target.value })}
-                        placeholder={
-                          (isAr
-                            ? product?.variant_label_fabric_ar
-                            : product?.variant_label_fabric_en) ||
-                          product?.variant_label_fabric_en ||
-                          product?.variant_label_fabric_ar ||
-                          "Fabric"
-                        }
-                      />
+                      )}
                     </div>
                   </td>
 
