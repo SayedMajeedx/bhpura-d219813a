@@ -58,4 +58,27 @@ describe("immutable order customer identity", () => {
       phone: "97330000003",
     });
   });
+
+  it("prioritizes new checkout email snapshot over linked customer previous email", () => {
+    // Simulates an order placed with a new email (e.g. sayed@tcig.co)
+    // while the customer profile or prior history had an older email (e.g. ifatshady@gmail.com)
+    const order = {
+      customer_name_snapshot: "Sayed Majeed Alawi",
+      customer_email_snapshot: "sayed@tcig.co",
+      customer_phone_snapshot: "39955508",
+      customers: {
+        name: "Sayed Majeed Alawi",
+        email: "ifatshady@gmail.com",
+        phone: "39955508",
+      },
+    };
+
+    expect(getOrderCustomerEmail(order)).toBe("sayed@tcig.co");
+    expect(getOrderCustomerContact(order)).toEqual({
+      name: "Sayed Majeed Alawi",
+      email: "sayed@tcig.co",
+      phone: "39955508",
+    });
+  });
 });
+
