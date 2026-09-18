@@ -136,7 +136,7 @@ export function TrustBadgesEditor({
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-center bg-muted/40 p-2 rounded-xl border border-border-subtle">
-          <Label htmlFor="toggle-trust-badges" className="text-xs font-semibold cursor-pointer">
+          <Label htmlFor="toggle-trust-badges" className="text-xs font-medium cursor-pointer">
             {isAr ? "إظهار شريط الشارات" : "Show Badges Bar"}
           </Label>
           <Switch
@@ -152,7 +152,7 @@ export function TrustBadgesEditor({
           {/* Quick Dynamic Generator & Niche Presets */}
           <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5 space-y-2.5">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
                 <Wand2 className="h-3.5 w-3.5" />
                 <span>
                   {isAr ? "توليد شارات تناسب نوع نشاط المتجر تلقائياً" : "Tailor Badges to Your Niche"}
@@ -253,7 +253,7 @@ export function TrustBadgesEditor({
                         </Button>
                       </div>
 
-                      <span className="text-xs font-semibold text-muted-foreground min-w-[20px]">
+                      <span className="text-xs font-medium text-muted-foreground min-w-[20px]">
                         #{index + 1}
                       </span>
 
@@ -350,7 +350,7 @@ export function TrustBadgesEditor({
               variant="outline"
               size="sm"
               onClick={handleAddItem}
-              className="w-full gap-2 border-dashed border-border py-2 text-xs font-semibold hover:border-primary/50"
+              className="w-full gap-2 border-dashed border-border py-2 text-xs font-medium hover:border-primary/50"
             >
               <Plus className="h-3.5 w-3.5 text-primary" />
               <span>{isAr ? "إضافة شارة طمأنينة جديدة" : "Add New Trust Badge"}</span>
@@ -388,7 +388,7 @@ export function TrustBadgesEditor({
                       };
                       onChange({ ...value, items: [...items, newItem] });
                     }}
-                    className="h-8 text-xs gap-1.5 px-2.5 bg-background hover:bg-muted"
+                    className="h-8 text-xs gap-1.5 px-2.5 bg-background hover:bg-muted font-normal"
                   >
                     {renderTrustBadgeIcon(iconName, "h-3.5 w-3.5", "amber")}
                     <span>{iconName}</span>
@@ -401,7 +401,7 @@ export function TrustBadgesEditor({
           {/* Live Storefront Preview */}
           <div className="mt-4 rounded-xl border border-border-strong bg-muted/20 p-3.5 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold flex items-center gap-1.5 text-muted-foreground">
+              <span className="text-xs font-medium flex items-center gap-1.5 text-muted-foreground">
                 <Eye className="h-3.5 w-3.5 text-primary" />
                 {isAr ? "معاينة حية لشكل الفوتر بالمتجر" : "Live Storefront Footer Preview"}
               </span>

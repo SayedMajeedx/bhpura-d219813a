@@ -740,9 +740,9 @@ function Settings() {
 
   if (isError) {
     return (
-      <Card className="flex min-h-48 flex-col items-center justify-center gap-3 rounded-2xl border-destructive/30 p-6 text-center">
+      <Card className="flex min-h-48 flex-col items-center justify-center gap-3 rounded-xl border-destructive/30 p-6 text-center">
         <AlertTriangle className="h-8 w-8 text-destructive" aria-hidden="true" />
-        <h1 className="text-lg font-bold">
+        <h1 className="text-lg font-semibold tracking-tight text-foreground">
           {lang === "ar"
             ? "تعذّر تحميل إعدادات العلامة التجارية"
             : "Brand settings could not be loaded"}
@@ -828,9 +828,20 @@ function Settings() {
     }
   };
 
+  const storefrontModeSaveRef = useRef<(() => Promise<void> | void) | null>(null);
+  const storefrontCustomizerSaveRef = useRef<(() => Promise<void> | void) | null>(null);
+
   const handleUnifiedSave = async () => {
     if (activeTab === "business" || activeTab === "invoice") {
       await save();
+    } else if (activeTab === "storefront") {
+      setTabSaving(true);
+      try {
+        if (storefrontModeSaveRef.current) await storefrontModeSaveRef.current();
+        if (storefrontCustomizerSaveRef.current) await storefrontCustomizerSaveRef.current();
+      } finally {
+        setTabSaving(false);
+      }
     } else {
       const handler = tabSaveHandlersRef.current[activeTab];
       if (handler) {
@@ -962,7 +973,7 @@ function Settings() {
           asChild
           variant="outline"
           size="sm"
-          className="h-9 gap-1.5 text-xs font-semibold shrink-0"
+          className="h-9 gap-1.5 text-xs font-medium shrink-0"
         >
           <a href={`/${brand.slug}`} target="_blank" rel="noopener noreferrer">
             <Eye className="h-3.5 w-3.5 text-primary" />
@@ -994,8 +1005,8 @@ function Settings() {
       >
         <TabsContent value="business" className="space-y-6 mt-0">
           <StoreProfileCard brandId={brandId} slug={brand.slug} />
-          <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-3 sm:p-6 space-y-4">
-            <h2 className="font-display text-xl font-bold">{t("settings.business")}</h2>
+          <Card className="overflow-hidden border border-border/70 shadow-xs rounded-xl bg-card p-4 sm:p-6 space-y-5">
+            <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground">{t("settings.business")}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label>{t("settings.businessName")}</Label>
@@ -1214,8 +1225,8 @@ function Settings() {
         </TabsContent>
 
         <TabsContent value="invoice" className="space-y-6 mt-0">
-          <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-3 sm:p-6 space-y-4">
-            <h2 className="font-display text-xl">{t("settings.appearance")}</h2>
+          <Card className="overflow-hidden border border-border/70 shadow-xs rounded-xl bg-card p-4 sm:p-6 space-y-5">
+            <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground">{t("settings.appearance")}</h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -1331,50 +1342,6 @@ function Settings() {
                     onChange={(e) => setF({ ...f, background_color: e.target.value })}
                   />
                 </div>
-              </div>
-            </div>
-
-            {/* Storefront Corner Curvature Setting */}
-            <div className="rounded-lg border border-border p-4 space-y-2.5">
-              <div>
-                <Label className="font-semibold text-sm">
-                  {lang === "ar"
-                    ? "انحناء زوايا متجرك (Corner Curvature)"
-                    : "Storefront Corner Curvature"}
-                </Label>
-                <Select
-                  value={f.storefront_radius || "1rem"}
-                  onValueChange={(val) => setF({ ...f, storefront_radius: val })}
-                >
-                  <SelectTrigger className="mt-1.5">
-                    <SelectValue
-                      placeholder={lang === "ar" ? "اختر شكل الزوايا" : "Select corner style"}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0px">
-                      {lang === "ar"
-                        ? "مستقيمة حادة (Sharp Rectangles — 0px)"
-                        : "Sharp Rectangles (0px)"}
-                    </SelectItem>
-                    <SelectItem value="0.375rem">
-                      {lang === "ar" ? "انحناء خفيف (Subtle — 6px)" : "Subtle Rounded (6px)"}
-                    </SelectItem>
-                    <SelectItem value="1rem">
-                      {lang === "ar"
-                        ? "منحنية أنيقة (Extra Curved — 16px Default)"
-                        : "Extra Curved (16px — Default)"}
-                    </SelectItem>
-                    <SelectItem value="1.5rem">
-                      {lang === "ar" ? "دائرية بيضاوية (Pill — 24px)" : "Fully Rounded Pill (24px)"}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="mt-1.5 text-xs text-muted-foreground">
-                  {lang === "ar"
-                    ? "اختر النمط المناسب لهوية متجرك — يطبق فوراً على بطاقات المنتجات والأزرار والقوائم."
-                    : "Choose the style that matches your brand identity — applies instantly to storefront cards, buttons, and panels."}
-                </p>
               </div>
             </div>
 
@@ -1792,10 +1759,17 @@ function Settings() {
         </TabsContent>
 
         <TabsContent value="storefront" className="space-y-6 mt-0">
-          <StorefrontModeCard brandId={brandId} />
+          <StorefrontModeCard
+            brandId={brandId}
+            onRegisterSave={(fn) => {
+              storefrontModeSaveRef.current = fn;
+            }}
+          />
           <StorefrontCustomizerCard
             brandId={brandId}
-            onRegisterSave={(fn) => registerTabSave("storefront", fn)}
+            onRegisterSave={(fn) => {
+              storefrontCustomizerSaveRef.current = fn;
+            }}
           />
           <StorefrontSeoCard brandId={brandId} />
         </TabsContent>
@@ -2020,9 +1994,9 @@ function PaymentSettingsCard({
   }
 
   return (
-    <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-6">
+    <Card className="overflow-hidden border border-border/70 shadow-xs rounded-xl bg-card p-4 sm:p-6 space-y-5">
       <div>
-        <h2 className="font-display text-xl font-bold">
+        <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground">
           {isAr ? "إعدادات الدفع" : "Payment Settings"}
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
@@ -2037,7 +2011,7 @@ function PaymentSettingsCard({
         <div className="overflow-hidden rounded-xl border border-border-subtle p-5 space-y-4 bg-background shadow-sm transition-all duration-300 hover:scale-[1.005] hover:border-primary/20">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold">
+              <p className="text-sm font-medium text-foreground">
                 {isAr ? "الدفع عند الاستلام" : "Cash on Delivery"}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -2057,7 +2031,7 @@ function PaymentSettingsCard({
         <div className="overflow-hidden rounded-xl border border-border-subtle p-5 space-y-4 bg-background shadow-sm transition-all duration-300 hover:scale-[1.005] hover:border-primary/20">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold">
+              <p className="text-sm font-medium text-foreground">
                 {isAr ? "بوابة دفع بالبطاقة" : "Card Payment Gateways"}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -2074,7 +2048,7 @@ function PaymentSettingsCard({
           {state.card_enabled && (
             <div className="pt-4 border-t border-border-subtle space-y-4 animate-in fade-in-50 duration-200">
               <div>
-                <Label className="text-xs font-semibold">
+                <Label className="text-xs font-medium text-foreground">
                   {isAr
                     ? "نسبة رسوم معالجة البطاقة المقدرة (%)"
                     : "Estimated Card Processing Fee (%)"}
@@ -2100,7 +2074,7 @@ function PaymentSettingsCard({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-xs font-semibold">
+                  <Label className="text-xs font-medium text-foreground">
                     {isAr ? "مفتاح API العام (Public Key)" : "Public / Publishable API Key"}
                   </Label>
                   <Input
@@ -2112,7 +2086,7 @@ function PaymentSettingsCard({
                   />
                 </div>
                 <div>
-                  <Label className="text-xs font-semibold">
+                  <Label className="text-xs font-medium text-foreground">
                     {isAr
                       ? "المفتاح السري (Secret Key / Merchant ID)"
                       : "Secret API Key / Merchant ID"}
@@ -2143,7 +2117,7 @@ function PaymentSettingsCard({
         <div className="overflow-hidden rounded-xl border border-border-subtle p-5 space-y-4 bg-background shadow-sm transition-all duration-300 hover:scale-[1.005] hover:border-primary/20">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold">
+              <p className="text-sm font-medium text-foreground">
                 {isAr ? "بنفت باي (BenefitPay)" : "BenefitPay"}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -2161,7 +2135,7 @@ function PaymentSettingsCard({
             <div className="pt-4 border-t border-border-subtle space-y-4 animate-in fade-in-50 duration-200">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-xs font-semibold">
+                  <Label className="text-xs font-medium text-foreground">
                     {isAr
                       ? "نسبة رسوم معالجة بنفت باي (%)"
                       : "Estimated BenefitPay Processing Fee (%)"}
@@ -2188,7 +2162,7 @@ function PaymentSettingsCard({
                   </p>
                 </div>
                 <div>
-                  <Label className="text-xs font-semibold">
+                  <Label className="text-xs font-medium text-foreground">
                     {isAr
                       ? "رقم الهاتف أو الحساب أو IBAN"
                       : "Benefit phone, account number, or IBAN"}
@@ -2199,13 +2173,13 @@ function PaymentSettingsCard({
                     placeholder={
                       isAr ? "يظهر للعميل لنسخه مباشرة" : "Shown to customer with copy button"
                     }
-                    className="mt-1.5 text-sm font-semibold bg-background/50 focus:bg-background transition-colors"
+                    className="mt-1.5 text-sm font-medium bg-background/50 focus:bg-background transition-colors"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">
+                <Label className="text-xs font-medium text-foreground">
                   {isAr ? "رمز QR لبنفت باي" : "Benefit Pay QR image"}
                 </Label>
                 <div className="flex items-center gap-4 mt-1.5">
@@ -2540,13 +2514,13 @@ function BrandHeroCard({
   if (!state) return null;
 
   return (
-    <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-4">
+    <Card className="overflow-hidden border border-border/70 shadow-xs rounded-xl bg-card p-4 sm:p-6 space-y-5">
       <div>
-        <h2 className="font-display text-xl">{isAr ? "واجهة المتجر" : "Storefront Hero"}</h2>
+        <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground">{isAr ? "واجهة المتجر" : "Storefront Hero"}</h2>
         <p className="text-sm text-muted-foreground">
           {isAr
             ? "الصور/الفيديو والنبذة التي يراها العملاء في الصفحة الرئيسية"
-            : "Hero media, brand color, and About text shown on the public storefront home"}
+            : "Hero media and About text shown on the public storefront home"}
         </p>
       </div>
 
@@ -2686,22 +2660,26 @@ function BrandHeroCard({
         }}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <Label>{isAr ? "لون العلامة" : "Brand color"}</Label>
-          <div className="flex items-center gap-2">
-            <input
-              type="color"
-              value={state.primary_color ?? "#000000"}
-              onChange={(e) => setState({ ...state, primary_color: e.target.value })}
-              className="h-9 w-12 rounded border border-border cursor-pointer"
-            />
-            <Input
-              value={state.primary_color ?? ""}
-              onChange={(e) => setState({ ...state, primary_color: e.target.value })}
-            />
+      <div className="p-3.5 rounded-lg border border-border/70 bg-muted/20 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div
+            className="w-5 h-5 rounded-full border border-border/70 shadow-xs shrink-0"
+            style={{ backgroundColor: state.primary_color || "var(--primary, #000000)" }}
+          />
+          <div>
+            <p className="text-xs font-medium text-foreground">
+              {isAr ? "لون العلامة الأساسي" : "Primary Brand Color"}
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              {isAr
+                ? "يُدار عبر تبويب المظهر والأنماط لضمان تناسق ألوان المتجر"
+                : "Managed under Theme & Styles for store-wide visual consistency"}
+            </p>
           </div>
         </div>
+        <span className="font-mono text-xs text-muted-foreground uppercase">
+          {state.primary_color || "#000000"}
+        </span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -3162,7 +3140,7 @@ function HeroSlideLivePreview({
       >
         {/* Sample Sale Badge preview */}
         <div
-          className="absolute top-2.5 start-2.5 z-20 px-2.5 py-1 text-xs font-bold text-white shadow-sm"
+          className="absolute top-2.5 start-2.5 z-20 px-2.5 py-1 text-xs font-semibold text-white shadow-sm"
           style={{ backgroundColor: badgeBg, borderRadius: `calc(${radius} * 0.5)` }}
         >
           {isAr ? "خصم 20%" : "20% OFF"}
@@ -3689,7 +3667,7 @@ function ShippingSettingsCard({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
               <div>
-                <Label className="text-xs font-semibold block mb-1.5">
+                <Label className="text-xs font-medium text-foreground block mb-1.5">
                   {isAr ? "سعر التوصيل داخل البحرين" : "Bahrain Delivery Fee"} ({currency})
                 </Label>
                 <div className="relative">
@@ -3720,7 +3698,7 @@ function ShippingSettingsCard({
 
               <div className="md:col-span-2 space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs font-semibold">
+                  <Label className="text-xs font-medium text-foreground">
                     {isAr ? "مدة التوصيل المتوقعة داخل البحرين" : "Estimated Transit Time (Bahrain)"}
                   </Label>
                   <div className="flex items-center gap-1.5">
@@ -3891,7 +3869,7 @@ function ShippingSettingsCard({
 
                       <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0">
                         <div className="text-end">
-                          <div className="text-base font-bold font-mono text-primary">
+                          <div className="text-base font-semibold font-mono text-primary">
                             {formatMoney(z.fee, currency, lang)}
                           </div>
                           <div className="text-[11px] text-muted-foreground">
@@ -4023,7 +4001,7 @@ function ShippingSettingsCard({
 
               {/* Country Selection Chips & Dropdown */}
               <div className="space-y-2">
-                <Label className="text-xs font-semibold block">
+                <Label className="text-xs font-medium text-foreground block">
                   {isAr ? "الدول التابعة لهذه المنطقة" : "Countries in this zone"} *
                 </Label>
 
@@ -4094,7 +4072,7 @@ function ShippingSettingsCard({
               {/* Zone Names */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-xs font-semibold block mb-1">
+                  <Label className="text-xs font-medium text-foreground block mb-1">
                     {isAr ? "اسم المنطقة (بالعربية)" : "Zone Name (Arabic)"} *
                   </Label>
                   <Input
@@ -4107,7 +4085,7 @@ function ShippingSettingsCard({
                   />
                 </div>
                 <div>
-                  <Label className="text-xs font-semibold block mb-1">
+                  <Label className="text-xs font-medium text-foreground block mb-1">
                     {isAr ? "اسم المنطقة (بالإنجليزية)" : "Zone Name (English)"} *
                   </Label>
                   <Input
@@ -4123,7 +4101,7 @@ function ShippingSettingsCard({
 
               {/* Pricing Model & Fees */}
               <div className="space-y-2">
-                <Label className="text-xs font-semibold block">
+                <Label className="text-xs font-medium text-foreground block">
                   {isAr ? "طريقة احتساب رسوم الشحن" : "Pricing Model"} *
                 </Label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -4136,7 +4114,7 @@ function ShippingSettingsCard({
                         : "border-border bg-background hover:bg-secondary/40 text-foreground"
                     }`}
                   >
-                    <div className="font-semibold text-xs flex items-center gap-1.5">
+                    <div className="font-medium text-xs flex items-center gap-1.5">
                       <Package className="h-3.5 w-3.5" />
                       <span>{isAr ? "سعر ثابت للطلب" : "Flat per order"}</span>
                     </div>
@@ -4154,7 +4132,7 @@ function ShippingSettingsCard({
                         : "border-border bg-background hover:bg-secondary/40 text-foreground"
                     }`}
                   >
-                    <div className="font-semibold text-xs flex items-center gap-1.5">
+                    <div className="font-medium text-xs flex items-center gap-1.5">
                       <Truck className="h-3.5 w-3.5" />
                       <span>{isAr ? "سعر لكل قطعة" : "Per piece"}</span>
                     </div>
@@ -4172,7 +4150,7 @@ function ShippingSettingsCard({
                         : "border-border bg-background hover:bg-secondary/40 text-foreground"
                     }`}
                   >
-                    <div className="font-semibold text-xs flex items-center gap-1.5">
+                    <div className="font-medium text-xs flex items-center gap-1.5">
                       <Layers className="h-3.5 w-3.5" />
                       <span>{isAr ? "سعر لكل مجموعة قطع" : "Per bundle of items"}</span>
                     </div>
@@ -4186,7 +4164,7 @@ function ShippingSettingsCard({
               {/* Fee Input & Bundle Size (if applicable) */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
                 <div>
-                  <Label className="text-xs font-semibold block mb-1">
+                  <Label className="text-xs font-medium text-foreground block mb-1">
                     {newZone.pricing_type === "flat"
                       ? isAr
                         ? "رسوم الشحن الثابتة"
@@ -4218,7 +4196,7 @@ function ShippingSettingsCard({
 
                 {newZone.pricing_type === "bundle" && (
                   <div>
-                    <Label className="text-xs font-semibold block mb-1">
+                    <Label className="text-xs font-medium text-foreground block mb-1">
                       {isAr ? "حجم المجموعة (عدد القطع)" : "Items per bundle"} *
                     </Label>
                     <Input
@@ -4239,7 +4217,7 @@ function ShippingSettingsCard({
                 )}
 
                 <div className={newZone.pricing_type === "bundle" ? "" : "sm:col-span-2"}>
-                  <Label className="text-xs font-semibold block mb-1">
+                  <Label className="text-xs font-medium text-foreground block mb-1">
                     {isAr ? "مدة التوصيل للمنطقة (اختياري)" : "Transit Estimate (Optional)"}
                   </Label>
                   <Input
@@ -4260,7 +4238,7 @@ function ShippingSettingsCard({
 
               {/* Payment Methods Selection for this Zone */}
               <div className="space-y-1.5 pt-1">
-                <Label className="text-xs font-semibold block">
+                <Label className="text-xs font-medium text-foreground block">
                   {isAr ? "طرق الدفع المسموحة لهذه المنطقة" : "Accepted payment methods for this zone"}
                 </Label>
                 <div className="flex flex-wrap items-center gap-2">
@@ -4334,7 +4312,7 @@ function ShippingSettingsCard({
                 <Button
                   type="button"
                   size="sm"
-                  className="bg-primary text-primary-foreground font-semibold px-5 h-9 rounded-lg shadow-sm hover:opacity-95"
+                  className="bg-primary text-primary-foreground font-medium px-5 h-9 rounded-lg shadow-sm hover:opacity-95"
                   onClick={addZone}
                 >
                   <Plus className="h-4 w-4 me-1.5" />
@@ -4382,7 +4360,7 @@ function CustomizerNavigation({
           key={value}
           type="button"
           variant={active === value ? "default" : "ghost"}
-          className="h-10 text-xs sm:text-sm font-semibold rounded-lg"
+          className="h-10 text-xs sm:text-sm font-medium rounded-lg"
           onClick={() => onChange(value)}
           role="tab"
           aria-selected={active === value}
@@ -4456,7 +4434,7 @@ function SectionBannerPicker({
     <div className="space-y-2 rounded-lg border border-border bg-card p-3 shadow-xs">
       <div className="flex items-center justify-between">
         <div>
-          <span className="text-xs font-semibold text-foreground">{title}</span>
+          <span className="text-xs font-medium text-foreground">{title}</span>
           {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
         </div>
         {imageUrl && (
@@ -4782,7 +4760,7 @@ function FooterLivePreview({
                     className="object-contain transition-all duration-150"
                   />
                 ) : (
-                  <span className="font-bold text-sm" style={{ color: fg }}>
+                  <span className="font-semibold text-sm" style={{ color: fg }}>
                     {brandName}
                   </span>
                 )}
@@ -4883,7 +4861,7 @@ function FooterLogoResizerControl({
     <div className="space-y-4 rounded-xl border border-border p-4 bg-card/60 shadow-xs">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <Label className="text-sm font-semibold">
+          <Label className="text-sm font-medium text-foreground">
             {isAr ? "حجم شعار تذييل الصفحة (الفوتر)" : "Footer Logo Size"}
           </Label>
           <p className="mt-0.5 text-xs text-muted-foreground">
@@ -4892,7 +4870,7 @@ function FooterLogoResizerControl({
               : "Control the exact height of the logo shown in the storefront footer across devices with live preview."}
           </p>
         </div>
-        <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-primary/10 text-primary border border-primary/20">
+        <span className="text-xs font-mono font-medium px-2.5 py-1 rounded-md bg-primary/10 text-primary border border-primary/20">
           {currentSize}px
         </span>
       </div>
@@ -4953,7 +4931,13 @@ function FooterLogoResizerControl({
   );
 }
 
-function StorefrontModeCard({ brandId }: { brandId: string }) {
+function StorefrontModeCard({
+  brandId,
+  onRegisterSave,
+}: {
+  brandId: string;
+  onRegisterSave?: (fn: () => Promise<void> | void) => void;
+}) {
   const brand = useBrand();
   const { lang } = useI18n();
   const isAr = lang === "ar";
@@ -5108,6 +5092,12 @@ function StorefrontModeCard({ brandId }: { brandId: string }) {
     }
   };
 
+  useEffect(() => {
+    if (onRegisterSave) {
+      onRegisterSave(handleSave);
+    }
+  }, [onRegisterSave, handleSave]);
+
   const isCatalog = form.storefront_mode === "catalog";
   const hasWhatsApp = Boolean(
     form.whatsapp_number && form.whatsapp_number.replace(/\D/g, "").length >= 8,
@@ -5123,10 +5113,10 @@ function StorefrontModeCard({ brandId }: { brandId: string }) {
   }
 
   return (
-    <Card className="overflow-hidden border border-border shadow-xs rounded-md bg-card p-6 space-y-6">
+    <Card className="overflow-hidden border border-border/70 shadow-xs rounded-xl bg-card p-4 sm:p-6 space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h3 className="text-lg font-semibold text-foreground">
+          <h3 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground">
             {isAr ? "وضع المتجر ونموذج البيع" : "Storefront Mode & Selling Model"}
           </h3>
           <p className="text-sm text-muted-foreground mt-0.5">
@@ -5178,7 +5168,7 @@ function StorefrontModeCard({ brandId }: { brandId: string }) {
               >
                 <ShoppingBag className="h-4 w-4" />
               </div>
-              <span className="font-semibold text-sm text-foreground">
+              <span className="font-medium text-sm text-foreground">
                 {isAr ? "متجر بيع مباشر (Shop)" : "Direct E-Commerce Store (Shop)"}
               </span>
             </div>
@@ -5227,7 +5217,7 @@ function StorefrontModeCard({ brandId }: { brandId: string }) {
               >
                 <MessageCircle className="h-4 w-4" />
               </div>
-              <span className="font-semibold text-sm text-foreground">
+              <span className="font-medium text-sm text-foreground">
                 {isAr
                   ? "كتالوج واستفسارات واتساب (Catalog)"
                   : "Catalog & WhatsApp Inquiries (Catalog)"}
@@ -5257,7 +5247,7 @@ function StorefrontModeCard({ brandId }: { brandId: string }) {
           <div className="flex items-start gap-2.5 p-3 rounded-md bg-muted/60 border border-border text-muted-foreground text-xs">
             <Info className="h-4 w-4 shrink-0 text-primary mt-0.5" />
             <div>
-              <span className="font-semibold text-foreground block">
+              <span className="font-medium text-foreground block">
                 {isAr ? "ميزات وضع الكتالوج" : "Catalog Mode Features"}
               </span>
               <span>
@@ -5273,7 +5263,7 @@ function StorefrontModeCard({ brandId }: { brandId: string }) {
             <div className="flex items-start gap-2.5 p-3 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs">
               <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
               <div>
-                <span className="font-semibold block">
+                <span className="font-medium block">
                   {isAr ? "رقم الواتساب غير مضبوط" : "WhatsApp number not configured"}
                 </span>
                 <span>
@@ -5287,7 +5277,7 @@ function StorefrontModeCard({ brandId }: { brandId: string }) {
 
           {/* WhatsApp phone input */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">
+            <Label className="text-xs font-medium text-foreground">
               {isAr ? "رقم الواتساب لاستقبال الاستفسارات" : "WhatsApp Number for Inquiries"}
             </Label>
             <PhoneInput
@@ -5304,7 +5294,7 @@ function StorefrontModeCard({ brandId }: { brandId: string }) {
           {/* Show prices switch */}
           <div className="flex items-center justify-between rounded-md border border-border p-3.5 bg-card">
             <div className="space-y-0.5">
-              <Label className="text-xs font-semibold text-foreground">
+              <Label className="text-xs font-medium text-foreground">
                 {isAr ? "إظهار أسعار المنتجات في الكتالوج" : "Show Product Prices in Catalog"}
               </Label>
               <p className="text-xs text-muted-foreground">
@@ -5372,7 +5362,7 @@ function StorefrontModeCard({ brandId }: { brandId: string }) {
             <div className="space-y-2 rounded-md border border-border bg-muted/30 p-3.5 mt-3">
               <div className="flex items-center gap-2">
                 <MessageCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                <span className="text-xs font-semibold text-foreground">
+                <span className="text-xs font-medium text-foreground">
                   {isAr ? "معاينة حية لشكل الرسالة على الواتساب" : "Live WhatsApp Message Preview"}
                 </span>
               </div>
@@ -6723,24 +6713,6 @@ function StorefrontCustomizerCard({
                   </div>
                 ))}
               </div>
-            </div>
-            <div className="space-y-1 pt-2 sm:col-span-2">
-              <Label>
-                {isAr
-                  ? "رقم الهاتف أو الحساب أو IBAN للتحويل"
-                  : "Benefit phone, account number, or IBAN"}
-              </Label>
-              <Input
-                value={(state as any).benefit_account_number ?? ""}
-                onChange={(e) =>
-                  setState({ ...state, benefit_account_number: e.target.value } as any)
-                }
-                placeholder={
-                  isAr
-                    ? "يظهر للمتسوقين عند الدفع مع زر النسخ السريع"
-                    : "Shown to customers with a copy button"
-                }
-              />
             </div>
           </div>
         </div>

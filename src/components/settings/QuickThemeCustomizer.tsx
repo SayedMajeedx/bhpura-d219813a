@@ -211,7 +211,7 @@ export function QuickThemeCustomizer({
               />
             </label>
             <div className="min-w-0">
-              <span className="block text-xs font-semibold text-foreground">
+              <span className="block text-xs font-medium text-foreground">
                 {isAr ? "اللون الأساسي" : "Primary"}
               </span>
               <span className="block font-mono text-xs text-muted-foreground uppercase">
@@ -247,7 +247,7 @@ export function QuickThemeCustomizer({
               />
             </label>
             <div className="min-w-0">
-              <span className="block text-xs font-semibold text-foreground">
+              <span className="block text-xs font-medium text-foreground">
                 {isAr ? "اللون الثانوي" : "Secondary"}
               </span>
               <span className="block font-mono text-xs text-muted-foreground uppercase">
@@ -277,7 +277,7 @@ export function QuickThemeCustomizer({
             {onHeaderBgChange && (
               <div className="rounded-xl border border-border bg-muted/20 p-3.5 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-foreground">
+                  <span className="text-xs font-medium text-foreground">
                     {isAr ? "شريط الترويسة العلوي (Header)" : "Top Header Bar"}
                   </span>
                   <div className="flex gap-1">
@@ -378,7 +378,7 @@ export function QuickThemeCustomizer({
             {onFooterBgChange && (
               <div className="rounded-xl border border-border bg-muted/20 p-3.5 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-foreground">
+                  <span className="text-xs font-medium text-foreground">
                     {isAr ? "شريط التذييل (الفوتر)" : "Footer Bar"}
                   </span>
                   <div className="flex gap-1">
@@ -427,7 +427,7 @@ export function QuickThemeCustomizer({
                     <label
                       className="relative size-8 shrink-0 cursor-pointer overflow-hidden rounded-md border border-border shadow-xs"
                       style={{ backgroundColor: footerBg || "#ffffff" }}
-                      title={isAr ? "لون خلفية الفوتر" : "Footer background color"}
+                      title={isAr ? "لون خلفية التذييل" : "Footer background color"}
                     >
                       <input
                         type="color"
@@ -438,7 +438,7 @@ export function QuickThemeCustomizer({
                     </label>
                     <div className="min-w-0">
                       <span className="block text-xs font-medium text-foreground truncate">
-                        {isAr ? "خلفية الفوتر" : "Background"}
+                        {isAr ? "خلفية التذييل" : "Background"}
                       </span>
                       <span className="block font-mono text-xs text-muted-foreground uppercase">
                         {footerBg || "#ffffff"}
@@ -452,7 +452,7 @@ export function QuickThemeCustomizer({
                       <label
                         className="relative size-8 shrink-0 cursor-pointer overflow-hidden rounded-md border border-border shadow-xs"
                         style={{ backgroundColor: footerFg || "#111111" }}
-                        title={isAr ? "لون نصوص وروابط الفوتر" : "Footer text & links color"}
+                        title={isAr ? "لون نص وأيقونات التذييل" : "Footer text & icons color"}
                       >
                         <input
                           type="color"
@@ -463,7 +463,7 @@ export function QuickThemeCustomizer({
                       </label>
                       <div className="min-w-0">
                         <span className="block text-xs font-medium text-foreground truncate">
-                          {isAr ? "النصوص والروابط" : "Text / Links"}
+                          {isAr ? "النص والأيقونات" : "Text / Icons"}
                         </span>
                         <span className="block font-mono text-xs text-muted-foreground uppercase">
                           {footerFg || "#111111"}
@@ -478,14 +478,22 @@ export function QuickThemeCustomizer({
         </div>
       )}
 
-      {/* 3. Corner Radius Style */}
+      {/* 3. Corner Radius */}
       <div className="space-y-3 border-t border-border-subtle pt-4">
-        <Label className="text-sm font-medium">
-          {isAr ? "3. انحناء الحواف والبطاقات" : "3. Corner Style"}
-        </Label>
-        <div className="grid grid-cols-3 gap-3">
+        <div>
+          <Label className="text-sm font-medium">
+            {isAr ? "3. انحناء وتدوير الحواف" : "3. Corner Radius"}
+          </Label>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {isAr
+              ? "يحدد مظهر البطاقات والأزرار في المتجر بالكامل."
+              : "Defines overall shape for buttons, cards, and storefront panels."}
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {cornerPresets.map((preset) => {
             const isSelected = activeRadiusPreset === preset.id;
+
             return (
               <Button
                 key={preset.id}
@@ -493,10 +501,10 @@ export function QuickThemeCustomizer({
                 variant={isSelected ? "default" : "outline"}
                 onClick={() => onRadiusChange(preset.value)}
                 className={cn(
-                  "h-14 flex-col justify-center gap-1 border-2 transition-all",
+                  "h-12 flex-col gap-1 items-center justify-center transition-all",
                   isSelected
-                    ? "border-primary bg-primary text-primary-foreground shadow-sm"
-                    : "border-border hover:bg-muted/50",
+                    ? "bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/20"
+                    : "border-border hover:bg-muted/40",
                 )}
               >
                 <div
@@ -505,7 +513,7 @@ export function QuickThemeCustomizer({
                     preset.previewClass,
                   )}
                 />
-                <span className="text-xs font-semibold">
+                <span className="text-xs font-medium">
                   {isAr ? preset.labelAr : preset.labelEn}
                 </span>
               </Button>
@@ -536,7 +544,7 @@ export function QuickThemeCustomizer({
                 )}
               >
                 <div className="flex items-center justify-between w-full">
-                  <span className="font-bold text-sm text-foreground">
+                  <span className="font-semibold text-sm text-foreground">
                     {isAr ? preset.labelAr : preset.labelEn}
                   </span>
                   {isSelected && (
@@ -613,7 +621,7 @@ export function QuickThemeCustomizer({
                     className={cn(
                       "flex items-center gap-1.5 p-2 rounded-lg border text-xs font-medium transition-all",
                       isBadgeSelected
-                        ? "border-primary bg-primary/10 font-bold"
+                        ? "border-primary bg-primary/10 font-medium text-primary"
                         : "border-border hover:bg-muted/40",
                     )}
                   >

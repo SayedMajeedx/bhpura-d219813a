@@ -87,12 +87,12 @@ export function SettingsStickySaveBar({
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-foreground truncate">
+                <span className="text-xs font-medium text-foreground truncate">
                   {isAr ? meta.labelAr : meta.labelEn}
                 </span>
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
               </div>
-              <p className="text-[11px] text-muted-foreground hidden sm:block truncate">
+              <p className="text-[11px] text-muted-foreground hidden sm:block truncate font-normal">
                 {isAr
                   ? "احفظ التغييرات لتطبيقها فوراً على متجرك"
                   : "Save changes to apply immediately to your store"}
@@ -108,8 +108,8 @@ export function SettingsStickySaveBar({
               disabled={isSaving}
               size="default"
               className={cn(
-                "min-h-[44px] px-4 sm:px-6 font-semibold text-xs sm:text-sm gap-2 shadow-md transition-all",
-                "hover:shadow-lg active:scale-98",
+                "min-h-[44px] px-4 sm:px-6 font-medium text-xs sm:text-sm gap-2 shadow-xs transition-all",
+                "hover:shadow active:scale-98",
               )}
             >
               {isSaving ? (

@@ -27,17 +27,17 @@ export function SettingsCommandHeader({
 
       <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
             <Settings className="h-3 w-3 shrink-0" />
             <span>{isAr ? "إعدادات المنصة والبوتيك" : "Boutique Settings"}</span>
-            <span className="ms-1 px-1.5 py-0.2 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+            <span className="ms-1 px-1.5 py-0.2 rounded-full bg-primary text-primary-foreground text-xs font-medium">
               {brandName}
             </span>
           </div>
 
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{activeTabLabel}</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">{activeTabLabel}</h1>
 
-          <p className="text-xs text-muted-foreground max-w-xl">
+          <p className="text-xs text-muted-foreground font-normal leading-relaxed max-w-xl">
             {isAr
               ? "تعديل إعدادات الهوية التجاريّة، الفواتير، طرق الدفع والتسليم، والأمان."
               : "Manage business identity, invoicing, payment gateways, fulfillment, and security settings."}
@@ -49,7 +49,7 @@ export function SettingsCommandHeader({
             type="button"
             onClick={onSave}
             disabled={saving}
-            className="w-full shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2 text-xs font-bold sm:w-auto sm:self-center bg-primary text-primary-foreground"
+            className="w-full shadow-xs transition-all duration-150 active:scale-95 gap-2 text-xs font-medium sm:w-auto sm:self-center bg-primary text-primary-foreground"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             <span>

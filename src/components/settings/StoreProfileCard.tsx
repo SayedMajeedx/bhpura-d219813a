@@ -409,14 +409,14 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
 
   return (
     <>
-      <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-3 sm:p-6 space-y-6">
+      <Card className="overflow-hidden border border-border/70 shadow-xs rounded-xl bg-card p-3 sm:p-6 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-4">
           <div>
-            <h2 className="font-display text-xl font-bold flex items-center gap-2">
+            <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 text-foreground tracking-tight">
               <Sparkles className="w-5 h-5 text-primary" />
               {isAr ? "نوع النشاط ووحدات المتجر" : "Store Vertical & Modules"}
             </h2>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground font-normal leading-relaxed mt-1">
               {isAr
                 ? "حدّد نوع نشاط متجرك لتكييف التجربة والوحدات التخصصية بما يناسب منتجاتك"
                 : "Set your store vertical and specialized modules tailored to your product catalog"}
@@ -428,7 +428,7 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
             size="sm"
             onClick={() => setShowResetConfirmDialog(true)}
             disabled={isLoading || saving}
-            className="self-start sm:self-auto gap-1 text-xs"
+            className="self-start sm:self-auto gap-1 text-xs font-medium"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             {isAr ? "إعادة للافتراضيات" : "Reset to Defaults"}
@@ -443,14 +443,14 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-sm">
+                <span className="font-medium text-sm text-foreground">
                   {isAr ? "منصة إضافات المتجر" : "Store Add-ons Platform"}
                 </span>
-                <Badge variant="secondary" className="text-xs px-2 py-0">
+                <Badge variant="secondary" className="text-xs px-2 py-0 font-normal">
                   {isAr ? `${addons.length} إضافات مثبتة` : `${addons.length} installed`}
                 </Badge>
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5 font-normal">
                 {isAr
                   ? "تثبيت وتخصيص إضافات الأنشطة وتوسيع إمكانيات متجرك"
                   : "Install and configure activity add-ons to extend your store"}
@@ -496,7 +496,7 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
           <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-sm font-semibold text-foreground">
+                <Label className="text-sm font-medium text-foreground">
                   {isAr ? "الوحدات والميزات التخصصية" : "Specialized Store Modules"}
                 </Label>
                 <p className="text-xs text-muted-foreground">
@@ -509,7 +509,7 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="text-xs text-muted-foreground hover:text-foreground gap-1.5 h-8"
+                className="text-xs text-muted-foreground hover:text-foreground gap-1.5 h-8 font-normal"
                 onClick={() => setShowResetConfirmDialog(true)}
                 disabled={isLoading || saving}
               >
@@ -534,7 +534,7 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
                         <div className="flex items-center justify-center size-7 rounded-lg bg-primary/10 text-primary shrink-0">
                           {renderAddonIcon(m.icon)}
                         </div>
-                        <span className="font-semibold text-sm text-foreground">
+                        <span className="font-medium text-sm text-foreground">
                           {isAr ? m.name.ar : m.name.en}
                         </span>
                         {isRequired && (
@@ -639,10 +639,10 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
                     className="rounded-lg border border-border bg-card p-3 space-y-2 text-xs"
                   >
                     <div className="flex items-center justify-between gap-1">
-                      <span className="font-bold text-foreground">
+                      <span className="font-medium text-foreground">
                         {isAr ? prof.label_ar : prof.label_en}
                       </span>
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-xs font-normal">
                         {prof.fields.filter((f) => f.required).length}{" "}
                         {isAr ? "حقول إجبارية" : "required"}
                       </Badge>
@@ -671,7 +671,7 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
             <div className="flex items-start gap-3 p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200 text-xs">
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
               <div>
-                <p className="font-semibold">
+                <p className="font-medium text-foreground">
                   {isAr ? "تنبيه بخصوص بيانات القياسات" : "Customer measurements notice"}
                 </p>
                 <p className="mt-0.5">
@@ -730,7 +730,7 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
           <div className="space-y-4 py-2">
             {/* New Vertical Required Add-ons */}
             <div className="space-y-2">
-              <Label className="text-xs font-semibold text-foreground">
+              <Label className="text-xs font-medium text-foreground">
                 {isAr
                   ? "إضافات حزمة البداية التي ستُثبَّت وتُفعَّل:"
                   : "Starter pack add-ons to install & enable:"}
@@ -776,7 +776,7 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
             {candidatesToDisable.length > 0 && (
               <div className="space-y-2 pt-2 border-t border-border">
                 <div className="space-y-0.5">
-                  <Label className="text-xs font-semibold text-foreground">
+                  <Label className="text-xs font-medium text-foreground">
                     {isAr
                       ? "إضافات النشاط السابق (اختياري - يُقترح إيقافها):"
                       : "Previous vertical add-ons (optional to disable):"}

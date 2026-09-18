@@ -331,7 +331,7 @@ html.lang-ar h1,
 html.lang-ar h2,
 html.lang-ar h3,
 html.lang-ar .font-display {
-  font-family: "Tajawal", "Segoe UI", sans-serif;
+  font-family: "Tajawal", "Readex Pro", "Segoe UI", -apple-system, sans-serif;
   letter-spacing: 0;
 }
 

@@ -70,14 +70,14 @@ export function SettingsScopeSwitcher({
         aria-pressed={active}
         onClick={() => onTabChange(tab.id)}
         className={cn(
-          "flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+          "flex min-h-10 items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-xs transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
           mobile ? "min-w-0 flex-1" : "whitespace-nowrap",
           active
-            ? "bg-primary text-primary-foreground shadow-sm"
-            : "text-muted-foreground hover:bg-background/80 hover:text-foreground",
+            ? "bg-primary text-primary-foreground font-medium shadow-xs"
+            : "text-muted-foreground hover:bg-background/80 hover:text-foreground font-normal",
         )}
       >
-        <Icon className="h-3.5 w-3.5 shrink-0" />
+        <Icon className="h-4 w-4 shrink-0 opacity-80" />
         <span className="truncate">{isAr ? tab.ar : tab.en}</span>
       </button>
     );

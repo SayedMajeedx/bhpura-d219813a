@@ -27,7 +27,7 @@
 @font-face {
   font-family: "Tajawal";
   src: url("/fonts/arabic-font.woff2") format("woff2");
-  font-weight: 400 700;
+  font-weight: 400 500;
   font-style: normal;
   font-display: swap;
 }
