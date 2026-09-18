@@ -13,6 +13,7 @@ import { getReadableTextColor } from "@/lib/color-utils";
 import { getInvoiceStatusLabel } from "@/lib/status-labels";
 import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
 import { useVocabulary } from "@/hooks/use-vocabulary";
+import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 
 type SavedAddress = {
   id?: string;
@@ -49,6 +50,8 @@ type Item = {
   line_total: number;
   customization_total: number;
   customizations: Customization[];
+  product?: any;
+  products?: any;
   selected_variant?: {
     size?: string | null;
     color?: string | null;
@@ -223,13 +226,35 @@ export default function InvoicePreview({
   settings,
   shippingAddress,
   paymentBadge,
+  brandAddons: propsBrandAddons,
+  storeVertical,
 }: {
   order: any;
   items: Item[];
   settings: any;
   shippingAddress?: SavedAddress | null;
   paymentBadge?: PaymentBadge;
+  brandAddons?: any[] | null;
+  storeVertical?: string | null;
 }) {
+  const brandId = order?.brand_id;
+  const brandAddonsQ = useQuery({
+    queryKey: ["brand_addons", brandId],
+    enabled: Boolean(brandId && !propsBrandAddons),
+    queryFn: async () => {
+      const { data } = await (supabase.from("brand_addons") as any)
+        .select("addon_id, status")
+        .eq("brand_id", brandId)
+        .eq("status", "installed");
+      return data ?? [];
+    },
+  });
+  const effectiveAddons = propsBrandAddons ?? brandAddonsQ.data;
+  const addonDefaults = variantAxisDefaultsFrom(
+    effectiveAddons,
+    storeVertical ?? settings?.store_vertical,
+  );
+
   const currency = order.currency;
   const color = settings.primary_color || "#8b6f47";
   const bg = settings.background_color || "#ffffff";
@@ -726,14 +751,22 @@ export default function InvoicePreview({
                       {it.selected_variant &&
                         (() => {
                           const isPlaceholder = isPlaceholderVariant(it.selected_variant);
+                          const axes = resolveAllVariantAxes({
+                            product: (it as any).products || (it as any).product,
+                            addonDefaults,
+                            lang: isRTL ? "ar" : "en",
+                          });
                           const parts = [
                             it.selected_variant.color &&
-                              `${isRTL ? "اللون" : "Color"}: ${it.selected_variant.color}`,
+                              axes.color.visible &&
+                              `${axes.color.label}: ${it.selected_variant.color}`,
                             it.selected_variant.size &&
                               !isPlaceholder &&
-                              `${isRTL ? "المقاس" : "Size"}: ${it.selected_variant.size}`,
+                              axes.size.visible &&
+                              `${axes.size.label}: ${it.selected_variant.size}`,
                             it.selected_variant.fabric &&
-                              `${isRTL ? "القماش" : "Fabric"}: ${it.selected_variant.fabric}`,
+                              axes.fabric.visible &&
+                              `${axes.fabric.label}: ${it.selected_variant.fabric}`,
                           ].filter(Boolean);
                           if (parts.length === 0) return null;
                           return (

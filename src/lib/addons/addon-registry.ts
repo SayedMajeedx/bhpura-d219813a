@@ -288,24 +288,43 @@ export function aiContextFrom(
   return parts.join("\n");
 }
 
-export function variantAxisDefaultsFrom(rows: BrandAddonRow[] | null | undefined): {
+export function variantAxisDefaultsFrom(
+  rows?: BrandAddonRow[] | null,
+  storeVertical?: string | null,
+): {
   size?: { ar: string; en: string } | null;
   color?: { ar: string; en: string } | null;
   fabric?: { ar: string; en: string } | null;
 } {
-  if (!rows || !Array.isArray(rows)) return {};
-  const installedIds = new Set(rows.filter((r) => r.status === "installed").map((r) => r.addon_id));
-
   const out: {
     size?: { ar: string; en: string } | null;
     color?: { ar: string; en: string } | null;
     fabric?: { ar: string; en: string } | null;
   } = {};
 
-  for (const manifest of ADDON_MANIFESTS) {
-    if (!installedIds.has(manifest.id)) continue;
-    if (manifest.contributions.variantAxisDefaults) {
-      Object.assign(out, manifest.contributions.variantAxisDefaults);
+  // 1. If storeVertical is specified, seed defaults from manifests configured for this vertical activity
+  if (storeVertical) {
+    const norm = storeVertical.trim().toLowerCase();
+    for (const manifest of ADDON_MANIFESTS) {
+      if (manifest.activities && manifest.activities.map((a) => a.toLowerCase()).includes(norm)) {
+        if (manifest.contributions.variantAxisDefaults) {
+          Object.assign(out, manifest.contributions.variantAxisDefaults);
+        }
+      }
+    }
+  }
+
+  // 2. If installed brand addons are provided, merge their explicit axis defaults
+  if (rows && Array.isArray(rows)) {
+    const installedIds = new Set(
+      rows.filter((r) => r.status === "installed").map((r) => r.addon_id),
+    );
+
+    for (const manifest of ADDON_MANIFESTS) {
+      if (!installedIds.has(manifest.id)) continue;
+      if (manifest.contributions.variantAxisDefaults) {
+        Object.assign(out, manifest.contributions.variantAxisDefaults);
+      }
     }
   }
 
@@ -511,5 +530,31 @@ export function resolveAllVariantAxes({
     size: resolveVariantAxis({ axis: "size", product, addonDefaults, lang }),
     color: resolveVariantAxis({ axis: "color", product, addonDefaults, lang }),
     fabric: resolveVariantAxis({ axis: "fabric", product, addonDefaults, lang }),
+  };
+}
+
+export function resolveItemAllVariantLabels({
+  product,
+  brandAddons,
+  addonDefaults,
+  storeVertical,
+  lang,
+}: {
+  product?: ProductVariantLabels | null;
+  brandAddons?: BrandAddonRow[] | null;
+  addonDefaults?: {
+    size?: { ar: string; en: string } | null;
+    color?: { ar: string; en: string } | null;
+    fabric?: { ar: string; en: string } | null;
+  } | null;
+  storeVertical?: string | null;
+  lang: "ar" | "en";
+}): Record<"size" | "color" | "fabric", string> {
+  const defaults = addonDefaults ?? variantAxisDefaultsFrom(brandAddons, storeVertical);
+  const axes = resolveAllVariantAxes({ product, addonDefaults: defaults, lang });
+  return {
+    size: axes.size.label,
+    color: axes.color.label,
+    fabric: axes.fabric.label,
   };
 }

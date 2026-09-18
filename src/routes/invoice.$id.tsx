@@ -8,6 +8,8 @@ import { getInvoiceStatusLabel } from "@/lib/status-labels";
 import { getOrderCustomerEmail } from "@/lib/order-customer-snapshot";
 
 import { getReadableTextColor } from "@/lib/color-utils";
+import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
+import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
 
 export const Route = createFileRoute("/invoice/$id")({
   ssr: false,
@@ -118,11 +120,12 @@ const PAY: Record<string, { en: string; ar: string }> = {
 };
 
 function PublicInvoice() {
-  const { order, settings, shippingAddress, branch } = Route.useLoaderData() as any;
+  const { order, settings, shippingAddress, branch, brandAddons } = Route.useLoaderData() as any;
   const [lang, setLang] = useState<"en" | "ar">("en");
   const [copied, setCopied] = useState(false);
   const L = LABELS[lang];
   const isRTL = lang === "ar";
+  const addonDefaults = variantAxisDefaultsFrom(brandAddons, settings?.store_vertical);
   const locale = isRTL ? "ar-BH-u-nu-latn" : "en-BH";
   const currency = order.currency ?? "BHD";
   const color = settings?.primary_color || "#8b6f47";
@@ -567,6 +570,12 @@ function PublicInvoice() {
                     const primaryTitle = lines[0] || "—";
                     const secondaryParts = lines.slice(1);
 
+                    const axes = resolveAllVariantAxes({
+                      product: it.products,
+                      addonDefaults,
+                      lang: lang === "ar" ? "ar" : "en",
+                    });
+
                     const hyphenParts = primaryTitle
                       .split(/\s+[-–—]\s+/)
                       .map((s: string) => s.trim())
@@ -579,7 +588,7 @@ function PublicInvoice() {
                       inlineDetails = hyphenParts
                         .slice(1)
                         .map((p: string) =>
-                          /^\d+$/.test(p) ? (isRTL ? `مقاس ${p}` : `Size ${p}`) : p,
+                          /^\d+$/.test(p) ? `${axes.size.label} ${p}` : p,
                         )
                         .join(" · ");
                     }
@@ -614,31 +623,34 @@ function PublicInvoice() {
                                 it.selected_variant?.size || it.product_variants?.size;
                               const itemFabric =
                                 it.selected_variant?.fabric || it.product_variants?.fabric;
+                              const isPlaceholder = isPlaceholderVariant(
+                                it.selected_variant || it.product_variants,
+                              );
+
                               return (
                                 <>
-                                  {itemColor && (
+                                  {itemColor && axes.color.visible && (
                                     <p
                                       className="text-xs mt-0.5"
                                       style={{ color: textColor, opacity: 0.75 }}
                                     >
-                                      {L.color}: <span className="font-medium">{itemColor}</span>
+                                      {axes.color.label}: <span className="font-medium">{itemColor}</span>
                                     </p>
                                   )}
-                                  {itemSize && (
+                                  {itemSize && !isPlaceholder && axes.size.visible && (
                                     <p
                                       className="text-xs mt-0.5"
                                       style={{ color: textColor, opacity: 0.75 }}
                                     >
-                                      {L.size}: <span className="font-medium">{itemSize}</span>
+                                      {axes.size.label}: <span className="font-medium">{itemSize}</span>
                                     </p>
                                   )}
-                                  {itemFabric && (
+                                  {itemFabric && axes.fabric.visible && (
                                     <p
                                       className="text-xs mt-0.5"
                                       style={{ color: textColor, opacity: 0.75 }}
                                     >
-                                      {isRTL ? "القماش" : "Fabric"}:{" "}
-                                      <span className="font-medium">{itemFabric}</span>
+                                      {axes.fabric.label}: <span className="font-medium">{itemFabric}</span>
                                     </p>
                                   )}
                                 </>

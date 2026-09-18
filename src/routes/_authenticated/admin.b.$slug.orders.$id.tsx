@@ -108,6 +108,7 @@ import { OrderUnifiedHeader } from "@/components/orders/OrderUnifiedHeader";
 import { OrderStickyBottomBar } from "@/components/orders/OrderStickyBottomBar";
 import { OrderSalesDocumentsCard } from "@/components/orders/OrderSalesDocumentsCard";
 import { useVocabulary } from "@/hooks/use-vocabulary";
+import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 
 function formatDeliveryAddress(
   c:
@@ -261,6 +262,7 @@ function OrderDetail() {
   const { isAdmin, isCourier } = useProfile();
   const brandId = brand.id;
   const { profile: storeProfile } = useAdminStoreProfile(brandId);
+  const addonDefaults = variantAxisDefaultsFrom(storeProfile.addons, storeProfile.vertical);
   const { vocabulary } = useVocabulary();
   const [approvingBenefit, setApprovingBenefit] = useState(false);
   const [rejectingBenefit, setRejectingBenefit] = useState(false);
@@ -852,12 +854,16 @@ function OrderDetail() {
 
     const p = (productsQ.data ?? []).find((x: any) => x.id === variant.product_id);
     const isAr = lang === "ar";
-    const sizeLabel = isAr ? "المقاس" : "Size";
-    const colorLabel = isAr ? "اللون" : "Color";
+    const axes = resolveAllVariantAxes({
+      product: p,
+      addonDefaults,
+      lang: isAr ? "ar" : "en",
+    });
     const variantTitle = [
       p ? (p as any).name : "",
-      variant.size ? `${sizeLabel}: ${variant.size}` : "",
-      variant.color ? `${colorLabel}: ${variant.color}` : "",
+      variant.size && axes.size.visible ? `${axes.size.label}: ${variant.size}` : "",
+      variant.color && axes.color.visible ? `${axes.color.label}: ${variant.color}` : "",
+      variant.fabric && axes.fabric.visible ? `${axes.fabric.label}: ${variant.fabric}` : "",
     ]
       .filter(Boolean)
       .join(" — ");
@@ -1347,13 +1353,15 @@ function OrderDetail() {
     }
     const p = products.find((x: any) => x.id === v.product_id);
     const isAr = lang === "ar";
-    const sizeLabel = isAr ? "المقاس" : "Size";
-    const colorLabel = isAr ? "اللون" : "Color";
-    const fabricLabel = isAr ? "القماش" : "Fabric";
+    const axes = resolveAllVariantAxes({
+      product: p,
+      addonDefaults,
+      lang: isAr ? "ar" : "en",
+    });
     const lines = [p?.name || (v as any).title || "Product"];
-    if (v.size) lines.push(`${sizeLabel}: ${v.size}`);
-    if (v.color) lines.push(`${colorLabel}: ${v.color}`);
-    if (v.fabric) lines.push(`${fabricLabel}: ${v.fabric}`);
+    if (v.size && axes.size.visible) lines.push(`${axes.size.label}: ${v.size}`);
+    if (v.color && axes.color.visible) lines.push(`${axes.color.label}: ${v.color}`);
+    if (v.fabric && axes.fabric.visible) lines.push(`${axes.fabric.label}: ${v.fabric}`);
     setItems([
       ...items,
       {
@@ -1397,13 +1405,15 @@ function OrderDetail() {
     const p = productsQ.data?.find((x: any) => x.id === v?.product_id);
     if (!v || !p) return;
     const isAr = lang === "ar";
-    const sizeLabel = isAr ? "المقاس" : "Size";
-    const colorLabel = isAr ? "اللون" : "Color";
-    const fabricLabel = isAr ? "القماش" : "Fabric";
+    const axes = resolveAllVariantAxes({
+      product: p,
+      addonDefaults,
+      lang: isAr ? "ar" : "en",
+    });
     const lines = [p.name];
-    if (v.size) lines.push(`${sizeLabel}: ${v.size}`);
-    if (v.color) lines.push(`${colorLabel}: ${v.color}`);
-    if (v.fabric) lines.push(`${fabricLabel}: ${v.fabric}`);
+    if (v.size && axes.size.visible) lines.push(`${axes.size.label}: ${v.size}`);
+    if (v.color && axes.color.visible) lines.push(`${axes.color.label}: ${v.color}`);
+    if (v.fabric && axes.fabric.visible) lines.push(`${axes.fabric.label}: ${v.fabric}`);
     updateItem(idx, {
       product_id: p.id,
       variant_id: v.id,
@@ -1946,7 +1956,12 @@ function OrderDetail() {
         customization_total: i.customization_total,
         line_total: i.line_total,
         customizations: i.customizations,
+        selected_variant: i.selected_variant,
+        custom_field_values: i.custom_field_values,
+        product: (productsQ.data ?? []).find((p: any) => p.id === i.product_id),
       })),
+      brandAddons: storeProfile.addons,
+      storeVertical: storeProfile.vertical,
       subtotal: totals.subtotal,
       discount: totals.discount,
       taxRate: Number(order.tax_rate ?? 0),
@@ -3621,48 +3636,56 @@ function OrderDetail() {
                                         (isAr ? "المواصفات والخيارات" : "Specifications & Options")}
                                     </span>
                                   </div>
-                                  {it.selected_variant && (
-                                    <div className="flex flex-wrap gap-2">
-                                      {it.selected_variant.size && (
-                                        <span className="inline-flex items-center gap-1 bg-background border border-border-strong px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
-                                          <span className="text-muted-foreground">
-                                            {isAr ? "المقاس:" : "Size:"}
-                                          </span>
-                                          <b>
-                                            {String(it.selected_variant?.size ?? "").includes(
-                                              "custom",
-                                            ) ||
-                                            String(it.selected_variant?.size ?? "").includes(
-                                              "خاص",
-                                            ) ||
-                                            String(it.selected_variant?.size ?? "").includes(
-                                              vocabulary.custom_order?.[lang] || "custom",
-                                            )
-                                              ? vocabulary.custom_sizing?.[lang] ||
-                                                (isAr ? "قياسات خاصة" : "Custom Sizing")
-                                              : it.selected_variant.size}
-                                          </b>
-                                        </span>
-                                      )}
-                                      {it.selected_variant.color && (
-                                        <span className="inline-flex items-center gap-1.5 bg-background border border-border-strong px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
-                                          <span className="text-muted-foreground">
-                                            {isAr ? "اللون:" : "Color:"}
-                                          </span>
-                                          <b>{it.selected_variant.color}</b>
-                                        </span>
-                                      )}
-                                      {it.selected_variant.fabric && (
-                                        <span className="inline-flex items-center gap-1 bg-background border border-border-strong px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
-                                          <span className="text-muted-foreground">
-                                            {isAr ? "القماش:" : "Fabric:"}
-                                          </span>
-                                          <b>{it.selected_variant.fabric}</b>
-                                        </span>
-                                      )}
-                                    </div>
-                                  )}
-                                  {it.custom_field_values && it.custom_field_values.length > 0 && (
+                                   {it.selected_variant &&
+                                     (() => {
+                                       const itemAxes = resolveAllVariantAxes({
+                                         product,
+                                         addonDefaults,
+                                         lang: isAr ? "ar" : "en",
+                                       });
+                                       return (
+                                         <div className="flex flex-wrap gap-2">
+                                           {it.selected_variant.size && itemAxes.size.visible && (
+                                             <span className="inline-flex items-center gap-1 bg-background border border-border-strong px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
+                                               <span className="text-muted-foreground">
+                                                 {itemAxes.size.label}:
+                                               </span>
+                                               <b>
+                                                 {String(it.selected_variant?.size ?? "").includes(
+                                                   "custom",
+                                                 ) ||
+                                                 String(it.selected_variant?.size ?? "").includes(
+                                                   "خاص",
+                                                 ) ||
+                                                 String(it.selected_variant?.size ?? "").includes(
+                                                   vocabulary.custom_order?.[lang] || "custom",
+                                                 )
+                                                   ? vocabulary.custom_sizing?.[lang] ||
+                                                     (isAr ? "قياسات خاصة" : "Custom Sizing")
+                                                   : it.selected_variant.size}
+                                               </b>
+                                             </span>
+                                           )}
+                                           {it.selected_variant.color && itemAxes.color.visible && (
+                                             <span className="inline-flex items-center gap-1.5 bg-background border border-border-strong px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
+                                               <span className="text-muted-foreground">
+                                                 {itemAxes.color.label}:
+                                               </span>
+                                               <b>{it.selected_variant.color}</b>
+                                             </span>
+                                           )}
+                                           {it.selected_variant.fabric && itemAxes.fabric.visible && (
+                                             <span className="inline-flex items-center gap-1 bg-background border border-border-strong px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
+                                               <span className="text-muted-foreground">
+                                                 {itemAxes.fabric.label}:
+                                               </span>
+                                               <b>{it.selected_variant.fabric}</b>
+                                             </span>
+                                           )}
+                                          </div>
+                                        );
+                                      })()}
+                                   {it.custom_field_values && it.custom_field_values.length > 0 && (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 pt-1 border-t border-border-subtle">
                                       {it.custom_field_values.map((cf, i) => (
                                         <div key={i} className="text-xs">
@@ -4545,7 +4568,10 @@ function OrderDetail() {
           <div className="no-print mb-6">
             <OrderSalesDocumentsCard
               order={order}
-              items={items}
+              items={items.map((it) => ({
+                ...it,
+                product: (productsQ.data ?? []).find((p: any) => p.id === it.product_id),
+              }))}
               brand={brand}
               settings={settingsQ.data}
               currency={currency}
@@ -4595,10 +4621,15 @@ function OrderDetail() {
                     total: totals.total,
                     advance_paid: totals.advancePaid,
                   }}
-                  items={items}
+                  items={items.map((it) => ({
+                    ...it,
+                    product: (productsQ.data ?? []).find((p: any) => p.id === it.product_id),
+                  }))}
                   settings={settingsQ.data}
                   shippingAddress={chosen}
                   paymentBadge={paymentBadge}
+                  brandAddons={storeProfile.addons}
+                  storeVertical={storeProfile.vertical}
                 />
               );
             })()}
