@@ -48,6 +48,15 @@ import {
   Banknote,
   CreditCard,
   QrCode,
+  Building2,
+  Palette,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  Mail,
+  FileText,
+  Store,
+  Shield,
+  KeyRound,
 } from "lucide-react";
 import {
   type ShippingZone,
@@ -110,6 +119,7 @@ import { SettingsStickySaveBar } from "@/components/settings/SettingsStickySaveB
 import { StoreReadinessChecklist } from "@/components/settings/StoreReadinessChecklist";
 import { SettingsSearchBar } from "@/components/settings/SettingsSearchBar";
 import { StoreProfileCard } from "@/components/settings/StoreProfileCard";
+import { SettingsCollapsibleCard } from "@/components/settings/SettingsCollapsibleCard";
 
 const SUPPORTED_CURRENCIES = [
   { code: "BHD", name_en: "BHD — Bahraini Dinar", name_ar: "د.ب — دينار بحريني" },
@@ -722,6 +732,58 @@ function Settings() {
   const storefrontModeSaveRef = useRef<(() => Promise<void> | void) | null>(null);
   const storefrontCustomizerSaveRef = useRef<(() => Promise<void> | void) | null>(null);
 
+  const initialFRef = useRef<string>("");
+  const [activeTabDirty, setActiveTabDirty] = useState<Record<string, boolean>>({});
+  const markTabDirty = useCallback((tab: string, dirty = true) => {
+    setActiveTabDirty((prev) => (prev[tab] === dirty ? prev : { ...prev, [tab]: dirty }));
+  }, []);
+
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const toggleSection = useCallback((id: string) => {
+    setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }));
+  }, []);
+  const expandAllInTab = useCallback((sectionIds: string[]) => {
+    setOpenSections((prev) => {
+      const next = { ...prev };
+      for (const id of sectionIds) next[id] = true;
+      return next;
+    });
+  }, []);
+  const collapseAllInTab = useCallback((sectionIds: string[]) => {
+    setOpenSections((prev) => {
+      const next = { ...prev };
+      for (const id of sectionIds) next[id] = false;
+      return next;
+    });
+  }, []);
+
+  const isFormDirty = Boolean(
+    f && initialFRef.current && JSON.stringify(f) !== initialFRef.current,
+  );
+
+  const isCurrentTabDirty =
+    activeTab === "business" || activeTab === "invoice"
+      ? isFormDirty
+      : Boolean(activeTabDirty[activeTab]);
+
+  const handleDiscard = useCallback(() => {
+    if (activeTab === "business" || activeTab === "invoice") {
+      if (initialFRef.current) {
+        try {
+          const original = JSON.parse(initialFRef.current);
+          setF(original);
+          toast.info(lang === "ar" ? "تم التراجع عن التغييرات" : "Changes discarded");
+        } catch {
+          // ignore
+        }
+      }
+    } else {
+      setActiveTabDirty((prev) => ({ ...prev, [activeTab]: false }));
+      void qc.invalidateQueries();
+      toast.info(lang === "ar" ? "تم التراجع عن التغييرات" : "Changes discarded");
+    }
+  }, [activeTab, lang, qc]);
+
   const registerTabSave = useCallback((tab: string, handler: () => Promise<void> | void) => {
     tabSaveHandlersRef.current[tab] = handler;
   }, []);
@@ -731,8 +793,12 @@ function Settings() {
     if (data) {
       const trimmed = (data.business_name ?? "").trim();
       const name = LEGACY_SETTINGS_NAMES.has(trimmed) ? brandDisplayName : trimmed;
+      const initialSettings = { ...data, business_name: name };
       if (isMounted) {
-        setF({ ...data, business_name: name });
+        setF(initialSettings);
+        if (!initialFRef.current) {
+          initialFRef.current = JSON.stringify(initialSettings);
+        }
       }
     }
     return () => {
@@ -823,6 +889,8 @@ function Settings() {
       if (error) toast.error(error.message);
       else {
         toast.success(lang === "ar" ? "تم حفظ التغييرات بنجاح" : "Settings saved successfully");
+        if (f) initialFRef.current = JSON.stringify(f);
+        setActiveTabDirty((prev) => ({ ...prev, [activeTab]: false }));
         qc.invalidateQueries({ queryKey: queryKeys.brand.businessSettings(brandId) });
       }
     } finally {
@@ -838,6 +906,7 @@ function Settings() {
       try {
         if (storefrontModeSaveRef.current) await storefrontModeSaveRef.current();
         if (storefrontCustomizerSaveRef.current) await storefrontCustomizerSaveRef.current();
+        setActiveTabDirty((prev) => ({ ...prev, storefront: false }));
       } finally {
         setTabSaving(false);
       }
@@ -847,6 +916,7 @@ function Settings() {
         setTabSaving(true);
         try {
           await handler();
+          setActiveTabDirty((prev) => ({ ...prev, [activeTab]: false }));
         } finally {
           setTabSaving(false);
         }
@@ -947,7 +1017,7 @@ function Settings() {
   const activeHeader = TAB_HEADERS[activeTab] ?? TAB_HEADERS.business;
 
   return (
-    <div className="space-y-3.5">
+    <div className="space-y-4 pb-28">
       {f.font_url && (
         <style>{`@font-face { font-family: 'CustomFont'; src: url('${f.font_url}'); font-display: swap; }`}</style>
       )}
@@ -1002,10 +1072,67 @@ function Settings() {
         onValueChange={(val: any) => setActiveTab(val)}
         className="w-full mt-2"
       >
-        <TabsContent value="business" className="space-y-6 mt-0">
-          <StoreProfileCard brandId={brandId} slug={brand.slug} />
-          <Card className="overflow-hidden border border-border/70 shadow-xs rounded-xl bg-card p-4 sm:p-6 space-y-5">
-            <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground">{t("settings.business")}</h2>
+        <TabsContent value="business" className="space-y-4 mt-0">
+          <div className="flex items-center justify-between gap-3 px-1">
+            <p className="text-xs text-muted-foreground font-normal">
+              {lang === "ar"
+                ? "أقسام بيانات المتجر والنشاط (انقر على أي قسم للتوسيع والتعديل)"
+                : "Store profile & settings (click to expand)"}
+            </p>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                const ids = ["biz-profile", "biz-details"];
+                const anyOpen = ids.some((id) => openSections[id]);
+                if (anyOpen) collapseAllInTab(ids);
+                else expandAllInTab(ids);
+              }}
+              className="h-7 text-xs font-normal text-muted-foreground hover:text-foreground gap-1.5"
+            >
+              {["biz-profile", "biz-details"].some((id) => openSections[id]) ? (
+                <>
+                  <ChevronsDownUp className="h-3.5 w-3.5" />
+                  <span>{lang === "ar" ? "طي الكل" : "Collapse all"}</span>
+                </>
+              ) : (
+                <>
+                  <ChevronsUpDown className="h-3.5 w-3.5" />
+                  <span>{lang === "ar" ? "توسيع الكل" : "Expand all"}</span>
+                </>
+              )}
+            </Button>
+          </div>
+
+          <SettingsCollapsibleCard
+            id="biz-profile"
+            open={openSections["biz-profile"] ?? false}
+            onOpenChange={() => toggleSection("biz-profile")}
+            title={lang === "ar" ? "نوع النشاط والوحدات التخصصية" : "Store Vertical & Modules"}
+            description={
+              lang === "ar"
+                ? "تكييف النظام وفق قطاع النشاط (أزياء، مطاعم، إلكترونيات) والوحدات المفعّلة"
+                : "Tailor the store experience and specialized addons to your industry"
+            }
+            icon={Store}
+          >
+            <StoreProfileCard brandId={brandId} slug={brand.slug} borderless={true} />
+          </SettingsCollapsibleCard>
+
+          <SettingsCollapsibleCard
+            id="biz-details"
+            open={openSections["biz-details"] ?? false}
+            onOpenChange={() => toggleSection("biz-details")}
+            title={lang === "ar" ? "بيانات المتجر والاتصال والضريبة والعملة" : "Store Profile, Contact, Tax & Currency"}
+            description={
+              lang === "ar"
+                ? "اسم المتجر، الشعار، أرقام التواصل، العملة الافتراضية، والرقم الضريبي"
+                : "Store identity, contact numbers, base currency, and tax registration"
+            }
+            icon={Building2}
+          >
+            <div className="space-y-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label>{t("settings.businessName")}</Label>
@@ -1220,12 +1347,56 @@ function Settings() {
                 onChange={(e) => setF({ ...f, footer_note: e.target.value })}
               />
             </div>
-          </Card>
+            </div>
+          </SettingsCollapsibleCard>
         </TabsContent>
 
-        <TabsContent value="invoice" className="space-y-6 mt-0">
-          <Card className="overflow-hidden border border-border/70 shadow-xs rounded-xl bg-card p-4 sm:p-6 space-y-5">
-            <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground">{t("settings.appearance")}</h2>
+        <TabsContent value="invoice" className="space-y-4 mt-0">
+          <div className="flex items-center justify-between gap-3 px-1">
+            <p className="text-xs text-muted-foreground font-normal">
+              {lang === "ar"
+                ? "إعدادات الفاتورة والطباعة (انقر على أي قسم للتوسيع والتعديل)"
+                : "Invoice & layout settings (click to expand)"}
+            </p>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                const ids = ["inv-design", "inv-logo"];
+                const anyOpen = ids.some((id) => openSections[id]);
+                if (anyOpen) collapseAllInTab(ids);
+                else expandAllInTab(ids);
+              }}
+              className="h-7 text-xs font-normal text-muted-foreground hover:text-foreground gap-1.5"
+            >
+              {["inv-design", "inv-logo"].some((id) => openSections[id]) ? (
+                <>
+                  <ChevronsDownUp className="h-3.5 w-3.5" />
+                  <span>{lang === "ar" ? "طي الكل" : "Collapse all"}</span>
+                </>
+              ) : (
+                <>
+                  <ChevronsUpDown className="h-3.5 w-3.5" />
+                  <span>{lang === "ar" ? "توسيع الكل" : "Expand all"}</span>
+                </>
+              )}
+            </Button>
+          </div>
+
+          <SettingsCollapsibleCard
+            id="inv-design"
+            open={openSections["inv-design"] ?? false}
+            onOpenChange={() => toggleSection("inv-design")}
+            title={lang === "ar" ? "تصميم وقالب الفاتورة" : "Invoice Design & Template"}
+            description={
+              lang === "ar"
+                ? "تخصيص الألوان، الخطوط، القالب، شارات الحالة والمعاينة الفورية"
+                : "Fonts, colors, templates, status badges and live preview"
+            }
+            icon={FileText}
+          >
+            <div className="space-y-5">
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -1652,151 +1823,314 @@ function Settings() {
               </div>
               <p style={{ marginTop: 6 }}>{t("settings.previewText")}</p>
             </div>
-          </Card>
+            </div>
+          </SettingsCollapsibleCard>
 
           {f.logo_url && (
-            <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-3 sm:p-6 space-y-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="font-display text-xl">Invoice logo position &amp; size</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Drag the logo to reposition it and drag any corner to resize. This will be
-                    applied to every invoice.
-                  </p>
+            <SettingsCollapsibleCard
+              id="inv-logo"
+              open={openSections["inv-logo"] ?? false}
+              onOpenChange={() => toggleSection("inv-logo")}
+              title={lang === "ar" ? "أبعاد وموضع الشعار على الفاتورة" : "Invoice Logo Position & Size"}
+              description={
+                lang === "ar"
+                  ? "تحديد موضع وأبعاد الشعار التفاعلي عبر السحب والإفلات"
+                  : "Interactive drag & resize tool for invoice header logo"
+              }
+              icon={Palette}
+            >
+              <div className="space-y-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h4 className="font-medium text-foreground">
+                      {lang === "ar" ? "معاينة موضع الشعار" : "Invoice logo position & size"}
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
+                      {lang === "ar"
+                        ? "اسحب الشعار لتغيير موضعه واسحب الزوايا لتغيير الحجم. يطبّق على جميع الفواتير."
+                        : "Drag the logo to reposition it and drag any corner to resize. This will be applied to every invoice."}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setF({ ...f, logo_x: 0, logo_y: 0, logo_width: 160, logo_height: 64 })
+                    }
+                  >
+                    {lang === "ar" ? "إعادة ضبط" : "Reset"}
+                  </Button>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setF({ ...f, logo_x: 0, logo_y: 0, logo_width: 160, logo_height: 64 })
+
+                <div
+                  className="w-full overflow-x-auto rounded-md pb-2"
+                  tabIndex={0}
+                  aria-label={
+                    lang === "ar" ? "معاينة موضع شعار الفاتورة" : "Invoice logo position preview"
                   }
                 >
-                  Reset
-                </Button>
-              </div>
-
-              <div
-                className="w-full overflow-x-auto rounded-md pb-2"
-                tabIndex={0}
-                aria-label={
-                  lang === "ar" ? "معاينة موضع شعار الفاتورة" : "Invoice logo position preview"
-                }
-              >
-                <div
-                  className="relative mx-auto border border-dashed border-border rounded-md bg-white overflow-hidden"
-                  style={{ width: LOGO_CANVAS_W, height: LOGO_CANVAS_H }}
-                >
-                  <Rnd
-                    size={{ width: f.logo_width, height: f.logo_height }}
-                    position={{ x: f.logo_x, y: f.logo_y }}
-                    onDragStop={(_e, d) => setF({ ...f, logo_x: d.x, logo_y: d.y })}
-                    onResizeStop={(_e, _dir, ref, _delta, pos) =>
-                      setF({
-                        ...f,
-                        logo_width: parseInt(ref.style.width, 10),
-                        logo_height: parseInt(ref.style.height, 10),
-                        logo_x: pos.x,
-                        logo_y: pos.y,
-                      })
-                    }
-                    bounds="parent"
-                    lockAspectRatio
-                    className="border border-dashed border-border hover:border-primary/50"
+                  <div
+                    className="relative mx-auto border border-dashed border-border rounded-md bg-white overflow-hidden"
+                    style={{ width: LOGO_CANVAS_W, height: LOGO_CANVAS_H }}
                   >
-                    <img
-                      src={f.logo_url}
-                      alt="logo"
-                      draggable={false}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "contain",
-                        pointerEvents: "none",
-                      }}
-                    />
-                  </Rnd>
+                    <Rnd
+                      size={{ width: f.logo_width, height: f.logo_height }}
+                      position={{ x: f.logo_x, y: f.logo_y }}
+                      onDragStop={(_e, d) => setF({ ...f, logo_x: d.x, logo_y: d.y })}
+                      onResizeStop={(_e, _dir, ref, _delta, pos) =>
+                        setF({
+                          ...f,
+                          logo_width: parseInt(ref.style.width, 10),
+                          logo_height: parseInt(ref.style.height, 10),
+                          logo_x: pos.x,
+                          logo_y: pos.y,
+                        })
+                      }
+                      bounds="parent"
+                      lockAspectRatio
+                      className="border border-dashed border-border hover:border-primary/50"
+                    >
+                      <img
+                        src={f.logo_url}
+                        alt="logo"
+                        draggable={false}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "contain",
+                          pointerEvents: "none",
+                        }}
+                      />
+                    </Rnd>
+                  </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                <div>
-                  <Label>X</Label>
-                  <Input
-                    type="number"
-                    value={f.logo_x}
-                    onChange={(e) => setF({ ...f, logo_x: Number(e.target.value) })}
-                  />
-                </div>
-                <div>
-                  <Label>Y</Label>
-                  <Input
-                    type="number"
-                    value={f.logo_y}
-                    onChange={(e) => setF({ ...f, logo_y: Number(e.target.value) })}
-                  />
-                </div>
-                <div>
-                  <Label>Width</Label>
-                  <Input
-                    type="number"
-                    value={f.logo_width}
-                    onChange={(e) => setF({ ...f, logo_width: Number(e.target.value) })}
-                  />
-                </div>
-                <div>
-                  <Label>Height</Label>
-                  <Input
-                    type="number"
-                    value={f.logo_height}
-                    onChange={(e) => setF({ ...f, logo_height: Number(e.target.value) })}
-                  />
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                  <div>
+                    <Label>X</Label>
+                    <Input
+                      type="number"
+                      value={f.logo_x}
+                      onChange={(e) => setF({ ...f, logo_x: Number(e.target.value) })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Y</Label>
+                    <Input
+                      type="number"
+                      value={f.logo_y}
+                      onChange={(e) => setF({ ...f, logo_y: Number(e.target.value) })}
+                    />
+                  </div>
+                  <div>
+                    <Label>{lang === "ar" ? "العرض" : "Width"}</Label>
+                    <Input
+                      type="number"
+                      value={f.logo_width}
+                      onChange={(e) => setF({ ...f, logo_width: Number(e.target.value) })}
+                    />
+                  </div>
+                  <div>
+                    <Label>{lang === "ar" ? "الارتفاع" : "Height"}</Label>
+                    <Input
+                      type="number"
+                      value={f.logo_height}
+                      onChange={(e) => setF({ ...f, logo_height: Number(e.target.value) })}
+                    />
+                  </div>
                 </div>
               </div>
-            </Card>
+            </SettingsCollapsibleCard>
           )}
         </TabsContent>
 
-        <TabsContent value="storefront" className="space-y-6 mt-0">
-          <StorefrontModeCard
-            brandId={brandId}
-            onRegisterSave={(fn) => {
-              storefrontModeSaveRef.current = fn;
-            }}
-          />
-          <StorefrontCustomizerCard
-            brandId={brandId}
-            onRegisterSave={(fn) => {
-              storefrontCustomizerSaveRef.current = fn;
-            }}
-          />
-          <StorefrontSeoCard brandId={brandId} />
+        <TabsContent value="storefront" className="space-y-4 mt-0">
+          <div className="flex items-center justify-between gap-3 px-1">
+            <p className="text-xs text-muted-foreground font-normal">
+              {lang === "ar"
+                ? "أقسام واجهة المتجر (انقر على أي قسم للتوسيع والتعديل)"
+                : "Storefront sections (click to expand)"}
+            </p>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                const ids = ["sf-mode", "sf-customizer", "sf-seo"];
+                const anyOpen = ids.some((id) => openSections[id]);
+                if (anyOpen) collapseAllInTab(ids);
+                else expandAllInTab(ids);
+              }}
+              className="h-7 text-xs font-normal text-muted-foreground hover:text-foreground gap-1.5"
+            >
+              {["sf-mode", "sf-customizer", "sf-seo"].some((id) => openSections[id]) ? (
+                <>
+                  <ChevronsDownUp className="h-3.5 w-3.5" />
+                  <span>{lang === "ar" ? "طي الكل" : "Collapse all"}</span>
+                </>
+              ) : (
+                <>
+                  <ChevronsUpDown className="h-3.5 w-3.5" />
+                  <span>{lang === "ar" ? "توسيع الكل" : "Expand all"}</span>
+                </>
+              )}
+            </Button>
+          </div>
+
+          <SettingsCollapsibleCard
+            id="sf-mode"
+            open={openSections["sf-mode"] ?? false}
+            onOpenChange={() => toggleSection("sf-mode")}
+            title={lang === "ar" ? "وضع المتجر ونموذج البيع" : "Storefront Mode & Selling Model"}
+            description={
+              lang === "ar"
+                ? "التحكم في نموذج البيع المباشر أو وضع الكتالوج واستقبال الطلبات عبر واتساب"
+                : "Switch between direct checkout or WhatsApp catalog mode"
+            }
+            icon={ShoppingBag}
+          >
+            <StorefrontModeCard
+              brandId={brandId}
+              borderless={true}
+              onRegisterSave={(fn) => {
+                storefrontModeSaveRef.current = fn;
+              }}
+              onDirtyChange={(dirty) => markTabDirty("storefront", dirty)}
+            />
+          </SettingsCollapsibleCard>
+
+          <SettingsCollapsibleCard
+            id="sf-customizer"
+            open={openSections["sf-customizer"] ?? false}
+            onOpenChange={() => toggleSection("sf-customizer")}
+            title={lang === "ar" ? "مظهر المتجر والقالب البصري" : "Storefront Appearance & Visual Theme"}
+            description={
+              lang === "ar"
+                ? "الألوان، الخطوط، أنصاف الأقطار، لافتات الترويج، والقائمة"
+                : "Colors, typography, corner radius, promotional banners, and navigation"
+            }
+            icon={Palette}
+          >
+            <StorefrontCustomizerCard
+              brandId={brandId}
+              borderless={true}
+              onRegisterSave={(fn) => {
+                storefrontCustomizerSaveRef.current = fn;
+              }}
+              onDirtyChange={(dirty) => markTabDirty("storefront", dirty)}
+            />
+          </SettingsCollapsibleCard>
+
+          <SettingsCollapsibleCard
+            id="sf-seo"
+            open={openSections["sf-seo"] ?? false}
+            onOpenChange={() => toggleSection("sf-seo")}
+            title={lang === "ar" ? "ظهور المتجر في محركات البحث (SEO)" : "Search Engine Optimization (SEO)"}
+            description={
+              lang === "ar"
+                ? "عنوان ووصف الصفحة الرئيسية عند ظهورها في Google أو مشاركتها"
+                : "Control homepage title and description for search engines and social sharing"
+            }
+            icon={Globe}
+          >
+            <StorefrontSeoCard
+              brandId={brandId}
+              borderless={true}
+              onDirtyChange={(dirty) => markTabDirty("storefront", dirty)}
+            />
+          </SettingsCollapsibleCard>
         </TabsContent>
 
-        <TabsContent value="checkout" className="space-y-6 mt-0">
-          <CheckoutFulfillmentSection
-            brandId={brandId}
-            onRegisterSave={(fn) => registerTabSave("checkout", fn)}
-          />
+        <TabsContent value="checkout" className="space-y-4 mt-0">
+          <SettingsCollapsibleCard
+            id="checkout-fulfillment"
+            open={openSections["checkout-fulfillment"] ?? false}
+            onOpenChange={() => toggleSection("checkout-fulfillment")}
+            title={lang === "ar" ? "خيارات التوصيل والاستلام والشحن" : "Shipping & Fulfillment Options"}
+            description={
+              lang === "ar"
+                ? "إدارة مناطق التوصيل، الرسوم، وخيارات استلام الفرع"
+                : "Manage delivery zones, flat rates, and branch pickup options"
+            }
+            icon={Truck}
+          >
+            <CheckoutFulfillmentSection
+              brandId={brandId}
+              onRegisterSave={(fn) => registerTabSave("checkout", fn)}
+            />
+          </SettingsCollapsibleCard>
         </TabsContent>
 
-        <TabsContent value="payments" className="space-y-6 mt-0">
-          <PaymentSettingsCard
-            brandId={brandId}
-            onRegisterSave={(fn) => registerTabSave("payments", fn)}
-          />
+        <TabsContent value="payments" className="space-y-4 mt-0">
+          <SettingsCollapsibleCard
+            id="payments-methods"
+            open={openSections["payments-methods"] ?? false}
+            onOpenChange={() => toggleSection("payments-methods")}
+            title={lang === "ar" ? "بوابات وطرق الدفع" : "Payment Gateways & Methods"}
+            description={
+              lang === "ar"
+                ? "إعداد الدفع عند الاستلام، BenefitPay، والبطاقات الائتمانية"
+                : "Configure Cash on Delivery, BenefitPay, cards, and payment processors"
+            }
+            icon={CreditCard}
+          >
+            <PaymentSettingsCard
+              brandId={brandId}
+              onRegisterSave={(fn) => registerTabSave("payments", fn)}
+            />
+          </SettingsCollapsibleCard>
         </TabsContent>
 
-        <TabsContent value="emails" className="space-y-6 mt-0">
-          <EmailSettingsCard
-            brandId={brandId}
-            onRegisterSave={(fn) => registerTabSave("emails", fn)}
-          />
+        <TabsContent value="emails" className="space-y-4 mt-0">
+          <SettingsCollapsibleCard
+            id="emails-notifs"
+            open={openSections["emails-notifs"] ?? false}
+            onOpenChange={() => toggleSection("emails-notifs")}
+            title={lang === "ar" ? "إشعارات البريد والرسائل" : "Email & Notification Settings"}
+            description={
+              lang === "ar"
+                ? "إدارة رسائل تأكيد الطلب، الفواتير، وإشعارات الشحن التلقائية"
+                : "Manage automated order confirmations, invoices, and shipping updates"
+            }
+            icon={Mail}
+          >
+            <EmailSettingsCard
+              brandId={brandId}
+              onRegisterSave={(fn) => registerTabSave("emails", fn)}
+            />
+          </SettingsCollapsibleCard>
         </TabsContent>
 
-        <TabsContent value="security" className="space-y-6 mt-0">
-          <SupportAccessCard brand={brand} />
-          <PasskeySettings />
+        <TabsContent value="security" className="space-y-4 mt-0">
+          <SettingsCollapsibleCard
+            id="sec-support"
+            open={openSections["sec-support"] ?? false}
+            onOpenChange={() => toggleSection("sec-support")}
+            title={lang === "ar" ? "صلاحيات دعم المنصة" : "Support Access"}
+            description={
+              lang === "ar"
+                ? "منح فريق الدعم الفني صلاحية مؤقتة للمساعدة في حل المشكلات"
+                : "Grant temporary access to platform support staff for troubleshooting"
+            }
+            icon={Shield}
+          >
+            <SupportAccessCard brand={brand} />
+          </SettingsCollapsibleCard>
+          <SettingsCollapsibleCard
+            id="sec-passkey"
+            open={openSections["sec-passkey"] ?? false}
+            onOpenChange={() => toggleSection("sec-passkey")}
+            title={lang === "ar" ? "مفاتيح المرور (Passkeys)" : "Passkey Settings"}
+            description={
+              lang === "ar"
+                ? "تسجيل الدخول السريع والآمن عبر بصمة الإصبع أو الوجه"
+                : "Fast and secure biometric login using Face ID or Touch ID"
+            }
+            icon={KeyRound}
+          >
+            <PasskeySettings />
+          </SettingsCollapsibleCard>
         </TabsContent>
 
         <TabsContent value="apps" className="mt-0">
@@ -1810,8 +2144,10 @@ function Settings() {
 
       <SettingsStickySaveBar
         activeTab={activeTab}
+        isDirty={isCurrentTabDirty}
         isSaving={saving || tabSaving}
         onSave={handleUnifiedSave}
+        onDiscard={handleDiscard}
         isAr={lang === "ar"}
       />
     </div>
@@ -4571,7 +4907,15 @@ function ColorField({
   );
 }
 
-function StorefrontSeoCard({ brandId }: { brandId: string }) {
+function StorefrontSeoCard({
+  brandId,
+  borderless = false,
+  onDirtyChange,
+}: {
+  brandId: string;
+  borderless?: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
+}) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const qc = useQueryClient();
@@ -4606,22 +4950,32 @@ function StorefrontSeoCard({ brandId }: { brandId: string }) {
       .eq("id", brandId);
     setSaving(false);
     if (error) return toast.error(error.message);
+    onDirtyChange?.(false);
     await qc.invalidateQueries({ queryKey: ["brand-storefront-seo", brandId] });
     toast.success(isAr ? "تم حفظ إعدادات محركات البحث" : "Storefront SEO saved");
   };
 
+  const Container = borderless ? "div" : Card;
+
   return (
-    <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-4">
-      <div>
-        <h2 className="font-display text-xl">
-          {isAr ? "ظهور المتجر في محركات البحث" : "Storefront SEO"}
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          {isAr
-            ? "عنوان ووصف الصفحة الرئيسية عند ظهورها في Google أو مشاركتها."
-            : "Control the homepage title and description shown in search and social sharing."}
-        </p>
-      </div>
+    <Container
+      className={cn(
+        "overflow-hidden space-y-4",
+        !borderless && "border border-border-subtle shadow-lg rounded-2xl bg-card p-6",
+      )}
+    >
+      {!borderless && (
+        <div>
+          <h2 className="font-display text-xl">
+            {isAr ? "ظهور المتجر في محركات البحث" : "Storefront SEO"}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {isAr
+              ? "عنوان ووصف الصفحة الرئيسية عند ظهورها في Google أو مشاركتها."
+              : "Control the homepage title and description shown in search and social sharing."}
+          </p>
+        </div>
+      )}
       <div>
         <div className="flex justify-between gap-3">
           <Label>{isAr ? "عنوان الصفحة الرئيسية" : "Homepage Meta Title"}</Label>
@@ -4632,7 +4986,10 @@ function StorefrontSeoCard({ brandId }: { brandId: string }) {
         <Input
           value={metaTitle}
           maxLength={META_TITLE_LIMIT}
-          onChange={(event) => setMetaTitle(event.target.value)}
+          onChange={(event) => {
+            setMetaTitle(event.target.value);
+            onDirtyChange?.(true);
+          }}
           dir={isAr ? "rtl" : "ltr"}
           placeholder={
             isAr ? "اسم المتجر ووصفه المختصر" : "Store name and concise value proposition"
@@ -4650,7 +5007,10 @@ function StorefrontSeoCard({ brandId }: { brandId: string }) {
           value={metaDescription}
           maxLength={META_DESCRIPTION_LIMIT}
           rows={3}
-          onChange={(event) => setMetaDescription(event.target.value)}
+          onChange={(event) => {
+            setMetaDescription(event.target.value);
+            onDirtyChange?.(true);
+          }}
           dir={isAr ? "rtl" : "ltr"}
           placeholder={
             isAr ? "وصف جذاب ومختصر للمتجر" : "A concise and compelling storefront description"
@@ -4666,7 +5026,7 @@ function StorefrontSeoCard({ brandId }: { brandId: string }) {
             ? "حفظ إعدادات البحث"
             : "Save SEO settings"}
       </Button>
-    </Card>
+    </Container>
   );
 }
 
@@ -4933,9 +5293,13 @@ function FooterLogoResizerControl({
 function StorefrontModeCard({
   brandId,
   onRegisterSave,
+  borderless = false,
+  onDirtyChange,
 }: {
   brandId: string;
   onRegisterSave?: (fn: () => Promise<void> | void) => void;
+  borderless?: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const brand = useBrand();
   const { lang } = useI18n();
@@ -5083,6 +5447,7 @@ function StorefrontModeCard({
       toast.success(
         isAr ? "تم حفظ إعدادات وضع المتجر بنجاح" : "Storefront mode settings saved successfully",
       );
+      onDirtyChange?.(false);
     } catch (err: any) {
       toast.error(
         err.message || (isAr ? "فشل حفظ إعدادات وضع المتجر" : "Failed to save storefront settings"),
@@ -5112,13 +5477,22 @@ function StorefrontModeCard({
     );
   }
 
+  const Container = borderless ? "div" : Card;
+
   return (
-    <Card className="overflow-hidden border border-border/70 shadow-xs rounded-xl bg-card p-4 sm:p-6 space-y-5">
+    <Container
+      className={cn(
+        "overflow-hidden space-y-5",
+        !borderless && "border border-border/70 shadow-xs rounded-xl bg-card p-4 sm:p-6",
+      )}
+    >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h3 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground">
-            {isAr ? "وضع المتجر ونموذج البيع" : "Storefront Mode & Selling Model"}
-          </h3>
+          {!borderless && (
+            <h3 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground">
+              {isAr ? "وضع المتجر ونموذج البيع" : "Storefront Mode & Selling Model"}
+            </h3>
+          )}
           <p className="text-sm text-muted-foreground mt-0.5">
             {isAr
               ? "اختر بين نموذج البيع المباشر مع الدفع الإلكتروني، أو وضع الكتالوج واستقبال الطلبات عبر الواتساب."
@@ -5394,16 +5768,20 @@ function StorefrontModeCard({
           </div>
         </div>
       )}
-    </Card>
+    </Container>
   );
 }
 
 function StorefrontCustomizerCard({
   brandId,
   onRegisterSave,
+  borderless = false,
+  onDirtyChange,
 }: {
   brandId: string;
   onRegisterSave?: (fn: () => Promise<void> | void) => void;
+  borderless?: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const brand = useBrand();
   const heroSaveRef = useRef<(() => Promise<void>) | null>(null);
@@ -5736,6 +6114,7 @@ function StorefrontCustomizerCard({
     if (error) toast.error(error.message);
     else {
       toast.success(isAr ? "تم الحفظ بنجاح" : "Settings saved successfully");
+      onDirtyChange?.(false);
       await qc.invalidateQueries({ queryKey: ["business-settings-theme", brandId] });
       await router.invalidate();
     }
@@ -5928,21 +6307,28 @@ function StorefrontCustomizerCard({
     );
   }
 
+  const Container = borderless ? "div" : Card;
+
   return (
-    <Card
-      className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-6"
+    <Container
+      className={cn(
+        "overflow-hidden space-y-6",
+        !borderless && "border border-border-subtle shadow-lg rounded-2xl bg-card p-6",
+      )}
       dir={isAr ? "rtl" : "ltr"}
     >
-      <div>
-        <h2 className="font-display text-2xl">
-          {isAr ? "إعدادات واجهة المتجر" : "Storefront Settings"}
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          {isAr
-            ? "خصّص شكل المتجر العام — يطبَّق فوراً بعد الحفظ"
-            : "Customize the public storefront — applied instantly after saving"}
-        </p>
-      </div>
+      {!borderless && (
+        <div>
+          <h2 className="font-display text-2xl">
+            {isAr ? "إعدادات واجهة المتجر" : "Storefront Settings"}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {isAr
+              ? "خصّص شكل المتجر العام — يطبَّق فوراً بعد الحفظ"
+              : "Customize the public storefront — applied instantly after saving"}
+          </p>
+        </div>
+      )}
 
       <CustomizerNavigation active={settingsTab} onChange={setSettingsTab} isAr={isAr} />
       {(settingsTab === "promotions" || settingsTab === "content") && (
@@ -7491,7 +7877,7 @@ function StorefrontCustomizerCard({
           <span>{saving ? (isAr ? "جارٍ الحفظ..." : "Saving...") : isAr ? "حفظ إعدادات المتجر" : "Save storefront settings"}</span>
         </Button>
       </div>
-    </Card>
+    </Container>
   );
 }
 

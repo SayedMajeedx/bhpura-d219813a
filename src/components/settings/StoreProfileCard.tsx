@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { queryKeys } from "@/lib/query-keys";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -102,7 +103,15 @@ function renderAddonIcon(iconName: string) {
   }
 }
 
-export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: string }) {
+export function StoreProfileCard({
+  brandId,
+  slug,
+  borderless = false,
+}: {
+  brandId: string;
+  slug: string;
+  borderless?: boolean;
+}) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const qc = useQueryClient();
@@ -407,33 +416,54 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
 
   const isLoading = isProfileLoading || isMutating;
 
+  const Container = borderless ? "div" : Card;
+
   return (
     <>
-      <Card className="overflow-hidden border border-border/70 shadow-xs rounded-xl bg-card p-3 sm:p-6 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-4">
-          <div>
-            <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 text-foreground tracking-tight">
-              <Sparkles className="w-5 h-5 text-primary" />
-              {isAr ? "نوع النشاط ووحدات المتجر" : "Store Vertical & Modules"}
-            </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground font-normal leading-relaxed mt-1">
-              {isAr
-                ? "حدّد نوع نشاط متجرك لتكييف التجربة والوحدات التخصصية بما يناسب منتجاتك"
-                : "Set your store vertical and specialized modules tailored to your product catalog"}
-            </p>
+      <Container
+        className={cn(
+          "overflow-hidden space-y-6",
+          !borderless && "border border-border/70 shadow-xs rounded-xl bg-card p-3 sm:p-6",
+        )}
+      >
+        {!borderless ? (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-4">
+            <div>
+              <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 text-foreground tracking-tight">
+                <Sparkles className="w-5 h-5 text-primary" />
+                {isAr ? "نوع النشاط ووحدات المتجر" : "Store Vertical & Modules"}
+              </h2>
+              <p className="text-xs sm:text-sm text-muted-foreground font-normal leading-relaxed mt-1">
+                {isAr
+                  ? "حدّد نوع نشاط متجرك لتكييف التجربة والوحدات التخصصية بما يناسب منتجاتك"
+                  : "Set your store vertical and specialized modules tailored to your product catalog"}
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowResetConfirmDialog(true)}
+              disabled={isLoading}
+              className="self-start sm:self-auto text-xs"
+            >
+              {isAr ? "إعادة ضبط للافتراضي" : "Reset to defaults"}
+            </Button>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setShowResetConfirmDialog(true)}
-            disabled={isLoading || saving}
-            className="self-start sm:self-auto gap-1 text-xs font-medium"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            {isAr ? "إعادة للافتراضيات" : "Reset to Defaults"}
-          </Button>
-        </div>
+        ) : (
+          <div className="flex justify-end pb-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowResetConfirmDialog(true)}
+              disabled={isLoading}
+              className="text-xs"
+            >
+              {isAr ? "إعادة ضبط للافتراضي" : "Reset to defaults"}
+            </Button>
+          </div>
+        )}
 
         {/* Add-ons Platform Quick Access */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl border border-border bg-muted/20">
@@ -700,7 +730,7 @@ export function StoreProfileCard({ brandId, slug }: { brandId: string; slug: str
                 : "Save Changes"}
           </Button>
         </div>
-      </Card>
+      </Container>
 
       {/* Vertical Change & Starter Pack Synchronization Dialog */}
       <Dialog
