@@ -5432,6 +5432,8 @@ function VariantMobileCard({
   brand,
   update,
   del,
+  mainLabel,
+  incLabel,
   isSelected,
   onToggleSelect,
   product,
