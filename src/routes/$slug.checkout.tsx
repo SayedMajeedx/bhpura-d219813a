@@ -2432,11 +2432,15 @@ function Checkout() {
                       {c.name} × {c.qty}
                     </div>
                     {(() => {
-                      const parts = displayVariantParts({
-                        size: c.size,
-                        color: c.color,
-                        fabric: c.fabric,
-                      });
+                      const parts = displayVariantParts(
+                        {
+                          size: c.size,
+                          size_unit: c.size_unit,
+                          color: c.color,
+                          fabric: c.fabric,
+                        },
+                        lang,
+                      );
                       return parts.length > 0 ? (
                         <div className="truncate text-xs text-muted-foreground">
                           {parts.join(" · ")}

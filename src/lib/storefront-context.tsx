@@ -243,6 +243,7 @@ export type CartItem = {
   price: number;
   original_price?: number | null;
   size: string | null;
+  size_unit?: string | null;
   color: string | null;
   fabric?: string | null;
   qty: number;

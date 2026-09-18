@@ -1016,6 +1016,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       price: displayPrice,
       original_price: originalPriceWithAddons > displayPrice ? originalPriceWithAddons : null,
       size: effectiveSize,
+      size_unit: targetVariant?.size_unit || null,
       color: targetVariant?.color || selectedColor || null,
       fabric: targetVariant?.fabric || selectedFabric || null,
       qty,
@@ -1401,13 +1402,25 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 </div>
               )}
 
-              {/* 📏 Size Selection Pills */}
+              {/* 📏 Size Selection Pills (if any) */}
               {uniqueSizes.length > 0 &&
                 resolvedAxes.size.visible &&
                 (!showSizeModeToggle || sizeMode === "ready") && (
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <div className="text-sm font-semibold">{resolvedAxes.size.label}</div>
+                      <div className="text-sm font-semibold flex items-center gap-1.5">
+                        <span>{resolvedAxes.size.label}:</span>
+                        {selectedSize && (
+                          <span className="text-muted-foreground font-normal">
+                            {formatSizeWithUnit(
+                              selectedSize,
+                              variants.find((v) => v.size === selectedSize && v.size_unit)?.size_unit ||
+                                variants.find((v) => v.size === selectedSize)?.size_unit,
+                              lang,
+                            )}
+                          </span>
+                        )}
+                      </div>
                       <AddonSlot
                         placement="storefront.product.optionsAside"
                         props={{
@@ -1421,6 +1434,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                     <div className="flex flex-wrap gap-2">
                       {uniqueSizes.map((sz) => {
                         const active = selectedSize === sz;
+                        const matchingVariant = variants.find((v) => v.size === sz && v.size_unit);
+                        const unit = matchingVariant?.size_unit || variants.find((v) => v.size === sz)?.size_unit;
+                        const sizeLabel = formatSizeWithUnit(sz, unit, lang);
                         const oos =
                           isSizeOutOfStock[sz] ||
                           Number(
@@ -1447,7 +1463,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                                 : ""
                             }`}
                           >
-                            {sz}
+                            {sizeLabel}
                           </Button>
                         );
                       })}

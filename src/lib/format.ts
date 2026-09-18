@@ -78,28 +78,47 @@ export function formatOrderStatus(
 export function formatSizeWithUnit(
   size: string | null | undefined,
   unit: string | null | undefined,
-  lang: "ar" | "en",
+  lang: "ar" | "en" = "ar",
 ): string {
   const s = (size ?? "").trim();
   if (!s) return "";
   const u = (unit ?? "").trim();
   if (!u) return s;
-  if (lang !== "ar") return `${s}${u}`;
+
+  const key = u.toLowerCase();
   const map: Record<string, string> = {
     cm: "سم",
     mm: "مم",
     m: "م",
-    inch: "بوصة",
-    in: "بوصة",
+    inch: "إنش",
+    in: "إنش",
     ft: "قدم",
-    kg: "كجم",
-    g: "جم",
-    grams: "جم",
-    gram: "جم",
+    kg: "كيلوغرام",
+    g: "غرام",
+    grams: "غرام",
+    gram: "غرام",
     lb: "رطل",
     ml: "مل",
     l: "لتر",
   };
-  const key = u.toLowerCase();
-  return `${s}${map[key] ?? u}`;
+
+  const arUnit = map[key] ?? u;
+
+  // Avoid duplicate units if size string already ends with unit
+  if (
+    s.toLowerCase().endsWith(key) ||
+    s.toLowerCase().endsWith(` ${key}`) ||
+    s.endsWith(arUnit) ||
+    s.endsWith(` ${arUnit}`)
+  ) {
+    return s;
+  }
+
+  if (lang !== "ar") {
+    // e.g. 250g or 50 inch
+    const isShortAlpha = /^[a-zA-Z]{1,3}$/.test(u);
+    return isShortAlpha ? `${s}${u}` : `${s} ${u}`;
+  }
+
+  return `${s} ${arUnit}`;
 }

@@ -54,7 +54,7 @@ import {
   Instagram,
 } from "lucide-react";
 import { toast } from "sonner";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatSizeWithUnit } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
 import { ActivityLogList } from "@/components/activity-log-list";
 import { PrintLabelButton, printLabels, type LabelData } from "@/components/barcode-label";
@@ -127,6 +127,19 @@ import { useAddons } from "@/components/addons/AddonsProvider";
 
 /** Common measurement units the admin can pick from for a "size" variant. */
 const SIZE_UNITS = ["", "cm", "mm", "m", "inch", "ft", "kg", "g", "ml", "l"] as const;
+
+const SIZE_UNIT_LABELS: Record<string, { ar: string; en: string }> = {
+  "": { ar: "— بدون وحدة —", en: "— None —" },
+  g: { ar: "غرام (g)", en: "Grams (g)" },
+  kg: { ar: "كيلوغرام (kg)", en: "Kilograms (kg)" },
+  ml: { ar: "ملليلتر (ml)", en: "Milliliters (ml)" },
+  l: { ar: "لتر (l)", en: "Liters (l)" },
+  inch: { ar: "إنش (inch)", en: "Inches (in)" },
+  cm: { ar: "سنتيمتر (cm)", en: "Centimeters (cm)" },
+  mm: { ar: "ميليمتر (mm)", en: "Millimeters (mm)" },
+  m: { ar: "متر (m)", en: "Meters (m)" },
+  ft: { ar: "قدم (ft)", en: "Feet (ft)" },
+};
 
 type InventorySearch = {
   filter?: string;
@@ -4454,7 +4467,7 @@ function BulkVariantDialog({
             >
               {SIZE_UNITS.map((unit) => (
                 <option key={unit} value={unit}>
-                  {unit || "—"}
+                  {isAr ? SIZE_UNIT_LABELS[unit]?.ar || unit : SIZE_UNIT_LABELS[unit]?.en || unit || "—"}
                 </option>
               ))}
             </select>
@@ -5109,7 +5122,7 @@ function VariantDesktopRow({
                   >
                     {SIZE_UNITS.map((u) => (
                       <option key={u} value={u}>
-                        {u || "—"}
+                        {isAr ? SIZE_UNIT_LABELS[u]?.ar || u : SIZE_UNIT_LABELS[u]?.en || u || "—"}
                       </option>
                     ))}
                   </select>
@@ -5184,7 +5197,7 @@ function VariantDesktopRow({
               <>
                 {sizeAxis.visible && v.size && (
                   <span className="inline-flex items-center bg-primary/5 text-primary text-xs font-semibold px-2 py-0.5 border border-primary/10 rounded-md">
-                    {v.size} {v.size_unit || ""}
+                    {formatSizeWithUnit(v.size, v.size_unit, isAr ? "ar" : "en")}
                   </span>
                 )}
                 {colorAxis.visible && v.color && (
@@ -5523,7 +5536,7 @@ function VariantMobileCard({
               <>
                 {isSizeVis && v.size && (
                   <span className="inline-flex items-center bg-primary/5 text-primary text-xs font-bold px-1.5 py-0.5 border border-primary/10 rounded-sm">
-                    {v.size} {v.size_unit || ""}
+                    {formatSizeWithUnit(v.size, v.size_unit, isAr ? "ar" : "en")}
                   </span>
                 )}
                 {isColorVis && v.color && (
@@ -6180,7 +6193,7 @@ function VariantList({
                   >
                     {SIZE_UNITS.map((u) => (
                       <option key={u} value={u}>
-                        {u || "—"}
+                        {isAr ? SIZE_UNIT_LABELS[u]?.ar || u : SIZE_UNIT_LABELS[u]?.en || u || "—"}
                       </option>
                     ))}
                   </select>
@@ -6629,7 +6642,7 @@ function VariantList({
                               >
                                 {SIZE_UNITS.map((u) => (
                                   <option key={u} value={u}>
-                                    {u === "" ? "—" : u}
+                                    {isAr ? SIZE_UNIT_LABELS[u]?.ar || u : SIZE_UNIT_LABELS[u]?.en || (u === "" ? "—" : u)}
                                   </option>
                                 ))}
                               </select>

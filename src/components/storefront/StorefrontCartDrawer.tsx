@@ -125,11 +125,15 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
                       <div className="flex-1 min-w-0">
                         <div className="font-medium truncate">{displayName}</div>
                         <div className="text-xs text-muted-foreground">
-                          {displayVariantParts({
-                            size: item.size,
-                            color: item.color,
-                            fabric: item.fabric,
-                          }).join(" · ")}
+                          {displayVariantParts(
+                            {
+                              size: item.size,
+                              size_unit: item.size_unit,
+                              color: item.color,
+                              fabric: item.fabric,
+                            },
+                            lang,
+                          ).join(" · ")}
                         </div>
                         {(() => {
                           const formattedFields = formatCustomFieldsList(item.custom_fields, lang);
