@@ -172,7 +172,7 @@ async function handleList(
   let query = supabase
     .from("profiles")
     .select(
-      "id, email, name, phone, role, status, brand_id, must_change_password, created_at, updated_at, brand:brands(id, slug, name_en, name_ar, logo_url, is_active)",
+      "id, email, name, phone, role, status, brand_id, must_change_password, permissions, created_at, updated_at, brand:brands(id, slug, name_en, name_ar, logo_url, is_active)",
     )
     .order("created_at", { ascending: false });
 
@@ -487,6 +487,19 @@ async function handleCreate(
   const mustChangePassword =
     body.must_change_password !== undefined ? Boolean(body.must_change_password) : true;
 
+  if (!createdAuthUser) {
+    const authUpdatePayload: Record<string, any> = {
+      user_metadata: { must_change_password: mustChangePassword },
+    };
+    if (password && String(password).trim().length > 0) {
+      authUpdatePayload.password = String(password).trim();
+    }
+    await supabase.auth.admin.updateUserById(userId, authUpdatePayload).catch(() => undefined);
+  }
+
+  const rawPermissions = Array.isArray(body.permissions) ? body.permissions : [];
+  const permissions = userRole === "staff" ? rawPermissions : [];
+
   const updatePayload: Record<string, any> = {
     id: userId,
     email: normalizedEmail,
@@ -494,7 +507,8 @@ async function handleCreate(
     phone: phone ? String(phone).trim() : null,
     role: userRole,
     status: "active",
-    must_change_password: createdAuthUser ? mustChangePassword : false,
+    must_change_password: mustChangePassword,
+    permissions,
   };
   if (userRole !== "super_admin") {
     updatePayload.brand_id = brand_id ?? null;
@@ -543,7 +557,7 @@ async function handleUpdate(
   body: any,
   ctx: { userId: string; isSuperAdmin: boolean; callerBrandId: string | null },
 ) {
-  const { userId, role, status, name, phone, brand_id, password } = body;
+  const { userId, role, status, name, phone, brand_id, password, permissions } = body;
 
   if (!userId) {
     return new Response(JSON.stringify({ error: "userId is required" }), {
@@ -636,6 +650,9 @@ async function handleUpdate(
   const updates: Record<string, any> = {};
   if (mustChangePassword !== undefined) {
     updates.must_change_password = mustChangePassword;
+  }
+  if (permissions !== undefined) {
+    updates.permissions = Array.isArray(permissions) ? permissions : [];
   }
   if (role !== undefined) {
     if (!validRoles.includes(role)) {

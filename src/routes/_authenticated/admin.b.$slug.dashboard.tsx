@@ -259,6 +259,7 @@ function Dashboard() {
         slug,
       ),
     staleTime: 60_000,
+    enabled: Boolean(canViewFinancials && slug),
     refetchOnWindowFocus: false,
   });
   const previousReportingOverviewQ = useQuery({
@@ -277,6 +278,7 @@ function Dashboard() {
         slug,
       ),
     staleTime: 60_000,
+    enabled: Boolean(canViewFinancials && slug),
     refetchOnWindowFocus: false,
   });
 
@@ -403,6 +405,7 @@ function Dashboard() {
       return data ?? [];
     },
     staleTime: 60_000,
+    enabled: Boolean(canViewFinancials && brandId),
     refetchOnWindowFocus: false,
   });
 
@@ -471,10 +474,12 @@ function Dashboard() {
     customersQ.isLoading ||
     ordersQ.isLoading ||
     recentOrdersQ.isLoading ||
-    expensesQ.isLoading ||
     incubatorSalesQ.isLoading ||
-    reportingOverviewQ.isLoading ||
-    previousReportingOverviewQ.isLoading;
+    (canViewFinancials
+      ? expensesQ.isLoading ||
+        reportingOverviewQ.isLoading ||
+        previousReportingOverviewQ.isLoading
+      : false);
   const accountingRows = Array.isArray(reportingOverviewQ.data) ? reportingOverviewQ.data : [];
   const accountingRow: any =
     accountingRows.find((row: any) => row.currency === currency) ?? accountingRows[0];
@@ -958,7 +963,7 @@ function Dashboard() {
     return <RoutePendingSkeleton />;
   }
 
-  if (reportingOverviewQ.error) {
+  if (canViewFinancials && reportingOverviewQ.error) {
     return (
       <div className="mx-auto max-w-3xl p-4">
         <Card className="border-rose-200 bg-rose-50/70 p-8 text-center">
@@ -973,13 +978,13 @@ function Dashboard() {
               ? "لن نعرض أرقاماً تقديرية قد تتعارض مع التقارير. أعد المحاولة بعد التحقق من الاتصال."
               : "We will not show fallback estimates that may conflict with Reports. Check the connection and try again."}
           </p>
-          <button
+          <Button
             type="button"
-            className="mt-5 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
+            className="mt-5"
             onClick={() => reportingOverviewQ.refetch()}
           >
             {isAr ? "إعادة المحاولة" : "Try again"}
-          </button>
+          </Button>
         </Card>
       </div>
     );

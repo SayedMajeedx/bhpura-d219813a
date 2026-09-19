@@ -51,6 +51,7 @@ import {
   EyeOff,
   Share2,
   ShieldCheck,
+  MessageCircle,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -158,6 +159,39 @@ const AVAILABLE_PERMISSIONS = [
   { id: "manage_settings", labelEn: "Manage Settings", labelAr: "إدارة الإعدادات" },
 ];
 
+const PERMISSION_PRESETS = [
+  {
+    id: "all",
+    labelEn: "Full Operational",
+    labelAr: "كامل الصلاحيات",
+    permissions: [
+      "manage_inventory",
+      "manage_orders",
+      "manage_customers",
+      "view_financials",
+      "manage_settings",
+    ],
+  },
+  {
+    id: "sales_orders",
+    labelEn: "Sales & Orders",
+    labelAr: "مبيعات وطلبات",
+    permissions: ["manage_orders", "manage_customers"],
+  },
+  {
+    id: "inventory",
+    labelEn: "Inventory & Stock",
+    labelAr: "مخزون ومنتجات",
+    permissions: ["manage_inventory", "manage_orders"],
+  },
+  {
+    id: "finance",
+    labelEn: "Finance & Accounts",
+    labelAr: "محاسب مالي",
+    permissions: ["view_financials", "manage_orders"],
+  },
+];
+
 function TeamManagement() {
   const t = useT();
   const { lang } = useI18n();
@@ -207,11 +241,40 @@ function TeamManagement() {
     isOpen: boolean;
     name: string;
     email: string;
+    phone?: string;
     tempPassword?: string;
     mustChangePassword: boolean;
     storeName: string;
   } | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const handleQuickResetTempPassword = async (member: StaffMember) => {
+    const newPassword = generateSecureTempPassword();
+    try {
+      await callUserManagement("update", {
+        userId: member.id,
+        password: newPassword,
+        must_change_password: true,
+      });
+      toast.success(
+        isAr
+          ? "تم توليد كلمة مرور مؤقتة وتفعيل إجبار التغيير عند أول دخول"
+          : "Temporary password generated with mandatory first-login change",
+      );
+      setCredentialsModal({
+        isOpen: true,
+        name: member.name || member.email.split("@")[0],
+        email: member.email,
+        phone: member.phone || undefined,
+        tempPassword: newPassword,
+        mustChangePassword: true,
+        storeName: isAr ? brand.name_ar || brand.name_en : brand.name_en,
+      });
+      qc.invalidateQueries({ queryKey: queryKeys.staff.all(brand.id) });
+    } catch (err: any) {
+      toast.error(err.message || (isAr ? "فشل إعادة تعيين كلمة المرور" : "Failed to reset password"));
+    }
+  };
 
   const copyToClipboard = async (text: string, key: string) => {
     try {
@@ -302,6 +365,7 @@ function TeamManagement() {
           isOpen: true,
           name: form.name.trim(),
           email: form.email.trim(),
+          phone: form.phone.trim() || undefined,
           tempPassword: form.password,
           mustChangePassword: form.must_change_password,
           storeName: isAr ? brand.name_ar || brand.name_en : brand.name_en,
@@ -337,6 +401,7 @@ function TeamManagement() {
           isOpen: true,
           name: editing?.name || "",
           email: editing?.email || "",
+          phone: (updates.phone !== undefined ? updates.phone : editing?.phone) || undefined,
           tempPassword: updates.password,
           mustChangePassword: Boolean(updates.must_change_password),
           storeName: isAr ? brand.name_ar || brand.name_en : brand.name_en,
@@ -385,7 +450,9 @@ function TeamManagement() {
   };
 
   const locale = isAr ? "ar-BH-u-nu-latn" : "en-US";
-  const adminMembers = staff.filter((m) => m.role === "admin" || m.role === "super_admin");
+  const adminMembers = staff.filter(
+    (m) => m.role === "admin" || m.role === "super_admin" || m.role === "brand_admin",
+  );
   const isSingleAdmin = !staffQ.isLoading && adminMembers.length <= 1;
   const adminHasNoPhone = adminMembers.length > 0 && adminMembers.every((m) => !m.phone);
 
@@ -599,28 +666,52 @@ function TeamManagement() {
             </div>
 
             {form.role === "staff" && (
-              <div className="space-y-2">
-                <Label>{isAr ? "الصلاحيات" : "Permissions"}</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 rounded-lg border border-border bg-secondary/5">
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <Label>{isAr ? "الصلاحيات المخصصة" : "Staff Permissions"}</Label>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    {isAr ? "نماذج سريعة:" : "Quick presets:"}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 pb-0.5">
+                  {PERMISSION_PRESETS.map((preset) => {
+                    const isSelected =
+                      preset.permissions.length === form.permissions.length &&
+                      preset.permissions.every((p) => form.permissions.includes(p));
+                    return (
+                      <Button
+                        key={preset.id}
+                        type="button"
+                        size="sm"
+                        variant={isSelected ? "default" : "outline"}
+                        className="h-7 text-xs px-2.5 font-normal"
+                        onClick={() =>
+                          setForm({ ...form, permissions: [...preset.permissions] })
+                        }
+                      >
+                        {isAr ? preset.labelAr : preset.labelEn}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg border border-border bg-secondary/5">
                   {AVAILABLE_PERMISSIONS.map((p) => {
                     const checked = form.permissions.includes(p.id);
                     return (
                       <label
                         key={p.id}
-                        className="flex items-center gap-2 text-sm cursor-pointer hover:opacity-80 transition-opacity"
+                        className="flex items-center gap-2.5 text-sm cursor-pointer select-none hover:opacity-85 transition-opacity"
                       >
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={checked}
-                          className="rounded border-input text-primary focus:ring-primary h-4 w-4"
-                          onChange={() => {
-                            const newPerms = checked
-                              ? form.permissions.filter((x) => x !== p.id)
-                              : [...form.permissions, p.id];
+                          onCheckedChange={(val) => {
+                            const newPerms = val
+                              ? [...form.permissions, p.id]
+                              : form.permissions.filter((x) => x !== p.id);
                             setForm({ ...form, permissions: newPerms });
                           }}
                         />
-                        <span>{isAr ? p.labelAr : p.labelEn}</span>
+                        <span className="text-xs font-medium">{isAr ? p.labelAr : p.labelEn}</span>
                       </label>
                     );
                   })}
@@ -753,14 +844,41 @@ function TeamManagement() {
                   </span>
 
                   {member.phone && (
-                    <span
-                      className="inline-flex items-center gap-1 text-xs font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded-md"
+                    <a
+                      href={`https://wa.me/${member.phone.replace(/\D/g, "")}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 rounded-md hover:bg-emerald-500/20 transition-colors"
                       dir="ltr"
+                      title={isAr ? "محادثة واتساب مباشرة" : "Direct WhatsApp Chat"}
                     >
-                      📱 {member.phone}
-                    </span>
+                      <MessageCircle className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>{member.phone}</span>
+                    </a>
                   )}
                 </div>
+
+                {member.role === "staff" && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {Array.isArray((member as any).permissions) && (member as any).permissions.length > 0 ? (
+                      (member as any).permissions.map((pId: string) => {
+                        const permObj = AVAILABLE_PERMISSIONS.find((p) => p.id === pId);
+                        return (
+                          <span
+                            key={pId}
+                            className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground font-medium"
+                          >
+                            {isAr ? permObj?.labelAr || pId : permObj?.labelEn || pId}
+                          </span>
+                        );
+                      })
+                    ) : (
+                      <span className="text-[11px] text-muted-foreground italic">
+                        {isAr ? "بدون صلاحيات مخصصة" : "No specific permissions"}
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 <div className="pt-3 mt-1 border-t border-border-subtle flex justify-between items-center">
                   <span className="text-xs text-muted-foreground font-medium">
@@ -783,6 +901,15 @@ function TeamManagement() {
                       }
                       return (
                         <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-amber-600 hover:text-amber-700 hover:bg-amber-500/10 border-amber-500/20"
+                            title={isAr ? "إعادة تعيين كلمة مرور مؤقتة فورية" : "Quick Reset Temporary Password"}
+                            onClick={() => handleQuickResetTempPassword(member)}
+                          >
+                            <KeyRound className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
@@ -864,9 +991,16 @@ function TeamManagement() {
                       </td>
                       <td className="hidden p-4 text-muted-foreground sm:table-cell" dir="ltr">
                         {member.phone ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-md">
-                            📱 {member.phone}
-                          </span>
+                          <a
+                            href={`https://wa.me/${member.phone.replace(/\D/g, "")}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-md hover:bg-emerald-500/20 transition-colors"
+                            title={isAr ? "محادثة واتساب مباشرة" : "Direct WhatsApp Chat"}
+                          >
+                            <MessageCircle className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                            <span>{member.phone}</span>
+                          </a>
                         ) : (
                           <span className="text-xs text-muted-foreground italic">
                             {isAr ? "غير محدد" : "None"}
@@ -874,44 +1008,69 @@ function TeamManagement() {
                         )}
                       </td>
                       <td className="p-4">
-                        <span
-                          className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
-                            member.role === "super_admin"
-                              ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
-                              : member.role === "brand_admin"
-                                ? "bg-blue-500/15 text-blue-700 dark:text-blue-400"
-                                : member.role === "admin"
-                                  ? "bg-primary/10 text-primary"
-                                  : "bg-secondary text-secondary-foreground"
-                          }`}
-                        >
-                          {member.role === "super_admin" ? (
-                            <>
-                              <Crown className="h-3 w-3" />
-                              {isAr ? "مدير عام" : "Super Admin"}
-                            </>
-                          ) : member.role === "brand_admin" ? (
-                            <>
-                              <Shield className="h-3 w-3" />
-                              {isAr ? "مدير علامة تجارية" : "Brand Admin"}
-                            </>
-                          ) : member.role === "admin" ? (
-                            <>
-                              <Shield className="h-3 w-3" />
-                              {isAr ? "مدير" : "Admin"}
-                            </>
-                          ) : member.role === "courier" ? (
-                            <>
-                              <Users className="h-3 w-3" />
-                              {isAr ? "مندوب توصيل" : "Courier"}
-                            </>
-                          ) : (
-                            <>
-                              <Users className="h-3 w-3" />
-                              {isAr ? "موظف" : "Staff"}
-                            </>
+                        <div className="flex flex-col items-start gap-1.5">
+                          <span
+                            className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
+                              member.role === "super_admin"
+                                ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                                : member.role === "brand_admin"
+                                  ? "bg-blue-500/15 text-blue-700 dark:text-blue-400"
+                                  : member.role === "admin"
+                                    ? "bg-primary/10 text-primary"
+                                    : "bg-secondary text-secondary-foreground"
+                            }`}
+                          >
+                            {member.role === "super_admin" ? (
+                              <>
+                                <Crown className="h-3 w-3" />
+                                {isAr ? "مدير عام" : "Super Admin"}
+                              </>
+                            ) : member.role === "brand_admin" ? (
+                              <>
+                                <Shield className="h-3 w-3" />
+                                {isAr ? "مدير علامة تجارية" : "Brand Admin"}
+                              </>
+                            ) : member.role === "admin" ? (
+                              <>
+                                <Shield className="h-3 w-3" />
+                                {isAr ? "مدير" : "Admin"}
+                              </>
+                            ) : member.role === "courier" ? (
+                              <>
+                                <Users className="h-3 w-3" />
+                                {isAr ? "مندوب توصيل" : "Courier"}
+                              </>
+                            ) : (
+                              <>
+                                <Users className="h-3 w-3" />
+                                {isAr ? "موظف" : "Staff"}
+                              </>
+                            )}
+                          </span>
+
+                          {member.role === "staff" && (
+                            <div className="flex flex-wrap gap-1 max-w-[260px]">
+                              {Array.isArray((member as any).permissions) &&
+                              (member as any).permissions.length > 0 ? (
+                                (member as any).permissions.map((pId: string) => {
+                                  const permObj = AVAILABLE_PERMISSIONS.find((p) => p.id === pId);
+                                  return (
+                                    <span
+                                      key={pId}
+                                      className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground font-medium"
+                                    >
+                                      {isAr ? permObj?.labelAr || pId : permObj?.labelEn || pId}
+                                    </span>
+                                  );
+                                })
+                              ) : (
+                                <span className="text-[11px] text-muted-foreground italic">
+                                  {isAr ? "بدون صلاحيات مخصصة" : "No specific permissions"}
+                                </span>
+                              )}
+                            </div>
                           )}
-                        </span>
+                        </div>
                       </td>
 
                       <td className="p-4">
@@ -963,6 +1122,19 @@ function TeamManagement() {
                             }
                             return (
                               <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-amber-600 hover:text-amber-700 hover:bg-amber-500/10"
+                                  title={
+                                    isAr
+                                      ? "إعادة تعيين كلمة مرور مؤقتة فورية"
+                                      : "Quick Reset Temporary Password"
+                                  }
+                                  onClick={() => handleQuickResetTempPassword(member)}
+                                >
+                                  <KeyRound className="h-4 w-4" />
+                                </Button>
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -1127,29 +1299,57 @@ function TeamManagement() {
                 </Select>
               </div>
               {editing.role === "staff" && (
-                <div className="space-y-2">
-                  <Label>{isAr ? "الصلاحيات" : "Permissions"}</Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 rounded-lg border border-border bg-secondary/5">
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <Label>{isAr ? "الصلاحيات المخصصة" : "Staff Permissions"}</Label>
+                    <span className="text-xs text-muted-foreground font-medium">
+                      {isAr ? "نماذج سريعة:" : "Quick presets:"}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 pb-0.5">
+                    {PERMISSION_PRESETS.map((preset) => {
+                      const memberPerms = (editing as any).permissions || [];
+                      const isSelected =
+                        preset.permissions.length === memberPerms.length &&
+                        preset.permissions.every((p) => memberPerms.includes(p));
+                      return (
+                        <Button
+                          key={preset.id}
+                          type="button"
+                          size="sm"
+                          variant={isSelected ? "default" : "outline"}
+                          className="h-7 text-xs px-2.5 font-normal"
+                          onClick={() =>
+                            setEditing({
+                              ...editing,
+                              permissions: [...preset.permissions],
+                            } as any)
+                          }
+                        >
+                          {isAr ? preset.labelAr : preset.labelEn}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg border border-border bg-secondary/5">
                     {AVAILABLE_PERMISSIONS.map((p) => {
                       const memberPerms = (editing as any).permissions || [];
                       const checked = memberPerms.includes(p.id);
                       return (
                         <label
                           key={p.id}
-                          className="flex items-center gap-2 text-sm cursor-pointer hover:opacity-80 transition-opacity"
+                          className="flex items-center gap-2.5 text-sm cursor-pointer select-none hover:opacity-85 transition-opacity"
                         >
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             checked={checked}
-                            className="rounded border-input text-primary focus:ring-primary h-4 w-4"
-                            onChange={() => {
-                              const newPerms = checked
-                                ? memberPerms.filter((x: string) => x !== p.id)
-                                : [...memberPerms, p.id];
+                            onCheckedChange={(val) => {
+                              const newPerms = val
+                                ? [...memberPerms, p.id]
+                                : memberPerms.filter((x: string) => x !== p.id);
                               setEditing({ ...editing, permissions: newPerms } as any);
                             }}
                           />
-                          <span>{isAr ? p.labelAr : p.labelEn}</span>
+                          <span className="text-xs font-medium">{isAr ? p.labelAr : p.labelEn}</span>
                         </label>
                       );
                     })}
@@ -1346,6 +1546,16 @@ function TeamManagement() {
                   </div>
                 )}
 
+                {/* Phone */}
+                {credentialsModal.phone && (
+                  <div className="flex items-center justify-between py-1 border-b border-border/50">
+                    <span className="text-muted-foreground">{isAr ? "الهاتف / الواتساب:" : "Phone / WhatsApp:"}</span>
+                    <span className="font-mono font-medium text-emerald-700 dark:text-emerald-400" dir="ltr">
+                      {credentialsModal.phone}
+                    </span>
+                  </div>
+                )}
+
                 {/* Email */}
                 <div className="flex items-center justify-between py-1 border-b border-border/50">
                   <span className="text-muted-foreground">{isAr ? "البريد الإلكتروني:" : "Email:"}</span>
@@ -1466,12 +1676,23 @@ function TeamManagement() {
                       loginUrl: `${window.location.origin}/auth`,
                       lang: isAr ? "ar" : "en",
                     });
-                    const waUrl = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+                    const phoneDigits = credentialsModal.phone
+                      ? credentialsModal.phone.replace(/\D/g, "")
+                      : "";
+                    const waUrl = phoneDigits
+                      ? `https://wa.me/${phoneDigits}?text=${encodeURIComponent(msg)}`
+                      : `https://wa.me/?text=${encodeURIComponent(msg)}`;
                     window.open(waUrl, "_blank");
                   }}
                 >
-                  <Share2 className="h-4 w-4" />
-                  {isAr ? "مشاركة فورية عبر واتساب" : "Share via WhatsApp"}
+                  <MessageCircle className="h-4 w-4" />
+                  {credentialsModal.phone
+                    ? isAr
+                      ? `إرسال عبر واتساب إلى ${credentialsModal.phone}`
+                      : `Send via WhatsApp to ${credentialsModal.phone}`
+                    : isAr
+                      ? "مشاركة فورية عبر واتساب"
+                      : "Share via WhatsApp"}
                 </Button>
               </div>
             </div>
