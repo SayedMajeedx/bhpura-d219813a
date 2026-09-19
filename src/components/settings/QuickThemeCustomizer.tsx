@@ -11,55 +11,118 @@ export interface FontMoodPreset {
   labelAr: string;
   fontAr: string;
   fontEn: string;
+  displayFontAr?: string;
+  bodyFontAr?: string;
+  displayFontEn?: string;
+  bodyFontEn?: string;
   descriptionEn: string;
   descriptionAr: string;
 }
 
 export const FONT_MOOD_PRESETS: FontMoodPreset[] = [
   {
-    id: "classic",
-    labelEn: "Classic",
-    labelAr: "كلاسيكي فاخر",
+    id: "editorial",
+    labelEn: "Editorial / Luxury",
+    labelAr: "تحريري وفاخر",
     fontAr: "Amiri",
     fontEn: "Playfair Display",
-    descriptionEn: "Heritage & luxury vibe",
-    descriptionAr: "فخامة وأصالة راقية",
+    displayFontAr: "Amiri",
+    bodyFontAr: "Tajawal",
+    displayFontEn: "Playfair Display",
+    bodyFontEn: "Inter",
+    descriptionEn: "High-end luxury & editorial feel",
+    descriptionAr: "فخامة وأصالة تحريرية راقية",
   },
   {
-    id: "modern",
-    labelEn: "Modern",
+    id: "minimal",
+    labelEn: "Minimal Modern",
     labelAr: "عصري وبسيط",
+    fontAr: "Readex Pro",
+    fontEn: "Plus Jakarta Sans",
+    displayFontAr: "Readex Pro",
+    bodyFontAr: "Readex Pro",
+    displayFontEn: "Plus Jakarta Sans",
+    bodyFontEn: "Plus Jakarta Sans",
+    descriptionEn: "Clean, geometric & contemporary",
+    descriptionAr: "وضوح وبساطة هندسية حديثة",
+  },
+  {
+    id: "boutique",
+    labelEn: "Elegant Boutique",
+    labelAr: "بوتيك أنيق",
+    fontAr: "Aref Ruqaa",
+    fontEn: "Cormorant Garamond",
+    displayFontAr: "Aref Ruqaa",
+    bodyFontAr: "Almarai",
+    displayFontEn: "Cormorant Garamond",
+    bodyFontEn: "Montserrat",
+    descriptionEn: "Exclusive boutique elegance",
+    descriptionAr: "طابع بوتيك حصري وساحر",
+  },
+  {
+    id: "artisan",
+    labelEn: "Warm Artisan",
+    labelAr: "حرفي دافئ",
+    fontAr: "Changa",
+    fontEn: "Playfair Display",
+    displayFontAr: "Changa",
+    bodyFontAr: "Tajawal",
+    displayFontEn: "Playfair Display",
+    bodyFontEn: "Plus Jakarta Sans",
+    descriptionEn: "Handcrafted, warm & welcoming",
+    descriptionAr: "دفء الحِرفة واللمسة اليدوية",
+  },
+  {
+    id: "contemporary",
+    labelEn: "Contemporary Clean",
+    labelAr: "معاصر وواضح",
     fontAr: "Cairo",
     fontEn: "Inter",
-    descriptionEn: "Clean & contemporary",
-    descriptionAr: "وضوح وبساطة حديثة",
+    displayFontAr: "Cairo",
+    bodyFontAr: "Cairo",
+    displayFontEn: "Inter",
+    bodyFontEn: "Inter",
+    descriptionEn: "High legibility & digital first",
+    descriptionAr: "مقروئية عالية وتصميم رقمي",
   },
   {
     id: "signature",
-    labelEn: "Signature",
-    labelAr: "توقيع بوتيك",
+    labelEn: "Signature Boutique",
+    labelAr: "توقيع راقٍ",
     fontAr: "Tajawal",
     fontEn: "Cormorant Garamond",
-    descriptionEn: "Boutique & editorial",
-    descriptionAr: "طابع بوتيك حصري وأنيق",
+    displayFontAr: "Tajawal",
+    bodyFontAr: "Readex Pro",
+    displayFontEn: "Cormorant Garamond",
+    bodyFontEn: "Inter",
+    descriptionEn: "Signature boutique presentation",
+    descriptionAr: "توقيع خاص بالمتاجر الراقية",
   },
   {
-    id: "strong",
-    labelEn: "Strong",
-    labelAr: "جريء وقوي",
+    id: "bold",
+    labelEn: "Bold & Dynamic",
+    labelAr: "جريء وديناميكي",
     fontAr: "Almarai",
     fontEn: "Montserrat",
-    descriptionEn: "Bold & confident",
-    descriptionAr: "حضور واثق ومباشر",
+    displayFontAr: "Almarai",
+    bodyFontAr: "Cairo",
+    displayFontEn: "Montserrat",
+    bodyFontEn: "Inter",
+    descriptionEn: "Confident, striking & powerful",
+    descriptionAr: "حضور واثق ومباشر وعصري",
   },
   {
-    id: "bubble",
-    labelEn: "Bubble",
-    labelAr: "مرح وحيوي",
+    id: "youthful",
+    labelEn: "Youthful Vibe",
+    labelAr: "شبابي وحيوي",
     fontAr: "Changa",
     fontEn: "Poppins",
-    descriptionEn: "Playful & youthful",
-    descriptionAr: "عفوي وجذاب للشباب",
+    displayFontAr: "Changa",
+    bodyFontAr: "Readex Pro",
+    displayFontEn: "Poppins",
+    bodyFontEn: "Plus Jakarta Sans",
+    descriptionEn: "Playful, friendly & youthful",
+    descriptionAr: "عفوي ومرح وجذاب للشباب",
   },
 ];
 
@@ -615,9 +678,12 @@ export function QuickThemeCustomizer({
                 <span className="text-xs text-muted-foreground">
                   {isAr ? preset.descriptionAr : preset.descriptionEn}
                 </span>
-                <div className="mt-2 text-xs font-mono text-muted-foreground flex items-center gap-2">
-                  <span className="px-1.5 py-0.5 rounded bg-muted">
-                    {preset.fontAr} / {preset.fontEn}
+                <div className="mt-2 text-xs font-mono text-muted-foreground flex flex-col gap-1 w-full">
+                  <span className="px-1.5 py-0.5 rounded bg-muted text-[11px] truncate">
+                    Display: {preset.displayFontAr || preset.fontAr} / {preset.displayFontEn || preset.fontEn}
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded bg-muted/60 text-[10px] text-muted-foreground truncate">
+                    Body: {preset.bodyFontAr || preset.fontAr} / {preset.bodyFontEn || preset.fontEn}
                   </span>
                 </div>
               </button>

@@ -1,5 +1,5 @@
 import React from "react";
-import { Package, Plus, MoreHorizontal } from "lucide-react";
+import { Package, Plus, MoreHorizontal, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,6 +10,7 @@ import {
 interface InventoryCommandHeaderProps {
   lang: "en" | "ar";
   productCount: number;
+  pendingNotifyCount?: number;
   isCourier: boolean;
   onCreateNew: () => void;
   renderImporters?: React.ReactNode;
@@ -18,6 +19,7 @@ interface InventoryCommandHeaderProps {
 export const InventoryCommandHeader: React.FC<InventoryCommandHeaderProps> = ({
   lang,
   productCount,
+  pendingNotifyCount,
   isCourier,
   onCreateNew,
   renderImporters,
@@ -43,6 +45,14 @@ export const InventoryCommandHeader: React.FC<InventoryCommandHeaderProps> = ({
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
               {productCount} {isAr ? "منتج" : "products"}
             </span>
+            {Boolean(pendingNotifyCount && pendingNotifyCount > 0) && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+                <Bell className="size-3" />
+                <span>
+                  {pendingNotifyCount} {isAr ? "طلب إشعار توفر" : "waitlist"}
+                </span>
+              </span>
+            )}
           </div>
           <p className="text-xs leading-relaxed text-muted-foreground">
             {isAr

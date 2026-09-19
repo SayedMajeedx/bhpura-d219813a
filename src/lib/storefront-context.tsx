@@ -225,6 +225,7 @@ export type PublicSettings = {
   storefront_loader_text_en?: string | null;
   storefront_loader_text_ar?: string | null;
   trust_badges?: TrustBadgesConfig | null;
+  storefront_design_version?: number | null;
 };
 
 export type CustomFieldValue = {
@@ -870,7 +871,7 @@ export function useFitProfiles(): FitProfileDefinition[] {
   return useMemo(() => resolveFitProfiles(settings?.fit_profiles), [settings?.fit_profiles]);
 }
 
-export function formatPrice(amount: number, currency: string, lang: StoreLang) {
+export function formatPrice(amount: number, currency: string, lang: StoreLang = "ar") {
   const normalizedCurrency = (currency || "").toUpperCase();
   const isThreeDecimals = ["BHD", "KWD", "OMR", "IQD", "LYD"].includes(normalizedCurrency);
   const fractionDigits = isThreeDecimals ? 3 : 2;

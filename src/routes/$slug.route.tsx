@@ -20,9 +20,14 @@ import {
 import {
   customFontFaces,
   defaultStorefrontTypography,
+  getGoogleFontsUrl,
   normalizeTypography,
   typographyVariables,
 } from "@/lib/typography";
+import {
+  buildOrganizationSchema,
+  buildWebSiteSchema,
+} from "@/lib/seo/structured-data";
 import {
   renderTrustBadgeIcon,
   getDynamicTrustBadges,
@@ -378,11 +383,37 @@ export const Route = createFileRoute("/$slug")({
         : (b.meta_description || `Shop ${b.name_en || b.name_ar} online.`);
     const img = settings?.logo_url || b.logo_url || "https://boutq.store/og-placeholder.png";
     const favicon = resolveBrandFavicon(settings?.favicon_url, settings?.logo_url ?? b.logo_url);
+    const googleFontsUrl = getGoogleFontsUrl(settings?.storefront_typography);
+    const orgSchema = buildOrganizationSchema(b, settings);
+    const webSiteSchema = buildWebSiteSchema(b, settings);
+
     const links: Array<Record<string, any>> = [
       {
         rel: "icon",
         href: favicon,
         ...(faviconType(favicon) ? { type: faviconType(favicon) } : {}),
+      },
+      {
+        rel: "manifest",
+        href: `/${b.slug}/manifest.webmanifest`,
+      },
+      ...(googleFontsUrl
+        ? [
+            { rel: "preconnect", href: "https://fonts.googleapis.com" },
+            { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+            { rel: "stylesheet", href: googleFontsUrl },
+          ]
+        : []),
+    ];
+
+    const scripts: Array<Record<string, any>> = [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify(orgSchema),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify(webSiteSchema),
       },
     ];
 
@@ -404,6 +435,7 @@ export const Route = createFileRoute("/$slug")({
         { name: "twitter:image", content: img },
       ],
       links,
+      scripts,
     };
   },
   component: StorefrontLayout,
@@ -614,10 +646,12 @@ function WhatsAppFab() {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="WhatsApp"
+      aria-label={lang === "ar" ? "تواصل معنا عبر واتساب" : "Contact us on WhatsApp"}
       className={`fixed z-50 ${
-        hasStickyBottom ? "bottom-[84px] md:bottom-6" : "bottom-6 md:bottom-6"
-      } end-5 h-14 w-14 rounded-full grid place-items-center shadow-lg hover:scale-110 active:scale-95`}
+        hasStickyBottom
+          ? "bottom-[calc(88px+env(safe-area-inset-bottom,0px))] md:bottom-6"
+          : "bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] md:bottom-6"
+      } end-5 h-14 w-14 rounded-full grid place-items-center shadow-lg hover:scale-110 active:scale-95 touch-manipulation`}
       style={{
         backgroundColor: "#25D366",
         color: "#fff",

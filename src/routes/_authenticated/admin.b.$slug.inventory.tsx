@@ -367,6 +367,21 @@ function Inventory() {
     },
   });
 
+  const backInStockRequests = useQuery({
+    queryKey: ["admin", brandId, "back-in-stock-count"],
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("back_in_stock_requests")
+        .select("*", { count: "exact", head: true })
+        .eq("brand_id", brandId)
+        .is("notified_at", null);
+      if (error) return 0;
+      return count ?? 0;
+    },
+  });
+
   const businessName = useQuery({
     queryKey: ["business-name", brandId],
     staleTime: 30_000,
@@ -470,6 +485,7 @@ function Inventory() {
           initialAction={searchParams.action}
           products={products.data ?? []}
           variants={variants.data ?? []}
+          pendingNotifyCount={backInStockRequests.data ?? 0}
           businessName={businessName.data?.business_name ?? null}
           currency={businessName.data?.currency ?? "BHD"}
           onChanged={() => {
@@ -1201,6 +1217,7 @@ function ProductsSection({
   initialAction,
   products,
   variants,
+  pendingNotifyCount = 0,
   businessName,
   currency,
   onChanged,
@@ -1210,6 +1227,7 @@ function ProductsSection({
   initialAction?: string;
   products: Product[];
   variants: Variant[];
+  pendingNotifyCount?: number;
   businessName: string | null;
   currency: string;
   onChanged: () => void;
@@ -1837,6 +1855,7 @@ function ProductsSection({
       <InventoryCommandHeader
         lang={isAr ? "ar" : "en"}
         productCount={products.length}
+        pendingNotifyCount={pendingNotifyCount}
         isCourier={false}
         onCreateNew={() => {
           setEditing(null);

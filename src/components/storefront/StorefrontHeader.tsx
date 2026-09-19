@@ -7,7 +7,8 @@ import { cloudflareImageUrl } from "@/lib/media-delivery";
 import { SearchBar, MobileStorefrontDropdown } from "@/components/storefront/StorefrontNavigation";
 import { CartDrawer } from "@/components/storefront/StorefrontCartDrawer";
 import { isCatalogMode } from "@/lib/storefront-mode";
-import { ShoppingBag, Heart, User, Languages, X, Bell } from "lucide-react";
+import { ShoppingBag, Heart, User, Languages, X, Bell, Search } from "lucide-react";
+import { SearchOverlay } from "@/components/storefront/SearchOverlay";
 
 function StoreHeader() {
   const { brand, settings, lang, setLang, t, cartCount, session, isStoreMember, wishlistCount } =
@@ -17,14 +18,91 @@ function StoreHeader() {
   const logoSize = settings.logo_size || 40;
   const [mounted, setMounted] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [searchOverlayOpen, setSearchOverlayOpen] = useState(false);
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  const isV2 = settings.storefront_design_version === 2;
+
   return (
     <header className="w-full">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2 flex flex-col gap-2">
-        <div className="h-14 flex items-center gap-3 justify-between">
+        {/* Mobile 1-Row Header: [Menu] [Logo] [Search] [Cart] for V2 */}
+        {isV2 ? (
+          <div className="flex md:hidden h-14 items-center justify-between gap-2">
+            <div className="shrink-0">
+              <MobileStorefrontDropdown />
+            </div>
+
+            <Link
+              to="/$slug"
+              params={{ slug: brand.slug }}
+              className="flex min-h-11 items-center justify-center gap-2 min-w-0 flex-1 px-1"
+              style={{ color: "var(--sf-header-fg)" }}
+              aria-label={displayName}
+            >
+              {settings.logo_url && (
+                <img
+                  src={cloudflareImageUrl(settings.logo_url, 240)}
+                  alt={displayName}
+                  width={130}
+                  height={40}
+                  fetchPriority="high"
+                  decoding="async"
+                  className="shrink-0 object-contain max-h-9 w-auto"
+                />
+              )}
+              {settings.show_header_name && (
+                <span className="font-display text-base truncate font-semibold">
+                  {displayName}
+                </span>
+              )}
+            </Link>
+
+            <div className="flex items-center gap-1 shrink-0" style={{ color: "var(--sf-header-fg)" }}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11 rounded-full bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-white/80"
+                style={{ color: "var(--sf-header-fg)" }}
+                onClick={() => setSearchOverlayOpen(true)}
+                aria-label={t("البحث", "Search")}
+              >
+                <Search className="h-5 w-5" />
+              </Button>
+
+              {!isCatalogMode(settings) && (
+                <CartDrawer>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative h-11 w-11 rounded-full bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-white/80"
+                    style={{ color: "var(--sf-header-fg)" }}
+                    aria-label={t("سلة التسوق", "Shopping cart")}
+                  >
+                    <ShoppingBag className="h-5 w-5" />
+                    {cartCount > 0 && (
+                      <span
+                        className="absolute top-1 end-1 min-w-[18px] h-[18px] px-1 rounded-full text-xs font-semibold grid place-items-center"
+                        style={{
+                          backgroundColor: "var(--sf-btn-primary-bg)",
+                          color: "var(--sf-btn-primary-fg)",
+                        }}
+                      >
+                        {cartCount}
+                      </span>
+                    )}
+                  </Button>
+                </CartDrawer>
+              )}
+            </div>
+          </div>
+        ) : null}
+
+        {/* Desktop Header row (always) & Mobile V1 fallback */}
+        <div className={`h-14 items-center gap-3 justify-between ${isV2 ? "hidden md:flex" : "flex"}`}>
           <Link
             to="/$slug"
             params={{ slug: brand.slug }}
@@ -204,15 +282,17 @@ function StoreHeader() {
           </div>
         </div>
 
-        {/* Mobile: keep Menu beside Search in the sticky header. */}
-        <div dir={lang === "ar" ? "rtl" : "ltr"} className="flex items-center gap-2 pb-1 md:hidden">
-          <div className="shrink-0">
-            <MobileStorefrontDropdown />
+        {/* Mobile: keep Menu beside Search in the sticky header for V1 */}
+        {!isV2 && (
+          <div dir={lang === "ar" ? "rtl" : "ltr"} className="flex items-center gap-2 pb-1 md:hidden">
+            <div className="shrink-0">
+              <MobileStorefrontDropdown />
+            </div>
+            <div className="min-w-0 flex-1">
+              <SearchBar />
+            </div>
           </div>
-          <div className="min-w-0 flex-1">
-            <SearchBar />
-          </div>
-        </div>
+        )}
       </div>
 
       <Dialog open={notificationsOpen} onOpenChange={setNotificationsOpen}>
@@ -253,6 +333,11 @@ function StoreHeader() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <SearchOverlay
+        isOpen={searchOverlayOpen}
+        onClose={() => setSearchOverlayOpen(false)}
+      />
     </header>
   );
 }

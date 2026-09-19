@@ -36,8 +36,10 @@ import {
   Truck,
   FileText,
   MessageCircle,
+  Bell,
 } from "lucide-react";
 import { isCatalogMode, shouldShowPrices, buildWhatsAppInquiryUrl } from "@/lib/storefront-mode";
+import { NotifyMeForm } from "@/components/storefront/NotifyMeForm";
 import { AddonSlot } from "@/components/addons/AddonSlot";
 import { useAddons } from "@/components/addons/AddonsProvider";
 import { useVocabulary } from "@/hooks/use-vocabulary";
@@ -48,6 +50,7 @@ import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { toast } from "sonner";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
+import { isLikelyImageUrl } from "@/lib/media-delivery";
 import {
   fetchActiveBrandIdentity,
   fetchBestSellerRows,
@@ -56,6 +59,10 @@ import {
 } from "@/lib/storefront-queries";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
+import {
+  buildProductSchema,
+  buildBreadcrumbsSchema,
+} from "@/lib/seo/structured-data";
 
 export const Route = createFileRoute("/$slug/product/$id")({
   loader: async ({ params, location }) => {
@@ -96,17 +103,15 @@ export const Route = createFileRoute("/$slug/product/$id")({
       fetchBestSellerRows(brand.slug, 10),
     ]);
 
-    return { product: product as any, recommendationCatalog, bestSellerRows, initialLang };
+    return { brand, product: product as any, recommendationCatalog, bestSellerRows, initialLang };
   },
   head: ({ loaderData, params }) => {
-    const product = loaderData?.product as Product | null | undefined;
-    if (!product) return { meta: [{ title: "Product not found" }] };
+    const product = loaderData?.product as any;
+    const brand = (loaderData as any)?.brand;
+    if (!product) return {};
 
     const lang = (loaderData as any)?.initialLang || "ar";
-    const name =
-      (lang === "ar"
-        ? (product.name_ar || product.name || product.name_en)
-        : (product.name_en || product.name || product.name_ar)) || "Product";
+    const name = (lang === "ar" ? product.name_ar : product.name_en) || product.name || "";
     const rawDesc =
       (lang === "ar"
         ? (product.description_ar || product.description || product.description_en)
@@ -114,6 +119,32 @@ export const Route = createFileRoute("/$slug/product/$id")({
     const description = rawDesc.replace(/\s+/g, " ").trim().slice(0, 160);
     const title = `${name} | ${String(params?.slug || "").toUpperCase()}`;
     const image = product.image_url || undefined;
+
+    const productSchema = buildProductSchema(
+      {
+        id: product.id,
+        name_en: product.name_en || product.name,
+        name_ar: product.name_ar || product.name,
+        description_en: product.description_en || product.description,
+        description_ar: product.description_ar || product.description,
+        price: Number(product.base_price ?? product.product_variants?.[0]?.selling_price ?? 0),
+        sale_price: product.original_price ? Number(product.base_price) : undefined,
+        sku: product.product_variants?.[0]?.id || product.id,
+        primary_image_url: product.image_url,
+        images: Array.isArray(product.media)
+          ? product.media.map((m: any) => (typeof m === "string" ? m : m?.url)).filter(Boolean)
+          : (product.image_url ? [product.image_url] : []),
+        is_active: true,
+      },
+      brand || { slug: params.slug },
+      undefined,
+      lang,
+    );
+
+    const breadcrumbsSchema = buildBreadcrumbsSchema([
+      { name: lang === "ar" ? "الرئيسية" : "Home", url: `https://boutq.store/${params.slug}` },
+      { name, url: `https://boutq.store/${params.slug}/product/${params.id}` },
+    ]);
 
     return {
       htmlAttrs: {
@@ -136,6 +167,16 @@ export const Route = createFileRoute("/$slug/product/$id")({
         {
           rel: "canonical",
           href: `https://boutq.store/${params.slug}/product/${params.id}`,
+        },
+      ],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify(productSchema),
+        },
+        {
+          type: "application/ld+json",
+          children: JSON.stringify(breadcrumbsSchema),
         },
       ],
     };
@@ -1288,7 +1329,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                     streamIframeUrl={media[mediaIdx % media.length].stream_iframe_url}
                     poster={
                       media[mediaIdx % media.length].poster_url ??
-                      media[mediaIdx % media.length].url
+                      (isLikelyImageUrl(media[mediaIdx % media.length].url)
+                        ? media[mediaIdx % media.length].url
+                        : undefined)
                     }
                     className="h-full w-full object-cover"
                     wrapperClassName="h-full w-full overflow-hidden bg-black/90"
@@ -1356,13 +1399,15 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 >
                   {m.type === "video" ? (
                     <div className="relative w-full h-full bg-black/90 flex items-center justify-center">
-                      {m.poster_url || m.url ? (
+                      {m.poster_url || isLikelyImageUrl(m.url) ? (
                         <img
                           src={m.poster_url || m.url}
-                          alt=""
+                          alt={`${displayName} - preview ${i + 1}`}
                           className="w-full h-full object-cover opacity-60"
                         />
-                      ) : null}
+                      ) : (
+                        <div className="size-full bg-muted/60" />
+                      )}
                       <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                         <div className="h-6 w-6 rounded-full bg-white/90 text-black flex items-center justify-center text-xs font-bold shadow-md">
                           ▶
@@ -2247,6 +2292,26 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 <span>{t("طلب عبر واتساب", "Inquire via WhatsApp")}</span>
               </Button>
             </div>
+          ) : selectedVariantOutOfStock ? (
+            <div className="space-y-3">
+              <NotifyMeForm
+                brandId={brand.id}
+                productId={product.id}
+                variantId={variant?.id}
+                productName={displayName}
+                variantLabel={
+                  variant
+                    ? [
+                        formatSizeWithUnit(variant.size, variant.size_unit, lang),
+                        variant.color,
+                        variant.fabric,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")
+                    : null
+                }
+              />
+            </div>
           ) : (
             <div className="hidden md:flex gap-2">
               <Button
@@ -2353,6 +2418,15 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               >
                 <MessageCircle className="h-4 w-4" />
                 <span>{t("طلب عبر واتساب", "Inquire")}</span>
+              </Button>
+            ) : selectedVariantOutOfStock ? (
+              <Button
+                type="button"
+                className="flex-1 h-11 px-4 font-semibold bg-primary text-primary-foreground gap-2"
+                onClick={scrollToOptions}
+              >
+                <Bell className="h-4 w-4" />
+                <span>{t("أشعرني عند التوفر", "Notify When Available")}</span>
               </Button>
             ) : (
               <>

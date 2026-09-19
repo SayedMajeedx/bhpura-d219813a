@@ -1,3 +1,4 @@
+import { StorefrontDesignUpgradeCard } from "./StorefrontDesignUpgradeCard";
 import { ModeGroup } from "./ModeGroup";
 import { HomeHeroGroup } from "./HomeHeroGroup";
 import { HomeSectionsGroup } from "./HomeSectionsGroup";
@@ -9,6 +10,10 @@ import { SeoGroup } from "./SeoGroup";
 export function StorefrontTab() {
   return (
     <div className="space-y-8">
+      <section id="group-upgrade" aria-label="Storefront Design Version">
+        <StorefrontDesignUpgradeCard />
+      </section>
+
       <section id="group-mode" aria-label="Storefront Mode">
         <ModeGroup />
       </section>

@@ -11,6 +11,8 @@ import { faviconType } from "@/lib/favicon";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { Button } from "@/components/ui/button";
 import { SecondaryBannerParallax } from "@/components/storefront/secondary-banner-parallax";
+import { JsonLd } from "@/components/storefront/seo/JsonLd";
+import { buildCollectionSchema, buildBreadcrumbsSchema } from "@/lib/seo/structured-data";
 
 function getDescendantCategories(catId: string, categories: any[]): any[] {
   const descendants: any[] = [];
@@ -446,6 +448,32 @@ function CategoryPage() {
 
   return (
     <main>
+      {categoryQuery.data && (
+        <JsonLd
+          schema={[
+            buildCollectionSchema(
+              (lang === "ar" ? categoryQuery.data.name_ar : categoryQuery.data.name_en) || categorySlug,
+              filteredProducts.map((p: any) => ({
+                id: p.id,
+                name_en: p.name_en || p.name,
+                name_ar: p.name_ar || p.name,
+                price: Number(p.product_variants?.[0]?.selling_price ?? 0),
+                sale_price: p.product_variants?.[0]?.original_price ? Number(p.product_variants[0].selling_price) : undefined,
+              })),
+              brand,
+              settings,
+              `https://boutq.store/${brand.slug}/${categorySlug}`,
+            ),
+            buildBreadcrumbsSchema([
+              { name: lang === "ar" ? "الرئيسية" : "Home", url: `https://boutq.store/${brand.slug}` },
+              {
+                name: (lang === "ar" ? categoryQuery.data.name_ar : categoryQuery.data.name_en) || categorySlug,
+                url: `https://boutq.store/${brand.slug}/${categorySlug}`,
+              },
+            ]),
+          ]}
+        />
+      )}
       <SecondaryBannerParallax
         enabled={
           settings.secondary_banner_parallax_enabled &&
