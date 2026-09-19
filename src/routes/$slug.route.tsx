@@ -26,6 +26,7 @@ import {
 import {
   renderTrustBadgeIcon,
   getDynamicTrustBadges,
+  resolveStorefrontTrustBadges,
   DEFAULT_TRUST_BADGES,
   type TrustBadgesConfig,
 } from "@/lib/trust-badges";
@@ -133,6 +134,35 @@ export const Route = createFileRoute("/$slug")({
       };
       storefrontTypography.display.en = storefrontTypography.body.en;
     }
+
+    const rawTrustBadges = s?.trust_badges;
+    let normalizedTrustBadges: TrustBadgesConfig | null = null;
+    if (rawTrustBadges) {
+      let parsed = rawTrustBadges;
+      if (typeof rawTrustBadges === "string") {
+        try {
+          parsed = JSON.parse(rawTrustBadges);
+        } catch {
+          parsed = null;
+        }
+      }
+      if (parsed && typeof parsed === "object") {
+        normalizedTrustBadges = {
+          enabled: parsed.enabled !== false,
+          items: Array.isArray(parsed.items)
+            ? parsed.items.map((item: any, idx: number) => ({
+                id: String(item?.id ?? `badge-${idx}`),
+                icon: String(item?.icon ?? "ShieldCheck"),
+                text_ar: String(item?.text_ar ?? ""),
+                text_en: String(item?.text_en ?? ""),
+                color: String(item?.color ?? "amber"),
+                enabled: item?.enabled !== false,
+              }))
+            : [],
+        };
+      }
+    }
+
     const safeSettings: PublicSettings = {
       brand_id: brand.id,
       business_name: s?.business_name ?? brand.name_en,
@@ -273,6 +303,7 @@ export const Route = createFileRoute("/$slug")({
       analytics_consent_required: (trackingSettings as any)?.consent_required ?? true,
       storefront_loader_text_en: s?.storefront_loader_text_en ?? null,
       storefront_loader_text_ar: s?.storefront_loader_text_ar ?? null,
+      trust_badges: normalizedTrustBadges,
     };
 
     const rawHero = brand.hero_media as any;
@@ -624,24 +655,16 @@ function StorefrontFooter() {
   const [openCompany, setOpenCompany] = useState(false);
   const [openHelp, setOpenHelp] = useState(false);
 
-  const rawTrustBadges = (settings as any)?.trust_badges;
+  const rawTrustBadges = settings.trust_badges;
   const storeVertical = normalizeVertical(
-    (settings as any)?.store_vertical ?? (brand as any)?.store_vertical ?? "general",
+    settings.store_vertical ?? (brand as any)?.store_vertical ?? "general",
   );
-  const trustBadgesConfig: TrustBadgesConfig =
-    rawTrustBadges && typeof rawTrustBadges === "object" && Array.isArray(rawTrustBadges.items)
-      ? rawTrustBadges
-      : getDynamicTrustBadges({
-          vertical: storeVertical,
-          settings,
-          currency: (settings as any)?.currency ?? (brand as any)?.currency,
-          brandName: isAr ? brand?.name_ar : brand?.name_en,
-        });
-
-  const activeBadges =
-    (trustBadgesConfig.enabled ?? true)
-      ? (trustBadgesConfig.items || []).filter((b) => b.enabled)
-      : [];
+  const activeBadges = resolveStorefrontTrustBadges({
+    config: rawTrustBadges,
+    vertical: storeVertical,
+    settings,
+    brandName: isAr ? brand?.name_ar : brand?.name_en,
+  });
 
   const pages = settings.pages ?? [];
   const pageLinks = pages

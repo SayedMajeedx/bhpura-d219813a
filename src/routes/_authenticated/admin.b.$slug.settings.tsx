@@ -6755,18 +6755,28 @@ function StorefrontCustomizerCard({
         cart_drawer_checkout_fg: data.cart_drawer_checkout_fg ?? null,
         storefront_loader_text_en: data.storefront_loader_text_en ?? null,
         storefront_loader_text_ar: data.storefront_loader_text_ar ?? null,
-        trust_badges:
-          data.trust_badges && typeof data.trust_badges === "object"
-            ? (data.trust_badges as any)
-            : {
-                enabled: true,
-                items: getDynamicTrustBadges({
-                  vertical: (brand as any)?.store_vertical,
-                  settings: data,
-                  currency: (data as any)?.currency,
-                  brandName: brandDisplayName,
-                }),
-              },
+        trust_badges: (() => {
+          let tb = data.trust_badges;
+          if (typeof tb === "string") {
+            try {
+              tb = JSON.parse(tb);
+            } catch {
+              tb = null;
+            }
+          }
+          if (tb && typeof tb === "object") {
+            return tb as any;
+          }
+          return {
+            enabled: true,
+            items: getDynamicTrustBadges({
+              vertical: (brand as any)?.store_vertical,
+              settings: data,
+              currency: (data as any)?.currency,
+              brandName: brandDisplayName,
+            }),
+          };
+        })(),
       });
   }, [data, brand, brandDisplayName]);
 
@@ -7844,7 +7854,10 @@ function StorefrontCustomizerCard({
         {/* Footer Trust Badges Editor */}
         <TrustBadgesEditor
           value={state.trust_badges}
-          onChange={(val) => setState({ ...state, trust_badges: val })}
+          onChange={(val) => {
+            setState({ ...state, trust_badges: val });
+            onDirtyChange?.(true);
+          }}
           isAr={isAr}
           footerBg={state.footer_bg}
           footerFg={state.footer_fg}

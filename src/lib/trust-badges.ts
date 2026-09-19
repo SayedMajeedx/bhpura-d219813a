@@ -313,6 +313,51 @@ export function getDynamicTrustBadges(params?: DynamicTrustBadgesParams): TrustB
 
 export const DEFAULT_TRUST_BADGES: TrustBadgesConfig = getDynamicTrustBadges({ vertical: "general" });
 
+/**
+ * Resolves active trust badges for the storefront.
+ * 
+ * Rules:
+ * 1. If merchant explicitly configured trust badges in database:
+ *    - If global toggle is off (enabled === false): returns [] (no badges).
+ *    - If merchant configured items list (even if empty []): returns items where enabled !== false.
+ * 2. If not yet configured (null/undefined):
+ *    - Falls back to smart niche-specific dynamic badges.
+ */
+export function resolveStorefrontTrustBadges(options: {
+  config?: TrustBadgesConfig | null;
+  vertical?: string | null;
+  settings?: any;
+  brandName?: string | null;
+}): TrustBadgeItem[] {
+  const { config, vertical, settings, brandName } = options;
+
+  // 1. If merchant explicitly configured trust badges in database:
+  if (config && typeof config === "object") {
+    // If merchant turned OFF the global badges toggle:
+    if (config.enabled === false) {
+      return [];
+    }
+    // If merchant configured items:
+    if (Array.isArray(config.items)) {
+      return config.items.filter((item) => item && item.enabled !== false);
+    }
+  }
+
+  // 2. Fallback to smart niche-specific dynamic badges only if not yet configured by merchant:
+  const dynamic = getDynamicTrustBadges({
+    vertical: vertical || undefined,
+    settings,
+    currency: settings?.currency,
+    brandName: brandName || undefined,
+  });
+
+  if (dynamic.enabled === false) {
+    return [];
+  }
+
+  return (dynamic.items || []).filter((item) => item && item.enabled !== false);
+}
+
 export interface BadgeColorPreset {
   id: string;
   label_ar: string;

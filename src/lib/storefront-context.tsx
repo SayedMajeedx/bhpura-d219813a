@@ -23,6 +23,7 @@ import {
   type StoreModuleOverrides,
 } from "@/lib/store-profile";
 import type { ShippingZone } from "@/lib/shipping";
+import type { TrustBadgesConfig } from "@/lib/trust-badges";
 import {
   resolveFitProfiles,
   type FitProfileDefinition,
@@ -223,6 +224,7 @@ export type PublicSettings = {
   analytics_consent_required: boolean;
   storefront_loader_text_en?: string | null;
   storefront_loader_text_ar?: string | null;
+  trust_badges?: TrustBadgesConfig | null;
 };
 
 export type CustomFieldValue = {
