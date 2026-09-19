@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { provisionBrandWithOwner } from "@/lib/brand-provisioning";
 import { uploadPublicMedia } from "@/lib/r2-upload";
-import { syncBrandVerticalCategories } from "@/lib/addons/vertical-categories";
+import { finalizeBrandSetup } from "@/lib/brand-wizard.functions";
 import { getBrandTemplate } from "@/lib/brand-templates";
 import { FONT_MOOD_PRESETS } from "@/components/settings/QuickThemeCustomizer";
 
@@ -264,23 +264,13 @@ export function BrandWizardDialog({ onSaved, onClose }: BrandWizardDialogProps) 
     if (brandId) {
       updatePipelineStep("finalize", "running");
       try {
-        if (uploadedLogoUrl) {
-          await Promise.all([
-            supabase
-              .from("business_settings")
-              .update({ logo_url: uploadedLogoUrl })
-              .eq("brand_id", brandId),
-            (supabase.from("brands") as any)
-              .update({ logo_url: uploadedLogoUrl })
-              .eq("id", brandId),
-          ]);
-        }
-
-        // Sync default categories
-        await syncBrandVerticalCategories({
-          db: supabase,
-          brandId,
-          newVertical: data.store_vertical,
+        await finalizeBrandSetup({
+          data: {
+            brandId,
+            storeVertical: data.store_vertical,
+            logoUrl: uploadedLogoUrl,
+            faviconUrl: null,
+          },
         });
         updatePipelineStep("finalize", "success");
       } catch (err: any) {
