@@ -52,6 +52,7 @@ import {
   ChevronRight,
   HelpCircle,
   Instagram,
+  Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney, formatSizeWithUnit, splitCompositeVariantSize } from "@/lib/format";
@@ -196,6 +197,10 @@ type Product = {
   variant_label_color_en?: string | null;
   variant_label_fabric_ar?: string | null;
   variant_label_fabric_en?: string | null;
+  variant_label_four_ar?: string | null;
+  variant_label_four_en?: string | null;
+  variant_label_five_ar?: string | null;
+  variant_label_five_en?: string | null;
   fabric_type?: string | null;
   occasion?: string | null;
   size_guide_id?: string | null;
@@ -209,6 +214,8 @@ type Variant = {
   size: string | null;
   color: string | null;
   fabric: string | null;
+  option_four?: string | null;
+  option_five?: string | null;
   cost_price: number;
   selling_price: number;
   original_price: number | null;
@@ -2393,6 +2400,10 @@ function ProductDialog({
     variant_label_color_en: product?.variant_label_color_en ?? "",
     variant_label_fabric_ar: product?.variant_label_fabric_ar ?? "",
     variant_label_fabric_en: product?.variant_label_fabric_en ?? "",
+    variant_label_four_ar: product?.variant_label_four_ar ?? "",
+    variant_label_four_en: product?.variant_label_four_en ?? "",
+    variant_label_five_ar: product?.variant_label_five_ar ?? "",
+    variant_label_five_en: product?.variant_label_five_en ?? "",
     fabric_type: (product as any)?.fabric_type ?? "",
     occasion: (product as any)?.occasion ?? "",
     size_guide_id: product?.size_guide_id ?? null,
@@ -2411,6 +2422,7 @@ function ProductDialog({
   // Stepper state: 'basic' | 'media' | 'customizer'
   const [activeDialogTab, setActiveDialogTab] = useState<"basic" | "media" | "customizer">("basic");
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [showExtraAxes, setShowExtraAxes] = useState(false);
 
   useEffect(
     () => () => {
@@ -2447,6 +2459,10 @@ function ProductDialog({
       variant_label_color_en: product?.variant_label_color_en ?? "",
       variant_label_fabric_ar: product?.variant_label_fabric_ar ?? "",
       variant_label_fabric_en: product?.variant_label_fabric_en ?? "",
+      variant_label_four_ar: product?.variant_label_four_ar ?? "",
+      variant_label_four_en: product?.variant_label_four_en ?? "",
+      variant_label_five_ar: product?.variant_label_five_ar ?? "",
+      variant_label_five_en: product?.variant_label_five_en ?? "",
       fabric_type: (product as any)?.fabric_type ?? "",
       occasion: (product as any)?.occasion ?? "",
       size_guide_id: product?.size_guide_id ?? null,
@@ -2455,6 +2471,14 @@ function ProductDialog({
     });
     setErrors({});
     setActiveDialogTab("basic");
+    setShowExtraAxes(
+      Boolean(
+        product?.variant_label_four_ar ||
+        product?.variant_label_four_en ||
+        product?.variant_label_five_ar ||
+        product?.variant_label_five_en,
+      ),
+    );
   }, [product]);
 
   const categoriesQ = useQuery({
@@ -2654,6 +2678,10 @@ function ProductDialog({
         variant_label_color_en: (form.variant_label_color_en || "").trim() || null,
         variant_label_fabric_ar: (form.variant_label_fabric_ar || "").trim() || null,
         variant_label_fabric_en: (form.variant_label_fabric_en || "").trim() || null,
+        variant_label_four_ar: (form.variant_label_four_ar || "").trim() || null,
+        variant_label_four_en: (form.variant_label_four_en || "").trim() || null,
+        variant_label_five_ar: (form.variant_label_five_ar || "").trim() || null,
+        variant_label_five_en: (form.variant_label_five_en || "").trim() || null,
         fabric_type: (form.fabric_type || "").trim() || null,
         occasion: (form.occasion || "").trim() || null,
         size_guide_id: form.size_guide_hidden ? null : form.size_guide_id || null,
@@ -2721,6 +2749,10 @@ function ProductDialog({
         variant_label_color_en: (form.variant_label_color_en || "").trim() || null,
         variant_label_fabric_ar: (form.variant_label_fabric_ar || "").trim() || null,
         variant_label_fabric_en: (form.variant_label_fabric_en || "").trim() || null,
+        variant_label_four_ar: (form.variant_label_four_ar || "").trim() || null,
+        variant_label_four_en: (form.variant_label_four_en || "").trim() || null,
+        variant_label_five_ar: (form.variant_label_five_ar || "").trim() || null,
+        variant_label_five_en: (form.variant_label_five_en || "").trim() || null,
         fabric_type: (form.fabric_type || "").trim() || null,
         occasion: (form.occasion || "").trim() || null,
         size_guide_id: form.size_guide_hidden ? null : form.size_guide_id || null,
@@ -3277,36 +3309,122 @@ function ProductDialog({
                         </div>
                       </div>
 
-                      {addonAxisDefaults?.fabric !== null && (
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                          <div>
-                            <Label className="text-xs font-bold text-muted-foreground">
-                              {isAr ? "مسمى الخامة بالعربية" : "Custom Fabric Label — Arabic"}
-                            </Label>
-                            <Input
-                              className="mt-1 h-8 rounded-md text-xs"
-                              placeholder={
-                                addonAxisDefaults?.fabric?.ar || (isAr ? "الخامة" : "Fabric")
-                              }
-                              value={form.variant_label_fabric_ar || ""}
-                              onChange={(e) =>
-                                setForm({ ...form, variant_label_fabric_ar: e.target.value })
-                              }
-                            />
+                      {/* Axis 3: Fabric / Packaging / Custom */}
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 border-b border-border-subtle pb-2.5">
+                        <div>
+                          <Label className="text-xs font-bold text-muted-foreground">
+                            {isAr
+                              ? "مسمى الخاصية 3 بالعربية (الخامة / نوع التغليف)"
+                              : "Axis 3 Label — Arabic (Fabric / Packaging)"}
+                          </Label>
+                          <Input
+                            className="mt-1 h-8 rounded-md text-xs"
+                            placeholder={
+                              addonAxisDefaults?.fabric?.ar ||
+                              (isAr ? "الخامة أو نوع التغليف" : "Fabric or Packaging")
+                            }
+                            value={form.variant_label_fabric_ar || ""}
+                            onChange={(e) =>
+                              setForm({ ...form, variant_label_fabric_ar: e.target.value })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs font-bold text-muted-foreground">
+                            {isAr ? "مسمى الخاصية 3 بالإنجليزية" : "Axis 3 Label — English"}
+                          </Label>
+                          <Input
+                            className="mt-1 h-8 rounded-md text-xs"
+                            placeholder={addonAxisDefaults?.fabric?.en || "Fabric or Packaging"}
+                            value={form.variant_label_fabric_en || ""}
+                            onChange={(e) =>
+                              setForm({ ...form, variant_label_fabric_en: e.target.value })
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      {/* Axis 4 & Axis 5 */}
+                      {showExtraAxes || form.variant_label_four_ar || form.variant_label_five_ar ? (
+                        <>
+                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 border-b border-border-subtle pb-2.5">
+                            <div>
+                              <Label className="text-xs font-bold text-muted-foreground">
+                                {isAr
+                                  ? "مسمى الخاصية 4 بالعربية (مثال: الحشوة / درجة التحميص)"
+                                  : "Axis 4 Label — Arabic (e.g. Filling / Roast)"}
+                              </Label>
+                              <Input
+                                className="mt-1 h-8 rounded-md text-xs"
+                                placeholder={isAr ? "الحشوة أو درجة التحميص" : "Filling or Roast"}
+                                value={form.variant_label_four_ar || ""}
+                                onChange={(e) =>
+                                  setForm({ ...form, variant_label_four_ar: e.target.value })
+                                }
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs font-bold text-muted-foreground">
+                                {isAr ? "مسمى الخاصية 4 بالإنجليزية" : "Axis 4 Label — English"}
+                              </Label>
+                              <Input
+                                className="mt-1 h-8 rounded-md text-xs"
+                                placeholder="Filling or Roast"
+                                value={form.variant_label_four_en || ""}
+                                onChange={(e) =>
+                                  setForm({ ...form, variant_label_four_en: e.target.value })
+                                }
+                              />
+                            </div>
                           </div>
-                          <div>
-                            <Label className="text-xs font-bold text-muted-foreground">
-                              {isAr ? "مسمى الخامة بالإنجليزية" : "Custom Fabric Label — English"}
-                            </Label>
-                            <Input
-                              className="mt-1 h-8 rounded-md text-xs"
-                              placeholder={addonAxisDefaults?.fabric?.en || "Fabric"}
-                              value={form.variant_label_fabric_en || ""}
-                              onChange={(e) =>
-                                setForm({ ...form, variant_label_fabric_en: e.target.value })
-                              }
-                            />
+
+                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 pb-1">
+                            <div>
+                              <Label className="text-xs font-bold text-muted-foreground">
+                                {isAr
+                                  ? "مسمى الخاصية 5 بالعربية (مثال: الإضافات / المرفقات)"
+                                  : "Axis 5 Label — Arabic (e.g. Add-ons)"}
+                              </Label>
+                              <Input
+                                className="mt-1 h-8 rounded-md text-xs"
+                                placeholder={isAr ? "الإضافات أو المرفقات" : "Add-ons or Options"}
+                                value={form.variant_label_five_ar || ""}
+                                onChange={(e) =>
+                                  setForm({ ...form, variant_label_five_ar: e.target.value })
+                                }
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs font-bold text-muted-foreground">
+                                {isAr ? "مسمى الخاصية 5 بالإنجليزية" : "Axis 5 Label — English"}
+                              </Label>
+                              <Input
+                                className="mt-1 h-8 rounded-md text-xs"
+                                placeholder="Add-ons or Options"
+                                value={form.variant_label_five_en || ""}
+                                onChange={(e) =>
+                                  setForm({ ...form, variant_label_five_en: e.target.value })
+                                }
+                              />
+                            </div>
                           </div>
+                        </>
+                      ) : (
+                        <div className="pt-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 text-xs text-primary font-bold hover:bg-primary/5 gap-1.5"
+                            onClick={() => setShowExtraAxes(true)}
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            <span>
+                              {isAr
+                                ? "+ إضافة خاصية إضافية (المحور 4 و 5)"
+                                : "+ Add Extra Attributes (Axis 4 & 5)"}
+                            </span>
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -4421,7 +4539,9 @@ function BulkVariantDialog({
             />
           </div>
           <div>
-            <Label>{sizeAxis.label} {isAr ? "(بفاصلة)" : "(comma separated)"}</Label>
+            <Label>
+              {sizeAxis.label} {isAr ? "(بفاصلة)" : "(comma separated)"}
+            </Label>
             <Input
               value={sizesText}
               onChange={(e) => setSizesText(e.target.value)}
@@ -4430,7 +4550,9 @@ function BulkVariantDialog({
           </div>
           {colorAxis.visible && (
             <div>
-              <Label>{colorAxis.label} {isAr ? "(بفاصلة)" : "(comma separated)"}</Label>
+              <Label>
+                {colorAxis.label} {isAr ? "(بفاصلة)" : "(comma separated)"}
+              </Label>
               <Input
                 value={colorsText}
                 onChange={(e) => setColorsText(e.target.value)}
@@ -4467,7 +4589,9 @@ function BulkVariantDialog({
             >
               {SIZE_UNITS.map((unit) => (
                 <option key={unit} value={unit}>
-                  {isAr ? SIZE_UNIT_LABELS[unit]?.ar || unit : SIZE_UNIT_LABELS[unit]?.en || unit || "—"}
+                  {isAr
+                    ? SIZE_UNIT_LABELS[unit]?.ar || unit
+                    : SIZE_UNIT_LABELS[unit]?.en || unit || "—"}
                 </option>
               ))}
             </select>
@@ -4968,6 +5092,7 @@ function VariantDesktopRow({
   renderSkuCol,
   renderBarcodeCol,
   product,
+  onDuplicate,
 }: {
   v: Variant;
   canViewFinancials: boolean;
@@ -4988,6 +5113,7 @@ function VariantDesktopRow({
   renderSkuCol: boolean;
   renderBarcodeCol: boolean;
   product?: Product;
+  onDuplicate?: (v: Variant) => void;
 }) {
   const [costVal, setCostVal] = useState(String(v.cost_price));
   const [sellingVal, setSellingVal] = useState(
@@ -5036,6 +5162,8 @@ function VariantDesktopRow({
   const [sizeUnitVal, setSizeUnitVal] = useState(v.size_unit ?? "");
   const [colorVal, setColorVal] = useState(v.color ?? "");
   const [fabricVal, setFabricVal] = useState(v.fabric ?? "");
+  const [fourVal, setFourVal] = useState(v.option_four ?? "");
+  const [fiveVal, setFiveVal] = useState(v.option_five ?? "");
 
   const { profile: storeProfile } = useAdminStoreProfile(brand.id);
   const { addons } = useAddons();
@@ -5061,6 +5189,18 @@ function VariantDesktopRow({
     addonDefaults: addonAxisDefaults,
     lang: isAr ? "ar" : "en",
   });
+  const fourAxis = resolveVariantAxis({
+    axis: "four",
+    product,
+    addonDefaults: addonAxisDefaults,
+    lang: isAr ? "ar" : "en",
+  });
+  const fiveAxis = resolveVariantAxis({
+    axis: "five",
+    product,
+    addonDefaults: addonAxisDefaults,
+    lang: isAr ? "ar" : "en",
+  });
 
   // Sync back on external changes
   useEffect(() => {
@@ -5068,7 +5208,9 @@ function VariantDesktopRow({
     setSizeUnitVal(v.size_unit ?? "");
     setColorVal(v.color ?? "");
     setFabricVal(v.fabric ?? "");
-  }, [v.size, v.size_unit, v.color, v.fabric]);
+    setFourVal(v.option_four ?? "");
+    setFiveVal(v.option_five ?? "");
+  }, [v.size, v.size_unit, v.color, v.fabric, v.option_four, v.option_five]);
 
   const saveAttributes = () => {
     const split = splitCompositeVariantSize(sizeVal, sizeUnitVal);
@@ -5087,6 +5229,8 @@ function VariantDesktopRow({
       size_unit: finalUnit,
       color: finalColor,
       fabric: fabricVal || null,
+      option_four: fourVal || null,
+      option_five: fiveVal || null,
     });
     setIsEditingAttrs(false);
   };
@@ -5140,12 +5284,8 @@ function VariantDesktopRow({
                 </div>
               </div>
             )}
-            {(colorAxis.visible || fabricAxis.visible) && (
-              <div
-                className={`grid ${
-                  colorAxis.visible && fabricAxis.visible ? "grid-cols-2" : "grid-cols-1"
-                } gap-2`}
-              >
+            {(colorAxis.visible || fabricAxis.visible || fourAxis.visible || fiveAxis.visible) && (
+              <div className="grid grid-cols-2 gap-2">
                 {colorAxis.visible && (
                   <div>
                     <span className="text-xs font-bold text-muted-foreground block mb-1">
@@ -5169,6 +5309,32 @@ function VariantDesktopRow({
                       value={fabricVal}
                       onChange={(e) => setFabricVal(e.target.value)}
                       placeholder={fabricAxis.label}
+                    />
+                  </div>
+                )}
+                {fourAxis.visible && (
+                  <div>
+                    <span className="text-xs font-bold text-muted-foreground block mb-1">
+                      {fourAxis.label}
+                    </span>
+                    <input
+                      className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      value={fourVal}
+                      onChange={(e) => setFourVal(e.target.value)}
+                      placeholder={fourAxis.label}
+                    />
+                  </div>
+                )}
+                {fiveAxis.visible && (
+                  <div>
+                    <span className="text-xs font-bold text-muted-foreground block mb-1">
+                      {fiveAxis.label}
+                    </span>
+                    <input
+                      className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      value={fiveVal}
+                      onChange={(e) => setFiveVal(e.target.value)}
+                      placeholder={fiveAxis.label}
                     />
                   </div>
                 )}
@@ -5202,7 +5368,9 @@ function VariantDesktopRow({
           <div className="flex items-center gap-1.5 flex-wrap group/v">
             {(() => {
               const split = splitCompositeVariantSize(v.size, v.size_unit);
-              const hasAttributes = Boolean(v.size || v.color || v.fabric);
+              const hasAttributes = Boolean(
+                v.size || v.color || v.fabric || v.option_four || v.option_five,
+              );
 
               if (!hasAttributes) {
                 return (
@@ -5216,7 +5384,9 @@ function VariantDesktopRow({
                 <>
                   {v.size && (
                     <span className="inline-flex items-center bg-primary/5 text-primary text-xs font-semibold px-2 py-0.5 border border-primary/10 rounded-md">
-                      {split.isComposite ? `${split.size} ${isAr ? (split.unit === "g" ? "غرام" : split.unit) : split.unit}` : formatSizeWithUnit(v.size, v.size_unit, isAr ? "ar" : "en")}
+                      {split.isComposite
+                        ? `${split.size} ${isAr ? (split.unit === "g" ? "غرام" : split.unit) : split.unit}`
+                        : formatSizeWithUnit(v.size, v.size_unit, isAr ? "ar" : "en")}
                     </span>
                   )}
                   {split.isComposite && !v.color && split.option && (
@@ -5234,6 +5404,16 @@ function VariantDesktopRow({
                   {v.fabric && (
                     <span className="inline-flex items-center bg-muted text-foreground text-xs font-semibold px-2 py-0.5 border border-border rounded-md">
                       {v.fabric}
+                    </span>
+                  )}
+                  {v.option_four && (
+                    <span className="inline-flex items-center bg-muted text-foreground text-xs font-semibold px-2 py-0.5 border border-border rounded-md">
+                      {v.option_four}
+                    </span>
+                  )}
+                  {v.option_five && (
+                    <span className="inline-flex items-center bg-muted text-foreground text-xs font-semibold px-2 py-0.5 border border-border rounded-md">
+                      {v.option_five}
                     </span>
                   )}
                 </>
@@ -5255,6 +5435,20 @@ function VariantDesktopRow({
             >
               <Pencil className="h-3 w-3" />
             </button>
+            {onDuplicate && (
+              <button
+                type="button"
+                className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-primary opacity-0 group-hover/v:opacity-100 transition-opacity"
+                onClick={() => onDuplicate(v)}
+                title={
+                  isAr
+                    ? "تكرار هذا المتغير (إضافة خيار أو نكهة جديدة بنفس الحجم)"
+                    : "Duplicate variant (add new option with same size)"
+                }
+              >
+                <Copy className="h-3 w-3" />
+              </button>
+            )}
           </div>
         )}
       </td>
@@ -5445,12 +5639,28 @@ function VariantDesktopRow({
         })()}
       </td>
 
-      {/* Delete button */}
+      {/* Actions */}
       <td className="px-2 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-        <InventoryDeleteAction
-          message={t("inventory.deleteVariantConfirm")}
-          onConfirm={() => del(v.id)}
-        />
+        <div className="flex items-center justify-center gap-1">
+          {onDuplicate && (
+            <button
+              type="button"
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+              onClick={() => onDuplicate(v)}
+              title={
+                isAr
+                  ? "تكرار هذا المتغير (إضافة خيار بنفس المقاس/الوزن)"
+                  : "Duplicate variant (add option with same size)"
+              }
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </button>
+          )}
+          <InventoryDeleteAction
+            message={t("inventory.deleteVariantConfirm")}
+            onConfirm={() => del(v.id)}
+          />
+        </div>
       </td>
     </tr>
   );
@@ -5475,6 +5685,7 @@ function VariantMobileCard({
   sizeAxis,
   colorAxis,
   fabricAxis,
+  onDuplicate,
 }: {
   v: Variant;
   canViewFinancials: boolean;
@@ -5494,6 +5705,7 @@ function VariantMobileCard({
   sizeAxis?: VariantAxisConfig;
   colorAxis?: VariantAxisConfig;
   fabricAxis?: VariantAxisConfig;
+  onDuplicate?: (v: Variant) => void;
 }) {
   const [costVal, setCostVal] = useState(String(v.cost_price));
   const [sellingVal, setSellingVal] = useState(
@@ -5556,7 +5768,9 @@ function VariantMobileCard({
           <div className="flex items-center gap-1.5 flex-wrap">
             {(() => {
               const split = splitCompositeVariantSize(v.size, v.size_unit);
-              const hasAttributes = Boolean(v.size || v.color || v.fabric);
+              const hasAttributes = Boolean(
+                v.size || v.color || v.fabric || v.option_four || v.option_five,
+              );
 
               if (!hasAttributes) {
                 return (
@@ -5570,7 +5784,9 @@ function VariantMobileCard({
                 <>
                   {v.size && (
                     <span className="inline-flex items-center bg-primary/5 text-primary text-xs font-bold px-1.5 py-0.5 border border-primary/10 rounded-sm">
-                      {split.isComposite ? `${split.size} ${isAr ? (split.unit === "g" ? "غرام" : split.unit) : split.unit}` : formatSizeWithUnit(v.size, v.size_unit, isAr ? "ar" : "en")}
+                      {split.isComposite
+                        ? `${split.size} ${isAr ? (split.unit === "g" ? "غرام" : split.unit) : split.unit}`
+                        : formatSizeWithUnit(v.size, v.size_unit, isAr ? "ar" : "en")}
                     </span>
                   )}
                   {split.isComposite && !v.color && split.option && (
@@ -5589,12 +5805,39 @@ function VariantMobileCard({
                       {v.fabric}
                     </span>
                   )}
+                  {v.option_four && (
+                    <span className="inline-flex items-center bg-muted text-foreground text-xs font-bold px-1.5 py-0.5 border border-border rounded-sm">
+                      {v.option_four}
+                    </span>
+                  )}
+                  {v.option_five && (
+                    <span className="inline-flex items-center bg-muted text-foreground text-xs font-bold px-1.5 py-0.5 border border-border rounded-sm">
+                      {v.option_five}
+                    </span>
+                  )}
                 </>
               );
             })()}
           </div>
         </div>
-        <div onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          {onDuplicate && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 text-muted-foreground hover:text-primary hover:bg-primary/10 touch-manipulation"
+              onClick={() => onDuplicate(v)}
+              title={
+                isAr
+                  ? "تكرار هذا المتغير (إضافة خيار بنفس المقاس/الوزن)"
+                  : "Duplicate variant (add option with same size)"
+              }
+              aria-label={isAr ? "تكرار هذا المتغير" : "Duplicate variant"}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          )}
           <InventoryDeleteAction
             message={t("inventory.deleteVariantConfirm")}
             onConfirm={() => del(v.id)}
@@ -5810,6 +6053,313 @@ function VariantMobileCard({
   );
 }
 
+function ManageProductAxesDialog({
+  productId,
+  product,
+  onChanged,
+}: {
+  productId: string;
+  product?: Product;
+  onChanged: () => void;
+}) {
+  const { lang } = useI18n();
+  const isAr = lang === "ar";
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const [form, setForm] = useState({
+    variant_label_size_ar: product?.variant_label_size_ar ?? "",
+    variant_label_size_en: product?.variant_label_size_en ?? "",
+    variant_label_color_ar: product?.variant_label_color_ar ?? "",
+    variant_label_color_en: product?.variant_label_color_en ?? "",
+    variant_label_fabric_ar: product?.variant_label_fabric_ar ?? "",
+    variant_label_fabric_en: product?.variant_label_fabric_en ?? "",
+    variant_label_four_ar: product?.variant_label_four_ar ?? "",
+    variant_label_four_en: product?.variant_label_four_en ?? "",
+    variant_label_five_ar: product?.variant_label_five_ar ?? "",
+    variant_label_five_en: product?.variant_label_five_en ?? "",
+  });
+
+  useEffect(() => {
+    if (open) {
+      setForm({
+        variant_label_size_ar: product?.variant_label_size_ar ?? "",
+        variant_label_size_en: product?.variant_label_size_en ?? "",
+        variant_label_color_ar: product?.variant_label_color_ar ?? "",
+        variant_label_color_en: product?.variant_label_color_en ?? "",
+        variant_label_fabric_ar: product?.variant_label_fabric_ar ?? "",
+        variant_label_fabric_en: product?.variant_label_fabric_en ?? "",
+        variant_label_four_ar: product?.variant_label_four_ar ?? "",
+        variant_label_four_en: product?.variant_label_four_en ?? "",
+        variant_label_five_ar: product?.variant_label_five_ar ?? "",
+        variant_label_five_en: product?.variant_label_five_en ?? "",
+      });
+    }
+  }, [open, product]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const { error } = await (supabase.from("products") as any)
+        .update({
+          variant_label_size_ar: form.variant_label_size_ar.trim() || null,
+          variant_label_size_en: form.variant_label_size_en.trim() || null,
+          variant_label_color_ar: form.variant_label_color_ar.trim() || null,
+          variant_label_color_en: form.variant_label_color_en.trim() || null,
+          variant_label_fabric_ar: form.variant_label_fabric_ar.trim() || null,
+          variant_label_fabric_en: form.variant_label_fabric_en.trim() || null,
+          variant_label_four_ar: form.variant_label_four_ar.trim() || null,
+          variant_label_four_en: form.variant_label_four_en.trim() || null,
+          variant_label_five_ar: form.variant_label_five_ar.trim() || null,
+          variant_label_five_en: form.variant_label_five_en.trim() || null,
+        })
+        .eq("id", productId);
+
+      if (error) throw error;
+
+      toast.success(
+        isAr ? "تم حفظ وتحديث خصائص ومحاور المنتج بنجاح!" : "Variant axes updated successfully!",
+      );
+      setOpen(false);
+      onChanged();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update axes");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const applyPreset = (ar: string, en: string) => {
+    if (!form.variant_label_color_ar) {
+      setForm((prev) => ({ ...prev, variant_label_color_ar: ar, variant_label_color_en: en }));
+    } else if (!form.variant_label_fabric_ar) {
+      setForm((prev) => ({ ...prev, variant_label_fabric_ar: ar, variant_label_fabric_en: en }));
+    } else if (!form.variant_label_four_ar) {
+      setForm((prev) => ({ ...prev, variant_label_four_ar: ar, variant_label_four_en: en }));
+    } else if (!form.variant_label_five_ar) {
+      setForm((prev) => ({ ...prev, variant_label_five_ar: ar, variant_label_five_en: en }));
+    } else {
+      toast.info(
+        isAr
+          ? "جميع المحاور مستخدمة بالفعل، يمكنك تعديلها يدوياً أدناه."
+          : "All axes are assigned. You can edit them manually below.",
+      );
+    }
+  };
+
+  const presets = [
+    { ar: "النكهة", en: "Flavor" },
+    { ar: "نوع التغليف", en: "Packaging" },
+    { ar: "الحشوة", en: "Filling" },
+    { ar: "درجة التحميص", en: "Roast Level" },
+    { ar: "الإضافات", en: "Add-ons" },
+    { ar: "الخامة", en: "Fabric" },
+  ];
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 px-2.5 rounded-lg text-xs font-bold gap-1.5 hover:bg-secondary/40 touch-manipulation"
+        >
+          <Sliders className="h-3.5 w-3.5" />
+          <span>{isAr ? "خصائص ومحاور المنتج" : "Customize Axes"}</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-base font-black">
+            {isAr ? "🏷️ تخصيص أسماء الخصائص والمحاور" : "🏷️ Customize Variant Attributes & Axes"}
+          </DialogTitle>
+          <p className="text-xs text-muted-foreground">
+            {isAr
+              ? "تحكم في أسماء الأعمدة والخيارات لمتغيرات هذا المنتج (حتى 5 محاور مستقلة) لتظهر بشكل مخصص ومثالي في لوحة التحكم والمتجر."
+              : "Customize column titles and options for this product (up to 5 independent axes) across admin and storefront."}
+          </p>
+        </DialogHeader>
+
+        {/* Quick Presets */}
+        <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
+          <span className="text-xs font-bold text-muted-foreground block">
+            {isAr ? "⚡ نماذج واقتراحات سريعة بنقرة واحدة:" : "⚡ Quick Presets (1-click add):"}
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {presets.map((p) => (
+              <button
+                key={p.ar}
+                type="button"
+                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-background border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                onClick={() => applyPreset(p.ar, p.en)}
+              >
+                + {isAr ? p.ar : p.en}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-3 py-2">
+          {/* Axis 1: Size */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 rounded-xl border border-border bg-card">
+            <div>
+              <Label className="text-xs font-bold text-muted-foreground">
+                {isAr
+                  ? "المحور 1: المقاس / الحجم / الوزن (عربي)"
+                  : "Axis 1: Size / Weight (Arabic)"}
+              </Label>
+              <Input
+                className="mt-1 h-8 text-xs"
+                placeholder={isAr ? "المقاس أو الوزن أو الحجم" : "Size or Weight"}
+                value={form.variant_label_size_ar}
+                onChange={(e) => setForm({ ...form, variant_label_size_ar: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-bold text-muted-foreground">
+                {isAr ? "المحور 1: بالإنجليزية" : "Axis 1: English"}
+              </Label>
+              <Input
+                className="mt-1 h-8 text-xs"
+                placeholder="Size / Weight"
+                value={form.variant_label_size_en}
+                onChange={(e) => setForm({ ...form, variant_label_size_en: e.target.value })}
+              />
+            </div>
+          </div>
+
+          {/* Axis 2: Color / Flavor */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 rounded-xl border border-border bg-card">
+            <div>
+              <Label className="text-xs font-bold text-muted-foreground">
+                {isAr
+                  ? "المحور 2: اللون / النكهة / الخيار (عربي)"
+                  : "Axis 2: Color / Flavor / Option (Arabic)"}
+              </Label>
+              <Input
+                className="mt-1 h-8 text-xs"
+                placeholder={isAr ? "اللون أو النكهة أو الخيار" : "Color / Flavor / Option"}
+                value={form.variant_label_color_ar}
+                onChange={(e) => setForm({ ...form, variant_label_color_ar: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-bold text-muted-foreground">
+                {isAr ? "المحور 2: بالإنجليزية" : "Axis 2: English"}
+              </Label>
+              <Input
+                className="mt-1 h-8 text-xs"
+                placeholder="Color / Flavor / Option"
+                value={form.variant_label_color_en}
+                onChange={(e) => setForm({ ...form, variant_label_color_en: e.target.value })}
+              />
+            </div>
+          </div>
+
+          {/* Axis 3: Fabric / Packaging */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 rounded-xl border border-border bg-card">
+            <div>
+              <Label className="text-xs font-bold text-muted-foreground">
+                {isAr
+                  ? "المحور 3: الخامة / التغليف / مخصص (عربي)"
+                  : "Axis 3: Fabric / Packaging / Custom (Arabic)"}
+              </Label>
+              <Input
+                className="mt-1 h-8 text-xs"
+                placeholder={isAr ? "الخامة أو نوع التغليف" : "Fabric or Packaging"}
+                value={form.variant_label_fabric_ar}
+                onChange={(e) => setForm({ ...form, variant_label_fabric_ar: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-bold text-muted-foreground">
+                {isAr ? "المحور 3: بالإنجليزية" : "Axis 3: English"}
+              </Label>
+              <Input
+                className="mt-1 h-8 text-xs"
+                placeholder="Fabric / Packaging"
+                value={form.variant_label_fabric_en}
+                onChange={(e) => setForm({ ...form, variant_label_fabric_en: e.target.value })}
+              />
+            </div>
+          </div>
+
+          {/* Axis 4: Roast / Filling */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 rounded-xl border border-border bg-card">
+            <div>
+              <Label className="text-xs font-bold text-muted-foreground">
+                {isAr
+                  ? "المحور 4: الحشوة / درجة التحميص (عربي)"
+                  : "Axis 4: Filling / Roast (Arabic)"}
+              </Label>
+              <Input
+                className="mt-1 h-8 text-xs"
+                placeholder={isAr ? "الحشوة أو درجة التحميص" : "Filling or Roast"}
+                value={form.variant_label_four_ar}
+                onChange={(e) => setForm({ ...form, variant_label_four_ar: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-bold text-muted-foreground">
+                {isAr ? "المحور 4: بالإنجليزية" : "Axis 4: English"}
+              </Label>
+              <Input
+                className="mt-1 h-8 text-xs"
+                placeholder="Filling / Roast"
+                value={form.variant_label_four_en}
+                onChange={(e) => setForm({ ...form, variant_label_four_en: e.target.value })}
+              />
+            </div>
+          </div>
+
+          {/* Axis 5: Add-ons / Extras */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 rounded-xl border border-border bg-card">
+            <div>
+              <Label className="text-xs font-bold text-muted-foreground">
+                {isAr
+                  ? "المحور 5: الإضافات / المرفقات (عربي)"
+                  : "Axis 5: Add-ons / Extras (Arabic)"}
+              </Label>
+              <Input
+                className="mt-1 h-8 text-xs"
+                placeholder={isAr ? "الإضافات أو المرفقات" : "Add-ons or Inclusions"}
+                value={form.variant_label_five_ar}
+                onChange={(e) => setForm({ ...form, variant_label_five_ar: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-bold text-muted-foreground">
+                {isAr ? "المحور 5: بالإنجليزية" : "Axis 5: English"}
+              </Label>
+              <Input
+                className="mt-1 h-8 text-xs"
+                placeholder="Add-ons / Inclusions"
+                value={form.variant_label_five_en}
+                onChange={(e) => setForm({ ...form, variant_label_five_en: e.target.value })}
+              />
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={saving}>
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button type="button" onClick={handleSave} disabled={saving} className="gap-1.5">
+            {saving ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <Check className="h-4 w-4" />
+            )}
+            <span>{isAr ? "حفظ وتطبيق الخصائص" : "Save & Apply Axes"}</span>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function VariantList({
   productId,
   productName,
@@ -5863,6 +6413,18 @@ function VariantList({
   );
   const fabricAxis = resolveVariantAxis({
     axis: "fabric",
+    product,
+    addonDefaults: addonAxisDefaults,
+    lang: isAr ? "ar" : "en",
+  });
+  const fourAxis = resolveVariantAxis({
+    axis: "four",
+    product,
+    addonDefaults: addonAxisDefaults,
+    lang: isAr ? "ar" : "en",
+  });
+  const fiveAxis = resolveVariantAxis({
+    axis: "five",
     product,
     addonDefaults: addonAxisDefaults,
     lang: isAr ? "ar" : "en",
@@ -5925,6 +6487,8 @@ function VariantList({
     size_unit: "",
     color: "",
     fabric: "",
+    option_four: "",
+    option_five: "",
     sku: "",
     barcode: "",
     cost_price: String(product?.cost_price ?? 0),
@@ -5936,13 +6500,40 @@ function VariantList({
   };
   const [row, setRow] = useState(empty);
 
-  const startAdding = () => {
-    setRow({
-      ...empty,
-      cost_price: String(product?.cost_price ?? 0),
-      selling_price: "",
-      original_price: String(product?.base_price ?? 0),
-    });
+  const startAdding = (cloneFrom?: Variant) => {
+    if (cloneFrom) {
+      setRow({
+        ...empty,
+        size: cloneFrom.size ?? "",
+        size_unit: cloneFrom.size_unit ?? "",
+        color: "", // merchant only types the new flavor/option!
+        fabric: cloneFrom.fabric ?? "",
+        option_four: cloneFrom.option_four ?? "",
+        option_five: cloneFrom.option_five ?? "",
+        cost_price: String(cloneFrom.cost_price ?? product?.cost_price ?? 0),
+        selling_price: cloneFrom.selling_price ? String(cloneFrom.selling_price) : "",
+        original_price: cloneFrom.original_price
+          ? String(cloneFrom.original_price)
+          : String(product?.base_price ?? 0),
+        stock_main: String(cloneFrom.stock_main ?? 0),
+        stock_incubator: String(cloneFrom.stock_incubator ?? 0),
+      });
+    } else {
+      // Smart prefill: if existing variants share a common size or price, reuse it to save typing!
+      const existingSize = variants.find((v) => v.size)?.size ?? "";
+      const existingUnit = variants.find((v) => v.size_unit)?.size_unit ?? (SIZE_UNITS[0] || "");
+      const existingPrice =
+        variants.length > 0 && variants[0].selling_price ? String(variants[0].selling_price) : "";
+
+      setRow({
+        ...empty,
+        size: existingSize,
+        size_unit: existingUnit,
+        cost_price: String(product?.cost_price ?? 0),
+        selling_price: existingPrice,
+        original_price: String(product?.base_price ?? 0),
+      });
+    }
     setAdding(true);
   };
 
@@ -6004,6 +6595,8 @@ function VariantList({
       size_unit: (sizeAxis.visible ? finalUnit : null) || null,
       color: (colorAxis.visible || finalColor ? finalColor : null) || null,
       fabric: (fabricAxis.visible ? row.fabric : null) || null,
+      option_four: (fourAxis.visible ? row.option_four : null) || null,
+      option_five: (fiveAxis.visible ? row.option_five : null) || null,
       sku: row.sku || null,
       barcode: row.barcode.trim() || null,
       cost_price: Number(product?.cost_price ?? 0),
@@ -6242,7 +6835,7 @@ function VariantList({
   // Auto-calculated total table width
   const totalTableWidth =
     44 +
-    270 +
+    360 +
     (renderImageCol ? 96 : 0) +
     (renderSkuCol ? 120 : 0) +
     (renderBarcodeCol ? 190 : 0) +
@@ -6304,6 +6897,12 @@ function VariantList({
 
       {/* Mobile Stacked Card View */}
       <div className="space-y-4 md:hidden">
+        <div className="flex items-center justify-between gap-2 pb-1">
+          <div className="text-xs font-bold text-muted-foreground">
+            {variants.length} {isAr ? "متغيرات" : "variants"}
+          </div>
+          <ManageProductAxesDialog productId={productId} product={product} onChanged={onChanged} />
+        </div>
         {variants.map((v) => (
           <VariantMobileCard
             key={v.id}
@@ -6325,6 +6924,7 @@ function VariantList({
             sizeAxis={sizeAxis}
             colorAxis={colorAxis}
             fabricAxis={fabricAxis}
+            onDuplicate={startAdding}
           />
         ))}
 
@@ -6389,6 +6989,32 @@ function VariantList({
                     value={row.fabric}
                     placeholder={fabricAxis.label}
                     onChange={(e) => setRow({ ...row, fabric: e.target.value })}
+                  />
+                </div>
+              )}
+              {fourAxis.visible && (
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">
+                    {fourAxis.label}
+                  </Label>
+                  <Input
+                    className="mt-1 h-9 rounded-md text-xs"
+                    value={row.option_four}
+                    placeholder={fourAxis.label}
+                    onChange={(e) => setRow({ ...row, option_four: e.target.value })}
+                  />
+                </div>
+              )}
+              {fiveAxis.visible && (
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">
+                    {fiveAxis.label}
+                  </Label>
+                  <Input
+                    className="mt-1 h-9 rounded-md text-xs"
+                    value={row.option_five}
+                    placeholder={fiveAxis.label}
+                    onChange={(e) => setRow({ ...row, option_five: e.target.value })}
                   />
                 </div>
               )}
@@ -6597,8 +7223,15 @@ function VariantList({
             </button>
           </div>
 
-          <div className="text-xs font-bold text-muted-foreground px-2">
-            {variants.length} {isAr ? "متغيرات" : "variants"}
+          <div className="flex items-center gap-2 px-2">
+            <ManageProductAxesDialog
+              productId={productId}
+              product={product}
+              onChanged={onChanged}
+            />
+            <div className="text-xs font-bold text-muted-foreground">
+              {variants.length} {isAr ? "متغيرات" : "variants"}
+            </div>
           </div>
         </div>
 
@@ -6622,13 +7255,15 @@ function VariantList({
                 </th>
                 <th
                   className="px-2 py-3 text-start font-black text-xs"
-                  style={{ width: 270, minWidth: 260 }}
+                  style={{ width: 360, minWidth: 340 }}
                 >
                   {(() => {
                     const visibleLabels = [
                       sizeAxis.visible ? sizeAxis.label : null,
                       colorAxis.visible ? colorAxis.label : null,
                       fabricAxis.visible ? fabricAxis.label : null,
+                      fourAxis.visible ? fourAxis.label : null,
+                      fiveAxis.visible ? fiveAxis.label : null,
                     ].filter(Boolean);
                     const axisSummary =
                       visibleLabels.length > 0
@@ -6636,9 +7271,7 @@ function VariantList({
                         : isAr
                           ? "الخصائص"
                           : "Attributes";
-                    return isAr
-                      ? `المتغير (${axisSummary})`
-                      : `Variant (${axisSummary})`;
+                    return isAr ? `المتغير (${axisSummary})` : `Variant (${axisSummary})`;
                   })()}
                 </th>
                 {renderImageCol && (
@@ -6775,6 +7408,7 @@ function VariantList({
                   renderSkuCol={renderSkuCol}
                   renderBarcodeCol={renderBarcodeCol}
                   product={product}
+                  onDuplicate={startAdding}
                 />
               ))}
 
@@ -6784,32 +7418,32 @@ function VariantList({
                   <td className="px-2 py-3 text-center"></td>
                   {/* Variant (combined attributes inputs) */}
                   <td className="px-2 py-3 align-middle">
-                    <div className="flex flex-col gap-1.5 w-full max-w-[260px]">
+                    <div className="flex flex-col gap-1.5 w-full min-w-[320px]">
                       {(sizeAxis.visible || colorAxis.visible) && (
                         <div
                           className={`grid gap-1.5 ${
-                            sizeAxis.visible && colorAxis.visible
-                              ? "grid-cols-2"
-                              : "grid-cols-1"
+                            sizeAxis.visible && colorAxis.visible ? "grid-cols-2" : "grid-cols-1"
                           }`}
                         >
                           {sizeAxis.visible && (
                             <div className="flex gap-1 min-w-0">
                               <Input
-                                className="h-8 flex-1 min-w-0 text-start text-xs font-semibold"
+                                className="h-8 flex-1 min-w-[70px] text-start text-xs font-semibold"
                                 value={row.size}
                                 onChange={(e) => setRow({ ...row, size: e.target.value })}
                                 placeholder={sizeAxis.label}
                               />
                               <select
-                                className="h-8 rounded-md border border-input bg-background px-1 text-xs outline-none shrink-0"
+                                className="h-8 w-20 shrink-0 rounded-md border border-input bg-background px-1 text-xs outline-none"
                                 value={row.size_unit}
                                 onChange={(e) => setRow({ ...row, size_unit: e.target.value })}
                                 title={isAr ? `وحدة ${sizeAxis.label}` : `${sizeAxis.label} unit`}
                               >
                                 {SIZE_UNITS.map((u) => (
                                   <option key={u} value={u}>
-                                    {isAr ? SIZE_UNIT_LABELS[u]?.ar || u : SIZE_UNIT_LABELS[u]?.en || (u === "" ? "—" : u)}
+                                    {isAr
+                                      ? SIZE_UNIT_LABELS[u]?.ar || u
+                                      : SIZE_UNIT_LABELS[u]?.en || (u === "" ? "—" : u)}
                                   </option>
                                 ))}
                               </select>
@@ -6817,7 +7451,7 @@ function VariantList({
                           )}
                           {colorAxis.visible && (
                             <Input
-                              className="h-8 w-full min-w-0 text-xs font-semibold"
+                              className="h-8 w-full min-w-[90px] text-xs font-semibold"
                               value={row.color}
                               onChange={(e) => setRow({ ...row, color: e.target.value })}
                               placeholder={colorAxis.label}
@@ -6825,13 +7459,33 @@ function VariantList({
                           )}
                         </div>
                       )}
-                      {fabricAxis.visible && (
-                        <Input
-                          className="h-8 w-full min-w-0 text-xs font-semibold"
-                          value={row.fabric}
-                          onChange={(e) => setRow({ ...row, fabric: e.target.value })}
-                          placeholder={fabricAxis.label}
-                        />
+                      {(fabricAxis.visible || fourAxis.visible || fiveAxis.visible) && (
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {fabricAxis.visible && (
+                            <Input
+                              className="h-8 w-full min-w-0 text-xs font-semibold"
+                              value={row.fabric}
+                              onChange={(e) => setRow({ ...row, fabric: e.target.value })}
+                              placeholder={fabricAxis.label}
+                            />
+                          )}
+                          {fourAxis.visible && (
+                            <Input
+                              className="h-8 w-full min-w-0 text-xs font-semibold"
+                              value={row.option_four}
+                              onChange={(e) => setRow({ ...row, option_four: e.target.value })}
+                              placeholder={fourAxis.label}
+                            />
+                          )}
+                          {fiveAxis.visible && (
+                            <Input
+                              className="h-8 w-full min-w-0 text-xs font-semibold"
+                              value={row.option_five}
+                              onChange={(e) => setRow({ ...row, option_five: e.target.value })}
+                              placeholder={fiveAxis.label}
+                            />
+                          )}
+                        </div>
                       )}
                     </div>
                   </td>
@@ -7022,6 +7676,7 @@ function VariantList({
             canViewFinancials={canViewFinancials}
             onChanged={onChanged}
           />
+          <ManageProductAxesDialog productId={productId} product={product} onChanged={onChanged} />
         </div>
       </div>
 

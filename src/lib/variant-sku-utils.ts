@@ -416,6 +416,7 @@ import {
   splitCompositeVariantSize,
   type SplitCompositeSizeResult,
 } from "@/lib/format";
+import { translateOptionValue } from "@/lib/variant-i18n";
 
 export { splitCompositeVariantSize, type SplitCompositeSizeResult };
 
@@ -445,15 +446,17 @@ export function displayVariantParts(
             : split.size;
       parts.push(sizeStr);
       if (!v.color && split.option) {
-        parts.push(split.option);
+        parts.push(translateOptionValue(split.option, lang));
       }
     } else {
       parts.push(formatSizeWithUnit(v.size.trim(), v.size_unit, lang));
     }
   }
-  if (v.color && v.color.trim()) parts.push(v.color.trim());
-  if (v.fabric && v.fabric.trim()) parts.push(v.fabric.trim());
-  if (v.option_four && v.option_four.trim()) parts.push(v.option_four.trim());
-  if (v.option_five && v.option_five.trim()) parts.push(v.option_five.trim());
+  if (v.color && v.color.trim()) parts.push(translateOptionValue(v.color.trim(), lang));
+  if (v.fabric && v.fabric.trim()) parts.push(translateOptionValue(v.fabric.trim(), lang));
+  if (v.option_four && v.option_four.trim())
+    parts.push(translateOptionValue(v.option_four.trim(), lang));
+  if (v.option_five && v.option_five.trim())
+    parts.push(translateOptionValue(v.option_five.trim(), lang));
   return parts;
 }

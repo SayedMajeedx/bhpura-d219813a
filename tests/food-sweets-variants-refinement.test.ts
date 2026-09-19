@@ -1,10 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { formatSizeWithUnit, splitCompositeVariantSize } from "../src/lib/format";
-import {
-  displayVariantParts,
-  formatSkuToken,
-} from "../src/lib/variant-sku-utils";
+import { displayVariantParts, formatSkuToken } from "../src/lib/variant-sku-utils";
 import { extractVariantsHeuristically } from "../src/lib/generate-variants.functions";
+import { translateOptionValue } from "../src/lib/variant-i18n";
 
 describe("Food & Sweets Product Variants Refinement", () => {
   describe("splitCompositeVariantSize", () => {
@@ -68,10 +66,7 @@ describe("Food & Sweets Product Variants Refinement", () => {
     });
 
     it("handles clean separated size and color properly", () => {
-      const parts = displayVariantParts(
-        { size: "700", size_unit: "g", color: "عادية" },
-        "ar",
-      );
+      const parts = displayVariantParts({ size: "700", size_unit: "g", color: "عادية" }, "ar");
       expect(parts).toEqual(["700 غرام", "عادية"]);
     });
   });
@@ -100,6 +95,36 @@ describe("Food & Sweets Product Variants Refinement", () => {
       expect(result.colors).toContain("بدون سكر");
       expect(result.selling_price).toBe(8.5);
       expect(result.stock_main).toBe(100);
+    });
+  });
+
+  describe("Bilingual Variant Options Translation Engine", () => {
+    it("translates common Arabic food/sweets options to English", () => {
+      expect(translateOptionValue("عادية", "en")).toBe("Regular");
+      expect(translateOptionValue("بدون سكر", "en")).toBe("Sugar Free");
+      expect(translateOptionValue("فستق", "en")).toBe("Pistachio");
+      expect(translateOptionValue("زعفران", "en")).toBe("Saffron");
+      expect(translateOptionValue("بوكس فاخر", "en")).toBe("Luxury Box");
+      expect(translateOptionValue("علبة قصدير", "en")).toBe("Tin Box");
+    });
+
+    it("translates common English food/sweets options to Arabic", () => {
+      expect(translateOptionValue("Regular", "ar")).toBe("عادية");
+      expect(translateOptionValue("Sugar Free", "ar")).toBe("بدون سكر");
+      expect(translateOptionValue("Pistachio", "ar")).toBe("فستق");
+    });
+
+    it("extracts language from bilingual slash or parenthesis notation", () => {
+      expect(translateOptionValue("عادية / Regular", "en")).toBe("Regular");
+      expect(translateOptionValue("عادية / Regular", "ar")).toBe("عادية");
+      expect(translateOptionValue("بدون سكر (Sugar Free)", "en")).toBe("Sugar Free");
+      expect(translateOptionValue("بدون سكر (Sugar Free)", "ar")).toBe("بدون سكر");
+    });
+
+    it("safely handles null/undefined or unknown words by preserving original text", () => {
+      expect(translateOptionValue(null, "en")).toBe("");
+      expect(translateOptionValue("", "en")).toBe("");
+      expect(translateOptionValue("CustomBrandFlavor123", "en")).toBe("CustomBrandFlavor123");
     });
   });
 });

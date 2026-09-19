@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { formatSizeWithUnit } from "@/lib/format";
+import { translateOptionValue } from "@/lib/variant-i18n";
 import {
   ChevronLeft,
   ChevronRight,
@@ -115,6 +116,8 @@ type Variant = {
   size_unit: string | null;
   color: string | null;
   fabric: string | null;
+  option_four?: string | null;
+  option_five?: string | null;
   selling_price: number;
   original_price: number | null;
   stock_main: number;
@@ -153,6 +156,10 @@ type Product = {
   variant_label_color_en?: string | null;
   variant_label_fabric_ar?: string | null;
   variant_label_fabric_en?: string | null;
+  variant_label_four_ar?: string | null;
+  variant_label_four_en?: string | null;
+  variant_label_five_ar?: string | null;
+  variant_label_five_en?: string | null;
 };
 
 type RecommendationProduct = {
@@ -336,6 +343,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedFabric, setSelectedFabric] = useState<string | null>(null);
+  const [selectedOptionFour, setSelectedOptionFour] = useState<string | null>(null);
+  const [selectedOptionFive, setSelectedOptionFive] = useState<string | null>(null);
   const [sizeMode, setSizeMode] = useState<"ready" | "custom">("ready");
   const [measurementsApplied, setMeasurementsApplied] = useState(false);
   const [tailoringNotes, setTailoringNotes] = useState("");
@@ -347,8 +356,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     initialData: loaderData?.product ?? undefined,
     queryFn: async () => {
       const primaryFields =
-        "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, is_made_to_order, base_price, size_guide_id, size_guide_hidden, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main, stock_incubator, image_url)";
-      const fullFields = `${primaryFields}, variant_label_size_ar, variant_label_size_en, variant_label_color_ar, variant_label_color_en, variant_label_fabric_ar, variant_label_fabric_en`;
+        "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, is_made_to_order, base_price, size_guide_id, size_guide_hidden, product_variants(id, size, size_unit, color, fabric, option_four, option_five, selling_price, original_price, stock_main, stock_incubator, image_url)";
+      const fullFields = `${primaryFields}, variant_label_size_ar, variant_label_size_en, variant_label_color_ar, variant_label_color_en, variant_label_fabric_ar, variant_label_fabric_en, variant_label_four_ar, variant_label_four_en, variant_label_five_ar, variant_label_five_en`;
 
       const fetchByTargetId = async (targetId: string) => {
         // Try full fields with custom variant labels
@@ -560,6 +569,16 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     return Array.from(new Set(fabrics));
   }, [variants]);
 
+  const uniqueFour = useMemo(() => {
+    const opts = variants.map((v) => v.option_four).filter(Boolean) as string[];
+    return Array.from(new Set(opts));
+  }, [variants]);
+
+  const uniqueFive = useMemo(() => {
+    const opts = variants.map((v) => v.option_five).filter(Boolean) as string[];
+    return Array.from(new Set(opts));
+  }, [variants]);
+
   // Dynamic out of stock maps for each option dimension, checking current other active options
   const isColorOutOfStock = useMemo(() => {
     return uniqueColors.reduce(
@@ -568,7 +587,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           const colorMatch = v.color === col;
           const sizeMatch = !selectedSize || v.size === selectedSize;
           const fabricMatch = !selectedFabric || v.fabric === selectedFabric;
-          return colorMatch && sizeMatch && fabricMatch;
+          const fourMatch = !selectedOptionFour || v.option_four === selectedOptionFour;
+          const fiveMatch = !selectedOptionFive || v.option_five === selectedOptionFive;
+          return colorMatch && sizeMatch && fabricMatch && fourMatch && fiveMatch;
         });
         acc[col] =
           matching.length === 0 ||
@@ -577,7 +598,14 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       },
       {} as Record<string, boolean>,
     );
-  }, [uniqueColors, selectedSize, selectedFabric, variants]);
+  }, [
+    uniqueColors,
+    selectedSize,
+    selectedFabric,
+    selectedOptionFour,
+    selectedOptionFive,
+    variants,
+  ]);
 
   const isSizeOutOfStock = useMemo(() => {
     return uniqueSizes.reduce(
@@ -586,7 +614,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           const sizeMatch = v.size === sz;
           const colorMatch = !selectedColor || v.color === selectedColor;
           const fabricMatch = !selectedFabric || v.fabric === selectedFabric;
-          return colorMatch && sizeMatch && fabricMatch;
+          const fourMatch = !selectedOptionFour || v.option_four === selectedOptionFour;
+          const fiveMatch = !selectedOptionFive || v.option_five === selectedOptionFive;
+          return colorMatch && sizeMatch && fabricMatch && fourMatch && fiveMatch;
         });
         acc[sz] =
           matching.length === 0 ||
@@ -595,7 +625,14 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       },
       {} as Record<string, boolean>,
     );
-  }, [uniqueSizes, selectedColor, selectedFabric, variants]);
+  }, [
+    uniqueSizes,
+    selectedColor,
+    selectedFabric,
+    selectedOptionFour,
+    selectedOptionFive,
+    variants,
+  ]);
 
   const isFabricOutOfStock = useMemo(() => {
     return uniqueFabrics.reduce(
@@ -604,7 +641,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           const fabricMatch = v.fabric === fb;
           const colorMatch = !selectedColor || v.color === selectedColor;
           const sizeMatch = !selectedSize || v.size === selectedSize;
-          return colorMatch && sizeMatch && fabricMatch;
+          const fourMatch = !selectedOptionFour || v.option_four === selectedOptionFour;
+          const fiveMatch = !selectedOptionFive || v.option_five === selectedOptionFive;
+          return colorMatch && sizeMatch && fabricMatch && fourMatch && fiveMatch;
         });
         acc[fb] =
           matching.length === 0 ||
@@ -613,7 +652,14 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       },
       {} as Record<string, boolean>,
     );
-  }, [uniqueFabrics, selectedColor, selectedSize, variants]);
+  }, [
+    uniqueFabrics,
+    selectedColor,
+    selectedSize,
+    selectedOptionFour,
+    selectedOptionFive,
+    variants,
+  ]);
 
   const isVisualColorAxis = useMemo(() => {
     const label = (resolvedAxes.color.label || "").toLowerCase();
@@ -635,6 +681,24 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     }
   }, [uniqueColors, selectedColor]);
 
+  useEffect(() => {
+    if (uniqueFabrics.length === 1 && !selectedFabric) {
+      setSelectedFabric(uniqueFabrics[0]);
+    }
+  }, [uniqueFabrics, selectedFabric]);
+
+  useEffect(() => {
+    if (uniqueFour.length === 1 && !selectedOptionFour) {
+      setSelectedOptionFour(uniqueFour[0]);
+    }
+  }, [uniqueFour, selectedOptionFour]);
+
+  useEffect(() => {
+    if (uniqueFive.length === 1 && !selectedOptionFive) {
+      setSelectedOptionFive(uniqueFive[0]);
+    }
+  }, [uniqueFive, selectedOptionFive]);
+
   // Auto-initialize attributes only when a single variant is available
   useEffect(() => {
     if (variants.length === 1 && !variantId) {
@@ -643,6 +707,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       setSelectedColor(first.color ?? null);
       setSelectedSize(first.size ?? null);
       setSelectedFabric(first.fabric ?? null);
+      setSelectedOptionFour(first.option_four ?? null);
+      setSelectedOptionFive(first.option_five ?? null);
     }
   }, [variants, variantId]);
 
@@ -652,14 +718,23 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       const colorMatch = !selectedColor || v.color === selectedColor;
       const sizeMatch = !selectedSize || v.size === selectedSize;
       const fabricMatch = !selectedFabric || v.fabric === selectedFabric;
-      return colorMatch && sizeMatch && fabricMatch;
+      const fourMatch = !selectedOptionFour || v.option_four === selectedOptionFour;
+      const fiveMatch = !selectedOptionFive || v.option_five === selectedOptionFive;
+      return colorMatch && sizeMatch && fabricMatch && fourMatch && fiveMatch;
     });
     if (match) {
       setVariantId(match.id);
     } else {
       setVariantId(null);
     }
-  }, [selectedColor, selectedSize, selectedFabric, variants]);
+  }, [
+    selectedColor,
+    selectedSize,
+    selectedFabric,
+    selectedOptionFour,
+    selectedOptionFive,
+    variants,
+  ]);
 
   // Dynamic image swapping based on selected color name matching media filename/URL
   useEffect(() => {
@@ -760,9 +835,18 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       const colorMatch = !selectedColor || v.color === selectedColor;
       const sizeMatch = !selectedSize || v.size === selectedSize;
       const fabricMatch = !selectedFabric || v.fabric === selectedFabric;
-      return colorMatch && sizeMatch && fabricMatch;
+      const fourMatch = !selectedOptionFour || v.option_four === selectedOptionFour;
+      const fiveMatch = !selectedOptionFive || v.option_five === selectedOptionFive;
+      return colorMatch && sizeMatch && fabricMatch && fourMatch && fiveMatch;
     });
-  }, [selectedColor, selectedSize, selectedFabric, variants]);
+  }, [
+    selectedColor,
+    selectedSize,
+    selectedFabric,
+    selectedOptionFour,
+    selectedOptionFive,
+    variants,
+  ]);
 
   // Compute prices for matching variants
   const matchingPrices = useMemo(() => {
@@ -1018,7 +1102,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         : targetVariant?.size && !isPlaceholderVariant(targetVariant)
           ? targetVariant.size
           : isTailoringActive
-            ? vocabulary.custom_sizing?.[lang] || vocabulary.custom_order?.[lang] || t("حسب الطلب", "Made to order")
+            ? vocabulary.custom_sizing?.[lang] ||
+              vocabulary.custom_order?.[lang] ||
+              t("حسب الطلب", "Made to order")
             : targetVariant?.size || null;
 
     addToCart({
@@ -1039,6 +1125,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       size_unit: targetVariant?.size_unit || null,
       color: targetVariant?.color || selectedColor || null,
       fabric: targetVariant?.fabric || selectedFabric || null,
+      option_four: targetVariant?.option_four || selectedOptionFour || null,
+      option_five: targetVariant?.option_five || selectedOptionFive || null,
       qty,
       max_stock: isTailoringActive
         ? 999
@@ -1371,8 +1459,14 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 (resolvedAxes.color.visible || uniqueColors.length > 1) && (
                   <div>
                     <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
-                      <span>{resolvedAxes.color.label || (lang === "ar" ? "الخيار" : "Option")}:</span>
-                      <span className="text-muted-foreground font-normal">{selectedColor}</span>
+                      <span>
+                        {resolvedAxes.color.label || (lang === "ar" ? "الخيار" : "Option")}:
+                      </span>
+                      {selectedColor && (
+                        <span className="text-muted-foreground font-normal">
+                          {translateOptionValue(selectedColor, lang)}
+                        </span>
+                      )}
                     </div>
                     {isVisualColorAxis ? (
                       <div className="flex flex-wrap gap-2.5">
@@ -1381,6 +1475,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                           const oos = !isTailoringActive && Boolean(isColorOutOfStock[color]);
                           const hex = resolveColorHex(color);
                           const ringStyle = active ? { borderColor: primary } : {};
+                          const localizedColor = translateOptionValue(color, lang);
                           return (
                             <Button
                               key={color}
@@ -1392,14 +1487,16 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                                 setErrorMsg(null);
                               }}
                               className={`h-11 w-11 rounded-full border-2 p-0 relative ${
-                                active ? "scale-110 shadow-sm" : "border-transparent hover:scale-105"
+                                active
+                                  ? "scale-110 shadow-sm"
+                                  : "border-transparent hover:scale-105"
                               } ${oos ? "opacity-45 cursor-not-allowed" : ""}`}
                               style={ringStyle}
                               title={
-                                color +
+                                localizedColor +
                                 (oos ? ` (${t("غير متوفر جاهز", "out of ready stock")})` : "")
                               }
-                              aria-label={color}
+                              aria-label={localizedColor}
                             >
                               {hex ? (
                                 <span
@@ -1412,7 +1509,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                                 </span>
                               ) : (
                                 <span className="h-7 w-7 rounded-full border bg-muted flex items-center justify-center text-xs font-bold uppercase truncate shadow-inner relative overflow-hidden">
-                                  {color.slice(0, 2)}
+                                  {localizedColor.slice(0, 2)}
                                   {oos && (
                                     <span className="absolute inset-0 w-full h-[2px] bg-destructive/80 rotate-45 origin-center top-1/2 -translate-y-1/2" />
                                   )}
@@ -1442,7 +1539,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                                   : ""
                               }`}
                             >
-                              {color}
+                              {translateOptionValue(color, lang)}
                             </Button>
                           );
                         })}
@@ -1463,7 +1560,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                           <span className="text-muted-foreground font-normal">
                             {formatSizeWithUnit(
                               selectedSize,
-                              variants.find((v) => v.size === selectedSize && v.size_unit)?.size_unit ||
+                              variants.find((v) => v.size === selectedSize && v.size_unit)
+                                ?.size_unit ||
                                 variants.find((v) => v.size === selectedSize)?.size_unit,
                               lang,
                             )}
@@ -1484,7 +1582,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                       {uniqueSizes.map((sz) => {
                         const active = selectedSize === sz;
                         const matchingVariant = variants.find((v) => v.size === sz && v.size_unit);
-                        const unit = matchingVariant?.size_unit || variants.find((v) => v.size === sz)?.size_unit;
+                        const unit =
+                          matchingVariant?.size_unit ||
+                          variants.find((v) => v.size === sz)?.size_unit;
                         const sizeLabel = formatSizeWithUnit(sz, unit, lang);
                         const oos =
                           isSizeOutOfStock[sz] ||
@@ -1523,7 +1623,14 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               {/* 🧵 Fabric Selection Pills (if any) */}
               {uniqueFabrics.length > 0 && resolvedAxes.fabric.visible && (
                 <div>
-                  <div className="text-sm font-semibold mb-2">{resolvedAxes.fabric.label}</div>
+                  <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+                    <span>{resolvedAxes.fabric.label}:</span>
+                    {selectedFabric && (
+                      <span className="text-muted-foreground font-normal">
+                        {translateOptionValue(selectedFabric, lang)}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {uniqueFabrics.map((fb) => {
                       const active = selectedFabric === fb;
@@ -1554,7 +1661,73 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                               : ""
                           }`}
                         >
-                          {fb}
+                          {translateOptionValue(fb, lang)}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 🏷️ Option Four Selection Pills (if any) */}
+              {uniqueFour.length > 0 && resolvedAxes.four.visible && (
+                <div>
+                  <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+                    <span>{resolvedAxes.four.label}:</span>
+                    {selectedOptionFour && (
+                      <span className="text-muted-foreground font-normal">
+                        {translateOptionValue(selectedOptionFour, lang)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {uniqueFour.map((opt) => {
+                      const active = selectedOptionFour === opt;
+                      return (
+                        <Button
+                          key={opt}
+                          type="button"
+                          variant={active ? "default" : "outline"}
+                          onClick={() => {
+                            setSelectedOptionFour(opt);
+                            setErrorMsg(null);
+                          }}
+                          className="min-h-11 px-4 py-2 rounded-lg text-sm font-medium"
+                        >
+                          {translateOptionValue(opt, lang)}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 🏷️ Option Five Selection Pills (if any) */}
+              {uniqueFive.length > 0 && resolvedAxes.five.visible && (
+                <div>
+                  <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+                    <span>{resolvedAxes.five.label}:</span>
+                    {selectedOptionFive && (
+                      <span className="text-muted-foreground font-normal">
+                        {translateOptionValue(selectedOptionFive, lang)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {uniqueFive.map((opt) => {
+                      const active = selectedOptionFive === opt;
+                      return (
+                        <Button
+                          key={opt}
+                          type="button"
+                          variant={active ? "default" : "outline"}
+                          onClick={() => {
+                            setSelectedOptionFive(opt);
+                            setErrorMsg(null);
+                          }}
+                          className="min-h-11 px-4 py-2 rounded-lg text-sm font-medium"
+                        >
+                          {translateOptionValue(opt, lang)}
                         </Button>
                       );
                     })}
@@ -1566,6 +1739,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               {(!resolvedAxes.color.visible || uniqueColors.length === 0) &&
                 (!resolvedAxes.size.visible || uniqueSizes.length === 0) &&
                 (!resolvedAxes.fabric.visible || uniqueFabrics.length === 0) &&
+                (!resolvedAxes.four.visible || uniqueFour.length === 0) &&
+                (!resolvedAxes.five.visible || uniqueFive.length === 0) &&
                 hasVariants &&
                 (!showSizeModeToggle || sizeMode === "ready") &&
                 !isTailoringActive &&
@@ -1577,7 +1752,13 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                         const oos = Number(v.stock_main || 0) + Number(v.stock_incubator || 0) <= 0;
                         const active = v.id === variantId;
                         const label =
-                          [formatSizeWithUnit(v.size, v.size_unit, lang), v.color, v.fabric]
+                          [
+                            formatSizeWithUnit(v.size, v.size_unit, lang),
+                            translateOptionValue(v.color, lang),
+                            translateOptionValue(v.fabric, lang),
+                            translateOptionValue(v.option_four, lang),
+                            translateOptionValue(v.option_five, lang),
+                          ]
                             .filter(Boolean)
                             .join(" · ") || t("متغيّر", "Variant");
                         return (
