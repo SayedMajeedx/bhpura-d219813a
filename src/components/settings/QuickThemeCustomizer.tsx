@@ -1,8 +1,9 @@
 import * as React from "react";
-import { ArrowLeftRight, Check, Sparkles, Layers, Tag } from "lucide-react";
+import { ArrowLeftRight, Check, Sparkles, Layers, Tag, Palette, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { extractLogoPalette, type ExtractedPalette } from "@/lib/logo-palette";
 
 export interface FontMoodPreset {
   id: string;
@@ -74,6 +75,7 @@ export interface QuickThemeCustomizerProps {
   headerFg?: string | null;
   footerBg?: string | null;
   footerFg?: string | null;
+  logoUrl?: string | null;
   isAr: boolean;
   onPrimaryChange: (val: string) => void;
   onSecondaryChange: (val: string) => void;
@@ -86,6 +88,7 @@ export interface QuickThemeCustomizerProps {
   onHeaderFgChange?: (val: string | null) => void;
   onFooterBgChange?: (val: string | null) => void;
   onFooterFgChange?: (val: string | null) => void;
+  onExtractPalette?: (palette: ExtractedPalette) => void;
 }
 
 export function QuickThemeCustomizer({
@@ -100,6 +103,7 @@ export function QuickThemeCustomizer({
   headerFg,
   footerBg,
   footerFg,
+  logoUrl,
   isAr,
   onPrimaryChange,
   onSecondaryChange,
@@ -112,7 +116,24 @@ export function QuickThemeCustomizer({
   onHeaderFgChange,
   onFooterBgChange,
   onFooterFgChange,
+  onExtractPalette,
 }: QuickThemeCustomizerProps) {
+  const [extracting, setExtracting] = React.useState(false);
+  const logoFileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleExtractFromSource = async (source: File | string) => {
+    setExtracting(true);
+    try {
+      const palette = await extractLogoPalette(source);
+      onPrimaryChange(palette.primary);
+      onSecondaryChange(palette.secondary);
+      onExtractPalette?.(palette);
+    } catch (e) {
+      console.error("Failed to extract palette from logo:", e);
+    } finally {
+      setExtracting(false);
+    }
+  };
   // Normalize radius to sharp / smooth / round matching storefront route
   const activeRadiusPreset = React.useMemo(() => {
     if (radius === "0" || radius === "0px" || radius === "0rem") return "sharp";
@@ -192,9 +213,47 @@ export function QuickThemeCustomizer({
 
       {/* 1. Brand Colors */}
       <div className="space-y-3 pt-2">
-        <Label className="text-sm font-medium">
-          {isAr ? "1. ألوان الهوية الرئيسية" : "1. Brand Colors"}
-        </Label>
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">
+            {isAr ? "1. ألوان الهوية الرئيسية" : "1. Brand Colors"}
+          </Label>
+
+          <div>
+            <input
+              ref={logoFileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleExtractFromSource(file);
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={extracting}
+              onClick={() => {
+                if (logoUrl) {
+                  handleExtractFromSource(logoUrl);
+                } else {
+                  logoFileInputRef.current?.click();
+                }
+              }}
+              className="h-7 text-xs gap-1.5 border-dashed"
+            >
+              <Palette className="size-3.5 text-primary" />
+              {extracting
+                ? isAr
+                  ? "جاري الاستخراج..."
+                  : "Extracting..."
+                : isAr
+                ? "استخراج الألوان من الشعار"
+                : "Extract from logo"}
+            </Button>
+          </div>
+        </div>
         <div className="flex flex-wrap items-center gap-4">
           {/* Primary Swatch */}
           <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-2 min-w-[170px]">

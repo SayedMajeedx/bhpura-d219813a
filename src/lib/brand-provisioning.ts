@@ -14,6 +14,15 @@ export interface ProvisionBrandPayload {
   owner_phone?: string | null;
   owner_password?: string;
   plan_type?: "trial" | "annual";
+  business_type?: string;
+  store_vertical?: string;
+  storefront_accent_color?: string;
+  storefront_background_color?: string;
+  brand_palette?: Record<string, any>;
+  storefront_font_ar?: string;
+  storefront_font_en?: string;
+  storefront_radius?: string;
+  template_defaults?: Record<string, any>;
 }
 
 export interface ProvisionBrandResult {

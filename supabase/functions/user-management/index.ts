@@ -273,17 +273,56 @@ async function handleProvisionBrand(supabase: any, body: any) {
     );
     if (provisionalProfileError) throw provisionalProfileError;
 
-    const { data: provisionedBrandId, error: provisionError } = await supabase.rpc(
-      "create_tenant_with_defaults",
+    const storeVertical = String(body.store_vertical ?? "general").trim().toLowerCase();
+    const storefrontAccentColor = String(body.storefront_accent_color ?? body.primary_color ?? "#1c1917").trim();
+    const storefrontBackgroundColor = String(body.storefront_background_color ?? "#ffffff").trim();
+    const brandPalette = body.brand_palette && typeof body.brand_palette === "object" ? body.brand_palette : {};
+    const storefrontFontAr = String(body.storefront_font_ar ?? "Tajawal").trim();
+    const storefrontFontEn = String(body.storefront_font_en ?? "Inter").trim();
+    const storefrontRadius = String(body.storefront_radius ?? "0.5rem").trim();
+    const templateDefaults = body.template_defaults && typeof body.template_defaults === "object" ? body.template_defaults : {};
+
+    let provisionedBrandId: string | null = null;
+    let provisionError: any = null;
+
+    const rpcV2Result = await supabase.rpc(
+      "create_tenant_with_defaults_v2",
       {
         p_slug: slug,
         p_name_en: nameEn,
         p_name_ar: nameAr,
-        p_primary_color: "#800020",
         p_owner_id: ownerId,
         p_business_type: String(body.business_type ?? "Fashion"),
+        p_store_vertical: storeVertical,
+        p_storefront_accent_color: storefrontAccentColor,
+        p_storefront_background_color: storefrontBackgroundColor,
+        p_brand_palette: brandPalette,
+        p_storefront_font_ar: storefrontFontAr,
+        p_storefront_font_en: storefrontFontEn,
+        p_storefront_radius: storefrontRadius,
+        p_template_defaults: templateDefaults,
       },
     );
+
+    if (rpcV2Result.error && rpcV2Result.error.message?.includes("create_tenant_with_defaults_v2")) {
+      // Fallback for backward compatibility
+      const rpcV1Result = await supabase.rpc(
+        "create_tenant_with_defaults",
+        {
+          p_slug: slug,
+          p_name_en: nameEn,
+          p_name_ar: nameAr,
+          p_primary_color: storefrontAccentColor,
+          p_owner_id: ownerId,
+          p_business_type: String(body.business_type ?? "Fashion"),
+        },
+      );
+      provisionedBrandId = rpcV1Result.data;
+      provisionError = rpcV1Result.error;
+    } else {
+      provisionedBrandId = rpcV2Result.data;
+      provisionError = rpcV2Result.error;
+    }
     if (provisionError) throw provisionError;
     brandId = provisionedBrandId;
 

@@ -1382,6 +1382,7 @@ export type Database = {
           best_sellers_title_en: string | null;
           bom_enabled: boolean | null;
           brand_id: string;
+          brand_palette: Json;
           btn_checkout_bg: string | null;
           btn_checkout_fg: string | null;
           btn_primary_bg: string | null;
@@ -1440,6 +1441,8 @@ export type Database = {
           homepage_editorial_sections: Json;
           invoice_arabic_font_family: string | null;
           invoice_divider_color: string | null;
+          invoice_inherit_brand_color: boolean;
+          invoice_inherit_brand_font: boolean;
           invoice_secondary_color: string | null;
           invoice_show_business_details: boolean;
           invoice_show_business_name: boolean;
@@ -1540,6 +1543,7 @@ export type Database = {
           best_sellers_title_en?: string | null;
           bom_enabled?: boolean | null;
           brand_id: string;
+          brand_palette?: Json;
           btn_checkout_bg?: string | null;
           btn_checkout_fg?: string | null;
           btn_primary_bg?: string | null;
@@ -1598,6 +1602,8 @@ export type Database = {
           homepage_editorial_sections?: Json;
           invoice_arabic_font_family?: string | null;
           invoice_divider_color?: string | null;
+          invoice_inherit_brand_color?: boolean;
+          invoice_inherit_brand_font?: boolean;
           invoice_secondary_color?: string | null;
           invoice_show_business_details?: boolean;
           invoice_show_business_name?: boolean;
@@ -1698,6 +1704,7 @@ export type Database = {
           best_sellers_title_en?: string | null;
           bom_enabled?: boolean | null;
           brand_id?: string;
+          brand_palette?: Json;
           btn_checkout_bg?: string | null;
           btn_checkout_fg?: string | null;
           btn_primary_bg?: string | null;
@@ -1756,6 +1763,8 @@ export type Database = {
           homepage_editorial_sections?: Json;
           invoice_arabic_font_family?: string | null;
           invoice_divider_color?: string | null;
+          invoice_inherit_brand_color?: boolean;
+          invoice_inherit_brand_font?: boolean;
           invoice_secondary_color?: string | null;
           invoice_show_business_details?: boolean;
           invoice_show_business_name?: boolean;
@@ -8498,6 +8507,24 @@ export type Database = {
           p_subtotal: number;
         };
         Returns: Json;
+      };
+      create_tenant_with_defaults_v2: {
+        Args: {
+          p_slug: string;
+          p_name_en: string;
+          p_name_ar?: string | null;
+          p_owner_id: string;
+          p_business_type?: string;
+          p_store_vertical?: string;
+          p_storefront_accent_color?: string;
+          p_storefront_background_color?: string;
+          p_brand_palette?: Json;
+          p_storefront_font_ar?: string;
+          p_storefront_font_en?: string;
+          p_storefront_radius?: string;
+          p_template_defaults?: Json;
+        };
+        Returns: string;
       };
       validate_promo_code_before_returning_customer_guard_20260825: {
         Args: {

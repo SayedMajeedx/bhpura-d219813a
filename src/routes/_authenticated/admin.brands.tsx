@@ -46,6 +46,7 @@ import {
   Smartphone,
   Puzzle,
 } from "lucide-react";
+import { BrandWizardDialog } from "@/components/super-admin/brand-wizard/BrandWizardDialog";
 import { toast } from "sonner";
 import { useI18n, useT } from "@/lib/i18n";
 import { SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
@@ -346,14 +347,15 @@ function BrandsPage() {
                 variant="outline"
                 className="h-11 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
               >
-                <Plus className="h-4 w-4 me-2" /> {lang === "ar" ? "إطلاق يدوي" : "Manual Setup"}
+                <Plus className="h-4 w-4 me-2" /> {lang === "ar" ? "معالج إطلاق متجر" : "Launch Brand Wizard"}
               </Button>
             </DialogTrigger>
-            <NewBrandDialog
+            <BrandWizardDialog
               onSaved={() => {
                 setOpen(false);
                 refresh();
               }}
+              onClose={() => setOpen(false)}
             />
           </Dialog>
         </div>
@@ -1169,7 +1171,6 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
         name_en: form.name_en.trim(),
         name_ar: form.name_ar.trim() || null,
         logo_url: form.logo_url.trim() || null,
-        primary_color: form.primary_color || null,
         about_ar: form.about_ar.trim() || null,
         about_en: form.about_en.trim() || null,
         meta_title: sanitizeMetaText(form.meta_title, META_TITLE_LIMIT) || null,
@@ -1227,17 +1228,22 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
         <div>
           <Label>{isAr ? "لون العلامة" : "Brand color"}</Label>
           <div className="flex items-center gap-2">
-            <input
-              type="color"
-              value={form.primary_color}
-              onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
-              className="h-9 w-12 rounded border border-border cursor-pointer"
+            <div
+              className="h-9 w-12 rounded border border-border shrink-0"
+              style={{ backgroundColor: form.primary_color || "#18181b" }}
             />
             <Input
               value={form.primary_color}
-              onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
+              readOnly
+              disabled
+              className="bg-muted text-muted-foreground font-mono"
             />
           </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            {isAr
+              ? "يُشتق لون العلامة تلقائياً من لون واجهة المتجر (storefront_accent_color) في إعدادات البراند."
+              : "Brand color is automatically derived from storefront accent color in brand settings."}
+          </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
