@@ -222,10 +222,29 @@ export type PublicSettings = {
   meta_pixel_enabled: boolean;
   meta_pixel_id: string | null;
   analytics_consent_required: boolean;
-  storefront_loader_text_en?: string | null;
   storefront_loader_text_ar?: string | null;
+  storefront_loader_text_en?: string | null;
+  shipping_policy_ar?: string | null;
+  shipping_policy_en?: string | null;
+  brand_story_title_ar?: string | null;
+  brand_story_title_en?: string | null;
+  brand_story_subtitle_ar?: string | null;
+  brand_story_subtitle_en?: string | null;
+  brand_story_description_ar?: string | null;
+  brand_story_description_en?: string | null;
+  brand_story_image_url?: string | null;
   trust_badges?: TrustBadgesConfig | null;
+  trust_bar_enabled?: boolean;
+  trust_bar_position?: "above_footer" | "below_header" | "both" | string;
   storefront_design_version?: number | null;
+  newsletter_enabled?: boolean;
+  newsletter_title_ar?: string | null;
+  newsletter_title_en?: string | null;
+  footer_show_payment_methods?: boolean;
+  footer_layout?: "columns" | "minimal" | "classic" | string;
+  new_badge_days?: number;
+  recent_views_enabled?: boolean;
+  social_proof_threshold?: number;
 };
 
 export type CustomFieldValue = {

@@ -63,6 +63,11 @@ import {
   buildProductSchema,
   buildBreadcrumbsSchema,
 } from "@/lib/seo/structured-data";
+import { ProductAccordion } from "@/components/storefront/ProductAccordion";
+import { ImageZoom } from "@/components/storefront/ImageZoom";
+import { BundleOffer } from "@/components/storefront/BundleOffer";
+import { RecentlyViewed, recordRecentlyViewed } from "@/components/storefront/RecentlyViewed";
+import { getProductRecentPurchaseCount } from "@/lib/storefront-social-proof";
 
 export const Route = createFileRoute("/$slug/product/$id")({
   loader: async ({ params, location }) => {
@@ -224,6 +229,8 @@ type Product = {
   base_price?: number | null;
   original_price?: number | null;
   is_made_to_order?: boolean | null;
+  size_guide_id?: string | null;
+  size_guide_hidden?: boolean | null;
   variant_label_size_ar?: string | null;
   variant_label_size_en?: string | null;
   variant_label_color_ar?: string | null;
@@ -262,127 +269,7 @@ function variantSortKey(v: Variant): [number, string] {
   return [num, label.toLowerCase()];
 }
 
-const COLOR_MAP: Record<string, string> = {
-  black: "#0b0c10",
-  white: "#ffffff",
-  blue: "#2563eb",
-  red: "#dc2626",
-  green: "#16a34a",
-  yellow: "#eab308",
-  orange: "#ea580c",
-  purple: "#9333ea",
-  pink: "#db2777",
-  brown: "#78350f",
-  grey: "#4b5563",
-  gray: "#4b5563",
-  navy: "#1e3a8a",
-  teal: "#0d9488",
-  gold: "#d97706",
-  silver: "#9ca3af",
-  beige: "#f5f5dc",
-  burgundy: "#800020",
-  maroon: "#800020",
-  olive: "#556b2f",
-  nude: "#e3bc9a",
-  camel: "#c19a6b",
-  sand: "#e0cda3",
-  taupe: "#483c32",
-  charcoal: "#36454f",
-  ivory: "#fffff0",
-  cream: "#fffdd0",
-  lilac: "#c8a2c8",
-  lavender: "#e6e6fa",
-  mint: "#98ff98",
-
-  // Arabic with & without hamza
-  أسود: "#0b0c10",
-  اسود: "#0b0c10",
-  فاحم: "#0b0c10",
-  أبيض: "#ffffff",
-  ابيض: "#ffffff",
-  سكري: "#fcfbf4",
-  أوفوايت: "#f8f6f0",
-  افوايت: "#f8f6f0",
-  "أوف وايت": "#f8f6f0",
-  "اف وايت": "#f8f6f0",
-  عاجي: "#fffff0",
-  أزرق: "#2563eb",
-  ازرق: "#2563eb",
-  سماوي: "#38bdf8",
-  كحلي: "#1e3a8a",
-  نيفي: "#1e3a8a",
-  أحمر: "#dc2626",
-  احمر: "#dc2626",
-  عنابي: "#800020",
-  ماروني: "#800020",
-  خمري: "#722f37",
-  أخضر: "#16a34a",
-  اخضر: "#16a34a",
-  زيتي: "#4e5d2c",
-  زيتوني: "#556b2f",
-  أصفر: "#eab308",
-  اصفر: "#eab308",
-  خردلي: "#e3a857",
-  برتقالي: "#ea580c",
-  مشمشي: "#fbceb1",
-  بنفسجي: "#9333ea",
-  موف: "#9932cc",
-  ليلك: "#c8a2c8",
-  لافندر: "#e6e6fa",
-  وردي: "#db2777",
-  زهري: "#ff2a8d",
-  روز: "#ff007f",
-  خربزي: "#f88379",
-  بني: "#78350f",
-  عسلي: "#d4a373",
-  جملي: "#c19a6b",
-  تراكوتا: "#e2725b",
-  رمادي: "#4b5563",
-  رصاصي: "#71717a",
-  فحمي: "#36454f",
-  بيج: "#f5f5dc",
-  لحمي: "#e3bc9a",
-  نودي: "#e3bc9a",
-  ذهبي: "#d97706",
-  فضي: "#9ca3af",
-};
-
-function resolveColorHex(rawColor: string): string | null {
-  if (!rawColor) return null;
-  const trimmed = rawColor.trim();
-
-  // If valid CSS hex code
-  if (/^#(?:[0-9a-fA-F]{3}){1,2}$/.test(trimmed)) {
-    return trimmed;
-  }
-
-  const key = trimmed.toLowerCase();
-  if (COLOR_MAP[key]) return COLOR_MAP[key];
-
-  // Strip Arabic hamzas and tatweel
-  const normalized = key.replace(/[أإآ]/g, "ا").replace(/ـ/g, "").trim();
-
-  if (COLOR_MAP[normalized]) return COLOR_MAP[normalized];
-
-  // Keyword matching for compound color names
-  if (/اسود|أسود|black|فاحم/.test(normalized)) return "#0b0c10";
-  if (/ابيض|أبيض|white|سكري|عاجي|افوايت|أوفوايت/.test(normalized)) return "#ffffff";
-  if (/كحلي|navy|نيفي/.test(normalized)) return "#1e3a8a";
-  if (/عنابي|ماروني|خمري|burgundy|maroon/.test(normalized)) return "#800020";
-  if (/زيتي|زيتوني|olive/.test(normalized)) return "#4e5d2c";
-  if (/بني|brown|جملي|camel/.test(normalized)) return "#78350f";
-  if (/بيج|beige|لحمي|نودي|nude|sand/.test(normalized)) return "#f5f5dc";
-  if (/رمادي|رصاصي|فحمي|gray|grey|charcoal/.test(normalized)) return "#4b5563";
-  if (/ازرق|أزرق|سماوي|blue/.test(normalized)) return "#2563eb";
-  if (/احمر|أحمر|red/.test(normalized)) return "#dc2626";
-  if (/اخضر|أخضر|green/.test(normalized)) return "#16a34a";
-  if (/وردي|زهري|روز|pink/.test(normalized)) return "#db2777";
-  if (/بنفسجي|موف|ليلك|purple/.test(normalized)) return "#9333ea";
-  if (/ذهبي|gold/.test(normalized)) return "#d97706";
-  if (/فضي|silver/.test(normalized)) return "#9ca3af";
-
-  return null;
-}
+import { COLOR_MAP, resolveColorHex } from "@/lib/color-names";
 
 const parsePriceDelta = (valStr: string): number => {
   if (!valStr) return 0;
@@ -498,6 +385,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
 
   useEffect(() => {
     if (!product) return;
+    if (brand?.slug && product?.id) {
+      recordRecentlyViewed(brand.slug, product.id);
+    }
     const first = product.product_variants?.[0];
     trackStorefrontEvent(
       "view_item",
@@ -536,6 +426,21 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
     refetchOnWindowFocus: false,
+  });
+
+  const socialProofQuery = useQuery({
+    queryKey: ["storefront", brand.slug, "social-proof", product?.id],
+    queryFn: async () => {
+      if (!brand?.id || !product?.id) return null;
+      return getProductRecentPurchaseCount(
+        brand.id,
+        product.id,
+        7,
+        settings?.social_proof_threshold ?? 3,
+      );
+    },
+    enabled: Boolean(brand?.id && product?.id && settings?.storefront_design_version === 2),
+    staleTime: 10 * 60_000,
   });
 
   const { data: bestSellerRows = [] } = useQuery({
@@ -1341,6 +1246,13 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                     playsInline
                     controls
                   />
+                ) : settings?.storefront_design_version === 2 ? (
+                  <ImageZoom
+                    src={media[mediaIdx % media.length].url}
+                    alt={displayName}
+                    className="w-full h-full"
+                    aspectRatio="aspect-auto h-full"
+                  />
                 ) : (
                   <ResponsiveImage
                     src={media[mediaIdx % media.length].url}
@@ -1481,6 +1393,20 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               </>
             )}
           </div>
+
+          {/* Social Proof Badge */}
+          {settings?.storefront_design_version === 2 && socialProofQuery.data && (
+            <div className="mb-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-semibold border border-amber-500/20">
+              <Sparkles className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+              <span>
+                {t(
+                  `تم شراؤه ${socialProofQuery.data} مرات خلال الأسبوع الماضي`,
+                  `Purchased ${socialProofQuery.data} times in the last 7 days`,
+                )}
+              </span>
+            </div>
+          )}
+
           {displayDescription && (
             <p className="text-muted-foreground mb-4 sm:mb-6 whitespace-pre-line text-sm sm:text-base">
               {displayDescription}
@@ -2364,6 +2290,24 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               </span>
             </div>
           )}
+
+          {/* Layer 2 Product Accordions */}
+          {settings?.storefront_design_version === 2 && (
+            <ProductAccordion
+              description={displayDescription}
+              fabricCare={variant?.fabric ? `${variant.fabric}` : null}
+              hasSizeGuide={Boolean(modules?.size_guide || (product?.size_guide_id && !product?.size_guide_hidden))}
+            />
+          )}
+
+          {/* Layer 2 Bundle Offer */}
+          {settings?.storefront_design_version === 2 && relatedProducts.length > 0 && (
+            <BundleOffer
+              mainProduct={product}
+              mainVariant={variant}
+              bundleItems={relatedProducts.slice(0, 3)}
+            />
+          )}
         </div>
 
         {/* Mobile sticky purchase bar */}
@@ -2488,6 +2432,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           )}
         </div>
       )}
+
+      {/* Layer 2 Recently Viewed Carousel */}
+      <RecentlyViewed excludeProductId={product.id} />
     </div>
   );
 }

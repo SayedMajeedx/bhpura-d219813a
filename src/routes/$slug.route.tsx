@@ -43,6 +43,7 @@ import { X, ChevronDown, Sparkles } from "lucide-react";
 import { faviconType, resolveBrandFavicon, useDynamicFavicon } from "@/lib/favicon";
 import { StorefrontAnalytics } from "@/components/storefront-analytics";
 import { isCatalogMode } from "@/lib/storefront-mode";
+import { FooterV2 } from "@/components/storefront/FooterV2";
 import { normalizeVertical, normalizeModuleOverrides } from "@/lib/store-profile";
 import { isColorDark, hexToRgba } from "@/components/storefront/storefront-utils";
 
@@ -732,6 +733,11 @@ function StorefrontSocialIcon({ platform }: { platform: string }) {
 
 function StorefrontFooter() {
   const { brand, settings, lang, t } = useStorefront();
+
+  if (settings?.footer_layout === "columns" || settings?.storefront_design_version === 2) {
+    return <FooterV2 />;
+  }
+
   const storeModules = useStoreModules();
   const showSizeGuideFooterLink = Boolean(storeModules?.size_guide);
   const isAr = lang === "ar";

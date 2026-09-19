@@ -13,6 +13,9 @@ import { Button } from "@/components/ui/button";
 import { SecondaryBannerParallax } from "@/components/storefront/secondary-banner-parallax";
 import { JsonLd } from "@/components/storefront/seo/JsonLd";
 import { buildCollectionSchema, buildBreadcrumbsSchema } from "@/lib/seo/structured-data";
+import { CategoryFilters, type FilterState } from "@/components/storefront/CategoryFilters";
+import { CategoryFiltersSheet } from "@/components/storefront/CategoryFiltersSheet";
+import { extractUniqueVariantColors } from "@/lib/color-names";
 
 function getDescendantCategories(catId: string, categories: any[]): any[] {
   const descendants: any[] = [];
@@ -104,7 +107,41 @@ function CategoryPage() {
   const { brand, lang, t, settings } = useStorefront();
   const { category: categorySlug } = Route.useParams();
   const cmsPage = settings.pages.find((page) => page.slug === categorySlug);
-  const [sort, setSort] = useState<"new" | "old" | "price-low" | "price-high">("new");
+  const [filters, setFilters] = useState<FilterState>(() => {
+    if (typeof window === "undefined") {
+      return { size: null, color: null, minPrice: null, maxPrice: null, inStockOnly: false, sort: "new" };
+    }
+    const sp = new URLSearchParams(window.location.search);
+    return {
+      size: sp.get("size") || null,
+      color: sp.get("color") || null,
+      minPrice: sp.get("min") ? Number(sp.get("min")) : null,
+      maxPrice: sp.get("max") ? Number(sp.get("max")) : null,
+      inStockOnly: sp.get("stock") === "1",
+      sort: (sp.get("sort") as any) || "new",
+    };
+  });
+
+  const sort = filters.sort;
+  const setSort = (newSort: FilterState["sort"]) => {
+    setFilters((prev) => ({ ...prev, sort: newSort }));
+  };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sp = new URLSearchParams(window.location.search);
+    if (filters.size) sp.set("size", filters.size); else sp.delete("size");
+    if (filters.color) sp.set("color", filters.color); else sp.delete("color");
+    if (filters.minPrice !== null) sp.set("min", String(filters.minPrice)); else sp.delete("min");
+    if (filters.maxPrice !== null) sp.set("max", String(filters.maxPrice)); else sp.delete("max");
+    if (filters.inStockOnly) sp.set("stock", "1"); else sp.delete("stock");
+    if (filters.sort && filters.sort !== "new") sp.set("sort", filters.sort); else sp.delete("sort");
+
+    const newSearch = sp.toString();
+    const newUrl = `${window.location.pathname}${newSearch ? `?${newSearch}` : ""}`;
+    window.history.replaceState(null, "", newUrl);
+  }, [filters]);
+
   const navigate = useNavigate();
   const smartKind = ["new-arrivals", "new"].includes(categorySlug)
     ? "new"
@@ -376,6 +413,33 @@ function CategoryPage() {
         list = list.filter((p) => p.category && targetValues.has(p.category.toLowerCase()));
       }
     }
+
+    if (filters.size) {
+      list = list.filter((p) =>
+        p.product_variants?.some((v) => v.size === filters.size),
+      );
+    }
+    if (filters.color) {
+      list = list.filter((p) =>
+        p.product_variants?.some((v) => v.color === filters.color),
+      );
+    }
+    if (filters.minPrice !== null) {
+      const minVal = filters.minPrice;
+      list = list.filter((p) =>
+        p.product_variants?.some((v) => Number(v.selling_price || 0) >= minVal),
+      );
+    }
+    if (filters.maxPrice !== null) {
+      const maxVal = filters.maxPrice;
+      list = list.filter((p) =>
+        p.product_variants?.some((v) => Number(v.selling_price || 0) <= maxVal),
+      );
+    }
+    if (filters.inStockOnly) {
+      list = list.filter((p) => hasAvailableStock(p));
+    }
+
     const rows = [...list];
     if (smartKind === "best" && sort === "new") return rows;
     const price = (product: ProductRow) =>
@@ -396,7 +460,46 @@ function CategoryPage() {
             ? price(b) - price(a)
             : new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
-  }, [productsQuery.data, selectedSubCategorySlugs, sort, smartKind, categoriesQuery.data]);
+  }, [
+    productsQuery.data,
+    selectedSubCategorySlugs,
+    sort,
+    smartKind,
+    categoriesQuery.data,
+    filters.size,
+    filters.color,
+    filters.minPrice,
+    filters.maxPrice,
+    filters.inStockOnly,
+  ]);
+
+  const allVariants = useMemo(() => {
+    const list = productsQuery.data ?? [];
+    return list.flatMap((p) => p.product_variants || []);
+  }, [productsQuery.data]);
+
+  const availableSizes = useMemo(() => {
+    const set = new Set<string>();
+    allVariants.forEach((v) => {
+      if (v.size && v.size.trim()) set.add(v.size.trim());
+    });
+    return Array.from(set).sort();
+  }, [allVariants]);
+
+  const availableColors = useMemo(() => {
+    return extractUniqueVariantColors(allVariants);
+  }, [allVariants]);
+
+  const { minCatalogPrice, maxCatalogPrice } = useMemo(() => {
+    const prices = allVariants
+      .map((v) => Number(v.selling_price || 0))
+      .filter((p) => p > 0);
+    if (prices.length === 0) return { minCatalogPrice: 0, maxCatalogPrice: 100 };
+    return {
+      minCatalogPrice: Math.floor(Math.min(...prices)),
+      maxCatalogPrice: Math.ceil(Math.max(...prices)),
+    };
+  }, [allVariants]);
 
   const breadcrumbs = useMemo(() => {
     if (smartKind || !activeCategory || categoriesQuery.isLoading) return null;
@@ -633,31 +736,101 @@ function CategoryPage() {
         </div>
       </SecondaryBannerParallax>
 
-      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
-        <div className="mb-6 flex justify-end">
-          <select
-            id="category-sort"
-            name="category-sort"
-            aria-label={t("ترتيب المنتجات", "Sort products")}
-            value={sort}
-            onChange={(event) => setSort(event.target.value as typeof sort)}
-            className="h-11 rounded-lg border bg-background px-3 text-sm"
-          >
-            <option value="new">{t("الأحدث أولاً", "Newest first")}</option>
-            <option value="old">{t("الأقدم أولاً", "Oldest first")}</option>
-            <option value="price-low">{t("السعر: الأقل أولاً", "Price: low to high")}</option>
-            <option value="price-high">{t("السعر: الأعلى أولاً", "Price: high to low")}</option>
-          </select>
-        </div>
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        {settings?.storefront_design_version === 2 ? (
+          <>
+            {/* Toolbar: Counter, Mobile Filter Sheet, Sort Selector */}
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-border/80">
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-medium text-muted-foreground">
+                  {t(
+                    `عرض ${filteredProducts.length} من أصل ${productsQuery.data?.length ?? 0} منتج`,
+                    `Showing ${filteredProducts.length} of ${productsQuery.data?.length ?? 0} products`,
+                  )}
+                </span>
+              </div>
 
-        <ProductGrid
-          products={filteredProducts}
-          loading={categoryQuery.isLoading || productsQuery.isLoading || categoriesQuery.isLoading}
-          categoryEmpty
-          onViewAll={() => {
-            void navigate({ to: "/$slug", params: { slug: brand.slug } });
-          }}
-        />
+              <div className="flex items-center gap-3 ms-auto">
+                <CategoryFiltersSheet
+                  filters={filters}
+                  onChange={setFilters}
+                  availableSizes={availableSizes}
+                  availableColors={availableColors}
+                  minCatalogPrice={minCatalogPrice}
+                  maxCatalogPrice={maxCatalogPrice}
+                  totalFilteredCount={filteredProducts.length}
+                />
+
+                <select
+                  id="category-sort"
+                  name="category-sort"
+                  aria-label={t("ترتيب المنتجات", "Sort products")}
+                  value={sort}
+                  onChange={(event) => setSort(event.target.value as typeof sort)}
+                  className="h-10 rounded-lg border border-border bg-card px-3 text-xs font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <option value="new">{t("الأحدث أولاً", "Newest first")}</option>
+                  <option value="old">{t("الأقدم أولاً", "Oldest first")}</option>
+                  <option value="price-low">{t("السعر: الأقل أولاً", "Price: low to high")}</option>
+                  <option value="price-high">{t("السعر: الأعلى أولاً", "Price: high to low")}</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Desktop 2-column layout: Sidebar + Grid */}
+            <div className="flex gap-8 items-start">
+              <aside className="hidden lg:block w-60 shrink-0 sticky top-24">
+                <CategoryFilters
+                  filters={filters}
+                  onChange={setFilters}
+                  availableSizes={availableSizes}
+                  availableColors={availableColors}
+                  minCatalogPrice={minCatalogPrice}
+                  maxCatalogPrice={maxCatalogPrice}
+                  totalFilteredCount={filteredProducts.length}
+                />
+              </aside>
+
+              <div className="flex-1 min-w-0">
+                <ProductGrid
+                  products={filteredProducts}
+                  loading={categoryQuery.isLoading || productsQuery.isLoading || categoriesQuery.isLoading}
+                  categoryEmpty
+                  onViewAll={() => {
+                    void navigate({ to: "/$slug", params: { slug: brand.slug } });
+                  }}
+                />
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="mb-6 flex justify-end">
+              <select
+                id="category-sort"
+                name="category-sort"
+                aria-label={t("ترتيب المنتجات", "Sort products")}
+                value={sort}
+                onChange={(event) => setSort(event.target.value as typeof sort)}
+                className="h-11 rounded-lg border bg-background px-3 text-sm"
+              >
+                <option value="new">{t("الأحدث أولاً", "Newest first")}</option>
+                <option value="old">{t("الأقدم أولاً", "Oldest first")}</option>
+                <option value="price-low">{t("السعر: الأقل أولاً", "Price: low to high")}</option>
+                <option value="price-high">{t("السعر: الأعلى أولاً", "Price: high to low")}</option>
+              </select>
+            </div>
+
+            <ProductGrid
+              products={filteredProducts}
+              loading={categoryQuery.isLoading || productsQuery.isLoading || categoriesQuery.isLoading}
+              categoryEmpty
+              onViewAll={() => {
+                void navigate({ to: "/$slug", params: { slug: brand.slug } });
+              }}
+            />
+          </>
+        )}
       </section>
     </main>
   );

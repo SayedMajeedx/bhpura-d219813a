@@ -11,6 +11,8 @@ import { ProductGrid } from "@/components/storefront/product-grid";
 import { SecondaryBannerParallax } from "@/components/storefront/secondary-banner-parallax";
 import { HeroV2 } from "@/components/storefront/HeroV2";
 import { TrustBar } from "@/components/storefront/TrustBar";
+import { BrandStorySection } from "@/components/storefront/BrandStorySection";
+import { RecentlyViewed } from "@/components/storefront/RecentlyViewed";
 import { isLikelyImageUrl } from "@/lib/media-delivery";
 import {
   fetchStorefrontPageData,
@@ -375,6 +377,14 @@ function StoreHome() {
           />
         </div>
       </section>
+
+      {/* Brand Story Section (Layer 2) */}
+      {settings.storefront_design_version === 2 && <BrandStorySection />}
+
+      {/* Recently Viewed Carousel (Layer 2) */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <RecentlyViewed />
+      </div>
     </div>
   );
 }
