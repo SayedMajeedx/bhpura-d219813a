@@ -1,14 +1,17 @@
-import React, { useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import {
   TrustBadgesConfig,
   TrustBadgeItem,
+  TRUST_ICON_CATALOG,
   BADGE_COLOR_PRESETS,
   renderTrustBadgeIcon,
+  getDynamicTrustBadges,
 } from "@/lib/trust-badges";
 import { TrustBadgeIconPicker } from "@/components/settings/TrustBadgeIconPicker";
 import {
@@ -21,6 +24,12 @@ import {
   Sparkles,
   Smartphone,
   Monitor,
+  Wand2,
+  RotateCcw,
+  Coffee,
+  Shirt,
+  Gem,
+  Flame,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAddons } from "@/components/addons/AddonsProvider";
@@ -32,6 +41,8 @@ interface TrustBadgesEditorProps {
   isAr?: boolean;
   footerBg?: string | null;
   footerFg?: string | null;
+  vertical?: string | null;
+  settings?: Record<string, any> | null;
 }
 
 export function TrustBadgesEditor({
@@ -40,6 +51,8 @@ export function TrustBadgesEditor({
   isAr = true,
   footerBg,
   footerFg,
+  vertical,
+  settings,
 }: TrustBadgesEditorProps) {
   const items = value.items || [];
   const isEnabled = value.enabled ?? true;
@@ -82,6 +95,20 @@ export function TrustBadgesEditor({
     onChange({ ...value, items: next });
   };
 
+  const handleGenerateDynamicBadges = (overrideVertical?: string) => {
+    const targetVertical = overrideVertical || vertical || "general";
+    const generated = getDynamicTrustBadges({
+      vertical: targetVertical,
+      settings,
+    });
+    onChange(generated);
+    toast.success(
+      isAr
+        ? "تم توليد شارات مخصصة تناسب نوع نشاط المتجر"
+        : "Generated trust badges tailored to your store niche",
+    );
+  };
+
   return (
     <div
       className="space-y-5 rounded-xl border border-border p-4 bg-card shadow-sm"
@@ -103,13 +130,13 @@ export function TrustBadgesEditor({
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
             {isAr
-              ? "تخصيص الشارات والأيقونات المعروضة أسفل صفحة المتجر لتعزيز ثقة العميل (أصالة التصاميم، طرق الدفع، التشفير، التوصيل)."
+              ? "تخصيص الشارات والأيقونات المعروضة أسفل صفحة المتجر لتعزيز ثقة العميل (أصالة وجودة المنتجات، طرق الدفع المعتمدة، التشفير، التوصيل)."
               : "Customize the reassurance badges and icons shown at the bottom of your storefront to boost customer confidence."}
           </p>
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-center bg-muted/40 p-2 rounded-xl border border-border-subtle">
-          <Label htmlFor="toggle-trust-badges" className="text-xs font-semibold cursor-pointer">
+          <Label htmlFor="toggle-trust-badges" className="text-xs font-medium cursor-pointer">
             {isAr ? "إظهار شريط الشارات" : "Show Badges Bar"}
           </Label>
           <Switch
@@ -122,6 +149,59 @@ export function TrustBadgesEditor({
 
       {isEnabled && (
         <>
+          {/* Quick Dynamic Generator & Niche Presets */}
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5 space-y-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
+                <Wand2 className="h-3.5 w-3.5" />
+                <span>
+                  {isAr ? "توليد شارات تناسب نوع نشاط المتجر تلقائياً" : "Tailor Badges to Your Niche"}
+                </span>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleGenerateDynamicBadges()}
+                className="h-7 text-xs gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+              >
+                <Sparkles className="h-3 w-3" />
+                <span>{isAr ? "توليد حسب نشاط متجري" : "Auto-Generate for My Store"}</span>
+              </Button>
+            </div>
+
+            {/* Quick Niche Presets */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[11px] text-muted-foreground me-1 font-medium">
+                {isAr ? "قوالب الأنشطة الجاهزة:" : "Ready presets:"}
+              </span>
+              {[
+                { id: "coffee", labelAr: "قهوة ومحاصيل", labelEn: "Coffee & Beans", icon: Coffee },
+                { id: "abayas", labelAr: "عبايات وتفصيل", labelEn: "Abayas & Tailoring", icon: Sparkles },
+                { id: "fashion", labelAr: "أزياء وملابس", labelEn: "Fashion & Apparel", icon: Shirt },
+                { id: "beauty", labelAr: "عطور وتجميل", labelEn: "Beauty & Fragrance", icon: Sparkles },
+                { id: "jewelry", labelAr: "مجوهرات وإكسسوارات", labelEn: "Jewelry & Luxury", icon: Gem },
+                { id: "food", labelAr: "مأكولات ومخبوزات", labelEn: "Food & Bakery", icon: Flame },
+                { id: "general", labelAr: "متجر عام", labelEn: "General Store", icon: RotateCcw },
+              ].map((preset) => {
+                const Icon = preset.icon;
+                return (
+                  <Button
+                    key={preset.id}
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleGenerateDynamicBadges(preset.id)}
+                    className="h-6 text-[11px] px-2 py-0.5 rounded-lg border border-border-subtle hover:border-primary/40 hover:bg-background"
+                  >
+                    <Icon className="h-2.5 w-2.5 me-1 text-muted-foreground" />
+                    <span>{isAr ? preset.labelAr : preset.labelEn}</span>
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Badges List */}
           <div className="space-y-3">
             {items.length === 0 ? (
@@ -173,7 +253,7 @@ export function TrustBadgesEditor({
                         </Button>
                       </div>
 
-                      <span className="text-xs font-semibold text-muted-foreground min-w-[20px]">
+                      <span className="text-xs font-medium text-muted-foreground min-w-[20px]">
                         #{index + 1}
                       </span>
 
@@ -241,7 +321,7 @@ export function TrustBadgesEditor({
                         value={item.text_ar || ""}
                         onChange={(e) => handleUpdateItem(index, { text_ar: e.target.value })}
                         placeholder={
-                          isAr ? "مثال: تصاميم حصرية خاصّة بنا" : "e.g. Exclusive In-House Designs"
+                          isAr ? "مثال: محاصيل مختصة طازجة / جودة أصلية مضمونة" : "e.g. Specialty Roasted Beans / 100% Authentic Quality"
                         }
                         className="h-9 text-xs text-end bg-background border-border"
                       />
@@ -253,7 +333,7 @@ export function TrustBadgesEditor({
                       <Input
                         value={item.text_en || ""}
                         onChange={(e) => handleUpdateItem(index, { text_en: e.target.value })}
-                        placeholder="e.g. Exclusive In-House Designs"
+                        placeholder="e.g. Specialty Roasted Beans / 100% Authentic Quality"
                         className="h-9 text-xs text-start bg-background border-border"
                       />
                     </div>
@@ -270,7 +350,7 @@ export function TrustBadgesEditor({
               variant="outline"
               size="sm"
               onClick={handleAddItem}
-              className="w-full gap-2 border-dashed border-border py-2 text-xs font-semibold hover:border-primary/50"
+              className="w-full gap-2 border-dashed border-border py-2 text-xs font-medium hover:border-primary/50"
             >
               <Plus className="h-3.5 w-3.5 text-primary" />
               <span>{isAr ? "إضافة شارة طمأنينة جديدة" : "Add New Trust Badge"}</span>
@@ -308,7 +388,7 @@ export function TrustBadgesEditor({
                       };
                       onChange({ ...value, items: [...items, newItem] });
                     }}
-                    className="h-8 text-xs gap-1.5 px-2.5 bg-background hover:bg-muted"
+                    className="h-8 text-xs gap-1.5 px-2.5 bg-background hover:bg-muted font-normal"
                   >
                     {renderTrustBadgeIcon(iconName, "h-3.5 w-3.5", "amber")}
                     <span>{iconName}</span>
@@ -321,7 +401,7 @@ export function TrustBadgesEditor({
           {/* Live Storefront Preview */}
           <div className="mt-4 rounded-xl border border-border-strong bg-muted/20 p-3.5 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold flex items-center gap-1.5 text-muted-foreground">
+              <span className="text-xs font-medium flex items-center gap-1.5 text-muted-foreground">
                 <Eye className="h-3.5 w-3.5 text-primary" />
                 {isAr ? "معاينة حية لشكل الفوتر بالمتجر" : "Live Storefront Footer Preview"}
               </span>

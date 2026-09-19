@@ -206,5 +206,14 @@ describe("Placeholder Variant Utilities", () => {
       "أسود",
       "حرير",
     ]);
+
+    // Real size with unit (e.g. coffee beans 250g)
+    expect(
+      displayVariantParts({ size: "250", size_unit: "g", color: "medium", fabric: "washed" }, "ar"),
+    ).toEqual(["250 غرام", "medium", "washed"]);
+
+    expect(
+      displayVariantParts({ size: "250", size_unit: "g", color: "medium", fabric: "washed" }, "en"),
+    ).toEqual(["250g", "medium", "washed"]);
   });
 });

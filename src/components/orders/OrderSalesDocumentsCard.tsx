@@ -11,6 +11,7 @@ import { printDeliveryNote } from "@/lib/thermal-print";
 
 import { getFulfillmentBadgeDetails, getFulfillmentMethodLabel } from "@/lib/status-labels";
 import { RETURN_STATUS_CONFIG, type ReturnStatus } from "@/lib/returns.types";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 
 interface OrderSalesDocumentsCardProps {
   order: any;
@@ -48,6 +49,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
   const isAr = lang === "ar";
   const [copiedInvoice, setCopiedInvoice] = React.useState(false);
   const brandId = brand?.id || order?.brand_id;
+  const { profile: storeProfile } = useAdminStoreProfile(brandId);
 
   const resolvedBrandName =
     (isAr ? brand?.name_ar : brand?.name_en) ||
@@ -151,11 +153,14 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
         description: it.title || it.product_title || it.name || it.description || "Item",
         quantity: Number(it.quantity || 1),
         selected_variant: it.selected_variant || null,
+        product: (it as any).product || (it as any).products || null,
       })),
       isPaid: order.payment_status === "paid" || balanceDue <= 0,
       balanceDue,
       currency,
       lang,
+      brandAddons: storeProfile?.addons,
+      storeVertical: storeProfile?.vertical || settings?.store_vertical,
     });
   };
 

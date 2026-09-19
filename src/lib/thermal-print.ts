@@ -1,5 +1,6 @@
 import { formatDate, formatMoney } from "@/lib/format";
 import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
+import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 
 type ThermalItem = {
   description: string;
@@ -8,6 +9,7 @@ type ThermalItem = {
   customization_total: number;
   line_total: number;
   customizations?: { name: string; price_delta: number }[];
+  product?: any;
   selected_variant?: {
     size?: string | null;
     color?: string | null;
@@ -57,6 +59,9 @@ type ThermalArgs = {
     thankYou: string;
   };
   footerNote?: string | null;
+  brandAddons?: any[] | null;
+  storeVertical?: string | null;
+  variantAxisLabels?: { color?: string; size?: string; fabric?: string };
 };
 
 function escapeHtml(s: string) {
@@ -71,19 +76,32 @@ export function printThermalReceipt(a: ThermalArgs) {
   const isRTL = a.lang === "ar";
   const locale = isRTL ? "ar-BH-u-nu-latn" : "en-US";
   const money = (n: number) => escapeHtml(formatMoney(n, a.currency, locale));
+  const addonDefaults = variantAxisDefaultsFrom(a.brandAddons, a.storeVertical);
 
   const itemsHtml = a.items
     .map((it) => {
       const unit = Number(it.unit_price) + Number(it.customization_total);
       const isPlaceholder = isPlaceholderVariant(it.selected_variant);
+      const axes = resolveAllVariantAxes({
+        product: it.product,
+        addonDefaults,
+        lang: isRTL ? "ar" : "en",
+      });
+      const colorLabel = a.variantAxisLabels?.color || axes.color.label;
+      const sizeLabel = a.variantAxisLabels?.size || axes.size.label;
+      const fabricLabel = a.variantAxisLabels?.fabric || axes.fabric.label;
+
       const variantParts = [
         it.selected_variant?.color &&
-          `${isRTL ? "اللون" : "Color"}: ${escapeHtml(it.selected_variant.color)}`,
+          axes.color.visible &&
+          `${escapeHtml(colorLabel)}: ${escapeHtml(it.selected_variant.color)}`,
         it.selected_variant?.size &&
           !isPlaceholder &&
-          `${isRTL ? "المقاس" : "Size"}: ${escapeHtml(it.selected_variant.size)}`,
+          axes.size.visible &&
+          `${escapeHtml(sizeLabel)}: ${escapeHtml(it.selected_variant.size)}`,
         it.selected_variant?.fabric &&
-          `${isRTL ? "القماش" : "Fabric"}: ${escapeHtml(it.selected_variant.fabric)}`,
+          axes.fabric.visible &&
+          `${escapeHtml(fabricLabel)}: ${escapeHtml(it.selected_variant.fabric)}`,
       ].filter(Boolean);
 
       const variantHtml =
@@ -237,6 +255,7 @@ export type DeliveryNoteArgs = {
   items: Array<{
     description: string;
     quantity: number;
+    product?: any;
     selected_variant?: {
       size?: string | null;
       color?: string | null;
@@ -247,24 +266,40 @@ export type DeliveryNoteArgs = {
   balanceDue?: number;
   currency?: string;
   lang: "en" | "ar";
+  brandAddons?: any[] | null;
+  storeVertical?: string | null;
+  variantAxisLabels?: { color?: string; size?: string; fabric?: string };
 };
 
 export function printDeliveryNote(a: DeliveryNoteArgs) {
   const isRTL = a.lang === "ar";
   const locale = isRTL ? "ar-BH-u-nu-latn" : "en-US";
   const currency = a.currency || "BHD";
+  const addonDefaults = variantAxisDefaultsFrom(a.brandAddons, a.storeVertical);
 
   const itemsRows = a.items
     .map((it, idx) => {
       const isPlaceholder = isPlaceholderVariant(it.selected_variant);
+      const axes = resolveAllVariantAxes({
+        product: it.product,
+        addonDefaults,
+        lang: isRTL ? "ar" : "en",
+      });
+      const colorLabel = a.variantAxisLabels?.color || axes.color.label;
+      const sizeLabel = a.variantAxisLabels?.size || axes.size.label;
+      const fabricLabel = a.variantAxisLabels?.fabric || axes.fabric.label;
+
       const variantParts = [
         it.selected_variant?.color &&
-          `${isRTL ? "اللون" : "Color"}: ${escapeHtml(it.selected_variant.color)}`,
+          axes.color.visible &&
+          `${escapeHtml(colorLabel)}: ${escapeHtml(it.selected_variant.color)}`,
         it.selected_variant?.size &&
           !isPlaceholder &&
-          `${isRTL ? "المقاس" : "Size"}: ${escapeHtml(it.selected_variant.size)}`,
+          axes.size.visible &&
+          `${escapeHtml(sizeLabel)}: ${escapeHtml(it.selected_variant.size)}`,
         it.selected_variant?.fabric &&
-          `${isRTL ? "القماش" : "Fabric"}: ${escapeHtml(it.selected_variant.fabric)}`,
+          axes.fabric.visible &&
+          `${escapeHtml(fabricLabel)}: ${escapeHtml(it.selected_variant.fabric)}`,
       ].filter(Boolean);
 
       const variantHtml =

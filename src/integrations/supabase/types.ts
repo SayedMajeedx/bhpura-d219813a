@@ -1442,15 +1442,19 @@ export type Database = {
           invoice_divider_color: string | null;
           invoice_secondary_color: string | null;
           invoice_show_business_details: boolean;
+          invoice_show_business_name: boolean;
           invoice_show_customer_contact: boolean;
           invoice_show_fulfillment: boolean;
           invoice_show_notes: boolean;
+          invoice_show_terms: boolean;
           invoice_status_paid_color: string | null;
           invoice_status_progress_color: string | null;
           invoice_status_unpaid_color: string | null;
           invoice_table_header_bg: string | null;
           invoice_table_header_fg: string | null;
           invoice_template: string;
+          invoice_terms_ar: string | null;
+          invoice_terms_en: string | null;
           invoice_title_ar: string | null;
           invoice_title_en: string | null;
           link_color: string | null;
@@ -1596,15 +1600,19 @@ export type Database = {
           invoice_divider_color?: string | null;
           invoice_secondary_color?: string | null;
           invoice_show_business_details?: boolean;
+          invoice_show_business_name?: boolean;
           invoice_show_customer_contact?: boolean;
           invoice_show_fulfillment?: boolean;
           invoice_show_notes?: boolean;
+          invoice_show_terms?: boolean;
           invoice_status_paid_color?: string | null;
           invoice_status_progress_color?: string | null;
           invoice_status_unpaid_color?: string | null;
           invoice_table_header_bg?: string | null;
           invoice_table_header_fg?: string | null;
           invoice_template?: string;
+          invoice_terms_ar?: string | null;
+          invoice_terms_en?: string | null;
           invoice_title_ar?: string | null;
           invoice_title_en?: string | null;
           link_color?: string | null;
@@ -1750,15 +1758,19 @@ export type Database = {
           invoice_divider_color?: string | null;
           invoice_secondary_color?: string | null;
           invoice_show_business_details?: boolean;
+          invoice_show_business_name?: boolean;
           invoice_show_customer_contact?: boolean;
           invoice_show_fulfillment?: boolean;
           invoice_show_notes?: boolean;
+          invoice_show_terms?: boolean;
           invoice_status_paid_color?: string | null;
           invoice_status_progress_color?: string | null;
           invoice_status_unpaid_color?: string | null;
           invoice_table_header_bg?: string | null;
           invoice_table_header_fg?: string | null;
           invoice_template?: string;
+          invoice_terms_ar?: string | null;
+          invoice_terms_en?: string | null;
           invoice_title_ar?: string | null;
           invoice_title_en?: string | null;
           link_color?: string | null;
@@ -4837,6 +4849,7 @@ export type Database = {
           email: string | null;
           full_name: string | null;
           id: string;
+          must_change_password: boolean | null;
           name: string | null;
           permissions: Json | null;
           phone: string | null;
@@ -4852,6 +4865,7 @@ export type Database = {
           email?: string | null;
           full_name?: string | null;
           id: string;
+          must_change_password?: boolean | null;
           name?: string | null;
           permissions?: Json | null;
           phone?: string | null;
@@ -4867,6 +4881,7 @@ export type Database = {
           email?: string | null;
           full_name?: string | null;
           id?: string;
+          must_change_password?: boolean | null;
           name?: string | null;
           permissions?: Json | null;
           phone?: string | null;
@@ -7335,6 +7350,10 @@ export type Database = {
       };
     };
     Functions: {
+      complete_first_sign_in_password_change: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
       activate_storefront_membership: {
         Args: { p_brand_slug: string; p_name?: string; p_phone?: string };
         Returns: Json;

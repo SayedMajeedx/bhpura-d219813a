@@ -29,6 +29,7 @@ import {
   Store,
   Lock,
   Puzzle,
+  Coffee,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StorefrontLivePreview } from "@/components/onboarding/StorefrontLivePreview";
@@ -49,6 +50,7 @@ const VERTICAL_ICONS: Record<StoreVertical, React.ComponentType<{ className?: st
   [STORE_VERTICALS[0]]: Shirt,
   fashion: Sparkles,
   beauty: Sparkles,
+  coffee: Coffee,
   food: UtensilsCrossed,
   gifts: Gift,
   print: Printer,

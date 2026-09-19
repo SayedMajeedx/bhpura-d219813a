@@ -21,6 +21,9 @@ import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { CategoriesCommandHeader } from "@/components/categories/CategoriesCommandHeader";
 import { CategoriesWorkQueue } from "@/components/categories/CategoriesWorkQueue";
 import { CropUploadButton } from "@/components/crop-upload-button";
+import { syncBrandVerticalCategories, PURA_BRAND_ID } from "@/lib/addons/vertical-categories";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
+import type { StoreVertical } from "@/lib/store-profile";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/categories")({
   component: CategoriesPage,
@@ -57,6 +60,8 @@ function CategoriesPage() {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const qc = useQueryClient();
+  const { profile } = useAdminStoreProfile(brandId);
+  const [isSyncingDefaults, setIsSyncingDefaults] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
   const [open, setOpen] = useState(false);
 
@@ -202,6 +207,50 @@ function CategoriesPage() {
     qc.invalidateQueries({ queryKey: ["categories", brandId] });
   };
 
+  const handleSyncVerticalDefaults = async () => {
+    if (brandId === PURA_BRAND_ID) {
+      toast.info(
+        isAr
+          ? "براند Pura محمي من التعديل التلقائي للأقسام."
+          : "Pura brand is protected from automated category changes.",
+      );
+      return;
+    }
+
+    const confirmed = window.confirm(
+      isAr
+        ? `هل تريد تهيئة أقسام المتجر الافتراضية لنشاطك؟\nسيتم استبدال الأقسام السابقة الفارغة (التي لا تحتوي على أي منتجات) بأقسام مناسبة لنشاطك، وتبقى الأقسام المرتبطة بمنتجات محفوظة دون أي مساس.`
+        : `Do you want to initialize default categories for your store vertical?\nEmpty previous categories with zero products will be replaced, while all categories linked to existing products will be kept safe.`,
+    );
+    if (!confirmed) return;
+
+    try {
+      setIsSyncingDefaults(true);
+      const targetVertical = (profile?.vertical as StoreVertical) || "general";
+      const res = await syncBrandVerticalCategories({
+        db: supabase,
+        brandId,
+        newVertical: targetVertical,
+        replaceEmptyOldCategories: true,
+      });
+
+      toast.success(
+        isAr
+          ? `تمت تهيئة أقسام النشاط بنجاح (إضافة ${res.insertedCount}، حذف ${res.removedCount} قسم فارغ)`
+          : `Categories initialized successfully (+${res.insertedCount}, -${res.removedCount} empty)`,
+      );
+
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["admin-categories-overview", brandId] }),
+        qc.invalidateQueries({ queryKey: ["categories", brandId] }),
+      ]);
+    } catch (err: any) {
+      toast.error(err.message || (isAr ? "فشل تحديث الأقسام" : "Failed to sync categories"));
+    } finally {
+      setIsSyncingDefaults(false);
+    }
+  };
+
   return (
     <div
       className="mx-auto max-w-6xl space-y-4 p-1 sm:p-2 animate-fade-in"
@@ -210,6 +259,8 @@ function CategoriesPage() {
       <CategoriesCommandHeader
         lang={lang}
         categoryCount={(data ?? []).length}
+        onSyncVerticalDefaults={handleSyncVerticalDefaults}
+        isSyncingDefaults={isSyncingDefaults}
         onCreateNew={() => {
           setEditing(null);
           setOpen(true);

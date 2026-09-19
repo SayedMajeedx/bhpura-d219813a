@@ -132,6 +132,39 @@ export const COLOR_SKU_MAP: Record<string, string> = {
   bronze: "BRZ",
   copper: "CPR",
   metallic: "MET",
+
+  // Sweets, Food, Coffee & Retail Option codes
+  عادية: "REG",
+  عادي: "REG",
+  "بدون سكر": "SF",
+  بدون_سكر: "SF",
+  دايت: "DIET",
+  فستق: "PST",
+  جوز: "WAL",
+  لوز: "ALM",
+  كاجو: "CSH",
+  زعفران: "SAF",
+  هيل: "CDX",
+  كلاسيك: "CLS",
+  شوكولاتة: "CHOC",
+  حليب: "MLK",
+  فانيلا: "VAN",
+  قهوة: "COF",
+  سادة: "PLN",
+
+  // English Food & Retail Option codes
+  regular: "REG",
+  plain: "PLN",
+  "sugar free": "SF",
+  "sugar-free": "SF",
+  sugarfree: "SF",
+  diet: "DIET",
+  saffron: "SAF",
+  classic: "CLS",
+  walnut: "WAL",
+  cashew: "CSH",
+  almond: "ALM",
+  vanilla: "VAN",
 };
 
 /**
@@ -378,23 +411,52 @@ export function isPlaceholderVariant(
   return !hasColor && !hasFabric && !hasOptionFour && !hasOptionFive;
 }
 
+import {
+  formatSizeWithUnit,
+  splitCompositeVariantSize,
+  type SplitCompositeSizeResult,
+} from "@/lib/format";
+import { translateOptionValue } from "@/lib/variant-i18n";
+
+export { splitCompositeVariantSize, type SplitCompositeSizeResult };
+
 export function displayVariantParts(
   v?: {
     size?: string | null;
+    size_unit?: string | null;
     color?: string | null;
     fabric?: string | null;
     option_four?: string | null;
     option_five?: string | null;
   } | null,
+  lang: "ar" | "en" = "ar",
 ): string[] {
   if (!v) return [];
   const parts: string[] = [];
   if (v.size && !(PLACEHOLDER_SIZE_VALUES as readonly string[]).includes(v.size.trim())) {
-    parts.push(v.size.trim());
+    const split = splitCompositeVariantSize(v.size.trim(), v.size_unit);
+    if (split.isComposite) {
+      const sizeStr =
+        lang === "ar"
+          ? split.unit === "g"
+            ? `${split.size} غرام`
+            : `${split.size} ${split.unit}`.trim()
+          : split.unit
+            ? `${split.size}${split.unit}`
+            : split.size;
+      parts.push(sizeStr);
+      if (!v.color && split.option) {
+        parts.push(translateOptionValue(split.option, lang));
+      }
+    } else {
+      parts.push(formatSizeWithUnit(v.size.trim(), v.size_unit, lang));
+    }
   }
-  if (v.color && v.color.trim()) parts.push(v.color.trim());
-  if (v.fabric && v.fabric.trim()) parts.push(v.fabric.trim());
-  if (v.option_four && v.option_four.trim()) parts.push(v.option_four.trim());
-  if (v.option_five && v.option_five.trim()) parts.push(v.option_five.trim());
+  if (v.color && v.color.trim()) parts.push(translateOptionValue(v.color.trim(), lang));
+  if (v.fabric && v.fabric.trim()) parts.push(translateOptionValue(v.fabric.trim(), lang));
+  if (v.option_four && v.option_four.trim())
+    parts.push(translateOptionValue(v.option_four.trim(), lang));
+  if (v.option_five && v.option_five.trim())
+    parts.push(translateOptionValue(v.option_five.trim(), lang));
   return parts;
 }

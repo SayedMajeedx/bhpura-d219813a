@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, useMemo, useCallback, useDeferredValue } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import {
   Plus,
+  Minus,
   Pencil,
   Trash2,
   Package,
@@ -37,6 +38,7 @@ import {
   ChevronDown,
   Sparkles,
   Upload,
+  Download,
   Loader2,
   Check,
   RefreshCw,
@@ -51,9 +53,10 @@ import {
   ChevronRight,
   HelpCircle,
   Instagram,
+  Copy,
 } from "lucide-react";
 import { toast } from "sonner";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatSizeWithUnit, splitCompositeVariantSize } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
 import { ActivityLogList } from "@/components/activity-log-list";
 import { PrintLabelButton, printLabels, type LabelData } from "@/components/barcode-label";
@@ -115,11 +118,50 @@ import {
   customFieldPresetsFrom,
   sizingPresetsFrom,
   sizingPresetOrderFrom,
+  type VariantAxisConfig,
 } from "@/lib/addons/addon-registry";
+import {
+  getVerticalSizingPresets,
+  getVerticalAiPromptPlaceholder,
+  getVerticalAxisPlaceholders,
+} from "@/lib/addons/vertical-inventory";
 import { useAddons } from "@/components/addons/AddonsProvider";
+import { translateOptionTerms } from "@/lib/translate-options.functions";
+
+function prefetchOptionTranslations(terms: Array<string | null | undefined>, isAr: boolean) {
+  const cleanTerms = Array.from(
+    new Set(
+      terms
+        .map((t) => (t || "").trim())
+        .filter((t) => t.length > 0)
+    )
+  );
+  if (cleanTerms.length === 0) return;
+
+  translateOptionTerms({
+    data: {
+      terms: cleanTerms,
+      from: isAr ? "ar" : "en",
+      to: isAr ? "en" : "ar",
+    },
+  }).catch((err) => console.warn("Failed to prefetch variant translations:", err));
+}
 
 /** Common measurement units the admin can pick from for a "size" variant. */
 const SIZE_UNITS = ["", "cm", "mm", "m", "inch", "ft", "kg", "g", "ml", "l"] as const;
+
+const SIZE_UNIT_LABELS: Record<string, { ar: string; en: string }> = {
+  "": { ar: "— بدون وحدة —", en: "— None —" },
+  g: { ar: "غرام (g)", en: "Grams (g)" },
+  kg: { ar: "كيلوغرام (kg)", en: "Kilograms (kg)" },
+  ml: { ar: "ملليلتر (ml)", en: "Milliliters (ml)" },
+  l: { ar: "لتر (l)", en: "Liters (l)" },
+  inch: { ar: "إنش (inch)", en: "Inches (in)" },
+  cm: { ar: "سنتيمتر (cm)", en: "Centimeters (cm)" },
+  mm: { ar: "ميليمتر (mm)", en: "Millimeters (mm)" },
+  m: { ar: "متر (m)", en: "Meters (m)" },
+  ft: { ar: "قدم (ft)", en: "Feet (ft)" },
+};
 
 type InventorySearch = {
   filter?: string;
@@ -176,6 +218,10 @@ type Product = {
   variant_label_color_en?: string | null;
   variant_label_fabric_ar?: string | null;
   variant_label_fabric_en?: string | null;
+  variant_label_four_ar?: string | null;
+  variant_label_four_en?: string | null;
+  variant_label_five_ar?: string | null;
+  variant_label_five_en?: string | null;
   fabric_type?: string | null;
   occasion?: string | null;
   size_guide_id?: string | null;
@@ -189,6 +235,8 @@ type Variant = {
   size: string | null;
   color: string | null;
   fabric: string | null;
+  option_four?: string | null;
+  option_five?: string | null;
   cost_price: number;
   selling_price: number;
   original_price: number | null;
@@ -486,13 +534,19 @@ const PRODUCT_HEADER_MAPS = {
 function ProductImporterModal({
   brandId,
   onComplete,
+  isOpen: controlledIsOpen,
+  onOpenChange: setControlledIsOpen,
   renderTrigger,
 }: {
   brandId: string;
   onComplete: () => void;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
   renderTrigger?: (onClick: () => void) => React.ReactNode;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
+  const setIsOpen = setControlledIsOpen || setInternalIsOpen;
   const [step, setStep] = useState<"preset" | "mapper" | "importing" | "success">("preset");
   const [preset, setPreset] = useState<"shopify" | "salla" | "zid" | "woocommerce" | "custom">(
     "custom",
@@ -847,7 +901,7 @@ function ProductImporterModal({
     <>
       {renderTrigger ? (
         renderTrigger(handleOpen)
-      ) : (
+      ) : controlledIsOpen !== undefined ? null : (
         <Button
           variant="outline"
           onClick={handleOpen}
@@ -1198,6 +1252,7 @@ function ProductsSection({
   const [incubatorTransferModalOpen, setIncubatorTransferModalOpen] = useState(false);
   const [incubatorTransferProducts, setIncubatorTransferProducts] = useState<Product[]>([]);
   const [isInstagramModalOpen, setIsInstagramModalOpen] = useState(false);
+  const [isProductImporterOpen, setIsProductImporterOpen] = useState(false);
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
 
@@ -1802,7 +1857,25 @@ function ProductsSection({
               <Instagram className="h-4 w-4 me-2 text-primary" />
               {isAr ? "استيراد كتالوج إنستغرام" : "Import from Instagram"}
             </Button>
-            <ProductImporterModal brandId={brandId} onComplete={onChanged} />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsProductImporterOpen(true)}
+              className="justify-start text-xs font-medium h-9"
+            >
+              <Upload className="h-4 w-4 me-2 text-primary" />
+              {isAr ? "استيراد كتالوج المنتجات" : "Import Product Catalog"}
+            </Button>
+            <Link to="/admin/b/$slug/export" params={{ slug: brand.slug }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start text-xs font-medium h-9"
+              >
+                <Download className="h-4 w-4 me-2 text-primary" />
+                {isAr ? "تصدير الكتالوج (إكسل / CSV)" : "Export Catalog (Excel / CSV)"}
+              </Button>
+            </Link>
 
             <div className="px-2.5 pt-2 py-1 text-xs font-bold text-muted-foreground border-b border-border-subtle">
               {isAr ? "الباركود والطباعة" : "Barcodes & Print"}
@@ -2284,6 +2357,12 @@ function ProductsSection({
         onOpenChange={setIsInstagramModalOpen}
         onComplete={onChanged}
       />
+      <ProductImporterModal
+        brandId={brandId}
+        isOpen={isProductImporterOpen}
+        onOpenChange={setIsProductImporterOpen}
+        onComplete={onChanged}
+      />
     </div>
   );
 }
@@ -2342,6 +2421,10 @@ function ProductDialog({
     variant_label_color_en: product?.variant_label_color_en ?? "",
     variant_label_fabric_ar: product?.variant_label_fabric_ar ?? "",
     variant_label_fabric_en: product?.variant_label_fabric_en ?? "",
+    variant_label_four_ar: product?.variant_label_four_ar ?? "",
+    variant_label_four_en: product?.variant_label_four_en ?? "",
+    variant_label_five_ar: product?.variant_label_five_ar ?? "",
+    variant_label_five_en: product?.variant_label_five_en ?? "",
     fabric_type: (product as any)?.fabric_type ?? "",
     occasion: (product as any)?.occasion ?? "",
     size_guide_id: product?.size_guide_id ?? null,
@@ -2360,6 +2443,7 @@ function ProductDialog({
   // Stepper state: 'basic' | 'media' | 'customizer'
   const [activeDialogTab, setActiveDialogTab] = useState<"basic" | "media" | "customizer">("basic");
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [showExtraAxes, setShowExtraAxes] = useState(false);
 
   useEffect(
     () => () => {
@@ -2396,6 +2480,10 @@ function ProductDialog({
       variant_label_color_en: product?.variant_label_color_en ?? "",
       variant_label_fabric_ar: product?.variant_label_fabric_ar ?? "",
       variant_label_fabric_en: product?.variant_label_fabric_en ?? "",
+      variant_label_four_ar: product?.variant_label_four_ar ?? "",
+      variant_label_four_en: product?.variant_label_four_en ?? "",
+      variant_label_five_ar: product?.variant_label_five_ar ?? "",
+      variant_label_five_en: product?.variant_label_five_en ?? "",
       fabric_type: (product as any)?.fabric_type ?? "",
       occasion: (product as any)?.occasion ?? "",
       size_guide_id: product?.size_guide_id ?? null,
@@ -2404,6 +2492,14 @@ function ProductDialog({
     });
     setErrors({});
     setActiveDialogTab("basic");
+    setShowExtraAxes(
+      Boolean(
+        product?.variant_label_four_ar ||
+        product?.variant_label_four_en ||
+        product?.variant_label_five_ar ||
+        product?.variant_label_five_en,
+      ),
+    );
   }, [product]);
 
   const categoriesQ = useQuery({
@@ -2603,6 +2699,10 @@ function ProductDialog({
         variant_label_color_en: (form.variant_label_color_en || "").trim() || null,
         variant_label_fabric_ar: (form.variant_label_fabric_ar || "").trim() || null,
         variant_label_fabric_en: (form.variant_label_fabric_en || "").trim() || null,
+        variant_label_four_ar: (form.variant_label_four_ar || "").trim() || null,
+        variant_label_four_en: (form.variant_label_four_en || "").trim() || null,
+        variant_label_five_ar: (form.variant_label_five_ar || "").trim() || null,
+        variant_label_five_en: (form.variant_label_five_en || "").trim() || null,
         fabric_type: (form.fabric_type || "").trim() || null,
         occasion: (form.occasion || "").trim() || null,
         size_guide_id: form.size_guide_hidden ? null : form.size_guide_id || null,
@@ -2670,6 +2770,10 @@ function ProductDialog({
         variant_label_color_en: (form.variant_label_color_en || "").trim() || null,
         variant_label_fabric_ar: (form.variant_label_fabric_ar || "").trim() || null,
         variant_label_fabric_en: (form.variant_label_fabric_en || "").trim() || null,
+        variant_label_four_ar: (form.variant_label_four_ar || "").trim() || null,
+        variant_label_four_en: (form.variant_label_four_en || "").trim() || null,
+        variant_label_five_ar: (form.variant_label_five_ar || "").trim() || null,
+        variant_label_five_en: (form.variant_label_five_en || "").trim() || null,
         fabric_type: (form.fabric_type || "").trim() || null,
         occasion: (form.occasion || "").trim() || null,
         size_guide_id: form.size_guide_hidden ? null : form.size_guide_id || null,
@@ -2704,6 +2808,7 @@ function ProductDialog({
           barcode: null,
           image_url: form.image_url || (form.media?.[0]?.url ?? null),
         });
+        prefetchOptionTranslations([form.fabric_type], isAr);
       }
     }
     for (const url of removedCommittedMedia.current) {
@@ -3226,36 +3331,122 @@ function ProductDialog({
                         </div>
                       </div>
 
-                      {addonAxisDefaults?.fabric !== null && (
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                          <div>
-                            <Label className="text-xs font-bold text-muted-foreground">
-                              {isAr ? "مسمى الخامة بالعربية" : "Custom Fabric Label — Arabic"}
-                            </Label>
-                            <Input
-                              className="mt-1 h-8 rounded-md text-xs"
-                              placeholder={
-                                addonAxisDefaults?.fabric?.ar || (isAr ? "الخامة" : "Fabric")
-                              }
-                              value={form.variant_label_fabric_ar || ""}
-                              onChange={(e) =>
-                                setForm({ ...form, variant_label_fabric_ar: e.target.value })
-                              }
-                            />
+                      {/* Axis 3: Fabric / Packaging / Custom */}
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 border-b border-border-subtle pb-2.5">
+                        <div>
+                          <Label className="text-xs font-bold text-muted-foreground">
+                            {isAr
+                              ? "مسمى الخاصية 3 بالعربية (الخامة / نوع التغليف)"
+                              : "Axis 3 Label — Arabic (Fabric / Packaging)"}
+                          </Label>
+                          <Input
+                            className="mt-1 h-8 rounded-md text-xs"
+                            placeholder={
+                              addonAxisDefaults?.fabric?.ar ||
+                              (isAr ? "الخامة أو نوع التغليف" : "Fabric or Packaging")
+                            }
+                            value={form.variant_label_fabric_ar || ""}
+                            onChange={(e) =>
+                              setForm({ ...form, variant_label_fabric_ar: e.target.value })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs font-bold text-muted-foreground">
+                            {isAr ? "مسمى الخاصية 3 بالإنجليزية" : "Axis 3 Label — English"}
+                          </Label>
+                          <Input
+                            className="mt-1 h-8 rounded-md text-xs"
+                            placeholder={addonAxisDefaults?.fabric?.en || "Fabric or Packaging"}
+                            value={form.variant_label_fabric_en || ""}
+                            onChange={(e) =>
+                              setForm({ ...form, variant_label_fabric_en: e.target.value })
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      {/* Axis 4 & Axis 5 */}
+                      {showExtraAxes || form.variant_label_four_ar || form.variant_label_five_ar ? (
+                        <>
+                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 border-b border-border-subtle pb-2.5">
+                            <div>
+                              <Label className="text-xs font-bold text-muted-foreground">
+                                {isAr
+                                  ? "مسمى الخاصية 4 بالعربية (مثال: الحشوة / درجة التحميص)"
+                                  : "Axis 4 Label — Arabic (e.g. Filling / Roast)"}
+                              </Label>
+                              <Input
+                                className="mt-1 h-8 rounded-md text-xs"
+                                placeholder={isAr ? "الحشوة أو درجة التحميص" : "Filling or Roast"}
+                                value={form.variant_label_four_ar || ""}
+                                onChange={(e) =>
+                                  setForm({ ...form, variant_label_four_ar: e.target.value })
+                                }
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs font-bold text-muted-foreground">
+                                {isAr ? "مسمى الخاصية 4 بالإنجليزية" : "Axis 4 Label — English"}
+                              </Label>
+                              <Input
+                                className="mt-1 h-8 rounded-md text-xs"
+                                placeholder="Filling or Roast"
+                                value={form.variant_label_four_en || ""}
+                                onChange={(e) =>
+                                  setForm({ ...form, variant_label_four_en: e.target.value })
+                                }
+                              />
+                            </div>
                           </div>
-                          <div>
-                            <Label className="text-xs font-bold text-muted-foreground">
-                              {isAr ? "مسمى الخامة بالإنجليزية" : "Custom Fabric Label — English"}
-                            </Label>
-                            <Input
-                              className="mt-1 h-8 rounded-md text-xs"
-                              placeholder={addonAxisDefaults?.fabric?.en || "Fabric"}
-                              value={form.variant_label_fabric_en || ""}
-                              onChange={(e) =>
-                                setForm({ ...form, variant_label_fabric_en: e.target.value })
-                              }
-                            />
+
+                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 pb-1">
+                            <div>
+                              <Label className="text-xs font-bold text-muted-foreground">
+                                {isAr
+                                  ? "مسمى الخاصية 5 بالعربية (مثال: الإضافات / المرفقات)"
+                                  : "Axis 5 Label — Arabic (e.g. Add-ons)"}
+                              </Label>
+                              <Input
+                                className="mt-1 h-8 rounded-md text-xs"
+                                placeholder={isAr ? "الإضافات أو المرفقات" : "Add-ons or Options"}
+                                value={form.variant_label_five_ar || ""}
+                                onChange={(e) =>
+                                  setForm({ ...form, variant_label_five_ar: e.target.value })
+                                }
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs font-bold text-muted-foreground">
+                                {isAr ? "مسمى الخاصية 5 بالإنجليزية" : "Axis 5 Label — English"}
+                              </Label>
+                              <Input
+                                className="mt-1 h-8 rounded-md text-xs"
+                                placeholder="Add-ons or Options"
+                                value={form.variant_label_five_en || ""}
+                                onChange={(e) =>
+                                  setForm({ ...form, variant_label_five_en: e.target.value })
+                                }
+                              />
+                            </div>
                           </div>
+                        </>
+                      ) : (
+                        <div className="pt-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 text-xs text-primary font-bold hover:bg-primary/5 gap-1.5"
+                            onClick={() => setShowExtraAxes(true)}
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            <span>
+                              {isAr
+                                ? "+ إضافة خاصية إضافية (المحور 4 و 5)"
+                                : "+ Add Extra Attributes (Axis 4 & 5)"}
+                            </span>
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -3568,6 +3759,22 @@ function ProductDialog({
                   onCheckedChange={(checked) => setForm({ ...form, is_made_to_order: checked })}
                 />
               </div>
+
+              {Boolean(form.is_made_to_order) && (
+                <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 text-xs text-muted-foreground leading-relaxed flex items-start gap-2.5">
+                  <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold text-foreground block mb-0.5">
+                      {isAr ? "وضع تنفيذ المنتج في المتجر:" : "Storefront execution mode:"}
+                    </span>
+                    <span>
+                      {isAr
+                        ? "إذا أضفت مقاسات جاهزة بجدول المتغيرات، سيتيح المتجر للعميل الاختيار بين (مقاس جاهز) أو (صنع حسب الطلب). أما إذا لم تضف مقاسات جاهزة، فسيتحول المنتج تلقائياً إلى (حصري حسب الطلب) بدون خيارات مقاسات عادية."
+                        : "If you add ready sizes in the variants table, customers can choose between ready-to-wear and made-to-order. If no ready sizes are added, it will automatically present as Made-to-Order Only."}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {(form.custom_fields ?? []).length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground border-2 border-dashed border-border-strong rounded-xl bg-background/50">
@@ -3902,21 +4109,43 @@ function BulkVariantDialog({
     () => variantAxisDefaultsFrom(addons.length > 0 ? addons : storeProfile?.addons),
     [addons, storeProfile?.addons],
   );
+  const currentVertical = storeProfile?.vertical || "general";
+
+  const sizeAxis = resolveVariantAxis({
+    axis: "size",
+    product,
+    addonDefaults: addonAxisDefaults,
+    lang: isAr ? "ar" : "en",
+  });
+  const colorAxis = resolveVariantAxis({
+    axis: "color",
+    product,
+    addonDefaults: addonAxisDefaults,
+    lang: isAr ? "ar" : "en",
+  });
+  const fabricAxis = resolveVariantAxis({
+    axis: "fabric",
+    product,
+    addonDefaults: addonAxisDefaults,
+    lang: isAr ? "ar" : "en",
+  });
+
   const orderedPresets = useMemo(() => {
     const rows = addons.length > 0 ? addons : storeProfile?.addons;
     const fromAddons = sizingPresetsFrom(rows);
     const order = sizingPresetOrderFrom(rows);
-    const combined = [...fromAddons, ...UNIVERSAL_SIZING_PRESETS];
-    if (order.length === 0) return combined;
-    return combined.sort((a, b) => {
-      const idxA = order.indexOf(a.id);
-      const idxB = order.indexOf(b.id);
-      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-      if (idxA !== -1) return -1;
-      if (idxB !== -1) return 1;
-      return 0;
-    });
-  }, [addons, storeProfile?.addons]);
+    return getVerticalSizingPresets(currentVertical, fromAddons, order);
+  }, [addons, storeProfile?.addons, currentVertical]);
+
+  const aiPromptPlaceholder = useMemo(
+    () => getVerticalAiPromptPlaceholder(currentVertical, isAr),
+    [currentVertical, isAr],
+  );
+
+  const { sizePlaceholder, colorPlaceholder } = useMemo(
+    () => getVerticalAxisPlaceholders(currentVertical, isAr),
+    [currentVertical, isAr],
+  );
   const existingSku = variants.find((v) => v.sku)?.sku || "";
   const blank: VariantGenerationPlan = {
     base_sku: existingSku,
@@ -4186,6 +4415,8 @@ function BulkVariantDialog({
         })),
       );
       if (error) throw error;
+      const batchTerms = rows.flatMap((r) => [r.color, r.fabric]);
+      prefetchOptionTranslations(batchTerms, isAr);
       let activationFailed = false;
       if (variants.length === 0) {
         const { error: activationError } = await supabase
@@ -4276,11 +4507,7 @@ function BulkVariantDialog({
             className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder={
-              isAr
-                ? "مثال: كود NP24، الألوان كحلي وعنابي وبيج، المقاسات من S إلى XL، السعر 25 د.ب والتخفيض 19 د.ب، المخزون 5 لكل خيار"
-                : "Example: code DRS-01, colors Black, Olive and Burgundy, sizes S to XL, price 25 BHD, sale 19, stock 5 per variant"
-            }
+            placeholder={aiPromptPlaceholder}
           />
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <Button type="button" onClick={parseWithAi} disabled={parsing}>
@@ -4307,7 +4534,7 @@ function BulkVariantDialog({
         {/* QUICK SIZING PRESET PILLS */}
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">
-            {isAr ? "قوالب مقاسات جاهزة بنقرة واحدة:" : "1-Click Sizing Quick Presets:"}
+            {isAr ? "قوالب مقاسات وخيارات جاهزة بنقرة واحدة:" : "1-Click Sizing Quick Presets:"}
           </Label>
           <div className="flex items-center gap-1.5 flex-wrap">
             {orderedPresets.map((preset) => (
@@ -4336,21 +4563,27 @@ function BulkVariantDialog({
             />
           </div>
           <div>
-            <Label>{isAr ? "المقاسات (بفاصلة)" : "Sizes (comma separated)"}</Label>
+            <Label>
+              {sizeAxis.label} {isAr ? "(بفاصلة)" : "(comma separated)"}
+            </Label>
             <Input
               value={sizesText}
               onChange={(e) => setSizesText(e.target.value)}
-              placeholder={isAr ? "52, 54, 56, 58, 60" : "S, M, L, XL"}
+              placeholder={sizePlaceholder}
             />
           </div>
-          <div>
-            <Label>{isAr ? "الألوان (بفاصلة)" : "Colors (comma separated)"}</Label>
-            <Input
-              value={colorsText}
-              onChange={(e) => setColorsText(e.target.value)}
-              placeholder={isAr ? "كحلي, عنابي, بيج" : "Black, Navy, Olive"}
-            />
-          </div>
+          {colorAxis.visible && (
+            <div>
+              <Label>
+                {colorAxis.label} {isAr ? "(بفاصلة)" : "(comma separated)"}
+              </Label>
+              <Input
+                value={colorsText}
+                onChange={(e) => setColorsText(e.target.value)}
+                placeholder={colorPlaceholder}
+              />
+            </div>
+          )}
           {resolveVariantAxis({
             axis: "fabric",
             product,
@@ -4380,7 +4613,9 @@ function BulkVariantDialog({
             >
               {SIZE_UNITS.map((unit) => (
                 <option key={unit} value={unit}>
-                  {unit || "—"}
+                  {isAr
+                    ? SIZE_UNIT_LABELS[unit]?.ar || unit
+                    : SIZE_UNIT_LABELS[unit]?.en || unit || "—"}
                 </option>
               ))}
             </select>
@@ -4446,7 +4681,7 @@ function BulkVariantDialog({
           </div>
           <div>
             <div className="flex items-center gap-1">
-              <Label>{isAr ? "مخزون الأمانة / الحاضنة" : "Consignment / Incubator stock"}</Label>
+              <Label>{isAr ? "مخزون الحاضنة" : "Incubator stock"}</Label>
               <TooltipProvider delayDuration={200}>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -4456,8 +4691,8 @@ function BulkVariantDialog({
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-xs text-center text-xs">
                     {isAr
-                      ? "القطع المعروضة في محلات خارجية أو حاضنات شريكة بنظام الأمانة/العُهدة."
-                      : "Items held at partner boutiques or business incubators under consignment."}
+                      ? "القطع المعروضة في محلات خارجية أو حاضنات شريكة."
+                      : "Items held at partner boutiques or business incubators."}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -4533,7 +4768,7 @@ function BulkVariantDialog({
               </div>
 
               <div className="flex items-center gap-1.5">
-                <span>{isAr ? "الأمانة/الحاضنة:" : "Consignment:"}</span>
+                <span>{isAr ? "الحاضنة:" : "Incubator:"}</span>
                 <Input
                   className="h-7 w-16 text-xs"
                   type="number"
@@ -4589,7 +4824,7 @@ function BulkVariantDialog({
                       ...(canViewFinancials ? [isAr ? "التكلفة" : "Cost"] : []),
                       isAr ? "السعر اللي يدفعه العميل" : "Customer price",
                       isAr ? "مخزون المحل" : "Store Stock",
-                      isAr ? "الأمانة / الحاضنة" : "Consignment / Incubator",
+                      isAr ? "مخزون الحاضنة" : "Incubator Stock",
                       "",
                     ].map((label) => (
                       <th key={label} className="p-2 text-start font-semibold">
@@ -4765,43 +5000,55 @@ function VariantImageUploader({ brandId, imageUrl, onChange, isAr }: VariantImag
   );
 }
 
-function StockStepper({ value, onChange }: { value: number; onChange: (val: number) => void }) {
+function StockStepper({
+  value,
+  onChange,
+  min = 0,
+}: {
+  value: number;
+  onChange: (val: number) => void;
+  min?: number;
+}) {
   return (
     <div
-      className="inline-flex items-center border border-input bg-background rounded-lg overflow-hidden h-9 shadow-sm shrink-0 select-none max-w-[105px]"
+      dir="ltr"
+      className="inline-flex items-center border border-input bg-background rounded-lg overflow-hidden h-8.5 shadow-2xs shrink-0 select-none"
       onClick={(e) => e.stopPropagation()}
     >
       <button
         type="button"
-        className="w-8 h-full flex items-center justify-center hover:bg-muted active:scale-90 transition-all text-muted-foreground hover:text-foreground font-black text-sm border-e border-input"
+        className="w-7 h-full flex items-center justify-center hover:bg-muted active:scale-95 transition-all text-muted-foreground hover:text-foreground border-r border-input touch-manipulation"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          onChange(Math.max(0, value - 1));
+          onChange(Math.max(min, value - 1));
         }}
+        aria-label="Decrease"
       >
-        -
+        <Minus className="h-3 w-3" />
       </button>
       <input
         type="number"
-        className="w-9 text-center bg-transparent border-0 outline-none h-full font-bold text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none px-0.5"
+        className="w-11 text-center bg-transparent border-0 outline-none h-full font-mono font-bold text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none px-0.5"
         value={value}
         onChange={(e) => {
           e.stopPropagation();
-          onChange(Math.max(0, parseInt(e.target.value) || 0));
+          onChange(Math.max(min, parseInt(e.target.value) || 0));
         }}
+        onFocus={(e) => e.currentTarget.select()}
         onClick={(e) => e.stopPropagation()}
       />
       <button
         type="button"
-        className="w-8 h-full flex items-center justify-center hover:bg-muted active:scale-90 transition-all text-muted-foreground hover:text-foreground font-black text-sm border-s border-input"
+        className="w-7 h-full flex items-center justify-center hover:bg-muted active:scale-95 transition-all text-muted-foreground hover:text-foreground border-l border-input touch-manipulation"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
           onChange(value + 1);
         }}
+        aria-label="Increase"
       >
-        +
+        <Plus className="h-3 w-3" />
       </button>
     </div>
   );
@@ -4861,10 +5108,12 @@ function PremiumCurrencyInput({
   );
 }
 
+type VariantViewMode = "quick" | "barcodes" | "full";
+
 function VariantDesktopRow({
   v,
   canViewFinancials,
-  barcodeLabel: _barcodeLabel,
+  barcodeLabel,
   SIZE_UNITS,
   salesByVariant,
   t,
@@ -4877,10 +5126,9 @@ function VariantDesktopRow({
   del,
   isSelected,
   onToggleSelect,
-  renderImageCol,
-  renderSkuCol,
-  renderBarcodeCol,
   product,
+  onDuplicate,
+  viewMode = "quick",
 }: {
   v: Variant;
   canViewFinancials: boolean;
@@ -4897,10 +5145,12 @@ function VariantDesktopRow({
   del: (id: string) => void;
   isSelected: boolean;
   onToggleSelect: () => void;
-  renderImageCol: boolean;
-  renderSkuCol: boolean;
-  renderBarcodeCol: boolean;
+  renderImageCol?: boolean;
+  renderSkuCol?: boolean;
+  renderBarcodeCol?: boolean;
   product?: Product;
+  onDuplicate?: (v: Variant) => void;
+  viewMode?: VariantViewMode;
 }) {
   const [costVal, setCostVal] = useState(String(v.cost_price));
   const [sellingVal, setSellingVal] = useState(
@@ -4949,6 +5199,8 @@ function VariantDesktopRow({
   const [sizeUnitVal, setSizeUnitVal] = useState(v.size_unit ?? "");
   const [colorVal, setColorVal] = useState(v.color ?? "");
   const [fabricVal, setFabricVal] = useState(v.fabric ?? "");
+  const [fourVal, setFourVal] = useState(v.option_four ?? "");
+  const [fiveVal, setFiveVal] = useState(v.option_five ?? "");
 
   const { profile: storeProfile } = useAdminStoreProfile(brand.id);
   const { addons } = useAddons();
@@ -4962,18 +5214,54 @@ function VariantDesktopRow({
     addonDefaults: addonAxisDefaults,
     lang: isAr ? "ar" : "en",
   });
-  const colorAxis = resolveVariantAxis({
-    axis: "color",
-    product,
-    addonDefaults: addonAxisDefaults,
-    lang: isAr ? "ar" : "en",
-  });
-  const fabricAxis = resolveVariantAxis({
-    axis: "fabric",
-    product,
-    addonDefaults: addonAxisDefaults,
-    lang: isAr ? "ar" : "en",
-  });
+  const colorAxis = useMemo(() => {
+    const raw = resolveVariantAxis({
+      axis: "color",
+      product,
+      addonDefaults: addonAxisDefaults,
+      lang: isAr ? "ar" : "en",
+    });
+    return {
+      ...raw,
+      visible: raw.visible || Boolean(v.color && v.color.trim()),
+    };
+  }, [product, addonAxisDefaults, isAr, v.color]);
+  const fabricAxis = useMemo(() => {
+    const raw = resolveVariantAxis({
+      axis: "fabric",
+      product,
+      addonDefaults: addonAxisDefaults,
+      lang: isAr ? "ar" : "en",
+    });
+    return {
+      ...raw,
+      visible: raw.visible || Boolean(v.fabric && v.fabric.trim()),
+    };
+  }, [product, addonAxisDefaults, isAr, v.fabric]);
+  const fourAxis = useMemo(() => {
+    const raw = resolveVariantAxis({
+      axis: "four",
+      product,
+      addonDefaults: addonAxisDefaults,
+      lang: isAr ? "ar" : "en",
+    });
+    return {
+      ...raw,
+      visible: raw.visible || Boolean(v.option_four && v.option_four.trim()),
+    };
+  }, [product, addonAxisDefaults, isAr, v.option_four]);
+  const fiveAxis = useMemo(() => {
+    const raw = resolveVariantAxis({
+      axis: "five",
+      product,
+      addonDefaults: addonAxisDefaults,
+      lang: isAr ? "ar" : "en",
+    });
+    return {
+      ...raw,
+      visible: raw.visible || Boolean(v.option_five && v.option_five.trim()),
+    };
+  }, [product, addonAxisDefaults, isAr, v.option_five]);
 
   // Sync back on external changes
   useEffect(() => {
@@ -4981,24 +5269,82 @@ function VariantDesktopRow({
     setSizeUnitVal(v.size_unit ?? "");
     setColorVal(v.color ?? "");
     setFabricVal(v.fabric ?? "");
-  }, [v.size, v.size_unit, v.color, v.fabric]);
+    setFourVal(v.option_four ?? "");
+    setFiveVal(v.option_five ?? "");
+  }, [v.size, v.size_unit, v.color, v.fabric, v.option_four, v.option_five]);
 
   const saveAttributes = () => {
+    const split = splitCompositeVariantSize(sizeVal, sizeUnitVal);
+    let finalSize = sizeVal || null;
+    let finalUnit = sizeUnitVal || null;
+    let finalColor = colorVal || null;
+
+    if (split.isComposite && !finalColor) {
+      finalSize = split.size;
+      finalUnit = split.unit;
+      finalColor = split.option;
+    }
+
     update(v, {
-      size: sizeVal || null,
-      size_unit: sizeUnitVal || null,
-      color: colorVal || null,
+      size: finalSize,
+      size_unit: finalUnit,
+      color: finalColor,
       fabric: fabricVal || null,
+      option_four: fourVal || null,
+      option_five: fiveVal || null,
     });
     setIsEditingAttrs(false);
   };
 
+  let marginBg =
+    "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/30";
+  if (currentMargin < 20) {
+    marginBg =
+      "bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-900/30";
+  } else if (currentMargin < 50) {
+    marginBg =
+      "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/30";
+  }
+
+  const stock = (v.stock_main ?? 0) + (v.stock_incubator ?? 0);
+  const qtySold = salesByVariant.get(v.id) || 0;
+  const variantCreatedAt = v.created_at ? new Date(v.created_at) : null;
+  const daysElapsed = variantCreatedAt
+    ? Math.max(
+        1,
+        Math.min(
+          45,
+          Math.ceil(
+            (new Date().getTime() - variantCreatedAt.getTime()) / (1000 * 60 * 60 * 24),
+          ),
+        ),
+      )
+    : 45;
+  const dailyVelocity = qtySold / daysElapsed;
+
+  let runRateText = isAr ? "لا مبيعات" : "No sales";
+  let runRateColor = "text-muted-foreground text-xs";
+
+  if (stock <= 0) {
+    runRateText = isAr ? "نفد" : "Out of stock";
+    runRateColor = "text-rose-600 dark:text-rose-400 font-bold text-xs";
+  } else if (dailyVelocity > 0) {
+    const days = Math.ceil(stock / dailyVelocity);
+    runRateText = isAr ? `ينفد في ${days} ي` : `${days} d left`;
+    runRateColor =
+      days <= 7
+        ? "text-amber-600 dark:text-amber-400 font-bold text-xs"
+        : "text-emerald-600 dark:text-emerald-400 font-medium text-xs";
+  }
+
   return (
     <tr
-      className={`border-t border-border transition-all ${isSelected ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-secondary/15"}`}
+      className={`border-t border-border transition-all ${
+        isSelected ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-secondary/15"
+      }`}
     >
-      {/* Checkbox */}
-      <td className="px-2 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+      {/* Checkbox (Col 1) */}
+      <td className="w-10 px-2 py-3 text-center align-middle" onClick={(e) => e.stopPropagation()}>
         <input
           type="checkbox"
           className="h-4 w-4 rounded border-input text-primary focus:ring-primary cursor-pointer transition-all"
@@ -5007,8 +5353,8 @@ function VariantDesktopRow({
         />
       </td>
 
-      {/* Combined Variant Attributes */}
-      <td className="px-2 py-3 text-start align-middle" onClick={(e) => e.stopPropagation()}>
+      {/* Variant & Identity (Col 2) */}
+      <td className="px-3 py-3 text-start align-middle" onClick={(e) => e.stopPropagation()}>
         {isEditingAttrs ? (
           <div className="flex flex-col gap-2.5 p-3 bg-card/95 backdrop-blur-md border border-primary/30 rounded-2xl w-[320px] sm:w-[350px] shadow-xl animate-in fade-in zoom-in-95 duration-150 relative z-40">
             {sizeAxis.visible && (
@@ -5035,19 +5381,15 @@ function VariantDesktopRow({
                   >
                     {SIZE_UNITS.map((u) => (
                       <option key={u} value={u}>
-                        {u || "—"}
+                        {isAr ? SIZE_UNIT_LABELS[u]?.ar || u : SIZE_UNIT_LABELS[u]?.en || u || "—"}
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
             )}
-            {(colorAxis.visible || fabricAxis.visible) && (
-              <div
-                className={`grid ${
-                  colorAxis.visible && fabricAxis.visible ? "grid-cols-2" : "grid-cols-1"
-                } gap-2`}
-              >
+            {(colorAxis.visible || fabricAxis.visible || fourAxis.visible || fiveAxis.visible) && (
+              <div className="grid grid-cols-2 gap-2">
                 {colorAxis.visible && (
                   <div>
                     <span className="text-xs font-bold text-muted-foreground block mb-1">
@@ -5071,6 +5413,32 @@ function VariantDesktopRow({
                       value={fabricVal}
                       onChange={(e) => setFabricVal(e.target.value)}
                       placeholder={fabricAxis.label}
+                    />
+                  </div>
+                )}
+                {fourAxis.visible && (
+                  <div>
+                    <span className="text-xs font-bold text-muted-foreground block mb-1">
+                      {fourAxis.label}
+                    </span>
+                    <input
+                      className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      value={fourVal}
+                      onChange={(e) => setFourVal(e.target.value)}
+                      placeholder={fourAxis.label}
+                    />
+                  </div>
+                )}
+                {fiveAxis.visible && (
+                  <div>
+                    <span className="text-xs font-bold text-muted-foreground block mb-1">
+                      {fiveAxis.label}
+                    </span>
+                    <input
+                      className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      value={fiveVal}
+                      onChange={(e) => setFiveVal(e.target.value)}
+                      placeholder={fiveAxis.label}
                     />
                   </div>
                 )}
@@ -5101,247 +5469,293 @@ function VariantDesktopRow({
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-1.5 flex-wrap group/v">
-            {[
-              sizeAxis.visible && v.size,
-              colorAxis.visible && v.color,
-              fabricAxis.visible && v.fabric,
-            ].some(Boolean) ? (
-              <>
-                {sizeAxis.visible && v.size && (
-                  <span className="inline-flex items-center bg-primary/5 text-primary text-xs font-semibold px-2 py-0.5 border border-primary/10 rounded-md">
-                    {v.size} {v.size_unit || ""}
-                  </span>
-                )}
-                {colorAxis.visible && v.color && (
-                  <span className="inline-flex items-center bg-muted text-foreground text-xs font-semibold px-2 py-0.5 border border-border rounded-md gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground shrink-0" />
-                    {v.color}
-                  </span>
-                )}
-                {fabricAxis.visible && v.fabric && (
-                  <span className="inline-flex items-center bg-muted text-foreground text-xs font-semibold px-2 py-0.5 border border-border rounded-md">
-                    {v.fabric}
-                  </span>
-                )}
-              </>
-            ) : (
-              <span className="text-muted-foreground text-xs italic">
-                {isAr ? "متغير قياسي" : "Standard Variant"}
-              </span>
-            )}
+          <div className="flex flex-col gap-1.5 min-w-0">
+            {/* Top Line: Thumbnail & Attribute Badges */}
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="shrink-0">
+                <VariantImageUploader
+                  brandId={brand.id}
+                  imageUrl={v.image_url}
+                  onChange={(url) => update(v, { image_url: url })}
+                  isAr={isAr}
+                />
+              </div>
 
-            {!renderBarcodeCol && (v.barcode || v.sku) && (
-              <span className="inline-flex items-center gap-1 font-mono text-xs text-muted-foreground bg-muted/70 px-1.5 py-0.5 rounded-md border border-border-subtle shrink-0">
-                <Barcode className="h-3 w-3 text-primary/80" />
-                <span>{v.barcode || v.sku}</span>
-              </span>
-            )}
+              <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0 group/v">
+                {(() => {
+                  const split = splitCompositeVariantSize(v.size, v.size_unit);
+                  const hasAttributes = Boolean(
+                    v.size || v.color || v.fabric || v.option_four || v.option_five,
+                  );
 
-            <button
-              type="button"
-              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground opacity-0 group-hover/v:opacity-100 transition-opacity"
-              onClick={() => setIsEditingAttrs(true)}
-              title={isAr ? "تعديل الخصائص" : "Edit attributes"}
-            >
-              <Pencil className="h-3 w-3" />
-            </button>
+                  if (!hasAttributes) {
+                    return (
+                      <span className="text-muted-foreground text-xs italic">
+                        {isAr ? "متغير قياسي" : "Standard Variant"}
+                      </span>
+                    );
+                  }
+
+                  return (
+                    <>
+                      {v.size && (
+                        <span className="inline-flex items-center bg-primary/10 text-primary text-xs font-bold px-2 py-0.5 border border-primary/20 rounded-md">
+                          {split.isComposite
+                            ? `${split.size} ${isAr ? (split.unit === "g" ? "غرام" : split.unit) : split.unit}`
+                            : formatSizeWithUnit(v.size, v.size_unit, isAr ? "ar" : "en")}
+                        </span>
+                      )}
+                      {split.isComposite && !v.color && split.option && (
+                        <span className="inline-flex items-center bg-muted/80 text-foreground text-xs font-semibold px-2 py-0.5 border border-border rounded-md gap-1">
+                          <Sparkles className="h-3 w-3 text-primary" />
+                          {split.option}
+                        </span>
+                      )}
+                      {v.color && (
+                        <span className="inline-flex items-center bg-muted text-foreground text-xs font-semibold px-2 py-0.5 border border-border rounded-md gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground shrink-0" />
+                          {v.color}
+                        </span>
+                      )}
+                      {v.fabric && (
+                        <span className="inline-flex items-center bg-muted text-foreground text-xs font-semibold px-2 py-0.5 border border-border rounded-md">
+                          {v.fabric}
+                        </span>
+                      )}
+                      {v.option_four && (
+                        <span className="inline-flex items-center bg-muted text-foreground text-xs font-semibold px-2 py-0.5 border border-border rounded-md">
+                          {v.option_four}
+                        </span>
+                      )}
+                      {v.option_five && (
+                        <span className="inline-flex items-center bg-muted text-foreground text-xs font-semibold px-2 py-0.5 border border-border rounded-md">
+                          {v.option_five}
+                        </span>
+                      )}
+                    </>
+                  );
+                })()}
+
+                <button
+                  type="button"
+                  className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground opacity-0 group-hover/v:opacity-100 transition-opacity"
+                  onClick={() => setIsEditingAttrs(true)}
+                  title={isAr ? "تعديل الخصائص" : "Edit attributes"}
+                >
+                  <Pencil className="h-3 w-3" />
+                </button>
+              </div>
+            </div>
+
+            {/* Bottom Line: SKU & Barcode Controls */}
+            {(viewMode === "full" || viewMode === "barcodes") ? (
+              <div className="flex items-center gap-2 pt-1 border-t border-border/40 flex-wrap">
+                <div className="flex items-center gap-1 bg-muted/30 hover:bg-muted/50 rounded-lg px-2 py-0.5 border border-border/60 transition-colors">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
+                    {t("inventory.sku")}:
+                  </span>
+                  <input
+                    className="h-6 w-24 bg-transparent font-mono text-xs font-semibold outline-none focus:text-primary placeholder:text-muted-foreground/40"
+                    defaultValue={v.sku ?? ""}
+                    onBlur={(e) => update(v, { sku: e.target.value || null })}
+                    placeholder="—"
+                  />
+                </div>
+
+                <div className="flex items-center gap-1 bg-muted/30 hover:bg-muted/50 rounded-lg px-2 py-0.5 border border-border/60 transition-colors">
+                  <Barcode className="h-3.5 w-3.5 text-muted-foreground/80 shrink-0" />
+                  <span className="text-[10px] font-bold text-muted-foreground shrink-0">
+                    {barcodeLabel}:
+                  </span>
+                  <input
+                    className="h-6 w-28 bg-transparent font-mono text-xs font-semibold outline-none focus:text-primary placeholder:text-muted-foreground/40"
+                    defaultValue={v.barcode ?? ""}
+                    onBlur={(e) => update(v, { barcode: e.target.value.trim() || null })}
+                    placeholder={isAr ? "بدون باركود" : "None"}
+                  />
+                  <button
+                    type="button"
+                    title={isAr ? "توليد باركود تلقائياً" : "Generate barcode"}
+                    className="h-5.5 w-5.5 flex items-center justify-center rounded hover:bg-background text-muted-foreground hover:text-primary transition-colors active:scale-95 shadow-2xs shrink-0"
+                    onClick={() => update(v, { barcode: genBarcode() })}
+                  >
+                    <Wand2 className="h-3 w-3" />
+                  </button>
+                </div>
+
+                {v.barcode && (
+                  <PrintLabelButton
+                    label={isAr ? "طباعة" : "Print"}
+                    data={{
+                      code: v.barcode,
+                      productName,
+                      size: v.size,
+                      color: v.color,
+                      price: v.selling_price,
+                      businessName,
+                    }}
+                  />
+                )}
+              </div>
+            ) : (v.barcode || v.sku) ? (
+              <div className="flex items-center gap-2 pt-0.5 flex-wrap">
+                {v.sku && (
+                  <span className="inline-flex items-center font-mono text-[10px] text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded border border-border-subtle shrink-0">
+                    SKU: {v.sku}
+                  </span>
+                )}
+                {v.barcode && (
+                  <span className="inline-flex items-center gap-1 font-mono text-[10px] text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded border border-border-subtle shrink-0">
+                    <Barcode className="h-3 w-3 text-muted-foreground" />
+                    <span>{v.barcode}</span>
+                  </span>
+                )}
+                {v.barcode && (
+                  <PrintLabelButton
+                    label={isAr ? "طباعة" : "Print"}
+                    data={{
+                      code: v.barcode,
+                      productName,
+                      size: v.size,
+                      color: v.color,
+                      price: v.selling_price,
+                      businessName,
+                    }}
+                  />
+                )}
+              </div>
+            ) : null}
           </div>
         )}
       </td>
 
-      {/* Image Column */}
-      {renderImageCol && (
-        <td className="px-2 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-          <div className="flex justify-center">
-            <VariantImageUploader
-              brandId={brand.id}
-              imageUrl={v.image_url}
-              onChange={(url) => update(v, { image_url: url })}
-              isAr={isAr}
-            />
-          </div>
-        </td>
-      )}
-
-      {/* SKU Column */}
-      {renderSkuCol && (
-        <td className="px-2 py-3 text-start" onClick={(e) => e.stopPropagation()}>
-          <input
-            className="w-full bg-transparent hover:bg-muted/30 focus:bg-background border border-transparent hover:border-input focus:border-input px-2 py-1 rounded-md transition outline-none font-mono text-xs"
-            defaultValue={v.sku ?? ""}
-            onBlur={(e) => update(v, { sku: e.target.value || null })}
-            placeholder="—"
-          />
-        </td>
-      )}
-
-      {/* Barcode Column */}
-      {renderBarcodeCol && (
-        <td className="px-2 py-3 text-start" onClick={(e) => e.stopPropagation()}>
-          <div className="flex min-w-0 items-center gap-1.5">
-            <input
-              className="min-w-0 flex-1 bg-transparent hover:bg-muted/30 focus:bg-background border border-transparent hover:border-input focus:border-input px-2 py-1 rounded-md transition font-mono text-xs outline-none"
-              placeholder={isAr ? "بدون" : "None"}
-              defaultValue={v.barcode ?? ""}
-              onBlur={(e) => update(v, { barcode: e.target.value.trim() || null })}
-            />
-            <button
-              type="button"
-              title={isAr ? "توليد باركود" : "Generate barcode"}
-              className="text-muted-foreground hover:text-primary p-1 rounded-md hover:bg-secondary active:scale-95 transition touch-manipulation"
-              onClick={(e) => {
-                e.preventDefault();
-                update(v, { barcode: genBarcode() });
-              }}
-            >
-              <Wand2 className="h-3 w-3" />
-            </button>
-            {v.barcode && (
-              <PrintLabelButton
-                label={isAr ? "طباعة" : "Print"}
-                data={{
-                  code: v.barcode,
-                  productName,
-                  size: v.size,
-                  color: v.color,
-                  price: v.selling_price,
-                  businessName,
-                }}
-              />
-            )}
-          </div>
-        </td>
-      )}
-
-      {/* Cost Column */}
-      {canViewFinancials && (
-        <td className="px-2 py-3 text-center">
+      {/* Pricing & Financials (Col 3) */}
+      <td className="w-48 px-2 py-3 text-center align-middle" onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-col items-center gap-1">
           <PremiumCurrencyInput
-            value={costVal}
-            onChange={setCostVal}
-            onBlur={(e) => update(v, { cost_price: Number(e.target.value) })}
-            disabled
+            value={sellingVal}
+            onChange={setSellingVal}
+            onBlur={(e) => commitSalePrice(e.target.value)}
+            onClear={() => commitSalePrice("")}
+            clearLabel={isAr ? "إزالة التخفيض" : "Remove sale"}
+            placeholder={String(product?.base_price ?? "0.000")}
           />
-        </td>
-      )}
-
-      {/* Price Column */}
-      <td className="px-2 py-3 text-center">
-        <PremiumCurrencyInput
-          value={sellingVal}
-          onChange={setSellingVal}
-          onBlur={(e) => commitSalePrice(e.target.value)}
-          onClear={() => commitSalePrice("")}
-          clearLabel={isAr ? "إزالة التخفيض" : "Remove sale"}
-          placeholder={String(product?.base_price ?? "0.000")}
-        />
-      </td>
-
-      {/* Original Price Column */}
-      <td className="px-2 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-        <input
-          type="number"
-          step="0.001"
-          min="0"
-          className="w-full h-9 px-2 text-center bg-muted/40 border border-transparent rounded-lg font-medium text-xs max-w-[100px] disabled:opacity-100"
-          value={product?.base_price ?? 0}
-          disabled
-        />
-      </td>
-
-      {/* Margin Column */}
-      {canViewFinancials && (
-        <td className="px-2 py-3 text-center">
-          {(() => {
-            let marginBg =
-              "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/30";
-            if (currentMargin < 20) {
-              marginBg =
-                "bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-900/30";
-            } else if (currentMargin < 50) {
-              marginBg =
-                "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/30";
-            }
-            return (
+          {viewMode === "full" && canViewFinancials ? (
+            <div className="flex items-center justify-center gap-1 mt-1 pt-1 border-t border-border/40 w-full">
+              <span className="text-[10px] font-bold text-muted-foreground shrink-0">
+                {isAr ? "التكلفة:" : "Cost:"}
+              </span>
+              <div className="relative inline-flex items-center w-22 shrink-0">
+                <input
+                  type="number"
+                  step="0.001"
+                  className="h-7 w-full ps-1 pe-5.5 text-center rounded-lg border border-input bg-background text-xs font-mono font-bold focus:ring-2 focus:ring-primary/20 outline-none"
+                  value={costVal}
+                  onChange={(e) => setCostVal(e.target.value)}
+                  onBlur={(e) => update(v, { cost_price: Number(e.target.value) })}
+                  placeholder="0.000"
+                />
+                <span className="absolute end-1 text-[8.5px] font-black text-muted-foreground pointer-events-none">
+                  BHD
+                </span>
+              </div>
               <span
-                className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${marginBg}`}
+                className={`inline-flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-black border shrink-0 ${marginBg}`}
+                title={isAr ? "هامش الربح" : "Profit margin"}
               >
-                <TrendingUp className="h-3 w-3" />
+                <TrendingUp className="h-2.5 w-2.5" />
                 {currentMargin.toFixed(0)}%
               </span>
-            );
-          })()}
-        </td>
-      )}
-
-      {/* Stock Main */}
-      <td className="px-2 py-3 text-center">
-        <StockStepper
-          value={v.stock_main ?? 0}
-          onChange={(val) => update(v, { stock_main: val })}
-        />
-      </td>
-
-      {/* Stock Incubator */}
-      <td className="px-2 py-3 text-center">
-        <StockStepper
-          value={v.stock_incubator ?? 0}
-          onChange={(val) => update(v, { stock_incubator: val })}
-        />
-      </td>
-
-      {/* Stock Total Run Rate Column */}
-      <td className="px-2 py-3 text-center">
-        <div className="font-extrabold text-sm text-foreground">
-          {(v.stock_main ?? 0) + (v.stock_incubator ?? 0)}
-        </div>
-        {(() => {
-          const stock = (v.stock_main ?? 0) + (v.stock_incubator ?? 0);
-          const qtySold = salesByVariant.get(v.id) || 0;
-          const variantCreatedAt = v.created_at ? new Date(v.created_at) : null;
-          const daysElapsed = variantCreatedAt
-            ? Math.max(
-                1,
-                Math.min(
-                  45,
-                  Math.ceil(
-                    (new Date().getTime() - variantCreatedAt.getTime()) / (1000 * 60 * 60 * 24),
-                  ),
-                ),
-              )
-            : 45;
-          const dailyVelocity = qtySold / daysElapsed;
-
-          let runRateText = isAr ? "لا مبيعات" : "No sales";
-          let runRateColor = "text-muted-foreground text-xs";
-
-          if (stock <= 0) {
-            runRateText = isAr ? "نفد" : "Out of stock";
-            runRateColor = "text-rose-600 dark:text-rose-400 font-bold text-xs";
-          } else if (dailyVelocity > 0) {
-            const days = Math.ceil(stock / dailyVelocity);
-            runRateText = isAr ? `ينفد في ${days} ي` : `${days} d left`;
-            runRateColor =
-              days <= 7
-                ? "text-amber-600 dark:text-amber-400 font-bold text-xs"
-                : "text-emerald-600 dark:text-emerald-400 font-medium text-xs";
-          }
-
-          return (
-            <div className={`text-xs mt-0.5 whitespace-nowrap leading-none ${runRateColor}`}>
-              {runRateText}
             </div>
-          );
-        })()}
+          ) : (
+            <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground flex-wrap">
+              {canViewFinancials && (
+                <span>
+                  {isAr ? "التكلفة" : "Cost"}: <strong className="font-mono text-foreground">{costVal || "0"}</strong>
+                </span>
+              )}
+              {canViewFinancials && (
+                <span
+                  className={`inline-flex items-center justify-center gap-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold border ${marginBg}`}
+                >
+                  <TrendingUp className="h-2.5 w-2.5" />
+                  {currentMargin.toFixed(0)}%
+                </span>
+              )}
+              {Number(v.original_price || 0) > Number(v.selling_price || 0) && (
+                <span className="line-through text-muted-foreground/60 text-[10px]">
+                  {v.original_price}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
       </td>
 
-      {/* Delete button */}
-      <td className="px-2 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-        <InventoryDeleteAction
-          message={t("inventory.deleteVariantConfirm")}
-          onConfirm={() => del(v.id)}
-        />
+      {/* Stock & Inventory (Col 4) */}
+      <td className="w-56 px-2 py-3 text-center align-middle" onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-col items-center gap-1">
+          <div className="flex items-center justify-center gap-1.5">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight shrink-0">
+              {isAr ? "المحل:" : "Store:"}
+            </span>
+            <StockStepper
+              value={v.stock_main ?? 0}
+              onChange={(val) => update(v, { stock_main: val })}
+            />
+          </div>
+          {viewMode === "full" ? (
+            <div className="flex flex-col items-center gap-1 mt-1 pt-1 border-t border-border/40 w-full">
+              <div className="flex items-center justify-center gap-1.5">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight shrink-0">
+                  {isAr ? "حاضنة:" : "Inc:"}
+                </span>
+                <StockStepper
+                  value={v.stock_incubator ?? 0}
+                  onChange={(val) => update(v, { stock_incubator: val })}
+                />
+              </div>
+              <span className={`text-[10px] font-medium leading-none ${runRateColor}`}>
+                {runRateText}
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-2 text-[11px] flex-wrap">
+              {(v.stock_incubator ?? 0) > 0 && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-semibold text-[10px] border border-border-subtle">
+                  {isAr ? "حاضنة:" : "Inc:"} <strong className="ms-1 text-foreground">{v.stock_incubator}</strong>
+                </span>
+              )}
+              <span className={`text-[11px] whitespace-nowrap leading-none ${runRateColor}`}>
+                {runRateText}
+              </span>
+            </div>
+          )}
+        </div>
+      </td>
+
+      {/* Actions (Col 5) */}
+      <td className="w-20 px-2 py-3 text-center align-middle" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-center gap-1">
+          {onDuplicate && (
+            <button
+              type="button"
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+              onClick={() => onDuplicate(v)}
+              title={
+                isAr
+                  ? "تكرار هذا المتغير (إضافة خيار بنفس المقاس/الوزن)"
+                  : "Duplicate variant (add option with same size)"
+              }
+            >
+              <Copy className="h-4 w-4" />
+            </button>
+          )}
+          <InventoryDeleteAction
+            message={t("inventory.deleteVariantConfirm")}
+            onConfirm={() => del(v.id)}
+          />
+        </div>
       </td>
     </tr>
   );
@@ -5363,6 +5777,10 @@ function VariantMobileCard({
   isSelected,
   onToggleSelect,
   product,
+  sizeAxis,
+  colorAxis,
+  fabricAxis,
+  onDuplicate,
 }: {
   v: Variant;
   canViewFinancials: boolean;
@@ -5379,6 +5797,10 @@ function VariantMobileCard({
   isSelected: boolean;
   onToggleSelect: () => void;
   product?: Product;
+  sizeAxis?: VariantAxisConfig;
+  colorAxis?: VariantAxisConfig;
+  fabricAxis?: VariantAxisConfig;
+  onDuplicate?: (v: Variant) => void;
 }) {
   const [costVal, setCostVal] = useState(String(v.cost_price));
   const [sellingVal, setSellingVal] = useState(
@@ -5421,6 +5843,10 @@ function VariantMobileCard({
     update(v, { selling_price: salePrice });
   };
 
+  const isSizeVis = sizeAxis ? sizeAxis.visible : true;
+  const isColorVis = colorAxis ? colorAxis.visible : true;
+  const isFabricVis = fabricAxis ? fabricAxis.visible : true;
+
   return (
     <div
       className={`rounded-xl border p-4 space-y-3.5 shadow-sm transition-all bg-background ${isSelected ? "border-primary bg-primary/5/10" : "border-border"}`}
@@ -5435,32 +5861,78 @@ function VariantMobileCard({
             onChange={onToggleSelect}
           />
           <div className="flex items-center gap-1.5 flex-wrap">
-            {[v.size, v.color, v.fabric].some(Boolean) ? (
-              <>
-                {v.size && (
-                  <span className="inline-flex items-center bg-primary/5 text-primary text-xs font-bold px-1.5 py-0.5 border border-primary/10 rounded-sm">
-                    {v.size} {v.size_unit || ""}
+            {(() => {
+              const split = splitCompositeVariantSize(v.size, v.size_unit);
+              const hasAttributes = Boolean(
+                v.size || v.color || v.fabric || v.option_four || v.option_five,
+              );
+
+              if (!hasAttributes) {
+                return (
+                  <span className="text-muted-foreground text-xs italic font-semibold">
+                    {isAr ? "متغير قياسي" : "Standard Variant"}
                   </span>
-                )}
-                {v.color && (
-                  <span className="inline-flex items-center bg-muted text-foreground text-xs font-bold px-1.5 py-0.5 border border-border rounded-sm">
-                    {v.color}
-                  </span>
-                )}
-                {v.fabric && (
-                  <span className="inline-flex items-center bg-muted text-foreground text-xs font-bold px-1.5 py-0.5 border border-border rounded-sm">
-                    {v.fabric}
-                  </span>
-                )}
-              </>
-            ) : (
-              <span className="text-muted-foreground text-xs italic font-semibold">
-                {isAr ? "متغير قياسي" : "Standard Variant"}
-              </span>
-            )}
+                );
+              }
+
+              return (
+                <>
+                  {v.size && (
+                    <span className="inline-flex items-center bg-primary/5 text-primary text-xs font-bold px-1.5 py-0.5 border border-primary/10 rounded-sm">
+                      {split.isComposite
+                        ? `${split.size} ${isAr ? (split.unit === "g" ? "غرام" : split.unit) : split.unit}`
+                        : formatSizeWithUnit(v.size, v.size_unit, isAr ? "ar" : "en")}
+                    </span>
+                  )}
+                  {split.isComposite && !v.color && split.option && (
+                    <span className="inline-flex items-center bg-primary/10 text-primary text-xs font-bold px-1.5 py-0.5 border border-primary/20 rounded-sm gap-1">
+                      <Sparkles className="h-2.5 w-2.5" />
+                      {split.option}
+                    </span>
+                  )}
+                  {v.color && (
+                    <span className="inline-flex items-center bg-muted text-foreground text-xs font-bold px-1.5 py-0.5 border border-border rounded-sm">
+                      {v.color}
+                    </span>
+                  )}
+                  {v.fabric && (
+                    <span className="inline-flex items-center bg-muted text-foreground text-xs font-bold px-1.5 py-0.5 border border-border rounded-sm">
+                      {v.fabric}
+                    </span>
+                  )}
+                  {v.option_four && (
+                    <span className="inline-flex items-center bg-muted text-foreground text-xs font-bold px-1.5 py-0.5 border border-border rounded-sm">
+                      {v.option_four}
+                    </span>
+                  )}
+                  {v.option_five && (
+                    <span className="inline-flex items-center bg-muted text-foreground text-xs font-bold px-1.5 py-0.5 border border-border rounded-sm">
+                      {v.option_five}
+                    </span>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
-        <div onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          {onDuplicate && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 text-muted-foreground hover:text-primary hover:bg-primary/10 touch-manipulation"
+              onClick={() => onDuplicate(v)}
+              title={
+                isAr
+                  ? "تكرار هذا المتغير (إضافة خيار بنفس المقاس/الوزن)"
+                  : "Duplicate variant (add option with same size)"
+              }
+              aria-label={isAr ? "تكرار هذا المتغير" : "Duplicate variant"}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          )}
           <InventoryDeleteAction
             message={t("inventory.deleteVariantConfirm")}
             onConfirm={() => del(v.id)}
@@ -5513,8 +5985,8 @@ function VariantMobileCard({
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs text-center text-xs">
                   {isAr
-                    ? "القطع المعروضة في محلات خارجية أو حاضنات شريكة بنظام الأمانة/العُهدة."
-                    : "Items held at partner boutiques or business incubators under consignment."}
+                    ? "القطع المعروضة في محلات خارجية أو حاضنات شريكة."
+                    : "Items held at partner boutiques or business incubators."}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -5676,6 +6148,313 @@ function VariantMobileCard({
   );
 }
 
+function ManageProductAxesDialog({
+  productId,
+  product,
+  onChanged,
+}: {
+  productId: string;
+  product?: Product;
+  onChanged: () => void;
+}) {
+  const { lang } = useI18n();
+  const isAr = lang === "ar";
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const [form, setForm] = useState({
+    variant_label_size_ar: product?.variant_label_size_ar ?? "",
+    variant_label_size_en: product?.variant_label_size_en ?? "",
+    variant_label_color_ar: product?.variant_label_color_ar ?? "",
+    variant_label_color_en: product?.variant_label_color_en ?? "",
+    variant_label_fabric_ar: product?.variant_label_fabric_ar ?? "",
+    variant_label_fabric_en: product?.variant_label_fabric_en ?? "",
+    variant_label_four_ar: product?.variant_label_four_ar ?? "",
+    variant_label_four_en: product?.variant_label_four_en ?? "",
+    variant_label_five_ar: product?.variant_label_five_ar ?? "",
+    variant_label_five_en: product?.variant_label_five_en ?? "",
+  });
+
+  useEffect(() => {
+    if (open) {
+      setForm({
+        variant_label_size_ar: product?.variant_label_size_ar ?? "",
+        variant_label_size_en: product?.variant_label_size_en ?? "",
+        variant_label_color_ar: product?.variant_label_color_ar ?? "",
+        variant_label_color_en: product?.variant_label_color_en ?? "",
+        variant_label_fabric_ar: product?.variant_label_fabric_ar ?? "",
+        variant_label_fabric_en: product?.variant_label_fabric_en ?? "",
+        variant_label_four_ar: product?.variant_label_four_ar ?? "",
+        variant_label_four_en: product?.variant_label_four_en ?? "",
+        variant_label_five_ar: product?.variant_label_five_ar ?? "",
+        variant_label_five_en: product?.variant_label_five_en ?? "",
+      });
+    }
+  }, [open, product]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const { error } = await (supabase.from("products") as any)
+        .update({
+          variant_label_size_ar: form.variant_label_size_ar.trim() || null,
+          variant_label_size_en: form.variant_label_size_en.trim() || null,
+          variant_label_color_ar: form.variant_label_color_ar.trim() || null,
+          variant_label_color_en: form.variant_label_color_en.trim() || null,
+          variant_label_fabric_ar: form.variant_label_fabric_ar.trim() || null,
+          variant_label_fabric_en: form.variant_label_fabric_en.trim() || null,
+          variant_label_four_ar: form.variant_label_four_ar.trim() || null,
+          variant_label_four_en: form.variant_label_four_en.trim() || null,
+          variant_label_five_ar: form.variant_label_five_ar.trim() || null,
+          variant_label_five_en: form.variant_label_five_en.trim() || null,
+        })
+        .eq("id", productId);
+
+      if (error) throw error;
+
+      toast.success(
+        isAr ? "تم حفظ وتحديث خصائص ومحاور المنتج بنجاح!" : "Variant axes updated successfully!",
+      );
+      setOpen(false);
+      onChanged();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update axes");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const applyPreset = (ar: string, en: string) => {
+    if (!form.variant_label_color_ar) {
+      setForm((prev) => ({ ...prev, variant_label_color_ar: ar, variant_label_color_en: en }));
+    } else if (!form.variant_label_fabric_ar) {
+      setForm((prev) => ({ ...prev, variant_label_fabric_ar: ar, variant_label_fabric_en: en }));
+    } else if (!form.variant_label_four_ar) {
+      setForm((prev) => ({ ...prev, variant_label_four_ar: ar, variant_label_four_en: en }));
+    } else if (!form.variant_label_five_ar) {
+      setForm((prev) => ({ ...prev, variant_label_five_ar: ar, variant_label_five_en: en }));
+    } else {
+      toast.info(
+        isAr
+          ? "جميع المحاور مستخدمة بالفعل، يمكنك تعديلها يدوياً أدناه."
+          : "All axes are assigned. You can edit them manually below.",
+      );
+    }
+  };
+
+  const presets = [
+    { ar: "النكهة", en: "Flavor" },
+    { ar: "نوع التغليف", en: "Packaging" },
+    { ar: "الحشوة", en: "Filling" },
+    { ar: "درجة التحميص", en: "Roast Level" },
+    { ar: "الإضافات", en: "Add-ons" },
+    { ar: "الخامة", en: "Fabric" },
+  ];
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 px-2.5 rounded-lg text-xs font-bold gap-1.5 hover:bg-secondary/40 touch-manipulation"
+        >
+          <Sliders className="h-3.5 w-3.5" />
+          <span>{isAr ? "خصائص ومحاور المنتج" : "Customize Axes"}</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-base font-black">
+            {isAr ? "🏷️ تخصيص أسماء الخصائص والمحاور" : "🏷️ Customize Variant Attributes & Axes"}
+          </DialogTitle>
+          <p className="text-xs text-muted-foreground">
+            {isAr
+              ? "تحكم في أسماء الأعمدة والخيارات لمتغيرات هذا المنتج (حتى 5 محاور مستقلة) لتظهر بشكل مخصص ومثالي في لوحة التحكم والمتجر."
+              : "Customize column titles and options for this product (up to 5 independent axes) across admin and storefront."}
+          </p>
+        </DialogHeader>
+
+        {/* Quick Presets */}
+        <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
+          <span className="text-xs font-bold text-muted-foreground block">
+            {isAr ? "⚡ نماذج واقتراحات سريعة بنقرة واحدة:" : "⚡ Quick Presets (1-click add):"}
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {presets.map((p) => (
+              <button
+                key={p.ar}
+                type="button"
+                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-background border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                onClick={() => applyPreset(p.ar, p.en)}
+              >
+                + {isAr ? p.ar : p.en}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-3 py-2">
+          {/* Axis 1: Size */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 rounded-xl border border-border bg-card">
+            <div>
+              <Label className="text-xs font-bold text-muted-foreground">
+                {isAr
+                  ? "المحور 1: المقاس / الحجم / الوزن (عربي)"
+                  : "Axis 1: Size / Weight (Arabic)"}
+              </Label>
+              <Input
+                className="mt-1 h-8 text-xs"
+                placeholder={isAr ? "المقاس أو الوزن أو الحجم" : "Size or Weight"}
+                value={form.variant_label_size_ar}
+                onChange={(e) => setForm({ ...form, variant_label_size_ar: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-bold text-muted-foreground">
+                {isAr ? "المحور 1: بالإنجليزية" : "Axis 1: English"}
+              </Label>
+              <Input
+                className="mt-1 h-8 text-xs"
+                placeholder="Size / Weight"
+                value={form.variant_label_size_en}
+                onChange={(e) => setForm({ ...form, variant_label_size_en: e.target.value })}
+              />
+            </div>
+          </div>
+
+          {/* Axis 2: Color / Flavor */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 rounded-xl border border-border bg-card">
+            <div>
+              <Label className="text-xs font-bold text-muted-foreground">
+                {isAr
+                  ? "المحور 2: اللون / النكهة / الخيار (عربي)"
+                  : "Axis 2: Color / Flavor / Option (Arabic)"}
+              </Label>
+              <Input
+                className="mt-1 h-8 text-xs"
+                placeholder={isAr ? "اللون أو النكهة أو الخيار" : "Color / Flavor / Option"}
+                value={form.variant_label_color_ar}
+                onChange={(e) => setForm({ ...form, variant_label_color_ar: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-bold text-muted-foreground">
+                {isAr ? "المحور 2: بالإنجليزية" : "Axis 2: English"}
+              </Label>
+              <Input
+                className="mt-1 h-8 text-xs"
+                placeholder="Color / Flavor / Option"
+                value={form.variant_label_color_en}
+                onChange={(e) => setForm({ ...form, variant_label_color_en: e.target.value })}
+              />
+            </div>
+          </div>
+
+          {/* Axis 3: Fabric / Packaging */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 rounded-xl border border-border bg-card">
+            <div>
+              <Label className="text-xs font-bold text-muted-foreground">
+                {isAr
+                  ? "المحور 3: الخامة / التغليف / مخصص (عربي)"
+                  : "Axis 3: Fabric / Packaging / Custom (Arabic)"}
+              </Label>
+              <Input
+                className="mt-1 h-8 text-xs"
+                placeholder={isAr ? "الخامة أو نوع التغليف" : "Fabric or Packaging"}
+                value={form.variant_label_fabric_ar}
+                onChange={(e) => setForm({ ...form, variant_label_fabric_ar: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-bold text-muted-foreground">
+                {isAr ? "المحور 3: بالإنجليزية" : "Axis 3: English"}
+              </Label>
+              <Input
+                className="mt-1 h-8 text-xs"
+                placeholder="Fabric / Packaging"
+                value={form.variant_label_fabric_en}
+                onChange={(e) => setForm({ ...form, variant_label_fabric_en: e.target.value })}
+              />
+            </div>
+          </div>
+
+          {/* Axis 4: Roast / Filling */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 rounded-xl border border-border bg-card">
+            <div>
+              <Label className="text-xs font-bold text-muted-foreground">
+                {isAr
+                  ? "المحور 4: الحشوة / درجة التحميص (عربي)"
+                  : "Axis 4: Filling / Roast (Arabic)"}
+              </Label>
+              <Input
+                className="mt-1 h-8 text-xs"
+                placeholder={isAr ? "الحشوة أو درجة التحميص" : "Filling or Roast"}
+                value={form.variant_label_four_ar}
+                onChange={(e) => setForm({ ...form, variant_label_four_ar: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-bold text-muted-foreground">
+                {isAr ? "المحور 4: بالإنجليزية" : "Axis 4: English"}
+              </Label>
+              <Input
+                className="mt-1 h-8 text-xs"
+                placeholder="Filling / Roast"
+                value={form.variant_label_four_en}
+                onChange={(e) => setForm({ ...form, variant_label_four_en: e.target.value })}
+              />
+            </div>
+          </div>
+
+          {/* Axis 5: Add-ons / Extras */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3 rounded-xl border border-border bg-card">
+            <div>
+              <Label className="text-xs font-bold text-muted-foreground">
+                {isAr
+                  ? "المحور 5: الإضافات / المرفقات (عربي)"
+                  : "Axis 5: Add-ons / Extras (Arabic)"}
+              </Label>
+              <Input
+                className="mt-1 h-8 text-xs"
+                placeholder={isAr ? "الإضافات أو المرفقات" : "Add-ons or Inclusions"}
+                value={form.variant_label_five_ar}
+                onChange={(e) => setForm({ ...form, variant_label_five_ar: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-bold text-muted-foreground">
+                {isAr ? "المحور 5: بالإنجليزية" : "Axis 5: English"}
+              </Label>
+              <Input
+                className="mt-1 h-8 text-xs"
+                placeholder="Add-ons / Inclusions"
+                value={form.variant_label_five_en}
+                onChange={(e) => setForm({ ...form, variant_label_five_en: e.target.value })}
+              />
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={saving}>
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button type="button" onClick={handleSave} disabled={saving} className="gap-1.5">
+            {saving ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <Check className="h-4 w-4" />
+            )}
+            <span>{isAr ? "حفظ وتطبيق الخصائص" : "Save & Apply Axes"}</span>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function VariantList({
   productId,
   productName,
@@ -5698,12 +6477,148 @@ function VariantList({
   const isAr = lang === "ar";
   const { canViewFinancials } = useProfile();
   const brand = useBrand();
+  const { profile: storeProfile } = useAdminStoreProfile(brand.id);
+  const { addons } = useAddons();
+  const addonAxisDefaults = useMemo(
+    () => variantAxisDefaultsFrom(addons.length > 0 ? addons : storeProfile?.addons),
+    [addons, storeProfile?.addons],
+  );
+  const sizeAxis = resolveVariantAxis({
+    axis: "size",
+    product,
+    addonDefaults: addonAxisDefaults,
+    lang: isAr ? "ar" : "en",
+  });
+  const rawColorAxis = resolveVariantAxis({
+    axis: "color",
+    product,
+    addonDefaults: addonAxisDefaults,
+    lang: isAr ? "ar" : "en",
+  });
+  const hasVariantColors = useMemo(
+    () => variants.some((v) => Boolean(v.color && v.color.trim())),
+    [variants],
+  );
+  const colorAxis = useMemo(
+    () => ({
+      ...rawColorAxis,
+      visible: rawColorAxis.visible || hasVariantColors,
+    }),
+    [rawColorAxis, hasVariantColors],
+  );
+  const rawFabricAxis = resolveVariantAxis({
+    axis: "fabric",
+    product,
+    addonDefaults: addonAxisDefaults,
+    lang: isAr ? "ar" : "en",
+  });
+  const hasVariantFabrics = useMemo(
+    () => variants.some((v) => Boolean(v.fabric && v.fabric.trim())),
+    [variants],
+  );
+  const fabricAxis = useMemo(
+    () => ({
+      ...rawFabricAxis,
+      visible: rawFabricAxis.visible || hasVariantFabrics,
+    }),
+    [rawFabricAxis, hasVariantFabrics],
+  );
+
+  const rawFourAxis = resolveVariantAxis({
+    axis: "four",
+    product,
+    addonDefaults: addonAxisDefaults,
+    lang: isAr ? "ar" : "en",
+  });
+  const hasVariantFour = useMemo(
+    () => variants.some((v) => Boolean(v.option_four && v.option_four.trim())),
+    [variants],
+  );
+  const fourAxis = useMemo(
+    () => ({
+      ...rawFourAxis,
+      visible: rawFourAxis.visible || hasVariantFour,
+    }),
+    [rawFourAxis, hasVariantFour],
+  );
+
+  const rawFiveAxis = resolveVariantAxis({
+    axis: "five",
+    product,
+    addonDefaults: addonAxisDefaults,
+    lang: isAr ? "ar" : "en",
+  });
+  const hasVariantFive = useMemo(
+    () => variants.some((v) => Boolean(v.option_five && v.option_five.trim())),
+    [variants],
+  );
+  const fiveAxis = useMemo(
+    () => ({
+      ...rawFiveAxis,
+      visible: rawFiveAxis.visible || hasVariantFive,
+    }),
+    [rawFiveAxis, hasVariantFive],
+  );
+
+  // 1-Click Auto-Healer: Detect variants where size contains merged attributes (e.g. "700 - عادية" with color null)
+  const [isHealing, setIsHealing] = useState(false);
+  const compositeVariants = useMemo(() => {
+    return variants.filter((v) => {
+      if (v.color && v.color.trim()) return false;
+      const split = splitCompositeVariantSize(v.size, v.size_unit);
+      return split.isComposite;
+    });
+  }, [variants]);
+
+  const handleAutoHealCompositeVariants = async () => {
+    if (compositeVariants.length === 0) return;
+    setIsHealing(true);
+    try {
+      for (const v of compositeVariants) {
+        const split = splitCompositeVariantSize(v.size, v.size_unit);
+        if (split.isComposite) {
+          const { error: vErr } = await (supabase.from("product_variants") as any)
+            .update({
+              size: split.size,
+              size_unit: split.unit || v.size_unit || "g",
+              color: split.option,
+            })
+            .eq("id", v.id);
+          if (vErr) throw vErr;
+        }
+      }
+
+      if (!product?.variant_label_color_ar) {
+        const { error: pErr } = await (supabase.from("products") as any)
+          .update({
+            variant_label_color_ar: colorAxis.label || "النكهة / الخيار",
+            variant_label_color_en: "Flavor / Option",
+          })
+          .eq("id", productId);
+        if (pErr) console.warn("Could not update product axis label:", pErr);
+      }
+
+      toast.success(
+        isAr
+          ? `تم بنجاح فرز وتصحيح ${compositeVariants.length} متغيرات وتفعيل محور النكهات!`
+          : `Successfully healed ${compositeVariants.length} variants into clean sizes & options!`,
+      );
+      onChanged();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to auto-heal variants");
+    } finally {
+      setIsHealing(false);
+    }
+  };
+
   const [adding, setAdding] = useState(false);
   const empty = {
     size: "",
     size_unit: "",
     color: "",
     fabric: "",
+    option_four: "",
+    option_five: "",
     sku: "",
     barcode: "",
     cost_price: String(product?.cost_price ?? 0),
@@ -5715,13 +6630,40 @@ function VariantList({
   };
   const [row, setRow] = useState(empty);
 
-  const startAdding = () => {
-    setRow({
-      ...empty,
-      cost_price: String(product?.cost_price ?? 0),
-      selling_price: "",
-      original_price: String(product?.base_price ?? 0),
-    });
+  const startAdding = (cloneFrom?: Variant) => {
+    if (cloneFrom) {
+      setRow({
+        ...empty,
+        size: cloneFrom.size ?? "",
+        size_unit: cloneFrom.size_unit ?? "",
+        color: "", // merchant only types the new flavor/option!
+        fabric: cloneFrom.fabric ?? "",
+        option_four: cloneFrom.option_four ?? "",
+        option_five: cloneFrom.option_five ?? "",
+        cost_price: String(cloneFrom.cost_price ?? product?.cost_price ?? 0),
+        selling_price: cloneFrom.selling_price ? String(cloneFrom.selling_price) : "",
+        original_price: cloneFrom.original_price
+          ? String(cloneFrom.original_price)
+          : String(product?.base_price ?? 0),
+        stock_main: String(cloneFrom.stock_main ?? 0),
+        stock_incubator: String(cloneFrom.stock_incubator ?? 0),
+      });
+    } else {
+      // Smart prefill: if existing variants share a common size or price, reuse it to save typing!
+      const existingSize = variants.find((v) => v.size)?.size ?? "";
+      const existingUnit = variants.find((v) => v.size_unit)?.size_unit ?? (SIZE_UNITS[0] || "");
+      const existingPrice =
+        variants.length > 0 && variants[0].selling_price ? String(variants[0].selling_price) : "";
+
+      setRow({
+        ...empty,
+        size: existingSize,
+        size_unit: existingUnit,
+        cost_price: String(product?.cost_price ?? 0),
+        selling_price: existingPrice,
+        original_price: String(product?.base_price ?? 0),
+      });
+    }
     setAdding(true);
   };
 
@@ -5763,14 +6705,28 @@ function VariantList({
       );
       return;
     }
+
+    const split = splitCompositeVariantSize(row.size, row.size_unit);
+    let finalSize = row.size;
+    let finalUnit = row.size_unit;
+    let finalColor = row.color;
+
+    if (split.isComposite && !finalColor) {
+      finalSize = split.size;
+      finalUnit = split.unit;
+      finalColor = split.option;
+    }
+
     const { error } = await (supabase.from("product_variants") as any).insert({
       user_id: user.id,
       brand_id: brand.id,
       product_id: productId,
-      size: row.size || null,
-      size_unit: row.size_unit || null,
-      color: row.color || null,
-      fabric: row.fabric || null,
+      size: (sizeAxis.visible ? finalSize : null) || null,
+      size_unit: (sizeAxis.visible ? finalUnit : null) || null,
+      color: (colorAxis.visible || finalColor ? finalColor : null) || null,
+      fabric: (fabricAxis.visible ? row.fabric : null) || null,
+      option_four: (fourAxis.visible ? row.option_four : null) || null,
+      option_five: (fiveAxis.visible ? row.option_five : null) || null,
       sku: row.sku || null,
       barcode: row.barcode.trim() || null,
       cost_price: Number(product?.cost_price ?? 0),
@@ -5787,6 +6743,17 @@ function VariantList({
       image_url: row.image_url || null,
     });
     if (error) return toast.error(error.message);
+    prefetchOptionTranslations([finalColor, row.fabric, row.option_four, row.option_five], isAr);
+
+    if (finalColor && !product?.variant_label_color_ar) {
+      await (supabase.from("products") as any)
+        .update({
+          variant_label_color_ar: colorAxis.label || "النكهة / الخيار",
+          variant_label_color_en: "Flavor / Option",
+        })
+        .eq("id", productId);
+    }
+
     if (variants.length === 0) {
       const { error: activationError } = await supabase
         .from("products")
@@ -5843,7 +6810,10 @@ function VariantList({
       .update(normalizedPatch)
       .eq("id", v.id);
     if (error) toast.error(error.message);
-    else onChanged();
+    else {
+      prefetchOptionTranslations([normalizedPatch.color, normalizedPatch.fabric, normalizedPatch.option_four, normalizedPatch.option_five], isAr);
+      onChanged();
+    }
   };
 
   const del = async (id: string) => {
@@ -5853,13 +6823,13 @@ function VariantList({
   };
 
   const mainLabel = isAr ? "مخزون المحل" : "Store Stock";
-  const incLabel = isAr ? "مخزون الأمانة / الحاضنة" : "Consignment / Incubator";
+  const incLabel = isAr ? "مخزون الحاضنة" : "Incubator Stock";
   const mainTooltip = isAr
     ? "القطع المتوفرة فعلياً داخل متجرك والجاهزة للبيع المباشر والشحن للعملاء."
     : "Physical stock in your primary store, ready for instant sale and shipping.";
   const incTooltip = isAr
-    ? "القطع المعروضة في محلات خارجية أو حاضنات تجارية شريكة بنظام الأمانة/العُهدة."
-    : "Items held at partner boutiques or business incubators under consignment.";
+    ? "القطع المعروضة في محلات خارجية أو حاضنات تجارية شريكة."
+    : "Items held at partner boutiques or business incubators.";
   const barcodeLabel = isAr ? "الباركود" : "Barcode";
 
   // State for dynamic columns compacting / hiding
@@ -5996,26 +6966,61 @@ function VariantList({
     }
   };
 
-  // Auto-calculated total table width
-  const totalTableWidth =
-    44 +
-    270 +
-    (renderImageCol ? 96 : 0) +
-    (renderSkuCol ? 120 : 0) +
-    (renderBarcodeCol ? 190 : 0) +
-    (canViewFinancials ? 110 : 0) +
-    110 +
-    110 +
-    (canViewFinancials ? 96 : 0) +
-    115 +
-    115 +
-    88 +
-    60;
-
   return (
     <div className="mt-4 border-t border-border pt-4">
+      {/* 1-Click Smart Split & Auto-Healer Banner */}
+      {compositeVariants.length > 0 && (
+        <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="flex items-start sm:items-center gap-2.5">
+            <span className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0 mt-0.5 sm:mt-0">
+              <Sparkles className="h-4 w-4" />
+            </span>
+            <div className="text-xs">
+              <span className="font-bold text-foreground block sm:inline">
+                {isAr
+                  ? `رصد النظام دمجاً للوزن والنكهة في (${compositeVariants.length}) متغيرات:`
+                  : `Detected merged size and flavor in (${compositeVariants.length}) variants:`}
+              </span>{" "}
+              <span className="text-muted-foreground">
+                {compositeVariants
+                  .slice(0, 3)
+                  .map((v) => `"${v.size}"`)
+                  .join("، ")}
+                {isAr
+                  ? " — هل ترغب في فرزها وتوزيعها تلقائياً إلى محورين مستقلين؟"
+                  : " — Would you like to automatically split them into separate weight and flavor axes?"}
+              </span>
+            </div>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            disabled={isHealing}
+            onClick={handleAutoHealCompositeVariants}
+            className="shrink-0 h-8 text-xs font-bold gap-1.5 w-full sm:w-auto"
+          >
+            {isHealing ? (
+              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Zap className="h-3.5 w-3.5" />
+            )}
+            <span>
+              {isAr
+                ? "فرز وتصحيح المتغيرات تلقائياً (بنقرة واحدة)"
+                : "Auto-Heal & Split Variants (1-Click)"}
+            </span>
+          </Button>
+        </div>
+      )}
+
       {/* Mobile Stacked Card View */}
       <div className="space-y-4 md:hidden">
+        <div className="flex items-center justify-between gap-2 pb-1">
+          <div className="text-xs font-bold text-muted-foreground">
+            {variants.length} {isAr ? "متغيرات" : "variants"}
+          </div>
+          <ManageProductAxesDialog productId={productId} product={product} onChanged={onChanged} />
+        </div>
         {variants.map((v) => (
           <VariantMobileCard
             key={v.id}
@@ -6034,6 +7039,10 @@ function VariantList({
             isSelected={selectedIds.has(v.id)}
             onToggleSelect={() => toggleSelect(v.id)}
             product={product}
+            sizeAxis={sizeAxis}
+            colorAxis={colorAxis}
+            fabricAxis={fabricAxis}
+            onDuplicate={startAdding}
           />
         ))}
 
@@ -6044,61 +7053,89 @@ function VariantList({
               {t("inventory.addVariant")}
             </div>
             <div className="grid grid-cols-2 gap-3.5">
-              <div>
-                <Label className="text-xs font-bold text-muted-foreground uppercase">
-                  {(isAr ? product?.variant_label_size_ar : product?.variant_label_size_en) ||
-                    product?.variant_label_size_en ||
-                    product?.variant_label_size_ar ||
-                    t("inventory.size")}
-                </Label>
-                <Input
-                  className="mt-1 h-9 rounded-md text-xs"
-                  value={row.size}
-                  onChange={(e) => setRow({ ...row, size: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label className="text-xs font-bold text-muted-foreground uppercase">
-                  {isAr ? "الوحدة" : "Unit"}
-                </Label>
-                <select
-                  className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2.5 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                  value={row.size_unit}
-                  onChange={(e) => setRow({ ...row, size_unit: e.target.value })}
-                >
-                  {SIZE_UNITS.map((u) => (
-                    <option key={u} value={u}>
-                      {u || "—"}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <Label className="text-xs font-bold text-muted-foreground uppercase">
-                  {(isAr ? product?.variant_label_color_ar : product?.variant_label_color_en) ||
-                    product?.variant_label_color_en ||
-                    product?.variant_label_color_ar ||
-                    t("inventory.color")}
-                </Label>
-                <Input
-                  className="mt-1 h-9 rounded-md text-xs"
-                  value={row.color}
-                  onChange={(e) => setRow({ ...row, color: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label className="text-xs font-bold text-muted-foreground uppercase">
-                  {(isAr ? product?.variant_label_fabric_ar : product?.variant_label_fabric_en) ||
-                    product?.variant_label_fabric_en ||
-                    product?.variant_label_fabric_ar ||
-                    t("inventory.fabric")}
-                </Label>
-                <Input
-                  className="mt-1 h-9 rounded-md text-xs"
-                  value={row.fabric}
-                  onChange={(e) => setRow({ ...row, fabric: e.target.value })}
-                />
-              </div>
+              {sizeAxis.visible && (
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">
+                    {sizeAxis.label}
+                  </Label>
+                  <Input
+                    className="mt-1 h-9 rounded-md text-xs"
+                    value={row.size}
+                    placeholder={sizeAxis.label}
+                    onChange={(e) => setRow({ ...row, size: e.target.value })}
+                  />
+                </div>
+              )}
+              {sizeAxis.visible && (
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">
+                    {isAr ? `وحدة ${sizeAxis.label}` : "Unit"}
+                  </Label>
+                  <select
+                    className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2.5 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    value={row.size_unit}
+                    onChange={(e) => setRow({ ...row, size_unit: e.target.value })}
+                  >
+                    {SIZE_UNITS.map((u) => (
+                      <option key={u} value={u}>
+                        {isAr ? SIZE_UNIT_LABELS[u]?.ar || u : SIZE_UNIT_LABELS[u]?.en || u || "—"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {colorAxis.visible && (
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">
+                    {colorAxis.label}
+                  </Label>
+                  <Input
+                    className="mt-1 h-9 rounded-md text-xs"
+                    value={row.color}
+                    placeholder={colorAxis.label}
+                    onChange={(e) => setRow({ ...row, color: e.target.value })}
+                  />
+                </div>
+              )}
+              {fabricAxis.visible && (
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">
+                    {fabricAxis.label}
+                  </Label>
+                  <Input
+                    className="mt-1 h-9 rounded-md text-xs"
+                    value={row.fabric}
+                    placeholder={fabricAxis.label}
+                    onChange={(e) => setRow({ ...row, fabric: e.target.value })}
+                  />
+                </div>
+              )}
+              {fourAxis.visible && (
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">
+                    {fourAxis.label}
+                  </Label>
+                  <Input
+                    className="mt-1 h-9 rounded-md text-xs"
+                    value={row.option_four}
+                    placeholder={fourAxis.label}
+                    onChange={(e) => setRow({ ...row, option_four: e.target.value })}
+                  />
+                </div>
+              )}
+              {fiveAxis.visible && (
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">
+                    {fiveAxis.label}
+                  </Label>
+                  <Input
+                    className="mt-1 h-9 rounded-md text-xs"
+                    value={row.option_five}
+                    placeholder={fiveAxis.label}
+                    onChange={(e) => setRow({ ...row, option_five: e.target.value })}
+                  />
+                </div>
+              )}
               <div>
                 <Label className="text-xs font-bold text-muted-foreground uppercase">
                   {t("inventory.sku")}
@@ -6273,7 +7310,7 @@ function VariantList({
               <Zap className="h-3.5 w-3.5" />
               <span>{isAr ? "الأسعار والمخزون السريع" : "Quick Stock & Prices"}</span>
               <span className="text-xs font-black uppercase px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 ms-1">
-                {isAr ? "بدون تمرير" : "Zero Scroll"}
+                {isAr ? "مدمج" : "Compact"}
               </span>
             </button>
 
@@ -6301,25 +7338,29 @@ function VariantList({
             >
               <TableProperties className="h-3.5 w-3.5" />
               <span>{isAr ? "المصفوفة الكاملة" : "Full Matrix"}</span>
+              <span className="text-xs font-black uppercase px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30 ms-1">
+                {isAr ? "بدون تمرير" : "Zero Scroll"}
+              </span>
             </button>
           </div>
 
-          <div className="text-xs font-bold text-muted-foreground px-2">
-            {variants.length} {isAr ? "متغيرات" : "variants"}
+          <div className="flex items-center gap-2 px-2">
+            <ManageProductAxesDialog
+              productId={productId}
+              product={product}
+              onChanged={onChanged}
+            />
+            <div className="text-xs font-bold text-muted-foreground">
+              {variants.length} {isAr ? "متغيرات" : "variants"}
+            </div>
           </div>
         </div>
 
-        <div className="w-full overflow-x-auto os-scrollbar">
-          <table
-            className="w-full text-xs text-start border-collapse"
-            style={{ minWidth: totalTableWidth }}
-          >
+        <div className="w-full">
+          <table className="w-full text-xs text-start border-collapse table-fixed">
             <thead>
               <tr className="text-start text-xs border-b bg-muted/40 font-semibold text-muted-foreground">
-                <th
-                  className="px-2 py-3 text-center align-middle"
-                  style={{ width: 44, minWidth: 44 }}
-                >
+                <th className="w-10 px-2 py-3 text-center align-middle">
                   <input
                     type="checkbox"
                     className="h-4 w-4 rounded border-input text-primary focus:ring-primary cursor-pointer transition-all"
@@ -6327,91 +7368,30 @@ function VariantList({
                     onChange={toggleSelectAll}
                   />
                 </th>
-                <th
-                  className="px-2 py-3 text-start font-black text-xs"
-                  style={{ width: 270, minWidth: 260 }}
-                >
+                <th className="px-3 py-3 text-start font-black text-xs">
                   {(() => {
-                    const sizeLbl =
-                      (isAr ? product?.variant_label_size_ar : product?.variant_label_size_en) ||
-                      product?.variant_label_size_en ||
-                      product?.variant_label_size_ar ||
-                      (isAr ? "المقاس" : "Size");
-                    const colorLbl =
-                      (isAr ? product?.variant_label_color_ar : product?.variant_label_color_en) ||
-                      product?.variant_label_color_en ||
-                      product?.variant_label_color_ar ||
-                      (isAr ? "اللون" : "Color");
-                    const fabricLbl =
-                      (isAr
-                        ? product?.variant_label_fabric_ar
-                        : product?.variant_label_fabric_en) ||
-                      product?.variant_label_fabric_en ||
-                      product?.variant_label_fabric_ar ||
-                      (isAr ? "الخامة" : "Fabric");
-                    return isAr
-                      ? `المتغير (${sizeLbl} / ${colorLbl} / ${fabricLbl})`
-                      : `Variant (${sizeLbl} / ${colorLbl} / ${fabricLbl})`;
+                    const visibleLabels = [
+                      sizeAxis.visible ? sizeAxis.label : null,
+                      colorAxis.visible ? colorAxis.label : null,
+                      fabricAxis.visible ? fabricAxis.label : null,
+                      fourAxis.visible ? fourAxis.label : null,
+                      fiveAxis.visible ? fiveAxis.label : null,
+                    ].filter(Boolean);
+                    const axisSummary =
+                      visibleLabels.length > 0
+                        ? visibleLabels.join(" / ")
+                        : isAr
+                          ? "الخصائص"
+                          : "Attributes";
+                    return isAr ? `المتغير والتعريف (${axisSummary})` : `Variant & Identity (${axisSummary})`;
                   })()}
                 </th>
-                {renderImageCol && (
-                  <th
-                    className="px-2 py-3 text-center font-black text-xs"
-                    style={{ width: 96, minWidth: 96 }}
-                  >
-                    {isAr ? "الصورة" : "Image"}
-                  </th>
-                )}
-                {renderSkuCol && (
-                  <th
-                    className="px-2 py-3 text-start font-black text-xs"
-                    style={{ width: 120, minWidth: 110 }}
-                  >
-                    {t("inventory.sku")}
-                  </th>
-                )}
-                {renderBarcodeCol && (
-                  <th
-                    className="px-2 py-3 text-start font-black text-xs"
-                    style={{ width: 190, minWidth: 180 }}
-                  >
-                    {barcodeLabel}
-                  </th>
-                )}
-                {canViewFinancials && (
-                  <th
-                    className="px-2 py-3 text-center font-black text-xs"
-                    style={{ width: 110, minWidth: 100 }}
-                  >
-                    {t("inventory.cost")}
-                  </th>
-                )}
-                <th
-                  className="px-2 py-3 text-center font-black text-xs"
-                  style={{ width: 110, minWidth: 105 }}
-                >
-                  {isAr ? "السعر اللي يدفعه العميل" : "Customer Price"}
+                <th className="w-48 px-2 py-3 text-center font-black text-xs">
+                  {isAr ? "السعر والأرباح" : "Price & Profit"}
                 </th>
-                <th
-                  className="px-2 py-3 text-center font-black text-xs"
-                  style={{ width: 110, minWidth: 105 }}
-                >
-                  {isAr ? "السعر الأساسي" : "Base Price"}
-                </th>
-                {canViewFinancials && (
-                  <th
-                    className="px-2 py-3 text-center font-black text-xs"
-                    style={{ width: 96, minWidth: 90 }}
-                  >
-                    {t("inventory.margin")}
-                  </th>
-                )}
-                <th
-                  className="px-2 py-3 text-center font-black text-xs"
-                  style={{ width: 115, minWidth: 105 }}
-                >
+                <th className="w-56 px-2 py-3 text-center font-black text-xs">
                   <div className="inline-flex items-center justify-center gap-1">
-                    <span>{mainLabel}</span>
+                    <span>{isAr ? "المخزون والتوزيع" : "Stock & Inventory"}</span>
                     <TooltipProvider delayDuration={200}>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -6430,39 +7410,11 @@ function VariantList({
                   </div>
                 </th>
                 <th
-                  className="px-2 py-3 text-center font-black text-xs"
-                  style={{ width: 115, minWidth: 105 }}
-                >
-                  <div className="inline-flex items-center justify-center gap-1">
-                    <span>{incLabel}</span>
-                    <TooltipProvider delayDuration={200}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            type="button"
-                            className="text-muted-foreground hover:text-foreground"
-                          >
-                            <HelpCircle className="h-3 w-3" />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="max-w-xs text-center text-xs">
-                          {incTooltip}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                </th>
-                <th
-                  className="px-2 py-3 text-center font-black text-xs"
-                  style={{ width: 88, minWidth: 80 }}
-                >
-                  {t("inventory.stock")}
-                </th>
-                <th
-                  className="px-2 py-3 text-center"
-                  style={{ width: 60, minWidth: 60 }}
+                  className="w-20 px-2 py-3 text-center font-black text-xs"
                   aria-label={isAr ? "الإجراءات" : "Actions"}
-                ></th>
+                >
+                  {isAr ? "إجراء" : "Action"}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -6488,78 +7440,20 @@ function VariantList({
                   renderSkuCol={renderSkuCol}
                   renderBarcodeCol={renderBarcodeCol}
                   product={product}
+                  onDuplicate={startAdding}
+                  viewMode={viewMode}
                 />
               ))}
 
-              {/* Adding desktop row (perfect matching design) */}
+              {/* Adding desktop row (perfect matching columnar design) */}
               {adding && (
                 <tr className="border-t border-border bg-secondary/30 animate-in fade-in duration-150">
-                  <td className="px-2 py-3 text-center"></td>
-                  {/* Variant (combined attributes inputs) */}
-                  <td className="px-2 py-3 align-middle">
-                    <div className="flex flex-col gap-1.5 w-full max-w-[260px]">
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <div className="flex gap-1 min-w-0">
-                          <Input
-                            className="h-8 flex-1 min-w-0 text-start text-xs font-semibold"
-                            value={row.size}
-                            onChange={(e) => setRow({ ...row, size: e.target.value })}
-                            placeholder={
-                              (isAr
-                                ? product?.variant_label_size_ar
-                                : product?.variant_label_size_en) ||
-                              product?.variant_label_size_en ||
-                              product?.variant_label_size_ar ||
-                              (isAr ? "المقاس" : "Size")
-                            }
-                          />
-                          <select
-                            className="h-8 rounded-md border border-input bg-background px-1 text-xs outline-none shrink-0"
-                            value={row.size_unit}
-                            onChange={(e) => setRow({ ...row, size_unit: e.target.value })}
-                            title={isAr ? "وحدة المقاس" : "Size unit"}
-                          >
-                            {SIZE_UNITS.map((u) => (
-                              <option key={u} value={u}>
-                                {u === "" ? "—" : u}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <Input
-                          className="h-8 w-full min-w-0 text-xs font-semibold"
-                          value={row.color}
-                          onChange={(e) => setRow({ ...row, color: e.target.value })}
-                          placeholder={
-                            (isAr
-                              ? product?.variant_label_color_ar
-                              : product?.variant_label_color_en) ||
-                            product?.variant_label_color_en ||
-                            product?.variant_label_color_ar ||
-                            (isAr ? "اللون" : "Color")
-                          }
-                        />
-                      </div>
-                      <Input
-                        className="h-8 w-full min-w-0 text-xs font-semibold"
-                        value={row.fabric}
-                        onChange={(e) => setRow({ ...row, fabric: e.target.value })}
-                        placeholder={
-                          (isAr
-                            ? product?.variant_label_fabric_ar
-                            : product?.variant_label_fabric_en) ||
-                          product?.variant_label_fabric_en ||
-                          product?.variant_label_fabric_ar ||
-                          "Fabric"
-                        }
-                      />
-                    </div>
-                  </td>
+                  <td className="w-10 px-2 py-3 text-center align-middle"></td>
 
-                  {/* Optional Image */}
-                  {renderImageCol && (
-                    <td className="px-2 py-3 text-center">
-                      <div className="flex justify-center">
+                  {/* Variant & Identity (Col 2) */}
+                  <td className="px-3 py-3 align-middle text-start">
+                    <div className="flex items-start gap-2.5">
+                      <div className="shrink-0 pt-0.5">
                         <VariantImageUploader
                           brandId={brand.id}
                           imageUrl={row.image_url}
@@ -6567,128 +7461,206 @@ function VariantList({
                           isAr={isAr}
                         />
                       </div>
-                    </td>
-                  )}
+                      <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                        {/* Attributes Inputs */}
+                        {(sizeAxis.visible || colorAxis.visible) && (
+                          <div
+                            className={`grid gap-1.5 ${
+                              sizeAxis.visible && colorAxis.visible ? "grid-cols-2" : "grid-cols-1"
+                            }`}
+                          >
+                            {sizeAxis.visible && (
+                              <div className="flex gap-1 min-w-0">
+                                <Input
+                                  className="h-8 flex-1 min-w-[70px] text-start text-xs font-semibold"
+                                  value={row.size}
+                                  onChange={(e) => setRow({ ...row, size: e.target.value })}
+                                  placeholder={sizeAxis.label}
+                                />
+                                <select
+                                  className="h-8 w-20 shrink-0 rounded-md border border-input bg-background px-1 text-xs outline-none"
+                                  value={row.size_unit}
+                                  onChange={(e) => setRow({ ...row, size_unit: e.target.value })}
+                                  title={isAr ? `وحدة ${sizeAxis.label}` : `${sizeAxis.label} unit`}
+                                >
+                                  {SIZE_UNITS.map((u) => (
+                                    <option key={u} value={u}>
+                                      {isAr
+                                        ? SIZE_UNIT_LABELS[u]?.ar || u
+                                        : SIZE_UNIT_LABELS[u]?.en || (u === "" ? "—" : u)}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+                            {colorAxis.visible && (
+                              <Input
+                                className="h-8 w-full min-w-[90px] text-xs font-semibold"
+                                value={row.color}
+                                onChange={(e) => setRow({ ...row, color: e.target.value })}
+                                placeholder={colorAxis.label}
+                              />
+                            )}
+                          </div>
+                        )}
+                        {(fabricAxis.visible || fourAxis.visible || fiveAxis.visible) && (
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {fabricAxis.visible && (
+                              <Input
+                                className="h-8 w-full min-w-0 text-xs font-semibold"
+                                value={row.fabric}
+                                onChange={(e) => setRow({ ...row, fabric: e.target.value })}
+                                placeholder={fabricAxis.label}
+                              />
+                            )}
+                            {fourAxis.visible && (
+                              <Input
+                                className="h-8 w-full min-w-0 text-xs font-semibold"
+                                value={row.option_four}
+                                onChange={(e) => setRow({ ...row, option_four: e.target.value })}
+                                placeholder={fourAxis.label}
+                              />
+                            )}
+                            {fiveAxis.visible && (
+                              <Input
+                                className="h-8 w-full min-w-0 text-xs font-semibold"
+                                value={row.option_five}
+                                onChange={(e) => setRow({ ...row, option_five: e.target.value })}
+                                placeholder={fiveAxis.label}
+                              />
+                            )}
+                          </div>
+                        )}
 
-                  {/* Optional SKU */}
-                  {renderSkuCol && (
-                    <td className="px-2 py-3">
-                      <Input
-                        className="h-8 w-full text-xs font-mono"
-                        value={row.sku}
-                        placeholder={isAr ? "كود المنتج" : "SKU"}
-                        onChange={(e) => setRow({ ...row, sku: e.target.value })}
-                      />
-                    </td>
-                  )}
-
-                  {/* Optional Barcode */}
-                  {renderBarcodeCol && (
-                    <td className="px-2 py-3">
-                      <div className="flex items-center gap-1">
-                        <Input
-                          className="h-8 w-full text-xs font-mono"
-                          value={row.barcode}
-                          placeholder={barcodeLabel}
-                          onChange={(e) => setRow({ ...row, barcode: e.target.value })}
-                        />
-                        <button
-                          type="button"
-                          title={isAr ? "توليد باركود" : "Generate barcode"}
-                          className="text-muted-foreground hover:text-primary p-1 rounded-sm hover:bg-secondary touch-manipulation active:scale-95 transition"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setRow({ ...row, barcode: genBarcode() });
-                          }}
-                        >
-                          <Wand2 className="h-3 w-3" />
-                        </button>
+                        {/* SKU & Barcode directly under attributes if in full matrix or barcodes mode */}
+                        {(viewMode === "full" || viewMode === "barcodes") && (
+                          <div className="flex items-center gap-2 mt-1.5 pt-1.5 border-t border-border/40 flex-wrap">
+                            <div className="flex items-center gap-1 bg-background rounded-lg px-2 py-0.5 border border-border">
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
+                                {t("inventory.sku")}:
+                              </span>
+                              <input
+                                className="h-6 w-24 bg-transparent font-mono text-xs font-semibold outline-none focus:text-primary placeholder:text-muted-foreground/40"
+                                value={row.sku}
+                                onChange={(e) => setRow({ ...row, sku: e.target.value })}
+                                placeholder={isAr ? "كود المنتج" : "SKU"}
+                              />
+                            </div>
+                            <div className="flex items-center gap-1 bg-background rounded-lg px-2 py-0.5 border border-border">
+                              <Barcode className="h-3.5 w-3.5 text-muted-foreground/80 shrink-0" />
+                              <span className="text-[10px] font-bold text-muted-foreground shrink-0">
+                                {barcodeLabel}:
+                              </span>
+                              <input
+                                className="h-6 w-28 bg-transparent font-mono text-xs font-semibold outline-none focus:text-primary placeholder:text-muted-foreground/40"
+                                value={row.barcode}
+                                onChange={(e) => setRow({ ...row, barcode: e.target.value })}
+                                placeholder={isAr ? "بدون باركود" : "None"}
+                              />
+                              <button
+                                type="button"
+                                title={isAr ? "توليد باركود تلقائياً" : "Generate barcode"}
+                                className="h-5.5 w-5.5 flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-primary transition-colors active:scale-95 shadow-2xs shrink-0"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setRow({ ...row, barcode: genBarcode() });
+                                }}
+                              >
+                                <Wand2 className="h-3 w-3" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </td>
-                  )}
-
-                  {/* Financials (Cost) */}
-                  {canViewFinancials && (
-                    <td className="px-2 py-3 text-center">
-                      <div className="relative inline-flex items-center w-full max-w-[100px] shrink-0">
-                        <Input
-                          className="h-8 w-full bg-muted/50 ps-2 pe-7 text-center text-xs font-bold text-muted-foreground disabled:cursor-not-allowed disabled:opacity-100"
-                          type="number"
-                          step="0.001"
-                          value={row.cost_price}
-                          disabled
-                        />
-                        <span className="absolute end-2 text-xs font-black text-muted-foreground pointer-events-none uppercase">
-                          BHD
-                        </span>
-                      </div>
-                    </td>
-                  )}
-
-                  {/* Selling Price */}
-                  <td className="px-2 py-3 text-center">
-                    <div className="relative inline-flex items-center w-full max-w-[100px] shrink-0">
-                      <Input
-                        className="h-8 w-full ps-2 pe-7 text-center text-xs font-bold"
-                        type="number"
-                        step="0.001"
-                        value={row.selling_price}
-                        placeholder={String(product?.base_price ?? "0.000")}
-                        onChange={(e) => setRow({ ...row, selling_price: e.target.value })}
-                      />
-                      <span className="absolute end-2 text-xs font-black text-muted-foreground pointer-events-none uppercase">
-                        BHD
-                      </span>
                     </div>
                   </td>
 
-                  {/* Original Price */}
-                  <td className="px-2 py-3 text-center">
-                    <Input
-                      className="h-8 w-full text-center text-xs max-w-[100px]"
-                      type="number"
-                      step="0.001"
-                      min="0"
-                      value={product?.base_price ?? 0}
-                      disabled
-                    />
+                  {/* Selling & Cost Price (Col 3) */}
+                  <td className="w-48 px-2 py-3 text-center align-middle">
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="relative inline-flex items-center w-full max-w-[130px]">
+                        <Input
+                          className="h-8 w-full ps-2 pe-7 text-center text-xs font-bold"
+                          type="number"
+                          step="0.001"
+                          value={row.selling_price}
+                          placeholder={String(product?.base_price ?? "0.000")}
+                          onChange={(e) => setRow({ ...row, selling_price: e.target.value })}
+                        />
+                        <span className="absolute end-2 text-[10px] font-black text-muted-foreground pointer-events-none uppercase">
+                          BHD
+                        </span>
+                      </div>
+                      {viewMode === "full" && canViewFinancials ? (
+                        <div className="flex items-center justify-center gap-1 mt-1 pt-1 border-t border-border/40 w-full">
+                          <span className="text-[10px] font-bold text-muted-foreground shrink-0">
+                            {isAr ? "التكلفة:" : "Cost:"}
+                          </span>
+                          <div className="relative inline-flex items-center w-22 shrink-0">
+                            <Input
+                              type="number"
+                              step="0.001"
+                              className="h-7 w-full ps-1 pe-5.5 text-center text-xs font-bold font-mono"
+                              value={row.cost_price}
+                              onChange={(e) => setRow({ ...row, cost_price: e.target.value })}
+                              placeholder="0.000"
+                            />
+                            <span className="absolute end-1 text-[8.5px] font-black text-muted-foreground pointer-events-none">
+                              BHD
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground">
+                          {isAr ? "الأساسي" : "Base"}: {product?.base_price ?? "0.000"}
+                        </span>
+                      )}
+                    </div>
                   </td>
 
-                  {/* Margin column (blank on add) */}
-                  {canViewFinancials && (
-                    <td className="px-2 py-3 text-center text-muted-foreground text-xs">—</td>
-                  )}
-
-                  {/* Main Stock */}
-                  <td className="px-2 py-3 text-center">
-                    <Input
-                      className="h-8 w-full text-center text-xs max-w-[80px] font-bold"
-                      type="number"
-                      value={row.stock_main}
-                      onChange={(e) => setRow({ ...row, stock_main: e.target.value })}
-                    />
+                  {/* Stock & Distribution (Col 4) */}
+                  <td className="w-56 px-2 py-3 text-center align-middle">
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight shrink-0">
+                          {isAr ? "المحل:" : "Store:"}
+                        </span>
+                        <Input
+                          className="h-8 w-22 text-center text-xs font-bold font-mono"
+                          type="number"
+                          value={row.stock_main}
+                          onChange={(e) => setRow({ ...row, stock_main: e.target.value })}
+                          placeholder="0"
+                        />
+                      </div>
+                      {viewMode === "full" ? (
+                        <div className="flex items-center justify-center gap-1.5 mt-1 pt-1 border-t border-border/40 w-full">
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight shrink-0">
+                            {isAr ? "حاضنة:" : "Inc:"}
+                          </span>
+                          <Input
+                            type="number"
+                            className="h-7 w-22 text-center text-xs font-bold font-mono"
+                            value={row.stock_incubator}
+                            onChange={(e) => setRow({ ...row, stock_incubator: e.target.value })}
+                            placeholder="0"
+                          />
+                        </div>
+                      ) : row.stock_incubator ? (
+                        <span className="text-[10px] text-muted-foreground font-semibold">
+                          {isAr ? "حاضنة:" : "Inc:"} {row.stock_incubator}
+                        </span>
+                      ) : null}
+                    </div>
                   </td>
 
-                  {/* Incubator Stock */}
-                  <td className="px-2 py-3 text-center">
-                    <Input
-                      className="h-8 w-full text-center text-xs max-w-[80px] font-bold"
-                      type="number"
-                      value={row.stock_incubator}
-                      onChange={(e) => setRow({ ...row, stock_incubator: e.target.value })}
-                    />
-                  </td>
-
-                  {/* Total stock */}
-                  <td className="px-2 py-3 text-center font-bold text-xs">
-                    {Number(row.stock_main || 0) + Number(row.stock_incubator || 0)}
-                  </td>
-                  <td className="px-2 py-3">
-                    <div className="flex justify-center gap-1.5">
+                  {/* Actions (Col 5) */}
+                  <td className="w-20 px-2 py-3 text-center align-middle">
+                    <div className="flex justify-center items-center gap-1">
                       <Button
                         type="button"
                         size="sm"
-                        className="h-8 px-3 rounded-lg text-xs font-bold"
+                        className="h-8 px-2.5 rounded-lg text-xs font-bold"
                         onClick={(e) => {
                           e.preventDefault();
                           add();
@@ -6742,6 +7714,7 @@ function VariantList({
             canViewFinancials={canViewFinancials}
             onChanged={onChanged}
           />
+          <ManageProductAxesDialog productId={productId} product={product} onChanged={onChanged} />
         </div>
       </div>
 

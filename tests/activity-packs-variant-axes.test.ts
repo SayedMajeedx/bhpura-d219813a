@@ -48,13 +48,13 @@ describe("Activity Packs & Variant Axes Resolution", () => {
       expect(defaults?.fabric).toBeNull();
     });
 
-    it("resolves food-beverage axis defaults (portion size, disabled color and fabric)", () => {
+    it("resolves food-beverage axis defaults (weight/size, flavor/option, disabled fabric)", () => {
       const defaults = variantAxisDefaultsFrom([
         { addon_id: "food-beverage", status: "installed" },
       ]);
       expect(defaults).toBeDefined();
-      expect(defaults?.size).toEqual({ ar: "الحجم", en: "Size" });
-      expect(defaults?.color).toBeNull();
+      expect(defaults?.size).toEqual({ ar: "الوزن / الحجم", en: "Weight / Size" });
+      expect(defaults?.color).toEqual({ ar: "النكهة / الخيار", en: "Flavor / Option" });
       expect(defaults?.fabric).toBeNull();
     });
 

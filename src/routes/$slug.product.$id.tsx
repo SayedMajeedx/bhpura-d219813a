@@ -18,6 +18,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { formatSizeWithUnit } from "@/lib/format";
+import { translateOptionValue } from "@/lib/variant-i18n";
+import { useVariantTranslations } from "@/lib/use-variant-translations";
 import {
   ChevronLeft,
   ChevronRight,
@@ -40,6 +42,7 @@ import { AddonSlot } from "@/components/addons/AddonSlot";
 import { useAddons } from "@/components/addons/AddonsProvider";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { variantAxisDefaultsFrom, resolveAllVariantAxes } from "@/lib/addons/addon-registry";
+import { formatCustomField } from "@/lib/addons/custom-fields";
 import { ProductShareModal } from "@/components/storefront/ProductShareModal";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { toast } from "sonner";
@@ -55,9 +58,37 @@ import { uploadPublicMedia } from "@/lib/r2-upload";
 import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
 
 export const Route = createFileRoute("/$slug/product/$id")({
-  loader: async ({ params }) => {
+  loader: async ({ params, location }) => {
+    let initialLang: "ar" | "en" = "ar";
+    const searchParams = location?.search as any;
+    const queryLang = searchParams?.lang;
+    if (queryLang === "en" || queryLang === "ar") {
+      initialLang = queryLang;
+    } else if (typeof window === "undefined") {
+      try {
+        const { getStorefrontInitialLang } = await import("@/lib/storefront-cookies.functions");
+        const cookieLang = await getStorefrontInitialLang({ data: { slug: params.slug } });
+        if (cookieLang === "en" || cookieLang === "ar") {
+          initialLang = cookieLang;
+        }
+      } catch {
+        /* fallback to default */
+      }
+    } else {
+      try {
+        const cookieMatch =
+          document.cookie.match(new RegExp(`(?:^|; )boutq_lang_${params.slug}=([^;]*)`)) ||
+          document.cookie.match(/(?:^|; )boutq_lang=([^;]*)/);
+        if (cookieMatch && (cookieMatch[1] === "en" || cookieMatch[1] === "ar")) {
+          initialLang = cookieMatch[1] as "ar" | "en";
+        }
+      } catch {
+        /* fallback */
+      }
+    }
+
     const brand = await fetchActiveBrandIdentity(params.slug);
-    if (!brand) return { product: null, recommendationCatalog: [], bestSellerRows: [] };
+    if (!brand) return { product: null, recommendationCatalog: [], bestSellerRows: [], initialLang };
 
     const [product, recommendationCatalog, bestSellerRows] = await Promise.all([
       fetchProductDetail(brand.id, params.id),
@@ -65,26 +96,30 @@ export const Route = createFileRoute("/$slug/product/$id")({
       fetchBestSellerRows(brand.slug, 10),
     ]);
 
-    return { product: product as any, recommendationCatalog, bestSellerRows };
+    return { product: product as any, recommendationCatalog, bestSellerRows, initialLang };
   },
   head: ({ loaderData, params }) => {
     const product = loaderData?.product as Product | null | undefined;
     if (!product) return { meta: [{ title: "Product not found" }] };
 
-    const name = product.name_ar || product.name_en || product.name;
-    const description = (
-      product.description_ar ||
-      product.description_en ||
-      product.description ||
-      name
-    )
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 160);
-    const title = `${name} | ${params.slug.toUpperCase()}`;
+    const lang = (loaderData as any)?.initialLang || "ar";
+    const name =
+      (lang === "ar"
+        ? (product.name_ar || product.name || product.name_en)
+        : (product.name_en || product.name || product.name_ar)) || "Product";
+    const rawDesc =
+      (lang === "ar"
+        ? (product.description_ar || product.description || product.description_en)
+        : (product.description_en || product.description || product.description_ar)) || name;
+    const description = rawDesc.replace(/\s+/g, " ").trim().slice(0, 160);
+    const title = `${name} | ${String(params?.slug || "").toUpperCase()}`;
     const image = product.image_url || undefined;
 
     return {
+      htmlAttrs: {
+        lang,
+        dir: lang === "ar" ? "rtl" : "ltr",
+      },
       meta: [
         { title },
         { name: "description", content: description },
@@ -114,6 +149,8 @@ type Variant = {
   size_unit: string | null;
   color: string | null;
   fabric: string | null;
+  option_four?: string | null;
+  option_five?: string | null;
   selling_price: number;
   original_price: number | null;
   stock_main: number;
@@ -152,6 +189,10 @@ type Product = {
   variant_label_color_en?: string | null;
   variant_label_fabric_ar?: string | null;
   variant_label_fabric_en?: string | null;
+  variant_label_four_ar?: string | null;
+  variant_label_four_en?: string | null;
+  variant_label_five_ar?: string | null;
+  variant_label_five_en?: string | null;
 };
 
 type RecommendationProduct = {
@@ -335,6 +376,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedFabric, setSelectedFabric] = useState<string | null>(null);
+  const [selectedOptionFour, setSelectedOptionFour] = useState<string | null>(null);
+  const [selectedOptionFive, setSelectedOptionFive] = useState<string | null>(null);
   const [sizeMode, setSizeMode] = useState<"ready" | "custom">("ready");
   const [measurementsApplied, setMeasurementsApplied] = useState(false);
   const [tailoringNotes, setTailoringNotes] = useState("");
@@ -346,8 +389,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     initialData: loaderData?.product ?? undefined,
     queryFn: async () => {
       const primaryFields =
-        "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, is_made_to_order, base_price, size_guide_id, size_guide_hidden, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main, stock_incubator, image_url)";
-      const fullFields = `${primaryFields}, variant_label_size_ar, variant_label_size_en, variant_label_color_ar, variant_label_color_en, variant_label_fabric_ar, variant_label_fabric_en`;
+        "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, is_made_to_order, base_price, size_guide_id, size_guide_hidden, product_variants(id, size, size_unit, color, fabric, option_four, option_five, selling_price, original_price, stock_main, stock_incubator, image_url)";
+      const fullFields = `${primaryFields}, variant_label_size_ar, variant_label_size_en, variant_label_color_ar, variant_label_color_en, variant_label_fabric_ar, variant_label_fabric_en, variant_label_four_ar, variant_label_four_en, variant_label_five_ar, variant_label_five_en`;
 
       const fetchByTargetId = async (targetId: string) => {
         // Try full fields with custom variant labels
@@ -411,16 +454,6 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     refetchOnWindowFocus: false,
   });
 
-  const addonAxisDefaults = useMemo(() => variantAxisDefaultsFrom(addons), [addons]);
-  const resolvedAxes = useMemo(
-    () =>
-      resolveAllVariantAxes({
-        product,
-        addonDefaults: addonAxisDefaults,
-        lang: lang === "ar" ? "ar" : "en",
-      }),
-    [product, addonAxisDefaults, lang],
-  );
 
   useEffect(() => {
     if (!product) return;
@@ -559,6 +592,68 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     return Array.from(new Set(fabrics));
   }, [variants]);
 
+  const uniqueFour = useMemo(() => {
+    const opts = variants.map((v) => v.option_four).filter(Boolean) as string[];
+    return Array.from(new Set(opts));
+  }, [variants]);
+
+  const uniqueFive = useMemo(() => {
+    const opts = variants.map((v) => v.option_five).filter(Boolean) as string[];
+    return Array.from(new Set(opts));
+  }, [variants]);
+
+  const allOptionTerms = useMemo(() => {
+    return [
+      ...uniqueSizes,
+      ...uniqueColors,
+      ...uniqueFabrics,
+      ...uniqueFour,
+      ...uniqueFive,
+    ];
+  }, [uniqueSizes, uniqueColors, uniqueFabrics, uniqueFour, uniqueFive]);
+
+  useVariantTranslations(allOptionTerms, lang === "ar" ? "ar" : "en");
+
+  const addonAxisDefaults = useMemo(() => variantAxisDefaultsFrom(addons), [addons]);
+  const resolvedAxes = useMemo(() => {
+    const base = resolveAllVariantAxes({
+      product,
+      addonDefaults: addonAxisDefaults,
+      lang: lang === "ar" ? "ar" : "en",
+    });
+    return {
+      size: {
+        ...base.size,
+        visible: base.size.visible || uniqueSizes.length > 0,
+      },
+      color: {
+        ...base.color,
+        visible: base.color.visible || uniqueColors.length > 0,
+      },
+      fabric: {
+        ...base.fabric,
+        visible: base.fabric.visible || uniqueFabrics.length > 0,
+      },
+      four: {
+        ...base.four,
+        visible: base.four.visible || uniqueFour.length > 0,
+      },
+      five: {
+        ...base.five,
+        visible: base.five.visible || uniqueFive.length > 0,
+      },
+    };
+  }, [
+    product,
+    addonAxisDefaults,
+    lang,
+    uniqueSizes,
+    uniqueColors,
+    uniqueFabrics,
+    uniqueFour,
+    uniqueFive,
+  ]);
+
   // Dynamic out of stock maps for each option dimension, checking current other active options
   const isColorOutOfStock = useMemo(() => {
     return uniqueColors.reduce(
@@ -567,7 +662,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           const colorMatch = v.color === col;
           const sizeMatch = !selectedSize || v.size === selectedSize;
           const fabricMatch = !selectedFabric || v.fabric === selectedFabric;
-          return colorMatch && sizeMatch && fabricMatch;
+          const fourMatch = !selectedOptionFour || v.option_four === selectedOptionFour;
+          const fiveMatch = !selectedOptionFive || v.option_five === selectedOptionFive;
+          return colorMatch && sizeMatch && fabricMatch && fourMatch && fiveMatch;
         });
         acc[col] =
           matching.length === 0 ||
@@ -576,7 +673,14 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       },
       {} as Record<string, boolean>,
     );
-  }, [uniqueColors, selectedSize, selectedFabric, variants]);
+  }, [
+    uniqueColors,
+    selectedSize,
+    selectedFabric,
+    selectedOptionFour,
+    selectedOptionFive,
+    variants,
+  ]);
 
   const isSizeOutOfStock = useMemo(() => {
     return uniqueSizes.reduce(
@@ -585,7 +689,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           const sizeMatch = v.size === sz;
           const colorMatch = !selectedColor || v.color === selectedColor;
           const fabricMatch = !selectedFabric || v.fabric === selectedFabric;
-          return colorMatch && sizeMatch && fabricMatch;
+          const fourMatch = !selectedOptionFour || v.option_four === selectedOptionFour;
+          const fiveMatch = !selectedOptionFive || v.option_five === selectedOptionFive;
+          return colorMatch && sizeMatch && fabricMatch && fourMatch && fiveMatch;
         });
         acc[sz] =
           matching.length === 0 ||
@@ -594,7 +700,14 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       },
       {} as Record<string, boolean>,
     );
-  }, [uniqueSizes, selectedColor, selectedFabric, variants]);
+  }, [
+    uniqueSizes,
+    selectedColor,
+    selectedFabric,
+    selectedOptionFour,
+    selectedOptionFive,
+    variants,
+  ]);
 
   const isFabricOutOfStock = useMemo(() => {
     return uniqueFabrics.reduce(
@@ -603,7 +716,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           const fabricMatch = v.fabric === fb;
           const colorMatch = !selectedColor || v.color === selectedColor;
           const sizeMatch = !selectedSize || v.size === selectedSize;
-          return colorMatch && sizeMatch && fabricMatch;
+          const fourMatch = !selectedOptionFour || v.option_four === selectedOptionFour;
+          const fiveMatch = !selectedOptionFive || v.option_five === selectedOptionFive;
+          return colorMatch && sizeMatch && fabricMatch && fourMatch && fiveMatch;
         });
         acc[fb] =
           matching.length === 0 ||
@@ -612,7 +727,52 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       },
       {} as Record<string, boolean>,
     );
-  }, [uniqueFabrics, selectedColor, selectedSize, variants]);
+  }, [
+    uniqueFabrics,
+    selectedColor,
+    selectedSize,
+    selectedOptionFour,
+    selectedOptionFive,
+    variants,
+  ]);
+
+  const isVisualColorAxis = useMemo(() => {
+    const label = (resolvedAxes.color.label || "").toLowerCase();
+    const isColorLabel = label.includes("لون") || label.includes("color");
+    const hasHexMatch = uniqueColors.some((c) => Boolean(resolveColorHex(c)));
+    return isColorLabel && hasHexMatch;
+  }, [resolvedAxes.color.label, uniqueColors]);
+
+  // Pre-select single options if an axis has only 1 choice available
+  useEffect(() => {
+    if (uniqueSizes.length === 1 && !selectedSize) {
+      setSelectedSize(uniqueSizes[0]);
+    }
+  }, [uniqueSizes, selectedSize]);
+
+  useEffect(() => {
+    if (uniqueColors.length === 1 && !selectedColor) {
+      setSelectedColor(uniqueColors[0]);
+    }
+  }, [uniqueColors, selectedColor]);
+
+  useEffect(() => {
+    if (uniqueFabrics.length === 1 && !selectedFabric) {
+      setSelectedFabric(uniqueFabrics[0]);
+    }
+  }, [uniqueFabrics, selectedFabric]);
+
+  useEffect(() => {
+    if (uniqueFour.length === 1 && !selectedOptionFour) {
+      setSelectedOptionFour(uniqueFour[0]);
+    }
+  }, [uniqueFour, selectedOptionFour]);
+
+  useEffect(() => {
+    if (uniqueFive.length === 1 && !selectedOptionFive) {
+      setSelectedOptionFive(uniqueFive[0]);
+    }
+  }, [uniqueFive, selectedOptionFive]);
 
   // Auto-initialize attributes only when a single variant is available
   useEffect(() => {
@@ -622,6 +782,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       setSelectedColor(first.color ?? null);
       setSelectedSize(first.size ?? null);
       setSelectedFabric(first.fabric ?? null);
+      setSelectedOptionFour(first.option_four ?? null);
+      setSelectedOptionFive(first.option_five ?? null);
     }
   }, [variants, variantId]);
 
@@ -631,14 +793,23 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       const colorMatch = !selectedColor || v.color === selectedColor;
       const sizeMatch = !selectedSize || v.size === selectedSize;
       const fabricMatch = !selectedFabric || v.fabric === selectedFabric;
-      return colorMatch && sizeMatch && fabricMatch;
+      const fourMatch = !selectedOptionFour || v.option_four === selectedOptionFour;
+      const fiveMatch = !selectedOptionFive || v.option_five === selectedOptionFive;
+      return colorMatch && sizeMatch && fabricMatch && fourMatch && fiveMatch;
     });
     if (match) {
       setVariantId(match.id);
     } else {
       setVariantId(null);
     }
-  }, [selectedColor, selectedSize, selectedFabric, variants]);
+  }, [
+    selectedColor,
+    selectedSize,
+    selectedFabric,
+    selectedOptionFour,
+    selectedOptionFive,
+    variants,
+  ]);
 
   // Dynamic image swapping based on selected color name matching media filename/URL
   useEffect(() => {
@@ -739,9 +910,18 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       const colorMatch = !selectedColor || v.color === selectedColor;
       const sizeMatch = !selectedSize || v.size === selectedSize;
       const fabricMatch = !selectedFabric || v.fabric === selectedFabric;
-      return colorMatch && sizeMatch && fabricMatch;
+      const fourMatch = !selectedOptionFour || v.option_four === selectedOptionFour;
+      const fiveMatch = !selectedOptionFive || v.option_five === selectedOptionFive;
+      return colorMatch && sizeMatch && fabricMatch && fourMatch && fiveMatch;
     });
-  }, [selectedColor, selectedSize, selectedFabric, variants]);
+  }, [
+    selectedColor,
+    selectedSize,
+    selectedFabric,
+    selectedOptionFour,
+    selectedOptionFive,
+    variants,
+  ]);
 
   // Compute prices for matching variants
   const matchingPrices = useMemo(() => {
@@ -813,12 +993,18 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   };
 
   const isMadeToOrder = Boolean(product?.is_made_to_order);
-  const hasReadySizes = uniqueSizes.length > 0 || hasVariants;
+  const hasReadySizes = uniqueSizes.length > 0;
   const hasCustomFields = customFields.length > 0;
   const showSizeModeToggle =
     modules.made_to_order && hasReadySizes && hasCustomFields && isMadeToOrder;
   const isTailoringActive =
     isMadeToOrder && ((showSizeModeToggle && sizeMode === "custom") || !showSizeModeToggle);
+
+  useEffect(() => {
+    if (isMadeToOrder && !hasReadySizes) {
+      setSizeMode("custom");
+    }
+  }, [isMadeToOrder, hasReadySizes]);
 
   const selectedVariantOutOfStock = Boolean(!isTailoringActive && variant && maxStock <= 0);
 
@@ -921,14 +1107,18 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     if (measurementsApplied) {
       Object.entries(cfValues).forEach(([k, v]) => {
         if (isMeasurementField(k) && v && !custom.some((c) => c.key === k)) {
-          custom.push({
-            key: k,
-            label_ar: k === "fit_profile" ? "ملف المقاس المستخدم" : k,
-            label_en: k === "fit_profile" ? "Applied measurement profile" : k,
-            value: String(v),
-            type: "text",
-            price_delta: 0,
-          });
+          const fmtAr = formatCustomField({ key: k, value: String(v) }, "ar");
+          const fmtEn = formatCustomField({ key: k, value: String(v) }, "en");
+          if (fmtAr && fmtEn) {
+            custom.push({
+              key: k,
+              label_ar: fmtAr.label,
+              label_en: fmtEn.label,
+              value: lang === "ar" ? fmtAr.value : fmtEn.value,
+              type: "text",
+              price_delta: 0,
+            });
+          }
         }
       });
     }
@@ -984,10 +1174,13 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     const effectiveSize =
       showSizeModeToggle && sizeMode === "custom"
         ? vocabulary.custom_sizing?.[lang] || t("قياسات خاصة / حسب الطلب", "Custom Sizing")
-        : targetVariant?.size ||
-          (isTailoringActive
-            ? vocabulary.custom_order?.[lang] || t("حسب الطلب", "Made to order")
-            : null);
+        : targetVariant?.size && !isPlaceholderVariant(targetVariant)
+          ? targetVariant.size
+          : isTailoringActive
+            ? vocabulary.custom_sizing?.[lang] ||
+              vocabulary.custom_order?.[lang] ||
+              t("حسب الطلب", "Made to order")
+            : targetVariant?.size || null;
 
     addToCart({
       cart_line_id: "",
@@ -1004,8 +1197,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       price: displayPrice,
       original_price: originalPriceWithAddons > displayPrice ? originalPriceWithAddons : null,
       size: effectiveSize,
+      size_unit: targetVariant?.size_unit || null,
       color: targetVariant?.color || selectedColor || null,
       fabric: targetVariant?.fabric || selectedFabric || null,
+      option_four: targetVariant?.option_four || selectedOptionFour || null,
+      option_five: targetVariant?.option_five || selectedOptionFive || null,
       qty,
       max_stock: isTailoringActive
         ? 999
@@ -1260,6 +1456,16 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                       onClick={() => {
                         setSizeMode("ready");
                         setErrorMsg(null);
+                        setCfValues((prev) => {
+                          const next = { ...prev };
+                          Object.keys(next).forEach((k) => {
+                            if (isMeasurementField(k)) {
+                              delete next[k];
+                            }
+                          });
+                          return next;
+                        });
+                        setMeasurementsApplied(false);
                       }}
                       className={`h-11 rounded-lg font-semibold flex items-center justify-center gap-2 ${
                         sizeMode === "ready" ? "shadow-sm" : ""
@@ -1288,69 +1494,155 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 </div>
               )}
 
-              {/* 🔵 Circular Color Swatches */}
-              {uniqueColors.length > 0 && resolvedAxes.color.visible && (
-                <div>
-                  <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
-                    <span>{resolvedAxes.color.label}:</span>
-                    <span className="text-muted-foreground font-normal">{selectedColor}</span>
+              {!showSizeModeToggle && isMadeToOrder && !hasReadySizes && (
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-primary shrink-0" />
+                      <span className="text-sm font-bold text-foreground">
+                        {vocabulary.made_to_order?.[lang] || t("صنع حسب الطلب", "Made to Order")}
+                      </span>
+                    </div>
+                    <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                      {vocabulary.custom_order?.[lang] || t("خاص", "Bespoke")}
+                    </span>
                   </div>
-                  <div className="flex flex-wrap gap-2.5">
-                    {uniqueColors.map((color) => {
-                      const active = selectedColor === color;
-                      const oos = !isTailoringActive && Boolean(isColorOutOfStock[color]);
-                      const hex = resolveColorHex(color);
-                      const ringStyle = active ? { borderColor: primary } : {};
-                      return (
-                        <Button
-                          key={color}
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setSelectedColor(color);
-                            setErrorMsg(null);
-                          }}
-                          className={`h-11 w-11 rounded-full border-2 p-0 relative ${
-                            active ? "scale-110 shadow-sm" : "border-transparent hover:scale-105"
-                          } ${oos ? "opacity-45 cursor-not-allowed" : ""}`}
-                          style={ringStyle}
-                          title={
-                            color + (oos ? ` (${t("غير متوفر جاهز", "out of ready stock")})` : "")
-                          }
-                          aria-label={color}
-                        >
-                          {hex ? (
-                            <span
-                              className="h-7 w-7 rounded-full border shadow-inner block relative overflow-hidden"
-                              style={{ backgroundColor: hex }}
-                            >
-                              {oos && (
-                                <span className="absolute inset-0 w-full h-[2px] bg-destructive/80 rotate-45 origin-center top-1/2 -translate-y-1/2" />
-                              )}
-                            </span>
-                          ) : (
-                            <span className="h-7 w-7 rounded-full border bg-muted flex items-center justify-center text-xs font-bold uppercase truncate shadow-inner relative overflow-hidden">
-                              {color.slice(0, 2)}
-                              {oos && (
-                                <span className="absolute inset-0 w-full h-[2px] bg-destructive/80 rotate-45 origin-center top-1/2 -translate-y-1/2" />
-                              )}
-                            </span>
-                          )}
-                        </Button>
-                      );
-                    })}
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {t(
+                      "يتم تجهيز هذه القطعة خصيصاً على قياساتكِ الفردية لضمان أفضل ملاءمة وأناقة.",
+                      "This piece is tailored specifically to your personal measurements for a perfect fit.",
+                    )}
+                  </p>
+                  <div className="pt-2 flex items-center justify-between border-t border-primary/10">
+                    <span className="text-xs text-muted-foreground">
+                      {t("تحتاجين مساعدة في القياسات؟", "Need measuring guidance?")}
+                    </span>
+                    <AddonSlot
+                      placement="storefront.product.optionsAside"
+                      props={{
+                        product,
+                        selectedSize: null,
+                        uniqueSizes: [],
+                      }}
+                    />
                   </div>
                 </div>
               )}
 
-              {/* 📏 Size Selection Pills */}
+              {/* 🔵 Circular Color Swatches OR 🏷️ Option Pills (Flavors / Types / Roasts) */}
+              {uniqueColors.length > 0 &&
+                (resolvedAxes.color.visible || uniqueColors.length > 1) && (
+                  <div>
+                    <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+                      <span>
+                        {resolvedAxes.color.label || (lang === "ar" ? "الخيار" : "Option")}:
+                      </span>
+                      {selectedColor && (
+                        <span className="text-muted-foreground font-normal">
+                          {translateOptionValue(selectedColor, lang)}
+                        </span>
+                      )}
+                    </div>
+                    {isVisualColorAxis ? (
+                      <div className="flex flex-wrap gap-2.5">
+                        {uniqueColors.map((color) => {
+                          const active = selectedColor === color;
+                          const oos = !isTailoringActive && Boolean(isColorOutOfStock[color]);
+                          const hex = resolveColorHex(color);
+                          const ringStyle = active ? { borderColor: primary } : {};
+                          const localizedColor = translateOptionValue(color, lang);
+                          return (
+                            <Button
+                              key={color}
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setSelectedColor(color);
+                                setErrorMsg(null);
+                              }}
+                              className={`h-11 w-11 rounded-full border-2 p-0 relative ${
+                                active
+                                  ? "scale-110 shadow-sm"
+                                  : "border-transparent hover:scale-105"
+                              } ${oos ? "opacity-45 cursor-not-allowed" : ""}`}
+                              style={ringStyle}
+                              title={
+                                localizedColor +
+                                (oos ? ` (${t("غير متوفر جاهز", "out of ready stock")})` : "")
+                              }
+                              aria-label={localizedColor}
+                            >
+                              {hex ? (
+                                <span
+                                  className="h-7 w-7 rounded-full border shadow-inner block relative overflow-hidden"
+                                  style={{ backgroundColor: hex }}
+                                >
+                                  {oos && (
+                                    <span className="absolute inset-0 w-full h-[2px] bg-destructive/80 rotate-45 origin-center top-1/2 -translate-y-1/2" />
+                                  )}
+                                </span>
+                              ) : (
+                                <span className="h-7 w-7 rounded-full border bg-muted flex items-center justify-center text-xs font-bold uppercase truncate shadow-inner relative overflow-hidden">
+                                  {localizedColor.slice(0, 2)}
+                                  {oos && (
+                                    <span className="absolute inset-0 w-full h-[2px] bg-destructive/80 rotate-45 origin-center top-1/2 -translate-y-1/2" />
+                                  )}
+                                </span>
+                              )}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {uniqueColors.map((color) => {
+                          const active = selectedColor === color;
+                          const oos = !isTailoringActive && Boolean(isColorOutOfStock[color]);
+                          return (
+                            <Button
+                              key={color}
+                              type="button"
+                              variant={active ? "default" : "outline"}
+                              onClick={() => {
+                                setSelectedColor(color);
+                                setErrorMsg(null);
+                              }}
+                              className={`min-h-11 px-4 py-2 rounded-lg text-sm font-medium ${
+                                oos
+                                  ? "line-through opacity-45 cursor-not-allowed bg-muted text-muted-foreground border-dashed"
+                                  : ""
+                              }`}
+                            >
+                              {translateOptionValue(color, lang)}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+              {/* 📏 Size Selection Pills (if any) */}
               {uniqueSizes.length > 0 &&
                 resolvedAxes.size.visible &&
                 (!showSizeModeToggle || sizeMode === "ready") && (
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <div className="text-sm font-semibold">{resolvedAxes.size.label}</div>
+                      <div className="text-sm font-semibold flex items-center gap-1.5">
+                        <span>{resolvedAxes.size.label}:</span>
+                        {selectedSize && (
+                          <span className="text-muted-foreground font-normal">
+                            {formatSizeWithUnit(
+                              selectedSize,
+                              variants.find((v) => v.size === selectedSize && v.size_unit)
+                                ?.size_unit ||
+                                variants.find((v) => v.size === selectedSize)?.size_unit,
+                              lang,
+                            )}
+                          </span>
+                        )}
+                      </div>
                       <AddonSlot
                         placement="storefront.product.optionsAside"
                         props={{
@@ -1364,6 +1656,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                     <div className="flex flex-wrap gap-2">
                       {uniqueSizes.map((sz) => {
                         const active = selectedSize === sz;
+                        const matchingVariant = variants.find((v) => v.size === sz && v.size_unit);
+                        const unit =
+                          matchingVariant?.size_unit ||
+                          variants.find((v) => v.size === sz)?.size_unit;
+                        const sizeLabel = formatSizeWithUnit(sz, unit, lang);
                         const oos =
                           isSizeOutOfStock[sz] ||
                           Number(
@@ -1390,7 +1687,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                                 : ""
                             }`}
                           >
-                            {sz}
+                            {sizeLabel}
                           </Button>
                         );
                       })}
@@ -1399,9 +1696,16 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 )}
 
               {/* 🧵 Fabric Selection Pills (if any) */}
-              {uniqueFabrics.length > 0 && resolvedAxes.fabric.visible && (
+              {uniqueFabrics.length > 0 && (
                 <div>
-                  <div className="text-sm font-semibold mb-2">{resolvedAxes.fabric.label}</div>
+                  <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+                    <span>{resolvedAxes.fabric.label || (lang === "ar" ? "الخامة" : "Fabric")}:</span>
+                    {selectedFabric && (
+                      <span className="text-muted-foreground font-normal">
+                        {translateOptionValue(selectedFabric, lang)}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {uniqueFabrics.map((fb) => {
                       const active = selectedFabric === fb;
@@ -1432,7 +1736,73 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                               : ""
                           }`}
                         >
-                          {fb}
+                          {translateOptionValue(fb, lang)}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 🏷️ Option Four Selection Pills (if any) */}
+              {uniqueFour.length > 0 && (
+                <div>
+                  <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+                    <span>{resolvedAxes.four.label || (lang === "ar" ? "الخيار 4" : "Option 4")}:</span>
+                    {selectedOptionFour && (
+                      <span className="text-muted-foreground font-normal">
+                        {translateOptionValue(selectedOptionFour, lang)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {uniqueFour.map((opt) => {
+                      const active = selectedOptionFour === opt;
+                      return (
+                        <Button
+                          key={opt}
+                          type="button"
+                          variant={active ? "default" : "outline"}
+                          onClick={() => {
+                            setSelectedOptionFour(opt);
+                            setErrorMsg(null);
+                          }}
+                          className="min-h-11 px-4 py-2 rounded-lg text-sm font-medium"
+                        >
+                          {translateOptionValue(opt, lang)}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 🏷️ Option Five Selection Pills (if any) */}
+              {uniqueFive.length > 0 && (
+                <div>
+                  <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+                    <span>{resolvedAxes.five.label || (lang === "ar" ? "الخيار 5" : "Option 5")}:</span>
+                    {selectedOptionFive && (
+                      <span className="text-muted-foreground font-normal">
+                        {translateOptionValue(selectedOptionFive, lang)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {uniqueFive.map((opt) => {
+                      const active = selectedOptionFive === opt;
+                      return (
+                        <Button
+                          key={opt}
+                          type="button"
+                          variant={active ? "default" : "outline"}
+                          onClick={() => {
+                            setSelectedOptionFive(opt);
+                            setErrorMsg(null);
+                          }}
+                          className="min-h-11 px-4 py-2 rounded-lg text-sm font-medium"
+                        >
+                          {translateOptionValue(opt, lang)}
                         </Button>
                       );
                     })}
@@ -1444,8 +1814,12 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               {(!resolvedAxes.color.visible || uniqueColors.length === 0) &&
                 (!resolvedAxes.size.visible || uniqueSizes.length === 0) &&
                 (!resolvedAxes.fabric.visible || uniqueFabrics.length === 0) &&
+                (!resolvedAxes.four.visible || uniqueFour.length === 0) &&
+                (!resolvedAxes.five.visible || uniqueFive.length === 0) &&
                 hasVariants &&
-                (!showSizeModeToggle || sizeMode === "ready") && (
+                (!showSizeModeToggle || sizeMode === "ready") &&
+                !isTailoringActive &&
+                !variants.every(isPlaceholderVariant) && (
                   <div>
                     <div className="text-sm font-medium mb-2">{t("الخيارات", "Options")}</div>
                     <div className="flex flex-wrap gap-2">
@@ -1453,7 +1827,13 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                         const oos = Number(v.stock_main || 0) + Number(v.stock_incubator || 0) <= 0;
                         const active = v.id === variantId;
                         const label =
-                          [formatSizeWithUnit(v.size, v.size_unit, lang), v.color, v.fabric]
+                          [
+                            formatSizeWithUnit(v.size, v.size_unit, lang),
+                            translateOptionValue(v.color, lang),
+                            translateOptionValue(v.fabric, lang),
+                            translateOptionValue(v.option_four, lang),
+                            translateOptionValue(v.option_five, lang),
+                          ]
                             .filter(Boolean)
                             .join(" · ") || t("متغيّر", "Variant");
                         return (
@@ -1870,13 +2250,25 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           ) : (
             <div className="hidden md:flex gap-2">
               <Button
-                className="flex-1 h-12 font-semibold shadow-sm hover:opacity-90 bg-primary text-primary-foreground"
+                className="flex-1 h-12 font-semibold shadow-sm hover:opacity-90 bg-primary text-primary-foreground gap-2"
                 disabled={selectedVariantOutOfStock}
                 aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
                 onClick={() => doAdd(false)}
               >
-                <ShoppingBag className="h-4 w-4 me-2" />
-                {t("أضف للسلة", "Add to cart")}
+                {isTailoringActive ? (
+                  <Sparkles className="h-4 w-4" />
+                ) : (
+                  <ShoppingBag className="h-4 w-4" />
+                )}
+                <span>
+                  {isTailoringActive
+                    ? vocabulary.custom_order?.[lang]
+                      ? lang === "ar"
+                        ? `طلب ${vocabulary.custom_order[lang]} القطعة`
+                        : `Order ${vocabulary.custom_order[lang]} Piece`
+                      : t("طلب تجهيز القطعة", "Order Custom Piece")
+                    : t("أضف للسلة", "Add to cart")}
+                </span>
               </Button>
               <Button
                 variant="outline"
@@ -1885,7 +2277,13 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
                 onClick={() => doAdd(true)}
               >
-                {t("اشتر الآن", "Buy now")}
+                {isTailoringActive
+                  ? vocabulary.custom_order?.[lang]
+                    ? lang === "ar"
+                      ? `إتمام طلب ال${vocabulary.custom_order[lang]}`
+                      : `Complete ${vocabulary.custom_order[lang]}`
+                    : t("إتمام الطلب الآن", "Complete Order Now")
+                  : t("اشتر الآن", "Buy now")}
               </Button>
             </div>
           )}
@@ -1963,9 +2361,21 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   disabled={selectedVariantOutOfStock}
                   aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
                   onClick={() => doAdd(false)}
-                  aria-label={t("أضف للسلة", "Add to cart")}
+                  aria-label={
+                    isTailoringActive
+                      ? vocabulary.custom_order?.[lang]
+                        ? lang === "ar"
+                          ? `طلب ${vocabulary.custom_order[lang]} القطعة`
+                          : `Order ${vocabulary.custom_order[lang]} Piece`
+                        : t("طلب تجهيز القطعة", "Order Custom Piece")
+                      : t("أضف للسلة", "Add to cart")
+                  }
                 >
-                  <ShoppingBag className="h-4 w-4" />
+                  {isTailoringActive ? (
+                    <Sparkles className="h-4 w-4" />
+                  ) : (
+                    <ShoppingBag className="h-4 w-4" />
+                  )}
                 </Button>
                 <Button
                   variant="outline"
@@ -1974,7 +2384,13 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
                   onClick={() => doAdd(true)}
                 >
-                  {t("اشتر الآن", "Buy now")}
+                  {isTailoringActive
+                    ? vocabulary.custom_order?.[lang]
+                      ? lang === "ar"
+                        ? `إتمام طلب ال${vocabulary.custom_order[lang]}`
+                        : `Complete ${vocabulary.custom_order[lang]}`
+                      : t("إتمام الطلب", "Complete Order")
+                    : t("اشتر الآن", "Buy now")}
                 </Button>
               </>
             )}

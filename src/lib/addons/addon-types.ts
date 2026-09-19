@@ -11,6 +11,7 @@ export type AddonId =
   | "fashion-core"
   | "abaya-pack"
   | "beauty-perfume"
+  | "coffee-roastery"
   | "food-beverage"
   | "digital-products"
   | "gifts"

@@ -43,7 +43,21 @@ import {
   X,
   Crown,
   AlertTriangle,
+  KeyRound,
+  Sparkles,
+  Copy,
+  CheckCheck,
+  Eye,
+  EyeOff,
+  Share2,
+  ShieldCheck,
+  MessageCircle,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  generateSecureTempPassword,
+  formatTeamInviteMessage,
+} from "@/lib/team-credentials-utils";
 import { toast } from "sonner";
 import { useI18n, useT } from "@/lib/i18n";
 import { useProfile, SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
@@ -145,6 +159,39 @@ const AVAILABLE_PERMISSIONS = [
   { id: "manage_settings", labelEn: "Manage Settings", labelAr: "إدارة الإعدادات" },
 ];
 
+const PERMISSION_PRESETS = [
+  {
+    id: "all",
+    labelEn: "Full Operational",
+    labelAr: "كامل الصلاحيات",
+    permissions: [
+      "manage_inventory",
+      "manage_orders",
+      "manage_customers",
+      "view_financials",
+      "manage_settings",
+    ],
+  },
+  {
+    id: "sales_orders",
+    labelEn: "Sales & Orders",
+    labelAr: "مبيعات وطلبات",
+    permissions: ["manage_orders", "manage_customers"],
+  },
+  {
+    id: "inventory",
+    labelEn: "Inventory & Stock",
+    labelAr: "مخزون ومنتجات",
+    permissions: ["manage_inventory", "manage_orders"],
+  },
+  {
+    id: "finance",
+    labelEn: "Finance & Accounts",
+    labelAr: "محاسب مالي",
+    permissions: ["view_financials", "manage_orders"],
+  },
+];
+
 function TeamManagement() {
   const t = useT();
   const { lang } = useI18n();
@@ -157,7 +204,6 @@ function TeamManagement() {
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<StaffMember | null>(null);
-  const [editPassword, setEditPassword] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<StaffMember | null>(null);
 
   const staffQ = useQuery({
@@ -181,12 +227,91 @@ function TeamManagement() {
     name: "",
     phone: "",
     password: "",
+    must_change_password: true,
     role: "staff" as UserRole,
     permissions: [] as string[],
   });
+  const [showPassword, setShowPassword] = useState(false);
+
+  const [editPassword, setEditPassword] = useState("");
+  const [editMustChangePassword, setEditMustChangePassword] = useState(true);
+  const [showEditPassword, setShowEditPassword] = useState(false);
+
+  const [credentialsModal, setCredentialsModal] = useState<{
+    isOpen: boolean;
+    name: string;
+    email: string;
+    phone?: string;
+    tempPassword?: string;
+    mustChangePassword: boolean;
+    storeName: string;
+  } | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const handleQuickResetTempPassword = async (member: StaffMember) => {
+    const newPassword = generateSecureTempPassword();
+    try {
+      await callUserManagement("update", {
+        userId: member.id,
+        password: newPassword,
+        must_change_password: true,
+      });
+      toast.success(
+        isAr
+          ? "تم توليد كلمة مرور مؤقتة وتفعيل إجبار التغيير عند أول دخول"
+          : "Temporary password generated with mandatory first-login change",
+      );
+      setCredentialsModal({
+        isOpen: true,
+        name: member.name || member.email.split("@")[0],
+        email: member.email,
+        phone: member.phone || undefined,
+        tempPassword: newPassword,
+        mustChangePassword: true,
+        storeName: isAr ? brand.name_ar || brand.name_en : brand.name_en,
+      });
+      qc.invalidateQueries({ queryKey: queryKeys.staff.all(brand.id) });
+    } catch (err: any) {
+      toast.error(err.message || (isAr ? "فشل إعادة تعيين كلمة المرور" : "Failed to reset password"));
+    }
+  };
+
+  const copyToClipboard = async (text: string, key: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedKey(key);
+      toast.success(isAr ? "تم النسخ إلى الحافظة" : "Copied to clipboard");
+      setTimeout(() => setCopiedKey(null), 2000);
+    } catch {
+      toast.error(isAr ? "تعذر النسخ" : "Failed to copy");
+    }
+  };
+
+  const handleGeneratePassword = () => {
+    const pwd = generateSecureTempPassword();
+    setForm((f) => ({ ...f, password: pwd }));
+    setShowPassword(true);
+    toast.success(isAr ? "تم توليد كلمة مرور مؤقتة" : "Temporary password generated");
+  };
+
+  const handleGenerateEditPassword = () => {
+    const pwd = generateSecureTempPassword();
+    setEditPassword(pwd);
+    setShowEditPassword(true);
+    toast.success(isAr ? "تم توليد كلمة مرور جديدة" : "New password generated");
+  };
 
   const resetForm = () => {
-    setForm({ email: "", name: "", phone: "", password: "", role: "staff", permissions: [] });
+    setForm({
+      email: "",
+      name: "",
+      phone: "",
+      password: "",
+      must_change_password: true,
+      role: "staff",
+      permissions: [],
+    });
+    setShowPassword(false);
   };
 
   const handleAdd = async () => {
@@ -218,6 +343,7 @@ function TeamManagement() {
         name: form.name.trim() || undefined,
         phone: form.phone.trim() || undefined,
         password: form.password,
+        must_change_password: form.must_change_password,
         role: form.role,
         // Attach the new user to the brand this team page is scoped to
         brand_id: form.role === "super_admin" ? null : brand.id,
@@ -233,6 +359,19 @@ function TeamManagement() {
             : "User added successfully",
       );
       setAddOpen(false);
+
+      if (!result.linked_existing_identity && form.password) {
+        setCredentialsModal({
+          isOpen: true,
+          name: form.name.trim(),
+          email: form.email.trim(),
+          phone: form.phone.trim() || undefined,
+          tempPassword: form.password,
+          mustChangePassword: form.must_change_password,
+          storeName: isAr ? brand.name_ar || brand.name_en : brand.name_en,
+        });
+      }
+
       resetForm();
       qc.invalidateQueries({ queryKey: queryKeys.staff.all(brand.id) });
     } catch (err: any) {
@@ -248,13 +387,30 @@ function TeamManagement() {
       name?: string;
       phone?: string | null;
       permissions?: string[];
+      password?: string;
+      must_change_password?: boolean;
     },
   ) => {
     try {
       await callUserManagement("update", { userId, ...updates });
       toast.success(isAr ? "تم التحديث بنجاح" : "Updated successfully");
       setEditOpen(false);
+
+      if (updates.password) {
+        setCredentialsModal({
+          isOpen: true,
+          name: editing?.name || "",
+          email: editing?.email || "",
+          phone: (updates.phone !== undefined ? updates.phone : editing?.phone) || undefined,
+          tempPassword: updates.password,
+          mustChangePassword: Boolean(updates.must_change_password),
+          storeName: isAr ? brand.name_ar || brand.name_en : brand.name_en,
+        });
+      }
+
       setEditing(null);
+      setEditPassword("");
+      setShowEditPassword(false);
       qc.invalidateQueries({ queryKey: queryKeys.staff.all(brand.id) });
     } catch (err: any) {
       toast.error(err.message || (isAr ? "فشل التحديث" : "Failed to update"));
@@ -294,7 +450,9 @@ function TeamManagement() {
   };
 
   const locale = isAr ? "ar-BH-u-nu-latn" : "en-US";
-  const adminMembers = staff.filter((m) => m.role === "admin" || m.role === "super_admin");
+  const adminMembers = staff.filter(
+    (m) => m.role === "admin" || m.role === "super_admin" || m.role === "brand_admin",
+  );
   const isSingleAdmin = !staffQ.isLoading && adminMembers.length <= 1;
   const adminHasNoPhone = adminMembers.length > 0 && adminMembers.every((m) => !m.phone);
 
@@ -386,18 +544,72 @@ function TeamManagement() {
                 dir="ltr"
               />
             </div>
-            <div>
-              <Label>
-                {isAr ? "كلمة المرور (للحسابات الجديدة فقط)" : "Password (new accounts only)"}
-              </Label>
-              <Input
-                type="password"
-                className="text-start"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                placeholder={isAr ? "كلمة مرور مؤقتة" : "Temporary password"}
-              />
-              <p className="mt-1 text-xs text-muted-foreground">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="staff-password">
+                  {isAr ? "كلمة المرور المؤقتة (للحسابات الجديدة)" : "Temporary Password (new accounts)"}
+                </Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleGeneratePassword}
+                  className="h-7 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10 gap-1.5"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {isAr ? "توليد كلمة مرور" : "Generate Password"}
+                </Button>
+              </div>
+
+              <div className="relative">
+                <Input
+                  id="staff-password"
+                  type={showPassword ? "text" : "password"}
+                  className="text-start pe-10 font-mono"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  placeholder={isAr ? "مثال: Bq-x7#9kM" : "e.g. Bq-x7#9kM"}
+                  dir="ltr"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 end-0 flex items-center pe-3 text-muted-foreground hover:text-foreground transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+
+              {form.password ? (
+                <div className="flex items-start gap-2 pt-1.5 p-2.5 rounded-lg bg-secondary/40 border border-border">
+                  <Checkbox
+                    id="require-password-change"
+                    checked={form.must_change_password}
+                    onCheckedChange={(checked) =>
+                      setForm({ ...form, must_change_password: Boolean(checked) })
+                    }
+                    className="mt-0.5"
+                  />
+                  <div className="space-y-0.5">
+                    <label
+                      htmlFor="require-password-change"
+                      className="text-xs font-semibold cursor-pointer text-foreground block"
+                    >
+                      {isAr
+                        ? "إلزام بتغيير كلمة المرور فور أول تسجيل دخول (موصى به)"
+                        : "Require password change on first sign-in (Recommended)"}
+                    </label>
+                    <p className="text-[11px] text-muted-foreground leading-tight">
+                      {isAr
+                        ? "سيتم تحويل الموظف تلقائياً لصفحة إعداد كلمة المرور الخاصة به فور تسجيل الدخول ولا يمكنه تصفح لوحة التحكم قبل إكمالها."
+                        : "The user will be redirected to the password setup screen upon first login and blocked from dashboard access until updated."}
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+
+              <p className="text-[11px] text-muted-foreground">
                 {isAr
                   ? "اتركها فارغة إذا كان البريد مرتبطاً بحساب عميل حالي؛ لن تتغير كلمة مروره."
                   : "Leave blank when the email belongs to an existing customer; their current password will not change."}
@@ -413,6 +625,18 @@ function TeamManagement() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="brand_admin">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4" />
+                      {isAr ? "مدير علامة تجارية" : "Brand Admin"}
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="admin">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4" />
+                      {isAr ? "مدير" : "Admin"}
+                    </div>
+                  </SelectItem>
                   <SelectItem value="staff">
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4" />
@@ -426,22 +650,6 @@ function TeamManagement() {
                     </div>
                   </SelectItem>
                   {isSuperAdmin && (
-                    <SelectItem value="admin">
-                      <div className="flex items-center gap-2">
-                        <Shield className="h-4 w-4" />
-                        {isAr ? "مدير" : "Admin"}
-                      </div>
-                    </SelectItem>
-                  )}
-                  {isSuperAdmin && (
-                    <SelectItem value="brand_admin">
-                      <div className="flex items-center gap-2">
-                        <Shield className="h-4 w-4" />
-                        {isAr ? "مدير علامة تجارية" : "Brand Admin"}
-                      </div>
-                    </SelectItem>
-                  )}
-                  {isSuperAdmin && (
                     <SelectItem value="super_admin">
                       <div className="flex items-center gap-2">
                         <Crown className="h-4 w-4" />
@@ -454,28 +662,52 @@ function TeamManagement() {
             </div>
 
             {form.role === "staff" && (
-              <div className="space-y-2">
-                <Label>{isAr ? "الصلاحيات" : "Permissions"}</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 rounded-lg border border-border bg-secondary/5">
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <Label>{isAr ? "الصلاحيات المخصصة" : "Staff Permissions"}</Label>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    {isAr ? "نماذج سريعة:" : "Quick presets:"}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 pb-0.5">
+                  {PERMISSION_PRESETS.map((preset) => {
+                    const isSelected =
+                      preset.permissions.length === form.permissions.length &&
+                      preset.permissions.every((p) => form.permissions.includes(p));
+                    return (
+                      <Button
+                        key={preset.id}
+                        type="button"
+                        size="sm"
+                        variant={isSelected ? "default" : "outline"}
+                        className="h-7 text-xs px-2.5 font-normal"
+                        onClick={() =>
+                          setForm({ ...form, permissions: [...preset.permissions] })
+                        }
+                      >
+                        {isAr ? preset.labelAr : preset.labelEn}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg border border-border bg-secondary/5">
                   {AVAILABLE_PERMISSIONS.map((p) => {
                     const checked = form.permissions.includes(p.id);
                     return (
                       <label
                         key={p.id}
-                        className="flex items-center gap-2 text-sm cursor-pointer hover:opacity-80 transition-opacity"
+                        className="flex items-center gap-2.5 text-sm cursor-pointer select-none hover:opacity-85 transition-opacity"
                       >
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={checked}
-                          className="rounded border-input text-primary focus:ring-primary h-4 w-4"
-                          onChange={() => {
-                            const newPerms = checked
-                              ? form.permissions.filter((x) => x !== p.id)
-                              : [...form.permissions, p.id];
+                          onCheckedChange={(val) => {
+                            const newPerms = val
+                              ? [...form.permissions, p.id]
+                              : form.permissions.filter((x) => x !== p.id);
                             setForm({ ...form, permissions: newPerms });
                           }}
                         />
-                        <span>{isAr ? p.labelAr : p.labelEn}</span>
+                        <span className="text-xs font-medium">{isAr ? p.labelAr : p.labelEn}</span>
                       </label>
                     );
                   })}
@@ -485,8 +717,8 @@ function TeamManagement() {
 
             <p className="text-xs text-muted-foreground">
               {isAr
-                ? "سيتمكن المستخدم من تسجيل الدخول فوراً. يمكنه تغيير كلمة المرور لاحقاً."
-                : "The user will be able to sign in immediately. They can change their password later."}
+                ? "سيحصل العضو الجديد على صلاحيات لوحة التحكم، وسيُطلب منه إنشاء كلمة مرور دائمة خاصة به عند تسجيل الدخول الأول."
+                : "The new member will receive dashboard access and will be prompted to create their permanent password on first sign-in."}
             </p>
           </div>
           <DialogFooter>
@@ -538,25 +770,33 @@ function TeamManagement() {
                       {member.email}
                     </span>
                   </div>
-                  <span
-                    className={`shrink-0 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${
-                      member.status === "active"
-                        ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                        : "bg-muted text-muted-foreground border border-border"
-                    }`}
-                  >
-                    {member.status === "active" ? (
-                      <>
-                        <Check className="h-3 w-3" />
-                        {isAr ? "نشط" : "Active"}
-                      </>
-                    ) : (
-                      <>
-                        <X className="h-3 w-3" />
-                        {isAr ? "غير نشط" : "Inactive"}
-                      </>
+                  <div className="shrink-0 flex items-center gap-1.5 flex-wrap justify-end">
+                    {member.must_change_password && (
+                      <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 font-medium border border-amber-500/25">
+                        <KeyRound className="h-3 w-3" />
+                        {isAr ? "في انتظار أول دخول" : "Pending First Login"}
+                      </span>
                     )}
-                  </span>
+                    <span
+                      className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${
+                        member.status === "active"
+                          ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                          : "bg-muted text-muted-foreground border border-border"
+                      }`}
+                    >
+                      {member.status === "active" ? (
+                        <>
+                          <Check className="h-3 w-3" />
+                          {isAr ? "نشط" : "Active"}
+                        </>
+                      ) : (
+                        <>
+                          <X className="h-3 w-3" />
+                          {isAr ? "غير نشط" : "Inactive"}
+                        </>
+                      )}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
@@ -600,14 +840,41 @@ function TeamManagement() {
                   </span>
 
                   {member.phone && (
-                    <span
-                      className="inline-flex items-center gap-1 text-xs font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded-md"
+                    <a
+                      href={`https://wa.me/${member.phone.replace(/\D/g, "")}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 rounded-md hover:bg-emerald-500/20 transition-colors"
                       dir="ltr"
+                      title={isAr ? "محادثة واتساب مباشرة" : "Direct WhatsApp Chat"}
                     >
-                      📱 {member.phone}
-                    </span>
+                      <MessageCircle className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>{member.phone}</span>
+                    </a>
                   )}
                 </div>
+
+                {member.role === "staff" && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {Array.isArray((member as any).permissions) && (member as any).permissions.length > 0 ? (
+                      (member as any).permissions.map((pId: string) => {
+                        const permObj = AVAILABLE_PERMISSIONS.find((p) => p.id === pId);
+                        return (
+                          <span
+                            key={pId}
+                            className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground font-medium"
+                          >
+                            {isAr ? permObj?.labelAr || pId : permObj?.labelEn || pId}
+                          </span>
+                        );
+                      })
+                    ) : (
+                      <span className="text-[11px] text-muted-foreground italic">
+                        {isAr ? "بدون صلاحيات مخصصة" : "No specific permissions"}
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 <div className="pt-3 mt-1 border-t border-border-subtle flex justify-between items-center">
                   <span className="text-xs text-muted-foreground font-medium">
@@ -630,6 +897,15 @@ function TeamManagement() {
                       }
                       return (
                         <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-amber-600 hover:text-amber-700 hover:bg-amber-500/10 border-amber-500/20"
+                            title={isAr ? "إعادة تعيين كلمة مرور مؤقتة فورية" : "Quick Reset Temporary Password"}
+                            onClick={() => handleQuickResetTempPassword(member)}
+                          >
+                            <KeyRound className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
@@ -711,9 +987,16 @@ function TeamManagement() {
                       </td>
                       <td className="hidden p-4 text-muted-foreground sm:table-cell" dir="ltr">
                         {member.phone ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-md">
-                            📱 {member.phone}
-                          </span>
+                          <a
+                            href={`https://wa.me/${member.phone.replace(/\D/g, "")}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-md hover:bg-emerald-500/20 transition-colors"
+                            title={isAr ? "محادثة واتساب مباشرة" : "Direct WhatsApp Chat"}
+                          >
+                            <MessageCircle className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                            <span>{member.phone}</span>
+                          </a>
                         ) : (
                           <span className="text-xs text-muted-foreground italic">
                             {isAr ? "غير محدد" : "None"}
@@ -721,66 +1004,99 @@ function TeamManagement() {
                         )}
                       </td>
                       <td className="p-4">
-                        <span
-                          className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
-                            member.role === "super_admin"
-                              ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
-                              : member.role === "brand_admin"
-                                ? "bg-blue-500/15 text-blue-700 dark:text-blue-400"
-                                : member.role === "admin"
-                                  ? "bg-primary/10 text-primary"
-                                  : "bg-secondary text-secondary-foreground"
-                          }`}
-                        >
-                          {member.role === "super_admin" ? (
-                            <>
-                              <Crown className="h-3 w-3" />
-                              {isAr ? "مدير عام" : "Super Admin"}
-                            </>
-                          ) : member.role === "brand_admin" ? (
-                            <>
-                              <Shield className="h-3 w-3" />
-                              {isAr ? "مدير علامة تجارية" : "Brand Admin"}
-                            </>
-                          ) : member.role === "admin" ? (
-                            <>
-                              <Shield className="h-3 w-3" />
-                              {isAr ? "مدير" : "Admin"}
-                            </>
-                          ) : member.role === "courier" ? (
-                            <>
-                              <Users className="h-3 w-3" />
-                              {isAr ? "مندوب توصيل" : "Courier"}
-                            </>
-                          ) : (
-                            <>
-                              <Users className="h-3 w-3" />
-                              {isAr ? "موظف" : "Staff"}
-                            </>
+                        <div className="flex flex-col items-start gap-1.5">
+                          <span
+                            className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
+                              member.role === "super_admin"
+                                ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                                : member.role === "brand_admin"
+                                  ? "bg-blue-500/15 text-blue-700 dark:text-blue-400"
+                                  : member.role === "admin"
+                                    ? "bg-primary/10 text-primary"
+                                    : "bg-secondary text-secondary-foreground"
+                            }`}
+                          >
+                            {member.role === "super_admin" ? (
+                              <>
+                                <Crown className="h-3 w-3" />
+                                {isAr ? "مدير عام" : "Super Admin"}
+                              </>
+                            ) : member.role === "brand_admin" ? (
+                              <>
+                                <Shield className="h-3 w-3" />
+                                {isAr ? "مدير علامة تجارية" : "Brand Admin"}
+                              </>
+                            ) : member.role === "admin" ? (
+                              <>
+                                <Shield className="h-3 w-3" />
+                                {isAr ? "مدير" : "Admin"}
+                              </>
+                            ) : member.role === "courier" ? (
+                              <>
+                                <Users className="h-3 w-3" />
+                                {isAr ? "مندوب توصيل" : "Courier"}
+                              </>
+                            ) : (
+                              <>
+                                <Users className="h-3 w-3" />
+                                {isAr ? "موظف" : "Staff"}
+                              </>
+                            )}
+                          </span>
+
+                          {member.role === "staff" && (
+                            <div className="flex flex-wrap gap-1 max-w-[260px]">
+                              {Array.isArray((member as any).permissions) &&
+                              (member as any).permissions.length > 0 ? (
+                                (member as any).permissions.map((pId: string) => {
+                                  const permObj = AVAILABLE_PERMISSIONS.find((p) => p.id === pId);
+                                  return (
+                                    <span
+                                      key={pId}
+                                      className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground font-medium"
+                                    >
+                                      {isAr ? permObj?.labelAr || pId : permObj?.labelEn || pId}
+                                    </span>
+                                  );
+                                })
+                              ) : (
+                                <span className="text-[11px] text-muted-foreground italic">
+                                  {isAr ? "بدون صلاحيات مخصصة" : "No specific permissions"}
+                                </span>
+                              )}
+                            </div>
                           )}
-                        </span>
+                        </div>
                       </td>
 
                       <td className="p-4">
-                        <span
-                          className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
-                            member.status === "active"
-                              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                              : "bg-muted text-muted-foreground border border-border"
-                          }`}
-                        >
-                          {member.status === "active" ? (
-                            <>
-                              <Check className="h-3 w-3" />
-                              {isAr ? "نشط" : "Active"}
-                            </>
-                          ) : (
-                            <>
-                              <X className="h-3 w-3" />
-                              {isAr ? "غير نشط" : "Inactive"}
-                            </>
+                        <div className="flex flex-col items-start gap-1">
+                          <span
+                            className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
+                              member.status === "active"
+                                ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                                : "bg-muted text-muted-foreground border border-border"
+                            }`}
+                          >
+                            {member.status === "active" ? (
+                              <>
+                                <Check className="h-3 w-3" />
+                                {isAr ? "نشط" : "Active"}
+                              </>
+                            ) : (
+                              <>
+                                <X className="h-3 w-3" />
+                                {isAr ? "غير نشط" : "Inactive"}
+                              </>
+                            )}
+                          </span>
+                          {member.must_change_password && (
+                            <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 font-medium border border-amber-500/20 whitespace-nowrap">
+                              <KeyRound className="h-2.5 w-2.5" />
+                              {isAr ? "في انتظار أول دخول" : "Pending First Login"}
+                            </span>
                           )}
-                        </span>
+                        </div>
                       </td>
                       <td className="hidden p-4 text-muted-foreground lg:table-cell">
                         {new Date(member.created_at).toLocaleDateString(locale)}
@@ -802,6 +1118,19 @@ function TeamManagement() {
                             }
                             return (
                               <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-amber-600 hover:text-amber-700 hover:bg-amber-500/10"
+                                  title={
+                                    isAr
+                                      ? "إعادة تعيين كلمة مرور مؤقتة فورية"
+                                      : "Quick Reset Temporary Password"
+                                  }
+                                  onClick={() => handleQuickResetTempPassword(member)}
+                                >
+                                  <KeyRound className="h-4 w-4" />
+                                </Button>
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -901,6 +1230,18 @@ function TeamManagement() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="brand_admin">
+                      <div className="flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        {isAr ? "مدير علامة تجارية" : "Brand Admin"}
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="admin">
+                      <div className="flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        {isAr ? "مدير" : "Admin"}
+                      </div>
+                    </SelectItem>
                     <SelectItem value="staff">
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4" />
@@ -913,22 +1254,6 @@ function TeamManagement() {
                         {isAr ? "مندوب توصيل" : "Courier"}
                       </div>
                     </SelectItem>
-                    {isSuperAdmin && (
-                      <SelectItem value="admin">
-                        <div className="flex items-center gap-2">
-                          <Shield className="h-4 w-4" />
-                          {isAr ? "مدير" : "Admin"}
-                        </div>
-                      </SelectItem>
-                    )}
-                    {(isSuperAdmin || editing.role === "brand_admin") && (
-                      <SelectItem value="brand_admin">
-                        <div className="flex items-center gap-2">
-                          <Shield className="h-4 w-4" />
-                          {isAr ? "مدير علامة تجارية" : "Brand Admin"}
-                        </div>
-                      </SelectItem>
-                    )}
                     {(isSuperAdmin || editing.role === "super_admin") && (
                       <SelectItem value="super_admin">
                         <div className="flex items-center gap-2">
@@ -966,46 +1291,127 @@ function TeamManagement() {
                 </Select>
               </div>
               {editing.role === "staff" && (
-                <div className="space-y-2">
-                  <Label>{isAr ? "الصلاحيات" : "Permissions"}</Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 rounded-lg border border-border bg-secondary/5">
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <Label>{isAr ? "الصلاحيات المخصصة" : "Staff Permissions"}</Label>
+                    <span className="text-xs text-muted-foreground font-medium">
+                      {isAr ? "نماذج سريعة:" : "Quick presets:"}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 pb-0.5">
+                    {PERMISSION_PRESETS.map((preset) => {
+                      const memberPerms = (editing as any).permissions || [];
+                      const isSelected =
+                        preset.permissions.length === memberPerms.length &&
+                        preset.permissions.every((p) => memberPerms.includes(p));
+                      return (
+                        <Button
+                          key={preset.id}
+                          type="button"
+                          size="sm"
+                          variant={isSelected ? "default" : "outline"}
+                          className="h-7 text-xs px-2.5 font-normal"
+                          onClick={() =>
+                            setEditing({
+                              ...editing,
+                              permissions: [...preset.permissions],
+                            } as any)
+                          }
+                        >
+                          {isAr ? preset.labelAr : preset.labelEn}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg border border-border bg-secondary/5">
                     {AVAILABLE_PERMISSIONS.map((p) => {
                       const memberPerms = (editing as any).permissions || [];
                       const checked = memberPerms.includes(p.id);
                       return (
                         <label
                           key={p.id}
-                          className="flex items-center gap-2 text-sm cursor-pointer hover:opacity-80 transition-opacity"
+                          className="flex items-center gap-2.5 text-sm cursor-pointer select-none hover:opacity-85 transition-opacity"
                         >
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             checked={checked}
-                            className="rounded border-input text-primary focus:ring-primary h-4 w-4"
-                            onChange={() => {
-                              const newPerms = checked
-                                ? memberPerms.filter((x: string) => x !== p.id)
-                                : [...memberPerms, p.id];
+                            onCheckedChange={(val) => {
+                              const newPerms = val
+                                ? [...memberPerms, p.id]
+                                : memberPerms.filter((x: string) => x !== p.id);
                               setEditing({ ...editing, permissions: newPerms } as any);
                             }}
                           />
-                          <span>{isAr ? p.labelAr : p.labelEn}</span>
+                          <span className="text-xs font-medium">{isAr ? p.labelAr : p.labelEn}</span>
                         </label>
                       );
                     })}
                   </div>
                 </div>
               )}
-              <div>
-                <Label>
-                  {isAr ? "تعيين كلمة مرور جديدة (اختياري)" : "Set New Password (optional)"}
-                </Label>
-                <Input
-                  type="password"
-                  className="text-start"
-                  value={editPassword}
-                  onChange={(e) => setEditPassword(e.target.value)}
-                  placeholder={isAr ? "أدخل كلمة مرور جديدة" : "Enter new password"}
-                />
+              <div className="space-y-2 pt-2 border-t border-border">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="edit-staff-password">
+                    {isAr ? "تعيين أو إعادة تعيين كلمة المرور (اختياري)" : "Set / Reset Password (optional)"}
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleGenerateEditPassword}
+                    className="h-7 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10 gap-1.5"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    {isAr ? "توليد كلمة مرور" : "Generate Password"}
+                  </Button>
+                </div>
+
+                <div className="relative">
+                  <Input
+                    id="edit-staff-password"
+                    type={showEditPassword ? "text" : "password"}
+                    className="text-start pe-10 font-mono"
+                    value={editPassword}
+                    onChange={(e) => setEditPassword(e.target.value)}
+                    placeholder={isAr ? "أدخل كلمة مرور جديدة" : "Enter new password"}
+                    dir="ltr"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowEditPassword(!showEditPassword)}
+                    className="absolute inset-y-0 end-0 flex items-center pe-3 text-muted-foreground hover:text-foreground transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showEditPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+
+                {editPassword.trim() ? (
+                  <div className="flex items-start gap-2 pt-1.5 p-2.5 rounded-lg bg-secondary/40 border border-border">
+                    <Checkbox
+                      id="edit-require-password-change"
+                      checked={editMustChangePassword}
+                      onCheckedChange={(checked) =>
+                        setEditMustChangePassword(Boolean(checked))
+                      }
+                      className="mt-0.5"
+                    />
+                    <div className="space-y-0.5">
+                      <label
+                        htmlFor="edit-require-password-change"
+                        className="text-xs font-semibold cursor-pointer text-foreground block"
+                      >
+                        {isAr
+                          ? "إلزام بتغيير كلمة المرور عند تسجيل الدخول القادم"
+                          : "Require password change on next sign-in"}
+                      </label>
+                      <p className="text-[11px] text-muted-foreground leading-tight">
+                        {isAr
+                          ? "سيتم تحويل الموظف تلقائياً لصفحة إعداد كلمة المرور الخاصة به فور تسجيل الدخول."
+                          : "First sign-in password setup will be required upon next login."}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
           )}
@@ -1028,7 +1434,12 @@ function TeamManagement() {
                     role: editing.role,
                     status: editing.status,
                     permissions: editing.role === "staff" ? (editing as any).permissions : [],
-                    ...(editPassword.trim() ? { password: editPassword.trim() } : {}),
+                    ...(editPassword.trim()
+                      ? {
+                          password: editPassword.trim(),
+                          must_change_password: editMustChangePassword,
+                        }
+                      : {}),
                   });
                 }
               }}
@@ -1083,6 +1494,213 @@ function TeamManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Team Member Credentials Card Modal */}
+      <Dialog
+        open={Boolean(credentialsModal?.isOpen)}
+        onOpenChange={(v) => {
+          if (!v) setCredentialsModal(null);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-2 text-primary font-semibold text-xs mb-1">
+              <ShieldCheck className="h-4 w-4" />
+              {isAr ? "بطاقة بيانات الدخول الآمنة" : "Secure Member Credentials"}
+            </div>
+            <DialogTitle className="text-xl font-bold font-display">
+              {isAr ? "بيانات تسجيل الدخول للعضو" : "Member Login Credentials"}
+            </DialogTitle>
+          </DialogHeader>
+
+          {credentialsModal && (
+            <div className="space-y-4 py-2">
+              <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-2.5">
+                <KeyRound className="h-4 w-4 mt-0.5 shrink-0" />
+                <div className="leading-relaxed">
+                  {credentialsModal.mustChangePassword
+                    ? isAr
+                      ? "تم تعيين كلمة المرور ككلمة مرور مؤقتة. سيُطلب من العضو تغييرها فور أول تسجيل دخول قبل الوصول للوحة التحكم."
+                      : "This temporary password has been set. The member will be required to change it on their first login."
+                    : isAr
+                      ? "تم تحديث كلمة المرور بنجاح. يمكن للعضو الدخول بها مباشرة."
+                      : "Password updated successfully. The member can use it to sign in directly."}
+                </div>
+              </div>
+
+              {/* Credential rows */}
+              <div className="space-y-2.5 rounded-xl border border-border bg-card p-3.5 text-xs">
+                {/* Member Name */}
+                {credentialsModal.name && (
+                  <div className="flex items-center justify-between py-1 border-b border-border/50">
+                    <span className="text-muted-foreground">{isAr ? "الاسم:" : "Name:"}</span>
+                    <span className="font-semibold text-foreground">{credentialsModal.name}</span>
+                  </div>
+                )}
+
+                {/* Phone */}
+                {credentialsModal.phone && (
+                  <div className="flex items-center justify-between py-1 border-b border-border/50">
+                    <span className="text-muted-foreground">{isAr ? "الهاتف / الواتساب:" : "Phone / WhatsApp:"}</span>
+                    <span className="font-mono font-medium text-emerald-700 dark:text-emerald-400" dir="ltr">
+                      {credentialsModal.phone}
+                    </span>
+                  </div>
+                )}
+
+                {/* Email */}
+                <div className="flex items-center justify-between py-1 border-b border-border/50">
+                  <span className="text-muted-foreground">{isAr ? "البريد الإلكتروني:" : "Email:"}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-medium text-foreground" dir="ltr">
+                      {credentialsModal.email}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                      onClick={() => copyToClipboard(credentialsModal.email, "email")}
+                    >
+                      {copiedKey === "email" ? (
+                        <CheckCheck className="h-3.5 w-3.5 text-emerald-500" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Temp Password */}
+                {credentialsModal.tempPassword && (
+                  <div className="flex items-center justify-between py-1 border-b border-border/50">
+                    <span className="text-muted-foreground">
+                      {isAr ? "كلمة المرور المؤقتة:" : "Temporary Password:"}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-primary tracking-wider" dir="ltr">
+                        {credentialsModal.tempPassword}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                        onClick={() =>
+                          copyToClipboard(credentialsModal.tempPassword || "", "password")
+                        }
+                      >
+                        {copiedKey === "password" ? (
+                          <CheckCheck className="h-3.5 w-3.5 text-emerald-500" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Login URL */}
+                <div className="flex items-center justify-between py-1">
+                  <span className="text-muted-foreground">
+                    {isAr ? "رابط تسجيل الدخول:" : "Login URL:"}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-muted-foreground text-[11px]" dir="ltr">
+                      {window.location.origin}/auth
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                      onClick={() =>
+                        copyToClipboard(`${window.location.origin}/auth`, "url")
+                      }
+                    >
+                      {copiedKey === "url" ? (
+                        <CheckCheck className="h-3.5 w-3.5 text-emerald-500" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons for sharing */}
+              <div className="space-y-2 pt-2">
+                <Button
+                  className="w-full gap-2 font-medium"
+                  onClick={() => {
+                    const msg = formatTeamInviteMessage({
+                      name: credentialsModal.name,
+                      storeName: credentialsModal.storeName,
+                      email: credentialsModal.email,
+                      tempPassword: credentialsModal.tempPassword,
+                      loginUrl: `${window.location.origin}/auth`,
+                      lang: isAr ? "ar" : "en",
+                    });
+                    copyToClipboard(msg, "full_message");
+                  }}
+                >
+                  {copiedKey === "full_message" ? (
+                    <>
+                      <CheckCheck className="h-4 w-4 text-emerald-300" />
+                      {isAr ? "تم نسخ نص الدعوة كاملاً!" : "Full Invitation Copied!"}
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4" />
+                      {isAr
+                        ? "نسخ رسالة الترحيب والبيانات (جاهزة للمشاركة)"
+                        : "Copy Welcome Message (Ready to share)"}
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full gap-2 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+                  onClick={() => {
+                    const msg = formatTeamInviteMessage({
+                      name: credentialsModal.name,
+                      storeName: credentialsModal.storeName,
+                      email: credentialsModal.email,
+                      tempPassword: credentialsModal.tempPassword,
+                      loginUrl: `${window.location.origin}/auth`,
+                      lang: isAr ? "ar" : "en",
+                    });
+                    const phoneDigits = credentialsModal.phone
+                      ? credentialsModal.phone.replace(/\D/g, "")
+                      : "";
+                    const waUrl = phoneDigits
+                      ? `https://wa.me/${phoneDigits}?text=${encodeURIComponent(msg)}`
+                      : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+                    window.open(waUrl, "_blank");
+                  }}
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  {credentialsModal.phone
+                    ? isAr
+                      ? `إرسال عبر واتساب إلى ${credentialsModal.phone}`
+                      : `Send via WhatsApp to ${credentialsModal.phone}`
+                    : isAr
+                      ? "مشاركة فورية عبر واتساب"
+                      : "Share via WhatsApp"}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              className="w-full"
+              onClick={() => setCredentialsModal(null)}
+            >
+              {isAr ? "إغلاق" : "Done"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

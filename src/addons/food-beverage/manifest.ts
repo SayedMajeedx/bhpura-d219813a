@@ -1,5 +1,4 @@
 import type { AddonManifest } from "@/lib/addons/addon-types";
-import { resolveBrandOwnerUserId } from "@/lib/addons/seed-helpers";
 
 export const foodBeverageManifest: AddonManifest = {
   id: "food-beverage",
@@ -34,10 +33,40 @@ export const foodBeverageManifest: AddonManifest = {
       workshop_instructions: { ar: "تعليمات للمطبخ", en: "Kitchen instructions" },
     },
     variantAxisDefaults: {
-      size: { ar: "الحجم", en: "Size" },
-      color: null,
+      size: { ar: "الوزن / الحجم", en: "Weight / Size" },
+      color: { ar: "النكهة / الخيار", en: "Flavor / Option" },
       fabric: null,
     },
+    sizingPresets: [
+      {
+        id: "sweets_bakery_weights",
+        labelAr: "أوزان الحلويات والمخبوزات (250غ، 500غ، 700غ، 1كغ)",
+        labelEn: "Sweets & Bakery Weights (250g, 500g, 700g, 1kg)",
+        sizes: ["250", "500", "700", "1000"],
+        unit: "g",
+      },
+      {
+        id: "food_portions",
+        labelAr: "أحجام الوجبات (صغير، وسط، كبير)",
+        labelEn: "Meal Portions (Small, Medium, Large)",
+        sizes: ["صغير", "وسط", "كبير"],
+        unit: "portion",
+      },
+      {
+        id: "food_servings",
+        labelAr: "حصص الأفراد (فردي، ثنائي، عائلي)",
+        labelEn: "Servings (Single, Double, Family)",
+        sizes: ["شخص واحد", "شخصين", "عائلي (4-6 أشخاص)"],
+        unit: "serving",
+      },
+      {
+        id: "beverage_sizes",
+        labelAr: "أحجام المشروبات (عادي، كبير)",
+        labelEn: "Drink Sizes (Regular, Large)",
+        sizes: ["عادي", "حجم كبير"],
+        unit: "volume",
+      },
+    ],
     settingsPatchOnInstall: {
       pickup_enabled: true,
     },
@@ -64,41 +93,4 @@ export const foodBeverageManifest: AddonManifest = {
         ? `متجر "${brandName}" يقدم أطعمة ومشروبات ومأكولات طازجة ولذيذة.`
         : `Store "${brandName}" serves fresh foods and beverages.`,
   },
-  seeds: [
-    {
-      key: "food_extras_customization",
-      description: {
-        ar: "خيارات إضافات الوجبات والمشروبات الافتراضية",
-        en: "Default food & beverage customization extras",
-      },
-      run: async ({ brandId, db }) => {
-        const optionName = "إضافة صوص أو مقبلات إضافية";
-        const { data: existing, error: existErr } = await db
-          .from("customization_options")
-          .select("id")
-          .eq("brand_id", brandId)
-          .eq("name", optionName)
-          .maybeSingle();
-
-        if (existErr) throw existErr;
-
-        if (!existing) {
-          const userId = await resolveBrandOwnerUserId(db, brandId);
-          if (!userId) {
-            return;
-          }
-
-          const { error } = await db.from("customization_options").insert({
-            brand_id: brandId,
-            user_id: userId,
-            name: optionName,
-            price_delta: 0.5,
-            product_ids: [],
-          });
-
-          if (error) throw error;
-        }
-      },
-    },
-  ],
 };

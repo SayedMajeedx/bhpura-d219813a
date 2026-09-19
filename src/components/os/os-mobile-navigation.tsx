@@ -18,6 +18,7 @@ import {
   Sun,
   Moon,
   Monitor,
+  Crown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/components/ui/sheet";
@@ -141,22 +142,37 @@ export function OsMobileNavigation({
       {
         id: "orders",
         icon: ordersItem.icon ?? ReceiptText,
-        label: lang === "ar" ? "الطلبات" : "Orders",
-        active: pathname.includes("/orders"),
+        label: lang === "ar" ? "العمليات" : "Operations",
+        active:
+          pathname.includes("/orders") ||
+          pathname.includes("/abandoned-carts") ||
+          pathname.includes("/returns"),
         onClick: () => navigate({ to: `/admin/b/$slug/orders`, params: { slug: activeSlug } }),
       },
       {
         id: "inventory",
         icon: inventoryItem.icon ?? Package,
-        label: lang === "ar" ? "المخزون" : "Inventory",
-        active: pathname.includes("/inventory"),
+        label: lang === "ar" ? "الكتالوج" : "Catalog",
+        active:
+          pathname.includes("/inventory") ||
+          pathname.includes("/categories") ||
+          pathname.includes("/incubators") ||
+          pathname.includes("/size-guides") ||
+          pathname.includes("/import") ||
+          pathname.includes("/export"),
         onClick: () => navigate({ to: `/admin/b/$slug/inventory`, params: { slug: activeSlug } }),
       },
       {
         id: "customers",
         icon: customersItem.icon ?? Users,
-        label: lang === "ar" ? "العملاء" : "Customers",
-        active: pathname.includes("/customers"),
+        label: lang === "ar" ? "النمو" : "Growth",
+        active:
+          pathname.includes("/customers") ||
+          pathname.includes("/reviews") ||
+          pathname.includes("/campaigns") ||
+          pathname.includes("/discounts") ||
+          pathname.includes("/loyalty") ||
+          pathname.includes("/content-studio"),
         onClick: () => navigate({ to: `/admin/b/$slug/customers`, params: { slug: activeSlug } }),
       },
       {
@@ -203,6 +219,15 @@ export function OsMobileNavigation({
           section: "overview",
         },
         {
+          id: "grants",
+          to: "/admin/super/grants",
+          labelEn: "Grant Surveys",
+          labelAr: "مبادرة الـ 6 شهور",
+          icon: Crown,
+          category: "today",
+          section: "overview",
+        },
+        {
           id: "health",
           to: "/admin/super/health",
           labelEn: "System Health",
@@ -230,39 +255,39 @@ export function OsMobileNavigation({
       ];
     }
 
-    const today = navItems.filter((item) => item.category === "today");
-    const productsStock = navItems.filter((item) => item.category === "products_stock");
-    const customersGrowth = navItems.filter((item) => item.category === "customers_growth");
-    const moneyReports = navItems.filter((item) => item.category === "money_reports");
-    const storeSetup = navItems.filter((item) => item.category === "store_setup");
+    const operations = navItems.filter((item) => (item.workspace || item.category) === "operations");
+    const catalog = navItems.filter((item) => (item.workspace || item.category) === "catalog");
+    const growth = navItems.filter((item) => (item.workspace || item.category) === "growth");
+    const finance = navItems.filter((item) => (item.workspace || item.category) === "finance");
+    const storeSetup = navItems.filter((item) => (item.workspace || item.category) === "store_setup");
 
     return [
       {
-        id: "today",
-        title: lang === "ar" ? "اليوم" : "Today",
-        items: today,
+        id: "operations",
+        title: lang === "ar" ? "الطلبات والعمليات" : "Operations & Orders",
+        items: operations,
       },
       {
-        id: "products_stock",
-        title: lang === "ar" ? "المنتجات والمخزون" : "Products & Stock",
-        items: productsStock,
+        id: "catalog",
+        title: lang === "ar" ? "الكتالوج والمخزون" : "Catalog & Stock",
+        items: catalog,
       },
       {
-        id: "customers_growth",
+        id: "growth",
         title: lang === "ar" ? "العملاء والنمو" : "Customers & Growth",
-        items: customersGrowth,
+        items: growth,
       },
       {
-        id: "money_reports",
-        title: lang === "ar" ? "المالية والتقارير" : "Money & Reports",
-        items: moneyReports,
+        id: "finance",
+        title: lang === "ar" ? "المالية والتقارير" : "Finance & Reports",
+        items: finance,
       },
       {
         id: "store_setup",
         title: lang === "ar" ? "إعداد المتجر" : "Store Setup",
         items: storeSetup,
       },
-    ];
+    ].filter((g) => g.items.length > 0);
   }, [activeSlug, isSuperAdmin, navItems, lang]);
 
   return (

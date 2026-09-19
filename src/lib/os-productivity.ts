@@ -50,6 +50,10 @@ export function resolveRouteTitles(
   if (cleanPath.endsWith("/team")) return { en: "Team & Staff", ar: "فريق العمل" };
   if (cleanPath.endsWith("/integrations"))
     return { en: "Integrations & API", ar: "الربط والتكامل" };
+  if (cleanPath.endsWith("/import"))
+    return { en: "Import & Migration", ar: "مركز الاستيراد والترحيل" };
+  if (cleanPath.endsWith("/export"))
+    return { en: "Export & Backup", ar: "مركز التصدير والنسخ الاحتياطي" };
   if (cleanPath.includes("/admin/super/requests"))
     return { en: "Platform Control", ar: "تحكم المنصة الخارقة" };
 

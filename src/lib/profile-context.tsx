@@ -34,6 +34,7 @@ export type Profile = {
   brand_id: string | null;
   brand?: BrandSummary | null;
   permissions?: string[] | null;
+  must_change_password?: boolean | null;
   created_at: string;
   updated_at: string;
 };

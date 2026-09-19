@@ -41,6 +41,7 @@ import {
   Tag,
   Globe,
   Leaf,
+  Coffee,
   LucideIcon,
 } from "lucide-react";
 
@@ -58,43 +59,304 @@ export interface TrustBadgesConfig {
   items: TrustBadgeItem[];
 }
 
-export const DEFAULT_TRUST_BADGES: TrustBadgesConfig = {
-  enabled: true,
-  items: [
-    {
-      id: "badge-designs",
-      icon: "Sparkles",
-      text_ar: "تصاميم حصرية خاصّة بنا",
-      text_en: "Exclusive In-House Designs",
-      color: "amber",
-      enabled: true,
-    },
-    {
+export interface DynamicTrustBadgesParams {
+  vertical?: string | null;
+  settings?: Record<string, any> | null;
+  currency?: string | null;
+  brandName?: string | null;
+}
+
+/**
+ * Generates tailored trust badges dynamically based on the brand's vertical,
+ * enabled payment methods, and fulfillment settings.
+ */
+export function getDynamicTrustBadges(params?: DynamicTrustBadgesParams): TrustBadgesConfig {
+  const vertical = (params?.vertical || "general").toLowerCase();
+  const settings = params?.settings || {};
+  const currency = (params?.currency || settings.currency || "BHD").toUpperCase();
+
+  // 1. Craftsmanship / Product badge tailored to vertical
+  let productBadge: TrustBadgeItem;
+  switch (vertical) {
+    case "coffee":
+      productBadge = {
+        id: "badge-vertical-coffee",
+        icon: "Coffee",
+        text_ar: "محاصيل مختصة طازجة التحميص",
+        text_en: "Freshly Roasted Specialty Coffee",
+        color: "amber",
+        enabled: true,
+      };
+      break;
+    case "beauty":
+      productBadge = {
+        id: "badge-vertical-beauty",
+        icon: "Sparkles",
+        text_ar: "أصناف ومستحضرات أصلية 100%",
+        text_en: "100% Authentic Beauty & Scents",
+        color: "rose",
+        enabled: true,
+      };
+      break;
+    case "jewelry":
+      productBadge = {
+        id: "badge-vertical-jewelry",
+        icon: "Gem",
+        text_ar: "قطع ومجوهرات أصلية فاخرة",
+        text_en: "Guaranteed Fine Jewelry",
+        color: "amber",
+        enabled: true,
+      };
+      break;
+    case "food":
+      productBadge = {
+        id: "badge-vertical-food",
+        icon: "Clock",
+        text_ar: "طازج ومحضر يومياً بعناية",
+        text_en: "Freshly Prepared Daily",
+        color: "amber",
+        enabled: true,
+      };
+      break;
+    case "electronics":
+      productBadge = {
+        id: "badge-vertical-electronics",
+        icon: "ShieldCheck",
+        text_ar: "منتجات أصلية مع ضمان الجودة",
+        text_en: "Authentic Products with Warranty",
+        color: "sky",
+        enabled: true,
+      };
+      break;
+    case "print":
+      productBadge = {
+        id: "badge-vertical-print",
+        icon: "Palette",
+        text_ar: "طباعة عالية الدقة وتفاصيل متقنة",
+        text_en: "High-Resolution Custom Print",
+        color: "indigo",
+        enabled: true,
+      };
+      break;
+    case "gifts":
+      productBadge = {
+        id: "badge-vertical-gifts",
+        icon: "Gift",
+        text_ar: "تغليف إهدائي فاخر وتنسيق متميز",
+        text_en: "Luxury Gift Curation & Packaging",
+        color: "rose",
+        enabled: true,
+      };
+      break;
+    case "digital":
+      productBadge = {
+        id: "badge-vertical-digital",
+        icon: "Zap",
+        text_ar: "تسليم رقمي فوري ومباشر",
+        text_en: "Instant Digital Delivery",
+        color: "sky",
+        enabled: true,
+      };
+      break;
+    case "abayas":
+      productBadge = {
+        id: "badge-vertical-abayas",
+        icon: "Sparkles",
+        text_ar: "تصاميم حصرية وأقمشة مختارة",
+        text_en: "Exclusive In-House Designs",
+        color: "amber",
+        enabled: true,
+      };
+      break;
+    case "fashion":
+      productBadge = {
+        id: "badge-vertical-fashion",
+        icon: "Shirt",
+        text_ar: "أزياء وتصاميم عصرية مختارة",
+        text_en: "Curated Contemporary Fashion",
+        color: "purple",
+        enabled: true,
+      };
+      break;
+    case "home":
+      productBadge = {
+        id: "badge-vertical-home",
+        icon: "Award",
+        text_ar: "قطع منزلية مختارة بعناية",
+        text_en: "Curated Home Essentials",
+        color: "amber",
+        enabled: true,
+      };
+      break;
+    default:
+      productBadge = {
+        id: "badge-vertical-general",
+        icon: "Award",
+        text_ar: "جودة مضمونة وتجربة موثوقة",
+        text_en: "Guaranteed Quality & Trusted Service",
+        color: "amber",
+        enabled: true,
+      };
+      break;
+  }
+
+  // 2. Payment badge tailored to store payment settings & currency
+  const codEnabled = Boolean(settings.cod_enabled ?? true);
+  const benefitEnabled = Boolean(settings.benefit_enabled || settings.benefit_pay_enabled);
+  const cardEnabled = Boolean(
+    settings.card_enabled || settings.tap_enabled || settings.stripe_enabled,
+  );
+
+  let paymentBadge: TrustBadgeItem;
+  if (benefitEnabled && codEnabled && currency === "BHD") {
+    paymentBadge = {
       id: "badge-payments",
       icon: "Banknote",
       text_ar: "الدفع كاش عند الاستلام أو بنفت بي",
       text_en: "Cash on Arrival & BenefitPay",
       color: "emerald",
       enabled: true,
-    },
-    {
-      id: "badge-security",
-      icon: "ShieldCheck",
-      text_ar: "موقع آمن ومشفّر 256-Bit",
-      text_en: "256-Bit SSL Encrypted",
-      color: "sky",
+    };
+  } else if (benefitEnabled && currency === "BHD") {
+    paymentBadge = {
+      id: "badge-payments",
+      icon: "QrCode",
+      text_ar: "الدفع المباشر عبر بنفت بي",
+      text_en: "Direct BenefitPay Checkout",
+      color: "emerald",
       enabled: true,
-    },
-    {
+    };
+  } else if (cardEnabled && codEnabled) {
+    paymentBadge = {
+      id: "badge-payments",
+      icon: "CreditCard",
+      text_ar: "الدفع بالبطاقة أو عند الاستلام",
+      text_en: "Card & Cash on Delivery",
+      color: "emerald",
+      enabled: true,
+    };
+  } else if (cardEnabled) {
+    paymentBadge = {
+      id: "badge-payments",
+      icon: "CreditCard",
+      text_ar: "دفع إلكتروني آمن ومشفر",
+      text_en: "Safe & Encrypted Digital Payments",
+      color: "emerald",
+      enabled: true,
+    };
+  } else if (codEnabled) {
+    paymentBadge = {
+      id: "badge-payments",
+      icon: "Banknote",
+      text_ar: "الدفع نقداً عند الاستلام",
+      text_en: "Cash on Delivery Available",
+      color: "emerald",
+      enabled: true,
+    };
+  } else {
+    paymentBadge = {
+      id: "badge-payments",
+      icon: "CreditCard",
+      text_ar: "طرق دفع آمنة وموثوقة",
+      text_en: "Secure & Trusted Payment Methods",
+      color: "emerald",
+      enabled: true,
+    };
+  }
+
+  // 3. Security badge
+  const securityBadge: TrustBadgeItem = {
+    id: "badge-security",
+    icon: "ShieldCheck",
+    text_ar: "موقع آمن ومشفّر 256-Bit",
+    text_en: "256-Bit SSL Encrypted",
+    color: "sky",
+    enabled: true,
+  };
+
+  // 4. Delivery / fulfillment badge
+  let deliveryBadge: TrustBadgeItem;
+  if (vertical === "digital" || settings.digital_delivery_enabled) {
+    deliveryBadge = {
       id: "badge-delivery",
-      icon: "Truck",
-      text_ar: "توصيل سريع ومباشر",
-      text_en: "Fast Local Delivery",
+      icon: "Zap",
+      text_ar: "تحميل فوري بعد الدفع مباشرة",
+      text_en: "Instant Access & Direct Download",
       color: "purple",
       enabled: true,
-    },
-  ],
-};
+    };
+  } else if (settings.pickup_enabled && settings.delivery_enabled === false) {
+    deliveryBadge = {
+      id: "badge-delivery",
+      icon: "PackageCheck",
+      text_ar: "استلام فوري وميسّر من الفرع",
+      text_en: "Fast & Easy Store Pickup",
+      color: "purple",
+      enabled: true,
+    };
+  } else {
+    deliveryBadge = {
+      id: "badge-delivery",
+      icon: "Truck",
+      text_ar: "توصيل سريع ومباشر للباب",
+      text_en: "Fast & Direct Local Delivery",
+      color: "purple",
+      enabled: true,
+    };
+  }
+
+  return {
+    enabled: true,
+    items: [productBadge, paymentBadge, securityBadge, deliveryBadge],
+  };
+}
+
+export const DEFAULT_TRUST_BADGES: TrustBadgesConfig = getDynamicTrustBadges({ vertical: "general" });
+
+/**
+ * Resolves active trust badges for the storefront.
+ * 
+ * Rules:
+ * 1. If merchant explicitly configured trust badges in database:
+ *    - If global toggle is off (enabled === false): returns [] (no badges).
+ *    - If merchant configured items list (even if empty []): returns items where enabled !== false.
+ * 2. If not yet configured (null/undefined):
+ *    - Falls back to smart niche-specific dynamic badges.
+ */
+export function resolveStorefrontTrustBadges(options: {
+  config?: TrustBadgesConfig | null;
+  vertical?: string | null;
+  settings?: any;
+  brandName?: string | null;
+}): TrustBadgeItem[] {
+  const { config, vertical, settings, brandName } = options;
+
+  // 1. If merchant explicitly configured trust badges in database:
+  if (config && typeof config === "object") {
+    // If merchant turned OFF the global badges toggle:
+    if (config.enabled === false) {
+      return [];
+    }
+    // If merchant configured items:
+    if (Array.isArray(config.items)) {
+      return config.items.filter((item) => item && item.enabled !== false);
+    }
+  }
+
+  // 2. Fallback to smart niche-specific dynamic badges only if not yet configured by merchant:
+  const dynamic = getDynamicTrustBadges({
+    vertical: vertical || undefined,
+    settings,
+    currency: settings?.currency,
+    brandName: brandName || undefined,
+  });
+
+  if (dynamic.enabled === false) {
+    return [];
+  }
+
+  return (dynamic.items || []).filter((item) => item && item.enabled !== false);
+}
 
 export interface BadgeColorPreset {
   id: string;
@@ -693,6 +955,17 @@ export const TRUST_ICON_CATALOG: IconCatalogItem[] = [
     description_en: "Most popular bestselling trends right now",
     category: "general",
     keywords: ["flame", "hot", "trend", "popular", "شعلة", "ترند", "الأكثر طلبا", "رائج"],
+  },
+  {
+    id: "Coffee",
+    name: "Coffee",
+    icon: Coffee,
+    label_ar: "قهوة ومحاصيل مختصة",
+    label_en: "Specialty Coffee Beans",
+    description_ar: "محاصيل قهوة مختصة طازجة التحميص وجودة عالية",
+    description_en: "Fresh roasted specialty coffee beans and single origin crops",
+    category: "general",
+    keywords: ["coffee", "beans", "roastery", "specialty", "قهوة", "محصول", "بن", "محمصة", "اسبريسو", "فلتر"],
   },
   {
     id: "Leaf",

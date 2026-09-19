@@ -119,7 +119,7 @@ export function TrustBadgeIconPicker({
         {/* Header & Search Input */}
         <div className="p-3 border-b border-border bg-muted/30 space-y-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold flex items-center gap-1.5">
+            <span className="text-xs font-medium flex items-center gap-1.5 text-foreground">
               <Sparkles className="h-3.5 w-3.5 text-primary" />
               {isAr ? "اختيار أيقونة الشارة" : "Select Badge Icon"}
             </span>
@@ -153,7 +153,7 @@ export function TrustBadgeIconPicker({
                 size="sm"
                 className={cn(
                   "h-6 px-2 text-xs rounded-md shrink-0 font-normal",
-                  selectedCategory === cat.id && "font-semibold",
+                  selectedCategory === cat.id && "font-medium",
                 )}
                 onClick={() => setSelectedCategory(cat.id)}
               >
@@ -206,7 +206,7 @@ export function TrustBadgeIconPicker({
 
                     <div className="min-w-0 flex-1 space-y-0.5">
                       <div className="flex items-center justify-between gap-1">
-                        <span className="text-xs font-semibold truncate leading-tight">
+                        <span className="text-xs font-medium text-foreground truncate leading-tight">
                           {isAr ? item.label_ar : item.label_en}
                         </span>
                         {isSelected && <Check className="h-3 w-3 text-primary shrink-0" />}

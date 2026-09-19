@@ -481,9 +481,30 @@ export function StoreReadinessChecklist({
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 100;
   const isAllComplete = completedCount === totalCount;
 
-  // Option 3: Collapsed by default when 100% complete; expanded by default when incomplete
-  const [userCollapsed, setUserCollapsed] = useState<boolean | null>(null);
+  // Option 3: Collapsed preference with localStorage memory
+  const collapseStorageKey = `store-readiness-collapsed-${brandId}`;
+  const [userCollapsed, setUserCollapsed] = useState<boolean | null>(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const saved = localStorage.getItem(collapseStorageKey);
+        if (saved !== null) return saved === "true";
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  });
   const collapsed = userCollapsed !== null ? userCollapsed : isAllComplete;
+
+  const toggleCollapsed = () => {
+    const next = !collapsed;
+    setUserCollapsed(next);
+    try {
+      localStorage.setItem(collapseStorageKey, String(next));
+    } catch {
+      // ignore
+    }
+  };
 
   // Option 3: Dismiss capability with localStorage memory
   const storageKey = `store-readiness-dismissed-${brandId}`;
@@ -526,32 +547,32 @@ export function StoreReadinessChecklist({
 
   return (
     <div
-      className={`rounded-2xl border border-border-strong bg-card shadow-xs transition-all ${
-        collapsed ? "p-3 sm:p-4" : "p-4 sm:p-5"
+      className={`rounded-xl border border-border/70 bg-card shadow-xs transition-all ${
+        collapsed ? "p-3 sm:p-3.5" : "p-4 sm:p-5"
       }`}
     >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
           <div
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors ${
               isAllComplete
                 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/20"
                 : "bg-primary/10 text-primary"
             }`}
           >
             {isAllComplete ? (
-              <CheckCircle2 className="h-5 w-5" />
+              <CheckCircle2 className="h-4.5 w-4.5" />
             ) : (
-              <Sparkles className="h-5 w-5" />
+              <Sparkles className="h-4.5 w-4.5" />
             )}
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-display font-bold text-foreground text-sm sm:text-base">
+              <h3 className="text-sm sm:text-base font-semibold text-foreground tracking-tight">
                 {isAr ? "جاهزية المتجر للانطلاق المباشر" : "Store Launch Readiness"}
               </h3>
               <span
-                className={`text-xs font-bold px-2 py-0.5 rounded-full transition-colors ${
+                className={`text-xs font-medium px-2.5 py-0.5 rounded-full transition-colors ${
                   isAllComplete
                     ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
                     : "bg-amber-500/15 text-amber-800 dark:text-amber-200"
@@ -560,7 +581,7 @@ export function StoreReadinessChecklist({
                 {completedCount} / {totalCount} {isAr ? "مكتمل" : "completed"} ({progressPercent}%)
               </span>
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground font-normal leading-relaxed mt-0.5">
               {isAllComplete
                 ? isAr
                   ? "متجرك مستوفٍ لجميع المتطلبات الأساسية ومستعد لاستقبال العملاء والطلبات!"
@@ -573,7 +594,7 @@ export function StoreReadinessChecklist({
         </div>
 
         <div className="flex items-center gap-1.5 self-end sm:self-center">
-          <Button asChild variant="outline" size="sm" className="h-8 gap-1.5 text-xs font-semibold">
+          <Button asChild variant="outline" size="sm" className="h-8 gap-1.5 text-xs font-medium">
             <a href={`/${slug}`} target="_blank" rel="noopener noreferrer">
               <Store className="h-3.5 w-3.5 text-primary" />
               <span>{isAr ? "معاينة المتجر المباشر" : "Customer Preview"}</span>
@@ -585,7 +606,7 @@ export function StoreReadinessChecklist({
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => setUserCollapsed(!collapsed)}
+            onClick={toggleCollapsed}
             className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
             aria-label={
               collapsed
@@ -636,10 +657,10 @@ export function StoreReadinessChecklist({
             return (
               <div
                 key={item.id}
-                className={`flex items-start justify-between gap-3 p-3 rounded-xl border transition-colors ${
+                className={`flex items-start justify-between gap-3 p-3 rounded-lg border transition-colors ${
                   item.isComplete
                     ? "border-emerald-500/20 bg-emerald-500/[0.03]"
-                    : "border-border-strong bg-muted/20 hover:border-primary/40"
+                    : "border-border/60 bg-muted/20 hover:border-primary/40"
                 }`}
               >
                 <div className="flex items-start gap-2.5 min-w-0">
@@ -657,10 +678,10 @@ export function StoreReadinessChecklist({
                     )}
                   </div>
                   <div className="min-w-0">
-                    <span className="text-xs font-bold text-foreground block truncate">
+                    <span className="text-xs font-medium text-foreground block truncate">
                       {item.title}
                     </span>
-                    <span className="text-xs text-muted-foreground block line-clamp-1">
+                    <span className="text-xs text-muted-foreground/90 font-normal block line-clamp-1 leading-normal">
                       {item.description}
                     </span>
                   </div>
@@ -669,7 +690,7 @@ export function StoreReadinessChecklist({
                 <div className="shrink-0 self-center">
                   {item.isComplete ? (
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded bg-emerald-500/10">
+                      <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded bg-emerald-500/10">
                         {isAr ? "مكتمل" : "Ready"}
                       </span>
                       {item.actionType === "tab" && item.tabId ? (
@@ -678,7 +699,7 @@ export function StoreReadinessChecklist({
                           variant="ghost"
                           size="sm"
                           onClick={() => onNavigateTab(item.tabId!)}
-                          className="h-6 px-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+                          className="h-6 px-1.5 text-xs font-normal text-muted-foreground hover:text-foreground"
                           title={item.editLabel}
                         >
                           <span>{item.editLabel}</span>
@@ -688,7 +709,7 @@ export function StoreReadinessChecklist({
                           asChild
                           variant="ghost"
                           size="sm"
-                          className="h-6 px-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+                          className="h-6 px-1.5 text-xs font-normal text-muted-foreground hover:text-foreground"
                           title={item.editLabel}
                         >
                           <Link to={item.href}>
@@ -703,7 +724,7 @@ export function StoreReadinessChecklist({
                       variant="outline"
                       size="sm"
                       onClick={() => onNavigateTab(item.tabId!)}
-                      className="h-7 text-xs font-bold px-2"
+                      className="h-7 text-xs font-medium px-2.5"
                     >
                       {item.actionLabel}
                     </Button>
@@ -712,7 +733,7 @@ export function StoreReadinessChecklist({
                       asChild
                       variant="outline"
                       size="sm"
-                      className="h-7 text-xs font-bold px-2"
+                      className="h-7 text-xs font-medium px-2.5"
                     >
                       <Link to={item.href}>
                         {item.actionLabel}
