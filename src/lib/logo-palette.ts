@@ -493,7 +493,7 @@ export async function extractLogoPalette(
       } else {
         source.onload = onImageLoaded;
       }
-    } else if (source instanceof Blob || source instanceof File) {
+    } else if (source instanceof Blob) {
       const url = URL.createObjectURL(source);
       img.onload = () => {
         onImageLoaded();

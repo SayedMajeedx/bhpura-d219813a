@@ -277,7 +277,11 @@ export function BrandWizardDialog({ onSaved, onClose }: BrandWizardDialogProps) 
         }
 
         // Sync default categories
-        await syncBrandVerticalCategories(brandId, data.store_vertical);
+        await syncBrandVerticalCategories({
+          db: supabase,
+          brandId,
+          newVertical: data.store_vertical,
+        });
         updatePipelineStep("finalize", "success");
       } catch (err: any) {
         updatePipelineStep(
