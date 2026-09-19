@@ -381,7 +381,7 @@ async function handleCreate(
   const userRole = role || "staff";
   const validRoles = ctx.isSuperAdmin
     ? ["super_admin", "admin", "brand_admin", "staff", "courier"]
-    : ["staff", "courier"]; // brand admins/admins may create operational roles only
+    : ["brand_admin", "admin", "staff", "courier"];
   if (!validRoles.includes(userRole)) {
     return new Response(
       JSON.stringify({ error: `Invalid role. Allowed: ${validRoles.join(", ")}` }),
@@ -400,7 +400,7 @@ async function handleCreate(
     }
   }
   // Every non-platform role must have a brand.
-  if ((userRole === "brand_admin" || userRole === "staff" || userRole === "courier") && !brand_id) {
+  if ((userRole === "brand_admin" || userRole === "admin" || userRole === "staff" || userRole === "courier") && !brand_id) {
     return new Response(JSON.stringify({ error: "brand_id is required for this role" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -645,7 +645,7 @@ async function handleUpdate(
 
   const validRoles = ctx.isSuperAdmin
     ? ["super_admin", "admin", "brand_admin", "staff", "courier"]
-    : ["staff", "courier"];
+    : ["brand_admin", "admin", "staff", "courier"];
 
   const updates: Record<string, any> = {};
   if (mustChangePassword !== undefined) {
@@ -661,7 +661,16 @@ async function handleUpdate(
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+    if (!ctx.isSuperAdmin && role === "super_admin") {
+      return new Response(
+        JSON.stringify({ error: "Only super admins can assign super_admin role" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
     updates.role = role;
+    if (role !== "staff") {
+      updates.permissions = [];
+    }
   }
   if (status !== undefined) {
     if (!["active", "inactive"].includes(status)) {

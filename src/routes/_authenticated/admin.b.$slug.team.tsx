@@ -625,6 +625,18 @@ function TeamManagement() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="brand_admin">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4" />
+                      {isAr ? "مدير علامة تجارية" : "Brand Admin"}
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="admin">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4" />
+                      {isAr ? "مدير" : "Admin"}
+                    </div>
+                  </SelectItem>
                   <SelectItem value="staff">
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4" />
@@ -637,22 +649,6 @@ function TeamManagement() {
                       {isAr ? "مندوب توصيل" : "Courier"}
                     </div>
                   </SelectItem>
-                  {isSuperAdmin && (
-                    <SelectItem value="admin">
-                      <div className="flex items-center gap-2">
-                        <Shield className="h-4 w-4" />
-                        {isAr ? "مدير" : "Admin"}
-                      </div>
-                    </SelectItem>
-                  )}
-                  {isSuperAdmin && (
-                    <SelectItem value="brand_admin">
-                      <div className="flex items-center gap-2">
-                        <Shield className="h-4 w-4" />
-                        {isAr ? "مدير علامة تجارية" : "Brand Admin"}
-                      </div>
-                    </SelectItem>
-                  )}
                   {isSuperAdmin && (
                     <SelectItem value="super_admin">
                       <div className="flex items-center gap-2">
@@ -1234,6 +1230,18 @@ function TeamManagement() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="brand_admin">
+                      <div className="flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        {isAr ? "مدير علامة تجارية" : "Brand Admin"}
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="admin">
+                      <div className="flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        {isAr ? "مدير" : "Admin"}
+                      </div>
+                    </SelectItem>
                     <SelectItem value="staff">
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4" />
@@ -1246,22 +1254,6 @@ function TeamManagement() {
                         {isAr ? "مندوب توصيل" : "Courier"}
                       </div>
                     </SelectItem>
-                    {isSuperAdmin && (
-                      <SelectItem value="admin">
-                        <div className="flex items-center gap-2">
-                          <Shield className="h-4 w-4" />
-                          {isAr ? "مدير" : "Admin"}
-                        </div>
-                      </SelectItem>
-                    )}
-                    {(isSuperAdmin || editing.role === "brand_admin") && (
-                      <SelectItem value="brand_admin">
-                        <div className="flex items-center gap-2">
-                          <Shield className="h-4 w-4" />
-                          {isAr ? "مدير علامة تجارية" : "Brand Admin"}
-                        </div>
-                      </SelectItem>
-                    )}
                     {(isSuperAdmin || editing.role === "super_admin") && (
                       <SelectItem value="super_admin">
                         <div className="flex items-center gap-2">
