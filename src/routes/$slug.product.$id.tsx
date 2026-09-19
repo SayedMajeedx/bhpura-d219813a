@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { formatSizeWithUnit } from "@/lib/format";
 import { translateOptionValue } from "@/lib/variant-i18n";
+import { useVariantTranslations } from "@/lib/use-variant-translations";
 import {
   ChevronLeft,
   ChevronRight,
@@ -568,6 +569,17 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     const opts = variants.map((v) => v.option_five).filter(Boolean) as string[];
     return Array.from(new Set(opts));
   }, [variants]);
+
+  const allOptionTerms = useMemo(() => {
+    return [
+      ...uniqueColors,
+      ...uniqueFabrics,
+      ...uniqueFour,
+      ...uniqueFive,
+    ];
+  }, [uniqueColors, uniqueFabrics, uniqueFour, uniqueFive]);
+
+  useVariantTranslations(allOptionTerms, lang === "ar" ? "ar" : "en");
 
   const addonAxisDefaults = useMemo(() => variantAxisDefaultsFrom(addons), [addons]);
   const resolvedAxes = useMemo(() => {

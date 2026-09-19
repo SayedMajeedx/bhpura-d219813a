@@ -126,6 +126,26 @@ import {
   getVerticalAxisPlaceholders,
 } from "@/lib/addons/vertical-inventory";
 import { useAddons } from "@/components/addons/AddonsProvider";
+import { translateOptionTerms } from "@/lib/translate-options.functions";
+
+function prefetchOptionTranslations(terms: Array<string | null | undefined>, isAr: boolean) {
+  const cleanTerms = Array.from(
+    new Set(
+      terms
+        .map((t) => (t || "").trim())
+        .filter((t) => t.length > 0)
+    )
+  );
+  if (cleanTerms.length === 0) return;
+
+  translateOptionTerms({
+    data: {
+      terms: cleanTerms,
+      from: isAr ? "ar" : "en",
+      to: isAr ? "en" : "ar",
+    },
+  }).catch((err) => console.warn("Failed to prefetch variant translations:", err));
+}
 
 /** Common measurement units the admin can pick from for a "size" variant. */
 const SIZE_UNITS = ["", "cm", "mm", "m", "inch", "ft", "kg", "g", "ml", "l"] as const;
@@ -2788,6 +2808,7 @@ function ProductDialog({
           barcode: null,
           image_url: form.image_url || (form.media?.[0]?.url ?? null),
         });
+        prefetchOptionTranslations([form.fabric_type], isAr);
       }
     }
     for (const url of removedCommittedMedia.current) {
@@ -4394,6 +4415,8 @@ function BulkVariantDialog({
         })),
       );
       if (error) throw error;
+      const batchTerms = rows.flatMap((r) => [r.color, r.fabric]);
+      prefetchOptionTranslations(batchTerms, isAr);
       let activationFailed = false;
       if (variants.length === 0) {
         const { error: activationError } = await supabase
@@ -6720,6 +6743,7 @@ function VariantList({
       image_url: row.image_url || null,
     });
     if (error) return toast.error(error.message);
+    prefetchOptionTranslations([finalColor, row.fabric, row.option_four, row.option_five], isAr);
 
     if (finalColor && !product?.variant_label_color_ar) {
       await (supabase.from("products") as any)
@@ -6786,7 +6810,10 @@ function VariantList({
       .update(normalizedPatch)
       .eq("id", v.id);
     if (error) toast.error(error.message);
-    else onChanged();
+    else {
+      prefetchOptionTranslations([normalizedPatch.color, normalizedPatch.fabric, normalizedPatch.option_four, normalizedPatch.option_five], isAr);
+      onChanged();
+    }
   };
 
   const del = async (id: string) => {
