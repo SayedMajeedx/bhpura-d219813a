@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +34,7 @@ import {
   Upload,
   FileText,
   Sparkles,
+  ExternalLink,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
@@ -364,8 +365,6 @@ function PagesAndPolicies() {
       .update({
         pages: pagesPayload,
         socials: cleanedSocials,
-        whatsapp_enabled: waEnabled,
-        whatsapp_number: number || null,
       })
       .eq("brand_id", brandId);
     setSaving(false);
@@ -525,41 +524,41 @@ function PagesAndPolicies() {
             </div>
           </Card>
 
-          <Card className="space-y-4 overflow-hidden rounded-2xl border-border-subtle bg-card p-3 shadow-lg sm:p-6">
+          <Card className="space-y-4 overflow-hidden rounded-2xl border-border-subtle bg-card p-4 shadow-lg sm:p-6">
             <div className="flex items-center gap-2">
               <MessageCircle className="h-5 w-5 text-emerald-500" />
               <h2 className="font-display text-xl font-bold">
                 {isAr ? "زر واتساب العائم" : "WhatsApp floating button"}
               </h2>
             </div>
-            <div className="flex items-center justify-between gap-4 rounded-xl border p-4 bg-muted/10">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border p-4 bg-muted/10">
               <div>
                 <p className="text-sm font-semibold">
-                  {isAr ? "إظهار الزر في المتجر" : "Show button on storefront"}
+                  {isAr ? "إدارة تفعيل ورقم الواتساب" : "WhatsApp Button & Number"}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {isAr
-                    ? "يفتح محادثة واتساب مباشرة من جميع صفحات المتجر."
-                    : "Opens a WhatsApp chat from every storefront page."}
+                    ? "يُدار زر واتساب العائم ونموذج التواصل المركزي الآن من إعدادات المتجر."
+                    : "The storefront WhatsApp floating button and inquiry number are managed in Settings."}
                 </p>
+                <div className="mt-2 text-xs font-mono text-muted-foreground">
+                  {isAr ? "الحالة الحالية: " : "Current status: "}
+                  <span className="font-semibold text-foreground">
+                    {waEnabled ? (isAr ? "مفعّل" : "Enabled") : (isAr ? "معطّل" : "Disabled")}
+                  </span>
+                  {waNumber && <span> ({waNumber})</span>}
+                </div>
               </div>
-              <Switch
-                checked={waEnabled}
-                onCheckedChange={setWaEnabled}
-                aria-label={lang === "ar" ? "تفعيل زر واتساب" : "Enable WhatsApp button"}
-              />
-            </div>
-            <div>
-              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">
-                {isAr ? "رقم واتساب مع رمز الدولة" : "WhatsApp number with country code"}
-              </Label>
-              <Input
-                value={waNumber}
-                onChange={(event) => setWaNumber(event.target.value)}
-                placeholder="+97312345678"
-                inputMode="tel"
-                dir="ltr"
-              />
+              <Button asChild variant="outline" size="sm">
+                <Link
+                  to="/admin/b/$slug/settings"
+                  params={{ slug: brand.slug }}
+                  search={{ tab: "storefront", group: "mode" } as any}
+                >
+                  <span>{isAr ? "تعديل في الإعدادات" : "Edit in Settings"}</span>
+                  <ExternalLink className="ms-1.5 h-3.5 w-3.5" />
+                </Link>
+              </Button>
             </div>
           </Card>
         </>

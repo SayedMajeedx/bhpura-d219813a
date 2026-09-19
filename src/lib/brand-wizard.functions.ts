@@ -27,7 +27,7 @@ export const finalizeBrandSetup = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // 1. Update logo & favicon in settings and brands table
-    const updatePayload: Record<string, any> = {};
+    const updatePayload: { logo_url?: string | null; favicon_url?: string | null } = {};
     if (data.logoUrl) {
       updatePayload.logo_url = data.logoUrl;
     }
