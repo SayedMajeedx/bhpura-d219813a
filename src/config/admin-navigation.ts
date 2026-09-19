@@ -361,7 +361,7 @@ export function getAdminNavItems({
       labelAr: lang === "ar" ? "الحاضنات والعُهد" : "Incubators & Consignment",
       descriptionEn:
         "Consignment inventory tracking, vendor payouts, and profit-sharing management",
-      descriptionAr: "إدارة بضائع الأمانة، الموردين الخارجيين، ونسب الأرباح المشتركة",
+      descriptionAr: "إدارة بضائع الحاضنات والعُهد، الموردين الخارجيين، ونسب الأرباح المشتركة",
       icon: Building2,
       permission: "manage_inventory",
       section: "operations",

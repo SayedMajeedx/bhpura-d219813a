@@ -4658,7 +4658,7 @@ function BulkVariantDialog({
           </div>
           <div>
             <div className="flex items-center gap-1">
-              <Label>{isAr ? "مخزون الأمانة / الحاضنة" : "Consignment / Incubator stock"}</Label>
+              <Label>{isAr ? "مخزون الحاضنة" : "Incubator stock"}</Label>
               <TooltipProvider delayDuration={200}>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -4668,8 +4668,8 @@ function BulkVariantDialog({
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-xs text-center text-xs">
                     {isAr
-                      ? "القطع المعروضة في محلات خارجية أو حاضنات شريكة بنظام الأمانة/العُهدة."
-                      : "Items held at partner boutiques or business incubators under consignment."}
+                      ? "القطع المعروضة في محلات خارجية أو حاضنات شريكة."
+                      : "Items held at partner boutiques or business incubators."}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -4745,7 +4745,7 @@ function BulkVariantDialog({
               </div>
 
               <div className="flex items-center gap-1.5">
-                <span>{isAr ? "الأمانة/الحاضنة:" : "Consignment:"}</span>
+                <span>{isAr ? "الحاضنة:" : "Incubator:"}</span>
                 <Input
                   className="h-7 w-16 text-xs"
                   type="number"
@@ -4801,7 +4801,7 @@ function BulkVariantDialog({
                       ...(canViewFinancials ? [isAr ? "التكلفة" : "Cost"] : []),
                       isAr ? "السعر اللي يدفعه العميل" : "Customer price",
                       isAr ? "مخزون المحل" : "Store Stock",
-                      isAr ? "الأمانة / الحاضنة" : "Consignment / Incubator",
+                      isAr ? "مخزون الحاضنة" : "Incubator Stock",
                       "",
                     ].map((label) => (
                       <th key={label} className="p-2 text-start font-semibold">
@@ -5191,30 +5191,54 @@ function VariantDesktopRow({
     addonDefaults: addonAxisDefaults,
     lang: isAr ? "ar" : "en",
   });
-  const colorAxis = resolveVariantAxis({
-    axis: "color",
-    product,
-    addonDefaults: addonAxisDefaults,
-    lang: isAr ? "ar" : "en",
-  });
-  const fabricAxis = resolveVariantAxis({
-    axis: "fabric",
-    product,
-    addonDefaults: addonAxisDefaults,
-    lang: isAr ? "ar" : "en",
-  });
-  const fourAxis = resolveVariantAxis({
-    axis: "four",
-    product,
-    addonDefaults: addonAxisDefaults,
-    lang: isAr ? "ar" : "en",
-  });
-  const fiveAxis = resolveVariantAxis({
-    axis: "five",
-    product,
-    addonDefaults: addonAxisDefaults,
-    lang: isAr ? "ar" : "en",
-  });
+  const colorAxis = useMemo(() => {
+    const raw = resolveVariantAxis({
+      axis: "color",
+      product,
+      addonDefaults: addonAxisDefaults,
+      lang: isAr ? "ar" : "en",
+    });
+    return {
+      ...raw,
+      visible: raw.visible || Boolean(v.color && v.color.trim()),
+    };
+  }, [product, addonAxisDefaults, isAr, v.color]);
+  const fabricAxis = useMemo(() => {
+    const raw = resolveVariantAxis({
+      axis: "fabric",
+      product,
+      addonDefaults: addonAxisDefaults,
+      lang: isAr ? "ar" : "en",
+    });
+    return {
+      ...raw,
+      visible: raw.visible || Boolean(v.fabric && v.fabric.trim()),
+    };
+  }, [product, addonAxisDefaults, isAr, v.fabric]);
+  const fourAxis = useMemo(() => {
+    const raw = resolveVariantAxis({
+      axis: "four",
+      product,
+      addonDefaults: addonAxisDefaults,
+      lang: isAr ? "ar" : "en",
+    });
+    return {
+      ...raw,
+      visible: raw.visible || Boolean(v.option_four && v.option_four.trim()),
+    };
+  }, [product, addonAxisDefaults, isAr, v.option_four]);
+  const fiveAxis = useMemo(() => {
+    const raw = resolveVariantAxis({
+      axis: "five",
+      product,
+      addonDefaults: addonAxisDefaults,
+      lang: isAr ? "ar" : "en",
+    });
+    return {
+      ...raw,
+      visible: raw.visible || Boolean(v.option_five && v.option_five.trim()),
+    };
+  }, [product, addonAxisDefaults, isAr, v.option_five]);
 
   // Sync back on external changes
   useEffect(() => {
@@ -5661,7 +5685,7 @@ function VariantDesktopRow({
             <div className="flex flex-col items-center gap-1 mt-1 pt-1 border-t border-border/40 w-full">
               <div className="flex items-center justify-center gap-1.5">
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight shrink-0">
-                  {isAr ? "أمانة:" : "Inc:"}
+                  {isAr ? "حاضنة:" : "Inc:"}
                 </span>
                 <StockStepper
                   value={v.stock_incubator ?? 0}
@@ -5676,7 +5700,7 @@ function VariantDesktopRow({
             <div className="flex items-center justify-center gap-2 text-[11px] flex-wrap">
               {(v.stock_incubator ?? 0) > 0 && (
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-semibold text-[10px] border border-border-subtle">
-                  {isAr ? "أمانة:" : "Inc:"} <strong className="ms-1 text-foreground">{v.stock_incubator}</strong>
+                  {isAr ? "حاضنة:" : "Inc:"} <strong className="ms-1 text-foreground">{v.stock_incubator}</strong>
                 </span>
               )}
               <span className={`text-[11px] whitespace-nowrap leading-none ${runRateColor}`}>
@@ -5938,8 +5962,8 @@ function VariantMobileCard({
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs text-center text-xs">
                   {isAr
-                    ? "القطع المعروضة في محلات خارجية أو حاضنات شريكة بنظام الأمانة/العُهدة."
-                    : "Items held at partner boutiques or business incubators under consignment."}
+                    ? "القطع المعروضة في محلات خارجية أو حاضنات شريكة."
+                    : "Items held at partner boutiques or business incubators."}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -6459,24 +6483,59 @@ function VariantList({
     }),
     [rawColorAxis, hasVariantColors],
   );
-  const fabricAxis = resolveVariantAxis({
+  const rawFabricAxis = resolveVariantAxis({
     axis: "fabric",
     product,
     addonDefaults: addonAxisDefaults,
     lang: isAr ? "ar" : "en",
   });
-  const fourAxis = resolveVariantAxis({
+  const hasVariantFabrics = useMemo(
+    () => variants.some((v) => Boolean(v.fabric && v.fabric.trim())),
+    [variants],
+  );
+  const fabricAxis = useMemo(
+    () => ({
+      ...rawFabricAxis,
+      visible: rawFabricAxis.visible || hasVariantFabrics,
+    }),
+    [rawFabricAxis, hasVariantFabrics],
+  );
+
+  const rawFourAxis = resolveVariantAxis({
     axis: "four",
     product,
     addonDefaults: addonAxisDefaults,
     lang: isAr ? "ar" : "en",
   });
-  const fiveAxis = resolveVariantAxis({
+  const hasVariantFour = useMemo(
+    () => variants.some((v) => Boolean(v.option_four && v.option_four.trim())),
+    [variants],
+  );
+  const fourAxis = useMemo(
+    () => ({
+      ...rawFourAxis,
+      visible: rawFourAxis.visible || hasVariantFour,
+    }),
+    [rawFourAxis, hasVariantFour],
+  );
+
+  const rawFiveAxis = resolveVariantAxis({
     axis: "five",
     product,
     addonDefaults: addonAxisDefaults,
     lang: isAr ? "ar" : "en",
   });
+  const hasVariantFive = useMemo(
+    () => variants.some((v) => Boolean(v.option_five && v.option_five.trim())),
+    [variants],
+  );
+  const fiveAxis = useMemo(
+    () => ({
+      ...rawFiveAxis,
+      visible: rawFiveAxis.visible || hasVariantFive,
+    }),
+    [rawFiveAxis, hasVariantFive],
+  );
 
   // 1-Click Auto-Healer: Detect variants where size contains merged attributes (e.g. "700 - عادية" with color null)
   const [isHealing, setIsHealing] = useState(false);
@@ -6737,13 +6796,13 @@ function VariantList({
   };
 
   const mainLabel = isAr ? "مخزون المحل" : "Store Stock";
-  const incLabel = isAr ? "مخزون الأمانة / الحاضنة" : "Consignment / Incubator";
+  const incLabel = isAr ? "مخزون الحاضنة" : "Incubator Stock";
   const mainTooltip = isAr
     ? "القطع المتوفرة فعلياً داخل متجرك والجاهزة للبيع المباشر والشحن للعملاء."
     : "Physical stock in your primary store, ready for instant sale and shipping.";
   const incTooltip = isAr
-    ? "القطع المعروضة في محلات خارجية أو حاضنات تجارية شريكة بنظام الأمانة/العُهدة."
-    : "Items held at partner boutiques or business incubators under consignment.";
+    ? "القطع المعروضة في محلات خارجية أو حاضنات تجارية شريكة."
+    : "Items held at partner boutiques or business incubators.";
   const barcodeLabel = isAr ? "الباركود" : "Barcode";
 
   // State for dynamic columns compacting / hiding
@@ -7550,7 +7609,7 @@ function VariantList({
                       {viewMode === "full" ? (
                         <div className="flex items-center justify-center gap-1.5 mt-1 pt-1 border-t border-border/40 w-full">
                           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight shrink-0">
-                            {isAr ? "أمانة:" : "Inc:"}
+                            {isAr ? "حاضنة:" : "Inc:"}
                           </span>
                           <Input
                             type="number"
@@ -7562,7 +7621,7 @@ function VariantList({
                         </div>
                       ) : row.stock_incubator ? (
                         <span className="text-[10px] text-muted-foreground font-semibold">
-                          {isAr ? "أمانة:" : "Inc:"} {row.stock_incubator}
+                          {isAr ? "حاضنة:" : "Inc:"} {row.stock_incubator}
                         </span>
                       ) : null}
                     </div>

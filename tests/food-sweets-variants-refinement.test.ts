@@ -3,6 +3,7 @@ import { formatSizeWithUnit, splitCompositeVariantSize } from "../src/lib/format
 import { displayVariantParts, formatSkuToken } from "../src/lib/variant-sku-utils";
 import { extractVariantsHeuristically } from "../src/lib/generate-variants.functions";
 import { translateOptionValue } from "../src/lib/variant-i18n";
+import { resolveVariantAxis, resolveAllVariantAxes } from "../src/lib/addons/addon-registry";
 
 describe("Food & Sweets Product Variants Refinement", () => {
   describe("splitCompositeVariantSize", () => {
@@ -125,6 +126,80 @@ describe("Food & Sweets Product Variants Refinement", () => {
       expect(translateOptionValue(null, "en")).toBe("");
       expect(translateOptionValue("", "en")).toBe("");
       expect(translateOptionValue("CustomBrandFlavor123", "en")).toBe("CustomBrandFlavor123");
+    });
+  });
+
+  describe("Storefront & Inventory Variant Axis Visibility with Merchant Data", () => {
+    // In Food & Sweets vertical, fabric is defaulted to null/disabled:
+    const foodAddonDefaults = {
+      size: { labelAr: "الحجم / الوزن", labelEn: "Size / Weight", placeholderAr: "مثال: 500g", placeholderEn: "e.g. 500g" },
+      color: { labelAr: "النكهة / الخيار", labelEn: "Flavor / Option", placeholderAr: "مثال: فستق", placeholderEn: "e.g. Pistachio" },
+      fabric: null, // Disabled by default for food
+      four: null,
+      five: null,
+    };
+
+    it("makes fabric visible when merchant variants have fabric data", () => {
+      const product = {
+        id: "prod-1",
+        variant_label_fabric_ar: "الخامة",
+        variant_label_fabric_en: "Material",
+        product_variants: [
+          { size: "700", color: "عادية", fabric: "حرير" },
+          { size: "700", color: "بدون سكر", fabric: "حرير" },
+        ],
+      };
+
+      const fabricAxis = resolveVariantAxis({
+        axis: "fabric",
+        product,
+        addonDefaults: foodAddonDefaults,
+        lang: "ar",
+      });
+
+      expect(fabricAxis.visible).toBe(true);
+      expect(fabricAxis.label).toBe("الخامة");
+    });
+
+    it("keeps fabric hidden if no variants have fabric data in food vertical", () => {
+      const product = {
+        id: "prod-2",
+        product_variants: [
+          { size: "700", color: "عادية", fabric: null },
+          { size: "700", color: "بدون سكر", fabric: "" },
+        ],
+      };
+
+      const fabricAxis = resolveVariantAxis({
+        axis: "fabric",
+        product,
+        addonDefaults: foodAddonDefaults,
+        lang: "ar",
+      });
+
+      expect(fabricAxis.visible).toBe(false);
+    });
+
+    it("resolveAllVariantAxes exposes fabric when variants have fabric values", () => {
+      const product = {
+        id: "prod-1",
+        variant_label_fabric_ar: "الخامة",
+        variant_label_fabric_en: "Material",
+        product_variants: [
+          { size: "700", color: "عادية", fabric: "حرير" },
+        ],
+      };
+
+      const allAxes = resolveAllVariantAxes({
+        product,
+        addonDefaults: foodAddonDefaults,
+        lang: "ar",
+      });
+
+      expect(allAxes.size.visible).toBe(true);
+      expect(allAxes.color.visible).toBe(true);
+      expect(allAxes.fabric.visible).toBe(true);
+      expect(allAxes.fabric.label).toBe("الخامة");
     });
   });
 });

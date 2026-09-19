@@ -421,16 +421,6 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     refetchOnWindowFocus: false,
   });
 
-  const addonAxisDefaults = useMemo(() => variantAxisDefaultsFrom(addons), [addons]);
-  const resolvedAxes = useMemo(
-    () =>
-      resolveAllVariantAxes({
-        product,
-        addonDefaults: addonAxisDefaults,
-        lang: lang === "ar" ? "ar" : "en",
-      }),
-    [product, addonAxisDefaults, lang],
-  );
 
   useEffect(() => {
     if (!product) return;
@@ -578,6 +568,46 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     const opts = variants.map((v) => v.option_five).filter(Boolean) as string[];
     return Array.from(new Set(opts));
   }, [variants]);
+
+  const addonAxisDefaults = useMemo(() => variantAxisDefaultsFrom(addons), [addons]);
+  const resolvedAxes = useMemo(() => {
+    const base = resolveAllVariantAxes({
+      product,
+      addonDefaults: addonAxisDefaults,
+      lang: lang === "ar" ? "ar" : "en",
+    });
+    return {
+      size: {
+        ...base.size,
+        visible: base.size.visible || uniqueSizes.length > 0,
+      },
+      color: {
+        ...base.color,
+        visible: base.color.visible || uniqueColors.length > 0,
+      },
+      fabric: {
+        ...base.fabric,
+        visible: base.fabric.visible || uniqueFabrics.length > 0,
+      },
+      four: {
+        ...base.four,
+        visible: base.four.visible || uniqueFour.length > 0,
+      },
+      five: {
+        ...base.five,
+        visible: base.five.visible || uniqueFive.length > 0,
+      },
+    };
+  }, [
+    product,
+    addonAxisDefaults,
+    lang,
+    uniqueSizes,
+    uniqueColors,
+    uniqueFabrics,
+    uniqueFour,
+    uniqueFive,
+  ]);
 
   // Dynamic out of stock maps for each option dimension, checking current other active options
   const isColorOutOfStock = useMemo(() => {
@@ -1621,10 +1651,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 )}
 
               {/* 🧵 Fabric Selection Pills (if any) */}
-              {uniqueFabrics.length > 0 && resolvedAxes.fabric.visible && (
+              {uniqueFabrics.length > 0 && (
                 <div>
                   <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
-                    <span>{resolvedAxes.fabric.label}:</span>
+                    <span>{resolvedAxes.fabric.label || (lang === "ar" ? "الخامة" : "Fabric")}:</span>
                     {selectedFabric && (
                       <span className="text-muted-foreground font-normal">
                         {translateOptionValue(selectedFabric, lang)}
@@ -1670,10 +1700,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               )}
 
               {/* 🏷️ Option Four Selection Pills (if any) */}
-              {uniqueFour.length > 0 && resolvedAxes.four.visible && (
+              {uniqueFour.length > 0 && (
                 <div>
                   <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
-                    <span>{resolvedAxes.four.label}:</span>
+                    <span>{resolvedAxes.four.label || (lang === "ar" ? "الخيار 4" : "Option 4")}:</span>
                     {selectedOptionFour && (
                       <span className="text-muted-foreground font-normal">
                         {translateOptionValue(selectedOptionFour, lang)}
@@ -1703,10 +1733,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               )}
 
               {/* 🏷️ Option Five Selection Pills (if any) */}
-              {uniqueFive.length > 0 && resolvedAxes.five.visible && (
+              {uniqueFive.length > 0 && (
                 <div>
                   <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
-                    <span>{resolvedAxes.five.label}:</span>
+                    <span>{resolvedAxes.five.label || (lang === "ar" ? "الخيار 5" : "Option 5")}:</span>
                     {selectedOptionFive && (
                       <span className="text-muted-foreground font-normal">
                         {translateOptionValue(selectedOptionFive, lang)}

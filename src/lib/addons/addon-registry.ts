@@ -473,9 +473,10 @@ export function resolveVariantAxis({
   product,
   addonDefaults,
   lang,
+  hasValues,
 }: {
   axis: VariantAxisKey;
-  product?: ProductVariantLabels | null;
+  product?: (ProductVariantLabels & { product_variants?: any[] }) | null;
   addonDefaults?: {
     size?: { ar: string; en: string } | null;
     color?: { ar: string; en: string } | null;
@@ -484,6 +485,7 @@ export function resolveVariantAxis({
     five?: { ar: string; en: string } | null;
   };
   lang: "ar" | "en";
+  hasValues?: boolean;
 }): VariantAxisConfig {
   const customAr = (product as any)?.[`variant_label_${axis}_ar`]?.trim();
   const customEn = (product as any)?.[`variant_label_${axis}_en`]?.trim();
@@ -494,6 +496,28 @@ export function resolveVariantAxis({
       label: custom,
       visible: true,
       isCustom: true,
+    };
+  }
+
+  // If variants have non-empty values for this axis, inventory data trumps addon defaults
+  const variantKey =
+    axis === "four" ? "option_four" : axis === "five" ? "option_five" : axis;
+  const axisHasData =
+    hasValues === true ||
+    (Array.isArray((product as any)?.product_variants) &&
+      (product as any).product_variants.some(
+        (v: any) => typeof v?.[variantKey] === "string" && v[variantKey].trim() !== "",
+      ));
+
+  if (axisHasData) {
+    const addonAxis = addonDefaults?.[axis];
+    const fallbackLabel =
+      (addonAxis && (addonAxis[lang] || addonAxis.en || addonAxis.ar)) ||
+      GENERIC_AXIS_DEFAULTS[axis][lang];
+    return {
+      label: fallbackLabel,
+      visible: true,
+      isCustom: false,
     };
   }
 
@@ -545,7 +569,7 @@ export function resolveAllVariantAxes({
   addonDefaults,
   lang,
 }: {
-  product?: ProductVariantLabels | null;
+  product?: (ProductVariantLabels & { product_variants?: any[] }) | null;
   addonDefaults?: {
     size?: { ar: string; en: string } | null;
     color?: { ar: string; en: string } | null;
