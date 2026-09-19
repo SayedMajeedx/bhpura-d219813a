@@ -1,36 +1,37 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
 import { useSettingsLevel } from "@/features/settings/settings-level";
 import { SETTINGS_REGISTRY, type SettingsTabId } from "@/features/settings/registry";
+import { getStorefrontUrl } from "@/lib/storefront-url";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Check,
   Compass,
-  Layers,
+  Eye,
+  ExternalLink,
   Loader2,
   Save,
   Search,
   SlidersHorizontal,
-  Sparkles,
   Undo2,
+  X,
 } from "lucide-react";
 
 interface SettingsHeaderProps {
   activeTab: SettingsTabId;
   onTabChange: (tab: SettingsTabId, groupAnchor?: string) => void;
+  isPreviewOpen?: boolean;
+  onTogglePreview?: () => void;
 }
 
-export function SettingsHeader({ activeTab, onTabChange }: SettingsHeaderProps) {
+export function SettingsHeader({
+  activeTab,
+  onTabChange,
+  isPreviewOpen,
+  onTogglePreview,
+}: SettingsHeaderProps) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const { form, isDirty, dirtyCount, isSaving, save, reset } = useBrandSettingsFormContext();
@@ -39,9 +40,41 @@ export function SettingsHeader({ activeTab, onTabChange }: SettingsHeaderProps) 
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const brandDisplayName =
     (isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug || "Boutique";
+
+  // Global Keyboard shortcut: Cmd+K or "/" to focus search; Escape to clear
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isInput =
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.getAttribute("contenteditable") === "true");
+
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        setSearchOpen(true);
+      } else if (e.key === "/" && !isInput) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        setSearchOpen(true);
+      } else if (e.key === "Escape") {
+        if (searchOpen || searchQuery) {
+          setSearchQuery("");
+          setSearchOpen(false);
+          searchInputRef.current?.blur();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [searchOpen, searchQuery]);
 
   // Filter searchable registry fields
   const searchResults = useMemo(() => {
@@ -63,6 +96,9 @@ export function SettingsHeader({ activeTab, onTabChange }: SettingsHeaderProps) 
   const handleSelectSearchResult = (entry: (typeof SETTINGS_REGISTRY)[0]) => {
     setSearchQuery("");
     setSearchOpen(false);
+    if (entry.level === "advanced" && !isAdvanced) {
+      toggleLevel();
+    }
     if (entry.tab) {
       onTabChange(entry.tab as SettingsTabId, entry.group ? `group-${entry.group}` : undefined);
     }
@@ -96,11 +132,48 @@ export function SettingsHeader({ activeTab, onTabChange }: SettingsHeaderProps) 
 
         {/* Level Toggle & Save Controls */}
         <div className="flex flex-wrap items-center gap-3">
+          {/* Live Preview Toggle (P3) */}
+          {onTogglePreview && (
+            <Button
+              type="button"
+              variant={isPreviewOpen ? "default" : "outline"}
+              size="sm"
+              onClick={onTogglePreview}
+              className="hidden xl:inline-flex h-9 px-3 text-xs gap-1.5 rounded-xl transition-all"
+              title={isAr ? "تبديل لوحة المعاينة المباشرة" : "Toggle live preview pane"}
+            >
+              <Eye className="size-3.5" />
+              <span>{isAr ? "معاينة المتجر" : "Store Preview"}</span>
+            </Button>
+          )}
+
+          {/* Small screens preview link */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            asChild
+            className="xl:hidden h-9 px-3 text-xs gap-1.5 rounded-xl"
+            title={isAr ? "معاينة المتجر في نافذة جديدة" : "Preview store in new tab"}
+          >
+            <a
+              href={getStorefrontUrl(brand.slug || "pura")}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Eye className="size-3.5" />
+              <span>{isAr ? "معاينة" : "Preview"}</span>
+              <ExternalLink className="size-3" />
+            </a>
+          </Button>
+
           {/* Basic vs Advanced Page-Wide Switch (Owner Decision #3) */}
           <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-border bg-background/80 shadow-xs">
             <SlidersHorizontal className="size-3.5 text-muted-foreground" />
             <div className="flex items-center gap-1.5">
-              <span className={`text-xs font-semibold ${!isAdvanced ? "text-primary" : "text-muted-foreground"}`}>
+              <span
+                className={`text-xs font-semibold ${!isAdvanced ? "text-primary" : "text-muted-foreground"}`}
+              >
                 {isAr ? "أساسي" : "Basic"}
               </span>
               <Switch
@@ -108,7 +181,9 @@ export function SettingsHeader({ activeTab, onTabChange }: SettingsHeaderProps) 
                 onCheckedChange={toggleLevel}
                 aria-label="Toggle Basic or Advanced settings level"
               />
-              <span className={`text-xs font-semibold ${isAdvanced ? "text-primary" : "text-muted-foreground"}`}>
+              <span
+                className={`text-xs font-semibold ${isAdvanced ? "text-primary" : "text-muted-foreground"}`}
+              >
                 {isAr ? "متقدم" : "Advanced"}
               </span>
             </div>
@@ -158,10 +233,11 @@ export function SettingsHeader({ activeTab, onTabChange }: SettingsHeaderProps) 
 
       {/* Row 2: Universal Setting Search Bar */}
       <div className="relative pt-1">
-        <div className="relative">
+        <div className="relative flex items-center">
           <Search className="absolute start-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
           <Input
-            className="ps-9 pe-4 h-9 text-xs bg-background/90 rounded-xl"
+            ref={searchInputRef}
+            className="ps-9 pe-16 h-9 text-xs bg-background/90 rounded-xl"
             value={searchQuery}
             placeholder={
               isAr
@@ -174,6 +250,25 @@ export function SettingsHeader({ activeTab, onTabChange }: SettingsHeaderProps) 
             }}
             onFocus={() => setSearchOpen(true)}
           />
+          <div className="absolute end-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            {searchQuery && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setSearchQuery("");
+                  setSearchOpen(false);
+                }}
+                className="size-6 text-muted-foreground hover:text-foreground"
+              >
+                <X className="size-3" />
+              </Button>
+            )}
+            <kbd className="hidden sm:inline-flex items-center text-[10px] font-mono text-muted-foreground bg-muted/80 border border-border rounded px-1.5 py-0.5 select-none pointer-events-none">
+              ⌘K
+            </kbd>
+          </div>
         </div>
 
         {/* Search Results Dropdown */}

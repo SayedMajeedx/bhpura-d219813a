@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 export interface SettingsStickySaveBarProps {
   activeTab: string;
   isDirty?: boolean;
+  dirtyCount?: number;
   isSaving: boolean;
   onSave: () => void | Promise<void>;
   onDiscard?: () => void;
@@ -16,6 +17,7 @@ export interface SettingsStickySaveBarProps {
 export function SettingsStickySaveBar({
   activeTab,
   isDirty = true,
+  dirtyCount,
   isSaving,
   onSave,
   onDiscard,
@@ -58,7 +60,13 @@ export function SettingsStickySaveBar({
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500" />
           </span>
           <span className="text-xs font-medium text-foreground tracking-tight select-none">
-            {isAr ? "تغييرات غير محفوظة" : "Unsaved changes"}
+            {isAr
+              ? dirtyCount && dirtyCount > 0
+                ? `${dirtyCount} تغييرات غير محفوظة`
+                : "تغييرات غير محفوظة"
+              : dirtyCount && dirtyCount > 0
+                ? `${dirtyCount} unsaved change${dirtyCount > 1 ? "s" : ""}`
+                : "Unsaved changes"}
           </span>
         </div>
 

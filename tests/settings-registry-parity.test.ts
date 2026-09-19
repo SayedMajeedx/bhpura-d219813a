@@ -100,4 +100,46 @@ describe("Settings Registry Parity Guard", () => {
       expect(field.label.en.trim().length).toBeGreaterThan(0);
     }
   });
+
+  it("basic settings count across owner: 'settings' is <= 45 (Owner Decision #7)", () => {
+    const basicSettings = SETTINGS_REGISTRY.filter(
+      (f) => f.owner === "settings" && f.level === "basic",
+    );
+    expect(basicSettings.length).toBeLessThanOrEqual(45);
+  });
+
+  it("every column with owner: 'settings' is referenced in src/features/settings", () => {
+    function getAllFiles(dir: string, allFiles: string[] = []): string[] {
+      const files = fs.readdirSync(dir);
+      for (const file of files) {
+        const filePath = path.join(dir, file);
+        if (fs.statSync(filePath).isDirectory()) {
+          getAllFiles(filePath, allFiles);
+        } else if (file.endsWith(".tsx") || file.endsWith(".ts")) {
+          allFiles.push(filePath);
+        }
+      }
+      return allFiles;
+    }
+
+    const settingsDir = path.resolve(__dirname, "../src/features/settings");
+    const allSettingsFiles = getAllFiles(settingsDir);
+    const combinedCode = allSettingsFiles.map((f) => fs.readFileSync(f, "utf-8")).join("\n");
+
+    const settingsOwned = SETTINGS_REGISTRY.filter((f) => f.owner === "settings");
+    const unreferenced: string[] = [];
+
+    for (const field of settingsOwned) {
+      const regex = new RegExp(`\\b${field.key}\\b`);
+      if (!regex.test(combinedCode)) {
+        unreferenced.push(field.key);
+      }
+    }
+
+    expect(
+      unreferenced,
+      `The following settings-owned keys are missing from src/features/settings: ${unreferenced.join(", ")}`,
+    ).toEqual([]);
+  });
 });
+
