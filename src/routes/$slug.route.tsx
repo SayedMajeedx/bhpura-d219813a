@@ -47,7 +47,40 @@ export const Route = createFileRoute("/$slug")({
   headers: () => ({
     "Cache-Control": "public, max-age=0, s-maxage=10, must-revalidate",
   }),
-  loader: async ({ params }) => {
+  loader: async ({ params, location }) => {
+    let initialLang: "ar" | "en" = "ar";
+    const searchParams = location?.search as any;
+    const queryLang = searchParams?.lang;
+    if (queryLang === "en" || queryLang === "ar") {
+      initialLang = queryLang;
+    } else if (typeof window === "undefined") {
+      try {
+        const { getStorefrontInitialLang } = await import("@/lib/storefront-cookies.functions");
+        const cookieLang = await getStorefrontInitialLang({ data: { slug: params.slug } });
+        if (cookieLang === "en" || cookieLang === "ar") {
+          initialLang = cookieLang;
+        }
+      } catch {
+        /* fallback to default */
+      }
+    } else {
+      try {
+        const cookieMatch =
+          document.cookie.match(new RegExp(`(?:^|; )boutq_lang_${params.slug}=([^;]*)`)) ||
+          document.cookie.match(/(?:^|; )boutq_lang=([^;]*)/);
+        if (cookieMatch && (cookieMatch[1] === "en" || cookieMatch[1] === "ar")) {
+          initialLang = cookieMatch[1] as "ar" | "en";
+        } else {
+          const stored = localStorage.getItem(`storefront-lang:${params.slug}`);
+          if (stored === "en" || stored === "ar") {
+            initialLang = stored;
+          }
+        }
+      } catch {
+        /* fallback */
+      }
+    }
+
     const { data: pageData, error } = await (supabase.rpc as any)("get_storefront_page_data", {
       p_brand_slug: params.slug,
     });
@@ -61,6 +94,7 @@ export const Route = createFileRoute("/$slug")({
         bootstrapData: pageData,
         isSuspended: true,
         suspensionReason: pageData.suspension_reason || "trial_expired",
+        initialLang,
       };
     }
 
@@ -322,16 +356,26 @@ export const Route = createFileRoute("/$slug")({
       brand: { ...brand, hero_media: heroConfig } as unknown as Brand,
       settings: safeSettings,
       bootstrapData: pageData,
+      initialLang,
     };
   },
   head: ({ loaderData }) => {
-    const typedLoaderData = loaderData as { brand?: Brand; settings?: PublicSettings } | undefined;
+    const typedLoaderData = loaderData as
+      | { brand?: Brand; settings?: PublicSettings; initialLang?: "ar" | "en" }
+      | undefined;
     const b = typedLoaderData?.brand;
     const settings = typedLoaderData?.settings;
+    const lang = typedLoaderData?.initialLang || "ar";
     if (!b) return { meta: [{ title: "Storefront" }] };
-    const title = b.meta_title || settings?.business_name || `${b.name_en} — Online Store`;
+
+    const title =
+      lang === "ar"
+        ? (b.meta_title || settings?.business_name || b.name_ar || `${b.name_en} — متجر إلكتروني`)
+        : (b.meta_title || settings?.business_name || b.name_en || `${b.name_ar} — Online Store`);
     const desc =
-      b.meta_description || `Shop ${b.name_en}${b.name_ar ? " / " + b.name_ar : ""} online.`;
+      lang === "ar"
+        ? (b.meta_description || `تسوق من ${b.name_ar || b.name_en} أونلاين.`)
+        : (b.meta_description || `Shop ${b.name_en || b.name_ar} online.`);
     const img = settings?.logo_url || b.logo_url || "https://boutq.store/og-placeholder.png";
     const favicon = resolveBrandFavicon(settings?.favicon_url, settings?.logo_url ?? b.logo_url);
     const links: Array<Record<string, any>> = [
@@ -343,6 +387,10 @@ export const Route = createFileRoute("/$slug")({
     ];
 
     return {
+      htmlAttrs: {
+        lang,
+        dir: lang === "ar" ? "rtl" : "ltr",
+      },
       meta: [
         { title },
         { name: "description", content: desc },
@@ -365,7 +413,7 @@ export const Route = createFileRoute("/$slug")({
 
 function StorefrontLayout() {
   const loaderData = Route.useLoaderData() as any;
-  const { brand, settings, bootstrapData, isSuspended, suspensionReason } = loaderData;
+  const { brand, settings, bootstrapData, isSuspended, suspensionReason, initialLang } = loaderData;
 
   // Must run unconditionally, before the early return below — React hooks
   // can't be called conditionally. It safely handles undefined inputs.
@@ -379,6 +427,7 @@ function StorefrontLayout() {
     <StorefrontProvider
       brand={brand}
       settings={settings}
+      initialLang={initialLang}
       sizeGuides={bootstrapData?.size_guides ?? []}
       addons={bootstrapData?.addons ?? []}
     >

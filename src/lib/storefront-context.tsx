@@ -326,22 +326,47 @@ export function StorefrontProvider({
   settings,
   sizeGuides = [],
   addons = [],
+  initialLang,
   children,
 }: {
   brand: Brand;
   settings: PublicSettings;
   sizeGuides?: SizeGuide[];
   addons?: Array<{ addon_id: string; status: string; public_settings: Record<string, unknown> }>;
+  initialLang?: StoreLang;
   children: ReactNode;
 }) {
   const cartKey = `storefront-cart:${brand.slug}`;
   const langKey = `storefront-lang:${brand.slug}`;
   const wishlistKey = `storefront-wishlist:${brand.slug}`;
 
-  // Keep the server render and first client render identical. Browser preferences
-  // are restored after hydration so React never compares SSR Arabic/empty state
-  // with localStorage-backed English/cart/wishlist markup.
-  const [lang, setLangState] = useState<StoreLang>("ar");
+  // Instant zero-flicker language initialization:
+  // Uses SSR loader's initialLang (derived from cookie/URL) or browser storage synchronously.
+  const [lang, setLangState] = useState<StoreLang>(() => {
+    if (initialLang === "ar" || initialLang === "en") {
+      return initialLang;
+    }
+    if (typeof window !== "undefined") {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlLang = urlParams.get("lang");
+        if (urlLang === "en" || urlLang === "ar") return urlLang;
+
+        const cookieMatch =
+          document.cookie.match(new RegExp(`(?:^|; )boutq_lang_${brand.slug}=([^;]*)`)) ||
+          document.cookie.match(/(?:^|; )boutq_lang=([^;]*)/);
+        if (cookieMatch && (cookieMatch[1] === "en" || cookieMatch[1] === "ar")) {
+          return cookieMatch[1] as StoreLang;
+        }
+
+        const stored = localStorage.getItem(langKey);
+        if (stored === "en" || stored === "ar") return stored;
+      } catch {
+        /* ignore */
+      }
+    }
+    return "ar";
+  });
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [storageHydrated, setStorageHydrated] = useState(false);
@@ -366,15 +391,27 @@ export function StorefrontProvider({
       let storedLang: string | null = null;
       if (urlLang === "en" || urlLang === "ar") {
         storedLang = urlLang;
-        setLangState(urlLang);
+        if (urlLang !== lang) setLangState(urlLang);
         try {
           localStorage.setItem(langKey, urlLang);
+          const cookieFlags = "; path=/; max-age=31536000; SameSite=Lax";
+          document.cookie = `boutq_lang_${brand.slug}=${urlLang}${cookieFlags}`;
+          document.cookie = `boutq_lang=${urlLang}${cookieFlags}`;
         } catch {
           /* ignore */
         }
       } else {
         storedLang = localStorage.getItem(langKey);
-        if (storedLang === "en" || storedLang === "ar") setLangState(storedLang);
+        if (storedLang === "en" || storedLang === "ar") {
+          if (storedLang !== lang) setLangState(storedLang);
+          try {
+            const cookieFlags = "; path=/; max-age=31536000; SameSite=Lax";
+            document.cookie = `boutq_lang_${brand.slug}=${storedLang}${cookieFlags}`;
+            document.cookie = `boutq_lang=${storedLang}${cookieFlags}`;
+          } catch {
+            /* ignore */
+          }
+        }
       }
 
       // 1. Check for shared cart in URL: ?c=... or ?cart=... (short code) OR ?share_cart=... (payload)
@@ -607,8 +644,15 @@ export function StorefrontProvider({
       } catch {
         /* ignore storage error */
       }
+      try {
+        const cookieFlags = "; path=/; max-age=31536000; SameSite=Lax";
+        document.cookie = `boutq_lang_${brand.slug}=${l}${cookieFlags}`;
+        document.cookie = `boutq_lang=${l}${cookieFlags}`;
+      } catch {
+        /* ignore cookie error */
+      }
     },
-    [langKey],
+    [brand.slug, langKey],
   );
 
   const dir: "rtl" | "ltr" = lang === "ar" ? "rtl" : "ltr";

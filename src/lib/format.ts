@@ -1,4 +1,5 @@
 import { getOrderStatusLabel } from "@/lib/status-labels";
+import { translateOptionValue } from "@/lib/variant-i18n";
 
 export function westernNumeralLocale(locale = "en-BH"): string {
   try {
@@ -136,11 +137,11 @@ export function splitCompositeVariantSize(
               : resolvedUnit;
 
     const cleanLabelAr = unitLabelAr
-      ? `${sizeNum} ${unitLabelAr} · ${optionText}`
-      : `${sizeNum} · ${optionText}`;
+      ? `${sizeNum} ${unitLabelAr} · ${translateOptionValue(optionText, "ar")}`
+      : `${sizeNum} · ${translateOptionValue(optionText, "ar")}`;
     const cleanLabelEn = resolvedUnit
-      ? `${sizeNum}${resolvedUnit} · ${optionText}`
-      : `${sizeNum} · ${optionText}`;
+      ? `${sizeNum}${resolvedUnit} · ${translateOptionValue(optionText, "en")}`
+      : `${sizeNum} · ${translateOptionValue(optionText, "en")}`;
 
     return {
       isComposite: true,
@@ -157,12 +158,12 @@ export function splitCompositeVariantSize(
     size: str,
     unit: fallbackUnit,
     option: "",
-    cleanLabelAr: str,
-    cleanLabelEn: str,
+    cleanLabelAr: translateOptionValue(str, "ar"),
+    cleanLabelEn: translateOptionValue(str, "en"),
   };
 }
 
-/** Format a size value with an optional unit, translating known units to Arabic. */
+/** Format a size value with an optional unit, translating known units and values. */
 export function formatSizeWithUnit(
   size: string | null | undefined,
   unit: string | null | undefined,
@@ -178,7 +179,7 @@ export function formatSizeWithUnit(
     return lang === "ar" ? split.cleanLabelAr : split.cleanLabelEn;
   }
 
-  if (!u) return s;
+  if (!u) return translateOptionValue(s, lang);
 
   const key = u.toLowerCase();
   const map: Record<string, string> = {
@@ -197,7 +198,8 @@ export function formatSizeWithUnit(
     l: "لتر",
   };
 
-  const arUnit = map[key] ?? u;
+  const arUnit = map[key] ?? translateOptionValue(u, "ar");
+  const enUnit = translateOptionValue(u, "en") || u;
 
   // Avoid duplicate units if size string already ends with unit
   if (
@@ -206,14 +208,18 @@ export function formatSizeWithUnit(
     s.endsWith(arUnit) ||
     s.endsWith(` ${arUnit}`)
   ) {
-    return s;
+    return translateOptionValue(s, lang);
   }
+
+  // If size is a text descriptor like "صغير" or "بوكس", translate the word itself
+  const isNumericSize = !isNaN(Number(toWesternDigits(s)));
+  const translatedSize = isNumericSize ? s : translateOptionValue(s, lang);
 
   if (lang !== "ar") {
     // e.g. 250g or 50 inch
-    const isShortAlpha = /^[a-zA-Z]{1,3}$/.test(u);
-    return isShortAlpha ? `${s}${u}` : `${s} ${u}`;
+    const isShortAlpha = /^[a-zA-Z]{1,3}$/.test(enUnit);
+    return isShortAlpha && isNumericSize ? `${translatedSize}${enUnit}` : `${translatedSize} ${enUnit}`;
   }
 
-  return `${s} ${arUnit}`;
+  return `${translatedSize} ${arUnit}`;
 }

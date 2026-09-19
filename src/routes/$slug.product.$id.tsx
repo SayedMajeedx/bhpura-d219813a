@@ -58,9 +58,37 @@ import { uploadPublicMedia } from "@/lib/r2-upload";
 import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
 
 export const Route = createFileRoute("/$slug/product/$id")({
-  loader: async ({ params }) => {
+  loader: async ({ params, location }) => {
+    let initialLang: "ar" | "en" = "ar";
+    const searchParams = location?.search as any;
+    const queryLang = searchParams?.lang;
+    if (queryLang === "en" || queryLang === "ar") {
+      initialLang = queryLang;
+    } else if (typeof window === "undefined") {
+      try {
+        const { getStorefrontInitialLang } = await import("@/lib/storefront-cookies.functions");
+        const cookieLang = await getStorefrontInitialLang({ data: { slug: params.slug } });
+        if (cookieLang === "en" || cookieLang === "ar") {
+          initialLang = cookieLang;
+        }
+      } catch {
+        /* fallback to default */
+      }
+    } else {
+      try {
+        const cookieMatch =
+          document.cookie.match(new RegExp(`(?:^|; )boutq_lang_${params.slug}=([^;]*)`)) ||
+          document.cookie.match(/(?:^|; )boutq_lang=([^;]*)/);
+        if (cookieMatch && (cookieMatch[1] === "en" || cookieMatch[1] === "ar")) {
+          initialLang = cookieMatch[1] as "ar" | "en";
+        }
+      } catch {
+        /* fallback */
+      }
+    }
+
     const brand = await fetchActiveBrandIdentity(params.slug);
-    if (!brand) return { product: null, recommendationCatalog: [], bestSellerRows: [] };
+    if (!brand) return { product: null, recommendationCatalog: [], bestSellerRows: [], initialLang };
 
     const [product, recommendationCatalog, bestSellerRows] = await Promise.all([
       fetchProductDetail(brand.id, params.id),
@@ -68,26 +96,30 @@ export const Route = createFileRoute("/$slug/product/$id")({
       fetchBestSellerRows(brand.slug, 10),
     ]);
 
-    return { product: product as any, recommendationCatalog, bestSellerRows };
+    return { product: product as any, recommendationCatalog, bestSellerRows, initialLang };
   },
   head: ({ loaderData, params }) => {
     const product = loaderData?.product as Product | null | undefined;
     if (!product) return { meta: [{ title: "Product not found" }] };
 
-    const name = product.name_ar || product.name_en || product.name;
-    const description = (
-      product.description_ar ||
-      product.description_en ||
-      product.description ||
-      name
-    )
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 160);
-    const title = `${name} | ${params.slug.toUpperCase()}`;
+    const lang = (loaderData as any)?.initialLang || "ar";
+    const name =
+      (lang === "ar"
+        ? (product.name_ar || product.name || product.name_en)
+        : (product.name_en || product.name || product.name_ar)) || "Product";
+    const rawDesc =
+      (lang === "ar"
+        ? (product.description_ar || product.description || product.description_en)
+        : (product.description_en || product.description || product.description_ar)) || name;
+    const description = rawDesc.replace(/\s+/g, " ").trim().slice(0, 160);
+    const title = `${name} | ${String(params?.slug || "").toUpperCase()}`;
     const image = product.image_url || undefined;
 
     return {
+      htmlAttrs: {
+        lang,
+        dir: lang === "ar" ? "rtl" : "ltr",
+      },
       meta: [
         { title },
         { name: "description", content: description },
@@ -572,12 +604,13 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
 
   const allOptionTerms = useMemo(() => {
     return [
+      ...uniqueSizes,
       ...uniqueColors,
       ...uniqueFabrics,
       ...uniqueFour,
       ...uniqueFive,
     ];
-  }, [uniqueColors, uniqueFabrics, uniqueFour, uniqueFive]);
+  }, [uniqueSizes, uniqueColors, uniqueFabrics, uniqueFour, uniqueFive]);
 
   useVariantTranslations(allOptionTerms, lang === "ar" ? "ar" : "en");
 
