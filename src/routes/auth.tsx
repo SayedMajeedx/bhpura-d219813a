@@ -78,7 +78,7 @@ function AuthPage() {
       } = await supabase.auth.getUser();
       const { data: profile } = await supabase
         .from("profiles")
-        .select("role, status")
+        .select("role, status, must_change_password")
         .eq("id", user!.id)
         .maybeSingle();
       const dashboardRoles = new Set(["super_admin", "admin", "brand_admin", "staff", "courier"]);
@@ -92,7 +92,16 @@ function AuthPage() {
       }
       applyRememberMe(remember);
       await new Promise((r) => setTimeout(r, 100));
-      navigate({ to: "/admin" });
+
+      const requiresPasswordChange =
+        Boolean((profile as any)?.must_change_password) ||
+        Boolean(user?.user_metadata?.must_change_password);
+
+      if (requiresPasswordChange) {
+        navigate({ to: "/first-login" });
+      } else {
+        navigate({ to: "/admin" });
+      }
     } catch (err: any) {
       toast.error(translateAuthError(err, lang as any));
     } finally {
@@ -108,7 +117,7 @@ function AuthPage() {
       if (!data.user) throw new Error("Passkey sign-in did not return a user.");
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("role, status")
+        .select("role, status, must_change_password")
         .eq("id", data.user.id)
         .maybeSingle();
       const dashboardRoles = new Set(["super_admin", "admin", "brand_admin", "staff", "courier"]);
@@ -126,7 +135,15 @@ function AuthPage() {
         );
       }
       applyRememberMe(true);
-      await navigate({ to: "/admin" });
+      const requiresPasswordChange =
+        Boolean((profile as any)?.must_change_password) ||
+        Boolean(data.user?.user_metadata?.must_change_password);
+
+      if (requiresPasswordChange) {
+        await navigate({ to: "/first-login" });
+      } else {
+        await navigate({ to: "/admin" });
+      }
     } catch (err: any) {
       const cancelled =
         err?.name === "NotAllowedError" || /cancel|not allowed/i.test(err?.message ?? "");

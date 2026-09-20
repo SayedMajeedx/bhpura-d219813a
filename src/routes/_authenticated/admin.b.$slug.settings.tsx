@@ -1,6 +1,6 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,8 @@ import {
 import { toast } from "sonner";
 import {
   AlertTriangle,
+  Save,
+  Undo2,
   Eye,
   EyeOff,
   RefreshCw,
@@ -31,13 +33,44 @@ import {
   Trash2,
   Crop,
   ChevronDown,
+  ChevronUp,
   Smartphone,
   Monitor,
   ShoppingBag,
   MessageCircle,
   Info,
   AlertCircle,
+  Plus,
+  Globe,
+  Package,
+  Layers,
+  Check,
+  X,
+  Banknote,
+  CreditCard,
+  QrCode,
+  Building2,
+  Palette,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  Mail,
+  FileText,
+  Type,
+  Scale,
+  Store,
+  Shield,
+  KeyRound,
 } from "lucide-react";
+import {
+  type ShippingZone,
+  COUNTRIES_DATABASE,
+  GCC_NON_BH_CODES,
+  ARAB_CODES,
+  getCountryByCode,
+  formatCountryName,
+  getShippingPricingDescription,
+} from "@/lib/shipping";
+import { CountryFlag } from "@/components/ui/country-flag";
 import { useT, useI18n } from "@/lib/i18n";
 import { PhoneInput } from "@/components/phone-input";
 import { Rnd } from "react-rnd";
@@ -80,10 +113,16 @@ import {
   type FontMoodPreset,
 } from "@/components/settings/QuickThemeCustomizer";
 import { TrustBadgesEditor } from "@/components/settings/TrustBadgesEditor";
-import { type TrustBadgesConfig, DEFAULT_TRUST_BADGES } from "@/lib/trust-badges";
+import {
+  type TrustBadgesConfig,
+  DEFAULT_TRUST_BADGES,
+  getDynamicTrustBadges,
+} from "@/lib/trust-badges";
+import { SettingsStickySaveBar } from "@/components/settings/SettingsStickySaveBar";
 import { StoreReadinessChecklist } from "@/components/settings/StoreReadinessChecklist";
 import { SettingsSearchBar } from "@/components/settings/SettingsSearchBar";
 import { StoreProfileCard } from "@/components/settings/StoreProfileCard";
+import { SettingsCollapsibleCard } from "@/components/settings/SettingsCollapsibleCard";
 
 const SUPPORTED_CURRENCIES = [
   { code: "BHD", name_en: "BHD — Bahraini Dinar", name_ar: "د.ب — دينار بحريني" },
@@ -182,6 +221,10 @@ type Settings = {
   invoice_table_header_bg?: string | null;
   invoice_table_header_fg?: string | null;
   invoice_divider_color?: string | null;
+  invoice_show_business_name?: boolean;
+  invoice_show_terms?: boolean;
+  invoice_terms_ar?: string | null;
+  invoice_terms_en?: string | null;
   storefront_radius?: string | null;
 };
 
@@ -688,17 +731,105 @@ function Settings() {
     },
   });
 
+function getComparableSettings(s: Settings | null): string {
+  if (!s) return "";
+  const { id, created_at, updated_at, user_id, brand_id, ...rest } = s as any;
+  const sortedKeys = Object.keys(rest).sort();
+  const sortedObj: Record<string, any> = {};
+  for (const k of sortedKeys) {
+    sortedObj[k] = rest[k];
+  }
+  return JSON.stringify(sortedObj);
+}
+
   const [f, setF] = useState<Settings | null>(null);
   const [activeTab, setActiveTab] = useState<SettingsTabId>("business");
   const [saving, setSaving] = useState(false);
+  const [tabSaving, setTabSaving] = useState(false);
+  const tabSaveHandlersRef = useRef<Record<string, () => Promise<void> | void>>({});
+  const storefrontModeSaveRef = useRef<(() => Promise<void> | void) | null>(null);
+  const storefrontCustomizerSaveRef = useRef<(() => Promise<void> | void) | null>(null);
+
+  const initialFRef = useRef<string>("");
+  const initialSettingsObjRef = useRef<Settings | null>(null);
+  const [activeTabDirty, setActiveTabDirty] = useState<Record<string, boolean>>({});
+  const markTabDirty = useCallback((tab: string, dirty = true) => {
+    setActiveTabDirty((prev) => (prev[tab] === dirty ? prev : { ...prev, [tab]: dirty }));
+  }, []);
+
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const toggleSection = useCallback((id: string) => {
+    setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }));
+  }, []);
+  const expandAllInTab = useCallback((sectionIds: string[]) => {
+    setOpenSections((prev) => {
+      const next = { ...prev };
+      for (const id of sectionIds) next[id] = true;
+      return next;
+    });
+  }, []);
+  const collapseAllInTab = useCallback((sectionIds: string[]) => {
+    setOpenSections((prev) => {
+      const next = { ...prev };
+      for (const id of sectionIds) next[id] = false;
+      return next;
+    });
+  }, []);
+
+  const isFormDirty = Boolean(
+    f && initialFRef.current && getComparableSettings(f) !== initialFRef.current,
+  );
+
+  const isCurrentTabDirty =
+    activeTab === "business" || activeTab === "invoice"
+      ? isFormDirty
+      : Boolean(activeTabDirty[activeTab]);
+
+  const handleDiscard = useCallback(() => {
+    if (activeTab === "business" || activeTab === "invoice") {
+      if (initialSettingsObjRef.current) {
+        const resetObj = { ...initialSettingsObjRef.current };
+        setF(resetObj);
+        initialFRef.current = getComparableSettings(resetObj);
+        toast.info(lang === "ar" ? "تم التراجع عن التغييرات" : "Changes discarded");
+      }
+    } else {
+      setActiveTabDirty((prev) => ({ ...prev, [activeTab]: false }));
+      void qc.invalidateQueries();
+      toast.info(lang === "ar" ? "تم التراجع عن التغييرات" : "Changes discarded");
+    }
+  }, [activeTab, lang, qc]);
+
+  const registerTabSave = useCallback((tab: string, handler: () => Promise<void> | void) => {
+    tabSaveHandlersRef.current[tab] = handler;
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
     if (data) {
       const trimmed = (data.business_name ?? "").trim();
       const name = LEGACY_SETTINGS_NAMES.has(trimmed) ? brandDisplayName : trimmed;
+      const initialSettings: Settings = {
+        ...data,
+        business_name: name,
+        invoice_show_business_name: (data as any).invoice_show_business_name ?? true,
+        invoice_show_terms: (data as any).invoice_show_terms ?? true,
+        invoice_terms_ar: (data as any).invoice_terms_ar ?? null,
+        invoice_terms_en: (data as any).invoice_terms_en ?? null,
+      } as Settings;
       if (isMounted) {
-        setF({ ...data, business_name: name });
+        setF((prev) => {
+          if (!prev || !initialFRef.current || getComparableSettings(prev) === initialFRef.current) {
+            initialFRef.current = getComparableSettings(initialSettings);
+            initialSettingsObjRef.current = initialSettings;
+            return initialSettings;
+          }
+          return prev;
+        });
+        if (!initialFRef.current) {
+          initialFRef.current = getComparableSettings(initialSettings);
+          initialSettingsObjRef.current = initialSettings;
+        }
       }
     }
     return () => {
@@ -708,9 +839,9 @@ function Settings() {
 
   if (isError) {
     return (
-      <Card className="flex min-h-48 flex-col items-center justify-center gap-3 rounded-2xl border-destructive/30 p-6 text-center">
+      <Card className="flex min-h-48 flex-col items-center justify-center gap-3 rounded-xl border-destructive/30 p-6 text-center">
         <AlertTriangle className="h-8 w-8 text-destructive" aria-hidden="true" />
-        <h1 className="text-lg font-bold">
+        <h1 className="text-lg font-semibold tracking-tight text-foreground">
           {lang === "ar"
             ? "تعذّر تحميل إعدادات العلامة التجارية"
             : "Brand settings could not be loaded"}
@@ -784,17 +915,61 @@ function Settings() {
           invoice_table_header_bg: f.invoice_table_header_bg,
           invoice_table_header_fg: f.invoice_table_header_fg,
           invoice_divider_color: f.invoice_divider_color,
+          invoice_show_business_name: f.invoice_show_business_name ?? true,
+          invoice_show_terms: f.invoice_show_terms ?? true,
+          invoice_terms_ar: f.invoice_terms_ar ?? null,
+          invoice_terms_en: f.invoice_terms_en ?? null,
         })
         .eq("brand_id", brandId);
       if (error) toast.error(error.message);
       else {
         toast.success(lang === "ar" ? "تم حفظ التغييرات بنجاح" : "Settings saved successfully");
-        qc.invalidateQueries({ queryKey: queryKeys.brand.businessSettings(brandId) });
+        if (f) {
+          initialFRef.current = getComparableSettings(f);
+          initialSettingsObjRef.current = { ...f };
+        }
+        setActiveTabDirty((prev) => ({ ...prev, [activeTab]: false }));
+        await qc.invalidateQueries({ queryKey: queryKeys.brand.businessSettings(brandId) });
       }
     } finally {
       setSaving(false);
     }
   };
+
+  const handleUnifiedSave = async () => {
+    if (activeTab === "business" || activeTab === "invoice") {
+      await save();
+    } else if (activeTab === "storefront") {
+      setTabSaving(true);
+      try {
+        if (storefrontModeSaveRef.current) await storefrontModeSaveRef.current();
+        if (storefrontCustomizerSaveRef.current) await storefrontCustomizerSaveRef.current();
+        setActiveTabDirty((prev) => ({ ...prev, storefront: false }));
+      } finally {
+        setTabSaving(false);
+      }
+    } else {
+      const handler = tabSaveHandlersRef.current[activeTab];
+      if (handler) {
+        setTabSaving(true);
+        try {
+          await handler();
+          setActiveTabDirty((prev) => ({ ...prev, [activeTab]: false }));
+        } finally {
+          setTabSaving(false);
+        }
+      }
+    }
+  };
+
+  const isActionableTab = [
+    "business",
+    "invoice",
+    "storefront",
+    "checkout",
+    "payments",
+    "emails",
+  ].includes(activeTab);
 
   const handleUpload = async (file: File | Blob, kind: "logo" | "favicon" | "font") => {
     try {
@@ -879,8 +1054,85 @@ function Settings() {
   };
   const activeHeader = TAB_HEADERS[activeTab] ?? TAB_HEADERS.business;
 
+  const renderSectionHeaderAction = () => {
+    if (!isCurrentTabDirty) return null;
+    return (
+      <Button
+        type="button"
+        size="sm"
+        onClick={(e) => {
+          e.stopPropagation();
+          void handleUnifiedSave();
+        }}
+        disabled={saving || tabSaving}
+        className="h-7 px-2.5 text-xs gap-1.5 shadow-xs bg-primary text-primary-foreground hover:bg-primary/90 animate-in fade-in duration-150"
+      >
+        {saving || tabSaving ? (
+          <Loader2 className="h-3 w-3 animate-spin" />
+        ) : (
+          <Save className="h-3 w-3" />
+        )}
+        <span>{saving || tabSaving ? (lang === "ar" ? "حفظ..." : "Saving...") : (lang === "ar" ? "حفظ" : "Save")}</span>
+      </Button>
+    );
+  };
+
+  const renderSectionSaveBanner = (sectionName?: string) => {
+    if (!isCurrentTabDirty) return null;
+    return (
+      <div className="flex items-center justify-between p-3 mt-4 rounded-lg bg-primary/5 border border-primary/20 animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className="flex items-center gap-2 text-xs font-medium text-foreground">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+          </span>
+          <span>
+            {lang === "ar"
+              ? `توجد تعديلات غير محفوظة${sectionName ? ` في ${sectionName}` : ""}`
+              : `Unsaved changes${sectionName ? ` in ${sectionName}` : ""}`}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleDiscard}
+            disabled={saving || tabSaving}
+            className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <Undo2 className="h-3.5 w-3.5 me-1" />
+            <span>{lang === "ar" ? "تراجع" : "Discard"}</span>
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleUnifiedSave}
+            disabled={saving || tabSaving}
+            className="h-8 px-3.5 text-xs gap-1.5 shadow-sm"
+          >
+            {saving || tabSaving ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Save className="h-3.5 w-3.5" />
+            )}
+            <span>
+              {saving || tabSaving
+                ? lang === "ar"
+                  ? "جارٍ الحفظ..."
+                  : "Saving..."
+                : lang === "ar"
+                  ? "حفظ التغييرات"
+                  : "Save Changes"}
+            </span>
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="space-y-3.5">
+    <div className="space-y-4 pb-44">
       {f.font_url && (
         <style>{`@font-face { font-family: 'CustomFont'; src: url('${f.font_url}'); font-display: swap; }`}</style>
       )}
@@ -890,9 +1142,9 @@ function Settings() {
         lang={lang === "ar" ? "ar" : "en"}
         brandName={brandDisplayName}
         activeTabLabel={lang === "ar" ? activeHeader.ar : activeHeader.en}
-        saving={saving}
-        onSave={save}
-        showSave={activeTab === "business" || activeTab === "invoice"}
+        saving={saving || tabSaving}
+        onSave={handleUnifiedSave}
+        showSave={isActionableTab}
       />
 
       {/* 1b. Search & Customer Preview Bar */}
@@ -905,7 +1157,7 @@ function Settings() {
           asChild
           variant="outline"
           size="sm"
-          className="h-9 gap-1.5 text-xs font-semibold shrink-0"
+          className="h-9 gap-1.5 text-xs font-medium shrink-0"
         >
           <a href={`/${brand.slug}`} target="_blank" rel="noopener noreferrer">
             <Eye className="h-3.5 w-3.5 text-primary" />
@@ -935,10 +1187,68 @@ function Settings() {
         onValueChange={(val: any) => setActiveTab(val)}
         className="w-full mt-2"
       >
-        <TabsContent value="business" className="space-y-6 mt-0">
-          <StoreProfileCard brandId={brandId} slug={brand.slug} />
-          <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-3 sm:p-6 space-y-4">
-            <h2 className="font-display text-xl font-bold">{t("settings.business")}</h2>
+        <TabsContent value="business" className="space-y-4 mt-0">
+          <div className="flex items-center justify-between gap-3 px-1">
+            <p className="text-xs text-muted-foreground font-normal">
+              {lang === "ar"
+                ? "أقسام بيانات المتجر والنشاط (انقر على أي قسم للتوسيع والتعديل)"
+                : "Store profile & settings (click to expand)"}
+            </p>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                const ids = ["biz-profile", "biz-details"];
+                const anyOpen = ids.some((id) => openSections[id]);
+                if (anyOpen) collapseAllInTab(ids);
+                else expandAllInTab(ids);
+              }}
+              className="h-7 text-xs font-normal text-muted-foreground hover:text-foreground gap-1.5"
+            >
+              {["biz-profile", "biz-details"].some((id) => openSections[id]) ? (
+                <>
+                  <ChevronsDownUp className="h-3.5 w-3.5" />
+                  <span>{lang === "ar" ? "طي الكل" : "Collapse all"}</span>
+                </>
+              ) : (
+                <>
+                  <ChevronsUpDown className="h-3.5 w-3.5" />
+                  <span>{lang === "ar" ? "توسيع الكل" : "Expand all"}</span>
+                </>
+              )}
+            </Button>
+          </div>
+
+          <SettingsCollapsibleCard
+            id="biz-profile"
+            open={openSections["biz-profile"] ?? false}
+            onOpenChange={() => toggleSection("biz-profile")}
+            title={lang === "ar" ? "نوع النشاط والوحدات التخصصية" : "Store Vertical & Modules"}
+            description={
+              lang === "ar"
+                ? "تكييف النظام وفق قطاع النشاط (أزياء، مطاعم، إلكترونيات) والوحدات المفعّلة"
+                : "Tailor the store experience and specialized addons to your industry"
+            }
+            icon={Store}
+          >
+            <StoreProfileCard brandId={brandId} slug={brand.slug} borderless={true} />
+          </SettingsCollapsibleCard>
+
+          <SettingsCollapsibleCard
+            id="biz-details"
+            open={openSections["biz-details"] ?? false}
+            onOpenChange={() => toggleSection("biz-details")}
+            headerActions={renderSectionHeaderAction()}
+            title={lang === "ar" ? "بيانات المتجر والاتصال والضريبة والعملة" : "Store Profile, Contact, Tax & Currency"}
+            description={
+              lang === "ar"
+                ? "اسم المتجر، الشعار، أرقام التواصل، العملة الافتراضية، والرقم الضريبي"
+                : "Store identity, contact numbers, base currency, and tax registration"
+            }
+            icon={Building2}
+          >
+            <div className="space-y-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label>{t("settings.businessName")}</Label>
@@ -1153,254 +1463,194 @@ function Settings() {
                 onChange={(e) => setF({ ...f, footer_note: e.target.value })}
               />
             </div>
-          </Card>
+            {renderSectionSaveBanner(lang === "ar" ? "بيانات المتجر والملف التجاري" : "Store Profile & Details")}
+            </div>
+          </SettingsCollapsibleCard>
         </TabsContent>
 
-        <TabsContent value="invoice" className="space-y-6 mt-0">
-          <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-3 sm:p-6 space-y-4">
-            <h2 className="font-display text-xl">{t("settings.appearance")}</h2>
+        <TabsContent value="invoice" className="space-y-4 mt-0">
+          <div className="flex items-center justify-between gap-3 px-1">
+            <p className="text-xs text-muted-foreground font-normal">
+              {lang === "ar"
+                ? "إعدادات الفاتورة والطباعة (انقر على أي قسم للتوسيع والتعديل)"
+                : "Invoice & layout settings (click to expand)"}
+            </p>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                const ids = ["inv-design", "inv-typography", "inv-terms", "inv-logo"];
+                const anyOpen = ids.some((id) => openSections[id]);
+                if (anyOpen) collapseAllInTab(ids);
+                else expandAllInTab(ids);
+              }}
+              className="h-7 text-xs font-normal text-muted-foreground hover:text-foreground gap-1.5"
+            >
+              {["inv-design", "inv-typography", "inv-terms", "inv-logo"].some(
+                (id) => openSections[id],
+              ) ? (
+                <>
+                  <ChevronsDownUp className="h-3.5 w-3.5" />
+                  <span>{lang === "ar" ? "طي الكل" : "Collapse all"}</span>
+                </>
+              ) : (
+                <>
+                  <ChevronsUpDown className="h-3.5 w-3.5" />
+                  <span>{lang === "ar" ? "توسيع الكل" : "Expand all"}</span>
+                </>
+              )}
+            </Button>
+          </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <Label>{t("settings.fontFamily")}</Label>
-                <Select value={f.font_family} onValueChange={(v) => setF({ ...f, font_family: v })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {FONT_PRESETS.map((x) => (
-                      <SelectItem key={x} value={x}>
-                        {x}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>{t("settings.uploadFont")}</Label>
-                <div className="flex gap-2">
-                  <Input
-                    readOnly
-                    value={f.font_url ? t("settings.uploaded") : ""}
-                    placeholder={t("settings.noFile")}
-                  />
-                  <input
-                    ref={fontInput}
-                    type="file"
-                    accept=".woff,.woff2,.ttf,.otf"
-                    className="hidden"
-                    onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], "font")}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => fontInput.current?.click()}
-                    disabled={uploading === "font"}
-                    aria-label={t("settings.uploadFont")}
-                    title={t("settings.uploadFont")}
-                  >
-                    <Upload className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <div>
-                <Label>{t("settings.fontSize")}</Label>
-                <Input
-                  type="number"
-                  min={10}
-                  max={24}
-                  value={f.font_size}
-                  onChange={(e) => setF({ ...f, font_size: Number(e.target.value) })}
-                />
-              </div>
-              <div>
-                <Label>{t("settings.logoHeight")}</Label>
-                <Input
-                  type="number"
-                  min={24}
-                  max={200}
-                  value={f.logo_size}
-                  onChange={(e) => setF({ ...f, logo_size: Number(e.target.value) })}
-                />
-              </div>
-              <div>
-                <Label>{t("settings.accent")}</Label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={f.primary_color}
-                    onChange={(e) => setF({ ...f, primary_color: e.target.value })}
-                    className="h-9 w-12 rounded border border-border cursor-pointer"
-                  />
-                  <Input
-                    value={f.primary_color}
-                    onChange={(e) => setF({ ...f, primary_color: e.target.value })}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <Label>{t("settings.textColor")}</Label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={f.text_color}
-                    onChange={(e) => setF({ ...f, text_color: e.target.value })}
-                    className="h-9 w-12 rounded border border-border cursor-pointer"
-                  />
-                  <Input
-                    value={f.text_color}
-                    onChange={(e) => setF({ ...f, text_color: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div>
-                <Label>{t("settings.bgColor")}</Label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={f.background_color}
-                    onChange={(e) => setF({ ...f, background_color: e.target.value })}
-                    className="h-9 w-12 rounded border border-border cursor-pointer"
-                  />
-                  <Input
-                    value={f.background_color}
-                    onChange={(e) => setF({ ...f, background_color: e.target.value })}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Storefront Corner Curvature Setting */}
-            <div className="rounded-lg border border-border p-4 space-y-2.5">
-              <div>
-                <Label className="font-semibold text-sm">
-                  {lang === "ar"
-                    ? "انحناء زوايا متجرك (Corner Curvature)"
-                    : "Storefront Corner Curvature"}
+          {/* 1. Invoice Design & Template */}
+          <SettingsCollapsibleCard
+            id="inv-design"
+            open={openSections["inv-design"] ?? false}
+            onOpenChange={() => toggleSection("inv-design")}
+            headerActions={renderSectionHeaderAction()}
+            title={lang === "ar" ? "تصميم وقالب الفاتورة" : "Invoice Design & Template"}
+            description={
+              lang === "ar"
+                ? "تخصيص القالب العام، الألوان، خيارات العرض، وتنسيق الترويسة"
+                : "Invoice templates, color palette, display toggles, and table styling"
+            }
+            icon={FileText}
+          >
+            <div className="space-y-5">
+              {/* Template Picker */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">
+                  {lang === "ar" ? "نمط قالب الفاتورة" : "Invoice Template"}
                 </Label>
-                <Select
-                  value={f.storefront_radius || "1rem"}
-                  onValueChange={(val) => setF({ ...f, storefront_radius: val })}
-                >
-                  <SelectTrigger className="mt-1.5">
-                    <SelectValue
-                      placeholder={lang === "ar" ? "اختر شكل الزوايا" : "Select corner style"}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0px">
-                      {lang === "ar"
-                        ? "مستقيمة حادة (Sharp Rectangles — 0px)"
-                        : "Sharp Rectangles (0px)"}
-                    </SelectItem>
-                    <SelectItem value="0.375rem">
-                      {lang === "ar" ? "انحناء خفيف (Subtle — 6px)" : "Subtle Rounded (6px)"}
-                    </SelectItem>
-                    <SelectItem value="1rem">
-                      {lang === "ar"
-                        ? "منحنية أنيقة (Extra Curved — 16px Default)"
-                        : "Extra Curved (16px — Default)"}
-                    </SelectItem>
-                    <SelectItem value="1.5rem">
-                      {lang === "ar" ? "دائرية بيضاوية (Pill — 24px)" : "Fully Rounded Pill (24px)"}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="mt-1.5 text-xs text-muted-foreground">
-                  {lang === "ar"
-                    ? "اختر النمط المناسب لهوية متجرك — يطبق فوراً على بطاقات المنتجات والأزرار والقوائم."
-                    : "Choose the style that matches your brand identity — applies instantly to storefront cards, buttons, and panels."}
-                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {(["modern", "classic", "minimal"] as const).map((template) => (
+                    <Button
+                      key={template}
+                      type="button"
+                      variant={f.invoice_template === template ? "default" : "outline"}
+                      onClick={() => setF({ ...f, invoice_template: template })}
+                      className="capitalize h-9"
+                    >
+                      {template === "modern" && (lang === "ar" ? "عصري (Modern)" : "Modern")}
+                      {template === "classic" && (lang === "ar" ? "كلاسيكي (Classic)" : "Classic")}
+                      {template === "minimal" && (lang === "ar" ? "مبسّط (Minimal)" : "Minimal")}
+                    </Button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <div className="rounded-lg border border-border p-4 space-y-4">
-              <div>
-                <h3 className="font-medium">
-                  {lang === "ar" ? "قالب الفاتورة" : "Invoice template"}
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  {lang === "ar"
-                    ? "يطبق على المعاينة وملف PDF والرابط العام."
-                    : "Applies to the preview, PDF download, and public invoice link."}
-                </p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {(["modern", "classic", "minimal"] as const).map((template) => (
-                  <Button
-                    key={template}
-                    type="button"
-                    variant={f.invoice_template === template ? "default" : "outline"}
-                    onClick={() => setF({ ...f, invoice_template: template })}
-                    className="capitalize"
-                  >
-                    {template}
-                  </Button>
-                ))}
-              </div>
+              {/* Invoice Titles */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>
-                    {lang === "ar" ? "عنوان الفاتورة بالإنجليزية" : "English invoice title"}
-                  </Label>
-                  <Input
-                    value={f.invoice_title_en ?? ""}
-                    placeholder="INVOICE"
-                    onChange={(e) => setF({ ...f, invoice_title_en: e.target.value || null })}
-                  />
-                </div>
-                <div>
-                  <Label>
-                    {lang === "ar" ? "عنوان الفاتورة بالعربية" : "Arabic invoice title"}
+                    {lang === "ar" ? "عنوان الفاتورة بالعربية" : "Arabic Invoice Title"}
                   </Label>
                   <Input
                     dir="rtl"
                     value={f.invoice_title_ar ?? ""}
-                    placeholder="فاتورة"
+                    placeholder="فاتورة ضريبية / فاتورة مبيعات"
                     onChange={(e) => setF({ ...f, invoice_title_ar: e.target.value || null })}
                   />
                 </div>
                 <div>
-                  <Label>{lang === "ar" ? "خط الفاتورة بالعربية" : "Arabic font family"}</Label>
-                  <Select
-                    value={f.invoice_arabic_font_family ?? "Cairo"}
-                    onValueChange={(val) => setF({ ...f, invoice_arabic_font_family: val })}
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Cairo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ARABIC_FONT_PRESETS.map((font) => (
-                        <SelectItem key={font} value={font}>
-                          {font}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>
+                    {lang === "ar" ? "عنوان الفاتورة بالإنجليزية" : "English Invoice Title"}
+                  </Label>
+                  <Input
+                    dir="ltr"
+                    value={f.invoice_title_en ?? ""}
+                    placeholder="TAX INVOICE"
+                    onChange={(e) => setF({ ...f, invoice_title_en: e.target.value || null })}
+                  />
                 </div>
+              </div>
+
+              {/* Main Palette */}
+              <div className="border-t border-border pt-4 space-y-3">
                 <div>
-                  <Label>{lang === "ar" ? "اللون الثانوي" : "Secondary color"}</Label>
-                  <div className="flex gap-2 mt-1">
-                    <input
-                      type="color"
-                      value={f.invoice_secondary_color ?? "#f5f5f5"}
-                      onChange={(e) => setF({ ...f, invoice_secondary_color: e.target.value })}
-                      className="h-9 w-12 rounded border"
-                    />
-                    <Input
-                      value={f.invoice_secondary_color ?? ""}
-                      placeholder="#f5f5f5"
-                      onChange={(e) =>
-                        setF({ ...f, invoice_secondary_color: e.target.value || null })
-                      }
-                    />
+                  <h4 className="text-sm font-semibold">
+                    {lang === "ar" ? "لوحة ألوان الفاتورة" : "Invoice Color Palette"}
+                  </h4>
+                  <p className="text-xs text-muted-foreground">
+                    {lang === "ar"
+                      ? "تحديد اللون الرئيسي للعلامة التجارية، ولون البطاقات الثانوية، والخلفية، والنصوص"
+                      : "Set the brand primary accent, secondary surface color, background, and text colors"}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                  <div>
+                    <Label className="text-xs">{t("settings.accent")}</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="color"
+                        value={f.primary_color}
+                        onChange={(e) => setF({ ...f, primary_color: e.target.value })}
+                        className="h-9 w-10 rounded border border-border cursor-pointer shrink-0"
+                      />
+                      <Input
+                        className="font-mono text-xs h-9"
+                        value={f.primary_color}
+                        onChange={(e) => setF({ ...f, primary_color: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs">
+                      {lang === "ar" ? "اللون الثانوي (البطاقات)" : "Secondary (Cards)"}
+                    </Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="color"
+                        value={f.invoice_secondary_color ?? "#f5f5f5"}
+                        onChange={(e) => setF({ ...f, invoice_secondary_color: e.target.value })}
+                        className="h-9 w-10 rounded border border-border cursor-pointer shrink-0"
+                      />
+                      <Input
+                        className="font-mono text-xs h-9"
+                        value={f.invoice_secondary_color ?? ""}
+                        placeholder="#f5f5f5"
+                        onChange={(e) =>
+                          setF({ ...f, invoice_secondary_color: e.target.value || null })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs">{t("settings.bgColor")}</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="color"
+                        value={f.background_color}
+                        onChange={(e) => setF({ ...f, background_color: e.target.value })}
+                        className="h-9 w-10 rounded border border-border cursor-pointer shrink-0"
+                      />
+                      <Input
+                        className="font-mono text-xs h-9"
+                        value={f.background_color}
+                        onChange={(e) => setF({ ...f, background_color: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs">{t("settings.textColor")}</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="color"
+                        value={f.text_color}
+                        onChange={(e) => setF({ ...f, text_color: e.target.value })}
+                        className="h-9 w-10 rounded border border-border cursor-pointer shrink-0"
+                      />
+                      <Input
+                        className="font-mono text-xs h-9"
+                        value={f.text_color}
+                        onChange={(e) => setF({ ...f, text_color: e.target.value })}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1413,8 +1663,8 @@ function Settings() {
                   </h4>
                   <p className="text-xs text-muted-foreground">
                     {lang === "ar"
-                      ? "تحديد ألوان مستقلة لشارات الحالة (مدفوع، غير مدفوع، قيد التنفيذ)."
-                      : "Define independent colors for paid, unpaid, and in-progress status badges."}
+                      ? "تحديد ألوان مستقلة لشارات الحالة (مدفوع، غير مدفوع، قيد التنفيذ)"
+                      : "Define independent colors for paid, unpaid, and in-progress status badges"}
                   </p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1427,7 +1677,7 @@ function Settings() {
                         type="color"
                         value={f.invoice_status_paid_color ?? "#16a34a"}
                         onChange={(e) => setF({ ...f, invoice_status_paid_color: e.target.value })}
-                        className="h-8 w-10 rounded border"
+                        className="h-8 w-10 rounded border cursor-pointer shrink-0"
                       />
                       <Input
                         className="h-8 text-xs font-mono"
@@ -1450,7 +1700,7 @@ function Settings() {
                         onChange={(e) =>
                           setF({ ...f, invoice_status_unpaid_color: e.target.value })
                         }
-                        className="h-8 w-10 rounded border"
+                        className="h-8 w-10 rounded border cursor-pointer shrink-0"
                       />
                       <Input
                         className="h-8 text-xs font-mono"
@@ -1473,7 +1723,7 @@ function Settings() {
                         onChange={(e) =>
                           setF({ ...f, invoice_status_progress_color: e.target.value })
                         }
-                        className="h-8 w-10 rounded border"
+                        className="h-8 w-10 rounded border cursor-pointer shrink-0"
                       />
                       <Input
                         className="h-8 text-xs font-mono"
@@ -1496,8 +1746,8 @@ function Settings() {
                   </h4>
                   <p className="text-xs text-muted-foreground">
                     {lang === "ar"
-                      ? "التحكم خلفية ترويسة جدول المنتجات وخطوط التقسيم."
-                      : "Customize item table header background, text color, and section line dividers."}
+                      ? "التحكم في خلفية ترويسة جدول المنتجات، لون النص، وخطوط التقسيم"
+                      : "Customize item table header background, text color, and section line dividers"}
                   </p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1510,7 +1760,7 @@ function Settings() {
                         type="color"
                         value={f.invoice_table_header_bg || "#f8fafc"}
                         onChange={(e) => setF({ ...f, invoice_table_header_bg: e.target.value })}
-                        className="h-8 w-10 rounded border cursor-pointer"
+                        className="h-8 w-10 rounded border cursor-pointer shrink-0"
                       />
                       <Input
                         className="h-8 text-xs font-mono"
@@ -1531,7 +1781,7 @@ function Settings() {
                         type="color"
                         value={f.invoice_table_header_fg || "#ffffff"}
                         onChange={(e) => setF({ ...f, invoice_table_header_fg: e.target.value })}
-                        className="h-8 w-10 rounded border cursor-pointer"
+                        className="h-8 w-10 rounded border cursor-pointer shrink-0"
                       />
                       <Input
                         className="h-8 text-xs font-mono"
@@ -1552,7 +1802,7 @@ function Settings() {
                         type="color"
                         value={f.invoice_divider_color ?? "#e2e8f0"}
                         onChange={(e) => setF({ ...f, invoice_divider_color: e.target.value })}
-                        className="h-8 w-10 rounded border"
+                        className="h-8 w-10 rounded border cursor-pointer shrink-0"
                       />
                       <Input
                         className="h-8 text-xs font-mono"
@@ -1566,195 +1816,1045 @@ function Settings() {
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {(
-                  [
-                    [
-                      "invoice_show_business_details",
-                      lang === "ar" ? "إظهار بيانات النشاط" : "Show business details",
-                    ],
-                    [
-                      "invoice_show_customer_contact",
-                      lang === "ar" ? "إظهار بيانات العميل" : "Show customer contact",
-                    ],
-                    [
-                      "invoice_show_fulfillment",
-                      lang === "ar" ? "إظهار بيانات التسليم" : "Show fulfillment details",
-                    ],
-                    [
-                      "invoice_show_notes",
-                      lang === "ar" ? "إظهار الملاحظات" : "Show notes and footer",
-                    ],
-                  ] as const
-                ).map(([key, label]) => (
-                  <div
-                    key={key}
-                    className="flex items-center justify-between rounded-md border p-3"
-                  >
-                    <Label>{label}</Label>
-                    <Switch
-                      checked={f[key]}
-                      onCheckedChange={(checked) => setF({ ...f, [key]: checked })}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
 
-            <div
-              className="rounded-md border border-border p-6 mt-2"
-              style={{
-                backgroundColor: f.background_color,
-                color: f.text_color,
-                fontFamily: previewFont,
-                fontSize: `${f.font_size}px`,
-              }}
-            >
-              <div style={{ borderTop: `4px solid ${f.primary_color}`, marginBottom: 12 }} />
-              {f.logo_url && (
-                <img
-                  src={f.logo_url}
-                  alt="logo"
-                  style={{ height: f.logo_size, objectFit: "contain", marginBottom: 8 }}
-                />
-              )}
-              <div
-                style={{
-                  color: f.primary_color,
-                  fontSize: `${f.font_size * 1.6}px`,
-                  fontWeight: 600,
-                }}
-              >
-                {f.business_name || t("settings.businessName")}
-              </div>
-              <p style={{ marginTop: 6 }}>{t("settings.previewText")}</p>
-            </div>
-          </Card>
-
-          {f.logo_url && (
-            <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-3 sm:p-6 space-y-4">
-              <div className="flex items-start justify-between gap-4">
+              {/* Display Options Toggles */}
+              <div className="border-t border-border pt-4 space-y-3">
                 <div>
-                  <h2 className="font-display text-xl">Invoice logo position &amp; size</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Drag the logo to reposition it and drag any corner to resize. This will be
-                    applied to every invoice.
+                  <h4 className="text-sm font-semibold">
+                    {lang === "ar" ? "خيارات إظهار وإخفاء عناصر الفاتورة" : "Invoice Display Options"}
+                  </h4>
+                  <p className="text-xs text-muted-foreground">
+                    {lang === "ar"
+                      ? "التحكم في ظهور اسم البراند، تفاصيل التواصل، الشحن، والملاحظات"
+                      : "Toggle brand name, contact details, fulfillment info, and notes on invoices"}
                   </p>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setF({ ...f, logo_x: 0, logo_y: 0, logo_width: 160, logo_height: 64 })
-                  }
-                >
-                  Reset
-                </Button>
+
+                <div className="grid grid-cols-1 gap-2.5">
+                  {/* Brand name toggle */}
+                  <div className="flex items-center justify-between rounded-lg border border-border p-3 bg-card hover:bg-muted/30 transition-colors">
+                    <div className="space-y-0.5 pe-4">
+                      <Label className="text-sm font-medium cursor-pointer">
+                        {lang === "ar"
+                          ? "إظهار اسم المتجر كنص بجانب/تحت الشعار"
+                          : "Show brand name text beside/under logo"}
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        {lang === "ar"
+                          ? "أوقف هذا الخيار إذا كان شعار المتجر يتضمن اسم البراند بالرسم لتجنب التكرار في ترويسة الفاتورة"
+                          : "Turn off if your logo image already contains the brand name to avoid duplicate text"}
+                      </p>
+                    </div>
+                    <Switch
+                      checked={f.invoice_show_business_name ?? true}
+                      onCheckedChange={(checked) =>
+                        setF({ ...f, invoice_show_business_name: checked })
+                      }
+                    />
+                  </div>
+
+                  {/* Business details */}
+                  <div className="flex items-center justify-between rounded-lg border border-border p-3 bg-card hover:bg-muted/30 transition-colors">
+                    <div className="space-y-0.5 pe-4">
+                      <Label className="text-sm font-medium cursor-pointer">
+                        {lang === "ar" ? "إظهار بيانات النشاط التجاري" : "Show business details"}
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        {lang === "ar"
+                          ? "عرض العنوان ورقم الهاتف والبريد والرقم الضريبي في الترويسة"
+                          : "Display address, phone, email, and tax ID on invoice header"}
+                      </p>
+                    </div>
+                    <Switch
+                      checked={f.invoice_show_business_details}
+                      onCheckedChange={(checked) =>
+                        setF({ ...f, invoice_show_business_details: checked })
+                      }
+                    />
+                  </div>
+
+                  {/* Customer contact */}
+                  <div className="flex items-center justify-between rounded-lg border border-border p-3 bg-card hover:bg-muted/30 transition-colors">
+                    <div className="space-y-0.5 pe-4">
+                      <Label className="text-sm font-medium cursor-pointer">
+                        {lang === "ar" ? "إظهار بيانات العميل" : "Show customer contact"}
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        {lang === "ar"
+                          ? "عرض اسم العميل وهاتفه وعنوان التوصيل في صندوق مستقل"
+                          : "Display customer name, phone number, and delivery address"}
+                      </p>
+                    </div>
+                    <Switch
+                      checked={f.invoice_show_customer_contact}
+                      onCheckedChange={(checked) =>
+                        setF({ ...f, invoice_show_customer_contact: checked })
+                      }
+                    />
+                  </div>
+
+                  {/* Fulfillment details */}
+                  <div className="flex items-center justify-between rounded-lg border border-border p-3 bg-card hover:bg-muted/30 transition-colors">
+                    <div className="space-y-0.5 pe-4">
+                      <Label className="text-sm font-medium cursor-pointer">
+                        {lang === "ar" ? "إظهار بيانات التسليم والشحن" : "Show fulfillment details"}
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        {lang === "ar"
+                          ? "عرض طريقة الاستلام أو التوصيل ورسوم الشحن"
+                          : "Display shipping method, delivery fee, or store pickup details"}
+                      </p>
+                    </div>
+                    <Switch
+                      checked={f.invoice_show_fulfillment}
+                      onCheckedChange={(checked) =>
+                        setF({ ...f, invoice_show_fulfillment: checked })
+                      }
+                    />
+                  </div>
+
+                  {/* Order notes */}
+                  <div className="flex items-center justify-between rounded-lg border border-border p-3 bg-card hover:bg-muted/30 transition-colors">
+                    <div className="space-y-0.5 pe-4">
+                      <Label className="text-sm font-medium cursor-pointer">
+                        {lang === "ar" ? "إظهار ملاحظات الطلب" : "Show order notes"}
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        {lang === "ar"
+                          ? "عرض ملاحظات العميل أو الطلب في أسفل الفاتورة"
+                          : "Display customer or order specific notes in invoice footer"}
+                      </p>
+                    </div>
+                    <Switch
+                      checked={f.invoice_show_notes}
+                      onCheckedChange={(checked) =>
+                        setF({ ...f, invoice_show_notes: checked })
+                      }
+                    />
+                  </div>
+                </div>
               </div>
 
+              {/* Design Preview Box */}
               <div
-                className="w-full overflow-x-auto rounded-md pb-2"
-                tabIndex={0}
-                aria-label={
-                  lang === "ar" ? "معاينة موضع شعار الفاتورة" : "Invoice logo position preview"
-                }
+                className="rounded-lg border border-border p-5 mt-3 shadow-xs space-y-3"
+                style={{
+                  backgroundColor: f.background_color,
+                  color: f.text_color,
+                  fontFamily: previewFont,
+                }}
               >
-                <div
-                  className="relative mx-auto border border-dashed border-border rounded-md bg-white overflow-hidden"
-                  style={{ width: LOGO_CANVAS_W, height: LOGO_CANVAS_H }}
-                >
-                  <Rnd
-                    size={{ width: f.logo_width, height: f.logo_height }}
-                    position={{ x: f.logo_x, y: f.logo_y }}
-                    onDragStop={(_e, d) => setF({ ...f, logo_x: d.x, logo_y: d.y })}
-                    onResizeStop={(_e, _dir, ref, _delta, pos) =>
+                <div style={{ borderTop: `4px solid ${f.primary_color}` }} />
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    {f.logo_url && (
+                      <img
+                        src={f.logo_url}
+                        alt="logo"
+                        style={{
+                          width: f.logo_width || "auto",
+                          height: f.logo_height || f.logo_size || 64,
+                          objectFit: "contain",
+                          marginBottom: 8,
+                        }}
+                      />
+                    )}
+                    {f.invoice_show_business_name !== false && (
+                      <div
+                        style={{
+                          color: f.primary_color,
+                          fontSize: `${f.font_size * 1.4}px`,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {f.business_name || t("settings.businessName")}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-end">
+                    <span
+                      className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold text-white"
+                      style={{ backgroundColor: f.invoice_status_paid_color || "#16a34a" }}
+                    >
+                      {lang === "ar" ? "مدفوع" : "PAID"}
+                    </span>
+                    <p className="text-xs opacity-70 mt-1">#INV-1001</p>
+                  </div>
+                </div>
+                <p className="text-xs opacity-75">{t("settings.previewText")}</p>
+              </div>
+              {renderSectionSaveBanner(lang === "ar" ? "تصميم وقالب الفاتورة" : "Invoice Design & Template")}
+            </div>
+          </SettingsCollapsibleCard>
+
+          {/* 2. Invoice Typography */}
+          <SettingsCollapsibleCard
+            id="inv-typography"
+            open={openSections["inv-typography"] ?? false}
+            onOpenChange={() => toggleSection("inv-typography")}
+            headerActions={renderSectionHeaderAction()}
+            title={lang === "ar" ? "تخصيص الخطوط والطباعة" : "Invoice Typography & Fonts"}
+            description={
+              lang === "ar"
+                ? "اختيار الخطوط العربية والإنجليزية، حجم الخط، وإمكانية رفع خط مخصص للمتجر"
+                : "Arabic and English font pairings, base font size, and custom font uploads"
+            }
+            icon={Type}
+          >
+            <div className="space-y-5">
+              {/* Dual Font Selectors */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Arabic Font Selector */}
+                <div className="space-y-2.5 p-4 rounded-lg border border-border bg-card">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-semibold">
+                      {lang === "ar" ? "الخط العربي للفاتورة" : "Arabic Font Family"}
+                    </Label>
+                    <span className="text-xs font-mono text-muted-foreground px-2 py-0.5 rounded bg-muted">
+                      {f.invoice_arabic_font_family || "Cairo"}
+                    </span>
+                  </div>
+                  <Select
+                    value={f.invoice_arabic_font_family ?? "Cairo"}
+                    onValueChange={(val) => setF({ ...f, invoice_arabic_font_family: val })}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Cairo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ARABIC_FONT_PRESETS.map((font) => (
+                        <SelectItem key={font} value={font} className="font-medium">
+                          <span style={{ fontFamily: `"${font}", sans-serif` }}>{font}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Fast selection chips */}
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {["Cairo", "Tajawal", "Alexandria", "Almarai", "IBM Plex Sans Arabic"].map(
+                      (preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setF({ ...f, invoice_arabic_font_family: preset })}
+                          className={cn(
+                            "text-xs px-2.5 py-1 rounded-md border transition-all cursor-pointer",
+                            (f.invoice_arabic_font_family || "Cairo") === preset
+                              ? "bg-primary text-primary-foreground border-primary font-semibold"
+                              : "bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground border-border",
+                          )}
+                          style={{ fontFamily: `"${preset}", sans-serif` }}
+                        >
+                          {preset}
+                        </button>
+                      ),
+                    )}
+                  </div>
+                </div>
+
+                {/* English / Latin Font Selector */}
+                <div className="space-y-2.5 p-4 rounded-lg border border-border bg-card">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-semibold">
+                      {lang === "ar" ? "الخط اللاتيني / الإنجليزي للفاتورة" : "Latin / English Font Family"}
+                    </Label>
+                    <span className="text-xs font-mono text-muted-foreground px-2 py-0.5 rounded bg-muted">
+                      {f.font_family || "Cormorant Garamond"}
+                    </span>
+                  </div>
+                  <Select
+                    value={f.font_family}
+                    onValueChange={(val) => setF({ ...f, font_family: val })}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FONT_PRESETS.map((font) => (
+                        <SelectItem key={font} value={font} className="font-medium">
+                          <span style={{ fontFamily: `"${font}", sans-serif` }}>{font}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Fast selection chips */}
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {["Cormorant Garamond", "Inter", "Playfair Display", "Montserrat", "Poppins"].map(
+                      (preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setF({ ...f, font_family: preset })}
+                          className={cn(
+                            "text-xs px-2.5 py-1 rounded-md border transition-all cursor-pointer",
+                            f.font_family === preset
+                              ? "bg-primary text-primary-foreground border-primary font-semibold"
+                              : "bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground border-border",
+                          )}
+                          style={{ fontFamily: `"${preset}", sans-serif` }}
+                        >
+                          {preset}
+                        </button>
+                      ),
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Font Size & Custom Font Upload */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Font Size Slider */}
+                <div className="space-y-2 p-4 rounded-lg border border-border bg-card">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-semibold">{t("settings.fontSize")}</Label>
+                    <span className="text-xs font-mono text-primary font-semibold">
+                      {f.font_size}px
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="range"
+                      min={10}
+                      max={22}
+                      value={f.font_size}
+                      onChange={(e) => setF({ ...f, font_size: Number(e.target.value) })}
+                      className="w-full accent-primary cursor-pointer"
+                    />
+                    <Input
+                      type="number"
+                      min={10}
+                      max={24}
+                      value={f.font_size}
+                      onChange={(e) => setF({ ...f, font_size: Number(e.target.value) })}
+                      className="w-20 text-center font-mono h-9"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {lang === "ar"
+                      ? "المقاس القياسي الموصى به: 13px إلى 15px لوضوح القراءة والطباعة"
+                      : "Standard recommended size: 13px to 15px for crisp printing"}
+                  </p>
+                </div>
+
+                {/* Custom Font Upload */}
+                <div className="space-y-2 p-4 rounded-lg border border-border bg-card">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-semibold">{t("settings.uploadFont")}</Label>
+                    {f.font_url && (
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                        <Check className="h-3 w-3" />
+                        {lang === "ar" ? "تم رفع خط" : "Font uploaded"}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      readOnly
+                      value={f.font_url ? (lang === "ar" ? "خط مخصص مفعّل" : "Custom font active") : ""}
+                      placeholder={t("settings.noFile")}
+                      className="h-9 text-xs"
+                    />
+                    <input
+                      ref={fontInput}
+                      type="file"
+                      accept=".woff,.woff2,.ttf,.otf"
+                      className="hidden"
+                      onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], "font")}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fontInput.current?.click()}
+                      disabled={uploading === "font"}
+                      className="h-9 gap-1.5 shrink-0"
+                    >
+                      {uploading === "font" ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Upload className="h-3.5 w-3.5" />
+                      )}
+                      <span>{uploading === "font" ? (lang === "ar" ? "جارٍ الرفع..." : "Uploading...") : (lang === "ar" ? "رفع ملف" : "Upload")}</span>
+                    </Button>
+                    {f.font_url && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() =>
+                          setF({
+                            ...f,
+                            font_url: null,
+                            font_family:
+                              f.font_family === "Custom (uploaded)"
+                                ? "Cormorant Garamond"
+                                : f.font_family,
+                          })
+                        }
+                        className="h-9 w-9 text-destructive hover:bg-destructive/10 shrink-0"
+                        title={lang === "ar" ? "إزالة الخط المخصص" : "Remove custom font"}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {lang === "ar"
+                      ? "يدعم صيغ WOFF2 وWOFF وTTF وOTF. يطبق كخط مخصص."
+                      : "Supports WOFF2, WOFF, TTF, and OTF font files."}
+                  </p>
+                </div>
+              </div>
+
+              {/* Live Typography Preview Card */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground">
+                  {lang === "ar" ? "معاينة مباشرة لتناسق الخطوط والمقاس" : "Live Typography Pairings Preview"}
+                </Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-xl border border-border p-5 bg-muted/20">
+                  {/* Arabic typography preview */}
+                  <div
+                    dir="rtl"
+                    className="space-y-2 p-4 rounded-lg bg-card border border-border"
+                    style={{
+                      fontFamily: `"${f.invoice_arabic_font_family || "Cairo"}", sans-serif`,
+                      fontSize: `${f.font_size}px`,
+                    }}
+                  >
+                    <div className="flex items-center justify-between border-b pb-2">
+                      <span className="font-bold text-primary">
+                        {f.invoice_title_ar || "فاتورة ضريبية"} #1024
+                      </span>
+                      <span className="text-xs text-muted-foreground font-mono">
+                        {f.invoice_arabic_font_family || "Cairo"}
+                      </span>
+                    </div>
+                    <div className="space-y-1 text-sm">
+                      <p className="font-semibold">قهوة مختصة كولومبية فاخرة — كيس 250 جرام</p>
+                      <p className="text-xs text-muted-foreground">
+                        الكمية: 2 × 6.500 د.ب | المجموع الفرعي: 13.000 د.ب
+                      </p>
+                      <p className="font-bold text-primary pt-1">
+                        الإجمالي النهائي: 13.000 د.ب شامل الضريبة
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* English typography preview */}
+                  <div
+                    dir="ltr"
+                    className="space-y-2 p-4 rounded-lg bg-card border border-border"
+                    style={{
+                      fontFamily: previewFont,
+                      fontSize: `${f.font_size}px`,
+                    }}
+                  >
+                    <div className="flex items-center justify-between border-b pb-2">
+                      <span className="font-bold text-primary">
+                        {f.invoice_title_en || "TAX INVOICE"} #1024
+                      </span>
+                      <span className="text-xs text-muted-foreground font-mono">
+                        {f.font_family || "Cormorant Garamond"}
+                      </span>
+                    </div>
+                    <div className="space-y-1 text-sm">
+                      <p className="font-semibold">Specialty Colombian Roast — 250g Whole Beans</p>
+                      <p className="text-xs text-muted-foreground">
+                        Qty: 2 × 6.500 BHD | Subtotal: 13.000 BHD
+                      </p>
+                      <p className="font-bold text-primary pt-1">
+                        Total Amount: 13.000 BHD (Tax Included)
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {renderSectionSaveBanner(lang === "ar" ? "الخطوط والطباعة" : "Typography & Fonts")}
+            </div>
+          </SettingsCollapsibleCard>
+
+          {/* 3. Invoice Terms & Conditions */}
+          <SettingsCollapsibleCard
+            id="inv-terms"
+            open={openSections["inv-terms"] ?? false}
+            onOpenChange={() => toggleSection("inv-terms")}
+            headerActions={renderSectionHeaderAction()}
+            title={lang === "ar" ? "الشروط والأحكام وملاحظات التذييل" : "Terms, Conditions & Footer Notes"}
+            description={
+              lang === "ar"
+                ? "تخصيص سياسة الاسترجاع والاستبدال وشروط الفاتورة الخاصة بنشاطك بدلاً من النصوص الثابتة"
+                : "Customize return policies, guarantee terms, and custom footer messages for your brand"
+            }
+            icon={Scale}
+          >
+            <div className="space-y-5">
+              {/* Show/Hide Terms Box Toggle */}
+              <div className="flex items-center justify-between rounded-lg border border-border p-3.5 bg-card">
+                <div className="space-y-0.5 pe-4">
+                  <Label className="text-sm font-semibold cursor-pointer">
+                    {lang === "ar"
+                      ? "إظهار قسم الشروط والأحكام على الفاتورة"
+                      : "Display Terms & Conditions section on invoice"}
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    {lang === "ar"
+                      ? "عند التفعيل، يظهر صندوق أنيق في أسفل الفاتورة يحتوي على الشروط المحددة أدناه"
+                      : "When enabled, an official terms box appears at the bottom of customer invoices"}
+                  </p>
+                </div>
+                <Switch
+                  checked={f.invoice_show_terms ?? true}
+                  onCheckedChange={(checked) => setF({ ...f, invoice_show_terms: checked })}
+                />
+              </div>
+
+              {/* Fast Preset Templates */}
+              <div className="space-y-2 p-3.5 rounded-lg border border-border bg-muted/20">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold text-foreground">
+                    {lang === "ar" ? "قوالب شروط جاهزة وسريعة" : "Quick Preset Templates"}
+                  </Label>
+                  <span className="text-[11px] text-muted-foreground">
+                    {lang === "ar" ? "انقر لتعبئة الحقول فوراً" : "Click to populate"}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs gap-1.5"
+                    onClick={() => {
                       setF({
                         ...f,
-                        logo_width: parseInt(ref.style.width, 10),
-                        logo_height: parseInt(ref.style.height, 10),
-                        logo_x: pos.x,
-                        logo_y: pos.y,
-                      })
-                    }
-                    bounds="parent"
-                    lockAspectRatio
-                    className="border border-dashed border-border hover:border-primary/50"
+                        invoice_terms_ar:
+                          "تُحضّر جميع المشروبات والمنتجات طازجة حسب الطلب. يرجى التأكد من استلام طلبك بحالة ممتازة عند الاستلام أو التوصيل. يسعدنا دائماً خدمتكم.",
+                        invoice_terms_en:
+                          "All beverages and specialty items are prepared fresh to order. Please inspect your order upon receipt. We appreciate your business.",
+                      });
+                      toast.info(lang === "ar" ? "تم تطبيق قالب المقهى والمشروبات" : "Coffee template applied");
+                    }}
                   >
-                    <img
-                      src={f.logo_url}
-                      alt="logo"
-                      draggable={false}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "contain",
-                        pointerEvents: "none",
-                      }}
-                    />
-                  </Rnd>
+                    <span>☕</span>
+                    <span>{lang === "ar" ? "مقهى ومشروبات (Coffee & F&B)" : "Coffee & F&B"}</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs gap-1.5"
+                    onClick={() => {
+                      setF({
+                        ...f,
+                        invoice_terms_ar:
+                          "فترة الاستبدال والاسترجاع خلال 7 أيام من تاريخ الاستلام مع إبراز الفاتورة ووجود المنتج بحالته الأصلية وتغليفه الأصلي.",
+                        invoice_terms_en:
+                          "Exchange and return valid within 7 days of receipt with original invoice and item in its original condition and packaging.",
+                      });
+                      toast.info(lang === "ar" ? "تم تطبيق قالب التجارة والتجزئة" : "Retail template applied");
+                    }}
+                  >
+                    <span>🛍️</span>
+                    <span>{lang === "ar" ? "تجارة عامة وتجزئة (Retail)" : "Retail & General"}</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs gap-1.5"
+                    onClick={() => {
+                      setF({
+                        ...f,
+                        invoice_terms_ar:
+                          "فترة الاستبدال والاسترجاع خلال 3 أيام من الاستلام. القطع المصنعة أو المعدلة بطلب خاص غير قابلة للإلغاء أو الاسترجاع بعد البدء في التنفيذ.",
+                        invoice_terms_en:
+                          "Exchange and return valid within 3 days of receipt. Custom-made or tailored items are non-refundable once production commences.",
+                      });
+                      toast.info(lang === "ar" ? "تم تطبيق قالب التفصيل والتصنيع" : "Custom items template applied");
+                    }}
+                  >
+                    <span>🧵</span>
+                    <span>{lang === "ar" ? "تفصيل وتصنيع خاص (Custom)" : "Made-to-Order"}</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-xs text-muted-foreground hover:text-destructive gap-1"
+                    onClick={() => {
+                      setF({
+                        ...f,
+                        invoice_terms_ar: "",
+                        invoice_terms_en: "",
+                      });
+                    }}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    <span>{lang === "ar" ? "مسح الحقول" : "Clear"}</span>
+                  </Button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                <div>
-                  <Label>X</Label>
-                  <Input
-                    type="number"
-                    value={f.logo_x}
-                    onChange={(e) => setF({ ...f, logo_x: Number(e.target.value) })}
+              {/* Textareas for Arabic and English Terms */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium">
+                    {lang === "ar" ? "نص الشروط والأحكام (العربية)" : "Arabic Terms & Conditions"}
+                  </Label>
+                  <Textarea
+                    dir="rtl"
+                    rows={4}
+                    value={f.invoice_terms_ar ?? ""}
+                    placeholder="اكتب شروط الاسترجاع والاستبدال أو سياسة الخدمة لمتجرك..."
+                    onChange={(e) => setF({ ...f, invoice_terms_ar: e.target.value })}
+                    className="leading-relaxed text-sm resize-y"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    {lang === "ar"
+                      ? "يظهر في الفواتير الصادرة باللغة العربية. إذا تُرك فارغاً يظهر نص شكر وتقدير افتراضي مهذب."
+                      : "Used on Arabic invoices. If left empty, a polite thank-you message is displayed."}
+                  </p>
                 </div>
-                <div>
-                  <Label>Y</Label>
-                  <Input
-                    type="number"
-                    value={f.logo_y}
-                    onChange={(e) => setF({ ...f, logo_y: Number(e.target.value) })}
+
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium">
+                    {lang === "ar" ? "نص الشروط والأحكام (الإنجليزية)" : "English Terms & Conditions"}
+                  </Label>
+                  <Textarea
+                    dir="ltr"
+                    rows={4}
+                    value={f.invoice_terms_en ?? ""}
+                    placeholder="Enter return, refund, or warranty policies for your store..."
+                    onChange={(e) => setF({ ...f, invoice_terms_en: e.target.value })}
+                    className="leading-relaxed text-sm resize-y"
                   />
-                </div>
-                <div>
-                  <Label>Width</Label>
-                  <Input
-                    type="number"
-                    value={f.logo_width}
-                    onChange={(e) => setF({ ...f, logo_width: Number(e.target.value) })}
-                  />
-                </div>
-                <div>
-                  <Label>Height</Label>
-                  <Input
-                    type="number"
-                    value={f.logo_height}
-                    onChange={(e) => setF({ ...f, logo_height: Number(e.target.value) })}
-                  />
+                  <p className="text-xs text-muted-foreground">
+                    {lang === "ar"
+                      ? "يظهر في الفواتير الصادرة باللغة الإنجليزية."
+                      : "Used on English invoices. If left empty, a polite thank-you message is displayed."}
+                  </p>
                 </div>
               </div>
-            </Card>
-          )}
+
+              {/* Additional Footer Note */}
+              <div className="space-y-1.5 pt-2">
+                <Label className="text-sm font-medium">
+                  {lang === "ar" ? "ملاحظة التذييل الإضافية (اختياري)" : "Additional Footer Note (Optional)"}
+                </Label>
+                <Textarea
+                  rows={2}
+                  placeholder={lang === "ar" ? "مثال: شكراً لزيارتكم! يسعدنا تواصلكم دائماً عبر الواتساب أو انستغرام" : "e.g., Thank you for shopping with us! Follow our journey on Instagram"}
+                  value={f.footer_note ?? ""}
+                  onChange={(e) => setF({ ...f, footer_note: e.target.value })}
+                  className="text-sm resize-y"
+                />
+              </div>
+
+              {/* Live Terms Box Preview */}
+              {(f.invoice_show_terms ?? true) && (
+                <div className="space-y-1.5 pt-2">
+                  <Label className="text-xs font-medium text-muted-foreground">
+                    {lang === "ar" ? "معاينة ظهور صندوق الشروط في أسفل الفاتورة" : "Terms Box Preview on Invoice"}
+                  </Label>
+                  <div
+                    className="rounded-lg p-4 border border-border text-xs leading-relaxed transition-colors space-y-1"
+                    style={{
+                      backgroundColor: f.invoice_secondary_color || "#f8fafc",
+                    }}
+                  >
+                    <p className="font-bold text-foreground">
+                      {lang === "ar" ? "الشروط والأحكام" : "Terms & Conditions"}
+                    </p>
+                    <p className="text-muted-foreground whitespace-pre-wrap">
+                      {lang === "ar"
+                        ? f.invoice_terms_ar ||
+                          "شكراً لتعاملكم معنا. لأي استفسارات أو تفاصيل إضافية، يسعدنا تواصلكم."
+                        : f.invoice_terms_en ||
+                          "Thank you for your business. For any inquiries, please feel free to reach out to us."}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {renderSectionSaveBanner(lang === "ar" ? "الشروط والتذييل" : "Terms & Conditions")}
+            </div>
+          </SettingsCollapsibleCard>
+
+          {/* 4. Invoice Logo Position & Size */}
+          <SettingsCollapsibleCard
+            id="inv-logo"
+            open={openSections["inv-logo"] ?? false}
+            onOpenChange={() => toggleSection("inv-logo")}
+            headerActions={renderSectionHeaderAction()}
+            title={lang === "ar" ? "أبعاد وموضع الشعار على الفاتورة" : "Invoice Logo Position & Size"}
+            description={
+              lang === "ar"
+                ? "تحديد موضع وأبعاد الشعار التفاعلي عبر السحب والإفلات وتغيير الحجم"
+                : "Interactive drag & resize tool for invoice header logo"
+            }
+            icon={Palette}
+          >
+            <div className="space-y-4">
+              {f.logo_url ? (
+                <>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h4 className="font-medium text-foreground">
+                        {lang === "ar" ? "معاينة موضع الشعار" : "Invoice logo position & size"}
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        {lang === "ar"
+                          ? "اسحب الشعار لتغيير موضعه واسحب الزوايا لتكبير أو تصغير الحجم. تنعكس الأبعاد على جميع الفواتير الصادرة."
+                          : "Drag the logo to reposition it and drag corners to resize. Dimensions apply across all generated invoices."}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setF({
+                          ...f,
+                          logo_x: 0,
+                          logo_y: 0,
+                          logo_width: 160,
+                          logo_height: 64,
+                          logo_size: 64,
+                        })
+                      }
+                      className="shrink-0 text-xs"
+                    >
+                      {lang === "ar" ? "إعادة ضبط" : "Reset"}
+                    </Button>
+                  </div>
+
+                  <div
+                    className="w-full overflow-x-auto rounded-md pb-2"
+                    tabIndex={0}
+                    aria-label={
+                      lang === "ar" ? "معاينة موضع شعار الفاتورة" : "Invoice logo position preview"
+                    }
+                  >
+                    <div
+                      className="relative mx-auto border border-dashed border-border rounded-md bg-white overflow-hidden shadow-inner"
+                      style={{ width: LOGO_CANVAS_W, height: LOGO_CANVAS_H }}
+                    >
+                      <Rnd
+                        size={{
+                          width: Math.max(24, f.logo_width || 160),
+                          height: Math.max(24, f.logo_height || f.logo_size || 64),
+                        }}
+                        position={{
+                          x: Number(f.logo_x) || 0,
+                          y: Number(f.logo_y) || 0,
+                        }}
+                        onDragStop={(_e, d) =>
+                          setF({
+                            ...f,
+                            logo_x: Math.round(d.x),
+                            logo_y: Math.round(d.y),
+                          })
+                        }
+                        onResizeStop={(_e, _dir, ref, _delta, pos) => {
+                          const w = Math.max(24, parseInt(ref.style.width, 10));
+                          const h = Math.max(24, parseInt(ref.style.height, 10));
+                          setF({
+                            ...f,
+                            logo_width: w,
+                            logo_height: h,
+                            logo_size: h,
+                            logo_x: Math.round(pos.x),
+                            logo_y: Math.round(pos.y),
+                          });
+                        }}
+                        lockAspectRatio
+                        className="border border-dashed border-primary/60 hover:border-primary rounded cursor-move"
+                      >
+                        <img
+                          src={f.logo_url}
+                          alt="logo"
+                          draggable={false}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "contain",
+                            pointerEvents: "none",
+                          }}
+                        />
+                      </Rnd>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                    <div>
+                      <Label className="text-xs">X (الموضع الأفقي)</Label>
+                      <Input
+                        type="number"
+                        min={-500}
+                        max={500}
+                        value={f.logo_x ?? 0}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setF({ ...f, logo_x: v === "" || v === "-" ? (v as any) : Number(v) });
+                        }}
+                        className="h-9 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Y (الموضع الرأسي)</Label>
+                      <Input
+                        type="number"
+                        min={-500}
+                        max={500}
+                        value={f.logo_y ?? 0}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setF({ ...f, logo_y: v === "" || v === "-" ? (v as any) : Number(v) });
+                        }}
+                        className="h-9 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">{lang === "ar" ? "العرض (Width)" : "Width"}</Label>
+                      <Input
+                        type="number"
+                        min={24}
+                        max={600}
+                        value={f.logo_width}
+                        onChange={(e) =>
+                          setF({ ...f, logo_width: Math.max(24, Number(e.target.value)) })
+                        }
+                        className="h-9 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">{lang === "ar" ? "الارتفاع (Height)" : "Height"}</Label>
+                      <Input
+                        type="number"
+                        min={24}
+                        max={300}
+                        value={f.logo_height || f.logo_size || 64}
+                        onChange={(e) => {
+                          const val = Math.max(24, Number(e.target.value));
+                          setF({ ...f, logo_height: val, logo_size: val });
+                        }}
+                        className="h-9 font-mono"
+                      />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8 space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    {lang === "ar"
+                      ? "لم يتم رفع شعار للمتجر بعد. يرجى رفع الشعار في قسم 'الملف التجاري' لتتمكن من تخصيص موضعه وحجمه."
+                      : "No logo uploaded yet. Upload a logo in the Business Profile tab to customize its position and dimensions."}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setActiveTab("business")}
+                  >
+                    {lang === "ar" ? "الانتقال إلى الملف التجاري" : "Go to Business Profile"}
+                  </Button>
+                </div>
+              )}
+              {renderSectionSaveBanner(lang === "ar" ? "أبعاد وموضع الشعار" : "Logo Position & Dimensions")}
+            </div>
+          </SettingsCollapsibleCard>
         </TabsContent>
 
-        <TabsContent value="storefront" className="space-y-6 mt-0">
-          <StorefrontModeCard brandId={brandId} />
-          <StorefrontCustomizerCard brandId={brandId} />
-          <StorefrontSeoCard brandId={brandId} />
+        <TabsContent value="storefront" className="space-y-4 mt-0">
+          <div className="flex items-center justify-between gap-3 px-1">
+            <p className="text-xs text-muted-foreground font-normal">
+              {lang === "ar"
+                ? "أقسام واجهة المتجر (انقر على أي قسم للتوسيع والتعديل)"
+                : "Storefront sections (click to expand)"}
+            </p>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                const ids = ["sf-mode", "sf-customizer", "sf-seo"];
+                const anyOpen = ids.some((id) => openSections[id]);
+                if (anyOpen) collapseAllInTab(ids);
+                else expandAllInTab(ids);
+              }}
+              className="h-7 text-xs font-normal text-muted-foreground hover:text-foreground gap-1.5"
+            >
+              {["sf-mode", "sf-customizer", "sf-seo"].some((id) => openSections[id]) ? (
+                <>
+                  <ChevronsDownUp className="h-3.5 w-3.5" />
+                  <span>{lang === "ar" ? "طي الكل" : "Collapse all"}</span>
+                </>
+              ) : (
+                <>
+                  <ChevronsUpDown className="h-3.5 w-3.5" />
+                  <span>{lang === "ar" ? "توسيع الكل" : "Expand all"}</span>
+                </>
+              )}
+            </Button>
+          </div>
+
+          <SettingsCollapsibleCard
+            id="sf-mode"
+            open={openSections["sf-mode"] ?? false}
+            onOpenChange={() => toggleSection("sf-mode")}
+            title={lang === "ar" ? "وضع المتجر ونموذج البيع" : "Storefront Mode & Selling Model"}
+            description={
+              lang === "ar"
+                ? "التحكم في نموذج البيع المباشر أو وضع الكتالوج واستقبال الطلبات عبر واتساب"
+                : "Switch between direct checkout or WhatsApp catalog mode"
+            }
+            icon={ShoppingBag}
+          >
+            <StorefrontModeCard
+              brandId={brandId}
+              borderless={true}
+              onRegisterSave={(fn) => {
+                storefrontModeSaveRef.current = fn;
+              }}
+              onDirtyChange={(dirty) => markTabDirty("storefront", dirty)}
+            />
+          </SettingsCollapsibleCard>
+
+          <SettingsCollapsibleCard
+            id="sf-customizer"
+            open={openSections["sf-customizer"] ?? false}
+            onOpenChange={() => toggleSection("sf-customizer")}
+            title={lang === "ar" ? "مظهر المتجر والقالب البصري" : "Storefront Appearance & Visual Theme"}
+            description={
+              lang === "ar"
+                ? "الألوان، الخطوط، أنصاف الأقطار، لافتات الترويج، والقائمة"
+                : "Colors, typography, corner radius, promotional banners, and navigation"
+            }
+            icon={Palette}
+          >
+            <StorefrontCustomizerCard
+              brandId={brandId}
+              borderless={true}
+              onRegisterSave={(fn) => {
+                storefrontCustomizerSaveRef.current = fn;
+              }}
+              onDirtyChange={(dirty) => markTabDirty("storefront", dirty)}
+            />
+          </SettingsCollapsibleCard>
+
+          <SettingsCollapsibleCard
+            id="sf-seo"
+            open={openSections["sf-seo"] ?? false}
+            onOpenChange={() => toggleSection("sf-seo")}
+            title={lang === "ar" ? "ظهور المتجر في محركات البحث (SEO)" : "Search Engine Optimization (SEO)"}
+            description={
+              lang === "ar"
+                ? "عنوان ووصف الصفحة الرئيسية عند ظهورها في Google أو مشاركتها"
+                : "Control homepage title and description for search engines and social sharing"
+            }
+            icon={Globe}
+          >
+            <StorefrontSeoCard
+              brandId={brandId}
+              borderless={true}
+              onDirtyChange={(dirty) => markTabDirty("storefront", dirty)}
+            />
+          </SettingsCollapsibleCard>
         </TabsContent>
 
-        <TabsContent value="checkout" className="space-y-6 mt-0">
-          <CheckoutFulfillmentSection brandId={brandId} />
+        <TabsContent value="checkout" className="space-y-4 mt-0">
+          <SettingsCollapsibleCard
+            id="checkout-fulfillment"
+            open={openSections["checkout-fulfillment"] ?? false}
+            onOpenChange={() => toggleSection("checkout-fulfillment")}
+            title={lang === "ar" ? "خيارات التوصيل والاستلام والشحن" : "Shipping & Fulfillment Options"}
+            description={
+              lang === "ar"
+                ? "إدارة مناطق التوصيل، الرسوم، وخيارات استلام الفرع"
+                : "Manage delivery zones, flat rates, and branch pickup options"
+            }
+            icon={Truck}
+          >
+            <CheckoutFulfillmentSection
+              brandId={brandId}
+              onRegisterSave={(fn) => registerTabSave("checkout", fn)}
+            />
+          </SettingsCollapsibleCard>
         </TabsContent>
 
-        <TabsContent value="payments" className="space-y-6 mt-0">
-          <PaymentSettingsCard brandId={brandId} />
+        <TabsContent value="payments" className="space-y-4 mt-0">
+          <SettingsCollapsibleCard
+            id="payments-methods"
+            open={openSections["payments-methods"] ?? false}
+            onOpenChange={() => toggleSection("payments-methods")}
+            title={lang === "ar" ? "بوابات وطرق الدفع" : "Payment Gateways & Methods"}
+            description={
+              lang === "ar"
+                ? "إعداد الدفع عند الاستلام، BenefitPay، والبطاقات الائتمانية"
+                : "Configure Cash on Delivery, BenefitPay, cards, and payment processors"
+            }
+            icon={CreditCard}
+          >
+            <PaymentSettingsCard
+              brandId={brandId}
+              onRegisterSave={(fn) => registerTabSave("payments", fn)}
+            />
+          </SettingsCollapsibleCard>
         </TabsContent>
 
-        <TabsContent value="emails" className="space-y-6 mt-0">
-          <EmailSettingsCard brandId={brandId} />
+        <TabsContent value="emails" className="space-y-4 mt-0">
+          <SettingsCollapsibleCard
+            id="emails-notifs"
+            open={openSections["emails-notifs"] ?? false}
+            onOpenChange={() => toggleSection("emails-notifs")}
+            title={lang === "ar" ? "إشعارات البريد والرسائل" : "Email & Notification Settings"}
+            description={
+              lang === "ar"
+                ? "إدارة رسائل تأكيد الطلب، الفواتير، وإشعارات الشحن التلقائية"
+                : "Manage automated order confirmations, invoices, and shipping updates"
+            }
+            icon={Mail}
+          >
+            <EmailSettingsCard
+              brandId={brandId}
+              onRegisterSave={(fn) => registerTabSave("emails", fn)}
+            />
+          </SettingsCollapsibleCard>
         </TabsContent>
 
-        <TabsContent value="security" className="space-y-6 mt-0">
-          <SupportAccessCard brand={brand} />
-          <PasskeySettings />
+        <TabsContent value="security" className="space-y-4 mt-0">
+          <SettingsCollapsibleCard
+            id="sec-support"
+            open={openSections["sec-support"] ?? false}
+            onOpenChange={() => toggleSection("sec-support")}
+            title={lang === "ar" ? "صلاحيات دعم المنصة" : "Support Access"}
+            description={
+              lang === "ar"
+                ? "منح فريق الدعم الفني صلاحية مؤقتة للمساعدة في حل المشكلات"
+                : "Grant temporary access to platform support staff for troubleshooting"
+            }
+            icon={Shield}
+          >
+            <SupportAccessCard brand={brand} />
+          </SettingsCollapsibleCard>
+          <SettingsCollapsibleCard
+            id="sec-passkey"
+            open={openSections["sec-passkey"] ?? false}
+            onOpenChange={() => toggleSection("sec-passkey")}
+            title={lang === "ar" ? "مفاتيح المرور (Passkeys)" : "Passkey Settings"}
+            description={
+              lang === "ar"
+                ? "تسجيل الدخول السريع والآمن عبر بصمة الإصبع أو الوجه"
+                : "Fast and secure biometric login using Face ID or Touch ID"
+            }
+            icon={KeyRound}
+          >
+            <PasskeySettings />
+          </SettingsCollapsibleCard>
         </TabsContent>
 
         <TabsContent value="apps" className="mt-0">
@@ -1765,6 +2865,15 @@ function Settings() {
           <SubscriptionCard brand={brand} />
         </TabsContent>
       </Tabs>
+
+      <SettingsStickySaveBar
+        activeTab={activeTab}
+        isDirty={isCurrentTabDirty}
+        isSaving={saving || tabSaving}
+        onSave={handleUnifiedSave}
+        onDiscard={handleDiscard}
+        isAr={lang === "ar"}
+      />
     </div>
   );
 }
@@ -1827,7 +2936,13 @@ async function heroVideoDuration(file: File): Promise<number> {
   }
 }
 
-function PaymentSettingsCard({ brandId }: { brandId: string }) {
+function PaymentSettingsCard({
+  brandId,
+  onRegisterSave,
+}: {
+  brandId: string;
+  onRegisterSave?: (fn: () => Promise<void> | void) => void;
+}) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const qc = useQueryClient();
@@ -1889,6 +3004,12 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
     }
   };
 
+  const saveRef = useRef(save);
+  saveRef.current = save;
+  useEffect(() => {
+    onRegisterSave?.(() => saveRef.current());
+  }, [onRegisterSave]);
+
   const uploadQr = async (file: File) => {
     try {
       setUploading(true);
@@ -1932,9 +3053,9 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
   }
 
   return (
-    <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-6">
+    <Card className="overflow-hidden border border-border/70 shadow-xs rounded-xl bg-card p-4 sm:p-6 space-y-5">
       <div>
-        <h2 className="font-display text-xl font-bold">
+        <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground">
           {isAr ? "إعدادات الدفع" : "Payment Settings"}
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
@@ -1949,7 +3070,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
         <div className="overflow-hidden rounded-xl border border-border-subtle p-5 space-y-4 bg-background shadow-sm transition-all duration-300 hover:scale-[1.005] hover:border-primary/20">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold">
+              <p className="text-sm font-medium text-foreground">
                 {isAr ? "الدفع عند الاستلام" : "Cash on Delivery"}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -1969,7 +3090,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
         <div className="overflow-hidden rounded-xl border border-border-subtle p-5 space-y-4 bg-background shadow-sm transition-all duration-300 hover:scale-[1.005] hover:border-primary/20">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold">
+              <p className="text-sm font-medium text-foreground">
                 {isAr ? "بوابة دفع بالبطاقة" : "Card Payment Gateways"}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -1986,7 +3107,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
           {state.card_enabled && (
             <div className="pt-4 border-t border-border-subtle space-y-4 animate-in fade-in-50 duration-200">
               <div>
-                <Label className="text-xs font-semibold">
+                <Label className="text-xs font-medium text-foreground">
                   {isAr
                     ? "نسبة رسوم معالجة البطاقة المقدرة (%)"
                     : "Estimated Card Processing Fee (%)"}
@@ -2012,7 +3133,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-xs font-semibold">
+                  <Label className="text-xs font-medium text-foreground">
                     {isAr ? "مفتاح API العام (Public Key)" : "Public / Publishable API Key"}
                   </Label>
                   <Input
@@ -2024,7 +3145,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs font-semibold">
+                  <Label className="text-xs font-medium text-foreground">
                     {isAr
                       ? "المفتاح السري (Secret Key / Merchant ID)"
                       : "Secret API Key / Merchant ID"}
@@ -2055,7 +3176,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
         <div className="overflow-hidden rounded-xl border border-border-subtle p-5 space-y-4 bg-background shadow-sm transition-all duration-300 hover:scale-[1.005] hover:border-primary/20">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold">
+              <p className="text-sm font-medium text-foreground">
                 {isAr ? "بنفت باي (BenefitPay)" : "BenefitPay"}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -2073,7 +3194,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
             <div className="pt-4 border-t border-border-subtle space-y-4 animate-in fade-in-50 duration-200">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-xs font-semibold">
+                  <Label className="text-xs font-medium text-foreground">
                     {isAr
                       ? "نسبة رسوم معالجة بنفت باي (%)"
                       : "Estimated BenefitPay Processing Fee (%)"}
@@ -2100,7 +3221,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
                   </p>
                 </div>
                 <div>
-                  <Label className="text-xs font-semibold">
+                  <Label className="text-xs font-medium text-foreground">
                     {isAr
                       ? "رقم الهاتف أو الحساب أو IBAN"
                       : "Benefit phone, account number, or IBAN"}
@@ -2111,13 +3232,13 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
                     placeholder={
                       isAr ? "يظهر للعميل لنسخه مباشرة" : "Shown to customer with copy button"
                     }
-                    className="mt-1.5 text-sm font-semibold bg-background/50 focus:bg-background transition-colors"
+                    className="mt-1.5 text-sm font-medium bg-background/50 focus:bg-background transition-colors"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">
+                <Label className="text-xs font-medium text-foreground">
                   {isAr ? "رمز QR لبنفت باي" : "Benefit Pay QR image"}
                 </Label>
                 <div className="flex items-center gap-4 mt-1.5">
@@ -2168,12 +3289,13 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
 
       <div className="flex justify-end pt-2">
         <Button
-          size="sm"
+          size="default"
           onClick={save}
           disabled={saving}
-          className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+          className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2"
         >
-          {saving ? "…" : isAr ? "حفظ إعدادات الدفع" : "Save payment settings"}
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          <span>{saving ? (isAr ? "جارٍ الحفظ..." : "Saving...") : isAr ? "حفظ إعدادات الدفع" : "Save payment settings"}</span>
         </Button>
       </div>
     </Card>
@@ -2451,13 +3573,13 @@ function BrandHeroCard({
   if (!state) return null;
 
   return (
-    <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-4">
+    <Card className="overflow-hidden border border-border/70 shadow-xs rounded-xl bg-card p-4 sm:p-6 space-y-5">
       <div>
-        <h2 className="font-display text-xl">{isAr ? "واجهة المتجر" : "Storefront Hero"}</h2>
+        <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground">{isAr ? "واجهة المتجر" : "Storefront Hero"}</h2>
         <p className="text-sm text-muted-foreground">
           {isAr
             ? "الصور/الفيديو والنبذة التي يراها العملاء في الصفحة الرئيسية"
-            : "Hero media, brand color, and About text shown on the public storefront home"}
+            : "Hero media and About text shown on the public storefront home"}
         </p>
       </div>
 
@@ -2597,22 +3719,26 @@ function BrandHeroCard({
         }}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <Label>{isAr ? "لون العلامة" : "Brand color"}</Label>
-          <div className="flex items-center gap-2">
-            <input
-              type="color"
-              value={state.primary_color ?? "#000000"}
-              onChange={(e) => setState({ ...state, primary_color: e.target.value })}
-              className="h-9 w-12 rounded border border-border cursor-pointer"
-            />
-            <Input
-              value={state.primary_color ?? ""}
-              onChange={(e) => setState({ ...state, primary_color: e.target.value })}
-            />
+      <div className="p-3.5 rounded-lg border border-border/70 bg-muted/20 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div
+            className="w-5 h-5 rounded-full border border-border/70 shadow-xs shrink-0"
+            style={{ backgroundColor: state.primary_color || "var(--primary, #000000)" }}
+          />
+          <div>
+            <p className="text-xs font-medium text-foreground">
+              {isAr ? "لون العلامة الأساسي" : "Primary Brand Color"}
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              {isAr
+                ? "يُدار عبر تبويب المظهر والأنماط لضمان تناسق ألوان المتجر"
+                : "Managed under Theme & Styles for store-wide visual consistency"}
+            </p>
           </div>
         </div>
+        <span className="font-mono text-xs text-muted-foreground uppercase">
+          {state.primary_color || "#000000"}
+        </span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2630,12 +3756,6 @@ function BrandHeroCard({
             onChange={(e) => setState({ ...state, about_en: e.target.value })}
           />
         </div>
-      </div>
-
-      <div className="flex justify-end">
-        <Button size="sm" onClick={save} disabled={saving}>
-          {isAr ? "حفظ واجهة المتجر" : "Save storefront hero"}
-        </Button>
       </div>
     </Card>
   );
@@ -3079,7 +4199,7 @@ function HeroSlideLivePreview({
       >
         {/* Sample Sale Badge preview */}
         <div
-          className="absolute top-2.5 start-2.5 z-20 px-2.5 py-1 text-xs font-bold text-white shadow-sm"
+          className="absolute top-2.5 start-2.5 z-20 px-2.5 py-1 text-xs font-semibold text-white shadow-sm"
           style={{ backgroundColor: badgeBg, borderRadius: `calc(${radius} * 0.5)` }}
         >
           {isAr ? "خصم 20%" : "20% OFF"}
@@ -3194,7 +4314,13 @@ function HeroSlideLivePreview({
   );
 }
 
-function ShippingSettingsCard({ brandId }: { brandId: string }) {
+function ShippingSettingsCard({
+  brandId,
+  onRegisterSave,
+}: {
+  brandId: string;
+  onRegisterSave?: (fn: () => Promise<void> | void) => void;
+}) {
   const t = useT();
   const { lang } = useI18n();
   const isAr = lang === "ar";
@@ -3209,10 +4335,29 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
     delivery_estimate_ar: string;
     delivery_estimate_en: string;
   } | null>(null);
-  const [zones, setZones] = useState<
-    Array<{ id: string; name_en: string; name_ar: string; fee: number }>
-  >([]);
-  const [newZone, setNewZone] = useState({ name_en: "", name_ar: "", fee: "" });
+  const [zones, setZones] = useState<ShippingZone[]>([]);
+  const [newZone, setNewZone] = useState<{
+    name_en: string;
+    name_ar: string;
+    countries: string[];
+    pricing_type: "flat" | "per_piece" | "bundle";
+    fee: string;
+    bundle_size: number;
+    estimate_ar: string;
+    estimate_en: string;
+    allowed_payment_methods: Array<"cod" | "card" | "benefit">;
+  }>({
+    name_en: "",
+    name_ar: "",
+    countries: [],
+    pricing_type: "flat",
+    fee: "5",
+    bundle_size: 2,
+    estimate_ar: "",
+    estimate_en: "",
+    allowed_payment_methods: ["card", "benefit"],
+  });
+  const [isAddZoneOpen, setIsAddZoneOpen] = useState(false);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["business-settings-shipping", brandId],
@@ -3229,6 +4374,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
     },
   });
   const currency = (data as any)?.currency ?? "BHD";
+
   useEffect(() => {
     if (data) {
       setState({
@@ -3250,7 +4396,15 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
             id: z.id || crypto.randomUUID(),
             name_en: String(z.name_en || ""),
             name_ar: String(z.name_ar || ""),
+            countries: Array.isArray(z.countries) ? z.countries : [],
+            pricing_type: (z.pricing_type || "flat") as "flat" | "per_piece" | "bundle",
             fee: Number(z.fee ?? 0),
+            bundle_size: Number(z.bundle_size || 2),
+            estimate_ar: String(z.estimate_ar || ""),
+            estimate_en: String(z.estimate_en || ""),
+            allowed_payment_methods: Array.isArray(z.allowed_payment_methods)
+              ? (z.allowed_payment_methods as Array<"cod" | "card" | "benefit">)
+              : ["card", "benefit"],
           })),
         );
       } catch (_e) {
@@ -3279,30 +4433,193 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
     setSaving(false);
     if (error) toast.error(error.message);
     else {
-      toast.success(isAr ? "تم الحفظ" : "Saved");
+      toast.success(isAr ? "تم حفظ إعدادات الشحن والتوصيل" : "Shipping settings saved");
       qc.invalidateQueries({ queryKey: ["business-settings-shipping", brandId] });
     }
   };
 
-  const addZone = () => {
-    if (!newZone.name_en.trim() || !newZone.name_ar.trim() || newZone.fee === "") {
+  const saveRef = useRef(save);
+  saveRef.current = save;
+  useEffect(() => {
+    onRegisterSave?.(() => saveRef.current());
+  }, [onRegisterSave]);
+
+  const toggleCountry = (code: string) => {
+    setNewZone((prev) => {
+      const exists = prev.countries.includes(code);
+      const next = exists ? prev.countries.filter((c) => c !== code) : [...prev.countries, code];
+      let autoAr = prev.name_ar;
+      let autoEn = prev.name_en;
+      if (!exists && prev.countries.length === 0) {
+        const country = getCountryByCode(code);
+        if (country) {
+          autoAr = country.name_ar;
+          autoEn = country.name_en;
+        }
+      }
+      return { ...prev, countries: next, name_ar: autoAr, name_en: autoEn };
+    });
+  };
+
+  const applyGccPreset = () => {
+    setIsAddZoneOpen(true);
+    setNewZone((prev) => ({
+      ...prev,
+      countries: GCC_NON_BH_CODES,
+      name_ar: prev.name_ar || "دول الخليج العربي",
+      name_en: prev.name_en || "GCC Countries",
+      fee: prev.fee !== "" ? prev.fee : "5",
+      estimate_ar: prev.estimate_ar || "خلال 3 - 5 أيام عمل",
+      estimate_en: prev.estimate_en || "3 - 5 business days",
+    }));
+  };
+
+  const applyArabPreset = () => {
+    setIsAddZoneOpen(true);
+    setNewZone((prev) => ({
+      ...prev,
+      countries: ARAB_CODES,
+      name_ar: prev.name_ar || "الدول العربية",
+      name_en: prev.name_en || "Arab Countries",
+      fee: prev.fee !== "" ? prev.fee : "7",
+      estimate_ar: prev.estimate_ar || "خلال 5 - 7 أيام عمل",
+      estimate_en: prev.estimate_en || "5 - 7 business days",
+    }));
+  };
+
+  const addZone = async () => {
+    const nameAr = newZone.name_ar.trim() || newZone.name_en.trim();
+    const nameEn = newZone.name_en.trim() || newZone.name_ar.trim();
+    if (!nameAr) {
+      toast.error(isAr ? "الرجاء كتابة اسم المنطقة" : "Please enter zone name");
+      return;
+    }
+    if (newZone.countries.length === 0) {
       toast.error(
-        isAr ? "الرجاء تعبئة جميع الحقول لإضافة منطقة" : "Please fill all fields to add a zone",
+        isAr
+          ? "الرجاء اختيار دولة واحدة على الأقل لهذه المنطقة"
+          : "Please select at least one country for this zone",
       );
       return;
     }
-    const zone = {
+    const feeNum = newZone.fee === "" ? 5 : Number(newZone.fee);
+    if (isNaN(feeNum) || feeNum < 0) {
+      toast.error(isAr ? "الرجاء تحديد رسوم شحن صحيحة" : "Please specify a valid shipping fee");
+      return;
+    }
+    const zone: ShippingZone = {
       id: crypto.randomUUID(),
-      name_en: newZone.name_en.trim(),
-      name_ar: newZone.name_ar.trim(),
-      fee: Math.max(0, Number(newZone.fee)),
+      name_en: nameEn,
+      name_ar: nameAr,
+      countries: newZone.countries,
+      pricing_type: newZone.pricing_type,
+      fee: feeNum,
+      bundle_size:
+        newZone.pricing_type === "bundle" ? Math.max(1, Number(newZone.bundle_size || 2)) : undefined,
+      estimate_ar: newZone.estimate_ar.trim() || undefined,
+      estimate_en: newZone.estimate_en.trim() || undefined,
+      allowed_payment_methods: newZone.allowed_payment_methods,
     };
-    setZones([...zones, zone]);
-    setNewZone({ name_en: "", name_ar: "", fee: "" });
+    const nextZones = [...zones, zone];
+    setZones(nextZones);
+    setNewZone({
+      name_en: "",
+      name_ar: "",
+      countries: [],
+      pricing_type: "flat",
+      fee: "5",
+      bundle_size: 2,
+      estimate_ar: "",
+      estimate_en: "",
+      allowed_payment_methods: ["card", "benefit"],
+    });
+    setIsAddZoneOpen(false);
+
+    const { error } = await supabase
+      .from("business_settings")
+      .update({ shipping_zones: nextZones as any })
+      .eq("brand_id", brandId);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      qc.invalidateQueries({ queryKey: ["business-settings-shipping", brandId] });
+      toast.success(
+        isAr ? "تمت إضافة منطقة الشحن وحفظها بنجاح" : "Shipping zone added and saved successfully",
+      );
+    }
   };
 
-  const removeZone = (id: string) => {
-    setZones(zones.filter((z) => z.id !== id));
+  const toggleZonePaymentMethod = async (zoneId: string, method: "cod" | "card" | "benefit") => {
+    const target = zones.find((z) => z.id === zoneId);
+    if (!target) return;
+    const current = Array.isArray(target.allowed_payment_methods)
+      ? target.allowed_payment_methods
+      : ["card", "benefit"];
+    const exists = current.includes(method);
+    const next = (
+      exists ? current.filter((m) => m !== method) : [...current, method]
+    ) as Array<"cod" | "card" | "benefit">;
+    if (next.length === 0) {
+      toast.error(
+        isAr
+          ? "يجب إبقاء وسيلة دفع واحدة على الأقل مفعلة لهذه المنطقة"
+          : "At least one payment method must remain active for this zone",
+      );
+      return;
+    }
+    const nextZones: ShippingZone[] = zones.map((z) =>
+      z.id === zoneId ? { ...z, allowed_payment_methods: next } : z,
+    );
+    setZones(nextZones);
+
+    const { error } = await supabase
+      .from("business_settings")
+      .update({ shipping_zones: nextZones as any })
+      .eq("brand_id", brandId);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      qc.invalidateQueries({ queryKey: ["business-settings-shipping", brandId] });
+      toast.success(
+        isAr
+          ? "تم تحديث وحفظ طرق الدفع لهذه المنطقة"
+          : "Zone payment methods updated and saved",
+      );
+    }
+  };
+
+  const toggleNewZonePaymentMethod = (method: "cod" | "card" | "benefit") => {
+    setNewZone((prev) => {
+      const current = prev.allowed_payment_methods;
+      const exists = current.includes(method);
+      const next = (
+        exists ? current.filter((m) => m !== method) : [...current, method]
+      ) as Array<"cod" | "card" | "benefit">;
+      if (next.length === 0) {
+        toast.error(
+          isAr
+            ? "يجب إبقاء وسيلة دفع واحدة على الأقل"
+            : "At least one payment method is required",
+        );
+        return prev;
+      }
+      return { ...prev, allowed_payment_methods: next };
+    });
+  };
+
+  const removeZone = async (id: string) => {
+    const nextZones = zones.filter((z) => z.id !== id);
+    setZones(nextZones);
+    const { error } = await supabase
+      .from("business_settings")
+      .update({ shipping_zones: nextZones as any })
+      .eq("brand_id", brandId);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      qc.invalidateQueries({ queryKey: ["business-settings-shipping", brandId] });
+      toast.success(isAr ? "تم حذف المنطقة وحفظ التغييرات" : "Shipping zone removed");
+    }
   };
 
   if (isError) {
@@ -3335,226 +4652,742 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
   }
 
   return (
-    <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-4">
+    <Card className="overflow-hidden border border-border shadow-lg rounded-2xl bg-card p-6 space-y-6">
       <div>
         <h2 className="font-display text-xl">{t("settings.shippingTitle")}</h2>
         <p className="text-sm text-muted-foreground">{t("settings.shippingSubtitle")}</p>
       </div>
 
-      <div className="flex items-center justify-between rounded-md border border-border p-3">
-        <p className="text-sm font-medium">{t("settings.deliveryEnabled")}</p>
-        <Switch
-          checked={state.delivery_enabled}
-          onCheckedChange={(v) => setState({ ...state, delivery_enabled: v })}
-        />
-      </div>
-      <div className="flex items-center justify-between rounded-md border border-border p-3">
-        <p className="text-sm font-medium">{t("settings.pickupEnabled")}</p>
-        <Switch
-          checked={state.pickup_enabled}
-          onCheckedChange={(v) => setState({ ...state, pickup_enabled: v })}
-        />
-      </div>
-      <div className="flex items-center justify-between rounded-md border border-border p-3">
-        <div>
-          <p className="text-sm font-medium">
-            {isAr ? "تفعيل التسليم الرقمي" : "Enable digital delivery"}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {isAr
-              ? "إرسال المنتج عبر البريد الإلكتروني أو واتساب"
-              : "Send products by email or WhatsApp"}
-          </p>
+      {/* Main Delivery & Pickup Toggles */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="flex items-center justify-between rounded-xl border border-border p-3.5 bg-background">
+          <div>
+            <p className="text-sm font-medium">{t("settings.deliveryEnabled")}</p>
+            <p className="text-xs text-muted-foreground">{isAr ? "توصيل للعنوان" : "Home delivery"}</p>
+          </div>
+          <Switch
+            checked={state.delivery_enabled}
+            onCheckedChange={(v) => setState({ ...state, delivery_enabled: v })}
+          />
         </div>
-        <Switch
-          checked={state.digital_delivery_enabled}
-          onCheckedChange={(v) => setState({ ...state, digital_delivery_enabled: v })}
-        />
+        <div className="flex items-center justify-between rounded-xl border border-border p-3.5 bg-background">
+          <div>
+            <p className="text-sm font-medium">{t("settings.pickupEnabled")}</p>
+            <p className="text-xs text-muted-foreground">{isAr ? "استلام من الفرع" : "In-store pickup"}</p>
+          </div>
+          <Switch
+            checked={state.pickup_enabled}
+            onCheckedChange={(v) => setState({ ...state, pickup_enabled: v })}
+          />
+        </div>
+        <div className="flex items-center justify-between rounded-xl border border-border p-3.5 bg-background">
+          <div>
+            <p className="text-sm font-medium">
+              {isAr ? "التسليم الرقمي" : "Digital delivery"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {isAr ? "إرسال عبر واتساب/إيميل" : "Via Email/WhatsApp"}
+            </p>
+          </div>
+          <Switch
+            checked={state.digital_delivery_enabled}
+            onCheckedChange={(v) => setState({ ...state, digital_delivery_enabled: v })}
+          />
+        </div>
       </div>
 
       {state.delivery_enabled && (
-        <div className="space-y-4 border-t border-border pt-4 animate-in fade-in-50 duration-200">
-          <div>
-            <h3 className="text-sm font-semibold mb-2">
-              {isAr ? "مناطق تسعير التوصيل والشحن" : "Shipping & Delivery Pricing Zones"}
-            </h3>
-            <p className="text-xs text-muted-foreground mb-4">
-              {isAr
-                ? "أنشئ مناطق توصيل مخصصة بأسعار مختلفة (مثال: البحرين محلي، شحن السعودية، دولي مجلس التعاون). سيختار العميل منطقته عند الدفع."
-                : "Create custom shipping zones with distinct fees. Customers will select their zone during checkout."}
-            </p>
+        <div className="space-y-6 border-t border-border pt-6">
+          {/* SECTION 1: Anchored Bahrain Domestic Delivery */}
+          <div className="rounded-xl border-2 border-primary/20 bg-primary/5 p-4 sm:p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-primary/10 pb-3">
+              <div className="flex items-center gap-3">
+                <CountryFlag
+                  code="BH"
+                  className="w-9 h-6 rounded-xs object-cover border border-border/40 shadow-xs shrink-0"
+                />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-semibold text-foreground">
+                      {isAr ? "التوصيل داخل البحرين (الافتراضي)" : "Domestic Delivery - Bahrain (Default)"}
+                    </h3>
+                    <span className="text-[11px] font-medium bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                      {isAr ? "الوجهة التلقائية للعميل" : "Default Destination"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {isAr
+                      ? "تظهر البحرين تلقائياً كخيار أول ومحدد مسبقاً لجميع العملاء عند إتمام الطلب."
+                      : "Bahrain is preselected automatically for every customer upon entering checkout."}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+              <div>
+                <Label className="text-xs font-medium text-foreground block mb-1.5">
+                  {isAr ? "سعر التوصيل داخل البحرين" : "Bahrain Delivery Fee"} ({currency})
+                </Label>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    step="0.05"
+                    min={0}
+                    value={state.delivery_fee}
+                    onChange={(e) =>
+                      setState({ ...state, delivery_fee: Math.max(0, Number(e.target.value)) })
+                    }
+                    className="font-mono h-10 pe-14 ps-3 text-sm bg-background"
+                  />
+                  <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground pointer-events-none">
+                    {currency}
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  {state.delivery_fee === 0
+                    ? isAr
+                      ? "التوصيل مجاني لعملاء البحرين"
+                      : "Delivery is free for Bahrain customers"
+                    : isAr
+                      ? `سعر ثابت لجميع مناطق البحرين: ${formatMoney(state.delivery_fee, currency, lang)}`
+                      : `Fixed fee for all Bahrain: ${formatMoney(state.delivery_fee, currency, lang)}`}
+                </p>
+              </div>
+
+              <div className="md:col-span-2 space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-medium text-foreground">
+                    {isAr ? "مدة التوصيل المتوقعة داخل البحرين" : "Estimated Transit Time (Bahrain)"}
+                  </Label>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-muted-foreground">
+                      {state.delivery_estimate_enabled
+                        ? isAr
+                          ? "مُفعل"
+                          : "Enabled"
+                        : isAr
+                          ? "معطل"
+                          : "Disabled"}
+                    </span>
+                    <Switch
+                      checked={state.delivery_estimate_enabled}
+                      onCheckedChange={(v) => setState({ ...state, delivery_estimate_enabled: v })}
+                    />
+                  </div>
+                </div>
+
+                {state.delivery_estimate_enabled && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <Input
+                      type="text"
+                      value={state.delivery_estimate_ar}
+                      onChange={(e) => setState({ ...state, delivery_estimate_ar: e.target.value })}
+                      placeholder="التوصيل خلال 24 - 48 ساعة داخل البحرين"
+                      className="text-xs bg-background text-end"
+                      dir="rtl"
+                    />
+                    <Input
+                      type="text"
+                      value={state.delivery_estimate_en}
+                      onChange={(e) => setState({ ...state, delivery_estimate_en: e.target.value })}
+                      placeholder="Estimated delivery within 24 - 48 hours"
+                      className="text-xs bg-background"
+                      dir="ltr"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Zones Table / List */}
-          {zones.length > 0 ? (
-            <div className="rounded-lg border border-border overflow-hidden bg-background">
-              <table className="w-full text-sm text-start rtl:text-end">
-                <thead className="bg-secondary/10 text-xs font-semibold text-muted-foreground border-b border-border">
-                  <tr>
-                    <th className="p-3">{isAr ? "المنطقة (إنجليزي)" : "Zone Name (EN)"}</th>
-                    <th className="p-3">{isAr ? "المنطقة (عربي)" : "Zone Name (AR)"}</th>
-                    <th className="p-3 w-32">{isAr ? "رسوم التوصيل" : "Fee"}</th>
-                    <th className="p-3 w-12"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {zones.map((z) => (
-                    <tr key={z.id} className="hover:bg-secondary/5 transition-colors">
-                      <td className="p-3 font-medium">{z.name_en}</td>
-                      <td className="p-3 font-medium">{z.name_ar}</td>
-                      <td className="p-3 font-mono font-semibold">
-                        {formatMoney(z.fee, currency, lang)}
-                      </td>
-                      <td className="p-3 text-center">
+          {/* SECTION 2: International / Multi-Country Shipping Zones */}
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="text-base font-semibold flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-primary" />
+                  <span>{isAr ? "مناطق الشحن خارج البحرين (الدولي والخليجي)" : "International & Regional Shipping Zones"}</span>
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {isAr
+                    ? "حدد أسعار الشحن للبلدان الأخرى بدقة: سعر ثابت للطلب، أو سعر لكل قطعة، أو سعر لكل مجموعة قطع (مثال: كل قطعتين 5 دينار)."
+                    : "Configure shipping rules for other countries: flat per order, per piece, or bundle pricing (e.g. 5 BHD every 2 pieces)."}
+                </p>
+              </div>
+            </div>
+
+            {/* Existing Zones List */}
+            {zones.length > 0 ? (
+              <div className="grid grid-cols-1 gap-3">
+                {zones.map((z) => {
+                  const countryObjects = (z.countries ?? []).map((code) => getCountryByCode(code));
+                  return (
+                    <div
+                      key={z.id}
+                      className="rounded-xl border border-border bg-background p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-border/80 transition-all shadow-sm"
+                    >
+                      <div className="space-y-2 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-sm text-foreground">
+                            {isAr ? z.name_ar : z.name_en}
+                          </span>
+                          <span className="text-xs text-muted-foreground">({z.name_en})</span>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium bg-secondary text-secondary-foreground px-2 py-0.5 rounded-md">
+                            {z.pricing_type === "bundle"
+                              ? isAr
+                                ? `كل ${z.bundle_size || 2} قطع`
+                                : `Every ${z.bundle_size || 2} items`
+                              : z.pricing_type === "per_piece"
+                                ? isAr
+                                  ? "لكل قطعة"
+                                  : "Per item"
+                                : isAr
+                                  ? "سعر ثابت للطلب"
+                                  : "Flat per order"}
+                          </span>
+                        </div>
+
+                        {/* Country Badges */}
+                        <div className="flex flex-wrap gap-1.5">
+                          {countryObjects.map((c, i) => (
+                            <span
+                              key={i}
+                              className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border border-border/80 bg-secondary/30"
+                            >
+                              <CountryFlag
+                                code={c?.code || ""}
+                                className="w-4 h-3 rounded-2xs object-cover border border-border/40 shrink-0"
+                              />
+                              <span>{isAr ? c?.name_ar : c?.name_en}</span>
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Transit Estimate */}
+                        {(z.estimate_ar || z.estimate_en) && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                            <Truck className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span>{isAr ? z.estimate_ar : z.estimate_en}</span>
+                          </p>
+                        )}
+
+                        {/* Allowed Payment Methods */}
+                        <div className="pt-2 border-t border-border/40 mt-1">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="text-[11px] font-semibold text-foreground">
+                              {isAr ? "طرق الدفع المقبولة لهذه المنطقة:" : "Accepted payment methods for this zone:"}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {isAr ? "(انقر للتفعيل / الإلغاء)" : "(click to toggle)"}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {[
+                              { id: "card" as const, ar: "الدفع بالبطاقة", en: "Card payment", icon: CreditCard },
+                              { id: "benefit" as const, ar: "بنفت", en: "Benefit", icon: QrCode },
+                              { id: "cod" as const, ar: "الدفع عند الاستلام", en: "Cash on delivery", icon: Banknote },
+                            ].map((m) => {
+                              const allowedList = Array.isArray(z.allowed_payment_methods)
+                                ? z.allowed_payment_methods
+                                : ["card", "benefit"];
+                              const isAllowed = allowedList.includes(m.id);
+                              return (
+                                <button
+                                  key={m.id}
+                                  type="button"
+                                  onClick={() => toggleZonePaymentMethod(z.id, m.id)}
+                                  className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-all ${
+                                    isAllowed
+                                      ? "bg-primary/10 text-primary border-primary/30 font-medium shadow-2xs"
+                                      : "bg-muted/40 text-muted-foreground border-border opacity-50 hover:opacity-90"
+                                  }`}
+                                  title={
+                                    isAr
+                                      ? isAllowed
+                                        ? "انقر لتعطيل طريقة الدفع لهذه المنطقة"
+                                        : "انقر لتفعيل طريقة الدفع لهذه المنطقة"
+                                      : isAllowed
+                                        ? "Click to disable for this zone"
+                                        : "Click to enable for this zone"
+                                  }
+                                >
+                                  <m.icon className="w-3.5 h-3.5 shrink-0" />
+                                  <span>{isAr ? m.ar : m.en}</span>
+                                  <span
+                                    className={`w-1.5 h-1.5 rounded-full ${
+                                      isAllowed ? "bg-primary" : "bg-muted-foreground/40"
+                                    }`}
+                                  />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0">
+                        <div className="text-end">
+                          <div className="text-base font-semibold font-mono text-primary">
+                            {formatMoney(z.fee, currency, lang)}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground">
+                            {getShippingPricingDescription(z, currency, lang)}
+                          </div>
+                        </div>
+
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          className="h-9 w-9 text-destructive hover:bg-destructive/10 rounded-lg"
                           onClick={() => removeZone(z.id)}
-                          aria-label={isAr ? "حذف" : "Delete"}
+                          aria-label={isAr ? "حذف المنطقة" : "Delete zone"}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground bg-secondary/5">
-              {isAr
-                ? "لا توجد مناطق شحن معرفة بعد. سيتم استخدام السعر الافتراضي أدناه لجميع الطلبات."
-                : "No shipping zones defined yet. The default delivery fee below will be used as a fallback."}
-            </div>
-          )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-border p-6 text-center text-muted-foreground text-xs space-y-1">
+                <Globe className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
+                <p className="font-medium text-foreground">
+                  {isAr ? "لم تتم إضافة مناطق شحن دولية بعد" : "No international shipping zones added yet"}
+                </p>
+                <p>
+                  {isAr
+                    ? "إذا كنت تشحن لدول أخرى (مثل السعودية والإمارات)، يمكنك إضافتها بسهولة من النموذج أدناه."
+                    : "If you ship abroad (e.g. GCC or Arab countries), configure destination zones below."}
+                </p>
+              </div>
+            )}
 
-          {/* Add New Zone Form */}
-          <div className="rounded-lg border border-border p-4 bg-secondary/10 space-y-3">
-            <h4 className="text-xs font-semibold text-muted-foreground">
-              {isAr ? "إضافة منطقة جديدة" : "Add New Shipping Zone"}
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <Input
-                  type="text"
-                  placeholder={
-                    isAr ? "الاسم بالإنجليزي (مثال: KSA Shipping)" : "EN Name (e.g. KSA Shipping)"
-                  }
-                  value={newZone.name_en}
-                  onChange={(e) => setNewZone({ ...newZone, name_en: e.target.value })}
-                  className="text-xs"
-                />
+            {/* Add New Zone Builder Card */}
+            {!isAddZoneOpen ? (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-dashed border-border bg-muted/20 hover:bg-muted/30 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <Plus className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">
+                      {isAr ? "إضافة منطقة شحن جديدة" : "Add New Shipping Zone"}
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
+                      {isAr
+                        ? "حدد أسعار شحن مخصصة وطرق دفع للدول الأخرى (مثل دول الخليج أو الدول العربية)"
+                        : "Define custom shipping rates and payment options for other countries"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs px-3 rounded-full flex items-center gap-1.5 hover:border-primary hover:bg-primary/5 transition-colors"
+                    onClick={applyGccPreset}
+                  >
+                    <div className="flex items-center -space-x-1 rtl:space-x-reverse shrink-0">
+                      <CountryFlag code="SA" className="w-3.5 h-2.5 rounded-2xs object-cover border border-background shadow-xs" />
+                      <CountryFlag code="AE" className="w-3.5 h-2.5 rounded-2xs object-cover border border-background shadow-xs" />
+                      <CountryFlag code="KW" className="w-3.5 h-2.5 rounded-2xs object-cover border border-background shadow-xs" />
+                    </div>
+                    <span>{isAr ? "دول الخليج" : "GCC"}</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsAddZoneOpen(true)}
+                    className="gap-1.5 h-8 text-xs font-semibold rounded-lg shrink-0"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>{isAr ? "إضافة منطقة" : "Add Zone"}</span>
+                  </Button>
+                </div>
               </div>
-              <div>
-                <Input
-                  type="text"
-                  placeholder={
-                    isAr ? "الاسم بالعربي (مثال: شحن السعودية)" : "AR Name (e.g. شحن السعودية)"
-                  }
-                  value={newZone.name_ar}
-                  onChange={(e) => setNewZone({ ...newZone, name_ar: e.target.value })}
-                  className="text-xs text-end"
-                  dir="rtl"
-                />
+            ) : (
+              <div className="rounded-xl border border-border p-4 sm:p-5 bg-secondary/10 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/40 pb-3">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <Plus className="h-4 w-4 text-primary" />
+                    <span>{isAr ? "إضافة منطقة شحن جديدة" : "Add New Shipping Zone"}</span>
+                  </h4>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs text-muted-foreground me-1 hidden sm:inline">
+                      {isAr ? "قوالب سريعة:" : "Presets:"}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs px-3 rounded-full flex items-center gap-1.5 hover:border-primary hover:bg-primary/5 transition-colors"
+                      onClick={applyGccPreset}
+                    >
+                      <div className="flex items-center -space-x-1 rtl:space-x-reverse shrink-0">
+                        <CountryFlag code="SA" className="w-3.5 h-2.5 rounded-2xs object-cover border border-background shadow-xs" />
+                        <CountryFlag code="AE" className="w-3.5 h-2.5 rounded-2xs object-cover border border-background shadow-xs" />
+                        <CountryFlag code="KW" className="w-3.5 h-2.5 rounded-2xs object-cover border border-background shadow-xs" />
+                      </div>
+                      <span>{isAr ? "دول الخليج العربي" : "GCC Countries"}</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs px-3 rounded-full flex items-center gap-1.5 hover:border-primary hover:bg-primary/5 transition-colors"
+                      onClick={applyArabPreset}
+                    >
+                      <Globe className="h-3.5 w-3.5 text-primary shrink-0" />
+                      <span>{isAr ? "الدول العربية" : "Arab Countries"}</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsAddZoneOpen(false)}
+                      className="h-8 text-xs text-muted-foreground hover:text-foreground gap-1 ms-auto sm:ms-2"
+                    >
+                      <ChevronUp className="h-3.5 w-3.5" />
+                      <span>{isAr ? "طي النموذج" : "Collapse"}</span>
+                    </Button>
+                  </div>
+                </div>
+
+              {/* Country Selection Chips & Dropdown */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-foreground block">
+                  {isAr ? "الدول التابعة لهذه المنطقة" : "Countries in this zone"} *
+                </Label>
+
+                {newZone.countries.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 p-2 rounded-lg bg-background border border-border">
+                    {newZone.countries.map((code) => {
+                      const c = getCountryByCode(code);
+                      return (
+                        <span
+                          key={code}
+                          className="inline-flex items-center gap-1.5 text-xs bg-primary/10 text-primary border border-primary/20 px-2.5 py-1 rounded-full font-medium"
+                        >
+                          <CountryFlag code={code} className="w-4 h-3 rounded-2xs object-cover border border-border/40 shrink-0" />
+                          <span>{isAr ? c?.name_ar : c?.name_en}</span>
+                          <button
+                            type="button"
+                            onClick={() => toggleCountry(code)}
+                            className="text-primary/70 hover:text-primary hover:bg-primary/20 rounded-full p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Dropdown to add more countries */}
+                <Select
+                  value=""
+                  onValueChange={(val) => {
+                    if (val) toggleCountry(val);
+                  }}
+                >
+                  <SelectTrigger className="text-xs h-9 bg-background">
+                    <SelectValue
+                      placeholder={
+                        newZone.countries.length === 0
+                          ? isAr
+                            ? "اختر دولة لإضافتها إلى المنطقة..."
+                            : "Select a country to add..."
+                          : isAr
+                            ? "+ إضافة دولة أخرى إلى نفس المنطقة..."
+                            : "+ Add another country to this zone..."
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {COUNTRIES_DATABASE.filter((c) => c.code !== "BH").map((c) => {
+                      const isSelected = newZone.countries.includes(c.code);
+                      return (
+                        <SelectItem key={c.code} value={c.code} className="text-xs">
+                          <div className="flex items-center justify-between w-full gap-2">
+                            <div className="flex items-center gap-2">
+                              <CountryFlag code={c.code} className="w-4 h-3 rounded-2xs object-cover border border-border/40 shrink-0" />
+                              <span>{isAr ? c.name_ar : c.name_en}</span>
+                              <span className="text-muted-foreground text-[11px]">({c.name_en})</span>
+                            </div>
+                            {isSelected && <Check className="h-3.5 w-3.5 text-primary ms-2 shrink-0" />}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="flex gap-2">
-                <Input
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  placeholder={isAr ? "الرسوم" : "Fee"}
-                  value={newZone.fee}
-                  onChange={(e) => setNewZone({ ...newZone, fee: e.target.value })}
-                  className="text-xs"
-                />
+
+              {/* Zone Names */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs font-medium text-foreground block mb-1">
+                    {isAr ? "اسم المنطقة (بالعربية)" : "Zone Name (Arabic)"} *
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder={isAr ? "مثال: شحن دول الخليج العربي" : "e.g. شحن دول الخليج العربي"}
+                    value={newZone.name_ar}
+                    onChange={(e) => setNewZone({ ...newZone, name_ar: e.target.value })}
+                    className="text-xs bg-background text-end"
+                    dir="rtl"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs font-medium text-foreground block mb-1">
+                    {isAr ? "اسم المنطقة (بالإنجليزية)" : "Zone Name (English)"} *
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder="e.g. GCC Express Shipping"
+                    value={newZone.name_en}
+                    onChange={(e) => setNewZone({ ...newZone, name_en: e.target.value })}
+                    className="text-xs bg-background"
+                    dir="ltr"
+                  />
+                </div>
+              </div>
+
+              {/* Pricing Model & Fees */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-foreground block">
+                  {isAr ? "طريقة احتساب رسوم الشحن" : "Pricing Model"} *
+                </Label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNewZone({ ...newZone, pricing_type: "flat" })}
+                    className={`p-3 rounded-xl border text-start transition-all cursor-pointer ${
+                      newZone.pricing_type === "flat"
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-background hover:bg-secondary/40 text-foreground"
+                    }`}
+                  >
+                    <div className="font-medium text-xs flex items-center gap-1.5">
+                      <Package className="h-3.5 w-3.5" />
+                      <span>{isAr ? "سعر ثابت للطلب" : "Flat per order"}</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      {isAr ? "مبلغ ثابت للشحنة بالكامل بغض النظر عن عدد القطع" : "Fixed fee regardless of quantity"}
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setNewZone({ ...newZone, pricing_type: "per_piece" })}
+                    className={`p-3 rounded-xl border text-start transition-all cursor-pointer ${
+                      newZone.pricing_type === "per_piece"
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-background hover:bg-secondary/40 text-foreground"
+                    }`}
+                  >
+                    <div className="font-medium text-xs flex items-center gap-1.5">
+                      <Truck className="h-3.5 w-3.5" />
+                      <span>{isAr ? "سعر لكل قطعة" : "Per piece"}</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      {isAr ? "مثال: 5 د.ب. لكل قطعة (قطعتين = 10 د.ب.)" : "e.g. 5 BHD each (2 items = 10 BHD)"}
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setNewZone({ ...newZone, pricing_type: "bundle" })}
+                    className={`p-3 rounded-xl border text-start transition-all cursor-pointer ${
+                      newZone.pricing_type === "bundle"
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-background hover:bg-secondary/40 text-foreground"
+                    }`}
+                  >
+                    <div className="font-medium text-xs flex items-center gap-1.5">
+                      <Layers className="h-3.5 w-3.5" />
+                      <span>{isAr ? "سعر لكل مجموعة قطع" : "Per bundle of items"}</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      {isAr ? "مثال: 5 د.ب. لكل قطعتين (1-2=5، 3-4=10)" : "e.g. 5 BHD every 2 pieces"}
+                    </p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Fee Input & Bundle Size (if applicable) */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                <div>
+                  <Label className="text-xs font-medium text-foreground block mb-1">
+                    {newZone.pricing_type === "flat"
+                      ? isAr
+                        ? "رسوم الشحن الثابتة"
+                        : "Flat Shipping Fee"
+                      : newZone.pricing_type === "per_piece"
+                        ? isAr
+                          ? "سعر الشحن للقطعة الواحدة"
+                          : "Fee Per Piece"
+                        : isAr
+                          ? "رسوم المجموعة"
+                          : "Fee Per Bundle"}{" "}
+                    ({currency}) *
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min={0}
+                      placeholder="5.000"
+                      value={newZone.fee}
+                      onChange={(e) => setNewZone({ ...newZone, fee: e.target.value })}
+                      className="font-mono text-xs bg-background pe-14 ps-3"
+                    />
+                    <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground pointer-events-none">
+                      {currency}
+                    </span>
+                  </div>
+                </div>
+
+                {newZone.pricing_type === "bundle" && (
+                  <div>
+                    <Label className="text-xs font-medium text-foreground block mb-1">
+                      {isAr ? "حجم المجموعة (عدد القطع)" : "Items per bundle"} *
+                    </Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={newZone.bundle_size}
+                      onChange={(e) =>
+                        setNewZone({ ...newZone, bundle_size: Math.max(1, Number(e.target.value || 1)) })
+                      }
+                      className="font-mono text-xs bg-background"
+                      placeholder="2"
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {isAr ? `يحسب كل ${newZone.bundle_size} قطع بمبلغ واحد` : `Charged per ${newZone.bundle_size} items`}
+                    </p>
+                  </div>
+                )}
+
+                <div className={newZone.pricing_type === "bundle" ? "" : "sm:col-span-2"}>
+                  <Label className="text-xs font-medium text-foreground block mb-1">
+                    {isAr ? "مدة التوصيل للمنطقة (اختياري)" : "Transit Estimate (Optional)"}
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder={isAr ? "مثال: خلال 3 - 5 أيام عمل" : "e.g. 3 - 5 business days"}
+                    value={isAr ? newZone.estimate_ar : newZone.estimate_en}
+                    onChange={(e) =>
+                      setNewZone(
+                        isAr
+                          ? { ...newZone, estimate_ar: e.target.value, estimate_en: e.target.value }
+                          : { ...newZone, estimate_en: e.target.value },
+                      )
+                    }
+                    className="text-xs bg-background"
+                  />
+                </div>
+              </div>
+
+              {/* Payment Methods Selection for this Zone */}
+              <div className="space-y-1.5 pt-1">
+                <Label className="text-xs font-medium text-foreground block">
+                  {isAr ? "طرق الدفع المسموحة لهذه المنطقة" : "Accepted payment methods for this zone"}
+                </Label>
+                <div className="flex flex-wrap items-center gap-2">
+                  {[
+                    { id: "card" as const, ar: "الدفع بالبطاقة", en: "Card payment", icon: CreditCard },
+                    { id: "benefit" as const, ar: "بنفت", en: "Benefit", icon: QrCode },
+                    { id: "cod" as const, ar: "الدفع عند الاستلام", en: "Cash on delivery", icon: Banknote },
+                  ].map((m) => {
+                    const isAllowed = newZone.allowed_payment_methods.includes(m.id);
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => toggleNewZonePaymentMethod(m.id)}
+                        className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border transition-all ${
+                          isAllowed
+                            ? "bg-primary/10 text-primary border-primary/30 font-medium"
+                            : "bg-muted/40 text-muted-foreground border-border opacity-50 hover:opacity-90"
+                        }`}
+                      >
+                        <m.icon className="w-3.5 h-3.5 shrink-0" />
+                        <span>{isAr ? m.ar : m.en}</span>
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            isAllowed ? "bg-primary" : "bg-muted-foreground/40"
+                          }`}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  {isAr
+                    ? "افتراضياً يتم تعطيل الدفع عند الاستلام للشحن الخارجي إلا إذا رغبت بتفعيله صراحة."
+                    : "Cash on delivery is disabled by default for cross-border shipping unless explicitly enabled."}
+                </p>
+              </div>
+
+              {/* Dynamic Live Formula Preview */}
+              {Number(newZone.fee || 0) > 0 && (
+                <div className="rounded-lg bg-primary/10 border border-primary/20 p-3 text-xs text-foreground flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Info className="h-4 w-4 text-primary shrink-0" />
+                    <span>
+                      {newZone.pricing_type === "flat"
+                        ? isAr
+                          ? `يدفع العميل ${formatMoney(Number(newZone.fee), currency, lang)} دائماً مهما كان عدد المنتجات في سلته.`
+                          : `The customer always pays ${formatMoney(Number(newZone.fee), currency, lang)} regardless of cart item quantity.`
+                        : newZone.pricing_type === "per_piece"
+                          ? isAr
+                            ? `إذا كان في السلة 3 قطع، ستكون رسوم الشحن: 3 × ${formatMoney(Number(newZone.fee), currency, lang)} = ${formatMoney(3 * Number(newZone.fee), currency, lang)}`
+                            : `If the cart contains 3 items, shipping fee = 3 × ${formatMoney(Number(newZone.fee), currency, lang)} = ${formatMoney(3 * Number(newZone.fee), currency, lang)}`
+                          : isAr
+                            ? `إذا كان في السلة 3 قطع، ستكون الرسوم ${formatMoney(Math.ceil(3 / (newZone.bundle_size || 2)) * Number(newZone.fee), currency, lang)} (كل ${newZone.bundle_size || 2} قطع بسعر ${formatMoney(Number(newZone.fee), currency, lang)}).`
+                            : `If the cart contains 3 items, shipping fee = ${formatMoney(Math.ceil(3 / (newZone.bundle_size || 2)) * Number(newZone.fee), currency, lang)} (${formatMoney(Number(newZone.fee), currency, lang)} per ${newZone.bundle_size || 2} items).`}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/40">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 text-xs rounded-lg"
+                  onClick={() => setIsAddZoneOpen(false)}
+                >
+                  {isAr ? "إلغاء" : "Cancel"}
+                </Button>
                 <Button
                   type="button"
                   size="sm"
-                  className="shrink-0 text-xs bg-primary hover:bg-primary/90"
+                  className="bg-primary text-primary-foreground font-medium px-5 h-9 rounded-lg shadow-sm hover:opacity-95"
                   onClick={addZone}
                 >
-                  {isAr ? "إضافة" : "Add"}
+                  <Plus className="h-4 w-4 me-1.5" />
+                  {isAr ? "إضافة هذه المنطقة وحفظها" : "Add & Save Zone"}
                 </Button>
               </div>
             </div>
-          </div>
-
-          {/* Default / Fallback Delivery Fee */}
-          <div className="pt-3 border-t border-border">
-            <Label className="text-xs font-semibold">
-              {isAr ? "رسوم التوصيل الافتراضية / الاحتياطية" : "Default / Fallback Delivery Fee"}
-            </Label>
-            <Input
-              type="number"
-              step="0.01"
-              min={0}
-              value={state.delivery_fee}
-              onChange={(e) =>
-                setState({ ...state, delivery_fee: Math.max(0, Number(e.target.value)) })
-              }
-              className="mt-1"
-            />
-            <p className="text-xs text-muted-foreground mt-1">{t("settings.deliveryFeeHint")}</p>
+            )}
           </div>
         </div>
       )}
 
-      {/* Estimated Delivery Notice Settings */}
-      <div className="rounded-lg border border-border p-4 bg-secondary/5 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold">
-              {isAr ? "مؤشر مدة التوصيل التقديرية" : "Estimated Delivery Notice"}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {isAr
-                ? "يظهر للعميل في صفحة المنتج وسلة الشراء لطمأنته حول موعد استلام الطلب"
-                : "Appears on product page and cart to assure customers of delivery timelines"}
-            </p>
-          </div>
-          <Switch
-            checked={state.delivery_estimate_enabled}
-            onCheckedChange={(v) => setState({ ...state, delivery_estimate_enabled: v })}
-          />
-        </div>
-
-        {state.delivery_estimate_enabled && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-border-subtle">
-            <div>
-              <Label className="text-xs font-medium">
-                {isAr ? "نص مدة التوصيل (بالعربية)" : "Delivery Estimate Text (Arabic)"}
-              </Label>
-              <Input
-                type="text"
-                value={state.delivery_estimate_ar}
-                onChange={(e) => setState({ ...state, delivery_estimate_ar: e.target.value })}
-                placeholder="التوصيل المتوقع خلال 24 - 48 ساعة داخل البحرين"
-                className="text-xs mt-1 text-end"
-                dir="rtl"
-              />
-            </div>
-            <div>
-              <Label className="text-xs font-medium">
-                {isAr ? "نص مدة التوصيل (بالإنجليزية)" : "Delivery Estimate Text (English)"}
-              </Label>
-              <Input
-                type="text"
-                value={state.delivery_estimate_en}
-                onChange={(e) => setState({ ...state, delivery_estimate_en: e.target.value })}
-                placeholder="Estimated delivery within 24 - 48 hours"
-                className="text-xs mt-1"
-                dir="ltr"
-              />
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="flex justify-end pt-2">
-        <Button size="sm" onClick={save} disabled={saving}>
-          {t("settings.save")}
+      <div className="flex justify-end pt-4 border-t border-border">
+        <Button size="default" onClick={save} disabled={saving} className="min-w-32 gap-2 shadow-sm">
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          <span>{saving ? (isAr ? "جارٍ الحفظ..." : "Saving...") : isAr ? "حفظ إعدادات الشحن والتوصيل" : "Save Shipping Settings"}</span>
         </Button>
       </div>
     </Card>
@@ -3586,7 +5419,7 @@ function CustomizerNavigation({
           key={value}
           type="button"
           variant={active === value ? "default" : "ghost"}
-          className="h-10 text-xs sm:text-sm font-semibold rounded-lg"
+          className="h-10 text-xs sm:text-sm font-medium rounded-lg"
           onClick={() => onChange(value)}
           role="tab"
           aria-selected={active === value}
@@ -3660,7 +5493,7 @@ function SectionBannerPicker({
     <div className="space-y-2 rounded-lg border border-border bg-card p-3 shadow-xs">
       <div className="flex items-center justify-between">
         <div>
-          <span className="text-xs font-semibold text-foreground">{title}</span>
+          <span className="text-xs font-medium text-foreground">{title}</span>
           {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
         </div>
         {imageUrl && (
@@ -3798,7 +5631,15 @@ function ColorField({
   );
 }
 
-function StorefrontSeoCard({ brandId }: { brandId: string }) {
+function StorefrontSeoCard({
+  brandId,
+  borderless = false,
+  onDirtyChange,
+}: {
+  brandId: string;
+  borderless?: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
+}) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const qc = useQueryClient();
@@ -3833,22 +5674,32 @@ function StorefrontSeoCard({ brandId }: { brandId: string }) {
       .eq("id", brandId);
     setSaving(false);
     if (error) return toast.error(error.message);
+    onDirtyChange?.(false);
     await qc.invalidateQueries({ queryKey: ["brand-storefront-seo", brandId] });
     toast.success(isAr ? "تم حفظ إعدادات محركات البحث" : "Storefront SEO saved");
   };
 
+  const Container = borderless ? "div" : Card;
+
   return (
-    <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-4">
-      <div>
-        <h2 className="font-display text-xl">
-          {isAr ? "ظهور المتجر في محركات البحث" : "Storefront SEO"}
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          {isAr
-            ? "عنوان ووصف الصفحة الرئيسية عند ظهورها في Google أو مشاركتها."
-            : "Control the homepage title and description shown in search and social sharing."}
-        </p>
-      </div>
+    <Container
+      className={cn(
+        "overflow-hidden space-y-4",
+        !borderless && "border border-border-subtle shadow-lg rounded-2xl bg-card p-6",
+      )}
+    >
+      {!borderless && (
+        <div>
+          <h2 className="font-display text-xl">
+            {isAr ? "ظهور المتجر في محركات البحث" : "Storefront SEO"}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {isAr
+              ? "عنوان ووصف الصفحة الرئيسية عند ظهورها في Google أو مشاركتها."
+              : "Control the homepage title and description shown in search and social sharing."}
+          </p>
+        </div>
+      )}
       <div>
         <div className="flex justify-between gap-3">
           <Label>{isAr ? "عنوان الصفحة الرئيسية" : "Homepage Meta Title"}</Label>
@@ -3859,7 +5710,10 @@ function StorefrontSeoCard({ brandId }: { brandId: string }) {
         <Input
           value={metaTitle}
           maxLength={META_TITLE_LIMIT}
-          onChange={(event) => setMetaTitle(event.target.value)}
+          onChange={(event) => {
+            setMetaTitle(event.target.value);
+            onDirtyChange?.(true);
+          }}
           dir={isAr ? "rtl" : "ltr"}
           placeholder={
             isAr ? "اسم المتجر ووصفه المختصر" : "Store name and concise value proposition"
@@ -3877,7 +5731,10 @@ function StorefrontSeoCard({ brandId }: { brandId: string }) {
           value={metaDescription}
           maxLength={META_DESCRIPTION_LIMIT}
           rows={3}
-          onChange={(event) => setMetaDescription(event.target.value)}
+          onChange={(event) => {
+            setMetaDescription(event.target.value);
+            onDirtyChange?.(true);
+          }}
           dir={isAr ? "rtl" : "ltr"}
           placeholder={
             isAr ? "وصف جذاب ومختصر للمتجر" : "A concise and compelling storefront description"
@@ -3893,7 +5750,7 @@ function StorefrontSeoCard({ brandId }: { brandId: string }) {
             ? "حفظ إعدادات البحث"
             : "Save SEO settings"}
       </Button>
-    </Card>
+    </Container>
   );
 }
 
@@ -3986,7 +5843,7 @@ function FooterLivePreview({
                     className="object-contain transition-all duration-150"
                   />
                 ) : (
-                  <span className="font-bold text-sm" style={{ color: fg }}>
+                  <span className="font-semibold text-sm" style={{ color: fg }}>
                     {brandName}
                   </span>
                 )}
@@ -4087,7 +5944,7 @@ function FooterLogoResizerControl({
     <div className="space-y-4 rounded-xl border border-border p-4 bg-card/60 shadow-xs">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <Label className="text-sm font-semibold">
+          <Label className="text-sm font-medium text-foreground">
             {isAr ? "حجم شعار تذييل الصفحة (الفوتر)" : "Footer Logo Size"}
           </Label>
           <p className="mt-0.5 text-xs text-muted-foreground">
@@ -4096,7 +5953,7 @@ function FooterLogoResizerControl({
               : "Control the exact height of the logo shown in the storefront footer across devices with live preview."}
           </p>
         </div>
-        <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-primary/10 text-primary border border-primary/20">
+        <span className="text-xs font-mono font-medium px-2.5 py-1 rounded-md bg-primary/10 text-primary border border-primary/20">
           {currentSize}px
         </span>
       </div>
@@ -4157,7 +6014,17 @@ function FooterLogoResizerControl({
   );
 }
 
-function StorefrontModeCard({ brandId }: { brandId: string }) {
+function StorefrontModeCard({
+  brandId,
+  onRegisterSave,
+  borderless = false,
+  onDirtyChange,
+}: {
+  brandId: string;
+  onRegisterSave?: (fn: () => Promise<void> | void) => void;
+  borderless?: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
+}) {
   const brand = useBrand();
   const { lang } = useI18n();
   const isAr = lang === "ar";
@@ -4166,6 +6033,7 @@ function StorefrontModeCard({ brandId }: { brandId: string }) {
 
   const inquiryArRef = useRef<HTMLTextAreaElement>(null);
   const inquiryEnRef = useRef<HTMLTextAreaElement>(null);
+  const handleSaveRef = useRef<(() => Promise<void>) | null>(null);
 
   const { data: rawSettings, isLoading } = useQuery({
     queryKey: queryKeys.brand.businessSettings(brandId),
@@ -4303,6 +6171,7 @@ function StorefrontModeCard({ brandId }: { brandId: string }) {
       toast.success(
         isAr ? "تم حفظ إعدادات وضع المتجر بنجاح" : "Storefront mode settings saved successfully",
       );
+      onDirtyChange?.(false);
     } catch (err: any) {
       toast.error(
         err.message || (isAr ? "فشل حفظ إعدادات وضع المتجر" : "Failed to save storefront settings"),
@@ -4311,6 +6180,12 @@ function StorefrontModeCard({ brandId }: { brandId: string }) {
       setSaving(false);
     }
   };
+
+  handleSaveRef.current = handleSave;
+
+  useEffect(() => {
+    onRegisterSave?.(() => handleSaveRef.current?.());
+  }, [onRegisterSave]);
 
   const isCatalog = form.storefront_mode === "catalog";
   const hasWhatsApp = Boolean(
@@ -4326,13 +6201,22 @@ function StorefrontModeCard({ brandId }: { brandId: string }) {
     );
   }
 
+  const Container = borderless ? "div" : Card;
+
   return (
-    <Card className="overflow-hidden border border-border shadow-xs rounded-md bg-card p-6 space-y-6">
+    <Container
+      className={cn(
+        "overflow-hidden space-y-5",
+        !borderless && "border border-border/70 shadow-xs rounded-xl bg-card p-4 sm:p-6",
+      )}
+    >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h3 className="text-lg font-semibold text-foreground">
-            {isAr ? "وضع المتجر ونموذج البيع" : "Storefront Mode & Selling Model"}
-          </h3>
+          {!borderless && (
+            <h3 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground">
+              {isAr ? "وضع المتجر ونموذج البيع" : "Storefront Mode & Selling Model"}
+            </h3>
+          )}
           <p className="text-sm text-muted-foreground mt-0.5">
             {isAr
               ? "اختر بين نموذج البيع المباشر مع الدفع الإلكتروني، أو وضع الكتالوج واستقبال الطلبات عبر الواتساب."
@@ -4382,7 +6266,7 @@ function StorefrontModeCard({ brandId }: { brandId: string }) {
               >
                 <ShoppingBag className="h-4 w-4" />
               </div>
-              <span className="font-semibold text-sm text-foreground">
+              <span className="font-medium text-sm text-foreground">
                 {isAr ? "متجر بيع مباشر (Shop)" : "Direct E-Commerce Store (Shop)"}
               </span>
             </div>
@@ -4431,7 +6315,7 @@ function StorefrontModeCard({ brandId }: { brandId: string }) {
               >
                 <MessageCircle className="h-4 w-4" />
               </div>
-              <span className="font-semibold text-sm text-foreground">
+              <span className="font-medium text-sm text-foreground">
                 {isAr
                   ? "كتالوج واستفسارات واتساب (Catalog)"
                   : "Catalog & WhatsApp Inquiries (Catalog)"}
@@ -4461,7 +6345,7 @@ function StorefrontModeCard({ brandId }: { brandId: string }) {
           <div className="flex items-start gap-2.5 p-3 rounded-md bg-muted/60 border border-border text-muted-foreground text-xs">
             <Info className="h-4 w-4 shrink-0 text-primary mt-0.5" />
             <div>
-              <span className="font-semibold text-foreground block">
+              <span className="font-medium text-foreground block">
                 {isAr ? "ميزات وضع الكتالوج" : "Catalog Mode Features"}
               </span>
               <span>
@@ -4477,7 +6361,7 @@ function StorefrontModeCard({ brandId }: { brandId: string }) {
             <div className="flex items-start gap-2.5 p-3 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs">
               <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
               <div>
-                <span className="font-semibold block">
+                <span className="font-medium block">
                   {isAr ? "رقم الواتساب غير مضبوط" : "WhatsApp number not configured"}
                 </span>
                 <span>
@@ -4491,7 +6375,7 @@ function StorefrontModeCard({ brandId }: { brandId: string }) {
 
           {/* WhatsApp phone input */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">
+            <Label className="text-xs font-medium text-foreground">
               {isAr ? "رقم الواتساب لاستقبال الاستفسارات" : "WhatsApp Number for Inquiries"}
             </Label>
             <PhoneInput
@@ -4508,7 +6392,7 @@ function StorefrontModeCard({ brandId }: { brandId: string }) {
           {/* Show prices switch */}
           <div className="flex items-center justify-between rounded-md border border-border p-3.5 bg-card">
             <div className="space-y-0.5">
-              <Label className="text-xs font-semibold text-foreground">
+              <Label className="text-xs font-medium text-foreground">
                 {isAr ? "إظهار أسعار المنتجات في الكتالوج" : "Show Product Prices in Catalog"}
               </Label>
               <p className="text-xs text-muted-foreground">
@@ -4576,7 +6460,7 @@ function StorefrontModeCard({ brandId }: { brandId: string }) {
             <div className="space-y-2 rounded-md border border-border bg-muted/30 p-3.5 mt-3">
               <div className="flex items-center gap-2">
                 <MessageCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                <span className="text-xs font-semibold text-foreground">
+                <span className="text-xs font-medium text-foreground">
                   {isAr ? "معاينة حية لشكل الرسالة على الواتساب" : "Live WhatsApp Message Preview"}
                 </span>
               </div>
@@ -4608,11 +6492,21 @@ function StorefrontModeCard({ brandId }: { brandId: string }) {
           </div>
         </div>
       )}
-    </Card>
+    </Container>
   );
 }
 
-function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
+function StorefrontCustomizerCard({
+  brandId,
+  onRegisterSave,
+  borderless = false,
+  onDirtyChange,
+}: {
+  brandId: string;
+  onRegisterSave?: (fn: () => Promise<void> | void) => void;
+  borderless?: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
+}) {
   const brand = useBrand();
   const heroSaveRef = useRef<(() => Promise<void>) | null>(null);
   const { lang } = useI18n();
@@ -4861,12 +6755,30 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         cart_drawer_checkout_fg: data.cart_drawer_checkout_fg ?? null,
         storefront_loader_text_en: data.storefront_loader_text_en ?? null,
         storefront_loader_text_ar: data.storefront_loader_text_ar ?? null,
-        trust_badges:
-          data.trust_badges && typeof data.trust_badges === "object"
-            ? (data.trust_badges as any)
-            : DEFAULT_TRUST_BADGES,
+        trust_badges: (() => {
+          let tb = data.trust_badges;
+          if (typeof tb === "string") {
+            try {
+              tb = JSON.parse(tb);
+            } catch {
+              tb = null;
+            }
+          }
+          if (tb && typeof tb === "object") {
+            return tb as any;
+          }
+          return {
+            enabled: true,
+            items: getDynamicTrustBadges({
+              vertical: (brand as any)?.store_vertical,
+              settings: data,
+              currency: (data as any)?.currency,
+              brandName: brandDisplayName,
+            }),
+          };
+        })(),
       });
-  }, [data]);
+  }, [data, brand, brandDisplayName]);
 
   const save = async () => {
     if (!state) return;
@@ -4936,10 +6848,17 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     if (error) toast.error(error.message);
     else {
       toast.success(isAr ? "تم الحفظ بنجاح" : "Settings saved successfully");
+      onDirtyChange?.(false);
       await qc.invalidateQueries({ queryKey: ["business-settings-theme", brandId] });
       await router.invalidate();
     }
   };
+
+  const saveRef = useRef(save);
+  saveRef.current = save;
+  useEffect(() => {
+    onRegisterSave?.(() => saveRef.current());
+  }, [onRegisterSave]);
 
   const updatePromoCard = (index: number, patch: Partial<HomePromoCard>) =>
     setState((current) =>
@@ -5122,21 +7041,28 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     );
   }
 
+  const Container = borderless ? "div" : Card;
+
   return (
-    <Card
-      className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 space-y-6"
+    <Container
+      className={cn(
+        "overflow-hidden space-y-6",
+        !borderless && "border border-border-subtle shadow-lg rounded-2xl bg-card p-6",
+      )}
       dir={isAr ? "rtl" : "ltr"}
     >
-      <div>
-        <h2 className="font-display text-2xl">
-          {isAr ? "إعدادات واجهة المتجر" : "Storefront Settings"}
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          {isAr
-            ? "خصّص شكل المتجر العام — يطبَّق فوراً بعد الحفظ"
-            : "Customize the public storefront — applied instantly after saving"}
-        </p>
-      </div>
+      {!borderless && (
+        <div>
+          <h2 className="font-display text-2xl">
+            {isAr ? "إعدادات واجهة المتجر" : "Storefront Settings"}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {isAr
+              ? "خصّص شكل المتجر العام — يطبَّق فوراً بعد الحفظ"
+              : "Customize the public storefront — applied instantly after saving"}
+          </p>
+        </div>
+      )}
 
       <CustomizerNavigation active={settingsTab} onChange={setSettingsTab} isAr={isAr} />
       {(settingsTab === "promotions" || settingsTab === "content") && (
@@ -5908,24 +7834,6 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                 ))}
               </div>
             </div>
-            <div className="space-y-1 pt-2 sm:col-span-2">
-              <Label>
-                {isAr
-                  ? "رقم الهاتف أو الحساب أو IBAN للتحويل"
-                  : "Benefit phone, account number, or IBAN"}
-              </Label>
-              <Input
-                value={(state as any).benefit_account_number ?? ""}
-                onChange={(e) =>
-                  setState({ ...state, benefit_account_number: e.target.value } as any)
-                }
-                placeholder={
-                  isAr
-                    ? "يظهر للمتسوقين عند الدفع مع زر النسخ السريع"
-                    : "Shown to customers with a copy button"
-                }
-              />
-            </div>
           </div>
         </div>
 
@@ -5946,10 +7854,15 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         {/* Footer Trust Badges Editor */}
         <TrustBadgesEditor
           value={state.trust_badges}
-          onChange={(val) => setState({ ...state, trust_badges: val })}
+          onChange={(val) => {
+            setState({ ...state, trust_badges: val });
+            onDirtyChange?.(true);
+          }}
           isAr={isAr}
           footerBg={state.footer_bg}
           footerFg={state.footer_fg}
+          vertical={(brand as any)?.store_vertical}
+          settings={state}
         />
 
         {/* Hero Title Customization Card */}
@@ -6690,18 +8603,18 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         )}
       </div>
 
-      <div className="sticky bottom-20 md:bottom-3 z-10 flex justify-end rounded-xl border border-border-strong bg-background/90 p-3 shadow-lg backdrop-blur-xl">
-        <Button onClick={save} disabled={saving}>
-          {saving
-            ? isAr
-              ? "جارٍ الحفظ..."
-              : "Saving..."
-            : isAr
-              ? "حفظ إعدادات المتجر"
-              : "Save storefront settings"}
+      <div className="flex justify-end pt-4 border-t border-border">
+        <Button
+          size="default"
+          onClick={save}
+          disabled={saving}
+          className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2"
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          <span>{saving ? (isAr ? "جارٍ الحفظ..." : "Saving...") : isAr ? "حفظ إعدادات المتجر" : "Save storefront settings"}</span>
         </Button>
       </div>
-    </Card>
+    </Container>
   );
 }
 
@@ -6921,10 +8834,25 @@ function BranchesCard({ brandId }: { brandId: string }) {
   );
 }
 
-function CheckoutFulfillmentSection({ brandId }: { brandId: string }) {
+function CheckoutFulfillmentSection({
+  brandId,
+  onRegisterSave,
+}: {
+  brandId: string;
+  onRegisterSave?: (fn: () => Promise<void> | void) => void;
+}) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const [subTab, setSubTab] = useState<"shipping" | "branches">("shipping");
+  const shippingSaveRef = useRef<(() => Promise<void> | void) | null>(null);
+
+  useEffect(() => {
+    onRegisterSave?.(async () => {
+      if (shippingSaveRef.current) {
+        await shippingSaveRef.current();
+      }
+    });
+  }, [onRegisterSave]);
 
   return (
     <div className="space-y-6">
@@ -6954,7 +8882,12 @@ function CheckoutFulfillmentSection({ brandId }: { brandId: string }) {
       </div>
 
       {subTab === "shipping" ? (
-        <ShippingSettingsCard brandId={brandId} />
+        <ShippingSettingsCard
+          brandId={brandId}
+          onRegisterSave={(fn) => {
+            shippingSaveRef.current = fn;
+          }}
+        />
       ) : (
         <BranchesCard brandId={brandId} />
       )}
@@ -6963,7 +8896,13 @@ function CheckoutFulfillmentSection({ brandId }: { brandId: string }) {
 }
 
 // ---------------- Email Settings ----------------
-function EmailSettingsCard({ brandId }: { brandId: string }) {
+function EmailSettingsCard({
+  brandId,
+  onRegisterSave,
+}: {
+  brandId: string;
+  onRegisterSave?: (fn: () => Promise<void> | void) => void;
+}) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const [state, setState] = useState<{
@@ -7027,6 +8966,12 @@ function EmailSettingsCard({ brandId }: { brandId: string }) {
     if (error) toast.error(error.message);
     else toast.success(isAr ? "تم الحفظ" : "Saved");
   };
+
+  const saveRef = useRef(save);
+  saveRef.current = save;
+  useEffect(() => {
+    onRegisterSave?.(() => saveRef.current());
+  }, [onRegisterSave]);
 
   const injectPlaceholder = (
     ref: React.RefObject<HTMLTextAreaElement | null>,
@@ -7184,8 +9129,14 @@ function EmailSettingsCard({ brandId }: { brandId: string }) {
         </div>
       </div>
       <div className="flex justify-end pt-2">
-        <Button size="sm" onClick={save} disabled={saving}>
-          {isAr ? "حفظ إعدادات البريد" : "Save email settings"}
+        <Button
+          size="default"
+          onClick={save}
+          disabled={saving}
+          className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2"
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          <span>{saving ? (isAr ? "جارٍ الحفظ..." : "Saving...") : isAr ? "حفظ إعدادات البريد" : "Save email settings"}</span>
         </Button>
       </div>
     </Card>

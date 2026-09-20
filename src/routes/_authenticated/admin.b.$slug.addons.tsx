@@ -6,7 +6,16 @@ import { AddonStore } from "@/components/addons/AddonStore";
 import { Puzzle } from "lucide-react";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 
+type AddonsSearch = {
+  addon?: string;
+};
+
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/addons")({
+  validateSearch: (search: Record<string, unknown>): AddonsSearch => {
+    return {
+      addon: typeof search.addon === "string" ? search.addon : undefined,
+    };
+  },
   component: AddonsPageRoute,
 });
 
@@ -17,6 +26,9 @@ function AddonsPageRoute() {
 
   const brandId = brand.id;
   const slug = brand.slug;
+
+  const { addon: searchAddon } = Route.useSearch();
+  const navigate = Route.useNavigate();
 
   const { profile } = useAdminStoreProfile(brandId);
   const storeVertical = profile?.vertical || null;
@@ -38,7 +50,22 @@ function AddonsPageRoute() {
         }
       />
 
-      {brandId ? <AddonStore brandId={brandId} slug={slug} storeVertical={storeVertical} /> : null}
+      {brandId ? (
+        <AddonStore
+          brandId={brandId}
+          slug={slug}
+          storeVertical={storeVertical}
+          selectedAddonId={searchAddon || null}
+          onSelectAddon={(addonId) => {
+            navigate({
+              search: (prev) => ({
+                ...prev,
+                addon: addonId || undefined,
+              }),
+            });
+          }}
+        />
+      ) : null}
     </div>
   );
 }

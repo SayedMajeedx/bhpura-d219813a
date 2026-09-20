@@ -25,6 +25,8 @@ import {
 } from "@/lib/typography";
 import {
   renderTrustBadgeIcon,
+  getDynamicTrustBadges,
+  resolveStorefrontTrustBadges,
   DEFAULT_TRUST_BADGES,
   type TrustBadgesConfig,
 } from "@/lib/trust-badges";
@@ -45,7 +47,40 @@ export const Route = createFileRoute("/$slug")({
   headers: () => ({
     "Cache-Control": "public, max-age=0, s-maxage=10, must-revalidate",
   }),
-  loader: async ({ params }) => {
+  loader: async ({ params, location }) => {
+    let initialLang: "ar" | "en" = "ar";
+    const searchParams = location?.search as any;
+    const queryLang = searchParams?.lang;
+    if (queryLang === "en" || queryLang === "ar") {
+      initialLang = queryLang;
+    } else if (typeof window === "undefined") {
+      try {
+        const { getStorefrontInitialLang } = await import("@/lib/storefront-cookies.functions");
+        const cookieLang = await getStorefrontInitialLang({ data: { slug: params.slug } });
+        if (cookieLang === "en" || cookieLang === "ar") {
+          initialLang = cookieLang;
+        }
+      } catch {
+        /* fallback to default */
+      }
+    } else {
+      try {
+        const cookieMatch =
+          document.cookie.match(new RegExp(`(?:^|; )boutq_lang_${params.slug}=([^;]*)`)) ||
+          document.cookie.match(/(?:^|; )boutq_lang=([^;]*)/);
+        if (cookieMatch && (cookieMatch[1] === "en" || cookieMatch[1] === "ar")) {
+          initialLang = cookieMatch[1] as "ar" | "en";
+        } else {
+          const stored = localStorage.getItem(`storefront-lang:${params.slug}`);
+          if (stored === "en" || stored === "ar") {
+            initialLang = stored;
+          }
+        }
+      } catch {
+        /* fallback */
+      }
+    }
+
     const { data: pageData, error } = await (supabase.rpc as any)("get_storefront_page_data", {
       p_brand_slug: params.slug,
     });
@@ -59,6 +94,7 @@ export const Route = createFileRoute("/$slug")({
         bootstrapData: pageData,
         isSuspended: true,
         suspensionReason: pageData.suspension_reason || "trial_expired",
+        initialLang,
       };
     }
 
@@ -132,6 +168,35 @@ export const Route = createFileRoute("/$slug")({
       };
       storefrontTypography.display.en = storefrontTypography.body.en;
     }
+
+    const rawTrustBadges = s?.trust_badges;
+    let normalizedTrustBadges: TrustBadgesConfig | null = null;
+    if (rawTrustBadges) {
+      let parsed = rawTrustBadges;
+      if (typeof rawTrustBadges === "string") {
+        try {
+          parsed = JSON.parse(rawTrustBadges);
+        } catch {
+          parsed = null;
+        }
+      }
+      if (parsed && typeof parsed === "object") {
+        normalizedTrustBadges = {
+          enabled: parsed.enabled !== false,
+          items: Array.isArray(parsed.items)
+            ? parsed.items.map((item: any, idx: number) => ({
+                id: String(item?.id ?? `badge-${idx}`),
+                icon: String(item?.icon ?? "ShieldCheck"),
+                text_ar: String(item?.text_ar ?? ""),
+                text_en: String(item?.text_en ?? ""),
+                color: String(item?.color ?? "amber"),
+                enabled: item?.enabled !== false,
+              }))
+            : [],
+        };
+      }
+    }
+
     const safeSettings: PublicSettings = {
       brand_id: brand.id,
       business_name: s?.business_name ?? brand.name_en,
@@ -172,7 +237,15 @@ export const Route = createFileRoute("/$slug")({
             id: String(z.id || ""),
             name_en: String(z.name_en || ""),
             name_ar: String(z.name_ar || ""),
+            countries: Array.isArray(z.countries) ? z.countries : [],
+            pricing_type: (z.pricing_type || "flat") as "flat" | "per_piece" | "bundle",
             fee: Number(z.fee ?? 0),
+            bundle_size: Number(z.bundle_size || (z.pricing_type === "bundle" ? 2 : 1)),
+            estimate_ar: String(z.estimate_ar || ""),
+            estimate_en: String(z.estimate_en || ""),
+            allowed_payment_methods: Array.isArray(z.allowed_payment_methods)
+              ? (z.allowed_payment_methods as Array<"cod" | "card" | "benefit">)
+              : ["card", "benefit"],
           }));
         } catch (_e) {
           return [];
@@ -264,6 +337,7 @@ export const Route = createFileRoute("/$slug")({
       analytics_consent_required: (trackingSettings as any)?.consent_required ?? true,
       storefront_loader_text_en: s?.storefront_loader_text_en ?? null,
       storefront_loader_text_ar: s?.storefront_loader_text_ar ?? null,
+      trust_badges: normalizedTrustBadges,
     };
 
     const rawHero = brand.hero_media as any;
@@ -282,16 +356,26 @@ export const Route = createFileRoute("/$slug")({
       brand: { ...brand, hero_media: heroConfig } as unknown as Brand,
       settings: safeSettings,
       bootstrapData: pageData,
+      initialLang,
     };
   },
   head: ({ loaderData }) => {
-    const typedLoaderData = loaderData as { brand?: Brand; settings?: PublicSettings } | undefined;
+    const typedLoaderData = loaderData as
+      | { brand?: Brand; settings?: PublicSettings; initialLang?: "ar" | "en" }
+      | undefined;
     const b = typedLoaderData?.brand;
     const settings = typedLoaderData?.settings;
+    const lang = typedLoaderData?.initialLang || "ar";
     if (!b) return { meta: [{ title: "Storefront" }] };
-    const title = b.meta_title || settings?.business_name || `${b.name_en} — Online Store`;
+
+    const title =
+      lang === "ar"
+        ? (b.meta_title || settings?.business_name || b.name_ar || `${b.name_en} — متجر إلكتروني`)
+        : (b.meta_title || settings?.business_name || b.name_en || `${b.name_ar} — Online Store`);
     const desc =
-      b.meta_description || `Shop ${b.name_en}${b.name_ar ? " / " + b.name_ar : ""} online.`;
+      lang === "ar"
+        ? (b.meta_description || `تسوق من ${b.name_ar || b.name_en} أونلاين.`)
+        : (b.meta_description || `Shop ${b.name_en || b.name_ar} online.`);
     const img = settings?.logo_url || b.logo_url || "https://boutq.store/og-placeholder.png";
     const favicon = resolveBrandFavicon(settings?.favicon_url, settings?.logo_url ?? b.logo_url);
     const links: Array<Record<string, any>> = [
@@ -303,6 +387,10 @@ export const Route = createFileRoute("/$slug")({
     ];
 
     return {
+      htmlAttrs: {
+        lang,
+        dir: lang === "ar" ? "rtl" : "ltr",
+      },
       meta: [
         { title },
         { name: "description", content: desc },
@@ -325,7 +413,7 @@ export const Route = createFileRoute("/$slug")({
 
 function StorefrontLayout() {
   const loaderData = Route.useLoaderData() as any;
-  const { brand, settings, bootstrapData, isSuspended, suspensionReason } = loaderData;
+  const { brand, settings, bootstrapData, isSuspended, suspensionReason, initialLang } = loaderData;
 
   // Must run unconditionally, before the early return below — React hooks
   // can't be called conditionally. It safely handles undefined inputs.
@@ -339,6 +427,7 @@ function StorefrontLayout() {
     <StorefrontProvider
       brand={brand}
       settings={settings}
+      initialLang={initialLang}
       sizeGuides={bootstrapData?.size_guides ?? []}
       addons={bootstrapData?.addons ?? []}
     >
@@ -615,16 +704,16 @@ function StorefrontFooter() {
   const [openCompany, setOpenCompany] = useState(false);
   const [openHelp, setOpenHelp] = useState(false);
 
-  const rawTrustBadges = (settings as any).trust_badges;
-  const trustBadgesConfig: TrustBadgesConfig =
-    rawTrustBadges && typeof rawTrustBadges === "object" && Array.isArray(rawTrustBadges.items)
-      ? rawTrustBadges
-      : DEFAULT_TRUST_BADGES;
-
-  const activeBadges =
-    (trustBadgesConfig.enabled ?? true)
-      ? (trustBadgesConfig.items || []).filter((b) => b.enabled)
-      : [];
+  const rawTrustBadges = settings.trust_badges;
+  const storeVertical = normalizeVertical(
+    settings.store_vertical ?? (brand as any)?.store_vertical ?? "general",
+  );
+  const activeBadges = resolveStorefrontTrustBadges({
+    config: rawTrustBadges,
+    vertical: storeVertical,
+    settings,
+    brandName: isAr ? brand?.name_ar : brand?.name_en,
+  });
 
   const pages = settings.pages ?? [];
   const pageLinks = pages

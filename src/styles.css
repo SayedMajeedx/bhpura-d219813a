@@ -81,7 +81,7 @@
     "29LT Kaff", "Tajawal", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Noto Sans Arabic", sans-serif;
   --font-ui:
-    "Tajawal", "Inter", "Plus Jakarta Sans", "ArabicLocal", system-ui, -apple-system,
+    "Readex Pro", "Tajawal", "Inter", "Plus Jakarta Sans", system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Arabic", sans-serif;
 
   --radius: 0.5rem;
@@ -327,11 +327,19 @@ summary {
 }
 
 html.lang-ar body,
+html.lang-ar input,
+html.lang-ar textarea,
+html.lang-ar select,
+html.lang-ar button {
+  font-family: "Readex Pro", "Tajawal", "Segoe UI", -apple-system, sans-serif;
+  letter-spacing: 0;
+}
+
 html.lang-ar h1,
 html.lang-ar h2,
 html.lang-ar h3,
 html.lang-ar .font-display {
-  font-family: "Tajawal", "Segoe UI", sans-serif;
+  font-family: "Readex Pro", "Tajawal", "Segoe UI", -apple-system, sans-serif;
   letter-spacing: 0;
 }
 

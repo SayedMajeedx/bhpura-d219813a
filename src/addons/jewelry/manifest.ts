@@ -1,5 +1,4 @@
 import type { AddonManifest } from "@/lib/addons/addon-types";
-import { resolveBrandOwnerUserId } from "@/lib/addons/seed-helpers";
 
 export const jewelryManifest: AddonManifest = {
   id: "jewelry",
@@ -142,41 +141,6 @@ export const jewelryManifest: AddonManifest = {
               { label: "US 9", values: { us: "9", diameter: 18.9, circumference: 59.5 } },
             ],
             is_active: true,
-          });
-
-          if (error) throw error;
-        }
-      },
-    },
-    {
-      key: "jewelry_engraving_option",
-      description: {
-        ar: "خيار نقش الأسماء والتواريخ على المجوهرات",
-        en: "Jewelry name and date engraving option",
-      },
-      run: async ({ brandId, db }) => {
-        const optionName = "نقش وحفر اسم أو تاريخ مخصص";
-        const { data: existing, error: existErr } = await db
-          .from("customization_options")
-          .select("id")
-          .eq("brand_id", brandId)
-          .eq("name", optionName)
-          .maybeSingle();
-
-        if (existErr) throw existErr;
-
-        if (!existing) {
-          const userId = await resolveBrandOwnerUserId(db, brandId);
-          if (!userId) {
-            return;
-          }
-
-          const { error } = await db.from("customization_options").insert({
-            brand_id: brandId,
-            user_id: userId,
-            name: optionName,
-            price_delta: 3.0,
-            product_ids: [],
           });
 
           if (error) throw error;

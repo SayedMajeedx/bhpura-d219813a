@@ -288,24 +288,43 @@ export function aiContextFrom(
   return parts.join("\n");
 }
 
-export function variantAxisDefaultsFrom(rows: BrandAddonRow[] | null | undefined): {
+export function variantAxisDefaultsFrom(
+  rows?: BrandAddonRow[] | null,
+  storeVertical?: string | null,
+): {
   size?: { ar: string; en: string } | null;
   color?: { ar: string; en: string } | null;
   fabric?: { ar: string; en: string } | null;
 } {
-  if (!rows || !Array.isArray(rows)) return {};
-  const installedIds = new Set(rows.filter((r) => r.status === "installed").map((r) => r.addon_id));
-
   const out: {
     size?: { ar: string; en: string } | null;
     color?: { ar: string; en: string } | null;
     fabric?: { ar: string; en: string } | null;
   } = {};
 
-  for (const manifest of ADDON_MANIFESTS) {
-    if (!installedIds.has(manifest.id)) continue;
-    if (manifest.contributions.variantAxisDefaults) {
-      Object.assign(out, manifest.contributions.variantAxisDefaults);
+  // 1. If storeVertical is specified, seed defaults from manifests configured for this vertical activity
+  if (storeVertical) {
+    const norm = storeVertical.trim().toLowerCase();
+    for (const manifest of ADDON_MANIFESTS) {
+      if (manifest.activities && manifest.activities.map((a) => a.toLowerCase()).includes(norm)) {
+        if (manifest.contributions.variantAxisDefaults) {
+          Object.assign(out, manifest.contributions.variantAxisDefaults);
+        }
+      }
+    }
+  }
+
+  // 2. If installed brand addons are provided, merge their explicit axis defaults
+  if (rows && Array.isArray(rows)) {
+    const installedIds = new Set(
+      rows.filter((r) => r.status === "installed").map((r) => r.addon_id),
+    );
+
+    for (const manifest of ADDON_MANIFESTS) {
+      if (!installedIds.has(manifest.id)) continue;
+      if (manifest.contributions.variantAxisDefaults) {
+        Object.assign(out, manifest.contributions.variantAxisDefaults);
+      }
     }
   }
 
@@ -433,28 +452,40 @@ export interface ProductVariantLabels {
   variant_label_color_en?: string | null;
   variant_label_fabric_ar?: string | null;
   variant_label_fabric_en?: string | null;
+  variant_label_four_ar?: string | null;
+  variant_label_four_en?: string | null;
+  variant_label_five_ar?: string | null;
+  variant_label_five_en?: string | null;
 }
 
 export const GENERIC_AXIS_DEFAULTS = {
   size: { ar: "المقاس / خيار", en: "Size / Option" },
   color: { ar: "اللون", en: "Color" },
   fabric: { ar: "الخامة", en: "Fabric" },
+  four: { ar: "خاصية إضافية 1", en: "Option 4" },
+  five: { ar: "خاصية إضافية 2", en: "Option 5" },
 } as const;
+
+export type VariantAxisKey = "size" | "color" | "fabric" | "four" | "five";
 
 export function resolveVariantAxis({
   axis,
   product,
   addonDefaults,
   lang,
+  hasValues,
 }: {
-  axis: "size" | "color" | "fabric";
-  product?: ProductVariantLabels | null;
+  axis: VariantAxisKey;
+  product?: (ProductVariantLabels & { product_variants?: any[] }) | null;
   addonDefaults?: {
     size?: { ar: string; en: string } | null;
     color?: { ar: string; en: string } | null;
     fabric?: { ar: string; en: string } | null;
+    four?: { ar: string; en: string } | null;
+    five?: { ar: string; en: string } | null;
   };
   lang: "ar" | "en";
+  hasValues?: boolean;
 }): VariantAxisConfig {
   const customAr = (product as any)?.[`variant_label_${axis}_ar`]?.trim();
   const customEn = (product as any)?.[`variant_label_${axis}_en`]?.trim();
@@ -465,6 +496,45 @@ export function resolveVariantAxis({
       label: custom,
       visible: true,
       isCustom: true,
+    };
+  }
+
+  // If variants have non-empty values for this axis, inventory data trumps addon defaults
+  const variantKey =
+    axis === "four" ? "option_four" : axis === "five" ? "option_five" : axis;
+  const axisHasData =
+    hasValues === true ||
+    (Array.isArray((product as any)?.product_variants) &&
+      (product as any).product_variants.some(
+        (v: any) => typeof v?.[variantKey] === "string" && v[variantKey].trim() !== "",
+      ));
+
+  if (axisHasData) {
+    const addonAxis = addonDefaults?.[axis];
+    const fallbackLabel =
+      (addonAxis && (addonAxis[lang] || addonAxis.en || addonAxis.ar)) ||
+      GENERIC_AXIS_DEFAULTS[axis][lang];
+    return {
+      label: fallbackLabel,
+      visible: true,
+      isCustom: false,
+    };
+  }
+
+  // Axes 'four' and 'five' are disabled by default unless custom label is set on product
+  if (axis === "four" || axis === "five") {
+    const addonAxis = addonDefaults?.[axis];
+    if (addonAxis) {
+      return {
+        label: addonAxis[lang] || addonAxis.en || addonAxis.ar,
+        visible: true,
+        isCustom: false,
+      };
+    }
+    return {
+      label: GENERIC_AXIS_DEFAULTS[axis][lang],
+      visible: false,
+      isCustom: false,
     };
   }
 
@@ -499,17 +569,47 @@ export function resolveAllVariantAxes({
   addonDefaults,
   lang,
 }: {
-  product?: ProductVariantLabels | null;
+  product?: (ProductVariantLabels & { product_variants?: any[] }) | null;
   addonDefaults?: {
     size?: { ar: string; en: string } | null;
     color?: { ar: string; en: string } | null;
     fabric?: { ar: string; en: string } | null;
+    four?: { ar: string; en: string } | null;
+    five?: { ar: string; en: string } | null;
   };
   lang: "ar" | "en";
-}): Record<"size" | "color" | "fabric", VariantAxisConfig> {
+}): Record<VariantAxisKey, VariantAxisConfig> {
   return {
     size: resolveVariantAxis({ axis: "size", product, addonDefaults, lang }),
     color: resolveVariantAxis({ axis: "color", product, addonDefaults, lang }),
     fabric: resolveVariantAxis({ axis: "fabric", product, addonDefaults, lang }),
+    four: resolveVariantAxis({ axis: "four", product, addonDefaults, lang }),
+    five: resolveVariantAxis({ axis: "five", product, addonDefaults, lang }),
+  };
+}
+
+export function resolveItemAllVariantLabels({
+  product,
+  brandAddons,
+  addonDefaults,
+  storeVertical,
+  lang,
+}: {
+  product?: ProductVariantLabels | null;
+  brandAddons?: BrandAddonRow[] | null;
+  addonDefaults?: {
+    size?: { ar: string; en: string } | null;
+    color?: { ar: string; en: string } | null;
+    fabric?: { ar: string; en: string } | null;
+  } | null;
+  storeVertical?: string | null;
+  lang: "ar" | "en";
+}): Record<"size" | "color" | "fabric", string> {
+  const defaults = addonDefaults ?? variantAxisDefaultsFrom(brandAddons, storeVertical);
+  const axes = resolveAllVariantAxes({ product, addonDefaults: defaults, lang });
+  return {
+    size: axes.size.label,
+    color: axes.color.label,
+    fabric: axes.fabric.label,
   };
 }

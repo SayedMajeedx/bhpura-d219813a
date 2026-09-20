@@ -1,8 +1,9 @@
 import React from "react";
-import { Package, ShoppingBag, Plus, Minus, Trash2, ScanLine, Scissors } from "lucide-react";
+import { Package, ShoppingBag, Plus, Minus, Trash2, ScanLine, Scissors, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/format";
 import { useVocabulary } from "@/hooks/use-vocabulary";
+import { useAddons } from "@/components/addons/AddonsProvider";
 
 interface OrderItemsWorkflowCardProps {
   lang: "en" | "ar";
@@ -30,6 +31,8 @@ export const OrderItemsWorkflowCard: React.FC<OrderItemsWorkflowCardProps> = ({
   children,
 }) => {
   const isAr = lang === "ar";
+  const { isInstalled } = useAddons();
+  const hasMadeToOrder = isInstalled("made-to-order");
   const { vocabulary } = useVocabulary();
 
   return (
@@ -138,14 +141,18 @@ export const OrderItemsWorkflowCard: React.FC<OrderItemsWorkflowCardProps> = ({
                       </div>
                     )}
 
-                    {/* Tailoring Specs Badge */}
+                    {/* Tailoring / Specs Badge */}
                     {tailoringSpecs ? (
                       <button
                         type="button"
                         onClick={() => onOpenTailoringNotes?.(idx)}
                         className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md hover:bg-amber-500/20 transition-colors"
                       >
-                        <Scissors className="h-3 w-3" />
+                        {hasMadeToOrder ? (
+                          <Scissors className="h-3 w-3" />
+                        ) : (
+                          <SlidersHorizontal className="h-3 w-3" />
+                        )}
                         <span className="truncate max-w-[200px]">{tailoringSpecs}</span>
                       </button>
                     ) : (
@@ -156,7 +163,11 @@ export const OrderItemsWorkflowCard: React.FC<OrderItemsWorkflowCardProps> = ({
                           onClick={() => onOpenTailoringNotes(idx)}
                           className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
                         >
-                          <Scissors className="h-3 w-3" />
+                          {hasMadeToOrder ? (
+                            <Scissors className="h-3 w-3" />
+                          ) : (
+                            <SlidersHorizontal className="h-3 w-3" />
+                          )}
                           <span>
                             {vocabulary.workshop_instructions?.[lang]
                               ? `+ ${vocabulary.workshop_instructions[lang]}`

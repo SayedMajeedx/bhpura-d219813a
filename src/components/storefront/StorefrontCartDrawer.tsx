@@ -9,6 +9,7 @@ import { ShareCartModal } from "@/components/storefront/ShareCartModal";
 import { cloudflareImageUrl } from "@/lib/media-delivery";
 import { isCatalogMode } from "@/lib/storefront-mode";
 import { displayVariantParts } from "@/lib/variant-sku-utils";
+import { formatCustomFieldsList } from "@/lib/addons/custom-fields";
 import { ShoppingBag, Minus, Plus, Trash2, Gift, Share2 } from "lucide-react";
 
 export function CartDrawer({ children }: { children: React.ReactNode }) {
@@ -124,40 +125,48 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
                       <div className="flex-1 min-w-0">
                         <div className="font-medium truncate">{displayName}</div>
                         <div className="text-xs text-muted-foreground">
-                          {displayVariantParts({
-                            size: item.size,
-                            color: item.color,
-                            fabric: item.fabric,
-                          }).join(" · ")}
+                          {displayVariantParts(
+                            {
+                              size: item.size,
+                              size_unit: item.size_unit,
+                              color: item.color,
+                              fabric: item.fabric,
+                            },
+                            lang,
+                          ).join(" · ")}
                         </div>
-                        {(item.custom_fields ?? []).length > 0 && (
-                          <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-                            {item.custom_fields!.map((field) => (
-                              <div key={field.key} className="break-words">
-                                <span className="font-medium text-foreground/80">
-                                  {lang === "ar"
-                                    ? field.label_ar || field.label_en || field.key
-                                    : field.label_en || field.label_ar || field.key}
-                                  :
-                                </span>{" "}
-                                {field.value.startsWith("http") ? (
-                                  <a
-                                    href={field.value}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-primary hover:underline font-medium inline-flex items-center gap-0.5 mt-0.5"
-                                  >
-                                    <span>
-                                      📎 {lang === "ar" ? "تحميل/عرض الملف" : "View File"}
+                        {(() => {
+                          const formattedFields = formatCustomFieldsList(item.custom_fields, lang);
+                          if (formattedFields.length === 0) return null;
+                          return (
+                            <div className="mt-1.5 space-y-1 rounded-md bg-secondary/30 p-2 text-xs border border-border/40">
+                              {formattedFields.map((field) => (
+                                <div
+                                  key={field.key}
+                                  className="flex items-center justify-between gap-2 py-0.5 border-b border-border/20 last:border-b-0"
+                                >
+                                  <span className="text-muted-foreground font-medium">
+                                    {field.label}:
+                                  </span>
+                                  {field.isLink ? (
+                                    <a
+                                      href={field.value}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="text-primary hover:underline font-medium inline-flex items-center gap-0.5"
+                                    >
+                                      📎 {lang === "ar" ? "عرض الملف" : "View File"}
+                                    </a>
+                                  ) : (
+                                    <span className="font-semibold text-foreground" dir="auto">
+                                      {field.value}
                                     </span>
-                                  </a>
-                                ) : (
-                                  field.value
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })()}
                         <div
                           className="text-sm font-semibold mt-1"
                           style={{ color: settings.primary_color }}

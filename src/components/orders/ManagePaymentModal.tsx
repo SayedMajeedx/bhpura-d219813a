@@ -58,13 +58,13 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
   const isAr = lang === "ar";
 
   const [paymentStatus, setPaymentStatus] = useState<PaymentBadge>("unpaid");
-  const [paymentMethod, setPaymentMethod] = useState<string>("cod");
+  const [paymentMethod, setPaymentMethod] = useState<string>("unspecified");
   const [advanceAmount, setAdvanceAmount] = useState<string>("0");
   const [paymentRef, setPaymentRef] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const parsedAdvance = Math.max(0, Number(advanceAmount) || 0);
   const originalStatus = ((order?.payment_status as PaymentBadge) || "unpaid") as PaymentBadge;
-  const originalMethod = order?.payment_method || "cod";
+  const originalMethod = order?.payment_method || "unspecified";
   const originalAdvance = Number(order?.advance_paid ?? totals.advancePaid ?? 0);
   const originalReference =
     order?.payment_reference || order?.gateway_reference || order?.benefit_receipt_key || "";
@@ -77,7 +77,7 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
   useEffect(() => {
     if (order && open) {
       setPaymentStatus((order.payment_status as PaymentBadge) || "unpaid");
-      setPaymentMethod(order.payment_method || "cod");
+      setPaymentMethod(order.payment_method || "unspecified");
       setAdvanceAmount(String(order.advance_paid ?? totals.advancePaid ?? 0));
       setPaymentRef(
         order.payment_reference || order.gateway_reference || order.benefit_receipt_key || "",
@@ -118,7 +118,7 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
     try {
       await onSavePayment({
         payment_status: paymentStatus,
-        payment_method: paymentMethod,
+        payment_method: paymentMethod === "unspecified" ? "" : paymentMethod,
         advance_paid: parsedAdvance,
         payment_reference: paymentRef.trim(),
       });
@@ -138,28 +138,26 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md gap-4 rounded-2xl border-border-strong p-5 shadow-xl">
-        <DialogHeader className="space-y-1.5 border-b border-border-subtle pb-3">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
-              <CreditCard className="h-4 w-4" />
-            </div>
-            <DialogTitle className="text-base font-extrabold font-display">
-              {isAr ? "إدارة عمليات وتسوية الدفع" : "Manage Order Payment Lifecycle"}
+      <DialogContent className="max-w-md w-full p-5 sm:p-6 gap-4 font-sans text-start">
+        <DialogHeader className="space-y-1.5 text-start">
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-primary" />
+              <span>{isAr ? "إدارة وتحديث حالة الدفع" : "Manage Order Payment"}</span>
             </DialogTitle>
           </div>
           <DialogDescription className="text-xs text-muted-foreground">
             {isAr
-              ? "تعديل حالة الدفع، طريقة التحصيل، تسجيل العربون، ورقم المرجع."
-              : "Update payment status, collection channel, advance amount, and reference ID."}
+              ? "حدّث حالة الدفع، قناة التحصيل، والمبالغ المستلمة مع مزامنة فورية لسجل الطلب."
+              : "Update payment status, channel, and advance collections with instant ledger audit."}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 text-xs py-1">
-          {/* Status Quick Presets */}
+        <div className="space-y-4 pt-1">
+          {/* Quick Preset Buttons */}
           <div className="space-y-1.5">
             <Label className="text-xs font-bold text-foreground">
-              {isAr ? "حالة الدفع" : "Payment Status"}
+              {isAr ? "حالة الدفع السريعة" : "Payment Status Preset"}
             </Label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {(["unpaid", "partial", "paid", "refunded"] as PaymentBadge[]).map((st) => {
@@ -193,6 +191,9 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
                 <SelectValue placeholder={isAr ? "اختر طريقة الدفع" : "Select Payment Method"} />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="unspecified">
+                  ⚪ {isAr ? "غير محدد" : "Not specified"}
+                </SelectItem>
                 <SelectItem value="cod">
                   💵 {isAr ? "الدفع عند الاستلام (COD)" : "Cash on Delivery (COD)"}
                 </SelectItem>

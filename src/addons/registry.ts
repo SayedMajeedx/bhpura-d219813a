@@ -10,6 +10,7 @@ import { digitalProductsManifest } from "./digital-products/manifest";
 import { giftsManifest } from "./gifts/manifest";
 import { printStampsManifest } from "./print-stamps/manifest";
 import { jewelryManifest } from "./jewelry/manifest";
+import { coffeeRoasteryManifest } from "./coffee-roastery/manifest";
 
 export const ADDON_MANIFESTS: AddonManifest[] = [
   sizeGuidesManifest,
@@ -18,6 +19,7 @@ export const ADDON_MANIFESTS: AddonManifest[] = [
   fashionCoreManifest,
   abayaPackManifest,
   beautyPerfumeManifest,
+  coffeeRoasteryManifest,
   foodBeverageManifest,
   digitalProductsManifest,
   giftsManifest,

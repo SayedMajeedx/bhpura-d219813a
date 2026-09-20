@@ -178,7 +178,7 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                   : `${isAr ? "الطلب" : "Order"} #${order.invoice_number ?? order.id?.slice(0, 8)}`}
               </h1>
 
-              {!isCreationMode && (
+              {!isCreationMode && (hasProductionStages || orderType !== "ready_stock") && (
                 <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary border border-primary/20">
                   {orderTypeLabel}
                 </span>

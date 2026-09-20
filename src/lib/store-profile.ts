@@ -2,6 +2,7 @@ export const STORE_VERTICALS = [
   "abayas",
   "fashion",
   "beauty",
+  "coffee",
   "food",
   "gifts",
   "print",
@@ -25,6 +26,7 @@ export const VERTICAL_MODULE_DEFAULTS: Record<StoreVertical, StoreModules> = {
   abayas: { size_guide: true, fit_passport: true, made_to_order: true },
   fashion: { size_guide: true, fit_passport: true, made_to_order: true },
   beauty: { size_guide: false, fit_passport: false, made_to_order: false },
+  coffee: { size_guide: false, fit_passport: false, made_to_order: false },
   food: { size_guide: false, fit_passport: false, made_to_order: false },
   gifts: { size_guide: false, fit_passport: false, made_to_order: false },
   print: { size_guide: false, fit_passport: false, made_to_order: true },
@@ -39,6 +41,7 @@ export const VERTICAL_LABELS: Record<StoreVertical, { ar: string; en: string }> 
   abayas: { ar: "عبايات", en: "Abayas" },
   fashion: { ar: "أزياء", en: "Fashion" },
   beauty: { ar: "عطور وتجميل", en: "Beauty & Perfume" },
+  coffee: { ar: "محاصيل وقهوة مختصة", en: "Specialty Coffee & Roastery" },
   food: { ar: "مأكولات ومشروبات", en: "Food & Beverage" },
   gifts: { ar: "هدايا وحرف", en: "Gifts & Crafts" },
   print: { ar: "طباعة وأختام", en: "Print & Stamps" },
@@ -117,6 +120,7 @@ export function legacyBusinessTypeToVertical(
   businessType: string | null | undefined,
 ): StoreVertical {
   const t = (businessType ?? "").toLowerCase();
+  if (/coffee|roast|roastery|قهوة|محصول|محاصيل|محمصة|بن/.test(t)) return "coffee";
   if (/cafe|restaurant|food|مطعم|كافيه/.test(t)) return "food";
   if (/digital|رقمي/.test(t)) return "digital";
   if (/abaya|عباي/.test(t)) return "abayas";
@@ -130,6 +134,7 @@ export function legacyBusinessTypeToVertical(
 
 /** لتمرير قيمة مفهومة لـ create_tenant_with_defaults (يستخدمها لتسمية القسم الأول فقط). */
 export function verticalToLegacyBusinessType(v: StoreVertical): string {
+  if (v === "coffee") return "Specialty Coffee";
   if (v === "food") return "Cafe / Restaurant";
   if (v === "digital") return "Digital store";
   if (v === "abayas") return "Abayas & Fashion";

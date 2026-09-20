@@ -172,7 +172,7 @@ async function handleList(
   let query = supabase
     .from("profiles")
     .select(
-      "id, email, name, phone, role, status, brand_id, created_at, updated_at, brand:brands(id, slug, name_en, name_ar, logo_url, is_active)",
+      "id, email, name, phone, role, status, brand_id, must_change_password, permissions, created_at, updated_at, brand:brands(id, slug, name_en, name_ar, logo_url, is_active)",
     )
     .order("created_at", { ascending: false });
 
@@ -381,7 +381,7 @@ async function handleCreate(
   const userRole = role || "staff";
   const validRoles = ctx.isSuperAdmin
     ? ["super_admin", "admin", "brand_admin", "staff", "courier"]
-    : ["staff", "courier"]; // brand admins/admins may create operational roles only
+    : ["brand_admin", "admin", "staff", "courier"];
   if (!validRoles.includes(userRole)) {
     return new Response(
       JSON.stringify({ error: `Invalid role. Allowed: ${validRoles.join(", ")}` }),
@@ -400,7 +400,7 @@ async function handleCreate(
     }
   }
   // Every non-platform role must have a brand.
-  if ((userRole === "brand_admin" || userRole === "staff" || userRole === "courier") && !brand_id) {
+  if ((userRole === "brand_admin" || userRole === "admin" || userRole === "staff" || userRole === "courier") && !brand_id) {
     return new Response(JSON.stringify({ error: "brand_id is required for this role" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -455,11 +455,17 @@ async function handleCreate(
         },
       );
     }
+    const mustChangePassword =
+      body.must_change_password !== undefined ? Boolean(body.must_change_password) : true;
+
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: normalizedEmail,
       password,
       email_confirm: true,
-      user_metadata: { name: name || normalizedEmail.split("@")[0] },
+      user_metadata: {
+        name: name || normalizedEmail.split("@")[0],
+        must_change_password: mustChangePassword,
+      },
     });
     if (authError) {
       return new Response(JSON.stringify({ error: authError.message }), {
@@ -478,6 +484,22 @@ async function handleCreate(
     });
   }
 
+  const mustChangePassword =
+    body.must_change_password !== undefined ? Boolean(body.must_change_password) : true;
+
+  if (!createdAuthUser) {
+    const authUpdatePayload: Record<string, any> = {
+      user_metadata: { must_change_password: mustChangePassword },
+    };
+    if (password && String(password).trim().length > 0) {
+      authUpdatePayload.password = String(password).trim();
+    }
+    await supabase.auth.admin.updateUserById(userId, authUpdatePayload).catch(() => undefined);
+  }
+
+  const rawPermissions = Array.isArray(body.permissions) ? body.permissions : [];
+  const permissions = userRole === "staff" ? rawPermissions : [];
+
   const updatePayload: Record<string, any> = {
     id: userId,
     email: normalizedEmail,
@@ -485,6 +507,8 @@ async function handleCreate(
     phone: phone ? String(phone).trim() : null,
     role: userRole,
     status: "active",
+    must_change_password: mustChangePassword,
+    permissions,
   };
   if (userRole !== "super_admin") {
     updatePayload.brand_id = brand_id ?? null;
@@ -533,7 +557,7 @@ async function handleUpdate(
   body: any,
   ctx: { userId: string; isSuperAdmin: boolean; callerBrandId: string | null },
 ) {
-  const { userId, role, status, name, phone, brand_id, password } = body;
+  const { userId, role, status, name, phone, brand_id, password, permissions } = body;
 
   if (!userId) {
     return new Response(JSON.stringify({ error: "userId is required" }), {
@@ -589,11 +613,21 @@ async function handleUpdate(
     });
   }
 
+  const mustChangePassword =
+    body.must_change_password !== undefined ? Boolean(body.must_change_password) : undefined;
+
   // 1. If password is provided, update the auth password directly
   if (password !== undefined && String(password).trim().length > 0) {
-    const { error: authUpdateError } = await supabase.auth.admin.updateUserById(userId, {
+    const authUpdatePayload: Record<string, any> = {
       password: String(password).trim(),
-    });
+    };
+    if (mustChangePassword !== undefined) {
+      authUpdatePayload.user_metadata = { must_change_password: mustChangePassword };
+    }
+    const { error: authUpdateError } = await supabase.auth.admin.updateUserById(
+      userId,
+      authUpdatePayload,
+    );
     if (authUpdateError) {
       return new Response(
         JSON.stringify({ error: `Failed to update password in auth: ${authUpdateError.message}` }),
@@ -603,13 +637,23 @@ async function handleUpdate(
         },
       );
     }
+  } else if (mustChangePassword !== undefined) {
+    await supabase.auth.admin.updateUserById(userId, {
+      user_metadata: { must_change_password: mustChangePassword },
+    });
   }
 
   const validRoles = ctx.isSuperAdmin
     ? ["super_admin", "admin", "brand_admin", "staff", "courier"]
-    : ["staff", "courier"];
+    : ["brand_admin", "admin", "staff", "courier"];
 
   const updates: Record<string, any> = {};
+  if (mustChangePassword !== undefined) {
+    updates.must_change_password = mustChangePassword;
+  }
+  if (permissions !== undefined) {
+    updates.permissions = Array.isArray(permissions) ? permissions : [];
+  }
   if (role !== undefined) {
     if (!validRoles.includes(role)) {
       return new Response(
@@ -617,7 +661,16 @@ async function handleUpdate(
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+    if (!ctx.isSuperAdmin && role === "super_admin") {
+      return new Response(
+        JSON.stringify({ error: "Only super admins can assign super_admin role" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
     updates.role = role;
+    if (role !== "staff") {
+      updates.permissions = [];
+    }
   }
   if (status !== undefined) {
     if (!["active", "inactive"].includes(status)) {

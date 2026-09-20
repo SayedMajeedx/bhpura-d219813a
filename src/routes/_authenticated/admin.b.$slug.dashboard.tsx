@@ -38,6 +38,7 @@ import { getOrderWorkflow } from "@/lib/order-workflow";
 import { isLowStock } from "@/lib/inventory-health";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { getStorefrontUrl } from "@/lib/storefront-url";
+import { useAddons } from "@/components/addons/AddonsProvider";
 
 import { DashboardCommandHeader } from "@/components/dashboard/DashboardCommandHeader";
 import {
@@ -58,6 +59,8 @@ function Dashboard() {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const { canViewFinancials } = useProfile();
+  const { isInstalled } = useAddons();
+  const hasMadeToOrder = isInstalled("made-to-order");
   const { slug } = Route.useParams();
   const brand = useBrand();
   const brandId = brand.id;
@@ -68,10 +71,9 @@ function Dashboard() {
     const start = new Date(end);
     start.setDate(start.getDate() - 29);
     start.setHours(0, 0, 0, 0);
+    const periodDurationMs = end.getTime() - start.getTime();
     const previousEnd = new Date(start.getTime() - 1);
-    const previousStart = new Date(previousEnd);
-    previousStart.setDate(previousStart.getDate() - 29);
-    previousStart.setHours(0, 0, 0, 0);
+    const previousStart = new Date(previousEnd.getTime() - periodDurationMs);
     return { start, end, previousStart, previousEnd };
   }, []);
   const reportingTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -257,6 +259,7 @@ function Dashboard() {
         slug,
       ),
     staleTime: 60_000,
+    enabled: Boolean(canViewFinancials && slug),
     refetchOnWindowFocus: false,
   });
   const previousReportingOverviewQ = useQuery({
@@ -275,6 +278,7 @@ function Dashboard() {
         slug,
       ),
     staleTime: 60_000,
+    enabled: Boolean(canViewFinancials && slug),
     refetchOnWindowFocus: false,
   });
 
@@ -401,6 +405,7 @@ function Dashboard() {
       return data ?? [];
     },
     staleTime: 60_000,
+    enabled: Boolean(canViewFinancials && brandId),
     refetchOnWindowFocus: false,
   });
 
@@ -469,10 +474,12 @@ function Dashboard() {
     customersQ.isLoading ||
     ordersQ.isLoading ||
     recentOrdersQ.isLoading ||
-    expensesQ.isLoading ||
     incubatorSalesQ.isLoading ||
-    reportingOverviewQ.isLoading ||
-    previousReportingOverviewQ.isLoading;
+    (canViewFinancials
+      ? expensesQ.isLoading ||
+        reportingOverviewQ.isLoading ||
+        previousReportingOverviewQ.isLoading
+      : false);
   const accountingRows = Array.isArray(reportingOverviewQ.data) ? reportingOverviewQ.data : [];
   const accountingRow: any =
     accountingRows.find((row: any) => row.currency === currency) ?? accountingRows[0];
@@ -501,11 +508,11 @@ function Dashboard() {
   const actionNeededOrders = useMemo(() => {
     return (ordersQ.data ?? [])
       .filter((o) => {
-        const wf = getOrderWorkflow(o);
+        const wf = getOrderWorkflow(o, { productionStages: hasMadeToOrder });
         return wf.needsAttention && !wf.terminal;
       })
       .slice(0, 5);
-  }, [ordersQ.data]);
+  }, [ordersQ.data, hasMadeToOrder]);
 
   // Financial intelligence aggregations
   const financials = useMemo(() => {
@@ -612,13 +619,17 @@ function Dashboard() {
     );
     const opex = manualOpex + paymentProcessingFees + incubatorCommissions;
     const reportRevenue = Number(accountingRow?.net_revenue ?? revenue);
+    const reportMerchRevenue = Number(
+      accountingRow?.net_merchandise_after_returns ?? accountingRow?.net_merch_sales ?? revenue,
+    );
     const reportCogs = Number(
       accountingRow?.known_cogs_after_returns ?? accountingRow?.known_cogs ?? cogs,
     );
     const reportOpex = Number(accountingRow?.expenses ?? opex);
-    const netProfit = reportRevenue - reportCogs - reportOpex;
+    const grossProfit = reportMerchRevenue - reportCogs;
+    const netProfit = grossProfit - reportOpex;
     const grossMarginPercent =
-      reportRevenue > 0 ? ((reportRevenue - reportCogs) / reportRevenue) * 100 : 0;
+      reportMerchRevenue > 0 ? (grossProfit / reportMerchRevenue) * 100 : 0;
     const current30Orders = orders;
     const prior30Orders = allOrders.filter((o) => {
       const timestamp = Date.parse(o.created_at);
@@ -925,7 +936,7 @@ function Dashboard() {
   // Orders awaiting merchant preparation & fulfillment (synchronized with orders page to_prepare tab)
   const unfulfilledOrdersCount = useMemo(() => {
     return (ordersQ.data ?? []).filter((o: any) => {
-      const workflow = getOrderWorkflow(o);
+      const workflow = getOrderWorkflow(o, { productionStages: hasMadeToOrder });
       return (
         !workflow.terminal &&
         [
@@ -933,22 +944,26 @@ function Dashboard() {
           "packing",
           "on_hold",
           "needs_packing",
-          "received_from_workshop",
-          "sent_to_workshop",
-          "received_from_tailor",
-          "sent_to_tailor",
+          ...(hasMadeToOrder
+            ? [
+                "received_from_workshop",
+                "sent_to_workshop",
+                "received_from_tailor",
+                "sent_to_tailor",
+              ]
+            : []),
         ].includes(workflow.fulfillment) &&
         (!workflow.awaitingPayment || workflow.isCod)
       );
     }).length;
-  }, [ordersQ.data]);
+  }, [ordersQ.data, hasMadeToOrder]);
 
   // Loading skeleton placeholder
   if (isLoading) {
     return <RoutePendingSkeleton />;
   }
 
-  if (reportingOverviewQ.error) {
+  if (canViewFinancials && reportingOverviewQ.error) {
     return (
       <div className="mx-auto max-w-3xl p-4">
         <Card className="border-rose-200 bg-rose-50/70 p-8 text-center">
@@ -963,13 +978,13 @@ function Dashboard() {
               ? "لن نعرض أرقاماً تقديرية قد تتعارض مع التقارير. أعد المحاولة بعد التحقق من الاتصال."
               : "We will not show fallback estimates that may conflict with Reports. Check the connection and try again."}
           </p>
-          <button
+          <Button
             type="button"
-            className="mt-5 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
+            className="mt-5"
             onClick={() => reportingOverviewQ.refetch()}
           >
             {isAr ? "إعادة المحاولة" : "Try again"}
-          </button>
+          </Button>
         </Card>
       </div>
     );

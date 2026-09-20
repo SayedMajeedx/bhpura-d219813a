@@ -46,6 +46,11 @@ export function starterPackFor(
         required: ["beauty-perfume"],
         suggested: [],
       };
+    case "coffee":
+      return {
+        required: ["coffee-roastery"],
+        suggested: [],
+      };
     case "food":
       return {
         required: ["food-beverage"],

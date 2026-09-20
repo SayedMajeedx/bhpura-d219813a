@@ -14,6 +14,7 @@ import { OsAppDockRail } from "@/components/os/os-app-dock-rail";
 import { OsSidebar } from "@/components/os/os-sidebar";
 import { OsMenuBar } from "@/components/os/os-menu-bar";
 import { OsAppWindow } from "@/components/os/os-app-window";
+import { OsWorkspaceTabs } from "@/components/os/os-workspace-tabs";
 import { OsMobileNavigation } from "@/components/os/os-mobile-navigation";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/lib/theme-context";
@@ -618,6 +619,16 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
               isFocusMode={isFocusMode}
               onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
               pageKey={pathname}
+              workspaceTabs={
+                activeSlug && !isCourier && !isPlatformMode ? (
+                  <OsWorkspaceTabs
+                    navItems={navItems}
+                    pathname={pathname}
+                    lang={lang}
+                    activeSlug={activeSlug}
+                  />
+                ) : undefined
+              }
             >
               {children}
             </OsAppWindow>

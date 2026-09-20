@@ -63,6 +63,7 @@ export type OrderWorkflow = {
   withCourier: boolean;
   terminal: boolean;
   isCod: boolean;
+  isTailoring: boolean;
   isManualBenefit: boolean;
   outstanding: number;
 };
@@ -224,6 +225,7 @@ export function getOrderWorkflow(
     withCourier: fulfillment === "out_for_delivery",
     terminal,
     isCod,
+    isTailoring,
     isManualBenefit,
     outstanding,
   };

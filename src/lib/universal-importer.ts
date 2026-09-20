@@ -149,7 +149,6 @@ export const importProductCatalog = createServerFn({ method: "POST" })
   .validator((raw: unknown) => ProductImportSchema.parse(raw))
   .handler(async ({ data, context }) => {
     let auditRunId: string | null = null;
-    let auditAdmin: any = null;
     try {
       const userId = context.userId;
       if (!userId) throw new Error("UNAUTHORIZED: Session user not found");
@@ -158,22 +157,26 @@ export const importProductCatalog = createServerFn({ method: "POST" })
       await verifyBrandAccess(data.brandId, context);
 
       const sessionId = data.importSessionId ?? crypto.randomUUID();
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      auditAdmin = supabaseAdmin;
-      const { data: run } = await (supabaseAdmin.from("import_runs" as never) as any)
-        .insert({
-          brand_id: data.brandId,
-          created_by: userId,
-          session_id: sessionId,
-          batch_index: data.batchIndex,
-          source: data.source,
-          entity_type: "products",
-          status: "processing",
-          total_count: data.products.length,
-        })
-        .select("id")
-        .maybeSingle();
-      auditRunId = run?.id ?? null;
+      let run: any = null;
+      try {
+        const { data: runData } = await (context.supabase.from("import_runs" as never) as any)
+          .insert({
+            brand_id: data.brandId,
+            created_by: userId,
+            session_id: sessionId,
+            batch_index: data.batchIndex,
+            source: data.source,
+            entity_type: "products",
+            status: "processing",
+            total_count: data.products.length,
+          })
+          .select("id")
+          .maybeSingle();
+        run = runData;
+        auditRunId = run?.id ?? null;
+      } catch (auditErr) {
+        console.warn("Non-blocking import_runs creation notice:", auditErr);
+      }
 
       let successCount = 0;
       let skippedCount = 0;
@@ -238,7 +241,8 @@ export const importProductCatalog = createServerFn({ method: "POST" })
               finalImageUrl = `${publicBaseUrl}/${key}`;
               mediaArray.push({ type: "image", url: finalImageUrl });
             } catch (imgErr) {
-              finalImageUrl = null;
+              finalImageUrl = prod.image_url;
+              mediaArray.push({ type: "image", url: prod.image_url });
               issues.push({ row: index + 1, code: "IMAGE_REHOST_FAILED", name: prod.name });
               console.error("Failed to re-host imported image", {
                 source: data.source,
@@ -338,16 +342,20 @@ export const importProductCatalog = createServerFn({ method: "POST" })
 
       const status = failedCount > 0 || skippedCount > 0 ? "partial" : "completed";
       if (run?.id) {
-        await (supabaseAdmin.from("import_runs" as never) as any)
-          .update({
-            status,
-            success_count: successCount,
-            skipped_count: skippedCount,
-            failed_count: failedCount,
-            issues: issues.slice(0, 100),
-            completed_at: new Date().toISOString(),
-          })
-          .eq("id", run.id);
+        try {
+          await (context.supabase.from("import_runs" as never) as any)
+            .update({
+              status,
+              success_count: successCount,
+              skipped_count: skippedCount,
+              failed_count: failedCount,
+              issues: issues.slice(0, 100),
+              completed_at: new Date().toISOString(),
+            })
+            .eq("id", run.id);
+        } catch (updateErr) {
+          console.warn("Non-blocking import_runs completion update notice:", updateErr);
+        }
       }
       return {
         importSessionId: sessionId,
@@ -359,9 +367,9 @@ export const importProductCatalog = createServerFn({ method: "POST" })
       };
     } catch (err: any) {
       console.error("[Product Import Pipeline Exception]:", err);
-      if (auditRunId && auditAdmin) {
+      if (auditRunId) {
         try {
-          await (auditAdmin.from("import_runs" as never) as any)
+          await (context.supabase.from("import_runs" as never) as any)
             .update({
               status: "failed",
               failed_count: data.products.length,
@@ -370,7 +378,7 @@ export const importProductCatalog = createServerFn({ method: "POST" })
             })
             .eq("id", auditRunId);
         } catch (auditError) {
-          console.error("[Product Import Audit Finalization Failed]:", auditError);
+          console.warn("[Product Import Audit Finalization Notice]:", auditError);
         }
       }
       if (err instanceof Error && /^(UNAUTHORIZED|FORBIDDEN):/.test(err.message)) throw err;

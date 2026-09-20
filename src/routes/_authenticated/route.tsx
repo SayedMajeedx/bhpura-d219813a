@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_authenticated")({
       queryFn: async () => {
         const { data } = await supabase
           .from("profiles")
-          .select("status, role")
+          .select("status, role, must_change_password")
           .eq("id", user.id)
           .maybeSingle();
         return data ?? null;
@@ -36,6 +36,14 @@ export const Route = createFileRoute("/_authenticated")({
     const dashboardRoles = new Set(["super_admin", "admin", "brand_admin", "staff", "courier"]);
     if (!profile || profile.status !== "active" || !dashboardRoles.has(profile.role ?? "")) {
       throw redirect({ to: "/auth" });
+    }
+
+    const requiresPasswordChange =
+      Boolean((profile as any)?.must_change_password) ||
+      Boolean(user?.user_metadata?.must_change_password);
+
+    if (requiresPasswordChange) {
+      throw redirect({ to: "/first-login" });
     }
 
     return { user };
