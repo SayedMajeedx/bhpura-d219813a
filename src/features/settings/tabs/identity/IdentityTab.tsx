@@ -76,7 +76,7 @@ function FirstVisitIntroBanner() {
               <span>{isAr ? "1. الشعار والاسم" : "1. Logo & Name"}</span>
             </Button>
 
-            <span className="text-muted-foreground/60 text-xs rtl:rotate-180">→</span>
+            <span className="text-muted-foreground text-xs rtl:rotate-180">→</span>
 
             <Button
               type="button"
@@ -89,7 +89,7 @@ function FirstVisitIntroBanner() {
               <span>{isAr ? "2. لوحة الألوان" : "2. Color Palette"}</span>
             </Button>
 
-            <span className="text-muted-foreground/60 text-xs rtl:rotate-180">→</span>
+            <span className="text-muted-foreground text-xs rtl:rotate-180">→</span>
 
             <Button
               type="button"
@@ -102,7 +102,7 @@ function FirstVisitIntroBanner() {
               <span>{isAr ? "3. الخطوط" : "3. Typography"}</span>
             </Button>
 
-            <span className="text-muted-foreground/60 text-xs rtl:rotate-180">→</span>
+            <span className="text-muted-foreground text-xs rtl:rotate-180">→</span>
 
             <Button
               type="button"

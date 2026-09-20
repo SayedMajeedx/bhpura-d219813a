@@ -17,7 +17,8 @@ export function SeoGroup() {
 
   const brandDisplayName =
     (isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug || "Boutique";
-  const previewTitle = metaTitle || `${brandDisplayName} | ${isAr ? "المتجر الإلكتروني الرسمي" : "Official Boutique"}`;
+  const previewTitle =
+    metaTitle || `${brandDisplayName} | ${isAr ? "المتجر الإلكتروني الرسمي" : "Official Boutique"}`;
   const previewDesc =
     metaDescription ||
     (isAr
@@ -30,7 +31,11 @@ export function SeoGroup() {
         <div>
           <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
             <Search className="size-4 text-primary" />
-            <span>{isAr ? "تهيئة محركات البحث ومواقع التواصل (SEO)" : "Search Engine Optimization (SEO)"}</span>
+            <span>
+              {isAr
+                ? "تهيئة محركات البحث ومواقع التواصل (SEO)"
+                : "Search Engine Optimization (SEO)"}
+            </span>
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
             {isAr
@@ -43,13 +48,15 @@ export function SeoGroup() {
         <div className="rounded-xl border border-border bg-muted/10 p-4 space-y-2">
           <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
             <Globe className="size-3.5 text-primary" />
-            <span>{isAr ? "معاينة بطاقة نتيجة البحث في Google:" : "Google Search Result Preview:"}</span>
+            <span>
+              {isAr ? "معاينة بطاقة نتيجة البحث في Google:" : "Google Search Result Preview:"}
+            </span>
           </span>
           <div className="rounded-lg border border-border bg-background p-3.5 shadow-xs space-y-1">
-            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <span className="font-mono">boutq.app › {brand.slug}</span>
             </div>
-            <h4 className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline cursor-pointer truncate">
+            <h4 className="text-sm font-medium text-info dark:text-info hover:underline cursor-pointer truncate">
               {previewTitle}
             </h4>
             <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
@@ -65,8 +72,10 @@ export function SeoGroup() {
               {isAr ? "عنوان الصفحة الرئيسية (Meta Title)" : "Homepage Meta Title"}
             </Label>
             <span
-              className={`font-mono text-[11px] ${
-                metaTitle.length > META_TITLE_LIMIT ? "text-destructive font-semibold" : "text-muted-foreground"
+              className={`font-mono text-xs ${
+                metaTitle.length > META_TITLE_LIMIT
+                  ? "text-destructive font-semibold"
+                  : "text-muted-foreground"
               }`}
             >
               {metaTitle.length}/{META_TITLE_LIMIT}
@@ -94,7 +103,7 @@ export function SeoGroup() {
               {isAr ? "وصف الصفحة الرئيسية (Meta Description)" : "Homepage Meta Description"}
             </Label>
             <span
-              className={`font-mono text-[11px] ${
+              className={`font-mono text-xs ${
                 metaDescription.length > META_DESCRIPTION_LIMIT
                   ? "text-destructive font-semibold"
                   : "text-muted-foreground"

@@ -349,8 +349,8 @@ export function QuickThemeCustomizer({
                   ? "جاري الاستخراج..."
                   : "Extracting..."
                 : isAr
-                ? "استخراج الألوان من الشعار"
-                : "Extract from logo"}
+                  ? "استخراج الألوان من الشعار"
+                  : "Extract from logo"}
             </Button>
           </div>
         </div>
@@ -717,10 +717,12 @@ export function QuickThemeCustomizer({
                 </span>
                 <div className="mt-2 text-xs font-mono text-muted-foreground flex flex-col gap-1 w-full">
                   <span className="px-1.5 py-0.5 rounded bg-muted text-[11px] truncate">
-                    Display: {preset.displayFontAr || preset.fontAr} / {preset.displayFontEn || preset.fontEn}
+                    Display: {preset.displayFontAr || preset.fontAr} /{" "}
+                    {preset.displayFontEn || preset.fontEn}
                   </span>
                   <span className="px-1.5 py-0.5 rounded bg-muted/60 text-[10px] text-muted-foreground truncate">
-                    Body: {preset.bodyFontAr || preset.fontAr} / {preset.bodyFontEn || preset.fontEn}
+                    Body: {preset.bodyFontAr || preset.fontAr} /{" "}
+                    {preset.bodyFontEn || preset.fontEn}
                   </span>
                 </div>
               </button>

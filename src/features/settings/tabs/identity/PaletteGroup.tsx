@@ -3,12 +3,16 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Palette, Sliders } from "lucide-react";
-import { QuickThemeCustomizer, type FontMoodPreset } from "@/components/settings/QuickThemeCustomizer";
+import {
+  QuickThemeCustomizer,
+  type FontMoodPreset,
+} from "@/components/settings/QuickThemeCustomizer";
 import { ColorField } from "../../shared/ColorField";
 import { AdvancedOnly } from "../../FieldVisibility";
 import { useBrandSettingsFormContext } from "../../use-brand-settings-form";
 import { useI18n } from "@/lib/i18n";
 import type { ExtractedPalette } from "@/lib/logo-palette";
+import { paletteToSettingsPatch } from "@/lib/brand-palette-apply";
 
 export function PaletteGroup() {
   const { lang } = useI18n();
@@ -16,12 +20,9 @@ export function PaletteGroup() {
   const { bs, setBs, patchBs } = useBrandSettingsFormContext();
 
   const handleExtractPalette = (palette: ExtractedPalette) => {
-    patchBs({
-      storefront_accent_color: palette.accent || palette.primary,
-      storefront_background_color: palette.background,
-      btn_primary_bg: palette.accent || palette.primary,
-      btn_primary_fg: palette.contrastRatio >= 4.5 ? "#FFFFFF" : "#111827",
-    });
+    // Writes the full derived palette (header, footer, buttons, headings) plus
+    // brand_palette metadata so the readiness checklist can see the logo source.
+    patchBs(paletteToSettingsPatch(palette, "logo") as any);
   };
 
   const handleFontPreset = (preset: FontMoodPreset) => {
@@ -83,6 +84,25 @@ export function PaletteGroup() {
           }}
           onExtractPalette={handleExtractPalette}
         />
+        {(() => {
+          const meta =
+            (bs.brand_palette as { source?: string; extracted_at?: string } | null) ?? null;
+          if (!meta?.source) return null;
+          return (
+            <p className="mt-3 text-xs text-muted-foreground">
+              {meta.source === "logo"
+                ? isAr
+                  ? "اللوحة الحالية مستخرجة من الشعار"
+                  : "Current palette was extracted from the logo"
+                : isAr
+                  ? "اللوحة الحالية مضبوطة يدوياً"
+                  : "Current palette was set manually"}
+              {meta.extracted_at
+                ? ` · ${new Date(meta.extracted_at).toLocaleDateString(isAr ? "ar-BH" : "en-GB")}`
+                : ""}
+            </p>
+          );
+        })()}
       </Card>
 
       {/* 2. Advanced Fine-grained Color Controls */}

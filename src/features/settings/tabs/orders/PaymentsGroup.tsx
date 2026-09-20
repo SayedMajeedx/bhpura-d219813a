@@ -64,14 +64,14 @@ export function PaymentsGroup() {
           {/* BenefitPay */}
           <div className="flex items-center justify-between gap-3 rounded-xl border border-border p-3.5 bg-background">
             <div className="flex items-center gap-2.5">
-              <div className="size-8 rounded-lg bg-red-500/10 text-red-600 flex items-center justify-center shrink-0">
+              <div className="size-8 rounded-lg bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
                 <QrCode className="size-4" />
               </div>
               <div>
                 <Label className="cursor-pointer text-xs font-semibold">
                   {isAr ? "بنفت باي" : "BenefitPay"}
                 </Label>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {isAr ? "تحويل فوري" : "Instant QR/IBAN"}
                 </p>
               </div>
@@ -85,14 +85,14 @@ export function PaymentsGroup() {
           {/* Cash on Delivery */}
           <div className="flex items-center justify-between gap-3 rounded-xl border border-border p-3.5 bg-background">
             <div className="flex items-center gap-2.5">
-              <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+              <div className="size-8 rounded-lg bg-success/10 text-success flex items-center justify-center shrink-0">
                 <Banknote className="size-4" />
               </div>
               <div>
                 <Label className="cursor-pointer text-xs font-semibold">
                   {isAr ? "عند الاستلام" : "Cash on Delivery"}
                 </Label>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {isAr ? "نقداً للسائق" : "COD Payment"}
                 </p>
               </div>
@@ -106,14 +106,14 @@ export function PaymentsGroup() {
           {/* Credit / Debit Cards */}
           <div className="flex items-center justify-between gap-3 rounded-xl border border-border p-3.5 bg-background">
             <div className="flex items-center gap-2.5">
-              <div className="size-8 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0">
+              <div className="size-8 rounded-lg bg-info/10 text-info flex items-center justify-center shrink-0">
                 <CreditCard className="size-4" />
               </div>
               <div>
                 <Label className="cursor-pointer text-xs font-semibold">
                   {isAr ? "بطاقات الدفع" : "Cards (Visa/MC)"}
                 </Label>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {isAr ? "بوابة دفع إلكترونية" : "Online Gateway"}
                 </p>
               </div>
@@ -127,9 +127,9 @@ export function PaymentsGroup() {
 
         {/* BenefitPay Details if enabled */}
         {bs.benefit_enabled && (
-          <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 space-y-4">
+          <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 space-y-4">
             <div className="flex items-center gap-2">
-              <QrCode className="size-4 text-red-600" />
+              <QrCode className="size-4 text-destructive" />
               <h4 className="text-xs font-semibold text-foreground">
                 {isAr ? "بيانات حساب ورمز بنفت باي (BenefitPay)" : "BenefitPay Account & QR Setup"}
               </h4>
@@ -204,13 +204,19 @@ export function PaymentsGroup() {
         {/* Advanced Gateway Credentials & Processing Fees */}
         <AdvancedOnly
           fieldKey="card_public_key"
-          reason={isAr ? "إعداد مفاتيح بوابة الدفع الإلكتروني ورسوم المعالجة" : "Payment gateway credentials & fee configuration"}
+          reason={
+            isAr
+              ? "إعداد مفاتيح بوابة الدفع الإلكتروني ورسوم المعالجة"
+              : "Payment gateway credentials & fee configuration"
+          }
         >
           <div className="rounded-xl border border-border p-4 bg-muted/5 space-y-4">
             <div className="flex items-center gap-2">
               <Sparkles className="size-4 text-primary" />
               <h4 className="text-xs font-semibold">
-                {isAr ? "مفاتيح بوابة الدفع ورسوم العمليات" : "Payment Gateway API Keys & Processing Fees"}
+                {isAr
+                  ? "مفاتيح بوابة الدفع ورسوم العمليات"
+                  : "Payment Gateway API Keys & Processing Fees"}
               </h4>
             </div>
 
@@ -235,10 +241,12 @@ export function PaymentsGroup() {
                   <button
                     type="button"
                     onClick={() => setShowSecretKey(!showSecretKey)}
-                    className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1"
+                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
                   >
                     {showSecretKey ? <EyeOff className="size-3" /> : <Eye className="size-3" />}
-                    <span>{showSecretKey ? (isAr ? "إخفاء" : "Hide") : (isAr ? "إظهار" : "Show")}</span>
+                    <span>
+                      {showSecretKey ? (isAr ? "إخفاء" : "Hide") : isAr ? "إظهار" : "Show"}
+                    </span>
                   </button>
                 </div>
                 <Input

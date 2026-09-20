@@ -107,54 +107,79 @@ describe("Settings Search Universal Filtering", () => {
 });
 
 describe("Store Readiness Checklist Integration", () => {
-  it("evaluates palette readiness using brand_palette extracted from logo", () => {
-    const unextracted = evaluateStoreReadiness({
+  it("adds palette/vertical readiness items only for Storefront 2.0 brands", () => {
+    const v1 = evaluateStoreReadiness({
       logoUrl: "https://example.com/logo.png",
       activeProductsCount: 5,
-      brandPalette: { meta: { source: "manual" } },
-      storeVertical: "fashion",
-      lang: "ar",
-    });
-
-    const paletteItem1 = unextracted.items.find((i) => i.id === "palette");
-    expect(paletteItem1?.isComplete).toBe(false);
-
-    const extracted = evaluateStoreReadiness({
-      logoUrl: "https://example.com/logo.png",
-      activeProductsCount: 5,
-      brandPalette: { meta: { source: "logo" } },
-      storeVertical: "fashion",
-      lang: "ar",
-    });
-
-    const paletteItem2 = extracted.items.find((i) => i.id === "palette");
-    expect(paletteItem2?.isComplete).toBe(true);
-    expect(paletteItem2?.tabId).toBe("identity");
-    expect(paletteItem2?.group).toBe("palette");
-  });
-
-  it("evaluates vertical readiness requiring explicit non-general vertical", () => {
-    const general = evaluateStoreReadiness({
-      logoUrl: "https://example.com/logo.png",
-      activeProductsCount: 5,
+      businessSettings: { storefront_design_version: 1 },
       storeVertical: "general",
       lang: "ar",
     });
+    expect(v1.items.find((i) => i.id === "palette")).toBeUndefined();
+    expect(v1.items.find((i) => i.id === "vertical")).toBeUndefined();
+    expect(v1.totalCount).toBe(5);
 
-    const verticalItem1 = general.items.find((i) => i.id === "vertical");
-    expect(verticalItem1?.isComplete).toBe(false);
+    const v2 = evaluateStoreReadiness({
+      logoUrl: "https://example.com/logo.png",
+      activeProductsCount: 5,
+      businessSettings: { storefront_design_version: 2 },
+      storeVertical: "general",
+      lang: "ar",
+    });
+    expect(v2.totalCount).toBe(7);
+  });
+
+  it("marks the palette item complete for a logo-extracted or manually chosen palette", () => {
+    const base = {
+      logoUrl: "https://example.com/logo.png",
+      activeProductsCount: 5,
+      storeVertical: "fashion",
+      lang: "ar" as const,
+    };
+    const unset = evaluateStoreReadiness({
+      ...base,
+      businessSettings: { storefront_design_version: 2 },
+    });
+    expect(unset.items.find((i) => i.id === "palette")?.isComplete).toBe(false);
+
+    const manual = evaluateStoreReadiness({
+      ...base,
+      businessSettings: { storefront_design_version: 2, storefront_accent_color: "#800020" },
+      brandPalette: { source: "manual" },
+    });
+    expect(manual.items.find((i) => i.id === "palette")?.isComplete).toBe(true);
+
+    const extracted = evaluateStoreReadiness({
+      ...base,
+      businessSettings: { storefront_design_version: 2 },
+      brandPalette: { source: "logo", meta: { source: "logo" } },
+    });
+    const item = extracted.items.find((i) => i.id === "palette");
+    expect(item?.isComplete).toBe(true);
+    expect(item?.tabId).toBe("identity");
+  });
+
+  it("evaluates vertical readiness requiring an explicit non-general vertical", () => {
+    const general = evaluateStoreReadiness({
+      logoUrl: "https://example.com/logo.png",
+      activeProductsCount: 5,
+      businessSettings: { storefront_design_version: 2 },
+      storeVertical: "general",
+      lang: "ar",
+    });
+    expect(general.items.find((i) => i.id === "vertical")?.isComplete).toBe(false);
 
     const selected = evaluateStoreReadiness({
       logoUrl: "https://example.com/logo.png",
       activeProductsCount: 5,
-      storeVertical: "perfumes",
+      businessSettings: { storefront_design_version: 2 },
+      storeVertical: "beauty",
       lang: "ar",
     });
-
-    const verticalItem2 = selected.items.find((i) => i.id === "vertical");
-    expect(verticalItem2?.isComplete).toBe(true);
-    expect(verticalItem2?.tabId).toBe("identity");
-    expect(verticalItem2?.group).toBe("vertical");
+    const item = selected.items.find((i) => i.id === "vertical");
+    expect(item?.isComplete).toBe(true);
+    expect(item?.tabId).toBe("identity");
+    expect(item?.group).toBe("vertical");
   });
 
   it("points all actionable readiness items to valid SettingsTabId and group anchors", () => {

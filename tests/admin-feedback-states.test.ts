@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 const customers = readFileSync("src/routes/_authenticated/admin.b.$slug.customers.tsx", "utf8");
 const inventory = readFileSync("src/routes/_authenticated/admin.b.$slug.inventory.tsx", "utf8");
 const settings = readFileSync("src/routes/_authenticated/admin.b.$slug.settings.tsx", "utf8");
-const settingsHeader = readFileSync("src/components/settings/SettingsCommandHeader.tsx", "utf8");
+const settingsHeader = readFileSync("src/features/settings/SettingsHeader.tsx", "utf8");
 
 describe("admin feedback states", () => {
   it("offers safe retry states without presenting failed queries as empty data", () => {
@@ -21,10 +21,12 @@ describe("admin feedback states", () => {
     expect(inventory).toContain("Add Product");
   });
 
-  it("shows the shared save action only for settings sections it actually owns", () => {
-    expect(settings).toContain('showSave={activeTab === "business" || activeTab === "invoice"}');
+  it("shows the shared save action only when the unified settings form is dirty", () => {
+    // The settings route is a thin shell; the save/discard controls live in the
+    // unified header and render only when there are unsaved changes.
+    expect(settings).toContain("SettingsPage");
     expect(settings).not.toContain("{saveButton}");
-    expect(settingsHeader).toContain("Save This Section");
+    expect(settingsHeader).toContain("{isDirty && (");
     expect(settingsHeader).not.toContain("Save All Changes");
   });
 });

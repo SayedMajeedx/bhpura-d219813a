@@ -7,11 +7,7 @@ export function VerticalGroup() {
 
   return (
     <div className="space-y-4">
-      <StoreProfileCard
-        brandId={brandId}
-        slug={brand.slug ?? ""}
-        borderless={false}
-      />
+      <StoreProfileCard brandId={brandId} slug={brand.slug ?? ""} borderless={false} />
     </div>
   );
 }

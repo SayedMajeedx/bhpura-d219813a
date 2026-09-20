@@ -30,9 +30,11 @@ export function HomeHeroGroup() {
   const [backgroundCropSrc, setBackgroundCropSrc] = useState<string | null>(null);
 
   // Parse hero_media
-  const heroMedia = (brand.hero_media && typeof brand.hero_media === "object" && !Array.isArray(brand.hero_media)
-    ? brand.hero_media
-    : {}) as { background?: MediaItem | null; slides?: HeroSlide[] };
+  const heroMedia = (
+    brand.hero_media && typeof brand.hero_media === "object" && !Array.isArray(brand.hero_media)
+      ? brand.hero_media
+      : {}
+  ) as { background?: MediaItem | null; slides?: HeroSlide[] };
 
   const backgroundMedia = heroMedia.background ?? null;
   const slides = Array.isArray(heroMedia.slides) ? heroMedia.slides : [];
@@ -149,7 +151,9 @@ export function HomeHeroGroup() {
             <Input
               className="mt-1.5 text-end text-xs h-9"
               value={bs.hero_title_ar ?? ""}
-              placeholder={isAr ? "اترك فارغاً لاستخدام اسم المتجر بالعربية" : "Blank uses brand name"}
+              placeholder={
+                isAr ? "اترك فارغاً لاستخدام اسم المتجر بالعربية" : "Blank uses brand name"
+              }
               onChange={(e) => setBs({ hero_title_ar: e.target.value || null })}
             />
           </div>
@@ -161,7 +165,9 @@ export function HomeHeroGroup() {
             <Input
               className="mt-1.5 text-start text-xs h-9"
               value={bs.hero_title_en ?? ""}
-              placeholder={isAr ? "اترك فارغاً لاستخدام اسم المتجر بالإنجليزية" : "Blank uses brand name"}
+              placeholder={
+                isAr ? "اترك فارغاً لاستخدام اسم المتجر بالإنجليزية" : "Blank uses brand name"
+              }
               onChange={(e) => setBs({ hero_title_en: e.target.value || null })}
             />
           </div>
@@ -197,7 +203,9 @@ export function HomeHeroGroup() {
         {/* Advanced Title Tuning */}
         <AdvancedOnly
           fieldKey="hero_title_size"
-          reason={isAr ? "تخصيص مقاس ومحاذاة ولون عنوان الواجهة" : "Customize hero title typography"}
+          reason={
+            isAr ? "تخصيص مقاس ومحاذاة ولون عنوان الواجهة" : "Customize hero title typography"
+          }
         >
           <div className="rounded-xl border border-border p-4 bg-muted/5 space-y-4">
             <div className="flex items-center gap-2">
@@ -289,11 +297,7 @@ export function HomeHeroGroup() {
                 playsInline
               />
             ) : (
-              <img
-                src={backgroundMedia.url}
-                alt=""
-                className="w-full h-full object-cover"
-              />
+              <img src={backgroundMedia.url} alt="" className="w-full h-full object-cover" />
             )}
             <div className="absolute top-3 end-3 flex gap-2 bg-background/80 backdrop-blur-sm p-1.5 rounded-lg border border-border shadow-sm">
               <Button
@@ -376,11 +380,7 @@ export function HomeHeroGroup() {
           </p>
         </div>
 
-        <HeroSlidesEditor
-          brandId={brandId}
-          slides={slides}
-          onChange={updateSlides}
-        />
+        <HeroSlidesEditor brandId={brandId} slides={slides} onChange={updateSlides} />
       </div>
     </div>
   );

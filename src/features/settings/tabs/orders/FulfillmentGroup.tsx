@@ -4,6 +4,7 @@ import { useBrandSettingsFormContext } from "@/features/settings/use-brand-setti
 import { AdvancedOnly } from "@/features/settings/FieldVisibility";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import {
@@ -117,7 +118,9 @@ export function FulfillmentGroup() {
       pricing_type: newZone.pricing_type,
       fee: isNaN(feeNum) ? 5 : feeNum,
       bundle_size:
-        newZone.pricing_type === "bundle" ? Math.max(1, Number(newZone.bundle_size || 2)) : undefined,
+        newZone.pricing_type === "bundle"
+          ? Math.max(1, Number(newZone.bundle_size || 2))
+          : undefined,
       estimate_ar: newZone.estimate_ar.trim() || undefined,
       estimate_en: newZone.estimate_en.trim() || undefined,
       allowed_payment_methods: newZone.allowed_payment_methods,
@@ -162,7 +165,9 @@ export function FulfillmentGroup() {
         <div>
           <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
             <Truck className="size-4 text-primary" />
-            <span>{isAr ? "خيارات التوصيل والاستلام (Fulfillment)" : "Fulfillment & Delivery"}</span>
+            <span>
+              {isAr ? "خيارات التوصيل والاستلام (Fulfillment)" : "Fulfillment & Delivery"}
+            </span>
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
             {isAr
@@ -175,7 +180,9 @@ export function FulfillmentGroup() {
           <div className="flex items-center justify-between rounded-xl border border-border p-3.5 bg-background">
             <div>
               <p className="text-xs font-semibold">{isAr ? "التوصيل للعنوان" : "Home Delivery"}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">{isAr ? "شحن للمنزل" : "Standard shipping"}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {isAr ? "شحن للمنزل" : "Standard shipping"}
+              </p>
             </div>
             <Switch
               checked={bs.delivery_enabled ?? true}
@@ -186,7 +193,9 @@ export function FulfillmentGroup() {
           <div className="flex items-center justify-between rounded-xl border border-border p-3.5 bg-background">
             <div>
               <p className="text-xs font-semibold">{isAr ? "الاستلام من الفرع" : "Store Pickup"}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">{isAr ? "استلام ذاتي" : "In-store pickup"}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {isAr ? "استلام ذاتي" : "In-store pickup"}
+              </p>
             </div>
             <Switch
               checked={bs.pickup_enabled ?? true}
@@ -196,8 +205,12 @@ export function FulfillmentGroup() {
 
           <div className="flex items-center justify-between rounded-xl border border-border p-3.5 bg-background">
             <div>
-              <p className="text-xs font-semibold">{isAr ? "التسليم الرقمي" : "Digital Delivery"}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">{isAr ? "واتساب/إيميل" : "Electronic"}</p>
+              <p className="text-xs font-semibold">
+                {isAr ? "التسليم الرقمي" : "Digital Delivery"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {isAr ? "واتساب/إيميل" : "Electronic"}
+              </p>
             </div>
             <Switch
               checked={bs.digital_delivery_enabled ?? false}
@@ -213,13 +226,15 @@ export function FulfillmentGroup() {
               <div className="flex items-center gap-2.5">
                 <CountryFlag
                   code="BH"
-                  className="w-8 h-5 rounded-xs object-cover border border-border/40 shadow-xs shrink-0"
+                  className="w-8 h-5 rounded-xs object-cover border border-border shadow-xs shrink-0"
                 />
                 <div>
                   <h4 className="text-xs font-semibold text-foreground">
-                    {isAr ? "التوصيل داخل البحرين (الافتراضي)" : "Domestic Delivery - Bahrain (Default)"}
+                    {isAr
+                      ? "التوصيل داخل البحرين (الافتراضي)"
+                      : "Domestic Delivery - Bahrain (Default)"}
                   </h4>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     {isAr ? "الوجهة التلقائية المعتمدة للمتجر" : "Default shipping destination"}
                   </p>
                 </div>
@@ -258,6 +273,39 @@ export function FulfillmentGroup() {
                 />
               </div>
             </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">
+                  {isAr
+                    ? "نص الشحن والاستبدال في صفحة المنتج (عربي)"
+                    : "Shipping & returns text on product page (Arabic)"}
+                </Label>
+                <Textarea
+                  dir="rtl"
+                  rows={3}
+                  className="text-xs"
+                  value={bs.shipping_returns_ar ?? ""}
+                  placeholder="توصيل خلال 24-48 ساعة داخل البحرين. الاستبدال خلال 7 أيام بحالته الأصلية."
+                  onChange={(e) => setBs({ shipping_returns_ar: e.target.value || null })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">
+                  {isAr
+                    ? "نص الشحن والاستبدال في صفحة المنتج (إنجليزي)"
+                    : "Shipping & returns text on product page (English)"}
+                </Label>
+                <Textarea
+                  dir="ltr"
+                  rows={3}
+                  className="text-xs"
+                  value={bs.shipping_returns_en ?? ""}
+                  placeholder="Delivery within 24-48h in Bahrain. Exchanges within 7 days in original condition."
+                  onChange={(e) => setBs({ shipping_returns_en: e.target.value || null })}
+                />
+              </div>
+            </div>
           </div>
         )}
 
@@ -267,10 +315,14 @@ export function FulfillmentGroup() {
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="text-xs font-semibold text-foreground">
-                  {isAr ? "مناطق الشحن الإقليمية والدولية" : "Regional & International Shipping Zones"}
+                  {isAr
+                    ? "مناطق الشحن الإقليمية والدولية"
+                    : "Regional & International Shipping Zones"}
                 </h4>
-                <p className="text-[11px] text-muted-foreground">
-                  {isAr ? "أضف مناطق مخصصة لدول الخليج والدول العربية والعالمية." : "Set custom rates for GCC and global destinations."}
+                <p className="text-xs text-muted-foreground">
+                  {isAr
+                    ? "أضف مناطق مخصصة لدول الخليج والدول العربية والعالمية."
+                    : "Set custom rates for GCC and global destinations."}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -319,8 +371,12 @@ export function FulfillmentGroup() {
                         <h5 className="text-xs font-semibold text-foreground">
                           {isAr ? zone.name_ar : zone.name_en}
                         </h5>
-                        <p className="text-[11px] text-muted-foreground">
-                          {getShippingPricingDescription(zone, bs.currency || "BHD", isAr ? "ar" : "en")}
+                        <p className="text-xs text-muted-foreground">
+                          {getShippingPricingDescription(
+                            zone,
+                            bs.currency || "BHD",
+                            isAr ? "ar" : "en",
+                          )}
                         </p>
                       </div>
                       <Button
@@ -340,10 +396,12 @@ export function FulfillmentGroup() {
                         return (
                           <span
                             key={cCode}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted text-[11px] text-foreground font-medium"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted text-xs text-foreground font-medium"
                           >
                             <CountryFlag code={cCode} className="w-4 h-3 rounded-2xs" />
-                            <span>{isAr ? (country?.name_ar || cCode) : (country?.name_en || cCode)}</span>
+                            <span>
+                              {isAr ? country?.name_ar || cCode : country?.name_en || cCode}
+                            </span>
                           </span>
                         );
                       })}
@@ -351,13 +409,15 @@ export function FulfillmentGroup() {
 
                     {/* Zone Payment Methods */}
                     <div className="flex items-center gap-3 pt-2 border-t border-border text-xs">
-                      <span className="text-[11px] text-muted-foreground font-medium">
+                      <span className="text-xs text-muted-foreground font-medium">
                         {isAr ? "طرق الدفع المسموحة:" : "Payment Methods:"}
                       </span>
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={() => toggleZonePaymentMethod(zone.id, "card")}
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium border ${
+                        className={`h-auto rounded-md inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border ${
                           zone.allowed_payment_methods?.includes("card")
                             ? "bg-primary/10 border-primary text-primary"
                             : "border-border text-muted-foreground opacity-60"
@@ -365,31 +425,35 @@ export function FulfillmentGroup() {
                       >
                         <CreditCard className="size-3" />
                         <span>{isAr ? "بطاقة" : "Card"}</span>
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={() => toggleZonePaymentMethod(zone.id, "benefit")}
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium border ${
+                        className={`h-auto rounded-md inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border ${
                           zone.allowed_payment_methods?.includes("benefit")
-                            ? "bg-red-500/10 border-red-500 text-red-600"
+                            ? "bg-destructive/10 border-destructive text-destructive"
                             : "border-border text-muted-foreground opacity-60"
                         }`}
                       >
                         <QrCode className="size-3" />
                         <span>{isAr ? "بنفت باي" : "BenefitPay"}</span>
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={() => toggleZonePaymentMethod(zone.id, "cod")}
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium border ${
+                        className={`h-auto rounded-md inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border ${
                           zone.allowed_payment_methods?.includes("cod")
-                            ? "bg-emerald-500/10 border-emerald-500 text-emerald-600"
+                            ? "bg-success/10 border-success text-success"
                             : "border-border text-muted-foreground opacity-60"
                         }`}
                       >
                         <Banknote className="size-3" />
                         <span>{isAr ? "عند الاستلام" : "COD"}</span>
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -442,7 +506,9 @@ export function FulfillmentGroup() {
                     />
                   </div>
                   <div>
-                    <Label className="text-xs">{isAr ? "مدة التوصيل المتوقعة" : "Delivery Estimate"}</Label>
+                    <Label className="text-xs">
+                      {isAr ? "مدة التوصيل المتوقعة" : "Delivery Estimate"}
+                    </Label>
                     <Input
                       className="mt-1 text-xs h-8"
                       value={isAr ? newZone.estimate_ar : newZone.estimate_en}
@@ -457,16 +523,20 @@ export function FulfillmentGroup() {
 
                 {/* Country Selector */}
                 <div>
-                  <Label className="text-xs">{isAr ? "اختر الدول التابعة لهذه المنطقة:" : "Select Countries:"}</Label>
+                  <Label className="text-xs">
+                    {isAr ? "اختر الدول التابعة لهذه المنطقة:" : "Select Countries:"}
+                  </Label>
                   <div className="mt-2 flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-2 border border-border rounded-lg bg-background">
                     {COUNTRIES_DATABASE.filter((c) => c.code !== "BH").map((c) => {
                       const selected = newZone.countries.includes(c.code);
                       return (
-                        <button
+                        <Button
                           key={c.code}
                           type="button"
+                          variant="ghost"
+                          size="sm"
                           onClick={() => toggleCountry(c.code)}
-                          className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs border transition-colors ${
+                          className={`h-auto rounded-md inline-flex items-center gap-1 px-2 py-1 rounded text-xs border transition-colors ${
                             selected
                               ? "bg-primary text-primary-foreground border-primary"
                               : "bg-muted/40 hover:bg-muted border-border text-foreground"
@@ -474,7 +544,7 @@ export function FulfillmentGroup() {
                         >
                           <CountryFlag code={c.code} className="w-3.5 h-2.5 rounded-2xs" />
                           <span>{isAr ? c.name_ar : c.name_en}</span>
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>
@@ -508,7 +578,11 @@ export function FulfillmentGroup() {
         {/* 3. Advanced Delivery Estimate Settings */}
         <AdvancedOnly
           fieldKey="delivery_estimate_enabled"
-          reason={isAr ? "تخصيص عبارات وتفعيل تنبيه مدة التوصيل" : "Toggle and tune delivery estimate messaging"}
+          reason={
+            isAr
+              ? "تخصيص عبارات وتفعيل تنبيه مدة التوصيل"
+              : "Toggle and tune delivery estimate messaging"
+          }
         >
           <div className="rounded-xl border border-border p-4 bg-muted/5 space-y-4">
             <div className="flex items-center gap-2">
@@ -521,10 +595,14 @@ export function FulfillmentGroup() {
             <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-3.5 bg-background">
               <div>
                 <Label className="cursor-pointer text-xs font-medium">
-                  {isAr ? "إظهار مدة التوصيل التقديرية في المتجر" : "Display Delivery Estimate on Storefront"}
+                  {isAr
+                    ? "إظهار مدة التوصيل التقديرية في المتجر"
+                    : "Display Delivery Estimate on Storefront"}
                 </Label>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  {isAr ? "عرض المدة في صفحات المنتجات والدفع" : "Show timing on product & checkout pages"}
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {isAr
+                    ? "عرض المدة في صفحات المنتجات والدفع"
+                    : "Show timing on product & checkout pages"}
                 </p>
               </div>
               <Switch

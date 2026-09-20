@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { ImageCropperDialog } from "@/components/image-cropper-dialog";
+import { EditorialSectionsEditor } from "./EditorialSectionsEditor";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { toast } from "sonner";
 import { Image, Loader2, Sparkles, Trash2, Upload } from "lucide-react";
@@ -45,7 +46,9 @@ export function HomeSectionsGroup() {
   const rawCards = Array.isArray(bs.home_promo_cards) ? bs.home_promo_cards : [];
   const promoCards: PromoCard[] = Array.from({ length: 4 }, (_, idx) => ({
     ...EMPTY_PROMO_CARD,
-    ...((typeof rawCards[idx] === "object" && rawCards[idx] !== null ? (rawCards[idx] as object) : {}) as any),
+    ...((typeof rawCards[idx] === "object" && rawCards[idx] !== null
+      ? (rawCards[idx] as object)
+      : {}) as any),
   }));
 
   const updatePromoCard = (index: number, patch: Partial<PromoCard>) => {
@@ -158,6 +161,13 @@ export function HomeSectionsGroup() {
           </div>
         </div>
 
+        <AdvancedOnly
+          fieldKey="homepage_editorial_sections"
+          reason={isAr ? "لافتات وخلفيات أقسام الرئيسية" : "Section banners & backgrounds"}
+        >
+          <EditorialSectionsEditor />
+        </AdvancedOnly>
+
         {/* Advanced Titles for Core Sections */}
         <AdvancedOnly
           fieldKey="new_arrivals_title_ar"
@@ -239,10 +249,7 @@ export function HomeSectionsGroup() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {promoCards.map((card, idx) => (
-            <div
-              key={idx}
-              className="space-y-3 rounded-xl border border-border p-4 bg-background"
-            >
+            <div key={idx} className="space-y-3 rounded-xl border border-border p-4 bg-background">
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="font-semibold text-xs text-foreground">
@@ -365,7 +372,11 @@ export function HomeSectionsGroup() {
       {/* 3. Section Banner Images & Parallax (Advanced) */}
       <AdvancedOnly
         fieldKey="trending_banner_background_url"
-        reason={isAr ? "إعدادات بنرات الأقسام وحركة البارالاكس" : "Section banner imagery & parallax motion"}
+        reason={
+          isAr
+            ? "إعدادات بنرات الأقسام وحركة البارالاكس"
+            : "Section banner imagery & parallax motion"
+        }
       >
         <div className="rounded-xl border border-border p-5 bg-card shadow-sm space-y-5">
           <div className="flex items-center gap-2">
@@ -493,9 +504,7 @@ export function HomeSectionsGroup() {
               </div>
               <Switch
                 checked={bs.secondary_banner_parallax_enabled ?? false}
-                onCheckedChange={(checked) =>
-                  setBs({ secondary_banner_parallax_enabled: checked })
-                }
+                onCheckedChange={(checked) => setBs({ secondary_banner_parallax_enabled: checked })}
               />
             </div>
 

@@ -286,18 +286,14 @@ export function BrandSettingsFormProvider({
   const localForm = useBrandSettingsForm(brandId || "");
   const form = providedForm ?? localForm;
   return (
-    <BrandSettingsFormContext.Provider value={form}>
-      {children}
-    </BrandSettingsFormContext.Provider>
+    <BrandSettingsFormContext.Provider value={form}>{children}</BrandSettingsFormContext.Provider>
   );
 }
 
 export function useBrandSettingsFormContext(): BrandSettingsFormState {
   const ctx = useContext(BrandSettingsFormContext);
   if (!ctx) {
-    throw new Error(
-      "useBrandSettingsFormContext must be used within a BrandSettingsFormProvider",
-    );
+    throw new Error("useBrandSettingsFormContext must be used within a BrandSettingsFormProvider");
   }
   return ctx;
 }

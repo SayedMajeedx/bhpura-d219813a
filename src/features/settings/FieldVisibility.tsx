@@ -14,12 +14,7 @@ interface AdvancedOnlyProps {
   reason?: string;
 }
 
-export function AdvancedOnly({
-  children,
-  fallback,
-  labelAr,
-  labelEn,
-}: AdvancedOnlyProps) {
+export function AdvancedOnly({ children, fallback, labelAr, labelEn }: AdvancedOnlyProps) {
   const [level, setLevel] = useSettingsLevel();
   const { lang } = useI18n();
   const isAr = lang === "ar";
@@ -33,7 +28,7 @@ export function AdvancedOnly({
   }
 
   return (
-    <div className="py-2 px-3.5 my-2 rounded-xl border border-dashed border-border/80 bg-muted/20 flex items-center justify-between text-xs text-muted-foreground transition-all">
+    <div className="py-2 px-3.5 my-2 rounded-xl border border-dashed border-border bg-muted/20 flex items-center justify-between text-xs text-muted-foreground transition-all">
       <div className="flex items-center gap-2">
         <SlidersHorizontal className="h-3.5 w-3.5 text-primary opacity-70" />
         <span>

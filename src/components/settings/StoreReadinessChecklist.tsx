@@ -37,6 +37,8 @@ export interface BusinessSettingsData {
   storefront_mode?: string | null;
   whatsapp_number?: string | null;
   brand_palette?: any | null;
+  storefront_accent_color?: string | null;
+  storefront_design_version?: number | null;
 }
 
 export interface ReadinessEvaluationInput {
@@ -51,7 +53,16 @@ export interface ReadinessEvaluationInput {
 }
 
 export interface ReadinessItem {
-  id: "logo" | "palette" | "vertical" | "products" | "payments" | "fulfillment" | "policies" | "whatsapp" | (string & {});
+  id:
+    | "logo"
+    | "palette"
+    | "vertical"
+    | "products"
+    | "payments"
+    | "fulfillment"
+    | "policies"
+    | "whatsapp"
+    | (string & {});
   icon: React.ElementType;
   title: string;
   description: string;
@@ -120,17 +131,18 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
   );
   const hasPolicies = validPages.length > 0 || Boolean(input.hasReturnPolicy);
 
-  // 6. Brand Palette from logo
+  // 6. Brand palette set (extracted from the logo or chosen manually). Only brands on
+  //    Storefront 2.0 get the palette/vertical items so existing v1 brands never regress.
+  const includeDesignChecks = Number(bData?.storefront_design_version ?? 1) >= 2;
+  const paletteMeta = input.brandPalette ?? bData?.brand_palette ?? null;
+  const paletteSource: string | null = paletteMeta?.source ?? paletteMeta?.meta?.source ?? null;
   const hasExtractedPalette = Boolean(
-    input.brandPalette?.meta?.source === "logo" ||
-      (bData as any)?.brand_palette?.meta?.source === "logo",
+    paletteSource === "logo" || paletteSource === "manual" || bData?.storefront_accent_color,
   );
 
   // 7. Store vertical specified
   const hasVertical = Boolean(
-    input.storeVertical &&
-      input.storeVertical !== "general" &&
-      input.storeVertical !== "other",
+    input.storeVertical && input.storeVertical !== "general" && input.storeVertical !== "other",
   );
 
   const isCatalog = bData?.storefront_mode === "catalog";
@@ -160,14 +172,14 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
         {
           id: "palette",
           icon: Sparkles,
-          title: isAr ? "لون العلامة مستخرج من الشعار" : "Brand color extracted from logo",
+          title: isAr ? "لون العلامة محدد" : "Brand colour set",
           description: isAr
             ? hasExtractedPalette
-              ? "تم استخراج واشتقاق لوحة ألوان الهوية بنجاح من الشعار"
-              : "استخرج ألوان المتجر تلقائياً لضمان اتساق الهوية البصرية"
+              ? "لوحة ألوان المتجر جاهزة"
+              : "اختر لون العلامة أو استخرجه من الشعار بضغطة واحدة"
             : hasExtractedPalette
-              ? "Brand palette successfully extracted from logo"
-              : "Extract storefront palette automatically from logo",
+              ? "Storefront palette is ready"
+              : "Pick the brand colour or extract it from the logo in one click",
           isComplete: hasExtractedPalette,
           actionType: "tab",
           tabId: "identity",
@@ -266,14 +278,14 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
         {
           id: "palette",
           icon: Sparkles,
-          title: isAr ? "لون العلامة مستخرج من الشعار" : "Brand color extracted from logo",
+          title: isAr ? "لون العلامة محدد" : "Brand colour set",
           description: isAr
             ? hasExtractedPalette
-              ? "تم استخراج واشتقاق لوحة ألوان الهوية بنجاح من الشعار"
-              : "استخرج ألوان المتجر تلقائياً لضمان اتساق الهوية البصرية"
+              ? "لوحة ألوان المتجر جاهزة"
+              : "اختر لون العلامة أو استخرجه من الشعار بضغطة واحدة"
             : hasExtractedPalette
-              ? "Brand palette successfully extracted from logo"
-              : "Extract storefront palette automatically from logo",
+              ? "Storefront palette is ready"
+              : "Pick the brand colour or extract it from the logo in one click",
           isComplete: hasExtractedPalette,
           actionType: "tab",
           tabId: "identity",
@@ -379,8 +391,11 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
         },
       ];
 
-  const completedCount = items.filter((it) => it.isComplete).length;
-  const totalCount = items.length;
+  const visibleItems = includeDesignChecks
+    ? items
+    : items.filter((it) => it.id !== "palette" && it.id !== "vertical");
+  const completedCount = visibleItems.filter((it) => it.isComplete).length;
+  const totalCount = visibleItems.length;
   const progressPercent = Math.round((completedCount / totalCount) * 100);
   const isAllComplete = completedCount === totalCount;
 
@@ -394,7 +409,7 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
     hasWhatsApp,
     isCatalog,
     pagesCount: validPages.length,
-    items,
+    items: visibleItems,
     completedCount,
     totalCount,
     progressPercent,
@@ -829,10 +844,7 @@ export function StoreReadinessChecklist({
                       variant="outline"
                       size="sm"
                       onClick={() =>
-                        onNavigateTab(
-                          item.tabId!,
-                          item.group ? `group-${item.group}` : undefined,
-                        )
+                        onNavigateTab(item.tabId!, item.group ? `group-${item.group}` : undefined)
                       }
                       className="h-7 text-xs font-medium px-2.5"
                     >

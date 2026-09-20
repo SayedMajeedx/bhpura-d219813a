@@ -55,10 +55,10 @@ export function TypographyAdvancedControls({
 }) {
   const previewLanguage = isAr ? "ar" : "en";
   const bodyCapabilitySet = (["en", "ar"] as const).map((language) =>
-    fontCapabilities(config.body[language])
+    fontCapabilities(config.body[language]),
   );
   const displayCapabilitySet = (["en", "ar"] as const).map((language) =>
-    fontCapabilities(config.display[language])
+    fontCapabilities(config.display[language]),
   );
   const bodyCapabilities = fontCapabilities(config.body[previewLanguage]);
   const displayCapabilities = fontCapabilities(config.display[previewLanguage]);
@@ -94,17 +94,13 @@ export function TypographyAdvancedControls({
     max: number,
     step: number,
     formatValue: (value: number) => string = String,
-    help?: string
+    help?: string,
   ) => (
     <div className="space-y-2 rounded-lg border border-border bg-background/60 p-3">
       <div className="flex items-start justify-between gap-3">
         <div>
           <Label className="text-sm font-medium">{label}</Label>
-          {help && (
-            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-              {help}
-            </p>
-          )}
+          {help && <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{help}</p>}
         </div>
         <span className="rounded-md bg-muted px-2 py-1 text-xs font-semibold tabular-nums text-foreground">
           {formatValue(config[key])}
@@ -192,7 +188,7 @@ export function TypographyAdvancedControls({
                 </Select>
               </div>
             );
-          })
+          }),
         )}
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -203,7 +199,7 @@ export function TypographyAdvancedControls({
           bodyWeightRange.max,
           10,
           (value) => String(value),
-          isAr ? "درجة سماكة النصوص العادية والأزرار." : "Thickness of body copy and controls."
+          isAr ? "درجة سماكة النصوص العادية والأزرار." : "Thickness of body copy and controls.",
         )}
         {range(
           isAr ? "سُمك العناوين" : "Heading weight",
@@ -212,7 +208,7 @@ export function TypographyAdvancedControls({
           displayWeightRange.max,
           10,
           (value) => String(value),
-          isAr ? "درجة سماكة عناوين الأقسام والبنرات." : "Thickness of headings and banner titles."
+          isAr ? "درجة سماكة عناوين الأقسام والبنرات." : "Thickness of headings and banner titles.",
         )}
         {range(
           isAr ? "الحجم العام للخطوط" : "Overall type size",
@@ -223,7 +219,7 @@ export function TypographyAdvancedControls({
           (value) => `${Math.round(value * 100)}%`,
           isAr
             ? "يكبّر أو يصغّر جميع أحجام الخطوط بنسب متوازنة."
-            : "Scales all type sizes proportionally."
+            : "Scales all type sizes proportionally.",
         )}
         {range(
           isAr ? "المسافة بين أسطر النص" : "Body line spacing",
@@ -234,7 +230,7 @@ export function TypographyAdvancedControls({
           (value) => `${value}×`,
           isAr
             ? "مساحة التنفس بين أسطر الفقرات والنصوص."
-            : "Breathing room between lines of body copy."
+            : "Breathing room between lines of body copy.",
         )}
         {range(
           isAr ? "المسافة بين أسطر العناوين" : "Heading line spacing",
@@ -245,7 +241,7 @@ export function TypographyAdvancedControls({
           (value) => `${value}×`,
           isAr
             ? "المسافة الرأسية للعناوين متعددة الأسطر."
-            : "Vertical spacing for multi-line headings."
+            : "Vertical spacing for multi-line headings.",
         )}
         {range(
           isAr ? "المسافة بين الحروف" : "Letter spacing",
@@ -256,7 +252,7 @@ export function TypographyAdvancedControls({
           (value) => `${value > 0 ? "+" : ""}${value}em`,
           isAr
             ? "تقريب الحروف أو إبعادها عن بعضها."
-            : "Tightens or loosens the space between characters."
+            : "Tightens or loosens the space between characters.",
         )}
       </div>
       {hasGenericAxes && (

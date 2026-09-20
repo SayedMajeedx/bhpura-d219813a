@@ -86,57 +86,57 @@ export function HeroSlidesEditor({
     handleUpdateSlides(updated);
   };
 
-async function captureVideoPoster(file: File): Promise<File | null> {
-  return new Promise((resolve) => {
-    try {
-      const video = document.createElement("video");
-      const url = URL.createObjectURL(file);
-      video.src = url;
-      video.muted = true;
-      video.playsInline = true;
+  async function captureVideoPoster(file: File): Promise<File | null> {
+    return new Promise((resolve) => {
+      try {
+        const video = document.createElement("video");
+        const url = URL.createObjectURL(file);
+        video.src = url;
+        video.muted = true;
+        video.playsInline = true;
 
-      video.onloadedmetadata = () => {
-        video.currentTime = Math.min(0.5, (video.duration || 1) / 2);
-      };
+        video.onloadedmetadata = () => {
+          video.currentTime = Math.min(0.5, (video.duration || 1) / 2);
+        };
 
-      video.onseeked = () => {
-        try {
-          const canvas = document.createElement("canvas");
-          canvas.width = video.videoWidth || 1280;
-          canvas.height = video.videoHeight || 720;
-          const ctx = canvas.getContext("2d");
-          if (!ctx) {
-            URL.revokeObjectURL(url);
-            return resolve(null);
-          }
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          canvas.toBlob(
-            (blob) => {
+        video.onseeked = () => {
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width = video.videoWidth || 1280;
+            canvas.height = video.videoHeight || 720;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) {
               URL.revokeObjectURL(url);
-              if (blob) {
-                resolve(new File([blob], "poster.webp", { type: "image/webp" }));
-              } else {
-                resolve(null);
-              }
-            },
-            "image/webp",
-            0.85,
-          );
-        } catch {
+              return resolve(null);
+            }
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(
+              (blob) => {
+                URL.revokeObjectURL(url);
+                if (blob) {
+                  resolve(new File([blob], "poster.webp", { type: "image/webp" }));
+                } else {
+                  resolve(null);
+                }
+              },
+              "image/webp",
+              0.85,
+            );
+          } catch {
+            URL.revokeObjectURL(url);
+            resolve(null);
+          }
+        };
+
+        video.onerror = () => {
           URL.revokeObjectURL(url);
           resolve(null);
-        }
-      };
-
-      video.onerror = () => {
-        URL.revokeObjectURL(url);
+        };
+      } catch {
         resolve(null);
-      };
-    } catch {
-      resolve(null);
-    }
-  });
-}
+      }
+    });
+  }
 
   const uploadMedia = async (file: File, index: number, language?: "en" | "ar") => {
     if (propUploadSlideMedia) {
@@ -181,7 +181,9 @@ async function captureVideoPoster(file: File): Promise<File | null> {
     <div className="space-y-3 border-t border-border pt-5">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <Label className="text-sm font-semibold">{isAr ? "شرائح محتوى الواجهة" : "Hero content slides"}</Label>
+          <Label className="text-sm font-semibold">
+            {isAr ? "شرائح محتوى الواجهة" : "Hero content slides"}
+          </Label>
           <p className="text-xs text-muted-foreground">
             {isAr
               ? "حتى 5 شرائح قابلة للتمرير: نص أو صورة أو فيديو."
@@ -210,12 +212,16 @@ async function captureVideoPoster(file: File): Promise<File | null> {
       {slides.map((slide, index) => (
         <div key={slide.id} className="space-y-3 rounded-xl border border-border p-4 bg-muted/10">
           <div className="flex items-center justify-between gap-3">
-            <strong className="text-sm">{isAr ? `الشريحة ${index + 1}` : `Slide ${index + 1}`}</strong>
+            <strong className="text-sm">
+              {isAr ? `الشريحة ${index + 1}` : `Slide ${index + 1}`}
+            </strong>
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              onClick={() => handleUpdateSlides(slides.filter((_, itemIndex) => itemIndex !== index))}
+              onClick={() =>
+                handleUpdateSlides(slides.filter((_, itemIndex) => itemIndex !== index))
+              }
               aria-label={isAr ? "حذف" : "Delete"}
             >
               <Trash2 className="h-4 w-4 text-destructive" />
@@ -265,7 +271,7 @@ async function captureVideoPoster(file: File): Promise<File | null> {
                           onClick={() =>
                             update(
                               index,
-                              language === "ar" ? { media_url_ar: "" } : { media_url_en: "" }
+                              language === "ar" ? { media_url_ar: "" } : { media_url_en: "" },
                             )
                           }
                         >
@@ -407,11 +413,7 @@ async function captureVideoPoster(file: File): Promise<File | null> {
             </>
           )}
 
-          <HeroSlideLivePreview
-            slide={slide}
-            isAr={isAr}
-            color={slideAccentColor}
-          />
+          <HeroSlideLivePreview slide={slide} isAr={isAr} color={slideAccentColor} />
         </div>
       ))}
     </div>

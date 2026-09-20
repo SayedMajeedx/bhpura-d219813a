@@ -5,13 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import {
-  ShoppingBag,
-  MessageCircle,
-  Info,
-  AlertCircle,
-  ExternalLink,
-} from "lucide-react";
+import { ShoppingBag, MessageCircle, Info, AlertCircle, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AdvancedOnly } from "../../FieldVisibility";
 import { useBrandSettingsFormContext } from "../../use-brand-settings-form";
@@ -35,14 +29,12 @@ export function ModeGroup({ onNavigateTab }: { onNavigateTab?: (tab: string) => 
   const catalogShowPrices = bs.catalog_show_prices !== false;
   const whatsappEnabled = bs.whatsapp_enabled ?? false;
   const whatsappNumber = bs.whatsapp_number ?? "";
-  const hasWhatsApp = Boolean(
-    whatsappNumber && whatsappNumber.replace(/\D/g, "").length >= 8
-  );
+  const hasWhatsApp = Boolean(whatsappNumber && whatsappNumber.replace(/\D/g, "").length >= 8);
 
   const injectToken = (
     ref: React.RefObject<HTMLTextAreaElement | null>,
     field: "catalog_inquiry_message_ar" | "catalog_inquiry_message_en",
-    token: string
+    token: string,
   ) => {
     const el = ref.current;
     if (!el) return;
@@ -71,7 +63,7 @@ export function ModeGroup({ onNavigateTab }: { onNavigateTab?: (tab: string) => 
 
   const renderPills = (
     ref: React.RefObject<HTMLTextAreaElement | null>,
-    field: "catalog_inquiry_message_ar" | "catalog_inquiry_message_en"
+    field: "catalog_inquiry_message_ar" | "catalog_inquiry_message_en",
   ) => (
     <div className="flex flex-wrap gap-1.5 mt-2">
       {tokens.map((t) => (
@@ -105,7 +97,7 @@ export function ModeGroup({ onNavigateTab }: { onNavigateTab?: (tab: string) => 
       productUrl: sampleUrl,
       variantLabel: sampleVariantAr,
       priceLabel: catalogShowPrices ? samplePrice : "",
-    }
+    },
   );
 
   const previewEn = renderInquiryMessage(
@@ -116,7 +108,7 @@ export function ModeGroup({ onNavigateTab }: { onNavigateTab?: (tab: string) => 
       productUrl: sampleUrl,
       variantLabel: sampleVariantEn,
       priceLabel: catalogShowPrices ? samplePrice : "",
-    }
+    },
   );
 
   return (
@@ -151,7 +143,7 @@ export function ModeGroup({ onNavigateTab }: { onNavigateTab?: (tab: string) => 
             "relative flex flex-col p-4 rounded-xl border cursor-pointer transition-all min-h-[44px]",
             !isCatalog
               ? "border-primary bg-primary/5 ring-1 ring-primary"
-              : "border-border hover:border-muted-foreground/40 bg-card"
+              : "border-border hover:border-muted-foreground/40 bg-card",
           )}
         >
           <div className="flex items-center justify-between mb-2">
@@ -161,7 +153,7 @@ export function ModeGroup({ onNavigateTab }: { onNavigateTab?: (tab: string) => 
                   "p-2 rounded-lg",
                   !isCatalog
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground"
+                    : "bg-muted text-muted-foreground",
                 )}
               >
                 <ShoppingBag className="h-4 w-4" />
@@ -173,9 +165,7 @@ export function ModeGroup({ onNavigateTab }: { onNavigateTab?: (tab: string) => 
             <div
               className={cn(
                 "h-4 w-4 rounded-full border flex items-center justify-center",
-                !isCatalog
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border"
+                !isCatalog ? "border-primary bg-primary text-primary-foreground" : "border-border",
               )}
             >
               {!isCatalog && <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />}
@@ -202,7 +192,7 @@ export function ModeGroup({ onNavigateTab }: { onNavigateTab?: (tab: string) => 
             "relative flex flex-col p-4 rounded-xl border cursor-pointer transition-all min-h-[44px]",
             isCatalog
               ? "border-primary bg-primary/5 ring-1 ring-primary"
-              : "border-border hover:border-muted-foreground/40 bg-card"
+              : "border-border hover:border-muted-foreground/40 bg-card",
           )}
         >
           <div className="flex items-center justify-between mb-2">
@@ -212,7 +202,7 @@ export function ModeGroup({ onNavigateTab }: { onNavigateTab?: (tab: string) => 
                   "p-2 rounded-lg",
                   isCatalog
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground"
+                    : "bg-muted text-muted-foreground",
                 )}
               >
                 <MessageCircle className="h-4 w-4" />
@@ -226,9 +216,7 @@ export function ModeGroup({ onNavigateTab }: { onNavigateTab?: (tab: string) => 
             <div
               className={cn(
                 "h-4 w-4 rounded-full border flex items-center justify-center",
-                isCatalog
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border"
+                isCatalog ? "border-primary bg-primary text-primary-foreground" : "border-border",
               )}
             >
               {isCatalog && <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />}
@@ -246,7 +234,7 @@ export function ModeGroup({ onNavigateTab }: { onNavigateTab?: (tab: string) => 
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-border p-4 bg-muted/10">
         <div>
           <div className="flex items-center gap-2">
-            <MessageCircle className="h-4 w-4 text-emerald-500" />
+            <MessageCircle className="h-4 w-4 text-success" />
             <p className="text-sm font-semibold">
               {isAr ? "زر واتساب العائم في المتجر" : "Storefront WhatsApp Floating Button"}
             </p>
@@ -299,8 +287,8 @@ export function ModeGroup({ onNavigateTab }: { onNavigateTab?: (tab: string) => 
 
           {/* WhatsApp phone warning if missing */}
           {!hasWhatsApp && (
-            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs">
-              <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-warning/10 border border-warning/30 text-warning text-xs">
+              <AlertCircle className="h-4 w-4 shrink-0 text-warning mt-0.5" />
               <div>
                 <span className="font-semibold block">
                   {isAr ? "رقم الواتساب غير مضبوط" : "WhatsApp number not configured"}
@@ -379,9 +367,11 @@ export function ModeGroup({ onNavigateTab }: { onNavigateTab?: (tab: string) => 
               {/* Live Message Preview */}
               <div className="space-y-2 rounded-xl border border-border bg-card p-3.5 mt-3">
                 <div className="flex items-center gap-2">
-                  <MessageCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  <MessageCircle className="h-4 w-4 text-success" />
                   <span className="text-xs font-semibold text-foreground">
-                    {isAr ? "معاينة حية لشكل الرسالة على الواتساب" : "Live WhatsApp Message Preview"}
+                    {isAr
+                      ? "معاينة حية لشكل الرسالة على الواتساب"
+                      : "Live WhatsApp Message Preview"}
                   </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -389,7 +379,10 @@ export function ModeGroup({ onNavigateTab }: { onNavigateTab?: (tab: string) => 
                     <span className="text-xs font-medium text-muted-foreground block">
                       {isAr ? "المعاينة بالعربية" : "Arabic Preview"}
                     </span>
-                    <p className="whitespace-pre-wrap font-sans text-foreground leading-relaxed text-xs" dir="rtl">
+                    <p
+                      className="whitespace-pre-wrap font-sans text-foreground leading-relaxed text-xs"
+                      dir="rtl"
+                    >
                       {previewAr}
                     </p>
                   </div>
@@ -397,7 +390,10 @@ export function ModeGroup({ onNavigateTab }: { onNavigateTab?: (tab: string) => 
                     <span className="text-xs font-medium text-muted-foreground block">
                       {isAr ? "المعاينة بالإنجليزية" : "English Preview"}
                     </span>
-                    <p className="whitespace-pre-wrap font-sans text-foreground leading-relaxed text-xs" dir="ltr">
+                    <p
+                      className="whitespace-pre-wrap font-sans text-foreground leading-relaxed text-xs"
+                      dir="ltr"
+                    >
                       {previewEn}
                     </p>
                   </div>

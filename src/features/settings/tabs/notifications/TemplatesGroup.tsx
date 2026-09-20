@@ -23,7 +23,9 @@ export function TemplatesGroup() {
         <div>
           <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
             <Mail className="size-4 text-primary" />
-            <span>{isAr ? "رسائل تأكيد الطلب بالبريد الإلكتروني" : "Order Confirmation Email"}</span>
+            <span>
+              {isAr ? "رسائل تأكيد الطلب بالبريد الإلكتروني" : "Order Confirmation Email"}
+            </span>
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
             {isAr
@@ -54,7 +56,11 @@ export function TemplatesGroup() {
             <Textarea
               className="mt-1.5 text-end text-xs min-h-[64px]"
               value={bs.email_intro_ar ?? ""}
-              placeholder={isAr ? "شكراً لتسوقكم معنا! تم استلام طلبكم وجاري تجهيزه بكل حب وعناية." : "Greeting in Arabic..."}
+              placeholder={
+                isAr
+                  ? "شكراً لتسوقكم معنا! تم استلام طلبكم وجاري تجهيزه بكل حب وعناية."
+                  : "Greeting in Arabic..."
+              }
               onChange={(e) => setBs({ email_intro_ar: e.target.value || null })}
             />
           </div>
@@ -75,7 +81,11 @@ export function TemplatesGroup() {
         {/* Advanced Email Footers */}
         <AdvancedOnly
           fieldKey="email_footer_ar"
-          reason={isAr ? "تخصيص الخاتمة والتوقيع الرسمي لرسائل البريد" : "Customize email sign-off and footer"}
+          reason={
+            isAr
+              ? "تخصيص الخاتمة والتوقيع الرسمي لرسائل البريد"
+              : "Customize email sign-off and footer"
+          }
         >
           <div className="rounded-xl border border-border p-4 bg-muted/5 space-y-4">
             <div className="flex items-center gap-2">
@@ -119,7 +129,9 @@ export function TemplatesGroup() {
         <div>
           <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
             <Truck className="size-4 text-primary" />
-            <span>{isAr ? "رسائل السائق: الطلب خرج للتوصيل" : "Courier Out for Delivery Dispatch"}</span>
+            <span>
+              {isAr ? "رسائل السائق: الطلب خرج للتوصيل" : "Courier Out for Delivery Dispatch"}
+            </span>
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
             {isAr
@@ -136,8 +148,14 @@ export function TemplatesGroup() {
             <Textarea
               className="mt-1.5 text-end text-xs min-h-[64px]"
               value={bs.courier_out_for_delivery_message_ar ?? ""}
-              placeholder={isAr ? "طلبكم في الطريق إليكم الآن مع السائق، يرجى التكرم بالرد على الاتصال." : "Message in Arabic..."}
-              onChange={(e) => setBs({ courier_out_for_delivery_message_ar: e.target.value || null })}
+              placeholder={
+                isAr
+                  ? "طلبكم في الطريق إليكم الآن مع السائق، يرجى التكرم بالرد على الاتصال."
+                  : "Message in Arabic..."
+              }
+              onChange={(e) =>
+                setBs({ courier_out_for_delivery_message_ar: e.target.value || null })
+              }
             />
           </div>
 
@@ -149,7 +167,9 @@ export function TemplatesGroup() {
               className="mt-1.5 text-start text-xs min-h-[64px]"
               value={bs.courier_out_for_delivery_message_en ?? ""}
               placeholder="Your order is currently out for delivery with our driver. Please be available to receive."
-              onChange={(e) => setBs({ courier_out_for_delivery_message_en: e.target.value || null })}
+              onChange={(e) =>
+                setBs({ courier_out_for_delivery_message_en: e.target.value || null })
+              }
             />
           </div>
         </div>

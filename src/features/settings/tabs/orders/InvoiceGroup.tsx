@@ -13,6 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ColorField } from "@/features/settings/shared/ColorField";
+import { InvoiceLayoutControls } from "./InvoiceLayoutControls";
+import { InvoiceLogoPositioner } from "./InvoiceLogoPositioner";
 import { FileText, Sparkles } from "lucide-react";
 
 export function InvoiceGroup() {
@@ -58,7 +60,9 @@ export function InvoiceGroup() {
                 <SelectItem value="clean">{isAr ? "أنيق ومرتب (Clean)" : "Clean"}</SelectItem>
                 <SelectItem value="minimal">{isAr ? "بسيط وعصري (Minimal)" : "Minimal"}</SelectItem>
                 <SelectItem value="modern">{isAr ? "حديث ومميز (Modern)" : "Modern"}</SelectItem>
-                <SelectItem value="classic">{isAr ? "كلاسيكي رسمي (Classic)" : "Classic"}</SelectItem>
+                <SelectItem value="classic">
+                  {isAr ? "كلاسيكي رسمي (Classic)" : "Classic"}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -69,7 +73,7 @@ export function InvoiceGroup() {
               <Label className="cursor-pointer text-xs font-semibold">
                 {isAr ? "إظهار الشروط والأحكام" : "Show Terms & Conditions"}
               </Label>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 {isAr ? "عرض الشروط أسفل الفاتورة" : "Print terms on bottom of invoice"}
               </p>
             </div>
@@ -117,7 +121,9 @@ export function InvoiceGroup() {
           <Input
             className="text-xs h-9"
             value={bs.footer_note ?? ""}
-            placeholder={isAr ? "شكراً لتسوقكم معنا ونتطلع لخدمتكم دائماً!" : "Thank you for shopping with us!"}
+            placeholder={
+              isAr ? "شكراً لتسوقكم معنا ونتطلع لخدمتكم دائماً!" : "Thank you for shopping with us!"
+            }
             onChange={(e) => setBs({ footer_note: e.target.value || null })}
           />
         </div>
@@ -125,13 +131,19 @@ export function InvoiceGroup() {
         {/* Advanced Invoice Styling & Layout Tuning */}
         <AdvancedOnly
           fieldKey="invoice_inherit_brand_color"
-          reason={isAr ? "تخصيص ألوان وتخطيط وشعار الفاتورة بدقة" : "Fine-tune invoice layout, colors & typography"}
+          reason={
+            isAr
+              ? "تخصيص ألوان وتخطيط وشعار الفاتورة بدقة"
+              : "Fine-tune invoice layout, colors & typography"
+          }
         >
           <div className="rounded-xl border border-border p-4 bg-muted/5 space-y-5">
             <div className="flex items-center gap-2">
               <Sparkles className="size-4 text-primary" />
               <h4 className="text-xs font-semibold">
-                {isAr ? "تخصيص الألوان والخطوط والأبعاد في الفاتورة" : "Advanced Invoice Typography & Color Customization"}
+                {isAr
+                  ? "تخصيص الألوان والخطوط والأبعاد في الفاتورة"
+                  : "Advanced Invoice Typography & Color Customization"}
               </h4>
             </div>
 
@@ -142,8 +154,10 @@ export function InvoiceGroup() {
                   <Label className="cursor-pointer text-xs font-semibold">
                     {isAr ? "توريث ألوان المتجر تلقائياً" : "Inherit Brand Accent Color"}
                   </Label>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
-                    {isAr ? "استخدام لون العلامة في الفاتورة" : "Syncs with storefront_accent_color"}
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {isAr
+                      ? "استخدام لون العلامة في الفاتورة"
+                      : "Syncs with storefront_accent_color"}
                   </p>
                 </div>
                 <Switch
@@ -157,7 +171,7 @@ export function InvoiceGroup() {
                   <Label className="cursor-pointer text-xs font-semibold">
                     {isAr ? "توريث خطوط المتجر تلقائياً" : "Inherit Brand Fonts"}
                   </Label>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     {isAr ? "تطبيق خطوط البراند على الفاتورة" : "Syncs with brand typography"}
                   </p>
                 </div>
@@ -213,54 +227,8 @@ export function InvoiceGroup() {
               </div>
             </div>
 
-            {/* Logo Dimensions on Invoice */}
-            <div className="space-y-2 pt-2 border-t border-border">
-              <Label className="text-xs font-semibold">
-                {isAr ? "أبعاد وموضع الشعار في رأس الفاتورة (px)" : "Logo Dimensions on Invoice (px)"}
-              </Label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div>
-                  <Label className="text-[11px] text-muted-foreground">{isAr ? "العرض (Width)" : "Width"}</Label>
-                  <Input
-                    type="number"
-                    min={40}
-                    max={400}
-                    className="mt-1 text-xs h-8 font-mono"
-                    value={bs.logo_width ?? 120}
-                    onChange={(e) => setBs({ logo_width: Number(e.target.value) || 120 })}
-                  />
-                </div>
-                <div>
-                  <Label className="text-[11px] text-muted-foreground">{isAr ? "الارتفاع (Height)" : "Height"}</Label>
-                  <Input
-                    type="number"
-                    min={20}
-                    max={200}
-                    className="mt-1 text-xs h-8 font-mono"
-                    value={bs.logo_height ?? 40}
-                    onChange={(e) => setBs({ logo_height: Number(e.target.value) || 40 })}
-                  />
-                </div>
-                <div>
-                  <Label className="text-[11px] text-muted-foreground">{isAr ? "إزاحة أفقية (X)" : "Offset X"}</Label>
-                  <Input
-                    type="number"
-                    className="mt-1 text-xs h-8 font-mono"
-                    value={bs.logo_x ?? 0}
-                    onChange={(e) => setBs({ logo_x: Number(e.target.value) || 0 })}
-                  />
-                </div>
-                <div>
-                  <Label className="text-[11px] text-muted-foreground">{isAr ? "إزاحة رأسية (Y)" : "Offset Y"}</Label>
-                  <Input
-                    type="number"
-                    className="mt-1 text-xs h-8 font-mono"
-                    value={bs.logo_y ?? 0}
-                    onChange={(e) => setBs({ logo_y: Number(e.target.value) || 0 })}
-                  />
-                </div>
-              </div>
-            </div>
+            <InvoiceLayoutControls />
+            <InvoiceLogoPositioner />
           </div>
         </AdvancedOnly>
       </div>

@@ -2,7 +2,15 @@ import * as React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, CheckCircle2, ArrowRight, ArrowLeft, Smartphone, ShieldCheck, Zap } from "lucide-react";
+import {
+  Sparkles,
+  CheckCircle2,
+  ArrowRight,
+  ArrowLeft,
+  Smartphone,
+  ShieldCheck,
+  Zap,
+} from "lucide-react";
 import { useBrandSettingsFormContext } from "../../use-brand-settings-form";
 import { useI18n } from "@/lib/i18n";
 
@@ -31,11 +39,14 @@ export function StorefrontDesignUpgradeCard() {
             <h3 className="text-base font-bold text-foreground">
               {isAr ? "محرك المتجر Storefront 2.0" : "Storefront 2.0 Design Engine"}
             </h3>
-            <Badge
-              variant={isV2 ? "default" : "secondary"}
-              className="text-[11px] font-semibold"
-            >
-              {isV2 ? (isAr ? "الإصدار 2.0 نشط" : "v2.0 Active") : (isAr ? "الإصدار 1.0 كلاسيك" : "v1.0 Classic")}
+            <Badge variant={isV2 ? "default" : "secondary"} className="text-xs font-semibold">
+              {isV2
+                ? isAr
+                  ? "الإصدار 2.0 نشط"
+                  : "v2.0 Active"
+                : isAr
+                  ? "الإصدار 1.0 كلاسيك"
+                  : "v1.0 Classic"}
             </Badge>
           </div>
 
@@ -69,15 +80,17 @@ export function StorefrontDesignUpgradeCard() {
       </div>
 
       {/* Feature Pills */}
-      <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-border/60 pt-4">
+      <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-border pt-4">
         <div className="flex items-start gap-2.5">
           <Smartphone className="h-4 w-4 text-primary shrink-0 mt-0.5" />
           <div>
             <h4 className="text-xs font-semibold text-foreground">
               {isAr ? "رأس مضغوط 56px للجوال" : "56px Mobile Header"}
             </h4>
-            <p className="text-[11px] text-muted-foreground">
-              {isAr ? "صف واحد خفيف مع بحث بملء الشاشة" : "1-row bar with instant fullscreen search"}
+            <p className="text-xs text-muted-foreground">
+              {isAr
+                ? "صف واحد خفيف مع بحث بملء الشاشة"
+                : "1-row bar with instant fullscreen search"}
             </p>
           </div>
         </div>
@@ -88,8 +101,10 @@ export function StorefrontDesignUpgradeCard() {
             <h4 className="text-xs font-semibold text-foreground">
               {isAr ? "شارات الثقة والضمان" : "Trust & Guarantee Badges"}
             </h4>
-            <p className="text-[11px] text-muted-foreground">
-              {isAr ? "استرجاع، توصيل سريع، ودفع آمن" : "Fast delivery, easy returns & secure payment"}
+            <p className="text-xs text-muted-foreground">
+              {isAr
+                ? "استرجاع، توصيل سريع، ودفع آمن"
+                : "Fast delivery, easy returns & secure payment"}
             </p>
           </div>
         </div>
@@ -100,8 +115,10 @@ export function StorefrontDesignUpgradeCard() {
             <h4 className="text-xs font-semibold text-foreground">
               {isAr ? "إشعار التوفر عبر واتساب" : "WhatsApp Back-in-Stock"}
             </h4>
-            <p className="text-[11px] text-muted-foreground">
-              {isAr ? "استقطاب العملاء للقطع المنتهية تلقائياً" : "Capture waitlist leads when variants sell out"}
+            <p className="text-xs text-muted-foreground">
+              {isAr
+                ? "استقطاب العملاء للقطع المنتهية تلقائياً"
+                : "Capture waitlist leads when variants sell out"}
             </p>
           </div>
         </div>

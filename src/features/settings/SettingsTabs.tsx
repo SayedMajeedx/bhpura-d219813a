@@ -22,7 +22,8 @@ export interface SettingsTabsProps {
   onTabChange: (tab: SettingsTabId) => void;
 }
 
-export function SettingsTabs({ activeTab, onTabChange }: SettingsTabsProps) {
+/** Navigation bar only (no form context required) — used by SettingsTabs and tests. */
+export function SettingsTabBar({ activeTab, onTabChange }: SettingsTabsProps) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
 
@@ -64,50 +65,62 @@ export function SettingsTabs({ activeTab, onTabChange }: SettingsTabsProps) {
     },
   ];
 
+  // 5-column grid on phones (icon over label, no scroll rail); full cards from `sm` up.
   return (
-    <div className="space-y-6">
-      {/* 5 Tab Navigation Bar */}
-      <div className="flex items-center gap-1.5 p-1.5 rounded-2xl border border-border bg-card shadow-xs overflow-x-auto no-scrollbar">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
+    <div
+      role="tablist"
+      aria-label={isAr ? "أقسام الإعدادات" : "Settings sections"}
+      className="grid grid-cols-5 gap-1 p-1.5 rounded-2xl border border-border bg-card shadow-xs sm:flex sm:items-center sm:gap-1.5"
+    >
+      {tabs.map((tab) => {
+        const Icon = tab.icon;
+        const isActive = activeTab === tab.id;
 
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => onTabChange(tab.id)}
-              className={`flex-1 min-w-[140px] flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 text-start select-none ${
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            aria-label={tab.label}
+            title={tab.description}
+            onClick={() => onTabChange(tab.id)}
+            className={`min-h-11 flex flex-col items-center justify-center gap-1 px-1 py-2 rounded-xl text-xs font-semibold transition-all duration-150 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:flex-1 sm:flex-row sm:items-center sm:gap-2.5 sm:px-3 sm:py-2.5 sm:text-xs sm:text-start ${
+              isActive
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            }`}
+          >
+            <div
+              className={`size-7 rounded-lg flex items-center justify-center shrink-0 ${
                 isActive
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  ? "bg-primary-foreground/20 text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
               }`}
             >
+              <Icon className="size-3.5" />
+            </div>
+            <div className="min-w-0 max-w-full sm:flex-1">
+              <div className="truncate">{tab.label}</div>
               <div
-                className={`size-7 rounded-lg flex items-center justify-center shrink-0 ${
-                  isActive
-                    ? "bg-primary-foreground/20 text-primary-foreground"
-                    : "bg-muted text-muted-foreground"
+                className={`hidden sm:block text-xs font-normal truncate ${
+                  isActive ? "text-primary-foreground/80" : "text-muted-foreground"
                 }`}
               >
-                <Icon className="size-3.5" />
+                {tab.description}
               </div>
-              <div className="min-w-0 flex-1 truncate">
-                <div className="truncate">{tab.label}</div>
-                <div
-                  className={`text-[10px] font-normal truncate ${
-                    isActive ? "text-primary-foreground/80" : "text-muted-foreground"
-                  }`}
-                >
-                  {tab.description}
-                </div>
-              </div>
-            </button>
-          );
-        })}
-      </div>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
-      {/* Tab Panels */}
+export function SettingsTabs({ activeTab, onTabChange }: SettingsTabsProps) {
+  return (
+    <div className="space-y-6">
+      <SettingsTabBar activeTab={activeTab} onTabChange={onTabChange} />
       <div>
         {activeTab === "identity" && <IdentityTab />}
         {activeTab === "storefront" && <StorefrontTab />}

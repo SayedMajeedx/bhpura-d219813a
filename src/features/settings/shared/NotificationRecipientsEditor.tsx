@@ -108,7 +108,7 @@ export function NotificationRecipientsEditor({
           ? isAr
             ? "هذا البريد مضاف بالفعل لهذه العلامة"
             : "This email is already added for this brand"
-          : error.message
+          : error.message,
       );
     setForm(emptyForm);
     setAdding(false);
@@ -160,8 +160,8 @@ export function NotificationRecipientsEditor({
       </div>
 
       {(q.data ?? []).length <= 1 && (
-        <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2.5">
-          <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+        <div className="mt-4 rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs text-warning flex items-start gap-2.5">
+          <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-warning" />
           <div className="space-y-0.5">
             <p className="font-bold">
               {isAr

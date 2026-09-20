@@ -36,7 +36,7 @@ export function BasicsGroup() {
             : "Logo uploaded successfully"
           : isAr
             ? "تم رفع أيقونة المتجر بنجاح"
-            : "Favicon uploaded successfully"
+            : "Favicon uploaded successfully",
       );
     } catch (e: any) {
       toast.error(e?.message ?? (isAr ? "فشل الرفع" : "Upload failed"));
@@ -64,9 +64,7 @@ export function BasicsGroup() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Business Name */}
         <div className="space-y-2">
-          <Label htmlFor="business_name">
-            {isAr ? "اسم المتجر التجاري" : "Business Name"}
-          </Label>
+          <Label htmlFor="business_name">{isAr ? "اسم المتجر التجاري" : "Business Name"}</Label>
           <Input
             id="business_name"
             value={bs.business_name ?? ""}
@@ -77,9 +75,7 @@ export function BasicsGroup() {
 
         {/* Store Slug (Read only display) */}
         <div className="space-y-2">
-          <Label htmlFor="store_slug">
-            {isAr ? "رابط المتجر (Slug)" : "Store URL (Slug)"}
-          </Label>
+          <Label htmlFor="store_slug">{isAr ? "رابط المتجر (Slug)" : "Store URL (Slug)"}</Label>
           <div className="flex gap-2">
             <Input
               id="store_slug"
@@ -128,9 +124,7 @@ export function BasicsGroup() {
               type="file"
               accept="image/png,image/svg+xml,image/webp,image/jpeg,image/gif"
               className="hidden"
-              onChange={(e) =>
-                e.target.files?.[0] && handleUpload(e.target.files[0], "logo")
-              }
+              onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], "logo")}
             />
             <Button
               type="button"
@@ -187,9 +181,7 @@ export function BasicsGroup() {
                 />
               </div>
               <span className="text-xs text-muted-foreground">
-                {isAr
-                  ? "معاينة الشعار الفعلي (تأكيد الشفافية)"
-                  : "Active logo preview"}
+                {isAr ? "معاينة الشعار الفعلي (تأكيد الشفافية)" : "Active logo preview"}
               </span>
             </div>
           )}
@@ -197,9 +189,7 @@ export function BasicsGroup() {
 
         {/* Favicon Upload */}
         <div className="space-y-2">
-          <Label htmlFor="favicon_url">
-            {isAr ? "أيقونة المتصفح (Favicon)" : "Favicon"}
-          </Label>
+          <Label htmlFor="favicon_url">{isAr ? "أيقونة المتصفح (Favicon)" : "Favicon"}</Label>
           <div className="flex gap-2">
             <Input
               id="favicon_url"
@@ -212,9 +202,7 @@ export function BasicsGroup() {
               type="file"
               accept="image/svg+xml,image/png,image/x-icon,image/vnd.microsoft.icon,image/webp"
               className="hidden"
-              onChange={(e) =>
-                e.target.files?.[0] && handleUpload(e.target.files[0], "favicon")
-              }
+              onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], "favicon")}
             />
             <Button
               type="button"

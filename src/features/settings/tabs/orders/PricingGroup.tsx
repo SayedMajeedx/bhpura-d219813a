@@ -51,10 +51,7 @@ export function PricingGroup() {
             <Label className="text-xs font-medium">
               {isAr ? "عملة المتجر الأساسية" : "Store Base Currency"}
             </Label>
-            <Select
-              value={bs.currency || "BHD"}
-              onValueChange={(val) => setBs({ currency: val })}
-            >
+            <Select value={bs.currency || "BHD"} onValueChange={(val) => setBs({ currency: val })}>
               <SelectTrigger className="text-xs h-9">
                 <SelectValue />
               </SelectTrigger>
@@ -111,7 +108,7 @@ export function PricingGroup() {
               <Label className="cursor-pointer text-xs font-semibold">
                 {isAr ? "الأسعار شاملة الضريبة" : "Prices are VAT inclusive"}
               </Label>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 {isAr ? "السعر المعروض للعميل يتضمن الضريبة" : "Displayed prices include tax"}
               </p>
             </div>
@@ -119,6 +116,29 @@ export function PricingGroup() {
               checked={bs.vat_inclusive ?? false}
               onCheckedChange={(checked) => setBs({ vat_inclusive: checked })}
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium">
+              {isAr ? "خصم شراء الطقم (%)" : "Bundle discount (%)"}
+            </Label>
+            <Input
+              type="number"
+              min={0}
+              max={50}
+              className="text-xs h-9 font-mono"
+              value={bs.bundle_discount_percent ?? 0}
+              onChange={(e) =>
+                setBs({
+                  bundle_discount_percent: Math.min(50, Math.max(0, Number(e.target.value) || 0)),
+                })
+              }
+            />
+            <p className="text-xs text-muted-foreground">
+              {isAr
+                ? 'يُطبَّق على عرض "أكملي الطقم" في صفحة المنتج. صفر = اقتراح بدون خصم.'
+                : 'Applied to the "Complete the set" offer on product pages. 0 = suggestion without discount.'}
+            </p>
           </div>
         </div>
       </div>

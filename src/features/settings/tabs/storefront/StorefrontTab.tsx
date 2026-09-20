@@ -1,4 +1,5 @@
 import { StorefrontDesignUpgradeCard } from "./StorefrontDesignUpgradeCard";
+import { DesignV2Group } from "./DesignV2Group";
 import { ModeGroup } from "./ModeGroup";
 import { HomeHeroGroup } from "./HomeHeroGroup";
 import { HomeSectionsGroup } from "./HomeSectionsGroup";
@@ -12,6 +13,10 @@ export function StorefrontTab() {
     <div className="space-y-8">
       <section id="group-upgrade" aria-label="Storefront Design Version">
         <StorefrontDesignUpgradeCard />
+      </section>
+
+      <section id="group-design_v2" aria-label="Storefront 2.0 options">
+        <DesignV2Group />
       </section>
 
       <section id="group-mode" aria-label="Storefront Mode">

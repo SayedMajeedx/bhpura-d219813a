@@ -13,12 +13,17 @@ export function LoaderGroup() {
 
   const textAr = bs.storefront_loader_text_ar ?? "";
   const textEn = bs.storefront_loader_text_en ?? "";
-  const previewText = (isAr ? textAr : textEn) || (isAr ? textEn : textAr) || (isAr ? "جاري فتح المتجر الإلكتروني..." : "Loading boutique storefront...");
+  const previewText =
+    (isAr ? textAr : textEn) ||
+    (isAr ? textEn : textAr) ||
+    (isAr ? "جاري فتح المتجر الإلكتروني..." : "Loading boutique storefront...");
 
   return (
     <AdvancedOnly
       fieldKey="storefront_loader_text_ar"
-      reason={isAr ? "تخصيص عبارة شاشة التحميل الترحيبية" : "Customize storefront loading screen message"}
+      reason={
+        isAr ? "تخصيص عبارة شاشة التحميل الترحيبية" : "Customize storefront loading screen message"
+      }
     >
       <div className="rounded-xl border border-border p-5 bg-card shadow-sm space-y-4">
         <div className="flex items-center gap-2">
@@ -38,10 +43,8 @@ export function LoaderGroup() {
         {/* Live Loader Preview */}
         <div className="rounded-xl border border-border p-6 bg-muted/10 flex flex-col items-center justify-center gap-3 text-center">
           <Loader2 className="size-6 text-primary animate-spin" />
-          <p className="text-xs font-medium text-foreground tracking-wide">
-            {previewText}
-          </p>
-          <span className="text-[10px] text-muted-foreground">
+          <p className="text-xs font-medium text-foreground tracking-wide">{previewText}</p>
+          <span className="text-xs text-muted-foreground">
             {isAr ? "معاينة حية لشاشة فتح المتجر" : "Live loading screen preview"}
           </span>
         </div>

@@ -92,7 +92,7 @@ export function LivePreviewPane({
       dir="ltr"
       aria-label="Live Storefront Preview"
       className={cn(
-        "hidden xl:flex flex-col w-[420px] 2xl:w-[480px] shrink-0 border-s border-border bg-card/60 backdrop-blur-md h-[calc(100vh-6rem)] sticky top-20 rounded-2xl overflow-hidden shadow-lg",
+        "hidden xl:flex flex-col w-[420px] 2xl:w-[480px] shrink-0 border-s border-border bg-card h-[calc(100vh-6rem)] sticky top-20 rounded-2xl overflow-hidden shadow-lg",
         className,
       )}
     >
@@ -101,9 +101,9 @@ export function LivePreviewPane({
         <div className="flex items-center gap-2">
           <Badge
             variant="outline"
-            className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-semibold px-2 py-0.5 gap-1.5"
+            className="border-success/30 bg-success/10 text-success text-xs font-semibold px-2 py-0.5 gap-1.5"
           >
-            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="size-2 rounded-full bg-success animate-pulse" />
             <span>{isAr ? "معاينة مباشرة" : "Live Preview"}</span>
           </Badge>
           {brandName && (
@@ -181,7 +181,7 @@ export function LivePreviewPane({
           /* Mobile Frame Mockup */
           <div className="w-[360px] h-full max-h-[720px] rounded-[38px] border-[6px] border-border bg-card shadow-2xl flex flex-col overflow-hidden relative ring-1 ring-border/50">
             {/* Status bar */}
-            <div className="h-6 w-full bg-background/90 px-5 flex items-center justify-between text-[10px] font-semibold text-muted-foreground shrink-0 select-none z-10 border-b border-border/40">
+            <div className="h-6 w-full bg-background/90 px-5 flex items-center justify-between text-xs font-semibold text-muted-foreground shrink-0 select-none z-10 border-b border-border">
               <span>9:41</span>
               {/* Dynamic Island */}
               <div className="h-3 w-16 bg-foreground/20 rounded-full" />
@@ -192,9 +192,9 @@ export function LivePreviewPane({
             </div>
 
             {/* Address Bar */}
-            <div className="h-7 w-full bg-muted/40 px-3 flex items-center justify-center border-b border-border/50 shrink-0 select-none">
-              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-mono">
-                <Lock className="size-2.5 text-emerald-500" />
+            <div className="h-7 w-full bg-muted/40 px-3 flex items-center justify-center border-b border-border shrink-0 select-none">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
+                <Lock className="size-2.5 text-success" />
                 <span>{slug}.boutq.com</span>
               </div>
             </div>
@@ -231,11 +231,11 @@ export function LivePreviewPane({
             <div className="h-8 w-full bg-muted/60 px-3 flex items-center gap-2 border-b border-border shrink-0 select-none">
               <div className="flex items-center gap-1.5">
                 <div className="size-2.5 rounded-full bg-destructive/60" />
-                <div className="size-2.5 rounded-full bg-amber-500/60" />
-                <div className="size-2.5 rounded-full bg-emerald-500/60" />
+                <div className="size-2.5 rounded-full bg-warning/60" />
+                <div className="size-2.5 rounded-full bg-success/60" />
               </div>
-              <div className="flex-1 max-w-xs mx-auto h-5 bg-background/80 rounded-md border border-border/60 px-2 flex items-center gap-1 text-[10px] text-muted-foreground font-mono truncate">
-                <Lock className="size-2.5 text-emerald-500 shrink-0" />
+              <div className="flex-1 max-w-xs mx-auto h-5 bg-background/80 rounded-md border border-border px-2 flex items-center gap-1 text-xs text-muted-foreground font-mono truncate">
+                <Lock className="size-2.5 text-success shrink-0" />
                 <span className="truncate">{slug}.boutq.com</span>
               </div>
             </div>

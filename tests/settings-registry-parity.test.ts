@@ -108,38 +108,56 @@ describe("Settings Registry Parity Guard", () => {
     expect(basicSettings.length).toBeLessThanOrEqual(45);
   });
 
-  it("every column with owner: 'settings' is referenced in src/features/settings", () => {
+  it("every column with owner: 'settings' has a real UI binding in src/features/settings/tabs", () => {
     function getAllFiles(dir: string, allFiles: string[] = []): string[] {
       const files = fs.readdirSync(dir);
       for (const file of files) {
         const filePath = path.join(dir, file);
         if (fs.statSync(filePath).isDirectory()) {
           getAllFiles(filePath, allFiles);
-        } else if (file.endsWith(".tsx") || file.endsWith(".ts")) {
+        } else if (file.endsWith(".tsx")) {
           allFiles.push(filePath);
         }
       }
       return allFiles;
     }
 
-    const settingsDir = path.resolve(__dirname, "../src/features/settings");
-    const allSettingsFiles = getAllFiles(settingsDir);
-    const combinedCode = allSettingsFiles.map((f) => fs.readFileSync(f, "utf-8")).join("\n");
+    // Only component code counts: registry/data files, labels and comments must not
+    // satisfy this guard. A key is "bound" when it is read from the form state or
+    // written through setBs/setBrand (directly, as a computed key, or via a typed
+    // key literal such as `key: "logo_size"` in a field-config array).
+    const tabsDir = path.resolve(__dirname, "../src/features/settings/tabs");
+    const componentFiles = getAllFiles(tabsDir);
+    const combinedCode = componentFiles.map((f) => fs.readFileSync(f, "utf-8")).join("\n");
 
-    const settingsOwned = SETTINGS_REGISTRY.filter((f) => f.owner === "settings");
-    const unreferenced: string[] = [];
+    // Self-saving components keep their own persistence (multi-step, confirmed flows).
+    const SELF_SAVING_KEYS = new Set(["store_vertical", "store_modules", "fit_profiles"]);
+    // Rendered by shared components that receive the whole row/brand as a prop.
+    const COMPONENT_BOUND_KEYS = new Set(["support_access_enabled"]);
+
+    const settingsOwned = SETTINGS_REGISTRY.filter(
+      (f) =>
+        f.owner === "settings" && !SELF_SAVING_KEYS.has(f.key) && !COMPONENT_BOUND_KEYS.has(f.key),
+    );
+    const unbound: string[] = [];
 
     for (const field of settingsOwned) {
-      const regex = new RegExp(`\\b${field.key}\\b`);
-      if (!regex.test(combinedCode)) {
-        unreferenced.push(field.key);
-      }
+      const k = field.key;
+      const bindingPatterns = [
+        new RegExp("(?:bs|brand|form\\.bs|form\\.brand)\\." + k + "\\b"),
+        new RegExp('(?:bs|brand|form\\.bs|form\\.brand)\\["' + k + '"\\]'),
+        new RegExp('set(?:Bs|Brand|Field)\\(\\s*"' + k + '"'),
+        new RegExp("set(?:Bs|Brand)\\(\\{[^}]*\\b" + k + "\\s*:"),
+        new RegExp('(?:key|fieldKey|name):\\s*"' + k + '"'),
+        new RegExp('fieldKey="' + k + '"'),
+      ];
+      const bound = bindingPatterns.some((p) => p.test(combinedCode));
+      if (!bound) unbound.push(k);
     }
 
     expect(
-      unreferenced,
-      `The following settings-owned keys are missing from src/features/settings: ${unreferenced.join(", ")}`,
+      unbound,
+      `These settings-owned keys have no real control in src/features/settings/tabs (label/comment mentions do not count): ${unbound.join(", ")}`,
     ).toEqual([]);
   });
 });
-

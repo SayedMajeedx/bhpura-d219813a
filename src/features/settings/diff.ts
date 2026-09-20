@@ -40,7 +40,7 @@ export function isEqual(a: any, b: any): boolean {
  */
 export function diffObjects<T extends Record<string, any>>(
   initial: T | null | undefined,
-  current: T | null | undefined
+  current: T | null | undefined,
 ): Partial<T> {
   const diff: Partial<T> = {};
   if (!current) return diff;

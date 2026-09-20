@@ -35,10 +35,7 @@ export function ContactGroup() {
         {/* Phone */}
         <div className="space-y-2">
           <Label htmlFor="phone">{isAr ? "رقم الهاتف الرئيسي" : "Primary Phone"}</Label>
-          <PhoneInput
-            value={bs.phone ?? ""}
-            onChange={(v) => setBs("phone", v)}
-          />
+          <PhoneInput value={bs.phone ?? ""} onChange={(v) => setBs("phone", v)} />
         </div>
 
         {/* WhatsApp Number (Single source of truth) */}
@@ -66,6 +63,30 @@ export function ContactGroup() {
             onChange={(e) => setBs("email", e.target.value)}
             placeholder="info@yourbrand.com"
           />
+        </div>
+
+        {/* Business hours (shown in the premium footer) */}
+        <div className="space-y-2 sm:col-span-2">
+          <Label>{isAr ? "ساعات العمل" : "Business hours"}</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              dir="rtl"
+              value={bs.business_hours_ar ?? ""}
+              onChange={(e) => setBs("business_hours_ar", e.target.value || null)}
+              placeholder="السبت - الخميس، 10 صباحاً - 10 مساءً"
+            />
+            <Input
+              dir="ltr"
+              value={bs.business_hours_en ?? ""}
+              onChange={(e) => setBs("business_hours_en", e.target.value || null)}
+              placeholder="Sat - Thu, 10am - 10pm"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {isAr
+              ? "تظهر في تذييل المتجر (المظهر الجديد)."
+              : "Shown in the storefront footer (new look)."}
+          </p>
         </div>
 
         {/* Custom Domain (Read only) */}
@@ -109,7 +130,9 @@ export function ContactGroup() {
           id="address"
           value={bs.address ?? ""}
           onChange={(e) => setBs("address", e.target.value)}
-          placeholder={isAr ? "المملكة، المدينة، الشارع، المبنى..." : "Country, City, Street, Building..."}
+          placeholder={
+            isAr ? "المملكة، المدينة، الشارع، المبنى..." : "Country, City, Street, Building..."
+          }
           rows={2}
         />
       </div>

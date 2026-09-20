@@ -115,7 +115,7 @@ export function SettingsHeader({
           <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
             <Compass className="size-3 shrink-0" />
             <span>{isAr ? "لوحة تحكم الإعدادات" : "Settings Center"}</span>
-            <span className="ms-1 px-1.5 py-0.2 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold">
+            <span className="ms-1 px-1.5 py-0.2 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
               {brandDisplayName}
             </span>
           </div>
@@ -265,7 +265,7 @@ export function SettingsHeader({
                 <X className="size-3" />
               </Button>
             )}
-            <kbd className="hidden sm:inline-flex items-center text-[10px] font-mono text-muted-foreground bg-muted/80 border border-border rounded px-1.5 py-0.5 select-none pointer-events-none">
+            <kbd className="hidden sm:inline-flex items-center text-xs font-mono text-muted-foreground bg-muted/80 border border-border rounded px-1.5 py-0.5 select-none pointer-events-none">
               ⌘K
             </kbd>
           </div>
@@ -274,7 +274,7 @@ export function SettingsHeader({
         {/* Search Results Dropdown */}
         {searchOpen && searchResults.length > 0 && (
           <div className="absolute z-50 inset-x-0 mt-1.5 rounded-xl border border-border bg-popover p-2 shadow-xl space-y-1">
-            <p className="px-2 py-1 text-[11px] font-semibold text-muted-foreground">
+            <p className="px-2 py-1 text-xs font-semibold text-muted-foreground">
               {isAr ? "نتائج البحث السريع:" : "Matching Settings:"}
             </p>
             {searchResults.map((entry) => (
@@ -288,20 +288,18 @@ export function SettingsHeader({
                   <span className="font-medium text-foreground">
                     {isAr ? entry.label.ar : entry.label.en}
                   </span>
-                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mt-0.5">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
                     <span className="capitalize">{entry.tab}</span>
                     <span>›</span>
                     <span className="capitalize">{entry.group}</span>
                     {entry.level === "advanced" && (
-                      <span className="ms-1 px-1 rounded bg-amber-500/10 text-amber-600 font-medium">
+                      <span className="ms-1 px-1 rounded bg-warning/10 text-warning font-medium">
                         {isAr ? "متقدم" : "Advanced"}
                       </span>
                     )}
                   </div>
                 </div>
-                <span className="text-[10px] font-mono text-muted-foreground">
-                  {entry.key}
-                </span>
+                <span className="text-xs font-mono text-muted-foreground">{entry.key}</span>
               </button>
             ))}
           </div>

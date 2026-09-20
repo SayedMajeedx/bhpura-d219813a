@@ -29,7 +29,10 @@ export function AnnouncementGroup() {
   const isItalic = bs.announcement_italic ?? false;
   const isDismissible = bs.announcement_dismissible ?? true;
 
-  const currentText = (isAr ? textAr : textEn) || (isAr ? textEn : textAr) || (isAr ? "توصيل مجاني للطلبات فوق 20 دينار" : "Free delivery on orders over 20 BHD");
+  const currentText =
+    (isAr ? textAr : textEn) ||
+    (isAr ? textEn : textAr) ||
+    (isAr ? "توصيل مجاني للطلبات فوق 20 دينار" : "Free delivery on orders over 20 BHD");
 
   return (
     <div className="space-y-6">
@@ -38,7 +41,11 @@ export function AnnouncementGroup() {
           <div>
             <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
               <Megaphone className="size-4 text-primary" />
-              <span>{isAr ? "شريط الإعلانات أعلى الصفحة (Top Announcement Bar)" : "Top Announcement Bar"}</span>
+              <span>
+                {isAr
+                  ? "شريط الإعلانات أعلى الصفحة (Top Announcement Bar)"
+                  : "Top Announcement Bar"}
+              </span>
             </h3>
             <p className="mt-1 text-xs text-muted-foreground">
               {isAr
@@ -110,7 +117,11 @@ export function AnnouncementGroup() {
         {/* Advanced Announcement Options */}
         <AdvancedOnly
           fieldKey="announcement_bg"
-          reason={isAr ? "تخصيص ألوان وخط ونطاق ظهور شريط الإعلانات" : "Customize colors, typography, scope & audience"}
+          reason={
+            isAr
+              ? "تخصيص ألوان وخط ونطاق ظهور شريط الإعلانات"
+              : "Customize colors, typography, scope & audience"
+          }
         >
           <div className="rounded-xl border border-border p-4 bg-muted/5 space-y-4">
             <div className="flex items-center gap-2">
@@ -179,10 +190,18 @@ export function AnnouncementGroup() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">{isAr ? "كافة صفحات المتجر" : "All Storefront Pages"}</SelectItem>
-                    <SelectItem value="home">{isAr ? "الصفحة الرئيسية فقط" : "Homepage Only"}</SelectItem>
-                    <SelectItem value="catalog">{isAr ? "صفحات التسوق والمنتجات" : "Shopping & Catalog Pages"}</SelectItem>
-                    <SelectItem value="checkout">{isAr ? "صفحة الدفع فقط" : "Checkout Only"}</SelectItem>
+                    <SelectItem value="all">
+                      {isAr ? "كافة صفحات المتجر" : "All Storefront Pages"}
+                    </SelectItem>
+                    <SelectItem value="home">
+                      {isAr ? "الصفحة الرئيسية فقط" : "Homepage Only"}
+                    </SelectItem>
+                    <SelectItem value="catalog">
+                      {isAr ? "صفحات التسوق والمنتجات" : "Shopping & Catalog Pages"}
+                    </SelectItem>
+                    <SelectItem value="checkout">
+                      {isAr ? "صفحة الدفع فقط" : "Checkout Only"}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -199,9 +218,15 @@ export function AnnouncementGroup() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">{isAr ? "الجميع (زوار وعملاء مسجلون)" : "All Visitors & Customers"}</SelectItem>
-                    <SelectItem value="guest">{isAr ? "الزوار غير المسجلين فقط" : "Guests Only"}</SelectItem>
-                    <SelectItem value="authenticated">{isAr ? "العملاء المسجلون فقط" : "Registered Customers Only"}</SelectItem>
+                    <SelectItem value="all">
+                      {isAr ? "الجميع (زوار وعملاء مسجلون)" : "All Visitors & Customers"}
+                    </SelectItem>
+                    <SelectItem value="guest">
+                      {isAr ? "الزوار غير المسجلين فقط" : "Guests Only"}
+                    </SelectItem>
+                    <SelectItem value="authenticated">
+                      {isAr ? "العملاء المسجلون فقط" : "Registered Customers Only"}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>

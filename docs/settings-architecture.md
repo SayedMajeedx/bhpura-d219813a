@@ -128,16 +128,21 @@ graph TD
 إذا أردت إضافة خيار إعداد جديد لأي براند:
 
 ### الخطوة 1: تحديث قاعدة البيانات (Migration)
+
 إذا كان الحقل عموداً جديداً، أضفه في migration بجدول `business_settings` ثم شغّل توليد الأنواع:
+
 ```sql
 ALTER TABLE business_settings ADD COLUMN my_new_setting BOOLEAN DEFAULT false;
 ```
+
 ```bash
 npm run types:supabase
 ```
 
 ### الخطوة 2: التسجيل في `SETTINGS_REGISTRY`
+
 في الملف `src/features/settings/registry.ts`، أضف تعريف الحقل:
+
 ```typescript
 {
   key: "my_new_setting",
@@ -153,7 +158,9 @@ npm run types:supabase
 ```
 
 ### الخطوة 3: عرض الحقل في مكوّن المجموعة المناسب
+
 في المجلد `src/features/settings/tabs/<tab>/<GroupComponent>.tsx`:
+
 ```tsx
 import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
 import { AdvancedOnly } from "@/features/settings/FieldVisibility";
@@ -177,9 +184,28 @@ export function MyGroup() {
 ```
 
 ### الخطوة 4: التحقق وتشغيل اختبارات الحراسة
+
 تحقق من سلامة الأنواع وعدم وجود كسر في سجل الإعدادات:
+
 ```bash
 npx vitest run tests/settings-registry-parity.test.ts tests/settings-tabs.test.ts
 npx tsc --noEmit
 ```
+
 سيرفض الاختبار الآلي أي حقل ينقصه التوثيق أو يتجاوز سقف الحقول الأساسية أو غير مربوط بالتبويبات!
+
+> **كيف يعرّف الحارس "الربط الحقيقي"؟** يفحص ملفات `src/features/settings/tabs/**/*.tsx` فقط، ويعتبر
+> الحقل مربوطاً عندما يُقرأ من حالة النموذج (`bs.<key>` / `brand.<key>`) أو يُكتب عبر
+> `setBs("<key>", …)` / `setBs({ <key>: … })` أو يُمرَّر كمفتاح مكتوب في مصفوفة إعدادات (`key: "<key>"`)
+> أو عبر `fieldKey="<key>"`. ذكر الاسم في تسمية أو تعليق أو ملف بيانات **لا يُحتسب** — لذلك لا يوجد
+> ملف "قائمة أعمدة" داخل المجلد يمكن أن يُرضي الحارس زوراً. الاستثناءان الوحيدان: الحقول ذاتية الحفظ
+> (`store_vertical`, `store_modules`, `fit_profiles` عبر `StoreProfileCard`) و`support_access_enabled`
+> (يُمرَّر البراند كاملاً إلى `SupportAccessCard`).
+
+### مجموعة "خيارات المظهر الجديد" (`storefront.design_v2`)
+
+كل عمود أضافته ترقية Storefront 2.0 (شريط الثقة، بطاقة المنتج، التذييل والنشرة، قصتنا، الفلاتر،
+صفحة المنتج، الدليل الاجتماعي، الحركة، نبّهني عند التوفر…) يُعدَّل من مجموعة واحدة
+`tabs/storefront/DesignV2Group.tsx`. النصوص التي تخص مكاناً آخر منطقياً تبقى في مكانها:
+`business_hours_*` في **الهوية ← التواصل**، `shipping_returns_*` في **الطلبات ← التوصيل**،
+`bundle_discount_percent` في **الطلبات ← العملة والضريبة**.

@@ -32,12 +32,12 @@ export function TypographyGroup() {
 
   const storefrontTypography: TypographyConfig = normalizeTypography(
     bs.storefront_typography as any,
-    defaultStorefrontTypography()
+    defaultStorefrontTypography(),
   );
 
   const adminTypography: TypographyConfig = normalizeTypography(
     bs.admin_typography as any,
-    defaultAdminTypography()
+    defaultAdminTypography(),
   );
 
   return (
@@ -125,7 +125,9 @@ export function TypographyGroup() {
               />
             </div>
             <div className="space-y-2">
-              <Label>{isAr ? "رابط الخط الإنجليزي المخصص (WOFF2)" : "Custom English Font URL"}</Label>
+              <Label>
+                {isAr ? "رابط الخط الإنجليزي المخصص (WOFF2)" : "Custom English Font URL"}
+              </Label>
               <Input
                 value={bs.storefront_font_en_url ?? ""}
                 onChange={(e) => setBs("storefront_font_en_url", e.target.value || null)}

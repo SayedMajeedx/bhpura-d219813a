@@ -122,7 +122,9 @@ export function HeaderFooterGroup() {
               {isAr ? "إظهار اسم المتجر بجانب الشعار" : "Show store name beside logo"}
             </Label>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {isAr ? "عرض النص التعريفي بجوار صورة الشعار" : "Display brand name text in the header"}
+              {isAr
+                ? "عرض النص التعريفي بجوار صورة الشعار"
+                : "Display brand name text in the header"}
             </p>
           </div>
           <Switch
@@ -209,7 +211,9 @@ export function HeaderFooterGroup() {
                 max={120}
                 value={footerLogoSize}
                 onChange={(e) =>
-                  setBs({ footer_logo_size: Math.max(16, Math.min(120, Number(e.target.value) || 28)) })
+                  setBs({
+                    footer_logo_size: Math.max(16, Math.min(120, Number(e.target.value) || 28)),
+                  })
                 }
                 className="w-18 text-center font-mono text-xs h-9"
               />
@@ -239,7 +243,9 @@ export function HeaderFooterGroup() {
       {/* 3. Navigation Drawer Menu Links (Advanced) */}
       <AdvancedOnly
         fieldKey="menu_show_home"
-        reason={isAr ? "تخصيص روابط وعنوان القائمة الجانبية" : "Customize navigation drawer links & title"}
+        reason={
+          isAr ? "تخصيص روابط وعنوان القائمة الجانبية" : "Customize navigation drawer links & title"
+        }
       >
         <div className="rounded-xl border border-border p-5 bg-card shadow-sm space-y-4">
           <div className="flex items-center gap-2">
@@ -285,9 +291,21 @@ export function HeaderFooterGroup() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
             {[
               { key: "menu_show_home", labelAr: "إظهار رابط الرئيسية", labelEn: "Show Home Link" },
-              { key: "menu_show_account", labelAr: "إظهار رابط الحساب وتجربة الدخول", labelEn: "Show Account & Login" },
-              { key: "menu_show_orders", labelAr: "إظهار رابط متابعة طلباتي", labelEn: "Show My Orders" },
-              { key: "menu_show_pages", labelAr: "إظهار روابط الصفحات الثابتة والسياسات", labelEn: "Show Custom Pages & Policies" },
+              {
+                key: "menu_show_account",
+                labelAr: "إظهار رابط الحساب وتجربة الدخول",
+                labelEn: "Show Account & Login",
+              },
+              {
+                key: "menu_show_orders",
+                labelAr: "إظهار رابط متابعة طلباتي",
+                labelEn: "Show My Orders",
+              },
+              {
+                key: "menu_show_pages",
+                labelAr: "إظهار روابط الصفحات الثابتة والسياسات",
+                labelEn: "Show Custom Pages & Policies",
+              },
             ].map(({ key, labelAr, labelEn }) => (
               <div
                 key={key}

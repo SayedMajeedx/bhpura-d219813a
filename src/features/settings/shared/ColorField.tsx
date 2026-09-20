@@ -10,21 +10,14 @@ export interface ColorFieldProps {
   description?: string;
 }
 
-export function ColorField({
-  label,
-  value,
-  onChange,
-  description,
-}: ColorFieldProps) {
+export function ColorField({ label, value, onChange, description }: ColorFieldProps) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
 
   return (
     <div className="space-y-1.5">
       <Label>{label}</Label>
-      {description && (
-        <p className="text-xs text-muted-foreground">{description}</p>
-      )}
+      {description && <p className="text-xs text-muted-foreground">{description}</p>}
       <div className="flex min-h-10 items-center gap-2 rounded-lg border border-border bg-background p-1.5">
         <label
           className="relative h-8 w-12 shrink-0 cursor-pointer overflow-hidden rounded-md border border-border shadow-sm"
