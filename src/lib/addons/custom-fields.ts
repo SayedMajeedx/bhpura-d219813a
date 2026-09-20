@@ -33,7 +33,7 @@ const MEASUREMENT_KEY_LABELS: Record<string, { ar: string; en: string }> = {
  */
 export function formatCustomField(
   field: CustomFieldItem,
-  lang: "ar" | "en" = "ar"
+  lang: "ar" | "en" = "ar",
 ): FormattedCustomField | null {
   const rawKey = (field.key || "").trim().toLowerCase();
 
@@ -122,7 +122,7 @@ export function formatCustomField(
  */
 export function formatCustomFieldsList(
   fields: CustomFieldItem[] | undefined | null,
-  lang: "ar" | "en" = "ar"
+  lang: "ar" | "en" = "ar",
 ): FormattedCustomField[] {
   if (!fields || !Array.isArray(fields)) return [];
   return fields

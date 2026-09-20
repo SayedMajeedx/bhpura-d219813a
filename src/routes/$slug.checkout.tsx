@@ -397,7 +397,10 @@ function Checkout() {
 
   // Delivery destination: "BH" (default domestic) or zone ID
   const [selectedDestination, setSelectedDestination] = useState<string>("BH");
-  const zones = useMemo(() => (settings.shipping_zones ?? []) as ShippingZone[], [settings.shipping_zones]);
+  const zones = useMemo(
+    () => (settings.shipping_zones ?? []) as ShippingZone[],
+    [settings.shipping_zones],
+  );
 
   // Selected country code (when international destination is chosen)
   const [selectedCountryCode, setSelectedCountryCode] = useState<string>("BH");
@@ -575,7 +578,11 @@ function Checkout() {
 
   const shipping = useMemo(() => {
     if (fulfillment !== "delivery") return 0;
-    return calculateShippingFee(selectedZone, totalCartQuantity, Number(settings.delivery_fee || 0));
+    return calculateShippingFee(
+      selectedZone,
+      totalCartQuantity,
+      Number(settings.delivery_fee || 0),
+    );
   }, [fulfillment, selectedZone, totalCartQuantity, settings.delivery_fee]);
 
   // 1. Fetch Loyalty Program and Customer Account
@@ -1624,7 +1631,9 @@ function Checkout() {
               <div className="flex items-center gap-2 text-xs text-muted-foreground bg-primary/5 rounded-lg px-3 py-2 border border-primary/10 mt-2">
                 <Truck className="h-4 w-4 text-primary shrink-0" />
                 <span>
-                  <strong className="text-foreground font-semibold">{t("التوصيل المتوقع", "Estimated delivery")}:</strong>{" "}
+                  <strong className="text-foreground font-semibold">
+                    {t("التوصيل المتوقع", "Estimated delivery")}:
+                  </strong>{" "}
                   {estimatedDeliveryText}
                 </span>
               </div>
@@ -1836,7 +1845,10 @@ function Checkout() {
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {t("توصيل لكافة مناطق مملكة البحرين", "Delivery across all Bahrain regions")}
+                          {t(
+                            "توصيل لكافة مناطق مملكة البحرين",
+                            "Delivery across all Bahrain regions",
+                          )}
                         </p>
                       </div>
                     </div>
@@ -1894,9 +1906,7 @@ function Checkout() {
                           {/* Radio Circle */}
                           <div
                             className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                              active
-                                ? "border-primary"
-                                : "border-muted-foreground/40"
+                              active ? "border-primary" : "border-muted-foreground/40"
                             }`}
                           >
                             {active && <div className="w-2 h-2 rounded-full bg-primary" />}
@@ -1935,7 +1945,9 @@ function Checkout() {
                             {zoneShippingFee > 0 ? (
                               formatPrice(zoneShippingFee, currency, lang)
                             ) : (
-                              <span className="text-emerald-600 font-bold">{t("مجانًا", "Free")}</span>
+                              <span className="text-emerald-600 font-bold">
+                                {t("مجانًا", "Free")}
+                              </span>
                             )}
                           </span>
                         </div>
@@ -1978,9 +1990,7 @@ function Checkout() {
                               className="w-4 h-3 rounded-2xs object-cover border border-border/40 shrink-0"
                             />
                             <span>
-                              {lang === "ar"
-                                ? cData?.name_ar || cCode
-                                : cData?.name_en || cCode}
+                              {lang === "ar" ? cData?.name_ar || cCode : cData?.name_en || cCode}
                             </span>
                           </div>
                         </SelectItem>
@@ -2000,11 +2010,15 @@ function Checkout() {
                     code="BH"
                     className="w-4.5 h-3 rounded-xs object-cover border border-border/40 shrink-0"
                   />
-                  <span>{t("تفاصيل العنوان داخل مملكة البحرين", "Address Details in Bahrain")}</span>
+                  <span>
+                    {t("تفاصيل العنوان داخل مملكة البحرين", "Address Details in Bahrain")}
+                  </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <Label htmlFor="checkout-address-label">{t("لقب العنوان", "Address label")}</Label>
+                    <Label htmlFor="checkout-address-label">
+                      {t("لقب العنوان", "Address label")}
+                    </Label>
                     <Input
                       id="checkout-address-label"
                       name="address-label"
@@ -2073,7 +2087,9 @@ function Checkout() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="checkout-house">{t("منزل / بناية", "House / Building")} *</Label>
+                    <Label htmlFor="checkout-house">
+                      {t("منزل / بناية", "House / Building")} *
+                    </Label>
                     <Input
                       id="checkout-house"
                       name="house"
@@ -2123,13 +2139,18 @@ function Checkout() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <Label htmlFor="checkout-intl-city">{t("المدينة / الإمارة", "City / State")} *</Label>
+                    <Label htmlFor="checkout-intl-city">
+                      {t("المدينة / الإمارة", "City / State")} *
+                    </Label>
                     <Input
                       id="checkout-intl-city"
                       name="intl-city"
                       autoComplete="address-level2"
                       className="h-11"
-                      placeholder={t("مثال: الرياض، دبي، الكويت", "e.g. Riyadh, Dubai, Kuwait City")}
+                      placeholder={t(
+                        "مثال: الرياض، دبي، الكويت",
+                        "e.g. Riyadh, Dubai, Kuwait City",
+                      )}
                       value={form.region}
                       onChange={(e) => {
                         setSelectedAddressId("manual");
@@ -2138,7 +2159,9 @@ function Checkout() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="checkout-intl-district">{t("الحي / المنطقة", "District / Area")} *</Label>
+                    <Label htmlFor="checkout-intl-district">
+                      {t("الحي / المنطقة", "District / Area")} *
+                    </Label>
                     <Input
                       id="checkout-intl-district"
                       name="intl-district"
@@ -2153,7 +2176,9 @@ function Checkout() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="checkout-intl-street">{t("اسم الشارع ورقم المبنى", "Street & Building")} *</Label>
+                    <Label htmlFor="checkout-intl-street">
+                      {t("اسم الشارع ورقم المبنى", "Street & Building")} *
+                    </Label>
                     <Input
                       id="checkout-intl-street"
                       name="intl-street"
@@ -2168,7 +2193,9 @@ function Checkout() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="checkout-intl-postal">{t("الرمز البريدي (اختياري)", "Postal / Zip Code (optional)")}</Label>
+                    <Label htmlFor="checkout-intl-postal">
+                      {t("الرمز البريدي (اختياري)", "Postal / Zip Code (optional)")}
+                    </Label>
                     <Input
                       id="checkout-intl-postal"
                       name="intl-postal"
@@ -2183,7 +2210,9 @@ function Checkout() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="checkout-intl-flat">{t("رقم الشقة / الجناح (اختياري)", "Apt / Suite (optional)")}</Label>
+                    <Label htmlFor="checkout-intl-flat">
+                      {t("رقم الشقة / الجناح (اختياري)", "Apt / Suite (optional)")}
+                    </Label>
                     <Input
                       id="checkout-intl-flat"
                       name="intl-flat"
@@ -2198,7 +2227,9 @@ function Checkout() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="checkout-intl-label">{t("لقب العنوان (اختياري)", "Address label (optional)")}</Label>
+                    <Label htmlFor="checkout-intl-label">
+                      {t("لقب العنوان (اختياري)", "Address label (optional)")}
+                    </Label>
                     <Input
                       id="checkout-intl-label"
                       name="intl-label"
@@ -2454,7 +2485,9 @@ function Checkout() {
                         <div className="mt-2 rounded-lg bg-secondary/40 border border-border/60 p-2 space-y-1">
                           <p className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
                             <span>✨</span>
-                            <span>{lang === "ar" ? "خيارات ومقاسات مخصصة" : "Custom Options & Sizing"}</span>
+                            <span>
+                              {lang === "ar" ? "خيارات ومقاسات مخصصة" : "Custom Options & Sizing"}
+                            </span>
                           </p>
                           <div className="grid grid-cols-1 gap-1 text-[11px]">
                             {formattedFields.map((field) => (
@@ -2506,13 +2539,17 @@ function Checkout() {
                 <span className="text-muted-foreground">
                   {t("التوصيل المتوقع", "Estimated delivery")}
                 </span>
-                <span className="font-medium text-foreground text-end">{estimatedDeliveryText}</span>
+                <span className="font-medium text-foreground text-end">
+                  {estimatedDeliveryText}
+                </span>
               </div>
             )}
             {fulfillment === "pickup" && (
               <div className="flex justify-between gap-3">
                 <span className="text-muted-foreground">{t("موعد الاستلام", "Pickup timing")}</span>
-                <span className="font-medium text-foreground text-end">{estimatedDeliveryText}</span>
+                <span className="font-medium text-foreground text-end">
+                  {estimatedDeliveryText}
+                </span>
               </div>
             )}
             <div className="flex justify-between">

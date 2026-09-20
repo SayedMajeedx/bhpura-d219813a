@@ -14,7 +14,9 @@ describe("Storefront Tailoring Experience & Sizing Consolidation", () => {
   it("Item 1: Fit Passport section must hide when sizeMode is 'ready'", () => {
     const code = fs.readFileSync(fitPassportPath, "utf-8");
     // Verifies early return when sizeMode is ready
-    expect(code).toMatch(/if\s*\(\s*!passportConfigured\s*\|\|\s*sizeMode\s*===\s*["']ready["']\s*\)\s*return\s*null;/);
+    expect(code).toMatch(
+      /if\s*\(\s*!passportConfigured\s*\|\|\s*sizeMode\s*===\s*["']ready["']\s*\)\s*return\s*null;/,
+    );
   });
 
   it("Item 1: Switching to ready size cleans up measurement values", () => {
@@ -47,7 +49,7 @@ describe("Storefront Tailoring Experience & Sizing Consolidation", () => {
 
   it("Item 3: Syncs sizeMode to custom when product is made-to-order without ready sizes", () => {
     const code = fs.readFileSync(pdpPath, "utf-8");
-    expect(code).toContain('if (isMadeToOrder && !hasReadySizes)');
+    expect(code).toContain("if (isMadeToOrder && !hasReadySizes)");
     expect(code).toContain('setSizeMode("custom")');
   });
 

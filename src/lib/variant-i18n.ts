@@ -321,9 +321,9 @@ const AR_TO_EN_MAP: Record<string, string> = {
   "كولد برو": "Cold Brew",
   "فرنش برس": "French Press",
   "فرينش برس": "French Press",
-  "كيمكس": "Chemex",
-  "v60": "V60",
-  "V60": "V60",
+  كيمكس: "Chemex",
+  v60: "V60",
+  V60: "V60",
   "طحنة إسبريسو": "Espresso Grind",
   "طحنة اسبريسو": "Espresso Grind",
   "طحنة فلتر": "Filter Grind",
@@ -500,7 +500,7 @@ const EXTRA_EN_ALIASES: Record<string, string> = {
   medium: "وسط",
   large: "كبير",
   "x-large": "كبير جداً",
-  "xl": "كبير جداً",
+  xl: "كبير جداً",
   mini: "ميني",
   single: "مفرد",
   double: "مزدوج",
@@ -742,9 +742,7 @@ function resolveArabicCompound(raw: string): string | null {
   // Case A: Noun + Adjective (e.g. "حرير طبيعي" -> "Natural Silk", "أزرق داكن" -> "Dark Blue")
   const adj2 = ADJECTIVES_MAP[w2] || ADJECTIVES_MAP[stripDefiniteArticle(w2)];
   const noun1 =
-    AR_TO_EN_MAP[w1] ||
-    AR_TO_EN_MAP[stripDefiniteArticle(w1)] ||
-    AR_TO_EN_MAP[normalizeKey(w1)];
+    AR_TO_EN_MAP[w1] || AR_TO_EN_MAP[stripDefiniteArticle(w1)] || AR_TO_EN_MAP[normalizeKey(w1)];
 
   if (noun1 && adj2) {
     return `${adj2} ${noun1}`;
@@ -753,9 +751,7 @@ function resolveArabicCompound(raw: string): string | null {
   // Case B: Adjective + Noun (e.g. "نصف كيلو" -> already in dict, but if any)
   const adj1 = ADJECTIVES_MAP[w1] || ADJECTIVES_MAP[stripDefiniteArticle(w1)];
   const noun2 =
-    AR_TO_EN_MAP[w2] ||
-    AR_TO_EN_MAP[stripDefiniteArticle(w2)] ||
-    AR_TO_EN_MAP[normalizeKey(w2)];
+    AR_TO_EN_MAP[w2] || AR_TO_EN_MAP[stripDefiniteArticle(w2)] || AR_TO_EN_MAP[normalizeKey(w2)];
 
   if (adj1 && noun2) {
     return `${adj1} ${noun2}`;
@@ -863,7 +859,10 @@ export function translateOptionValue(
 /**
  * Checks whether a given option term already has a known translation (in lexicon or cache).
  */
-export function hasKnownTranslation(value: string | null | undefined, targetLang: "ar" | "en"): boolean {
+export function hasKnownTranslation(
+  value: string | null | undefined,
+  targetLang: "ar" | "en",
+): boolean {
   if (!value) return true;
   const raw = value.trim();
   if (!raw) return true;

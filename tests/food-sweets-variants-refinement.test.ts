@@ -132,8 +132,18 @@ describe("Food & Sweets Product Variants Refinement", () => {
   describe("Storefront & Inventory Variant Axis Visibility with Merchant Data", () => {
     // In Food & Sweets vertical, fabric is defaulted to null/disabled:
     const foodAddonDefaults = {
-      size: { labelAr: "الحجم / الوزن", labelEn: "Size / Weight", placeholderAr: "مثال: 500g", placeholderEn: "e.g. 500g" },
-      color: { labelAr: "النكهة / الخيار", labelEn: "Flavor / Option", placeholderAr: "مثال: فستق", placeholderEn: "e.g. Pistachio" },
+      size: {
+        labelAr: "الحجم / الوزن",
+        labelEn: "Size / Weight",
+        placeholderAr: "مثال: 500g",
+        placeholderEn: "e.g. 500g",
+      },
+      color: {
+        labelAr: "النكهة / الخيار",
+        labelEn: "Flavor / Option",
+        placeholderAr: "مثال: فستق",
+        placeholderEn: "e.g. Pistachio",
+      },
       fabric: null, // Disabled by default for food
       four: null,
       five: null,
@@ -185,9 +195,7 @@ describe("Food & Sweets Product Variants Refinement", () => {
         id: "prod-1",
         variant_label_fabric_ar: "الخامة",
         variant_label_fabric_en: "Material",
-        product_variants: [
-          { size: "700", color: "عادية", fabric: "حرير" },
-        ],
+        product_variants: [{ size: "700", color: "عادية", fabric: "حرير" }],
       };
 
       const allAxes = resolveAllVariantAxes({

@@ -328,7 +328,10 @@ function PublicInvoice() {
                 {settings?.logo_url && (
                   <div
                     className="pdf-brand-logo-wrap relative mb-3 flex"
-                    style={{ height: Math.max(20, logoH + Math.max(0, logoY) + 8), justifyContent: "flex-start" }}
+                    style={{
+                      height: Math.max(20, logoH + Math.max(0, logoY) + 8),
+                      justifyContent: "flex-start",
+                    }}
                   >
                     <img
                       src={settings.logo_url}
@@ -587,9 +590,7 @@ function PublicInvoice() {
                       title = hyphenParts[0];
                       inlineDetails = hyphenParts
                         .slice(1)
-                        .map((p: string) =>
-                          /^\d+$/.test(p) ? `${axes.size.label} ${p}` : p,
-                        )
+                        .map((p: string) => (/^\d+$/.test(p) ? `${axes.size.label} ${p}` : p))
                         .join(" · ");
                     }
 
@@ -634,7 +635,8 @@ function PublicInvoice() {
                                       className="text-xs mt-0.5"
                                       style={{ color: textColor, opacity: 0.75 }}
                                     >
-                                      {axes.color.label}: <span className="font-medium">{itemColor}</span>
+                                      {axes.color.label}:{" "}
+                                      <span className="font-medium">{itemColor}</span>
                                     </p>
                                   )}
                                   {itemSize && !isPlaceholder && axes.size.visible && (
@@ -642,7 +644,8 @@ function PublicInvoice() {
                                       className="text-xs mt-0.5"
                                       style={{ color: textColor, opacity: 0.75 }}
                                     >
-                                      {axes.size.label}: <span className="font-medium">{itemSize}</span>
+                                      {axes.size.label}:{" "}
+                                      <span className="font-medium">{itemSize}</span>
                                     </p>
                                   )}
                                   {itemFabric && axes.fabric.visible && (
@@ -650,7 +653,8 @@ function PublicInvoice() {
                                       className="text-xs mt-0.5"
                                       style={{ color: textColor, opacity: 0.75 }}
                                     >
-                                      {axes.fabric.label}: <span className="font-medium">{itemFabric}</span>
+                                      {axes.fabric.label}:{" "}
+                                      <span className="font-medium">{itemFabric}</span>
                                     </p>
                                   )}
                                 </>

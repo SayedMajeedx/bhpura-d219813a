@@ -935,9 +935,8 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
         0,
         Math.min(1, Number(parsed.confidence?.description) || 0.75),
       );
-      const sizesConfidence = sizes.length > 0
-        ? Math.max(0, Math.min(1, Number(parsed.confidence?.sizes) || 0.8))
-        : 1.0;
+      const sizesConfidence =
+        sizes.length > 0 ? Math.max(0, Math.min(1, Number(parsed.confidence?.sizes) || 0.8)) : 1.0;
 
       return {
         id: post.id,

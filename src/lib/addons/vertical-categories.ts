@@ -12,21 +12,66 @@ export const PURA_BRAND_ID = "b2f628c9-cfeb-444b-befe-5dbbb9d5c9e6";
 
 export const DEFAULT_VERTICAL_CATEGORIES: Record<StoreVertical, DefaultCategorySpec[]> = {
   coffee: [
-    { name_ar: "محاصيل القهوة المختصة", name_en: "Specialty Coffee Beans", slug: "specialty-beans", sort_order: 1 },
-    { name_ar: "أظرف التقطير سريعة التحضير", name_en: "Drip Bags", slug: "drip-bags", sort_order: 2 },
-    { name_ar: "أدوات ومكائن التحضير", name_en: "Brewing Tools & Gear", slug: "brewing-tools", sort_order: 3 },
-    { name_ar: "أكواب وإكسسوارات المحمصة", name_en: "Cups & Merchandise", slug: "cups-merchandise", sort_order: 4 },
+    {
+      name_ar: "محاصيل القهوة المختصة",
+      name_en: "Specialty Coffee Beans",
+      slug: "specialty-beans",
+      sort_order: 1,
+    },
+    {
+      name_ar: "أظرف التقطير سريعة التحضير",
+      name_en: "Drip Bags",
+      slug: "drip-bags",
+      sort_order: 2,
+    },
+    {
+      name_ar: "أدوات ومكائن التحضير",
+      name_en: "Brewing Tools & Gear",
+      slug: "brewing-tools",
+      sort_order: 3,
+    },
+    {
+      name_ar: "أكواب وإكسسوارات المحمصة",
+      name_en: "Cups & Merchandise",
+      slug: "cups-merchandise",
+      sort_order: 4,
+    },
   ],
   food: [
     { name_ar: "وجبات رئيسية", name_en: "Main Dishes", slug: "main-dishes", sort_order: 1 },
-    { name_ar: "مقبلات وسلطات", name_en: "Appetizers & Salads", slug: "appetizers-salads", sort_order: 2 },
+    {
+      name_ar: "مقبلات وسلطات",
+      name_en: "Appetizers & Salads",
+      slug: "appetizers-salads",
+      sort_order: 2,
+    },
     { name_ar: "مشروبات", name_en: "Beverages", slug: "beverages", sort_order: 3 },
-    { name_ar: "حلويات ومخبوزات", name_en: "Desserts & Bakery", slug: "desserts-bakery", sort_order: 4 },
+    {
+      name_ar: "حلويات ومخبوزات",
+      name_en: "Desserts & Bakery",
+      slug: "desserts-bakery",
+      sort_order: 4,
+    },
   ],
   print: [
-    { name_ar: "أختام شخصية وتجارية", name_en: "Personal & Business Stamps", slug: "stamps", sort_order: 1 },
-    { name_ar: "مطبوعات ورقية وكروت", name_en: "Paper Prints & Business Cards", slug: "paper-prints", sort_order: 2 },
-    { name_ar: "لوحات وبنرات إعلانية", name_en: "Signs & Banners", slug: "signs-banners", sort_order: 3 },
+    {
+      name_ar: "أختام شخصية وتجارية",
+      name_en: "Personal & Business Stamps",
+      slug: "stamps",
+      sort_order: 1,
+    },
+    {
+      name_ar: "مطبوعات ورقية وكروت",
+      name_en: "Paper Prints & Business Cards",
+      slug: "paper-prints",
+      sort_order: 2,
+    },
+    {
+      name_ar: "لوحات وبنرات إعلانية",
+      name_en: "Signs & Banners",
+      slug: "signs-banners",
+      sort_order: 3,
+    },
   ],
   beauty: [
     { name_ar: "عطور نسائية", name_en: "Women's Perfumes", slug: "women-perfumes", sort_order: 1 },
@@ -35,14 +80,24 @@ export const DEFAULT_VERTICAL_CATEGORIES: Record<StoreVertical, DefaultCategoryS
   ],
   abayas: [
     { name_ar: "عبايات يومية", name_en: "Daily Abayas", slug: "daily-abayas", sort_order: 1 },
-    { name_ar: "عبايات مناسبات", name_en: "Occasion Abayas", slug: "occasion-abayas", sort_order: 2 },
+    {
+      name_ar: "عبايات مناسبات",
+      name_en: "Occasion Abayas",
+      slug: "occasion-abayas",
+      sort_order: 2,
+    },
     { name_ar: "طرح ونقابات", name_en: "Scarves & Veils", slug: "scarves-veils", sort_order: 3 },
   ],
   fashion: [
     { name_ar: "فساتين", name_en: "Dresses", slug: "dresses", sort_order: 1 },
     { name_ar: "بلايز وقمصان", name_en: "Tops & Shirts", slug: "tops-shirts", sort_order: 2 },
     { name_ar: "بناطيل وتنانير", name_en: "Pants & Skirts", slug: "pants-skirts", sort_order: 3 },
-    { name_ar: "إكسسوارات أزياء", name_en: "Fashion Accessories", slug: "fashion-accessories", sort_order: 4 },
+    {
+      name_ar: "إكسسوارات أزياء",
+      name_en: "Fashion Accessories",
+      slug: "fashion-accessories",
+      sort_order: 4,
+    },
   ],
   jewelry: [
     { name_ar: "سلاسل وقلادات", name_en: "Necklaces & Pendants", slug: "necklaces", sort_order: 1 },
@@ -52,23 +107,68 @@ export const DEFAULT_VERTICAL_CATEGORIES: Record<StoreVertical, DefaultCategoryS
   ],
   gifts: [
     { name_ar: "باقات وتنسيقات", name_en: "Bouquets & Floral", slug: "bouquets", sort_order: 1 },
-    { name_ar: "صناديق هدايا فاخرة", name_en: "Luxury Gift Boxes", slug: "gift-boxes", sort_order: 2 },
+    {
+      name_ar: "صناديق هدايا فاخرة",
+      name_en: "Luxury Gift Boxes",
+      slug: "gift-boxes",
+      sort_order: 2,
+    },
     { name_ar: "توزيعات مناسبات", name_en: "Occasion Favors", slug: "favors", sort_order: 3 },
   ],
   digital: [
-    { name_ar: "ملفات وقوالب", name_en: "Templates & Assets", slug: "templates-assets", sort_order: 1 },
-    { name_ar: "كتب وأدلة إلكترونية", name_en: "E-Books & Guides", slug: "ebooks-guides", sort_order: 2 },
-    { name_ar: "دورات وتراخيص", name_en: "Courses & Licenses", slug: "courses-licenses", sort_order: 3 },
+    {
+      name_ar: "ملفات وقوالب",
+      name_en: "Templates & Assets",
+      slug: "templates-assets",
+      sort_order: 1,
+    },
+    {
+      name_ar: "كتب وأدلة إلكترونية",
+      name_en: "E-Books & Guides",
+      slug: "ebooks-guides",
+      sort_order: 2,
+    },
+    {
+      name_ar: "دورات وتراخيص",
+      name_en: "Courses & Licenses",
+      slug: "courses-licenses",
+      sort_order: 3,
+    },
   ],
   home: [
     { name_ar: "ديكور وإكسسوارات", name_en: "Home Decor", slug: "home-decor", sort_order: 1 },
-    { name_ar: "أثاث ومفروشات", name_en: "Furniture & Bedding", slug: "furniture-bedding", sort_order: 2 },
-    { name_ar: "إضاءة وشموع", name_en: "Lighting & Candles", slug: "lighting-candles", sort_order: 3 },
+    {
+      name_ar: "أثاث ومفروشات",
+      name_en: "Furniture & Bedding",
+      slug: "furniture-bedding",
+      sort_order: 2,
+    },
+    {
+      name_ar: "إضاءة وشموع",
+      name_en: "Lighting & Candles",
+      slug: "lighting-candles",
+      sort_order: 3,
+    },
   ],
   electronics: [
-    { name_ar: "هواتف وأجهزة لوحية", name_en: "Phones & Tablets", slug: "phones-tablets", sort_order: 1 },
-    { name_ar: "سماعات وصوتيات", name_en: "Audio & Headphones", slug: "audio-headphones", sort_order: 2 },
-    { name_ar: "ملحقات وشواحن", name_en: "Accessories & Chargers", slug: "accessories-chargers", sort_order: 3 },
+    {
+      name_ar: "هواتف وأجهزة لوحية",
+      name_en: "Phones & Tablets",
+      slug: "phones-tablets",
+      sort_order: 1,
+    },
+    {
+      name_ar: "سماعات وصوتيات",
+      name_en: "Audio & Headphones",
+      slug: "audio-headphones",
+      sort_order: 2,
+    },
+    {
+      name_ar: "ملحقات وشواحن",
+      name_en: "Accessories & Chargers",
+      slug: "accessories-chargers",
+      sort_order: 3,
+    },
   ],
   general: [
     { name_ar: "وصلنا حديثاً", name_en: "New Arrivals", slug: "new-arrivals", sort_order: 1 },
@@ -151,8 +251,12 @@ export async function syncBrandVerticalCategories({
       const isTarget = cSlug ? targetSlugs.has(cSlug) : false;
       if (isTarget) return false;
 
-      const isUsedByNameAr = c.name_ar ? usedCategoryIdentifiers.has(c.name_ar.trim().toLowerCase()) : false;
-      const isUsedByNameEn = c.name_en ? usedCategoryIdentifiers.has(c.name_en.trim().toLowerCase()) : false;
+      const isUsedByNameAr = c.name_ar
+        ? usedCategoryIdentifiers.has(c.name_ar.trim().toLowerCase())
+        : false;
+      const isUsedByNameEn = c.name_en
+        ? usedCategoryIdentifiers.has(c.name_en.trim().toLowerCase())
+        : false;
       const isUsedBySlug = cSlug ? usedCategoryIdentifiers.has(cSlug) : false;
       const isUsedById = c.id ? usedCategoryIdentifiers.has(c.id.trim().toLowerCase()) : false;
 

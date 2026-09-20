@@ -155,7 +155,9 @@ export function TrustBadgesEditor({
               <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
                 <Wand2 className="h-3.5 w-3.5" />
                 <span>
-                  {isAr ? "توليد شارات تناسب نوع نشاط المتجر تلقائياً" : "Tailor Badges to Your Niche"}
+                  {isAr
+                    ? "توليد شارات تناسب نوع نشاط المتجر تلقائياً"
+                    : "Tailor Badges to Your Niche"}
                 </span>
               </div>
               <Button
@@ -177,10 +179,30 @@ export function TrustBadgesEditor({
               </span>
               {[
                 { id: "coffee", labelAr: "قهوة ومحاصيل", labelEn: "Coffee & Beans", icon: Coffee },
-                { id: "abayas", labelAr: "عبايات وتفصيل", labelEn: "Abayas & Tailoring", icon: Sparkles },
-                { id: "fashion", labelAr: "أزياء وملابس", labelEn: "Fashion & Apparel", icon: Shirt },
-                { id: "beauty", labelAr: "عطور وتجميل", labelEn: "Beauty & Fragrance", icon: Sparkles },
-                { id: "jewelry", labelAr: "مجوهرات وإكسسوارات", labelEn: "Jewelry & Luxury", icon: Gem },
+                {
+                  id: "abayas",
+                  labelAr: "عبايات وتفصيل",
+                  labelEn: "Abayas & Tailoring",
+                  icon: Sparkles,
+                },
+                {
+                  id: "fashion",
+                  labelAr: "أزياء وملابس",
+                  labelEn: "Fashion & Apparel",
+                  icon: Shirt,
+                },
+                {
+                  id: "beauty",
+                  labelAr: "عطور وتجميل",
+                  labelEn: "Beauty & Fragrance",
+                  icon: Sparkles,
+                },
+                {
+                  id: "jewelry",
+                  labelAr: "مجوهرات وإكسسوارات",
+                  labelEn: "Jewelry & Luxury",
+                  icon: Gem,
+                },
                 { id: "food", labelAr: "مأكولات ومخبوزات", labelEn: "Food & Bakery", icon: Flame },
                 { id: "general", labelAr: "متجر عام", labelEn: "General Store", icon: RotateCcw },
               ].map((preset) => {
@@ -321,7 +343,9 @@ export function TrustBadgesEditor({
                         value={item.text_ar || ""}
                         onChange={(e) => handleUpdateItem(index, { text_ar: e.target.value })}
                         placeholder={
-                          isAr ? "مثال: محاصيل مختصة طازجة / جودة أصلية مضمونة" : "e.g. Specialty Roasted Beans / 100% Authentic Quality"
+                          isAr
+                            ? "مثال: محاصيل مختصة طازجة / جودة أصلية مضمونة"
+                            : "e.g. Specialty Roasted Beans / 100% Authentic Quality"
                         }
                         className="h-9 text-xs text-end bg-background border-border"
                       />

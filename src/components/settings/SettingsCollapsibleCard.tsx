@@ -1,9 +1,5 @@
 import React, { useState } from "react";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -58,9 +54,7 @@ export function SettingsCollapsibleCard({
               <div
                 className={cn(
                   "h-9 w-9 rounded-lg flex items-center justify-center shrink-0 transition-colors",
-                  isOpen
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-primary/10 text-primary",
+                  isOpen ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary",
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -91,10 +85,7 @@ export function SettingsCollapsibleCard({
               aria-label={isOpen ? "Collapse" : "Expand"}
             >
               <ChevronDown
-                className={cn(
-                  "h-4 w-4 transition-transform duration-200",
-                  isOpen && "rotate-180",
-                )}
+                className={cn("h-4 w-4 transition-transform duration-200", isOpen && "rotate-180")}
               />
             </button>
           </CollapsibleTrigger>

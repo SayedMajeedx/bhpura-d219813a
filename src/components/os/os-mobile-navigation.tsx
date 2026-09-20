@@ -255,11 +255,15 @@ export function OsMobileNavigation({
       ];
     }
 
-    const operations = navItems.filter((item) => (item.workspace || item.category) === "operations");
+    const operations = navItems.filter(
+      (item) => (item.workspace || item.category) === "operations",
+    );
     const catalog = navItems.filter((item) => (item.workspace || item.category) === "catalog");
     const growth = navItems.filter((item) => (item.workspace || item.category) === "growth");
     const finance = navItems.filter((item) => (item.workspace || item.category) === "finance");
-    const storeSetup = navItems.filter((item) => (item.workspace || item.category) === "store_setup");
+    const storeSetup = navItems.filter(
+      (item) => (item.workspace || item.category) === "store_setup",
+    );
 
     return [
       {

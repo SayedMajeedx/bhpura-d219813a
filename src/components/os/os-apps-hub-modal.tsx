@@ -22,9 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import {
-  type AdminNavItemConfig,
-} from "@/config/admin-navigation";
+import { type AdminNavItemConfig } from "@/config/admin-navigation";
 
 export interface OsAppsHubModalProps {
   open: boolean;
@@ -35,13 +33,7 @@ export interface OsAppsHubModalProps {
   onPinnedChange?: (pinnedIds: string[]) => void;
 }
 
-type CategoryTab =
-  | "all"
-  | "operations"
-  | "catalog"
-  | "growth"
-  | "finance"
-  | "store_setup";
+type CategoryTab = "all" | "operations" | "catalog" | "growth" | "finance" | "store_setup";
 
 export function OsAppsHubModal({
   open,

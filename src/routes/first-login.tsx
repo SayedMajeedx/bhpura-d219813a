@@ -39,7 +39,9 @@ export const Route = createFileRoute("/first-login")({
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("status, role, name, full_name, must_change_password, brand_id, brand:brands(id, name_en, name_ar, slug, logo_url)")
+      .select(
+        "status, role, name, full_name, must_change_password, brand_id, brand:brands(id, name_en, name_ar, slug, logo_url)",
+      )
       .eq("id", user.id)
       .maybeSingle();
 
@@ -64,7 +66,9 @@ export const Route = createFileRoute("/first-login")({
     const { data: profile } = user
       ? await supabase
           .from("profiles")
-          .select("status, role, name, full_name, must_change_password, brand_id, brand:brands(id, name_en, name_ar, slug, logo_url)")
+          .select(
+            "status, role, name, full_name, must_change_password, brand_id, brand:brands(id, name_en, name_ar, slug, logo_url)",
+          )
           .eq("id", user.id)
           .maybeSingle()
       : { data: null };
@@ -133,7 +137,9 @@ function FirstLoginPage() {
 
     if (!evaluation.checks.minLength) {
       toast.error(
-        isAr ? "يجب أن تتكون كلمة المرور من 8 خانات على الأقل" : "Password must be at least 8 characters",
+        isAr
+          ? "يجب أن تتكون كلمة المرور من 8 خانات على الأقل"
+          : "Password must be at least 8 characters",
       );
       return;
     }
@@ -188,7 +194,9 @@ function FirstLoginPage() {
     } catch (err: any) {
       toast.error(
         err?.message ||
-          (isAr ? "حدث خطأ أثناء تحديث كلمة المرور. يرجى المحاولة مرة أخرى." : "Failed to update password. Please try again."),
+          (isAr
+            ? "حدث خطأ أثناء تحديث كلمة المرور. يرجى المحاولة مرة أخرى."
+            : "Failed to update password. Please try again."),
       );
     } finally {
       setSubmitting(false);
@@ -526,7 +534,9 @@ function FirstLoginPage() {
                   ) : (
                     <>
                       <Sparkles className="h-4 w-4 me-2" />
-                      {isAr ? "حفظ كلمة المرور ومتابعة للوحة التحكم" : "Save Password & Open Dashboard"}
+                      {isAr
+                        ? "حفظ كلمة المرور ومتابعة للوحة التحكم"
+                        : "Save Password & Open Dashboard"}
                     </>
                   )}
                 </Button>

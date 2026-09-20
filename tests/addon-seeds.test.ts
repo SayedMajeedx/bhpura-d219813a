@@ -125,11 +125,7 @@ describe("Addon Seeds Platform Integrity", () => {
   test("Every addon seed in the registry is tested and valid", () => {
     const addons = getAllAddons();
     const addonsWithSeeds = addons.filter((a) => a.seeds && a.seeds.length > 0);
-    const manifests = [
-      abayaPackManifest,
-      beautyPerfumeManifest,
-      jewelryManifest,
-    ];
+    const manifests = [abayaPackManifest, beautyPerfumeManifest, jewelryManifest];
 
     expect(addonsWithSeeds.map((a) => a.id).sort()).toEqual(manifests.map((m) => m.id).sort());
   });

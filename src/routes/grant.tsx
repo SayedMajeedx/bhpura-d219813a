@@ -63,10 +63,26 @@ const READINESS_OPTIONS = [
 ] as const;
 
 const SALES_CHANNELS = [
-  { id: "whatsapp_dm", title: "الواتساب والإنستغرام دايركت", desc: "نستقبل الطلبات يدويّاً عبر المحادثات" },
-  { id: "existing_store", title: "متجر إلكتروني آخر", desc: "لدينا منصة حالية ونرغب بالترقية والانتقال لنظام أرقى" },
-  { id: "physical_store", title: "محل / كشك / معرض فعلي", desc: "نبيع على أرض الواقع ونرغب بالتوسع أونلاين" },
-  { id: "not_started", title: "لم نبدأ البيع بعد", desc: "ننتظر إطلاق المتجر الإلكتروني لبدء المبيعات" },
+  {
+    id: "whatsapp_dm",
+    title: "الواتساب والإنستغرام دايركت",
+    desc: "نستقبل الطلبات يدويّاً عبر المحادثات",
+  },
+  {
+    id: "existing_store",
+    title: "متجر إلكتروني آخر",
+    desc: "لدينا منصة حالية ونرغب بالترقية والانتقال لنظام أرقى",
+  },
+  {
+    id: "physical_store",
+    title: "محل / كشك / معرض فعلي",
+    desc: "نبيع على أرض الواقع ونرغب بالتوسع أونلاين",
+  },
+  {
+    id: "not_started",
+    title: "لم نبدأ البيع بعد",
+    desc: "ننتظر إطلاق المتجر الإلكتروني لبدء المبيعات",
+  },
 ] as const;
 
 function GrantSurveyPage() {
@@ -125,7 +141,10 @@ function GrantSurveyPage() {
 
     setSubmitting(true);
     try {
-      const cleanPhone = whatsappNumber.trim().replace(/[^\d+]/g, "").replace(/^0+/, "");
+      const cleanPhone = whatsappNumber
+        .trim()
+        .replace(/[^\d+]/g, "")
+        .replace(/^0+/, "");
       const fullPhone = cleanPhone.startsWith("+") ? cleanPhone : `${countryCode}${cleanPhone}`;
 
       const { data, error } = await (publicSupabase.rpc as any)("submit_grant_application", {
@@ -157,7 +176,10 @@ function GrantSurveyPage() {
   };
 
   return (
-    <main dir="rtl" className="min-h-screen bg-muted/30 text-foreground selection:bg-primary/20 selection:text-primary">
+    <main
+      dir="rtl"
+      className="min-h-screen bg-muted/30 text-foreground selection:bg-primary/20 selection:text-primary"
+    >
       {/* Background Ambience */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 right-1/2 translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-primary/10 rounded-full blur-[120px]" />
@@ -190,7 +212,9 @@ function GrantSurveyPage() {
           </h1>
 
           <p className="text-sm sm:text-base text-muted-foreground max-w-lg mx-auto leading-relaxed">
-            منحة اشتراك مجاني كامل لمدة <span className="font-bold text-foreground">6 أشهر (نصف سنة)</span> لمتجرين محليين، مع مساعدة ومتابعة مباشرة حتى ينطلق متجركم الإلكتروني بأفضل صورة.
+            منحة اشتراك مجاني كامل لمدة{" "}
+            <span className="font-bold text-foreground">6 أشهر (نصف سنة)</span> لمتجرين محليين، مع
+            مساعدة ومتابعة مباشرة حتى ينطلق متجركم الإلكتروني بأفضل صورة.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-2 pt-1 text-xs text-muted-foreground font-medium">
@@ -223,7 +247,8 @@ function GrantSurveyPage() {
                   شكراً لمشاركتنا شغفك ومشروعك 🌟
                 </h2>
                 <p className="text-muted-foreground text-sm sm:text-base max-w-md mx-auto leading-relaxed">
-                  سعيدون جداً باهتمامك، سنقوم بمراجعة حسابكم والتواصل معكم عبر الواتساب في الموعد المحدد.
+                  سعيدون جداً باهتمامك، سنقوم بمراجعة حسابكم والتواصل معكم عبر الواتساب في الموعد
+                  المحدد.
                 </p>
               </div>
 
@@ -234,12 +259,16 @@ function GrantSurveyPage() {
                 </div>
                 <div className="flex justify-between items-center border-b border-border/60 pb-2">
                   <span>حساب الإنستغرام:</span>
-                  <span className="font-bold text-foreground" dir="ltr">@{instagramHandle.replace(/^@/, "")}</span>
+                  <span className="font-bold text-foreground" dir="ltr">
+                    @{instagramHandle.replace(/^@/, "")}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span>رقم التواصل:</span>
                   <span className="font-bold text-foreground" dir="ltr">
-                    {whatsappNumber.startsWith("+") ? whatsappNumber : `${countryCode} ${whatsappNumber}`}
+                    {whatsappNumber.startsWith("+")
+                      ? whatsappNumber
+                      : `${countryCode} ${whatsappNumber}`}
                   </span>
                 </div>
               </div>
@@ -289,7 +318,10 @@ function GrantSurveyPage() {
 
                   <div className="space-y-4">
                     <div className="space-y-1.5">
-                      <Label htmlFor="businessName" className="text-sm font-semibold flex items-center gap-1.5 text-foreground">
+                      <Label
+                        htmlFor="businessName"
+                        className="text-sm font-semibold flex items-center gap-1.5 text-foreground"
+                      >
                         <Store className="size-4 text-primary" />
                         اسم المشروع أو البراند التجاري <span className="text-destructive">*</span>
                       </Label>
@@ -305,7 +337,10 @@ function GrantSurveyPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label htmlFor="instagramHandle" className="text-sm font-semibold flex items-center gap-1.5 text-foreground">
+                      <Label
+                        htmlFor="instagramHandle"
+                        className="text-sm font-semibold flex items-center gap-1.5 text-foreground"
+                      >
                         <Instagram className="size-4 text-primary" />
                         حساب الإنستغرام للمتجر <span className="text-destructive">*</span>
                       </Label>
@@ -319,7 +354,9 @@ function GrantSurveyPage() {
                           dir="rtl"
                           placeholder="yourbrand"
                           value={instagramHandle}
-                          onChange={(e) => setInstagramHandle(e.target.value.replace(/^@/, "").trim())}
+                          onChange={(e) =>
+                            setInstagramHandle(e.target.value.replace(/^@/, "").trim())
+                          }
                           required
                           className="flex-1 bg-transparent px-3.5 text-sm text-foreground placeholder:text-muted-foreground/45 placeholder:opacity-50 placeholder:font-normal focus:outline-none text-right"
                         />
@@ -330,7 +367,10 @@ function GrantSurveyPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label htmlFor="whatsappNumber" className="text-sm font-semibold flex items-center gap-1.5 text-foreground">
+                      <Label
+                        htmlFor="whatsappNumber"
+                        className="text-sm font-semibold flex items-center gap-1.5 text-foreground"
+                      >
                         <Phone className="size-4 text-primary" />
                         رقم الواتساب للتواصل <span className="text-destructive">*</span>
                       </Label>
@@ -405,7 +445,7 @@ function GrantSurveyPage() {
                               "flex flex-col items-center justify-center gap-2 p-3.5 rounded-xl border cursor-pointer transition-all duration-200 select-none text-center min-h-[90px]",
                               isSelected
                                 ? "border-primary bg-primary/10 text-primary font-bold shadow-xs scale-[1.02]"
-                                : "border-border bg-card/60 hover:bg-muted/50 text-foreground"
+                                : "border-border bg-card/60 hover:bg-muted/50 text-foreground",
                             )}
                           >
                             <Icon className="size-5" />
@@ -419,7 +459,8 @@ function GrantSurveyPage() {
                   {/* Readiness Status */}
                   <div className="space-y-2.5">
                     <Label className="text-sm font-semibold block">
-                      هل لديك منتجات وصور جاهزة للبيع حالياً؟ <span className="text-destructive">*</span>
+                      هل لديك منتجات وصور جاهزة للبيع حالياً؟{" "}
+                      <span className="text-destructive">*</span>
                     </Label>
                     <div className="space-y-2">
                       {READINESS_OPTIONS.map((opt) => {
@@ -432,7 +473,7 @@ function GrantSurveyPage() {
                               "flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all duration-200 select-none",
                               isSelected
                                 ? "border-primary bg-primary/10 text-foreground shadow-xs"
-                                : "border-border bg-card hover:bg-muted/50 text-muted-foreground"
+                                : "border-border bg-card hover:bg-muted/50 text-muted-foreground",
                             )}
                           >
                             <div className="mt-0.5 flex size-4.5 shrink-0 items-center justify-center rounded-full border border-primary/40 bg-background">
@@ -440,11 +481,19 @@ function GrantSurveyPage() {
                             </div>
                             <div className="space-y-0.5 flex-1">
                               <div className="flex items-center justify-between gap-2">
-                                <span className={cn("text-xs sm:text-sm font-bold", isSelected && "text-foreground")}>
+                                <span
+                                  className={cn(
+                                    "text-xs sm:text-sm font-bold",
+                                    isSelected && "text-foreground",
+                                  )}
+                                >
                                   {opt.title}
                                 </span>
                                 {opt.highlight && (
-                                  <Badge variant="outline" className="text-[10px] bg-primary/15 border-primary/30 text-primary font-bold">
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] bg-primary/15 border-primary/30 text-primary font-bold"
+                                  >
                                     أولوية ترشيح ⚡
                                   </Badge>
                                 )}
@@ -505,20 +554,23 @@ function GrantSurveyPage() {
                               "flex flex-col gap-1 p-3.5 rounded-xl border cursor-pointer transition-all duration-200 select-none",
                               isSelected
                                 ? "border-primary bg-primary/10 text-foreground shadow-xs"
-                                : "border-border bg-card hover:bg-muted/50 text-muted-foreground"
+                                : "border-border bg-card hover:bg-muted/50 text-muted-foreground",
                             )}
                           >
                             <div className="flex items-center gap-2">
                               <div className="flex size-4 shrink-0 items-center justify-center rounded-full border border-primary/40 bg-background">
                                 {isSelected && <div className="size-2 rounded-full bg-primary" />}
                               </div>
-                              <span className={cn("text-xs sm:text-sm font-bold", isSelected && "text-foreground")}>
+                              <span
+                                className={cn(
+                                  "text-xs sm:text-sm font-bold",
+                                  isSelected && "text-foreground",
+                                )}
+                              >
                                 {ch.title}
                               </span>
                             </div>
-                            <p className="text-[11px] text-muted-foreground ps-6">
-                              {ch.desc}
-                            </p>
+                            <p className="text-[11px] text-muted-foreground ps-6">{ch.desc}</p>
                           </div>
                         );
                       })}
@@ -527,9 +579,14 @@ function GrantSurveyPage() {
 
                   {/* Biggest Challenge */}
                   <div className="space-y-1.5">
-                    <Label htmlFor="biggestChallenge" className="text-sm font-semibold flex items-center justify-between text-foreground">
+                    <Label
+                      htmlFor="biggestChallenge"
+                      className="text-sm font-semibold flex items-center justify-between text-foreground"
+                    >
                       <span>ما هو أكبر تحدٍ يواجهك في إدارة مبيعاتك وطلباتك؟</span>
-                      <span className="text-[11px] font-normal text-muted-foreground/75">(اختياري)</span>
+                      <span className="text-[11px] font-normal text-muted-foreground/75">
+                        (اختياري)
+                      </span>
                     </Label>
                     <Textarea
                       id="biggestChallenge"
@@ -580,7 +637,9 @@ function GrantSurveyPage() {
         {/* Footer info */}
         <footer className="text-center text-xs text-muted-foreground space-y-1 pt-4 border-t border-border/40">
           <p>© 2026 Boutq OS — منصة إدارة وتجارة البوتيكات الخليجية والمشاريع المحلية.</p>
-          <p className="text-[11px]">يتم تقييم واختيار المشاريع بناءً على الجدية وجودة المنتجات لتوفير تجربة تشغيل متكاملة.</p>
+          <p className="text-[11px]">
+            يتم تقييم واختيار المشاريع بناءً على الجدية وجودة المنتجات لتوفير تجربة تشغيل متكاملة.
+          </p>
         </footer>
       </div>
     </main>

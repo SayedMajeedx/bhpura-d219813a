@@ -35,7 +35,9 @@ export function SettingsCommandHeader({
             </span>
           </div>
 
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">{activeTabLabel}</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
+            {activeTabLabel}
+          </h1>
 
           <p className="text-xs text-muted-foreground font-normal leading-relaxed max-w-xl">
             {isAr

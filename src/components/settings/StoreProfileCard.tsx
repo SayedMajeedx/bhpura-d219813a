@@ -568,7 +568,10 @@ export function StoreProfileCard({
                           {isAr ? m.name.ar : m.name.en}
                         </span>
                         {isRequired && (
-                          <Badge variant="secondary" className="text-xs px-2 py-0 bg-primary/10 text-primary font-medium">
+                          <Badge
+                            variant="secondary"
+                            className="text-xs px-2 py-0 bg-primary/10 text-primary font-medium"
+                          >
                             {isAr ? "أساسي لنشاطك" : "Essential"}
                           </Badge>
                         )}
@@ -578,7 +581,10 @@ export function StoreProfileCard({
                           </Badge>
                         )}
                         {isEnabled && (
-                          <Badge variant="outline" className="text-xs px-2 py-0 border-emerald-500/30 text-emerald-600 bg-emerald-500/10">
+                          <Badge
+                            variant="outline"
+                            className="text-xs px-2 py-0 border-emerald-500/30 text-emerald-600 bg-emerald-500/10"
+                          >
                             {isAr ? "مفعّل" : "Active"}
                           </Badge>
                         )}

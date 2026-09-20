@@ -9,15 +9,33 @@ export interface CountryInfo {
 export const COUNTRIES_DATABASE: CountryInfo[] = [
   // GCC Countries (Primary)
   { code: "BH", name_ar: "مملكة البحرين", name_en: "Bahrain", flag: "🇧🇭", region: "gcc" },
-  { code: "SA", name_ar: "المملكة العربية السعودية", name_en: "Saudi Arabia", flag: "🇸🇦", region: "gcc" },
-  { code: "AE", name_ar: "الإمارات العربية المتحدة", name_en: "United Arab Emirates", flag: "🇦🇪", region: "gcc" },
+  {
+    code: "SA",
+    name_ar: "المملكة العربية السعودية",
+    name_en: "Saudi Arabia",
+    flag: "🇸🇦",
+    region: "gcc",
+  },
+  {
+    code: "AE",
+    name_ar: "الإمارات العربية المتحدة",
+    name_en: "United Arab Emirates",
+    flag: "🇦🇪",
+    region: "gcc",
+  },
   { code: "KW", name_ar: "دولة الكويت", name_en: "Kuwait", flag: "🇰🇼", region: "gcc" },
   { code: "QA", name_ar: "دولة قطر", name_en: "Qatar", flag: "🇶🇦", region: "gcc" },
   { code: "OM", name_ar: "سلطنة عُمان", name_en: "Oman", flag: "🇴🇲", region: "gcc" },
 
   // Arab World
   { code: "EG", name_ar: "جمهورية مصر العربية", name_en: "Egypt", flag: "🇪🇬", region: "arab" },
-  { code: "JO", name_ar: "المملكة الأردنية الهاشمية", name_en: "Jordan", flag: "🇯🇴", region: "arab" },
+  {
+    code: "JO",
+    name_ar: "المملكة الأردنية الهاشمية",
+    name_en: "Jordan",
+    flag: "🇯🇴",
+    region: "arab",
+  },
   { code: "LB", name_ar: "لبنان", name_en: "Lebanon", flag: "🇱🇧", region: "arab" },
   { code: "IQ", name_ar: "العراق", name_en: "Iraq", flag: "🇮🇶", region: "arab" },
   { code: "MA", name_ar: "المملكة المغربية", name_en: "Morocco", flag: "🇲🇦", region: "arab" },
@@ -25,8 +43,20 @@ export const COUNTRIES_DATABASE: CountryInfo[] = [
   { code: "DZ", name_ar: "الجزائر", name_en: "Algeria", flag: "🇩🇿", region: "arab" },
 
   // World (Common Luxury Shipping Destinations)
-  { code: "GB", name_ar: "المملكة المتحدة", name_en: "United Kingdom", flag: "🇬🇧", region: "world" },
-  { code: "US", name_ar: "الولايات المتحدة", name_en: "United States", flag: "🇺🇸", region: "world" },
+  {
+    code: "GB",
+    name_ar: "المملكة المتحدة",
+    name_en: "United Kingdom",
+    flag: "🇬🇧",
+    region: "world",
+  },
+  {
+    code: "US",
+    name_ar: "الولايات المتحدة",
+    name_en: "United States",
+    flag: "🇺🇸",
+    region: "world",
+  },
   { code: "FR", name_ar: "فرنسا", name_en: "France", flag: "🇫🇷", region: "world" },
   { code: "IT", name_ar: "إيطاليا", name_en: "Italy", flag: "🇮🇹", region: "world" },
   { code: "DE", name_ar: "ألمانيا", name_en: "Germany", flag: "🇩🇪", region: "world" },
@@ -73,7 +103,7 @@ export function formatCountryName(code: string, lang: "ar" | "en" = "ar"): strin
  */
 export function findZoneForCountry(
   zones: ShippingZone[] | undefined | null,
-  countryCode: string
+  countryCode: string,
 ): ShippingZone | undefined {
   if (!zones || zones.length === 0) return undefined;
   const upper = countryCode.trim().toUpperCase();
@@ -83,7 +113,9 @@ export function findZoneForCountry(
   if (direct) return direct;
 
   // 2. Wildcard or fallback match
-  const wildcard = zones.find((z) => (z.countries ?? []).includes("*") || (z.countries ?? []).includes("ALL"));
+  const wildcard = zones.find(
+    (z) => (z.countries ?? []).includes("*") || (z.countries ?? []).includes("ALL"),
+  );
   if (wildcard) return wildcard;
 
   // 3. Backward-compatibility: if zone has no countries list, check if country name matches zone name
@@ -99,7 +131,7 @@ export function findZoneForCountry(
 export function calculateShippingFee(
   zone: ShippingZone | null | undefined,
   totalQuantity: number,
-  defaultLocalFee: number
+  defaultLocalFee: number,
 ): number {
   // If no zone is provided, fallback to the default domestic delivery fee
   if (!zone) {
@@ -138,7 +170,7 @@ export function calculateShippingFee(
 export function getShippingPricingDescription(
   zone: ShippingZone | null | undefined,
   currency: string = "BHD",
-  lang: "ar" | "en" = "ar"
+  lang: "ar" | "en" = "ar",
 ): string {
   if (!zone) return "";
 

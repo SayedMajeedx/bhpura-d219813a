@@ -42,7 +42,8 @@ function SuperAdminGrantsPage() {
               استبيانات منحة الـ 6 شهور (برنامج انطلاقة) 🚀
             </h1>
             <p className="text-xs text-muted-foreground max-w-xl">
-              مراجعة وفرز طلبات أصحاب المشاريع المتقدمين من إعلان الإنستغرام، تصفية الحسابات الجاهزة، والتواصل المباشر معهم عبر الواتساب.
+              مراجعة وفرز طلبات أصحاب المشاريع المتقدمين من إعلان الإنستغرام، تصفية الحسابات
+              الجاهزة، والتواصل المباشر معهم عبر الواتساب.
             </p>
           </div>
 
@@ -53,7 +54,11 @@ function SuperAdminGrantsPage() {
                 <ArrowRight className="size-3.5" />
               </Link>
             </Button>
-            <Button asChild size="sm" className="h-9 gap-1.5 text-xs font-bold bg-primary text-primary-foreground">
+            <Button
+              asChild
+              size="sm"
+              className="h-9 gap-1.5 text-xs font-bold bg-primary text-primary-foreground"
+            >
               <a href="/grant" target="_blank" rel="noreferrer">
                 <span>معاينة الاستبيان العام</span>
               </a>

@@ -1078,7 +1078,10 @@ function OrdersList() {
       );
     }
 
-    if (hasMadeToOrder && (workflow.nextAction === "send_to_tailor" || workflow.nextAction === "send_to_workshop")) {
+    if (
+      hasMadeToOrder &&
+      (workflow.nextAction === "send_to_tailor" || workflow.nextAction === "send_to_workshop")
+    ) {
       return (
         <Button
           size="sm"

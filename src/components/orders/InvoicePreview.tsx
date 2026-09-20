@@ -426,7 +426,10 @@ export default function InvoicePreview({
               {settings.logo_url && (
                 <div
                   className="pdf-brand-logo-wrap relative mb-3 flex"
-                  style={{ height: Math.max(20, logoH + Math.max(0, logoY) + 8), justifyContent: "flex-start" }}
+                  style={{
+                    height: Math.max(20, logoH + Math.max(0, logoY) + 8),
+                    justifyContent: "flex-start",
+                  }}
                 >
                   <img
                     src={settings.logo_url}

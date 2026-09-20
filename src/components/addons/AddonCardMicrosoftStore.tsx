@@ -112,7 +112,7 @@ export function AddonCardMicrosoftStore({
       className={cn(
         "group relative flex flex-col justify-between rounded-2xl border border-border bg-card p-5 cursor-pointer transition-all duration-200 hover:border-primary/40 hover:shadow-md",
         isInstalled && !isDisabled && "border-primary/30 bg-card/95",
-        isDisabled && "opacity-75 bg-muted/20"
+        isDisabled && "opacity-75 bg-muted/20",
       )}
     >
       <div>
@@ -260,17 +260,11 @@ export function AddonCardMicrosoftStore({
               <div
                 className={cn(
                   "size-2 rounded-full",
-                  isDisabled ? "bg-amber-500" : "bg-emerald-500"
+                  isDisabled ? "bg-amber-500" : "bg-emerald-500",
                 )}
               />
               <span className="text-xs font-medium text-foreground">
-                {isDisabled
-                  ? isAr
-                    ? "معطّل"
-                    : "Disabled"
-                  : isAr
-                    ? "مثبّت"
-                    : "Installed"}
+                {isDisabled ? (isAr ? "معطّل" : "Disabled") : isAr ? "مثبّت" : "Installed"}
               </span>
             </div>
           ) : (

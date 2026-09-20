@@ -201,9 +201,7 @@ export function extractVariantsHeuristically(
   const flavorClause = cleanPrompt.match(
     /(?:النكهات|النكهة|نكهات|نكهة|الأنواع|النوع|أنواع|نوع|الخيارات|الخيار|خيارات|خيار|flavors?|flavours?|types?|options?)[\s:]*([^\n\r;.!]+)/i,
   );
-  const searchCorpus = [colorClause?.[1], flavorClause?.[1], cleanPrompt]
-    .filter(Boolean)
-    .join(" ");
+  const searchCorpus = [colorClause?.[1], flavorClause?.[1], cleanPrompt].filter(Boolean).join(" ");
 
   for (const color of knownColors) {
     // Avoid short 2-letter false positives in English
@@ -230,8 +228,7 @@ export function extractVariantsHeuristically(
       .map((f) => f.trim())
       .filter(
         (f) =>
-          f.length > 1 &&
-          !/(?:سعر|تكلفة|مخزون|وزن|غرام|كيلو|price|stock|cost|gram|kg)/i.test(f),
+          f.length > 1 && !/(?:سعر|تكلفة|مخزون|وزن|غرام|كيلو|price|stock|cost|gram|kg)/i.test(f),
       );
     for (const f of rawFlavors) {
       const cleanF = f.replace(/^(?:نكهة|نوع|طعم)\s+/i, "").trim();
