@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { type OsMobileTabItem } from "./os-mobile-tab-bar";
 import { OsIslandDock, type OsIslandDockItem } from "./os-island-dock";
+import { useBottomBarClaimed } from "@/lib/bottom-bar-store";
 import { OsQuickActions } from "./os-quick-actions";
 import { OsThemeToggle } from "./os-theme-toggle";
 import { OsAppsHubModal } from "./os-apps-hub-modal";
@@ -59,6 +60,7 @@ export function OsMobileNavigation({
   onOpenChangeMobile,
 }: OsMobileNavigationProps) {
   const navigate = useNavigate();
+  const bottomBarClaimed = useBottomBarClaimed();
   const { theme, setTheme } = useTheme();
   const [appsHubOpen, setAppsHubOpen] = React.useState(false);
 
@@ -255,11 +257,15 @@ export function OsMobileNavigation({
       ];
     }
 
-    const operations = navItems.filter((item) => (item.workspace || item.category) === "operations");
+    const operations = navItems.filter(
+      (item) => (item.workspace || item.category) === "operations",
+    );
     const catalog = navItems.filter((item) => (item.workspace || item.category) === "catalog");
     const growth = navItems.filter((item) => (item.workspace || item.category) === "growth");
     const finance = navItems.filter((item) => (item.workspace || item.category) === "finance");
-    const storeSetup = navItems.filter((item) => (item.workspace || item.category) === "store_setup");
+    const storeSetup = navItems.filter(
+      (item) => (item.workspace || item.category) === "store_setup",
+    );
 
     return [
       {
@@ -293,7 +299,7 @@ export function OsMobileNavigation({
   return (
     <>
       {/* Mobile Top Header */}
-      <div className="md:hidden no-print fixed top-0 inset-x-0 z-40 h-14 flex items-center justify-between px-3 border-b border-[var(--os-border)] os-glass-strong text-foreground shadow-sm backdrop-blur-xl">
+      <div className="md:hidden no-print fixed top-0 inset-x-0 z-40 h-14 flex items-center justify-between px-3 border-b border-[var(--os-border)] os-glass-strong text-foreground shadow-sm">
         <Sheet open={mobileOpen} onOpenChange={onOpenChangeMobile}>
           <SheetTrigger asChild>
             <Button
@@ -585,7 +591,11 @@ export function OsMobileNavigation({
 
       {/* Mobile & Tablet Floating Island Dock */}
       {(activeSlug || isSuperAdmin) && (
-        <OsIslandDock items={primaryTabItems} lang={lang} isHidden={isDetailPage} />
+        <OsIslandDock
+          items={primaryTabItems}
+          lang={lang}
+          isHidden={isDetailPage || bottomBarClaimed}
+        />
       )}
 
       {/* Apps Hub Modal */}

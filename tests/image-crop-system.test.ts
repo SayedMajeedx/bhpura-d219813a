@@ -18,7 +18,10 @@ describe("image crop contracts", () => {
       "src/routes/_authenticated/admin.b.$slug.categories.tsx",
       "src/routes/_authenticated/admin.b.$slug.inventory.tsx",
       "src/routes/_authenticated/admin.b.$slug.pages.tsx",
-      "src/routes/_authenticated/admin.b.$slug.settings.tsx",
+      "src/features/settings/tabs/identity/BasicsGroup.tsx",
+      "src/features/settings/tabs/storefront/HomeHeroGroup.tsx",
+      "src/features/settings/tabs/storefront/HeroSlidesEditor.tsx",
+      "src/features/settings/tabs/storefront/HomeSectionsGroup.tsx",
     ].map(read);
 
     const productionMarkup = files.join("\n");

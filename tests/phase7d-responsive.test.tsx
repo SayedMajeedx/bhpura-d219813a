@@ -3,8 +3,9 @@ import { describe, expect, test, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { IntegrationsScopeSwitcher } from "../src/components/integrations/IntegrationsScopeSwitcher";
 import { PagesScopeSwitcher } from "../src/components/pages/PagesScopeSwitcher";
-import { SettingsScopeSwitcher } from "../src/components/settings/SettingsScopeSwitcher";
+import { SettingsTabBar } from "../src/features/settings/SettingsTabs";
 import { RoutePendingSkeleton } from "../src/components/os/route-pending-skeleton";
+import { I18nProvider } from "../src/lib/i18n";
 
 describe("Phase 7D responsive configuration workspaces", () => {
   test("integrations keeps primary scopes visible and exposes secondary scopes from an accessible menu", () => {
@@ -24,16 +25,19 @@ describe("Phase 7D responsive configuration workspaces", () => {
     expect(onScopeChange).toHaveBeenCalledWith("pixels");
   });
 
-  test("settings replaces the nine-item mobile scroller with a localized overflow menu", () => {
+  test("settings exposes five function-based tabs without a mobile overflow rail", () => {
     const onTabChange = vi.fn();
     const { container } = render(
-      <SettingsScopeSwitcher lang="en" activeTab="business" onTabChange={onTabChange} />,
+      <I18nProvider>
+        <SettingsTabBar activeTab="identity" onTabChange={onTabChange} />
+      </I18nProvider>,
     );
 
     expect(container.querySelector(".overflow-x-auto")).toBeNull();
-    fireEvent.pointerDown(screen.getByRole("button", { name: "More settings" }));
-    fireEvent.click(screen.getByRole("menuitem", { name: "Security" }));
-    expect(onTabChange).toHaveBeenCalledWith("security");
+    const tabButtons = container.querySelectorAll('[role="tab"]');
+    expect(tabButtons).toHaveLength(5);
+    fireEvent.click(tabButtons[2]);
+    expect(onTabChange).toHaveBeenCalledWith("orders");
   });
 
   test("pages preserves both content scopes without a mobile overflow rail", () => {

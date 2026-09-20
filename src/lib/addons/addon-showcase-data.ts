@@ -187,7 +187,10 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
         bullets: [
           { ar: "جدول مرتب للمقاسات والأبعاد بالسنتيمتر", en: "Clean measurement matrix in cm" },
           { ar: "نصائح وإرشادات القياس الصحيح", en: "Accurate self-measuring guidance" },
-          { ar: "متوافق 100% مع شاشات الجوال والكمبيوتر", en: "100% responsive on mobile and desktop" },
+          {
+            ar: "متوافق 100% مع شاشات الجوال والكمبيوتر",
+            en: "100% responsive on mobile and desktop",
+          },
         ],
         tag: { ar: "واجهة المتجر", en: "Storefront" },
       },
@@ -199,7 +202,10 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
         },
         bullets: [
           { ar: "قوالب خليجية جاهزة بنقرة زر", en: "Ready GCC presets in one click" },
-          { ar: "إمكانية إضافة أعمدة وصفوف قياس مخصصة", en: "Add custom measurement columns and rows" },
+          {
+            ar: "إمكانية إضافة أعمدة وصفوف قياس مخصصة",
+            en: "Add custom measurement columns and rows",
+          },
           { ar: "ربط جماعي بالأقسام والمنتجات", en: "Bulk assign to categories & items" },
         ],
         tag: { ar: "لوحة التحكم", en: "Admin Panel" },
@@ -333,7 +339,10 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
           en: "Highlights the customer's ideal fit instantly based on their saved passport",
         },
         bullets: [
-          { ar: "شارة: 'مقاسك الموصى به: M' مع درجة المطابقة", en: "Badge: 'Your recommended fit: M'" },
+          {
+            ar: "شارة: 'مقاسك الموصى به: M' مع درجة المطابقة",
+            en: "Badge: 'Your recommended fit: M'",
+          },
           { ar: "زر تعديل المقاسات مباشرة", en: "Quick-edit passport button" },
           { ar: "تبويب متكامل داخل حساب العميل", en: "Dedicated tab in store account" },
         ],
@@ -394,7 +403,10 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
     keyFeatures: [
       {
         icon: "Scissors",
-        title: { ar: "خيارات التفصيل المخصصة في صفحة المنتج", en: "Bespoke Fields on Product Page" },
+        title: {
+          ar: "خيارات التفصيل المخصصة في صفحة المنتج",
+          en: "Bespoke Fields on Product Page",
+        },
         description: {
           ar: "حقول مخصصة تظهر للعميل مثل: اختيار مقاس مخصص، طلب تعديلات معينة، أو كتابة اسم للتطريز.",
           en: "Custom input fields on product pages: custom dimensions, alteration notes, or custom embroidery text.",
@@ -481,9 +493,15 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
           en: "Interactive inputs for custom abaya length, button types, and alterations",
         },
         bullets: [
-          { ar: "خيار: تفصيل مخصص / جاهز للشحن الفوري", en: "Toggle: Bespoke tailoring vs ready to ship" },
+          {
+            ar: "خيار: تفصيل مخصص / جاهز للشحن الفوري",
+            en: "Toggle: Bespoke tailoring vs ready to ship",
+          },
           { ar: "حقل الطول بالإنش وتفضيلات القصة", en: "Length in inches and cut preferences" },
-          { ar: "عرض مهلة الإنجاز: 'يستغرق التفصيل 5-7 أيام'", en: "Turnaround notice: 'Tailoring takes 5-7 days'" },
+          {
+            ar: "عرض مهلة الإنجاز: 'يستغرق التفصيل 5-7 أيام'",
+            en: "Turnaround notice: 'Tailoring takes 5-7 days'",
+          },
         ],
         tag: { ar: "واجهة المتجر", en: "Storefront" },
       },
@@ -494,8 +512,14 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
           en: "Follow tailoring progress and print atelier job cards for seamstresses in one click",
         },
         bullets: [
-          { ar: "شريط مراحل: القص ← الخياطة ← التجهيز", en: "Milestone bar: Cut → Stitch → Quality Check" },
-          { ar: "عرض مواصفات القياسات الدقيقة للقطعة", en: "Exact garment specifications overview" },
+          {
+            ar: "شريط مراحل: القص ← الخياطة ← التجهيز",
+            en: "Milestone bar: Cut → Stitch → Quality Check",
+          },
+          {
+            ar: "عرض مواصفات القياسات الدقيقة للقطعة",
+            en: "Exact garment specifications overview",
+          },
           { ar: "زر طباعة بطاقة الخياط للورشة", en: "Print tailor workshop job card button" },
         ],
         tag: { ar: "لوحة التحكم", en: "Admin Panel" },
@@ -630,7 +654,10 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
         },
         bullets: [
           { ar: "مقاسات العباية الخليجية بنقرة واحدة", en: "Standard Gulf abaya size chips" },
-          { ar: "تحديد خيار الطرحة وإمكانية إضافة الطقطق", en: "Sheila selection & snap button option" },
+          {
+            ar: "تحديد خيار الطرحة وإمكانية إضافة الطقطق",
+            en: "Sheila selection & snap button option",
+          },
           { ar: "دليل مقاسات تفاعلي مخصص للعبايات", en: "Specialized abaya measurement guide" },
         ],
         tag: { ar: "واجهة المتجر", en: "Storefront" },
@@ -918,7 +945,10 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
         },
         bullets: [
           { ar: "هرم النوتات: قمة، قلب، وقاعدة العطر", en: "Notes pyramid: Top, Heart, and Base" },
-          { ar: "أزرار اختيار الحجم (50ml / 100ml)", en: "Volume selection buttons (50ml / 100ml)" },
+          {
+            ar: "أزرار اختيار الحجم (50ml / 100ml)",
+            en: "Volume selection buttons (50ml / 100ml)",
+          },
           { ar: "شارة درجة التركيز: Eau de Parfum", en: "Concentration badge: Eau de Parfum" },
         ],
         tag: { ar: "واجهة المتجر", en: "Storefront" },
@@ -1062,7 +1092,10 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
         },
         bullets: [
           { ar: "خيارات أوزان القهوة (250g / 1kg)", en: "Weight selection chips (250g / 1kg)" },
-          { ar: "اختيار درجة الطحن: حبوب كاملة أو مطحونة", en: "Grind preference: Whole bean or ground" },
+          {
+            ar: "اختيار درجة الطحن: حبوب كاملة أو مطحونة",
+            en: "Grind preference: Whole bean or ground",
+          },
           { ar: "شارة التحميص الطازج والاستلام من الفرع", en: "Freshness badge & pickup option" },
         ],
         tag: { ar: "واجهة المتجر", en: "Storefront" },
@@ -1205,7 +1238,10 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
           en: "One-click download button with file size info and zero shipping steps",
         },
         bullets: [
-          { ar: "زر: 'تحميل الملف الرقمي الآن (PDF - 12MB)'", en: "CTA: 'Download Your File Now (PDF - 12MB)'" },
+          {
+            ar: "زر: 'تحميل الملف الرقمي الآن (PDF - 12MB)'",
+            en: "CTA: 'Download Your File Now (PDF - 12MB)'",
+          },
           { ar: "تخطي عنوان الشحن والدفع بضغطة زر", en: "Zero-shipping instant checkout" },
           { ar: "حفظ دائم في حساب العميل بالمتجر", en: "Permanent access in customer account" },
         ],
@@ -1219,7 +1255,10 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
         },
         bullets: [
           { ar: "رفع آمن للملفات والمرفقات", en: "Secure cloud asset storage" },
-          { ar: "تحديد حد أقصى للتحميل (مثلاً 3 مرات)", en: "Download limit controls (e.g. 3 times)" },
+          {
+            ar: "تحديد حد أقصى للتحميل (مثلاً 3 مرات)",
+            en: "Download limit controls (e.g. 3 times)",
+          },
           { ar: "سجل عمليات التحميل لكل عميل", en: "Audit log of customer download activity" },
         ],
         tag: { ar: "لوحة التحكم", en: "Admin Panel" },
@@ -1227,7 +1266,7 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
     },
   },
 
-  "gifts": {
+  gifts: {
     id: "gifts",
     tagline: {
       ar: "خدمات التغليف الفاخر، كروت الإهداء المكتوبة، والشحن المباشر لعنوان المهداة إليه",
@@ -1354,7 +1393,10 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
         },
         bullets: [
           { ar: "تفعيل: 'هذا الطلب عبارة عن هدية'", en: "Toggle: 'This order is a gift'" },
-          { ar: "اختيار التغليف: بوكس مخملي فاخر (+3 د.ب)", en: "Box choice: Velvet luxury box (+3 BHD)" },
+          {
+            ar: "اختيار التغليف: بوكس مخملي فاخر (+3 د.ب)",
+            en: "Box choice: Velvet luxury box (+3 BHD)",
+          },
           { ar: "حقل رسالة الكارت بخط أنيق", en: "Card greeting message input" },
         ],
         tag: { ar: "واجهة المتجر", en: "Storefront" },
@@ -1367,7 +1409,10 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
         },
         bullets: [
           { ar: "وسم بارز: طلب هدية خاص", en: "Prominent badge: Special Gift Order" },
-          { ar: "عرض رسالة العميل مع زر طباعة الكارت", en: "Greeting card preview with print button" },
+          {
+            ar: "عرض رسالة العميل مع زر طباعة الكارت",
+            en: "Greeting card preview with print button",
+          },
           { ar: "تنبيه إخفاء السعر عن المستلم", en: "Price concealment verified indicator" },
         ],
         tag: { ar: "لوحة التحكم", en: "Admin Panel" },
@@ -1497,8 +1542,14 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
           en: "Clear millimeter dimensions (30mm/40mm) with logo attachment input",
         },
         bullets: [
-          { ar: "أزرار اختيار القطر: 30 مم، 40 مم، 50 مم", en: "Diameter selectors: 30mm, 40mm, 50mm" },
-          { ar: "اختيار لون حبر الختم (أزرق، أسود، أحمر)", en: "Ink color choices (Blue, Black, Red)" },
+          {
+            ar: "أزرار اختيار القطر: 30 مم، 40 مم، 50 مم",
+            en: "Diameter selectors: 30mm, 40mm, 50mm",
+          },
+          {
+            ar: "اختيار لون حبر الختم (أزرق، أسود، أحمر)",
+            en: "Ink color choices (Blue, Black, Red)",
+          },
           { ar: "حقل رفع ملف التصميم أو الشعار", en: "Artwork & vector logo upload slot" },
         ],
         tag: { ar: "واجهة المتجر", en: "Storefront" },
@@ -1519,7 +1570,7 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
     },
   },
 
-  "jewelry": {
+  jewelry: {
     id: "jewelry",
     tagline: {
       ar: "تجربة راقية لمتاجر الذهب والمجوهرات: مقاسات الخواتم الدقيقة، عيارات الذهب، والشهادات المعتمدة",
@@ -1645,7 +1696,10 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
           en: "Prestigious selector for ring sizes (US 5-10) and 18K/21K gold with cert badge",
         },
         bullets: [
-          { ar: "مقاسات الخواتم الأمريكية بدقة القطر", en: "US ring size chips with diameter guide" },
+          {
+            ar: "مقاسات الخواتم الأمريكية بدقة القطر",
+            en: "US ring size chips with diameter guide",
+          },
           { ar: "خيارات عيار الذهب: 18K أو 21K", en: "Metal selection: 18K Yellow / White Gold" },
           { ar: "شارة ضمان: 'ذهب خالص مع شهادة فحص'", en: "Trust badge: 'Certified Fine Gold'" },
         ],
@@ -1685,10 +1739,22 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
       en: "Boutq OS Team",
     },
     highlights: [
-      { ar: "محاور مخصصة: الوزن، نوع الطحنة، والمعالجة", en: "Custom axes: Weight, Grind Type, and Process" },
-      { ar: "نماذج أوزان المحاصيل (250g، 500g، 1kg) وأظرف التقطير", en: "Standard bag weights (250g, 500g, 1kg) & Drip bags" },
-      { ar: "مفردات المحمصة وملاحظات التحضير والباريسـتا", en: "Roastery vocabulary, barista & preparation notes" },
-      { ar: "سياق ذكاء اصطناعي متخصص لإيحاءات ومعالجات البن", en: "Specialized AI catalog context for origin and tasting notes" },
+      {
+        ar: "محاور مخصصة: الوزن، نوع الطحنة، والمعالجة",
+        en: "Custom axes: Weight, Grind Type, and Process",
+      },
+      {
+        ar: "نماذج أوزان المحاصيل (250g، 500g، 1kg) وأظرف التقطير",
+        en: "Standard bag weights (250g, 500g, 1kg) & Drip bags",
+      },
+      {
+        ar: "مفردات المحمصة وملاحظات التحضير والباريسـتا",
+        en: "Roastery vocabulary, barista & preparation notes",
+      },
+      {
+        ar: "سياق ذكاء اصطناعي متخصص لإيحاءات ومعالجات البن",
+        en: "Specialized AI catalog context for origin and tasting notes",
+      },
     ],
     fullOverview: {
       ar: "تم تصميم حزمة القهوة والمحامص المختصة لتمنح متاجر القهوة تجربة استثنائية من اليوم الأول. تشمل الحزمة درجات الطحن الجاهزة (حبوب كاملة، فلتر V60، إسبريسو، كيمكس، كولد برو)، أوزان المحاصيل الشائعة، بوكسات أظرف القهوة سريعة التحضير، ومفردات خاصة بالمحمصة في إدارة الطلبات وتتبع خطوط التجهيز.",
@@ -1795,8 +1861,14 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
         },
         bullets: [
           { ar: "أزرار اختيار الوزن: 250g أو 1kg", en: "Weight pills: 250g or 1kg" },
-          { ar: "قائمة خيارات الطحن: حبوب كاملة، فلتر V60، إسبريسو", en: "Grind options: Whole Bean, Filter V60, Espresso" },
-          { ar: "عرض إيحاءات التذوق: ياسمين، دراق، شوكولاتة", en: "Tasting notes chips: Jasmine, Peach, Chocolate" },
+          {
+            ar: "قائمة خيارات الطحن: حبوب كاملة، فلتر V60، إسبريسو",
+            en: "Grind options: Whole Bean, Filter V60, Espresso",
+          },
+          {
+            ar: "عرض إيحاءات التذوق: ياسمين، دراق، شوكولاتة",
+            en: "Tasting notes chips: Jasmine, Peach, Chocolate",
+          },
         ],
         tag: { ar: "واجهة المتجر", en: "Storefront" },
       },
@@ -1809,7 +1881,10 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
         bullets: [
           { ar: "قوالب أوزان ودرجات طحن قياسية", en: "Standardized weight and grind presets" },
           { ar: "توضيح درجة الطحن في بطاقة الطلب", en: "Clear grind size badge on order cards" },
-          { ar: "توجيه ذكاء اصطناعي لقراءة تفاصيل المحاصيل", en: "AI-assisted extraction for origin & process" },
+          {
+            ar: "توجيه ذكاء اصطناعي لقراءة تفاصيل المحاصيل",
+            en: "AI-assisted extraction for origin & process",
+          },
         ],
         tag: { ar: "لوحة التحكم", en: "Admin Panel" },
       },

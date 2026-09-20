@@ -36,8 +36,10 @@ import {
   Truck,
   FileText,
   MessageCircle,
+  Bell,
 } from "lucide-react";
 import { isCatalogMode, shouldShowPrices, buildWhatsAppInquiryUrl } from "@/lib/storefront-mode";
+import { NotifyMeForm } from "@/components/storefront/NotifyMeForm";
 import { AddonSlot } from "@/components/addons/AddonSlot";
 import { useAddons } from "@/components/addons/AddonsProvider";
 import { useVocabulary } from "@/hooks/use-vocabulary";
@@ -48,6 +50,7 @@ import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { toast } from "sonner";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
+import { isLikelyImageUrl } from "@/lib/media-delivery";
 import {
   fetchActiveBrandIdentity,
   fetchBestSellerRows,
@@ -56,6 +59,12 @@ import {
 } from "@/lib/storefront-queries";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
+import { buildProductSchema, buildBreadcrumbsSchema } from "@/lib/seo/structured-data";
+import { ProductAccordion } from "@/components/storefront/ProductAccordion";
+import { ImageZoom } from "@/components/storefront/ImageZoom";
+import { BundleOffer } from "@/components/storefront/BundleOffer";
+import { RecentlyViewed, recordRecentlyViewed } from "@/components/storefront/RecentlyViewed";
+import { getProductRecentPurchaseCount } from "@/lib/storefront-social-proof";
 
 export const Route = createFileRoute("/$slug/product/$id")({
   loader: async ({ params, location }) => {
@@ -88,7 +97,8 @@ export const Route = createFileRoute("/$slug/product/$id")({
     }
 
     const brand = await fetchActiveBrandIdentity(params.slug);
-    if (!brand) return { product: null, recommendationCatalog: [], bestSellerRows: [], initialLang };
+    if (!brand)
+      return { product: null, recommendationCatalog: [], bestSellerRows: [], initialLang };
 
     const [product, recommendationCatalog, bestSellerRows] = await Promise.all([
       fetchProductDetail(brand.id, params.id),
@@ -96,24 +106,50 @@ export const Route = createFileRoute("/$slug/product/$id")({
       fetchBestSellerRows(brand.slug, 10),
     ]);
 
-    return { product: product as any, recommendationCatalog, bestSellerRows, initialLang };
+    return { brand, product: product as any, recommendationCatalog, bestSellerRows, initialLang };
   },
   head: ({ loaderData, params }) => {
-    const product = loaderData?.product as Product | null | undefined;
-    if (!product) return { meta: [{ title: "Product not found" }] };
+    const product = loaderData?.product as any;
+    const brand = (loaderData as any)?.brand;
+    if (!product) return {};
 
     const lang = (loaderData as any)?.initialLang || "ar";
-    const name =
-      (lang === "ar"
-        ? (product.name_ar || product.name || product.name_en)
-        : (product.name_en || product.name || product.name_ar)) || "Product";
+    const name = (lang === "ar" ? product.name_ar : product.name_en) || product.name || "";
     const rawDesc =
       (lang === "ar"
-        ? (product.description_ar || product.description || product.description_en)
-        : (product.description_en || product.description || product.description_ar)) || name;
+        ? product.description_ar || product.description || product.description_en
+        : product.description_en || product.description || product.description_ar) || name;
     const description = rawDesc.replace(/\s+/g, " ").trim().slice(0, 160);
     const title = `${name} | ${String(params?.slug || "").toUpperCase()}`;
     const image = product.image_url || undefined;
+
+    const productSchema = buildProductSchema(
+      {
+        id: product.id,
+        name_en: product.name_en || product.name,
+        name_ar: product.name_ar || product.name,
+        description_en: product.description_en || product.description,
+        description_ar: product.description_ar || product.description,
+        price: Number(product.base_price ?? product.product_variants?.[0]?.selling_price ?? 0),
+        sale_price: product.original_price ? Number(product.base_price) : undefined,
+        sku: product.product_variants?.[0]?.id || product.id,
+        primary_image_url: product.image_url,
+        images: Array.isArray(product.media)
+          ? product.media.map((m: any) => (typeof m === "string" ? m : m?.url)).filter(Boolean)
+          : product.image_url
+            ? [product.image_url]
+            : [],
+        is_active: true,
+      },
+      brand || { slug: params.slug },
+      undefined,
+      lang,
+    );
+
+    const breadcrumbsSchema = buildBreadcrumbsSchema([
+      { name: lang === "ar" ? "الرئيسية" : "Home", url: `https://boutq.store/${params.slug}` },
+      { name, url: `https://boutq.store/${params.slug}/product/${params.id}` },
+    ]);
 
     return {
       htmlAttrs: {
@@ -136,6 +172,16 @@ export const Route = createFileRoute("/$slug/product/$id")({
         {
           rel: "canonical",
           href: `https://boutq.store/${params.slug}/product/${params.id}`,
+        },
+      ],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify(productSchema),
+        },
+        {
+          type: "application/ld+json",
+          children: JSON.stringify(breadcrumbsSchema),
         },
       ],
     };
@@ -183,6 +229,8 @@ type Product = {
   base_price?: number | null;
   original_price?: number | null;
   is_made_to_order?: boolean | null;
+  size_guide_id?: string | null;
+  size_guide_hidden?: boolean | null;
   variant_label_size_ar?: string | null;
   variant_label_size_en?: string | null;
   variant_label_color_ar?: string | null;
@@ -221,127 +269,7 @@ function variantSortKey(v: Variant): [number, string] {
   return [num, label.toLowerCase()];
 }
 
-const COLOR_MAP: Record<string, string> = {
-  black: "#0b0c10",
-  white: "#ffffff",
-  blue: "#2563eb",
-  red: "#dc2626",
-  green: "#16a34a",
-  yellow: "#eab308",
-  orange: "#ea580c",
-  purple: "#9333ea",
-  pink: "#db2777",
-  brown: "#78350f",
-  grey: "#4b5563",
-  gray: "#4b5563",
-  navy: "#1e3a8a",
-  teal: "#0d9488",
-  gold: "#d97706",
-  silver: "#9ca3af",
-  beige: "#f5f5dc",
-  burgundy: "#800020",
-  maroon: "#800020",
-  olive: "#556b2f",
-  nude: "#e3bc9a",
-  camel: "#c19a6b",
-  sand: "#e0cda3",
-  taupe: "#483c32",
-  charcoal: "#36454f",
-  ivory: "#fffff0",
-  cream: "#fffdd0",
-  lilac: "#c8a2c8",
-  lavender: "#e6e6fa",
-  mint: "#98ff98",
-
-  // Arabic with & without hamza
-  أسود: "#0b0c10",
-  اسود: "#0b0c10",
-  فاحم: "#0b0c10",
-  أبيض: "#ffffff",
-  ابيض: "#ffffff",
-  سكري: "#fcfbf4",
-  أوفوايت: "#f8f6f0",
-  افوايت: "#f8f6f0",
-  "أوف وايت": "#f8f6f0",
-  "اف وايت": "#f8f6f0",
-  عاجي: "#fffff0",
-  أزرق: "#2563eb",
-  ازرق: "#2563eb",
-  سماوي: "#38bdf8",
-  كحلي: "#1e3a8a",
-  نيفي: "#1e3a8a",
-  أحمر: "#dc2626",
-  احمر: "#dc2626",
-  عنابي: "#800020",
-  ماروني: "#800020",
-  خمري: "#722f37",
-  أخضر: "#16a34a",
-  اخضر: "#16a34a",
-  زيتي: "#4e5d2c",
-  زيتوني: "#556b2f",
-  أصفر: "#eab308",
-  اصفر: "#eab308",
-  خردلي: "#e3a857",
-  برتقالي: "#ea580c",
-  مشمشي: "#fbceb1",
-  بنفسجي: "#9333ea",
-  موف: "#9932cc",
-  ليلك: "#c8a2c8",
-  لافندر: "#e6e6fa",
-  وردي: "#db2777",
-  زهري: "#ff2a8d",
-  روز: "#ff007f",
-  خربزي: "#f88379",
-  بني: "#78350f",
-  عسلي: "#d4a373",
-  جملي: "#c19a6b",
-  تراكوتا: "#e2725b",
-  رمادي: "#4b5563",
-  رصاصي: "#71717a",
-  فحمي: "#36454f",
-  بيج: "#f5f5dc",
-  لحمي: "#e3bc9a",
-  نودي: "#e3bc9a",
-  ذهبي: "#d97706",
-  فضي: "#9ca3af",
-};
-
-function resolveColorHex(rawColor: string): string | null {
-  if (!rawColor) return null;
-  const trimmed = rawColor.trim();
-
-  // If valid CSS hex code
-  if (/^#(?:[0-9a-fA-F]{3}){1,2}$/.test(trimmed)) {
-    return trimmed;
-  }
-
-  const key = trimmed.toLowerCase();
-  if (COLOR_MAP[key]) return COLOR_MAP[key];
-
-  // Strip Arabic hamzas and tatweel
-  const normalized = key.replace(/[أإآ]/g, "ا").replace(/ـ/g, "").trim();
-
-  if (COLOR_MAP[normalized]) return COLOR_MAP[normalized];
-
-  // Keyword matching for compound color names
-  if (/اسود|أسود|black|فاحم/.test(normalized)) return "#0b0c10";
-  if (/ابيض|أبيض|white|سكري|عاجي|افوايت|أوفوايت/.test(normalized)) return "#ffffff";
-  if (/كحلي|navy|نيفي/.test(normalized)) return "#1e3a8a";
-  if (/عنابي|ماروني|خمري|burgundy|maroon/.test(normalized)) return "#800020";
-  if (/زيتي|زيتوني|olive/.test(normalized)) return "#4e5d2c";
-  if (/بني|brown|جملي|camel/.test(normalized)) return "#78350f";
-  if (/بيج|beige|لحمي|نودي|nude|sand/.test(normalized)) return "#f5f5dc";
-  if (/رمادي|رصاصي|فحمي|gray|grey|charcoal/.test(normalized)) return "#4b5563";
-  if (/ازرق|أزرق|سماوي|blue/.test(normalized)) return "#2563eb";
-  if (/احمر|أحمر|red/.test(normalized)) return "#dc2626";
-  if (/اخضر|أخضر|green/.test(normalized)) return "#16a34a";
-  if (/وردي|زهري|روز|pink/.test(normalized)) return "#db2777";
-  if (/بنفسجي|موف|ليلك|purple/.test(normalized)) return "#9333ea";
-  if (/ذهبي|gold/.test(normalized)) return "#d97706";
-  if (/فضي|silver/.test(normalized)) return "#9ca3af";
-
-  return null;
-}
+import { COLOR_MAP, resolveColorHex } from "@/lib/color-names";
 
 const parsePriceDelta = (valStr: string): number => {
   if (!valStr) return 0;
@@ -454,9 +382,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     refetchOnWindowFocus: false,
   });
 
-
   useEffect(() => {
     if (!product) return;
+    if (brand?.slug && product?.id) {
+      recordRecentlyViewed(brand.slug, product.id);
+    }
     const first = product.product_variants?.[0];
     trackStorefrontEvent(
       "view_item",
@@ -495,6 +425,21 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
     refetchOnWindowFocus: false,
+  });
+
+  const socialProofQuery = useQuery({
+    queryKey: ["storefront", brand.slug, "social-proof", product?.id],
+    queryFn: async () => {
+      if (!brand?.id || !product?.id) return null;
+      return getProductRecentPurchaseCount(
+        brand.id,
+        product.id,
+        7,
+        settings?.social_proof_threshold ?? 3,
+      );
+    },
+    enabled: Boolean(brand?.id && product?.id && settings?.storefront_design_version === 2),
+    staleTime: 10 * 60_000,
   });
 
   const { data: bestSellerRows = [] } = useQuery({
@@ -603,13 +548,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   }, [variants]);
 
   const allOptionTerms = useMemo(() => {
-    return [
-      ...uniqueSizes,
-      ...uniqueColors,
-      ...uniqueFabrics,
-      ...uniqueFour,
-      ...uniqueFive,
-    ];
+    return [...uniqueSizes, ...uniqueColors, ...uniqueFabrics, ...uniqueFour, ...uniqueFive];
   }, [uniqueSizes, uniqueColors, uniqueFabrics, uniqueFour, uniqueFive]);
 
   useVariantTranslations(allOptionTerms, lang === "ar" ? "ar" : "en");
@@ -928,6 +867,21 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     return matchingVariants.map((v) => Number(v.selling_price || basePrice) + selectedAddOnPrice);
   }, [matchingVariants, basePrice, selectedAddOnPrice]);
 
+  // Derived flags + effect run before any early return so hook order is stable.
+  const isMadeToOrder = Boolean(product?.is_made_to_order);
+  const hasReadySizes = uniqueSizes.length > 0;
+  const hasCustomFields = customFields.length > 0;
+  const showSizeModeToggle =
+    modules.made_to_order && hasReadySizes && hasCustomFields && isMadeToOrder;
+  const isTailoringActive =
+    isMadeToOrder && ((showSizeModeToggle && sizeMode === "custom") || !showSizeModeToggle);
+
+  useEffect(() => {
+    if (isMadeToOrder && !hasReadySizes) {
+      setSizeMode("custom");
+    }
+  }, [isMadeToOrder, hasReadySizes]);
+
   if (isLoading && !product) {
     return (
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 grid md:grid-cols-2 gap-8">
@@ -991,20 +945,6 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const scrollToOptions = () => {
     optionsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
-
-  const isMadeToOrder = Boolean(product?.is_made_to_order);
-  const hasReadySizes = uniqueSizes.length > 0;
-  const hasCustomFields = customFields.length > 0;
-  const showSizeModeToggle =
-    modules.made_to_order && hasReadySizes && hasCustomFields && isMadeToOrder;
-  const isTailoringActive =
-    isMadeToOrder && ((showSizeModeToggle && sizeMode === "custom") || !showSizeModeToggle);
-
-  useEffect(() => {
-    if (isMadeToOrder && !hasReadySizes) {
-      setSizeMode("custom");
-    }
-  }, [isMadeToOrder, hasReadySizes]);
 
   const selectedVariantOutOfStock = Boolean(!isTailoringActive && variant && maxStock <= 0);
 
@@ -1288,7 +1228,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                     streamIframeUrl={media[mediaIdx % media.length].stream_iframe_url}
                     poster={
                       media[mediaIdx % media.length].poster_url ??
-                      media[mediaIdx % media.length].url
+                      (isLikelyImageUrl(media[mediaIdx % media.length].url)
+                        ? media[mediaIdx % media.length].url
+                        : undefined)
                     }
                     className="h-full w-full object-cover"
                     wrapperClassName="h-full w-full overflow-hidden bg-black/90"
@@ -1297,6 +1239,16 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                     muted
                     playsInline
                     controls
+                  />
+                ) : settings?.storefront_design_version === 2 ? (
+                  <ImageZoom
+                    src={media[mediaIdx % media.length].url}
+                    alt={displayName}
+                    className="w-full h-full"
+                    aspectRatio="aspect-auto h-full"
+                    style={{
+                      viewTransitionName: `product-img-${product.id.replace(/[^a-zA-Z0-9_-]/g, "_")}`,
+                    }}
                   />
                 ) : (
                   <ResponsiveImage
@@ -1356,13 +1308,15 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 >
                   {m.type === "video" ? (
                     <div className="relative w-full h-full bg-black/90 flex items-center justify-center">
-                      {m.poster_url || m.url ? (
+                      {m.poster_url || isLikelyImageUrl(m.url) ? (
                         <img
                           src={m.poster_url || m.url}
-                          alt=""
+                          alt={`${displayName} - preview ${i + 1}`}
                           className="w-full h-full object-cover opacity-60"
                         />
-                      ) : null}
+                      ) : (
+                        <div className="size-full bg-muted/60" />
+                      )}
                       <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                         <div className="h-6 w-6 rounded-full bg-white/90 text-black flex items-center justify-center text-xs font-bold shadow-md">
                           ▶
@@ -1436,6 +1390,20 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               </>
             )}
           </div>
+
+          {/* Social Proof Badge */}
+          {settings?.storefront_design_version === 2 && socialProofQuery.data && (
+            <div className="mb-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-semibold border border-amber-500/20">
+              <Sparkles className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+              <span>
+                {t(
+                  `تم شراؤه ${socialProofQuery.data} مرات خلال الأسبوع الماضي`,
+                  `Purchased ${socialProofQuery.data} times in the last 7 days`,
+                )}
+              </span>
+            </div>
+          )}
+
           {displayDescription && (
             <p className="text-muted-foreground mb-4 sm:mb-6 whitespace-pre-line text-sm sm:text-base">
               {displayDescription}
@@ -1699,7 +1667,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               {uniqueFabrics.length > 0 && (
                 <div>
                   <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
-                    <span>{resolvedAxes.fabric.label || (lang === "ar" ? "الخامة" : "Fabric")}:</span>
+                    <span>
+                      {resolvedAxes.fabric.label || (lang === "ar" ? "الخامة" : "Fabric")}:
+                    </span>
                     {selectedFabric && (
                       <span className="text-muted-foreground font-normal">
                         {translateOptionValue(selectedFabric, lang)}
@@ -1748,7 +1718,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               {uniqueFour.length > 0 && (
                 <div>
                   <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
-                    <span>{resolvedAxes.four.label || (lang === "ar" ? "الخيار 4" : "Option 4")}:</span>
+                    <span>
+                      {resolvedAxes.four.label || (lang === "ar" ? "الخيار 4" : "Option 4")}:
+                    </span>
                     {selectedOptionFour && (
                       <span className="text-muted-foreground font-normal">
                         {translateOptionValue(selectedOptionFour, lang)}
@@ -1781,7 +1753,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               {uniqueFive.length > 0 && (
                 <div>
                   <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
-                    <span>{resolvedAxes.five.label || (lang === "ar" ? "الخيار 5" : "Option 5")}:</span>
+                    <span>
+                      {resolvedAxes.five.label || (lang === "ar" ? "الخيار 5" : "Option 5")}:
+                    </span>
                     {selectedOptionFive && (
                       <span className="text-muted-foreground font-normal">
                         {translateOptionValue(selectedOptionFive, lang)}
@@ -2247,6 +2221,26 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 <span>{t("طلب عبر واتساب", "Inquire via WhatsApp")}</span>
               </Button>
             </div>
+          ) : selectedVariantOutOfStock ? (
+            <div className="space-y-3">
+              <NotifyMeForm
+                brandId={brand.id}
+                productId={product.id}
+                variantId={variant?.id}
+                productName={displayName}
+                variantLabel={
+                  variant
+                    ? [
+                        formatSizeWithUnit(variant.size, variant.size_unit, lang),
+                        variant.color,
+                        variant.fabric,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")
+                    : null
+                }
+              />
+            </div>
           ) : (
             <div className="hidden md:flex gap-2">
               <Button
@@ -2298,6 +2292,26 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   : settings.delivery_estimate_en || "Estimated delivery within 24 - 48 hours"}
               </span>
             </div>
+          )}
+
+          {/* Layer 2 Product Accordions */}
+          {settings?.storefront_design_version === 2 && (
+            <ProductAccordion
+              description={displayDescription}
+              fabricCare={variant?.fabric ? `${variant.fabric}` : null}
+              hasSizeGuide={Boolean(
+                modules?.size_guide || (product?.size_guide_id && !product?.size_guide_hidden),
+              )}
+            />
+          )}
+
+          {/* Layer 2 Bundle Offer */}
+          {settings?.storefront_design_version === 2 && relatedProducts.length > 0 && (
+            <BundleOffer
+              mainProduct={product}
+              mainVariant={variant}
+              bundleItems={relatedProducts.slice(0, 3)}
+            />
           )}
         </div>
 
@@ -2353,6 +2367,15 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               >
                 <MessageCircle className="h-4 w-4" />
                 <span>{t("طلب عبر واتساب", "Inquire")}</span>
+              </Button>
+            ) : selectedVariantOutOfStock ? (
+              <Button
+                type="button"
+                className="flex-1 h-11 px-4 font-semibold bg-primary text-primary-foreground gap-2"
+                onClick={scrollToOptions}
+              >
+                <Bell className="h-4 w-4" />
+                <span>{t("أشعرني عند التوفر", "Notify When Available")}</span>
               </Button>
             ) : (
               <>
@@ -2414,6 +2437,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           )}
         </div>
       )}
+
+      {/* Layer 2 Recently Viewed Carousel */}
+      <RecentlyViewed excludeProductId={product.id} />
     </div>
   );
 }

@@ -20,11 +20,7 @@ export const translateOptionTerms = createServerFn({ method: "POST" })
   .validator((raw: unknown) => Input.parse(raw))
   .handler(async ({ data }) => {
     const rawTerms = Array.from(
-      new Set(
-        data.terms
-          .map((t) => (typeof t === "string" ? t.trim() : ""))
-          .filter(Boolean),
-      ),
+      new Set(data.terms.map((t) => (typeof t === "string" ? t.trim() : "")).filter(Boolean)),
     );
 
     if (rawTerms.length === 0 || data.from === data.to) {
@@ -111,8 +107,7 @@ export const translateOptionTerms = createServerFn({ method: "POST" })
             const payload = (await response.json()) as {
               candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
             };
-            const jsonText =
-              payload.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "{}";
+            const jsonText = payload.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "{}";
 
             try {
               const aiMap = JSON.parse(jsonText);

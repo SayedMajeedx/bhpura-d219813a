@@ -83,12 +83,7 @@ export const MERCHANT_JOB_GROUPS: MerchantJobGroup[] = [
 
 /** The 6 Unified Master Workspaces */
 export type AdminWorkspaceId =
-  | "today"
-  | "operations"
-  | "catalog"
-  | "growth"
-  | "finance"
-  | "store_setup";
+  "today" | "operations" | "catalog" | "growth" | "finance" | "store_setup";
 
 export interface AdminWorkspaceGroup {
   id: AdminWorkspaceId;
@@ -409,7 +404,8 @@ export function getAdminNavItems({
       labelAr: lang === "ar" ? "مركز الاستيراد والترحيل" : "Import & Migration",
       descriptionEn:
         "Universal importer for products, customer CRM, legacy orders, and Instagram catalog",
-      descriptionAr: "الاستيراد الشامل لكتالوج المنتجات، جهات اتصال العملاء، الطلبات السابقة، وإنستغرام",
+      descriptionAr:
+        "الاستيراد الشامل لكتالوج المنتجات، جهات اتصال العملاء، الطلبات السابقة، وإنستغرام",
       icon: Upload,
       permission: "manage_inventory",
       section: "operations",
@@ -650,7 +646,7 @@ export function getWorkspaceCategory(
 
 export function getWorkspaceGroup(
   workspaceId: AdminWorkspaceId | MerchantJobCategory | null | undefined,
-): (AdminWorkspaceGroup | MerchantJobGroup) & { icon?: LucideIcon } | undefined {
+): ((AdminWorkspaceGroup | MerchantJobGroup) & { icon?: LucideIcon }) | undefined {
   if (!workspaceId) return undefined;
   const ws = ADMIN_WORKSPACES.find((w) => w.id === workspaceId);
   if (ws) return ws;
@@ -680,4 +676,3 @@ export function getWorkspaceSubTabs(
   });
   return { items, activeItem };
 }
-

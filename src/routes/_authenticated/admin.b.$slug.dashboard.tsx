@@ -476,9 +476,7 @@ function Dashboard() {
     recentOrdersQ.isLoading ||
     incubatorSalesQ.isLoading ||
     (canViewFinancials
-      ? expensesQ.isLoading ||
-        reportingOverviewQ.isLoading ||
-        previousReportingOverviewQ.isLoading
+      ? expensesQ.isLoading || reportingOverviewQ.isLoading || previousReportingOverviewQ.isLoading
       : false);
   const accountingRows = Array.isArray(reportingOverviewQ.data) ? reportingOverviewQ.data : [];
   const accountingRow: any =
@@ -978,11 +976,7 @@ function Dashboard() {
               ? "لن نعرض أرقاماً تقديرية قد تتعارض مع التقارير. أعد المحاولة بعد التحقق من الاتصال."
               : "We will not show fallback estimates that may conflict with Reports. Check the connection and try again."}
           </p>
-          <Button
-            type="button"
-            className="mt-5"
-            onClick={() => reportingOverviewQ.refetch()}
-          >
+          <Button type="button" className="mt-5" onClick={() => reportingOverviewQ.refetch()}>
             {isAr ? "إعادة المحاولة" : "Try again"}
           </Button>
         </Card>

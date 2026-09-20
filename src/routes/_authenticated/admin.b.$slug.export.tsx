@@ -63,14 +63,16 @@ function ExportCenterPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select(`
+        .select(
+          `
           id, name, name_ar, name_en, description, description_ar, description_en,
           category, image_url, is_active, created_at,
           product_variants (
             id, size, size_unit, color, fabric, sku, barcode,
             cost_price, selling_price, stock_main, stock_incubator
           )
-        `)
+        `,
+        )
         .eq("brand_id", brandId)
         .order("created_at", { ascending: false });
       if (error) {
@@ -102,13 +104,15 @@ function ExportCenterPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select(`
+        .select(
+          `
           id, invoice_number, total, subtotal, shipping, discount, tax_amount,
           payment_method, payment_status, status, fulfillment_status, delivery_notes, created_at, customer_id,
           order_items (
             id, description, quantity, unit_price, unit_cost, line_total
           )
-        `)
+        `,
+        )
         .eq("brand_id", brandId)
         .order("created_at", { ascending: false });
       if (error) {
@@ -209,7 +213,9 @@ function ExportCenterPage() {
     });
     void refetchHistory();
     toast.success(
-      isAr ? "تم تنزيل النسخة الاحتياطية الكاملة للمتجر بنجاح!" : "Full store backup downloaded successfully!",
+      isAr
+        ? "تم تنزيل النسخة الاحتياطية الكاملة للمتجر بنجاح!"
+        : "Full store backup downloaded successfully!",
     );
   };
 
@@ -224,7 +230,9 @@ function ExportCenterPage() {
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl font-bold font-display tracking-tight text-foreground">
-                {isAr ? "مركز التصدير والنسخ الاحتياطي الشامل" : "Universal Export & Data Backup Center"}
+                {isAr
+                  ? "مركز التصدير والنسخ الاحتياطي الشامل"
+                  : "Universal Export & Data Backup Center"}
               </h1>
               <p className="text-xs sm:text-sm text-muted-foreground">
                 {isAr
@@ -263,7 +271,10 @@ function ExportCenterPage() {
                 {isAr ? "كتالوج المنتجات والخيارات" : "Products & Variants"}
               </p>
               <p className="text-2xl font-bold text-foreground tracking-tight">
-                {products.length} <span className="text-xs font-normal text-muted-foreground">({totalVariants} {isAr ? "خيار" : "variants"})</span>
+                {products.length}{" "}
+                <span className="text-xs font-normal text-muted-foreground">
+                  ({totalVariants} {isAr ? "خيار" : "variants"})
+                </span>
               </p>
             </div>
             <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
@@ -459,22 +470,23 @@ function ProductExportSection({
       // Category filter
       if (categoryFilter !== "all" && p.category !== categoryFilter) return;
 
-      const variants = p.product_variants && p.product_variants.length > 0
-        ? p.product_variants
-        : [
-            {
-              id: p.id,
-              size: null,
-              color: null,
-              fabric: null,
-              sku: `SKU-${p.id.slice(0, 8).toUpperCase()}`,
-              barcode: null,
-              cost_price: 0,
-              selling_price: 0,
-              stock_main: 0,
-              stock_incubator: 0,
-            },
-          ];
+      const variants =
+        p.product_variants && p.product_variants.length > 0
+          ? p.product_variants
+          : [
+              {
+                id: p.id,
+                size: null,
+                color: null,
+                fabric: null,
+                sku: `SKU-${p.id.slice(0, 8).toUpperCase()}`,
+                barcode: null,
+                cost_price: 0,
+                selling_price: 0,
+                stock_main: 0,
+                stock_incubator: 0,
+              },
+            ];
 
       variants.forEach((v: any) => {
         const totalStock = (v.stock_main || 0) + (v.stock_incubator || 0);
@@ -538,7 +550,7 @@ function ProductExportSection({
           rows.push({
             sku: v.sku || `SKU-${v.id?.slice(0, 6)}`,
             barcode: v.barcode || "—",
-            name: isAr ? (p.name_ar || p.name) : (p.name_en || p.name),
+            name: isAr ? p.name_ar || p.name : p.name_en || p.name,
             variant_details: [v.size, v.color].filter(Boolean).join(" / ") || "Standard",
             category: p.category || "—",
             total_stock: totalStock,
@@ -565,7 +577,7 @@ function ProductExportSection({
             stock_main: v.stock_main || 0,
             stock_incubator: v.stock_incubator || 0,
             total_stock: totalStock,
-            status: p.is_active ? (isAr ? "نشط" : "Active") : (isAr ? "معطل" : "Draft"),
+            status: p.is_active ? (isAr ? "نشط" : "Active") : isAr ? "معطل" : "Draft",
             image_url: p.image_url || "",
             description_ar: p.description_ar || p.description || "",
             description_en: p.description_en || p.description || "",
@@ -584,7 +596,9 @@ function ProductExportSection({
     }
 
     setIsExporting(true);
-    const toastId = toast.loading(isAr ? "جاري تجهيز وتنسيق الملف..." : "Generating export file...");
+    const toastId = toast.loading(
+      isAr ? "جاري تجهيز وتنسيق الملف..." : "Generating export file...",
+    );
 
     try {
       const fileName = `boutq_${brandSlug}_products_${selectedPresetId}_${new Date().toISOString().slice(0, 10)}.${format}`;
@@ -658,7 +672,9 @@ function ProductExportSection({
                   </p>
                 </div>
                 <div className="mt-3 pt-2 border-t border-border/50 flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span>{p.columns.length} {isAr ? "أعمدة" : "cols"}</span>
+                  <span>
+                    {p.columns.length} {isAr ? "أعمدة" : "cols"}
+                  </span>
                   <span className="font-semibold text-primary/80">
                     {p.id === "shopify_compatible" ? "Shopify Ready" : "Universal"}
                   </span>
@@ -686,7 +702,7 @@ function ProductExportSection({
                   <option value="all">{isAr ? "جميع الأقسام" : "All Categories"}</option>
                   {categories.map((c: any) => (
                     <option key={c.id} value={c.name}>
-                      {isAr ? (c.name_ar || c.name) : (c.name_en || c.name)}
+                      {isAr ? c.name_ar || c.name : c.name_en || c.name}
                     </option>
                   ))}
                 </select>
@@ -703,9 +719,15 @@ function ProductExportSection({
                 >
                   <option value="all">{isAr ? "كل المنتجات" : "All Products"}</option>
                   <option value="in_stock">{isAr ? "المتوفر بالمخزن فقط" : "In Stock Only"}</option>
-                  <option value="low_stock">{isAr ? "مخزون منخفض (≤ 5)" : "Low Stock (≤ 5)"}</option>
-                  <option value="out_of_stock">{isAr ? "المنتجات النافذة فقط" : "Out of Stock"}</option>
-                  <option value="active_only">{isAr ? "المنتجات النشطة فقط" : "Active Only"}</option>
+                  <option value="low_stock">
+                    {isAr ? "مخزون منخفض (≤ 5)" : "Low Stock (≤ 5)"}
+                  </option>
+                  <option value="out_of_stock">
+                    {isAr ? "المنتجات النافذة فقط" : "Out of Stock"}
+                  </option>
+                  <option value="active_only">
+                    {isAr ? "المنتجات النشطة فقط" : "Active Only"}
+                  </option>
                   <option value="draft_only">{isAr ? "المسودات والمعطلة" : "Drafts Only"}</option>
                 </select>
               </div>
@@ -766,8 +788,12 @@ function ProductExportSection({
               <Download className="h-4 w-4" />
             )}
             {isExporting
-              ? isAr ? "جاري التصدير..." : "Exporting..."
-              : isAr ? `تصدير الكتالوج (${flattenedRows.length} صف)` : `Export Catalog (${flattenedRows.length} Rows)`}
+              ? isAr
+                ? "جاري التصدير..."
+                : "Exporting..."
+              : isAr
+                ? `تصدير الكتالوج (${flattenedRows.length} صف)`
+                : `Export Catalog (${flattenedRows.length} Rows)`}
           </Button>
         </div>
 
@@ -793,7 +819,10 @@ function ProductExportSection({
                 {flattenedRows.slice(0, 5).map((row, idx) => (
                   <tr key={idx} className="hover:bg-muted/30">
                     {preset.columns.slice(0, 8).map((c) => (
-                      <td key={c.key} className="p-2.5 whitespace-nowrap text-foreground font-mono text-[11px]">
+                      <td
+                        key={c.key}
+                        className="p-2.5 whitespace-nowrap text-foreground font-mono text-[11px]"
+                      >
                         {row[c.key] != null ? String(row[c.key]) : "—"}
                       </td>
                     ))}
@@ -805,7 +834,9 @@ function ProductExportSection({
                 {flattenedRows.length === 0 && (
                   <tr>
                     <td colSpan={9} className="p-8 text-center text-muted-foreground">
-                      {isAr ? "لا توجد بيانات مطابقة للفلاتر المحددة" : "No records match current filters"}
+                      {isAr
+                        ? "لا توجد بيانات مطابقة للفلاتر المحددة"
+                        : "No records match current filters"}
                     </td>
                   </tr>
                 )}
@@ -873,8 +904,10 @@ function CustomerExportSection({
         let displayEmail = c.email || "";
 
         if (maskPrivacy) {
-          if (displayPhone) displayPhone = displayPhone.slice(0, 4) + "****" + displayPhone.slice(-2);
-          if (displayEmail) displayEmail = displayEmail.slice(0, 2) + "***@" + (displayEmail.split("@")[1] || "");
+          if (displayPhone)
+            displayPhone = displayPhone.slice(0, 4) + "****" + displayPhone.slice(-2);
+          if (displayEmail)
+            displayEmail = displayEmail.slice(0, 2) + "***@" + (displayEmail.split("@")[1] || "");
         }
 
         const avgOrder = stats.totalOrders > 0 ? stats.totalSpent / stats.totalOrders : 0;
@@ -887,7 +920,7 @@ function CustomerExportSection({
           email: displayEmail,
           total_orders: stats.totalOrders,
           total_spent: stats.totalSpent,
-          is_vip: isVip ? (isAr ? "نعم (VIP)" : "VIP") : (isAr ? "عادي" : "Standard"),
+          is_vip: isVip ? (isAr ? "نعم (VIP)" : "VIP") : isAr ? "عادي" : "Standard",
           segment: isVip ? "VIP" : stats.totalOrders > 0 ? "Returning" : "New Contact",
           average_order_value: avgOrder,
           notes: c.notes || "",
@@ -909,7 +942,9 @@ function CustomerExportSection({
     }
 
     setIsExporting(true);
-    const toastId = toast.loading(isAr ? "جاري تجهيز قائمة العملاء..." : "Generating customer list...");
+    const toastId = toast.loading(
+      isAr ? "جاري تجهيز قائمة العملاء..." : "Generating customer list...",
+    );
 
     try {
       const fileName = `boutq_${brandSlug}_customers_${selectedPresetId}_${new Date().toISOString().slice(0, 10)}.${format}`;
@@ -937,7 +972,9 @@ function CustomerExportSection({
 
       onExportSuccess();
       toast.success(
-        isAr ? `تم تصدير ${rows.length} جهة اتصال بنجاح!` : `Successfully exported ${rows.length} contacts!`,
+        isAr
+          ? `تم تصدير ${rows.length} جهة اتصال بنجاح!`
+          : `Successfully exported ${rows.length} contacts!`,
         { id: toastId },
       );
     } catch (err: any) {
@@ -980,7 +1017,9 @@ function CustomerExportSection({
                   </p>
                 </div>
                 <div className="mt-3 pt-2 border-t border-border/50 flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span>{p.columns.length} {isAr ? "حقول" : "fields"}</span>
+                  <span>
+                    {p.columns.length} {isAr ? "حقول" : "fields"}
+                  </span>
                   <span className="font-semibold text-sky-600 dark:text-sky-400">
                     {p.id === "whatsapp_campaign" ? "Marketing Blast" : "CRM"}
                   </span>
@@ -1006,9 +1045,15 @@ function CustomerExportSection({
                   className="h-9 px-3 text-xs rounded-lg border border-border bg-background focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <option value="all">{isAr ? "جميع جهات الاتصال" : "All Customers"}</option>
-                  <option value="vip_only">{isAr ? "عملاء VIP والأكثر شراءً فقط" : "VIP Spenders Only"}</option>
-                  <option value="with_orders">{isAr ? "من لديهم طلبات سابقة" : "With Order History"}</option>
-                  <option value="with_phone">{isAr ? "من لديهم رقم هاتف متاح" : "With Valid Phone"}</option>
+                  <option value="vip_only">
+                    {isAr ? "عملاء VIP والأكثر شراءً فقط" : "VIP Spenders Only"}
+                  </option>
+                  <option value="with_orders">
+                    {isAr ? "من لديهم طلبات سابقة" : "With Order History"}
+                  </option>
+                  <option value="with_phone">
+                    {isAr ? "من لديهم رقم هاتف متاح" : "With Valid Phone"}
+                  </option>
                 </select>
               </div>
 
@@ -1021,8 +1066,13 @@ function CustomerExportSection({
                   onChange={(e) => setMaskPrivacy(e.target.checked)}
                   className="rounded border-border text-primary focus:ring-primary h-4 w-4"
                 />
-                <label htmlFor="mask-privacy" className="text-xs font-semibold cursor-pointer text-foreground">
-                  {isAr ? "تفعيل درع الخصوصية (إخفاء الأرقام والبريد)" : "Privacy Shield (Mask phone & email)"}
+                <label
+                  htmlFor="mask-privacy"
+                  className="text-xs font-semibold cursor-pointer text-foreground"
+                >
+                  {isAr
+                    ? "تفعيل درع الخصوصية (إخفاء الأرقام والبريد)"
+                    : "Privacy Shield (Mask phone & email)"}
                 </label>
               </div>
             </div>
@@ -1064,7 +1114,9 @@ function CustomerExportSection({
           <div className="flex items-center gap-2">
             <Eye className="h-4 w-4 text-muted-foreground" />
             <span className="text-xs font-bold text-foreground">
-              {isAr ? "معاينة العملاء المستهدفين (أول 5 صفوف)" : "Target Customers Preview (First 5 Rows)"}
+              {isAr
+                ? "معاينة العملاء المستهدفين (أول 5 صفوف)"
+                : "Target Customers Preview (First 5 Rows)"}
             </span>
             <Badge variant="secondary" className="text-[11px] font-semibold">
               {rows.length} {isAr ? "عميل محدد" : "contacts"}
@@ -1082,8 +1134,12 @@ function CustomerExportSection({
               <Download className="h-4 w-4" />
             )}
             {isExporting
-              ? isAr ? "جاري التصدير..." : "Exporting..."
-              : isAr ? `تصدير قائمة العملاء (${rows.length})` : `Export Customers (${rows.length})`}
+              ? isAr
+                ? "جاري التصدير..."
+                : "Exporting..."
+              : isAr
+                ? `تصدير قائمة العملاء (${rows.length})`
+                : `Export Customers (${rows.length})`}
           </Button>
         </div>
 
@@ -1104,7 +1160,10 @@ function CustomerExportSection({
                 {rows.slice(0, 5).map((row: any, idx) => (
                   <tr key={idx} className="hover:bg-muted/30">
                     {preset.columns.map((c) => (
-                      <td key={c.key} className="p-2.5 whitespace-nowrap text-foreground font-mono text-[11px]">
+                      <td
+                        key={c.key}
+                        className="p-2.5 whitespace-nowrap text-foreground font-mono text-[11px]"
+                      >
                         {row[c.key] != null ? String(row[c.key]) : "—"}
                       </td>
                     ))}
@@ -1112,8 +1171,13 @@ function CustomerExportSection({
                 ))}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={preset.columns.length} className="p-8 text-center text-muted-foreground">
-                      {isAr ? "لا توجد جهات اتصال مطابقة للشريحة" : "No contacts match current segment"}
+                    <td
+                      colSpan={preset.columns.length}
+                      className="p-8 text-center text-muted-foreground"
+                    >
+                      {isAr
+                        ? "لا توجد جهات اتصال مطابقة للشريحة"
+                        : "No contacts match current segment"}
                     </td>
                   </tr>
                 )}
@@ -1223,7 +1287,12 @@ function OrderExportSection({
               sku: it.sku || "—",
               quantity: qty,
               unit_price: price,
-              item_total: it.line_total != null ? Number(it.line_total) : (it.total != null ? Number(it.total) : price * qty),
+              item_total:
+                it.line_total != null
+                  ? Number(it.line_total)
+                  : it.total != null
+                    ? Number(it.total)
+                    : price * qty,
               payment_status: o.payment_status || "paid",
               order_status: o.status || "completed",
             });
@@ -1258,7 +1327,10 @@ function OrderExportSection({
           order_date: orderDateStr,
           customer_name: custName,
           customer_phone: custPhone,
-          items_count: items.reduce((acc: number, it: any) => acc + (Number(it.quantity) || 1), items.length || 1),
+          items_count: items.reduce(
+            (acc: number, it: any) => acc + (Number(it.quantity) || 1),
+            items.length || 1,
+          ),
           subtotal: Number(o.subtotal) || Number(o.total) || 0,
           discount_amount: Number(o.discount ?? o.discount_amount) || 0,
           delivery_fee: Number(o.shipping ?? o.delivery_fee) || 0,
@@ -1282,7 +1354,9 @@ function OrderExportSection({
     }
 
     setIsExporting(true);
-    const toastId = toast.loading(isAr ? "جاري تنسيق تقرير الطلبات..." : "Generating orders report...");
+    const toastId = toast.loading(
+      isAr ? "جاري تنسيق تقرير الطلبات..." : "Generating orders report...",
+    );
 
     try {
       const fileName = `boutq_${brandSlug}_orders_${selectedPresetId}_${new Date().toISOString().slice(0, 10)}.${format}`;
@@ -1310,7 +1384,9 @@ function OrderExportSection({
 
       onExportSuccess();
       toast.success(
-        isAr ? `تم تصدير ${rows.length} صف من سجل المبيعات!` : `Successfully exported ${rows.length} sales rows!`,
+        isAr
+          ? `تم تصدير ${rows.length} صف من سجل المبيعات!`
+          : `Successfully exported ${rows.length} sales rows!`,
         { id: toastId },
       );
     } catch (err: any) {
@@ -1353,7 +1429,9 @@ function OrderExportSection({
                   </p>
                 </div>
                 <div className="mt-3 pt-2 border-t border-border/50 flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span>{p.columns.length} {isAr ? "حقول" : "columns"}</span>
+                  <span>
+                    {p.columns.length} {isAr ? "حقول" : "columns"}
+                  </span>
                   <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                     {p.id === "accounting_ledger" ? "Audit / Tax Ready" : "Sales Ledger"}
                   </span>
@@ -1469,8 +1547,12 @@ function OrderExportSection({
               <Download className="h-4 w-4" />
             )}
             {isExporting
-              ? isAr ? "جاري التصدير..." : "Exporting..."
-              : isAr ? `تصدير ملف المبيعات (${rows.length})` : `Export Orders (${rows.length})`}
+              ? isAr
+                ? "جاري التصدير..."
+                : "Exporting..."
+              : isAr
+                ? `تصدير ملف المبيعات (${rows.length})`
+                : `Export Orders (${rows.length})`}
           </Button>
         </div>
 
@@ -1491,7 +1573,10 @@ function OrderExportSection({
                 {rows.slice(0, 5).map((row: any, idx) => (
                   <tr key={idx} className="hover:bg-muted/30">
                     {preset.columns.map((c) => (
-                      <td key={c.key} className="p-2.5 whitespace-nowrap text-foreground font-mono text-[11px]">
+                      <td
+                        key={c.key}
+                        className="p-2.5 whitespace-nowrap text-foreground font-mono text-[11px]"
+                      >
                         {row[c.key] != null ? String(row[c.key]) : "—"}
                       </td>
                     ))}
@@ -1499,8 +1584,13 @@ function OrderExportSection({
                 ))}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={preset.columns.length} className="p-8 text-center text-muted-foreground">
-                      {isAr ? "لا توجد مبيعات مطابقة للفترة المحددة" : "No orders found in this period"}
+                    <td
+                      colSpan={preset.columns.length}
+                      className="p-8 text-center text-muted-foreground"
+                    >
+                      {isAr
+                        ? "لا توجد مبيعات مطابقة للفترة المحددة"
+                        : "No orders found in this period"}
                     </td>
                   </tr>
                 )}
@@ -1555,7 +1645,9 @@ function ExpenseExportSection({
     }
 
     setIsExporting(true);
-    const toastId = toast.loading(isAr ? "جاري تجهيز كشف المصروفات..." : "Generating expenses file...");
+    const toastId = toast.loading(
+      isAr ? "جاري تجهيز كشف المصروفات..." : "Generating expenses file...",
+    );
 
     try {
       const fileName = `boutq_${brandSlug}_expenses_${new Date().toISOString().slice(0, 10)}.${format}`;
@@ -1583,7 +1675,9 @@ function ExpenseExportSection({
 
       onExportSuccess();
       toast.success(
-        isAr ? `تم تصدير ${rows.length} بند مصروفات بنجاح!` : `Exported ${rows.length} expense items!`,
+        isAr
+          ? `تم تصدير ${rows.length} بند مصروفات بنجاح!`
+          : `Exported ${rows.length} expense items!`,
         { id: toastId },
       );
     } catch (err: any) {
@@ -1599,7 +1693,9 @@ function ExpenseExportSection({
         <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="space-y-1">
             <h3 className="text-sm font-bold text-foreground">
-              {isAr ? "كشف المصروفات والنفقات التشغيلية" : "Operational Overhead & Expenses Journal"}
+              {isAr
+                ? "كشف المصروفات والنفقات التشغيلية"
+                : "Operational Overhead & Expenses Journal"}
             </h3>
             <p className="text-xs text-muted-foreground">
               {isAr
@@ -1628,7 +1724,7 @@ function ExpenseExportSection({
                 format === "csv"
                   ? "border-sky-500 bg-sky-500/10 text-sky-600 dark:text-sky-400"
                   : "border-border text-muted-foreground hover:bg-muted"
-                }`}
+              }`}
             >
               <FileText className="h-4 w-4" />
               <span>CSV (UTF-8 BOM)</span>
@@ -1640,14 +1736,19 @@ function ExpenseExportSection({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-foreground">
-            {isAr ? "معاينة المصروفات" : "Expenses Preview"} ({rows.length} {isAr ? "بند" : "entries"})
+            {isAr ? "معاينة المصروفات" : "Expenses Preview"} ({rows.length}{" "}
+            {isAr ? "بند" : "entries"})
           </span>
           <Button
             onClick={handleExport}
             disabled={isExporting || rows.length === 0}
             className="h-10 px-5 text-xs font-bold gap-2 shadow-xs"
           >
-            {isExporting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            {isExporting ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
             {isAr ? `تصدير المصروفات (${rows.length})` : `Export Expenses (${rows.length})`}
           </Button>
         </div>
@@ -1668,7 +1769,10 @@ function ExpenseExportSection({
                 {rows.slice(0, 5).map((row: any, idx) => (
                   <tr key={idx} className="hover:bg-muted/30">
                     {preset.columns.map((c) => (
-                      <td key={c.key} className="p-2.5 whitespace-nowrap text-foreground font-mono text-[11px]">
+                      <td
+                        key={c.key}
+                        className="p-2.5 whitespace-nowrap text-foreground font-mono text-[11px]"
+                      >
                         {row[c.key] != null ? String(row[c.key]) : "—"}
                       </td>
                     ))}
@@ -1676,7 +1780,10 @@ function ExpenseExportSection({
                 ))}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={preset.columns.length} className="p-8 text-center text-muted-foreground">
+                    <td
+                      colSpan={preset.columns.length}
+                      className="p-8 text-center text-muted-foreground"
+                    >
                       {isAr ? "لا توجد مصروفات مسجلة" : "No expenses recorded"}
                     </td>
                   </tr>
@@ -1712,7 +1819,11 @@ function ExportHistorySection({
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 text-primary font-bold text-sm">
               <Database className="h-5 w-5" />
-              <span>{isAr ? "النسخة الاحتياطية الشاملة للمتجر (Disaster Recovery)" : "Full Store Disaster Recovery Backup"}</span>
+              <span>
+                {isAr
+                  ? "النسخة الاحتياطية الشاملة للمتجر (Disaster Recovery)"
+                  : "Full Store Disaster Recovery Backup"}
+              </span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed max-w-2xl">
               {isAr
@@ -1721,7 +1832,10 @@ function ExportHistorySection({
             </p>
           </div>
 
-          <Button onClick={onBackup} className="shrink-0 h-10 px-5 text-xs font-bold gap-2 shadow-xs">
+          <Button
+            onClick={onBackup}
+            className="shrink-0 h-10 px-5 text-xs font-bold gap-2 shadow-xs"
+          >
             <Sparkles className="h-4 w-4" />
             {isAr ? "تحميل النسخة الاحتياطية الفورية" : "Download Full JSON Backup"}
           </Button>
@@ -1777,8 +1891,8 @@ function ExportHistorySection({
                           run.file_format === "xlsx"
                             ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                             : run.file_format === "csv"
-                            ? "bg-sky-500/10 text-sky-600 dark:text-sky-400"
-                            : "bg-purple-500/10 text-purple-600 dark:text-purple-400"
+                              ? "bg-sky-500/10 text-sky-600 dark:text-sky-400"
+                              : "bg-purple-500/10 text-purple-600 dark:text-purple-400"
                         }`}
                       >
                         {String(run.file_format).toUpperCase()}
@@ -1795,7 +1909,9 @@ function ExportHistorySection({
                 {history.length === 0 && (
                   <tr>
                     <td colSpan={6} className="p-8 text-center text-muted-foreground">
-                      {isAr ? "لم يتم تنفيذ أي عمليات تصدير حتى الآن" : "No export runs recorded yet"}
+                      {isAr
+                        ? "لم يتم تنفيذ أي عمليات تصدير حتى الآن"
+                        : "No export runs recorded yet"}
                     </td>
                   </tr>
                 )}

@@ -18,7 +18,8 @@ export function evaluatePasswordStrength(
   const minLength = p.length >= 8;
   const hasLetter = /[a-zA-Z\u0600-\u06FF]/.test(p);
   const hasNumberOrSymbol = /[\d!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(p);
-  const matches = typeof confirmPassword === "string" && confirmPassword.length > 0 && p === confirmPassword;
+  const matches =
+    typeof confirmPassword === "string" && confirmPassword.length > 0 && p === confirmPassword;
 
   let score = 0;
   if (minLength) score++;

@@ -150,11 +150,7 @@ function ImportCenterPage() {
 
         <div className="flex items-center gap-2 shrink-0">
           <Link to="/admin/b/$slug/export" params={{ slug: brandSlug }}>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9 gap-1.5 text-xs font-semibold"
-            >
+            <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs font-semibold">
               <Download className="h-3.5 w-3.5" />
               {isAr ? "مركز التصدير والنسخ" : "Export & Backup"}
             </Button>
@@ -372,17 +368,9 @@ function ProductImportSection({
           lower.includes("عنوان")
         ) {
           if (newMap.name === -1) newMap.name = idx;
-        } else if (
-          lower.includes("price") ||
-          lower.includes("سعر") ||
-          lower.includes("السعر")
-        ) {
+        } else if (lower.includes("price") || lower.includes("سعر") || lower.includes("السعر")) {
           if (newMap.price === -1) newMap.price = idx;
-        } else if (
-          lower.includes("image") ||
-          lower.includes("صورة") ||
-          lower.includes("صور")
-        ) {
+        } else if (lower.includes("image") || lower.includes("صورة") || lower.includes("صور")) {
           if (newMap.image === -1) newMap.image = idx;
         } else if (
           lower.includes("stock") ||
@@ -483,9 +471,7 @@ function ProductImportSection({
       setLastCount(inserted);
       setStep("success");
       toast.success(
-        isAr
-          ? `تم استيراد ${inserted} منتج بنجاح!`
-          : `Successfully imported ${inserted} products!`,
+        isAr ? `تم استيراد ${inserted} منتج بنجاح!` : `Successfully imported ${inserted} products!`,
       );
       onComplete();
     } catch (err: any) {

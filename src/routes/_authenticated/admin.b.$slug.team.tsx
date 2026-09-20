@@ -54,10 +54,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  generateSecureTempPassword,
-  formatTeamInviteMessage,
-} from "@/lib/team-credentials-utils";
+import { generateSecureTempPassword, formatTeamInviteMessage } from "@/lib/team-credentials-utils";
 import { toast } from "sonner";
 import { useI18n, useT } from "@/lib/i18n";
 import { useProfile, SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
@@ -272,7 +269,9 @@ function TeamManagement() {
       });
       qc.invalidateQueries({ queryKey: queryKeys.staff.all(brand.id) });
     } catch (err: any) {
-      toast.error(err.message || (isAr ? "فشل إعادة تعيين كلمة المرور" : "Failed to reset password"));
+      toast.error(
+        err.message || (isAr ? "فشل إعادة تعيين كلمة المرور" : "Failed to reset password"),
+      );
     }
   };
 
@@ -547,7 +546,9 @@ function TeamManagement() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="staff-password">
-                  {isAr ? "كلمة المرور المؤقتة (للحسابات الجديدة)" : "Temporary Password (new accounts)"}
+                  {isAr
+                    ? "كلمة المرور المؤقتة (للحسابات الجديدة)"
+                    : "Temporary Password (new accounts)"}
                 </Label>
                 <Button
                   type="button"
@@ -681,9 +682,7 @@ function TeamManagement() {
                         size="sm"
                         variant={isSelected ? "default" : "outline"}
                         className="h-7 text-xs px-2.5 font-normal"
-                        onClick={() =>
-                          setForm({ ...form, permissions: [...preset.permissions] })
-                        }
+                        onClick={() => setForm({ ...form, permissions: [...preset.permissions] })}
                       >
                         {isAr ? preset.labelAr : preset.labelEn}
                       </Button>
@@ -856,7 +855,8 @@ function TeamManagement() {
 
                 {member.role === "staff" && (
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {Array.isArray((member as any).permissions) && (member as any).permissions.length > 0 ? (
+                    {Array.isArray((member as any).permissions) &&
+                    (member as any).permissions.length > 0 ? (
                       (member as any).permissions.map((pId: string) => {
                         const permObj = AVAILABLE_PERMISSIONS.find((p) => p.id === pId);
                         return (
@@ -901,7 +901,11 @@ function TeamManagement() {
                             variant="outline"
                             size="sm"
                             className="h-8 w-8 p-0 text-amber-600 hover:text-amber-700 hover:bg-amber-500/10 border-amber-500/20"
-                            title={isAr ? "إعادة تعيين كلمة مرور مؤقتة فورية" : "Quick Reset Temporary Password"}
+                            title={
+                              isAr
+                                ? "إعادة تعيين كلمة مرور مؤقتة فورية"
+                                : "Quick Reset Temporary Password"
+                            }
                             onClick={() => handleQuickResetTempPassword(member)}
                           >
                             <KeyRound className="h-4 w-4" />
@@ -1341,7 +1345,9 @@ function TeamManagement() {
                               setEditing({ ...editing, permissions: newPerms } as any);
                             }}
                           />
-                          <span className="text-xs font-medium">{isAr ? p.labelAr : p.labelEn}</span>
+                          <span className="text-xs font-medium">
+                            {isAr ? p.labelAr : p.labelEn}
+                          </span>
                         </label>
                       );
                     })}
@@ -1351,7 +1357,9 @@ function TeamManagement() {
               <div className="space-y-2 pt-2 border-t border-border">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="edit-staff-password">
-                    {isAr ? "تعيين أو إعادة تعيين كلمة المرور (اختياري)" : "Set / Reset Password (optional)"}
+                    {isAr
+                      ? "تعيين أو إعادة تعيين كلمة المرور (اختياري)"
+                      : "Set / Reset Password (optional)"}
                   </Label>
                   <Button
                     type="button"
@@ -1381,7 +1389,11 @@ function TeamManagement() {
                     className="absolute inset-y-0 end-0 flex items-center pe-3 text-muted-foreground hover:text-foreground transition-colors"
                     tabIndex={-1}
                   >
-                    {showEditPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showEditPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
 
@@ -1390,9 +1402,7 @@ function TeamManagement() {
                     <Checkbox
                       id="edit-require-password-change"
                       checked={editMustChangePassword}
-                      onCheckedChange={(checked) =>
-                        setEditMustChangePassword(Boolean(checked))
-                      }
+                      onCheckedChange={(checked) => setEditMustChangePassword(Boolean(checked))}
                       className="mt-0.5"
                     />
                     <div className="space-y-0.5">
@@ -1541,8 +1551,13 @@ function TeamManagement() {
                 {/* Phone */}
                 {credentialsModal.phone && (
                   <div className="flex items-center justify-between py-1 border-b border-border/50">
-                    <span className="text-muted-foreground">{isAr ? "الهاتف / الواتساب:" : "Phone / WhatsApp:"}</span>
-                    <span className="font-mono font-medium text-emerald-700 dark:text-emerald-400" dir="ltr">
+                    <span className="text-muted-foreground">
+                      {isAr ? "الهاتف / الواتساب:" : "Phone / WhatsApp:"}
+                    </span>
+                    <span
+                      className="font-mono font-medium text-emerald-700 dark:text-emerald-400"
+                      dir="ltr"
+                    >
                       {credentialsModal.phone}
                     </span>
                   </div>
@@ -1550,7 +1565,9 @@ function TeamManagement() {
 
                 {/* Email */}
                 <div className="flex items-center justify-between py-1 border-b border-border/50">
-                  <span className="text-muted-foreground">{isAr ? "البريد الإلكتروني:" : "Email:"}</span>
+                  <span className="text-muted-foreground">
+                    {isAr ? "البريد الإلكتروني:" : "Email:"}
+                  </span>
                   <div className="flex items-center gap-2">
                     <span className="font-mono font-medium text-foreground" dir="ltr">
                       {credentialsModal.email}
@@ -1611,9 +1628,7 @@ function TeamManagement() {
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6 text-muted-foreground hover:text-foreground"
-                      onClick={() =>
-                        copyToClipboard(`${window.location.origin}/auth`, "url")
-                      }
+                      onClick={() => copyToClipboard(`${window.location.origin}/auth`, "url")}
                     >
                       {copiedKey === "url" ? (
                         <CheckCheck className="h-3.5 w-3.5 text-emerald-500" />

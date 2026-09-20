@@ -96,11 +96,15 @@ export function getVerticalAxisPlaceholders(
   switch (vertical) {
     case "coffee":
       sizePlaceholder = isAr ? "250g, 500g, 1kg, بوكس أظرف" : "250g, 500g, 1kg, Drip Box";
-      colorPlaceholder = isAr ? "حبوب كاملة, طحنة فلتر V60, طحنة إسبريسو" : "Whole Beans, Filter V60, Espresso";
+      colorPlaceholder = isAr
+        ? "حبوب كاملة, طحنة فلتر V60, طحنة إسبريسو"
+        : "Whole Beans, Filter V60, Espresso";
       break;
     case "food":
       sizePlaceholder = isAr ? "صغير, وسط, كبير" : "Small, Medium, Large";
-      colorPlaceholder = isAr ? "عادي, حار, صوص خاص (النوع أو النكهة)" : "Regular, Spicy, Special (Flavor/Option)";
+      colorPlaceholder = isAr
+        ? "عادي, حار, صوص خاص (النوع أو النكهة)"
+        : "Regular, Spicy, Special (Flavor/Option)";
       break;
     case "print":
       sizePlaceholder = isAr ? "A4, A3, 25mm, 30mm" : "A4, A3, 25mm, 30mm";

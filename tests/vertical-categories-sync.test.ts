@@ -53,9 +53,7 @@ describe("Vertical Categories Synchronization & Invariants", () => {
     ];
 
     // Products: 1 product is in c1 ("women-perfumes")
-    const existingProducts = [
-      { id: "p1", category: "women-perfumes" },
-    ];
+    const existingProducts = [{ id: "p1", category: "women-perfumes" }];
 
     const deletedIds: string[] = [];
     const insertedRows: any[] = [];

@@ -73,8 +73,7 @@ export function AddonStore({
 
   // Local fallback selection if not driven strictly by route props
   const [localSelectedId, setLocalSelectedId] = useState<string | null>(null);
-  const activeSelectedId =
-    selectedAddonId !== undefined ? selectedAddonId : localSelectedId;
+  const activeSelectedId = selectedAddonId !== undefined ? selectedAddonId : localSelectedId;
 
   const handleSelectAddon = (id: AddonId | null) => {
     if (onSelectAddon) {
@@ -175,9 +174,7 @@ export function AddonStore({
         withDependencies: true,
       });
       toast.success(
-        isAr
-          ? `تم تثبيت ${manifest.name.ar} بنجاح`
-          : `${manifest.name.en} installed successfully`
+        isAr ? `تم تثبيت ${manifest.name.ar} بنجاح` : `${manifest.name.en} installed successfully`,
       );
     } catch (err: any) {
       toast.error(err.message || (isAr ? "فشل التثبيت" : "Install failed"));
@@ -205,7 +202,7 @@ export function AddonStore({
       toast.error(
         isAr
           ? `لا يمكن إزالة هذه الإضافة لأن الإضافات التالية تعتمد عليها: ${dependents.join(", ")}`
-          : `Cannot remove: required by ${dependents.join(", ")}`
+          : `Cannot remove: required by ${dependents.join(", ")}`,
       );
       return;
     }
@@ -229,7 +226,7 @@ export function AddonStore({
       purgeConfirmationText.trim() !== purgeModalAddon.id
     ) {
       toast.error(
-        isAr ? "اسم الإضافة المدخل غير مطابق للتأكيد" : "Confirmation text does not match"
+        isAr ? "اسم الإضافة المدخل غير مطابق للتأكيد" : "Confirmation text does not match",
       );
       return;
     }
@@ -240,7 +237,7 @@ export function AddonStore({
         purge: true,
       });
       toast.success(
-        isAr ? "تم إزالة الإضافة وحذف بياناتها بنجاح" : "Add-on and its data purged successfully"
+        isAr ? "تم إزالة الإضافة وحذف بياناتها بنجاح" : "Add-on and its data purged successfully",
       );
       setPurgeModalAddon(null);
       setPurgeConfirmationText("");
@@ -287,7 +284,7 @@ export function AddonStore({
       toast.success(
         isAr
           ? `تم تحديث ${res.upgraded.length} إضافة بنجاح`
-          : `Upgraded ${res.upgraded.length} add-on(s) successfully`
+          : `Upgraded ${res.upgraded.length} add-on(s) successfully`,
       );
     } catch (err: any) {
       toast.error(err.message || (isAr ? "فشل التحديث" : "Upgrade failed"));
@@ -308,7 +305,7 @@ export function AddonStore({
       toast.success(
         isAr
           ? "تم تثبيت إضافات حزمة البداية لنشاطك بنجاح"
-          : "Starter pack add-ons installed successfully"
+          : "Starter pack add-ons installed successfully",
       );
     } catch (err: any) {
       toast.error(err.message || (isAr ? "فشل تثبيت الحزمة" : "Failed to install starter pack"));
@@ -372,8 +369,8 @@ export function AddonStore({
                 {isAr ? (
                   <>
                     لتأكيد الحذف، اكتب{" "}
-                    <span className="font-bold text-destructive">{purgeModalAddon?.name.ar}</span> في
-                    الحقل أدناه:
+                    <span className="font-bold text-destructive">{purgeModalAddon?.name.ar}</span>{" "}
+                    في الحقل أدناه:
                   </>
                 ) : (
                   <>

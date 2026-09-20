@@ -39,7 +39,7 @@ export function OsIslandDock({
         // a dark:bg-zinc-950 override here would replace it with an
         // unrelated cool grey, off the brand hue in dark mode.
         "bg-background/45",
-        "backdrop-blur-3xl backdrop-saturate-200",
+        "backdrop-blur-xl",
         "border border-white/40 dark:border-white/10",
         "shadow-[0_12px_32px_-6px_rgba(0,0,0,0.1),0_4px_12px_-2px_rgba(0,0,0,0.04)]",
         "dark:shadow-[0_16px_40px_-8px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.08)]",

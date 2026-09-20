@@ -8,6 +8,8 @@ import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { type ProductRow } from "@/routes/$slug.index";
 import { Button } from "@/components/ui/button";
 
+import { ProductCardV2 } from "@/components/storefront/ProductCardV2";
+
 export function ProductCard({
   product,
   badge,
@@ -20,6 +22,11 @@ export function ProductCard({
   className?: string;
 }) {
   const { brand, currency, lang, t, isWishlisted, toggleWishlist, settings } = useStorefront();
+
+  if (settings?.storefront_design_version === 2) {
+    return <ProductCardV2 product={product} badge={badge} index={index} className={className} />;
+  }
+
   const displayName = pickName(lang, product);
   const pricedVariants = product.product_variants
     .filter((variant) => Number(variant.selling_price || 0) >= 0)
@@ -82,7 +89,7 @@ export function ProductCard({
       : "storefront-fade-in-up";
 
   return (
-    <div className={`group relative ${staggerClass} ${className || "w-full"}`}>
+    <div className={`group relative sf-cv-card ${staggerClass} ${className || "w-full"}`}>
       <Button
         type="button"
         variant="ghost"

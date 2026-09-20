@@ -86,7 +86,9 @@ describe("formatTeamInviteMessage", () => {
     expect(msg).toContain("ahmed@example.com");
     expect(msg).toContain("Bq-x7#9kM12");
     expect(msg).toContain("https://boutq.app/auth");
-    expect(msg).toContain("ستظهر لك شاشة مخصصة فور أول تسجيل دخول لإلزام تعيين كلمة مرور جديدة خاصة بك");
+    expect(msg).toContain(
+      "ستظهر لك شاشة مخصصة فور أول تسجيل دخول لإلزام تعيين كلمة مرور جديدة خاصة بك",
+    );
   });
 
   it("formats English invitation properly", () => {
@@ -104,6 +106,8 @@ describe("formatTeamInviteMessage", () => {
     expect(msg).toContain("sarah@example.com");
     expect(msg).toContain("Bq-x7#9kM12");
     expect(msg).toContain("https://boutq.app/auth");
-    expect(msg).toContain("You will be prompted to set a new, private password upon your first sign-in");
+    expect(msg).toContain(
+      "You will be prompted to set a new, private password upon your first sign-in",
+    );
   });
 });

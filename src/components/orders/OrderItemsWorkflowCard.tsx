@@ -1,5 +1,14 @@
 import React from "react";
-import { Package, ShoppingBag, Plus, Minus, Trash2, ScanLine, Scissors, SlidersHorizontal } from "lucide-react";
+import {
+  Package,
+  ShoppingBag,
+  Plus,
+  Minus,
+  Trash2,
+  ScanLine,
+  Scissors,
+  SlidersHorizontal,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/format";
 import { useVocabulary } from "@/hooks/use-vocabulary";

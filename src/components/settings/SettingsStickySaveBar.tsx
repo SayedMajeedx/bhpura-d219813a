@@ -2,10 +2,12 @@ import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, Save, Undo2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { claimBottomBar, releaseBottomBar } from "@/lib/bottom-bar-store";
 
 export interface SettingsStickySaveBarProps {
   activeTab: string;
   isDirty?: boolean;
+  dirtyCount?: number;
   isSaving: boolean;
   onSave: () => void | Promise<void>;
   onDiscard?: () => void;
@@ -16,6 +18,7 @@ export interface SettingsStickySaveBarProps {
 export function SettingsStickySaveBar({
   activeTab,
   isDirty = true,
+  dirtyCount,
   isSaving,
   onSave,
   onDiscard,
@@ -38,12 +41,24 @@ export function SettingsStickySaveBar({
 
   const isVisible = isDirty || isSaving;
 
+  // While visible, own the phone bottom slot so the floating dock slides away
+  // instead of covering the save/discard actions.
+  useEffect(() => {
+    const token = `settings-save-bar:${activeTab}`;
+    if (isVisible) claimBottomBar(token);
+    else releaseBottomBar(token);
+    return () => releaseBottomBar(token);
+  }, [isVisible, activeTab]);
+
   return (
     <div
       dir={isAr ? "rtl" : "ltr"}
       aria-live="polite"
       className={cn(
-        "fixed bottom-6 end-6 sm:bottom-6 sm:end-8 z-50 transition-all duration-300 ease-out",
+        // Phones: centred in the dock's exact position. Larger screens: bottom-end pill.
+        "fixed z-50 inset-x-3 mx-auto w-fit bottom-[max(0.85rem,calc(env(safe-area-inset-bottom,0px)+0.5rem))]",
+        "sm:inset-x-auto sm:mx-0 sm:bottom-6 sm:end-8",
+        "transition-all duration-300 ease-out motion-reduce:transition-none",
         isVisible
           ? "translate-y-0 opacity-100 pointer-events-auto scale-100"
           : "translate-y-12 opacity-0 pointer-events-none scale-95",
@@ -58,7 +73,13 @@ export function SettingsStickySaveBar({
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500" />
           </span>
           <span className="text-xs font-medium text-foreground tracking-tight select-none">
-            {isAr ? "تغييرات غير محفوظة" : "Unsaved changes"}
+            {isAr
+              ? dirtyCount && dirtyCount > 0
+                ? `${dirtyCount} تغييرات غير محفوظة`
+                : "تغييرات غير محفوظة"
+              : dirtyCount && dirtyCount > 0
+                ? `${dirtyCount} unsaved change${dirtyCount > 1 ? "s" : ""}`
+                : "Unsaved changes"}
           </span>
         </div>
 

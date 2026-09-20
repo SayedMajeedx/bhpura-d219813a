@@ -218,7 +218,9 @@ export function formatSizeWithUnit(
   if (lang !== "ar") {
     // e.g. 250g or 50 inch
     const isShortAlpha = /^[a-zA-Z]{1,3}$/.test(enUnit);
-    return isShortAlpha && isNumericSize ? `${translatedSize}${enUnit}` : `${translatedSize} ${enUnit}`;
+    return isShortAlpha && isNumericSize
+      ? `${translatedSize}${enUnit}`
+      : `${translatedSize} ${enUnit}`;
   }
 
   return `${translatedSize} ${arUnit}`;

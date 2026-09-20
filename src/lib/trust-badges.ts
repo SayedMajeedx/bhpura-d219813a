@@ -311,11 +311,13 @@ export function getDynamicTrustBadges(params?: DynamicTrustBadgesParams): TrustB
   };
 }
 
-export const DEFAULT_TRUST_BADGES: TrustBadgesConfig = getDynamicTrustBadges({ vertical: "general" });
+export const DEFAULT_TRUST_BADGES: TrustBadgesConfig = getDynamicTrustBadges({
+  vertical: "general",
+});
 
 /**
  * Resolves active trust badges for the storefront.
- * 
+ *
  * Rules:
  * 1. If merchant explicitly configured trust badges in database:
  *    - If global toggle is off (enabled === false): returns [] (no badges).
@@ -965,7 +967,18 @@ export const TRUST_ICON_CATALOG: IconCatalogItem[] = [
     description_ar: "محاصيل قهوة مختصة طازجة التحميص وجودة عالية",
     description_en: "Fresh roasted specialty coffee beans and single origin crops",
     category: "general",
-    keywords: ["coffee", "beans", "roastery", "specialty", "قهوة", "محصول", "بن", "محمصة", "اسبريسو", "فلتر"],
+    keywords: [
+      "coffee",
+      "beans",
+      "roastery",
+      "specialty",
+      "قهوة",
+      "محصول",
+      "بن",
+      "محمصة",
+      "اسبريسو",
+      "فلتر",
+    ],
   },
   {
     id: "Leaf",

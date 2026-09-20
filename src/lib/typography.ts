@@ -28,6 +28,111 @@ export const FONT_LIBRARY = {
     hexp: true,
     genericAxes: false,
   },
+  Inter: {
+    variable: true,
+    weight: { min: 100, max: 900 },
+    italic: true,
+    hexp: false,
+    genericAxes: false,
+  },
+  Tajawal: {
+    variable: false,
+    weight: { min: 200, max: 900 },
+    italic: false,
+    hexp: false,
+    genericAxes: false,
+  },
+  Cairo: {
+    variable: true,
+    weight: { min: 200, max: 900 },
+    italic: false,
+    hexp: false,
+    genericAxes: false,
+  },
+  Amiri: {
+    variable: false,
+    weight: { min: 400, max: 700 },
+    italic: true,
+    hexp: false,
+    genericAxes: false,
+  },
+  "Aref Ruqaa": {
+    variable: false,
+    weight: { min: 400, max: 700 },
+    italic: false,
+    hexp: false,
+    genericAxes: false,
+  },
+  Almarai: {
+    variable: false,
+    weight: { min: 300, max: 800 },
+    italic: false,
+    hexp: false,
+    genericAxes: false,
+  },
+  Changa: {
+    variable: true,
+    weight: { min: 200, max: 800 },
+    italic: false,
+    hexp: false,
+    genericAxes: false,
+  },
+  "Playfair Display": {
+    variable: true,
+    weight: { min: 400, max: 900 },
+    italic: true,
+    hexp: false,
+    genericAxes: false,
+  },
+  "Cormorant Garamond": {
+    variable: true,
+    weight: { min: 300, max: 700 },
+    italic: true,
+    hexp: false,
+    genericAxes: false,
+  },
+  Montserrat: {
+    variable: true,
+    weight: { min: 100, max: 900 },
+    italic: true,
+    hexp: false,
+    genericAxes: false,
+  },
+  Poppins: {
+    variable: false,
+    weight: { min: 100, max: 900 },
+    italic: true,
+    hexp: false,
+    genericAxes: false,
+  },
+  Cinzel: {
+    variable: true,
+    weight: { min: 400, max: 900 },
+    italic: false,
+    hexp: false,
+    genericAxes: false,
+  },
+  Prata: {
+    variable: false,
+    weight: { min: 400, max: 400 },
+    italic: false,
+    hexp: false,
+    genericAxes: false,
+  },
+  Marhey: {
+    variable: true,
+    weight: { min: 300, max: 700 },
+    italic: false,
+    hexp: false,
+    genericAxes: false,
+  },
+  Alexandria: {
+    variable: true,
+    weight: { min: 100, max: 900 },
+    italic: false,
+    hexp: false,
+    genericAxes: false,
+  },
 } as const satisfies Record<string, FontCapabilities>;
 
 export function fontCapabilities(source: FontSource): FontCapabilities {
@@ -79,20 +184,46 @@ const canonicalFamily = (family: string, language: TypographyLanguage) => {
   const aliases: Record<string, string> =
     language === "ar"
       ? {
-          Cairo: "Tajawal",
           "Noto Sans Arabic": "Tajawal",
-          "Noto Kufi Arabic": "29LT Bukra",
+          "Noto Kufi Arabic": "Cairo",
         }
       : {
-          Poppins: "Inter",
-          Montserrat: "Inter",
           "Open Sans": "Inter",
           Roboto: "Inter",
-          "Playfair Display": "Georgia",
-          "Cormorant Garamond": "Georgia",
         };
   return aliases[family] ?? family;
 };
+
+export function getGoogleFontsUrl(config?: TypographyConfig | null): string | null {
+  if (!config) return null;
+  const families = new Set<string>();
+  const addSource = (source?: FontSource) => {
+    if (!source || source.url) return;
+    const fam = source.family?.trim();
+    if (
+      fam &&
+      !fam.startsWith("Custom —") &&
+      fam !== "Georgia" &&
+      fam !== "sans-serif" &&
+      fam !== "serif"
+    ) {
+      families.add(fam);
+    }
+  };
+  addSource(config.body?.en);
+  addSource(config.body?.ar);
+  addSource(config.display?.en);
+  addSource(config.display?.ar);
+
+  if (families.size === 0) return null;
+
+  const parts = Array.from(families).map((fam) => {
+    const encoded = encodeURIComponent(fam).replace(/%20/g, "+");
+    return `family=${encoded}:wght@300;400;500;600;700;800;900`;
+  });
+
+  return `https://fonts.googleapis.com/css2?${parts.join("&")}&display=swap`;
+}
 
 export const defaultStorefrontTypography = (): TypographyConfig => ({
   body: {
@@ -216,6 +347,12 @@ export function typographyVariables(config: TypographyConfig, language: Typograp
     "--type-display-style":
       config.axes.italic && fontCapabilities(display).italic ? "italic" : "normal",
     "--type-optical-sizing": config.opticalSizing ? "auto" : "none",
+    "--font-size-display": `clamp(2rem, calc(1.5rem + 2.5vw * ${config.scale}), 3.5rem)`,
+    "--font-size-h1": `clamp(1.75rem, calc(1.25rem + 2vw * ${config.scale}), 2.75rem)`,
+    "--font-size-h2": `clamp(1.5rem, calc(1.2rem + 1.2vw * ${config.scale}), 2.25rem)`,
+    "--font-size-h3": `clamp(1.25rem, calc(1.1rem + 0.6vw * ${config.scale}), 1.75rem)`,
+    "--font-size-body": `clamp(0.9375rem, calc(0.9rem + 0.2vw * ${config.scale}), 1.0625rem)`,
+    "--font-size-caption": `clamp(0.75rem, calc(0.72rem + 0.15vw * ${config.scale}), 0.875rem)`,
   } as const;
 }
 

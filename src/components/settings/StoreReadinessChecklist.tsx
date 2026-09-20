@@ -19,7 +19,7 @@ import {
   X,
   MessageCircle,
 } from "lucide-react";
-import type { SettingsTabId } from "@/components/settings/SettingsScopeSwitcher";
+import type { SettingsTabId } from "@/features/settings/registry";
 import { normalizeWhatsAppDigits } from "@/lib/storefront-mode";
 import { useAddons } from "@/components/addons/AddonsProvider";
 import { readinessChecksFrom } from "@/lib/addons/addon-registry";
@@ -36,6 +36,9 @@ export interface BusinessSettingsData {
   pages?: any;
   storefront_mode?: string | null;
   whatsapp_number?: string | null;
+  brand_palette?: any | null;
+  storefront_accent_color?: string | null;
+  storefront_design_version?: number | null;
 }
 
 export interface ReadinessEvaluationInput {
@@ -43,18 +46,30 @@ export interface ReadinessEvaluationInput {
   activeProductsCount: number;
   businessSettings?: BusinessSettingsData | null;
   brandLogoUrl?: string | null;
+  brandPalette?: any | null;
+  storeVertical?: string | null;
   lang?: "ar" | "en";
   hasReturnPolicy?: boolean;
 }
 
 export interface ReadinessItem {
-  id: "logo" | "products" | "payments" | "fulfillment" | "policies" | "whatsapp" | (string & {});
+  id:
+    | "logo"
+    | "palette"
+    | "vertical"
+    | "products"
+    | "payments"
+    | "fulfillment"
+    | "policies"
+    | "whatsapp"
+    | (string & {});
   icon: React.ElementType;
   title: string;
   description: string;
   isComplete: boolean;
   actionType: "tab" | "link";
   tabId?: SettingsTabId;
+  group?: string;
   href?: string;
   actionLabel: string;
   editLabel: string;
@@ -116,6 +131,20 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
   );
   const hasPolicies = validPages.length > 0 || Boolean(input.hasReturnPolicy);
 
+  // 6. Brand palette set (extracted from the logo or chosen manually). Only brands on
+  //    Storefront 2.0 get the palette/vertical items so existing v1 brands never regress.
+  const includeDesignChecks = Number(bData?.storefront_design_version ?? 1) >= 2;
+  const paletteMeta = input.brandPalette ?? bData?.brand_palette ?? null;
+  const paletteSource: string | null = paletteMeta?.source ?? paletteMeta?.meta?.source ?? null;
+  const hasExtractedPalette = Boolean(
+    paletteSource === "logo" || paletteSource === "manual" || bData?.storefront_accent_color,
+  );
+
+  // 7. Store vertical specified
+  const hasVertical = Boolean(
+    input.storeVertical && input.storeVertical !== "general" && input.storeVertical !== "other",
+  );
+
   const isCatalog = bData?.storefront_mode === "catalog";
   const whatsappDigits = normalizeWhatsAppDigits(bData?.whatsapp_number);
   const hasWhatsApp = whatsappDigits.length > 0;
@@ -135,8 +164,45 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
               : "Appears in storefront header and catalog",
           isComplete: hasLogo,
           actionType: "tab",
-          tabId: "business",
+          tabId: "identity",
+          group: "basics",
           actionLabel: isAr ? "إعداد الشعار" : "Configure Logo",
+          editLabel: isAr ? "تعديل" : "Edit",
+        },
+        {
+          id: "palette",
+          icon: Sparkles,
+          title: isAr ? "لون العلامة محدد" : "Brand colour set",
+          description: isAr
+            ? hasExtractedPalette
+              ? "لوحة ألوان المتجر جاهزة"
+              : "اختر لون العلامة أو استخرجه من الشعار بضغطة واحدة"
+            : hasExtractedPalette
+              ? "Storefront palette is ready"
+              : "Pick the brand colour or extract it from the logo in one click",
+          isComplete: hasExtractedPalette,
+          actionType: "tab",
+          tabId: "identity",
+          group: "palette",
+          actionLabel: isAr ? "استخراج الألوان" : "Extract Colors",
+          editLabel: isAr ? "تعديل" : "Edit",
+        },
+        {
+          id: "vertical",
+          icon: Store,
+          title: isAr ? "تحديد نوع النشاط التجاري" : "Store business vertical selected",
+          description: isAr
+            ? hasVertical
+              ? `النشاط التجاري محدد: ${input.storeVertical}`
+              : "حدد نشاط متجرك لتجهيز التصنيفات وقوالب العرض المناسبة"
+            : hasVertical
+              ? `Vertical configured: ${input.storeVertical}`
+              : "Select business vertical for tailored starter packs & taxonomy",
+          isComplete: hasVertical,
+          actionType: "tab",
+          tabId: "identity",
+          group: "vertical",
+          actionLabel: isAr ? "تحديد النشاط" : "Select Vertical",
           editLabel: isAr ? "تعديل" : "Edit",
         },
         {
@@ -169,6 +235,7 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
           isComplete: hasWhatsApp,
           actionType: "tab",
           tabId: "storefront",
+          group: "mode",
           actionLabel: isAr ? "إعداد الكتالوج" : "Catalog Settings",
           editLabel: isAr ? "تعديل" : "Edit",
         },
@@ -203,8 +270,45 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
               : "Appears in storefront header, customer invoices, and receipts",
           isComplete: hasLogo,
           actionType: "tab",
-          tabId: "business",
+          tabId: "identity",
+          group: "basics",
           actionLabel: isAr ? "إعداد الشعار" : "Configure Logo",
+          editLabel: isAr ? "تعديل" : "Edit",
+        },
+        {
+          id: "palette",
+          icon: Sparkles,
+          title: isAr ? "لون العلامة محدد" : "Brand colour set",
+          description: isAr
+            ? hasExtractedPalette
+              ? "لوحة ألوان المتجر جاهزة"
+              : "اختر لون العلامة أو استخرجه من الشعار بضغطة واحدة"
+            : hasExtractedPalette
+              ? "Storefront palette is ready"
+              : "Pick the brand colour or extract it from the logo in one click",
+          isComplete: hasExtractedPalette,
+          actionType: "tab",
+          tabId: "identity",
+          group: "palette",
+          actionLabel: isAr ? "استخراج الألوان" : "Extract Colors",
+          editLabel: isAr ? "تعديل" : "Edit",
+        },
+        {
+          id: "vertical",
+          icon: Store,
+          title: isAr ? "تحديد نوع النشاط التجاري" : "Store business vertical selected",
+          description: isAr
+            ? hasVertical
+              ? `النشاط التجاري محدد: ${input.storeVertical}`
+              : "حدد نشاط متجرك لتجهيز التصنيفات وقوالب العرض المناسبة"
+            : hasVertical
+              ? `Vertical configured: ${input.storeVertical}`
+              : "Select business vertical for tailored starter packs & taxonomy",
+          isComplete: hasVertical,
+          actionType: "tab",
+          tabId: "identity",
+          group: "vertical",
+          actionLabel: isAr ? "تحديد النشاط" : "Select Vertical",
           editLabel: isAr ? "تعديل" : "Edit",
         },
         {
@@ -240,7 +344,8 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
               : "Enable Cash on Delivery (COD), Card, or BenefitPay",
           isComplete: hasPayments,
           actionType: "tab",
-          tabId: "payments",
+          tabId: "orders",
+          group: "payments",
           actionLabel: isAr ? "إعداد الدفع" : "Setup Payments",
           editLabel: isAr ? "تعديل" : "Edit",
         },
@@ -263,7 +368,8 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
               : "Specify local delivery fees, pickup locations, or zones",
           isComplete: hasFulfillment,
           actionType: "tab",
-          tabId: "checkout",
+          tabId: "orders",
+          group: "fulfillment",
           actionLabel: isAr ? "إعداد الشحن" : "Configure Shipping",
           editLabel: isAr ? "تعديل" : "Edit",
         },
@@ -285,8 +391,11 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
         },
       ];
 
-  const completedCount = items.filter((it) => it.isComplete).length;
-  const totalCount = items.length;
+  const visibleItems = includeDesignChecks
+    ? items
+    : items.filter((it) => it.id !== "palette" && it.id !== "vertical");
+  const completedCount = visibleItems.filter((it) => it.isComplete).length;
+  const totalCount = visibleItems.length;
   const progressPercent = Math.round((completedCount / totalCount) * 100);
   const isAllComplete = completedCount === totalCount;
 
@@ -300,7 +409,7 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
     hasWhatsApp,
     isCatalog,
     pagesCount: validPages.length,
-    items,
+    items: visibleItems,
     completedCount,
     totalCount,
     progressPercent,
@@ -313,7 +422,9 @@ interface StoreReadinessChecklistProps {
   slug: string;
   lang: "ar" | "en";
   logoUrl?: string | null;
-  onNavigateTab: (tab: SettingsTabId) => void;
+  brandPalette?: any | null;
+  storeVertical?: string | null;
+  onNavigateTab: (tab: SettingsTabId, groupAnchor?: string) => void;
 }
 
 export function StoreReadinessChecklist({
@@ -321,6 +432,8 @@ export function StoreReadinessChecklist({
   slug,
   lang,
   logoUrl,
+  brandPalette,
+  storeVertical,
   onNavigateTab,
 }: StoreReadinessChecklistProps) {
   const isAr = lang === "ar";
@@ -348,7 +461,7 @@ export function StoreReadinessChecklist({
       try {
         const { data, error } = await (supabase.from("business_settings") as any)
           .select(
-            "logo_url, cod_enabled, card_enabled, benefit_enabled, delivery_enabled, pickup_enabled, delivery_fee, shipping_zones, pages, storefront_mode, whatsapp_number",
+            "logo_url, cod_enabled, card_enabled, benefit_enabled, delivery_enabled, pickup_enabled, delivery_fee, shipping_zones, pages, storefront_mode, whatsapp_number, brand_palette",
           )
           .eq("brand_id", brandId)
           .maybeSingle();
@@ -395,10 +508,10 @@ export function StoreReadinessChecklist({
     },
   });
 
-  // 4. Query brand logo fallback if needed
+  // 4. Query brand details (logo)
   const brandQ = useQuery({
-    queryKey: ["readiness-brand-logo", brandId],
-    enabled: Boolean(brandId && !logoUrl && !businessSettingsQ.data?.logo_url),
+    queryKey: ["readiness-brand-details", brandId],
+    enabled: Boolean(brandId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("brands")
@@ -406,7 +519,7 @@ export function StoreReadinessChecklist({
         .eq("id", brandId)
         .maybeSingle();
       if (error) return null;
-      return (data?.logo_url as string) ?? null;
+      return data;
     },
   });
 
@@ -442,7 +555,9 @@ export function StoreReadinessChecklist({
     logoUrl,
     activeProductsCount: productsQ.data ?? 0,
     businessSettings: businessSettingsQ.data,
-    brandLogoUrl: brandQ.data,
+    brandLogoUrl: brandQ.data?.logo_url,
+    brandPalette: brandPalette ?? (businessSettingsQ.data as any)?.brand_palette,
+    storeVertical: storeVertical ?? (businessSettingsQ.data as any)?.store_vertical,
     lang,
     hasReturnPolicy: Boolean(returnPolicyQ.data),
   });
@@ -698,7 +813,12 @@ export function StoreReadinessChecklist({
                           type="button"
                           variant="ghost"
                           size="sm"
-                          onClick={() => onNavigateTab(item.tabId!)}
+                          onClick={() =>
+                            onNavigateTab(
+                              item.tabId!,
+                              item.group ? `group-${item.group}` : undefined,
+                            )
+                          }
                           className="h-6 px-1.5 text-xs font-normal text-muted-foreground hover:text-foreground"
                           title={item.editLabel}
                         >
@@ -723,7 +843,9 @@ export function StoreReadinessChecklist({
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => onNavigateTab(item.tabId!)}
+                      onClick={() =>
+                        onNavigateTab(item.tabId!, item.group ? `group-${item.group}` : undefined)
+                      }
                       className="h-7 text-xs font-medium px-2.5"
                     >
                       {item.actionLabel}

@@ -10,10 +10,22 @@ export const coffeeRoasteryManifest: AddonManifest = {
     en: "Roastery vocabulary, bean weights (250g, 1kg), grind options (V60, Espresso), and coffee AI catalog context",
   },
   whatItAdds: [
-    { ar: "مفردات المحمصة وملاحظات التحميص والطحن", en: "Roastery vocabulary, roasting and grind notes" },
-    { ar: "محاور مخصصة: الوزن، نوع الطحنة، ونوع المعالجة", en: "Tailored axes: Weight, Grind Type, and Process" },
-    { ar: "نماذج أوزان المحاصيل (250g، 500g، 1kg) وأظرف التقطير", en: "Coffee bean weights (250g, 500g, 1kg) and drip bag presets" },
-    { ar: "توجيه ذكاء اصطناعي متخصص لفهم إيحاءات ومعالجات البن عند الاستيراد", en: "Specialized AI context for origins, tasting notes, and processing" },
+    {
+      ar: "مفردات المحمصة وملاحظات التحميص والطحن",
+      en: "Roastery vocabulary, roasting and grind notes",
+    },
+    {
+      ar: "محاور مخصصة: الوزن، نوع الطحنة، ونوع المعالجة",
+      en: "Tailored axes: Weight, Grind Type, and Process",
+    },
+    {
+      ar: "نماذج أوزان المحاصيل (250g، 500g، 1kg) وأظرف التقطير",
+      en: "Coffee bean weights (250g, 500g, 1kg) and drip bag presets",
+    },
+    {
+      ar: "توجيه ذكاء اصطناعي متخصص لفهم إيحاءات ومعالجات البن عند الاستيراد",
+      en: "Specialized AI context for origins, tasting notes, and processing",
+    },
   ],
   icon: "Coffee",
   activities: ["coffee"],
@@ -28,7 +40,10 @@ export const coffeeRoasteryManifest: AddonManifest = {
         ar: "ملاحظات التحميص ودرجة الطحن:",
         en: "Roasting & Grind Notes:",
       },
-      workshop_instructions: { ar: "تعليمات للمحمصة / الباريستا", en: "Instructions for Roastery / Barista" },
+      workshop_instructions: {
+        ar: "تعليمات للمحمصة / الباريستا",
+        en: "Instructions for Roastery / Barista",
+      },
     },
     variantAxisDefaults: {
       size: { ar: "الوزن / الحجم", en: "Weight / Size" },

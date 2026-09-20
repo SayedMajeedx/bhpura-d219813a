@@ -20,9 +20,11 @@ import {
 import {
   customFontFaces,
   defaultStorefrontTypography,
+  getGoogleFontsUrl,
   normalizeTypography,
   typographyVariables,
 } from "@/lib/typography";
+import { buildOrganizationSchema, buildWebSiteSchema } from "@/lib/seo/structured-data";
 import {
   renderTrustBadgeIcon,
   getDynamicTrustBadges,
@@ -38,6 +40,7 @@ import { X, ChevronDown, Sparkles } from "lucide-react";
 import { faviconType, resolveBrandFavicon, useDynamicFavicon } from "@/lib/favicon";
 import { StorefrontAnalytics } from "@/components/storefront-analytics";
 import { isCatalogMode } from "@/lib/storefront-mode";
+import { FooterV2 } from "@/components/storefront/FooterV2";
 import { normalizeVertical, normalizeModuleOverrides } from "@/lib/store-profile";
 import { isColorDark, hexToRgba } from "@/components/storefront/storefront-utils";
 
@@ -361,8 +364,7 @@ export const Route = createFileRoute("/$slug")({
   },
   head: ({ loaderData }) => {
     const typedLoaderData = loaderData as
-      | { brand?: Brand; settings?: PublicSettings; initialLang?: "ar" | "en" }
-      | undefined;
+      { brand?: Brand; settings?: PublicSettings; initialLang?: "ar" | "en" } | undefined;
     const b = typedLoaderData?.brand;
     const settings = typedLoaderData?.settings;
     const lang = typedLoaderData?.initialLang || "ar";
@@ -370,19 +372,45 @@ export const Route = createFileRoute("/$slug")({
 
     const title =
       lang === "ar"
-        ? (b.meta_title || settings?.business_name || b.name_ar || `${b.name_en} — متجر إلكتروني`)
-        : (b.meta_title || settings?.business_name || b.name_en || `${b.name_ar} — Online Store`);
+        ? b.meta_title || settings?.business_name || b.name_ar || `${b.name_en} — متجر إلكتروني`
+        : b.meta_title || settings?.business_name || b.name_en || `${b.name_ar} — Online Store`;
     const desc =
       lang === "ar"
-        ? (b.meta_description || `تسوق من ${b.name_ar || b.name_en} أونلاين.`)
-        : (b.meta_description || `Shop ${b.name_en || b.name_ar} online.`);
+        ? b.meta_description || `تسوق من ${b.name_ar || b.name_en} أونلاين.`
+        : b.meta_description || `Shop ${b.name_en || b.name_ar} online.`;
     const img = settings?.logo_url || b.logo_url || "https://boutq.store/og-placeholder.png";
     const favicon = resolveBrandFavicon(settings?.favicon_url, settings?.logo_url ?? b.logo_url);
+    const googleFontsUrl = getGoogleFontsUrl(settings?.storefront_typography);
+    const orgSchema = buildOrganizationSchema(b, settings);
+    const webSiteSchema = buildWebSiteSchema(b, settings);
+
     const links: Array<Record<string, any>> = [
       {
         rel: "icon",
         href: favicon,
         ...(faviconType(favicon) ? { type: faviconType(favicon) } : {}),
+      },
+      {
+        rel: "manifest",
+        href: `/${b.slug}/manifest.webmanifest`,
+      },
+      ...(googleFontsUrl
+        ? [
+            { rel: "preconnect", href: "https://fonts.googleapis.com" },
+            { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+            { rel: "stylesheet", href: googleFontsUrl },
+          ]
+        : []),
+    ];
+
+    const scripts: Array<Record<string, any>> = [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify(orgSchema),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify(webSiteSchema),
       },
     ];
 
@@ -404,6 +432,7 @@ export const Route = createFileRoute("/$slug")({
         { name: "twitter:image", content: img },
       ],
       links,
+      scripts,
     };
   },
   component: StorefrontLayout,
@@ -488,33 +517,23 @@ function StoreShell() {
     };
   }, [brand.slug]);
 
-  const [localRadius, setLocalRadius] = useState<string | null>(null);
-  const [localGlass, setLocalGlass] = useState<boolean | null>(null);
-  const [localBadge, setLocalBadge] = useState<string | null>(null);
-
+  // Theme values come from the database only. Legacy preview overrides that the old
+  // settings page stored in localStorage are purged so a stale key can never shadow
+  // what the merchant actually saved.
   useEffect(() => {
     try {
-      const storedR = localStorage.getItem("boutq_storefront_radius");
-      if (storedR && ["0px", "0.375rem", "1rem", "1.5rem"].includes(storedR)) {
-        setLocalRadius(storedR);
-      }
-      const storedG = localStorage.getItem("boutq_header_glass");
-      if (storedG !== null) {
-        setLocalGlass(storedG === "true");
-      }
-      const storedB = localStorage.getItem("boutq_badge_accent");
-      if (storedB) {
-        setLocalBadge(storedB);
-      }
+      localStorage.removeItem("boutq_storefront_radius");
+      localStorage.removeItem("boutq_header_glass");
+      localStorage.removeItem("boutq_badge_accent");
     } catch (_e) {
-      // localStorage fallback
+      // localStorage unavailable (private mode) — nothing to purge.
     }
   }, []);
 
-  const rawRadius = localRadius || settings.storefront_radius || "0.5rem";
+  const rawRadius = settings.storefront_radius || "0.5rem";
   const radiusSf = ["0px", "0.375rem", "1rem", "1.5rem"].includes(rawRadius) ? rawRadius : "0.5rem";
-  const isGlass = localGlass !== null ? localGlass : (settings.header_glass ?? true);
-  const badgeAccent = localBadge || settings.badge_accent || "maroon";
+  const isGlass = settings.header_glass ?? true;
+  const badgeAccent = settings.badge_accent || "maroon";
 
   const badgeBg =
     badgeAccent === "crimson"
@@ -574,6 +593,7 @@ function StoreShell() {
           backgroundColor: "var(--sf-header-bg)",
           color: "var(--sf-header-fg)",
           borderBottom: "1px solid rgba(0, 0, 0, 0.08)",
+          transform: "translateZ(0)",
         }}
       >
         <AnnouncementBar />
@@ -614,10 +634,12 @@ function WhatsAppFab() {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="WhatsApp"
+      aria-label={lang === "ar" ? "تواصل معنا عبر واتساب" : "Contact us on WhatsApp"}
       className={`fixed z-50 ${
-        hasStickyBottom ? "bottom-[84px] md:bottom-6" : "bottom-6 md:bottom-6"
-      } end-5 h-14 w-14 rounded-full grid place-items-center shadow-lg hover:scale-110 active:scale-95`}
+        hasStickyBottom
+          ? "bottom-[calc(88px+env(safe-area-inset-bottom,0px))] md:bottom-6"
+          : "bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] md:bottom-6"
+      } end-5 h-14 w-14 rounded-full grid place-items-center shadow-lg hover:scale-110 active:scale-95 touch-manipulation`}
       style={{
         backgroundColor: "#25D366",
         color: "#fff",
@@ -698,11 +720,16 @@ function StorefrontSocialIcon({ platform }: { platform: string }) {
 
 function StorefrontFooter() {
   const { brand, settings, lang, t } = useStorefront();
+  // Hooks must run unconditionally; the v2 footer branch is decided after them.
   const storeModules = useStoreModules();
   const showSizeGuideFooterLink = Boolean(storeModules?.size_guide);
   const isAr = lang === "ar";
   const [openCompany, setOpenCompany] = useState(false);
   const [openHelp, setOpenHelp] = useState(false);
+
+  if (settings?.footer_layout === "columns" || settings?.storefront_design_version === 2) {
+    return <FooterV2 />;
+  }
 
   const rawTrustBadges = settings.trust_badges;
   const storeVertical = normalizeVertical(

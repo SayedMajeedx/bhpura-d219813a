@@ -1,8 +1,9 @@
 import * as React from "react";
-import { ArrowLeftRight, Check, Sparkles, Layers, Tag } from "lucide-react";
+import { ArrowLeftRight, Check, Sparkles, Layers, Tag, Palette, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { extractLogoPalette, type ExtractedPalette } from "@/lib/logo-palette";
 
 export interface FontMoodPreset {
   id: string;
@@ -10,55 +11,155 @@ export interface FontMoodPreset {
   labelAr: string;
   fontAr: string;
   fontEn: string;
+  displayFontAr?: string;
+  bodyFontAr?: string;
+  displayFontEn?: string;
+  bodyFontEn?: string;
   descriptionEn: string;
   descriptionAr: string;
 }
 
 export const FONT_MOOD_PRESETS: FontMoodPreset[] = [
   {
-    id: "classic",
-    labelEn: "Classic",
-    labelAr: "كلاسيكي فاخر",
+    id: "editorial",
+    labelEn: "Editorial / Luxury",
+    labelAr: "تحريري وفاخر",
     fontAr: "Amiri",
     fontEn: "Playfair Display",
-    descriptionEn: "Heritage & luxury vibe",
-    descriptionAr: "فخامة وأصالة راقية",
+    displayFontAr: "Amiri",
+    bodyFontAr: "Tajawal",
+    displayFontEn: "Playfair Display",
+    bodyFontEn: "Inter",
+    descriptionEn: "High-end luxury & editorial feel",
+    descriptionAr: "فخامة وأصالة تحريرية راقية",
+  },
+  {
+    id: "minimal",
+    labelEn: "Minimal Modern",
+    labelAr: "عصري وبسيط",
+    fontAr: "Readex Pro",
+    fontEn: "Plus Jakarta Sans",
+    displayFontAr: "Readex Pro",
+    bodyFontAr: "Readex Pro",
+    displayFontEn: "Plus Jakarta Sans",
+    bodyFontEn: "Plus Jakarta Sans",
+    descriptionEn: "Clean, geometric & contemporary",
+    descriptionAr: "وضوح وبساطة هندسية حديثة",
+  },
+  {
+    id: "boutique",
+    labelEn: "Elegant Boutique",
+    labelAr: "بوتيك أنيق",
+    fontAr: "Aref Ruqaa",
+    fontEn: "Cormorant Garamond",
+    displayFontAr: "Aref Ruqaa",
+    bodyFontAr: "Almarai",
+    displayFontEn: "Cormorant Garamond",
+    bodyFontEn: "Montserrat",
+    descriptionEn: "Exclusive boutique elegance",
+    descriptionAr: "طابع بوتيك حصري وساحر",
+  },
+  {
+    id: "artisan",
+    labelEn: "Warm Artisan",
+    labelAr: "حرفي دافئ",
+    fontAr: "Changa",
+    fontEn: "Playfair Display",
+    displayFontAr: "Changa",
+    bodyFontAr: "Tajawal",
+    displayFontEn: "Playfair Display",
+    bodyFontEn: "Plus Jakarta Sans",
+    descriptionEn: "Handcrafted, warm & welcoming",
+    descriptionAr: "دفء الحِرفة واللمسة اليدوية",
+  },
+  {
+    id: "contemporary",
+    labelEn: "Contemporary Clean",
+    labelAr: "معاصر وواضح",
+    fontAr: "Cairo",
+    fontEn: "Inter",
+    displayFontAr: "Cairo",
+    bodyFontAr: "Cairo",
+    displayFontEn: "Inter",
+    bodyFontEn: "Inter",
+    descriptionEn: "High legibility & digital first",
+    descriptionAr: "مقروئية عالية وتصميم رقمي",
+  },
+  {
+    id: "signature",
+    labelEn: "Signature Boutique",
+    labelAr: "توقيع راقٍ",
+    fontAr: "Tajawal",
+    fontEn: "Cormorant Garamond",
+    displayFontAr: "Tajawal",
+    bodyFontAr: "Readex Pro",
+    displayFontEn: "Cormorant Garamond",
+    bodyFontEn: "Inter",
+    descriptionEn: "Signature boutique presentation",
+    descriptionAr: "توقيع خاص بالمتاجر الراقية",
+  },
+  {
+    id: "bold",
+    labelEn: "Bold & Dynamic",
+    labelAr: "جريء وديناميكي",
+    fontAr: "Almarai",
+    fontEn: "Montserrat",
+    displayFontAr: "Almarai",
+    bodyFontAr: "Cairo",
+    displayFontEn: "Montserrat",
+    bodyFontEn: "Inter",
+    descriptionEn: "Confident, striking & powerful",
+    descriptionAr: "حضور واثق ومباشر وعصري",
+  },
+  {
+    id: "youthful",
+    labelEn: "Youthful Vibe",
+    labelAr: "شبابي وحيوي",
+    fontAr: "Changa",
+    fontEn: "Poppins",
+    displayFontAr: "Changa",
+    bodyFontAr: "Readex Pro",
+    displayFontEn: "Poppins",
+    bodyFontEn: "Plus Jakarta Sans",
+    descriptionEn: "Playful, friendly & youthful",
+    descriptionAr: "عفوي ومرح وجذاب للشباب",
+  },
+  // Legacy aliases for backward compatibility
+  {
+    id: "classic",
+    labelEn: "Classic",
+    labelAr: "كلاسيكي",
+    fontAr: "Tajawal",
+    fontEn: "Inter",
+    descriptionEn: "Classic balance",
+    descriptionAr: "توازن كلاسيكي",
   },
   {
     id: "modern",
     labelEn: "Modern",
-    labelAr: "عصري وبسيط",
-    fontAr: "Cairo",
-    fontEn: "Inter",
-    descriptionEn: "Clean & contemporary",
-    descriptionAr: "وضوح وبساطة حديثة",
-  },
-  {
-    id: "signature",
-    labelEn: "Signature",
-    labelAr: "توقيع بوتيك",
-    fontAr: "Tajawal",
-    fontEn: "Cormorant Garamond",
-    descriptionEn: "Boutique & editorial",
-    descriptionAr: "طابع بوتيك حصري وأنيق",
+    labelAr: "عصري",
+    fontAr: "Readex Pro",
+    fontEn: "Plus Jakarta Sans",
+    descriptionEn: "Modern geometric",
+    descriptionAr: "هندسي عصري",
   },
   {
     id: "strong",
     labelEn: "Strong",
-    labelAr: "جريء وقوي",
+    labelAr: "قوي وجريء",
     fontAr: "Almarai",
     fontEn: "Montserrat",
-    descriptionEn: "Bold & confident",
-    descriptionAr: "حضور واثق ومباشر",
+    descriptionEn: "Strong presence",
+    descriptionAr: "حضور قوي",
   },
   {
     id: "bubble",
-    labelEn: "Bubble",
-    labelAr: "مرح وحيوي",
+    labelEn: "Bubble / Friendly",
+    labelAr: "مرح وودود",
     fontAr: "Changa",
     fontEn: "Poppins",
-    descriptionEn: "Playful & youthful",
-    descriptionAr: "عفوي وجذاب للشباب",
+    descriptionEn: "Friendly and rounded",
+    descriptionAr: "ودود ومستدير",
   },
 ];
 
@@ -74,6 +175,7 @@ export interface QuickThemeCustomizerProps {
   headerFg?: string | null;
   footerBg?: string | null;
   footerFg?: string | null;
+  logoUrl?: string | null;
   isAr: boolean;
   onPrimaryChange: (val: string) => void;
   onSecondaryChange: (val: string) => void;
@@ -86,6 +188,7 @@ export interface QuickThemeCustomizerProps {
   onHeaderFgChange?: (val: string | null) => void;
   onFooterBgChange?: (val: string | null) => void;
   onFooterFgChange?: (val: string | null) => void;
+  onExtractPalette?: (palette: ExtractedPalette) => void;
 }
 
 export function QuickThemeCustomizer({
@@ -100,6 +203,7 @@ export function QuickThemeCustomizer({
   headerFg,
   footerBg,
   footerFg,
+  logoUrl,
   isAr,
   onPrimaryChange,
   onSecondaryChange,
@@ -112,7 +216,24 @@ export function QuickThemeCustomizer({
   onHeaderFgChange,
   onFooterBgChange,
   onFooterFgChange,
+  onExtractPalette,
 }: QuickThemeCustomizerProps) {
+  const [extracting, setExtracting] = React.useState(false);
+  const logoFileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleExtractFromSource = async (source: File | string) => {
+    setExtracting(true);
+    try {
+      const palette = await extractLogoPalette(source);
+      onPrimaryChange(palette.primary);
+      onSecondaryChange(palette.secondary);
+      onExtractPalette?.(palette);
+    } catch (e) {
+      console.error("Failed to extract palette from logo:", e);
+    } finally {
+      setExtracting(false);
+    }
+  };
   // Normalize radius to sharp / smooth / round matching storefront route
   const activeRadiusPreset = React.useMemo(() => {
     if (radius === "0" || radius === "0px" || radius === "0rem") return "sharp";
@@ -192,9 +313,47 @@ export function QuickThemeCustomizer({
 
       {/* 1. Brand Colors */}
       <div className="space-y-3 pt-2">
-        <Label className="text-sm font-medium">
-          {isAr ? "1. ألوان الهوية الرئيسية" : "1. Brand Colors"}
-        </Label>
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">
+            {isAr ? "1. ألوان الهوية الرئيسية" : "1. Brand Colors"}
+          </Label>
+
+          <div>
+            <input
+              ref={logoFileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleExtractFromSource(file);
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={extracting}
+              onClick={() => {
+                if (logoUrl) {
+                  handleExtractFromSource(logoUrl);
+                } else {
+                  logoFileInputRef.current?.click();
+                }
+              }}
+              className="h-7 text-xs gap-1.5 border-dashed"
+            >
+              <Palette className="size-3.5 text-primary" />
+              {extracting
+                ? isAr
+                  ? "جاري الاستخراج..."
+                  : "Extracting..."
+                : isAr
+                  ? "استخراج الألوان من الشعار"
+                  : "Extract from logo"}
+            </Button>
+          </div>
+        </div>
         <div className="flex flex-wrap items-center gap-4">
           {/* Primary Swatch */}
           <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-2 min-w-[170px]">
@@ -556,9 +715,14 @@ export function QuickThemeCustomizer({
                 <span className="text-xs text-muted-foreground">
                   {isAr ? preset.descriptionAr : preset.descriptionEn}
                 </span>
-                <div className="mt-2 text-xs font-mono text-muted-foreground flex items-center gap-2">
-                  <span className="px-1.5 py-0.5 rounded bg-muted">
-                    {preset.fontAr} / {preset.fontEn}
+                <div className="mt-2 text-xs font-mono text-muted-foreground flex flex-col gap-1 w-full">
+                  <span className="px-1.5 py-0.5 rounded bg-muted text-[11px] truncate">
+                    Display: {preset.displayFontAr || preset.fontAr} /{" "}
+                    {preset.displayFontEn || preset.fontEn}
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded bg-muted/60 text-[10px] text-muted-foreground truncate">
+                    Body: {preset.bodyFontAr || preset.fontAr} /{" "}
+                    {preset.bodyFontEn || preset.fontEn}
                   </span>
                 </div>
               </button>

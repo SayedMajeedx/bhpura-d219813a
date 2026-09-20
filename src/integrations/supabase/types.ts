@@ -453,6 +453,50 @@ export type Database = {
         };
         Relationships: [];
       };
+      back_in_stock_requests: {
+        Row: {
+          brand_id: string;
+          channel: string;
+          contact: string;
+          created_at: string;
+          id: string;
+          lang: string;
+          notified_at: string | null;
+          product_id: string;
+          variant_id: string | null;
+        };
+        Insert: {
+          brand_id: string;
+          channel: string;
+          contact: string;
+          created_at?: string;
+          id?: string;
+          lang?: string;
+          notified_at?: string | null;
+          product_id: string;
+          variant_id?: string | null;
+        };
+        Update: {
+          brand_id?: string;
+          channel?: string;
+          contact?: string;
+          created_at?: string;
+          id?: string;
+          lang?: string;
+          notified_at?: string | null;
+          product_id?: string;
+          variant_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "back_in_stock_requests_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       branches: {
         Row: {
           address_ar: string | null;
@@ -1382,6 +1426,7 @@ export type Database = {
           best_sellers_title_en: string | null;
           bom_enabled: boolean | null;
           brand_id: string;
+          brand_palette: Json;
           btn_checkout_bg: string | null;
           btn_checkout_fg: string | null;
           btn_primary_bg: string | null;
@@ -1440,6 +1485,8 @@ export type Database = {
           homepage_editorial_sections: Json;
           invoice_arabic_font_family: string | null;
           invoice_divider_color: string | null;
+          invoice_inherit_brand_color: boolean;
+          invoice_inherit_brand_font: boolean;
           invoice_secondary_color: string | null;
           invoice_show_business_details: boolean;
           invoice_show_business_name: boolean;
@@ -1516,6 +1563,37 @@ export type Database = {
           vat_number: string | null;
           whatsapp_enabled: boolean;
           whatsapp_number: string | null;
+          back_in_stock_enabled: boolean;
+          brand_story_enabled: boolean;
+          brand_story_image_url: string | null;
+          bundle_discount_percent: number | null;
+          business_hours_ar: string | null;
+          business_hours_en: string | null;
+          category_filters_enabled: boolean;
+          fabric_care_ar: string | null;
+          fabric_care_en: string | null;
+          footer_layout: string;
+          footer_show_payment_methods: boolean;
+          hero_overlay_strength: number;
+          hero_title_color_v2: string | null;
+          motion_enabled: boolean;
+          new_badge_days: number;
+          newsletter_enabled: boolean;
+          newsletter_title_ar: string | null;
+          newsletter_title_en: string | null;
+          pdp_image_zoom: boolean;
+          pdp_layout: string;
+          product_card_color_dots: boolean;
+          product_card_hover_image: boolean;
+          product_card_quick_add: boolean;
+          quick_view_enabled: boolean;
+          recently_viewed_enabled: boolean;
+          shipping_returns_ar: string | null;
+          shipping_returns_en: string | null;
+          social_proof_enabled: boolean;
+          storefront_design_version: number;
+          trust_bar_enabled: boolean;
+          trust_bar_position: string;
         };
         Insert: {
           address?: string | null;
@@ -1540,6 +1618,7 @@ export type Database = {
           best_sellers_title_en?: string | null;
           bom_enabled?: boolean | null;
           brand_id: string;
+          brand_palette?: Json;
           btn_checkout_bg?: string | null;
           btn_checkout_fg?: string | null;
           btn_primary_bg?: string | null;
@@ -1598,6 +1677,8 @@ export type Database = {
           homepage_editorial_sections?: Json;
           invoice_arabic_font_family?: string | null;
           invoice_divider_color?: string | null;
+          invoice_inherit_brand_color?: boolean;
+          invoice_inherit_brand_font?: boolean;
           invoice_secondary_color?: string | null;
           invoice_show_business_details?: boolean;
           invoice_show_business_name?: boolean;
@@ -1674,6 +1755,37 @@ export type Database = {
           vat_number?: string | null;
           whatsapp_enabled?: boolean;
           whatsapp_number?: string | null;
+          back_in_stock_enabled?: boolean;
+          brand_story_enabled?: boolean;
+          brand_story_image_url?: string | null;
+          bundle_discount_percent?: number | null;
+          business_hours_ar?: string | null;
+          business_hours_en?: string | null;
+          category_filters_enabled?: boolean;
+          fabric_care_ar?: string | null;
+          fabric_care_en?: string | null;
+          footer_layout?: string;
+          footer_show_payment_methods?: boolean;
+          hero_overlay_strength?: number;
+          hero_title_color_v2?: string | null;
+          motion_enabled?: boolean;
+          new_badge_days?: number;
+          newsletter_enabled?: boolean;
+          newsletter_title_ar?: string | null;
+          newsletter_title_en?: string | null;
+          pdp_image_zoom?: boolean;
+          pdp_layout?: string;
+          product_card_color_dots?: boolean;
+          product_card_hover_image?: boolean;
+          product_card_quick_add?: boolean;
+          quick_view_enabled?: boolean;
+          recently_viewed_enabled?: boolean;
+          shipping_returns_ar?: string | null;
+          shipping_returns_en?: string | null;
+          social_proof_enabled?: boolean;
+          storefront_design_version?: number;
+          trust_bar_enabled?: boolean;
+          trust_bar_position?: string;
         };
         Update: {
           address?: string | null;
@@ -1698,6 +1810,7 @@ export type Database = {
           best_sellers_title_en?: string | null;
           bom_enabled?: boolean | null;
           brand_id?: string;
+          brand_palette?: Json;
           btn_checkout_bg?: string | null;
           btn_checkout_fg?: string | null;
           btn_primary_bg?: string | null;
@@ -1756,6 +1869,8 @@ export type Database = {
           homepage_editorial_sections?: Json;
           invoice_arabic_font_family?: string | null;
           invoice_divider_color?: string | null;
+          invoice_inherit_brand_color?: boolean;
+          invoice_inherit_brand_font?: boolean;
           invoice_secondary_color?: string | null;
           invoice_show_business_details?: boolean;
           invoice_show_business_name?: boolean;
@@ -1832,6 +1947,37 @@ export type Database = {
           vat_number?: string | null;
           whatsapp_enabled?: boolean;
           whatsapp_number?: string | null;
+          back_in_stock_enabled?: boolean;
+          brand_story_enabled?: boolean;
+          brand_story_image_url?: string | null;
+          bundle_discount_percent?: number | null;
+          business_hours_ar?: string | null;
+          business_hours_en?: string | null;
+          category_filters_enabled?: boolean;
+          fabric_care_ar?: string | null;
+          fabric_care_en?: string | null;
+          footer_layout?: string;
+          footer_show_payment_methods?: boolean;
+          hero_overlay_strength?: number;
+          hero_title_color_v2?: string | null;
+          motion_enabled?: boolean;
+          new_badge_days?: number;
+          newsletter_enabled?: boolean;
+          newsletter_title_ar?: string | null;
+          newsletter_title_en?: string | null;
+          pdp_image_zoom?: boolean;
+          pdp_layout?: string;
+          product_card_color_dots?: boolean;
+          product_card_hover_image?: boolean;
+          product_card_quick_add?: boolean;
+          quick_view_enabled?: boolean;
+          recently_viewed_enabled?: boolean;
+          shipping_returns_ar?: string | null;
+          shipping_returns_en?: string | null;
+          social_proof_enabled?: boolean;
+          storefront_design_version?: number;
+          trust_bar_enabled?: boolean;
+          trust_bar_position?: string;
         };
         Relationships: [
           {
@@ -3935,6 +4081,44 @@ export type Database = {
             columns: ["request_id"];
             isOneToOne: true;
             referencedRelation: "order_review_requests";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      newsletter_subscribers: {
+        Row: {
+          brand_id: string;
+          channel: string;
+          contact: string;
+          created_at: string;
+          id: string;
+          lang: string;
+          source: string;
+        };
+        Insert: {
+          brand_id: string;
+          channel: string;
+          contact: string;
+          created_at?: string;
+          id?: string;
+          lang?: string;
+          source?: string;
+        };
+        Update: {
+          brand_id?: string;
+          channel?: string;
+          contact?: string;
+          created_at?: string;
+          id?: string;
+          lang?: string;
+          source?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "newsletter_subscribers_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
             referencedColumns: ["id"];
           },
         ];
@@ -7142,6 +7326,43 @@ export type Database = {
           vat_inclusive: boolean | null;
           whatsapp_enabled: boolean | null;
           whatsapp_number: string | null;
+          delivery_estimate_enabled: boolean | null;
+          delivery_estimate_ar: string | null;
+          delivery_estimate_en: string | null;
+          brand_palette: Json | null;
+          invoice_inherit_brand_color: boolean | null;
+          invoice_inherit_brand_font: boolean | null;
+          storefront_design_version: number | null;
+          trust_bar_enabled: boolean | null;
+          trust_bar_position: string | null;
+          hero_overlay_strength: number | null;
+          hero_title_color_v2: string | null;
+          product_card_hover_image: boolean | null;
+          product_card_color_dots: boolean | null;
+          product_card_quick_add: boolean | null;
+          new_badge_days: number | null;
+          footer_layout: string | null;
+          footer_show_payment_methods: boolean | null;
+          newsletter_enabled: boolean | null;
+          newsletter_title_ar: string | null;
+          newsletter_title_en: string | null;
+          brand_story_enabled: boolean | null;
+          brand_story_image_url: string | null;
+          category_filters_enabled: boolean | null;
+          pdp_layout: string | null;
+          pdp_image_zoom: boolean | null;
+          social_proof_enabled: boolean | null;
+          recently_viewed_enabled: boolean | null;
+          motion_enabled: boolean | null;
+          quick_view_enabled: boolean | null;
+          back_in_stock_enabled: boolean | null;
+          fabric_care_ar: string | null;
+          fabric_care_en: string | null;
+          shipping_returns_ar: string | null;
+          shipping_returns_en: string | null;
+          business_hours_ar: string | null;
+          business_hours_en: string | null;
+          bundle_discount_percent: number | null;
         };
         Relationships: [
           {
@@ -8498,6 +8719,24 @@ export type Database = {
           p_subtotal: number;
         };
         Returns: Json;
+      };
+      create_tenant_with_defaults_v2: {
+        Args: {
+          p_slug: string;
+          p_name_en: string;
+          p_name_ar?: string | null;
+          p_owner_id: string;
+          p_business_type?: string;
+          p_store_vertical?: string;
+          p_storefront_accent_color?: string;
+          p_storefront_background_color?: string;
+          p_brand_palette?: Json;
+          p_storefront_font_ar?: string;
+          p_storefront_font_en?: string;
+          p_storefront_radius?: string;
+          p_template_defaults?: Json;
+        };
+        Returns: string;
       };
       validate_promo_code_before_returning_customer_guard_20260825: {
         Args: {

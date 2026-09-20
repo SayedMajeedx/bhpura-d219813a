@@ -73,8 +73,14 @@ const CATEGORY_MAP: Record<string, { label: string; icon: any }> = {
 };
 
 const READINESS_MAP: Record<string, { label: string; color: string }> = {
-  ready_with_photos: { label: "جاهز مع الصور ⚡", color: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30" },
-  products_only: { label: "المنتجات فقط", color: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30" },
+  ready_with_photos: {
+    label: "جاهز مع الصور ⚡",
+    color: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+  },
+  products_only: {
+    label: "المنتجات فقط",
+    color: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
+  },
   idea_stage: { label: "فكرة قيد التجهيز", color: "bg-muted text-muted-foreground border-border" },
 };
 
@@ -87,11 +93,26 @@ const CHANNEL_MAP: Record<string, string> = {
 
 const STATUS_MAP: Record<GrantApplication["status"], { label: string; color: string }> = {
   pending: { label: "معلّق ⏳", color: "bg-muted text-muted-foreground border-border" },
-  reviewed: { label: "تمت المراجعة 👁️", color: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30" },
-  shortlisted: { label: "مرشح بالقائمة ⭐", color: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30" },
-  selected: { label: "فائز بـ 6 شهور 🏆", color: "bg-primary/20 text-primary border-primary/40 font-bold" },
-  offered_3_months: { label: "عرض 3 شهور 🎁", color: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30" },
-  rejected: { label: "مستبعد ✖", color: "bg-destructive/15 text-destructive border-destructive/30" },
+  reviewed: {
+    label: "تمت المراجعة 👁️",
+    color: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30",
+  },
+  shortlisted: {
+    label: "مرشح بالقائمة ⭐",
+    color: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30",
+  },
+  selected: {
+    label: "فائز بـ 6 شهور 🏆",
+    color: "bg-primary/20 text-primary border-primary/40 font-bold",
+  },
+  offered_3_months: {
+    label: "عرض 3 شهور 🎁",
+    color: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+  },
+  rejected: {
+    label: "مستبعد ✖",
+    color: "bg-destructive/15 text-destructive border-destructive/30",
+  },
 };
 
 export function SuperGrantsManager() {
@@ -103,7 +124,11 @@ export function SuperGrantsManager() {
   const [detailsApp, setDetailsApp] = useState<GrantApplication | null>(null);
   const [notesDraft, setNotesDraft] = useState("");
 
-  const { data: apps = [], isLoading, refetch } = useQuery({
+  const {
+    data: apps = [],
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["super-grant-applications"],
     queryFn: async () => {
       const { data, error } = await (supabase.from as any)("merchant_grant_applications")
@@ -133,7 +158,9 @@ export function SuperGrantsManager() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase.from as any)("merchant_grant_applications").delete().eq("id", id);
+      const { error } = await (supabase.from as any)("merchant_grant_applications")
+        .delete()
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -215,8 +242,12 @@ export function SuperGrantsManager() {
 
         <Card className="rounded-xl border-emerald-500/20 bg-emerald-500/5 shadow-xs">
           <CardContent className="p-4 space-y-1">
-            <span className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">جاهزون بالصور فوراً ⚡</span>
-            <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{readyCount}</div>
+            <span className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">
+              جاهزون بالصور فوراً ⚡
+            </span>
+            <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+              {readyCount}
+            </div>
           </CardContent>
         </Card>
 
@@ -229,8 +260,12 @@ export function SuperGrantsManager() {
 
         <Card className="rounded-xl border-amber-500/20 bg-amber-500/5 shadow-xs">
           <CardContent className="p-4 space-y-1">
-            <span className="text-xs text-amber-700 dark:text-amber-300 font-medium">عروض الـ 3 شهور 🎁</span>
-            <div className="text-2xl font-black text-amber-600 dark:text-amber-400">{offered3Count}</div>
+            <span className="text-xs text-amber-700 dark:text-amber-300 font-medium">
+              عروض الـ 3 شهور 🎁
+            </span>
+            <div className="text-2xl font-black text-amber-600 dark:text-amber-400">
+              {offered3Count}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -302,7 +337,9 @@ export function SuperGrantsManager() {
             <HelpCircle className="size-6" />
           </div>
           <p className="font-bold text-foreground">لا توجد تقديمات تطابق خيارات البحث الحالية.</p>
-          <p className="text-xs text-muted-foreground">تأكد من الفلاتر أو شجع أصحاب المشاريع للتقديم عبر رابط /grant</p>
+          <p className="text-xs text-muted-foreground">
+            تأكد من الفلاتر أو شجع أصحاب المشاريع للتقديم عبر رابط /grant
+          </p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -312,7 +349,10 @@ export function SuperGrantsManager() {
               color: "bg-muted text-muted-foreground",
             };
             const statusInfo = STATUS_MAP[app.status] || STATUS_MAP.pending;
-            const categoryInfo = CATEGORY_MAP[app.product_category] || { label: app.product_category, icon: Store };
+            const categoryInfo = CATEGORY_MAP[app.product_category] || {
+              label: app.product_category,
+              icon: Store,
+            };
             const CategoryIcon = categoryInfo.icon;
             const formattedDate = new Date(app.created_at).toLocaleDateString("ar-BH", {
               month: "short",
@@ -329,8 +369,8 @@ export function SuperGrantsManager() {
                   app.status === "selected"
                     ? "border-primary/50 bg-primary/5"
                     : app.readiness_status === "ready_with_photos"
-                    ? "border-emerald-500/25 bg-card"
-                    : "border-border bg-card"
+                      ? "border-emerald-500/25 bg-card"
+                      : "border-border bg-card",
                 )}
               >
                 <CardContent className="p-4 sm:p-5 space-y-3">
@@ -351,16 +391,25 @@ export function SuperGrantsManager() {
                           >
                             {app.business_name}
                           </h3>
-                          <Badge variant="outline" className={cn("text-[10px] px-2 py-0.5", readinessInfo.color)}>
+                          <Badge
+                            variant="outline"
+                            className={cn("text-[10px] px-2 py-0.5", readinessInfo.color)}
+                          >
                             {readinessInfo.label}
                           </Badge>
                         </div>
                         <div className="flex flex-wrap items-center gap-2.5 text-xs text-muted-foreground mt-0.5">
                           <span>{categoryInfo.label}</span>
                           <span>•</span>
-                          <span>قناة البيع: {CHANNEL_MAP[app.current_sales_channel] || app.current_sales_channel}</span>
+                          <span>
+                            قناة البيع:{" "}
+                            {CHANNEL_MAP[app.current_sales_channel] || app.current_sales_channel}
+                          </span>
                           <span>•</span>
-                          <span className="flex items-center gap-1 font-mono font-bold text-foreground" dir="ltr">
+                          <span
+                            className="flex items-center gap-1 font-mono font-bold text-foreground"
+                            dir="ltr"
+                          >
                             <Phone className="size-3 text-muted-foreground" />
                             {app.whatsapp_number}
                           </span>
@@ -377,9 +426,16 @@ export function SuperGrantsManager() {
                     <div className="flex items-center gap-2 self-start sm:self-center">
                       <Select
                         value={app.status}
-                        onValueChange={(val) => handleStatusChange(app, val as GrantApplication["status"])}
+                        onValueChange={(val) =>
+                          handleStatusChange(app, val as GrantApplication["status"])
+                        }
                       >
-                        <SelectTrigger className={cn("h-8 text-xs font-bold border rounded-lg min-w-[130px]", statusInfo.color)}>
+                        <SelectTrigger
+                          className={cn(
+                            "h-8 text-xs font-bold border rounded-lg min-w-[130px]",
+                            statusInfo.color,
+                          )}
+                        >
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -397,7 +453,9 @@ export function SuperGrantsManager() {
                   {/* Challenge details */}
                   {app.biggest_challenge && (
                     <div className="rounded-lg bg-muted/30 border border-border/50 p-2.5 text-xs text-muted-foreground leading-relaxed">
-                      <span className="font-bold text-foreground block mb-0.5">التحدي الأكبر للتاجر:</span>
+                      <span className="font-bold text-foreground block mb-0.5">
+                        التحدي الأكبر للتاجر:
+                      </span>
                       "{app.biggest_challenge}"
                     </div>
                   )}
@@ -453,7 +511,11 @@ export function SuperGrantsManager() {
                         size="sm"
                         className="h-8 text-xs gap-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 font-bold"
                       >
-                        <a href={getWhatsAppLink(app, "winner_6m")} target="_blank" rel="noreferrer">
+                        <a
+                          href={getWhatsAppLink(app, "winner_6m")}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
                           <Crown className="size-3.5" />
                           تهنئة الـ 6 شهور
                         </a>
@@ -466,7 +528,11 @@ export function SuperGrantsManager() {
                         size="sm"
                         className="h-8 text-xs gap-1.5 rounded-lg border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 font-bold"
                       >
-                        <a href={getWhatsAppLink(app, "special_3m")} target="_blank" rel="noreferrer">
+                        <a
+                          href={getWhatsAppLink(app, "special_3m")}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
                           <Gift className="size-3.5" />
                           إهداء الـ 3 شهور
                         </a>
@@ -520,12 +586,19 @@ export function SuperGrantsManager() {
                     <Store className="size-5 text-primary" />
                     استبيان: {detailsApp.business_name}
                   </DialogTitle>
-                  <Badge variant="outline" className={cn("text-xs font-bold", (STATUS_MAP[detailsApp.status] || STATUS_MAP.pending).color)}>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "text-xs font-bold",
+                      (STATUS_MAP[detailsApp.status] || STATUS_MAP.pending).color,
+                    )}
+                  >
                     {(STATUS_MAP[detailsApp.status] || STATUS_MAP.pending).label}
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  تاريخ وتوقيت التقديم: {new Date(detailsApp.created_at).toLocaleDateString("ar-BH", {
+                  تاريخ وتوقيت التقديم:{" "}
+                  {new Date(detailsApp.created_at).toLocaleDateString("ar-BH", {
                     weekday: "long",
                     year: "numeric",
                     month: "long",
@@ -547,7 +620,12 @@ export function SuperGrantsManager() {
                     <span className="font-mono font-bold text-sm text-foreground" dir="ltr">
                       @{detailsApp.instagram_handle.replace(/^@/, "")}
                     </span>
-                    <Button asChild size="sm" variant="outline" className="h-7 text-[11px] gap-1 rounded-lg">
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-[11px] gap-1 rounded-lg"
+                    >
                       <a
                         href={`https://instagram.com/${detailsApp.instagram_handle.replace(/^@/, "")}`}
                         target="_blank"
@@ -569,7 +647,12 @@ export function SuperGrantsManager() {
                     <span className="font-mono font-bold text-sm text-foreground" dir="ltr">
                       {detailsApp.whatsapp_number}
                     </span>
-                    <Button asChild size="sm" variant="outline" className="h-7 text-[11px] gap-1 rounded-lg border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10">
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-[11px] gap-1 rounded-lg border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10"
+                    >
                       <a
                         href={`https://wa.me/${normalizePhoneForWhatsApp(detailsApp.whatsapp_number)}`}
                         target="_blank"
@@ -590,23 +673,32 @@ export function SuperGrantsManager() {
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                   <div className="bg-card p-2.5 rounded-lg border border-border/60">
-                    <span className="text-muted-foreground block text-[11px] mb-1">مجال المنتجات</span>
+                    <span className="text-muted-foreground block text-[11px] mb-1">
+                      مجال المنتجات
+                    </span>
                     <span className="font-bold text-foreground">
-                      {(CATEGORY_MAP[detailsApp.product_category] || {}).label || detailsApp.product_category}
+                      {(CATEGORY_MAP[detailsApp.product_category] || {}).label ||
+                        detailsApp.product_category}
                     </span>
                   </div>
 
                   <div className="bg-card p-2.5 rounded-lg border border-border/60">
-                    <span className="text-muted-foreground block text-[11px] mb-1">حالة الجاهزية والتصوير</span>
+                    <span className="text-muted-foreground block text-[11px] mb-1">
+                      حالة الجاهزية والتصوير
+                    </span>
                     <span className="font-bold text-foreground">
-                      {(READINESS_MAP[detailsApp.readiness_status] || {}).label || detailsApp.readiness_status}
+                      {(READINESS_MAP[detailsApp.readiness_status] || {}).label ||
+                        detailsApp.readiness_status}
                     </span>
                   </div>
 
                   <div className="bg-card p-2.5 rounded-lg border border-border/60">
-                    <span className="text-muted-foreground block text-[11px] mb-1">قناة البيع الحالية</span>
+                    <span className="text-muted-foreground block text-[11px] mb-1">
+                      قناة البيع الحالية
+                    </span>
                     <span className="font-bold text-foreground">
-                      {CHANNEL_MAP[detailsApp.current_sales_channel] || detailsApp.current_sales_channel}
+                      {CHANNEL_MAP[detailsApp.current_sales_channel] ||
+                        detailsApp.current_sales_channel}
                     </span>
                   </div>
                 </div>
@@ -622,7 +714,9 @@ export function SuperGrantsManager() {
                   {detailsApp.biggest_challenge ? (
                     `"${detailsApp.biggest_challenge}"`
                   ) : (
-                    <span className="text-muted-foreground italic">لم يذكر التاجر أي تحدٍ محدد (حقل اختياري).</span>
+                    <span className="text-muted-foreground italic">
+                      لم يذكر التاجر أي تحدٍ محدد (حقل اختياري).
+                    </span>
                   )}
                 </p>
               </div>
@@ -640,7 +734,7 @@ export function SuperGrantsManager() {
                       onValueChange={(val) => {
                         const newStatus = val as GrantApplication["status"];
                         handleStatusChange(detailsApp, newStatus);
-                        setDetailsApp((prev) => prev ? { ...prev, status: newStatus } : null);
+                        setDetailsApp((prev) => (prev ? { ...prev, status: newStatus } : null));
                       }}
                     >
                       <SelectTrigger className="h-8 text-xs font-bold border rounded-lg">
@@ -673,7 +767,7 @@ export function SuperGrantsManager() {
                       id: detailsApp.id,
                       updates: { admin_notes: notesDraft },
                     });
-                    setDetailsApp((prev) => prev ? { ...prev, admin_notes: notesDraft } : null);
+                    setDetailsApp((prev) => (prev ? { ...prev, admin_notes: notesDraft } : null));
                   }}
                   disabled={updateMutation.isPending}
                   className="text-xs font-bold h-8"
@@ -690,7 +784,11 @@ export function SuperGrantsManager() {
                     size="sm"
                     className="h-8 text-xs gap-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 font-bold"
                   >
-                    <a href={getWhatsAppLink(detailsApp, "winner_6m")} target="_blank" rel="noreferrer">
+                    <a
+                      href={getWhatsAppLink(detailsApp, "winner_6m")}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       <Crown className="size-3.5" />
                       تهنئة الـ 6 شهور
                     </a>
@@ -701,7 +799,11 @@ export function SuperGrantsManager() {
                     size="sm"
                     className="h-8 text-xs gap-1.5 rounded-lg border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 font-bold"
                   >
-                    <a href={getWhatsAppLink(detailsApp, "special_3m")} target="_blank" rel="noreferrer">
+                    <a
+                      href={getWhatsAppLink(detailsApp, "special_3m")}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       <Gift className="size-3.5" />
                       إهداء الـ 3 شهور
                     </a>

@@ -1,20 +1,12 @@
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
-import {
-  Store,
-  ChevronLeft,
-  ChevronRight,
-  Boxes,
-} from "lucide-react";
+import { Store, ChevronLeft, ChevronRight, Boxes } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getStorefrontUrl } from "@/lib/storefront-url";
 import { OsNavItem } from "./os-nav-item";
 import { OsBrandSwitcher, type BrandRow } from "./os-brand-switcher";
 import { OsAppsHubModal } from "./os-apps-hub-modal";
-import {
-  ADMIN_WORKSPACES,
-  type AdminNavItemConfig,
-} from "@/config/admin-navigation";
+import { ADMIN_WORKSPACES, type AdminNavItemConfig } from "@/config/admin-navigation";
 
 export interface OsSidebarProps {
   brandLabel: string;
@@ -195,9 +187,7 @@ export function OsSidebar({
                     <div
                       className={cn(
                         "flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-bold tracking-wider transition-colors",
-                        isCurrentWorkspace
-                          ? "text-primary bg-primary/10"
-                          : "text-muted-foreground",
+                        isCurrentWorkspace ? "text-primary bg-primary/10" : "text-muted-foreground",
                       )}
                     >
                       <span className="flex items-center gap-1.5 truncate uppercase">

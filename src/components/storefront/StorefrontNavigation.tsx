@@ -133,19 +133,7 @@ function MobileStorefrontDropdown() {
   const { brand, settings, lang, setLang, t } = useStorefront();
   const [isOpen, setIsOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
-  const [localGlass, setLocalGlass] = useState<boolean | null>(null);
-  useEffect(() => {
-    try {
-      const storedG = localStorage.getItem("boutq_header_glass");
-      if (storedG !== null) {
-        setLocalGlass(storedG === "true");
-      }
-    } catch (_ignored) {
-      void 0;
-    }
-  }, []);
-
-  const isGlass = localGlass !== null ? localGlass : (settings.header_glass ?? true);
+  const isGlass = settings.header_glass ?? true;
   const menuBackground =
     settings.menu_bg || settings.header_bg || settings.background_color || "#ffffff";
   const isDarkMenu = isColorDark(menuBackground);
@@ -309,19 +297,7 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
     setMounted(true);
   }, []);
 
-  const [localGlass, setLocalGlass] = useState<boolean | null>(null);
-  useEffect(() => {
-    try {
-      const storedG = localStorage.getItem("boutq_header_glass");
-      if (storedG !== null) {
-        setLocalGlass(storedG === "true");
-      }
-    } catch {
-      void 0;
-    }
-  }, []);
-
-  const isGlass = localGlass !== null ? localGlass : (settings.header_glass ?? true);
+  const isGlass = settings.header_glass ?? true;
   const displayName = lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en;
   const menuTitle =
     (lang === "ar"

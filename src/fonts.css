@@ -46,8 +46,9 @@
 /* Boutique Headline Display Fonts */
 @font-face {
   font-family: "29LT Bukra";
-  src: url("/fonts/bukramed.woff2") format("woff2"),
-       url("/fonts/arabic-font.woff2") format("woff2");
+  src:
+    url("/fonts/bukramed.woff2") format("woff2"),
+    url("/fonts/arabic-font.woff2") format("woff2");
   font-weight: 500 700;
   font-style: normal;
   font-display: swap;

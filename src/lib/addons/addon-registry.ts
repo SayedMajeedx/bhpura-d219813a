@@ -500,8 +500,7 @@ export function resolveVariantAxis({
   }
 
   // If variants have non-empty values for this axis, inventory data trumps addon defaults
-  const variantKey =
-    axis === "four" ? "option_four" : axis === "five" ? "option_five" : axis;
+  const variantKey = axis === "four" ? "option_four" : axis === "five" ? "option_five" : axis;
   const axisHasData =
     hasValues === true ||
     (Array.isArray((product as any)?.product_variants) &&

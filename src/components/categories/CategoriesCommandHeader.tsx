@@ -51,7 +51,9 @@ export const CategoriesCommandHeader: React.FC<CategoriesCommandHeaderProps> = (
             disabled={isSyncingDefaults}
             className="h-9 px-3 gap-1.5 text-xs font-medium border-border hover:bg-muted"
           >
-            <FolderSync className={`h-3.5 w-3.5 text-primary ${isSyncingDefaults ? "animate-spin" : ""}`} />
+            <FolderSync
+              className={`h-3.5 w-3.5 text-primary ${isSyncingDefaults ? "animate-spin" : ""}`}
+            />
             <span>{isAr ? "تهيئة أقسام النشاط" : "Sync Vertical Categories"}</span>
           </Button>
         )}

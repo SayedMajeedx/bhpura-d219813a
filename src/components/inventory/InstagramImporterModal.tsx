@@ -407,8 +407,7 @@ export function InstagramImporterModal({
           isCover: selectAll ? img.isCover || idx === 0 : false,
         }));
         const cover =
-          updatedImages.find((img) => img.isCover) ||
-          (selectAll ? updatedImages[0] : null);
+          updatedImages.find((img) => img.isCover) || (selectAll ? updatedImages[0] : null);
         return {
           ...draft,
           images: updatedImages,
@@ -861,9 +860,7 @@ export function InstagramImporterModal({
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredDrafts.map((draft) => {
                     const ready = isDraftReady(draft);
-                    const selectedImages = draft.images.filter(
-                      (img) => img.selected !== false,
-                    );
+                    const selectedImages = draft.images.filter((img) => img.selected !== false);
                     const selectedCount = selectedImages.length;
                     const priceConfidence = draft.fieldConfidence.price;
                     const isPriceLow =
@@ -1095,10 +1092,7 @@ export function InstagramImporterModal({
                                       }
                                     >
                                       <Star
-                                        className={cn(
-                                          "h-2.5 w-2.5",
-                                          isCover ? "fill-white" : "",
-                                        )}
+                                        className={cn("h-2.5 w-2.5", isCover ? "fill-white" : "")}
                                       />
                                     </button>
 
@@ -1235,9 +1229,7 @@ export function InstagramImporterModal({
                                   handleFieldEdit(draft.id, "sizes", parsedSizes);
                                 }}
                                 placeholder={
-                                  isAr
-                                    ? "مثال: 52, 54, 56 (اختياري)"
-                                    : "e.g. S, M, L (optional)"
+                                  isAr ? "مثال: 52, 54, 56 (اختياري)" : "e.g. S, M, L (optional)"
                                 }
                                 className="h-7 text-xs rounded-lg font-mono"
                               />

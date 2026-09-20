@@ -22,11 +22,7 @@ export function useVariantTranslations(
 
   // Compute clean deduplicated list of non-empty strings
   const stringTerms = Array.from(
-    new Set(
-      terms
-        .map((t) => (typeof t === "string" ? t.trim() : ""))
-        .filter(Boolean),
-    ),
+    new Set(terms.map((t) => (typeof t === "string" ? t.trim() : "")).filter(Boolean)),
   );
 
   const missing = getUntranslatedTerms(stringTerms, targetLang);

@@ -30,7 +30,9 @@ describe("universal-exporter sanitization & formula injection defense (CWE-1236)
   });
 
   it("protects Excel cell values against formula injection", () => {
-    expect(sanitizeCellValue("=HYPERLINK(\"http://evil.com\")")).toBe("'=HYPERLINK(\"http://evil.com\")");
+    expect(sanitizeCellValue('=HYPERLINK("http://evil.com")')).toBe(
+      '\'=HYPERLINK("http://evil.com")',
+    );
     expect(sanitizeCellValue(100)).toBe(100);
     expect(sanitizeCellValue(true)).toBe(true);
   });

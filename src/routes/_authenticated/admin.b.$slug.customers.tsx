@@ -1051,9 +1051,7 @@ function CustomersPage() {
               className="cursor-pointer gap-2 py-2 text-xs font-semibold text-primary"
             >
               <Users className="h-4 w-4 shrink-0 text-primary" />
-              <span>
-                {isAr ? "استيراد العملاء وجهات الاتصال" : "Universal Customer Migration"}
-              </span>
+              <span>{isAr ? "استيراد العملاء وجهات الاتصال" : "Universal Customer Migration"}</span>
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="cursor-pointer gap-2 py-2 text-xs font-semibold">
               <Link to="/admin/b/$slug/export" params={{ slug: brand.slug }}>

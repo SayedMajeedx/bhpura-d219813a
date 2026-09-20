@@ -575,7 +575,7 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
         {/* Level 2: Active Application Window Frame */}
         <div
           className={cn(
-            "flex-1 flex flex-col min-w-0 print-area pt-14 md:pt-0 overflow-hidden transition-all duration-300",
+            "flex-1 flex flex-col min-w-0 print-area pt-14 md:pt-0 overflow-hidden transition-[padding] duration-300",
             isFocusMode && "ps-3 pt-3",
           )}
         >

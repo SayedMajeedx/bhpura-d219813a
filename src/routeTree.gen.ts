@@ -24,6 +24,8 @@ import { Route as SlugAccountRouteImport } from './routes/$slug.account'
 import { Route as SlugAuthRouteImport } from './routes/$slug.auth'
 import { Route as SlugAuthConfirmedRouteImport } from './routes/$slug.auth-confirmed'
 import { Route as SlugCheckoutRouteImport } from './routes/$slug.checkout'
+import { Route as SlugCustomOrderRouteImport } from './routes/$slug.custom-order'
+import { Route as SlugManifestDotwebmanifestRouteImport } from './routes/$slug.manifest[.webmanifest]'
 import { Route as SlugSearchRouteImport } from './routes/$slug.search'
 import { Route as SlugSizeGuideRouteImport } from './routes/$slug.size-guide'
 import { Route as SlugWishlistRouteImport } from './routes/$slug.wishlist'
@@ -164,6 +166,17 @@ const SlugCheckoutRoute = SlugCheckoutRouteImport.update({
   path: '/checkout',
   getParentRoute: () => SlugRouteRoute,
 } as any)
+const SlugCustomOrderRoute = SlugCustomOrderRouteImport.update({
+  id: '/custom-order',
+  path: '/custom-order',
+  getParentRoute: () => SlugRouteRoute,
+} as any)
+const SlugManifestDotwebmanifestRoute =
+  SlugManifestDotwebmanifestRouteImport.update({
+    id: '/manifest.webmanifest',
+    path: '/manifest.webmanifest',
+    getParentRoute: () => SlugRouteRoute,
+  } as any)
 const SlugSearchRoute = SlugSearchRouteImport.update({
   id: '/search',
   path: '/search',
@@ -552,6 +565,8 @@ export interface FileRoutesByFullPath {
   '/$slug/auth': typeof SlugAuthRoute
   '/$slug/auth-confirmed': typeof SlugAuthConfirmedRoute
   '/$slug/checkout': typeof SlugCheckoutRoute
+  '/$slug/custom-order': typeof SlugCustomOrderRoute
+  '/$slug/manifest.webmanifest': typeof SlugManifestDotwebmanifestRoute
   '/$slug/search': typeof SlugSearchRoute
   '/$slug/size-guide': typeof SlugSizeGuideRoute
   '/$slug/wishlist': typeof SlugWishlistRoute
@@ -632,6 +647,8 @@ export interface FileRoutesByTo {
   '/$slug/auth': typeof SlugAuthRoute
   '/$slug/auth-confirmed': typeof SlugAuthConfirmedRoute
   '/$slug/checkout': typeof SlugCheckoutRoute
+  '/$slug/custom-order': typeof SlugCustomOrderRoute
+  '/$slug/manifest.webmanifest': typeof SlugManifestDotwebmanifestRoute
   '/$slug/search': typeof SlugSearchRoute
   '/$slug/size-guide': typeof SlugSizeGuideRoute
   '/$slug/wishlist': typeof SlugWishlistRoute
@@ -713,6 +730,8 @@ export interface FileRoutesById {
   '/$slug/auth': typeof SlugAuthRoute
   '/$slug/auth-confirmed': typeof SlugAuthConfirmedRoute
   '/$slug/checkout': typeof SlugCheckoutRoute
+  '/$slug/custom-order': typeof SlugCustomOrderRoute
+  '/$slug/manifest.webmanifest': typeof SlugManifestDotwebmanifestRoute
   '/$slug/search': typeof SlugSearchRoute
   '/$slug/size-guide': typeof SlugSizeGuideRoute
   '/$slug/wishlist': typeof SlugWishlistRoute
@@ -796,6 +815,8 @@ export interface FileRouteTypes {
     | '/$slug/auth'
     | '/$slug/auth-confirmed'
     | '/$slug/checkout'
+    | '/$slug/custom-order'
+    | '/$slug/manifest.webmanifest'
     | '/$slug/search'
     | '/$slug/size-guide'
     | '/$slug/wishlist'
@@ -876,6 +897,8 @@ export interface FileRouteTypes {
     | '/$slug/auth'
     | '/$slug/auth-confirmed'
     | '/$slug/checkout'
+    | '/$slug/custom-order'
+    | '/$slug/manifest.webmanifest'
     | '/$slug/search'
     | '/$slug/size-guide'
     | '/$slug/wishlist'
@@ -956,6 +979,8 @@ export interface FileRouteTypes {
     | '/$slug/auth'
     | '/$slug/auth-confirmed'
     | '/$slug/checkout'
+    | '/$slug/custom-order'
+    | '/$slug/manifest.webmanifest'
     | '/$slug/search'
     | '/$slug/size-guide'
     | '/$slug/wishlist'
@@ -1152,6 +1177,20 @@ declare module '@tanstack/react-router' {
       path: '/checkout'
       fullPath: '/$slug/checkout'
       preLoaderRoute: typeof SlugCheckoutRouteImport
+      parentRoute: typeof SlugRouteRoute
+    }
+    '/$slug/custom-order': {
+      id: '/$slug/custom-order'
+      path: '/custom-order'
+      fullPath: '/$slug/custom-order'
+      preLoaderRoute: typeof SlugCustomOrderRouteImport
+      parentRoute: typeof SlugRouteRoute
+    }
+    '/$slug/manifest.webmanifest': {
+      id: '/$slug/manifest.webmanifest'
+      path: '/manifest.webmanifest'
+      fullPath: '/$slug/manifest.webmanifest'
+      preLoaderRoute: typeof SlugManifestDotwebmanifestRouteImport
       parentRoute: typeof SlugRouteRoute
     }
     '/$slug/search': {
@@ -1618,6 +1657,8 @@ interface SlugRouteRouteChildren {
   SlugAuthRoute: typeof SlugAuthRoute
   SlugAuthConfirmedRoute: typeof SlugAuthConfirmedRoute
   SlugCheckoutRoute: typeof SlugCheckoutRoute
+  SlugCustomOrderRoute: typeof SlugCustomOrderRoute
+  SlugManifestDotwebmanifestRoute: typeof SlugManifestDotwebmanifestRoute
   SlugSearchRoute: typeof SlugSearchRoute
   SlugSizeGuideRoute: typeof SlugSizeGuideRoute
   SlugWishlistRoute: typeof SlugWishlistRoute
@@ -1634,6 +1675,8 @@ const SlugRouteRouteChildren: SlugRouteRouteChildren = {
   SlugAuthRoute: SlugAuthRoute,
   SlugAuthConfirmedRoute: SlugAuthConfirmedRoute,
   SlugCheckoutRoute: SlugCheckoutRoute,
+  SlugCustomOrderRoute: SlugCustomOrderRoute,
+  SlugManifestDotwebmanifestRoute: SlugManifestDotwebmanifestRoute,
   SlugSearchRoute: SlugSearchRoute,
   SlugSizeGuideRoute: SlugSizeGuideRoute,
   SlugWishlistRoute: SlugWishlistRoute,

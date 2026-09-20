@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  resolveStorefrontTrustBadges,
-  type TrustBadgesConfig,
-} from "../src/lib/trust-badges";
+import { resolveStorefrontTrustBadges, type TrustBadgesConfig } from "../src/lib/trust-badges";
 
 describe("resolveStorefrontTrustBadges", () => {
   it("returns customized badges when merchant configures them in admin", () => {
@@ -144,6 +141,8 @@ describe("resolveStorefrontTrustBadges", () => {
 
     expect(abayasDefaults.length).toBeGreaterThan(0);
     // Abayas vertical default includes tailoring / fabric
-    expect(abayasDefaults.some((b) => b.text_ar.includes("تفصيل") || b.text_ar.includes("أقمشة"))).toBe(true);
+    expect(
+      abayasDefaults.some((b) => b.text_ar.includes("تفصيل") || b.text_ar.includes("أقمشة")),
+    ).toBe(true);
   });
 });

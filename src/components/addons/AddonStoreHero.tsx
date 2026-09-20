@@ -125,7 +125,10 @@ export function AddonStoreHero({
               </Badge>
             )}
 
-            <Badge variant="outline" className="px-2.5 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/5">
+            <Badge
+              variant="outline"
+              className="px-2.5 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/5"
+            >
               <ShieldCheck className="h-3.5 w-3.5 me-1 text-emerald-500" />
               <span>{isAr ? "إضافة رسمية موثقة" : "Official Extension"}</span>
             </Badge>
@@ -175,7 +178,10 @@ export function AddonStoreHero({
                 <span>{isAr ? "تثبيت سريع مجاني" : "Quick Install (Free)"}</span>
               </Button>
             ) : (
-              <Badge variant="outline" className="h-9 px-3 gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/5">
+              <Badge
+                variant="outline"
+                className="h-9 px-3 gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/5"
+              >
                 <Check className="h-3.5 w-3.5" />
                 <span>{isAr ? "مثبتة ونشطة في متجرك" : "Installed & Active"}</span>
               </Badge>
@@ -203,7 +209,10 @@ export function AddonStoreHero({
                   </div>
                 </div>
               </div>
-              <Badge variant="outline" className="text-[10px] uppercase tracking-wider font-semibold">
+              <Badge
+                variant="outline"
+                className="text-[10px] uppercase tracking-wider font-semibold"
+              >
                 v{currentManifest.version}
               </Badge>
             </div>
@@ -237,7 +246,9 @@ export function AddonStoreHero({
                 onClick={() => setCurrentIndex(idx)}
                 className={cn(
                   "h-1.5 rounded-full transition-all",
-                  idx === currentIndex ? "w-6 bg-primary" : "w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/60"
+                  idx === currentIndex
+                    ? "w-6 bg-primary"
+                    : "w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/60",
                 )}
                 aria-label={`Slide ${idx + 1}`}
               />

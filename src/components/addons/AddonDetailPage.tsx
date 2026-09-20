@@ -80,12 +80,12 @@ export function AddonDetailPage({
 
   // Preview tab state: 'storefront' | 'admin' | 'settings'
   const [activePreviewTab, setActivePreviewTab] = useState<"storefront" | "admin" | "settings">(
-    "storefront"
+    "storefront",
   );
 
   // Settings form local state (if installed)
   const [settingsForm, setSettingsForm] = useState<Record<string, any>>(
-    installedRow?.settings || {}
+    installedRow?.settings || {},
   );
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
@@ -191,7 +191,10 @@ export function AddonDetailPage({
                 </h1>
 
                 {isRecommended && (
-                  <Badge variant="outline" className="text-xs text-primary border-primary/30 font-medium">
+                  <Badge
+                    variant="outline"
+                    className="text-xs text-primary border-primary/30 font-medium"
+                  >
                     {isAr ? "موصى به لنشاطك" : "Recommended for your store"}
                   </Badge>
                 )}
@@ -206,7 +209,11 @@ export function AddonDetailPage({
               {/* Publisher & Verification */}
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="font-semibold text-foreground">
-                  {showcase ? (isAr ? showcase.publisher.ar : showcase.publisher.en) : "Boutq Official"}
+                  {showcase
+                    ? isAr
+                      ? showcase.publisher.ar
+                      : showcase.publisher.en
+                    : "Boutq Official"}
                 </span>
                 <span className="flex items-center gap-1 text-primary">
                   <ShieldCheck className="h-3.5 w-3.5" />
@@ -375,7 +382,11 @@ export function AddonDetailPage({
               <div className="flex items-center justify-between">
                 <Badge variant="outline" className="gap-1 text-xs border-primary/30 text-primary">
                   <Monitor className="h-3 w-3" />
-                  <span>{isAr ? showcase.previewMockup.storefront.tag?.ar : showcase.previewMockup.storefront.tag?.en}</span>
+                  <span>
+                    {isAr
+                      ? showcase.previewMockup.storefront.tag?.ar
+                      : showcase.previewMockup.storefront.tag?.en}
+                  </span>
                 </Badge>
                 <span className="text-xs text-muted-foreground">
                   {isAr ? "تظهر تلقائياً في صفحة المنتج" : "Auto-embeds on product page"}
@@ -428,7 +439,11 @@ export function AddonDetailPage({
               <div className="flex items-center justify-between">
                 <Badge variant="outline" className="gap-1 text-xs border-primary/30 text-primary">
                   <LayoutDashboard className="h-3 w-3" />
-                  <span>{isAr ? showcase.previewMockup.admin.tag?.ar : showcase.previewMockup.admin.tag?.en}</span>
+                  <span>
+                    {isAr
+                      ? showcase.previewMockup.admin.tag?.ar
+                      : showcase.previewMockup.admin.tag?.en}
+                  </span>
                 </Badge>
                 <span className="text-xs text-muted-foreground">
                   {isAr ? "متكامل مع لوحة التحكم" : "Integrated with Admin"}
