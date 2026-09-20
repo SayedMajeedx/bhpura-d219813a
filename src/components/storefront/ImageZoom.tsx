@@ -8,6 +8,7 @@ interface ImageZoomProps {
   alt: string;
   className?: string;
   aspectRatio?: string;
+  style?: React.CSSProperties;
 }
 
 export function ImageZoom({
@@ -15,6 +16,7 @@ export function ImageZoom({
   alt,
   className = "",
   aspectRatio = "aspect-[3/4]",
+  style,
 }: ImageZoomProps) {
   const [isZooming, setIsZooming] = useState(false);
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
@@ -58,6 +60,7 @@ export function ImageZoom({
           }`}
           loading="eager"
           decoding="async"
+          style={style}
         />
 
         {/* 2x Desktop Zoom Canvas on Hover */}

@@ -218,16 +218,24 @@ export function HeroV2({ slides }: HeroV2Props) {
                         {body}
                       </p>
                     )}
-                    {button && (
-                      <div className="pt-2">
+                    <div className="pt-2 flex flex-wrap items-center gap-3">
+                      {button && (
                         <a
                           href={slide.button_href || "#products"}
                           className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-2.5 sm:px-6 sm:py-3 text-xs sm:text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]"
                         >
                           {button}
                         </a>
-                      </div>
-                    )}
+                      )}
+                      {(brand as any)?.modules?.made_to_order && (
+                        <a
+                          href={`/${brand.slug}/custom-order`}
+                          className="inline-flex items-center justify-center rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 px-4 py-2.5 sm:px-5 sm:py-3 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]"
+                        >
+                          {isAr ? "طلب مخصص" : "Bespoke Order"}
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               </article>

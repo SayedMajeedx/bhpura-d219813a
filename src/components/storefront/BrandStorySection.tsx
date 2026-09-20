@@ -3,6 +3,7 @@ import { useStorefront } from "@/lib/storefront-context";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
+import { useReveal } from "@/lib/motion/use-reveal";
 import { Sparkles, ShieldCheck, HeartHandshake, Award } from "lucide-react";
 
 interface BrandStorySectionProps {
@@ -12,6 +13,9 @@ interface BrandStorySectionProps {
 export function BrandStorySection({ className = "" }: BrandStorySectionProps) {
   const { brand, settings, lang, t } = useStorefront();
   const isAr = lang === "ar";
+  const { ref: revealRef } = useReveal<HTMLElement>({
+    disabled: settings?.motion_enabled === false,
+  });
 
   const title = isAr
     ? settings?.brand_story_title_ar || brand.name_ar || brand.name_en
@@ -51,7 +55,10 @@ export function BrandStorySection({ className = "" }: BrandStorySectionProps) {
   ];
 
   return (
-    <section className={`py-12 sm:py-16 border-y border-border/60 bg-muted/20 ${className}`}>
+    <section
+      ref={revealRef}
+      className={`py-12 sm:py-16 border-y border-border/60 bg-muted/20 sf-reveal ${className}`}
+    >
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           {/* Visual Side (5 columns on desktop) */}

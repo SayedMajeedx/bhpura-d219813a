@@ -157,6 +157,16 @@ export function FooterV2() {
               >
                 {t("التخفيضات", "Sale")}
               </Link>
+              {(brand as any)?.modules?.made_to_order && (
+                <Link
+                  to={"/$slug/custom-order" as any}
+                  params={{ slug: brand.slug } as any}
+                  className="opacity-75 hover:opacity-100 hover:translate-x-0.5 transition-all w-fit"
+                  style={{ color: "var(--sf-footer-fg)" }}
+                >
+                  {t("طلب مخصص", "Custom Order")}
+                </Link>
+              )}
             </nav>
           </div>
 

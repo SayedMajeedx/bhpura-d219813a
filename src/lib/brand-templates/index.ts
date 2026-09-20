@@ -6,9 +6,96 @@ import {
 } from "@/lib/store-profile";
 import { DEFAULT_VERTICAL_CATEGORIES } from "@/lib/addons/vertical-categories";
 import { FONT_MOOD_PRESETS } from "@/components/settings/QuickThemeCustomizer";
-import type { BrandTemplate } from "./types";
+import type { BrandTemplate, BrandDesignConfig } from "./types";
 
 export * from "./types";
+
+export const VERTICAL_DESIGN_PRESETS: Record<StoreVertical, BrandDesignConfig> = {
+  abayas: {
+    preset: "editorial",
+    grid: 4,
+    radius: "0.5rem",
+    sectionSpacing: "airy",
+    cardStyle: "borderless",
+  },
+  fashion: {
+    preset: "editorial",
+    grid: 4,
+    radius: "0.5rem",
+    sectionSpacing: "airy",
+    cardStyle: "borderless",
+  },
+  jewelry: {
+    preset: "editorial",
+    grid: 4,
+    radius: "0.5rem",
+    sectionSpacing: "airy",
+    cardStyle: "borderless",
+  },
+  beauty: {
+    preset: "editorial",
+    grid: 4,
+    radius: "0.5rem",
+    sectionSpacing: "airy",
+    cardStyle: "borderless",
+  },
+  coffee: {
+    preset: "fresh",
+    grid: 4,
+    radius: "1.25rem",
+    sectionSpacing: "regular",
+    cardStyle: "bordered",
+  },
+  food: {
+    preset: "fresh",
+    grid: 4,
+    radius: "1.25rem",
+    sectionSpacing: "regular",
+    cardStyle: "bordered",
+  },
+  gifts: {
+    preset: "fresh",
+    grid: 4,
+    radius: "1.25rem",
+    sectionSpacing: "regular",
+    cardStyle: "bordered",
+  },
+  home: {
+    preset: "fresh",
+    grid: 4,
+    radius: "1.25rem",
+    sectionSpacing: "regular",
+    cardStyle: "bordered",
+  },
+  electronics: {
+    preset: "tech",
+    grid: 5,
+    radius: "0.375rem",
+    sectionSpacing: "dense",
+    cardStyle: "bordered",
+  },
+  digital: {
+    preset: "tech",
+    grid: 5,
+    radius: "0.375rem",
+    sectionSpacing: "dense",
+    cardStyle: "bordered",
+  },
+  print: {
+    preset: "tech",
+    grid: 5,
+    radius: "0.375rem",
+    sectionSpacing: "dense",
+    cardStyle: "bordered",
+  },
+  general: {
+    preset: "tech",
+    grid: 5,
+    radius: "0.375rem",
+    sectionSpacing: "dense",
+    cardStyle: "bordered",
+  },
+};
 
 const getFontPair = (presetId: "classic" | "modern" | "signature" | "strong" | "bubble") => {
   const preset = FONT_MOOD_PRESETS.find((p) => p.id === presetId);
@@ -18,7 +105,7 @@ const getFontPair = (presetId: "classic" | "modern" | "signature" | "strong" | "
   };
 };
 
-export const BRAND_TEMPLATES: Record<StoreVertical, BrandTemplate> = {
+export const RAW_BRAND_TEMPLATES: Record<StoreVertical, BrandTemplate> = {
   abayas: {
     vertical: "abayas",
     label: VERTICAL_LABELS.abayas,
@@ -513,6 +600,19 @@ export const BRAND_TEMPLATES: Record<StoreVertical, BrandTemplate> = {
     categories: DEFAULT_VERTICAL_CATEGORIES.general,
   },
 };
+
+export const BRAND_TEMPLATES: Record<StoreVertical, BrandTemplate> = Object.fromEntries(
+  Object.entries(RAW_BRAND_TEMPLATES).map(([key, template]) => {
+    const v = key as StoreVertical;
+    return [
+      v,
+      {
+        ...template,
+        design: VERTICAL_DESIGN_PRESETS[v] || VERTICAL_DESIGN_PRESETS.general,
+      },
+    ];
+  }),
+) as Record<StoreVertical, BrandTemplate>;
 
 export function getBrandTemplate(vertical: StoreVertical): BrandTemplate {
   return BRAND_TEMPLATES[vertical] || BRAND_TEMPLATES.general;

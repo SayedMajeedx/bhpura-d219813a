@@ -124,6 +124,43 @@ export const FONT_MOOD_PRESETS: FontMoodPreset[] = [
     descriptionEn: "Playful, friendly & youthful",
     descriptionAr: "عفوي ومرح وجذاب للشباب",
   },
+  // Legacy aliases for backward compatibility
+  {
+    id: "classic",
+    labelEn: "Classic",
+    labelAr: "كلاسيكي",
+    fontAr: "Tajawal",
+    fontEn: "Inter",
+    descriptionEn: "Classic balance",
+    descriptionAr: "توازن كلاسيكي",
+  },
+  {
+    id: "modern",
+    labelEn: "Modern",
+    labelAr: "عصري",
+    fontAr: "Readex Pro",
+    fontEn: "Plus Jakarta Sans",
+    descriptionEn: "Modern geometric",
+    descriptionAr: "هندسي عصري",
+  },
+  {
+    id: "strong",
+    labelEn: "Strong",
+    labelAr: "قوي وجريء",
+    fontAr: "Almarai",
+    fontEn: "Montserrat",
+    descriptionEn: "Strong presence",
+    descriptionAr: "حضور قوي",
+  },
+  {
+    id: "bubble",
+    labelEn: "Bubble / Friendly",
+    labelAr: "مرح وودود",
+    fontAr: "Changa",
+    fontEn: "Poppins",
+    descriptionEn: "Friendly and rounded",
+    descriptionAr: "ودود ومستدير",
+  },
 ];
 
 export interface QuickThemeCustomizerProps {

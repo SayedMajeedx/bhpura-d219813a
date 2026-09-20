@@ -7,7 +7,10 @@ import { QuickAddPopover } from "@/components/storefront/QuickAddPopover";
 import { useStorefront, formatPrice } from "@/lib/storefront-context";
 import { shouldShowPrices } from "@/lib/storefront-mode";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
-import { Heart } from "lucide-react";
+import { Heart, Eye } from "lucide-react";
+import { QuickViewModal } from "@/components/storefront/QuickViewModal";
+import { useReveal } from "@/lib/motion/use-reveal";
+import { getProductTransitionName } from "@/lib/motion/view-transitions";
 
 export interface ProductCardV2Props {
   product: any;
@@ -27,6 +30,25 @@ export function ProductCardV2({
   const { brand, settings, currency, lang, t, wishlist, toggleWishlist } = useStorefront();
   const isAr = lang === "ar";
   const wished = wishlist.includes(product.id);
+
+  // Quick View state
+  const [quickViewOpen, setQuickViewOpen] = useState(false);
+  const handleTriggerQuickView = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (onOpenQuickView) {
+      onOpenQuickView();
+    } else {
+      setQuickViewOpen(true);
+    }
+  };
+
+  // Zero-CLS scroll reveal
+  const { ref: revealRef } = useReveal<HTMLDivElement>({
+    disabled: settings?.motion_enabled === false,
+  });
 
   // Hover image swap state (loaded on first hover/focus)
   const [isHovered, setIsHovered] = useState(false);
@@ -116,10 +138,23 @@ export function ProductCardV2({
 
   return (
     <div
-      className={`group relative ${staggerClass} ${className || "w-full"}`}
+      ref={revealRef}
+      className={`group relative sf-reveal ${staggerClass} ${className || "w-full"}`}
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
     >
+      {/* Quick View Button (Desktop) */}
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-touch"
+        onClick={handleTriggerQuickView}
+        aria-label={t("معاينة سريعة", "Quick view")}
+        className="absolute end-12 top-2.5 z-20 hidden md:inline-flex rounded-full bg-background/90 text-foreground shadow-xs border border-border/80 backdrop-blur-xs transition-[transform,colors] duration-200 hover:scale-110 active:scale-95 hover:bg-background hover:text-primary"
+      >
+        <Eye className="h-4 w-4" />
+      </Button>
+
       {/* Wishlist Button */}
       <Button
         type="button"
@@ -170,6 +205,7 @@ export function ProductCardV2({
               sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
               alt={displayName}
               className="w-full h-full object-cover group-hover:scale-[1.03] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+              style={{ viewTransitionName: getProductTransitionName(product.id) }}
               loading="lazy"
               decoding="async"
               quality={78}
@@ -195,7 +231,7 @@ export function ProductCardV2({
               <QuickAddPopover
                 product={product}
                 variants={variants}
-                onOpenQuickView={onOpenQuickView}
+                onOpenQuickView={handleTriggerQuickView}
               />
             </div>
           )}
@@ -244,6 +280,14 @@ export function ProductCardV2({
           </div>
         </div>
       </Link>
+
+      {/* Quick View Modal */}
+      <QuickViewModal
+        open={quickViewOpen}
+        onOpenChange={setQuickViewOpen}
+        product={product}
+        brandSlug={brand.slug}
+      />
     </div>
   );
 }

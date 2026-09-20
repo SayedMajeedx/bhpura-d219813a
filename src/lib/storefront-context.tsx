@@ -245,6 +245,7 @@ export type PublicSettings = {
   new_badge_days?: number;
   recent_views_enabled?: boolean;
   social_proof_threshold?: number;
+  motion_enabled?: boolean;
 };
 
 export type CustomFieldValue = {

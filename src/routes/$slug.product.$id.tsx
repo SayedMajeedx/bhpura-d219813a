@@ -1252,6 +1252,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                     alt={displayName}
                     className="w-full h-full"
                     aspectRatio="aspect-auto h-full"
+                    style={{
+                      viewTransitionName: `product-img-${product.id.replace(/[^a-zA-Z0-9_-]/g, "_")}`,
+                    }}
                   />
                 ) : (
                   <ResponsiveImage

@@ -1,0 +1,67 @@
+/* Storefront 2.0 Motion System — Layer 3 */
+
+/* Base scroll reveal (Zero CLS impact: geometry is fixed, only opacity & translateY animate) */
+.sf-reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.sf-reveal.is-revealed,
+.sf-reveal[data-revealed="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger utilities (up to 8 items, 40ms intervals) */
+.sf-stagger-1 { transition-delay: 40ms; }
+.sf-stagger-2 { transition-delay: 80ms; }
+.sf-stagger-3 { transition-delay: 120ms; }
+.sf-stagger-4 { transition-delay: 160ms; }
+.sf-stagger-5 { transition-delay: 200ms; }
+.sf-stagger-6 { transition-delay: 240ms; }
+.sf-stagger-7 { transition-delay: 280ms; }
+.sf-stagger-8 { transition-delay: 320ms; }
+
+/* Subtle fade in for floating elements / modals */
+.sf-fade-in {
+  animation: sfFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes sfFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* View Transitions API configuration */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.25s;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Respect user's motion preferences strictly */
+@media (prefers-reduced-motion: reduce) {
+  .sf-reveal,
+  .sf-reveal.is-revealed,
+  .sf-reveal[data-revealed="true"],
+  .sf-fade-in {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

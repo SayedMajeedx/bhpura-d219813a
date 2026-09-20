@@ -62,4 +62,20 @@ describe("Brand Vertical Templates Registry", () => {
     const abayas = getBrandTemplate("abayas");
     expect(abayas.vertical).toBe("abayas");
   });
+
+  it("provides valid Storefront 2.0 design config to every vertical", () => {
+    const validPresets = new Set(["editorial", "fresh", "tech"]);
+    const validSpacings = new Set(["airy", "regular", "dense"]);
+    const validCardStyles = new Set(["borderless", "bordered"]);
+
+    for (const vertical of STORE_VERTICALS) {
+      const template = BRAND_TEMPLATES[vertical];
+      expect(template.design, `Template for ${vertical} must have design config`).toBeDefined();
+      expect(validPresets.has(template.design!.preset)).toBe(true);
+      expect([4, 5]).toContain(template.design!.grid);
+      expect(validSpacings.has(template.design!.sectionSpacing)).toBe(true);
+      expect(validCardStyles.has(template.design!.cardStyle)).toBe(true);
+      expect(template.design!.radius).toBeTruthy();
+    }
+  });
 });

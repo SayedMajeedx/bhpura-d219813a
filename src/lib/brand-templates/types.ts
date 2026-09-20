@@ -1,6 +1,18 @@
 import type { StoreVertical } from "@/lib/store-profile";
 import type { DefaultCategorySpec } from "@/lib/addons/vertical-categories";
 
+export type DesignPresetType = "editorial" | "fresh" | "tech";
+export type DesignSpacingType = "airy" | "regular" | "dense";
+export type DesignCardStyle = "borderless" | "bordered";
+
+export interface BrandDesignConfig {
+  preset: DesignPresetType;
+  grid: 4 | 5;
+  radius: string;
+  sectionSpacing: DesignSpacingType;
+  cardStyle: DesignCardStyle;
+}
+
 export interface BrandTemplate {
   vertical: StoreVertical;
   label: { ar: string; en: string };
@@ -13,6 +25,7 @@ export interface BrandTemplate {
     background: string;
     text: string;
   };
+  design?: BrandDesignConfig;
   storefrontMode: "shop" | "catalog" | "booking" | "inquiry";
   catalogShowPrices: boolean;
   fulfillment: {
