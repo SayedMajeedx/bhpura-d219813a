@@ -347,7 +347,8 @@ function BrandsPage() {
                 variant="outline"
                 className="h-11 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
               >
-                <Plus className="h-4 w-4 me-2" /> {lang === "ar" ? "معالج إطلاق متجر" : "Launch Brand Wizard"}
+                <Plus className="h-4 w-4 me-2" />{" "}
+                {lang === "ar" ? "معالج إطلاق متجر" : "Launch Brand Wizard"}
               </Button>
             </DialogTrigger>
             <BrandWizardDialog

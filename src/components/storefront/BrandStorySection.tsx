@@ -57,13 +57,13 @@ export function BrandStorySection({ className = "" }: BrandStorySectionProps) {
   return (
     <section
       ref={revealRef}
-      className={`py-12 sm:py-16 border-y border-border/60 bg-muted/20 sf-reveal ${className}`}
+      className={`py-12 sm:py-16 border-y border-border bg-muted/20 sf-reveal ${className}`}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           {/* Visual Side (5 columns on desktop) */}
           <div className="lg:col-span-5 order-2 lg:order-1">
-            <div className="relative rounded-2xl overflow-hidden aspect-[4/5] shadow-md border border-border/60 bg-card">
+            <div className="relative rounded-2xl overflow-hidden aspect-[4/5] shadow-md border border-border bg-card">
               {imageUrl ? (
                 <ResponsiveImage
                   src={imageUrl}
@@ -105,14 +105,12 @@ export function BrandStorySection({ className = "" }: BrandStorySectionProps) {
                 return (
                   <div
                     key={i}
-                    className="flex items-center gap-2.5 p-3 rounded-xl bg-card border border-border/80 shadow-2xs"
+                    className="flex items-center gap-2.5 p-3 rounded-xl bg-card border border-border shadow-2xs"
                   >
                     <div className="h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
                       <IconComp className="h-4 w-4" />
                     </div>
-                    <span className="text-xs font-semibold text-foreground">
-                      {v.text}
-                    </span>
+                    <span className="text-xs font-semibold text-foreground">{v.text}</span>
                   </div>
                 );
               })}
@@ -121,7 +119,11 @@ export function BrandStorySection({ className = "" }: BrandStorySectionProps) {
             {/* Read More / About Link if page exists */}
             {settings?.pages?.some((p) => p.slug === "about" || p.slug === "about-us") && (
               <div className="pt-2">
-                <Button asChild variant="outline" className="h-10 rounded-xl font-semibold text-xs gap-2">
+                <Button
+                  asChild
+                  variant="outline"
+                  className="h-10 rounded-xl font-semibold text-xs gap-2"
+                >
                   <Link
                     to="/$slug/$category"
                     params={{

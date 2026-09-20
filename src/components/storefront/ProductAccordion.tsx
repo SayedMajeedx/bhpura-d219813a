@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { ChevronDown, Sparkles, Shirt, Truck, Ruler } from "lucide-react";
 import { useStorefront } from "@/lib/storefront-context";
 
@@ -57,7 +58,9 @@ export function ProductAccordion({
           {description}
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground">{t("لا يوجد وصف إضافي", "No additional description")}</p>
+        <p className="text-xs text-muted-foreground">
+          {t("لا يوجد وصف إضافي", "No additional description")}
+        </p>
       ),
     },
     {
@@ -65,9 +68,7 @@ export function ProductAccordion({
       title: t("الخامة والعناية", "Fabric & Care"),
       icon: Shirt,
       content: (
-        <p className="text-xs leading-relaxed opacity-90 whitespace-pre-line">
-          {effectiveFabric}
-        </p>
+        <p className="text-xs leading-relaxed opacity-90 whitespace-pre-line">{effectiveFabric}</p>
       ),
     },
     {
@@ -77,9 +78,7 @@ export function ProductAccordion({
       content: (
         <div className="space-y-2 text-xs leading-relaxed opacity-90">
           <p>{effectiveShipping}</p>
-          {returnPolicy && (
-            <p className="pt-1 border-t border-border/50 opacity-80">{returnPolicy}</p>
-          )}
+          {returnPolicy && <p className="pt-1 border-t border-border opacity-80">{returnPolicy}</p>}
         </div>
       ),
     },
@@ -97,13 +96,15 @@ export function ProductAccordion({
                     "Review exact centimeter and inch measurements to pick your perfect fit.",
                   )}
                 </p>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={onOpenSizeGuide}
-                  className="text-xs font-semibold text-primary underline underline-offset-4 hover:opacity-80"
+                  className="h-auto rounded-md text-xs font-semibold text-primary underline underline-offset-4 hover:opacity-80"
                 >
                   {t("فتح جدول المقاسات الكامل", "Open Full Size Guide")}
-                </button>
+                </Button>
               </div>
             ),
           },
@@ -112,18 +113,20 @@ export function ProductAccordion({
   ];
 
   return (
-    <div className="divide-y divide-border/70 border-y border-border/70 my-6">
+    <div className="divide-y divide-border/70 border-y border-border my-6">
       {sections.map((section) => {
         const isOpen = openItems[section.id];
         const IconComponent = section.icon;
 
         return (
           <div key={section.id} className="py-1">
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => toggleItem(section.id)}
               aria-expanded={isOpen}
-              className="w-full flex items-center justify-between py-3 text-start text-xs font-semibold text-foreground hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 rounded-sm"
+              className="h-auto rounded-md w-full flex items-center justify-between py-3 text-start text-xs font-semibold text-foreground hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 rounded-sm"
             >
               <span className="flex items-center gap-2">
                 <IconComponent className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -134,7 +137,7 @@ export function ProductAccordion({
                   isOpen ? "rotate-180" : ""
                 }`}
               />
-            </button>
+            </Button>
 
             {isOpen && (
               <div className="pb-3.5 pt-1 text-foreground/90 animate-in fade-in slide-in-from-top-1 duration-150">

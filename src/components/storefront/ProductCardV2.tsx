@@ -59,9 +59,7 @@ export function ProductCardV2({
     ? product.media.filter((m: any) => m && m.url)
     : [];
   const primaryImage =
-    product.image_url ||
-    mediaList.find((m) => m.type === "image" || !m.type)?.url ||
-    null;
+    product.image_url || mediaList.find((m) => m.type === "image" || !m.type)?.url || null;
   const secondaryImage =
     mediaList.length > 1
       ? mediaList.find((m, i) => i > 0 && (m.type === "image" || !m.type))?.url || null
@@ -107,7 +105,7 @@ export function ProductCardV2({
     badgeStyle = "bg-primary text-primary-foreground border-transparent";
   } else if (badge === "best") {
     badgeLabel = t("الأكثر طلباً", "Best Seller");
-    badgeStyle = "bg-amber-600 text-white border-transparent";
+    badgeStyle = "bg-warning text-white border-transparent";
   } else if (badge === "trending") {
     badgeLabel = t("رائج", "Trending");
     badgeStyle = "bg-violet-600 text-white border-transparent";
@@ -133,8 +131,7 @@ export function ProductCardV2({
     setIsHovered(false);
   };
 
-  const activeImage =
-    isHovered && secondaryImage && hasHoveredOnce ? secondaryImage : primaryImage;
+  const activeImage = isHovered && secondaryImage && hasHoveredOnce ? secondaryImage : primaryImage;
 
   return (
     <div
@@ -150,7 +147,7 @@ export function ProductCardV2({
         size="icon-touch"
         onClick={handleTriggerQuickView}
         aria-label={t("معاينة سريعة", "Quick view")}
-        className="absolute end-12 top-2.5 z-20 hidden md:inline-flex rounded-full bg-background/90 text-foreground shadow-xs border border-border/80 backdrop-blur-xs transition-[transform,colors] duration-200 hover:scale-110 active:scale-95 hover:bg-background hover:text-primary"
+        className="absolute end-12 top-2.5 z-20 hidden md:inline-flex rounded-full bg-background/90 text-foreground shadow-xs border border-border backdrop-blur-xs transition-[transform,colors] duration-200 hover:scale-110 active:scale-95 hover:bg-background hover:text-primary"
       >
         <Eye className="h-4 w-4" />
       </Button>
@@ -166,7 +163,7 @@ export function ProductCardV2({
             ? t("إزالة من المفضلة", "Remove from wishlist")
             : t("إضافة إلى المفضلة", "Add to wishlist")
         }
-        className="absolute end-2.5 top-2.5 z-20 rounded-full bg-background/90 text-foreground shadow-xs border border-border/80 backdrop-blur-xs transition-[transform,colors] duration-200 hover:scale-110 active:scale-95 hover:bg-background hover:text-destructive"
+        className="absolute end-2.5 top-2.5 z-20 rounded-full bg-background/90 text-foreground shadow-xs border border-border backdrop-blur-xs transition-[transform,colors] duration-200 hover:scale-110 active:scale-95 hover:bg-background hover:text-destructive"
       >
         <Heart
           className={`h-4 w-4 transition-colors duration-200 ${
@@ -185,11 +182,11 @@ export function ProductCardV2({
         }}
       >
         {/* Card Media Container */}
-        <div className="aspect-[3/4] rounded-xl overflow-hidden bg-muted relative border border-border/40 shadow-xs group-hover:shadow-md transition-shadow duration-300">
+        <div className="aspect-[3/4] rounded-xl overflow-hidden bg-muted relative border border-border shadow-xs group-hover:shadow-md transition-shadow duration-300">
           {/* Badge */}
           {badgeLabel && (
             <span
-              className={`absolute start-2.5 top-2.5 z-10 rounded-md px-2.5 py-0.5 text-[11px] font-semibold shadow-xs select-none ${badgeStyle} ${
+              className={`absolute start-2.5 top-2.5 z-10 rounded-md px-2.5 py-0.5 text-xs font-semibold shadow-xs select-none ${badgeStyle} ${
                 isAr ? "font-display leading-none" : "tracking-wider uppercase"
               }`}
             >

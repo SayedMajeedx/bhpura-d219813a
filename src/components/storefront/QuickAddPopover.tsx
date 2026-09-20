@@ -12,11 +12,7 @@ interface QuickAddPopoverProps {
   onOpenQuickView?: () => void;
 }
 
-export function QuickAddPopover({
-  product,
-  variants = [],
-  onOpenQuickView,
-}: QuickAddPopoverProps) {
+export function QuickAddPopover({ product, variants = [], onOpenQuickView }: QuickAddPopoverProps) {
   const { brand, addToCart, t, lang } = useStorefront();
   const navigate = useNavigate();
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
@@ -93,11 +89,11 @@ export function QuickAddPopover({
         e.preventDefault();
         e.stopPropagation();
       }}
-      className="hidden lg:flex flex-col gap-1.5 w-full bg-background/95 backdrop-blur-md p-2 rounded-lg border border-border/80 shadow-md transition-all duration-200"
+      className="hidden lg:flex flex-col gap-1.5 w-full bg-background/95 backdrop-blur-md p-2 rounded-lg border border-border shadow-md transition-all duration-200"
     >
       {hasMultipleSizes ? (
         <div className="flex flex-col gap-1">
-          <span className="text-[11px] font-medium text-muted-foreground text-center">
+          <span className="text-xs font-medium text-muted-foreground text-center">
             {t("اختاري المقاس للإضافة السريعة", "Select size for quick add")}
           </span>
           <div className="flex flex-wrap items-center justify-center gap-1 max-h-24 overflow-y-auto py-0.5">
@@ -105,18 +101,20 @@ export function QuickAddPopover({
               const label = v.size || v.name || t("مقاس موحد", "One Size");
               const isAdded = justAdded && selectedVariantId === v.id;
               return (
-                <button
+                <Button
                   key={v.id}
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => handleSelectVariant(v)}
-                  className={`px-2.5 py-1 text-xs font-semibold rounded-md border transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
+                  className={`h-auto rounded-md px-2.5 py-1 text-xs font-semibold rounded-md border transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
                     isAdded
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-card hover:bg-primary/10 hover:border-primary border-border text-foreground"
                   }`}
                 >
                   {isAdded ? <Check className="h-3 w-3 inline" /> : label}
-                </button>
+                </Button>
               );
             })}
           </div>

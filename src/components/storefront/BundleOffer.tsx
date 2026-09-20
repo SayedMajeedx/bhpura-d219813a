@@ -13,11 +13,7 @@ interface BundleOfferProps {
   bundleItems: any[];
 }
 
-export function BundleOffer({
-  mainProduct,
-  mainVariant,
-  bundleItems = [],
-}: BundleOfferProps) {
+export function BundleOffer({ mainProduct, mainVariant, bundleItems = [] }: BundleOfferProps) {
   const { brand, addToCart, currency, lang, t } = useStorefront();
   const isAr = lang === "ar";
 
@@ -39,11 +35,7 @@ export function BundleOffer({
   );
 
   const compPrice = selectedItem
-    ? Number(
-        selectedItem.product_variants?.[0]?.selling_price ??
-          selectedItem.base_price ??
-          0,
-      )
+    ? Number(selectedItem.product_variants?.[0]?.selling_price ?? selectedItem.base_price ?? 0)
     : 0;
 
   const bundleTotal = mainPrice + compPrice;
@@ -81,7 +73,7 @@ export function BundleOffer({
   };
 
   return (
-    <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 my-6 space-y-4 shadow-xs">
+    <div className="rounded-xl border border-border bg-card/60 p-4 sm:p-5 my-6 space-y-4 shadow-xs">
       {/* Header */}
       <div className="flex items-center gap-2">
         <Sparkles className="h-4 w-4 text-primary" />
@@ -94,7 +86,7 @@ export function BundleOffer({
       <div className="flex items-center gap-3">
         {/* Main Product Thumbnail */}
         <div className="flex items-center gap-2">
-          <div className="h-16 w-14 rounded-lg overflow-hidden bg-muted border border-border/60 shrink-0">
+          <div className="h-16 w-14 rounded-lg overflow-hidden bg-muted border border-border shrink-0">
             {mainProduct.image_url ? (
               <img
                 src={mainProduct.image_url}
@@ -102,14 +94,16 @@ export function BundleOffer({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="h-full w-full grid place-items-center text-[10px] text-muted-foreground">
+              <div className="h-full w-full grid place-items-center text-xs text-muted-foreground">
                 Item
               </div>
             )}
           </div>
           <div className="text-start max-w-[120px]">
             <p className="text-xs font-medium truncate">
-              {isAr ? mainProduct.name_ar || mainProduct.name : mainProduct.name_en || mainProduct.name}
+              {isAr
+                ? mainProduct.name_ar || mainProduct.name
+                : mainProduct.name_en || mainProduct.name}
             </p>
             <p className="text-xs font-semibold text-primary">
               {formatPrice(mainPrice, currency, lang)}
@@ -122,7 +116,7 @@ export function BundleOffer({
         {/* Complementary Product Thumbnail */}
         {selectedItem && (
           <div className="flex items-center gap-2">
-            <div className="h-16 w-14 rounded-lg overflow-hidden bg-muted border border-border/60 shrink-0">
+            <div className="h-16 w-14 rounded-lg overflow-hidden bg-muted border border-border shrink-0">
               {selectedItem.image_url ? (
                 <img
                   src={selectedItem.image_url}
@@ -130,14 +124,16 @@ export function BundleOffer({
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="h-full w-full grid place-items-center text-[10px] text-muted-foreground">
+                <div className="h-full w-full grid place-items-center text-xs text-muted-foreground">
                   Match
                 </div>
               )}
             </div>
             <div className="text-start max-w-[120px]">
               <p className="text-xs font-medium truncate">
-                {isAr ? selectedItem.name_ar || selectedItem.name : selectedItem.name_en || selectedItem.name}
+                {isAr
+                  ? selectedItem.name_ar || selectedItem.name
+                  : selectedItem.name_en || selectedItem.name}
               </p>
               <p className="text-xs font-semibold text-primary">
                 {formatPrice(compPrice, currency, lang)}
@@ -150,24 +146,26 @@ export function BundleOffer({
       {/* Alternative Matches Picker if > 1 complementary items */}
       {bundleItems.length > 1 && (
         <div className="flex items-center gap-2 overflow-x-auto py-1">
-          <span className="text-[11px] text-muted-foreground shrink-0">
+          <span className="text-xs text-muted-foreground shrink-0">
             {t("خيارات التنسيق:", "Style with:")}
           </span>
           {bundleItems.map((item) => {
             const isChosen = item.id === selectedComplementaryId;
             return (
-              <button
+              <Button
                 key={item.id}
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setSelectedComplementaryId(item.id)}
-                className={`text-xs px-2.5 py-1 rounded-md border font-medium transition-all shrink-0 ${
+                className={`h-auto rounded-md text-xs px-2.5 py-1 rounded-md border font-medium transition-all shrink-0 ${
                   isChosen
                     ? "bg-primary text-primary-foreground border-primary"
                     : "bg-background text-foreground border-border hover:border-primary/50"
                 }`}
               >
                 {isAr ? item.name_ar || item.name : item.name_en || item.name}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -176,7 +174,7 @@ export function BundleOffer({
       {/* Total & Action */}
       <div className="pt-3 border-t border-border flex items-center justify-between gap-4">
         <div>
-          <span className="text-[11px] text-muted-foreground block">
+          <span className="text-xs text-muted-foreground block">
             {t("سعر الطقم معاً:", "Combined price:")}
           </span>
           <span className="text-sm font-bold text-foreground">

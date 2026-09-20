@@ -40,10 +40,10 @@ export function CategoryFilters({
 
   const hasActiveFilters = Boolean(
     filters.size ||
-      filters.color ||
-      filters.minPrice !== null ||
-      filters.maxPrice !== null ||
-      filters.inStockOnly,
+    filters.color ||
+    filters.minPrice !== null ||
+    filters.maxPrice !== null ||
+    filters.inStockOnly,
   );
 
   const handleReset = () => {
@@ -90,9 +90,7 @@ export function CategoryFilters({
           id="filter-instock"
           type="checkbox"
           checked={filters.inStockOnly}
-          onChange={(e) =>
-            onChange((prev) => ({ ...prev, inStockOnly: e.target.checked }))
-          }
+          onChange={(e) => onChange((prev) => ({ ...prev, inStockOnly: e.target.checked }))}
           className="h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
         />
       </div>
@@ -105,33 +103,35 @@ export function CategoryFilters({
               {t("المقاس", "Size")}
             </span>
             {filters.size && (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => onChange((prev) => ({ ...prev, size: null }))}
-                className="text-[11px] text-muted-foreground hover:text-foreground"
+                className="h-auto rounded-md text-xs text-muted-foreground hover:text-foreground"
               >
                 {t("مسح", "Clear")}
-              </button>
+              </Button>
             )}
           </div>
           <div className="flex flex-wrap gap-1.5">
             {availableSizes.map((s) => {
               const active = filters.size === s;
               return (
-                <button
+                <Button
                   key={s}
                   type="button"
-                  onClick={() =>
-                    onChange((prev) => ({ ...prev, size: active ? null : s }))
-                  }
-                  className={`px-2.5 py-1 text-xs rounded-md border font-medium transition-all ${
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onChange((prev) => ({ ...prev, size: active ? null : s }))}
+                  className={`h-auto rounded-md px-2.5 py-1 text-xs rounded-md border font-medium transition-all ${
                     active
                       ? "bg-primary text-primary-foreground border-primary shadow-xs"
                       : "bg-card text-foreground border-border hover:border-primary/50"
                   }`}
                 >
                   {s}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -146,13 +146,15 @@ export function CategoryFilters({
               {t("اللون", "Color")}
             </span>
             {filters.color && (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => onChange((prev) => ({ ...prev, color: null }))}
-                className="text-[11px] text-muted-foreground hover:text-foreground"
+                className="h-auto rounded-md text-xs text-muted-foreground hover:text-foreground"
               >
                 {t("مسح", "Clear")}
-              </button>
+              </Button>
             )}
           </div>
           <div className="flex flex-wrap gap-2">
@@ -160,23 +162,21 @@ export function CategoryFilters({
               const hex = c.hex || resolveColorHex(c.name) || "#94a3b8";
               const active = filters.color === c.name;
               return (
-                <button
+                <Button
                   key={c.name}
                   type="button"
-                  onClick={() =>
-                    onChange((prev) => ({ ...prev, color: active ? null : c.name }))
-                  }
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onChange((prev) => ({ ...prev, color: active ? null : c.name }))}
                   title={c.name}
                   aria-label={c.name}
-                  className={`h-6 w-6 rounded-full border border-border/70 shadow-xs transition-transform hover:scale-110 flex items-center justify-center ${
+                  className={`h-auto rounded-md h-6 w-6 rounded-full hover:bg-transparent border border-border shadow-xs transition-transform hover:scale-110 flex items-center justify-center ${
                     active ? "ring-2 ring-primary ring-offset-2 scale-110" : ""
                   }`}
                   style={{ backgroundColor: hex }}
                 >
-                  {active && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-white shadow-xs" />
-                  )}
-                </button>
+                  {active && <span className="h-1.5 w-1.5 rounded-full bg-white shadow-xs" />}
+                </Button>
               );
             })}
           </div>

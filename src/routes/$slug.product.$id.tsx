@@ -59,10 +59,7 @@ import {
 } from "@/lib/storefront-queries";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
-import {
-  buildProductSchema,
-  buildBreadcrumbsSchema,
-} from "@/lib/seo/structured-data";
+import { buildProductSchema, buildBreadcrumbsSchema } from "@/lib/seo/structured-data";
 import { ProductAccordion } from "@/components/storefront/ProductAccordion";
 import { ImageZoom } from "@/components/storefront/ImageZoom";
 import { BundleOffer } from "@/components/storefront/BundleOffer";
@@ -100,7 +97,8 @@ export const Route = createFileRoute("/$slug/product/$id")({
     }
 
     const brand = await fetchActiveBrandIdentity(params.slug);
-    if (!brand) return { product: null, recommendationCatalog: [], bestSellerRows: [], initialLang };
+    if (!brand)
+      return { product: null, recommendationCatalog: [], bestSellerRows: [], initialLang };
 
     const [product, recommendationCatalog, bestSellerRows] = await Promise.all([
       fetchProductDetail(brand.id, params.id),
@@ -119,8 +117,8 @@ export const Route = createFileRoute("/$slug/product/$id")({
     const name = (lang === "ar" ? product.name_ar : product.name_en) || product.name || "";
     const rawDesc =
       (lang === "ar"
-        ? (product.description_ar || product.description || product.description_en)
-        : (product.description_en || product.description || product.description_ar)) || name;
+        ? product.description_ar || product.description || product.description_en
+        : product.description_en || product.description || product.description_ar) || name;
     const description = rawDesc.replace(/\s+/g, " ").trim().slice(0, 160);
     const title = `${name} | ${String(params?.slug || "").toUpperCase()}`;
     const image = product.image_url || undefined;
@@ -138,7 +136,9 @@ export const Route = createFileRoute("/$slug/product/$id")({
         primary_image_url: product.image_url,
         images: Array.isArray(product.media)
           ? product.media.map((m: any) => (typeof m === "string" ? m : m?.url)).filter(Boolean)
-          : (product.image_url ? [product.image_url] : []),
+          : product.image_url
+            ? [product.image_url]
+            : [],
         is_active: true,
       },
       brand || { slug: params.slug },
@@ -382,7 +382,6 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     refetchOnWindowFocus: false,
   });
 
-
   useEffect(() => {
     if (!product) return;
     if (brand?.slug && product?.id) {
@@ -549,13 +548,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   }, [variants]);
 
   const allOptionTerms = useMemo(() => {
-    return [
-      ...uniqueSizes,
-      ...uniqueColors,
-      ...uniqueFabrics,
-      ...uniqueFour,
-      ...uniqueFive,
-    ];
+    return [...uniqueSizes, ...uniqueColors, ...uniqueFabrics, ...uniqueFour, ...uniqueFive];
   }, [uniqueSizes, uniqueColors, uniqueFabrics, uniqueFour, uniqueFive]);
 
   useVariantTranslations(allOptionTerms, lang === "ar" ? "ar" : "en");
@@ -874,6 +867,21 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     return matchingVariants.map((v) => Number(v.selling_price || basePrice) + selectedAddOnPrice);
   }, [matchingVariants, basePrice, selectedAddOnPrice]);
 
+  // Derived flags + effect run before any early return so hook order is stable.
+  const isMadeToOrder = Boolean(product?.is_made_to_order);
+  const hasReadySizes = uniqueSizes.length > 0;
+  const hasCustomFields = customFields.length > 0;
+  const showSizeModeToggle =
+    modules.made_to_order && hasReadySizes && hasCustomFields && isMadeToOrder;
+  const isTailoringActive =
+    isMadeToOrder && ((showSizeModeToggle && sizeMode === "custom") || !showSizeModeToggle);
+
+  useEffect(() => {
+    if (isMadeToOrder && !hasReadySizes) {
+      setSizeMode("custom");
+    }
+  }, [isMadeToOrder, hasReadySizes]);
+
   if (isLoading && !product) {
     return (
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 grid md:grid-cols-2 gap-8">
@@ -937,20 +945,6 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const scrollToOptions = () => {
     optionsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
-
-  const isMadeToOrder = Boolean(product?.is_made_to_order);
-  const hasReadySizes = uniqueSizes.length > 0;
-  const hasCustomFields = customFields.length > 0;
-  const showSizeModeToggle =
-    modules.made_to_order && hasReadySizes && hasCustomFields && isMadeToOrder;
-  const isTailoringActive =
-    isMadeToOrder && ((showSizeModeToggle && sizeMode === "custom") || !showSizeModeToggle);
-
-  useEffect(() => {
-    if (isMadeToOrder && !hasReadySizes) {
-      setSizeMode("custom");
-    }
-  }, [isMadeToOrder, hasReadySizes]);
 
   const selectedVariantOutOfStock = Boolean(!isTailoringActive && variant && maxStock <= 0);
 
@@ -1673,7 +1667,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               {uniqueFabrics.length > 0 && (
                 <div>
                   <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
-                    <span>{resolvedAxes.fabric.label || (lang === "ar" ? "الخامة" : "Fabric")}:</span>
+                    <span>
+                      {resolvedAxes.fabric.label || (lang === "ar" ? "الخامة" : "Fabric")}:
+                    </span>
                     {selectedFabric && (
                       <span className="text-muted-foreground font-normal">
                         {translateOptionValue(selectedFabric, lang)}
@@ -1722,7 +1718,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               {uniqueFour.length > 0 && (
                 <div>
                   <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
-                    <span>{resolvedAxes.four.label || (lang === "ar" ? "الخيار 4" : "Option 4")}:</span>
+                    <span>
+                      {resolvedAxes.four.label || (lang === "ar" ? "الخيار 4" : "Option 4")}:
+                    </span>
                     {selectedOptionFour && (
                       <span className="text-muted-foreground font-normal">
                         {translateOptionValue(selectedOptionFour, lang)}
@@ -1755,7 +1753,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               {uniqueFive.length > 0 && (
                 <div>
                   <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
-                    <span>{resolvedAxes.five.label || (lang === "ar" ? "الخيار 5" : "Option 5")}:</span>
+                    <span>
+                      {resolvedAxes.five.label || (lang === "ar" ? "الخيار 5" : "Option 5")}:
+                    </span>
                     {selectedOptionFive && (
                       <span className="text-muted-foreground font-normal">
                         {translateOptionValue(selectedOptionFive, lang)}
@@ -2299,7 +2299,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             <ProductAccordion
               description={displayDescription}
               fabricCare={variant?.fabric ? `${variant.fabric}` : null}
-              hasSizeGuide={Boolean(modules?.size_guide || (product?.size_guide_id && !product?.size_guide_hidden))}
+              hasSizeGuide={Boolean(
+                modules?.size_guide || (product?.size_guide_id && !product?.size_guide_hidden),
+              )}
             />
           )}
 

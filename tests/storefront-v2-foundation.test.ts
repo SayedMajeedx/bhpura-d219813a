@@ -34,10 +34,7 @@ describe("Storefront V2 Foundation - SEO & Structured Data", () => {
     expect(schema.name).toBe("Boutique Pura");
     expect(schema.url).toBe("https://boutq.store/pura");
     expect(schema.logo).toBe("https://boutq.app/pura/logo.png");
-    expect(schema.sameAs).toEqual([
-      "https://instagram.com/pura",
-      "https://twitter.com/pura",
-    ]);
+    expect(schema.sameAs).toEqual(["https://instagram.com/pura", "https://twitter.com/pura"]);
   });
 
   it("builds valid Schema.org WebSite JSON-LD with SearchAction", () => {

@@ -11,9 +11,7 @@ export interface UseRevealOptions {
  * Strictly respects prefers-reduced-motion and optional tenant-level motion_enabled setting.
  * Guarantees zero Cumulative Layout Shift (CLS) as space is preserved.
  */
-export function useReveal<T extends HTMLElement = HTMLDivElement>(
-  options: UseRevealOptions = {},
-) {
+export function useReveal<T extends HTMLElement = HTMLDivElement>(options: UseRevealOptions = {}) {
   const { threshold = 0.1, rootMargin = "0px 0px -40px 0px", disabled = false } = options;
   const ref = useRef<T | null>(null);
   const [isRevealed, setIsRevealed] = useState(false);

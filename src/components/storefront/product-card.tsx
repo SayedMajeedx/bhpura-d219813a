@@ -24,14 +24,7 @@ export function ProductCard({
   const { brand, currency, lang, t, isWishlisted, toggleWishlist, settings } = useStorefront();
 
   if (settings?.storefront_design_version === 2) {
-    return (
-      <ProductCardV2
-        product={product}
-        badge={badge}
-        index={index}
-        className={className}
-      />
-    );
+    return <ProductCardV2 product={product} badge={badge} index={index} className={className} />;
   }
 
   const displayName = pickName(lang, product);

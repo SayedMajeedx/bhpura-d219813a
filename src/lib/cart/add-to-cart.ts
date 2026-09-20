@@ -86,9 +86,7 @@ export function buildCartItem(
   }
 
   // Resolve price
-  const price = Number(
-    variant?.selling_price ?? variant?.price ?? product.base_price ?? 0,
-  );
+  const price = Number(variant?.selling_price ?? variant?.price ?? product.base_price ?? 0);
   const rawOriginalPrice = variant?.original_price ?? product.original_price;
   const original_price =
     rawOriginalPrice && Number(rawOriginalPrice) > price ? Number(rawOriginalPrice) : null;

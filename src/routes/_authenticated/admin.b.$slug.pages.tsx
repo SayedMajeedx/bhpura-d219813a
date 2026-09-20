@@ -544,7 +544,7 @@ function PagesAndPolicies() {
                 <div className="mt-2 text-xs font-mono text-muted-foreground">
                   {isAr ? "الحالة الحالية: " : "Current status: "}
                   <span className="font-semibold text-foreground">
-                    {waEnabled ? (isAr ? "مفعّل" : "Enabled") : (isAr ? "معطّل" : "Disabled")}
+                    {waEnabled ? (isAr ? "مفعّل" : "Enabled") : isAr ? "معطّل" : "Disabled"}
                   </span>
                   {waNumber && <span> ({waNumber})</span>}
                 </div>

@@ -99,9 +99,7 @@ export function HeroV2({ slides }: HeroV2Props) {
             const title = isAr
               ? slide.title_ar || slide.title_en
               : slide.title_en || slide.title_ar;
-            const body = isAr
-              ? slide.body_ar || slide.body_en
-              : slide.body_en || slide.body_ar;
+            const body = isAr ? slide.body_ar || slide.body_en : slide.body_en || slide.body_ar;
             const button = isAr
               ? slide.button_ar || slide.button_en
               : slide.button_en || slide.button_ar;

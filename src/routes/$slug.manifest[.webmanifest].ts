@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { publicSupabase as supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/$slug/manifest[.]webmanifest" as any)({
+export const Route = createFileRoute("/$slug/manifest.webmanifest")({
   server: {
     handlers: {
       GET: async ({ params }) => {
@@ -17,7 +17,9 @@ export const Route = createFileRoute("/$slug/manifest[.]webmanifest" as any)({
           const { data: settings } = brand
             ? await supabase
                 .from("business_settings")
-                .select("business_name, storefront_accent_color, storefront_background_color, logo_url, favicon_url")
+                .select(
+                  "business_name, storefront_accent_color, storefront_background_color, logo_url, favicon_url",
+                )
                 .eq("brand_id", brand.id)
                 .maybeSingle()
             : { data: null };
@@ -26,7 +28,8 @@ export const Route = createFileRoute("/$slug/manifest[.]webmanifest" as any)({
           const shortName = brand?.name_ar || brand?.name_en || slug;
           const themeColor = settings?.storefront_accent_color || brand?.primary_color || "#3f121a";
           const bgColor = settings?.storefront_background_color || "#ffffff";
-          const iconUrl = settings?.logo_url || brand?.logo_url || "https://boutq.store/placeholder.svg";
+          const iconUrl =
+            settings?.logo_url || brand?.logo_url || "https://boutq.store/placeholder.svg";
 
           const manifest = {
             name,

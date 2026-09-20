@@ -5,15 +5,7 @@ import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
 import { cloudflareImageUrl } from "@/lib/media-delivery";
-import {
-  Search,
-  X,
-  Sparkles,
-  Clock,
-  ArrowRight,
-  ArrowLeft,
-  ShoppingBag,
-} from "lucide-react";
+import { Search, X, Sparkles, Clock, ArrowRight, ArrowLeft, ShoppingBag } from "lucide-react";
 
 interface SearchOverlayProps {
   isOpen: boolean;
@@ -56,7 +48,10 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
     const trimmed = term.trim();
     if (!trimmed) return;
     try {
-      const updated = [trimmed, ...recentSearches.filter((s) => s.toLowerCase() !== trimmed.toLowerCase())].slice(0, 6);
+      const updated = [
+        trimmed,
+        ...recentSearches.filter((s) => s.toLowerCase() !== trimmed.toLowerCase()),
+      ].slice(0, 6);
       setRecentSearches(updated);
       localStorage.setItem(storageKey, JSON.stringify(updated));
     } catch {
@@ -208,7 +203,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
       className="fixed inset-0 z-50 flex flex-col bg-background/98 backdrop-blur-xl animate-in fade-in duration-200"
     >
       {/* 1. Header Search Bar */}
-      <div className="flex h-16 items-center gap-2 border-b border-border/80 px-4 sm:px-6">
+      <div className="flex h-16 items-center gap-2 border-b border-border px-4 sm:px-6">
         <Button
           type="button"
           variant="ghost"
@@ -227,8 +222,11 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={t("ابحث عن أي قطعة، قماش، أو لون...", "Search products, fabrics, colors...")}
-            className="h-11 w-full rounded-full border border-border/60 bg-muted/50 ps-9 pe-9 text-sm font-medium text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            placeholder={t(
+              "ابحث عن أي قطعة، قماش، أو لون...",
+              "Search products, fabrics, colors...",
+            )}
+            className="h-11 w-full rounded-full border border-border bg-muted/50 ps-9 pe-9 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             autoComplete="off"
             autoCorrect="off"
             spellCheck={false}
@@ -273,25 +271,29 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                     <Clock className="h-3.5 w-3.5" />
                     {t("عمليات البحث الأخيرة", "Recent Searches")}
                   </span>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={clearRecentSearches}
-                    className="hover:text-foreground underline transition-colors"
+                    className="h-auto rounded-md hover:text-foreground underline transition-colors"
                   >
                     {t("مسح الكل", "Clear All")}
-                  </button>
+                  </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {recentSearches.map((term, idx) => (
-                    <button
+                    <Button
                       key={idx}
                       type="button"
+                      variant="ghost"
+                      size="sm"
                       onClick={() => handleSelectRecent(term)}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted active:scale-95 transition-all"
+                      className="h-auto rounded-md inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted active:scale-95 transition-all"
                     >
                       <Clock className="h-3 w-3 text-muted-foreground" />
                       <span>{term}</span>
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -386,7 +388,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                       }}
                       className="flex items-center gap-3.5 p-2 rounded-xl hover:bg-muted/50 active:bg-muted transition-colors group"
                     >
-                      <div className="h-14 w-14 shrink-0 rounded-lg bg-muted border border-border/60 overflow-hidden relative">
+                      <div className="h-14 w-14 shrink-0 rounded-lg bg-muted border border-border overflow-hidden relative">
                         {imageUrl ? (
                           <img
                             src={cloudflareImageUrl(imageUrl, 160)}
@@ -416,7 +418,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                             {formatPrice(price, settings.currency)}
                           </span>
                           {hasDiscount && (
-                            <span className="text-[11px] text-muted-foreground line-through">
+                            <span className="text-xs text-muted-foreground line-through">
                               {formatPrice(oldPrice, settings.currency)}
                             </span>
                           )}

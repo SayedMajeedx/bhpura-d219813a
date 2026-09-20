@@ -1,11 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingBag, ArrowRight, ArrowLeft, Check, Minus, Plus } from "lucide-react";
@@ -46,12 +41,7 @@ export interface QuickViewModalProps {
   brandSlug: string;
 }
 
-export function QuickViewModal({
-  open,
-  onOpenChange,
-  product,
-  brandSlug,
-}: QuickViewModalProps) {
+export function QuickViewModal({ open, onOpenChange, product, brandSlug }: QuickViewModalProps) {
   const { lang, currency, addToCart, t } = useStorefront();
   const navigate = useNavigate();
   const isAr = lang === "ar";
@@ -84,11 +74,8 @@ export function QuickViewModal({
   const selectedVariant =
     variants.find((v) => v.id === selectedVariantId) || (variants.length > 0 ? variants[0] : null);
 
-  const activePrice = Number(
-    selectedVariant?.selling_price ?? product.base_price ?? 0,
-  );
-  const rawOriginal =
-    selectedVariant?.original_price ?? product.original_price;
+  const activePrice = Number(selectedVariant?.selling_price ?? product.base_price ?? 0);
+  const rawOriginal = selectedVariant?.original_price ?? product.original_price;
   const activeOriginalPrice =
     rawOriginal && Number(rawOriginal) > activePrice ? Number(rawOriginal) : null;
 
@@ -97,9 +84,7 @@ export function QuickViewModal({
     (Array.isArray(product.custom_fields) && product.custom_fields.length > 0);
 
   const colors = extractUniqueVariantColors(variants);
-  const sizes = Array.from(
-    new Set(variants.map((v) => v.size).filter(Boolean)),
-  ) as string[];
+  const sizes = Array.from(new Set(variants.map((v) => v.size).filter(Boolean))) as string[];
 
   const handleSelectColor = (colorName: string) => {
     const matching = variants.find(
@@ -117,9 +102,8 @@ export function QuickViewModal({
   const handleSelectSize = (sizeStr: string) => {
     const currentColor = selectedVariant?.color;
     const matching =
-      variants.find(
-        (v) => v.size === sizeStr && (!currentColor || v.color === currentColor),
-      ) || variants.find((v) => v.size === sizeStr);
+      variants.find((v) => v.size === sizeStr && (!currentColor || v.color === currentColor)) ||
+      variants.find((v) => v.size === sizeStr);
     if (matching) setSelectedVariantId(matching.id);
   };
 
@@ -145,34 +129,27 @@ export function QuickViewModal({
 
       addToCart(item);
 
-      toast.success(
-        isAr ? "تمت الإضافة إلى حقيبة التسوق" : "Added to shopping bag",
-        {
-          action: {
-            label: isAr ? "عرض الحقيبة" : "View Bag",
-            onClick: () => {
-              onOpenChange(false);
-              navigate({
-                to: "/$slug/checkout",
-                params: { slug: brandSlug },
-              });
-            },
+      toast.success(isAr ? "تمت الإضافة إلى حقيبة التسوق" : "Added to shopping bag", {
+        action: {
+          label: isAr ? "عرض الحقيبة" : "View Bag",
+          onClick: () => {
+            onOpenChange(false);
+            navigate({
+              to: "/$slug/checkout",
+              params: { slug: brandSlug },
+            });
           },
         },
-      );
+      });
       onOpenChange(false);
     } catch {
-      toast.error(
-        isAr ? "حدث خطأ أثناء الإضافة" : "Could not add item to bag",
-      );
+      toast.error(isAr ? "حدث خطأ أثناء الإضافة" : "Could not add item to bag");
     } finally {
       setIsAdding(false);
     }
   };
 
-  const title = isAr
-    ? product.name_ar || product.name
-    : product.name_en || product.name;
+  const title = isAr ? product.name_ar || product.name : product.name_en || product.name;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -199,11 +176,13 @@ export function QuickViewModal({
             {mediaList.length > 1 && (
               <div className="mt-3 flex items-center justify-center gap-2">
                 {mediaList.slice(0, 5).map((img, idx) => (
-                  <button
+                  <Button
                     key={idx}
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setSelectedImageIdx(idx)}
-                    className={`h-2.5 rounded-full transition-all ${
+                    className={`h-2.5 rounded-full hover:bg-transparent p-0 transition-all ${
                       idx === selectedImageIdx
                         ? "w-6 bg-primary"
                         : "w-2.5 bg-muted-foreground/30 hover:bg-muted-foreground/50"
@@ -223,8 +202,9 @@ export function QuickViewModal({
                   {product.category || (isAr ? "مختارات حصرية" : "Exclusive")}
                 </span>
                 {activeOriginalPrice && (
-                  <Badge variant="destructive" className="text-[10px] font-semibold">
-                    {Math.round(((activeOriginalPrice - activePrice) / activeOriginalPrice) * 100)}% {isAr ? "خصم" : "OFF"}
+                  <Badge variant="destructive" className="text-xs font-semibold">
+                    {Math.round(((activeOriginalPrice - activePrice) / activeOriginalPrice) * 100)}%{" "}
+                    {isAr ? "خصم" : "OFF"}
                   </Badge>
                 )}
               </div>
@@ -257,11 +237,13 @@ export function QuickViewModal({
                     {colors.map((c) => {
                       const isSelected = selectedVariant?.color === c.name;
                       return (
-                        <button
+                        <Button
                           key={c.name}
                           type="button"
+                          variant="ghost"
+                          size="icon"
                           onClick={() => handleSelectColor(c.name)}
-                          className={`relative flex h-8 w-8 items-center justify-center rounded-full border transition-all ${
+                          className={`relative flex h-8 w-8 items-center justify-center rounded-full hover:bg-transparent border p-0 transition-all ${
                             isSelected
                               ? "border-primary ring-2 ring-primary ring-offset-2"
                               : "border-border hover:scale-105"
@@ -272,13 +254,14 @@ export function QuickViewModal({
                           {isSelected && (
                             <Check
                               className={`h-3.5 w-3.5 ${
-                                c.hex && ["#ffffff", "#fffff0", "#fffdd0"].includes(c.hex.toLowerCase())
+                                c.hex &&
+                                ["#ffffff", "#fffff0", "#fffdd0"].includes(c.hex.toLowerCase())
                                   ? "text-black"
                                   : "text-white"
                               }`}
                             />
                           )}
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>
@@ -298,18 +281,20 @@ export function QuickViewModal({
                     {sizes.map((sz) => {
                       const isSelected = selectedVariant?.size === sz;
                       return (
-                        <button
+                        <Button
                           key={sz}
                           type="button"
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleSelectSize(sz)}
-                          className={`min-w-10 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${
+                          className={`h-auto rounded-md min-w-10 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${
                             isSelected
                               ? "border-primary bg-primary text-primary-foreground"
                               : "border-border bg-card text-foreground hover:bg-muted"
                           }`}
                         >
                           {sz}
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>
@@ -323,26 +308,28 @@ export function QuickViewModal({
                     {t("الكمية", "Quantity")}:
                   </span>
                   <div className="flex items-center rounded-lg border border-border">
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="sm"
                       disabled={qty <= 1}
                       onClick={() => setQty((q) => Math.max(1, q - 1))}
-                      className="p-2 text-muted-foreground hover:text-foreground disabled:opacity-40"
+                      className="h-auto rounded-md p-2 text-muted-foreground hover:text-foreground disabled:opacity-40"
                       aria-label="Decrease quantity"
                     >
                       <Minus className="h-3.5 w-3.5" />
-                    </button>
-                    <span className="min-w-8 text-center text-xs font-semibold">
-                      {qty}
-                    </span>
-                    <button
+                    </Button>
+                    <span className="min-w-8 text-center text-xs font-semibold">{qty}</span>
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setQty((q) => q + 1)}
-                      className="p-2 text-muted-foreground hover:text-foreground"
+                      className="h-auto rounded-md p-2 text-muted-foreground hover:text-foreground"
                       aria-label="Increase quantity"
                     >
                       <Plus className="h-3.5 w-3.5" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}

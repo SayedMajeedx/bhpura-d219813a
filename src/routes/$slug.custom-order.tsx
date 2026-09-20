@@ -19,7 +19,7 @@ import {
   Info,
 } from "lucide-react";
 
-export const Route = createFileRoute("/$slug/custom-order" as any)({
+export const Route = createFileRoute("/$slug/custom-order")({
   head: () => ({
     meta: [
       { title: "طلب مخصص — Bespoke Order" },
@@ -94,13 +94,17 @@ function CustomOrderRouteComponent() {
   const handleNext = () => {
     if (step === 1) {
       if (!fabric.trim() && !designStyle.trim()) {
-        toast.error(t("يرجى تحديد نوع القماش أو مواصفات التصميم", "Please specify fabric or design details"));
+        toast.error(
+          t("يرجى تحديد نوع القماش أو مواصفات التصميم", "Please specify fabric or design details"),
+        );
         return;
       }
       setStep(2);
     } else if (step === 2) {
       if (measurementMode === "custom" && !customLength.trim()) {
-        toast.error(t("يرجى إدخال الطول المطلوب على الأقل", "Please enter at least the desired length"));
+        toast.error(
+          t("يرجى إدخال الطول المطلوب على الأقل", "Please enter at least the desired length"),
+        );
         return;
       }
       setStep(3);
@@ -134,11 +138,26 @@ function CustomOrderRouteComponent() {
         selectedColor: color || t("حسب الاتفاق", "As agreed"),
         selectedSize: sizingSummary,
         customFields: [
-          { key: "orderType", label_ar: "نوع الطلب", label_en: "Order Type", value: "made_to_order" },
+          {
+            key: "orderType",
+            label_ar: "نوع الطلب",
+            label_en: "Order Type",
+            value: "made_to_order",
+          },
           { key: "fabric", label_ar: "القماش المختار", label_en: "Selected Fabric", value: fabric },
-          { key: "designStyle", label_ar: "تفاصيل القصة", label_en: "Design Style", value: designStyle },
+          {
+            key: "designStyle",
+            label_ar: "تفاصيل القصة",
+            label_en: "Design Style",
+            value: designStyle,
+          },
           { key: "color", label_ar: "اللون المفضل", label_en: "Preferred Color", value: color },
-          { key: "sizingSummary", label_ar: "المقاس والقياسات", label_en: "Sizing Summary", value: sizingSummary },
+          {
+            key: "sizingSummary",
+            label_ar: "المقاس والقياسات",
+            label_en: "Sizing Summary",
+            value: sizingSummary,
+          },
           ...(measurementMode === "custom"
             ? [
                 {
@@ -150,13 +169,34 @@ function CustomOrderRouteComponent() {
               ]
             : []),
           ...(targetDate
-            ? [{ key: "targetDate", label_ar: "الموعد المطلوب", label_en: "Target Date", value: targetDate }]
+            ? [
+                {
+                  key: "targetDate",
+                  label_ar: "الموعد المطلوب",
+                  label_en: "Target Date",
+                  value: targetDate,
+                },
+              ]
             : []),
           ...(specialNotes
-            ? [{ key: "specialNotes", label_ar: "ملاحظات إضافية", label_en: "Special Notes", value: specialNotes }]
+            ? [
+                {
+                  key: "specialNotes",
+                  label_ar: "ملاحظات إضافية",
+                  label_en: "Special Notes",
+                  value: specialNotes,
+                },
+              ]
             : []),
           ...(referenceUrl
-            ? [{ key: "referenceUrl", label_ar: "رابط التصميم المرجعي", label_en: "Reference URL", value: referenceUrl }]
+            ? [
+                {
+                  key: "referenceUrl",
+                  label_ar: "رابط التصميم المرجعي",
+                  label_en: "Reference URL",
+                  value: referenceUrl,
+                },
+              ]
             : []),
         ],
       });
@@ -252,7 +292,10 @@ function CustomOrderRouteComponent() {
               <Input
                 value={fabric}
                 onChange={(e) => setFabric(e.target.value)}
-                placeholder={t("مثال: حرير ياباني، كريب صالونا، لينن فاخر...", "e.g. Japanese Silk, Crepe, Fine Linen...")}
+                placeholder={t(
+                  "مثال: حرير ياباني، كريب صالونا، لينن فاخر...",
+                  "e.g. Japanese Silk, Crepe, Fine Linen...",
+                )}
               />
             </div>
 
@@ -263,7 +306,10 @@ function CustomOrderRouteComponent() {
               <Input
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
-                placeholder={t("مثال: أسود كلاسيكي، كحلي داكن، بيج رملي...", "e.g. Classic Black, Deep Navy, Sand Beige...")}
+                placeholder={t(
+                  "مثال: أسود كلاسيكي، كحلي داكن، بيج رملي...",
+                  "e.g. Classic Black, Deep Navy, Sand Beige...",
+                )}
               />
             </div>
 
@@ -292,28 +338,32 @@ function CustomOrderRouteComponent() {
             </h2>
 
             <div className="flex rounded-lg border border-border p-1 bg-muted/40">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setMeasurementMode("standard")}
-                className={`flex-1 rounded-md py-2 text-xs font-medium transition-all ${
+                className={`h-auto rounded-md flex-1 rounded-md py-2 text-xs font-medium transition-all ${
                   measurementMode === "standard"
                     ? "bg-card text-foreground shadow-xs font-semibold"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {t("مقاس قياسي جاهز", "Standard Size")}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setMeasurementMode("custom")}
-                className={`flex-1 rounded-md py-2 text-xs font-medium transition-all ${
+                className={`h-auto rounded-md flex-1 rounded-md py-2 text-xs font-medium transition-all ${
                   measurementMode === "custom"
                     ? "bg-card text-foreground shadow-xs font-semibold"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {t("قياسات مخصصة دقيقة (إنش / سم)", "Custom Exact Measurements")}
-              </button>
+              </Button>
             </div>
 
             {measurementMode === "standard" ? (
@@ -323,18 +373,20 @@ function CustomOrderRouteComponent() {
                 </label>
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                   {["50", "52", "54", "56", "58", "60"].map((sz) => (
-                    <button
+                    <Button
                       key={sz}
                       type="button"
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setStandardSize(sz)}
-                      className={`rounded-lg border py-2.5 text-xs font-semibold transition-all ${
+                      className={`h-auto rounded-md rounded-lg border py-2.5 text-xs font-semibold transition-all ${
                         standardSize === sz
                           ? "border-primary bg-primary text-primary-foreground shadow-xs"
                           : "border-border bg-card text-foreground hover:bg-muted"
                       }`}
                     >
                       {sz}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -398,7 +450,10 @@ function CustomOrderRouteComponent() {
 
             <div>
               <label className="block text-xs font-medium text-foreground mb-1">
-                {t("تاريخ المناسبة أو الموعد المفضل للاستلام", "Preferred Delivery / Occasion Date")}
+                {t(
+                  "تاريخ المناسبة أو الموعد المفضل للاستلام",
+                  "Preferred Delivery / Occasion Date",
+                )}
               </label>
               <Input
                 type="date"
@@ -444,8 +499,11 @@ function CustomOrderRouteComponent() {
                   {formatPrice(baseServicePrice, currency, lang)}
                 </p>
               </div>
-              <span className="text-[11px] text-muted-foreground max-w-xs text-end">
-                {t("يشمل العمل الحرفي والمتابعة وتأكيد القياسات مع العميل", "Includes artisanal crafting & personal measurement verification")}
+              <span className="text-xs text-muted-foreground max-w-xs text-end">
+                {t(
+                  "يشمل العمل الحرفي والمتابعة وتأكيد القياسات مع العميل",
+                  "Includes artisanal crafting & personal measurement verification",
+                )}
               </span>
             </div>
           </div>

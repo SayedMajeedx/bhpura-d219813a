@@ -77,7 +77,7 @@ export function ImageZoom({
         )}
 
         {/* Tap/Click Zoom Hint Badge */}
-        <div className="absolute end-3 bottom-3 z-10 p-2 rounded-full bg-background/80 backdrop-blur-xs border border-border/80 text-foreground shadow-xs opacity-70 group-hover:opacity-100 transition-opacity">
+        <div className="absolute end-3 bottom-3 z-10 p-2 rounded-full bg-background/80 backdrop-blur-xs border border-border text-foreground shadow-xs opacity-70 group-hover:opacity-100 transition-opacity">
           <ZoomIn className="h-4 w-4" />
         </div>
       </div>

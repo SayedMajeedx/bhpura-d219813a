@@ -27,7 +27,27 @@ const HEX_EXEMPT = [
   // html2canvas / jspdf rasterise these and do not resolve CSS variables.
   "components/orders/InvoicePreview.tsx",
   "routes/invoice.$id.tsx",
+  // Web manifest is served as JSON — CSS variables cannot be used there.
+  "routes/$slug.manifest[.webmanifest].ts",
 ];
+
+/** Directory/file prefixes with the same exemption rationale as HEX_EXEMPT. */
+const HEX_EXEMPT_PREFIXES = [
+  // The settings editors moved from the monolithic settings route into feature groups
+  // (colour pickers with literal defaults, live invoice/hero previews).
+  "features/settings/",
+  // Brand wizard colour pickers and palette previews.
+  "components/super-admin/brand-wizard/",
+  // Colour maths and per-vertical palette/colour-name data (not UI styling).
+  "lib/logo-palette.ts",
+  "lib/brand-palette-apply.ts",
+  "lib/brand-templates/",
+  "lib/color-names.ts",
+];
+
+function isHexExempt(rel: string): boolean {
+  return HEX_EXEMPT.includes(rel) || HEX_EXEMPT_PREFIXES.some((p) => rel.startsWith(p));
+}
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -99,7 +119,7 @@ describe("design system guardrails", () => {
   });
 
   it("allows no new raw hex outside the files that genuinely need it", () => {
-    const count = countMatches(/#[0-9a-fA-F]{6}\b/g, (rel) => !HEX_EXEMPT.includes(rel));
+    const count = countMatches(/#[0-9a-fA-F]{6}\b/g, (rel) => !isHexExempt(rel));
     expect(count).toBeLessThanOrEqual(246);
   });
 

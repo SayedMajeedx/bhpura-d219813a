@@ -1,5 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
-import { getProductTransitionName, navigateWithViewTransition } from "../src/lib/motion/view-transitions";
+import {
+  getProductTransitionName,
+  navigateWithViewTransition,
+} from "../src/lib/motion/view-transitions";
 import { BRAND_TEMPLATES, VERTICAL_DESIGN_PRESETS } from "../src/lib/brand-templates";
 import { buildCartItem } from "../src/lib/cart/add-to-cart";
 
@@ -7,7 +10,9 @@ describe("Storefront 2.0 Layer 3 Tests", () => {
   describe("View Transitions API Utilities", () => {
     it("generates safe, sanitized view-transition-name for arbitrary product IDs", () => {
       expect(getProductTransitionName("prod_123")).toBe("product-img-prod_123");
-      expect(getProductTransitionName("prod/abc:456#special")).toBe("product-img-prod_abc_456_special");
+      expect(getProductTransitionName("prod/abc:456#special")).toBe(
+        "product-img-prod_abc_456_special",
+      );
       expect(getProductTransitionName("")).toBe("product-img-item");
       expect(getProductTransitionName(null as any)).toBe("product-img-item");
     });
@@ -87,7 +92,12 @@ describe("Storefront 2.0 Layer 3 Tests", () => {
         selectedSize: "مخصص: طول 56 / صدر 23",
         customFields: [
           { key: "fabric", label_ar: "نوع القماش", label_en: "Fabric", value: "حرير ياباني" },
-          { key: "orderType", label_ar: "نوع الطلب", label_en: "Order Type", value: "made_to_order" },
+          {
+            key: "orderType",
+            label_ar: "نوع الطلب",
+            label_en: "Order Type",
+            value: "made_to_order",
+          },
         ],
       });
 

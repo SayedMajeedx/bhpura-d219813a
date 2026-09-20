@@ -109,7 +109,14 @@ function CategoryPage() {
   const cmsPage = settings.pages.find((page) => page.slug === categorySlug);
   const [filters, setFilters] = useState<FilterState>(() => {
     if (typeof window === "undefined") {
-      return { size: null, color: null, minPrice: null, maxPrice: null, inStockOnly: false, sort: "new" };
+      return {
+        size: null,
+        color: null,
+        minPrice: null,
+        maxPrice: null,
+        inStockOnly: false,
+        sort: "new",
+      };
     }
     const sp = new URLSearchParams(window.location.search);
     return {
@@ -130,12 +137,18 @@ function CategoryPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const sp = new URLSearchParams(window.location.search);
-    if (filters.size) sp.set("size", filters.size); else sp.delete("size");
-    if (filters.color) sp.set("color", filters.color); else sp.delete("color");
-    if (filters.minPrice !== null) sp.set("min", String(filters.minPrice)); else sp.delete("min");
-    if (filters.maxPrice !== null) sp.set("max", String(filters.maxPrice)); else sp.delete("max");
-    if (filters.inStockOnly) sp.set("stock", "1"); else sp.delete("stock");
-    if (filters.sort && filters.sort !== "new") sp.set("sort", filters.sort); else sp.delete("sort");
+    if (filters.size) sp.set("size", filters.size);
+    else sp.delete("size");
+    if (filters.color) sp.set("color", filters.color);
+    else sp.delete("color");
+    if (filters.minPrice !== null) sp.set("min", String(filters.minPrice));
+    else sp.delete("min");
+    if (filters.maxPrice !== null) sp.set("max", String(filters.maxPrice));
+    else sp.delete("max");
+    if (filters.inStockOnly) sp.set("stock", "1");
+    else sp.delete("stock");
+    if (filters.sort && filters.sort !== "new") sp.set("sort", filters.sort);
+    else sp.delete("sort");
 
     const newSearch = sp.toString();
     const newUrl = `${window.location.pathname}${newSearch ? `?${newSearch}` : ""}`;
@@ -415,14 +428,10 @@ function CategoryPage() {
     }
 
     if (filters.size) {
-      list = list.filter((p) =>
-        p.product_variants?.some((v) => v.size === filters.size),
-      );
+      list = list.filter((p) => p.product_variants?.some((v) => v.size === filters.size));
     }
     if (filters.color) {
-      list = list.filter((p) =>
-        p.product_variants?.some((v) => v.color === filters.color),
-      );
+      list = list.filter((p) => p.product_variants?.some((v) => v.color === filters.color));
     }
     if (filters.minPrice !== null) {
       const minVal = filters.minPrice;
@@ -491,9 +500,7 @@ function CategoryPage() {
   }, [allVariants]);
 
   const { minCatalogPrice, maxCatalogPrice } = useMemo(() => {
-    const prices = allVariants
-      .map((v) => Number(v.selling_price || 0))
-      .filter((p) => p > 0);
+    const prices = allVariants.map((v) => Number(v.selling_price || 0)).filter((p) => p > 0);
     if (prices.length === 0) return { minCatalogPrice: 0, maxCatalogPrice: 100 };
     return {
       minCatalogPrice: Math.floor(Math.min(...prices)),
@@ -555,22 +562,30 @@ function CategoryPage() {
         <JsonLd
           schema={[
             buildCollectionSchema(
-              (lang === "ar" ? categoryQuery.data.name_ar : categoryQuery.data.name_en) || categorySlug,
+              (lang === "ar" ? categoryQuery.data.name_ar : categoryQuery.data.name_en) ||
+                categorySlug,
               filteredProducts.map((p: any) => ({
                 id: p.id,
                 name_en: p.name_en || p.name,
                 name_ar: p.name_ar || p.name,
                 price: Number(p.product_variants?.[0]?.selling_price ?? 0),
-                sale_price: p.product_variants?.[0]?.original_price ? Number(p.product_variants[0].selling_price) : undefined,
+                sale_price: p.product_variants?.[0]?.original_price
+                  ? Number(p.product_variants[0].selling_price)
+                  : undefined,
               })),
               brand,
               settings,
               `https://boutq.store/${brand.slug}/${categorySlug}`,
             ),
             buildBreadcrumbsSchema([
-              { name: lang === "ar" ? "الرئيسية" : "Home", url: `https://boutq.store/${brand.slug}` },
               {
-                name: (lang === "ar" ? categoryQuery.data.name_ar : categoryQuery.data.name_en) || categorySlug,
+                name: lang === "ar" ? "الرئيسية" : "Home",
+                url: `https://boutq.store/${brand.slug}`,
+              },
+              {
+                name:
+                  (lang === "ar" ? categoryQuery.data.name_ar : categoryQuery.data.name_en) ||
+                  categorySlug,
                 url: `https://boutq.store/${brand.slug}/${categorySlug}`,
               },
             ]),
@@ -772,7 +787,9 @@ function CategoryPage() {
                   <option value="new">{t("الأحدث أولاً", "Newest first")}</option>
                   <option value="old">{t("الأقدم أولاً", "Oldest first")}</option>
                   <option value="price-low">{t("السعر: الأقل أولاً", "Price: low to high")}</option>
-                  <option value="price-high">{t("السعر: الأعلى أولاً", "Price: high to low")}</option>
+                  <option value="price-high">
+                    {t("السعر: الأعلى أولاً", "Price: high to low")}
+                  </option>
                 </select>
               </div>
             </div>
@@ -794,7 +811,9 @@ function CategoryPage() {
               <div className="flex-1 min-w-0">
                 <ProductGrid
                   products={filteredProducts}
-                  loading={categoryQuery.isLoading || productsQuery.isLoading || categoriesQuery.isLoading}
+                  loading={
+                    categoryQuery.isLoading || productsQuery.isLoading || categoriesQuery.isLoading
+                  }
                   categoryEmpty
                   onViewAll={() => {
                     void navigate({ to: "/$slug", params: { slug: brand.slug } });
@@ -823,7 +842,9 @@ function CategoryPage() {
 
             <ProductGrid
               products={filteredProducts}
-              loading={categoryQuery.isLoading || productsQuery.isLoading || categoriesQuery.isLoading}
+              loading={
+                categoryQuery.isLoading || productsQuery.isLoading || categoriesQuery.isLoading
+              }
               categoryEmpty
               onViewAll={() => {
                 void navigate({ to: "/$slug", params: { slug: brand.slug } });

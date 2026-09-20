@@ -130,11 +130,7 @@ import { translateOptionTerms } from "@/lib/translate-options.functions";
 
 function prefetchOptionTranslations(terms: Array<string | null | undefined>, isAr: boolean) {
   const cleanTerms = Array.from(
-    new Set(
-      terms
-        .map((t) => (t || "").trim())
-        .filter((t) => t.length > 0)
-    )
+    new Set(terms.map((t) => (t || "").trim()).filter((t) => t.length > 0)),
   );
   if (cleanTerms.length === 0) return;
 
@@ -5333,9 +5329,7 @@ function VariantDesktopRow({
         1,
         Math.min(
           45,
-          Math.ceil(
-            (new Date().getTime() - variantCreatedAt.getTime()) / (1000 * 60 * 60 * 24),
-          ),
+          Math.ceil((new Date().getTime() - variantCreatedAt.getTime()) / (1000 * 60 * 60 * 24)),
         ),
       )
     : 45;
@@ -5567,7 +5561,7 @@ function VariantDesktopRow({
             </div>
 
             {/* Bottom Line: SKU & Barcode Controls */}
-            {(viewMode === "full" || viewMode === "barcodes") ? (
+            {viewMode === "full" || viewMode === "barcodes" ? (
               <div className="flex items-center gap-2 pt-1 border-t border-border/40 flex-wrap">
                 <div className="flex items-center gap-1 bg-muted/30 hover:bg-muted/50 rounded-lg px-2 py-0.5 border border-border/60 transition-colors">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
@@ -5616,7 +5610,7 @@ function VariantDesktopRow({
                   />
                 )}
               </div>
-            ) : (v.barcode || v.sku) ? (
+            ) : v.barcode || v.sku ? (
               <div className="flex items-center gap-2 pt-0.5 flex-wrap">
                 {v.sku && (
                   <span className="inline-flex items-center font-mono text-[10px] text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded border border-border-subtle shrink-0">
@@ -5690,7 +5684,8 @@ function VariantDesktopRow({
             <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground flex-wrap">
               {canViewFinancials && (
                 <span>
-                  {isAr ? "التكلفة" : "Cost"}: <strong className="font-mono text-foreground">{costVal || "0"}</strong>
+                  {isAr ? "التكلفة" : "Cost"}:{" "}
+                  <strong className="font-mono text-foreground">{costVal || "0"}</strong>
                 </span>
               )}
               {canViewFinancials && (
@@ -5742,7 +5737,8 @@ function VariantDesktopRow({
             <div className="flex items-center justify-center gap-2 text-[11px] flex-wrap">
               {(v.stock_incubator ?? 0) > 0 && (
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-semibold text-[10px] border border-border-subtle">
-                  {isAr ? "حاضنة:" : "Inc:"} <strong className="ms-1 text-foreground">{v.stock_incubator}</strong>
+                  {isAr ? "حاضنة:" : "Inc:"}{" "}
+                  <strong className="ms-1 text-foreground">{v.stock_incubator}</strong>
                 </span>
               )}
               <span className={`text-[11px] whitespace-nowrap leading-none ${runRateColor}`}>
@@ -6830,7 +6826,15 @@ function VariantList({
       .eq("id", v.id);
     if (error) toast.error(error.message);
     else {
-      prefetchOptionTranslations([normalizedPatch.color, normalizedPatch.fabric, normalizedPatch.option_four, normalizedPatch.option_five], isAr);
+      prefetchOptionTranslations(
+        [
+          normalizedPatch.color,
+          normalizedPatch.fabric,
+          normalizedPatch.option_four,
+          normalizedPatch.option_five,
+        ],
+        isAr,
+      );
       onChanged();
     }
   };
@@ -7402,7 +7406,9 @@ function VariantList({
                         : isAr
                           ? "الخصائص"
                           : "Attributes";
-                    return isAr ? `المتغير والتعريف (${axisSummary})` : `Variant & Identity (${axisSummary})`;
+                    return isAr
+                      ? `المتغير والتعريف (${axisSummary})`
+                      : `Variant & Identity (${axisSummary})`;
                   })()}
                 </th>
                 <th className="w-48 px-2 py-3 text-center font-black text-xs">

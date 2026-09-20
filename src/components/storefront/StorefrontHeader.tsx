@@ -54,13 +54,14 @@ function StoreHeader() {
                 />
               )}
               {settings.show_header_name && (
-                <span className="font-display text-base truncate font-semibold">
-                  {displayName}
-                </span>
+                <span className="font-display text-base truncate font-semibold">{displayName}</span>
               )}
             </Link>
 
-            <div className="flex items-center gap-1 shrink-0" style={{ color: "var(--sf-header-fg)" }}>
+            <div
+              className="flex items-center gap-1 shrink-0"
+              style={{ color: "var(--sf-header-fg)" }}
+            >
               <Button
                 type="button"
                 variant="ghost"
@@ -102,7 +103,9 @@ function StoreHeader() {
         ) : null}
 
         {/* Desktop Header row (always) & Mobile V1 fallback */}
-        <div className={`h-14 items-center gap-3 justify-between ${isV2 ? "hidden md:flex" : "flex"}`}>
+        <div
+          className={`h-14 items-center gap-3 justify-between ${isV2 ? "hidden md:flex" : "flex"}`}
+        >
           <Link
             to="/$slug"
             params={{ slug: brand.slug }}
@@ -284,7 +287,10 @@ function StoreHeader() {
 
         {/* Mobile: keep Menu beside Search in the sticky header for V1 */}
         {!isV2 && (
-          <div dir={lang === "ar" ? "rtl" : "ltr"} className="flex items-center gap-2 pb-1 md:hidden">
+          <div
+            dir={lang === "ar" ? "rtl" : "ltr"}
+            className="flex items-center gap-2 pb-1 md:hidden"
+          >
             <div className="shrink-0">
               <MobileStorefrontDropdown />
             </div>
@@ -334,10 +340,7 @@ function StoreHeader() {
         </DialogContent>
       </Dialog>
 
-      <SearchOverlay
-        isOpen={searchOverlayOpen}
-        onClose={() => setSearchOverlayOpen(false)}
-      />
+      <SearchOverlay isOpen={searchOverlayOpen} onClose={() => setSearchOverlayOpen(false)} />
     </header>
   );
 }

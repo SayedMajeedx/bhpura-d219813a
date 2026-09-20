@@ -332,7 +332,12 @@ html.lang-ar input,
 html.lang-ar textarea,
 html.lang-ar select,
 html.lang-ar button {
-  font-family: "Readex Pro", "Tajawal", "Segoe UI", -apple-system, sans-serif;
+  font-family:
+    "Readex Pro",
+    "Tajawal",
+    "Segoe UI",
+    -apple-system,
+    sans-serif;
   letter-spacing: 0;
 }
 
@@ -340,7 +345,12 @@ html.lang-ar h1,
 html.lang-ar h2,
 html.lang-ar h3,
 html.lang-ar .font-display {
-  font-family: "Readex Pro", "Tajawal", "Segoe UI", -apple-system, sans-serif;
+  font-family:
+    "Readex Pro",
+    "Tajawal",
+    "Segoe UI",
+    -apple-system,
+    sans-serif;
   letter-spacing: 0;
 }
 

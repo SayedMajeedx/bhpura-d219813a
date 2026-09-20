@@ -28,7 +28,7 @@ export function TrustBar({ className }: TrustBarProps) {
   return (
     <section
       aria-label={isAr ? "مميزات التسوق والضمان" : "Shopping Guarantees & Features"}
-      className={`w-full border-y border-border/40 bg-card/60 backdrop-blur-xs py-4 sm:py-5 ${className ?? ""}`}
+      className={`w-full border-y border-border bg-card py-4 sm:py-5 ${className ?? ""}`}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4">

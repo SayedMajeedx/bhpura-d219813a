@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { resolveColorHex, extractUniqueVariantColors, COLOR_MAP } from "../src/lib/color-names";
 import { canQuickAddToCart, buildCartItem } from "../src/lib/cart/add-to-cart";
-import { recordRecentlyViewed, getRecentlyViewedIds } from "../src/components/storefront/RecentlyViewed";
+import {
+  recordRecentlyViewed,
+  getRecentlyViewedIds,
+} from "../src/components/storefront/RecentlyViewed";
 
 describe("Storefront V2 Layer 2 - Color Resolution & Swatches", () => {
   it("resolves Arabic and English color names to correct hex codes", () => {
@@ -64,9 +67,7 @@ describe("Storefront V2 Layer 2 - Safe Quick Add to Cart", () => {
     const bespokeProduct = {
       id: "p2",
       name: "Bespoke Evening Gown",
-      custom_fields: [
-        { key: "length", label_ar: "الطول", required: true },
-      ],
+      custom_fields: [{ key: "length", label_ar: "الطول", required: true }],
       product_variants: [
         {
           id: "v1",

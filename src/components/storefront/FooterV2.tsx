@@ -32,8 +32,14 @@ export function FooterV2() {
   };
 
   const footerLogoSize = Math.max(20, Math.min(120, Number(settings.footer_logo_size ?? 32)));
-  const aboutText = isAr ? brand.about_ar || settings.footer_note : brand.about_en || settings.footer_note;
-  const truncatedAbout = aboutText ? (aboutText.length > 160 ? `${aboutText.slice(0, 160)}...` : aboutText) : null;
+  const aboutText = isAr
+    ? brand.about_ar || settings.footer_note
+    : brand.about_en || settings.footer_note;
+  const truncatedAbout = aboutText
+    ? aboutText.length > 160
+      ? `${aboutText.slice(0, 160)}...`
+      : aboutText
+    : null;
 
   // Socials
   const rawSocials = settings.socials;
@@ -85,13 +91,19 @@ export function FooterV2() {
                 className="object-contain"
               />
             ) : (
-              <span className="text-lg font-bold font-display" style={{ color: "var(--sf-footer-fg)" }}>
+              <span
+                className="text-lg font-bold font-display"
+                style={{ color: "var(--sf-footer-fg)" }}
+              >
                 {isAr ? brand.name_ar || brand.name_en : brand.name_en}
               </span>
             )}
 
             {truncatedAbout && (
-              <p className="text-xs leading-relaxed opacity-80" style={{ color: "var(--sf-footer-fg)" }}>
+              <p
+                className="text-xs leading-relaxed opacity-80"
+                style={{ color: "var(--sf-footer-fg)" }}
+              >
                 {truncatedAbout}
               </p>
             )}
@@ -122,7 +134,10 @@ export function FooterV2() {
 
           {/* Column 2: Shop Navigation */}
           <div className="space-y-3">
-            <h4 className="text-xs font-semibold uppercase tracking-wider opacity-90 border-b border-white/10 pb-2" style={{ color: "var(--sf-footer-fg)" }}>
+            <h4
+              className="text-xs font-semibold uppercase tracking-wider opacity-90 border-b border-white/10 pb-2"
+              style={{ color: "var(--sf-footer-fg)" }}
+            >
               {t("تسوّقي", "Shop")}
             </h4>
             <nav className="flex flex-col space-y-2 text-xs">
@@ -172,7 +187,10 @@ export function FooterV2() {
 
           {/* Column 3: Customer Care & Pages */}
           <div className="space-y-3">
-            <h4 className="text-xs font-semibold uppercase tracking-wider opacity-90 border-b border-white/10 pb-2" style={{ color: "var(--sf-footer-fg)" }}>
+            <h4
+              className="text-xs font-semibold uppercase tracking-wider opacity-90 border-b border-white/10 pb-2"
+              style={{ color: "var(--sf-footer-fg)" }}
+            >
               {t("المساعدة وخدمة العملاء", "Customer Care")}
             </h4>
             <nav className="flex flex-col space-y-2 text-xs">
@@ -200,7 +218,10 @@ export function FooterV2() {
 
           {/* Column 4: Contact & Newsletter */}
           <div className="space-y-4">
-            <h4 className="text-xs font-semibold uppercase tracking-wider opacity-90 border-b border-white/10 pb-2" style={{ color: "var(--sf-footer-fg)" }}>
+            <h4
+              className="text-xs font-semibold uppercase tracking-wider opacity-90 border-b border-white/10 pb-2"
+              style={{ color: "var(--sf-footer-fg)" }}
+            >
               {t("تواصلي معنا", "Stay Connected")}
             </h4>
 
@@ -222,12 +243,18 @@ export function FooterV2() {
                 className="object-contain"
               />
             ) : (
-              <span className="text-base font-bold font-display" style={{ color: "var(--sf-footer-fg)" }}>
+              <span
+                className="text-base font-bold font-display"
+                style={{ color: "var(--sf-footer-fg)" }}
+              >
                 {isAr ? brand.name_ar || brand.name_en : brand.name_en}
               </span>
             )}
             {truncatedAbout && (
-              <p className="text-xs leading-relaxed opacity-75 max-w-sm" style={{ color: "var(--sf-footer-fg)" }}>
+              <p
+                className="text-xs leading-relaxed opacity-75 max-w-sm"
+                style={{ color: "var(--sf-footer-fg)" }}
+              >
                 {truncatedAbout}
               </p>
             )}
@@ -235,10 +262,12 @@ export function FooterV2() {
 
           {/* Accordion 1: Shop */}
           <div className="border-b border-white/10 pb-2">
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => toggleSection("shop")}
-              className="w-full flex items-center justify-between py-2 text-xs font-semibold"
+              className="h-auto rounded-md w-full flex items-center justify-between py-2 text-xs font-semibold"
               style={{ color: "var(--sf-footer-fg)" }}
             >
               <span>{t("تسوّقي", "Shop")}</span>
@@ -247,7 +276,7 @@ export function FooterV2() {
                   openSections.shop ? "rotate-180" : ""
                 }`}
               />
-            </button>
+            </Button>
             {openSections.shop && (
               <nav className="flex flex-col space-y-2 pt-1 pb-2 text-xs ps-2">
                 <Link
@@ -279,10 +308,12 @@ export function FooterV2() {
 
           {/* Accordion 2: Help */}
           <div className="border-b border-white/10 pb-2">
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => toggleSection("help")}
-              className="w-full flex items-center justify-between py-2 text-xs font-semibold"
+              className="h-auto rounded-md w-full flex items-center justify-between py-2 text-xs font-semibold"
               style={{ color: "var(--sf-footer-fg)" }}
             >
               <span>{t("المساعدة وخدمة العملاء", "Customer Care")}</span>
@@ -291,7 +322,7 @@ export function FooterV2() {
                   openSections.help ? "rotate-180" : ""
                 }`}
               />
-            </button>
+            </Button>
             {openSections.help && (
               <nav className="flex flex-col space-y-2 pt-1 pb-2 text-xs ps-2">
                 <Link
@@ -336,22 +367,22 @@ export function FooterV2() {
               aria-label={isAr ? "طرق الدفع المدعومة" : "Accepted payment methods"}
             >
               {settings.benefit_enabled && (
-                <span className="px-2 py-0.5 rounded-md border border-white/15 bg-white/5 text-[11px] font-bold">
+                <span className="px-2 py-0.5 rounded-md border border-white/15 bg-white/5 text-xs font-bold">
                   BenefitPay
                 </span>
               )}
               {settings.card_enabled && (
                 <>
-                  <span className="px-2 py-0.5 rounded-md border border-white/15 bg-white/5 text-[11px] font-medium">
+                  <span className="px-2 py-0.5 rounded-md border border-white/15 bg-white/5 text-xs font-medium">
                     Visa / Mastercard
                   </span>
-                  <span className="px-2 py-0.5 rounded-md border border-white/15 bg-white/5 text-[11px] font-medium">
+                  <span className="px-2 py-0.5 rounded-md border border-white/15 bg-white/5 text-xs font-medium">
                     Apple Pay
                   </span>
                 </>
               )}
               {settings.cod_enabled && (
-                <span className="px-2 py-0.5 rounded-md border border-white/15 bg-white/5 text-[11px]">
+                <span className="px-2 py-0.5 rounded-md border border-white/15 bg-white/5 text-xs">
                   {t("الدفع عند الاستلام", "COD")}
                 </span>
               )}
@@ -359,7 +390,7 @@ export function FooterV2() {
           )}
 
           {/* Copyright & Branding */}
-          <div className="flex items-center gap-3 text-[11px] text-center sm:text-end">
+          <div className="flex items-center gap-3 text-xs text-center sm:text-end">
             <span>
               © {new Date().getFullYear()} {isAr ? brand.name_ar || brand.name_en : brand.name_en}.{" "}
               {t("جميع الحقوق محفوظة", "All rights reserved.")}

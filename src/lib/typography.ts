@@ -200,7 +200,13 @@ export function getGoogleFontsUrl(config?: TypographyConfig | null): string | nu
   const addSource = (source?: FontSource) => {
     if (!source || source.url) return;
     const fam = source.family?.trim();
-    if (fam && !fam.startsWith("Custom —") && fam !== "Georgia" && fam !== "sans-serif" && fam !== "serif") {
+    if (
+      fam &&
+      !fam.startsWith("Custom —") &&
+      fam !== "Georgia" &&
+      fam !== "sans-serif" &&
+      fam !== "serif"
+    ) {
       families.add(fam);
     }
   };

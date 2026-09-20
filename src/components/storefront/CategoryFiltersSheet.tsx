@@ -47,14 +47,17 @@ export function CategoryFiltersSheet({
           <SlidersHorizontal className="h-3.5 w-3.5" />
           <span>{t("الفلاتر", "Filters")}</span>
           {activeCount > 0 && (
-            <span className="h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+            <span className="h-4 w-4 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">
               {activeCount}
             </span>
           )}
         </Button>
       </SheetTrigger>
 
-      <SheetContent side="bottom" className="max-h-[85vh] rounded-t-2xl p-0 flex flex-col bg-background">
+      <SheetContent
+        side="bottom"
+        className="max-h-[85vh] rounded-t-2xl p-0 flex flex-col bg-background"
+      >
         <SheetHeader className="p-4 border-b border-border text-start">
           <SheetTitle className="text-sm font-semibold">
             {t("تصفية المنتجات", "Filter Products")}
@@ -73,7 +76,7 @@ export function CategoryFiltersSheet({
           />
         </div>
 
-        <div className="p-4 border-t border-border bg-card/60 backdrop-blur-xs">
+        <div className="p-4 border-t border-border bg-card">
           <Button
             type="button"
             className="w-full h-11 text-sm font-semibold rounded-xl bg-primary text-primary-foreground"

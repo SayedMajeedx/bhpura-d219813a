@@ -137,8 +137,13 @@ export function buildProductSchema(
 ) {
   const storeUrl = resolveStoreUrl(brand, settings);
   const productUrl = `${storeUrl}/product/${product.id}`;
-  const name = (lang === "ar" ? product.name_ar || product.name_en : product.name_en || product.name_ar) || "Product";
-  const rawDesc = lang === "ar" ? product.description_ar || product.description_en : product.description_en || product.description_ar;
+  const name =
+    (lang === "ar" ? product.name_ar || product.name_en : product.name_en || product.name_ar) ||
+    "Product";
+  const rawDesc =
+    lang === "ar"
+      ? product.description_ar || product.description_en
+      : product.description_en || product.description_ar;
   const description = stripHtml(rawDesc) || name;
 
   const imageList: string[] = [];
@@ -150,11 +155,16 @@ export function buildProductSchema(
     }
   }
 
-  const effectivePrice = product.sale_price !== null && product.sale_price !== undefined && product.sale_price > 0
-    ? product.sale_price
-    : product.price;
+  const effectivePrice =
+    product.sale_price !== null && product.sale_price !== undefined && product.sale_price > 0
+      ? product.sale_price
+      : product.price;
 
-  const isOutOfStock = product.manage_stock && product.stock !== null && product.stock !== undefined && product.stock <= 0;
+  const isOutOfStock =
+    product.manage_stock &&
+    product.stock !== null &&
+    product.stock !== undefined &&
+    product.stock <= 0;
 
   return {
     "@context": "https://schema.org",
@@ -175,9 +185,7 @@ export function buildProductSchema(
       price: effectivePrice,
       priceValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
       itemCondition: "https://schema.org/NewCondition",
-      availability: isOutOfStock
-        ? "https://schema.org/OutOfStock"
-        : "https://schema.org/InStock",
+      availability: isOutOfStock ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
       seller: {
         "@type": "Organization",
         name: settings?.business_name || brand?.name_ar || brand?.name_en || "Store",
