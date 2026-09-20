@@ -52,6 +52,7 @@ ALTER TABLE public.newsletter_subscribers ENABLE ROW LEVEL SECURITY;
 -- Writes come only through the server function (service role) with rate limiting;
 -- the browser never inserts directly, so no anon INSERT policy is granted.
 
+DROP POLICY IF EXISTS "brand staff manage newsletter subscribers" ON public.newsletter_subscribers;
 CREATE POLICY "brand staff manage newsletter subscribers"
 ON public.newsletter_subscribers FOR ALL TO authenticated
 USING (public.can_access_brand(brand_id))
@@ -77,6 +78,7 @@ ALTER TABLE public.back_in_stock_requests ENABLE ROW LEVEL SECURITY;
 
 -- Writes come only through the server function (service role) with rate limiting.
 
+DROP POLICY IF EXISTS "brand staff manage back in stock requests" ON public.back_in_stock_requests;
 CREATE POLICY "brand staff manage back in stock requests"
 ON public.back_in_stock_requests FOR ALL TO authenticated
 USING (public.can_access_brand(brand_id))
