@@ -46,7 +46,7 @@ export const OsAppWindow = React.forwardRef<HTMLDivElement, OsAppWindowProps>(
       <div
         ref={ref}
         className={cn(
-          "os-window-frame relative flex flex-col flex-1 min-w-0 overflow-hidden transition-all duration-300",
+          "os-window-frame relative flex flex-col flex-1 min-w-0 overflow-hidden transition-colors duration-200",
           className,
         )}
         {...props}

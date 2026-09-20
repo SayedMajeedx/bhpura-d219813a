@@ -593,6 +593,7 @@ function StoreShell() {
           backgroundColor: "var(--sf-header-bg)",
           color: "var(--sf-header-fg)",
           borderBottom: "1px solid rgba(0, 0, 0, 0.08)",
+          transform: "translateZ(0)",
         }}
       >
         <AnnouncementBar />

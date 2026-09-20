@@ -6,8 +6,46 @@ export interface UseRevealOptions {
   disabled?: boolean;
 }
 
+type RevealListener = (isIntersecting: boolean) => void;
+
+interface ObserverPoolEntry {
+  observer: IntersectionObserver;
+  listeners: Map<Element, RevealListener>;
+}
+
+const observerPool = new Map<string, ObserverPoolEntry>();
+
+function getPooledObserver(threshold: number, rootMargin: string): ObserverPoolEntry {
+  const key = `${threshold}:${rootMargin}`;
+  let poolEntry = observerPool.get(key);
+
+  if (!poolEntry) {
+    const listeners = new Map<Element, RevealListener>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const listener = listeners.get(entry.target);
+            if (listener) {
+              listener(true);
+              listeners.delete(entry.target);
+              observer.unobserve(entry.target);
+            }
+          }
+        }
+      },
+      { threshold, rootMargin },
+    );
+
+    poolEntry = { observer, listeners };
+    observerPool.set(key, poolEntry);
+  }
+
+  return poolEntry;
+}
+
 /**
- * Hook to smoothly reveal elements when scrolled into viewport using IntersectionObserver.
+ * Hook to smoothly reveal elements when scrolled into viewport using a pooled IntersectionObserver.
  * Strictly respects prefers-reduced-motion and optional tenant-level motion_enabled setting.
  * Guarantees zero Cumulative Layout Shift (CLS) as space is preserved.
  */
@@ -45,27 +83,19 @@ export function useReveal<T extends HTMLElement = HTMLDivElement>(options: UseRe
       return;
     }
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            setIsRevealed(true);
-            entry.target.classList.add("is-revealed");
-            entry.target.setAttribute("data-revealed", "true");
-            observer.unobserve(entry.target);
-          }
-        }
-      },
-      {
-        threshold,
-        rootMargin,
-      },
-    );
+    const poolEntry = getPooledObserver(threshold, rootMargin);
+    const onIntersect: RevealListener = () => {
+      setIsRevealed(true);
+      node.classList.add("is-revealed");
+      node.setAttribute("data-revealed", "true");
+    };
 
-    observer.observe(node);
+    poolEntry.listeners.set(node, onIntersect);
+    poolEntry.observer.observe(node);
 
     return () => {
-      observer.disconnect();
+      poolEntry.listeners.delete(node);
+      poolEntry.observer.unobserve(node);
     };
   }, [threshold, rootMargin, disabled]);
 

@@ -13,7 +13,7 @@
 .sf-reveal.is-revealed,
 .sf-reveal[data-revealed="true"] {
   opacity: 1;
-  transform: translateY(0);
+  transform: none;
   /* Release the compositor layer once the one-shot reveal has finished. */
   will-change: auto;
 }

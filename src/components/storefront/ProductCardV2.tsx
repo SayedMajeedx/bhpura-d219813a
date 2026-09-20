@@ -10,7 +10,6 @@ import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { Heart, Eye } from "lucide-react";
 import { QuickViewModal } from "@/components/storefront/QuickViewModal";
 import { useReveal } from "@/lib/motion/use-reveal";
-import { getProductTransitionName } from "@/lib/motion/view-transitions";
 
 export interface ProductCardV2Props {
   product: any;
@@ -201,8 +200,7 @@ export function ProductCardV2({
               preset="card"
               sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
               alt={displayName}
-              className="w-full h-full object-cover group-hover:scale-[1.03] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
-              style={{ viewTransitionName: getProductTransitionName(product.id) }}
+              className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
               loading="lazy"
               decoding="async"
               quality={78}
