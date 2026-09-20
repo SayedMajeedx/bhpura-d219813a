@@ -55,6 +55,50 @@ export default defineConfig({
     }),
     react(),
     tailwindcss(),
+    {
+      name: "boutq-dev-optimizer-fast",
+      enforce: "post",
+      config(config) {
+        if (config.environments?.ssr?.optimizeDeps) {
+          config.environments.ssr.optimizeDeps.noDiscovery = true;
+          config.environments.ssr.optimizeDeps.include = [
+            "react",
+            "react/jsx-runtime",
+            "react/jsx-dev-runtime",
+            "react-dom",
+            "react-dom/server",
+            "@supabase/supabase-js",
+            "aws4fetch",
+            "@tanstack/react-store",
+            "@tanstack/react-router",
+          ];
+        }
+      },
+      configEnvironment(name, envConfig) {
+        if (name === "ssr" && envConfig.optimizeDeps) {
+          envConfig.optimizeDeps.noDiscovery = true;
+          envConfig.optimizeDeps.include = [
+            "react",
+            "react/jsx-runtime",
+            "react/jsx-dev-runtime",
+            "react-dom",
+            "react-dom/server",
+            "@supabase/supabase-js",
+            "aws4fetch",
+            "@tanstack/react-store",
+            "@tanstack/react-router",
+          ];
+        }
+        if (name === "client" && envConfig.optimizeDeps?.entries) {
+          const entries = Array.isArray(envConfig.optimizeDeps.entries)
+            ? envConfig.optimizeDeps.entries
+            : [envConfig.optimizeDeps.entries];
+          envConfig.optimizeDeps.entries = entries.filter(
+            (entry: string) => typeof entry === "string" && !entry.includes("router")
+          );
+        }
+      },
+    },
   ],
   optimizeDeps: {
     exclude: ["vinxi/http"],
