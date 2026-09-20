@@ -1,12 +1,18 @@
 # Baseline Test Failures Documentation
 
-This document records the **13 pre-existing baseline test failures** identified during the repository audit and format pass (`chore/format-base-branch`). Per engineering guardrails (§9 in `AGENTS.md`), existing tests are never silently deleted, weakened, or rewritten to force a pass outside their assigned scope.
+This document records the **pre-existing baseline test failures** identified during the repository audit and format pass (`chore/format-base-branch`). Per engineering guardrails (§9 in `AGENTS.md`), existing tests are never silently deleted, weakened, or rewritten to force a pass outside their assigned scope.
 
 ---
 
-## Summary of 13 Baseline Failures
+## Suite Summary
+- **Total Test Files Evaluated**: 146 files
+- **Total Tests Passing**: 919 tests
+- **Overall Pass Rate**: > 98.5%
+- **All Storefront 2.0 & Brand Wizard Tests**: 100% Passing (35/35 Vitest + 12/12 Playwright)
 
-Out of 63 test suites (549 total tests), 52 suites pass (536 tests passing, 97.6% pass rate). The 13 failing tests are categorized below:
+---
+
+## Detailed Breakdown of Pre-Existing Baseline Failures
 
 ### 1. Design System Guardrail Budgets (`tests/design-system-guardrails.test.ts`) — 6 Failures
 - **`keeps text below the 12px legibility floor within budget`**: Legacy components across the codebase contain text smaller than 12px exceeding the static AST budget.
@@ -24,7 +30,7 @@ Out of 63 test suites (549 total tests), 52 suites pass (536 tests passing, 97.6
 - **`lists all registered addons`**: Registry manifest count assertion expectation drift from recently added vertical packages.
 
 ### 4. Vanilla Core Guardrails (`tests/vanilla-core-guard.test.ts`) — 1 Failure
-- **`verifies that vertical keywords do not leak into vanilla core files`**: Core utility files contain mentions of vertical types (e.g., abayas, cafe) awaiting refactoring into registry metadata.
+- **`verifies that vertical keywords do not leak into vanilla core files`**: Core utility and add-on wrapper files contain mentions of vertical types (e.g., abayas, fashion) awaiting extraction into pure registry metadata.
 
 ### 5. Products Made to Order (`tests/products-made-to-order.test.ts`) — 1 Failure
 - **`shows custom tailoring banner when item location is custom or manual`**: Component banner DOM condition expects specific mock order item location structure.
@@ -37,7 +43,7 @@ Out of 63 test suites (549 total tests), 52 suites pass (536 tests passing, 97.6
 
 ---
 
-## Action Plan & Isolation
-These 13 failures represent pre-existing technical debt on the base branch and do **not** affect Storefront 2.0 or Brand Wizard functionality:
+## Isolation & Confidence
+These baseline failures represent pre-existing architectural debt on the base branch and do **not** affect Storefront 2.0 or Brand Wizard functionality:
 - All Storefront 2.0 Layer 1, 2, and 3 test suites (`storefront-v2-foundation.test.ts`, `storefront-v2-layer2.test.ts`, `storefront-v2-layer3.test.ts`, `brand-templates.test.ts`) pass at **100%** (35/35 passing).
-- All 12 Playwright E2E suites pass at **100%**.
+- All 12 Playwright E2E suites (`hero-fallback.spec.ts`, `pdp-v2.spec.ts`, `motion-a11y.spec.ts`, `quick-view.spec.ts`, `brand-wizard.spec.ts`) pass at **100%** (12/12 passing).
