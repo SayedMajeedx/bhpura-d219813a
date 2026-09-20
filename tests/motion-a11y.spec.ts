@@ -28,12 +28,16 @@ test.describe("Storefront Motion & Accessibility Suite", () => {
     const focusedTags: string[] = [];
     for (let i = 0; i < 6; i++) {
       await page.keyboard.press("Tab");
-      const tag = await page.evaluate(() => document.activeElement ? document.activeElement.tagName : "BODY");
+      const tag = await page.evaluate(() =>
+        document.activeElement ? document.activeElement.tagName : "BODY",
+      );
       focusedTags.push(tag);
     }
 
     // Ensure focus moves through valid focusable interactive elements
-    const hasFocusableElements = focusedTags.some((tag) => ["A", "BUTTON", "INPUT", "SELECT"].includes(tag));
+    const hasFocusableElements = focusedTags.some((tag) =>
+      ["A", "BUTTON", "INPUT", "SELECT"].includes(tag),
+    );
     expect(hasFocusableElements).toBe(true);
   });
 

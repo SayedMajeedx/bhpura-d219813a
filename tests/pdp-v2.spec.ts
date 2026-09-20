@@ -4,7 +4,9 @@ test.describe("Product Detail Page 2.0 (PDP) Suite", () => {
   const sampleProductId = "ab6ec951-2032-480b-873b-b1da13bcbd02";
 
   test("renders product media, pricing, and details cleanly", async ({ page }) => {
-    await page.goto(`/pura/product/${sampleProductId}?preview=1&design=2`, { waitUntil: "domcontentloaded" });
+    await page.goto(`/pura/product/${sampleProductId}?preview=1&design=2`, {
+      waitUntil: "domcontentloaded",
+    });
     await page.waitForTimeout(1500);
 
     // Verify main product heading
@@ -12,7 +14,7 @@ test.describe("Product Detail Page 2.0 (PDP) Suite", () => {
     await expect(title).toBeVisible();
 
     // Verify price element
-    const price = page.locator('text=/BHD|BD|د.ب|\\d+(\\.\\d{2,3})?/i').first();
+    const price = page.locator("text=/BHD|BD|د.ب|\\d+(\\.\\d{2,3})?/i").first();
     await expect(price).toBeVisible();
 
     // Verify product image or gallery container
@@ -21,11 +23,13 @@ test.describe("Product Detail Page 2.0 (PDP) Suite", () => {
   });
 
   test("renders ProductAccordion with expandable information sections", async ({ page }) => {
-    await page.goto(`/pura/product/${sampleProductId}?preview=1&design=2`, { waitUntil: "domcontentloaded" });
+    await page.goto(`/pura/product/${sampleProductId}?preview=1&design=2`, {
+      waitUntil: "domcontentloaded",
+    });
     await page.waitForTimeout(1500);
 
     // Find accordion trigger buttons
-    const accordionTriggers = page.locator('button[aria-expanded], [data-accordion] button');
+    const accordionTriggers = page.locator("button[aria-expanded], [data-accordion] button");
     const count = await accordionTriggers.count();
 
     if (count > 0) {
@@ -47,7 +51,9 @@ test.describe("Product Detail Page 2.0 (PDP) Suite", () => {
 
   test("supports mobile viewport with responsive layout", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto(`/pura/product/${sampleProductId}?preview=1&design=2`, { waitUntil: "domcontentloaded" });
+    await page.goto(`/pura/product/${sampleProductId}?preview=1&design=2`, {
+      waitUntil: "domcontentloaded",
+    });
     await page.waitForTimeout(1500);
 
     const title = page.locator("h1").first();

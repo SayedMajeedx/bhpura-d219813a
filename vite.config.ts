@@ -94,7 +94,7 @@ export default defineConfig({
             ? envConfig.optimizeDeps.entries
             : [envConfig.optimizeDeps.entries];
           envConfig.optimizeDeps.entries = entries.filter(
-            (entry: string) => typeof entry === "string" && !entry.includes("router")
+            (entry: string) => typeof entry === "string" && !entry.includes("router"),
           );
         }
       },

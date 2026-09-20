@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("HeroV2 Video Fallback & Contrast Suite", () => {
-  test("renders gracefully and does not collapse when video media fails to load", async ({ page }) => {
+  test("renders gracefully and does not collapse when video media fails to load", async ({
+    page,
+  }) => {
     // Abort video media requests to simulate CDN or network failure
     await page.route(/\.(mp4|webm|ogg)$/i, (route) => route.abort());
 
@@ -37,7 +39,9 @@ test.describe("HeroV2 Video Fallback & Contrast Suite", () => {
       if (!h1) return false;
       const section = h1.closest("section");
       if (!section) return false;
-      const scrim = section.querySelector('[class*="bg-black"], [class*="bg-gradient"], [class*="scrim"], [class*="opacity"]');
+      const scrim = section.querySelector(
+        '[class*="bg-black"], [class*="bg-gradient"], [class*="scrim"], [class*="opacity"]',
+      );
       return !!scrim || window.getComputedStyle(section).backgroundColor !== "rgba(0, 0, 0, 0)";
     });
 

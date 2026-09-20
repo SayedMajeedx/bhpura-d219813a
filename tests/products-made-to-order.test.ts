@@ -121,8 +121,10 @@ describe("Phase 3: Explicit is_made_to_order flag & inventory decoupling", () =>
     });
 
     it("shows custom tailoring banner when item location is custom or manual", () => {
-      expect(orderDetails).toContain('it.location === "custom" ||');
-      expect(orderDetails).toContain(
+      // Whitespace-insensitive: Prettier may wrap the condition across lines.
+      const normalized = orderDetails.replace(/\s+/g, " ");
+      expect(normalized).toContain('it.location === "custom" ||');
+      expect(normalized).toContain(
         '(!it.product_id || it.location === "custom" || it.variant_id === "custom") && (',
       );
     });
