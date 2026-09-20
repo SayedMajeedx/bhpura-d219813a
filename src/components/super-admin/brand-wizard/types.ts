@@ -21,6 +21,8 @@ export interface BrandWizardData {
   backgroundColor: string;
   textColor: string;
   mood: PaletteMood;
+  /** Whether the current palette came from the uploaded logo or manual edits. */
+  paletteSource: "logo" | "manual";
   fontPreset: FontMoodPreset;
   radius: string;
 

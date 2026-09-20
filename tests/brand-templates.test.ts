@@ -19,7 +19,7 @@ describe("Brand Vertical Templates Registry", () => {
       const template = BRAND_TEMPLATES[vertical];
       expect(
         validPresetIds.has(template.fontPresetId),
-        `Template ${vertical} has invalid fontPresetId: ${template.fontPresetId}`
+        `Template ${vertical} has invalid fontPresetId: ${template.fontPresetId}`,
       ).toBe(true);
       expect(template.fontAr).toBeTruthy();
       expect(template.fontEn).toBeTruthy();

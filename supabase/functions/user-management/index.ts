@@ -273,50 +273,78 @@ async function handleProvisionBrand(supabase: any, body: any) {
     );
     if (provisionalProfileError) throw provisionalProfileError;
 
-    const storeVertical = String(body.store_vertical ?? "general").trim().toLowerCase();
-    const storefrontAccentColor = String(body.storefront_accent_color ?? body.primary_color ?? "#1c1917").trim();
-    const storefrontBackgroundColor = String(body.storefront_background_color ?? "#ffffff").trim();
-    const brandPalette = body.brand_palette && typeof body.brand_palette === "object" ? body.brand_palette : {};
+    const VALID_VERTICALS = [
+      "abayas",
+      "fashion",
+      "beauty",
+      "coffee",
+      "food",
+      "gifts",
+      "print",
+      "jewelry",
+      "home",
+      "electronics",
+      "digital",
+      "general",
+    ];
+    const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+    const storeVertical = String(body.store_vertical ?? "general")
+      .trim()
+      .toLowerCase();
+    if (!VALID_VERTICALS.includes(storeVertical)) {
+      return jsonError("Invalid store vertical", 400);
+    }
+    const rawAccent = String(
+      body.storefront_accent_color ?? body.primary_color ?? "#800020",
+    ).trim();
+    const rawBackground = String(body.storefront_background_color ?? "#ffffff").trim();
+    if (!HEX_COLOR.test(rawAccent) || !HEX_COLOR.test(rawBackground)) {
+      return jsonError("Colours must be 6-digit hex values", 400);
+    }
+    const storefrontAccentColor = rawAccent.toLowerCase();
+    const storefrontBackgroundColor = rawBackground.toLowerCase();
+    const brandPalette =
+      body.brand_palette && typeof body.brand_palette === "object" ? body.brand_palette : {};
     const storefrontFontAr = String(body.storefront_font_ar ?? "Tajawal").trim();
     const storefrontFontEn = String(body.storefront_font_en ?? "Inter").trim();
     const storefrontRadius = String(body.storefront_radius ?? "0.5rem").trim();
-    const templateDefaults = body.template_defaults && typeof body.template_defaults === "object" ? body.template_defaults : {};
+    const templateDefaults =
+      body.template_defaults && typeof body.template_defaults === "object"
+        ? body.template_defaults
+        : {};
 
     let provisionedBrandId: string | null = null;
     let provisionError: any = null;
 
-    const rpcV2Result = await supabase.rpc(
-      "create_tenant_with_defaults_v2",
-      {
+    const rpcV2Result = await supabase.rpc("create_tenant_with_defaults_v2", {
+      p_slug: slug,
+      p_name_en: nameEn,
+      p_name_ar: nameAr,
+      p_owner_id: ownerId,
+      p_business_type: String(body.business_type ?? "Fashion"),
+      p_store_vertical: storeVertical,
+      p_storefront_accent_color: storefrontAccentColor,
+      p_storefront_background_color: storefrontBackgroundColor,
+      p_brand_palette: brandPalette,
+      p_storefront_font_ar: storefrontFontAr,
+      p_storefront_font_en: storefrontFontEn,
+      p_storefront_radius: storefrontRadius,
+      p_template_defaults: templateDefaults,
+    });
+
+    if (
+      rpcV2Result.error &&
+      rpcV2Result.error.message?.includes("create_tenant_with_defaults_v2")
+    ) {
+      // Fallback for backward compatibility
+      const rpcV1Result = await supabase.rpc("create_tenant_with_defaults", {
         p_slug: slug,
         p_name_en: nameEn,
         p_name_ar: nameAr,
+        p_primary_color: storefrontAccentColor,
         p_owner_id: ownerId,
         p_business_type: String(body.business_type ?? "Fashion"),
-        p_store_vertical: storeVertical,
-        p_storefront_accent_color: storefrontAccentColor,
-        p_storefront_background_color: storefrontBackgroundColor,
-        p_brand_palette: brandPalette,
-        p_storefront_font_ar: storefrontFontAr,
-        p_storefront_font_en: storefrontFontEn,
-        p_storefront_radius: storefrontRadius,
-        p_template_defaults: templateDefaults,
-      },
-    );
-
-    if (rpcV2Result.error && rpcV2Result.error.message?.includes("create_tenant_with_defaults_v2")) {
-      // Fallback for backward compatibility
-      const rpcV1Result = await supabase.rpc(
-        "create_tenant_with_defaults",
-        {
-          p_slug: slug,
-          p_name_en: nameEn,
-          p_name_ar: nameAr,
-          p_primary_color: storefrontAccentColor,
-          p_owner_id: ownerId,
-          p_business_type: String(body.business_type ?? "Fashion"),
-        },
-      );
+      });
       provisionedBrandId = rpcV1Result.data;
       provisionError = rpcV1Result.error;
     } else {
@@ -439,7 +467,13 @@ async function handleCreate(
     }
   }
   // Every non-platform role must have a brand.
-  if ((userRole === "brand_admin" || userRole === "admin" || userRole === "staff" || userRole === "courier") && !brand_id) {
+  if (
+    (userRole === "brand_admin" ||
+      userRole === "admin" ||
+      userRole === "staff" ||
+      userRole === "courier") &&
+    !brand_id
+  ) {
     return new Response(JSON.stringify({ error: "brand_id is required for this role" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

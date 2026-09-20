@@ -1,10 +1,7 @@
 import * as React from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import {
-  FONT_MOOD_PRESETS,
-  type FontMoodPreset,
-} from "@/components/settings/QuickThemeCustomizer";
+import { FONT_MOOD_PRESETS, type FontMoodPreset } from "@/components/settings/QuickThemeCustomizer";
 import {
   extractLogoPalette,
   derivePalette,
@@ -35,6 +32,7 @@ export function StepPalette({ data, onChange, isAr }: StepPaletteProps) {
         logoFile: file,
         logoPreviewUrl: previewUrl,
         palette,
+        paletteSource: "logo",
         accentColor: palette.primary,
         secondaryColor: palette.secondary,
         textColor: palette.text,
@@ -74,9 +72,7 @@ export function StepPalette({ data, onChange, isAr }: StepPaletteProps) {
     <div className="space-y-6">
       {/* Logo Upload Section */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium">
-          {isAr ? "شعار البراند (Logo)" : "Brand Logo"}
-        </Label>
+        <Label className="text-sm font-medium">{isAr ? "شعار البراند (Logo)" : "Brand Logo"}</Label>
         <div
           onClick={() => fileInputRef.current?.click()}
           className="border-2 border-dashed border-border hover:border-primary/60 rounded-xl p-5 text-center cursor-pointer transition-colors bg-muted/20 hover:bg-muted/40"
@@ -109,8 +105,8 @@ export function StepPalette({ data, onChange, isAr }: StepPaletteProps) {
                       ? "جاري استخراج لوحة الألوان..."
                       : "Extracting color palette..."
                     : isAr
-                    ? "انقر لاستبدال الشعار واستخراج الألوان مجدداً"
-                    : "Click to change logo and re-extract colors"}
+                      ? "انقر لاستبدال الشعار واستخراج الألوان مجدداً"
+                      : "Click to change logo and re-extract colors"}
                 </p>
               </div>
             </div>
@@ -120,7 +116,9 @@ export function StepPalette({ data, onChange, isAr }: StepPaletteProps) {
                 <Upload className="h-5 w-5" />
               </div>
               <p className="text-sm font-medium text-foreground">
-                {isAr ? "اسحب وأفلت الشعار هنا أو انقر للاختيار" : "Drop logo here or click to browse"}
+                {isAr
+                  ? "اسحب وأفلت الشعار هنا أو انقر للاختيار"
+                  : "Drop logo here or click to browse"}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 {isAr
@@ -141,20 +139,22 @@ export function StepPalette({ data, onChange, isAr }: StepPaletteProps) {
           </Label>
 
           {/* Mood Selector */}
-          <div className="flex items-center gap-1 bg-muted p-0.5 rounded-lg border border-border/60">
+          <div className="flex items-center gap-1 bg-muted p-0.5 rounded-lg border border-border">
             {(["dominant", "muted", "bold"] as PaletteMood[]).map((m) => (
-              <button
+              <Button
                 key={m}
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => handleMoodChange(m)}
-                className={`text-xs px-2.5 py-1 rounded-md transition-all capitalize font-medium ${
+                className={`h-auto rounded-md text-xs px-2.5 py-1 rounded-md transition-all capitalize font-medium ${
                   data.mood === m
                     ? "bg-background text-foreground shadow-xs font-semibold"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {isAr ? (m === "dominant" ? "أساسي" : m === "muted" ? "هادئ" : "جريء") : m}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -177,6 +177,7 @@ export function StepPalette({ data, onChange, isAr }: StepPaletteProps) {
                     accentColor: val,
                     textColor: derived.text,
                     palette: derived,
+                    paletteSource: "manual",
                   });
                 }}
                 className="h-8 w-10 rounded border border-border cursor-pointer p-0.5 bg-background"
@@ -246,15 +247,15 @@ export function StepPalette({ data, onChange, isAr }: StepPaletteProps) {
         <div
           className={`flex items-center justify-between p-2.5 rounded-lg border text-xs ${
             isContrastPass
-              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400"
-              : "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400"
+              ? "bg-success/10 border-success/30 text-success"
+              : "bg-warning/10 border-warning/30 text-warning"
           }`}
         >
           <div className="flex items-center gap-1.5">
             {isContrastPass ? (
-              <Check className="h-4 w-4 shrink-0 text-emerald-600" />
+              <Check className="h-4 w-4 shrink-0 text-success" />
             ) : (
-              <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
+              <AlertCircle className="h-4 w-4 shrink-0 text-warning" />
             )}
             <span>
               {isContrastPass
@@ -262,19 +263,21 @@ export function StepPalette({ data, onChange, isAr }: StepPaletteProps) {
                   ? `نسبة تباين ممتازة (${contrast}:1) متوافقة مع معايير القراءة WCAG AA`
                   : `Passes WCAG AA readability (${contrast}:1)`
                 : isAr
-                ? `نسبة التباين منخفضة (${contrast}:1) قد تصعّب قراءة النصوص`
-                : `Low contrast (${contrast}:1) may affect readability`}
+                  ? `نسبة التباين منخفضة (${contrast}:1) قد تصعّب قراءة النصوص`
+                  : `Low contrast (${contrast}:1) may affect readability`}
             </span>
           </div>
 
           {!isContrastPass && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={handleFixContrast}
-              className="text-xs underline font-semibold hover:opacity-80 shrink-0"
+              className="h-auto rounded-md text-xs underline font-semibold hover:opacity-80 shrink-0"
             >
               {isAr ? "تصحيح تلقائي" : "Auto-fix"}
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -288,11 +291,13 @@ export function StepPalette({ data, onChange, isAr }: StepPaletteProps) {
           {FONT_MOOD_PRESETS.map((preset) => {
             const isSelected = data.fontPreset.id === preset.id;
             return (
-              <button
+              <Button
                 key={preset.id}
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => onChange({ fontPreset: preset })}
-                className={`p-2.5 rounded-xl border text-start transition-all ${
+                className={`h-auto rounded-md p-2.5 rounded-xl border text-start transition-all ${
                   isSelected
                     ? "border-primary bg-primary/10 ring-1 ring-primary shadow-xs"
                     : "border-border bg-card hover:bg-muted/40"
@@ -301,10 +306,10 @@ export function StepPalette({ data, onChange, isAr }: StepPaletteProps) {
                 <div className="font-semibold text-xs text-foreground">
                   {isAr ? preset.labelAr : preset.labelEn}
                 </div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">
+                <div className="text-xs text-muted-foreground mt-0.5">
                   {preset.fontAr} / {preset.fontEn}
                 </div>
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -324,11 +329,13 @@ export function StepPalette({ data, onChange, isAr }: StepPaletteProps) {
           ].map((r) => {
             const isSelected = data.radius === r.id;
             return (
-              <button
+              <Button
                 key={r.id}
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => onChange({ radius: r.id })}
-                className={`p-2 rounded-xl border text-center transition-all ${
+                className={`h-auto rounded-md p-2 rounded-xl border text-center transition-all ${
                   isSelected
                     ? "border-primary bg-primary/10 ring-1 ring-primary font-medium"
                     : "border-border bg-card hover:bg-muted/40"
@@ -337,7 +344,7 @@ export function StepPalette({ data, onChange, isAr }: StepPaletteProps) {
                 <div className="text-xs text-foreground font-medium">
                   {isAr ? r.labelAr : r.labelEn}
                 </div>
-              </button>
+              </Button>
             );
           })}
         </div>

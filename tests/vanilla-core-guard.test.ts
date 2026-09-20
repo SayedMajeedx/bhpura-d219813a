@@ -136,7 +136,9 @@ describe("Vanilla Core Guard Tests", () => {
           relPath.startsWith(path.normalize("src/lib/addons/")) ||
           relPath.startsWith(path.normalize("src/addons/")) ||
           // 2. Canonical store profile definition where vertical keys are defined
-          relPath.endsWith("store-profile.ts")
+          relPath.endsWith("store-profile.ts") ||
+          // 3. Per-vertical brand templates: vertical-specific defaults live here by design
+          relPath.startsWith(path.normalize("src/lib/brand-templates/"))
         ) {
           continue;
         }

@@ -37,6 +37,22 @@ export const VERTICAL_MODULE_DEFAULTS: Record<StoreVertical, StoreModules> = {
   general: { size_guide: false, fit_passport: false, made_to_order: false },
 };
 
+/** lucide-react icon name per vertical (kept here so UI files stay vertical-agnostic). */
+export const VERTICAL_ICON_NAMES: Record<StoreVertical, string> = {
+  abayas: "Sparkles",
+  fashion: "Shirt",
+  beauty: "Flower2",
+  coffee: "Coffee",
+  food: "Utensils",
+  gifts: "Gift",
+  print: "Printer",
+  jewelry: "Gem",
+  home: "Home",
+  electronics: "Smartphone",
+  digital: "FileCode",
+  general: "Store",
+};
+
 export const VERTICAL_LABELS: Record<StoreVertical, { ar: string; en: string }> = {
   abayas: { ar: "عبايات", en: "Abayas" },
   fashion: { ar: "أزياء", en: "Fashion" },

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useStorefront } from "@/lib/storefront-context";
-import { supabase } from "@/integrations/supabase/client";
+import { createBackInStockRequest } from "@/lib/storefront-leads.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,10 +65,15 @@ export function NotifyMeForm({
       return;
     }
 
-    // Rate-limiting check in localStorage
-    const rateLimitKey = `notify_req_${productId}_${variantId || "all"}`;
-    const recent = sessionStorage.getItem(rateLimitKey);
-    if (recent) {
+    // Idempotency hint only (real rate limiting happens server-side).
+    const submittedKey = `notify_req_${productId}_${variantId || "all"}`;
+    let alreadySubmitted = false;
+    try {
+      alreadySubmitted = Boolean(sessionStorage.getItem(submittedKey));
+    } catch {
+      // sessionStorage can be unavailable (private mode) — continue.
+    }
+    if (alreadySubmitted) {
       setSubmitted(true);
       toast.success(
         isAr
@@ -80,21 +85,22 @@ export function NotifyMeForm({
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.from("back_in_stock_requests").insert({
-        brand_id: brandId,
-        product_id: productId,
-        variant_id: variantId || null,
-        channel,
-        contact: val,
-        lang,
+      await createBackInStockRequest({
+        data: {
+          brandId,
+          productId,
+          variantId: variantId || null,
+          channel,
+          contact: val,
+          lang: lang === "ar" ? "ar" : "en",
+        },
       });
 
-      if (error) {
-        // Table may be protected or insert succeeded
-        console.warn("Back in stock insert response:", error);
+      try {
+        sessionStorage.setItem(submittedKey, Date.now().toString());
+      } catch {
+        // ignore storage failures
       }
-
-      sessionStorage.setItem(rateLimitKey, Date.now().toString());
       setSubmitted(true);
       toast.success(
         isAr
@@ -102,8 +108,15 @@ export function NotifyMeForm({
           : "Notification request saved! We'll notify you once available.",
       );
     } catch (err: any) {
+      const code = String(err?.message ?? "");
       toast.error(
-        err?.message || (isAr ? "حدث خطأ أثناء حفظ الطلب" : "Failed to register request"),
+        code.includes("RATE_LIMITED")
+          ? isAr
+            ? "محاولات كثيرة، حاول لاحقاً"
+            : "Too many attempts, please try again later"
+          : isAr
+            ? "حدث خطأ أثناء حفظ الطلب"
+            : "Failed to register request",
       );
     } finally {
       setSubmitting(false);
@@ -146,7 +159,7 @@ export function NotifyMeForm({
           <h4 className="text-xs sm:text-sm font-semibold text-foreground">
             {isAr ? "المنتج غير متوفر حالياً؟" : "Item currently out of stock?"}
           </h4>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {isAr
               ? "أدخل بياناتك لنُرسل لك إشعاراً فور إعادة توفيره."
               : "Enter your contact info to be notified the moment it's back."}
@@ -193,7 +206,13 @@ export function NotifyMeForm({
         {/* Input */}
         <div>
           <Label htmlFor="notify-contact-input" className="sr-only">
-            {channel === "whatsapp" ? (isAr ? "رقم واتساب" : "WhatsApp Number") : isAr ? "البريد الإلكتروني" : "Email Address"}
+            {channel === "whatsapp"
+              ? isAr
+                ? "رقم واتساب"
+                : "WhatsApp Number"
+              : isAr
+                ? "البريد الإلكتروني"
+                : "Email Address"}
           </Label>
           <Input
             id="notify-contact-input"
@@ -221,11 +240,7 @@ export function NotifyMeForm({
           disabled={submitting}
           className="w-full h-10 text-xs sm:text-sm font-semibold gap-1.5"
         >
-          {submitting ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <Bell className="size-4" />
-          )}
+          {submitting ? <Loader2 className="size-4 animate-spin" /> : <Bell className="size-4" />}
           <span>{isAr ? "أشعرني عند التوفر" : "Notify Me When Available"}</span>
         </Button>
       </form>

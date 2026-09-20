@@ -33,7 +33,7 @@ export function StepReview({ data, isAr }: StepReviewProps) {
           borderRadius: data.radius || "0.5rem",
         }}
       >
-        <div className="flex items-center justify-between pb-4 border-b border-border/40">
+        <div className="flex items-center justify-between pb-4 border-b border-border">
           <div className="flex items-center gap-3">
             {data.logoPreviewUrl ? (
               <img
@@ -53,9 +53,7 @@ export function StepReview({ data, isAr }: StepReviewProps) {
               <div className="font-bold text-base leading-tight">
                 {isAr ? data.name_ar || data.name_en : data.name_en}
               </div>
-              <div className="text-xs opacity-75 font-mono">
-                boutq.app/{data.slug}
-              </div>
+              <div className="text-xs opacity-75 font-mono">boutq.app/{data.slug}</div>
             </div>
           </div>
 
@@ -76,8 +74,12 @@ export function StepReview({ data, isAr }: StepReviewProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="opacity-75">{isAr ? "الأقسام الافتراضية:" : "Starter categories:"}</span>
-            <span className="font-semibold">{template.categories.length} {isAr ? "أقسام" : "categories"}</span>
+            <span className="opacity-75">
+              {isAr ? "الأقسام الافتراضية:" : "Starter categories:"}
+            </span>
+            <span className="font-semibold">
+              {template.categories.length} {isAr ? "أقسام" : "categories"}
+            </span>
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -155,8 +157,8 @@ export function StepReview({ data, isAr }: StepReviewProps) {
                     ? "اشتراك سنوي نشط"
                     : "Annual Active"
                   : isAr
-                  ? "فترة تجريبية"
-                  : "Trial"}
+                    ? "فترة تجريبية"
+                    : "Trial"}
               </span>
             </div>
             <div className="flex justify-between">
@@ -167,8 +169,8 @@ export function StepReview({ data, isAr }: StepReviewProps) {
                     ? "تجهيز تلقائي"
                     : "Auto-provision"
                   : isAr
-                  ? "غير مفعل"
-                  : "Disabled"}
+                    ? "غير مفعل"
+                    : "Disabled"}
               </span>
             </div>
           </div>

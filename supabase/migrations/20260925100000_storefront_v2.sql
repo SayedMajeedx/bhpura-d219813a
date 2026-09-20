@@ -49,16 +49,15 @@ CREATE TABLE IF NOT EXISTS public.newsletter_subscribers (
 
 ALTER TABLE public.newsletter_subscribers ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "anon insert newsletter subscribers"
-ON public.newsletter_subscribers FOR INSERT TO anon, authenticated
-WITH CHECK (brand_id IS NOT NULL);
+-- Writes come only through the server function (service role) with rate limiting;
+-- the browser never inserts directly, so no anon INSERT policy is granted.
 
 CREATE POLICY "brand staff manage newsletter subscribers"
 ON public.newsletter_subscribers FOR ALL TO authenticated
 USING (public.can_access_brand(brand_id))
 WITH CHECK (public.can_access_brand(brand_id));
 
-GRANT SELECT, INSERT ON public.newsletter_subscribers TO anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.newsletter_subscribers TO authenticated;
 GRANT ALL ON public.newsletter_subscribers TO service_role;
 
 -- 3. Create back_in_stock_requests table
@@ -76,16 +75,14 @@ CREATE TABLE IF NOT EXISTS public.back_in_stock_requests (
 
 ALTER TABLE public.back_in_stock_requests ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "anon insert back in stock requests"
-ON public.back_in_stock_requests FOR INSERT TO anon, authenticated
-WITH CHECK (brand_id IS NOT NULL AND product_id IS NOT NULL);
+-- Writes come only through the server function (service role) with rate limiting.
 
 CREATE POLICY "brand staff manage back in stock requests"
 ON public.back_in_stock_requests FOR ALL TO authenticated
 USING (public.can_access_brand(brand_id))
 WITH CHECK (public.can_access_brand(brand_id));
 
-GRANT SELECT, INSERT ON public.back_in_stock_requests TO anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.back_in_stock_requests TO authenticated;
 GRANT ALL ON public.back_in_stock_requests TO service_role;
 
 -- 4. Recreate brand_public_settings view

@@ -44,9 +44,7 @@ export function StepAdminPlan({ data, onChange, isAr }: StepAdminPlanProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="owner-email">
-              {isAr ? "البريد الإلكتروني *" : "Email Address *"}
-            </Label>
+            <Label htmlFor="owner-email">{isAr ? "البريد الإلكتروني *" : "Email Address *"}</Label>
             <Input
               id="owner-email"
               type="email"
@@ -59,9 +57,7 @@ export function StepAdminPlan({ data, onChange, isAr }: StepAdminPlanProps) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="owner-phone">
-              {isAr ? "رقم الهاتف" : "Phone Number"}
-            </Label>
+            <Label htmlFor="owner-phone">{isAr ? "رقم الهاتف" : "Phone Number"}</Label>
             <Input
               id="owner-phone"
               placeholder="+973 3900 0000"
@@ -75,14 +71,16 @@ export function StepAdminPlan({ data, onChange, isAr }: StepAdminPlanProps) {
               <Label htmlFor="owner-password">
                 {isAr ? "كلمة المرور المؤقتة *" : "Temporary Password *"}
               </Label>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={generateRandomPassword}
-                className="text-xs text-primary hover:underline flex items-center gap-1 font-medium"
+                className="h-auto rounded-md text-xs text-primary hover:underline flex items-center gap-1 font-medium"
               >
                 <KeyRound className="h-3 w-3" />
                 {isAr ? "توليد كلمة سر" : "Generate"}
-              </button>
+              </Button>
             </div>
             <Input
               id="owner-password"
@@ -100,10 +98,12 @@ export function StepAdminPlan({ data, onChange, isAr }: StepAdminPlanProps) {
           {isAr ? "نوع الاشتراك (Plan Type)" : "Subscription Plan"}
         </Label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => onChange({ plan_type: "annual" })}
-            className={`p-3.5 rounded-xl border text-start transition-all flex items-start gap-3 ${
+            className={`h-auto rounded-md p-3.5 rounded-xl border text-start transition-all flex items-start gap-3 ${
               data.plan_type === "annual"
                 ? "border-primary bg-primary/10 ring-1 ring-primary shadow-xs"
                 : "border-border bg-card hover:bg-muted/40"
@@ -122,12 +122,14 @@ export function StepAdminPlan({ data, onChange, isAr }: StepAdminPlanProps) {
                   : "Immediate 1-year activation for all platform modules."}
               </p>
             </div>
-          </button>
+          </Button>
 
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => onChange({ plan_type: "trial" })}
-            className={`p-3.5 rounded-xl border text-start transition-all flex items-start gap-3 ${
+            className={`h-auto rounded-md p-3.5 rounded-xl border text-start transition-all flex items-start gap-3 ${
               data.plan_type === "trial"
                 ? "border-primary bg-primary/10 ring-1 ring-primary shadow-xs"
                 : "border-border bg-card hover:bg-muted/40"
@@ -146,7 +148,7 @@ export function StepAdminPlan({ data, onChange, isAr }: StepAdminPlanProps) {
                   : "Limited free trial period to evaluate the store OS."}
               </p>
             </div>
-          </button>
+          </Button>
         </div>
       </div>
 

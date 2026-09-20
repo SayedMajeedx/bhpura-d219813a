@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useStorefront } from "@/lib/storefront-context";
-import { publicSupabase as supabase } from "@/integrations/supabase/client";
+import { subscribeToNewsletter } from "@/lib/storefront-leads.functions";
 import { toast } from "sonner";
 import { Send, CheckCircle2, MessageCircle, Mail } from "lucide-react";
 
@@ -51,32 +51,29 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.from("newsletter_subscribers").upsert(
-        {
-          brand_id: brand.id,
+      await subscribeToNewsletter({
+        data: {
+          brandId: brand.id,
           channel,
           contact: cleanContact,
-          lang,
+          lang: lang === "ar" ? "ar" : "en",
           source,
         },
-        { onConflict: "brand_id,channel,contact" },
+      });
+      setSuccess(true);
+      toast.success(
+        t(
+          "شكراً لاشتراككِ! سنوافيكِ بجديدنا دائماً",
+          "Thank you for subscribing! We will keep you updated.",
+        ),
       );
-
-      if (error) {
-        console.error("Newsletter subscription error:", error);
-        toast.error(t("حدث خطأ، يرجى المحاولة لاحقاً", "An error occurred, please try again"));
-      } else {
-        setSuccess(true);
-        toast.success(
-          t(
-            "شكراً لاشتراككِ! سنوافيكِ بجديدنا دائماً",
-            "Thank you for subscribing! We will keep you updated.",
-          ),
-        );
-      }
-    } catch (err) {
-      console.error("Newsletter submission failed:", err);
-      toast.error(t("حدث خطأ غير متوقع", "An unexpected error occurred"));
+    } catch (err: any) {
+      const code = String(err?.message ?? "");
+      toast.error(
+        code.includes("RATE_LIMITED")
+          ? t("محاولات كثيرة، حاولي لاحقاً", "Too many attempts, please try again later")
+          : t("حدث خطأ، يرجى المحاولة لاحقاً", "An error occurred, please try again"),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -84,11 +81,11 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
 
   if (success) {
     return (
-      <div className={`flex items-center gap-2 text-xs text-primary font-medium p-3 rounded-lg bg-primary/10 border border-primary/20 ${className}`}>
+      <div
+        className={`flex items-center gap-2 text-xs text-primary font-medium p-3 rounded-lg bg-primary/10 border border-primary/20 ${className}`}
+      >
         <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
-        <span>
-          {t("تم تسجيل اشتراككِ بنجاح!", "You have successfully subscribed!")}
-        </span>
+        <span>{t("تم تسجيل اشتراككِ بنجاح!", "You have successfully subscribed!")}</span>
       </div>
     );
   }
@@ -101,10 +98,12 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
 
       {/* Channel Selector Pills */}
       <div className="flex items-center gap-1.5 p-0.5 rounded-lg bg-black/10 border border-white/10 w-fit">
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => setChannel("whatsapp")}
-          className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all ${
+          className={`h-auto flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all hover:bg-white/10 ${
             channel === "whatsapp"
               ? "bg-white/20 text-white shadow-xs font-semibold"
               : "opacity-60 hover:opacity-100"
@@ -113,11 +112,13 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
         >
           <MessageCircle className="h-3 w-3" />
           <span>{t("واتساب", "WhatsApp")}</span>
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => setChannel("email")}
-          className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all ${
+          className={`h-auto flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all hover:bg-white/10 ${
             channel === "email"
               ? "bg-white/20 text-white shadow-xs font-semibold"
               : "opacity-60 hover:opacity-100"
@@ -126,7 +127,7 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
         >
           <Mail className="h-3 w-3" />
           <span>{t("بريد إلكتروني", "Email")}</span>
-        </button>
+        </Button>
       </div>
 
       {/* Input & Submit Form */}
@@ -142,7 +143,7 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
           onChange={(e) => setContact(e.target.value)}
           dir="ltr"
           required
-          className="h-9 text-xs bg-white/10 border-white/15 text-white placeholder:text-white/40 focus-visible:ring-1 focus-visible:ring-primary rounded-lg"
+          className="h-9 text-xs bg-white/10 border-white/15 text-white placeholder:text-white/40 focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
         />
         <Button
           type="submit"

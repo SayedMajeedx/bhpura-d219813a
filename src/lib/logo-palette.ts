@@ -177,7 +177,11 @@ export function getContrastRatio(color1: string, color2: string): number {
 /**
  * Adjusts foreground color lightness until it satisfies minimum WCAG contrast against background (default 4.5:1 for AA body text).
  */
-export function ensureContrast(foreground: string, background: string, minRatio: number = 4.5): string {
+export function ensureContrast(
+  foreground: string,
+  background: string,
+  minRatio: number = 4.5,
+): string {
   const currentRatio = getContrastRatio(foreground, background);
   if (currentRatio >= minRatio) {
     return normalizeHex(foreground);
@@ -257,7 +261,7 @@ export function adjustMood(hex: string, mood: PaletteMood): string {
  */
 export function quantizePixels(
   pixels: Uint8ClampedArray | number[],
-  maxColors: number = 8
+  maxColors: number = 8,
 ): { color: string; count: number; rgb: RGB }[] {
   const binMap = new Map<number, { rSum: number; gSum: number; bSum: number; count: number }>();
   const totalPixels = pixels.length / 4;
@@ -335,9 +339,9 @@ export function quantizePixels(
 export function derivePalette(
   primaryInput: string,
   secondaryInput?: string,
-  mood: PaletteMood = "dominant"
+  mood: PaletteMood = "dominant",
 ): ExtractedPalette {
-  let primary = adjustMood(primaryInput || "#1c1917", mood);
+  const primary = adjustMood(primaryInput || "#1c1917", mood);
   const primaryRgb = hexToRgb(primary);
   const primaryHsl = rgbToHsl(primaryRgb.r, primaryRgb.g, primaryRgb.b);
 
@@ -383,7 +387,7 @@ export function extractPaletteFromImageData(
   data: Uint8ClampedArray | number[],
   width: number,
   height: number,
-  mood: PaletteMood = "dominant"
+  mood: PaletteMood = "dominant",
 ): ExtractedPalette {
   const clusters = quantizePixels(data, 10);
 
@@ -433,7 +437,7 @@ export function extractPaletteFromImageData(
  */
 export async function extractLogoPalette(
   source: File | Blob | HTMLImageElement | string,
-  mood: PaletteMood = "dominant"
+  mood: PaletteMood = "dominant",
 ): Promise<ExtractedPalette> {
   if (typeof window === "undefined" || typeof document === "undefined") {
     // SSR / Node fallback
@@ -472,7 +476,12 @@ export async function extractLogoPalette(
 
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const palette = extractPaletteFromImageData(imageData.data, canvas.width, canvas.height, mood);
+        const palette = extractPaletteFromImageData(
+          imageData.data,
+          canvas.width,
+          canvas.height,
+          mood,
+        );
         resolve(palette);
       } catch (err) {
         console.warn("Failed to extract palette from image canvas, using fallback:", err);

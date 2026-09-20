@@ -69,7 +69,31 @@ CREATE TRIGGER trg_business_settings_sync_brand_primary_color
   FOR EACH ROW
   EXECUTE FUNCTION public.sync_business_settings_brand_primary_color();
 
--- 4. Backfill existing records
+-- 4. Backfill existing records (order matters — never change an existing brand's invoice colour)
+-- 4a. Brands that never set a storefront accent inherit the brand colour they already show.
+UPDATE public.business_settings bs
+SET storefront_accent_color = b.primary_color
+FROM public.brands b
+WHERE b.id = bs.brand_id
+  AND bs.storefront_accent_color IS NULL
+  AND b.primary_color IS NOT NULL;
+
+-- 4b. Preserve intentional differences: an invoice colour that already differs from the
+--     storefront accent must NOT be overwritten — mark it as independent first.
+UPDATE public.business_settings
+SET invoice_inherit_brand_color = false
+WHERE storefront_accent_color IS NOT NULL
+  AND primary_color IS NOT NULL
+  AND lower(primary_color) IS DISTINCT FROM lower(storefront_accent_color);
+
+-- 4c. Same for fonts: a custom invoice font stays independent.
+UPDATE public.business_settings
+SET invoice_inherit_brand_font = false
+WHERE font_family IS NOT NULL
+  AND font_family NOT IN ('', 'Inter', 'Cormorant Garamond')
+  AND font_family IS DISTINCT FROM storefront_font_en;
+
+-- 4d. Now sync brands.primary_color (display-only mirror) with the storefront accent.
 UPDATE public.brands b
 SET primary_color = bs.storefront_accent_color
 FROM public.business_settings bs
@@ -77,6 +101,7 @@ WHERE bs.brand_id = b.id
   AND bs.storefront_accent_color IS NOT NULL
   AND b.primary_color IS DISTINCT FROM bs.storefront_accent_color;
 
+-- 4e. Invoice colour inherits only where it was already identical (inherit flag still true).
 UPDATE public.business_settings
 SET primary_color = storefront_accent_color
 WHERE invoice_inherit_brand_color = true

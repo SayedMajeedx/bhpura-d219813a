@@ -14,6 +14,8 @@ import { provisionBrandWithOwner } from "@/lib/brand-provisioning";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { finalizeBrandSetup } from "@/lib/brand-wizard.functions";
 import { getBrandTemplate } from "@/lib/brand-templates";
+import { derivePalette } from "@/lib/logo-palette";
+import { paletteToSettingsPatch } from "@/lib/brand-palette-apply";
 import { FONT_MOOD_PRESETS } from "@/components/settings/QuickThemeCustomizer";
 
 import type { BrandWizardData, WizardStep, PipelineStepStatus } from "./types";
@@ -57,6 +59,7 @@ const INITIAL_DATA: BrandWizardData = {
   backgroundColor: "#ffffff",
   textColor: "#18181b",
   mood: "dominant",
+  paletteSource: "manual",
   fontPreset: FONT_MOOD_PRESETS[1], // Modern
   radius: "0.5rem",
   owner_name: "",
@@ -99,8 +102,8 @@ export function BrandWizardDialog({ onSaved, onClose }: BrandWizardDialogProps) 
     },
     {
       id: "finalize",
-      labelAr: "تثبيت الأقسام الافتراضية للنشاط وتحديث الواجهة",
-      labelEn: "Installing vertical categories and theme settings",
+      labelAr: "تثبيت إضافات حزمة البداية والأقسام الافتراضية وتطبيق المظهر",
+      labelEn: "Installing starter add-ons, default categories and the new look",
       status: "idle",
     },
     {
@@ -119,12 +122,10 @@ export function BrandWizardDialog({ onSaved, onClose }: BrandWizardDialogProps) 
   const updatePipelineStep = (
     stepId: PipelineStepStatus["id"],
     status: PipelineStepStatus["status"],
-    errorMessage?: string
+    errorMessage?: string,
   ) => {
     setPipelineSteps((prev) =>
-      prev.map((step) =>
-        step.id === stepId ? { ...step, status, errorMessage } : step
-      )
+      prev.map((step) => (step.id === stepId ? { ...step, status, errorMessage } : step)),
     );
   };
 
@@ -139,7 +140,7 @@ export function BrandWizardDialog({ onSaved, onClose }: BrandWizardDialogProps) 
         toast.error(
           isAr
             ? "معرّف الرابط (Slug) غير صالح — أحرف إنجليزية صغيرة وأرقام وشرطات فقط"
-            : "Invalid URL slug format"
+            : "Invalid URL slug format",
         );
         return false;
       }
@@ -163,7 +164,7 @@ export function BrandWizardDialog({ onSaved, onClose }: BrandWizardDialogProps) 
         toast.error(
           isAr
             ? "كلمة المرور يجب أن تتكون من 8 خانات على الأقل"
-            : "Password must be at least 8 characters"
+            : "Password must be at least 8 characters",
         );
         return false;
       }
@@ -252,7 +253,7 @@ export function BrandWizardDialog({ onSaved, onClose }: BrandWizardDialogProps) 
         updatePipelineStep(
           "upload_logo",
           "error",
-          err.message || "Failed to upload logo to storage"
+          err.message || "Failed to upload logo to storage",
         );
         // Note: brand is NOT deleted. Step can be retried!
       }
@@ -264,21 +265,29 @@ export function BrandWizardDialog({ onSaved, onClose }: BrandWizardDialogProps) 
     if (brandId) {
       updatePipelineStep("finalize", "running");
       try {
+        // Explicit derived palette + Storefront 2.0 defaults from the vertical template,
+        // so the brand is ready to sell without any manual settings work.
+        const template = getBrandTemplate(data.store_vertical);
+        const palette =
+          data.palette ?? derivePalette(data.accentColor, data.secondaryColor, data.mood);
+        const settingsPatch = {
+          ...paletteToSettingsPatch(palette, data.paletteSource),
+          storefront_design_version: 2,
+          storefront_radius: template.design?.radius ?? data.radius,
+        };
         await finalizeBrandSetup({
           data: {
             brandId,
             storeVertical: data.store_vertical,
             logoUrl: uploadedLogoUrl,
             faviconUrl: null,
+            settingsPatch,
+            installStarterPack: true,
           },
         });
         updatePipelineStep("finalize", "success");
       } catch (err: any) {
-        updatePipelineStep(
-          "finalize",
-          "error",
-          err.message || "Failed to configure starter pack"
-        );
+        updatePipelineStep("finalize", "error", err.message || "Failed to configure starter pack");
       }
     }
 
@@ -286,18 +295,13 @@ export function BrandWizardDialog({ onSaved, onClose }: BrandWizardDialogProps) 
     if (brandId && data.createMobileApp) {
       updatePipelineStep("mobile_app", "running");
       try {
-        const { error: appError } = await supabase.functions.invoke(
-          "provision-white-label-app",
-          { body: { brand_id: brandId, rebuild: false } }
-        );
+        const { error: appError } = await supabase.functions.invoke("provision-white-label-app", {
+          body: { brand_id: brandId, rebuild: false },
+        });
         if (appError) throw appError;
         updatePipelineStep("mobile_app", "success");
       } catch (err: any) {
-        updatePipelineStep(
-          "mobile_app",
-          "error",
-          err.message || "Mobile app provisioning pending"
-        );
+        updatePipelineStep("mobile_app", "error", err.message || "Mobile app provisioning pending");
       }
     } else {
       updatePipelineStep("mobile_app", "success");
@@ -322,7 +326,7 @@ Password: ${data.owner_password || "(as provided)"}`;
   return (
     <DialogContent className="max-w-3xl max-h-[92vh] overflow-hidden flex flex-col p-0 gap-0 border-border bg-background shadow-2xl rounded-2xl">
       {/* Header */}
-      <div className="p-6 pb-4 border-b border-border/80 bg-muted/10">
+      <div className="p-6 pb-4 border-b border-border bg-muted/10">
         <DialogHeader className="text-start">
           <div className="flex items-center gap-2 text-xs font-semibold text-primary mb-1">
             <Sparkles className="h-4 w-4" />
@@ -344,23 +348,24 @@ Password: ${data.owner_password || "(as provided)"}`;
             {STEPS.map((step, idx) => {
               const Icon = step.icon;
               const isCurrent = currentStep === step.id;
-              const isPassed =
-                STEPS.findIndex((s) => s.id === currentStep) > idx;
+              const isPassed = STEPS.findIndex((s) => s.id === currentStep) > idx;
 
               return (
-                <button
+                <Button
                   key={step.id}
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => {
                     if (isPassed) setCurrentStep(step.id);
                   }}
                   disabled={!isPassed && !isCurrent}
-                  className={`flex items-center gap-2 p-2 rounded-xl text-start transition-all border ${
+                  className={`h-auto rounded-md flex items-center gap-2 p-2 rounded-xl text-start transition-all border ${
                     isCurrent
                       ? "border-primary bg-primary/10 text-primary font-semibold"
                       : isPassed
-                      ? "border-border/80 bg-card text-foreground cursor-pointer"
-                      : "border-transparent text-muted-foreground opacity-60 cursor-not-allowed"
+                        ? "border-border bg-card text-foreground cursor-pointer"
+                        : "border-transparent text-muted-foreground opacity-60 cursor-not-allowed"
                   }`}
                 >
                   <div
@@ -368,8 +373,8 @@ Password: ${data.owner_password || "(as provided)"}`;
                       isCurrent
                         ? "bg-primary text-primary-foreground font-bold"
                         : isPassed
-                        ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold"
-                        : "bg-muted text-muted-foreground"
+                          ? "bg-success/20 text-success font-bold"
+                          : "bg-muted text-muted-foreground"
                     }`}
                   >
                     {isPassed ? <Check className="h-3.5 w-3.5" /> : idx + 1}
@@ -379,7 +384,7 @@ Password: ${data.owner_password || "(as provided)"}`;
                       {isAr ? step.labelAr : step.labelEn}
                     </div>
                   </div>
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -394,7 +399,7 @@ Password: ${data.owner_password || "(as provided)"}`;
               <div
                 className={`mx-auto h-12 w-12 rounded-full flex items-center justify-center ${
                   executionComplete
-                    ? "bg-emerald-500/20 text-emerald-600"
+                    ? "bg-success/20 text-success"
                     : "bg-primary/10 text-primary animate-pulse"
                 }`}
               >
@@ -410,8 +415,8 @@ Password: ${data.owner_password || "(as provided)"}`;
                     ? "تهانينا! تم إطلاق البراند وتجهيزه بنجاح"
                     : "Congratulations! Brand launched successfully"
                   : isAr
-                  ? "جاري تهيئة المتجر وإعداد الأنظمة..."
-                  : "Provisioning store and setting up systems..."}
+                    ? "جاري تهيئة المتجر وإعداد الأنظمة..."
+                    : "Provisioning store and setting up systems..."}
               </h3>
               <p className="text-xs text-muted-foreground">
                 {executionComplete
@@ -419,8 +424,8 @@ Password: ${data.owner_password || "(as provided)"}`;
                     ? "جميع الأنظمة جاهزة للعمل. يمكنك الآن تسجيل الدخول كمدير أو زيارة المتجر."
                     : "All systems configured. You can now access the admin panel or visit the storefront."
                   : isAr
-                  ? "يتم الآن إنشاء سجلات المتجر، رفع الملفات، وتوليد التصنيفات."
-                  : "Creating store records, uploading assets, and generating taxonomy."}
+                    ? "يتم الآن إنشاء سجلات المتجر، رفع الملفات، وتوليد التصنيفات."
+                    : "Creating store records, uploading assets, and generating taxonomy."}
               </p>
             </div>
 
@@ -430,17 +435,17 @@ Password: ${data.owner_password || "(as provided)"}`;
                 return (
                   <div
                     key={step.id}
-                    className="flex items-center justify-between text-xs py-1.5 border-b border-border/40 last:border-0"
+                    className="flex items-center justify-between text-xs py-1.5 border-b border-border last:border-0"
                   >
                     <div className="flex items-center gap-2">
                       {step.status === "running" && (
                         <RefreshCw className="h-3.5 w-3.5 text-primary animate-spin shrink-0" />
                       )}
                       {step.status === "success" && (
-                        <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                        <Check className="h-3.5 w-3.5 text-success shrink-0" />
                       )}
                       {step.status === "error" && (
-                        <AlertCircle className="h-3.5 w-3.5 text-rose-600 shrink-0" />
+                        <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
                       )}
                       {step.status === "idle" && (
                         <div className="h-2 w-2 rounded-full bg-muted-foreground/40 shrink-0 ms-1" />
@@ -450,8 +455,8 @@ Password: ${data.owner_password || "(as provided)"}`;
                           step.status === "running"
                             ? "font-semibold text-primary"
                             : step.status === "error"
-                            ? "font-semibold text-rose-600"
-                            : "text-foreground"
+                              ? "font-semibold text-destructive"
+                              : "text-foreground"
                         }
                       >
                         {isAr ? step.labelAr : step.labelEn}
@@ -459,13 +464,15 @@ Password: ${data.owner_password || "(as provided)"}`;
                     </div>
 
                     {step.status === "error" && (
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={handleLaunch}
-                        className="text-xs text-rose-600 underline font-medium hover:opacity-80"
+                        className="h-auto rounded-md text-xs text-destructive underline font-medium hover:opacity-80"
                       >
                         {isAr ? "إعادة المحاولة" : "Retry"}
-                      </button>
+                      </Button>
                     )}
                   </div>
                 );
@@ -505,15 +512,8 @@ Password: ${data.owner_password || "(as provided)"}`;
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-2.5">
-                  <Button
-                    asChild
-                    className="flex-1 h-10 text-xs font-semibold gap-1.5"
-                  >
-                    <a
-                      href={`/admin/b/${data.slug}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
+                  <Button asChild className="flex-1 h-10 text-xs font-semibold gap-1.5">
+                    <a href={`/admin/b/${data.slug}`} target="_blank" rel="noreferrer">
                       <Store className="h-4 w-4" />
                       {isAr ? "لوحة تحكم المتجر" : "Open Brand Admin"}
                       <ExternalLink className="h-3.5 w-3.5 opacity-60" />
@@ -525,11 +525,7 @@ Password: ${data.owner_password || "(as provided)"}`;
                     variant="outline"
                     className="flex-1 h-10 text-xs font-semibold gap-1.5"
                   >
-                    <a
-                      href={`/${data.slug}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
+                    <a href={`/${data.slug}`} target="_blank" rel="noreferrer">
                       {isAr ? "معاينة المتجر المباشر" : "Visit Live Storefront"}
                       <ExternalLink className="h-3.5 w-3.5 opacity-60" />
                     </a>
@@ -549,9 +545,7 @@ Password: ${data.owner_password || "(as provided)"}`;
             {currentStep === "admin" && (
               <StepAdminPlan data={data} onChange={updateData} isAr={isAr} />
             )}
-            {currentStep === "review" && (
-              <StepReview data={data} isAr={isAr} />
-            )}
+            {currentStep === "review" && <StepReview data={data} isAr={isAr} />}
           </>
         )}
       </div>

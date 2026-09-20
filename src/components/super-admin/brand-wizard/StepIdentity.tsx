@@ -1,8 +1,10 @@
 import * as React from "react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   STORE_VERTICALS,
+  VERTICAL_ICON_NAMES,
   VERTICAL_LABELS,
   type StoreVertical,
 } from "@/lib/store-profile";
@@ -29,20 +31,24 @@ interface StepIdentityProps {
   isAr: boolean;
 }
 
-const VERTICAL_ICONS: Record<StoreVertical, React.ElementType> = {
-  abayas: Sparkles,
-  fashion: Shirt,
-  beauty: Flower2,
-  coffee: Coffee,
-  food: Utensils,
-  gifts: Gift,
-  print: Printer,
-  jewelry: Gem,
-  home: Home,
-  electronics: Smartphone,
-  digital: FileCode,
-  general: Store,
+const ICONS_BY_NAME: Record<string, React.ElementType> = {
+  Sparkles,
+  Shirt,
+  Flower2,
+  Coffee,
+  Utensils,
+  Gift,
+  Printer,
+  Gem,
+  Home,
+  Smartphone,
+  FileCode,
+  Store,
 };
+
+const VERTICAL_ICONS: Record<StoreVertical, React.ElementType> = Object.fromEntries(
+  STORE_VERTICALS.map((v) => [v, ICONS_BY_NAME[VERTICAL_ICON_NAMES[v]] ?? Store]),
+) as Record<StoreVertical, React.ElementType>;
 
 function slugify(text: string): string {
   return text
@@ -120,9 +126,11 @@ export function StepIdentity({ data, onChange, isAr }: StepIdentityProps) {
             {isAr ? "المعرّف بالرابط (Slug) *" : "Store Slug / URL identifier *"}
           </Label>
           {data.isSlugManuallyEdited && (
-            <button
+            <Button
               type="button"
-              className="text-xs text-primary hover:underline"
+              variant="ghost"
+              size="sm"
+              className="h-auto rounded-md text-xs text-primary hover:underline"
               onClick={() => {
                 onChange({
                   slug: slugify(data.name_en),
@@ -131,7 +139,7 @@ export function StepIdentity({ data, onChange, isAr }: StepIdentityProps) {
               }}
             >
               {isAr ? "إعادة تعيين من الاسم الإنجليزي" : "Reset from English name"}
-            </button>
+            </Button>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -165,21 +173,23 @@ export function StepIdentity({ data, onChange, isAr }: StepIdentityProps) {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-[340px] overflow-y-auto p-1 border border-border/60 rounded-xl bg-muted/20">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-[340px] overflow-y-auto p-1 border border-border rounded-xl bg-muted/20">
           {STORE_VERTICALS.map((vertical) => {
             const Icon = VERTICAL_ICONS[vertical] || Store;
             const isSelected = data.store_vertical === vertical;
             const label = VERTICAL_LABELS[vertical];
 
             return (
-              <button
+              <Button
                 key={vertical}
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => handleVerticalSelect(vertical)}
-                className={`flex flex-col items-start text-start p-3 rounded-xl border transition-all ${
+                className={`h-auto rounded-md flex flex-col items-start text-start p-3 rounded-xl border transition-all ${
                   isSelected
                     ? "border-primary bg-primary/10 shadow-sm ring-1 ring-primary"
-                    : "border-border/70 bg-card hover:bg-muted/50 hover:border-border"
+                    : "border-border bg-card hover:bg-muted/50 hover:border-border"
                 }`}
               >
                 <div
@@ -192,10 +202,10 @@ export function StepIdentity({ data, onChange, isAr }: StepIdentityProps) {
                 <div className="font-semibold text-xs text-foreground leading-tight">
                   {isAr ? label.ar : label.en}
                 </div>
-                <div className="text-[10px] text-muted-foreground leading-tight mt-1 truncate max-w-full">
+                <div className="text-xs text-muted-foreground leading-tight mt-1 truncate max-w-full">
                   {isAr ? label.en : label.ar}
                 </div>
-              </button>
+              </Button>
             );
           })}
         </div>
