@@ -212,4 +212,26 @@ describe("Store Readiness Checklist Integration", () => {
       }
     }
   });
+
+  it("SettingsTabBar provides full untruncated labels and 44px mobile touch targets", async () => {
+    // Read SettingsTabs.tsx source to verify mobile responsive design guarantees
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../src/features/settings/SettingsTabs.tsx"),
+      "utf8",
+    );
+
+    // Verify it uses a scrollable rail rather than rigid 5-column grid on mobile
+    expect(source).toContain("overflow-x-auto no-scrollbar scroll-smooth");
+    expect(source).not.toContain("grid grid-cols-5");
+
+    // Verify labels are not truncated with ellipsis on mobile
+    expect(source).toContain('className="whitespace-nowrap font-semibold">{tab.label}</div>');
+    expect(source).not.toContain('<div className="truncate">{tab.label}</div>');
+
+    // Verify min-h-11 (44px) touch target compliance with AGENTS.md rule #2
+    expect(source).toContain("min-h-11");
+  });
 });
+

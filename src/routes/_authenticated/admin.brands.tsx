@@ -410,11 +410,11 @@ function BrandsPage() {
 
       {/* Interactive Tabs Layout */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-2xl h-11 mb-6 bg-muted/60 p-1">
-          <TabsTrigger value="all-stores" className="h-9 font-medium text-xs">
+        <TabsList className="flex w-full items-center gap-1.5 overflow-x-auto no-scrollbar h-auto p-1 mb-6 bg-muted/60 border border-border rounded-xl overscroll-contain sm:grid sm:grid-cols-3 sm:max-w-2xl sm:h-11">
+          <TabsTrigger value="all-stores" className="shrink-0 whitespace-nowrap min-h-[38px] px-3 font-medium text-xs sm:shrink sm:min-w-0 sm:flex-1">
             {lang === "ar" ? "المحلات المتاحة" : "All Shops"} ({brands.length})
           </TabsTrigger>
-          <TabsTrigger value="receipt-approvals" className="h-9 font-medium text-xs relative">
+          <TabsTrigger value="receipt-approvals" className="shrink-0 whitespace-nowrap min-h-[38px] px-3 font-medium text-xs relative sm:shrink sm:min-w-0 sm:flex-1">
             {lang === "ar" ? "إيصالات الاشتراكات" : "Receipt Approvals"}
             {pendingApprovals.length > 0 && (
               <span className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-rose-500 text-white rounded-full text-xs flex items-center justify-center font-bold animate-bounce">
@@ -422,7 +422,7 @@ function BrandsPage() {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="mobile-apps" className="h-9 font-medium text-xs gap-1.5">
+          <TabsTrigger value="mobile-apps" className="shrink-0 whitespace-nowrap min-h-[38px] px-3 font-medium text-xs gap-1.5 sm:shrink sm:min-w-0 sm:flex-1">
             <Smartphone className="h-3.5 w-3.5" />
             {lang === "ar" ? "تطبيقات البراندات" : "Brand Apps"}
           </TabsTrigger>

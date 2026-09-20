@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useI18n } from "@/lib/i18n";
 import { type SettingsTabId } from "@/features/settings/registry";
 import { IdentityTab } from "@/features/settings/tabs/identity/IdentityTab";
@@ -65,12 +66,27 @@ export function SettingsTabBar({ activeTab, onTabChange }: SettingsTabsProps) {
     },
   ];
 
-  // 5-column grid on phones (icon over label, no scroll rail); full cards from `sm` up.
+  const tabListRef = useRef<HTMLDivElement>(null);
+  const activeTabRef = useRef<HTMLButtonElement>(null);
+
+  // Auto-scroll the active tab into center view on mobile navigation
+  useEffect(() => {
+    if (activeTabRef.current && tabListRef.current) {
+      activeTabRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "center",
+      });
+    }
+  }, [activeTab]);
+
+  // Mobile: smooth horizontal scroll rail with 100% visible labels; Desktop (sm+): full card flex bar
   return (
     <div
+      ref={tabListRef}
       role="tablist"
       aria-label={isAr ? "أقسام الإعدادات" : "Settings sections"}
-      className="grid grid-cols-5 gap-1 p-1.5 rounded-2xl border border-border bg-card shadow-xs sm:flex sm:items-center sm:gap-1.5"
+      className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth p-1.5 rounded-2xl border border-border bg-card shadow-xs overscroll-contain sm:flex sm:items-center sm:gap-1.5"
     >
       {tabs.map((tab) => {
         const Icon = tab.icon;
@@ -79,13 +95,14 @@ export function SettingsTabBar({ activeTab, onTabChange }: SettingsTabsProps) {
         return (
           <button
             key={tab.id}
+            ref={isActive ? activeTabRef : undefined}
             type="button"
             role="tab"
             aria-selected={isActive}
             aria-label={tab.label}
             title={tab.description}
             onClick={() => onTabChange(tab.id)}
-            className={`min-h-11 flex flex-col items-center justify-center gap-1 px-1 py-2 rounded-xl text-xs font-semibold transition-all duration-150 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:flex-1 sm:flex-row sm:items-center sm:gap-2.5 sm:px-3 sm:py-2.5 sm:text-xs sm:text-start ${
+            className={`min-h-11 shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all duration-150 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:flex-1 sm:flex-row sm:items-center sm:gap-2.5 sm:px-3 sm:py-2.5 sm:text-xs sm:text-start ${
               isActive
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -101,7 +118,7 @@ export function SettingsTabBar({ activeTab, onTabChange }: SettingsTabsProps) {
               <Icon className="size-3.5" />
             </div>
             <div className="min-w-0 max-w-full sm:flex-1">
-              <div className="truncate">{tab.label}</div>
+              <div className="whitespace-nowrap font-semibold">{tab.label}</div>
               <div
                 className={`hidden sm:block text-xs font-normal truncate ${
                   isActive ? "text-primary-foreground/80" : "text-muted-foreground"

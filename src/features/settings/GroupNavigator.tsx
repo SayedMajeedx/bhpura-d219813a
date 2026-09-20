@@ -135,7 +135,7 @@ export function GroupNavigator({
                   )}
                 >
                   {Icon && <Icon className="size-3.5 shrink-0 lg:size-4" />}
-                  <span className="truncate">{labelOf(g)}</span>
+                  <span className="whitespace-nowrap">{labelOf(g)}</span>
                 </Button>
               </li>
             );

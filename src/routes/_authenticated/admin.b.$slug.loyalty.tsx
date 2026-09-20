@@ -198,12 +198,12 @@ function LoyaltyDashboardPage() {
 
       {/* Main Tabs Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-muted p-1 border border-border">
-          <TabsTrigger value="tiers" className="gap-2 min-h-[38px]">
+        <TabsList className="flex w-full items-center gap-1.5 overflow-x-auto no-scrollbar h-auto p-1 bg-muted border border-border rounded-xl overscroll-contain sm:w-auto">
+          <TabsTrigger value="tiers" className="shrink-0 whitespace-nowrap gap-2 min-h-[38px] px-3">
             <Award className="h-4 w-4" />
             <span>{isAr ? "مستويات العضوية (Tiers)" : "VIP Tiers & Perks"}</span>
           </TabsTrigger>
-          <TabsTrigger value="ledger" className="gap-2 min-h-[38px]">
+          <TabsTrigger value="ledger" className="shrink-0 whitespace-nowrap gap-2 min-h-[38px] px-3">
             <Coins className="h-4 w-4" />
             <span>{isAr ? "سجل الحركات والرقابة (Ledger)" : "Points Ledger"}</span>
           </TabsTrigger>

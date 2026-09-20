@@ -31,7 +31,7 @@ export function CampaignsScopeSwitcher({
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-border-subtle bg-muted/40 p-1 sm:flex sm:items-center">
+    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar rounded-2xl border border-border-subtle bg-muted/40 p-1 overscroll-contain sm:flex">
       {segments.map((s) => {
         const Icon = s.icon;
         const isActive = activeSegment === s.id;
@@ -43,14 +43,14 @@ export function CampaignsScopeSwitcher({
             type="button"
             onClick={() => onSegmentChange(s.id)}
             className={cn(
-              "flex min-w-0 items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-xs font-bold transition-all duration-200 cursor-pointer sm:justify-start sm:whitespace-nowrap sm:px-3",
+              "flex shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap min-h-10 sm:justify-start",
               isActive
                 ? "bg-primary text-primary-foreground shadow-sm scale-[1.01]"
                 : "text-muted-foreground hover:bg-background/80 hover:text-foreground",
             )}
           >
             <Icon className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">{isAr ? s.labelAr : s.labelEn}</span>
+            <span className="whitespace-nowrap">{isAr ? s.labelAr : s.labelEn}</span>
             {count !== undefined && (
               <span
                 className={cn(

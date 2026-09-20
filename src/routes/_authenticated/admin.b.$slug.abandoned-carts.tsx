@@ -211,16 +211,16 @@ function AbandonedCartsDashboardPage() {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-3 max-w-md bg-muted/60 p-1">
-          <TabsTrigger value="carts" className="gap-2 min-h-[38px]">
+        <TabsList className="flex w-full items-center gap-1.5 overflow-x-auto no-scrollbar h-auto p-1 bg-muted/60 border border-border rounded-xl overscroll-contain sm:grid sm:grid-cols-3 sm:max-w-md">
+          <TabsTrigger value="carts" className="shrink-0 whitespace-nowrap min-h-[38px] px-3 gap-2 text-xs font-semibold sm:shrink sm:min-w-0 sm:flex-1">
             <ShoppingCart className="h-4 w-4" />
             <span>{isAr ? "السلات المتروكة" : "Abandoned Carts"}</span>
           </TabsTrigger>
-          <TabsTrigger value="sequences" className="gap-2 min-h-[38px]">
+          <TabsTrigger value="sequences" className="shrink-0 whitespace-nowrap min-h-[38px] px-3 gap-2 text-xs font-semibold sm:shrink sm:min-w-0 sm:flex-1">
             <Send className="h-4 w-4" />
             <span>{isAr ? "سلاسل التذكير (Drip)" : "Drip Sequences"}</span>
           </TabsTrigger>
-          <TabsTrigger value="logs" className="gap-2 min-h-[38px]">
+          <TabsTrigger value="logs" className="shrink-0 whitespace-nowrap min-h-[38px] px-3 gap-2 text-xs font-semibold sm:shrink sm:min-w-0 sm:flex-1">
             <RefreshCw className="h-4 w-4" />
             <span>{isAr ? "سجل الإرسال (Logs)" : "Dispatch Logs"}</span>
           </TabsTrigger>
