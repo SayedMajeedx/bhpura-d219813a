@@ -297,7 +297,7 @@ export function OsMobileNavigation({
   return (
     <>
       {/* Mobile Top Header */}
-      <div className="md:hidden no-print fixed top-0 inset-x-0 z-40 h-14 flex items-center justify-between px-3 border-b border-[var(--os-border)] os-glass-strong text-foreground shadow-sm backdrop-blur-xl">
+      <div className="md:hidden no-print fixed top-0 inset-x-0 z-40 h-14 flex items-center justify-between px-3 border-b border-[var(--os-border)] os-glass-strong text-foreground shadow-sm">
         <Sheet open={mobileOpen} onOpenChange={onOpenChangeMobile}>
           <SheetTrigger asChild>
             <Button

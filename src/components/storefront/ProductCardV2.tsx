@@ -136,7 +136,7 @@ export function ProductCardV2({
   return (
     <div
       ref={revealRef}
-      className={`group relative sf-reveal ${staggerClass} ${className || "w-full"}`}
+      className={`group relative sf-reveal sf-cv-card ${staggerClass} ${className || "w-full"}`}
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
     >

@@ -89,7 +89,7 @@ export function ProductCard({
       : "storefront-fade-in-up";
 
   return (
-    <div className={`group relative ${staggerClass} ${className || "w-full"}`}>
+    <div className={`group relative sf-cv-card ${staggerClass} ${className || "w-full"}`}>
       <Button
         type="button"
         variant="ghost"

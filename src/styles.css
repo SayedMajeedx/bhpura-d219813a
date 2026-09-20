@@ -732,11 +732,12 @@ html.is-embedded .hero-carousel-text-card a {
     }
   }
 
+  /* Applied to a wrapper INSIDE the scroll container, never to the scroller itself:
+     a transform / preserve-3d / will-change on the scrolling element breaks composited
+     scrolling and forces per-frame flattening. `forwards` is intentionally avoided so the
+     transform is cleared when the animation ends. */
   .os-page-transition {
-    animation: osPageTransition 200ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
-    backface-visibility: hidden;
-    transform-style: preserve-3d;
-    will-change: opacity, transform;
+    animation: osPageTransition 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   /* Modern Storefront Micro-Animations (60-120 FPS GPU Composited) */
@@ -921,4 +922,29 @@ html.is-embedded .hero-carousel-text-card a {
   textarea {
     font-size: 16px !important;
   }
+}
+
+/* ------------------------------------------------------------------------------------
+   Scroll performance
+   Backdrop blur is re-rendered on every scrolled frame for any fixed/sticky element that
+   overlaps the scrolling surface, and its cost grows with the blur radius. Touch devices
+   (phones/tablets) get a capped, cheap blur so the glass look survives without dropping
+   frames; desktops keep the full effect.
+   ------------------------------------------------------------------------------------ */
+@media (hover: none) and (pointer: coarse) {
+  .os-glass,
+  .os-glass-strong,
+  .os-toolbar,
+  [class~="backdrop-blur"],
+  [class*="backdrop-blur-"] {
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+  }
+}
+
+/* Long product grids: skip layout/paint of cards far outside the viewport. `auto`
+   intrinsic size reuses the last rendered height so the scrollbar does not jump. */
+.sf-cv-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 420px;
 }

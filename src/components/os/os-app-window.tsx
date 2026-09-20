@@ -35,6 +35,13 @@ export const OsAppWindow = React.forwardRef<HTMLDivElement, OsAppWindowProps>(
     },
     ref,
   ) => {
+    // The scroll container persists across navigations (only the inner wrapper is keyed),
+    // so reset its scroll position when the page changes.
+    const scrollerRef = React.useRef<HTMLDivElement>(null);
+    React.useEffect(() => {
+      scrollerRef.current?.scrollTo({ top: 0 });
+    }, [pageKey]);
+
     return (
       <div
         ref={ref}
@@ -85,11 +92,18 @@ export const OsAppWindow = React.forwardRef<HTMLDivElement, OsAppWindowProps>(
 
         {/* Opaque Readable Content Area with Butter-Smooth Page Transition */}
         <div
-          key={pageKey}
-          className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain os-scrollbar p-3 pb-32 sm:p-5 sm:pb-28 md:pb-24 lg:pb-20 bg-card/95 text-card-foreground os-page-transition"
+          ref={scrollerRef}
+          className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain os-scrollbar bg-card text-card-foreground"
           style={{ WebkitOverflowScrolling: "touch" }}
         >
-          {children}
+          {/* The transition runs on an inner wrapper so the scroll container itself never
+              carries a transform or will-change (both defeat composited scrolling). */}
+          <div
+            key={pageKey}
+            className="os-page-transition p-3 pb-32 sm:p-5 sm:pb-28 md:pb-24 lg:pb-20"
+          >
+            {children}
+          </div>
         </div>
       </div>
     );
