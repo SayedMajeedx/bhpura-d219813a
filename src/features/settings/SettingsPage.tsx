@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useBlocker } from "@tanstack/react-router";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
@@ -10,6 +10,7 @@ import {
 import { type SettingsTabId } from "@/features/settings/registry";
 import { SettingsHeader } from "@/features/settings/SettingsHeader";
 import { SettingsTabs } from "@/features/settings/SettingsTabs";
+import { SettingsNavContext } from "@/features/settings/GroupNavigator";
 import { StoreReadinessChecklist } from "@/components/settings/StoreReadinessChecklist";
 import { SettingsStickySaveBar } from "@/components/settings/SettingsStickySaveBar";
 import { LivePreviewPane } from "@/features/settings/shared/LivePreviewPane";
@@ -46,42 +47,25 @@ function SettingsPageInner() {
     return "identity";
   });
 
+  // Active group within the tab (one group is rendered at a time — see GroupNavigator).
+  const [activeGroup, setActiveGroup] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return new URLSearchParams(window.location.search).get("group");
+    }
+    return null;
+  });
+  const navValue = useMemo(() => ({ activeGroup, setActiveGroup }), [activeGroup]);
+
   const handleTabChange = useCallback((tab: SettingsTabId, groupAnchor?: string) => {
     setActiveTab(tab);
+    const group = groupAnchor ? groupAnchor.replace(/^group-/, "") : null;
+    setActiveGroup(group);
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
       url.searchParams.set("tab", tab);
-      if (groupAnchor) {
-        url.searchParams.set("group", groupAnchor.replace(/^group-/, ""));
-      } else {
-        url.searchParams.delete("group");
-      }
+      if (group) url.searchParams.set("group", group);
+      else url.searchParams.delete("group");
       window.history.replaceState({}, "", url.toString());
-
-      if (groupAnchor) {
-        setTimeout(() => {
-          const el = document.getElementById(groupAnchor);
-          if (el) {
-            el.scrollIntoView({ behavior: "smooth", block: "start" });
-          }
-        }, 150);
-      }
-    }
-  }, []);
-
-  // Check URL params on initial mount for anchor scrolling
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const urlGroup = params.get("group");
-      if (urlGroup) {
-        setTimeout(() => {
-          const el = document.getElementById(`group-${urlGroup}`);
-          if (el) {
-            el.scrollIntoView({ behavior: "smooth", block: "start" });
-          }
-        }, 300);
-      }
     }
   }, []);
 
@@ -221,7 +205,9 @@ function SettingsPageInner() {
           />
 
           {/* 5-Tab Navigation & Panels */}
-          <SettingsTabs activeTab={activeTab} onTabChange={handleTabChange} />
+          <SettingsNavContext.Provider value={navValue}>
+            <SettingsTabs activeTab={activeTab} onTabChange={handleTabChange} />
+          </SettingsNavContext.Provider>
         </div>
 
         {/* Live Preview Side Pane (xl screens) */}

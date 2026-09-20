@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { type OsMobileTabItem } from "./os-mobile-tab-bar";
 import { OsIslandDock, type OsIslandDockItem } from "./os-island-dock";
+import { useBottomBarClaimed } from "@/lib/bottom-bar-store";
 import { OsQuickActions } from "./os-quick-actions";
 import { OsThemeToggle } from "./os-theme-toggle";
 import { OsAppsHubModal } from "./os-apps-hub-modal";
@@ -59,6 +60,7 @@ export function OsMobileNavigation({
   onOpenChangeMobile,
 }: OsMobileNavigationProps) {
   const navigate = useNavigate();
+  const bottomBarClaimed = useBottomBarClaimed();
   const { theme, setTheme } = useTheme();
   const [appsHubOpen, setAppsHubOpen] = React.useState(false);
 
@@ -589,7 +591,11 @@ export function OsMobileNavigation({
 
       {/* Mobile & Tablet Floating Island Dock */}
       {(activeSlug || isSuperAdmin) && (
-        <OsIslandDock items={primaryTabItems} lang={lang} isHidden={isDetailPage} />
+        <OsIslandDock
+          items={primaryTabItems}
+          lang={lang}
+          isHidden={isDetailPage || bottomBarClaimed}
+        />
       )}
 
       {/* Apps Hub Modal */}

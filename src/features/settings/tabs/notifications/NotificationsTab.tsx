@@ -1,16 +1,13 @@
+import { MessageSquareText, Users } from "lucide-react";
+import { GroupNavigator, type GroupDef } from "@/features/settings/GroupNavigator";
 import { RecipientsGroup } from "./RecipientsGroup";
 import { TemplatesGroup } from "./TemplatesGroup";
 
-export function NotificationsTab() {
-  return (
-    <div className="space-y-8">
-      <section id="group-recipients" aria-label="Team Recipients">
-        <RecipientsGroup />
-      </section>
+const GROUPS: GroupDef[] = [
+  { id: "templates", icon: MessageSquareText, render: () => <TemplatesGroup /> },
+  { id: "recipients", icon: Users, render: () => <RecipientsGroup /> },
+];
 
-      <section id="group-templates" aria-label="Notification Templates">
-        <TemplatesGroup />
-      </section>
-    </div>
-  );
+export function NotificationsTab() {
+  return <GroupNavigator tab="notifications" groups={GROUPS} />;
 }

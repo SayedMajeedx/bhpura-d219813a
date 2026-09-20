@@ -1,26 +1,17 @@
+import { Coins, CreditCard, FileText, Truck } from "lucide-react";
+import { GroupNavigator, type GroupDef } from "@/features/settings/GroupNavigator";
 import { PaymentsGroup } from "./PaymentsGroup";
 import { PricingGroup } from "./PricingGroup";
 import { FulfillmentGroup } from "./FulfillmentGroup";
 import { InvoiceGroup } from "./InvoiceGroup";
 
+const GROUPS: GroupDef[] = [
+  { id: "payments", icon: CreditCard, render: () => <PaymentsGroup /> },
+  { id: "pricing", icon: Coins, render: () => <PricingGroup /> },
+  { id: "fulfillment", icon: Truck, render: () => <FulfillmentGroup /> },
+  { id: "invoice", icon: FileText, render: () => <InvoiceGroup /> },
+];
+
 export function OrdersTab() {
-  return (
-    <div className="space-y-8">
-      <section id="group-payments" aria-label="Payments">
-        <PaymentsGroup />
-      </section>
-
-      <section id="group-pricing" aria-label="Pricing & VAT">
-        <PricingGroup />
-      </section>
-
-      <section id="group-fulfillment" aria-label="Fulfillment & Shipping">
-        <FulfillmentGroup />
-      </section>
-
-      <section id="group-invoice" aria-label="Invoice">
-        <InvoiceGroup />
-      </section>
-    </div>
-  );
+  return <GroupNavigator tab="orders" groups={GROUPS} />;
 }

@@ -135,6 +135,40 @@ const TOGGLES: Array<{ key: BoolKey; ar: string; en: string; hintAr: string; hin
   },
 ];
 
+const TOGGLE_SECTIONS: Array<{ ar: string; en: string; keys: BoolKey[] }> = [
+  {
+    ar: "الصفحة الرئيسية",
+    en: "Homepage",
+    keys: [
+      "trust_bar_enabled",
+      "brand_story_enabled",
+      "social_proof_enabled",
+      "recently_viewed_enabled",
+      "motion_enabled",
+    ],
+  },
+  {
+    ar: "بطاقة المنتج",
+    en: "Product card",
+    keys: [
+      "product_card_hover_image",
+      "product_card_color_dots",
+      "product_card_quick_add",
+      "quick_view_enabled",
+    ],
+  },
+  {
+    ar: "صفحة المنتج والأقسام",
+    en: "Product page & categories",
+    keys: ["pdp_image_zoom", "category_filters_enabled", "back_in_stock_enabled"],
+  },
+  {
+    ar: "التذييل",
+    en: "Footer",
+    keys: ["newsletter_enabled", "footer_show_payment_methods"],
+  },
+];
+
 /**
  * Storefront 2.0 options. Every column added by the storefront_v2 migration is
  * editable here so merchants can tune or disable each new behaviour.
@@ -181,26 +215,42 @@ export function DesignV2Group() {
         </p>
       </div>
 
-      {/* Toggles */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {TOGGLES.map((item) => (
-          <div
-            key={item.key}
-            className="flex items-center justify-between gap-3 rounded-xl border border-border p-3.5 bg-background"
-          >
-            <div>
-              <Label className="cursor-pointer text-xs font-semibold">
-                {isAr ? item.ar : item.en}
-              </Label>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {isAr ? item.hintAr : item.hintEn}
-              </p>
+      {/* Toggles — dense rows grouped by surface (half the height of card-per-toggle) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+        {TOGGLE_SECTIONS.map((section) => (
+          <div key={section.en} className="rounded-xl border border-border bg-background">
+            <div className="px-3.5 pt-3 pb-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              {isAr ? section.ar : section.en}
             </div>
-            <Switch
-              checked={bs[item.key] ?? true}
-              onCheckedChange={(checked) => setBs({ [item.key]: checked })}
-              aria-label={isAr ? item.ar : item.en}
-            />
+            <ul className="divide-y divide-border">
+              {section.keys.map((key) => {
+                const item = TOGGLES.find((t) => t.key === key)!;
+                return (
+                  <li
+                    key={item.key}
+                    className="flex items-center justify-between gap-3 px-3.5 py-2.5"
+                  >
+                    <div className="min-w-0">
+                      <Label
+                        htmlFor={`v2-${item.key}`}
+                        className="cursor-pointer text-xs font-semibold"
+                      >
+                        {isAr ? item.ar : item.en}
+                      </Label>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {isAr ? item.hintAr : item.hintEn}
+                      </p>
+                    </div>
+                    <Switch
+                      id={`v2-${item.key}`}
+                      checked={bs[item.key] ?? true}
+                      onCheckedChange={(checked) => setBs({ [item.key]: checked })}
+                      aria-label={isAr ? item.ar : item.en}
+                    />
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         ))}
       </div>

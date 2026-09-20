@@ -1,3 +1,15 @@
+import {
+  Bell,
+  Globe,
+  LayoutGrid,
+  LayoutTemplate,
+  Loader2,
+  PanelTop,
+  Sparkles,
+  Store,
+  Wand2,
+} from "lucide-react";
+import { GroupNavigator, type GroupDef } from "@/features/settings/GroupNavigator";
 import { StorefrontDesignUpgradeCard } from "./StorefrontDesignUpgradeCard";
 import { DesignV2Group } from "./DesignV2Group";
 import { ModeGroup } from "./ModeGroup";
@@ -8,44 +20,23 @@ import { AnnouncementGroup } from "./AnnouncementGroup";
 import { LoaderGroup } from "./LoaderGroup";
 import { SeoGroup } from "./SeoGroup";
 
+const GROUPS: GroupDef[] = [
+  { id: "mode", icon: Store, render: () => <ModeGroup /> },
+  { id: "home_hero", icon: LayoutTemplate, render: () => <HomeHeroGroup /> },
+  { id: "home_sections", icon: LayoutGrid, render: () => <HomeSectionsGroup /> },
+  { id: "header_footer", icon: PanelTop, render: () => <HeaderFooterGroup /> },
+  { id: "announcement", icon: Bell, render: () => <AnnouncementGroup /> },
+  { id: "loader", icon: Loader2, render: () => <LoaderGroup /> },
+  { id: "seo", icon: Globe, render: () => <SeoGroup /> },
+  {
+    id: "upgrade",
+    label: { ar: "ترقية المظهر", en: "Design upgrade" },
+    icon: Wand2,
+    render: () => <StorefrontDesignUpgradeCard />,
+  },
+  { id: "design_v2", icon: Sparkles, render: () => <DesignV2Group /> },
+];
+
 export function StorefrontTab() {
-  return (
-    <div className="space-y-8">
-      <section id="group-upgrade" aria-label="Storefront Design Version">
-        <StorefrontDesignUpgradeCard />
-      </section>
-
-      <section id="group-design_v2" aria-label="Storefront 2.0 options">
-        <DesignV2Group />
-      </section>
-
-      <section id="group-mode" aria-label="Storefront Mode">
-        <ModeGroup />
-      </section>
-
-      <section id="group-home_hero" aria-label="Hero & Story">
-        <HomeHeroGroup />
-      </section>
-
-      <section id="group-home_sections" aria-label="Sections & Promo Cards">
-        <HomeSectionsGroup />
-      </section>
-
-      <section id="group-header_footer" aria-label="Header & Footer">
-        <HeaderFooterGroup />
-      </section>
-
-      <section id="group-announcement" aria-label="Announcement Bar">
-        <AnnouncementGroup />
-      </section>
-
-      <section id="group-loader" aria-label="Storefront Loader">
-        <LoaderGroup />
-      </section>
-
-      <section id="group-seo" aria-label="Storefront SEO">
-        <SeoGroup />
-      </section>
-    </div>
-  );
+  return <GroupNavigator tab="storefront" groups={GROUPS} />;
 }

@@ -1,8 +1,13 @@
 import * as React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
-import { Sparkles, ArrowRight, X, Palette, Image, Type, Compass } from "lucide-react";
+import { Sparkles, ArrowRight, X, Palette, Image, Type, Compass, Phone } from "lucide-react";
+import {
+  GroupNavigator,
+  SettingsNavContext,
+  type GroupDef,
+} from "@/features/settings/GroupNavigator";
 import { BasicsGroup } from "./BasicsGroup";
 import { VerticalGroup } from "./VerticalGroup";
 import { PaletteGroup } from "./PaletteGroup";
@@ -34,11 +39,10 @@ function FirstVisitIntroBanner() {
     }
   };
 
+  const { setActiveGroup } = useContext(SettingsNavContext);
   const scrollToAnchor = (anchorId: string) => {
-    const el = document.getElementById(anchorId);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    // Groups render one at a time: select the group instead of scrolling to it.
+    setActiveGroup(anchorId.replace(/^group-/, ""));
   };
 
   if (dismissed) return null;
@@ -132,17 +136,14 @@ function FirstVisitIntroBanner() {
   );
 }
 
-export function IdentityTab() {
-  return (
-    <div className="space-y-6">
-      {/* First-Visit Guidance Banner (P3) */}
-      <FirstVisitIntroBanner />
+const GROUPS: GroupDef[] = [
+  { id: "basics", icon: Image, render: () => <BasicsGroup /> },
+  { id: "vertical", icon: Compass, render: () => <VerticalGroup /> },
+  { id: "palette", icon: Palette, render: () => <PaletteGroup /> },
+  { id: "typography", icon: Type, render: () => <TypographyGroup /> },
+  { id: "contact", icon: Phone, render: () => <ContactGroup /> },
+];
 
-      <BasicsGroup />
-      <VerticalGroup />
-      <PaletteGroup />
-      <TypographyGroup />
-      <ContactGroup />
-    </div>
-  );
+export function IdentityTab() {
+  return <GroupNavigator tab="identity" groups={GROUPS} before={<FirstVisitIntroBanner />} />;
 }
