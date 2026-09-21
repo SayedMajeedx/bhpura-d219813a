@@ -164,7 +164,8 @@ describe("Storefront V2 Foundation - Typography & Presets", () => {
     expect(url).not.toBeNull();
     expect(url).toContain("fonts.googleapis.com/css2?");
     expect(url).toContain("Playfair+Display");
-    expect(url).toContain("Tajawal");
+    // Tajawal is self-hosted under /public/fonts and must never be requested from Google.
+    expect(url).not.toContain("Tajawal");
     expect(url).toContain("display=swap");
   });
 

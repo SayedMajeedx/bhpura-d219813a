@@ -159,6 +159,21 @@ export default {
         );
       }
 
+      // SEO fast paths: never let crawler probes fall through to /$slug SSR.
+      if (url.pathname === "/robots.txt") {
+        const { handleRobotsRequest } = await import("./lib/seo/robots-sitemap.server");
+        return withSecurityHeaders(handleRobotsRequest(request), correlationId);
+      }
+
+      const sitemapMatch = url.pathname.match(/^\/(?:([a-z0-9-]+)\/)?sitemap\.xml$/i);
+      if (sitemapMatch) {
+        const { handleSitemapRequest } = await import("./lib/seo/robots-sitemap.server");
+        return withSecurityHeaders(
+          await handleSitemapRequest(request, sitemapMatch[1] ?? null),
+          correlationId,
+        );
+      }
+
       if (url.pathname === "/api/public/webhooks/meta-whatsapp") {
         const { handleMetaWhatsAppWebhook } = await import("./lib/meta-whatsapp.server");
         return withSecurityHeaders(
