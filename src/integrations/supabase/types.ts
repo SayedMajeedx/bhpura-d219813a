@@ -4184,8 +4184,6 @@ export type Database = {
           shipping: number;
           shipping_address_id: string | null;
           status: string;
-          stock_deducted: boolean;
-          stock_snapshot: Json | null;
           subtotal: number;
           tax_amount: number;
           tax_rate: number;
@@ -4254,8 +4252,6 @@ export type Database = {
           shipping?: number;
           shipping_address_id?: string | null;
           status?: string;
-          stock_deducted?: boolean;
-          stock_snapshot?: Json | null;
           subtotal?: number;
           tax_amount?: number;
           tax_rate?: number;
@@ -4324,8 +4320,6 @@ export type Database = {
           shipping?: number;
           shipping_address_id?: string | null;
           status?: string;
-          stock_deducted?: boolean;
-          stock_snapshot?: Json | null;
           subtotal?: number;
           tax_amount?: number;
           tax_rate?: number;
@@ -8624,7 +8618,6 @@ export type Database = {
         Args: { p_incubator_id?: string };
         Returns: number;
       };
-      sync_order_stock: { Args: { p_order_id: string }; Returns: undefined };
       transfer_stock_to_incubator: {
         Args: {
           p_commission_type?: string;

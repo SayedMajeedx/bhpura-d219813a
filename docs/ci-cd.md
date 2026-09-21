@@ -40,8 +40,16 @@ The CI pipeline is implemented via GitHub Actions in [`.github/workflows/ci.yml`
      - Spawns an ephemeral PostgreSQL 15 container in GitHub Actions.
      - Sequentially executes all SQL migration scripts in `supabase/migrations/`.
      - Validates that SQL syntax, DDL statements, and schema changes apply without errors.
+   - **Local Command**: `npm run db:migrations:check`
 
-5. **`security-scan` (Vulnerability & Secret Scanning)**
+5. **`supabase-migration-drift` (Linked Migration Drift Verification)**
+   - **Steps**:
+     - Executes `scripts/database/check-migration-drift.mjs` against the linked Supabase project.
+     - Verifies zero discrepancy between committed migration versions and remote applied migrations.
+     - Automatically alerts on uncommitted remote migrations or unapplied local versions.
+   - **Local Command**: `npm run db:migrations:drift`
+
+6. **`security-scan` (Vulnerability & Secret Scanning)**
    - **Steps**:
      - `npm audit --audit-level=high`
      - `gitleaks` automated scan to prevent committing secret keys, API tokens, or credentials.

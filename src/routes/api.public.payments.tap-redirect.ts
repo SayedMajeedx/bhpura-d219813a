@@ -98,16 +98,6 @@ export const Route = createFileRoute("/api/public/payments/tap-redirect")({
               });
             }
 
-            const { error: stockError } = await supabaseAdmin.rpc("sync_order_stock", {
-              p_order_id: orderId,
-            });
-            if (stockError) {
-              console.error("[Tap Redirect Stock Sync Error]:", stockError);
-              return new Response("Payment was verified but stock reconciliation failed.", {
-                status: 500,
-              });
-            }
-
             const confirmationSearch = new URLSearchParams({
               payment: "success",
               fulfillment: order.fulfillment_method || "delivery",
@@ -152,14 +142,6 @@ export const Route = createFileRoute("/api/public/payments/tap-redirect")({
                 return new Response("Payment failed but order cancellation failed.", {
                   status: 500,
                 });
-              }
-
-              const { error: stockError } = await supabaseAdmin.rpc("sync_order_stock", {
-                p_order_id: orderId,
-              });
-              if (stockError) {
-                console.error("[Tap Redirect Stock Release Error]:", stockError);
-                return new Response("Payment failed but stock release failed.", { status: 500 });
               }
             }
 
