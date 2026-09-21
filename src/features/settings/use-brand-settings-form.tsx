@@ -199,11 +199,10 @@ export function useBrandSettingsForm(brandId: string): BrandSettingsFormState {
     setIsSaving(true);
     try {
       if (Object.keys(currentDiffBs).length > 0) {
-        const { error: bsErr } = await (supabase.from("business_settings") as any)
-          .upsert(
-            { ...currentDiffBs, brand_id: brandId },
-            { onConflict: "brand_id" },
-          );
+        const { error: bsErr } = await (supabase.from("business_settings") as any).upsert(
+          { ...currentDiffBs, brand_id: brandId },
+          { onConflict: "brand_id" },
+        );
         if (bsErr) throw bsErr;
       }
 

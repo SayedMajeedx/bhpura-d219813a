@@ -204,15 +204,14 @@ export function StoreProfileCard({
     setSaving(true);
     try {
       // 1. Upsert business_settings store_vertical (never write deprecated store_modules)
-      const { error: bsError } = await (supabase.from("business_settings") as any)
-        .upsert(
-          {
-            brand_id: brandId,
-            store_vertical: pendingVertical,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "brand_id" },
-        );
+      const { error: bsError } = await (supabase.from("business_settings") as any).upsert(
+        {
+          brand_id: brandId,
+          store_vertical: pendingVertical,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "brand_id" },
+      );
       if (bsError) throw bsError;
 
       // 2. Install missing required starter pack add-ons
@@ -377,16 +376,15 @@ export function StoreProfileCard({
   const handleSave = async () => {
     setSaving(true);
     try {
-      const { error } = await (supabase.from("business_settings") as any)
-        .upsert(
-          {
-            brand_id: brandId,
-            store_vertical: vertical,
-            fit_profiles: fitProfiles,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "brand_id" },
-        );
+      const { error } = await (supabase.from("business_settings") as any).upsert(
+        {
+          brand_id: brandId,
+          store_vertical: vertical,
+          fit_profiles: fitProfiles,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "brand_id" },
+      );
 
       if (error) throw error;
 

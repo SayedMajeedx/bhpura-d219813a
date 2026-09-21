@@ -170,9 +170,10 @@ describe("storefront & admin gating (source checks)", () => {
     );
     expect(existsSync(migPath)).toBe(true);
     const sql = readFileSync(migPath, "utf-8");
-    expect(sql).toContain("ALTER TABLE public.business_settings ALTER COLUMN user_id DROP NOT NULL");
+    expect(sql).toContain(
+      "ALTER TABLE public.business_settings ALTER COLUMN user_id DROP NOT NULL",
+    );
     expect(sql).toContain("ON DELETE SET NULL");
     expect(sql).toContain("ensure_brand_business_settings");
   });
 });
-
