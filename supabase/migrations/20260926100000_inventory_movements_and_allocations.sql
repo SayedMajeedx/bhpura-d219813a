@@ -187,7 +187,7 @@ BEGIN
           v_loc := 'main';
         END IF;
 
-        IF v_val::integer > 0 THEN
+        IF v_val::integer > 0 AND EXISTS (SELECT 1 FROM public.product_variants WHERE id = v_var_id) THEN
           INSERT INTO public.order_inventory_allocations (
             order_id, variant_id, location, quantity, brand_id
           ) VALUES (
@@ -198,10 +198,11 @@ BEGIN
     ELSE
       -- Fallback to order_items for older orders
       FOR v_item IN
-        SELECT variant_id, COALESCE(location, 'main') AS location, SUM(quantity)::integer AS qty
-        FROM public.order_items
-        WHERE order_id = v_ord.id AND variant_id IS NOT NULL AND COALESCE(location, 'main') IN ('main', 'incubator')
-        GROUP BY variant_id, COALESCE(location, 'main')
+        SELECT oi.variant_id, COALESCE(oi.location, 'main') AS location, SUM(oi.quantity)::integer AS qty
+        FROM public.order_items oi
+        JOIN public.product_variants pv ON pv.id = oi.variant_id
+        WHERE oi.order_id = v_ord.id AND oi.variant_id IS NOT NULL AND COALESCE(oi.location, 'main') IN ('main', 'incubator')
+        GROUP BY oi.variant_id, COALESCE(oi.location, 'main')
       LOOP
         IF v_item.qty > 0 THEN
           INSERT INTO public.order_inventory_allocations (

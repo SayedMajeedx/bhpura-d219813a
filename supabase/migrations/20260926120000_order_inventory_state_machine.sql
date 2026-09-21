@@ -513,9 +513,9 @@ CREATE OR REPLACE FUNCTION public.place_storefront_order_internal_20260710(
   p_customer jsonb,
   p_items jsonb,
   p_payment_method text,
-  p_notes text,
-  p_fulfillment text,
-  p_branch_id uuid
+  p_notes text DEFAULT NULL::text,
+  p_fulfillment text DEFAULT 'delivery'::text,
+  p_branch_id uuid DEFAULT NULL::uuid
 )
 RETURNS jsonb
 LANGUAGE plpgsql
