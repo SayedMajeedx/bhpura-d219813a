@@ -11,7 +11,8 @@ import { ColorField } from "@/features/settings/shared/ColorField";
 import { HeroSlidesEditor, type HeroSlide } from "./HeroSlidesEditor";
 import { ImageCropperDialog } from "@/components/image-cropper-dialog";
 import { uploadPublicMedia } from "@/lib/r2-upload";
-import { optimizeVideo } from "@/lib/video-optimizer";
+import { VIDEO_PRESETS, type OptimizedVideoResult } from "@/lib/video-optimizer";
+import { VideoOptimizerDialog } from "@/components/admin/video/VideoOptimizerDialog";
 import { toast } from "sonner";
 import { ImagePlus, Loader2, Sparkles, Trash2, Video } from "lucide-react";
 
@@ -30,6 +31,7 @@ export function HomeHeroGroup() {
 
   const [uploadingBg, setUploadingBg] = useState(false);
   const [backgroundCropSrc, setBackgroundCropSrc] = useState<string | null>(null);
+  const [pendingOptimizeBgVideo, setPendingOptimizeBgVideo] = useState<File | null>(null);
 
   // Parse hero_media
   const heroMedia = (
@@ -39,7 +41,7 @@ export function HomeHeroGroup() {
   ) as { background?: MediaItem | null; slides?: HeroSlide[] };
 
   const backgroundMedia = heroMedia.background ?? null;
-  const slides = Array.isArray(heroMedia.slides) ? heroMedia.slides : [];
+  const slides = heroMedia.slides ?? [];
 
   const updateBackground = (bg: MediaItem | null) => {
     setBrand({
@@ -64,41 +66,52 @@ export function HomeHeroGroup() {
   const handleUploadBgFile = async (file: File) => {
     const isVid = file.type.startsWith("video") || /\.(mp4|webm|mov|m4v|mkv)$/i.test(file.name);
     if (isVid) {
-      try {
-        setUploadingBg(true);
-        toast.info(isAr ? "جارٍ ضغط وتحسين فيديو الخلفية..." : "Optimizing background video...");
-        const result = await optimizeVideo(file);
-        const [url, posterUrl] = await Promise.all([
-          uploadPublicMedia(brandId, result.file, "hero"),
-          result.posterBlob && result.posterBlob.size > 0
-            ? uploadPublicMedia(brandId, result.posterBlob, "hero")
-            : Promise.resolve(null),
-        ]);
-        updateBackground({
-          type: "video",
-          url,
-          ...(posterUrl ? { posterUrl } : {}),
-        });
-        if (result.wasCompressed) {
-          toast.success(
-            isAr
-              ? `تم ضغط ورفع فيديو الخلفية بنجاح (وفّر ${result.savingsPercent}%)`
-              : `Background video compressed & uploaded (-${result.savingsPercent}%)`,
-          );
-        } else {
-          toast.success(isAr ? "تم رفع فيديو الخلفية" : "Background video uploaded");
-        }
-      } catch (err: any) {
-        toast.error(err.message || (isAr ? "فشل رفع الفيديو" : "Failed to upload video"));
-      } finally {
-        setUploadingBg(false);
-      }
+      setPendingOptimizeBgVideo(file);
     } else {
       const reader = new FileReader();
       reader.onload = () => {
         setBackgroundCropSrc(reader.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleConfirmBgVideo = async (result: OptimizedVideoResult) => {
+    if (!brandId) return;
+    try {
+      setUploadingBg(true);
+      const [url, posterUrl] = await Promise.all([
+        uploadPublicMedia(brandId, result.file, "hero"),
+        result.posterBlob && result.posterBlob.size > 0
+          ? uploadPublicMedia(brandId, result.posterBlob, "hero")
+          : Promise.resolve(null),
+      ]);
+      updateBackground({
+        type: "video",
+        url,
+        ...(posterUrl ? { posterUrl } : {}),
+      });
+      const presetLabel = isAr
+        ? VIDEO_PRESETS[result.preset].labelAr
+        : VIDEO_PRESETS[result.preset].labelEn;
+      if (result.wasCompressed) {
+        toast.success(
+          isAr
+            ? `تم تحسين فيديو الخلفية وحفظه (${presetLabel} — وفّر ${result.savingsPercent}%)`
+            : `Background video optimized & saved (${presetLabel} — -${result.savingsPercent}%)`,
+        );
+      } else {
+        toast.success(
+          isAr
+            ? `تم رفع فيديو الخلفية (${presetLabel})`
+            : `Background video uploaded (${presetLabel})`,
+        );
+      }
+    } catch (err: any) {
+      toast.error(err?.message || (isAr ? "فشل رفع الفيديو" : "Failed to upload video"));
+    } finally {
+      setUploadingBg(false);
+      setPendingOptimizeBgVideo(null);
     }
   };
 
@@ -122,7 +135,7 @@ export function HomeHeroGroup() {
       setUploadingBg(true);
       toast.info(
         isAr
-          ? "جارٍ جلب الفيديو الحالي لبدء الضغط..."
+          ? "جارٍ جلب الفيديو الحالي لفتحه في معالج التحسين..."
           : "Downloading existing video for optimization...",
       );
       const response = await fetch(backgroundMedia.url);
@@ -130,35 +143,10 @@ export function HomeHeroGroup() {
       const blob = await response.blob();
       const file = new File([blob], "current-hero-video.mp4", { type: blob.type || "video/mp4" });
 
-      toast.info(isAr ? "جارٍ ضغط وتحسين الفيديو..." : "Optimizing and compressing video...");
-      const result = await optimizeVideo(file);
-      const [url, posterUrl] = await Promise.all([
-        uploadPublicMedia(brandId, result.file, "hero"),
-        result.posterBlob && result.posterBlob.size > 0
-          ? uploadPublicMedia(brandId, result.posterBlob, "hero")
-          : Promise.resolve(null),
-      ]);
-      updateBackground({
-        type: "video",
-        url,
-        ...(posterUrl ? { posterUrl } : {}),
-      });
-      if (result.wasCompressed) {
-        toast.success(
-          isAr
-            ? `تم ضغط الفيديو بنجاح (وفّر ${result.savingsPercent}%) — اضغط حفظ التغييرات`
-            : `Video compressed successfully (-${result.savingsPercent}%) — click Save Changes`,
-        );
-      } else {
-        toast.info(
-          isAr
-            ? "الفيديو مُحسّن بالفعل أو لا يحتاج إلى مزيد من الضغط"
-            : "Video is already optimized or could not be further compressed",
-        );
-      }
+      setPendingOptimizeBgVideo(file);
     } catch (err: any) {
       toast.error(
-        err.message || (isAr ? "فشل ضغط الفيديو الحالي" : "Failed to compress current video"),
+        err?.message || (isAr ? "فشل جلب الفيديو الحالي" : "Failed to fetch current video"),
       );
     } finally {
       setUploadingBg(false);
@@ -469,6 +457,17 @@ export function HomeHeroGroup() {
 
         <HeroSlidesEditor brandId={brandId} slides={slides} onChange={updateSlides} />
       </div>
+
+      <VideoOptimizerDialog
+        open={!!pendingOptimizeBgVideo}
+        file={pendingOptimizeBgVideo}
+        brandId={brandId}
+        onOpenChange={(open) => {
+          if (!open) setPendingOptimizeBgVideo(null);
+        }}
+        onConfirm={handleConfirmBgVideo}
+        onCancel={() => setPendingOptimizeBgVideo(null)}
+      />
     </div>
   );
 }

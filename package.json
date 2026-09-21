@@ -17,7 +17,9 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "db:migrations:check": "node scripts/database/check-migration-integrity.mjs",
-    "db:migrations:drift": "node scripts/database/check-migration-drift.mjs"
+    "db:migrations:drift": "node scripts/database/check-migration-drift.mjs",
+    "perf:lh:mobile": "npx --yes @lhci/cli autorun --config=lighthouserc.json",
+    "perf:lh:desktop": "npx --yes @lhci/cli autorun --config=lighthouserc.desktop.json"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1085.0",
@@ -73,6 +75,7 @@
     "lru-cache": "^11.5.2",
     "lucide-react": "^0.575.0",
     "marked": "^18.0.6",
+    "mediabunny": "^1.58.1",
     "react": "^19.2.0",
     "react-day-picker": "^9.14.0",
     "react-dom": "^19.2.0",

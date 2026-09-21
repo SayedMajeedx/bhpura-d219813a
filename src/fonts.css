@@ -1,11 +1,15 @@
-/* Typography Architecture: Self-Hosted Variable + Google Fonts Fallbacks */
-
-@import url("https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200..700&family=Tajawal:wght@300;400;500;700&display=swap");
+/* Typography Architecture: Self-Hosted Fonts Only
+ *
+ * Every default family is served from /fonts (woff2, immutable cache) so the
+ * storefront never waits on a third-party CSS -> font chain during first paint.
+ * Merchant-selected Google families are loaded non-blocking from the route head
+ * (see getGoogleFontsUrl in src/lib/typography.ts).
+ */
 
 /* Primary Arabic & English Variable UI Fonts */
 @font-face {
   font-family: "Readex Pro";
-  src: url("/fonts/variable/readex-pro-hexp-wght.ttf") format("truetype-variations");
+  src: url("/fonts/variable/readex-pro-hexp-wght.woff2") format("woff2-variations");
   font-weight: 160 700;
   font-style: normal;
   font-display: swap;
@@ -13,7 +17,7 @@
 
 @font-face {
   font-family: "Plus Jakarta Sans";
-  src: url("/fonts/variable/plus-jakarta-sans-wght.ttf") format("truetype-variations");
+  src: url("/fonts/variable/plus-jakarta-sans-wght.woff2") format("woff2-variations");
   font-weight: 200 800;
   font-style: normal;
   font-display: swap;
@@ -21,7 +25,7 @@
 
 @font-face {
   font-family: "Plus Jakarta Sans";
-  src: url("/fonts/variable/plus-jakarta-sans-italic-wght.ttf") format("truetype-variations");
+  src: url("/fonts/variable/plus-jakarta-sans-italic-wght.woff2") format("woff2-variations");
   font-weight: 200 800;
   font-style: italic;
   font-display: swap;
@@ -41,6 +45,68 @@
   font-weight: 400 700;
   font-style: normal;
   font-display: swap;
+}
+
+/* Default Arabic body font (OFL, subset per script so only the needed file downloads) */
+@font-face {
+  font-family: "Tajawal";
+  src: url("/fonts/tajawal/tajawal-400-arabic.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E,
+    U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}
+@font-face {
+  font-family: "Tajawal";
+  src: url("/fonts/tajawal/tajawal-400-latin.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Tajawal";
+  src: url("/fonts/tajawal/tajawal-500-arabic.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E,
+    U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}
+@font-face {
+  font-family: "Tajawal";
+  src: url("/fonts/tajawal/tajawal-500-latin.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Tajawal";
+  src: url("/fonts/tajawal/tajawal-700-arabic.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E,
+    U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}
+@font-face {
+  font-family: "Tajawal";
+  src: url("/fonts/tajawal/tajawal-700-latin.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 /* Boutique Headline Display Fonts */

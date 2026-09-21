@@ -252,6 +252,10 @@ function MobileStorefrontDropdown() {
                           src={cloudflareImageUrl(page.iconUrl, 80)}
                           // Decorative icon next to visible title label
                           alt=""
+                          width={20}
+                          height={20}
+                          loading="lazy"
+                          decoding="async"
                           className="h-5 w-5 object-contain"
                         />
                       ) : (
@@ -363,6 +367,10 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
                     <img
                       src={cloudflareImageUrl(settings.logo_url, 320)}
                       alt={displayName}
+                      width={88}
+                      height={56}
+                      loading="lazy"
+                      decoding="async"
                       className="block max-h-full max-w-full object-contain"
                       style={{ width: "auto", height: "auto" }}
                     />
@@ -926,6 +934,10 @@ function SearchBar() {
                                 <img
                                   src={cloudflareImageUrl(imageUrl, 120)}
                                   alt={displayName}
+                                  width={120}
+                                  height={120}
+                                  loading="lazy"
+                                  decoding="async"
                                   className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 />
                               )}

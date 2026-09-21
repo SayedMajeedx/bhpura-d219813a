@@ -1,11 +1,14 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   customFontFaces,
   defaultStorefrontTypography,
   fontCapabilities,
+  getGoogleFontsUrl,
   normalizeTypography,
+  SELF_HOSTED_FAMILIES,
+  selfHostedFontPreloads,
   typographyVariables,
 } from "../src/lib/typography";
 
@@ -70,32 +73,93 @@ describe("typography management", () => {
     expect(arabic["--type-body-variation"]).toBe("'HEXP' 64");
   });
 
-  it("bundles both variable fonts and their OFL licenses locally", () => {
+  it("bundles the variable fonts as woff2 with their OFL licenses locally", () => {
     const fontsCss = readFileSync(resolve(process.cwd(), "src/fonts.css"), "utf8");
     const requiredFiles = [
-      "public/fonts/variable/plus-jakarta-sans-wght.ttf",
-      "public/fonts/variable/plus-jakarta-sans-italic-wght.ttf",
-      "public/fonts/variable/readex-pro-hexp-wght.ttf",
+      "public/fonts/variable/plus-jakarta-sans-wght.woff2",
+      "public/fonts/variable/plus-jakarta-sans-italic-wght.woff2",
+      "public/fonts/variable/readex-pro-hexp-wght.woff2",
       "public/fonts/licenses/plus-jakarta-sans-OFL.txt",
       "public/fonts/licenses/readex-pro-OFL.txt",
+      "public/fonts/licenses/Tajawal-OFL.txt",
     ];
 
-    for (const file of requiredFiles)
-      expect(readFileSync(resolve(process.cwd(), file)).length).toBeGreaterThan(0);
-    expect(
-      readFileSync(
-        resolve(process.cwd(), "public/fonts/variable/readex-pro-hexp-wght.ttf"),
-      ).includes(Buffer.from("HEXP")),
-    ).toBe(true);
-    expect(
-      readFileSync(
-        resolve(process.cwd(), "public/fonts/variable/plus-jakarta-sans-wght.ttf"),
-      ).includes(Buffer.from("wght")),
-    ).toBe(true);
+    for (const file of requiredFiles) {
+      const bytes = readFileSync(resolve(process.cwd(), file));
+      expect(bytes.length).toBeGreaterThan(0);
+      // woff2 magic number: "wOF2"
+      if (file.endsWith(".woff2")) expect(bytes.subarray(0, 4).toString("ascii")).toBe("wOF2");
+    }
     expect(fontsCss).toContain('font-family: "Plus Jakarta Sans"');
     expect(fontsCss).toContain('font-family: "Readex Pro"');
+    expect(fontsCss).toContain('format("woff2-variations")');
     expect(fontsCss).toContain("font-weight: 200 800");
     expect(fontsCss).toContain("font-weight: 160 700");
+  });
+
+  it("serves the default Arabic body font (Tajawal) locally, split per script", () => {
+    const fontsCss = readFileSync(resolve(process.cwd(), "src/fonts.css"), "utf8");
+    for (const weight of [400, 500, 700]) {
+      for (const subset of ["arabic", "latin"]) {
+        const file = `public/fonts/tajawal/tajawal-${weight}-${subset}.woff2`;
+        expect(readFileSync(resolve(process.cwd(), file)).length).toBeGreaterThan(0);
+        expect(fontsCss).toContain(`/fonts/tajawal/tajawal-${weight}-${subset}.woff2`);
+      }
+    }
+    expect(fontsCss).toContain("unicode-range:");
+    expect(fontsCss).toContain("U+0600-06FF");
+  });
+
+  it("never loads fonts through a render-blocking third-party chain", () => {
+    const fontsCss = readFileSync(resolve(process.cwd(), "src/fonts.css"), "utf8");
+    expect(fontsCss).not.toMatch(/@import\s+url\(/);
+    expect(fontsCss).not.toContain("fonts.googleapis.com");
+    expect(fontsCss).not.toContain(".ttf");
+    expect(
+      readdirSync(resolve(process.cwd(), "public/fonts/variable")).some((f) => f.endsWith(".ttf")),
+    ).toBe(false);
+
+    // Default storefront typography must be fully self-hosted (no Google request).
+    expect(getGoogleFontsUrl(defaultStorefrontTypography())).toBeNull();
+    for (const family of [
+      "Inter",
+      "Tajawal",
+      "Readex Pro",
+      "Plus Jakarta Sans",
+      "29LT Zarid Display",
+    ]) {
+      expect(SELF_HOSTED_FAMILIES.has(family)).toBe(true);
+    }
+  });
+
+  it("requests only the rendered weights for non-self-hosted Google families", () => {
+    const config = normalizeTypography(
+      {
+        body: { en: { family: "Poppins", url: null }, ar: { family: "Amiri", url: null } },
+        display: { en: { family: "Cinzel", url: null }, ar: { family: "Tajawal", url: null } },
+        bodyWeight: 400,
+        headingWeight: 600,
+      },
+      defaultStorefrontTypography(),
+    );
+    const url = getGoogleFontsUrl(config)!;
+    expect(url).toContain("family=Poppins:wght@400;700");
+    // Amiri only ships 400/700; 600 must not be requested.
+    expect(url).toContain("family=Amiri:wght@400;700");
+    // Cinzel is variable: a single range request instead of static instances.
+    expect(url).toContain("family=Cinzel:wght@400..700");
+    expect(url).not.toContain("Tajawal");
+    expect(url).not.toContain("900");
+  });
+
+  it("preloads at most the body and display faces of the active language", () => {
+    const config = defaultStorefrontTypography();
+    expect(selfHostedFontPreloads(config, "ar")).toEqual([
+      "/fonts/tajawal/tajawal-400-arabic.woff2",
+      "/fonts/zariddisplay.woff2",
+    ]);
+    expect(selfHostedFontPreloads(config, "en")).toEqual(["/fonts/inter.woff2"]);
+    expect(selfHostedFontPreloads(null, "ar")).toEqual([]);
   });
 
   it("promotes legacy uploads to selectable custom font sources", () => {

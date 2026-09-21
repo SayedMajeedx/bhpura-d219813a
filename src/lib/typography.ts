@@ -194,35 +194,122 @@ const canonicalFamily = (family: string, language: TypographyLanguage) => {
   return aliases[family] ?? family;
 };
 
+/**
+ * Families bundled under /public/fonts (see src/fonts.css). These never hit
+ * Google Fonts, so the storefront's first paint has no third-party CSS chain.
+ */
+export const SELF_HOSTED_FAMILIES = new Set([
+  "Plus Jakarta Sans",
+  "Readex Pro",
+  "Inter",
+  "Tajawal",
+  "Cormorant Garamond",
+  "29LT Bukra",
+  "29LT Zarid Display",
+  "29LT Kaff",
+  "29LT Azer",
+]);
+
+const isGoogleCandidate = (source?: FontSource) => {
+  if (!source || source.url) return false;
+  const fam = source.family?.trim();
+  return Boolean(
+    fam &&
+    !fam.startsWith("Custom —") &&
+    fam !== "Georgia" &&
+    fam !== "sans-serif" &&
+    fam !== "serif" &&
+    !SELF_HOSTED_FAMILIES.has(fam),
+  );
+};
+
+/**
+ * Builds a Google Fonts stylesheet URL only for merchant-selected families that
+ * are not self-hosted, requesting just the weights the storefront renders
+ * (body, heading, 400 and 700) instead of every static weight.
+ */
 export function getGoogleFontsUrl(config?: TypographyConfig | null): string | null {
   if (!config) return null;
-  const families = new Set<string>();
-  const addSource = (source?: FontSource) => {
-    if (!source || source.url) return;
-    const fam = source.family?.trim();
-    if (
-      fam &&
-      !fam.startsWith("Custom —") &&
-      fam !== "Georgia" &&
-      fam !== "sans-serif" &&
-      fam !== "serif"
-    ) {
-      families.add(fam);
+  const requested = new Map<string, Set<number>>();
+  const add = (source: FontSource | undefined, weight: number) => {
+    if (!isGoogleCandidate(source)) return;
+    const fam = source!.family.trim();
+    const caps = fontCapabilities(source!);
+    const set = requested.get(fam) ?? new Set<number>();
+    // Static families only guarantee 400/700 instances; asking Google for a
+    // missing instance fails the whole stylesheet, so snap to those. Variable
+    // families accept any value inside their axis range.
+    const candidates = caps.variable ? [weight, 400, 700] : [400, 700];
+    for (const w of candidates) {
+      const snapped = Math.round(w / 100) * 100;
+      if (snapped >= caps.weight.min && snapped <= caps.weight.max) set.add(snapped);
     }
+    requested.set(fam, set);
   };
-  addSource(config.body?.en);
-  addSource(config.body?.ar);
-  addSource(config.display?.en);
-  addSource(config.display?.ar);
+  const bodyWeight = Number(config.bodyWeight) || 400;
+  const headingWeight = Number(config.headingWeight) || 600;
+  add(config.body?.en, bodyWeight);
+  add(config.body?.ar, bodyWeight);
+  add(config.display?.en, headingWeight);
+  add(config.display?.ar, headingWeight);
 
-  if (families.size === 0) return null;
+  if (requested.size === 0) return null;
 
-  const parts = Array.from(families).map((fam) => {
+  const parts = Array.from(requested.entries()).map(([fam, weights]) => {
     const encoded = encodeURIComponent(fam).replace(/%20/g, "+");
-    return `family=${encoded}:wght@300;400;500;600;700;800;900`;
+    const sorted = Array.from(weights).sort((a, b) => a - b);
+    const variable = FONT_LIBRARY[fam as keyof typeof FONT_LIBRARY]?.variable;
+    const axis =
+      variable && sorted.length > 1
+        ? `${sorted[0]}..${sorted[sorted.length - 1]}`
+        : sorted.join(";");
+    return `family=${encoded}:wght@${axis}`;
   });
 
   return `https://fonts.googleapis.com/css2?${parts.join("&")}&display=swap`;
+}
+
+/**
+ * Self-hosted font files worth preloading for the active language: the body
+ * face (most text) and the display face (H1 / LCP text). At most two files.
+ */
+export function selfHostedFontPreloads(
+  config: TypographyConfig | null | undefined,
+  language: TypographyLanguage,
+): string[] {
+  if (!config) return [];
+  const nearest = (weight: number, options: number[]) =>
+    options.reduce((best, w) => (Math.abs(w - weight) < Math.abs(best - weight) ? w : best));
+  const fileFor = (source: FontSource | undefined, weight: number): string | null => {
+    if (!source || source.url) return null;
+    switch (source.family) {
+      case "Tajawal":
+        return `/fonts/tajawal/tajawal-${nearest(weight, [400, 500, 700])}-${language === "ar" ? "arabic" : "latin"}.woff2`;
+      case "Inter":
+        return "/fonts/inter.woff2";
+      case "Readex Pro":
+        return "/fonts/variable/readex-pro-hexp-wght.woff2";
+      case "Plus Jakarta Sans":
+        return "/fonts/variable/plus-jakarta-sans-wght.woff2";
+      case "Cormorant Garamond":
+        return "/fonts/english-font.woff2";
+      case "29LT Zarid Display":
+        return "/fonts/zariddisplay.woff2";
+      case "29LT Bukra":
+        return "/fonts/bukramed.woff2";
+      case "29LT Kaff":
+        return "/fonts/kafflight.woff2";
+      case "29LT Azer":
+        return "/fonts/azerextralight.woff2";
+      default:
+        return null;
+    }
+  };
+  const files = [
+    fileFor(config.body?.[language], Number(config.bodyWeight) || 400),
+    fileFor(config.display?.[language], Number(config.headingWeight) || 600),
+  ].filter((f): f is string => Boolean(f));
+  return Array.from(new Set(files));
 }
 
 export const defaultStorefrontTypography = (): TypographyConfig => ({

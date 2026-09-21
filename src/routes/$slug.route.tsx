@@ -22,6 +22,7 @@ import {
   defaultStorefrontTypography,
   getGoogleFontsUrl,
   normalizeTypography,
+  selfHostedFontPreloads,
   typographyVariables,
 } from "@/lib/typography";
 import { buildOrganizationSchema, buildWebSiteSchema } from "@/lib/seo/structured-data";
@@ -43,6 +44,7 @@ import { isCatalogMode } from "@/lib/storefront-mode";
 import { FooterV2 } from "@/components/storefront/FooterV2";
 import { normalizeVertical, normalizeModuleOverrides } from "@/lib/store-profile";
 import { isColorDark, hexToRgba } from "@/components/storefront/storefront-utils";
+import { isReservedStorefrontSlug } from "@/lib/seo/reserved-slugs";
 
 export const Route = createFileRoute("/$slug")({
   staleTime: 10_000,
@@ -51,6 +53,10 @@ export const Route = createFileRoute("/$slug")({
     "Cache-Control": "public, max-age=0, s-maxage=10, must-revalidate",
   }),
   loader: async ({ params, location }) => {
+    // File-like or platform paths (robots.txt, favicon.ico, .well-known, …) are
+    // never brands: fail fast instead of a database round-trip + SSR error page.
+    if (isReservedStorefrontSlug(params.slug)) throw notFound();
+
     let initialLang: "ar" | "en" = "ar";
     const searchParams = location?.search as any;
     const queryLang = searchParams?.lang;
@@ -380,7 +386,12 @@ export const Route = createFileRoute("/$slug")({
         : b.meta_description || `Shop ${b.name_en || b.name_ar} online.`;
     const img = settings?.logo_url || b.logo_url || "https://boutq.store/og-placeholder.png";
     const favicon = resolveBrandFavicon(settings?.favicon_url, settings?.logo_url ?? b.logo_url);
-    const googleFontsUrl = getGoogleFontsUrl(settings?.storefront_typography);
+    const typography = normalizeTypography(
+      settings?.storefront_typography,
+      defaultStorefrontTypography(),
+    );
+    const googleFontsUrl = getGoogleFontsUrl(typography);
+    const fontPreloads = selfHostedFontPreloads(typography, lang);
     const orgSchema = buildOrganizationSchema(b, settings);
     const webSiteSchema = buildWebSiteSchema(b, settings);
 
@@ -394,16 +405,33 @@ export const Route = createFileRoute("/$slug")({
         rel: "manifest",
         href: `/${b.slug}/manifest.webmanifest`,
       },
+      // Self-hosted faces for the active language are fetched at high priority
+      // alongside the CSS so text renders in the final font on first paint.
+      ...fontPreloads.map((href) => ({
+        rel: "preload",
+        as: "font",
+        type: "font/woff2",
+        href,
+        crossOrigin: "anonymous",
+      })),
+      // Merchant-selected Google families (rare) are fetched early but applied
+      // by the inline script below so the stylesheet never blocks rendering.
       ...(googleFontsUrl
         ? [
-            { rel: "preconnect", href: "https://fonts.googleapis.com" },
             { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-            { rel: "stylesheet", href: googleFontsUrl },
+            { rel: "preload", as: "style", href: googleFontsUrl },
           ]
         : []),
     ];
 
     const scripts: Array<Record<string, any>> = [
+      ...(googleFontsUrl
+        ? [
+            {
+              children: `(function(){var l=document.createElement("link");l.rel="stylesheet";l.href=${JSON.stringify(googleFontsUrl)};document.head.appendChild(l);})();`,
+            },
+          ]
+        : []),
       {
         type: "application/ld+json",
         children: JSON.stringify(orgSchema),
@@ -810,6 +838,10 @@ function StorefrontFooter() {
               <img
                 src={settings.logo_url}
                 alt={brand.name_en || "Logo"}
+                width={footerLogoSize * 3}
+                height={footerLogoSize}
+                loading="lazy"
+                decoding="async"
                 style={{ height: `${footerLogoSize}px`, width: "auto" }}
                 className="object-contain"
               />
@@ -906,6 +938,10 @@ function StorefrontFooter() {
               <img
                 src={settings.logo_url}
                 alt={brand.name_en || "Logo"}
+                width={footerLogoSize * 3}
+                height={footerLogoSize}
+                loading="lazy"
+                decoding="async"
                 style={{ height: `${footerLogoSize}px`, width: "auto" }}
                 className="object-contain"
               />
