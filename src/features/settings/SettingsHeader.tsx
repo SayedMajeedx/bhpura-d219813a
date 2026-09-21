@@ -132,28 +132,13 @@ export function SettingsHeader({
 
         {/* Level Toggle & Save Controls */}
         <div className="flex flex-wrap items-center gap-3">
-          {/* Live Preview Toggle (P3) */}
-          {onTogglePreview && (
-            <Button
-              type="button"
-              variant={isPreviewOpen ? "default" : "outline"}
-              size="sm"
-              onClick={onTogglePreview}
-              className="hidden xl:inline-flex h-9 px-3 text-xs gap-1.5 rounded-xl transition-all"
-              title={isAr ? "تبديل لوحة المعاينة المباشرة" : "Toggle live preview pane"}
-            >
-              <Eye className="size-3.5" />
-              <span>{isAr ? "معاينة المتجر" : "Store Preview"}</span>
-            </Button>
-          )}
-
-          {/* Small screens preview link */}
+          {/* Store Preview (Opens in new tab) */}
           <Button
             type="button"
             variant="outline"
             size="sm"
             asChild
-            className="xl:hidden h-9 px-3 text-xs gap-1.5 rounded-xl"
+            className="h-9 px-3 text-xs gap-1.5 rounded-xl hover:bg-muted"
             title={isAr ? "معاينة المتجر في نافذة جديدة" : "Preview store in new tab"}
           >
             <a
@@ -161,9 +146,9 @@ export function SettingsHeader({
               target="_blank"
               rel="noopener noreferrer"
             >
-              <Eye className="size-3.5" />
-              <span>{isAr ? "معاينة" : "Preview"}</span>
-              <ExternalLink className="size-3" />
+              <Eye className="size-3.5 text-primary" />
+              <span>{isAr ? "معاينة المتجر" : "Store Preview"}</span>
+              <ExternalLink className="size-3 text-muted-foreground" />
             </a>
           </Button>
 

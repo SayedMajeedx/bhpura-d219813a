@@ -13,12 +13,10 @@ import { SettingsTabs } from "@/features/settings/SettingsTabs";
 import { SettingsNavContext } from "@/features/settings/GroupNavigator";
 import { StoreReadinessChecklist } from "@/components/settings/StoreReadinessChecklist";
 import { SettingsStickySaveBar } from "@/components/settings/SettingsStickySaveBar";
-import { LivePreviewPane } from "@/features/settings/shared/LivePreviewPane";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, RefreshCw } from "lucide-react";
-
 const VALID_TABS: SettingsTabId[] = [
   "identity",
   "storefront",
@@ -33,9 +31,6 @@ function SettingsPageInner() {
   const isAr = lang === "ar";
   const { isLoading, isError, error, isDirty, dirtyCount, isSaving, save, reset, bs } =
     useBrandSettingsFormContext();
-
-  const [saveCount, setSaveCount] = useState(0);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   // Read initial active tab from URL search param (?tab=...)
   const [activeTab, setActiveTab] = useState<SettingsTabId>(() => {
@@ -110,10 +105,7 @@ function SettingsPageInner() {
   }, []);
 
   const handleSave = useCallback(async () => {
-    const ok = await save();
-    if (ok) {
-      setSaveCount((prev) => prev + 1);
-    }
+    await save();
   }, [save]);
 
   // Global Ctrl+S / Cmd+S shortcut to save changes when dirty
@@ -132,7 +124,7 @@ function SettingsPageInner() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 max-w-7xl mx-auto p-4 sm:p-6">
+      <div className="space-y-6 w-full max-w-[1500px] mx-auto p-4 sm:p-6">
         <Skeleton className="h-32 w-full rounded-2xl" />
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -150,23 +142,17 @@ function SettingsPageInner() {
 
   if (isError) {
     return (
-      <div className="max-w-2xl mx-auto p-6 text-center space-y-4">
-        <Card className="p-8 border border-destructive/30 rounded-2xl bg-destructive/5 space-y-4">
-          <div className="size-12 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mx-auto">
-            <AlertCircle className="size-6" />
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-foreground">
-              {isAr ? "تعذّر تحميل إعدادات المتجر" : "Failed to load store settings"}
-            </h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {error?.message ||
-                (isAr
-                  ? "يرجى التحقق من الاتصال وإعادة المحاولة"
-                  : "Please check your network and try again.")}
-            </p>
-          </div>
+      <div className="space-y-6 w-full max-w-[1500px] mx-auto p-4 sm:p-6">
+        <Card className="p-8 text-center space-y-3 border-destructive/20 bg-destructive/5">
+          <AlertCircle className="size-8 text-destructive mx-auto" />
+          <h2 className="text-base font-semibold text-foreground">
+            {isAr ? "فشل تحميل إعدادات المتجر" : "Failed to load store settings"}
+          </h2>
+          <p className="text-xs text-muted-foreground max-w-md mx-auto">
+            {error?.message || (isAr ? "حدث خطأ غير متوقع." : "An unexpected error occurred.")}
+          </p>
           <Button
+            type="button"
             size="sm"
             variant="outline"
             onClick={() => window.location.reload()}
@@ -181,43 +167,30 @@ function SettingsPageInner() {
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-24 px-2 sm:px-4">
+    <div className="space-y-6 w-full max-w-[1500px] mx-auto pb-24 px-2 sm:px-4">
       {/* Universal Command Header */}
       <SettingsHeader
         activeTab={activeTab}
         onTabChange={handleTabChange}
-        isPreviewOpen={isPreviewOpen}
-        onTogglePreview={() => setIsPreviewOpen((v) => !v)}
       />
 
-      {/* Main Workspace with Optional Side-by-Side Live Preview on xl screens */}
-      <div className="flex items-start gap-6">
-        <div className="flex-1 min-w-0 space-y-6">
-          {/* Store Launch Readiness Checklist (P3) */}
-          <StoreReadinessChecklist
-            brandId={brand.id}
-            slug={brand.slug}
-            lang={lang}
-            logoUrl={brand.logo_url}
-            brandPalette={bs.brand_palette as any}
-            storeVertical={bs.store_vertical as any}
-            onNavigateTab={handleTabChange}
-          />
-
-          {/* 5-Tab Navigation & Panels */}
-          <SettingsNavContext.Provider value={navValue}>
-            <SettingsTabs activeTab={activeTab} onTabChange={handleTabChange} />
-          </SettingsNavContext.Provider>
-        </div>
-
-        {/* Live Preview Side Pane (xl screens) */}
-        <LivePreviewPane
+      {/* Main Workspace (Full Width) */}
+      <div className="space-y-6 w-full">
+        {/* Store Launch Readiness Checklist (P3) */}
+        <StoreReadinessChecklist
+          brandId={brand.id}
           slug={brand.slug}
-          brandName={(isAr ? brand.name_ar : brand.name_en) || brand.slug}
-          saveCount={saveCount}
-          isOpen={isPreviewOpen}
-          onToggle={() => setIsPreviewOpen((v) => !v)}
+          lang={lang}
+          logoUrl={brand.logo_url}
+          brandPalette={bs.brand_palette as any}
+          storeVertical={bs.store_vertical as any}
+          onNavigateTab={handleTabChange}
         />
+
+        {/* 5-Tab Navigation & Panels */}
+        <SettingsNavContext.Provider value={navValue}>
+          <SettingsTabs activeTab={activeTab} onTabChange={handleTabChange} />
+        </SettingsNavContext.Provider>
       </div>
 
       {/* Sticky Save Bar (Pops up when changes are dirty) */}
