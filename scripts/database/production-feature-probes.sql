@@ -69,3 +69,84 @@ WHERE event_object_table IN ('orders', 'order_items', 'product_variants')
 GROUP BY event_object_table, action_timing, event_manipulation, action_statement
 ORDER BY (count(*) > 1) DESC, event_object_table, action_statement;
 
+-- -----------------------------------------------------------------------------
+-- Inventory Remediation Probe 1: Stock Trigger Exclusivity
+-- Asserts exactly one trigger per stock function and no duplicate bindings.
+-- -----------------------------------------------------------------------------
+SELECT
+  event_object_table,
+  trigger_name,
+  event_manipulation,
+  action_timing,
+  action_statement,
+  CASE
+    WHEN count(*) OVER (PARTITION BY event_object_table, action_statement, event_manipulation, action_timing) = 1 THEN 'EXACTLY_ONE_TRIGGER_OK'
+    ELSE 'DUPLICATE_TRIGGER_DEFECT'
+  END AS exclusivity_status
+FROM information_schema.triggers
+WHERE trigger_schema = 'public'
+  AND event_object_table IN ('orders', 'order_items', 'product_variants')
+  AND (
+    action_statement ILIKE '%inventory%'
+    OR action_statement ILIKE '%stock%'
+  )
+ORDER BY event_object_table, trigger_name;
+
+-- -----------------------------------------------------------------------------
+-- Inventory Remediation Probe 2: Non-negative Stock CHECK Constraint Validity
+-- Asserts product_variants_stock_nonnegative is present and VALIDATED.
+-- -----------------------------------------------------------------------------
+SELECT
+  conname AS constraint_name,
+  conrelid::regclass AS table_name,
+  convalidated,
+  CASE
+    WHEN convalidated THEN 'VALID'
+    ELSE 'NOT_VALIDATED'
+  END AS validation_status
+FROM pg_constraint
+WHERE conname = 'product_variants_stock_nonnegative'
+  AND conrelid = 'public.product_variants'::regclass;
+
+-- -----------------------------------------------------------------------------
+-- Inventory Remediation Probe 3: Ledger Invariant Verification
+-- Asserts cached stock_main and stock_incubator match the sum of ledger deltas
+-- for all variants across all brands.
+-- -----------------------------------------------------------------------------
+WITH ledger_aggregates AS (
+  SELECT
+    variant_id,
+    COALESCE(SUM(delta) FILTER (WHERE location = 'main'), 0)::int AS ledger_main,
+    COALESCE(SUM(delta) FILTER (WHERE location = 'incubator'), 0)::int AS ledger_incubator
+  FROM public.inventory_movements
+  GROUP BY variant_id
+),
+variant_drift_analysis AS (
+  SELECT
+    pv.id AS variant_id,
+    pv.brand_id,
+    COALESCE(pv.stock_main, 0) AS cached_stock_main,
+    COALESCE(la.ledger_main, 0) AS ledger_stock_main,
+    COALESCE(pv.stock_incubator, 0) AS cached_stock_incubator,
+    COALESCE(la.ledger_incubator, 0) AS ledger_stock_incubator,
+    (COALESCE(pv.stock_main, 0) - COALESCE(la.ledger_main, 0)) AS main_drift,
+    (COALESCE(pv.stock_incubator, 0) - COALESCE(la.ledger_incubator, 0)) AS incubator_drift
+  FROM public.product_variants pv
+  LEFT JOIN ledger_aggregates la ON la.variant_id = pv.id
+)
+SELECT
+  variant_id,
+  brand_id,
+  cached_stock_main,
+  ledger_stock_main,
+  cached_stock_incubator,
+  ledger_stock_incubator,
+  main_drift,
+  incubator_drift,
+  CASE
+    WHEN main_drift = 0 AND incubator_drift = 0 THEN 'INVARIANT_HOLDS'
+    ELSE 'DRIFT_DETECTED'
+  END AS ledger_status
+FROM variant_drift_analysis
+WHERE main_drift <> 0 OR incubator_drift <> 0;
+

@@ -129,16 +129,6 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
               return new Response("Payment update failed.", { status: 500 });
             }
 
-            const { error: stockError } = await supabaseAdmin.rpc("sync_order_stock", {
-              p_order_id: orderId,
-            });
-            if (stockError) {
-              console.error("[Tap Webhook Stock Sync Error]:", stockError);
-              return new Response("Stock reconciliation failed.", {
-                status: 500,
-              });
-            }
-
             console.log(
               `[Tap Webhook Success]: Securely verified and confirmed payment for Order ${orderId}`,
             );
@@ -169,14 +159,6 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
                 return new Response("Payment status update failed.", {
                   status: 500,
                 });
-              }
-
-              const { error: stockError } = await supabaseAdmin.rpc("sync_order_stock", {
-                p_order_id: orderId,
-              });
-              if (stockError) {
-                console.error("[Tap Webhook Stock Release Error]:", stockError);
-                return new Response("Stock release failed.", { status: 500 });
               }
             }
           }

@@ -78,3 +78,39 @@ When an order was deleted:
 3. **Order State Machine**: Introduce `public.order_inventory_desired_state` and `order_inventory_allocations` replacing fragile boolean flags and JSON snapshots.
 4. **Non-Negative Stock Invariant**: Enforce `CHECK (stock_main >= 0 AND stock_incubator >= 0)`.
 5. **Nightly Automated Reconciliation**: Continuous validation job comparing cached stock to ledger sums.
+
+---
+
+## 6. Implementation & Rollout Status
+
+All 5 remediation blocks have been completed:
+
+| Phase | Branch | Key Deliverables | Status |
+| :--- | :--- | :--- | :--- |
+| **0. Hotfix** | `fix/inventory-hotfix` | Dropped duplicate `orders_restore_stock_on_delete_trg`; fixed column names in `rpc_inspect_and_restock_return_item` and `rpc_validate_and_restore_abandoned_cart`; created Qoffee stock repair script and duplicate trigger probe. | **Completed & Verified** |
+| **1. Ledger** | `fix/inventory-ledger` | Created `inventory_movements`, `order_inventory_allocations`, `inventory_reconciliation_runs`; implemented `apply_inventory_movement` single write path, `order_inventory_transition` state machine, `rpc_adjust_variant_stock`, and 12-suite unit tests in `tests/inventory-ledger.test.ts`. | **Completed & Verified** |
+| **2. App Callers** | `fix/inventory-app-callers` | Converted `admin.b.$slug.orders.$id.tsx` to `replace_order_items`; converted inventory page stock edits to `rpc_adjust_variant_stock`; removed redundant `sync_order_stock` callers from Tap webhook and redirect handlers. | **Completed & Verified** |
+| **3. Admin Visibility** | `feat/inventory-history-ui` | Built `InventoryHistorySheet` drawer with live ledger pagination, balance history, badges, user attribution, and order links across mobile cards, desktop rows, and header actions. | **Completed & Verified** |
+| **4. Cleanup** | `chore/inventory-legacy-removal` | Dropped `orders.stock_snapshot`, `orders.stock_deducted`, deprecated `sync_order_stock` RPC wrapper, and dead trigger functions via migration `20260927100000_cleanup_legacy_inventory_artifacts.sql`; extended `production-feature-probes.sql` with trigger exclusivity, CHECK constraint validation, and ledger invariant verification; added automated CI drift check. | **Completed & Verified** |
+
+---
+
+## 7. Migration Ledger Reconciliation & CI Drift Detection
+
+To ensure absolute fidelity between local migration scripts and the linked production database (`ikciahnuqhemvnyfvbyp`):
+
+1. **Continuous CI Verification**:
+   The workflow in `.github/workflows/ci.yml` runs `node scripts/database/check-migration-drift.mjs` on every commit, verifying zero discrepancy between committed SQL files and the remote schema ledger.
+2. **Ledger Repair Protocol**:
+   Per `docs/database-recovery.md`, any discrepancies between local and remote migration tables should be resolved using `npx supabase migration repair` under explicit owner review:
+   - For remote-only versions verified to be captured in migrations: mark as applied or backfill local SQL.
+   - For unapplied local migrations: execute sequentially via approved deployment pipeline.
+
+---
+
+## 8. Out-of-Scope Follow-up: Packaging Materials Inventory
+
+During the audit, `packaging_materials.stock_quantity` and its corresponding trigger `trg_orders_deduct_packaging_materials` were identified as using legacy direct-decrement logic. To maintain strict scope discipline and avoid regressions in bill-of-materials (BOM) logic during the critical order stock remediation, packaging materials were kept untouched.
+
+**Recommendation**: A subsequent milestone should migrate `packaging_materials` to the append-only inventory ledger with dedicated `packaging_movements` tracking.
+

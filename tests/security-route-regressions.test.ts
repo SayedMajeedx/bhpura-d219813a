@@ -572,9 +572,7 @@ describe("server route security regressions", () => {
     expect(response.status).toBe(302);
     expect(response.headers.get("Location")).toContain("payment_error=failed");
     expect(update).toHaveBeenCalledWith({ payment_status: "declined" });
-    expect(supabaseAdmin.rpc).toHaveBeenCalledWith("sync_order_stock", {
-      p_order_id: "order-1",
-    });
+    expect(supabaseAdmin.rpc).not.toHaveBeenCalledWith("sync_order_stock", expect.anything());
   });
 
   it.each([
@@ -638,9 +636,7 @@ describe("server route security regressions", () => {
       expect(response.headers.get("Location")).toBe(
         `/shop/thank-you/order-1?payment=success&${expectedSearch}`,
       );
-      expect(supabaseAdmin.rpc).toHaveBeenCalledWith("sync_order_stock", {
-        p_order_id: "order-1",
-      });
+      expect(supabaseAdmin.rpc).not.toHaveBeenCalledWith("sync_order_stock", expect.anything());
     },
   );
 

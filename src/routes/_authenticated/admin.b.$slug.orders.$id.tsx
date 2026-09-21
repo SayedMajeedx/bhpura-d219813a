@@ -1479,40 +1479,6 @@ function OrderDetail() {
       return;
     }
 
-    // Stock precheck when order will be in a deducting state.
-    if (DEDUCTING.has(order.status)) {
-      const variants = variantsQ.data ?? [];
-      const wasDeducted = !!(orderQ.data as any)?.stock_deducted;
-      const priorItems = wasDeducted ? ((orderQ.data as any)?.order_items ?? []) : [];
-      const prevByVariant = new Map<string, number>();
-      for (const p of priorItems as any[]) {
-        if (!p.variant_id) continue;
-        prevByVariant.set(
-          p.variant_id,
-          (prevByVariant.get(p.variant_id) ?? 0) + Number(p.quantity),
-        );
-      }
-      const wantByVariant = new Map<string, number>();
-      for (const it of items) {
-        if (!it.variant_id) continue;
-        const isCustom = it.location === "custom" || !it.variant_id;
-        if (isCustom) continue;
-        wantByVariant.set(
-          it.variant_id,
-          (wantByVariant.get(it.variant_id) ?? 0) + Number(it.quantity),
-        );
-      }
-      for (const [vid, want] of wantByVariant) {
-        const v = variants.find((x: any) => x.id === vid);
-        if (!v) continue;
-        const available = Number(v.stock) + (prevByVariant.get(vid) ?? 0);
-        if (want > available) {
-          setSaving(false);
-          return toast.error(t("orderDetail.insufficientStock"));
-        }
-      }
-    }
-
     const orderPayload = {
       customer_id: order.customer_id,
       status: order.status,
@@ -1556,6 +1522,12 @@ function OrderDetail() {
         return toast.error(createError?.message || "ORDER_CREATE_FAILED");
       }
       if (items.length > 0) {
+        for (const it of items) {
+          const isCustom = it.location === "custom" || !it.variant_id;
+          if (isCustom && !it.location) {
+            it.location = "custom";
+          }
+        }
         const { error: itemError } = await (supabase.from("order_items") as any).insert(
           items.map((item) => ({
             user_id: user.id,
@@ -1700,56 +1672,6 @@ function OrderDetail() {
           return toast.error(t("orderDetail.insufficientStock"));
         }
         return toast.error(repErr.message);
-      }
-    }
-
-    // Stock deltas: compare prior deducted items vs current, log per-variant changes
-    {
-      const variants = variantsQ.data ?? [];
-      const wasDeducted = !!(orderQ.data as any)?.stock_deducted;
-      const priorItems = wasDeducted ? ((orderQ.data as any)?.order_items ?? []) : [];
-      const nowDeducting = DEDUCTING.has(order.status);
-      const prevByV = new Map<string, number>();
-      for (const p of priorItems as any[]) {
-        if (!p.variant_id) continue;
-        prevByV.set(p.variant_id, (prevByV.get(p.variant_id) ?? 0) + Number(p.quantity));
-      }
-      const wantByV = new Map<string, number>();
-      if (nowDeducting) {
-        for (const it of items) {
-          if (!it.variant_id) continue;
-          const isCustom = it.location === "custom" || !it.variant_id;
-          if (isCustom) continue;
-          wantByV.set(it.variant_id, (wantByV.get(it.variant_id) ?? 0) + Number(it.quantity));
-        }
-      }
-      const vids = new Set<string>([...prevByV.keys(), ...wantByV.keys()]);
-      for (const vid of vids) {
-        const delta = (wantByV.get(vid) ?? 0) - (prevByV.get(vid) ?? 0);
-        if (delta === 0) continue;
-        const v = variants.find((x: any) => x.id === vid) as any;
-        const p = v ? (productsQ.data ?? []).find((x: any) => x.id === v.product_id) : null;
-        const vLabel = v
-          ? `${(p as any)?.name ?? ""}${v.size ? ` · ${v.size}` : ""}${v.color ? ` · ${v.color}` : ""}`
-          : vid;
-        const before = Number(v?.stock ?? 0) + (prevByV.get(vid) ?? 0);
-        const after = before - (wantByV.get(vid) ?? 0);
-        const inv = order.invoice_number ?? "";
-        if (delta > 0) {
-          logs.push({
-            action: "stock_change",
-            order_id: order.id,
-            en: `Stock decreased from ${before} to ${after} for ${vLabel} due to Order #${inv}`,
-            ar: `انخفض المخزون من ${before} إلى ${after} لـ ${vLabel} بسبب الطلب رقم ${inv}`,
-          } as any);
-        } else {
-          logs.push({
-            action: "stock_change",
-            order_id: order.id,
-            en: `Stock restored from ${before} to ${after} for ${vLabel} due to Order #${inv}`,
-            ar: `استُعيد المخزون من ${before} إلى ${after} لـ ${vLabel} بسبب الطلب رقم ${inv}`,
-          } as any);
-        }
       }
     }
 
