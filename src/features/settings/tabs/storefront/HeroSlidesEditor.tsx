@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -69,6 +69,7 @@ export function HeroSlidesEditor({
   const { lang } = useI18n();
   const isAr = propIsAr ?? lang === "ar";
   const [internalUploading, setInternalUploading] = React.useState(false);
+  const [optimizingKey, setOptimizingKey] = React.useState<string | null>(null);
 
   const slides = propSlides ?? propState?.slides ?? [];
   const uploading = propUploading ?? internalUploading;
@@ -143,6 +144,71 @@ export function HeroSlidesEditor({
       toast.error(e?.message || (isAr ? "فشل رفع الوسائط" : "Media upload failed"));
     } finally {
       setInternalUploading(false);
+    }
+  };
+
+  const handleOptimizeExistingSlideVideo = async (
+    index: number,
+    language: "ar" | "en",
+    videoUrl: string,
+  ) => {
+    if (!brandId || !videoUrl) return;
+    const key = `${index}-${language}`;
+    try {
+      setOptimizingKey(key);
+      toast.info(
+        isAr
+          ? "جارٍ جلب الفيديو الحالي لبدء الضغط..."
+          : "Downloading existing video for optimization...",
+      );
+      const response = await fetch(videoUrl);
+      if (!response.ok) throw new Error(`Failed to fetch current video (${response.status})`);
+      const blob = await response.blob();
+      const file = new File([blob], `slide-${index}-${language}.mp4`, {
+        type: blob.type || "video/mp4",
+      });
+
+      toast.info(isAr ? "جارٍ ضغط وتحسين الفيديو..." : "Optimizing and compressing video...");
+      const result = await optimizeVideo(file);
+
+      const [url, posterUrl] = await Promise.all([
+        uploadPublicMedia(brandId, result.file, "hero"),
+        result.posterBlob && result.posterBlob.size > 0
+          ? uploadPublicMedia(brandId, result.posterBlob, "hero")
+          : Promise.resolve(null),
+      ]);
+
+      const patch: Partial<HeroSlide> =
+        language === "ar"
+          ? {
+              media_url_ar: url,
+              media_url: url,
+              ...(posterUrl ? { media_poster_url_ar: posterUrl, media_poster_url: posterUrl } : {}),
+            }
+          : {
+              media_url_en: url,
+              media_url: url,
+              ...(posterUrl ? { media_poster_url_en: posterUrl, media_poster_url: posterUrl } : {}),
+            };
+
+      update(index, patch);
+      if (result.wasCompressed) {
+        toast.success(
+          isAr
+            ? `تم ضغط الفيديو بنجاح (وفّر ${result.savingsPercent}%) — اضغط حفظ التغييرات`
+            : `Video compressed successfully (-${result.savingsPercent}%) — click Save Changes`,
+        );
+      } else {
+        toast.info(
+          isAr
+            ? "الفيديو مُحسّن بالفعل أو لا يحتاج إلى مزيد من الضغط"
+            : "Video is already optimized or could not be further compressed",
+        );
+      }
+    } catch (e: any) {
+      toast.error(e?.message || (isAr ? "فشل ضغط الفيديو الحالي" : "Failed to compress video"));
+    } finally {
+      setOptimizingKey(null);
     }
   };
 
@@ -232,21 +298,43 @@ export function HeroSlidesEditor({
                   >
                     <div className="flex items-center justify-between gap-2">
                       <Label>{language === "ar" ? "الوسائط العربية" : "English media"}</Label>
-                      {mediaUrl && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onClick={() =>
-                            update(
-                              index,
-                              language === "ar" ? { media_url_ar: "" } : { media_url_en: "" },
-                            )
-                          }
-                        >
-                          {language === "ar" ? "إزالة" : "Remove"}
-                        </Button>
-                      )}
+                      <div className="flex items-center gap-1.5">
+                        {mediaUrl && slide.type === "video" && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs gap-1.5"
+                            disabled={uploading || optimizingKey === `${index}-${language}`}
+                            onClick={() =>
+                              handleOptimizeExistingSlideVideo(index, language, mediaUrl)
+                            }
+                          >
+                            {optimizingKey === `${index}-${language}` ? (
+                              <Loader2 className="size-3.5 animate-spin" />
+                            ) : (
+                              <Sparkles className="size-3.5 text-primary" />
+                            )}
+                            <span>{isAr ? "ضغط وتحسين الفيديو" : "Compress"}</span>
+                          </Button>
+                        )}
+                        {mediaUrl && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 text-xs text-destructive hover:bg-destructive/10"
+                            onClick={() =>
+                              update(
+                                index,
+                                language === "ar" ? { media_url_ar: "" } : { media_url_en: "" },
+                              )
+                            }
+                          >
+                            {language === "ar" ? "إزالة" : "Remove"}
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     {mediaUrl &&
                       (slide.type === "video" ? (
@@ -274,7 +362,9 @@ export function HeroSlidesEditor({
                       <input
                         type="file"
                         accept={
-                          slide.type === "video" ? "video/mp4" : "image/jpeg,image/png,image/webp"
+                          slide.type === "video"
+                            ? "video/mp4,video/webm,video/quicktime"
+                            : "image/jpeg,image/png,image/webp"
                         }
                         className="hidden"
                         onChange={(event) => {

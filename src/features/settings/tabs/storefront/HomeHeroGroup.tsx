@@ -116,6 +116,55 @@ export function HomeHeroGroup() {
     }
   };
 
+  const handleOptimizeExistingBgVideo = async () => {
+    if (!backgroundMedia?.url || backgroundMedia.type !== "video") return;
+    try {
+      setUploadingBg(true);
+      toast.info(
+        isAr
+          ? "جارٍ جلب الفيديو الحالي لبدء الضغط..."
+          : "Downloading existing video for optimization...",
+      );
+      const response = await fetch(backgroundMedia.url);
+      if (!response.ok) throw new Error(`Failed to fetch current video (${response.status})`);
+      const blob = await response.blob();
+      const file = new File([blob], "current-hero-video.mp4", { type: blob.type || "video/mp4" });
+
+      toast.info(isAr ? "جارٍ ضغط وتحسين الفيديو..." : "Optimizing and compressing video...");
+      const result = await optimizeVideo(file);
+      const [url, posterUrl] = await Promise.all([
+        uploadPublicMedia(brandId, result.file, "hero"),
+        result.posterBlob && result.posterBlob.size > 0
+          ? uploadPublicMedia(brandId, result.posterBlob, "hero")
+          : Promise.resolve(null),
+      ]);
+      updateBackground({
+        type: "video",
+        url,
+        ...(posterUrl ? { posterUrl } : {}),
+      });
+      if (result.wasCompressed) {
+        toast.success(
+          isAr
+            ? `تم ضغط الفيديو بنجاح (وفّر ${result.savingsPercent}%) — اضغط حفظ التغييرات`
+            : `Video compressed successfully (-${result.savingsPercent}%) — click Save Changes`,
+        );
+      } else {
+        toast.info(
+          isAr
+            ? "الفيديو مُحسّن بالفعل أو لا يحتاج إلى مزيد من الضغط"
+            : "Video is already optimized or could not be further compressed",
+        );
+      }
+    } catch (err: any) {
+      toast.error(
+        err.message || (isAr ? "فشل ضغط الفيديو الحالي" : "Failed to compress current video"),
+      );
+    } finally {
+      setUploadingBg(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* 1. Hero Title & About Visibility */}
@@ -320,7 +369,24 @@ export function HomeHeroGroup() {
             ) : (
               <img src={backgroundMedia.url} alt="" className="w-full h-full object-cover" />
             )}
-            <div className="absolute top-3 end-3 flex gap-2 bg-background/80 backdrop-blur-sm p-1.5 rounded-lg border border-border shadow-sm">
+            <div className="absolute top-3 end-3 flex items-center gap-2 bg-background/90 backdrop-blur-sm p-1.5 rounded-lg border border-border shadow-sm">
+              {backgroundMedia.type === "video" && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs gap-1.5 bg-background hover:bg-muted"
+                  disabled={uploadingBg}
+                  onClick={handleOptimizeExistingBgVideo}
+                >
+                  {uploadingBg ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="size-3.5 text-primary" />
+                  )}
+                  <span>{isAr ? "ضغط وتحسين الفيديو" : "Compress Video"}</span>
+                </Button>
+              )}
               <Button
                 type="button"
                 size="sm"

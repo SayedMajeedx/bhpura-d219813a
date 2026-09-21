@@ -41,6 +41,7 @@ export function AppVideo({
   // Only render WebM or MP4 sources when explicitly provided or matching file extension
   const resolvedWebm = webmSrc || (src && src.toLowerCase().endsWith(".webm") ? src : null);
   const resolvedMp4 = mp4Src || (src && !src.toLowerCase().endsWith(".webm") ? src : null);
+  const hasSources = Boolean(resolvedWebm || (resolvedMp4 && resolvedMp4 !== resolvedWebm));
 
   const handleFrameReady = () => {
     const video = videoRef.current;
@@ -118,7 +119,7 @@ export function AppVideo({
       <video
         key={src || "app-video"}
         ref={videoRef}
-        src={resolvedMp4 || resolvedWebm || src || undefined}
+        {...(!hasSources && src ? { src } : {})}
         poster={poster ?? undefined}
         autoPlay={shouldAutoPlay}
         muted={shouldMute}
