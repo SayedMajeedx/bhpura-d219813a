@@ -14,7 +14,8 @@ import {
 import { ResponsiveImage, OptimizedVideo } from "@/components/responsive-media";
 import { HeroSlideLivePreview, type HeroSlide } from "./HeroSlideLivePreview";
 import { uploadPublicMedia } from "@/lib/r2-upload";
-import { optimizeVideo } from "@/lib/video-optimizer";
+import { VIDEO_PRESETS, type OptimizedVideoResult } from "@/lib/video-optimizer";
+import { VideoOptimizerDialog } from "@/components/admin/video/VideoOptimizerDialog";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
@@ -70,6 +71,11 @@ export function HeroSlidesEditor({
   const isAr = propIsAr ?? lang === "ar";
   const [internalUploading, setInternalUploading] = React.useState(false);
   const [optimizingKey, setOptimizingKey] = React.useState<string | null>(null);
+  const [pendingOptimizeVideo, setPendingOptimizeVideo] = React.useState<{
+    file: File;
+    index: number;
+    language?: "en" | "ar";
+  } | null>(null);
 
   const slides = propSlides ?? propState?.slides ?? [];
   const uploading = propUploading ?? internalUploading;
@@ -95,82 +101,33 @@ export function HeroSlidesEditor({
     }
     if (!brandId) return;
     const isVideo = file.type.startsWith("video/") || /\.(mp4|webm|mov|m4v)$/i.test(file.name);
+    if (isVideo) {
+      setPendingOptimizeVideo({ file, index, language });
+      return;
+    }
+
     try {
       setInternalUploading(true);
-
-      let uploadFile: File | Blob = file;
-      let posterBlob: Blob | null = null;
-      let wasCompressed = false;
-      let savingsPercent = 0;
-
-      if (isVideo) {
-        toast.info(isAr ? "جارٍ ضغط وتحسين الفيديو..." : "Optimizing video...");
-        const result = await optimizeVideo(file);
-        uploadFile = result.file;
-        posterBlob = result.posterBlob && result.posterBlob.size > 0 ? result.posterBlob : null;
-        wasCompressed = result.wasCompressed;
-        savingsPercent = result.savingsPercent;
-      }
-
-      const [url, posterUrl] = await Promise.all([
-        uploadPublicMedia(brandId, uploadFile, "hero"),
-        posterBlob ? uploadPublicMedia(brandId, posterBlob, "hero") : Promise.resolve(null),
-      ]);
-
+      const url = await uploadPublicMedia(brandId, file, "hero");
       const patch: Partial<HeroSlide> =
         language === "ar"
-          ? {
-              media_url_ar: url,
-              media_url: url,
-              ...(posterUrl ? { media_poster_url_ar: posterUrl, media_poster_url: posterUrl } : {}),
-            }
-          : {
-              media_url_en: url,
-              media_url: url,
-              ...(posterUrl ? { media_poster_url_en: posterUrl, media_poster_url: posterUrl } : {}),
-            };
+          ? { media_url_ar: url, media_url: url }
+          : { media_url_en: url, media_url: url };
 
       update(index, patch);
-      if (wasCompressed) {
-        toast.success(
-          isAr
-            ? `تم ضغط ورفع الفيديو بنجاح (وفّر ${savingsPercent}% من الحجم)`
-            : `Video compressed & uploaded (-${savingsPercent}%)`,
-        );
-      } else {
-        toast.success(isAr ? "تم رفع الوسائط بنجاح" : "Media uploaded successfully");
-      }
+      toast.success(isAr ? "تم رفع الصورة بنجاح" : "Image uploaded successfully");
     } catch (e: any) {
-      toast.error(e?.message || (isAr ? "فشل رفع الوسائط" : "Media upload failed"));
+      toast.error(e?.message || (isAr ? "فشل رفع الصورة" : "Image upload failed"));
     } finally {
       setInternalUploading(false);
     }
   };
 
-  const handleOptimizeExistingSlideVideo = async (
-    index: number,
-    language: "ar" | "en",
-    videoUrl: string,
-  ) => {
-    if (!brandId || !videoUrl) return;
-    const key = `${index}-${language}`;
+  const handleConfirmSlideVideo = async (result: OptimizedVideoResult) => {
+    if (!pendingOptimizeVideo || !brandId) return;
+    const { index, language } = pendingOptimizeVideo;
     try {
-      setOptimizingKey(key);
-      toast.info(
-        isAr
-          ? "جارٍ جلب الفيديو الحالي لبدء الضغط..."
-          : "Downloading existing video for optimization...",
-      );
-      const response = await fetch(videoUrl);
-      if (!response.ok) throw new Error(`Failed to fetch current video (${response.status})`);
-      const blob = await response.blob();
-      const file = new File([blob], `slide-${index}-${language}.mp4`, {
-        type: blob.type || "video/mp4",
-      });
-
-      toast.info(isAr ? "جارٍ ضغط وتحسين الفيديو..." : "Optimizing and compressing video...");
-      const result = await optimizeVideo(file);
-
+      setInternalUploading(true);
       const [url, posterUrl] = await Promise.all([
         uploadPublicMedia(brandId, result.file, "hero"),
         result.posterBlob && result.posterBlob.size > 0
@@ -192,21 +149,56 @@ export function HeroSlidesEditor({
             };
 
       update(index, patch);
+      const presetLabel = isAr
+        ? VIDEO_PRESETS[result.preset].labelAr
+        : VIDEO_PRESETS[result.preset].labelEn;
       if (result.wasCompressed) {
         toast.success(
           isAr
-            ? `تم ضغط الفيديو بنجاح (وفّر ${result.savingsPercent}%) — اضغط حفظ التغييرات`
-            : `Video compressed successfully (-${result.savingsPercent}%) — click Save Changes`,
+            ? `تم تحسين الفيديو وحفظه (${presetLabel} — وفّر ${result.savingsPercent}%)`
+            : `Video optimized and saved (${presetLabel} — -${result.savingsPercent}%)`,
         );
       } else {
-        toast.info(
+        toast.success(
           isAr
-            ? "الفيديو مُحسّن بالفعل أو لا يحتاج إلى مزيد من الضغط"
-            : "Video is already optimized or could not be further compressed",
+            ? `تم رفع الفيديو بنجاح (${presetLabel})`
+            : `Video uploaded successfully (${presetLabel})`,
         );
       }
     } catch (e: any) {
-      toast.error(e?.message || (isAr ? "فشل ضغط الفيديو الحالي" : "Failed to compress video"));
+      toast.error(e?.message || (isAr ? "فشل رفع الفيديو" : "Failed to upload video"));
+    } finally {
+      setInternalUploading(false);
+      setPendingOptimizeVideo(null);
+    }
+  };
+
+  const handleOptimizeExistingSlideVideo = async (
+    index: number,
+    language: "ar" | "en",
+    videoUrl: string,
+  ) => {
+    if (!brandId || !videoUrl) return;
+    const key = `${index}-${language}`;
+    try {
+      setOptimizingKey(key);
+      toast.info(
+        isAr
+          ? "جارٍ جلب الفيديو الحالي لفتحه في معالج التحسين..."
+          : "Downloading existing video for optimization...",
+      );
+      const response = await fetch(videoUrl);
+      if (!response.ok) throw new Error(`Failed to fetch current video (${response.status})`);
+      const blob = await response.blob();
+      const file = new File([blob], `slide-${index}-${language}.mp4`, {
+        type: blob.type || "video/mp4",
+      });
+
+      setPendingOptimizeVideo({ file, index, language });
+    } catch (e: any) {
+      toast.error(
+        e?.message || (isAr ? "فشل جلب الفيديو الحالي" : "Failed to fetch current video"),
+      );
     } finally {
       setOptimizingKey(null);
     }
@@ -475,6 +467,17 @@ export function HeroSlidesEditor({
           <HeroSlideLivePreview slide={slide} isAr={isAr} color={slideAccentColor} />
         </div>
       ))}
+
+      <VideoOptimizerDialog
+        open={!!pendingOptimizeVideo}
+        file={pendingOptimizeVideo?.file ?? null}
+        brandId={brandId}
+        onOpenChange={(open) => {
+          if (!open) setPendingOptimizeVideo(null);
+        }}
+        onConfirm={handleConfirmSlideVideo}
+        onCancel={() => setPendingOptimizeVideo(null)}
+      />
     </div>
   );
 }

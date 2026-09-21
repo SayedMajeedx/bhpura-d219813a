@@ -73,7 +73,8 @@ import { ImageCropperDialog } from "@/components/image-cropper-dialog";
 import { CropUploadButton } from "@/components/crop-upload-button";
 import { BilingualField } from "@/components/bilingual-field";
 import { deletePublicMediaUrl, uploadPublicMedia } from "@/lib/r2-upload";
-import { optimizeVideo } from "@/lib/video-optimizer";
+import { VIDEO_PRESETS, type OptimizedVideoResult } from "@/lib/video-optimizer";
+import { VideoOptimizerDialog } from "@/components/admin/video/VideoOptimizerDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -2454,7 +2455,7 @@ function ProductDialog({
   const [uploading, setUploading] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
-  const [, setPendingVideo] = useState<File | null>(null);
+  const [pendingVideo, setPendingVideo] = useState<File | null>(null);
   const uncommittedUploads = useRef(new Set<string>());
   const removedCommittedMedia = useRef(new Set<string>());
 
@@ -2577,46 +2578,54 @@ function ProductDialog({
   const handleFilePicked = async (file: File) => {
     if (file.type.startsWith("video") || /\.(mp4|webm|mov|m4v)$/i.test(file.name)) {
       setPendingVideo(file);
-      try {
-        setUploading(true);
-        toast.info(isAr ? "جارٍ ضغط وتحسين فيديو المنتج..." : "Optimizing product video...");
-        const result = await optimizeVideo(file);
-        const [videoUrl, posterUrl] = await Promise.all([
-          uploadPublicMedia(brand.id, result.file, "product"),
-          result.posterBlob && result.posterBlob.size > 0
-            ? uploadPublicMedia(brand.id, result.posterBlob, "product")
-            : Promise.resolve(null),
-        ]);
-        uncommittedUploads.current.add(videoUrl);
-        if (posterUrl) uncommittedUploads.current.add(posterUrl);
-        setForm((f) => ({
-          ...f,
-          media: [
-            ...f.media,
-            { type: "video", url: videoUrl, ...(posterUrl ? { poster_url: posterUrl } : {}) },
-          ],
-        }));
-        if (result.wasCompressed) {
-          toast.success(
-            isAr
-              ? `تم ضغط ورفع الفيديو بنجاح (وفّر ${result.savingsPercent}%)`
-              : `Video compressed & uploaded (-${result.savingsPercent}%)`,
-          );
-        } else {
-          toast.success(isAr ? "تم الرفع" : "Uploaded");
-        }
-      } catch (e: any) {
-        toast.error(e.message ?? "Upload failed");
-      } finally {
-        setUploading(false);
-        setPendingVideo(null);
-      }
       return;
     }
     setPendingImageFile(file);
     const reader = new FileReader();
     reader.onload = () => setCropSrc(String(reader.result));
     reader.readAsDataURL(file);
+  };
+
+  const handleConfirmProductVideo = async (result: OptimizedVideoResult) => {
+    try {
+      setUploading(true);
+      const [videoUrl, posterUrl] = await Promise.all([
+        uploadPublicMedia(brand.id, result.file, "product"),
+        result.posterBlob && result.posterBlob.size > 0
+          ? uploadPublicMedia(brand.id, result.posterBlob, "product")
+          : Promise.resolve(null),
+      ]);
+      uncommittedUploads.current.add(videoUrl);
+      if (posterUrl) uncommittedUploads.current.add(posterUrl);
+      setForm((f) => ({
+        ...f,
+        media: [
+          ...f.media,
+          { type: "video", url: videoUrl, ...(posterUrl ? { poster_url: posterUrl } : {}) },
+        ],
+      }));
+      const presetLabel = isAr
+        ? VIDEO_PRESETS[result.preset].labelAr
+        : VIDEO_PRESETS[result.preset].labelEn;
+      if (result.wasCompressed) {
+        toast.success(
+          isAr
+            ? `تم تحسين ورفع الفيديو بنجاح (${presetLabel} — وفّر ${result.savingsPercent}%)`
+            : `Video optimized & uploaded (${presetLabel} — -${result.savingsPercent}%)`,
+        );
+      } else {
+        toast.success(
+          isAr
+            ? `تم رفع الفيديو بنجاح (${presetLabel})`
+            : `Video uploaded successfully (${presetLabel})`,
+        );
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Upload failed");
+    } finally {
+      setUploading(false);
+      setPendingVideo(null);
+    }
   };
 
   const handleCropConfirmed = async (blob: Blob) => {
@@ -4118,6 +4127,16 @@ function ProductDialog({
         }}
         onConfirm={handleCropConfirmed}
         onSkipCrop={handleSkipCrop}
+      />
+      <VideoOptimizerDialog
+        open={Boolean(pendingVideo)}
+        file={pendingVideo}
+        brandId={brand.id}
+        onOpenChange={(open) => {
+          if (!open) setPendingVideo(null);
+        }}
+        onConfirm={handleConfirmProductVideo}
+        onCancel={() => setPendingVideo(null)}
       />
     </DialogContent>
   );
@@ -7188,7 +7207,11 @@ function VariantList({
               <History className="h-3.5 w-3.5 text-primary" />
               <span>{isAr ? "السجل" : "History"}</span>
             </Button>
-            <ManageProductAxesDialog productId={productId} product={product} onChanged={onChanged} />
+            <ManageProductAxesDialog
+              productId={productId}
+              product={product}
+              onChanged={onChanged}
+            />
           </div>
         </div>
         {variants.map((v) => (

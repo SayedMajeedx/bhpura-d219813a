@@ -16,6 +16,7 @@ import {
   getPlatformLogoUploadUrl,
   getPlatformQrUploadUrl,
 } from "@/lib/onboarding.functions";
+import { SuperVideoReoptimizer } from "@/components/super/SuperVideoReoptimizer";
 import {
   Sliders,
   DollarSign,
@@ -650,6 +651,11 @@ function SuperAdminSettings() {
           </Button>
         </div>
       </form>
+
+      {/* Platform Video Reoptimizer Section */}
+      <div className="pt-8 border-t border-border">
+        <SuperVideoReoptimizer />
+      </div>
     </div>
   );
 }
