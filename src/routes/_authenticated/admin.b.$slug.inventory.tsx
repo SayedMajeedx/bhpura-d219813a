@@ -54,10 +54,12 @@ import {
   HelpCircle,
   Instagram,
   Copy,
+  History,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney, formatSizeWithUnit, splitCompositeVariantSize } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
+import { InventoryHistorySheet } from "@/components/inventory/InventoryHistorySheet";
 import { ActivityLogList } from "@/components/activity-log-list";
 import { PrintLabelButton, printLabels, type LabelData } from "@/components/barcode-label";
 import { useProfile } from "@/lib/profile-context";
@@ -5143,6 +5145,7 @@ function VariantDesktopRow({
   onToggleSelect,
   product,
   onDuplicate,
+  onOpenHistory,
   viewMode = "quick",
 }: {
   v: Variant;
@@ -5165,6 +5168,7 @@ function VariantDesktopRow({
   renderBarcodeCol?: boolean;
   product?: Product;
   onDuplicate?: (v: Variant) => void;
+  onOpenHistory?: (v: Variant) => void;
   viewMode?: VariantViewMode;
 }) {
   const [costVal, setCostVal] = useState(String(v.cost_price));
@@ -5717,6 +5721,17 @@ function VariantDesktopRow({
               value={v.stock_main ?? 0}
               onChange={(val) => update(v, { stock_main: val })}
             />
+            {onOpenHistory && (
+              <button
+                type="button"
+                className="p-1 rounded-md text-muted-foreground/60 hover:text-primary hover:bg-primary/10 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                onClick={() => onOpenHistory(v)}
+                title={isAr ? "سجل حركات المخزون" : "Inventory Ledger History"}
+                aria-label={isAr ? "سجل حركات المخزون" : "Inventory Ledger History"}
+              >
+                <History className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
           {viewMode === "full" ? (
             <div className="flex flex-col items-center gap-1 mt-1 pt-1 border-t border-border/40 w-full">
@@ -5752,6 +5767,17 @@ function VariantDesktopRow({
       {/* Actions (Col 5) */}
       <td className="w-20 px-2 py-3 text-center align-middle" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-center gap-1">
+          {onOpenHistory && (
+            <button
+              type="button"
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              onClick={() => onOpenHistory(v)}
+              title={isAr ? "سجل حركات المخزون" : "Inventory History"}
+              aria-label={isAr ? "سجل حركات المخزون" : "Inventory History"}
+            >
+              <History className="h-4 w-4" />
+            </button>
+          )}
           {onDuplicate && (
             <button
               type="button"
@@ -5796,6 +5822,7 @@ function VariantMobileCard({
   colorAxis,
   fabricAxis,
   onDuplicate,
+  onOpenHistory,
 }: {
   v: Variant;
   canViewFinancials: boolean;
@@ -5816,6 +5843,7 @@ function VariantMobileCard({
   colorAxis?: VariantAxisConfig;
   fabricAxis?: VariantAxisConfig;
   onDuplicate?: (v: Variant) => void;
+  onOpenHistory?: (v: Variant) => void;
 }) {
   const [costVal, setCostVal] = useState(String(v.cost_price));
   const [sellingVal, setSellingVal] = useState(
@@ -5931,6 +5959,19 @@ function VariantMobileCard({
           </div>
         </div>
         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          {onOpenHistory && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 text-muted-foreground hover:text-primary hover:bg-primary/10 touch-manipulation"
+              onClick={() => onOpenHistory(v)}
+              title={isAr ? "سجل حركات المخزون" : "Inventory Ledger History"}
+              aria-label={isAr ? "سجل حركات المخزون" : "Inventory Ledger History"}
+            >
+              <History className="h-4 w-4" />
+            </Button>
+          )}
           {onDuplicate && (
             <Button
               type="button"
@@ -6115,10 +6156,24 @@ function VariantMobileCard({
 
       {/* Summary Footer */}
       <div className="flex items-center justify-between rounded-xl bg-secondary/25 px-4 py-3 text-xs border border-border-subtle font-semibold">
-        <span>
-          {t("inventory.stock")}:{" "}
-          <b className="text-sm font-black">{(v.stock_main ?? 0) + (v.stock_incubator ?? 0)}</b>
-        </span>
+        <div className="flex items-center gap-2">
+          <span>
+            {t("inventory.stock")}:{" "}
+            <b className="text-sm font-black">{(v.stock_main ?? 0) + (v.stock_incubator ?? 0)}</b>
+          </span>
+          {onOpenHistory && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-[11px] gap-1 text-muted-foreground hover:text-primary rounded-md"
+              onClick={() => onOpenHistory(v)}
+            >
+              <History className="h-3 w-3" />
+              <span>{isAr ? "السجل" : "History"}</span>
+            </Button>
+          )}
+        </div>
         {(() => {
           const stock = (v.stock_main ?? 0) + (v.stock_incubator ?? 0);
           const qtySold = salesByVariant.get(v.id) || 0;
@@ -6492,6 +6547,8 @@ function VariantList({
   const isAr = lang === "ar";
   const { canViewFinancials } = useProfile();
   const brand = useBrand();
+  const [historyVariant, setHistoryVariant] = useState<Variant | null>(null);
+  const [historyProductOpen, setHistoryProductOpen] = useState(false);
   const { profile: storeProfile } = useAdminStoreProfile(brand.id);
   const { addons } = useAddons();
   const addonAxisDefaults = useMemo(
@@ -7083,7 +7140,23 @@ function VariantList({
           <div className="text-xs font-bold text-muted-foreground">
             {variants.length} {isAr ? "متغيرات" : "variants"}
           </div>
-          <ManageProductAxesDialog productId={productId} product={product} onChanged={onChanged} />
+          <div className="flex items-center gap-1.5">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs font-bold gap-1 rounded-md"
+              onClick={() => {
+                setHistoryVariant(null);
+                setHistoryProductOpen(true);
+              }}
+              title={isAr ? "سجل حركات المخزون" : "Inventory History"}
+            >
+              <History className="h-3.5 w-3.5 text-primary" />
+              <span>{isAr ? "السجل" : "History"}</span>
+            </Button>
+            <ManageProductAxesDialog productId={productId} product={product} onChanged={onChanged} />
+          </div>
         </div>
         {variants.map((v) => (
           <VariantMobileCard
@@ -7107,6 +7180,7 @@ function VariantList({
             colorAxis={colorAxis}
             fabricAxis={fabricAxis}
             onDuplicate={startAdding}
+            onOpenHistory={setHistoryVariant}
           />
         ))}
 
@@ -7409,6 +7483,24 @@ function VariantList({
           </div>
 
           <div className="flex items-center gap-2 px-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs font-bold gap-1.5 rounded-md"
+              onClick={() => {
+                setHistoryVariant(null);
+                setHistoryProductOpen(true);
+              }}
+              title={
+                isAr
+                  ? "عرض سجل حركات المخزون لهذا المنتج"
+                  : "View inventory movements history for this product"
+              }
+            >
+              <History className="h-3.5 w-3.5 text-primary" />
+              <span>{isAr ? "سجل الحركات" : "History"}</span>
+            </Button>
             <ManageProductAxesDialog
               productId={productId}
               product={product}
@@ -7507,6 +7599,7 @@ function VariantList({
                   renderBarcodeCol={renderBarcodeCol}
                   product={product}
                   onDuplicate={startAdding}
+                  onOpenHistory={setHistoryVariant}
                   viewMode={viewMode}
                 />
               ))}
@@ -7852,6 +7945,24 @@ function VariantList({
           </button>
         </div>
       )}
+
+      <InventoryHistorySheet
+        isOpen={Boolean(historyVariant || historyProductOpen)}
+        onClose={() => {
+          setHistoryVariant(null);
+          setHistoryProductOpen(false);
+        }}
+        brandId={brand.id}
+        slug={brand.slug}
+        variantId={historyVariant?.id || null}
+        productId={productId}
+        productName={productName}
+        variantLabel={
+          historyVariant
+            ? [historyVariant.size, historyVariant.color].filter(Boolean).join(" · ")
+            : undefined
+        }
+      />
     </div>
   );
 }
