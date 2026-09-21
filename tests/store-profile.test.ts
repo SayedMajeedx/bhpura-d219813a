@@ -141,4 +141,38 @@ describe("storefront & admin gating (source checks)", () => {
     );
     expect(code).not.toMatch(/fashion/i);
   });
+
+  it("StoreProfileCard uses upsert and synchronizes businessSettings query cache", () => {
+    const code = readFileSync(
+      resolve(__dirname, "../src/components/settings/StoreProfileCard.tsx"),
+      "utf-8",
+    );
+    expect(code).toContain('.from("business_settings")');
+    expect(code).toContain(".upsert(");
+    expect(code).toContain("queryKeys.brand.businessSettings(brandId)");
+    expect(code).toContain("queryKeys.brand.storeProfile(brandId)");
+  });
+
+  it("useBrandSettingsForm uses upsert for business_settings and invalidates storeProfile", () => {
+    const code = readFileSync(
+      resolve(__dirname, "../src/features/settings/use-brand-settings-form.tsx"),
+      "utf-8",
+    );
+    expect(code).toContain('.from("business_settings")');
+    expect(code).toContain(".upsert(");
+    expect(code).toContain("queryKeys.brand.storeProfile(brandId)");
+  });
+
+  it("migration drops ON DELETE CASCADE on business_settings_user_id_fkey and heals missing rows", () => {
+    const migPath = resolve(
+      __dirname,
+      "../supabase/migrations/20260928110000_fix_business_settings_cascade_and_missing_rows.sql",
+    );
+    expect(existsSync(migPath)).toBe(true);
+    const sql = readFileSync(migPath, "utf-8");
+    expect(sql).toContain("ALTER TABLE public.business_settings ALTER COLUMN user_id DROP NOT NULL");
+    expect(sql).toContain("ON DELETE SET NULL");
+    expect(sql).toContain("ensure_brand_business_settings");
+  });
 });
+

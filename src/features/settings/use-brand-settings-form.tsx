@@ -200,8 +200,10 @@ export function useBrandSettingsForm(brandId: string): BrandSettingsFormState {
     try {
       if (Object.keys(currentDiffBs).length > 0) {
         const { error: bsErr } = await (supabase.from("business_settings") as any)
-          .update(currentDiffBs)
-          .eq("brand_id", brandId);
+          .upsert(
+            { ...currentDiffBs, brand_id: brandId },
+            { onConflict: "brand_id" },
+          );
         if (bsErr) throw bsErr;
       }
 
@@ -215,6 +217,7 @@ export function useBrandSettingsForm(brandId: string): BrandSettingsFormState {
       // Invalidate relevant queries
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.brand.businessSettings(brandId) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.brand.storeProfile(brandId) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.brand.profile(brandId) }),
         queryClient.invalidateQueries({ queryKey: ["business-settings-theme", brandId] }),
         queryClient.invalidateQueries({ queryKey: ["brand-hero", brandId] }),

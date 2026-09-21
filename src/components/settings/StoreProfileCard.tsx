@@ -203,13 +203,16 @@ export function StoreProfileCard({
     if (!pendingVertical) return;
     setSaving(true);
     try {
-      // 1. Update business_settings store_vertical (never write deprecated store_modules)
+      // 1. Upsert business_settings store_vertical (never write deprecated store_modules)
       const { error: bsError } = await (supabase.from("business_settings") as any)
-        .update({
-          store_vertical: pendingVertical,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("brand_id", brandId);
+        .upsert(
+          {
+            brand_id: brandId,
+            store_vertical: pendingVertical,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "brand_id" },
+        );
       if (bsError) throw bsError;
 
       // 2. Install missing required starter pack add-ons
@@ -237,8 +240,10 @@ export function StoreProfileCard({
         await qc.invalidateQueries({ queryKey: queryKeys.categories.overview(brandId) });
       }
 
-      // 5. Invalidate profile and addons caches
+      // 5. Invalidate profile, business_settings, and addons caches
       await qc.invalidateQueries({ queryKey: queryKeys.brand.storeProfile(brandId) });
+      await qc.invalidateQueries({ queryKey: queryKeys.brand.businessSettings(brandId) });
+      await qc.invalidateQueries({ queryKey: queryKeys.brand.profile(brandId) });
       await qc.invalidateQueries({ queryKey: queryKeys.addons.all(brandId) });
 
       setVertical(pendingVertical);
@@ -373,16 +378,21 @@ export function StoreProfileCard({
     setSaving(true);
     try {
       const { error } = await (supabase.from("business_settings") as any)
-        .update({
-          store_vertical: vertical,
-          fit_profiles: fitProfiles,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("brand_id", brandId);
+        .upsert(
+          {
+            brand_id: brandId,
+            store_vertical: vertical,
+            fit_profiles: fitProfiles,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "brand_id" },
+        );
 
       if (error) throw error;
 
       await qc.invalidateQueries({ queryKey: queryKeys.brand.storeProfile(brandId) });
+      await qc.invalidateQueries({ queryKey: queryKeys.brand.businessSettings(brandId) });
+      await qc.invalidateQueries({ queryKey: queryKeys.brand.profile(brandId) });
 
       toast.success(
         isAr ? "تم حفظ إعدادات نشاط المتجر بنجاح" : "Store profile settings saved successfully",

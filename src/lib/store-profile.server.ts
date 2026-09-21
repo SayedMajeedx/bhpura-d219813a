@@ -23,12 +23,17 @@ export async function getBrandAiContext(
   const lang = options?.lang || "ar";
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  // 1. Fetch brand details & installed add-ons
-  const [brandRes, addonsRes] = await Promise.all([
+  // 1. Fetch brand details, business settings & installed add-ons
+  const [brandRes, settingsRes, addonsRes] = await Promise.all([
     (supabaseAdmin as any)
       .from("brands")
-      .select("id, name_ar, name_en, store_vertical")
+      .select("id, name_ar, name_en")
       .eq("id", brandId)
+      .maybeSingle(),
+    (supabaseAdmin as any)
+      .from("business_settings")
+      .select("store_vertical")
+      .eq("brand_id", brandId)
       .maybeSingle(),
     (supabaseAdmin as any)
       .from("brand_addons")
@@ -42,7 +47,7 @@ export async function getBrandAiContext(
     lang === "ar"
       ? brand?.name_ar || brand?.name_en || "المتجر"
       : brand?.name_en || brand?.name_ar || "Store";
-  const vertical = brand?.store_vertical || "general";
+  const vertical = settingsRes.data?.store_vertical || "general";
 
   const installedAddonIds = (addonsRes.data ?? []).map(
     (row: { addon_id: string }) => row.addon_id as AddonId,
