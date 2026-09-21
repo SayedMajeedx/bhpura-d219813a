@@ -56,7 +56,7 @@ export type HomepageEditorialSections = Record<
   "best" | "sale" | "trending",
   EditorialSectionConfig
 >;
-export type HeroMediaItem = { type: "image" | "video"; url: string };
+export type HeroMediaItem = { type: "image" | "video"; url: string; posterUrl?: string };
 export type HeroContentSlide = {
   id: string;
   type: "text" | "image" | "video";

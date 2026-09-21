@@ -49,6 +49,7 @@ export function cloudflareImageSrcSet(
 
 export function isLikelyImageUrl(source?: string | null): boolean {
   if (!source) return false;
+  if (source.startsWith("data:image/") || source.startsWith("blob:")) return true;
   try {
     return /\.(avif|gif|jpe?g|png|svg|webp)(?:$|\?)/i.test(
       new URL(source, "https://boutq.store").pathname,

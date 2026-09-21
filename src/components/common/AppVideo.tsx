@@ -108,6 +108,7 @@ export function AppVideo({
           sizes="100vw"
           alt=""
           loading={active ? "eager" : "lazy"}
+          fetchPriority={active && isHero ? "high" : "auto"}
           className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ease-out z-0 ${
             isVideoPlaying ? "opacity-0 pointer-events-none" : "opacity-100"
           } ${className ?? ""}`}

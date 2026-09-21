@@ -11,12 +11,14 @@ import { ColorField } from "@/features/settings/shared/ColorField";
 import { HeroSlidesEditor, type HeroSlide } from "./HeroSlidesEditor";
 import { ImageCropperDialog } from "@/components/image-cropper-dialog";
 import { uploadPublicMedia } from "@/lib/r2-upload";
+import { optimizeVideo } from "@/lib/video-optimizer";
 import { toast } from "sonner";
 import { ImagePlus, Loader2, Sparkles, Trash2, Video } from "lucide-react";
 
 interface MediaItem {
   type: "image" | "video";
   url: string;
+  posterUrl?: string;
 }
 
 export function HomeHeroGroup() {
@@ -64,9 +66,28 @@ export function HomeHeroGroup() {
     if (isVid) {
       try {
         setUploadingBg(true);
-        const url = await uploadPublicMedia(brandId, file, "hero");
-        updateBackground({ type: "video", url });
-        toast.success(isAr ? "تم رفع فيديو الخلفية" : "Background video uploaded");
+        toast.info(isAr ? "جارٍ ضغط وتحسين فيديو الخلفية..." : "Optimizing background video...");
+        const result = await optimizeVideo(file);
+        const [url, posterUrl] = await Promise.all([
+          uploadPublicMedia(brandId, result.file, "hero"),
+          result.posterBlob && result.posterBlob.size > 0
+            ? uploadPublicMedia(brandId, result.posterBlob, "hero")
+            : Promise.resolve(null),
+        ]);
+        updateBackground({
+          type: "video",
+          url,
+          ...(posterUrl ? { posterUrl } : {}),
+        });
+        if (result.wasCompressed) {
+          toast.success(
+            isAr
+              ? `تم ضغط ورفع فيديو الخلفية بنجاح (وفّر ${result.savingsPercent}%)`
+              : `Background video compressed & uploaded (-${result.savingsPercent}%)`,
+          );
+        } else {
+          toast.success(isAr ? "تم رفع فيديو الخلفية" : "Background video uploaded");
+        }
       } catch (err: any) {
         toast.error(err.message || (isAr ? "فشل رفع الفيديو" : "Failed to upload video"));
       } finally {

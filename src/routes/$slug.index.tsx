@@ -636,6 +636,7 @@ function HeroBanner() {
           {background.type === "video" ? (
             <OptimizedVideo
               src={background.url}
+              poster={background.posterUrl}
               active
               wrapperClassName="h-full w-full"
               className="h-full w-full object-cover"

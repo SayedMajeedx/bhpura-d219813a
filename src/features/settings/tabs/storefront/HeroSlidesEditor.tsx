@@ -14,6 +14,7 @@ import {
 import { ResponsiveImage, OptimizedVideo } from "@/components/responsive-media";
 import { HeroSlideLivePreview, type HeroSlide } from "./HeroSlideLivePreview";
 import { uploadPublicMedia } from "@/lib/r2-upload";
+import { optimizeVideo } from "@/lib/video-optimizer";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
@@ -86,90 +87,58 @@ export function HeroSlidesEditor({
     handleUpdateSlides(updated);
   };
 
-  async function captureVideoPoster(file: File): Promise<File | null> {
-    return new Promise((resolve) => {
-      try {
-        const video = document.createElement("video");
-        const url = URL.createObjectURL(file);
-        video.src = url;
-        video.muted = true;
-        video.playsInline = true;
-
-        video.onloadedmetadata = () => {
-          video.currentTime = Math.min(0.5, (video.duration || 1) / 2);
-        };
-
-        video.onseeked = () => {
-          try {
-            const canvas = document.createElement("canvas");
-            canvas.width = video.videoWidth || 1280;
-            canvas.height = video.videoHeight || 720;
-            const ctx = canvas.getContext("2d");
-            if (!ctx) {
-              URL.revokeObjectURL(url);
-              return resolve(null);
-            }
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            canvas.toBlob(
-              (blob) => {
-                URL.revokeObjectURL(url);
-                if (blob) {
-                  resolve(new File([blob], "poster.webp", { type: "image/webp" }));
-                } else {
-                  resolve(null);
-                }
-              },
-              "image/webp",
-              0.85,
-            );
-          } catch {
-            URL.revokeObjectURL(url);
-            resolve(null);
-          }
-        };
-
-        video.onerror = () => {
-          URL.revokeObjectURL(url);
-          resolve(null);
-        };
-      } catch {
-        resolve(null);
-      }
-    });
-  }
-
   const uploadMedia = async (file: File, index: number, language?: "en" | "ar") => {
     if (propUploadSlideMedia) {
       await propUploadSlideMedia(file, index, language);
       return;
     }
     if (!brandId) return;
+    const isVideo = file.type.startsWith("video/") || /\.(mp4|webm|mov|m4v)$/i.test(file.name);
     try {
       setInternalUploading(true);
-      const url = await uploadPublicMedia(brandId, file, "hero");
-      const patch: Partial<HeroSlide> =
-        language === "ar"
-          ? { media_url_ar: url, media_url: url }
-          : { media_url_en: url, media_url: url };
 
-      if (file.type.startsWith("video/")) {
-        try {
-          const posterFile = await captureVideoPoster(file);
-          if (posterFile) {
-            const posterUrl = await uploadPublicMedia(brandId, posterFile, "hero");
-            if (language === "ar") {
-              patch.media_poster_url_ar = posterUrl;
-            } else {
-              patch.media_poster_url_en = posterUrl;
-            }
-          }
-        } catch (posterErr) {
-          console.warn("Failed to generate video poster:", posterErr);
-        }
+      let uploadFile: File | Blob = file;
+      let posterBlob: Blob | null = null;
+      let wasCompressed = false;
+      let savingsPercent = 0;
+
+      if (isVideo) {
+        toast.info(isAr ? "جارٍ ضغط وتحسين الفيديو..." : "Optimizing video...");
+        const result = await optimizeVideo(file);
+        uploadFile = result.file;
+        posterBlob = result.posterBlob && result.posterBlob.size > 0 ? result.posterBlob : null;
+        wasCompressed = result.wasCompressed;
+        savingsPercent = result.savingsPercent;
       }
 
+      const [url, posterUrl] = await Promise.all([
+        uploadPublicMedia(brandId, uploadFile, "hero"),
+        posterBlob ? uploadPublicMedia(brandId, posterBlob, "hero") : Promise.resolve(null),
+      ]);
+
+      const patch: Partial<HeroSlide> =
+        language === "ar"
+          ? {
+              media_url_ar: url,
+              media_url: url,
+              ...(posterUrl ? { media_poster_url_ar: posterUrl, media_poster_url: posterUrl } : {}),
+            }
+          : {
+              media_url_en: url,
+              media_url: url,
+              ...(posterUrl ? { media_poster_url_en: posterUrl, media_poster_url: posterUrl } : {}),
+            };
+
       update(index, patch);
-      toast.success(isAr ? "تم رفع الوسائط بنجاح" : "Media uploaded successfully");
+      if (wasCompressed) {
+        toast.success(
+          isAr
+            ? `تم ضغط ورفع الفيديو بنجاح (وفّر ${savingsPercent}% من الحجم)`
+            : `Video compressed & uploaded (-${savingsPercent}%)`,
+        );
+      } else {
+        toast.success(isAr ? "تم رفع الوسائط بنجاح" : "Media uploaded successfully");
+      }
     } catch (e: any) {
       toast.error(e?.message || (isAr ? "فشل رفع الوسائط" : "Media upload failed"));
     } finally {

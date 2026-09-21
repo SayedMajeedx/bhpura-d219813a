@@ -65,6 +65,8 @@ export async function handleR2MediaRequest(
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
     "Access-Control-Allow-Headers": "*",
+    "Access-Control-Expose-Headers": "Content-Range, Content-Length, Accept-Ranges, ETag",
+    "Accept-Ranges": "bytes",
     "Cache-Control": "public, max-age=31536000, immutable",
   };
 
@@ -91,16 +93,32 @@ export async function handleR2MediaRequest(
   try {
     const r2Binding = (env as any).R2_PUBLIC_BUCKET || (env as any).R2_BUCKET || (env as any).media;
     if (r2Binding && typeof r2Binding.get === "function") {
-      const object = await r2Binding.get(key);
+      const object = await r2Binding.get(key, {
+        range: request.headers,
+        onlyIf: request.headers,
+      });
       if (object) {
         const headers = new Headers(corsHeaders);
         const mime = getMimeType(key, object.httpMetadata?.contentType);
         headers.set("Content-Type", mime);
-        headers.set("Content-Length", String(object.size));
+        headers.set("Accept-Ranges", "bytes");
         if (object.httpEtag) headers.set("ETag", object.httpEtag);
         if (key.endsWith(".apk") || key.endsWith(".ipa"))
           headers.set("Content-Disposition", "attachment");
 
+        if (object.range) {
+          const start = (object.range as any).offset ?? 0;
+          const length = (object.range as any).length ?? object.size;
+          const end = start + length - 1;
+          headers.set("Content-Length", String(length));
+          headers.set("Content-Range", `bytes ${start}-${end}/${object.size}`);
+          if (request.method === "HEAD") {
+            return new Response(null, { status: 206, headers });
+          }
+          return new Response(object.body, { status: 206, headers });
+        }
+
+        headers.set("Content-Length", String(object.size));
         if (request.method === "HEAD") {
           return new Response(null, { status: 200, headers });
         }
@@ -136,15 +154,32 @@ export async function handleR2MediaRequest(
       const encodedKeyPath = key.split("/").map(encodeURIComponent).join("/");
       const endpoint = `https://${accountId}.r2.cloudflarestorage.com/${bucket}/${encodedKeyPath}`;
 
+      const forwardHeaders: Record<string, string> = {};
+      const range = request.headers.get("range");
+      if (range) forwardHeaders["range"] = range;
+      const ifMatch = request.headers.get("if-match");
+      if (ifMatch) forwardHeaders["if-match"] = ifMatch;
+      const ifNoneMatch = request.headers.get("if-none-match");
+      if (ifNoneMatch) forwardHeaders["if-none-match"] = ifNoneMatch;
+
       const r2Res = await client.fetch(endpoint, {
         method: request.method,
+        headers: Object.keys(forwardHeaders).length ? forwardHeaders : undefined,
       });
 
       if (r2Res.status === 404) {
         return new Response("Object Not Found", { status: 404, headers: corsHeaders });
       }
 
-      if (!r2Res.ok) {
+      if (r2Res.status === 416) {
+        const responseHeaders = new Headers(corsHeaders);
+        responseHeaders.set("Accept-Ranges", "bytes");
+        const cr = r2Res.headers.get("content-range");
+        if (cr) responseHeaders.set("Content-Range", cr);
+        return new Response(null, { status: 416, headers: responseHeaders });
+      }
+
+      if (!r2Res.ok && r2Res.status !== 206 && r2Res.status !== 304) {
         const errText = await r2Res.text().catch(() => "");
         return new Response(`R2 Fetch Error: ${r2Res.status} ${errText}`, {
           status: r2Res.status,
@@ -155,9 +190,13 @@ export async function handleR2MediaRequest(
       const responseHeaders = new Headers(corsHeaders);
       const mime = getMimeType(key, r2Res.headers.get("content-type"));
       responseHeaders.set("Content-Type", mime);
+      responseHeaders.set("Accept-Ranges", "bytes");
 
       const len = r2Res.headers.get("content-length");
       if (len) responseHeaders.set("Content-Length", len);
+
+      const contentRange = r2Res.headers.get("content-range");
+      if (contentRange) responseHeaders.set("Content-Range", contentRange);
 
       const etag = r2Res.headers.get("etag");
       if (etag) responseHeaders.set("ETag", etag);
@@ -165,11 +204,11 @@ export async function handleR2MediaRequest(
         responseHeaders.set("Content-Disposition", "attachment");
 
       if (request.method === "HEAD") {
-        return new Response(null, { status: 200, headers: responseHeaders });
+        return new Response(null, { status: r2Res.status, headers: responseHeaders });
       }
 
       return new Response(r2Res.body, {
-        status: 200,
+        status: r2Res.status,
         headers: responseHeaders,
       });
     } else {
