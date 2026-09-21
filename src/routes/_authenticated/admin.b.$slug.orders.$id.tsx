@@ -1583,7 +1583,6 @@ function OrderDetail() {
         }
       }
       localStorage.removeItem(`boutq_draft_${brandId}_new`);
-      await supabase.rpc("sync_order_stock", { p_order_id: created.id });
       toast.success(lang === "ar" ? "تم إنشاء الطلب بنجاح" : "Order created successfully");
       initialSnapshotRef.current = null;
       setOrder(null);
@@ -1671,48 +1670,41 @@ function OrderDetail() {
     }
 
     if (itemsModified) {
-      await supabase.from("order_items").delete().eq("order_id", order.id);
-      if (items.length > 0) {
-        const { error: ie } = await (supabase.from("order_items") as any).insert(
-          items.map((i) => ({
-            user_id: user.id,
-            brand_id: brandId,
-            order_id: order.id,
-            product_id: i.product_id ?? null,
-            variant_id: i.variant_id ?? null,
-            description: i.description,
-            quantity: i.quantity,
-            unit_price: i.unit_price,
-            unit_cost: i.unit_cost == null ? null : Number(i.unit_cost),
-            original_price: i.original_price ?? null,
-            customizations: i.customizations,
-            customization_total: i.customization_total,
-            line_total: i.line_total,
-            location: i.location ?? "main",
-            selected_variant: i.selected_variant ?? null,
-            custom_field_values: i.custom_field_values ?? [],
-          })),
-        );
-        if (ie) {
-          setSaving(false);
-          return toast.error(ie.message);
-        }
-      }
-    }
+      const itemsPayload = items.map((i) => ({
+        user_id: user.id,
+        brand_id: brandId,
+        order_id: order.id,
+        product_id: i.product_id ?? null,
+        variant_id: i.variant_id ?? null,
+        description: i.description,
+        quantity: i.quantity,
+        unit_price: i.unit_price,
+        unit_cost: i.unit_cost == null ? null : Number(i.unit_cost),
+        original_price: i.original_price ?? null,
+        customizations: i.customizations,
+        customization_total: i.customization_total,
+        line_total: i.line_total,
+        location: i.location ?? "main",
+        selected_variant: i.selected_variant ?? null,
+        custom_field_values: i.custom_field_values ?? [],
+      }));
 
-    // Sync inventory (deduct or restore based on status).
-    const { error: se } = await supabase.rpc("sync_order_stock", { p_order_id: order.id });
-    if (se) {
-      if (se.message?.includes("INSUFFICIENT_STOCK")) {
-        toast.error(t("orderDetail.insufficientStock"));
-      } else {
-        console.warn("[sync_order_stock]", se.message);
-        toast.error(se.message);
+      const { error: repErr } = await (supabase.rpc as any)("replace_order_items", {
+        p_order_id: order.id,
+        p_items: itemsPayload,
+      });
+
+      if (repErr) {
+        setSaving(false);
+        if (repErr.message?.includes("INSUFFICIENT_STOCK")) {
+          return toast.error(t("orderDetail.insufficientStock"));
+        }
+        return toast.error(repErr.message);
       }
     }
 
     // Stock deltas: compare prior deducted items vs current, log per-variant changes
-    if (!se) {
+    {
       const variants = variantsQ.data ?? [];
       const wasDeducted = !!(orderQ.data as any)?.stock_deducted;
       const priorItems = wasDeducted ? ((orderQ.data as any)?.order_items ?? []) : [];

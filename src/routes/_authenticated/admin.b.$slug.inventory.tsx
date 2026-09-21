@@ -6794,9 +6794,12 @@ function VariantList({
   };
 
   const update = async (v: Variant, patch: Partial<Variant>) => {
+    // If barcode is changing, verify uniqueness within the brand
     if (
-      Object.prototype.hasOwnProperty.call(patch, "barcode") &&
-      barcodeInUse(patch.barcode, v.id)
+      patch.barcode !== undefined &&
+      patch.barcode !== null &&
+      patch.barcode.trim() !== "" &&
+      variants.some((other) => other.id !== v.id && other.barcode === patch.barcode?.trim())
     ) {
       toast.error(
         isAr
@@ -6805,27 +6808,62 @@ function VariantList({
       );
       return;
     }
+
+    // Handle stock updates via ledger RPC
+    let stockUpdated = false;
+    if (patch.stock_main !== undefined && Number(patch.stock_main) !== Number(v.stock_main ?? 0)) {
+      const { error: stockErr } = await (supabase.rpc as any)("rpc_adjust_variant_stock", {
+        p_variant_id: v.id,
+        p_location: "main",
+        p_mode: "set",
+        p_value: Math.max(0, Number(patch.stock_main)),
+        p_reason: "manual_adjustment",
+        p_note: "Admin variant table inline edit",
+      });
+      if (stockErr) {
+        toast.error(stockErr.message);
+        return;
+      }
+      stockUpdated = true;
+    }
+
+    if (
+      patch.stock_incubator !== undefined &&
+      Number(patch.stock_incubator) !== Number(v.stock_incubator ?? 0)
+    ) {
+      const { error: incErr } = await (supabase.rpc as any)("rpc_adjust_variant_stock", {
+        p_variant_id: v.id,
+        p_location: "incubator",
+        p_mode: "set",
+        p_value: Math.max(0, Number(patch.stock_incubator)),
+        p_reason: "manual_adjustment",
+        p_note: "Admin variant table inline edit",
+      });
+      if (incErr) {
+        toast.error(incErr.message);
+        return;
+      }
+      stockUpdated = true;
+    }
+
     const normalizedPatch: any = { ...patch };
+    delete normalizedPatch.stock_main;
+    delete normalizedPatch.stock_incubator;
+    delete normalizedPatch.stock;
+
     if (typeof patch.selling_price === "number") {
       const regularPrice = Number(product?.base_price ?? 0);
       normalizedPatch.original_price = patch.selling_price < regularPrice ? regularPrice : null;
     }
-    if (patch.stock_main !== undefined || patch.stock_incubator !== undefined) {
-      const mainStock =
-        patch.stock_main !== undefined ? Number(patch.stock_main) : Number(v.stock_main ?? 0);
-      const incStock =
-        patch.stock_incubator !== undefined
-          ? Number(patch.stock_incubator)
-          : Number(v.stock_incubator ?? 0);
-      normalizedPatch.stock_main = mainStock;
-      normalizedPatch.stock_incubator = incStock;
-      normalizedPatch.stock = mainStock + incStock;
-    }
-    const { error } = await (supabase.from("product_variants") as any)
-      .update(normalizedPatch)
-      .eq("id", v.id);
-    if (error) toast.error(error.message);
-    else {
+
+    if (Object.keys(normalizedPatch).length > 0) {
+      const { error } = await (supabase.from("product_variants") as any)
+        .update(normalizedPatch)
+        .eq("id", v.id);
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
       prefetchOptionTranslations(
         [
           normalizedPatch.color,
@@ -6835,6 +6873,9 @@ function VariantList({
         ],
         isAr,
       );
+    }
+
+    if (stockUpdated || Object.keys(normalizedPatch).length > 0) {
       onChanged();
     }
   };
@@ -6917,18 +6958,18 @@ function VariantList({
 
   const bulkAddStock = async (amount: number) => {
     const selectedVariants = variants.filter((v) => selectedIds.has(v.id));
-    const promises = selectedVariants.map((v) => {
-      const newMain = Math.max(0, (v.stock_main ?? 0) + amount);
-      const inc = v.stock_incubator ?? 0;
-      return (supabase.from("product_variants") as any)
-        .update({
-          stock_main: newMain,
-          stock: newMain + inc,
-        })
-        .eq("id", v.id);
-    });
+    const promises = selectedVariants.map((v) =>
+      (supabase.rpc as any)("rpc_adjust_variant_stock", {
+        p_variant_id: v.id,
+        p_location: "main",
+        p_mode: "delta",
+        p_value: amount,
+        p_reason: "manual_adjustment",
+        p_note: `Bulk add stock +${amount}`,
+      }),
+    );
     const results = await Promise.all(promises);
-    const hasError = results.some((r) => r.error);
+    const hasError = results.some((r: any) => r.error);
     if (hasError) toast.error(isAr ? "فشل تحديث المخزون" : "Failed to update some stock entries");
     else {
       toast.success(
