@@ -91,6 +91,10 @@ export function BundleOffer({ mainProduct, mainVariant, bundleItems = [] }: Bund
               <img
                 src={mainProduct.image_url}
                 alt={mainProduct.name}
+                width={240}
+                height={240}
+                loading="lazy"
+                decoding="async"
                 className="h-full w-full object-cover"
               />
             ) : (
@@ -121,6 +125,10 @@ export function BundleOffer({ mainProduct, mainVariant, bundleItems = [] }: Bund
                 <img
                   src={selectedItem.image_url}
                   alt={selectedItem.name}
+                  width={240}
+                  height={240}
+                  loading="lazy"
+                  decoding="async"
                   className="h-full w-full object-cover"
                 />
               ) : (

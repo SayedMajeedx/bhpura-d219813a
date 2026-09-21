@@ -838,6 +838,10 @@ function StorefrontFooter() {
               <img
                 src={settings.logo_url}
                 alt={brand.name_en || "Logo"}
+                width={footerLogoSize * 3}
+                height={footerLogoSize}
+                loading="lazy"
+                decoding="async"
                 style={{ height: `${footerLogoSize}px`, width: "auto" }}
                 className="object-contain"
               />
@@ -934,6 +938,10 @@ function StorefrontFooter() {
               <img
                 src={settings.logo_url}
                 alt={brand.name_en || "Logo"}
+                width={footerLogoSize * 3}
+                height={footerLogoSize}
+                loading="lazy"
+                decoding="async"
                 style={{ height: `${footerLogoSize}px`, width: "auto" }}
                 className="object-contain"
               />

@@ -117,6 +117,10 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
                         <img
                           src={cloudflareImageUrl(item.image, 160)}
                           alt={displayName}
+                          width={64}
+                          height={64}
+                          loading="lazy"
+                          decoding="async"
                           className="h-16 w-16 rounded object-cover shrink-0"
                         />
                       ) : (

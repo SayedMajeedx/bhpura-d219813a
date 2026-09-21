@@ -6,7 +6,7 @@ import { hasAvailableStock, type ProductRow } from "@/routes/$slug.index";
 import { ProductGrid } from "@/components/storefront/product-grid";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
-import { StorefrontPageContent } from "@/routes/$slug.page.$idx";
+import { StorefrontPageContent } from "@/components/storefront/StorefrontPageContent";
 import { faviconType } from "@/lib/favicon";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { Button } from "@/components/ui/button";
