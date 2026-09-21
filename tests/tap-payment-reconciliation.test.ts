@@ -9,10 +9,14 @@ const candidate = {
   id: "order-1",
   brand_id: "brand-1",
   payment_gateway_reference: "chg-1",
+  total: 50.0,
+  currency: "BHD",
 };
 
 function dependencies(charge: {
   status?: string;
+  amount?: number | string;
+  currency?: string;
   metadata?: { order_id?: string; brand_id?: string };
 }): TapReconciliationDependencies {
   return {
@@ -38,12 +42,14 @@ describe("Tap payment reconciliation", () => {
   test("applies a terminal status only after charge metadata matches", async () => {
     const deps = dependencies({
       status: "CAPTURED",
+      amount: 50.0,
+      currency: "BHD",
       metadata: { order_id: candidate.id, brand_id: candidate.brand_id },
     });
 
     const result = await reconcileTapPaymentCandidates(deps, new Date("2026-08-08T12:00:00Z"));
 
-    expect(deps.applyVerifiedStatus).toHaveBeenCalledWith(candidate, "CAPTURED");
+    expect(deps.applyVerifiedStatus).toHaveBeenCalledWith(candidate, "CAPTURED", 50.0, "BHD");
     expect(result).toMatchObject({ scanned: 1, paid: 1, errors: 0 });
     expect(deps.listCandidates).toHaveBeenCalledWith("2026-08-08T11:30:00.000Z", 50);
   });
@@ -92,5 +98,35 @@ describe("Tap payment reconciliation", () => {
 
     expect(deps.applyVerifiedStatus).not.toHaveBeenCalled();
     expect(result.errors).toBe(1);
+  });
+
+  test("rejects transition when charge amount does not match order total", async () => {
+    const deps = dependencies({
+      status: "CAPTURED",
+      amount: 10.0, // Order total is 50.0
+      currency: "BHD",
+      metadata: { order_id: candidate.id, brand_id: candidate.brand_id },
+    });
+
+    const result = await reconcileTapPaymentCandidates(deps);
+
+    expect(deps.applyVerifiedStatus).not.toHaveBeenCalled();
+    expect(result.errors).toBe(1);
+    expect(result.paid).toBe(0);
+  });
+
+  test("rejects transition when charge currency does not match order currency", async () => {
+    const deps = dependencies({
+      status: "CAPTURED",
+      amount: 50.0,
+      currency: "SAR", // Order currency is BHD
+      metadata: { order_id: candidate.id, brand_id: candidate.brand_id },
+    });
+
+    const result = await reconcileTapPaymentCandidates(deps);
+
+    expect(deps.applyVerifiedStatus).not.toHaveBeenCalled();
+    expect(result.errors).toBe(1);
+    expect(result.paid).toBe(0);
   });
 });

@@ -65,6 +65,8 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
 
           const tapCharge = await tapRes.json<{
             status?: string;
+            amount?: number | string;
+            currency?: string;
             metadata?: { order_id?: string; brand_id?: string };
           }>();
           const verifiedStatus = tapCharge.status?.toUpperCase();
@@ -81,38 +83,65 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
             return new Response("Metadata verification failure.", { status: 400 });
           }
 
-          // 3. REPLAY ATTACK & IDEMPOTENCY CHECK
-          const { data: existingOrder, error: replayError } = await supabaseAdmin
+          // 3. TARGET ORDER LOOKUP & IDEMPOTENCY CHECK
+          const { data: targetOrder, error: targetOrderError } = await supabaseAdmin
             .from("orders")
-            .select("id, payment_status")
+            .select("id, total, currency, payment_status, payment_gateway_reference")
+            .eq("id", orderId)
+            .eq("brand_id", brandId)
+            .maybeSingle();
+
+          if (targetOrderError || !targetOrder) {
+            console.error("[Tap Webhook Target Order Not Found]:", { orderId, brandId, targetOrderError });
+            return new Response("Order not found.", { status: 404 });
+          }
+
+          if (targetOrder.payment_status === "paid") {
+            console.log(
+              "[Tap Webhook Idempotency]: Order",
+              orderId,
+              "already paid. Skipping duplicate update.",
+            );
+            return new Response("OK", { status: 200 });
+          }
+
+          // 4. REPLAY ATTACK CHECK: Ensure chargeId isn't claimed by a different order
+          const { data: conflictingOrder, error: replayError } = await supabaseAdmin
+            .from("orders")
+            .select("id")
             .eq("payment_gateway_reference" as any, chargeId)
+            .neq("id", orderId)
             .maybeSingle();
 
           if (replayError) {
             console.error("[Tap Webhook Replay Check Error]:", replayError);
           }
 
-          if (existingOrder) {
-            if (existingOrder.id !== orderId) {
-              console.error(
-                "[Tap Webhook Replay Attack Blocked]: Charge reference",
-                chargeId,
-                "was already used for order",
-                existingOrder.id,
-              );
-              return new Response("Duplicate payment reference.", { status: 400 });
-            }
-            if (existingOrder.payment_status === "paid") {
-              console.log(
-                "[Tap Webhook Idempotency]: Order",
-                orderId,
-                "already paid. Skipping duplicate update.",
-              );
-              return new Response("OK", { status: 200 });
-            }
+          if (conflictingOrder) {
+            console.error(
+              "[Tap Webhook Replay Attack Blocked]: Charge reference",
+              chargeId,
+              "was already used for order",
+              conflictingOrder.id,
+            );
+            return new Response("Duplicate payment reference.", { status: 400 });
           }
 
-          // 4. Update order status once authoritatively verified by Tap and passed replay checks
+          // 5. AMOUNT & CURRENCY VALIDATION
+          const chargeAmount = Number(tapCharge.amount);
+          const orderTotal = Number(targetOrder.total);
+          if (isNaN(chargeAmount) || Math.abs(chargeAmount - orderTotal) > 0.001) {
+            console.error("[Tap Webhook Amount Mismatch]:", { chargeAmount, orderTotal, orderId });
+            return new Response("Amount verification failure.", { status: 400 });
+          }
+          const expectedCurrency = (targetOrder.currency || "BHD").toUpperCase();
+          const chargeCurrency = (tapCharge.currency || "").toUpperCase();
+          if (chargeCurrency !== expectedCurrency) {
+            console.error("[Tap Webhook Currency Mismatch]:", { chargeCurrency, expectedCurrency, orderId });
+            return new Response("Currency verification failure.", { status: 400 });
+          }
+
+          // 6. Update order status once authoritatively verified by Tap and passed replay checks
           if (verifiedStatus === "CAPTURED" || verifiedStatus === "SUCCESS") {
             const { error: updateError } = await supabaseAdmin
               .from("orders")

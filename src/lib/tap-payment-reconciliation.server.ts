@@ -18,10 +18,14 @@ export interface TapReconciliationCandidate {
   id: string;
   brand_id: string;
   payment_gateway_reference: string;
+  total?: number | string | null;
+  currency?: string | null;
 }
 
 interface TapCharge {
   status?: string;
+  amount?: number | string;
+  currency?: string;
   metadata?: { order_id?: string; brand_id?: string };
 }
 
@@ -41,6 +45,8 @@ export interface TapReconciliationDependencies {
   applyVerifiedStatus(
     candidate: TapReconciliationCandidate,
     verifiedStatus: string,
+    verifiedAmount?: number,
+    verifiedCurrency?: string,
   ): Promise<boolean>;
 }
 
@@ -98,7 +104,48 @@ export async function reconcileTapPaymentCandidates(
         continue;
       }
 
-      const transitioned = await dependencies.applyVerifiedStatus(candidate, verifiedStatus);
+      let verifiedAmount: number | undefined;
+      let verifiedCurrency: string | undefined;
+
+      if (decision === "paid") {
+        const chargeAmount = Number(charge.amount);
+        const orderTotal = Number(candidate.total);
+        if (isNaN(chargeAmount) || Math.abs(chargeAmount - orderTotal) > 0.001) {
+          result.errors += 1;
+          console.error(
+            JSON.stringify({
+              event: "tap_payment_reconciliation_amount_mismatch",
+              orderId: candidate.id,
+              chargeAmount,
+              orderTotal,
+            }),
+          );
+          continue;
+        }
+        const expectedCurrency = (candidate.currency || "BHD").toUpperCase();
+        const chargeCurrency = (charge.currency || "").toUpperCase();
+        if (chargeCurrency !== expectedCurrency) {
+          result.errors += 1;
+          console.error(
+            JSON.stringify({
+              event: "tap_payment_reconciliation_currency_mismatch",
+              orderId: candidate.id,
+              chargeCurrency,
+              expectedCurrency,
+            }),
+          );
+          continue;
+        }
+        verifiedAmount = chargeAmount;
+        verifiedCurrency = chargeCurrency;
+      }
+
+      const transitioned = await dependencies.applyVerifiedStatus(
+        candidate,
+        verifiedStatus,
+        verifiedAmount,
+        verifiedCurrency,
+      );
       if (!transitioned) {
         result.skipped += 1;
       } else {
@@ -127,7 +174,7 @@ function createProductionDependencies(): TapReconciliationDependencies {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data, error } = await supabaseAdmin
         .from("orders")
-        .select("id, brand_id, payment_gateway_reference")
+        .select("id, brand_id, payment_gateway_reference, total, currency")
         .in("payment_method", [
           "card",
           "tap",
@@ -145,12 +192,20 @@ function createProductionDependencies(): TapReconciliationDependencies {
         .order("created_at", { ascending: true })
         .limit(limit);
       if (error) throw new Error(`candidate query failed: ${error.message}`);
-      return (data ?? []).filter(
-        (row): row is TapReconciliationCandidate =>
-          typeof row.id === "string" &&
-          typeof row.brand_id === "string" &&
-          typeof row.payment_gateway_reference === "string",
-      );
+      return (data ?? [])
+        .filter(
+          (row) =>
+            typeof row.id === "string" &&
+            typeof row.brand_id === "string" &&
+            typeof row.payment_gateway_reference === "string",
+        )
+        .map((row) => ({
+          id: row.id,
+          brand_id: row.brand_id,
+          payment_gateway_reference: row.payment_gateway_reference,
+          total: row.total,
+          currency: row.currency,
+        }));
     },
 
     async getApiKey(brandId) {
@@ -178,7 +233,7 @@ function createProductionDependencies(): TapReconciliationDependencies {
       return payload as TapCharge;
     },
 
-    async applyVerifiedStatus(candidate, verifiedStatus) {
+    async applyVerifiedStatus(candidate, verifiedStatus, verifiedAmount, verifiedCurrency) {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data, error } = await (supabaseAdmin.rpc as CallableFunction)(
         "reconcile_verified_tap_order",
@@ -187,6 +242,8 @@ function createProductionDependencies(): TapReconciliationDependencies {
           p_brand_id: candidate.brand_id,
           p_charge_id: candidate.payment_gateway_reference,
           p_verified_status: verifiedStatus,
+          p_verified_amount: verifiedAmount ?? null,
+          p_verified_currency: verifiedCurrency ?? null,
         },
       );
       if (error) throw new Error(`verified transition failed: ${error.message}`);

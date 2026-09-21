@@ -82,6 +82,7 @@ export const Route = createFileRoute("/api/public/payments/create-tap-charge")({
               id,
               brand_id,
               total,
+              currency,
               subtotal,
               shipping,
               discount,
@@ -236,7 +237,7 @@ export const Route = createFileRoute("/api/public/payments/create-tap-charge")({
 
           const tapPayload = {
             amount: Number(order.total),
-            currency: "BHD",
+            currency: (order.currency || "BHD").toUpperCase(),
             threeDSecure: true,
             save_card: false,
             description: `Order #${orderId.slice(0, 8)} Payment`,

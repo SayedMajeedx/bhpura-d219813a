@@ -56,6 +56,8 @@ export const Route = createFileRoute("/api/public/payments/tap-redirect")({
 
           const chargeData = await tapRes.json<{
             status?: string;
+            amount?: number | string;
+            currency?: string;
             metadata?: { order_id?: string; brand_id?: string };
           }>();
           const chargeStatus = chargeData.status?.toUpperCase();
@@ -69,13 +71,27 @@ export const Route = createFileRoute("/api/public/payments/tap-redirect")({
 
           const { data: order, error: orderError } = await supabaseAdmin
             .from("orders")
-            .select("id, payment_gateway_reference, fulfillment_method, digital_delivery_channel")
+            .select("id, total, currency, payment_gateway_reference, fulfillment_method, digital_delivery_channel")
             .eq("id", orderId)
             .eq("brand_id", brandId)
             .maybeSingle();
 
           if (orderError || !order || order.payment_gateway_reference !== tapId) {
             return new Response("Payment reference verification failure.", { status: 400 });
+          }
+
+          // Verify amount and currency to prevent altered charge exploitation
+          const chargeAmount = Number(chargeData.amount);
+          const orderTotal = Number(order.total);
+          if (isNaN(chargeAmount) || Math.abs(chargeAmount - orderTotal) > 0.001) {
+            console.error("[Tap Redirect Amount Mismatch]:", { chargeAmount, orderTotal, orderId });
+            return new Response("Payment amount verification failure.", { status: 400 });
+          }
+          const expectedCurrency = (order.currency || "BHD").toUpperCase();
+          const chargeCurrency = (chargeData.currency || "").toUpperCase();
+          if (chargeCurrency !== expectedCurrency) {
+            console.error("[Tap Redirect Currency Mismatch]:", { chargeCurrency, expectedCurrency, orderId });
+            return new Response("Payment currency verification failure.", { status: 400 });
           }
 
           // 4. Handle success vs failure
