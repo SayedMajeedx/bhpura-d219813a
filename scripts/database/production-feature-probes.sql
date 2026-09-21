@@ -41,5 +41,31 @@ SELECT jsonb_build_object(
     WHERE n.nspname = 'public' AND c.relname = 'product_barcodes'
   ), false),
   'localized_push', to_regprocedure('public.format_localized_order_status(text,text,text)') IS NOT NULL
-    AND to_regprocedure('public.format_currency_amount(numeric,text)') IS NOT NULL
+    AND to_regprocedure('public.format_currency_amount(numeric,text)') IS NOT NULL,
+  'duplicate_triggers_exist', EXISTS (
+    SELECT 1
+    FROM information_schema.triggers
+    WHERE event_object_table IN ('orders', 'order_items', 'product_variants')
+      AND trigger_schema = 'public'
+    GROUP BY event_object_table, action_statement, event_manipulation, action_timing
+    HAVING count(*) > 1
+  )
 ) AS feature_probes;
+
+-- Detailed Trigger Audit Probe:
+-- Lists (function, count(*)) for triggers on orders, order_items, product_variants
+-- and flags any function bound more than once for the same event and timing.
+SELECT
+  event_object_table,
+  action_timing,
+  event_manipulation,
+  action_statement,
+  count(*) AS binding_count,
+  array_agg(trigger_name ORDER BY trigger_name) AS trigger_names,
+  CASE WHEN count(*) > 1 THEN 'DUPLICATE_TRIGGER_DEFECT' ELSE 'OK' END AS status
+FROM information_schema.triggers
+WHERE event_object_table IN ('orders', 'order_items', 'product_variants')
+  AND trigger_schema = 'public'
+GROUP BY event_object_table, action_timing, event_manipulation, action_statement
+ORDER BY (count(*) > 1) DESC, event_object_table, action_statement;
+
