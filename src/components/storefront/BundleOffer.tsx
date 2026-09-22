@@ -63,7 +63,7 @@ export function BundleOffer({ mainProduct, mainVariant, bundleItems = [] }: Bund
     setAdded(true);
     toast.success(
       selectedItem
-        ? t("تمت إضافة الطقم إلى السلة بنجاح!", "Bundle added to cart successfully!")
+        ? t("تمت إضافة العرض إلى السلة بنجاح!", "Bundle added to cart successfully!")
         : t("تمت الإضافة إلى السلة", "Added to cart"),
     );
 
@@ -78,7 +78,7 @@ export function BundleOffer({ mainProduct, mainVariant, bundleItems = [] }: Bund
       <div className="flex items-center gap-2">
         <Sparkles className="h-4 w-4 text-primary" />
         <h3 className="text-sm font-semibold text-foreground">
-          {t("أكملي الطقم / التنسيق المثالي", "Complete the Look")}
+          {t("أكمل طلبك", "Complete your order")}
         </h3>
       </div>
 
@@ -155,7 +155,7 @@ export function BundleOffer({ mainProduct, mainVariant, bundleItems = [] }: Bund
       {bundleItems.length > 1 && (
         <div className="flex items-center gap-2 overflow-x-auto py-1">
           <span className="text-xs text-muted-foreground shrink-0">
-            {t("خيارات التنسيق:", "Style with:")}
+            {t("أضف معه:", "Add with it:")}
           </span>
           {bundleItems.map((item) => {
             const isChosen = item.id === selectedComplementaryId;
@@ -183,7 +183,7 @@ export function BundleOffer({ mainProduct, mainVariant, bundleItems = [] }: Bund
       <div className="pt-3 border-t border-border flex items-center justify-between gap-4">
         <div>
           <span className="text-xs text-muted-foreground block">
-            {t("سعر الطقم معاً:", "Combined price:")}
+            {t("السعر معاً:", "Combined price:")}
           </span>
           <span className="text-sm font-bold text-foreground">
             {formatPrice(bundleTotal, currency, lang)}
@@ -200,12 +200,12 @@ export function BundleOffer({ mainProduct, mainVariant, bundleItems = [] }: Bund
           {added ? (
             <>
               <Check className="h-3.5 w-3.5" />
-              <span>{t("تمت إضافة الطقم", "Bundle added")}</span>
+              <span>{t("تمت إضافة العرض", "Bundle added")}</span>
             </>
           ) : (
             <>
               <ShoppingBag className="h-3.5 w-3.5" />
-              <span>{t("إضافة الطقم للسلة", "Add bundle to cart")}</span>
+              <span>{t("إضافة العرض للسلة", "Add bundle to cart")}</span>
             </>
           )}
         </Button>

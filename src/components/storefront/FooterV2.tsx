@@ -142,7 +142,7 @@ export function FooterV2() {
               className="text-xs font-semibold uppercase tracking-wider opacity-90 border-b border-white/10 pb-2"
               style={{ color: "var(--sf-footer-fg)" }}
             >
-              {t("تسوّقي", "Shop")}
+              {t("تسوّق", "Shop")}
             </h4>
             <nav className="flex flex-col space-y-2 text-xs">
               <Link
@@ -278,7 +278,7 @@ export function FooterV2() {
               className="h-auto rounded-md w-full flex items-center justify-between py-2 text-xs font-semibold"
               style={{ color: "var(--sf-footer-fg)" }}
             >
-              <span>{t("تسوّقي", "Shop")}</span>
+              <span>{t("تسوّق", "Shop")}</span>
               <ChevronDown
                 className={`h-4 w-4 transition-transform duration-200 ${
                   openSections.shop ? "rotate-180" : ""

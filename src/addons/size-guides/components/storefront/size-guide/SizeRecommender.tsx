@@ -97,7 +97,7 @@ export function SizeRecommender({ guide, currentUnit, onRecommendSize }: SizeRec
             </h4>
             <p className="text-xs text-muted-foreground">
               {isAr
-                ? `أدخلي قياساتك بالـ (${unitLabel}) وسنقترح المقاس الأنسب لك بدقة`
+                ? `أدخل قياساتك بالـ (${unitLabel}) وسنقترح المقاس الأنسب لك بدقة`
                 : `Enter your measurements in (${unitLabel}) for an instant transparent recommendation`}
             </p>
           </div>

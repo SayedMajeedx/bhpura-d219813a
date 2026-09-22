@@ -1485,7 +1485,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     {t(
-                      "يتم تجهيز هذه القطعة خصيصاً على قياساتكِ الفردية لضمان أفضل ملاءمة وأناقة.",
+                      "يتم تجهيز هذه القطعة خصيصاً على قياساتك الفردية لضمان أفضل ملاءمة وأناقة.",
                       "This piece is tailored specifically to your personal measurements for a perfect fit.",
                     )}
                   </p>

@@ -136,7 +136,7 @@ export function PricingGroup() {
             />
             <p className="text-xs text-muted-foreground">
               {isAr
-                ? 'يُطبَّق على عرض "أكملي الطقم" في صفحة المنتج. صفر = اقتراح بدون خصم.'
+                ? 'يُطبَّق على عرض "أكمل طلبك" في صفحة المنتج. صفر = اقتراح بدون خصم.'
                 : 'Applied to the "Complete the set" offer on product pages. 0 = suggestion without discount.'}
             </p>
           </div>

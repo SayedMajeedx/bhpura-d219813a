@@ -232,7 +232,7 @@ function CustomOrderRouteComponent() {
         </h1>
         <p className="text-sm text-muted-foreground max-w-lg mx-auto">
           {t(
-            "صممي قطعتك الخاصة بدقة متناهية باختيار القماش واللون والقياسات الدقيقة التي تناسبك.",
+            "صمّم قطعتك الخاصة بدقة متناهية باختيار القماش واللون والقياسات الدقيقة التي تناسبك.",
             "Customize your exclusive piece with tailored fabrics, exact measurements, and hand-finished craftsmanship.",
           )}
         </p>
