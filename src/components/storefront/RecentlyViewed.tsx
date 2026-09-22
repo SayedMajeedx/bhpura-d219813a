@@ -46,13 +46,17 @@ export function RecentlyViewed({ excludeProductId, className = "" }: RecentlyVie
   const { brand, lang, t, settings } = useStorefront();
   const [productIds, setProductIds] = useState<string[]>([]);
 
+  const isEnabled = settings?.recently_viewed_enabled !== false;
+
   useEffect(() => {
+    if (!isEnabled) return;
     const ids = getRecentlyViewedIds(brand.slug).filter((id) => id !== excludeProductId);
     setProductIds(ids);
-  }, [brand.slug, excludeProductId]);
+  }, [brand.slug, excludeProductId, isEnabled]);
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["storefront", brand.slug, "recently-viewed", productIds.join(",")],
+    enabled: isEnabled && productIds.length > 0,
     queryFn: async () => {
       if (!productIds.length) return [];
       const { data, error } = await supabase
@@ -70,11 +74,10 @@ export function RecentlyViewed({ excludeProductId, className = "" }: RecentlyVie
       const map = new Map(list.map((p) => [p.id, p]));
       return productIds.map((id) => map.get(id)).filter(Boolean) as ProductRow[];
     },
-    enabled: productIds.length > 0,
     staleTime: 5 * 60_000,
   });
 
-  if (!products || products.length === 0) {
+  if (!isEnabled || !products || products.length === 0) {
     return null;
   }
 

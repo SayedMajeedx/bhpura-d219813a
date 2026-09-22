@@ -438,7 +438,12 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         settings?.social_proof_threshold ?? 3,
       );
     },
-    enabled: Boolean(brand?.id && product?.id && settings?.storefront_design_version === 2),
+    enabled: Boolean(
+      brand?.id &&
+        product?.id &&
+        settings?.storefront_design_version === 2 &&
+        settings?.social_proof_enabled !== false,
+    ),
     staleTime: 10 * 60_000,
   });
 
@@ -1240,7 +1245,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                     playsInline
                     controls
                   />
-                ) : settings?.storefront_design_version === 2 ? (
+                ) : settings?.storefront_design_version === 2 &&
+                  settings?.pdp_image_zoom !== false ? (
                   <ImageZoom
                     src={media[mediaIdx % media.length].url}
                     alt={displayName}
@@ -1392,7 +1398,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           </div>
 
           {/* Social Proof Badge */}
-          {settings?.storefront_design_version === 2 && socialProofQuery.data && (
+          {settings?.storefront_design_version === 2 &&
+            settings?.social_proof_enabled !== false &&
+            socialProofQuery.data && (
             <div className="mb-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-semibold border border-amber-500/20">
               <Sparkles className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
               <span>
@@ -2222,25 +2230,31 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               </Button>
             </div>
           ) : selectedVariantOutOfStock ? (
-            <div className="space-y-3">
-              <NotifyMeForm
-                brandId={brand.id}
-                productId={product.id}
-                variantId={variant?.id}
-                productName={displayName}
-                variantLabel={
-                  variant
-                    ? [
-                        formatSizeWithUnit(variant.size, variant.size_unit, lang),
-                        variant.color,
-                        variant.fabric,
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")
-                    : null
-                }
-              />
-            </div>
+            settings?.back_in_stock_enabled !== false ? (
+              <div className="space-y-3">
+                <NotifyMeForm
+                  brandId={brand.id}
+                  productId={product.id}
+                  variantId={variant?.id}
+                  productName={displayName}
+                  variantLabel={
+                    variant
+                      ? [
+                          formatSizeWithUnit(variant.size, variant.size_unit, lang),
+                          variant.color,
+                          variant.fabric,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")
+                      : null
+                  }
+                />
+              </div>
+            ) : (
+              <div className="rounded-xl border border-border bg-muted/40 p-4 text-center text-sm font-medium text-muted-foreground">
+                {t("هذا المنتج غير متوفر حالياً", "This product is currently out of stock")}
+              </div>
+            )
           ) : (
             <div className="hidden md:flex gap-2">
               <Button
@@ -2298,7 +2312,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           {settings?.storefront_design_version === 2 && (
             <ProductAccordion
               description={displayDescription}
-              fabricCare={variant?.fabric ? `${variant.fabric}` : null}
+              fabricCare={
+                variant?.fabric
+                  ? `${variant.fabric}`
+                  : (lang === "ar" ? settings?.fabric_care_ar : settings?.fabric_care_en) || null
+              }
               hasSizeGuide={Boolean(
                 modules?.size_guide || (product?.size_guide_id && !product?.size_guide_hidden),
               )}
@@ -2439,7 +2457,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       )}
 
       {/* Layer 2 Recently Viewed Carousel */}
-      <RecentlyViewed excludeProductId={product.id} />
+      {settings?.recently_viewed_enabled !== false && (
+        <RecentlyViewed excludeProductId={product.id} />
+      )}
     </div>
   );
 }

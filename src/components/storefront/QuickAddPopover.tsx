@@ -94,7 +94,7 @@ export function QuickAddPopover({ product, variants = [], onOpenQuickView }: Qui
       {hasMultipleSizes ? (
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium text-muted-foreground text-center">
-            {t("اختاري المقاس للإضافة السريعة", "Select size for quick add")}
+            {t("اختر المقاس للإضافة السريعة", "Select size for quick add")}
           </span>
           <div className="flex flex-wrap items-center justify-center gap-1 max-h-24 overflow-y-auto py-0.5">
             {availableVariants.map((v) => {

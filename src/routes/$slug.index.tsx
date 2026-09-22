@@ -336,10 +336,16 @@ function StoreHome() {
     );
   }
 
+  const showTrustBarBelowHero =
+    settings?.trust_bar_enabled !== false &&
+    (settings?.trust_bar_position === "below_hero" ||
+      settings?.trust_bar_position === "both" ||
+      !settings?.trust_bar_position);
+
   return (
     <div>
       <HeroBanner />
-      <TrustBar />
+      {showTrustBarBelowHero && <TrustBar />}
       <section className="w-full" style={{ backgroundColor: promoAreaBackground }}>
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
           <PromoCards />
@@ -380,12 +386,16 @@ function StoreHome() {
       </section>
 
       {/* Brand Story Section (Layer 2) */}
-      {settings.storefront_design_version === 2 && <BrandStorySection />}
+      {settings.storefront_design_version === 2 && settings.brand_story_enabled !== false && (
+        <BrandStorySection />
+      )}
 
       {/* Recently Viewed Carousel (Layer 2) */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <RecentlyViewed />
-      </div>
+      {settings.recently_viewed_enabled !== false && (
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <RecentlyViewed />
+        </div>
+      )}
     </div>
   );
 }

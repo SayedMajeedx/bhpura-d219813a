@@ -21,7 +21,7 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
   const [success, setSuccess] = useState(false);
 
   const title = isAr
-    ? settings?.newsletter_title_ar || "اشتركي في نشرتنا لتصلكِ أحدث التشكيلات والعروض"
+    ? settings?.newsletter_title_ar || "اشترك في نشرتنا لتصلك أحدث المنتجات والعروض"
     : settings?.newsletter_title_en || "Subscribe for exclusive updates & new arrivals";
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -63,7 +63,7 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
       setSuccess(true);
       toast.success(
         t(
-          "شكراً لاشتراككِ! سنوافيكِ بجديدنا دائماً",
+          "شكراً لاشتراكك! سنوافيك بجديدنا دائماً",
           "Thank you for subscribing! We will keep you updated.",
         ),
       );
@@ -71,7 +71,7 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
       const code = String(err?.message ?? "");
       toast.error(
         code.includes("RATE_LIMITED")
-          ? t("محاولات كثيرة، حاولي لاحقاً", "Too many attempts, please try again later")
+          ? t("محاولات كثيرة، يرجى المحاولة لاحقاً", "Too many attempts, please try again later")
           : t("حدث خطأ، يرجى المحاولة لاحقاً", "An error occurred, please try again"),
       );
     } finally {
@@ -85,7 +85,7 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
         className={`flex items-center gap-2 text-xs text-primary font-medium p-3 rounded-lg bg-primary/10 border border-primary/20 ${className}`}
       >
         <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
-        <span>{t("تم تسجيل اشتراككِ بنجاح!", "You have successfully subscribed!")}</span>
+        <span>{t("تم تسجيل اشتراكك بنجاح!", "You have successfully subscribed!")}</span>
       </div>
     );
   }

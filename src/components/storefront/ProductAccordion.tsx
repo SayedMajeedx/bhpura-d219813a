@@ -20,8 +20,14 @@ export function ProductAccordion({
   onOpenSizeGuide,
   hasSizeGuide = false,
 }: ProductAccordionProps) {
-  const { lang, t, settings } = useStorefront();
+  const { brand, lang, t, settings } = useStorefront();
   const isAr = lang === "ar";
+  const storeVertical = (
+    settings?.store_vertical ||
+    (brand as any)?.store_vertical ||
+    "general"
+  ).toLowerCase();
+  const isApparelVertical = ["fashion", "abayas", "clothing", "apparel"].includes(storeVertical);
 
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({
     description: true, // Default open for initial scannability
@@ -42,11 +48,16 @@ export function ProductAccordion({
 
   const effectiveShipping = shippingPolicy || defaultShipping;
 
-  const defaultFabricCare = isAr
-    ? "يُغسل باليد بماء بارد أو تنظيف جاف (Dry Clean). يُكوى بالبخار بدرجة حرارة منخفضة للحفاظ على جودة القماش."
-    : "Hand wash cold or dry clean only. Steam iron at low temperature to preserve fabric texture.";
+  const defaultFabricCare = isApparelVertical
+    ? isAr
+      ? "يُغسل باليد بماء بارد أو تنظيف جاف (Dry Clean). يُكوى بالبخار بدرجة حرارة منخفضة للحفاظ على جودة القماش."
+      : "Hand wash cold or dry clean only. Steam iron at low temperature to preserve fabric texture."
+    : null;
 
-  const effectiveFabric = fabricCare || defaultFabricCare;
+  const effectiveFabric =
+    fabricCare ||
+    (isAr ? settings?.fabric_care_ar : settings?.fabric_care_en) ||
+    defaultFabricCare;
 
   const sections = [
     {
@@ -63,14 +74,22 @@ export function ProductAccordion({
         </p>
       ),
     },
-    {
-      id: "fabric",
-      title: t("الخامة والعناية", "Fabric & Care"),
-      icon: Shirt,
-      content: (
-        <p className="text-xs leading-relaxed opacity-90 whitespace-pre-line">{effectiveFabric}</p>
-      ),
-    },
+    ...(effectiveFabric
+      ? [
+          {
+            id: "fabric",
+            title: isApparelVertical
+              ? t("الخامة والعناية", "Fabric & Care")
+              : t("المواصفات والعناية", "Specifications & Care"),
+            icon: isApparelVertical ? Shirt : Sparkles,
+            content: (
+              <p className="text-xs leading-relaxed opacity-90 whitespace-pre-line">
+                {effectiveFabric}
+              </p>
+            ),
+          },
+        ]
+      : []),
     {
       id: "shipping",
       title: t("الشحن والاسترجاع", "Shipping & Returns"),
@@ -92,7 +111,7 @@ export function ProductAccordion({
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground">
                   {t(
-                    "تعرفي على القياسات الدقيقة بالسنتيمتر والبوصة لكل تشكيلة لتختاري المقاس المثالي.",
+                    "تعرّف على القياسات الدقيقة بالسنتيمتر والبوصة لاختيار المقاس المثالي.",
                     "Review exact centimeter and inch measurements to pick your perfect fit.",
                   )}
                 </p>

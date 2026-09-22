@@ -369,7 +369,7 @@ function CustomOrderRouteComponent() {
             {measurementMode === "standard" ? (
               <div>
                 <label className="block text-xs font-medium text-foreground mb-2">
-                  {t("اختاري المقاس القياسي", "Select Standard Size")}
+                  {t("اختر المقاس القياسي", "Select Standard Size")}
                 </label>
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                   {["50", "52", "54", "56", "58", "60"].map((sz) => (

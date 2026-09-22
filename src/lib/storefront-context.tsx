@@ -244,8 +244,24 @@ export type PublicSettings = {
   footer_layout?: "columns" | "minimal" | "classic" | string;
   new_badge_days?: number;
   recent_views_enabled?: boolean;
+  recently_viewed_enabled?: boolean;
   social_proof_threshold?: number;
   motion_enabled?: boolean;
+  brand_story_enabled?: boolean;
+  social_proof_enabled?: boolean;
+  product_card_hover_image?: boolean;
+  product_card_color_dots?: boolean;
+  product_card_quick_add?: boolean;
+  quick_view_enabled?: boolean;
+  pdp_image_zoom?: boolean;
+  category_filters_enabled?: boolean;
+  back_in_stock_enabled?: boolean;
+  fabric_care_ar?: string | null;
+  fabric_care_en?: string | null;
+  shipping_returns_ar?: string | null;
+  shipping_returns_en?: string | null;
+  pdp_layout?: string | null;
+  bundle_discount_percent?: number | null;
 };
 
 export type CustomFieldValue = {

@@ -347,6 +347,37 @@ export const Route = createFileRoute("/$slug")({
       storefront_loader_text_en: s?.storefront_loader_text_en ?? null,
       storefront_loader_text_ar: s?.storefront_loader_text_ar ?? null,
       trust_badges: normalizedTrustBadges,
+      storefront_design_version: s?.storefront_design_version ?? 1,
+      trust_bar_enabled: s?.trust_bar_enabled ?? true,
+      trust_bar_position: s?.trust_bar_position ?? "below_hero",
+      brand_story_enabled: s?.brand_story_enabled ?? true,
+      brand_story_title_ar: s?.brand_story_title_ar ?? null,
+      brand_story_title_en: s?.brand_story_title_en ?? null,
+      brand_story_subtitle_ar: s?.brand_story_subtitle_ar ?? null,
+      brand_story_subtitle_en: s?.brand_story_subtitle_en ?? null,
+      brand_story_description_ar: s?.brand_story_description_ar ?? null,
+      brand_story_description_en: s?.brand_story_description_en ?? null,
+      brand_story_image_url: s?.brand_story_image_url ?? null,
+      social_proof_enabled: s?.social_proof_enabled ?? true,
+      recently_viewed_enabled: s?.recently_viewed_enabled ?? s?.recent_views_enabled ?? true,
+      recent_views_enabled: s?.recently_viewed_enabled ?? s?.recent_views_enabled ?? true,
+      product_card_hover_image: s?.product_card_hover_image ?? true,
+      product_card_color_dots: s?.product_card_color_dots ?? true,
+      product_card_quick_add: s?.product_card_quick_add ?? true,
+      quick_view_enabled: s?.quick_view_enabled ?? true,
+      pdp_image_zoom: s?.pdp_image_zoom ?? true,
+      category_filters_enabled: s?.category_filters_enabled ?? true,
+      back_in_stock_enabled: s?.back_in_stock_enabled ?? true,
+      fabric_care_ar: s?.fabric_care_ar ?? null,
+      fabric_care_en: s?.fabric_care_en ?? null,
+      shipping_returns_ar: s?.shipping_returns_ar ?? null,
+      shipping_returns_en: s?.shipping_returns_en ?? null,
+      newsletter_enabled: s?.newsletter_enabled ?? true,
+      newsletter_title_ar: s?.newsletter_title_ar ?? null,
+      newsletter_title_en: s?.newsletter_title_en ?? null,
+      footer_show_payment_methods: s?.footer_show_payment_methods ?? true,
+      footer_layout: s?.footer_layout ?? "columns",
+      motion_enabled: s?.motion_enabled ?? true,
     };
 
     const rawHero = brand.hero_media as any;
@@ -755,7 +786,10 @@ function StorefrontFooter() {
   const [openCompany, setOpenCompany] = useState(false);
   const [openHelp, setOpenHelp] = useState(false);
 
-  if (settings?.footer_layout === "columns" || settings?.storefront_design_version === 2) {
+  if (
+    settings?.footer_layout !== "simple" &&
+    (settings?.footer_layout === "columns" || settings?.storefront_design_version === 2)
+  ) {
     return <FooterV2 />;
   }
 

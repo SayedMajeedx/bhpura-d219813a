@@ -88,8 +88,8 @@ const TOGGLES: Array<{ key: BoolKey; ar: string; en: string; hintAr: string; hin
     key: "social_proof_enabled",
     ar: "دليل اجتماعي حقيقي",
     en: "Real social proof",
-    hintAr: '"طُلب N مرة هذا الأسبوع" من الطلبات الفعلية فقط',
-    hintEn: '"Ordered N times this week" from real orders only',
+    hintAr: '"تم شراؤه N مرات" في صفحة المنتج من الطلبات الفعلية',
+    hintEn: '"Purchased N times" on product page from real orders',
   },
   {
     key: "recently_viewed_enabled",
@@ -142,7 +142,6 @@ const TOGGLE_SECTIONS: Array<{ ar: string; en: string; keys: BoolKey[] }> = [
     keys: [
       "trust_bar_enabled",
       "brand_story_enabled",
-      "social_proof_enabled",
       "recently_viewed_enabled",
       "motion_enabled",
     ],
@@ -160,7 +159,12 @@ const TOGGLE_SECTIONS: Array<{ ar: string; en: string; keys: BoolKey[] }> = [
   {
     ar: "صفحة المنتج والأقسام",
     en: "Product page & categories",
-    keys: ["pdp_image_zoom", "category_filters_enabled", "back_in_stock_enabled"],
+    keys: [
+      "social_proof_enabled",
+      "pdp_image_zoom",
+      "category_filters_enabled",
+      "back_in_stock_enabled",
+    ],
   },
   {
     ar: "التذييل",
@@ -363,7 +367,7 @@ export function DesignV2Group() {
           <Input
             dir="rtl"
             className="mt-1 h-9 text-xs"
-            placeholder="اشتركي لتصلك التشكيلات الجديدة"
+            placeholder="اشترك لتصلك أحدث المنتجات والعروض"
             value={bs.newsletter_title_ar ?? ""}
             onChange={(e) => setBs({ newsletter_title_ar: e.target.value || null })}
           />
@@ -452,11 +456,11 @@ export function DesignV2Group() {
         )}
       </div>
 
-      {/* Fabric & care text (PDP accordion) */}
+      {/* Fabric & care / specifications text (PDP accordion) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-border">
         <div>
           <Label className="text-xs font-medium">
-            {isAr ? "القماش والعناية (عربي)" : "Fabric & care (Arabic)"}
+            {isAr ? "المواصفات والعناية / القماش (عربي)" : "Specifications & care / Fabric (Arabic)"}
           </Label>
           <Textarea
             dir="rtl"
@@ -468,7 +472,7 @@ export function DesignV2Group() {
         </div>
         <div>
           <Label className="text-xs font-medium">
-            {isAr ? "القماش والعناية (إنجليزي)" : "Fabric & care (English)"}
+            {isAr ? "المواصفات والعناية / القماش (إنجليزي)" : "Specifications & care / Fabric (English)"}
           </Label>
           <Textarea
             dir="ltr"

@@ -766,15 +766,17 @@ function CategoryPage() {
               </div>
 
               <div className="flex items-center gap-3 ms-auto">
-                <CategoryFiltersSheet
-                  filters={filters}
-                  onChange={setFilters}
-                  availableSizes={availableSizes}
-                  availableColors={availableColors}
-                  minCatalogPrice={minCatalogPrice}
-                  maxCatalogPrice={maxCatalogPrice}
-                  totalFilteredCount={filteredProducts.length}
-                />
+                {settings?.category_filters_enabled !== false && (
+                  <CategoryFiltersSheet
+                    filters={filters}
+                    onChange={setFilters}
+                    availableSizes={availableSizes}
+                    availableColors={availableColors}
+                    minCatalogPrice={minCatalogPrice}
+                    maxCatalogPrice={maxCatalogPrice}
+                    totalFilteredCount={filteredProducts.length}
+                  />
+                )}
 
                 <select
                   id="category-sort"
@@ -796,17 +798,19 @@ function CategoryPage() {
 
             {/* Desktop 2-column layout: Sidebar + Grid */}
             <div className="flex gap-8 items-start">
-              <aside className="hidden lg:block w-60 shrink-0 sticky top-24">
-                <CategoryFilters
-                  filters={filters}
-                  onChange={setFilters}
-                  availableSizes={availableSizes}
-                  availableColors={availableColors}
-                  minCatalogPrice={minCatalogPrice}
-                  maxCatalogPrice={maxCatalogPrice}
-                  totalFilteredCount={filteredProducts.length}
-                />
-              </aside>
+              {settings?.category_filters_enabled !== false && (
+                <aside className="hidden lg:block w-60 shrink-0 sticky top-24">
+                  <CategoryFilters
+                    filters={filters}
+                    onChange={setFilters}
+                    availableSizes={availableSizes}
+                    availableColors={availableColors}
+                    minCatalogPrice={minCatalogPrice}
+                    maxCatalogPrice={maxCatalogPrice}
+                    totalFilteredCount={filteredProducts.length}
+                  />
+                </aside>
+              )}
 
               <div className="flex-1 min-w-0">
                 <ProductGrid
