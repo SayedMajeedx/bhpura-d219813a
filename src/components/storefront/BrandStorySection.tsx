@@ -17,42 +17,110 @@ export function BrandStorySection({ className = "" }: BrandStorySectionProps) {
     disabled: settings?.motion_enabled === false,
   });
 
+  const storeVertical = (
+    settings?.store_vertical ||
+    (brand as any)?.store_vertical ||
+    "general"
+  ).toLowerCase();
+
+  const isFood = ["food", "sweets", "cafe", "coffee", "bakery", "restaurant"].includes(storeVertical);
+  const isPerfumes = ["perfumes", "beauty", "cosmetics"].includes(storeVertical);
+
+  const defaultSubtitle = isFood
+    ? (isAr ? "قصتنا وشغفنا بالمذاق الأصيل" : "Our Story & Passion for Authentic Flavors")
+    : isPerfumes
+      ? (isAr ? "قصتنا وشغفنا بالعطور الفاخرة" : "Our Story & Passion for Fine Fragrances")
+      : (isAr ? "قصتنا وشغفنا بالتصميم الراقي" : "Our Story & Passion for Refined Design");
+
+  const defaultDescAr = isFood
+    ? "نقدم أشهى المأكولات والحلويات المحضرة بعناية فائقة من أجود المكونات الطازجة لتلبي ذوق عملائنا المتميزين، مع التزامنا بأعلى معايير الجودة والنظافة."
+    : isPerfumes
+      ? "نبتكر أرقى النفحات العطرية المميزة بمكونات نقية وفريدة لتلبي ذوق عملائنا الرفيع، مع التزامنا بأعلى معايير الفخامة والثبات."
+      : "نقدم أرقى التشكيلات العصرية المصممة بعناية فائقة لتلبي ذوق عملائنا المتميزين، مع التزامنا بأعلى معايير الجودة والأناقة في كل اختيار.";
+
+  const defaultDescEn = isFood
+    ? "Crafting authentic culinary delicacies prepared with meticulous care from the finest fresh ingredients for our discerning guests, upholding the highest standards of taste and hygiene."
+    : isPerfumes
+      ? "Curating distinctive fragrances crafted from pure and rare ingredients for our refined clientele, upholding luxury and enduring elegance."
+      : "Curating refined contemporary pieces crafted with meticulous care for our distinguished clients, upholding the highest standards of luxury and elegance.";
+
   const title = isAr
     ? settings?.brand_story_title_ar || brand.name_ar || brand.name_en
     : settings?.brand_story_title_en || brand.name_en || brand.name_ar;
 
   const subtitle = isAr
-    ? settings?.brand_story_subtitle_ar || "قصتنا وشغفنا بالتصميم الراقي"
-    : settings?.brand_story_subtitle_en || "Our Story & Passion for Refined Design";
+    ? settings?.brand_story_subtitle_ar || defaultSubtitle
+    : settings?.brand_story_subtitle_en || defaultSubtitle;
 
   const description = isAr
     ? settings?.brand_story_description_ar ||
+      brand.about_ar ||
       brand.meta_description ||
-      "نقدم أرقى التشكيلات العصرية المصممة بعناية فائقة لتلبي ذوق عملائنا المتميزين، مع التزامنا بأعلى معايير الجودة والأناقة في كل قطعة."
+      defaultDescAr
     : settings?.brand_story_description_en ||
+      brand.about_en ||
       brand.meta_description ||
-      "Curating refined contemporary pieces crafted with meticulous care for our distinguished clients, upholding the highest standards of luxury and elegance in every design.";
+      defaultDescEn;
+
+  const bgMedia = brand.hero_media?.background;
+  const bgImageFallback =
+    typeof bgMedia === "string"
+      ? bgMedia
+      : typeof bgMedia === "object" && bgMedia?.type !== "video"
+        ? bgMedia?.url
+        : (typeof bgMedia === "object" ? bgMedia?.posterUrl : null);
 
   const imageUrl =
     settings?.brand_story_image_url ||
     settings?.category_banner_background_url ||
     brand.hero_media?.slides?.[0]?.media_url ||
+    bgImageFallback ||
     brand.logo_url;
 
-  const values = [
-    {
-      icon: Award,
-      text: t("أعلى معايير الجودة", "Premium Quality Standards"),
-    },
-    {
-      icon: HeartHandshake,
-      text: t("تصاميم حصرية مميزة", "Exclusive Curated Designs"),
-    },
-    {
-      icon: ShieldCheck,
-      text: t("ضمان الجودة والأصالة", "Authenticity & Quality Guarantee"),
-    },
-  ];
+  const values = isFood
+    ? [
+        {
+          icon: Award,
+          text: t("أعلى معايير الجودة والنظافة", "Premium Quality & Hygiene"),
+        },
+        {
+          icon: HeartHandshake,
+          text: t("مكونات طازجة ومختارة", "Fresh & Handpicked Ingredients"),
+        },
+        {
+          icon: ShieldCheck,
+          text: t("مذاق أصيل وطازج دائماً", "Authentic Flavor & Freshness Guaranteed"),
+        },
+      ]
+    : isPerfumes
+      ? [
+          {
+            icon: Award,
+            text: t("زيوت عطرية نقية", "Pure Fragrance Oils"),
+          },
+          {
+            icon: HeartHandshake,
+            text: t("ثبات وفوحان يدوم", "Long-Lasting Sillage"),
+          },
+          {
+            icon: ShieldCheck,
+            text: t("ضمان الجودة والأصالة", "Authenticity & Quality Guarantee"),
+          },
+        ]
+      : [
+          {
+            icon: Award,
+            text: t("أعلى معايير الجودة", "Premium Quality Standards"),
+          },
+          {
+            icon: HeartHandshake,
+            text: t("تشكيلات حصرية مميزة", "Exclusive Curated Collections"),
+          },
+          {
+            icon: ShieldCheck,
+            text: t("ضمان الجودة والأصالة", "Authenticity & Quality Guarantee"),
+          },
+        ];
 
   return (
     <section

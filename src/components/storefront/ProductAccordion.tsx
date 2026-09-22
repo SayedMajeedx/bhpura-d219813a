@@ -27,7 +27,7 @@ export function ProductAccordion({
     (brand as any)?.store_vertical ||
     "general"
   ).toLowerCase();
-  const isApparelVertical = ["fashion", "abayas", "clothing", "apparel"].includes(storeVertical);
+  const isApparelVertical = ["fashion", "clothing", "apparel"].includes(storeVertical);
 
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({
     description: true, // Default open for initial scannability

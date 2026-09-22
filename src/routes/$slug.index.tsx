@@ -619,17 +619,41 @@ function HeroBanner() {
   const { brand, settings } = useStorefront();
   const prioritizeHero = !settings.home_promo_cards.some((card) => Boolean(card?.image_url));
   const background = brand.hero_media?.background;
+  const bgUrl = typeof background === "string" ? background : background?.url;
+  const bgType =
+    typeof background === "object" && background?.type === "video"
+      ? "video"
+      : bgUrl && /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(bgUrl)
+        ? "video"
+        : bgUrl
+          ? "image"
+          : "text";
+  const bgPoster = typeof background === "object" ? background?.posterUrl : undefined;
+
   const slides = brand.hero_media?.slides?.length
-    ? brand.hero_media.slides
+    ? brand.hero_media.slides.map((s) => {
+        if (!s.media_url && bgUrl) {
+          return {
+            ...s,
+            type: s.type === "text" ? bgType : s.type,
+            media_url: bgUrl,
+            media_poster_url_ar: s.media_poster_url_ar || bgPoster,
+            media_poster_url_en: s.media_poster_url_en || bgPoster,
+          };
+        }
+        return s;
+      })
     : [
         {
-          id: "legacy-hero",
-          type: "text" as const,
+          id: "hero-slide-default",
+          type: bgType,
           title_en: settings.hero_title_en || brand.name_en,
           title_ar: settings.hero_title_ar || brand.name_ar || brand.name_en,
           body_en: brand.about_en || "A curated collection made for you.",
           body_ar: brand.about_ar || "مجموعة مختارة بعناية لك.",
-          media_url: "",
+          media_url: bgUrl || "",
+          media_poster_url_ar: bgPoster,
+          media_poster_url_en: bgPoster,
           button_en: "Shop now",
           button_ar: "تسوّق الآن",
           button_href: "#products",
@@ -637,7 +661,7 @@ function HeroBanner() {
       ];
 
   if (settings.storefront_design_version === 2) {
-    return <HeroV2 slides={slides} />;
+    return <HeroV2 slides={slides} background={background} />;
   }
 
   return (

@@ -6,11 +6,23 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface HeroV2Props {
   slides: HeroContentSlide[];
+  background?: { type?: string; url?: string; posterUrl?: string } | string | null;
 }
 
-export function HeroV2({ slides }: HeroV2Props) {
+export function HeroV2({ slides, background }: HeroV2Props) {
   const { settings, lang, brand } = useStorefront();
   const isAr = lang === "ar";
+
+  const resolvedBg = background ?? brand.hero_media?.background;
+  const fallbackBgUrl =
+    typeof resolvedBg === "string"
+      ? resolvedBg
+      : resolvedBg?.url || "";
+  const fallbackBgType =
+    (typeof resolvedBg === "object" && resolvedBg?.type) ||
+    (/\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(fallbackBgUrl) ? "video" : "image");
+  const fallbackBgPoster =
+    (typeof resolvedBg === "object" ? resolvedBg?.posterUrl : undefined) || "";
   const [activeIdx, setActiveIdx] = useState(0);
   const [isInViewport, setIsInViewport] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -104,16 +116,17 @@ export function HeroV2({ slides }: HeroV2Props) {
               ? slide.button_ar || slide.button_en
               : slide.button_en || slide.button_ar;
 
-            const mediaUrl =
+            const slideMedia =
               (isAr ? slide.media_url_ar : slide.media_url_en) ||
               slide.media_url ||
-              (isAr ? slide.media_url_en : slide.media_url_ar) ||
-              "";
+              (isAr ? slide.media_url_en : slide.media_url_ar);
+
+            const mediaUrl = slideMedia || fallbackBgUrl;
 
             const rawPoster =
               (isAr ? slide.media_poster_url_ar : slide.media_poster_url_en) ||
               (isAr ? slide.media_poster_url_en : slide.media_poster_url_ar) ||
-              "";
+              (slideMedia ? "" : fallbackBgPoster);
 
             // Strict poster validation: only valid image URLs
             const posterUrl = isLikelyImageUrl(rawPoster)
@@ -122,8 +135,14 @@ export function HeroV2({ slides }: HeroV2Props) {
                 ? mediaUrl
                 : null;
 
-            const isImage = slide.type === "image" && Boolean(mediaUrl);
-            const isVideo = slide.type === "video" && Boolean(mediaUrl);
+            const isVideo =
+              Boolean(mediaUrl) &&
+              (slide.type === "video" ||
+                (!slideMedia && fallbackBgType === "video") ||
+                /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(mediaUrl) ||
+                mediaUrl.includes("cloudflarestream") ||
+                mediaUrl.includes("/stream/"));
+            const isImage = !isVideo && Boolean(mediaUrl);
 
             return (
               <article

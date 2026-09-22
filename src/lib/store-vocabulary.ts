@@ -79,7 +79,7 @@ export function getVerticalVocabularyOverrides(vertical?: string | null): Partia
       variant_picker_prompt: { ar: "اختر الطراز أو السعة", en: "Select model or capacity" },
     };
   }
-  if (v === "fashion" || v === "abayas" || v === "clothing" || v === "apparel") {
+  if (v === "fashion" || v === "clothing" || v === "apparel") {
     return {
       specifications_label: { ar: "الخامة والتفاصيل", en: "Fabric & Details" },
       care_instructions_label: { ar: "تعليمات الغسيل والعناية", en: "Washing & Care Instructions" },
