@@ -25,7 +25,7 @@ describe("Phase 7D responsive configuration workspaces", () => {
     expect(onScopeChange).toHaveBeenCalledWith("pixels");
   });
 
-  test("settings exposes five function-based tabs without a mobile overflow rail", () => {
+  test("settings exposes five function-based tabs in an untruncated, 44px scroll rail", () => {
     const onTabChange = vi.fn();
     const { container } = render(
       <I18nProvider>
@@ -33,9 +33,18 @@ describe("Phase 7D responsive configuration workspaces", () => {
       </I18nProvider>,
     );
 
-    expect(container.querySelector(".overflow-x-auto")).toBeNull();
+    // Since 428519fa the tab bar is a horizontal rail (see tests/settings-tabs.test.ts)
+    // so full labels stay visible on narrow screens instead of being truncated.
+    const rail = container.querySelector(".overflow-x-auto") as HTMLElement | null;
+    expect(rail).not.toBeNull();
+    expect(rail!.className).toContain("no-scrollbar");
     const tabButtons = container.querySelectorAll('[role="tab"]');
     expect(tabButtons).toHaveLength(5);
+    for (const tab of Array.from(tabButtons)) {
+      expect((tab as HTMLElement).className).toContain("min-h-11");
+      // The label itself never truncates (the desktop-only subtitle may).
+      expect(tab.querySelector(".whitespace-nowrap.font-semibold")).not.toBeNull();
+    }
     fireEvent.click(tabButtons[2]);
     expect(onTabChange).toHaveBeenCalledWith("orders");
   });

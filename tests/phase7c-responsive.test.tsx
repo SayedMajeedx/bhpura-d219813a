@@ -7,7 +7,7 @@ import { DiscountsScopeSwitcher } from "../src/components/discounts/DiscountsSco
 import { PagesScopeSwitcher } from "../src/components/pages/PagesScopeSwitcher";
 
 describe("Phase 7C responsive growth and content workspaces", () => {
-  test("campaign segments use a wrapping mobile grid without a horizontal scroller", () => {
+  test("campaign segments use an untruncated mobile scroll rail", () => {
     const { container } = render(
       <CampaignsScopeSwitcher
         lang="en"
@@ -17,10 +17,18 @@ describe("Phase 7C responsive growth and content workspaces", () => {
       />,
     );
 
+    // Since 428519fa the segments live in a horizontal rail so labels are never
+    // truncated on narrow screens: every label is rendered whole and reachable.
     const switcher = container.firstElementChild as HTMLElement;
-    expect(switcher.className).toContain("grid-cols-2");
-    expect(switcher.className).not.toContain("overflow-x-auto");
-    expect(screen.getAllByRole("button")).toHaveLength(4);
+    expect(switcher.className).toContain("overflow-x-auto");
+    expect(switcher.className).toContain("no-scrollbar");
+    expect(switcher.className).not.toContain("grid-cols-2");
+    const buttons = screen.getAllByRole("button");
+    expect(buttons).toHaveLength(4);
+    for (const button of buttons) {
+      expect(button.className).toContain("whitespace-nowrap");
+      expect(button.querySelector(".truncate")).toBeNull();
+    }
   });
 
   test("discount statuses remain fully reachable in a two-row mobile grid", () => {

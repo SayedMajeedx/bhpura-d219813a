@@ -97,11 +97,12 @@ describe("Formatting Utilities Behavioral Suite", () => {
 
   describe("formatSizeWithUnit Translation & Formatting", () => {
     it("translates units to Arabic in Arabic locale", () => {
-      expect(formatSizeWithUnit("54", "cm", "ar")).toBe("54سم");
-      expect(formatSizeWithUnit("1.5", "m", "ar")).toBe("1.5م");
-      expect(formatSizeWithUnit("2", "kg", "ar")).toBe("2كجم");
-      expect(formatSizeWithUnit("250", "g", "ar")).toBe("250جم");
-      expect(formatSizeWithUnit("32", "inch", "ar")).toBe("32بوصة");
+      // Arabic renders full unit names separated by a space (matches storefront labels).
+      expect(formatSizeWithUnit("54", "cm", "ar")).toBe("54 سم");
+      expect(formatSizeWithUnit("1.5", "m", "ar")).toBe("1.5 م");
+      expect(formatSizeWithUnit("2", "kg", "ar")).toBe("2 كيلوغرام");
+      expect(formatSizeWithUnit("250", "g", "ar")).toBe("250 غرام");
+      expect(formatSizeWithUnit("32", "inch", "ar")).toBe("32 إنش");
     });
 
     it("preserves units in English locale", () => {
@@ -111,7 +112,9 @@ describe("Formatting Utilities Behavioral Suite", () => {
 
     it("handles missing size or unit gracefully", () => {
       expect(formatSizeWithUnit("", "cm", "ar")).toBe("");
-      expect(formatSizeWithUnit("XL", null, "ar")).toBe("XL");
+      // A unit-less descriptor is translated through the variant option lexicon.
+      expect(formatSizeWithUnit("XL", null, "ar")).toBe("كبير جداً");
+      expect(formatSizeWithUnit("XL", null, "en")).toBe("XL");
       expect(formatSizeWithUnit(null, null, "ar")).toBe("");
     });
   });

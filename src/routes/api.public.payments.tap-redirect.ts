@@ -71,7 +71,9 @@ export const Route = createFileRoute("/api/public/payments/tap-redirect")({
 
           const { data: order, error: orderError } = await supabaseAdmin
             .from("orders")
-            .select("id, total, currency, payment_gateway_reference, fulfillment_method, digital_delivery_channel")
+            .select(
+              "id, total, currency, payment_gateway_reference, fulfillment_method, digital_delivery_channel",
+            )
             .eq("id", orderId)
             .eq("brand_id", brandId)
             .maybeSingle();
@@ -90,7 +92,11 @@ export const Route = createFileRoute("/api/public/payments/tap-redirect")({
           const expectedCurrency = (order.currency || "BHD").toUpperCase();
           const chargeCurrency = (chargeData.currency || "").toUpperCase();
           if (chargeCurrency !== expectedCurrency) {
-            console.error("[Tap Redirect Currency Mismatch]:", { chargeCurrency, expectedCurrency, orderId });
+            console.error("[Tap Redirect Currency Mismatch]:", {
+              chargeCurrency,
+              expectedCurrency,
+              orderId,
+            });
             return new Response("Payment currency verification failure.", { status: 400 });
           }
 

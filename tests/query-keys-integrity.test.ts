@@ -65,8 +65,10 @@ describe("Query Keys Integrity & Single Source of Truth", () => {
     const cardPath = path.join(srcDir, "components", "settings", "StoreProfileCard.tsx");
     const content = fs.readFileSync(cardPath, "utf-8");
 
-    // Must not query businessSettings directly (uses useAdminStoreProfile instead)
-    expect(content.includes("queryKeys.brand.businessSettings")).toBe(false);
+    // Must not query businessSettings directly (uses useAdminStoreProfile instead).
+    // Invalidating that cache key after a write is correct and allowed.
+    const withoutInvalidations = content.replace(/invalidateQueries\(\{[^}]*\}\)/g, "");
+    expect(withoutInvalidations.includes("queryKeys.brand.businessSettings")).toBe(false);
 
     // Must not write store_modules to business_settings
     expect(/store_modules\s*:/.test(content)).toBe(false);

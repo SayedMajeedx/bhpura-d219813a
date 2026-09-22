@@ -210,7 +210,7 @@ describe("Placeholder Variant Utilities", () => {
     // Real size with unit (e.g. coffee beans 250g)
     expect(
       displayVariantParts({ size: "250", size_unit: "g", color: "medium", fabric: "washed" }, "ar"),
-    ).toEqual(["250 غرام", "medium", "washed"]);
+    ).toEqual(["250 غرام", "وسط", "washed"]);
 
     expect(
       displayVariantParts({ size: "250", size_unit: "g", color: "medium", fabric: "washed" }, "en"),

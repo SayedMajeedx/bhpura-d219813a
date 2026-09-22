@@ -20,6 +20,23 @@ test.describe("WebCodecs Video Optimizer & FastStart MP4 Pipeline", () => {
   test("Transcodes video to FastStart MP4 with moov atom preceding mdat atom", async ({ page }) => {
     await page.goto("/auth", { waitUntil: "domcontentloaded" });
 
+    // Linux CI builds of Chromium (headless shell) ship without an H.264
+    // encoder. The optimizer then returns the original file by design, so the
+    // MP4 assertions below only make sense where H.264 encoding exists.
+    const canEncodeH264 = await page.evaluate(async () => {
+      try {
+        const support = await VideoEncoder.isConfigSupported({
+          codec: "avc1.42e01e",
+          width: 1280,
+          height: 720,
+        });
+        return Boolean(support?.supported);
+      } catch {
+        return false;
+      }
+    });
+    test.skip(!canEncodeH264, "H.264 VideoEncoder unavailable in this Chromium build");
+
     // Execute transcoding in browser context using synthetic Canvas video
     const transcodeResult = await page.evaluate(async () => {
       // Helper to parse MP4 atom offsets

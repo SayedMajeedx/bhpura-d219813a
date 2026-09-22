@@ -260,7 +260,7 @@ export function VideoOptimizerDialog({
           <div className="space-y-4 py-2">
             {/* File Info Bar */}
             <div className="flex items-center justify-between rounded-md border border-border bg-muted/40 p-3 text-sm">
-              <div className="flex items-center gap-2 min-w-0 pr-2">
+              <div className="flex items-center gap-2 min-w-0 pe-2">
                 <Video className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <span className="truncate font-medium text-foreground text-xs sm:text-sm">
                   {file.name}
@@ -338,7 +338,7 @@ export function VideoOptimizerDialog({
               <div className="space-y-3 rounded-md border border-primary/30 bg-primary/5 p-3.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    <CheckCircle2 className="h-4 w-4 text-success" />
                     <span>
                       {isAr
                         ? `تم تحسين الفيديو بنجاح (${VIDEO_PRESETS[optimizedResult.preset].labelAr})`
@@ -347,7 +347,7 @@ export function VideoOptimizerDialog({
                   </div>
 
                   {optimizedResult.wasCompressed && optimizedResult.savingsPercent > 0 && (
-                    <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    <span className="inline-flex items-center rounded-full bg-success-subtle px-2 py-0.5 text-xs font-bold text-success">
                       {isAr
                         ? `وفّر ${optimizedResult.savingsPercent}%`
                         : `-${optimizedResult.savingsPercent}%`}
@@ -367,9 +367,7 @@ export function VideoOptimizerDialog({
                     <span className="text-muted-foreground block text-[10px]">
                       {isAr ? "الحجم بعد التحسين" : "Optimized size"}
                     </span>
-                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                      {optimizedSizeText}
-                    </span>
+                    <span className="font-semibold text-success">{optimizedSizeText}</span>
                   </div>
                 </div>
 

@@ -1,3 +1,4 @@
+import { VERTICAL_LABELS } from "@/lib/store-profile";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import {
@@ -34,7 +35,7 @@ export const Route = createFileRoute("/grant")({
 });
 
 const CATEGORIES = [
-  { id: "fashion", label: "أزياء وعبايات", icon: Shirt },
+  { id: "fashion", label: VERTICAL_LABELS.fashion.ar, icon: Shirt },
   { id: "perfumes_beauty", label: "عطور وتجميل", icon: Sparkles },
   { id: "accessories_gifts", label: "إكسسوارات وهدايا", icon: Gift },
   { id: "food_sweets", label: "حلويات ومأكولات", icon: UtensilsCrossed },

@@ -181,7 +181,9 @@ test.describe("P0 - Runtime & Mobile Orders Correctness", () => {
     await expect(invoiceEl).toBeVisible();
 
     // 6. Verify payment validation action button is rendered
-    const validateBtn = page.getByText("تأكيد الدفع").first();
+    // Role-scoped: the orders toolbar also renders a desktop-only hint that
+    // mentions "تأكيد الدفع" in prose (hidden at this viewport).
+    const validateBtn = page.getByRole("button", { name: "تأكيد الدفع" }).first();
     await expect(validateBtn).toBeVisible();
   });
 });

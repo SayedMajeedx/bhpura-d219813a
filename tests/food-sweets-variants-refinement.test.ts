@@ -14,7 +14,7 @@ describe("Food & Sweets Product Variants Refinement", () => {
       expect(res.unit).toBe("g");
       expect(res.option).toBe("عادية");
       expect(res.cleanLabelAr).toBe("700 غرام · عادية");
-      expect(res.cleanLabelEn).toBe("700g · عادية");
+      expect(res.cleanLabelEn).toBe("700g · Regular");
     });
 
     it("splits '700 - بدون سكر' with unit 'g' cleanly", () => {

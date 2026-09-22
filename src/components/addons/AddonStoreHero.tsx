@@ -9,11 +9,10 @@ import {
   ChevronRight,
   ChevronLeft,
   ShieldCheck,
-  Ruler,
-  Scissors,
   Layers,
-  Crown,
 } from "lucide-react";
+import { AddonIcon } from "@/lib/addons/addon-icons";
+import { featuredAddonsFor } from "@/lib/addons/featured-addons";
 import type { AddonId, AddonManifest } from "@/lib/addons/addon-types";
 import type { StoreVertical } from "@/lib/store-profile";
 import { ADDON_SHOWCASE_DATA } from "@/lib/addons/addon-showcase-data";
@@ -40,33 +39,10 @@ export function AddonStoreHero({
 }: AddonStoreHeroProps) {
   // Select top featured addons:
   // e.g. based on vertical or defaults: size-guides, abaya-pack/made-to-order, fit-passport
-  const featuredIds: AddonId[] = React.useMemo(() => {
-    if (storeVertical === "abayas") {
-      return ["abaya-pack", "made-to-order", "size-guides"];
-    }
-    if (storeVertical === "fashion") {
-      return ["fashion-core", "size-guides", "fit-passport"];
-    }
-    if (storeVertical === "beauty") {
-      return ["beauty-perfume", "gifts", "digital-products"];
-    }
-    if (storeVertical === "jewelry") {
-      return ["jewelry", "gifts", "made-to-order"];
-    }
-    if (storeVertical === "coffee") {
-      return ["coffee-roastery", "gifts", "made-to-order"];
-    }
-    if (storeVertical === "food") {
-      return ["food-beverage", "gifts", "digital-products"];
-    }
-    if (storeVertical === "gifts") {
-      return ["gifts", "digital-products", "fashion-core"];
-    }
-    if (storeVertical === "print") {
-      return ["print-stamps", "digital-products", "gifts"];
-    }
-    return ["size-guides", "made-to-order", "abaya-pack", "fit-passport"];
-  }, [storeVertical]);
+  const featuredIds: AddonId[] = React.useMemo(
+    () => featuredAddonsFor(storeVertical),
+    [storeVertical],
+  );
 
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -87,18 +63,9 @@ export function AddonStoreHero({
 
   const isInstalled = installedMap.has(currentId);
 
-  const getHeroIcon = (id: AddonId) => {
-    switch (id) {
-      case "size-guides":
-        return <Ruler className="h-8 w-8" />;
-      case "made-to-order":
-        return <Scissors className="h-8 w-8" />;
-      case "abaya-pack":
-        return <Crown className="h-8 w-8" />;
-      default:
-        return <Sparkles className="h-8 w-8" />;
-    }
-  };
+  const getHeroIcon = (id: AddonId) => (
+    <AddonIcon id={id} className="h-8 w-8" fallback={Sparkles} />
+  );
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card via-card to-primary/5 p-6 md:p-8 shadow-sm">

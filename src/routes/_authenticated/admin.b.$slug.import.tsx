@@ -56,7 +56,7 @@ const SAMPLE_CSV_TEMPLATES: Record<ImportType, { filename: string; content: stri
   products: {
     filename: "boutq_products_template.csv",
     content: `name_ar,name_en,price,cost_price,sku,stock,category,description_ar,description_en,image_url
-عباية حرير مطرزة,Embroidered Silk Abaya,45.000,20.000,SKU-ABY-01,15,عبايات,عباية فاخرة من الحرير الطبيعي مع تطريز يدوي,Luxury natural silk abaya with handcrafted embroidery,https://images.unsplash.com/photo-1584917865442-de89df76afd3
+قميص قطني مطرز,Embroidered Cotton Shirt,45.000,20.000,SKU-SHT-01,15,ملابس,قميص فاخر من القطن الطبيعي مع تطريز يدوي,Luxury natural cotton shirt with handcrafted embroidery,https://images.unsplash.com/photo-1584917865442-de89df76afd3
 فستان سهرة دانتيل,Lace Evening Dress,65.000,30.000,SKU-DRS-02,8,فساتين,فستان أنيق مناسب لجميع المناسبات,Elegant lace dress perfect for special occasions,https://images.unsplash.com/photo-1595777457583-95e059d581b8`,
   },
   customers: {
@@ -69,7 +69,7 @@ const SAMPLE_CSV_TEMPLATES: Record<ImportType, { filename: string; content: stri
   orders: {
     filename: "boutq_orders_template.csv",
     content: `order_number,created_at,customer_name,customer_phone,customer_email,total,item_name,quantity,price
-ORD-1001,2026-02-15T12:00:00Z,سارة العبدالله,97339000001,sara@example.com,45.000,عباية حرير مطرزة,1,45.000
+ORD-1001,2026-02-15T12:00:00Z,سارة العبدالله,97339000001,sara@example.com,45.000,قميص قطني مطرز,1,45.000
 ORD-1002,2026-02-16T14:30:00Z,فاطمة المحمود,97339000002,fatima@example.com,65.000,فستان سهرة دانتيل,1,65.000`,
   },
 };
@@ -233,19 +233,31 @@ function ImportCenterPage() {
       {/* Main Tabs Workspace */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="flex w-full items-center gap-1.5 overflow-x-auto no-scrollbar h-auto p-1 bg-muted/60 border border-border rounded-xl overscroll-contain sm:grid sm:grid-cols-4 sm:h-11">
-          <TabsTrigger value="products" className="shrink-0 whitespace-nowrap min-h-[38px] px-3 text-xs font-semibold gap-1.5 sm:shrink sm:min-w-0 sm:flex-1">
+          <TabsTrigger
+            value="products"
+            className="shrink-0 whitespace-nowrap min-h-[38px] px-3 text-xs font-semibold gap-1.5 sm:shrink sm:min-w-0 sm:flex-1"
+          >
             <Package className="h-4 w-4 shrink-0" />
             <span>{isAr ? "المنتجات" : "Products"}</span>
           </TabsTrigger>
-          <TabsTrigger value="customers" className="shrink-0 whitespace-nowrap min-h-[38px] px-3 text-xs font-semibold gap-1.5 sm:shrink sm:min-w-0 sm:flex-1">
+          <TabsTrigger
+            value="customers"
+            className="shrink-0 whitespace-nowrap min-h-[38px] px-3 text-xs font-semibold gap-1.5 sm:shrink sm:min-w-0 sm:flex-1"
+          >
             <Users className="h-4 w-4 shrink-0" />
             <span>{isAr ? "العملاء" : "Customers"}</span>
           </TabsTrigger>
-          <TabsTrigger value="orders" className="shrink-0 whitespace-nowrap min-h-[38px] px-3 text-xs font-semibold gap-1.5 sm:shrink sm:min-w-0 sm:flex-1">
+          <TabsTrigger
+            value="orders"
+            className="shrink-0 whitespace-nowrap min-h-[38px] px-3 text-xs font-semibold gap-1.5 sm:shrink sm:min-w-0 sm:flex-1"
+          >
             <ReceiptText className="h-4 w-4 shrink-0" />
             <span>{isAr ? "الطلبات السابقة" : "Past Orders"}</span>
           </TabsTrigger>
-          <TabsTrigger value="history" className="shrink-0 whitespace-nowrap min-h-[38px] px-3 text-xs font-semibold gap-1.5 sm:shrink sm:min-w-0 sm:flex-1">
+          <TabsTrigger
+            value="history"
+            className="shrink-0 whitespace-nowrap min-h-[38px] px-3 text-xs font-semibold gap-1.5 sm:shrink sm:min-w-0 sm:flex-1"
+          >
             <Clock className="h-4 w-4 shrink-0" />
             <span>{isAr ? "سجل الترحيل" : "Audit History"}</span>
           </TabsTrigger>
@@ -609,7 +621,7 @@ function ProductImportSection({
                     onChange={(e) =>
                       setMappings((prev) => ({ ...prev, [field]: Number(e.target.value) }))
                     }
-                    className="h-8 rounded-md border border-border bg-background px-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary max-w-[160px]"
+                    className="h-8 rounded-md border border-border bg-background px-2 text-xs font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 max-w-[160px]"
                   >
                     <option value={-1}>{isAr ? "— تخطي الحقل —" : "— Skip —"}</option>
                     {headers.map((h, idx) => (
@@ -928,7 +940,7 @@ function CustomerImportSection({
                     onChange={(e) =>
                       setMappings((prev) => ({ ...prev, [field]: Number(e.target.value) }))
                     }
-                    className="h-8 rounded-md border border-border bg-background px-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary min-w-[150px]"
+                    className="h-8 rounded-md border border-border bg-background px-2 text-xs font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-w-[150px]"
                   >
                     <option value={-1}>{isAr ? "— تخطي —" : "— Skip —"}</option>
                     {headers.map((h, idx) => (
@@ -1237,7 +1249,7 @@ function OrderImportSection({
                     onChange={(e) =>
                       setMappings((prev) => ({ ...prev, [field]: Number(e.target.value) }))
                     }
-                    className="h-8 rounded-md border border-border bg-background px-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary max-w-[150px]"
+                    className="h-8 rounded-md border border-border bg-background px-2 text-xs font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 max-w-[150px]"
                   >
                     <option value={-1}>{isAr ? "— تخطي —" : "— Skip —"}</option>
                     {headers.map((h, idx) => (

@@ -260,6 +260,9 @@ test("Comprehensive 1920x1080 Desktop UX Audit across all routes", async ({ page
         lower.startsWith("typeerror: failed to fetch") ||
         (lower.includes("[realtime] subscription error") && lower.includes("transport failure")) ||
         lower.includes("net::err_") ||
+        // Chrome notice when the unsaved-changes guard fires during scripted
+        // navigation without a user gesture; not an application error.
+        lower.includes("blocked attempt to show a 'beforeunload' confirmation panel") ||
         lower.includes("status of 401") ||
         lower.includes("status of 403") ||
         lower.includes("status of 404") ||

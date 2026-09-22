@@ -1,3 +1,4 @@
+import { STORE_VERTICALS, VERTICAL_ICON_NAMES, VERTICAL_LABELS } from "@/lib/store-profile";
 import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import {
   TRUST_ICON_CATALOG,
   BADGE_COLOR_PRESETS,
   renderTrustBadgeIcon,
+  resolveTrustBadgeIcon,
   getDynamicTrustBadges,
 } from "@/lib/trust-badges";
 import { TrustBadgeIconPicker } from "@/components/settings/TrustBadgeIconPicker";
@@ -25,11 +27,6 @@ import {
   Smartphone,
   Monitor,
   Wand2,
-  RotateCcw,
-  Coffee,
-  Shirt,
-  Gem,
-  Flame,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAddons } from "@/components/addons/AddonsProvider";
@@ -177,35 +174,12 @@ export function TrustBadgesEditor({
               <span className="text-[11px] text-muted-foreground me-1 font-medium">
                 {isAr ? "قوالب الأنشطة الجاهزة:" : "Ready presets:"}
               </span>
-              {[
-                { id: "coffee", labelAr: "قهوة ومحاصيل", labelEn: "Coffee & Beans", icon: Coffee },
-                {
-                  id: "abayas",
-                  labelAr: "عبايات وتفصيل",
-                  labelEn: "Abayas & Tailoring",
-                  icon: Sparkles,
-                },
-                {
-                  id: "fashion",
-                  labelAr: "أزياء وملابس",
-                  labelEn: "Fashion & Apparel",
-                  icon: Shirt,
-                },
-                {
-                  id: "beauty",
-                  labelAr: "عطور وتجميل",
-                  labelEn: "Beauty & Fragrance",
-                  icon: Sparkles,
-                },
-                {
-                  id: "jewelry",
-                  labelAr: "مجوهرات وإكسسوارات",
-                  labelEn: "Jewelry & Luxury",
-                  icon: Gem,
-                },
-                { id: "food", labelAr: "مأكولات ومخبوزات", labelEn: "Food & Bakery", icon: Flame },
-                { id: "general", labelAr: "متجر عام", labelEn: "General Store", icon: RotateCcw },
-              ].map((preset) => {
+              {STORE_VERTICALS.map((verticalId) => ({
+                id: verticalId,
+                labelAr: VERTICAL_LABELS[verticalId].ar,
+                labelEn: VERTICAL_LABELS[verticalId].en,
+                icon: resolveTrustBadgeIcon(VERTICAL_ICON_NAMES[verticalId]) ?? Sparkles,
+              })).map((preset) => {
                 const Icon = preset.icon;
                 return (
                   <Button

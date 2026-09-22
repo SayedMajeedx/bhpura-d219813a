@@ -71,7 +71,11 @@ export function SettingsTabBar({ activeTab, onTabChange }: SettingsTabsProps) {
 
   // Auto-scroll the active tab into center view on mobile navigation
   useEffect(() => {
-    if (activeTabRef.current && tabListRef.current) {
+    if (
+      activeTabRef.current &&
+      tabListRef.current &&
+      typeof activeTabRef.current.scrollIntoView === "function"
+    ) {
       activeTabRef.current.scrollIntoView({
         behavior: "smooth",
         block: "nearest",

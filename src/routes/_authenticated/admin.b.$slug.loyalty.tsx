@@ -203,7 +203,10 @@ function LoyaltyDashboardPage() {
             <Award className="h-4 w-4" />
             <span>{isAr ? "مستويات العضوية (Tiers)" : "VIP Tiers & Perks"}</span>
           </TabsTrigger>
-          <TabsTrigger value="ledger" className="shrink-0 whitespace-nowrap gap-2 min-h-[38px] px-3">
+          <TabsTrigger
+            value="ledger"
+            className="shrink-0 whitespace-nowrap gap-2 min-h-[38px] px-3"
+          >
             <Coins className="h-4 w-4" />
             <span>{isAr ? "سجل الحركات والرقابة (Ledger)" : "Points Ledger"}</span>
           </TabsTrigger>

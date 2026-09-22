@@ -12,6 +12,7 @@ export default tseslint.config(
       ".output",
       ".vinxi",
       ".wrangler",
+      ".worktrees",
       "src/routeTree.gen.ts",
       "worker-configuration.d.ts",
       ".codex-*/**",

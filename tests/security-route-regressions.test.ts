@@ -400,6 +400,8 @@ describe("server route security regressions", () => {
         new Response(
           JSON.stringify({
             status: "CAPTURED",
+            amount: 12.5,
+            currency: "BHD",
             metadata: { order_id: "order-1", brand_id: "brand-1" },
           }),
           { status: 200 },
@@ -420,13 +422,65 @@ describe("server route security regressions", () => {
     expect(await response.text()).toContain("reference verification failure");
   });
 
+  it("rejects a Tap charge whose amount or currency differs from the persisted order", async () => {
+    const brandMaybeSingle = vi.fn().mockResolvedValue({ data: { slug: "shop" }, error: null });
+    const orderMaybeSingle = vi.fn().mockResolvedValue({
+      data: { id: "order-1", total: 12.5, currency: "BHD", payment_gateway_reference: "chg_1" },
+      error: null,
+    });
+    const updateSpy = vi.fn();
+    supabaseAdmin.from.mockImplementation((table: string) => ({
+      select: vi.fn().mockReturnValue({
+        eq: vi
+          .fn()
+          .mockReturnValue(
+            table === "brands"
+              ? { maybeSingle: brandMaybeSingle }
+              : { eq: vi.fn().mockReturnValue({ maybeSingle: orderMaybeSingle }) },
+          ),
+      }),
+      update: updateSpy,
+    }));
+    supabaseAdmin.rpc.mockResolvedValue({ data: [{ api_key: "test-key" }], error: null });
+
+    for (const charge of [
+      { amount: 1.0, currency: "BHD" },
+      { amount: 12.5, currency: "USD" },
+    ]) {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(
+          new Response(
+            JSON.stringify({
+              status: "CAPTURED",
+              ...charge,
+              metadata: { order_id: "order-1", brand_id: "brand-1" },
+            }),
+            { status: 200 },
+          ),
+        ),
+      );
+      const response = await handler(
+        TapRedirectRoute,
+        "GET",
+      )({
+        request: new Request(
+          "https://example.test/api/public/payments/tap-redirect?tap_id=chg_1&order_id=order-1&brand_id=brand-1",
+        ),
+      });
+      expect(response.status).toBe(400);
+      expect(await response.text()).toContain("verification failure");
+    }
+    expect(updateSpy).not.toHaveBeenCalled();
+  });
+
   it("returns 500 instead of reporting payment success when the order update fails", async () => {
     const brandMaybeSingle = vi.fn().mockResolvedValue({
       data: { slug: "shop" },
       error: null,
     });
     const orderMaybeSingle = vi.fn().mockResolvedValue({
-      data: { id: "order-1", payment_gateway_reference: "chg_1" },
+      data: { id: "order-1", total: 12.5, currency: "BHD", payment_gateway_reference: "chg_1" },
       error: null,
     });
     const updateEqBrand = vi.fn().mockResolvedValue({ error: { message: "write failed" } });
@@ -451,6 +505,8 @@ describe("server route security regressions", () => {
         new Response(
           JSON.stringify({
             status: "CAPTURED",
+            amount: 12.5,
+            currency: "BHD",
             metadata: { order_id: "order-1", brand_id: "brand-1" },
           }),
           { status: 200 },
@@ -477,7 +533,7 @@ describe("server route security regressions", () => {
       error: null,
     });
     const orderMaybeSingle = vi.fn().mockResolvedValue({
-      data: { id: "order-1", payment_gateway_reference: "chg_1" },
+      data: { id: "order-1", total: 12.5, currency: "BHD", payment_gateway_reference: "chg_1" },
       error: null,
     });
     const deleteOrder = vi.fn(() => {
@@ -502,6 +558,8 @@ describe("server route security regressions", () => {
         new Response(
           JSON.stringify({
             status: "INITIATED",
+            amount: 12.5,
+            currency: "BHD",
             metadata: { order_id: "order-1", brand_id: "brand-1" },
           }),
           { status: 200 },
@@ -527,7 +585,7 @@ describe("server route security regressions", () => {
   it("cancels a terminally failed Tap order and releases its reservation", async () => {
     const brandMaybeSingle = vi.fn().mockResolvedValue({ data: { slug: "shop" }, error: null });
     const orderMaybeSingle = vi.fn().mockResolvedValue({
-      data: { id: "order-1", payment_gateway_reference: "chg_1" },
+      data: { id: "order-1", total: 12.5, currency: "BHD", payment_gateway_reference: "chg_1" },
       error: null,
     });
     const updateEqBrand = vi.fn().mockResolvedValue({ error: null });
@@ -553,6 +611,8 @@ describe("server route security regressions", () => {
         new Response(
           JSON.stringify({
             status: "DECLINED",
+            amount: 12.5,
+            currency: "BHD",
             metadata: { order_id: "order-1", brand_id: "brand-1" },
           }),
           { status: 200 },
@@ -588,6 +648,8 @@ describe("server route security regressions", () => {
       const orderMaybeSingle = vi.fn().mockResolvedValue({
         data: {
           id: "order-1",
+          total: 12.5,
+          currency: "BHD",
           payment_gateway_reference: "chg_1",
           fulfillment_method: fulfillmentMethod,
           digital_delivery_channel: digitalChannel,
@@ -616,6 +678,8 @@ describe("server route security regressions", () => {
           new Response(
             JSON.stringify({
               status: "CAPTURED",
+              amount: 12.5,
+              currency: "BHD",
               metadata: { order_id: "order-1", brand_id: "brand-1" },
             }),
             { status: 200 },

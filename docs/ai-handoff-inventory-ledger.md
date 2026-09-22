@@ -15,7 +15,7 @@ A merchant (brand `Qoffee`, id `c5281142-20a8-433a-983e-075d1a6a54fc`) created t
 **Root cause (verified against the live database on 2026-09-21):** the production `orders` table has **two `BEFORE DELETE` triggers that both execute `public.orders_restore_stock_on_delete()`**:
 
 - `orders_restore_stock_on_delete_trg` — created by `supabase/migrations/20260705215628_1287d645-c64c-42a5-ad21-1f3fd91db03e.sql`
-- `trg_orders_restore_stock_on_delete` — created by `supabase/migrations/20260706103909_609e0a74-c780-4100-8801-893d5e98a4e6.sql`, which dropped only its *own* new name and never dropped the old one.
+- `trg_orders_restore_stock_on_delete` — created by `supabase/migrations/20260706103909_609e0a74-c780-4100-8801-893d5e98a4e6.sql`, which dropped only its _own_ new name and never dropped the old one.
 
 Both triggers see the same `OLD` row with `stock_deducted = true`, so every deleted order has restored its stock **twice** since 2026-07-06. The bulk delete path is `deleteOrdersWithPrivateReceipts` in `src/lib/benefit-receipt.functions.ts` (one `DELETE … WHERE id IN (…)`), which is why all three variants share `updated_at = 2026-09-18T16:05:48Z`.
 
@@ -36,7 +36,7 @@ Both triggers see the same `OLD` row with `stock_deducted = true`, so every dele
 
 - The Supabase CLI is already linked to production project `ikciahnuqhemvnyfvbyp`. `npx supabase db query --linked "<sql>"` works for read-only introspection. **Never run a write against `--linked` unless the owner has explicitly approved that exact statement in chat.**
 - `.env` contains `SUPABASE_SERVICE_ROLE_KEY`; node scripts using `@supabase/supabase-js` must be run from the repo root so the package resolves.
-- Quality gates: `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm run test` (vitest), `npm run db:migrations:check`. There are pre-existing vitest failures on `main` — record the baseline before you start; any *new* failure is yours.
+- Quality gates: `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm run test` (vitest), `npm run db:migrations:check`. There are pre-existing vitest failures on `main` — record the baseline before you start; any _new_ failure is yours.
 - Migrations live in `supabase/migrations/YYYYMMDDHHMMSS_<safe-name>.sql`. Never edit or rename an applied migration; always add a new forward migration. Every migration must be idempotent (`IF EXISTS` / `IF NOT EXISTS` / `CREATE OR REPLACE`) and end with `NOTIFY pgrst, 'reload schema';`.
 - Functions that touch stock are `SECURITY DEFINER` with `SET search_path = public`; keep that pattern and keep the existing `REVOKE … FROM PUBLIC, anon` / `GRANT … TO authenticated, service_role` grants.
 
