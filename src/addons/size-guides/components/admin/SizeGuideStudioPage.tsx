@@ -695,19 +695,31 @@ export function SizeGuidesStudioPage() {
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-5">
             <TabsList className="flex w-full items-center gap-1.5 overflow-x-auto no-scrollbar h-auto p-1 bg-muted/60 border border-border rounded-xl overscroll-contain sm:grid sm:grid-cols-4 sm:h-10">
-              <TabsTrigger value="table" className="shrink-0 whitespace-nowrap min-h-[36px] px-3 gap-1.5 text-xs font-semibold sm:shrink sm:min-w-0 sm:flex-1">
+              <TabsTrigger
+                value="table"
+                className="shrink-0 whitespace-nowrap min-h-[36px] px-3 gap-1.5 text-xs font-semibold sm:shrink sm:min-w-0 sm:flex-1"
+              >
                 <TableIcon className="h-3.5 w-3.5" />
                 <span>{isAr ? "جدول القياسات" : "Size Table"}</span>
               </TabsTrigger>
-              <TabsTrigger value="measure" className="shrink-0 whitespace-nowrap min-h-[36px] px-3 gap-1.5 text-xs font-semibold sm:shrink sm:min-w-0 sm:flex-1">
+              <TabsTrigger
+                value="measure"
+                className="shrink-0 whitespace-nowrap min-h-[36px] px-3 gap-1.5 text-xs font-semibold sm:shrink sm:min-w-0 sm:flex-1"
+              >
                 <HelpCircle className="h-3.5 w-3.5" />
                 <span>{isAr ? "طريقة القياس" : "How to Measure"}</span>
               </TabsTrigger>
-              <TabsTrigger value="placement" className="shrink-0 whitespace-nowrap min-h-[36px] px-3 gap-1.5 text-xs font-semibold sm:shrink sm:min-w-0 sm:flex-1">
+              <TabsTrigger
+                value="placement"
+                className="shrink-0 whitespace-nowrap min-h-[36px] px-3 gap-1.5 text-xs font-semibold sm:shrink sm:min-w-0 sm:flex-1"
+              >
                 <Settings className="h-3.5 w-3.5" />
                 <span>{isAr ? "العرض والربط" : "Settings & Linking"}</span>
               </TabsTrigger>
-              <TabsTrigger value="preview" className="shrink-0 whitespace-nowrap min-h-[36px] px-3 gap-1.5 text-xs font-semibold sm:shrink sm:min-w-0 sm:flex-1">
+              <TabsTrigger
+                value="preview"
+                className="shrink-0 whitespace-nowrap min-h-[36px] px-3 gap-1.5 text-xs font-semibold sm:shrink sm:min-w-0 sm:flex-1"
+              >
                 <Eye className="h-3.5 w-3.5" />
                 <span>{isAr ? "معاينة حية" : "Live Preview"}</span>
               </TabsTrigger>

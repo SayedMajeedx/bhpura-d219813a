@@ -234,4 +234,3 @@ describe("Store Readiness Checklist Integration", () => {
     expect(source).toContain("min-h-11");
   });
 });
-

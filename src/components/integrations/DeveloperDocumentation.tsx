@@ -102,13 +102,22 @@ export function verifyBoutqWebhook(rawBody, signatureHeader, secret) {
       {/* Code Examples & Quickstart Tabs */}
       <Tabs defaultValue="quickstart" className="space-y-4">
         <TabsList className="flex w-full items-center gap-1.5 overflow-x-auto no-scrollbar h-auto p-1 bg-muted/60 border border-border rounded-xl overscroll-contain sm:grid sm:grid-cols-3 sm:max-w-md">
-          <TabsTrigger value="quickstart" className="shrink-0 whitespace-nowrap min-h-[38px] px-3 text-xs font-semibold sm:shrink sm:min-w-0 sm:flex-1">
+          <TabsTrigger
+            value="quickstart"
+            className="shrink-0 whitespace-nowrap min-h-[38px] px-3 text-xs font-semibold sm:shrink sm:min-w-0 sm:flex-1"
+          >
             {isAr ? "البداية السريعة (cURL)" : "Quickstart (cURL)"}
           </TabsTrigger>
-          <TabsTrigger value="sdk" className="shrink-0 whitespace-nowrap min-h-[38px] px-3 text-xs font-semibold sm:shrink sm:min-w-0 sm:flex-1">
+          <TabsTrigger
+            value="sdk"
+            className="shrink-0 whitespace-nowrap min-h-[38px] px-3 text-xs font-semibold sm:shrink sm:min-w-0 sm:flex-1"
+          >
             {isAr ? "إنشاء طلب (Node.js)" : "Create Order (Node.js)"}
           </TabsTrigger>
-          <TabsTrigger value="hmac" className="shrink-0 whitespace-nowrap min-h-[38px] px-3 text-xs font-semibold sm:shrink sm:min-w-0 sm:flex-1">
+          <TabsTrigger
+            value="hmac"
+            className="shrink-0 whitespace-nowrap min-h-[38px] px-3 text-xs font-semibold sm:shrink sm:min-w-0 sm:flex-1"
+          >
             {isAr ? "التحقق من HMAC" : "Verify HMAC"}
           </TabsTrigger>
         </TabsList>

@@ -20,18 +20,6 @@ import {
   Layers,
   ChevronDown,
   ChevronUp,
-  Ruler,
-  Scissors,
-  Crown,
-  Shirt,
-  Coffee,
-  UtensilsCrossed,
-  Download,
-  Gift,
-  Printer,
-  Gem,
-  Puzzle,
-  UserCheck,
   CheckCircle2,
   Lock,
 } from "lucide-react";
@@ -41,6 +29,7 @@ import type {
   BrandAddonRow,
   AddonSettingsField,
 } from "@/lib/addons/addon-types";
+import { AddonIcon } from "@/lib/addons/addon-icons";
 import { ADDON_SHOWCASE_DATA } from "@/lib/addons/addon-showcase-data";
 import { cn } from "@/lib/utils";
 
@@ -105,36 +94,7 @@ export function AddonDetailPage({
     }
   };
 
-  const getAddonIcon = (id: AddonId) => {
-    switch (id) {
-      case "size-guides":
-        return <Ruler className="h-10 w-10" />;
-      case "fit-passport":
-        return <UserCheck className="h-10 w-10" />;
-      case "made-to-order":
-        return <Scissors className="h-10 w-10" />;
-      case "abaya-pack":
-        return <Crown className="h-10 w-10" />;
-      case "fashion-core":
-        return <Shirt className="h-10 w-10" />;
-      case "beauty-perfume":
-        return <Sparkles className="h-10 w-10" />;
-      case "coffee-roastery":
-        return <Coffee className="h-10 w-10" />;
-      case "food-beverage":
-        return <UtensilsCrossed className="h-10 w-10" />;
-      case "digital-products":
-        return <Download className="h-10 w-10" />;
-      case "gifts":
-        return <Gift className="h-10 w-10" />;
-      case "print-stamps":
-        return <Printer className="h-10 w-10" />;
-      case "jewelry":
-        return <Gem className="h-10 w-10" />;
-      default:
-        return <Puzzle className="h-10 w-10" />;
-    }
-  };
+  const getAddonIcon = (id: AddonId) => <AddonIcon id={id} className="h-10 w-10" />;
 
   return (
     <div className="space-y-8 animate-in fade-in-50 duration-200">

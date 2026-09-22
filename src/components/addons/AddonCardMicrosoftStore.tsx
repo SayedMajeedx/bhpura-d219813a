@@ -17,20 +17,8 @@ import {
   Power,
   Trash2,
   AlertTriangle,
-  Ruler,
-  Scissors,
-  Crown,
-  Shirt,
-  Sparkles,
-  Coffee,
-  UtensilsCrossed,
-  Download,
-  Gift,
-  Printer,
-  Gem,
-  Puzzle,
-  UserCheck,
 } from "lucide-react";
+import { AddonIcon } from "@/lib/addons/addon-icons";
 import type { AddonId, AddonManifest, BrandAddonRow } from "@/lib/addons/addon-types";
 import { ADDON_SHOWCASE_DATA } from "@/lib/addons/addon-showcase-data";
 import { cn } from "@/lib/utils";
@@ -75,36 +63,7 @@ export function AddonCardMicrosoftStore({
       ? "فريق Boutq"
       : "Boutq Official";
 
-  const getAddonIcon = (id: AddonId) => {
-    switch (id) {
-      case "size-guides":
-        return <Ruler className="h-6 w-6" />;
-      case "fit-passport":
-        return <UserCheck className="h-6 w-6" />;
-      case "made-to-order":
-        return <Scissors className="h-6 w-6" />;
-      case "abaya-pack":
-        return <Crown className="h-6 w-6" />;
-      case "fashion-core":
-        return <Shirt className="h-6 w-6" />;
-      case "beauty-perfume":
-        return <Sparkles className="h-6 w-6" />;
-      case "coffee-roastery":
-        return <Coffee className="h-6 w-6" />;
-      case "food-beverage":
-        return <UtensilsCrossed className="h-6 w-6" />;
-      case "digital-products":
-        return <Download className="h-6 w-6" />;
-      case "gifts":
-        return <Gift className="h-6 w-6" />;
-      case "print-stamps":
-        return <Printer className="h-6 w-6" />;
-      case "jewelry":
-        return <Gem className="h-6 w-6" />;
-      default:
-        return <Puzzle className="h-6 w-6" />;
-    }
-  };
+  const getAddonIcon = (id: AddonId) => <AddonIcon id={id} className="h-6 w-6" />;
 
   return (
     <div

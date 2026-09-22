@@ -7,6 +7,7 @@
  */
 
 import type { StoreVocabulary } from "./store-vocabulary";
+import { MADE_TO_ORDER_KEYWORDS } from "@/lib/addons/made-to-order-lexicon";
 
 export type OrderType = "ready_stock" | "tailoring" | "mixed";
 
@@ -61,19 +62,10 @@ export function isTailoringItem(item: OrderItemForTypeDetection): boolean {
     ""
   ).toLowerCase();
 
-  const keywords = [
-    "تفصيل",
-    "بدون مخزون",
-    "tailor",
-    "custom",
-    "مخصص",
-    "مقاس خاص",
-    "حسب الطلب",
-    "made-to-order",
-  ];
-
   if (
-    keywords.some((kw) => sizeText.includes(kw) || notesText.includes(kw) || descText.includes(kw))
+    MADE_TO_ORDER_KEYWORDS.some(
+      (kw) => sizeText.includes(kw) || notesText.includes(kw) || descText.includes(kw),
+    )
   ) {
     return true;
   }

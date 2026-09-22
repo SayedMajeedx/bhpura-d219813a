@@ -1,3 +1,4 @@
+import { VERTICAL_LABELS } from "@/lib/store-profile";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -65,7 +66,7 @@ export type GrantApplication = {
 };
 
 const CATEGORY_MAP: Record<string, { label: string; icon: any }> = {
-  fashion: { label: "أزياء وعبايات", icon: Shirt },
+  fashion: { label: VERTICAL_LABELS.fashion.ar, icon: Shirt },
   perfumes_beauty: { label: "عطور وتجميل", icon: Sparkles },
   accessories_gifts: { label: "إكسسوارات وهدايا", icon: Gift },
   food_sweets: { label: "حلويات ومأكولات", icon: UtensilsCrossed },

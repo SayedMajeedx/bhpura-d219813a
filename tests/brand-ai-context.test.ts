@@ -10,8 +10,18 @@ const mockFrom = vi.fn((table: string) => {
           id: "brand-123",
           name_ar: "دار الأناقة",
           name_en: "Dar AlAnaqa",
-          store_vertical: "fashion",
         },
+        error: null,
+      }),
+    };
+  }
+  // store_vertical lives on business_settings (single source of truth), not brands.
+  if (table === "business_settings") {
+    return {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: { store_vertical: "fashion" },
         error: null,
       }),
     };

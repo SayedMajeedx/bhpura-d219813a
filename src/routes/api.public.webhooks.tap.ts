@@ -92,7 +92,11 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
             .maybeSingle();
 
           if (targetOrderError || !targetOrder) {
-            console.error("[Tap Webhook Target Order Not Found]:", { orderId, brandId, targetOrderError });
+            console.error("[Tap Webhook Target Order Not Found]:", {
+              orderId,
+              brandId,
+              targetOrderError,
+            });
             return new Response("Order not found.", { status: 404 });
           }
 
@@ -137,7 +141,11 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
           const expectedCurrency = (targetOrder.currency || "BHD").toUpperCase();
           const chargeCurrency = (tapCharge.currency || "").toUpperCase();
           if (chargeCurrency !== expectedCurrency) {
-            console.error("[Tap Webhook Currency Mismatch]:", { chargeCurrency, expectedCurrency, orderId });
+            console.error("[Tap Webhook Currency Mismatch]:", {
+              chargeCurrency,
+              expectedCurrency,
+              orderId,
+            });
             return new Response("Currency verification failure.", { status: 400 });
           }
 

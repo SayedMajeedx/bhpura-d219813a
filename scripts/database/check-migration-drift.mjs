@@ -17,7 +17,9 @@ export function checkMigrationDrift() {
       stdout.includes("Access token not provided") ||
       stderr.includes("not linked")
     ) {
-      console.warn("Supabase credentials not configured in this environment; skipping remote drift verification.");
+      console.warn(
+        "Supabase credentials not configured in this environment; skipping remote drift verification.",
+      );
       return;
     }
     console.error("Failed to run npx supabase migration list:", stderr || err.message);

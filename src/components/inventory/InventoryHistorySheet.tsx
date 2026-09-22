@@ -154,7 +154,9 @@ export function InventoryHistorySheet({
   const [filterLocation, setFilterLocation] = useState<string>("all");
 
   const [orderMap, setOrderMap] = useState<Record<string, { invoice_number: string }>>({});
-  const [profileMap, setProfileMap] = useState<Record<string, { full_name: string; email: string }>>({});
+  const [profileMap, setProfileMap] = useState<
+    Record<string, { full_name: string; email: string }>
+  >({});
 
   const fetchMovements = useCallback(async () => {
     if (!brandId || !isOpen) return;
@@ -294,7 +296,11 @@ export function InventoryHistorySheet({
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
                 {productName ? `${productName}` : ""}
                 {variantLabel ? ` · ${variantLabel}` : ""}
-                {!productName && !variantLabel ? (isAr ? "كافة الحركات المسجلة" : "All movements") : ""}
+                {!productName && !variantLabel
+                  ? isAr
+                    ? "كافة الحركات المسجلة"
+                    : "All movements"
+                  : ""}
               </SheetDescription>
             </div>
           </div>
@@ -354,7 +360,9 @@ export function InventoryHistorySheet({
           {loading && movements.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground gap-3">
               <RotateCcw className="h-6 w-6 animate-spin text-primary" />
-              <p className="text-xs font-semibold">{isAr ? "جارٍ تحميل السجل..." : "Loading ledger..."}</p>
+              <p className="text-xs font-semibold">
+                {isAr ? "جارٍ تحميل السجل..." : "Loading ledger..."}
+              </p>
             </div>
           ) : movements.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground gap-3">
@@ -454,9 +462,7 @@ export function InventoryHistorySheet({
                           ) : (
                             <ArrowDownRight className="h-3.5 w-3.5" />
                           )}
-                          <span>
-                            {isPositive ? `+${m.delta}` : `${m.delta}`}
-                          </span>
+                          <span>{isPositive ? `+${m.delta}` : `${m.delta}`}</span>
                         </span>
                       </TableCell>
 
@@ -508,7 +514,10 @@ export function InventoryHistorySheet({
                       </TableCell>
 
                       {/* Note */}
-                      <TableCell className="text-xs text-muted-foreground max-w-xs truncate" title={m.note || ""}>
+                      <TableCell
+                        className="text-xs text-muted-foreground max-w-xs truncate"
+                        title={m.note || ""}
+                      >
                         {m.note ? (
                           <span className="inline-flex items-center gap-1">
                             <FileText className="h-3 w-3 text-muted-foreground shrink-0" />
@@ -528,17 +537,11 @@ export function InventoryHistorySheet({
 
         {/* Footer with pagination */}
         <div className="p-4 border-t border-border bg-card/40 flex items-center justify-between text-xs text-muted-foreground shrink-0">
-          <div>
-            {isAr
-              ? `إجمالي الحركات: ${totalCount}`
-              : `Total movements: ${totalCount}`}
-          </div>
+          <div>{isAr ? `إجمالي الحركات: ${totalCount}` : `Total movements: ${totalCount}`}</div>
 
           <div className="flex items-center gap-2">
             <span className="font-medium">
-              {isAr
-                ? `صفحة ${page + 1} من ${totalPages}`
-                : `Page ${page + 1} of ${totalPages}`}
+              {isAr ? `صفحة ${page + 1} من ${totalPages}` : `Page ${page + 1} of ${totalPages}`}
             </span>
             <div className="flex items-center gap-1">
               <Button

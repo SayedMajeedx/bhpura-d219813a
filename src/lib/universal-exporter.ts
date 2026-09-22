@@ -538,10 +538,10 @@ export const ORDER_PRESETS: ExportPreset[] = [
   {
     id: "orders_line_items",
     labelEn: "Detailed Line-Item Breakdown",
-    labelAr: "تفصيل المنتجات المباعة (سطر لكل منتج)",
+    labelAr: "المنتجات المباعة بالتفاصيل (سطر لكل منتج)",
     descriptionEn:
       "Detailed audit row per individual item sold: SKU, product name, quantity, unit price, total",
-    descriptionAr: "كشف تفصيلي يوضح كل قطعة بيعت مع رمز التخزين والسعر والكمية التابعة لكل فاتورة",
+    descriptionAr: "كشف مفصّل يوضح كل قطعة بيعت مع رمز التخزين والسعر والكمية التابعة لكل فاتورة",
     columns: [
       { key: "invoice_number", headerEn: "Invoice #", headerAr: "رقم الفاتورة", width: 14 },
       { key: "order_date", headerEn: "Date", headerAr: "التاريخ", width: 16 },
