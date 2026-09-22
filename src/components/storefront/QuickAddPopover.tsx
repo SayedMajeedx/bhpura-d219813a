@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { useStorefront } from "@/lib/storefront-context";
 import { buildCartItem, canQuickAddToCart } from "@/lib/cart/add-to-cart";
+import { isCatalogMode } from "@/lib/storefront-mode";
 import { formatSizeWithUnit } from "@/lib/format";
 import { toast } from "sonner";
 import { ShoppingBag, Check } from "lucide-react";
@@ -26,7 +27,9 @@ export function QuickAddPopover({ product, variants = [], onOpenQuickView }: Qui
     "general"
   ).toLowerCase();
 
-  const isFood = ["food", "sweets", "cafe", "coffee", "bakery", "restaurant"].includes(storeVertical);
+  const isFood = ["food", "sweets", "cafe", "coffee", "bakery", "restaurant"].includes(
+    storeVertical,
+  );
   const isPerfume = ["perfumes", "beauty", "cosmetics"].includes(storeVertical);
   const isElectronics = ["electronics"].includes(storeVertical);
 
@@ -35,7 +38,9 @@ export function QuickAddPopover({ product, variants = [], onOpenQuickView }: Qui
     (isAr ? product.variant_label_size_en : product.variant_label_size_ar);
 
   const promptText = customSizeLabel
-    ? (isAr ? `اختر ${customSizeLabel} للإضافة السريعة` : `Select ${customSizeLabel} for quick add`)
+    ? isAr
+      ? `اختر ${customSizeLabel} للإضافة السريعة`
+      : `Select ${customSizeLabel} for quick add`
     : isFood
       ? t("اختر الوزن أو الحجم للإضافة السريعة", "Select weight or size for quick add")
       : isPerfume
@@ -121,6 +126,10 @@ export function QuickAddPopover({ product, variants = [], onOpenQuickView }: Qui
   };
 
   const hasMultipleVariants = availableVariants.length > 1;
+
+  // Catalog / inquiry-only storefronts have no cart, so a grid quick-add would
+  // dead-end. The card's own link to the product page remains.
+  if (isCatalogMode(settings)) return null;
 
   return (
     <div

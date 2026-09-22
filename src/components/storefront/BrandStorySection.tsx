@@ -23,14 +23,22 @@ export function BrandStorySection({ className = "" }: BrandStorySectionProps) {
     "general"
   ).toLowerCase();
 
-  const isFood = ["food", "sweets", "cafe", "coffee", "bakery", "restaurant"].includes(storeVertical);
+  const isFood = ["food", "sweets", "cafe", "coffee", "bakery", "restaurant"].includes(
+    storeVertical,
+  );
   const isPerfumes = ["perfumes", "beauty", "cosmetics"].includes(storeVertical);
 
   const defaultSubtitle = isFood
-    ? (isAr ? "قصتنا وشغفنا بالمذاق الأصيل" : "Our Story & Passion for Authentic Flavors")
+    ? isAr
+      ? "قصتنا وشغفنا بالمذاق الأصيل"
+      : "Our Story & Passion for Authentic Flavors"
     : isPerfumes
-      ? (isAr ? "قصتنا وشغفنا بالعطور الفاخرة" : "Our Story & Passion for Fine Fragrances")
-      : (isAr ? "قصتنا وشغفنا بالتصميم الراقي" : "Our Story & Passion for Refined Design");
+      ? isAr
+        ? "قصتنا وشغفنا بالعطور الفاخرة"
+        : "Our Story & Passion for Fine Fragrances"
+      : isAr
+        ? "قصتنا وشغفنا بالتصميم الراقي"
+        : "Our Story & Passion for Refined Design";
 
   const defaultDescAr = isFood
     ? "نقدم أشهى المأكولات والحلويات المحضرة بعناية فائقة من أجود المكونات الطازجة لتلبي ذوق عملائنا المتميزين، مع التزامنا بأعلى معايير الجودة والنظافة."
@@ -68,7 +76,9 @@ export function BrandStorySection({ className = "" }: BrandStorySectionProps) {
       ? bgMedia
       : typeof bgMedia === "object" && bgMedia?.type !== "video"
         ? bgMedia?.url
-        : (typeof bgMedia === "object" ? bgMedia?.posterUrl : null);
+        : typeof bgMedia === "object"
+          ? bgMedia?.posterUrl
+          : null;
 
   const imageUrl =
     settings?.brand_story_image_url ||

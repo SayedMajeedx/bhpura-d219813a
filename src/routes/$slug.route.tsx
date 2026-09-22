@@ -378,6 +378,8 @@ export const Route = createFileRoute("/$slug")({
       footer_show_payment_methods: s?.footer_show_payment_methods ?? true,
       footer_layout: s?.footer_layout ?? "columns",
       motion_enabled: s?.motion_enabled ?? true,
+      hero_overlay_strength: s?.hero_overlay_strength ?? 45,
+      hero_title_color_v2: s?.hero_title_color_v2 ?? null,
     };
 
     const rawHero = brand.hero_media as any;

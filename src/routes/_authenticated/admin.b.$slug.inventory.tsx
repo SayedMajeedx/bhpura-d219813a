@@ -2707,7 +2707,8 @@ function ProductDialog({
     let createdProductId: string | undefined;
 
     const primaryMediaImage = form.media.find((m) => m.type === "image" || !m.type)?.url;
-    const effectiveImageUrl = primaryMediaImage || (form.image_url.trim() ? form.image_url.trim() : null);
+    const effectiveImageUrl =
+      primaryMediaImage || (form.image_url.trim() ? form.image_url.trim() : null);
 
     if (product) {
       if (form.is_active) {

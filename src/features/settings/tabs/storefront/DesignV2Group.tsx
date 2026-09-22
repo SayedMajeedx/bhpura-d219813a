@@ -139,12 +139,7 @@ const TOGGLE_SECTIONS: Array<{ ar: string; en: string; keys: BoolKey[] }> = [
   {
     ar: "الصفحة الرئيسية",
     en: "Homepage",
-    keys: [
-      "trust_bar_enabled",
-      "brand_story_enabled",
-      "recently_viewed_enabled",
-      "motion_enabled",
-    ],
+    keys: ["trust_bar_enabled", "brand_story_enabled", "recently_viewed_enabled", "motion_enabled"],
   },
   {
     ar: "بطاقة المنتج",
@@ -300,23 +295,6 @@ export function DesignV2Group() {
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs font-medium">
-            {isAr ? "تخطيط صفحة المنتج" : "Product page layout"}
-          </Label>
-          <Select
-            value={bs.pdp_layout || "accordion"}
-            onValueChange={(val) => setBs({ pdp_layout: val })}
-          >
-            <SelectTrigger className="h-9 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="accordion">{isAr ? "أكورديون" : "Accordion"}</SelectItem>
-              <SelectItem value="flat">{isAr ? "مسطّح (الحالي)" : "Flat (current)"}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs font-medium">
             {isAr ? 'شارة "جديد" لمدة (أيام)' : '"New" badge for (days)'}
           </Label>
           <Input
@@ -460,7 +438,9 @@ export function DesignV2Group() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-border">
         <div>
           <Label className="text-xs font-medium">
-            {isAr ? "المواصفات والعناية / القماش (عربي)" : "Specifications & care / Fabric (Arabic)"}
+            {isAr
+              ? "المواصفات والعناية / القماش (عربي)"
+              : "Specifications & care / Fabric (Arabic)"}
           </Label>
           <Textarea
             dir="rtl"
@@ -472,7 +452,9 @@ export function DesignV2Group() {
         </div>
         <div>
           <Label className="text-xs font-medium">
-            {isAr ? "المواصفات والعناية / القماش (إنجليزي)" : "Specifications & care / Fabric (English)"}
+            {isAr
+              ? "المواصفات والعناية / القماش (إنجليزي)"
+              : "Specifications & care / Fabric (English)"}
           </Label>
           <Textarea
             dir="ltr"

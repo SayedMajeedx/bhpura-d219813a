@@ -10,6 +10,7 @@ import {
 import { ColorField } from "../../shared/ColorField";
 import { AdvancedOnly } from "../../FieldVisibility";
 import { useBrandSettingsFormContext } from "../../use-brand-settings-form";
+import { resolveFooterVariant } from "@/lib/storefront-engine";
 import { useI18n } from "@/lib/i18n";
 import type { ExtractedPalette } from "@/lib/logo-palette";
 import { paletteToSettingsPatch } from "@/lib/brand-palette-apply";
@@ -18,6 +19,9 @@ export function PaletteGroup() {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const { bs, setBs, patchBs } = useBrandSettingsFormContext();
+  // Footer colours are only read by the classic (simple) footer; the columns
+  // footer used by Storefront 2.0 derives its own surface from the theme.
+  const showFooterColours = resolveFooterVariant(bs) === "simple";
 
   const handleExtractPalette = (palette: ExtractedPalette) => {
     // Writes the full derived palette (header, footer, buttons, headings) plus
@@ -231,16 +235,20 @@ export function PaletteGroup() {
                 value={bs.menu_fg ?? null}
                 onChange={(v) => setBs("menu_fg", v)}
               />
-              <ColorField
-                label={isAr ? "خلفية التذييل" : "Footer BG"}
-                value={bs.footer_bg ?? null}
-                onChange={(v) => setBs("footer_bg", v)}
-              />
-              <ColorField
-                label={isAr ? "نص التذييل" : "Footer Text"}
-                value={bs.footer_fg ?? null}
-                onChange={(v) => setBs("footer_fg", v)}
-              />
+              {showFooterColours && (
+                <>
+                  <ColorField
+                    label={isAr ? "خلفية التذييل" : "Footer BG"}
+                    value={bs.footer_bg ?? null}
+                    onChange={(v) => setBs("footer_bg", v)}
+                  />
+                  <ColorField
+                    label={isAr ? "نص التذييل" : "Footer Text"}
+                    value={bs.footer_fg ?? null}
+                    onChange={(v) => setBs("footer_fg", v)}
+                  />
+                </>
+              )}
             </div>
 
             <div className="flex items-center justify-between rounded-xl border border-border p-4 bg-muted/10 mt-3">

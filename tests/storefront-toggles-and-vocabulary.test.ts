@@ -50,7 +50,10 @@ describe("Storefront 2.0 Toggles & Feature Gating Logic", () => {
   });
 
   describe("Trust Bar Positioning Evaluation", () => {
-    const evaluateTrustBar = (settings: { trust_bar_enabled?: boolean | null; trust_bar_position?: string | null }) => {
+    const evaluateTrustBar = (settings: {
+      trust_bar_enabled?: boolean | null;
+      trust_bar_position?: string | null;
+    }) => {
       const isEnabled = settings?.trust_bar_enabled !== false;
       const pos = settings?.trust_bar_position;
 

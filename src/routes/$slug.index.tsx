@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useStorefront } from "@/lib/storefront-context";
+import { useStorefront, type HeroContentSlide } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState, useRef, useEffect, type AnchorHTMLAttributes } from "react";
@@ -620,7 +620,7 @@ function HeroBanner() {
   const prioritizeHero = !settings.home_promo_cards.some((card) => Boolean(card?.image_url));
   const background = brand.hero_media?.background;
   const bgUrl = typeof background === "string" ? background : background?.url;
-  const bgType =
+  const bgType: HeroContentSlide["type"] =
     typeof background === "object" && background?.type === "video"
       ? "video"
       : bgUrl && /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(bgUrl)

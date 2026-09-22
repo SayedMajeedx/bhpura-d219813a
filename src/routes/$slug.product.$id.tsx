@@ -440,9 +440,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     },
     enabled: Boolean(
       brand?.id &&
-        product?.id &&
-        settings?.storefront_design_version === 2 &&
-        settings?.social_proof_enabled !== false,
+      product?.id &&
+      settings?.storefront_design_version === 2 &&
+      settings?.social_proof_enabled !== false,
     ),
     staleTime: 10 * 60_000,
   });
@@ -1401,16 +1401,16 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           {settings?.storefront_design_version === 2 &&
             settings?.social_proof_enabled !== false &&
             socialProofQuery.data && (
-            <div className="mb-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-semibold border border-amber-500/20">
-              <Sparkles className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-              <span>
-                {t(
-                  `تم شراؤه ${socialProofQuery.data} مرات خلال الأسبوع الماضي`,
-                  `Purchased ${socialProofQuery.data} times in the last 7 days`,
-                )}
-              </span>
-            </div>
-          )}
+              <div className="mb-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-semibold border border-amber-500/20">
+                <Sparkles className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                <span>
+                  {t(
+                    `تم شراؤه ${socialProofQuery.data} مرات خلال الأسبوع الماضي`,
+                    `Purchased ${socialProofQuery.data} times in the last 7 days`,
+                  )}
+                </span>
+              </div>
+            )}
 
           {displayDescription && (
             <p className="text-muted-foreground mb-4 sm:mb-6 whitespace-pre-line text-sm sm:text-base">

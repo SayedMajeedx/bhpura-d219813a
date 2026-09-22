@@ -14,10 +14,7 @@ export function HeroV2({ slides, background }: HeroV2Props) {
   const isAr = lang === "ar";
 
   const resolvedBg = background ?? brand.hero_media?.background;
-  const fallbackBgUrl =
-    typeof resolvedBg === "string"
-      ? resolvedBg
-      : resolvedBg?.url || "";
+  const fallbackBgUrl = typeof resolvedBg === "string" ? resolvedBg : resolvedBg?.url || "";
   const fallbackBgType =
     (typeof resolvedBg === "object" && resolvedBg?.type) ||
     (/\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(fallbackBgUrl) ? "video" : "image");
@@ -81,6 +78,16 @@ export function HeroV2({ slides, background }: HeroV2Props) {
   }
 
   const accentColor = settings.storefront_accent_color || brand?.primary_color || "#3f121a";
+
+  // Merchant-tunable scrim: 0 = clear media, 100 = heavy vignette. The gradient
+  // keeps its shape (strongest at the bottom where the text sits) and only its
+  // opacity scales, so headline contrast degrades predictably.
+  const overlayStrength = Math.min(100, Math.max(0, Number(settings.hero_overlay_strength ?? 45)));
+  const scrimBottom = (overlayStrength / 100) * 0.95;
+  const scrimMiddle = (overlayStrength / 100) * 0.45;
+  // Empty means "let the theme pick a readable colour", which is white over the
+  // scrim. A merchant override wins.
+  const heroTitleColor = settings.hero_title_color_v2?.trim() || undefined;
 
   return (
     <section
@@ -213,8 +220,13 @@ export function HeroV2({ slides, background }: HeroV2Props) {
                   />
                 )}
 
-                {/* High-Contrast Luxury Vignette Scrim */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent pointer-events-none" />
+                {/* High-Contrast Luxury Vignette Scrim (strength is merchant-tunable) */}
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    backgroundImage: `linear-gradient(to top, rgba(0,0,0,${scrimBottom}), rgba(0,0,0,${scrimMiddle}) 45%, rgba(0,0,0,0))`,
+                  }}
+                />
 
                 {/* Text / Action Content */}
                 <div className="absolute inset-0 flex flex-col justify-end p-5 sm:p-10 pb-10 sm:pb-14 text-white z-10">
@@ -225,6 +237,7 @@ export function HeroV2({ slides, background }: HeroV2Props) {
                         style={{
                           fontSize: "clamp(1.75rem, 1.25rem + 2.2vw, 3rem)",
                           lineHeight: 1.15,
+                          ...(heroTitleColor ? { color: heroTitleColor } : {}),
                         }}
                       >
                         {title}

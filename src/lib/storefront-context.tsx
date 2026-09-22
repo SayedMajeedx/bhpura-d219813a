@@ -247,6 +247,8 @@ export type PublicSettings = {
   recently_viewed_enabled?: boolean;
   social_proof_threshold?: number;
   motion_enabled?: boolean;
+  hero_overlay_strength?: number | null;
+  hero_title_color_v2?: string | null;
   brand_story_enabled?: boolean;
   social_proof_enabled?: boolean;
   product_card_hover_image?: boolean;

@@ -1,3 +1,4 @@
+import * as React from "react";
 import {
   Bell,
   Globe,
@@ -10,6 +11,8 @@ import {
   Wand2,
 } from "lucide-react";
 import { GroupNavigator, type GroupDef } from "@/features/settings/GroupNavigator";
+import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
+import { isStorefrontV2 } from "@/lib/storefront-engine";
 import { StorefrontDesignUpgradeCard } from "./StorefrontDesignUpgradeCard";
 import { DesignV2Group } from "./DesignV2Group";
 import { ModeGroup } from "./ModeGroup";
@@ -38,5 +41,15 @@ const GROUPS: GroupDef[] = [
 ];
 
 export function StorefrontTab() {
-  return <GroupNavigator tab="storefront" groups={GROUPS} />;
+  const { form } = useBrandSettingsFormContext();
+  // The Storefront 2.0 panel is read only by the V2 components, so it is hidden
+  // entirely on a classic storefront. GroupNavigator falls back to the first
+  // available group when the stored selection disappears.
+  const isV2 = isStorefrontV2(form.bs);
+  const groups = React.useMemo(
+    () => GROUPS.filter((g) => (g.id === "design_v2" ? isV2 : true)),
+    [isV2],
+  );
+
+  return <GroupNavigator tab="storefront" groups={groups} />;
 }

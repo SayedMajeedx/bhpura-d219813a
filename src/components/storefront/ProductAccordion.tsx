@@ -55,9 +55,7 @@ export function ProductAccordion({
     : null;
 
   const effectiveFabric =
-    fabricCare ||
-    (isAr ? settings?.fabric_care_ar : settings?.fabric_care_en) ||
-    defaultFabricCare;
+    fabricCare || (isAr ? settings?.fabric_care_ar : settings?.fabric_care_en) || defaultFabricCare;
 
   const sections = [
     {

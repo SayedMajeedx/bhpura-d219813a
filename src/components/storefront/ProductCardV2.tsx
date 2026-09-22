@@ -5,7 +5,7 @@ import { ResponsiveImage } from "@/components/responsive-media";
 import { ColorDots } from "@/components/storefront/ColorDots";
 import { QuickAddPopover } from "@/components/storefront/QuickAddPopover";
 import { useStorefront, formatPrice } from "@/lib/storefront-context";
-import { shouldShowPrices } from "@/lib/storefront-mode";
+import { isCatalogMode, shouldShowPrices } from "@/lib/storefront-mode";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { Heart, Eye } from "lucide-react";
 import { QuickViewModal } from "@/components/storefront/QuickViewModal";
@@ -32,6 +32,10 @@ export function ProductCardV2({
 
   // Quick View state
   const [quickViewOpen, setQuickViewOpen] = useState(false);
+  // Quick view is an add-to-cart surface (price, quantity, cart CTA), so it is
+  // suppressed on catalog / inquiry-only storefronts. The card still links to
+  // the product page, which has the inquiry flow.
+  const showQuickView = settings?.quick_view_enabled !== false && !isCatalogMode(settings);
   const handleTriggerQuickView = (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
@@ -148,7 +152,7 @@ export function ProductCardV2({
       onPointerLeave={handlePointerLeave}
     >
       {/* Quick View Button (Desktop) */}
-      {settings?.quick_view_enabled !== false && (
+      {showQuickView && (
         <Button
           type="button"
           variant="ghost"
@@ -291,7 +295,7 @@ export function ProductCardV2({
       </Link>
 
       {/* Quick View Modal */}
-      {settings?.quick_view_enabled !== false && (
+      {showQuickView && (
         <QuickViewModal
           open={quickViewOpen}
           onOpenChange={setQuickViewOpen}
