@@ -755,7 +755,7 @@ function CategoryPage() {
         {settings?.storefront_design_version === 2 ? (
           <>
             {/* Toolbar: Counter, Mobile Filter Sheet, Sort Selector */}
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-border/80">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-border">
               <div className="flex items-center gap-3">
                 <span className="text-xs font-medium text-muted-foreground">
                   {t(

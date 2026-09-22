@@ -2097,12 +2097,12 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                           )}
                       </span>
                     </label>
-                    <span className="text-xs sm:text-xs text-muted-foreground font-normal">
+                    <span className="text-xs text-muted-foreground font-normal">
                       {vocabulary.workshop_instructions?.[lang] ||
                         t("تعليمات للورشة", "Workshop notes")}
                     </span>
                   </div>
-                  <p className="text-xs sm:text-xs text-muted-foreground leading-relaxed">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
                     {vocabulary.workshop_notes_placeholder?.[lang]
                       ? `${t("ملاحظات خاصة:", "Special instructions:")} ${vocabulary.workshop_notes_placeholder[lang]}`
                       : t(

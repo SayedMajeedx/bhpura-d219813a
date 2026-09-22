@@ -77,7 +77,7 @@ export function ExpensesToolbar({
               type="button"
               onClick={() => onDatePresetChange(p.id)}
               className={cn(
-                "min-h-9 min-w-0 truncate rounded-md px-1.5 sm:px-2.5 py-1 text-xs sm:text-xs font-semibold transition-all duration-150 cursor-pointer",
+                "min-h-9 min-w-0 truncate rounded-md px-1.5 sm:px-2.5 py-1 text-xs font-semibold transition-all duration-150 cursor-pointer",
                 datePreset === p.id
                   ? "bg-primary text-primary-foreground shadow-2xs"
                   : "text-muted-foreground hover:bg-background/80 hover:text-foreground",

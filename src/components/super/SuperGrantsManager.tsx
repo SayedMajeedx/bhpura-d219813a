@@ -279,7 +279,7 @@ export function SuperGrantsManager() {
             placeholder="بحث بالمتجر أو الحساب أو الهاتف..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="ps-9 text-xs sm:text-sm rounded-lg min-h-10 placeholder:text-muted-foreground/45 placeholder:opacity-50"
+            className="ps-9 text-xs sm:text-sm rounded-lg min-h-10 placeholder:text-muted-foreground placeholder:opacity-50"
           />
         </div>
 
@@ -375,7 +375,7 @@ export function SuperGrantsManager() {
                 )}
               >
                 <CardContent className="p-4 sm:p-5 space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border-subtle pb-3">
                     <div className="flex items-center gap-3">
                       <div className="size-10 rounded-xl bg-muted/60 border border-border flex items-center justify-center text-primary shrink-0">
                         <CategoryIcon className="size-5" />
@@ -394,7 +394,7 @@ export function SuperGrantsManager() {
                           </h3>
                           <Badge
                             variant="outline"
-                            className={cn("text-[10px] px-2 py-0.5", readinessInfo.color)}
+                            className={cn("text-xs px-2 py-0.5", readinessInfo.color)}
                           >
                             {readinessInfo.label}
                           </Badge>
@@ -453,7 +453,7 @@ export function SuperGrantsManager() {
 
                   {/* Challenge details */}
                   {app.biggest_challenge && (
-                    <div className="rounded-lg bg-muted/30 border border-border/50 p-2.5 text-xs text-muted-foreground leading-relaxed">
+                    <div className="rounded-lg bg-muted/30 border border-border-subtle p-2.5 text-xs text-muted-foreground leading-relaxed">
                       <span className="font-bold text-foreground block mb-0.5">
                         التحدي الأكبر للتاجر:
                       </span>
@@ -581,7 +581,7 @@ export function SuperGrantsManager() {
         <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto" dir="rtl">
           {detailsApp && (
             <div className="space-y-5">
-              <DialogHeader className="border-b border-border/60 pb-3 text-right">
+              <DialogHeader className="border-b border-border-subtle pb-3 text-right">
                 <div className="flex items-center justify-between gap-2">
                   <DialogTitle className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
                     <Store className="size-5 text-primary" />
@@ -625,7 +625,7 @@ export function SuperGrantsManager() {
                       asChild
                       size="sm"
                       variant="outline"
-                      className="h-7 text-[11px] gap-1 rounded-lg"
+                      className="h-7 text-xs gap-1 rounded-lg"
                     >
                       <a
                         href={`https://instagram.com/${detailsApp.instagram_handle.replace(/^@/, "")}`}
@@ -652,7 +652,7 @@ export function SuperGrantsManager() {
                       asChild
                       size="sm"
                       variant="outline"
-                      className="h-7 text-[11px] gap-1 rounded-lg border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10"
+                      className="h-7 text-xs gap-1 rounded-lg border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10"
                     >
                       <a
                         href={`https://wa.me/${normalizePhoneForWhatsApp(detailsApp.whatsapp_number)}`}
@@ -673,18 +673,16 @@ export function SuperGrantsManager() {
                   إجابات الاستبيان حول المتجر
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                  <div className="bg-card p-2.5 rounded-lg border border-border/60">
-                    <span className="text-muted-foreground block text-[11px] mb-1">
-                      مجال المنتجات
-                    </span>
+                  <div className="bg-card p-2.5 rounded-lg border border-border-subtle">
+                    <span className="text-muted-foreground block text-xs mb-1">مجال المنتجات</span>
                     <span className="font-bold text-foreground">
                       {(CATEGORY_MAP[detailsApp.product_category] || {}).label ||
                         detailsApp.product_category}
                     </span>
                   </div>
 
-                  <div className="bg-card p-2.5 rounded-lg border border-border/60">
-                    <span className="text-muted-foreground block text-[11px] mb-1">
+                  <div className="bg-card p-2.5 rounded-lg border border-border-subtle">
+                    <span className="text-muted-foreground block text-xs mb-1">
                       حالة الجاهزية والتصوير
                     </span>
                     <span className="font-bold text-foreground">
@@ -693,8 +691,8 @@ export function SuperGrantsManager() {
                     </span>
                   </div>
 
-                  <div className="bg-card p-2.5 rounded-lg border border-border/60">
-                    <span className="text-muted-foreground block text-[11px] mb-1">
+                  <div className="bg-card p-2.5 rounded-lg border border-border-subtle">
+                    <span className="text-muted-foreground block text-xs mb-1">
                       قناة البيع الحالية
                     </span>
                     <span className="font-bold text-foreground">
@@ -758,7 +756,7 @@ export function SuperGrantsManager() {
                   onChange={(e) => setNotesDraft(e.target.value)}
                   placeholder="اكتب ملاحظاتك الداخلية عن هذا المتجر..."
                   dir="rtl"
-                  className="text-xs sm:text-sm rounded-xl leading-relaxed text-right placeholder:text-muted-foreground/45 placeholder:opacity-50"
+                  className="text-xs sm:text-sm rounded-xl leading-relaxed text-right placeholder:text-muted-foreground placeholder:opacity-50"
                 />
                 <Button
                   type="button"
@@ -778,7 +776,7 @@ export function SuperGrantsManager() {
               </div>
 
               {/* WhatsApp Action Buttons */}
-              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/60">
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border-subtle">
                 <div className="flex flex-wrap items-center gap-2">
                   <Button
                     asChild
@@ -843,7 +841,7 @@ export function SuperGrantsManager() {
               onChange={(e) => setNotesDraft(e.target.value)}
               placeholder="مثال: صور المنتجات ممتازة وجاهزة للبدء..."
               dir="rtl"
-              className="text-xs sm:text-sm rounded-xl leading-relaxed text-right placeholder:text-muted-foreground/45 placeholder:opacity-50"
+              className="text-xs sm:text-sm rounded-xl leading-relaxed text-right placeholder:text-muted-foreground placeholder:opacity-50"
             />
           </div>
           <DialogFooter className="flex gap-2 sm:justify-start">

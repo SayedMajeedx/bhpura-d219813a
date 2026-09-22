@@ -82,7 +82,7 @@ export const OsAppWindow = React.forwardRef<HTMLDivElement, OsAppWindowProps>(
               variant="outline"
               size="sm"
               onClick={onToggleFocusMode}
-              className="h-8 px-3 gap-1.5 text-xs font-semibold shadow-md bg-background/90 backdrop-blur-md border-border hover:bg-muted"
+              className="h-8 px-3 gap-1.5 text-xs font-semibold shadow-md bg-background border-border hover:bg-muted"
             >
               <Minimize2 className="h-3.5 w-3.5" />
               <span>خروج من وضع التركيز / Exit</span>

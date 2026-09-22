@@ -431,7 +431,7 @@ export function StoreProfileCard({
       <Container
         className={cn(
           "overflow-hidden space-y-6",
-          !borderless && "border border-border/70 shadow-xs rounded-xl bg-card p-3 sm:p-6",
+          !borderless && "border border-border shadow-xs rounded-xl bg-card p-3 sm:p-6",
         )}
       >
         {!borderless ? (

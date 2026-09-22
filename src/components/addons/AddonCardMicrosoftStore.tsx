@@ -92,7 +92,7 @@ export function AddonCardMicrosoftStore({
                 {isRecommended && (
                   <Badge
                     variant="outline"
-                    className="text-[10px] h-4 py-0 px-1.5 text-primary border-primary/30 shrink-0 font-medium"
+                    className="text-xs h-4 py-0 px-1.5 text-primary border-primary/30 shrink-0 font-medium"
                   >
                     {isAr ? "موصى به" : "Recommended"}
                   </Badge>
@@ -184,15 +184,15 @@ export function AddonCardMicrosoftStore({
         <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
           <Badge
             variant="outline"
-            className="text-[10px] h-4 py-0 px-1.5 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/5 font-medium flex items-center gap-1"
+            className="text-xs h-4 py-0 px-1.5 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/5 font-medium flex items-center gap-1"
           >
             <ShieldCheck className="h-2.5 w-2.5" />
             <span>{isAr ? "إضافة رسمية" : "Official"}</span>
           </Badge>
           {showcase?.categoryLabel && (
             <>
-              <span className="text-muted-foreground/60">•</span>
-              <span className="text-[11px] text-muted-foreground truncate">
+              <span className="text-muted-foreground">•</span>
+              <span className="text-xs text-muted-foreground truncate">
                 {isAr ? showcase.categoryLabel.ar : showcase.categoryLabel.en}
               </span>
             </>
@@ -238,7 +238,7 @@ export function AddonCardMicrosoftStore({
           {hasUpdate && (
             <Badge
               variant="outline"
-              className="gap-1 text-[11px] text-primary border-primary/30 bg-primary/5"
+              className="gap-1 text-xs text-primary border-primary/30 bg-primary/5"
             >
               <ArrowUpCircle className="h-3 w-3" />
               <span>{isAr ? "تحديث" : "Update"}</span>

@@ -41,7 +41,7 @@ export function SettingsCollapsibleCard({
       open={isOpen}
       onOpenChange={setIsOpen}
       className={cn(
-        "rounded-xl border border-border/70 bg-card overflow-hidden shadow-xs transition-all duration-200",
+        "rounded-xl border border-border bg-card overflow-hidden shadow-xs transition-all duration-200",
         isOpen ? "ring-1 ring-primary/20 border-primary/30" : "hover:border-border",
         className,
       )}
@@ -93,7 +93,7 @@ export function SettingsCollapsibleCard({
       </div>
 
       <CollapsibleContent className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down overflow-hidden">
-        <div className="border-t border-border/60" />
+        <div className="border-t border-border-subtle" />
         <div className={cn("p-4 sm:p-6", contentClassName)}>{children}</div>
       </CollapsibleContent>
     </Collapsible>

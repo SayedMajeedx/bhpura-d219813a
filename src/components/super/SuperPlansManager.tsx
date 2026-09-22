@@ -569,39 +569,45 @@ export function SuperPlansManager() {
         </div>
 
         <div className="flex items-center gap-1.5 p-1 bg-muted/40 border border-border-subtle rounded-xl shrink-0">
-          <button
+          <Button
             type="button"
             onClick={() => handleUpdateGlobalBillingMode("both")}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all min-h-[36px] ${
+            variant="chip"
+            size="sm"
+            className={`min-h-9 ${
               (platformSettings?.billing_interval_mode || "both") === "both"
-                ? "bg-primary text-primary-foreground shadow-sm font-bold"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold hover:bg-primary hover:text-primary-foreground"
+                : ""
             }`}
           >
             {isAr ? "شهري وسنوي" : "Monthly & Annual"}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={() => handleUpdateGlobalBillingMode("monthly_only")}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all min-h-[36px] ${
+            variant="chip"
+            size="sm"
+            className={`min-h-9 ${
               platformSettings?.billing_interval_mode === "monthly_only"
-                ? "bg-primary text-primary-foreground shadow-sm font-bold"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold hover:bg-primary hover:text-primary-foreground"
+                : ""
             }`}
           >
             {isAr ? "شهري فقط" : "Monthly Only"}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={() => handleUpdateGlobalBillingMode("annual_only")}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all min-h-[36px] ${
+            variant="chip"
+            size="sm"
+            className={`min-h-9 ${
               platformSettings?.billing_interval_mode === "annual_only"
-                ? "bg-primary text-primary-foreground shadow-sm font-bold"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold hover:bg-primary hover:text-primary-foreground"
+                : ""
             }`}
           >
             {isAr ? "سنوي فقط" : "Annual Only"}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -1105,39 +1111,42 @@ export function SuperPlansManager() {
                   {isAr ? "دورة الفوترة المتاحة للباقة" : "Allowed Billing Intervals"}
                 </Label>
                 <div className="grid grid-cols-3 gap-2">
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setNewPlanBillingIntervalMode("both")}
-                    className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
+                    variant="chip"
+                    className={`h-auto p-2.5 rounded-xl whitespace-normal ${
                       newPlanBillingIntervalMode === "both"
-                        ? "border-primary bg-primary/10 text-primary font-bold shadow-sm"
-                        : "border-border-subtle hover:bg-muted/40 text-muted-foreground"
+                        ? "border-primary bg-primary/10 text-primary font-bold shadow-sm hover:bg-primary/10 hover:text-primary"
+                        : "border-border-subtle hover:bg-muted/40"
                     }`}
                   >
                     {isAr ? "شهري وسنوي" : "Monthly & Annual"}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     onClick={() => setNewPlanBillingIntervalMode("monthly_only")}
-                    className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
+                    variant="chip"
+                    className={`h-auto p-2.5 rounded-xl whitespace-normal ${
                       newPlanBillingIntervalMode === "monthly_only"
-                        ? "border-primary bg-primary/10 text-primary font-bold shadow-sm"
-                        : "border-border-subtle hover:bg-muted/40 text-muted-foreground"
+                        ? "border-primary bg-primary/10 text-primary font-bold shadow-sm hover:bg-primary/10 hover:text-primary"
+                        : "border-border-subtle hover:bg-muted/40"
                     }`}
                   >
                     {isAr ? "فقط شهري" : "Monthly Only"}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     onClick={() => setNewPlanBillingIntervalMode("annual_only")}
-                    className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
+                    variant="chip"
+                    className={`h-auto p-2.5 rounded-xl whitespace-normal ${
                       newPlanBillingIntervalMode === "annual_only"
-                        ? "border-primary bg-primary/10 text-primary font-bold shadow-sm"
-                        : "border-border-subtle hover:bg-muted/40 text-muted-foreground"
+                        ? "border-primary bg-primary/10 text-primary font-bold shadow-sm hover:bg-primary/10 hover:text-primary"
+                        : "border-border-subtle hover:bg-muted/40"
                     }`}
                   >
                     {isAr ? "فقط سنوي" : "Annual Only"}
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -1377,39 +1386,42 @@ export function SuperPlansManager() {
                   {isAr ? "دورة الفوترة المتاحة للباقة" : "Allowed Billing Intervals"}
                 </Label>
                 <div className="grid grid-cols-3 gap-2">
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setEditBillingIntervalMode("both")}
-                    className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
+                    variant="chip"
+                    className={`h-auto p-2.5 rounded-xl whitespace-normal ${
                       editBillingIntervalMode === "both"
-                        ? "border-primary bg-primary/10 text-primary font-bold shadow-sm"
-                        : "border-border-subtle hover:bg-muted/40 text-muted-foreground"
+                        ? "border-primary bg-primary/10 text-primary font-bold shadow-sm hover:bg-primary/10 hover:text-primary"
+                        : "border-border-subtle hover:bg-muted/40"
                     }`}
                   >
                     {isAr ? "شهري وسنوي" : "Monthly & Annual"}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     onClick={() => setEditBillingIntervalMode("monthly_only")}
-                    className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
+                    variant="chip"
+                    className={`h-auto p-2.5 rounded-xl whitespace-normal ${
                       editBillingIntervalMode === "monthly_only"
-                        ? "border-primary bg-primary/10 text-primary font-bold shadow-sm"
-                        : "border-border-subtle hover:bg-muted/40 text-muted-foreground"
+                        ? "border-primary bg-primary/10 text-primary font-bold shadow-sm hover:bg-primary/10 hover:text-primary"
+                        : "border-border-subtle hover:bg-muted/40"
                     }`}
                   >
                     {isAr ? "فقط شهري" : "Monthly Only"}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     onClick={() => setEditBillingIntervalMode("annual_only")}
-                    className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
+                    variant="chip"
+                    className={`h-auto p-2.5 rounded-xl whitespace-normal ${
                       editBillingIntervalMode === "annual_only"
-                        ? "border-primary bg-primary/10 text-primary font-bold shadow-sm"
-                        : "border-border-subtle hover:bg-muted/40 text-muted-foreground"
+                        ? "border-primary bg-primary/10 text-primary font-bold shadow-sm hover:bg-primary/10 hover:text-primary"
+                        : "border-border-subtle hover:bg-muted/40"
                     }`}
                   >
                     {isAr ? "فقط سنوي" : "Annual Only"}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

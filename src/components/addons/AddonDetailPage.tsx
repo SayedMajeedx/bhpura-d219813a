@@ -111,7 +111,7 @@ export function AddonDetailPage({
             <span>{isAr ? "الرجوع إلى متجر الإضافات" : "Back to Add-on Store"}</span>
           </Button>
 
-          <span className="text-muted-foreground/50">/</span>
+          <span className="text-muted-foreground">/</span>
 
           <span className="text-sm font-semibold text-foreground">
             {isAr ? manifest.name.ar : manifest.name.en}
@@ -421,7 +421,7 @@ export function AddonDetailPage({
                       <div className="font-semibold text-xs text-foreground">
                         {isAr ? manifest.name.ar : manifest.name.en}
                       </div>
-                      <div className="text-[10px] text-muted-foreground">
+                      <div className="text-xs text-muted-foreground">
                         {isAr ? "لوحة الإدارة والإشراف" : "Management View"}
                       </div>
                     </div>
@@ -671,7 +671,7 @@ export function AddonDetailPage({
                       </button>
 
                       {isOpen && (
-                        <div className="px-3.5 pb-3.5 pt-1 text-xs text-muted-foreground leading-relaxed border-t border-border/50 bg-muted/10">
+                        <div className="px-3.5 pb-3.5 pt-1 text-xs text-muted-foreground leading-relaxed border-t border-border-subtle bg-muted/10">
                           {isAr ? faq.a.ar : faq.a.en}
                         </div>
                       )}
@@ -700,7 +700,7 @@ export function AddonDetailPage({
                     className="p-2.5 rounded-xl border border-border bg-muted/20 text-xs space-y-1"
                   >
                     <div className="font-semibold text-foreground">{slot.placement}</div>
-                    <div className="text-[11px] text-muted-foreground font-mono truncate">
+                    <div className="text-xs text-muted-foreground font-mono truncate">
                       slot_id: {slot.id}
                     </div>
                   </div>
@@ -723,7 +723,7 @@ export function AddonDetailPage({
                   {manifest.requires.map((reqId) => {
                     const reqManifest = allManifests.find((m) => m.id === reqId);
                     return (
-                      <Badge key={reqId} variant="secondary" className="text-[11px]">
+                      <Badge key={reqId} variant="secondary" className="text-xs">
                         {reqManifest ? (isAr ? reqManifest.name.ar : reqManifest.name.en) : reqId}
                       </Badge>
                     );
@@ -776,7 +776,7 @@ export function AddonDetailPage({
                 <AlertTriangle className="h-4 w-4" />
                 <span>{isAr ? "إدارة البيانات والحذف النهائي" : "Data Management & Purge"}</span>
               </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 {isAr
                   ? "يتيح لك النظام حذف جميع السجلات والمحتوى المرتبط بهذه الإضافة نهائياً من قاعدة بيانات المتجر."
                   : "You can permanently delete all records associated with this add-on from store database."}

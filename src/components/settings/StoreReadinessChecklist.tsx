@@ -662,7 +662,7 @@ export function StoreReadinessChecklist({
 
   return (
     <div
-      className={`rounded-xl border border-border/70 bg-card shadow-xs transition-all ${
+      className={`rounded-xl border border-border bg-card shadow-xs transition-all ${
         collapsed ? "p-3 sm:p-3.5" : "p-4 sm:p-5"
       }`}
     >
@@ -775,7 +775,7 @@ export function StoreReadinessChecklist({
                 className={`flex items-start justify-between gap-3 p-3 rounded-lg border transition-colors ${
                   item.isComplete
                     ? "border-emerald-500/20 bg-emerald-500/[0.03]"
-                    : "border-border/60 bg-muted/20 hover:border-primary/40"
+                    : "border-border-subtle bg-muted/20 hover:border-primary/40"
                 }`}
               >
                 <div className="flex items-start gap-2.5 min-w-0">
@@ -796,7 +796,7 @@ export function StoreReadinessChecklist({
                     <span className="text-xs font-medium text-foreground block truncate">
                       {item.title}
                     </span>
-                    <span className="text-xs text-muted-foreground/90 font-normal block line-clamp-1 leading-normal">
+                    <span className="text-xs text-muted-foreground font-normal block line-clamp-1 leading-normal">
                       {item.description}
                     </span>
                   </div>
@@ -805,7 +805,7 @@ export function StoreReadinessChecklist({
                 <div className="shrink-0 self-center">
                   {item.isComplete ? (
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded bg-emerald-500/10">
+                      <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded bg-emerald-500/10">
                         {isAr ? "مكتمل" : "Ready"}
                       </span>
                       {item.actionType === "tab" && item.tabId ? (

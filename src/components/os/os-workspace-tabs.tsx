@@ -47,13 +47,13 @@ export function OsWorkspaceTabs({
     <div
       data-os-workspace-tabs="true"
       className={cn(
-        "no-print shrink-0 w-full bg-card/85 backdrop-blur-md border-b border-border/60 transition-all select-none z-10",
+        "no-print shrink-0 w-full bg-card/85 backdrop-blur-md border-b border-border-subtle transition-all select-none z-10",
         className,
       )}
     >
       <div className="max-w-full px-3 py-1.5 sm:px-4 flex items-center justify-between gap-3 overflow-hidden">
         {/* Workspace Title & Badge (Desktop) */}
-        <div className="hidden lg:flex items-center gap-2 shrink-0 pe-2.5 border-e border-border/50">
+        <div className="hidden lg:flex items-center gap-2 shrink-0 pe-2.5 border-e border-border-subtle">
           {WorkspaceIcon && (
             <div className="h-6 w-6 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
               <WorkspaceIcon className="h-3.5 w-3.5" />
@@ -62,7 +62,7 @@ export function OsWorkspaceTabs({
           <span className="text-xs font-bold text-foreground truncate">
             {isAr ? workspaceGroup?.labelAr : workspaceGroup?.labelEn}
           </span>
-          <span className="text-[10px] font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+          <span className="text-xs font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
             {items.length}
           </span>
         </div>
@@ -85,7 +85,7 @@ export function OsWorkspaceTabs({
                   "group relative inline-flex items-center gap-1.5 min-h-[32px] sm:min-h-[30px] px-2.5 sm:px-3 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-150 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
                   isActive
                     ? "bg-primary text-primary-foreground shadow-2xs font-bold"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/80 bg-background/50 border border-border/40",
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/80 bg-background/50 border border-border-subtle",
                 )}
               >
                 {TabIcon && (
@@ -102,7 +102,7 @@ export function OsWorkspaceTabs({
                 {tab.badge !== undefined && (
                   <span
                     className={cn(
-                      "inline-flex min-w-[18px] h-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold tabular-nums",
+                      "inline-flex min-w-[18px] h-[18px] items-center justify-center rounded-full px-1 text-xs font-bold tabular-nums",
                       isActive
                         ? "bg-primary-foreground/20 text-primary-foreground"
                         : "bg-muted text-muted-foreground",

@@ -143,11 +143,11 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
                           const formattedFields = formatCustomFieldsList(item.custom_fields, lang);
                           if (formattedFields.length === 0) return null;
                           return (
-                            <div className="mt-1.5 space-y-1 rounded-md bg-secondary/30 p-2 text-xs border border-border/40">
+                            <div className="mt-1.5 space-y-1 rounded-md bg-secondary/30 p-2 text-xs border border-border-subtle">
                               {formattedFields.map((field) => (
                                 <div
                                   key={field.key}
-                                  className="flex items-center justify-between gap-2 py-0.5 border-b border-border/20 last:border-b-0"
+                                  className="flex items-center justify-between gap-2 py-0.5 border-b border-border-subtle last:border-b-0"
                                 >
                                   <span className="text-muted-foreground font-medium">
                                     {field.label}:

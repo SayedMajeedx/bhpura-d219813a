@@ -718,7 +718,7 @@ function PagesAndPolicies() {
                     if (draggedIndex !== null) movePage(draggedIndex, index);
                     setDraggedIndex(null);
                   }}
-                  className="overflow-hidden rounded-2xl border-border-subtle bg-card/40 px-2 shadow-md backdrop-blur-sm transition-all duration-200 hover:shadow-lg sm:px-4"
+                  className="overflow-hidden rounded-2xl border-border-subtle bg-card px-2 shadow-md transition-all duration-200 hover:shadow-lg sm:px-4"
                 >
                   <div className="flex items-center gap-2">
                     <button

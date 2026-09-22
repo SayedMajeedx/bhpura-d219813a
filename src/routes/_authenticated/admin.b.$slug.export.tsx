@@ -665,14 +665,15 @@ function ProductExportSection({
           {PRODUCT_PRESETS.map((p) => {
             const isSelected = selectedPresetId === p.id;
             return (
-              <button
+              <Button
                 key={p.id}
                 type="button"
                 onClick={() => setSelectedPresetId(p.id)}
-                className={`p-4 rounded-xl border text-start transition-all cursor-pointer flex flex-col justify-between ${
+                variant="chip"
+                className={`h-auto p-4 rounded-xl text-start whitespace-normal flex-col items-stretch justify-between gap-0 hover:text-foreground ${
                   isSelected
-                    ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary shadow-xs"
-                    : "border-border bg-card hover:border-primary/40 hover:bg-muted/40"
+                    ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary shadow-xs hover:bg-primary/5"
+                    : "border-border bg-card text-foreground hover:border-primary/40 hover:bg-muted/40"
                 }`}
               >
                 <div>
@@ -686,7 +687,7 @@ function ProductExportSection({
                     {isAr ? p.descriptionAr : p.descriptionEn}
                   </p>
                 </div>
-                <div className="mt-3 pt-2 border-t border-border/50 flex items-center justify-between text-[11px] text-muted-foreground">
+                <div className="mt-3 pt-2 border-t border-border-subtle flex items-center justify-between text-xs text-muted-foreground">
                   <span>
                     {p.columns.length} {isAr ? "أعمدة" : "cols"}
                   </span>
@@ -694,7 +695,7 @@ function ProductExportSection({
                     {p.id === "shopify_compatible" ? "Shopify Ready" : "Universal"}
                   </span>
                 </div>
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -750,30 +751,34 @@ function ProductExportSection({
 
             {/* Format Selector */}
             <div className="flex items-center gap-2 self-end sm:self-auto">
-              <button
+              <Button
                 type="button"
                 onClick={() => setFormat("xlsx")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer transition ${
+                variant="chip"
+                size="sm"
+                className={
                   format === "xlsx"
-                    ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                    : "border-border text-muted-foreground hover:bg-muted"
-                }`}
+                    ? "border-success bg-success-subtle text-success hover:bg-success-subtle hover:text-success"
+                    : "border-border"
+                }
               >
                 <FileSpreadsheet className="h-4 w-4" />
                 <span>Excel (.xlsx)</span>
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={() => setFormat("csv")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer transition ${
+                variant="chip"
+                size="sm"
+                className={
                   format === "csv"
-                    ? "border-sky-500 bg-sky-500/10 text-sky-600 dark:text-sky-400"
-                    : "border-border text-muted-foreground hover:bg-muted"
-                }`}
+                    ? "border-info bg-info-subtle text-info hover:bg-info-subtle hover:text-info"
+                    : "border-border"
+                }
               >
                 <FileText className="h-4 w-4" />
                 <span>CSV (UTF-8 BOM)</span>
-              </button>
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -787,7 +792,7 @@ function ProductExportSection({
             <span className="text-xs font-bold text-foreground">
               {isAr ? "معاينة مباشرة للبيانات (أول 5 صفوف)" : "Live Data Preview (First 5 Rows)"}
             </span>
-            <Badge variant="secondary" className="text-[11px] font-semibold">
+            <Badge variant="secondary" className="text-xs font-semibold">
               {flattenedRows.length} {isAr ? "سجل جاهز" : "rows ready"}
             </Badge>
           </div>
@@ -836,7 +841,7 @@ function ProductExportSection({
                     {preset.columns.slice(0, 8).map((c) => (
                       <td
                         key={c.key}
-                        className="p-2.5 whitespace-nowrap text-foreground font-mono text-[11px]"
+                        className="p-2.5 whitespace-nowrap text-foreground font-mono text-xs"
                       >
                         {row[c.key] != null ? String(row[c.key]) : "—"}
                       </td>
@@ -1010,14 +1015,15 @@ function CustomerExportSection({
           {CUSTOMER_PRESETS.map((p) => {
             const isSelected = selectedPresetId === p.id;
             return (
-              <button
+              <Button
                 key={p.id}
                 type="button"
                 onClick={() => setSelectedPresetId(p.id)}
-                className={`p-4 rounded-xl border text-start transition-all cursor-pointer flex flex-col justify-between ${
+                variant="chip"
+                className={`h-auto p-4 rounded-xl text-start whitespace-normal flex-col items-stretch justify-between gap-0 hover:text-foreground ${
                   isSelected
-                    ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary shadow-xs"
-                    : "border-border bg-card hover:border-primary/40 hover:bg-muted/40"
+                    ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary shadow-xs hover:bg-primary/5"
+                    : "border-border bg-card text-foreground hover:border-primary/40 hover:bg-muted/40"
                 }`}
               >
                 <div>
@@ -1031,7 +1037,7 @@ function CustomerExportSection({
                     {isAr ? p.descriptionAr : p.descriptionEn}
                   </p>
                 </div>
-                <div className="mt-3 pt-2 border-t border-border/50 flex items-center justify-between text-[11px] text-muted-foreground">
+                <div className="mt-3 pt-2 border-t border-border-subtle flex items-center justify-between text-xs text-muted-foreground">
                   <span>
                     {p.columns.length} {isAr ? "حقول" : "fields"}
                   </span>
@@ -1039,7 +1045,7 @@ function CustomerExportSection({
                     {p.id === "whatsapp_campaign" ? "Marketing Blast" : "CRM"}
                   </span>
                 </div>
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -1094,30 +1100,34 @@ function CustomerExportSection({
 
             {/* Format Selector */}
             <div className="flex items-center gap-2 self-end sm:self-auto">
-              <button
+              <Button
                 type="button"
                 onClick={() => setFormat("xlsx")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer transition ${
+                variant="chip"
+                size="sm"
+                className={
                   format === "xlsx"
-                    ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                    : "border-border text-muted-foreground hover:bg-muted"
-                }`}
+                    ? "border-success bg-success-subtle text-success hover:bg-success-subtle hover:text-success"
+                    : "border-border"
+                }
               >
                 <FileSpreadsheet className="h-4 w-4" />
                 <span>Excel (.xlsx)</span>
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={() => setFormat("csv")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer transition ${
+                variant="chip"
+                size="sm"
+                className={
                   format === "csv"
-                    ? "border-sky-500 bg-sky-500/10 text-sky-600 dark:text-sky-400"
-                    : "border-border text-muted-foreground hover:bg-muted"
-                }`}
+                    ? "border-info bg-info-subtle text-info hover:bg-info-subtle hover:text-info"
+                    : "border-border"
+                }
               >
                 <FileText className="h-4 w-4" />
                 <span>CSV (UTF-8 BOM)</span>
-              </button>
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -1133,7 +1143,7 @@ function CustomerExportSection({
                 ? "معاينة العملاء المستهدفين (أول 5 صفوف)"
                 : "Target Customers Preview (First 5 Rows)"}
             </span>
-            <Badge variant="secondary" className="text-[11px] font-semibold">
+            <Badge variant="secondary" className="text-xs font-semibold">
               {rows.length} {isAr ? "عميل محدد" : "contacts"}
             </Badge>
           </div>
@@ -1177,7 +1187,7 @@ function CustomerExportSection({
                     {preset.columns.map((c) => (
                       <td
                         key={c.key}
-                        className="p-2.5 whitespace-nowrap text-foreground font-mono text-[11px]"
+                        className="p-2.5 whitespace-nowrap text-foreground font-mono text-xs"
                       >
                         {row[c.key] != null ? String(row[c.key]) : "—"}
                       </td>
@@ -1422,14 +1432,15 @@ function OrderExportSection({
           {ORDER_PRESETS.map((p) => {
             const isSelected = selectedPresetId === p.id;
             return (
-              <button
+              <Button
                 key={p.id}
                 type="button"
                 onClick={() => setSelectedPresetId(p.id)}
-                className={`p-4 rounded-xl border text-start transition-all cursor-pointer flex flex-col justify-between ${
+                variant="chip"
+                className={`h-auto p-4 rounded-xl text-start whitespace-normal flex-col items-stretch justify-between gap-0 hover:text-foreground ${
                   isSelected
-                    ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary shadow-xs"
-                    : "border-border bg-card hover:border-primary/40 hover:bg-muted/40"
+                    ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary shadow-xs hover:bg-primary/5"
+                    : "border-border bg-card text-foreground hover:border-primary/40 hover:bg-muted/40"
                 }`}
               >
                 <div>
@@ -1443,7 +1454,7 @@ function OrderExportSection({
                     {isAr ? p.descriptionAr : p.descriptionEn}
                   </p>
                 </div>
-                <div className="mt-3 pt-2 border-t border-border/50 flex items-center justify-between text-[11px] text-muted-foreground">
+                <div className="mt-3 pt-2 border-t border-border-subtle flex items-center justify-between text-xs text-muted-foreground">
                   <span>
                     {p.columns.length} {isAr ? "حقول" : "columns"}
                   </span>
@@ -1451,7 +1462,7 @@ function OrderExportSection({
                     {p.id === "accounting_ledger" ? "Audit / Tax Ready" : "Sales Ledger"}
                   </span>
                 </div>
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -1474,18 +1485,20 @@ function OrderExportSection({
                     { id: "30d", labelAr: "30 يوم", labelEn: "30 Days" },
                     { id: "this_month", labelAr: "هذا الشهر", labelEn: "This Month" },
                   ].map((d) => (
-                    <button
+                    <Button
                       key={d.id}
                       type="button"
                       onClick={() => setDateRange(d.id as any)}
-                      className={`px-2.5 py-1 text-xs rounded-lg border font-medium cursor-pointer transition ${
+                      variant="chip"
+                      size="xs"
+                      className={
                         dateRange === d.id
-                          ? "border-primary bg-primary text-primary-foreground font-semibold"
-                          : "border-border bg-background text-muted-foreground hover:bg-muted"
-                      }`}
+                          ? "border-primary bg-primary text-primary-foreground font-semibold hover:bg-primary hover:text-primary-foreground"
+                          : "border-border bg-background"
+                      }
                     >
                       {isAr ? d.labelAr : d.labelEn}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -1509,30 +1522,34 @@ function OrderExportSection({
 
             {/* Format Selector */}
             <div className="flex items-center gap-2 self-end sm:self-auto">
-              <button
+              <Button
                 type="button"
                 onClick={() => setFormat("xlsx")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer transition ${
+                variant="chip"
+                size="sm"
+                className={
                   format === "xlsx"
-                    ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                    : "border-border text-muted-foreground hover:bg-muted"
-                }`}
+                    ? "border-success bg-success-subtle text-success hover:bg-success-subtle hover:text-success"
+                    : "border-border"
+                }
               >
                 <FileSpreadsheet className="h-4 w-4" />
                 <span>Excel (.xlsx)</span>
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={() => setFormat("csv")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer transition ${
+                variant="chip"
+                size="sm"
+                className={
                   format === "csv"
-                    ? "border-sky-500 bg-sky-500/10 text-sky-600 dark:text-sky-400"
-                    : "border-border text-muted-foreground hover:bg-muted"
-                }`}
+                    ? "border-info bg-info-subtle text-info hover:bg-info-subtle hover:text-info"
+                    : "border-border"
+                }
               >
                 <FileText className="h-4 w-4" />
                 <span>CSV (UTF-8 BOM)</span>
-              </button>
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -1546,7 +1563,7 @@ function OrderExportSection({
             <span className="text-xs font-bold text-foreground">
               {isAr ? "معاينة الطلبات الجاهزة (أول 5 صفوف)" : "Orders Preview (First 5 Rows)"}
             </span>
-            <Badge variant="secondary" className="text-[11px] font-semibold">
+            <Badge variant="secondary" className="text-xs font-semibold">
               {rows.length} {isAr ? "طلب / سطر" : "rows ready"}
             </Badge>
           </div>
@@ -1590,7 +1607,7 @@ function OrderExportSection({
                     {preset.columns.map((c) => (
                       <td
                         key={c.key}
-                        className="p-2.5 whitespace-nowrap text-foreground font-mono text-[11px]"
+                        className="p-2.5 whitespace-nowrap text-foreground font-mono text-xs"
                       >
                         {row[c.key] != null ? String(row[c.key]) : "—"}
                       </td>
@@ -1720,30 +1737,34 @@ function ExpenseExportSection({
           </div>
 
           <div className="flex items-center gap-2">
-            <button
+            <Button
               type="button"
               onClick={() => setFormat("xlsx")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer transition ${
+              variant="chip"
+              size="sm"
+              className={
                 format === "xlsx"
-                  ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                  : "border-border text-muted-foreground hover:bg-muted"
-              }`}
+                  ? "border-success bg-success-subtle text-success hover:bg-success-subtle hover:text-success"
+                  : "border-border"
+              }
             >
               <FileSpreadsheet className="h-4 w-4" />
               <span>Excel (.xlsx)</span>
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={() => setFormat("csv")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer transition ${
+              variant="chip"
+              size="sm"
+              className={
                 format === "csv"
-                  ? "border-sky-500 bg-sky-500/10 text-sky-600 dark:text-sky-400"
-                  : "border-border text-muted-foreground hover:bg-muted"
-              }`}
+                  ? "border-info bg-info-subtle text-info hover:bg-info-subtle hover:text-info"
+                  : "border-border"
+              }
             >
               <FileText className="h-4 w-4" />
               <span>CSV (UTF-8 BOM)</span>
-            </button>
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -1786,7 +1807,7 @@ function ExpenseExportSection({
                     {preset.columns.map((c) => (
                       <td
                         key={c.key}
-                        className="p-2.5 whitespace-nowrap text-foreground font-mono text-[11px]"
+                        className="p-2.5 whitespace-nowrap text-foreground font-mono text-xs"
                       >
                         {row[c.key] != null ? String(row[c.key]) : "—"}
                       </td>
@@ -1896,13 +1917,13 @@ function ExportHistorySection({
                       {run.entity_type}
                     </td>
                     <td className="p-3 whitespace-nowrap text-muted-foreground">
-                      <Badge variant="outline" className="text-[11px] font-mono">
+                      <Badge variant="outline" className="text-xs font-mono">
                         {run.preset}
                       </Badge>
                     </td>
                     <td className="p-3 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold ${
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
                           run.file_format === "xlsx"
                             ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                             : run.file_format === "csv"

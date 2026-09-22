@@ -458,7 +458,7 @@ function Inventory() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-4 p-1 sm:p-2 animate-fade-in">
-      <div className="flex p-1.5 gap-1.5 bg-muted/40 rounded-xl border border-border-subtle backdrop-blur-sm max-w-lg">
+      <div className="flex p-1.5 gap-1.5 bg-muted rounded-xl border border-border-subtle max-w-lg">
         <button
           className={`flex-1 rounded-lg py-2 px-3 text-sm font-semibold transition-all duration-200 ${tab === "products" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:bg-background/20"}`}
           onClick={() => setTab("products")}
@@ -5618,26 +5618,26 @@ function VariantDesktopRow({
 
             {/* Bottom Line: SKU & Barcode Controls */}
             {viewMode === "full" || viewMode === "barcodes" ? (
-              <div className="flex items-center gap-2 pt-1 border-t border-border/40 flex-wrap">
-                <div className="flex items-center gap-1 bg-muted/30 hover:bg-muted/50 rounded-lg px-2 py-0.5 border border-border/60 transition-colors">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
+              <div className="flex items-center gap-2 pt-1 border-t border-border-subtle flex-wrap">
+                <div className="flex items-center gap-1 bg-muted/30 hover:bg-muted/50 rounded-lg px-2 py-0.5 border border-border-subtle transition-colors">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-tight">
                     {t("inventory.sku")}:
                   </span>
                   <input
-                    className="h-6 w-24 bg-transparent font-mono text-xs font-semibold outline-none focus:text-primary placeholder:text-muted-foreground/40"
+                    className="h-6 w-24 bg-transparent font-mono text-xs font-semibold outline-none focus:text-primary placeholder:text-muted-foreground"
                     defaultValue={v.sku ?? ""}
                     onBlur={(e) => update(v, { sku: e.target.value || null })}
                     placeholder="—"
                   />
                 </div>
 
-                <div className="flex items-center gap-1 bg-muted/30 hover:bg-muted/50 rounded-lg px-2 py-0.5 border border-border/60 transition-colors">
-                  <Barcode className="h-3.5 w-3.5 text-muted-foreground/80 shrink-0" />
-                  <span className="text-[10px] font-bold text-muted-foreground shrink-0">
+                <div className="flex items-center gap-1 bg-muted/30 hover:bg-muted/50 rounded-lg px-2 py-0.5 border border-border-subtle transition-colors">
+                  <Barcode className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-xs font-bold text-muted-foreground shrink-0">
                     {barcodeLabel}:
                   </span>
                   <input
-                    className="h-6 w-28 bg-transparent font-mono text-xs font-semibold outline-none focus:text-primary placeholder:text-muted-foreground/40"
+                    className="h-6 w-28 bg-transparent font-mono text-xs font-semibold outline-none focus:text-primary placeholder:text-muted-foreground"
                     defaultValue={v.barcode ?? ""}
                     onBlur={(e) => update(v, { barcode: e.target.value.trim() || null })}
                     placeholder={isAr ? "بدون باركود" : "None"}
@@ -5669,12 +5669,12 @@ function VariantDesktopRow({
             ) : v.barcode || v.sku ? (
               <div className="flex items-center gap-2 pt-0.5 flex-wrap">
                 {v.sku && (
-                  <span className="inline-flex items-center font-mono text-[10px] text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded border border-border-subtle shrink-0">
+                  <span className="inline-flex items-center font-mono text-xs text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded border border-border-subtle shrink-0">
                     SKU: {v.sku}
                   </span>
                 )}
                 {v.barcode && (
-                  <span className="inline-flex items-center gap-1 font-mono text-[10px] text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded border border-border-subtle shrink-0">
+                  <span className="inline-flex items-center gap-1 font-mono text-xs text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded border border-border-subtle shrink-0">
                     <Barcode className="h-3 w-3 text-muted-foreground" />
                     <span>{v.barcode}</span>
                   </span>
@@ -5710,8 +5710,8 @@ function VariantDesktopRow({
             placeholder={String(product?.base_price ?? "0.000")}
           />
           {viewMode === "full" && canViewFinancials ? (
-            <div className="flex items-center justify-center gap-1 mt-1 pt-1 border-t border-border/40 w-full">
-              <span className="text-[10px] font-bold text-muted-foreground shrink-0">
+            <div className="flex items-center justify-center gap-1 mt-1 pt-1 border-t border-border-subtle w-full">
+              <span className="text-xs font-bold text-muted-foreground shrink-0">
                 {isAr ? "التكلفة:" : "Cost:"}
               </span>
               <div className="relative inline-flex items-center w-22 shrink-0">
@@ -5724,12 +5724,12 @@ function VariantDesktopRow({
                   onBlur={(e) => update(v, { cost_price: Number(e.target.value) })}
                   placeholder="0.000"
                 />
-                <span className="absolute end-1 text-[8.5px] font-black text-muted-foreground pointer-events-none">
+                <span className="absolute end-1 text-xs font-black text-muted-foreground pointer-events-none">
                   BHD
                 </span>
               </div>
               <span
-                className={`inline-flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-black border shrink-0 ${marginBg}`}
+                className={`inline-flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-black border shrink-0 ${marginBg}`}
                 title={isAr ? "هامش الربح" : "Profit margin"}
               >
                 <TrendingUp className="h-2.5 w-2.5" />
@@ -5737,7 +5737,7 @@ function VariantDesktopRow({
               </span>
             </div>
           ) : (
-            <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground flex-wrap">
+            <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground flex-wrap">
               {canViewFinancials && (
                 <span>
                   {isAr ? "التكلفة" : "Cost"}:{" "}
@@ -5746,14 +5746,14 @@ function VariantDesktopRow({
               )}
               {canViewFinancials && (
                 <span
-                  className={`inline-flex items-center justify-center gap-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold border ${marginBg}`}
+                  className={`inline-flex items-center justify-center gap-0.5 px-1.5 py-0.2 rounded-full text-xs font-bold border ${marginBg}`}
                 >
                   <TrendingUp className="h-2.5 w-2.5" />
                   {currentMargin.toFixed(0)}%
                 </span>
               )}
               {Number(v.original_price || 0) > Number(v.selling_price || 0) && (
-                <span className="line-through text-muted-foreground/60 text-[10px]">
+                <span className="line-through text-muted-foreground text-xs">
                   {v.original_price}
                 </span>
               )}
@@ -5766,7 +5766,7 @@ function VariantDesktopRow({
       <td className="w-56 px-2 py-3 text-center align-middle" onClick={(e) => e.stopPropagation()}>
         <div className="flex flex-col items-center gap-1">
           <div className="flex items-center justify-center gap-1.5">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight shrink-0">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-tight shrink-0">
               {isAr ? "المحل:" : "Store:"}
             </span>
             <StockStepper
@@ -5776,7 +5776,7 @@ function VariantDesktopRow({
             {onOpenHistory && (
               <button
                 type="button"
-                className="p-1 rounded-md text-muted-foreground/60 hover:text-primary hover:bg-primary/10 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="p-1 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 onClick={() => onOpenHistory(v)}
                 title={isAr ? "سجل حركات المخزون" : "Inventory Ledger History"}
                 aria-label={isAr ? "سجل حركات المخزون" : "Inventory Ledger History"}
@@ -5786,9 +5786,9 @@ function VariantDesktopRow({
             )}
           </div>
           {viewMode === "full" ? (
-            <div className="flex flex-col items-center gap-1 mt-1 pt-1 border-t border-border/40 w-full">
+            <div className="flex flex-col items-center gap-1 mt-1 pt-1 border-t border-border-subtle w-full">
               <div className="flex items-center justify-center gap-1.5">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight shrink-0">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-tight shrink-0">
                   {isAr ? "حاضنة:" : "Inc:"}
                 </span>
                 <StockStepper
@@ -5796,19 +5796,19 @@ function VariantDesktopRow({
                   onChange={(val) => update(v, { stock_incubator: val })}
                 />
               </div>
-              <span className={`text-[10px] font-medium leading-none ${runRateColor}`}>
+              <span className={`text-xs font-medium leading-none ${runRateColor}`}>
                 {runRateText}
               </span>
             </div>
           ) : (
-            <div className="flex items-center justify-center gap-2 text-[11px] flex-wrap">
+            <div className="flex items-center justify-center gap-2 text-xs flex-wrap">
               {(v.stock_incubator ?? 0) > 0 && (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-semibold text-[10px] border border-border-subtle">
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-semibold text-xs border border-border-subtle">
                   {isAr ? "حاضنة:" : "Inc:"}{" "}
                   <strong className="ms-1 text-foreground">{v.stock_incubator}</strong>
                 </span>
               )}
-              <span className={`text-[11px] whitespace-nowrap leading-none ${runRateColor}`}>
+              <span className={`text-xs whitespace-nowrap leading-none ${runRateColor}`}>
                 {runRateText}
               </span>
             </div>
@@ -6218,7 +6218,7 @@ function VariantMobileCard({
               type="button"
               variant="ghost"
               size="sm"
-              className="h-7 px-2 text-[11px] gap-1 text-muted-foreground hover:text-primary rounded-md"
+              className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-primary rounded-md"
               onClick={() => onOpenHistory(v)}
             >
               <History className="h-3 w-3" />
@@ -7749,25 +7749,25 @@ function VariantList({
 
                         {/* SKU & Barcode directly under attributes if in full matrix or barcodes mode */}
                         {(viewMode === "full" || viewMode === "barcodes") && (
-                          <div className="flex items-center gap-2 mt-1.5 pt-1.5 border-t border-border/40 flex-wrap">
+                          <div className="flex items-center gap-2 mt-1.5 pt-1.5 border-t border-border-subtle flex-wrap">
                             <div className="flex items-center gap-1 bg-background rounded-lg px-2 py-0.5 border border-border">
-                              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
+                              <span className="text-xs font-bold text-muted-foreground uppercase tracking-tight">
                                 {t("inventory.sku")}:
                               </span>
                               <input
-                                className="h-6 w-24 bg-transparent font-mono text-xs font-semibold outline-none focus:text-primary placeholder:text-muted-foreground/40"
+                                className="h-6 w-24 bg-transparent font-mono text-xs font-semibold outline-none focus:text-primary placeholder:text-muted-foreground"
                                 value={row.sku}
                                 onChange={(e) => setRow({ ...row, sku: e.target.value })}
                                 placeholder={isAr ? "كود المنتج" : "SKU"}
                               />
                             </div>
                             <div className="flex items-center gap-1 bg-background rounded-lg px-2 py-0.5 border border-border">
-                              <Barcode className="h-3.5 w-3.5 text-muted-foreground/80 shrink-0" />
-                              <span className="text-[10px] font-bold text-muted-foreground shrink-0">
+                              <Barcode className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                              <span className="text-xs font-bold text-muted-foreground shrink-0">
                                 {barcodeLabel}:
                               </span>
                               <input
-                                className="h-6 w-28 bg-transparent font-mono text-xs font-semibold outline-none focus:text-primary placeholder:text-muted-foreground/40"
+                                className="h-6 w-28 bg-transparent font-mono text-xs font-semibold outline-none focus:text-primary placeholder:text-muted-foreground"
                                 value={row.barcode}
                                 onChange={(e) => setRow({ ...row, barcode: e.target.value })}
                                 placeholder={isAr ? "بدون باركود" : "None"}
@@ -7802,13 +7802,13 @@ function VariantList({
                           placeholder={String(product?.base_price ?? "0.000")}
                           onChange={(e) => setRow({ ...row, selling_price: e.target.value })}
                         />
-                        <span className="absolute end-2 text-[10px] font-black text-muted-foreground pointer-events-none uppercase">
+                        <span className="absolute end-2 text-xs font-black text-muted-foreground pointer-events-none uppercase">
                           BHD
                         </span>
                       </div>
                       {viewMode === "full" && canViewFinancials ? (
-                        <div className="flex items-center justify-center gap-1 mt-1 pt-1 border-t border-border/40 w-full">
-                          <span className="text-[10px] font-bold text-muted-foreground shrink-0">
+                        <div className="flex items-center justify-center gap-1 mt-1 pt-1 border-t border-border-subtle w-full">
+                          <span className="text-xs font-bold text-muted-foreground shrink-0">
                             {isAr ? "التكلفة:" : "Cost:"}
                           </span>
                           <div className="relative inline-flex items-center w-22 shrink-0">
@@ -7820,13 +7820,13 @@ function VariantList({
                               onChange={(e) => setRow({ ...row, cost_price: e.target.value })}
                               placeholder="0.000"
                             />
-                            <span className="absolute end-1 text-[8.5px] font-black text-muted-foreground pointer-events-none">
+                            <span className="absolute end-1 text-xs font-black text-muted-foreground pointer-events-none">
                               BHD
                             </span>
                           </div>
                         </div>
                       ) : (
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="text-xs text-muted-foreground">
                           {isAr ? "الأساسي" : "Base"}: {product?.base_price ?? "0.000"}
                         </span>
                       )}
@@ -7837,7 +7837,7 @@ function VariantList({
                   <td className="w-56 px-2 py-3 text-center align-middle">
                     <div className="flex flex-col items-center gap-1">
                       <div className="flex items-center justify-center gap-1.5">
-                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight shrink-0">
+                        <span className="text-xs font-bold text-muted-foreground uppercase tracking-tight shrink-0">
                           {isAr ? "المحل:" : "Store:"}
                         </span>
                         <Input
@@ -7849,8 +7849,8 @@ function VariantList({
                         />
                       </div>
                       {viewMode === "full" ? (
-                        <div className="flex items-center justify-center gap-1.5 mt-1 pt-1 border-t border-border/40 w-full">
-                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight shrink-0">
+                        <div className="flex items-center justify-center gap-1.5 mt-1 pt-1 border-t border-border-subtle w-full">
+                          <span className="text-xs font-bold text-muted-foreground uppercase tracking-tight shrink-0">
                             {isAr ? "حاضنة:" : "Inc:"}
                           </span>
                           <Input
@@ -7862,7 +7862,7 @@ function VariantList({
                           />
                         </div>
                       ) : row.stock_incubator ? (
-                        <span className="text-[10px] text-muted-foreground font-semibold">
+                        <span className="text-xs text-muted-foreground font-semibold">
                           {isAr ? "حاضنة:" : "Inc:"} {row.stock_incubator}
                         </span>
                       ) : null}

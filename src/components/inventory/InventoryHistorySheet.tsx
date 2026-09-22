@@ -306,7 +306,7 @@ export function InventoryHistorySheet({
           </div>
 
           {/* Filters strip */}
-          <div className="flex flex-wrap items-center justify-between gap-2.5 pt-3 mt-1 border-t border-border/40">
+          <div className="flex flex-wrap items-center justify-between gap-2.5 pt-3 mt-1 border-t border-border-subtle">
             <div className="flex items-center gap-2 flex-wrap">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-semibold">
                 <Filter className="h-3.5 w-3.5" />
@@ -366,7 +366,7 @@ export function InventoryHistorySheet({
             </div>
           ) : movements.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground gap-3">
-              <Package className="h-8 w-8 text-muted-foreground/50" />
+              <Package className="h-8 w-8 text-muted-foreground" />
               <p className="text-sm font-bold text-foreground">
                 {isAr ? "لا توجد حركات مخزون مسجلة" : "No movements found"}
               </p>
@@ -378,7 +378,7 @@ export function InventoryHistorySheet({
             </div>
           ) : (
             <Table>
-              <TableHeader className="bg-muted/40 sticky top-0 z-10 backdrop-blur-xs">
+              <TableHeader className="bg-muted sticky top-0 z-10">
                 <TableRow className="border-border">
                   <TableHead className="text-xs font-bold text-muted-foreground w-36">
                     {isAr ? "التاريخ والوقت" : "Timestamp"}
@@ -422,7 +422,7 @@ export function InventoryHistorySheet({
                   const actor = m.created_by ? profileMap[m.created_by] : null;
 
                   return (
-                    <TableRow key={m.id} className="border-border/60 hover:bg-muted/30">
+                    <TableRow key={m.id} className="border-border-subtle hover:bg-muted/30">
                       {/* Timestamp */}
                       <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-mono">
                         {formatTimestamp(m.created_at)}
@@ -432,7 +432,7 @@ export function InventoryHistorySheet({
                       <TableCell className="whitespace-nowrap">
                         <Badge
                           variant="outline"
-                          className={`text-[11px] font-semibold border ${meta.badgeClass} rounded-md px-2 py-0.5`}
+                          className={`text-xs font-semibold border ${meta.badgeClass} rounded-md px-2 py-0.5`}
                         >
                           {isAr ? meta.ar : meta.en}
                         </Badge>
@@ -486,7 +486,7 @@ export function InventoryHistorySheet({
                             <ExternalLink className="h-3 w-3" />
                           </Link>
                         ) : m.reference_id ? (
-                          <span className="font-mono text-muted-foreground text-[11px]">
+                          <span className="font-mono text-muted-foreground text-xs">
                             {m.reference_type ? `${m.reference_type}: ` : ""}
                             {m.reference_id.slice(0, 8)}
                           </span>
@@ -503,7 +503,7 @@ export function InventoryHistorySheet({
                             <span>{actor.full_name || actor.email}</span>
                           </span>
                         ) : m.created_by ? (
-                          <span className="font-mono text-muted-foreground text-[11px]">
+                          <span className="font-mono text-muted-foreground text-xs">
                             {m.created_by.slice(0, 8)}
                           </span>
                         ) : (
