@@ -58,7 +58,12 @@ export function ProductCard({
   const media = Array.isArray(product.media)
     ? (product.media as Array<{ type: string; url: string }>)
     : [];
-  const cover = media.find((m) => m.type === "image")?.url || product.image_url;
+  const cover =
+    media.find((m) => m.type === "image")?.url ||
+    product.image_url ||
+    pricedVariants.find((v) => v.image_url)?.image_url ||
+    product.product_variants.find((v) => v.image_url)?.image_url ||
+    null;
 
   const wished = isWishlisted(product.id);
   const isAr = lang === "ar";

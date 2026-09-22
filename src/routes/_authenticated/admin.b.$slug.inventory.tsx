@@ -2706,6 +2706,9 @@ function ProductDialog({
     const legacyDesc = form.description_en.trim() || form.description_ar.trim() || null;
     let createdProductId: string | undefined;
 
+    const primaryMediaImage = form.media.find((m) => m.type === "image" || !m.type)?.url;
+    const effectiveImageUrl = primaryMediaImage || (form.image_url.trim() ? form.image_url.trim() : null);
+
     if (product) {
       if (form.is_active) {
         const { count, error: variantCountError } = await supabase
@@ -2732,7 +2735,7 @@ function ProductDialog({
             stock: initialQty,
             sku: null,
             barcode: null,
-            image_url: form.image_url || null,
+            image_url: effectiveImageUrl || null,
           });
         }
       }
@@ -2746,7 +2749,7 @@ function ProductDialog({
         category: form.category && form.category.trim() !== "" ? form.category.trim() : null,
         base_price: form.base_price ? Number(form.base_price) : 0,
         cost_price: form.cost_price ? Number(form.cost_price) : 0,
-        image_url: form.image_url,
+        image_url: effectiveImageUrl,
         is_active: form.is_active,
         featured_trending: form.featured_trending,
         show_sale_badge: form.show_sale_badge,
@@ -2817,7 +2820,7 @@ function ProductDialog({
         // In a future migration, alter column to nullable to distinguish between 'unknown cost' (null) and 'zero cost' (0),
         // preventing false 100% gross profit margins on financial reports/expenses screens.
         cost_price: form.cost_price ? Number(form.cost_price) : 0,
-        image_url: form.image_url,
+        image_url: effectiveImageUrl,
         is_active: form.is_active,
         featured_trending: form.featured_trending,
         show_sale_badge: form.show_sale_badge,
@@ -2865,7 +2868,7 @@ function ProductDialog({
           stock: initialQty,
           sku: null,
           barcode: null,
-          image_url: form.image_url || (form.media?.[0]?.url ?? null),
+          image_url: effectiveImageUrl || null,
         });
         prefetchOptionTranslations([form.fabric_type], isAr);
       }

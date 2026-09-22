@@ -53,19 +53,23 @@ export function ProductCardV2({
   const [isHovered, setIsHovered] = useState(false);
   const [hasHoveredOnce, setHasHoveredOnce] = useState(false);
 
+  // Variants & Pricing
+  const variants: any[] = Array.isArray(product.product_variants) ? product.product_variants : [];
+
   // Extract media items
   const mediaList: Array<{ type: string; url: string }> = Array.isArray(product.media)
     ? product.media.filter((m: any) => m && m.url)
     : [];
+  const variantWithImage = variants.find((v) => v.image_url)?.image_url || null;
   const primaryImage =
-    product.image_url || mediaList.find((m) => m.type === "image" || !m.type)?.url || null;
+    product.image_url ||
+    mediaList.find((m) => m.type === "image" || !m.type)?.url ||
+    variantWithImage ||
+    null;
   const secondaryImage =
     mediaList.length > 1
       ? mediaList.find((m, i) => i > 0 && (m.type === "image" || !m.type))?.url || null
-      : null;
-
-  // Variants & Pricing
-  const variants: any[] = Array.isArray(product.product_variants) ? product.product_variants : [];
+      : variants.find((v) => v.image_url && v.image_url !== primaryImage)?.image_url || null;
   const prices = variants
     .map((v) => Number(v.selling_price ?? v.price ?? product.base_price ?? 0))
     .filter((p) => p > 0);
