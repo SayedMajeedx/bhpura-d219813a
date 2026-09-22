@@ -160,7 +160,7 @@ export function AddonStoreHero({
         <div className="relative shrink-0 flex items-center justify-center lg:w-80">
           <div
             onClick={() => onSelectAddon(currentId)}
-            className="group cursor-pointer w-full rounded-2xl border border-border/70 bg-card/90 p-5 shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
+            className="group cursor-pointer w-full rounded-2xl border border-border bg-card/90 p-5 shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
           >
             <div className="flex items-center justify-between pb-3 border-b border-border">
               <div className="flex items-center gap-2">
@@ -176,10 +176,7 @@ export function AddonStoreHero({
                   </div>
                 </div>
               </div>
-              <Badge
-                variant="outline"
-                className="text-[10px] uppercase tracking-wider font-semibold"
-              >
+              <Badge variant="outline" className="text-xs uppercase tracking-wider font-semibold">
                 v{currentManifest.version}
               </Badge>
             </div>
@@ -205,7 +202,7 @@ export function AddonStoreHero({
 
       {/* Carousel Dots & Controls (if more than 1 featured) */}
       {featuredIds.length > 1 && (
-        <div className="mt-6 flex items-center justify-between pt-4 border-t border-border/50">
+        <div className="mt-6 flex items-center justify-between pt-4 border-t border-border-subtle">
           <div className="flex items-center gap-1.5">
             {featuredIds.map((id, idx) => (
               <button

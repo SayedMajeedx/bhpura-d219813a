@@ -601,7 +601,7 @@ function TeamManagement() {
                         ? "إلزام بتغيير كلمة المرور فور أول تسجيل دخول (موصى به)"
                         : "Require password change on first sign-in (Recommended)"}
                     </label>
-                    <p className="text-[11px] text-muted-foreground leading-tight">
+                    <p className="text-xs text-muted-foreground leading-tight">
                       {isAr
                         ? "سيتم تحويل الموظف تلقائياً لصفحة إعداد كلمة المرور الخاصة به فور تسجيل الدخول ولا يمكنه تصفح لوحة التحكم قبل إكمالها."
                         : "The user will be redirected to the password setup screen upon first login and blocked from dashboard access until updated."}
@@ -610,7 +610,7 @@ function TeamManagement() {
                 </div>
               ) : null}
 
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 {isAr
                   ? "اتركها فارغة إذا كان البريد مرتبطاً بحساب عميل حالي؛ لن تتغير كلمة مروره."
                   : "Leave blank when the email belongs to an existing customer; their current password will not change."}
@@ -771,7 +771,7 @@ function TeamManagement() {
                   </div>
                   <div className="shrink-0 flex items-center gap-1.5 flex-wrap justify-end">
                     {member.must_change_password && (
-                      <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 font-medium border border-amber-500/25">
+                      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 font-medium border border-amber-500/25">
                         <KeyRound className="h-3 w-3" />
                         {isAr ? "في انتظار أول دخول" : "Pending First Login"}
                       </span>
@@ -862,14 +862,14 @@ function TeamManagement() {
                         return (
                           <span
                             key={pId}
-                            className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground font-medium"
+                            className="inline-flex items-center text-xs px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground font-medium"
                           >
                             {isAr ? permObj?.labelAr || pId : permObj?.labelEn || pId}
                           </span>
                         );
                       })
                     ) : (
-                      <span className="text-[11px] text-muted-foreground italic">
+                      <span className="text-xs text-muted-foreground italic">
                         {isAr ? "بدون صلاحيات مخصصة" : "No specific permissions"}
                       </span>
                     )}
@@ -1057,14 +1057,14 @@ function TeamManagement() {
                                   return (
                                     <span
                                       key={pId}
-                                      className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground font-medium"
+                                      className="inline-flex items-center text-xs px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground font-medium"
                                     >
                                       {isAr ? permObj?.labelAr || pId : permObj?.labelEn || pId}
                                     </span>
                                   );
                                 })
                               ) : (
-                                <span className="text-[11px] text-muted-foreground italic">
+                                <span className="text-xs text-muted-foreground italic">
                                   {isAr ? "بدون صلاحيات مخصصة" : "No specific permissions"}
                                 </span>
                               )}
@@ -1095,7 +1095,7 @@ function TeamManagement() {
                             )}
                           </span>
                           {member.must_change_password && (
-                            <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 font-medium border border-amber-500/20 whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 font-medium border border-amber-500/20 whitespace-nowrap">
                               <KeyRound className="h-2.5 w-2.5" />
                               {isAr ? "في انتظار أول دخول" : "Pending First Login"}
                             </span>
@@ -1414,7 +1414,7 @@ function TeamManagement() {
                           ? "إلزام بتغيير كلمة المرور عند تسجيل الدخول القادم"
                           : "Require password change on next sign-in"}
                       </label>
-                      <p className="text-[11px] text-muted-foreground leading-tight">
+                      <p className="text-xs text-muted-foreground leading-tight">
                         {isAr
                           ? "سيتم تحويل الموظف تلقائياً لصفحة إعداد كلمة المرور الخاصة به فور تسجيل الدخول."
                           : "First sign-in password setup will be required upon next login."}
@@ -1542,7 +1542,7 @@ function TeamManagement() {
               <div className="space-y-2.5 rounded-xl border border-border bg-card p-3.5 text-xs">
                 {/* Member Name */}
                 {credentialsModal.name && (
-                  <div className="flex items-center justify-between py-1 border-b border-border/50">
+                  <div className="flex items-center justify-between py-1 border-b border-border-subtle">
                     <span className="text-muted-foreground">{isAr ? "الاسم:" : "Name:"}</span>
                     <span className="font-semibold text-foreground">{credentialsModal.name}</span>
                   </div>
@@ -1550,7 +1550,7 @@ function TeamManagement() {
 
                 {/* Phone */}
                 {credentialsModal.phone && (
-                  <div className="flex items-center justify-between py-1 border-b border-border/50">
+                  <div className="flex items-center justify-between py-1 border-b border-border-subtle">
                     <span className="text-muted-foreground">
                       {isAr ? "الهاتف / الواتساب:" : "Phone / WhatsApp:"}
                     </span>
@@ -1564,7 +1564,7 @@ function TeamManagement() {
                 )}
 
                 {/* Email */}
-                <div className="flex items-center justify-between py-1 border-b border-border/50">
+                <div className="flex items-center justify-between py-1 border-b border-border-subtle">
                   <span className="text-muted-foreground">
                     {isAr ? "البريد الإلكتروني:" : "Email:"}
                   </span>
@@ -1589,7 +1589,7 @@ function TeamManagement() {
 
                 {/* Temp Password */}
                 {credentialsModal.tempPassword && (
-                  <div className="flex items-center justify-between py-1 border-b border-border/50">
+                  <div className="flex items-center justify-between py-1 border-b border-border-subtle">
                     <span className="text-muted-foreground">
                       {isAr ? "كلمة المرور المؤقتة:" : "Temporary Password:"}
                     </span>
@@ -1621,7 +1621,7 @@ function TeamManagement() {
                     {isAr ? "رابط تسجيل الدخول:" : "Login URL:"}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-muted-foreground text-[11px]" dir="ltr">
+                    <span className="font-mono text-muted-foreground text-xs" dir="ltr">
                       {window.location.origin}/auth
                     </span>
                     <Button

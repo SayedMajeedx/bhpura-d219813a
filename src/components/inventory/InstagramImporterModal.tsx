@@ -899,14 +899,14 @@ export function InstagramImporterModal({
                           {/* Post Type Badges */}
                           <div className="absolute top-2 start-2 flex flex-col gap-1 z-10">
                             {draft.postType === "reel" && (
-                              <Badge className="bg-zinc-900/80 text-white text-xs gap-1 backdrop-blur-xs font-semibold border-0">
+                              <Badge className="bg-zinc-900/80 text-white text-xs gap-1 font-semibold border-0">
                                 <Video className="h-3 w-3" />
                                 {isAr ? "مستخرجة من فيديو" : "Reel Cover"}
                               </Badge>
                             )}
 
                             {draft.postType === "carousel" && (
-                              <Badge className="bg-zinc-900/80 text-white text-xs gap-1 backdrop-blur-xs font-semibold border-0">
+                              <Badge className="bg-zinc-900/80 text-white text-xs gap-1 font-semibold border-0">
                                 <Layers className="h-3 w-3" />
                                 {isAr
                                   ? `${draft.images.length} صور (معرض)`
@@ -958,7 +958,7 @@ export function InstagramImporterModal({
                         {draft.images.length > 1 && (
                           <div className="flex flex-col border-b border-border bg-muted/20">
                             {/* Gallery Header Bar */}
-                            <div className="flex items-center justify-between px-2.5 py-1.5 bg-muted/40 border-b border-border/60 text-xs">
+                            <div className="flex items-center justify-between px-2.5 py-1.5 bg-muted/40 border-b border-border-subtle text-xs">
                               <div className="flex items-center gap-1.5 font-medium text-foreground">
                                 <Layers className="h-3.5 w-3.5 text-primary" />
                                 <span>
@@ -1098,7 +1098,7 @@ export function InstagramImporterModal({
 
                                     {/* Bottom Cover Label Badge */}
                                     {isCover && (
-                                      <div className="absolute inset-x-0 bottom-0 bg-primary text-primary-foreground text-[9px] font-bold py-0.5 text-center leading-none pointer-events-none">
+                                      <div className="absolute inset-x-0 bottom-0 bg-primary text-primary-foreground text-xs font-bold py-0.5 text-center leading-none pointer-events-none">
                                         {isAr ? "الغلاف" : "Cover"}
                                       </div>
                                     )}

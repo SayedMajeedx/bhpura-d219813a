@@ -244,7 +244,7 @@ function OrderTimelineTracker({
                 {isCompleted ? "✓" : idx + 1}
               </div>
               <span
-                className={`text-xs sm:text-xs mt-2 font-semibold transition-colors ${
+                className={`text-xs mt-2 font-semibold transition-colors ${
                   isActive ? "text-foreground" : "text-muted-foreground"
                 }`}
               >

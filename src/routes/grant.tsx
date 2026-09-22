@@ -254,11 +254,11 @@ function GrantSurveyPage() {
               </div>
 
               <div className="rounded-xl border border-border bg-muted/40 p-4 text-xs sm:text-sm text-muted-foreground space-y-2 text-right">
-                <div className="flex justify-between items-center border-b border-border/60 pb-2">
+                <div className="flex justify-between items-center border-b border-border-subtle pb-2">
                   <span>اسم المشروع:</span>
                   <span className="font-bold text-foreground">{businessName}</span>
                 </div>
-                <div className="flex justify-between items-center border-b border-border/60 pb-2">
+                <div className="flex justify-between items-center border-b border-border-subtle pb-2">
                   <span>حساب الإنستغرام:</span>
                   <span className="font-bold text-foreground" dir="ltr">
                     @{instagramHandle.replace(/^@/, "")}
@@ -290,7 +290,7 @@ function GrantSurveyPage() {
         ) : (
           <Card className="rounded-2xl border-border bg-card shadow-xl overflow-hidden">
             {/* Step Progress Bar */}
-            <div className="border-b border-border/60 bg-muted/20 px-6 py-4">
+            <div className="border-b border-border-subtle bg-muted/20 px-6 py-4">
               <div className="flex items-center justify-between text-xs font-bold text-muted-foreground">
                 <span className={cn(step >= 1 && "text-primary")}>1. بيانات المشروع</span>
                 <span className={cn(step >= 2 && "text-primary")}>2. الجاهزية والنشاط</span>
@@ -333,7 +333,7 @@ function GrantSurveyPage() {
                         onChange={(e) => setBusinessName(e.target.value)}
                         required
                         dir="rtl"
-                        className="min-h-11 rounded-xl text-sm text-right placeholder:text-muted-foreground/45 placeholder:opacity-50 placeholder:font-normal focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="min-h-11 rounded-xl text-sm text-right placeholder:text-muted-foreground placeholder:opacity-50 placeholder:font-normal focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       />
                     </div>
 
@@ -346,7 +346,7 @@ function GrantSurveyPage() {
                         حساب الإنستغرام للمتجر <span className="text-destructive">*</span>
                       </Label>
                       <div className="relative flex rounded-xl border border-input bg-card shadow-xs focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-all overflow-hidden min-h-11">
-                        <span className="inline-flex items-center justify-center px-3.5 bg-muted/40 border-e border-border text-muted-foreground/70 font-bold text-sm select-none shrink-0">
+                        <span className="inline-flex items-center justify-center px-3.5 bg-muted/40 border-e border-border text-muted-foreground font-bold text-sm select-none shrink-0">
                           @
                         </span>
                         <input
@@ -359,10 +359,10 @@ function GrantSurveyPage() {
                             setInstagramHandle(e.target.value.replace(/^@/, "").trim())
                           }
                           required
-                          className="flex-1 bg-transparent px-3.5 text-sm text-foreground placeholder:text-muted-foreground/45 placeholder:opacity-50 placeholder:font-normal focus:outline-none text-right"
+                          className="flex-1 bg-transparent px-3.5 text-sm text-foreground placeholder:text-muted-foreground placeholder:opacity-50 placeholder:font-normal focus:outline-none text-right"
                         />
                       </div>
-                      <p className="text-[11px] text-muted-foreground/75">
+                      <p className="text-xs text-muted-foreground">
                         سنقوم بمراجعة حسابك لمعاينة صور وتفاعل المتجر.
                       </p>
                     </div>
@@ -399,10 +399,10 @@ function GrantSurveyPage() {
                           onChange={(e) => setWhatsappNumber(e.target.value.replace(/[^\d+]/g, ""))}
                           required
                           dir="rtl"
-                          className="flex-1 bg-transparent px-3.5 text-sm text-foreground placeholder:text-muted-foreground/45 placeholder:opacity-50 placeholder:font-normal focus:outline-none text-right"
+                          className="flex-1 bg-transparent px-3.5 text-sm text-foreground placeholder:text-muted-foreground placeholder:opacity-50 placeholder:font-normal focus:outline-none text-right"
                         />
                       </div>
-                      <p className="text-[11px] text-muted-foreground/75">
+                      <p className="text-xs text-muted-foreground">
                         سنرسل نتائج الاختيار والعروض المخصصة عبر الواتساب.
                       </p>
                     </div>
@@ -493,13 +493,13 @@ function GrantSurveyPage() {
                                 {opt.highlight && (
                                   <Badge
                                     variant="outline"
-                                    className="text-[10px] bg-primary/15 border-primary/30 text-primary font-bold"
+                                    className="text-xs bg-primary/15 border-primary/30 text-primary font-bold"
                                   >
                                     أولوية ترشيح ⚡
                                   </Badge>
                                 )}
                               </div>
-                              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                              <p className="text-xs text-muted-foreground leading-relaxed">
                                 {opt.desc}
                               </p>
                             </div>
@@ -571,7 +571,7 @@ function GrantSurveyPage() {
                                 {ch.title}
                               </span>
                             </div>
-                            <p className="text-[11px] text-muted-foreground ps-6">{ch.desc}</p>
+                            <p className="text-xs text-muted-foreground ps-6">{ch.desc}</p>
                           </div>
                         );
                       })}
@@ -585,9 +585,7 @@ function GrantSurveyPage() {
                       className="text-sm font-semibold flex items-center justify-between text-foreground"
                     >
                       <span>ما هو أكبر تحدٍ يواجهك في إدارة مبيعاتك وطلباتك؟</span>
-                      <span className="text-[11px] font-normal text-muted-foreground/75">
-                        (اختياري)
-                      </span>
+                      <span className="text-xs font-normal text-muted-foreground">(اختياري)</span>
                     </Label>
                     <Textarea
                       id="biggestChallenge"
@@ -596,7 +594,7 @@ function GrantSurveyPage() {
                       value={biggestChallenge}
                       onChange={(e) => setBiggestChallenge(e.target.value)}
                       dir="rtl"
-                      className="rounded-xl text-sm leading-relaxed text-right placeholder:text-muted-foreground/45 placeholder:opacity-50 placeholder:font-normal focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      className="rounded-xl text-sm leading-relaxed text-right placeholder:text-muted-foreground placeholder:opacity-50 placeholder:font-normal focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     />
                   </div>
 
@@ -636,9 +634,9 @@ function GrantSurveyPage() {
         )}
 
         {/* Footer info */}
-        <footer className="text-center text-xs text-muted-foreground space-y-1 pt-4 border-t border-border/40">
+        <footer className="text-center text-xs text-muted-foreground space-y-1 pt-4 border-t border-border-subtle">
           <p>© 2026 Boutq OS — منصة إدارة وتجارة البوتيكات الخليجية والمشاريع المحلية.</p>
-          <p className="text-[11px]">
+          <p className="text-xs">
             يتم تقييم واختيار المشاريع بناءً على الجدية وجودة المنتجات لتوفير تجربة تشغيل متكاملة.
           </p>
         </footer>

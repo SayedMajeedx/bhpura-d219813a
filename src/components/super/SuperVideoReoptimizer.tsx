@@ -414,7 +414,7 @@ export function SuperVideoReoptimizer() {
                   ? `إجمالي المقاطع المكتشفة: ${videoEntries.length}`
                   : `Total detected video clips: ${videoEntries.length}`}
               </span>
-              <Badge variant="outline" className="text-[10px] font-mono">
+              <Badge variant="outline" className="text-xs font-mono">
                 WebCodecs FastStart H.264
               </Badge>
             </div>
@@ -431,19 +431,19 @@ export function SuperVideoReoptimizer() {
                   >
                     <div className="space-y-1 min-w-0 max-w-xl">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant="secondary" className="text-[10px] font-semibold">
+                        <Badge variant="secondary" className="text-xs font-semibold">
                           {entry.brandName} ({entry.brandSlug})
                         </Badge>
                         <span className="font-semibold text-foreground truncate">
                           {entry.title}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 text-muted-foreground text-[11px]">
+                      <div className="flex items-center gap-2 text-muted-foreground text-xs">
                         <a
                           href={entry.videoUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="hover:underline flex items-center gap-1 font-mono text-[10px] truncate max-w-xs"
+                          className="hover:underline flex items-center gap-1 font-mono text-xs truncate max-w-xs"
                           title={entry.videoUrl}
                         >
                           <ExternalLink className="h-3 w-3 shrink-0" />
@@ -452,7 +452,7 @@ export function SuperVideoReoptimizer() {
                       </div>
                       {isCurrent && (
                         <div className="space-y-1 pt-1 max-w-xs">
-                          <div className="flex justify-between text-[10px] text-muted-foreground">
+                          <div className="flex justify-between text-xs text-muted-foreground">
                             <span>
                               {isAr ? "جاري المعالجة والرفع..." : "Processing & uploading..."}
                             </span>
@@ -467,18 +467,18 @@ export function SuperVideoReoptimizer() {
                       {status && (
                         <div className="flex items-center gap-1">
                           {status.status === "success" && (
-                            <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[10px] gap-1">
+                            <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-xs gap-1">
                               <CheckCircle2 className="h-3 w-3" />
                               {status.message}
                             </Badge>
                           )}
                           {status.status === "skipped" && (
-                            <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                            <Badge variant="outline" className="text-xs text-muted-foreground">
                               {status.message}
                             </Badge>
                           )}
                           {status.status === "error" && (
-                            <Badge variant="destructive" className="text-[10px] gap-1">
+                            <Badge variant="destructive" className="text-xs gap-1">
                               <AlertCircle className="h-3 w-3" />
                               {status.message}
                             </Badge>

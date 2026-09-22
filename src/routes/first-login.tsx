@@ -250,7 +250,7 @@ function FirstLoginPage() {
 
       {/* Main card */}
       <main className="relative z-10 w-full max-w-lg mx-auto px-4 py-4 sm:py-8 flex-1 flex flex-col justify-center">
-        <Card className="p-6 sm:p-8 border border-border shadow-2xl rounded-2xl bg-card/95 backdrop-blur-md">
+        <Card className="p-6 sm:p-8 border border-border shadow-2xl rounded-2xl bg-card">
           {isSuccess ? (
             <div className="py-8 text-center space-y-5 animate-in fade-in zoom-in-95 duration-300">
               <div className="h-16 w-16 mx-auto rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 flex items-center justify-center shadow-lg">
@@ -297,11 +297,11 @@ function FirstLoginPage() {
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="px-2 py-0.5 rounded-md bg-primary/10 text-primary font-medium text-[11px]">
+                  <span className="px-2 py-0.5 rounded-md bg-primary/10 text-primary font-medium text-xs">
                     {getRoleLabel(profile?.role)}
                   </span>
                   {brandName && (
-                    <span className="px-2 py-0.5 rounded-md bg-secondary text-secondary-foreground font-medium text-[11px] flex items-center gap-1">
+                    <span className="px-2 py-0.5 rounded-md bg-secondary text-secondary-foreground font-medium text-xs flex items-center gap-1">
                       <Store className="h-3 w-3" />
                       {brandName}
                     </span>

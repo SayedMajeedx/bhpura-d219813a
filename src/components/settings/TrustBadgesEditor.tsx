@@ -171,7 +171,7 @@ export function TrustBadgesEditor({
 
             {/* Quick Niche Presets */}
             <div className="flex flex-wrap items-center gap-1.5 pt-1">
-              <span className="text-[11px] text-muted-foreground me-1 font-medium">
+              <span className="text-xs text-muted-foreground me-1 font-medium">
                 {isAr ? "قوالب الأنشطة الجاهزة:" : "Ready presets:"}
               </span>
               {STORE_VERTICALS.map((verticalId) => ({
@@ -188,7 +188,7 @@ export function TrustBadgesEditor({
                     variant="ghost"
                     size="sm"
                     onClick={() => handleGenerateDynamicBadges(preset.id)}
-                    className="h-6 text-[11px] px-2 py-0.5 rounded-lg border border-border-subtle hover:border-primary/40 hover:bg-background"
+                    className="h-6 text-xs px-2 py-0.5 rounded-lg border border-border-subtle hover:border-primary/40 hover:bg-background"
                   >
                     <Icon className="h-2.5 w-2.5 me-1 text-muted-foreground" />
                     <span>{isAr ? preset.labelAr : preset.labelEn}</span>
@@ -421,7 +421,7 @@ export function TrustBadgesEditor({
                 {isAr ? "العرض على الكمبيوتر (Desktop)" : "Desktop View"}
               </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 py-2.5 px-4 text-xs font-medium border-y border-white/10 rounded-xl bg-white/5 backdrop-blur-xs max-w-3xl mx-auto">
+              <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 py-2.5 px-4 text-xs font-medium border-y border-white/10 rounded-xl bg-white/5 max-w-3xl mx-auto">
                 {items
                   .filter((b) => b.enabled)
                   .map((badge, idx) => (
@@ -446,7 +446,7 @@ export function TrustBadgesEditor({
                     .map((badge, idx) => (
                       <div
                         key={badge.id || idx}
-                        className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-xs p-2.5 flex flex-col items-center justify-center text-center gap-1.5 min-h-[64px]"
+                        className="rounded-xl border border-white/10 bg-white/5 p-2.5 flex flex-col items-center justify-center text-center gap-1.5 min-h-[64px]"
                       >
                         {renderTrustBadgeIcon(badge.icon, "h-4 w-4", badge.color)}
                         <span className="text-xs font-medium opacity-95 line-clamp-2">

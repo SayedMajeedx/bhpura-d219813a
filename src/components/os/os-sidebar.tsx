@@ -194,7 +194,7 @@ export function OsSidebar({
                         {GroupIcon && <GroupIcon className="h-3 w-3 shrink-0" />}
                         <span>{isAr ? group.labelAr : group.labelEn}</span>
                       </span>
-                      <span className="text-[10px] font-semibold opacity-70 px-1.5 py-0.5 rounded bg-muted/60">
+                      <span className="text-xs font-semibold opacity-70 px-1.5 py-0.5 rounded bg-muted/60">
                         {group.items.length}
                       </span>
                     </div>
@@ -277,7 +277,7 @@ export function OsSidebar({
                   <Boxes className="h-4 w-4 text-primary" />
                   <span>{isAr ? "دليل مساحات العمل والأدوات" : "Workspaces Directory"}</span>
                 </div>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
                   {navItems.length}
                 </span>
               </button>

@@ -298,7 +298,7 @@ export function VideoOptimizerDialog({
                       )}
                     >
                       {isRecommended && (
-                        <span className="absolute top-2 end-2 inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                        <span className="absolute top-2 end-2 inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary">
                           <Sparkles className="h-2.5 w-2.5" />
                           {isAr ? "موصى به" : "Recommended"}
                         </span>
@@ -309,7 +309,7 @@ export function VideoOptimizerDialog({
                           {isSelected && <Check className="h-3.5 w-3.5 text-primary" />}
                           <span>{isAr ? preset.labelAr : preset.labelEn}</span>
                         </div>
-                        <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2">
+                        <p className="text-xs text-muted-foreground leading-snug line-clamp-2">
                           {isAr ? preset.descriptionAr : preset.descriptionEn}
                         </p>
                       </div>
@@ -357,14 +357,14 @@ export function VideoOptimizerDialog({
 
                 {/* Size stats comparison */}
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="rounded bg-background/80 p-2 border border-border/50">
-                    <span className="text-muted-foreground block text-[10px]">
+                  <div className="rounded bg-background/80 p-2 border border-border-subtle">
+                    <span className="text-muted-foreground block text-xs">
                       {isAr ? "الحجم الأصلي" : "Original size"}
                     </span>
                     <span className="font-semibold text-foreground">{originalSizeText}</span>
                   </div>
-                  <div className="rounded bg-background/80 p-2 border border-border/50">
-                    <span className="text-muted-foreground block text-[10px]">
+                  <div className="rounded bg-background/80 p-2 border border-border-subtle">
+                    <span className="text-muted-foreground block text-xs">
                       {isAr ? "الحجم بعد التحسين" : "Optimized size"}
                     </span>
                     <span className="font-semibold text-success">{optimizedSizeText}</span>
@@ -406,7 +406,7 @@ export function VideoOptimizerDialog({
                     </div>
                   </button>
 
-                  <div className="absolute bottom-2 end-2 rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-white font-mono">
+                  <div className="absolute bottom-2 end-2 rounded bg-black/70 px-1.5 py-0.5 text-xs text-white font-mono">
                     {isAr ? "معاينة 5 ثوانٍ" : "5s Preview"}
                   </div>
                 </div>

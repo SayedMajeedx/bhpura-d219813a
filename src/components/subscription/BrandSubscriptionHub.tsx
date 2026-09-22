@@ -457,7 +457,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
         </CardHeader>
 
         <CardContent className="pt-2 pb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-2xl bg-background/60 border border-border-subtle backdrop-blur-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-2xl bg-card border border-border-subtle">
             <div>
               <span className="text-xs font-semibold text-muted-foreground block">
                 {isTrial

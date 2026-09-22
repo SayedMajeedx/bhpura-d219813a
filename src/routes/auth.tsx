@@ -214,13 +214,13 @@ function AuthPage() {
 
       {/* Top Header Controls Bar */}
       <div className="w-full max-w-md flex justify-end mb-6 relative z-10">
-        <div className="flex items-center gap-2 h-9 px-3.5 bg-zinc-900/80 backdrop-blur-xl border border-border rounded-2xl shadow-xs">
+        <div className="flex items-center gap-2 h-9 px-3.5 bg-zinc-900 border border-border rounded-2xl shadow-xs">
           <Languages className="h-4 w-4 text-primary" />
           <Select value={lang} onValueChange={(v) => setLang(v as "en" | "ar")}>
             <SelectTrigger className="h-7 border-0 bg-transparent text-xs font-bold text-zinc-200 focus:ring-0">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-zinc-900 backdrop-blur-xl border-border text-zinc-200">
+            <SelectContent className="bg-zinc-900 border-border text-zinc-200">
               <SelectItem value="en">English</SelectItem>
               <SelectItem value="ar">العربية</SelectItem>
             </SelectContent>
@@ -232,7 +232,7 @@ function AuthPage() {
       <div className="w-full max-w-md relative z-10 space-y-6">
         {/* Branding Header */}
         <div className="text-center space-y-2.5">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-primary/20 backdrop-blur-md border border-primary/40 text-primary-foreground font-mono text-xs font-bold uppercase tracking-widest shadow-xs">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-primary/20 border border-primary/40 text-primary-foreground font-mono text-xs font-bold uppercase tracking-widest shadow-xs">
             <Sparkles
               className="h-3.5 w-3.5 text-primary-foreground animate-spin"
               style={{ animationDuration: "6s" }}
@@ -248,7 +248,7 @@ function AuthPage() {
         </div>
 
         {/* Semi-Glossy Tech-Boutique Glass Card */}
-        <div className="backdrop-blur-xl bg-zinc-900/85 border border-border shadow-2xl rounded-3xl p-6 sm:p-8 relative overflow-hidden">
+        <div className="bg-zinc-900 border border-border shadow-2xl rounded-3xl p-6 sm:p-8 relative overflow-hidden">
           {/* Top Sheen Highlight */}
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
 
@@ -343,7 +343,7 @@ function AuthPage() {
               <Button
                 type="button"
                 variant="outline"
-                className="h-12 w-full gap-2.5 border-zinc-700 bg-zinc-950/80 hover:bg-zinc-800 text-white font-semibold rounded-xl backdrop-blur-md shadow-xs transition-all active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
+                className="h-12 w-full gap-2.5 border-zinc-700 bg-zinc-950/80 hover:bg-zinc-800 text-white font-semibold rounded-xl shadow-xs transition-all active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
                 disabled={passkeyLoading || loading}
                 onClick={() => void signInWithPasskey()}
               >

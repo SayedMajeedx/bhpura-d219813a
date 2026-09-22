@@ -1359,7 +1359,7 @@ function ImportHistorySection({
     return (
       <Card className="border-border bg-card">
         <CardContent className="p-12 text-center space-y-3">
-          <Clock className="h-10 w-10 mx-auto text-muted-foreground/60" />
+          <Clock className="h-10 w-10 mx-auto text-muted-foreground" />
           <h3 className="text-sm font-bold text-foreground">
             {isAr ? "لا توجد عمليات استيراد سابقة" : "No previous import runs"}
           </h3>

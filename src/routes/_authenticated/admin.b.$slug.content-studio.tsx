@@ -2390,7 +2390,7 @@ ${desc}${detailsBlock}
                           "font-semibold truncate pointer-events-none",
                           editionIsAr
                             ? "text-[12px] sm:text-sm"
-                            : "text-xs sm:text-xs uppercase tracking-[.22em]",
+                            : "text-xs uppercase tracking-[.22em]",
                         )}
                         style={
                           editionIsAr ? { fontFamily: "Tahoma, Arial, sans-serif" } : undefined
@@ -2405,7 +2405,7 @@ ${desc}${detailsBlock}
                 {headerShowBadge && headerBadgeText?.trim() && (
                   <span
                     className={cn(
-                      "rounded-full px-2.5 py-0.5 sm:px-3 sm:py-1 text-xs sm:text-xs font-bold uppercase tracking-[.16em] whitespace-nowrap pointer-events-none shrink-0",
+                      "rounded-full px-2.5 py-0.5 sm:px-3 sm:py-1 text-xs font-bold uppercase tracking-[.16em] whitespace-nowrap pointer-events-none shrink-0",
                       headerTextColor === "dark"
                         ? "border border-foreground/30 bg-black/5 text-foreground"
                         : "border border-white/50 bg-white/10 text-white",

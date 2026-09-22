@@ -402,7 +402,7 @@ export default function InvoicePreview({
               <div className="border-[6px] border-double border-emerald-600 text-emerald-600 font-extrabold text-2xl md:text-3xl tracking-widest uppercase py-2 px-6 rounded-xl font-sans flex flex-col items-center justify-center leading-none">
                 <span>{invoiceLang === "ar" ? "مدفوع" : "PAID"}</span>
                 {order.updated_at && (
-                  <span className="text-xs md:text-xs font-semibold tracking-normal mt-1 opacity-90 font-mono">
+                  <span className="text-xs font-semibold tracking-normal mt-1 opacity-90 font-mono">
                     {new Date(order.updated_at).toLocaleDateString(
                       invoiceLang === "ar" ? "ar-BH-u-nu-latn" : "en-BH",
                     )}
@@ -414,7 +414,7 @@ export default function InvoicePreview({
             <div className="absolute top-[10%] right-[10%] md:right-[15%] rotate-[-12deg] select-none pointer-events-none opacity-20 print:opacity-30 z-10">
               <div className="border-[6px] border-double border-rose-600 text-rose-600 font-extrabold text-2xl md:text-3xl tracking-widest uppercase py-2 px-6 rounded-xl font-sans flex flex-col items-center justify-center leading-none">
                 <span>{invoiceLang === "ar" ? "غير مدفوع" : "UNPAID"}</span>
-                <span className="text-xs md:text-xs font-semibold tracking-normal mt-1 uppercase font-mono text-center">
+                <span className="text-xs font-semibold tracking-normal mt-1 uppercase font-mono text-center">
                   {invoiceLang === "ar" ? "الرجاء التحويل البنكي" : "Bank Transfer Req."}
                 </span>
               </div>

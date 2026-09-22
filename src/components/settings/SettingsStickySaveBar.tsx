@@ -117,7 +117,7 @@ export function SettingsStickySaveBar({
               <>
                 <Save className="h-3.5 w-3.5 shrink-0" />
                 <span>{isAr ? "حفظ" : "Save"}</span>
-                <kbd className="hidden sm:inline-flex items-center text-[10px] font-mono opacity-60 bg-primary-foreground/20 rounded px-1 ms-1">
+                <kbd className="hidden sm:inline-flex items-center text-xs font-mono opacity-60 bg-primary-foreground/20 rounded px-1 ms-1">
                   ⌘S
                 </kbd>
               </>

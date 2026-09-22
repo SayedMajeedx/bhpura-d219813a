@@ -13,7 +13,7 @@ interface CountryFlagProps {
  */
 export function CountryFlag({
   code,
-  className = "w-5 h-3.5 object-cover rounded-xs border border-border/40 shadow-xs inline-block shrink-0",
+  className = "w-5 h-3.5 object-cover rounded-xs border border-border-subtle shadow-xs inline-block shrink-0",
   alt,
 }: CountryFlagProps) {
   const upper = (code || "").trim().toUpperCase();
@@ -44,7 +44,7 @@ export function CountryFlag({
   if (hasError) {
     return (
       <span
-        className={`inline-flex items-center justify-center font-mono font-bold text-[10px] bg-muted text-muted-foreground uppercase px-1 rounded border border-border ${className}`}
+        className={`inline-flex items-center justify-center font-mono font-bold text-xs bg-muted text-muted-foreground uppercase px-1 rounded border border-border ${className}`}
         title={alt || upper}
       >
         {upper}
