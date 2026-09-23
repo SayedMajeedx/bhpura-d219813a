@@ -282,7 +282,7 @@ test("Comprehensive 1920x1080 Desktop UX Audit across all routes", async ({ page
   // 1. Audit Dashboard
   console.log("--- AUDITING DASHBOARD ---");
   await page.goto("/admin/b/test-brand/dashboard");
-  await page.waitForLoadState("networkidle");
+  await page.waitForLoadState("domcontentloaded");
 
   const viewport = page.viewportSize();
   expect(viewport?.width).toBe(1920);
@@ -307,7 +307,7 @@ test("Comprehensive 1920x1080 Desktop UX Audit across all routes", async ({ page
   // 2. Audit Orders
   console.log("--- AUDITING ORDERS ---");
   await page.goto("/admin/b/test-brand/orders");
-  await page.waitForLoadState("networkidle");
+  await page.waitForLoadState("domcontentloaded");
 
   // Check table row hover effects and layout
   const orderRows = page.locator("table tbody tr");
@@ -331,7 +331,7 @@ test("Comprehensive 1920x1080 Desktop UX Audit across all routes", async ({ page
   console.log("--- AUDITING INVENTORY / PRODUCTS ---");
   const invResponse = await page.goto("/admin/b/test-brand/inventory");
   expect(invResponse?.status() ?? 200).toBeLessThan(400);
-  await page.waitForLoadState("networkidle");
+  await page.waitForLoadState("domcontentloaded");
   await expect(page.locator("main").first()).toBeVisible();
 
   // Check 'New Product' button & modal UX
@@ -350,12 +350,12 @@ test("Comprehensive 1920x1080 Desktop UX Audit across all routes", async ({ page
   // 4. Audit Analytics / Reports
   console.log("--- AUDITING REPORTS ---");
   await page.goto("/admin/b/test-brand/reports");
-  await page.waitForLoadState("networkidle");
+  await page.waitForLoadState("domcontentloaded");
 
   // 5. Audit Settings
   console.log("--- AUDITING SETTINGS ---");
   await page.goto("/admin/b/test-brand/settings");
-  await page.waitForLoadState("networkidle");
+  await page.waitForLoadState("domcontentloaded");
 
   const remainingAdminRoutes = [
     "/admin/b/test-brand/customers",
@@ -378,7 +378,7 @@ test("Comprehensive 1920x1080 Desktop UX Audit across all routes", async ({ page
   for (const path of remainingAdminRoutes) {
     const response = await page.goto(path);
     expect(response?.status() ?? 200, `${path} returned an invalid response`).toBeLessThan(400);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
     // Without a working session the guard redirects to /auth, which is correct
     // behaviour and has its own heading. What must never happen is the route
     // sitting on its pending component, which is what /admin used to do.

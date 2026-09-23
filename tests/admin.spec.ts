@@ -198,10 +198,10 @@ test("Scenario 1: Cold loads inventory workspace and verifies products catalog r
   page,
 }) => {
   await page.goto("/admin/b/test-brand/products");
-  await page.waitForLoadState("networkidle");
+  await page.waitForLoadState("domcontentloaded");
   if (page.url().includes("/auth")) {
     await page.goto("/admin/b/test-brand/products");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
   }
 
   await expect(page.locator("body")).toBeVisible();
@@ -220,7 +220,7 @@ test("Scenario 2: Edits variant stock and verifies URL remains on inventory page
   page,
 }) => {
   await page.goto("/admin/b/test-brand/inventory");
-  await page.waitForLoadState("networkidle");
+  await page.waitForLoadState("domcontentloaded");
 
   // With a session the workspace renders; without one the guard redirects to
   // /auth. Either is correct — the regression this guards against is the route
