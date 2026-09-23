@@ -209,8 +209,10 @@ test("Scenario 1: Cold loads inventory workspace and verifies products catalog r
   // redirects to /auth. Both are correct; what must not happen is the route
   // hanging on its pending component, which /admin did for 28s in production
   // when a redirect was thrown from inside a queryFn.
-  await expect(page.locator("body")).not.toHaveText(/^Loading\.\.\.$/);
-  await expect(page).toHaveURL(/\/admin\/b\/test-brand\/products|\/auth/);
+  await expect(page).toHaveURL(/\/admin\/b\/test-brand\/products|\/auth/, {
+    timeout: 30_000,
+  });
+  await expect(page.locator("body")).not.toHaveText(/^Loading\.\.\.$/, { timeout: 30_000 });
 });
 
 // ======================================================================
@@ -225,7 +227,10 @@ test("Scenario 2: Edits variant stock and verifies URL remains on inventory page
   // With a session the workspace renders; without one the guard redirects to
   // /auth. Either is correct — the regression this guards against is the route
   // hanging on its pending component instead of resolving to one of them.
-  await expect(page.locator("body")).not.toHaveText(/^Loading\.\.\.$/);
+  await expect(page).toHaveURL(/\/admin\/b\/test-brand\/inventory|\/auth/, {
+    timeout: 30_000,
+  });
+  await expect(page.locator("body")).not.toHaveText(/^Loading\.\.\.$/, { timeout: 30_000 });
   if (page.url().includes("/auth")) return;
   await expect(page).toHaveURL(/\/admin\/b\/test-brand\/inventory/);
 

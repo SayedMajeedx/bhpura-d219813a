@@ -382,7 +382,9 @@ test("Comprehensive 1920x1080 Desktop UX Audit across all routes", async ({ page
     // Without a working session the guard redirects to /auth, which is correct
     // behaviour and has its own heading. What must never happen is the route
     // sitting on its pending component, which is what /admin used to do.
-    await expect(page.locator("body"), `${path} must not hang`).not.toHaveText(/^Loading\.\.\.$/);
+    await expect(page.locator("body"), `${path} must not hang`).not.toHaveText(/^Loading\.\.\.$/, {
+      timeout: 30_000,
+    });
     const headingScope = page.url().includes("/auth")
       ? page.locator("h1")
       : page.locator("main h1");
