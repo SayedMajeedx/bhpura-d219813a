@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, Sparkles, Shirt, Truck, Ruler } from "lucide-react";
 import { useStorefront } from "@/lib/storefront-context";
+import { DEFAULT_VOCABULARY, getVerticalVocabularyOverrides } from "@/lib/store-vocabulary";
 
 interface ProductAccordionProps {
   description?: string | null;
@@ -28,6 +29,14 @@ export function ProductAccordion({
     "general"
   ).toLowerCase();
   const isApparelVertical = ["fashion", "clothing", "apparel"].includes(storeVertical);
+  // Section titles come from the per-vertical vocabulary so a coffee roastery
+  // sees "Ingredients & Details" / "Size & Weight Guide" rather than fabric and
+  // dress sizes. DEFAULT_VOCABULARY covers verticals with no override.
+  const vocab = {
+    ...DEFAULT_VOCABULARY,
+    ...getVerticalVocabularyOverrides(storeVertical),
+  };
+  const vocabText = (key: keyof typeof vocab) => (isAr ? vocab[key].ar : vocab[key].en);
 
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({
     description: true, // Default open for initial scannability
@@ -76,9 +85,7 @@ export function ProductAccordion({
       ? [
           {
             id: "fabric",
-            title: isApparelVertical
-              ? t("الخامة والعناية", "Fabric & Care")
-              : t("المواصفات والعناية", "Specifications & Care"),
+            title: `${vocabText("specifications_label")} · ${vocabText("care_instructions_label")}`,
             icon: isApparelVertical ? Shirt : Sparkles,
             content: (
               <p className="text-xs leading-relaxed opacity-90 whitespace-pre-line">
@@ -103,7 +110,7 @@ export function ProductAccordion({
       ? [
           {
             id: "sizeGuide",
-            title: t("دليل المقاسات", "Size Guide"),
+            title: vocabText("sizing_guide"),
             icon: Ruler,
             content: (
               <div className="space-y-2">

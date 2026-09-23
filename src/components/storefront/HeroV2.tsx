@@ -252,7 +252,7 @@ export function HeroV2({ slides, background }: HeroV2Props) {
                       {button && (
                         <a
                           href={slide.button_href || "#products"}
-                          className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-2.5 sm:px-6 sm:py-3 text-xs sm:text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]"
+                          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 py-2.5 sm:px-6 sm:py-3 text-xs sm:text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]"
                         >
                           {button}
                         </a>
@@ -260,7 +260,7 @@ export function HeroV2({ slides, background }: HeroV2Props) {
                       {(brand as any)?.modules?.made_to_order && (
                         <a
                           href={`/${brand.slug}/custom-order`}
-                          className="inline-flex items-center justify-center rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 px-4 py-2.5 sm:px-5 sm:py-3 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]"
+                          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 px-4 py-2.5 sm:px-5 sm:py-3 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]"
                         >
                           {isAr ? "طلب مخصص" : "Bespoke Order"}
                         </a>
@@ -288,12 +288,19 @@ export function HeroV2({ slides, background }: HeroV2Props) {
                 aria-selected={activeIdx === i}
                 aria-label={`${isAr ? "شريحة" : "Slide"} ${i + 1}`}
                 onClick={() => goTo(i)}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  activeIdx === i
-                    ? "w-8 bg-primary"
-                    : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
-                }`}
-              />
+                // The pill stays 8px tall; the tap area is padded out to 44px
+                // so the control is reachable on a phone (AGENTS.md section 2).
+                className="grid min-h-11 min-w-11 place-items-center"
+              >
+                <span
+                  aria-hidden="true"
+                  className={`block h-2 rounded-full transition-all duration-300 ${
+                    activeIdx === i
+                      ? "w-8 bg-primary"
+                      : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                  }`}
+                />
+              </button>
             ))}
           </div>
         )}

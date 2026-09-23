@@ -103,7 +103,7 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
           variant="ghost"
           size="sm"
           onClick={() => setChannel("whatsapp")}
-          className={`h-auto flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all hover:bg-white/10 ${
+          className={`h-auto min-h-11 flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition-all hover:bg-white/10 ${
             channel === "whatsapp"
               ? "bg-white/20 text-white shadow-xs font-semibold"
               : "opacity-60 hover:opacity-100"
@@ -118,7 +118,7 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
           variant="ghost"
           size="sm"
           onClick={() => setChannel("email")}
-          className={`h-auto flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all hover:bg-white/10 ${
+          className={`h-auto min-h-11 flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition-all hover:bg-white/10 ${
             channel === "email"
               ? "bg-white/20 text-white shadow-xs font-semibold"
               : "opacity-60 hover:opacity-100"
@@ -143,13 +143,13 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
           onChange={(e) => setContact(e.target.value)}
           dir="ltr"
           required
-          className="h-9 text-xs bg-white/10 border-white/15 text-white placeholder:text-white/40 focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
+          className="h-11 text-xs bg-white/10 border-white/15 text-white placeholder:text-white/40 focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
         />
         <Button
           type="submit"
           disabled={submitting}
           size="sm"
-          className="h-9 px-3 gap-1 shrink-0 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium"
+          className="h-11 px-3 gap-1 shrink-0 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium"
         >
           {submitting ? (
             <span className="h-3.5 w-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />

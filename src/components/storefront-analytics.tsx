@@ -210,21 +210,29 @@ export function StorefrontAnalytics() {
         </div>
       )}
       <div className="mt-3 flex flex-wrap gap-2">
-        <Button onClick={() => save({ decided: true, analytics: true, marketing: true })}>
+        <Button
+          size="touch"
+          onClick={() => save({ decided: true, analytics: true, marketing: true })}
+        >
           {t("قبول الكل", "Accept all")}
         </Button>
         <Button
           variant="outline"
+          size="touch"
           onClick={() => save({ decided: true, analytics: false, marketing: false })}
         >
           {t("الضروري فقط", "Essential only")}
         </Button>
         {customizing ? (
-          <Button variant="secondary" onClick={() => save({ ...choice, decided: true })}>
+          <Button
+            variant="secondary"
+            size="touch"
+            onClick={() => save({ ...choice, decided: true })}
+          >
             {t("حفظ", "Save choices")}
           </Button>
         ) : (
-          <Button variant="ghost" onClick={() => setCustomizing(true)}>
+          <Button variant="ghost" size="touch" onClick={() => setCustomizing(true)}>
             {t("تخصيص", "Customize")}
           </Button>
         )}

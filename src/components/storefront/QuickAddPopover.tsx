@@ -5,6 +5,7 @@ import { useStorefront } from "@/lib/storefront-context";
 import { buildCartItem, canQuickAddToCart } from "@/lib/cart/add-to-cart";
 import { isCatalogMode } from "@/lib/storefront-mode";
 import { formatSizeWithUnit } from "@/lib/format";
+import { translateOptionValue } from "@/lib/variant-i18n";
 import { toast } from "sonner";
 import { ShoppingBag, Check } from "lucide-react";
 
@@ -112,9 +113,13 @@ export function QuickAddPopover({ product, variants = [], onOpenQuickView }: Qui
 
   const formatVariantLabel = (v: any) => {
     const formattedSize = v.size ? formatSizeWithUnit(v.size, v.size_unit, lang) : "";
+    // The attribute shown next to the size (colour, fabric, …) is stored in the
+    // merchant's own language, so it has to go through the option lexicon too —
+    // otherwise an English storefront shows "53 (بني)".
     const extraParts = [v.color, v.fabric, v.option_four, v.option_five, v.name]
       .filter(Boolean)
-      .filter((part) => part !== v.size);
+      .filter((part) => part !== v.size)
+      .map((part) => translateOptionValue(String(part), lang) || String(part));
     const extra = extraParts.length > 0 ? extraParts[0] : "";
 
     if (formattedSize && extra) {

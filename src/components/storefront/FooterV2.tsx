@@ -275,7 +275,7 @@ export function FooterV2() {
               variant="ghost"
               size="sm"
               onClick={() => toggleSection("shop")}
-              className="h-auto rounded-md w-full flex items-center justify-between py-2 text-xs font-semibold"
+              className="h-auto min-h-11 rounded-md w-full flex items-center justify-between py-2 text-xs font-semibold"
               style={{ color: "var(--sf-footer-fg)" }}
             >
               <span>{t("تسوّق", "Shop")}</span>
@@ -290,7 +290,7 @@ export function FooterV2() {
                 <Link
                   to="/$slug/$category"
                   params={{ slug: brand.slug, category: "all" }}
-                  className="opacity-75 hover:opacity-100 py-1"
+                  className="opacity-75 hover:opacity-100 py-1 min-h-11 flex items-center"
                   style={{ color: "var(--sf-footer-fg)" }}
                 >
                   {t("كل المنتجات", "All Products")}
@@ -298,7 +298,7 @@ export function FooterV2() {
                 <Link
                   to="/$slug/$category"
                   params={{ slug: brand.slug, category: "new" }}
-                  className="opacity-75 hover:opacity-100 py-1"
+                  className="opacity-75 hover:opacity-100 py-1 min-h-11 flex items-center"
                   style={{ color: "var(--sf-footer-fg)" }}
                 >
                   {t("وصل حديثاً", "New Arrivals")}
@@ -321,7 +321,7 @@ export function FooterV2() {
               variant="ghost"
               size="sm"
               onClick={() => toggleSection("help")}
-              className="h-auto rounded-md w-full flex items-center justify-between py-2 text-xs font-semibold"
+              className="h-auto min-h-11 rounded-md w-full flex items-center justify-between py-2 text-xs font-semibold"
               style={{ color: "var(--sf-footer-fg)" }}
             >
               <span>{t("المساعدة وخدمة العملاء", "Customer Care")}</span>
@@ -336,7 +336,7 @@ export function FooterV2() {
                 <Link
                   to="/$slug/account"
                   params={{ slug: brand.slug }}
-                  className="opacity-75 hover:opacity-100 py-1"
+                  className="opacity-75 hover:opacity-100 py-1 min-h-11 flex items-center"
                   style={{ color: "var(--sf-footer-fg)" }}
                 >
                   {t("تتبع الطلبات وحسابي", "Track Order & Account")}
@@ -346,7 +346,7 @@ export function FooterV2() {
                     key={p.idx}
                     to="/$slug/page/$idx"
                     params={{ slug: brand.slug, idx: String(p.idx) }}
-                    className="opacity-75 hover:opacity-100 py-1"
+                    className="opacity-75 hover:opacity-100 py-1 min-h-11 flex items-center"
                     style={{ color: "var(--sf-footer-fg)" }}
                   >
                     {p.title}
