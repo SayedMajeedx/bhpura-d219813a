@@ -307,6 +307,30 @@ export function DesignV2Group() {
             onChange={(e) => setBs({ new_badge_days: Math.max(0, Number(e.target.value) || 0) })}
           />
         </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium">
+            {isAr ? "تناسب صور معرض المنتج" : "PDP Gallery Aspect Ratio"}
+          </Label>
+          <Select
+            value={bs.pdp_gallery_aspect_ratio || "3:4"}
+            onValueChange={(val) => setBs({ pdp_gallery_aspect_ratio: val })}
+          >
+            <SelectTrigger className="h-9 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="3:4">
+                {isAr ? "طولي 3:4 (أزياء وعبايات)" : "Portrait 3:4 (Fashion)"}
+              </SelectItem>
+              <SelectItem value="1:1">
+                {isAr ? "مربع 1:1 (إكسسوارات وعطور)" : "Square 1:1 (Accessories)"}
+              </SelectItem>
+              <SelectItem value="4:5">
+                {isAr ? "طولي 4:5 (افتتاحي)" : "Portrait 4:5 (Editorial)"}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Hero overlay + title colour */}

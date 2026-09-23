@@ -79,15 +79,41 @@ export function HeroV2({ slides, background }: HeroV2Props) {
 
   const accentColor = settings.storefront_accent_color || brand?.primary_color || "#3f121a";
 
-  // Merchant-tunable scrim: 0 = clear media, 100 = heavy vignette. The gradient
-  // keeps its shape (strongest at the bottom where the text sits) and only its
-  // opacity scales, so headline contrast degrades predictably.
+  // Merchant-tunable scrim: 0 = clear media, 100 = heavy vignette.
   const overlayStrength = Math.min(100, Math.max(0, Number(settings.hero_overlay_strength ?? 45)));
   const scrimBottom = (overlayStrength / 100) * 0.95;
   const scrimMiddle = (overlayStrength / 100) * 0.45;
-  // Empty means "let the theme pick a readable colour", which is white over the
-  // scrim. A merchant override wins.
   const heroTitleColor = settings.hero_title_color_v2?.trim() || undefined;
+
+  // Responsive Hero Layout & Presentation Settings
+  const isFullBleed = (settings.hero_layout ?? "full_bleed") === "full_bleed";
+  const mobileRatio = settings.hero_aspect_mobile ?? "portrait_4_5";
+  const desktopHeight = settings.hero_height_desktop ?? "standard";
+  const showArrows = hasMultiple && settings.hero_show_arrows !== false;
+
+  const mobileRatioClass =
+    mobileRatio === "story_9_16"
+      ? "aspect-[9/16] min-h-[520px]"
+      : mobileRatio === "square_1_1"
+        ? "aspect-square min-h-[340px]"
+        : mobileRatio === "landscape_4_3"
+          ? "aspect-[4/3] min-h-[260px]"
+          : "aspect-[4/5] min-h-[420px]";
+
+  const desktopHeightClass =
+    desktopHeight === "compact"
+      ? "sm:aspect-auto sm:h-[400px] sm:min-h-[400px]"
+      : desktopHeight === "cinematic"
+        ? "sm:aspect-auto sm:h-[620px] sm:min-h-[620px]"
+        : "sm:aspect-auto sm:h-[500px] sm:min-h-[500px]";
+
+  const outerWrapperClass = isFullBleed
+    ? "relative w-full overflow-hidden"
+    : "relative mx-auto w-full max-w-7xl px-3 sm:px-6 py-2 sm:py-4";
+
+  const cardContainerClass = isFullBleed
+    ? `relative isolate w-full overflow-hidden ${mobileRatioClass} ${desktopHeightClass}`
+    : `relative isolate w-full overflow-hidden rounded-2xl shadow-lg ring-1 ring-black/5 [clip-path:inset(0_round_1rem)] ${mobileRatioClass} ${desktopHeightClass}`;
 
   return (
     <section
@@ -95,10 +121,10 @@ export function HeroV2({ slides, background }: HeroV2Props) {
       aria-label={isAr ? "الواجهة الرئيسية" : "Hero Section"}
       className="relative w-full overflow-hidden"
     >
-      <div className="relative mx-auto w-full max-w-7xl px-3 sm:px-6 py-2 sm:py-4">
+      <div className={outerWrapperClass}>
         <div
           dir="ltr"
-          className="relative isolate w-full overflow-hidden rounded-2xl shadow-lg ring-1 ring-black/5 [clip-path:inset(0_round_1rem)] aspect-[4/3] sm:aspect-[21/9] min-h-[260px] sm:min-h-[420px]"
+          className={cardContainerClass}
           onTouchStart={(e) => {
             touchStartX.current = e.touches[0]?.clientX ?? null;
           }}
@@ -220,7 +246,7 @@ export function HeroV2({ slides, background }: HeroV2Props) {
                   />
                 )}
 
-                {/* High-Contrast Luxury Vignette Scrim (strength is merchant-tunable) */}
+                {/* High-Contrast Luxury Vignette Scrim */}
                 <div
                   className="absolute inset-0 pointer-events-none"
                   style={{
@@ -229,14 +255,14 @@ export function HeroV2({ slides, background }: HeroV2Props) {
                 />
 
                 {/* Text / Action Content */}
-                <div className="absolute inset-0 flex flex-col justify-end p-5 sm:p-10 pb-10 sm:pb-14 text-white z-10">
-                  <div className="max-w-2xl space-y-2">
+                <div className="absolute inset-0 flex flex-col justify-end p-4 sm:p-10 pb-8 sm:pb-14 text-white z-10 pointer-events-none">
+                  <div className="max-w-2xl space-y-2 pointer-events-auto">
                     {title && (
                       <h1
-                        className="font-bold tracking-tight text-white drop-shadow-md"
+                        className="font-bold tracking-tight text-white drop-shadow-md text-balance"
                         style={{
-                          fontSize: "clamp(1.75rem, 1.25rem + 2.2vw, 3rem)",
-                          lineHeight: 1.15,
+                          fontSize: "clamp(1.35rem, 1rem + 2.2vw, 2.75rem)",
+                          lineHeight: 1.18,
                           ...(heroTitleColor ? { color: heroTitleColor } : {}),
                         }}
                       >
@@ -244,7 +270,7 @@ export function HeroV2({ slides, background }: HeroV2Props) {
                       </h1>
                     )}
                     {body && (
-                      <p className="line-clamp-2 text-sm sm:text-base text-white/90 drop-shadow-sm max-w-xl">
+                      <p className="line-clamp-2 text-xs sm:text-base text-white/90 drop-shadow-sm max-w-xl">
                         {body}
                       </p>
                     )}
@@ -271,10 +297,62 @@ export function HeroV2({ slides, background }: HeroV2Props) {
               </article>
             );
           })}
+
+          {/* Luxury Floating Chevron Slide Navigation Arrows */}
+          {showArrows && (
+            <>
+              <button
+                type="button"
+                aria-label={isAr ? "الشريحة السابقة" : "Previous slide"}
+                onClick={() => goTo(isAr ? activeIdx + 1 : activeIdx - 1)}
+                className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 hidden md:grid size-11 place-items-center rounded-full bg-black/35 hover:bg-black/55 text-white backdrop-blur-md border border-white/20 shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none cursor-pointer"
+              >
+                <ChevronLeft className="size-6 text-white" />
+              </button>
+              <button
+                type="button"
+                aria-label={isAr ? "الشريحة التالية" : "Next slide"}
+                onClick={() => goTo(isAr ? activeIdx - 1 : activeIdx + 1)}
+                className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 hidden md:grid size-11 place-items-center rounded-full bg-black/35 hover:bg-black/55 text-white backdrop-blur-md border border-white/20 shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none cursor-pointer"
+              >
+                <ChevronRight className="size-6 text-white" />
+              </button>
+            </>
+          )}
+
+          {/* Carousel Dot Indicators for Full-Bleed mode */}
+          {hasMultiple && isFullBleed && (
+            <div
+              className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center gap-1.5"
+              role="tablist"
+              aria-label={isAr ? "شرائح الواجهة" : "Hero slides"}
+            >
+              {slides.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeIdx === i}
+                  aria-label={`${isAr ? "شريحة" : "Slide"} ${i + 1}`}
+                  onClick={() => goTo(i)}
+                  className="grid min-h-11 min-w-11 place-items-center"
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`block h-2 rounded-full transition-all duration-300 ${
+                      activeIdx === i
+                        ? "w-8 bg-white shadow-sm"
+                        : "w-2 bg-white/40 hover:bg-white/70"
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Carousel Dot Indicators */}
-        {hasMultiple && (
+        {/* Carousel Dot Indicators for Contained mode */}
+        {hasMultiple && !isFullBleed && (
           <div
             className="mt-3 flex items-center justify-center gap-2"
             role="tablist"
@@ -288,8 +366,6 @@ export function HeroV2({ slides, background }: HeroV2Props) {
                 aria-selected={activeIdx === i}
                 aria-label={`${isAr ? "شريحة" : "Slide"} ${i + 1}`}
                 onClick={() => goTo(i)}
-                // The pill stays 8px tall; the tap area is padded out to 44px
-                // so the control is reachable on a phone (AGENTS.md section 2).
                 className="grid min-h-11 min-w-11 place-items-center"
               >
                 <span

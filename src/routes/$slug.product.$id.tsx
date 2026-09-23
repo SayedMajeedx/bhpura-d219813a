@@ -1219,11 +1219,21 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       })
     : null;
 
+  const pdpGalleryRatio = settings?.pdp_gallery_aspect_ratio ?? "3:4";
+  const galleryRatioClass =
+    pdpGalleryRatio === "1:1"
+      ? "aspect-square"
+      : pdpGalleryRatio === "4:5"
+        ? "aspect-[4/5]"
+        : "aspect-[3/4]";
+
   return (
-    <div className="mx-auto max-w-5xl px-4 sm:px-6 py-3 sm:py-8 pb-28 md:pb-10">
+    <div className="mx-auto max-w-5xl px-4 sm:px-6 py-3 sm:py-8 pb-28 md:pb-10 overflow-x-clip w-full">
       <div className="grid md:grid-cols-12 gap-6 lg:gap-10 items-start">
-        <div className="md:col-span-5 max-w-[420px] mx-auto md:max-w-none w-full">
-          <div className="relative aspect-[3/4] max-h-[500px] bg-muted rounded-2xl overflow-hidden shadow-sm border border-border-subtle mx-auto w-full">
+        <div className="md:col-span-5 max-w-[420px] mx-auto md:max-w-none w-full min-w-0">
+          <div
+            className={`relative ${galleryRatioClass} max-h-[520px] bg-muted rounded-2xl overflow-hidden shadow-sm border border-border-subtle mx-auto w-full`}
+          >
             {media.length > 0 ? (
               <>
                 {media[mediaIdx % media.length].type === "video" ? (
@@ -1253,8 +1263,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   <ImageZoom
                     src={media[mediaIdx % media.length].url}
                     alt={displayName}
-                    className="w-full h-full"
-                    aspectRatio="aspect-auto h-full"
+                    className="w-full h-full max-w-full"
+                    aspectRatio="w-full h-full"
                     style={{
                       viewTransitionName: `product-img-${product.id.replace(/[^a-zA-Z0-9_-]/g, "_")}`,
                     }}
@@ -1265,7 +1275,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                     preset="product"
                     sizes="(min-width: 1024px) 55vw, 100vw"
                     alt={displayName}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover max-w-full"
                     fetchPriority="high"
                     loading="eager"
                   />
@@ -1277,20 +1287,20 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                       variant="ghost"
                       size="icon"
                       onClick={() => setMediaIdx((i) => (i - 1 + media.length) % media.length)}
-                      className="absolute top-1/2 left-3 -translate-y-1/2 h-11 w-11 bg-background/90 hover:bg-background text-foreground rounded-full shadow-md border border-border-subtle transition-transform active:scale-95 z-20"
-                      aria-label="Previous media"
+                      className="absolute top-1/2 start-3 -translate-y-1/2 h-11 w-11 bg-background/90 hover:bg-background text-foreground rounded-full shadow-md border border-border-subtle transition-transform active:scale-95 z-20"
+                      aria-label={t("الصورة السابقة", "Previous media")}
                     >
-                      <ChevronLeft className="h-5 w-5" />
+                      <ChevronLeft className="h-5 w-5 rtl:rotate-180" />
                     </Button>
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
                       onClick={() => setMediaIdx((i) => (i + 1) % media.length)}
-                      className="absolute top-1/2 right-3 -translate-y-1/2 h-11 w-11 bg-background/90 hover:bg-background text-foreground rounded-full shadow-md border border-border-subtle transition-transform active:scale-95 z-20"
-                      aria-label="Next media"
+                      className="absolute top-1/2 end-3 -translate-y-1/2 h-11 w-11 bg-background/90 hover:bg-background text-foreground rounded-full shadow-md border border-border-subtle transition-transform active:scale-95 z-20"
+                      aria-label={t("الصورة التالية", "Next media")}
                     >
-                      <ChevronRight className="h-5 w-5" />
+                      <ChevronRight className="h-5 w-5 rtl:rotate-180" />
                     </Button>
                   </>
                 )}
@@ -2479,7 +2489,7 @@ function RecommendationRail({
   const { brand, currency, lang, t, settings } = useStorefront();
 
   return (
-    <section aria-label={title}>
+    <section aria-label={title} className="w-full overflow-hidden">
       <div className="mb-4 flex items-end justify-between gap-3">
         <h2 className="font-display text-xl sm:text-2xl">{title}</h2>
         <span className="hidden text-xs text-muted-foreground sm:block">

@@ -381,6 +381,11 @@ export const Route = createFileRoute("/$slug")({
       motion_enabled: s?.motion_enabled ?? true,
       hero_overlay_strength: s?.hero_overlay_strength ?? 45,
       hero_title_color_v2: s?.hero_title_color_v2 ?? null,
+      hero_layout: s?.hero_layout ?? "full_bleed",
+      hero_height_desktop: s?.hero_height_desktop ?? "standard",
+      hero_aspect_mobile: s?.hero_aspect_mobile ?? "portrait_4_5",
+      hero_show_arrows: s?.hero_show_arrows ?? true,
+      pdp_gallery_aspect_ratio: s?.pdp_gallery_aspect_ratio ?? "3:4",
     };
 
     const rawHero = brand.hero_media as any;

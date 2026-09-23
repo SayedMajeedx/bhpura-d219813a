@@ -1594,6 +1594,11 @@ export type Database = {
           storefront_design_version: number;
           trust_bar_enabled: boolean;
           trust_bar_position: string;
+          hero_layout: string;
+          hero_height_desktop: string;
+          hero_aspect_mobile: string;
+          hero_show_arrows: boolean;
+          pdp_gallery_aspect_ratio: string;
         };
         Insert: {
           address?: string | null;
@@ -1786,6 +1791,11 @@ export type Database = {
           storefront_design_version?: number;
           trust_bar_enabled?: boolean;
           trust_bar_position?: string;
+          hero_layout?: string;
+          hero_height_desktop?: string;
+          hero_aspect_mobile?: string;
+          hero_show_arrows?: boolean;
+          pdp_gallery_aspect_ratio?: string;
         };
         Update: {
           address?: string | null;
@@ -1978,6 +1988,11 @@ export type Database = {
           storefront_design_version?: number;
           trust_bar_enabled?: boolean;
           trust_bar_position?: string;
+          hero_layout?: string;
+          hero_height_desktop?: string;
+          hero_aspect_mobile?: string;
+          hero_show_arrows?: boolean;
+          pdp_gallery_aspect_ratio?: string;
         };
         Relationships: [
           {
@@ -7357,6 +7372,11 @@ export type Database = {
           business_hours_ar: string | null;
           business_hours_en: string | null;
           bundle_discount_percent: number | null;
+          hero_layout: string | null;
+          hero_height_desktop: string | null;
+          hero_aspect_mobile: string | null;
+          hero_show_arrows: boolean | null;
+          pdp_gallery_aspect_ratio: string | null;
         };
         Relationships: [
           {

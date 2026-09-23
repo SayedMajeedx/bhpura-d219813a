@@ -47,15 +47,15 @@ export function ImageZoom({
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onClick={() => setLightboxOpen(true)}
-        className={`relative overflow-hidden cursor-zoom-in rounded-xl bg-muted group ${aspectRatio} ${className}`}
+        className={`relative overflow-hidden cursor-zoom-in rounded-xl bg-muted group w-full max-w-full ${aspectRatio} ${className}`}
       >
         {/* Base Image */}
         <ResponsiveImage
           src={src}
-          preset="hero"
+          preset="product"
           sizes="(min-width: 1024px) 50vw, 100vw"
           alt={alt}
-          className={`w-full h-full object-cover transition-opacity duration-200 ${
+          className={`w-full h-full object-cover max-w-full transition-opacity duration-200 ${
             isZooming ? "opacity-0" : "opacity-100"
           }`}
           loading="eager"

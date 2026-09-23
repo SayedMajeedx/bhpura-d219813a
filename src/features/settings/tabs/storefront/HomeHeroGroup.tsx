@@ -8,6 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ColorField } from "@/features/settings/shared/ColorField";
 import { HeroSlidesEditor, type HeroSlide } from "./HeroSlidesEditor";
 import { ImageCropperDialog } from "@/components/image-cropper-dialog";
@@ -159,7 +166,145 @@ export function HomeHeroGroup() {
 
   return (
     <div className="space-y-6">
-      {/* 1. Hero Title & About Visibility */}
+      {/* 1. Hero Presentation & Responsive Layout */}
+      <div className="rounded-xl border border-border p-5 bg-card shadow-sm space-y-4">
+        <div>
+          <h3 className="text-base font-semibold text-foreground">
+            {isAr ? "خيارات عرض ومظهر الواجهة (Hero Layout)" : "Hero Layout & Presentation"}
+          </h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {isAr
+              ? "تحكم بنمط عرض الهيرو، أبعاد الفيديو على الجوال، وارتفاعه على أجهزة الكمبيوتر لمنع المساحات البيضاء وتطابق العرض الفاخر."
+              : "Configure hero canvas width, mobile video aspect ratio, and desktop height bounds to eliminate white borders."}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Hero Layout: Full-bleed vs Contained */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium">
+              {isAr ? "نمط عرض الهيرو" : "Hero Display Layout"}
+            </Label>
+            <Select
+              value={bs.hero_layout || "full_bleed"}
+              onValueChange={(val) => setBs({ hero_layout: val })}
+            >
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="full_bleed">
+                  {isAr
+                    ? "ملء الشاشة الفاخر (Full-Bleed — موصى به)"
+                    : "Full-Bleed (Edge-to-Edge — Recommended)"}
+                </SelectItem>
+                <SelectItem value="contained">
+                  {isAr ? "بطاقة مؤطرة بزوايا منحنية (Contained)" : "Contained (Boxed Card)"}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-muted-foreground">
+              {isAr
+                ? "ملء الشاشة يمتد بعرض الشاشة بالكامل بدون إطار أبيض ومندمج مع الترويسة."
+                : "Full-bleed spans edge-to-edge seamlessly under the header with zero white frame."}
+            </p>
+          </div>
+
+          {/* Mobile Aspect Ratio */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium">
+              {isAr ? "تناسب الفيديو والصور على الجوال" : "Mobile Hero Media Ratio"}
+            </Label>
+            <Select
+              value={bs.hero_aspect_mobile || "portrait_4_5"}
+              onValueChange={(val) => setBs({ hero_aspect_mobile: val })}
+            >
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="portrait_4_5">
+                  {isAr
+                    ? "طولي 4:5 (موصى به للفيديوهات والريلز)"
+                    : "Portrait 4:5 (Optimal for Reels & Videos)"}
+                </SelectItem>
+                <SelectItem value="story_9_16">
+                  {isAr ? "ستوري كامل 9:16 (Story 9:16)" : "Story 9:16 (Full Vertical)"}
+                </SelectItem>
+                <SelectItem value="square_1_1">
+                  {isAr ? "مربع 1:1 (Square 1:1)" : "Square 1:1"}
+                </SelectItem>
+                <SelectItem value="landscape_4_3">
+                  {isAr ? "عريض كلاسيكي 4:3 (Landscape 4:3)" : "Landscape 4:3"}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-muted-foreground">
+              {isAr
+                ? "يضبط تناسب المشغل ليتوافق مع أبعاد الفيديوهات الرأسية بدون قص الرأس أو النص."
+                : "Optimizes the mobile container to fit vertical videos without clipping heads or text."}
+            </p>
+          </div>
+        </div>
+
+        {/* Desktop Height & Navigation Arrows (Advanced) */}
+        <AdvancedOnly
+          fieldKey="hero_height_desktop"
+          reason={
+            isAr
+              ? "تخصيص ارتفاع الهيرو وأسهم التنقل"
+              : "Customize desktop hero height and arrows"
+          }
+        >
+          <div className="rounded-xl border border-border p-4 bg-muted/5 space-y-4 pt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">
+                  {isAr ? "ارتفاع الهيرو على الكمبيوتر" : "Desktop Hero Height"}
+                </Label>
+                <Select
+                  value={bs.hero_height_desktop || "standard"}
+                  onValueChange={(val) => setBs({ hero_height_desktop: val })}
+                >
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="compact">
+                      {isAr ? "مدمج (Compact ~400px)" : "Compact (~400px)"}
+                    </SelectItem>
+                    <SelectItem value="standard">
+                      {isAr ? "قياسي متوازن (Standard ~500px)" : "Standard (~500px)"}
+                    </SelectItem>
+                    <SelectItem value="cinematic">
+                      {isAr ? "سينمائي عريض (Cinematic ~620px)" : "Cinematic (~620px)"}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg border border-border/60 p-3 bg-card">
+                <div className="space-y-0.5">
+                  <Label className="text-xs font-medium cursor-pointer">
+                    {isAr ? "أسهم التنقل بين الشرائح" : "Slide Navigation Arrows"}
+                  </Label>
+                  <p className="text-[11px] text-muted-foreground">
+                    {isAr
+                      ? "إظهار أزرار عائمة للتنقل السريع بين الشرائح على الشاشات الكبيرة"
+                      : "Floating chevron buttons to cycle slides on desktop"}
+                  </p>
+                </div>
+                <Switch
+                  checked={bs.hero_show_arrows ?? true}
+                  onCheckedChange={(checked) => setBs({ hero_show_arrows: checked })}
+                />
+              </div>
+            </div>
+          </div>
+        </AdvancedOnly>
+      </div>
+
+      {/* 2. Hero Title & About Visibility */}
       <div className="rounded-xl border border-border p-5 bg-card shadow-sm space-y-5">
         <div>
           <h3 className="text-base font-semibold text-foreground">

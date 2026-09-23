@@ -82,7 +82,7 @@ export function RecentlyViewed({ excludeProductId, className = "" }: RecentlyVie
   }
 
   return (
-    <section className={`my-12 border-t border-border pt-8 ${className}`}>
+    <section className={`my-12 border-t border-border pt-8 w-full overflow-hidden ${className}`}>
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Clock className="h-4 w-4 text-primary" />

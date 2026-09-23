@@ -264,6 +264,17 @@ export type PublicSettings = {
   shipping_returns_en?: string | null;
   pdp_layout?: string | null;
   bundle_discount_percent?: number | null;
+  hero_layout?: "full_bleed" | "contained" | string | null;
+  hero_height_desktop?: "compact" | "standard" | "cinematic" | string | null;
+  hero_aspect_mobile?:
+    | "portrait_4_5"
+    | "story_9_16"
+    | "square_1_1"
+    | "landscape_4_3"
+    | string
+    | null;
+  hero_show_arrows?: boolean | null;
+  pdp_gallery_aspect_ratio?: "3:4" | "1:1" | "4:5" | string | null;
 };
 
 export type CustomFieldValue = {
