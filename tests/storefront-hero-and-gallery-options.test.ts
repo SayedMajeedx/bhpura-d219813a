@@ -77,17 +77,15 @@ describe("Storefront Hero & PDP Gallery Options Suite", () => {
     expect(heroCode).toContain("aspect-[9/16]");
     expect(heroCode).toContain("aspect-square");
 
-    // Ambient Cinema Glow & video fit support
+    // Clean single-layer video fit support
     expect(heroCode).toContain("hero_video_fit");
-    expect(heroCode).toContain("useAmbientGlow");
-    expect(heroCode).toContain("scale-125 blur-3xl opacity-40");
+    expect(heroCode).toContain("object-cover");
 
     // Desktop height modes & adaptive clamp typography
     expect(heroCode).toContain("hero_height_desktop");
-    expect(heroCode).toContain("sm:h-[400px]");
-    expect(heroCode).toContain("sm:h-[500px]");
+    expect(heroCode).toContain("sm:h-[420px]");
+    expect(heroCode).toContain("sm:h-[520px]");
     expect(heroCode).toContain("sm:h-[620px]");
-    expect(heroCode).toContain("clamp(1.15rem");
 
     // Pure chevron navigation arrows without circles
     expect(heroCode).toContain("ChevronLeft");

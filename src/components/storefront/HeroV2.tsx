@@ -91,9 +91,7 @@ export function HeroV2({ slides, background }: HeroV2Props) {
   const mobileRatio = settings.hero_aspect_mobile ?? "portrait_4_5";
   const desktopHeight = settings.hero_height_desktop ?? "standard";
   const showArrows = hasMultiple && settings.hero_show_arrows !== false;
-  const videoFit = settings.hero_video_fit ?? "contain_ambient";
-  const useAmbientGlow =
-    videoFit === "contain_ambient" || (desktopHeight === "compact" && videoFit !== "cover");
+  const videoFit = settings.hero_video_fit ?? "cover";
 
   const mobileRatioClass =
     mobileRatio === "story_9_16"
@@ -106,10 +104,10 @@ export function HeroV2({ slides, background }: HeroV2Props) {
 
   const desktopHeightClass =
     desktopHeight === "compact"
-      ? "sm:aspect-auto sm:h-[400px] sm:min-h-[400px]"
+      ? "sm:aspect-auto sm:h-[420px] sm:min-h-[420px]"
       : desktopHeight === "cinematic"
         ? "sm:aspect-auto sm:h-[620px] sm:min-h-[620px]"
-        : "sm:aspect-auto sm:h-[500px] sm:min-h-[500px]";
+        : "sm:aspect-auto sm:h-[520px] sm:min-h-[520px]";
 
   const outerWrapperClass = isFullBleed
     ? "relative w-full overflow-hidden"
@@ -153,17 +151,20 @@ export function HeroV2({ slides, background }: HeroV2Props) {
               ? slide.button_ar || slide.button_en
               : slide.button_en || slide.button_ar;
 
-            const slideMedia =
-              (isAr ? slide.media_url_ar : slide.media_url_en) ||
-              slide.media_url ||
-              (isAr ? slide.media_url_en : slide.media_url_ar);
+            const rawSlideMedia =
+              (isAr ? slide.media_url_ar : slide.media_url_en)?.trim() ||
+              slide.media_url?.trim() ||
+              (isAr ? slide.media_url_en : slide.media_url_ar)?.trim() ||
+              "";
 
-            const mediaUrl = slideMedia || fallbackBgUrl;
+            const mediaUrl = rawSlideMedia || fallbackBgUrl;
 
             const rawPoster =
-              (isAr ? slide.media_poster_url_ar : slide.media_poster_url_en) ||
-              (isAr ? slide.media_poster_url_en : slide.media_poster_url_ar) ||
-              (slideMedia ? "" : fallbackBgPoster);
+              (isAr ? slide.media_poster_url_ar : slide.media_poster_url_en)?.trim() ||
+              slide.media_poster_url?.trim() ||
+              (isAr ? slide.media_poster_url_en : slide.media_poster_url_ar)?.trim() ||
+              fallbackBgPoster ||
+              "";
 
             // Strict poster validation: only valid image URLs
             const posterUrl = isLikelyImageUrl(rawPoster)
@@ -175,7 +176,7 @@ export function HeroV2({ slides, background }: HeroV2Props) {
             const isVideo =
               Boolean(mediaUrl) &&
               (slide.type === "video" ||
-                (!slideMedia && fallbackBgType === "video") ||
+                (!rawSlideMedia && fallbackBgType === "video") ||
                 /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(mediaUrl) ||
                 mediaUrl.includes("cloudflarestream") ||
                 mediaUrl.includes("/stream/"));
@@ -193,37 +194,39 @@ export function HeroV2({ slides, background }: HeroV2Props) {
                     : "z-0 opacity-0 scale-[0.98] pointer-events-none"
                 }`}
               >
-                {/* Fallback Luxury Geometric Background */}
-                <div
-                  className="absolute inset-0 size-full"
-                  style={{
-                    background: `radial-gradient(circle at 60% 40%, ${accentColor}cc 0%, ${accentColor}ee 50%, #0d0407 100%)`,
-                  }}
-                >
-                  <svg
-                    className="absolute inset-0 size-full opacity-[0.07] mix-blend-overlay"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="100%"
-                    height="100%"
+                {/* Fallback Luxury Geometric Background (Only rendered if no image and no video) */}
+                {!isImage && !isVideo && (
+                  <div
+                    className="absolute inset-0 size-full"
+                    style={{
+                      background: `radial-gradient(circle at 60% 40%, ${accentColor}cc 0%, ${accentColor}ee 50%, #0d0407 100%)`,
+                    }}
                   >
-                    <defs>
-                      <pattern
-                        id="hero-v2-grid"
-                        width="40"
-                        height="40"
-                        patternUnits="userSpaceOnUse"
-                      >
-                        <path
-                          d="M 40 0 L 0 0 0 40"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1"
-                        />
-                      </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#hero-v2-grid)" />
-                  </svg>
-                </div>
+                    <svg
+                      className="absolute inset-0 size-full opacity-[0.07] mix-blend-overlay"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="100%"
+                      height="100%"
+                    >
+                      <defs>
+                        <pattern
+                          id="hero-v2-grid"
+                          width="40"
+                          height="40"
+                          patternUnits="userSpaceOnUse"
+                        >
+                          <path
+                            d="M 40 0 L 0 0 0 40"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1"
+                          />
+                        </pattern>
+                      </defs>
+                      <rect width="100%" height="100%" fill="url(#hero-v2-grid)" />
+                    </svg>
+                  </div>
+                )}
 
                 {/* Media Layer */}
                 {isImage && (
@@ -240,37 +243,18 @@ export function HeroV2({ slides, background }: HeroV2Props) {
                 )}
 
                 {isVideo && (
-                  <>
-                    {/* Ambient Blurred Video Canvas (Cinema Mode for no-crop presentation) */}
-                    {useAmbientGlow && (
-                      <OptimizedVideo
-                        src={mediaUrl}
-                        poster={posterUrl}
-                        active={isActive && isInViewport}
-                        prepare={false}
-                        wrapperClassName="absolute inset-0 size-full pointer-events-none overflow-hidden"
-                        className="size-full object-cover scale-125 blur-3xl opacity-40"
-                      />
-                    )}
-
-                    {/* Foreground Video (Respects aspect ratio without violent cropping) */}
-                    <OptimizedVideo
-                      src={mediaUrl}
-                      poster={posterUrl}
-                      active={isActive && isInViewport}
-                      prepare={idx === preparedVideoIndex}
-                      wrapperClassName={`absolute inset-0 size-full pointer-events-none flex items-center justify-center ${
-                        useAmbientGlow ? "z-0" : ""
-                      }`}
-                      className={
-                        useAmbientGlow
-                          ? "size-full max-h-full max-w-full object-contain"
-                          : videoFit === "top"
-                            ? "size-full object-cover object-top"
-                            : "size-full object-cover"
-                      }
-                    />
-                  </>
+                  <OptimizedVideo
+                    src={mediaUrl}
+                    poster={posterUrl}
+                    active={isActive && isInViewport}
+                    prepare={idx === preparedVideoIndex}
+                    wrapperClassName="absolute inset-0 size-full pointer-events-none"
+                    className={
+                      videoFit === "top"
+                        ? "size-full object-cover object-top"
+                        : "size-full object-cover object-center"
+                    }
+                  />
                 )}
 
                 {/* High-Contrast Luxury Vignette Scrim */}

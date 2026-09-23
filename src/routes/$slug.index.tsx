@@ -632,11 +632,19 @@ function HeroBanner() {
 
   const slides = brand.hero_media?.slides?.length
     ? brand.hero_media.slides.map((s) => {
-        if (!s.media_url && bgUrl) {
+        const hasOwnMedia = Boolean(
+          s.media_url?.trim() ||
+          s.media_url_ar?.trim() ||
+          s.media_url_en?.trim()
+        );
+        if (!hasOwnMedia && bgUrl) {
           return {
             ...s,
             type: s.type === "text" ? bgType : s.type,
             media_url: bgUrl,
+            media_url_ar: s.media_url_ar || bgUrl,
+            media_url_en: s.media_url_en || bgUrl,
+            media_poster_url: s.media_poster_url || bgPoster,
             media_poster_url_ar: s.media_poster_url_ar || bgPoster,
             media_poster_url_en: s.media_poster_url_en || bgPoster,
           };
