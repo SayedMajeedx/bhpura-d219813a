@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureSessionUser } from "@/lib/auth/ensure-session-user";
 import { useBrand } from "@/lib/brand-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useI18n } from "@/lib/i18n";
@@ -38,14 +39,7 @@ import { BatchIncubatorTransferModal } from "@/components/incubators/BatchIncuba
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/incubators")({
   beforeLoad: async ({ context: { queryClient }, params }) => {
-    const user = await queryClient.ensureQueryData({
-      queryKey: ["auth_user"],
-      queryFn: async () => {
-        const { data, error } = await supabase.auth.getUser();
-        if (error) return null;
-        return data.user ?? null;
-      },
-    });
+    const user = await ensureSessionUser(queryClient);
 
     if (!user) throw redirect({ to: "/auth" });
 

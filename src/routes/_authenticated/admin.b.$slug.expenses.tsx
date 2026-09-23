@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureSessionUser } from "@/lib/auth/ensure-session-user";
 import { getItemPackagingCost } from "@/lib/bom-calculator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -136,15 +137,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/expenses")({
   beforeLoad: async ({ context: { queryClient }, params }) => {
-    const user = await queryClient.ensureQueryData({
-      queryKey: ["auth_user"],
-      queryFn: async () => {
-        const { data, error } = await supabase.auth.getUser();
-        if (error) return null;
-        return data.user ?? null;
-      },
-      staleTime: 1000 * 60 * 5,
-    });
+    const user = await ensureSessionUser(queryClient);
 
     if (!user) throw redirect({ to: "/auth" });
 

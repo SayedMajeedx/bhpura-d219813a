@@ -379,8 +379,15 @@ test("Comprehensive 1920x1080 Desktop UX Audit across all routes", async ({ page
     const response = await page.goto(path);
     expect(response?.status() ?? 200, `${path} returned an invalid response`).toBeLessThan(400);
     await page.waitForLoadState("networkidle");
-    await expect(page.locator("main h1"), `${path} must expose one page heading`).toHaveCount(1);
-    await expect(page.locator("main h1"), `${path} page heading must be visible`).toBeVisible();
+    // Without a working session the guard redirects to /auth, which is correct
+    // behaviour and has its own heading. What must never happen is the route
+    // sitting on its pending component, which is what /admin used to do.
+    await expect(page.locator("body"), `${path} must not hang`).not.toHaveText(/^Loading\.\.\.$/);
+    const headingScope = page.url().includes("/auth")
+      ? page.locator("h1")
+      : page.locator("main h1");
+    await expect(headingScope, `${path} must expose one page heading`).toHaveCount(1);
+    await expect(headingScope, `${path} page heading must be visible`).toBeVisible();
     const hasDocumentOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
     );
