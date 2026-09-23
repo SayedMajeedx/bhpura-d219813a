@@ -24,7 +24,7 @@ export async function fetchStorefrontProducts(brandId: string) {
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, featured_trending, show_sale_badge, custom_fields, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, color)",
+      "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, featured_trending, show_sale_badge, custom_fields, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, size_unit, color)",
     )
     .eq("brand_id", brandId)
     .eq("is_active", true)

@@ -45,6 +45,7 @@ import { AddonSlot } from "@/components/addons/AddonSlot";
 import { useAddons } from "@/components/addons/AddonsProvider";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { variantAxisDefaultsFrom, resolveAllVariantAxes } from "@/lib/addons/addon-registry";
+import { isColorSwatchAxis } from "@/lib/variant-axes";
 import { formatCustomField } from "@/lib/addons/custom-fields";
 import { ProductShareModal } from "@/components/storefront/ProductShareModal";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
@@ -562,7 +563,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
 
   useVariantTranslations(allOptionTerms, lang === "ar" ? "ar" : "en");
 
-  const addonAxisDefaults = useMemo(() => variantAxisDefaultsFrom(addons), [addons]);
+  const storeVertical = settings?.store_vertical ?? null;
+  const addonAxisDefaults = useMemo(
+    () => variantAxisDefaultsFrom(addons, storeVertical),
+    [addons, storeVertical],
+  );
   const resolvedAxes = useMemo(() => {
     const base = resolveAllVariantAxes({
       product,
@@ -684,12 +689,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     variants,
   ]);
 
-  const isVisualColorAxis = useMemo(() => {
-    const label = (resolvedAxes.color.label || "").toLowerCase();
-    const isColorLabel = label.includes("لون") || label.includes("color");
-    const hasHexMatch = uniqueColors.some((c) => Boolean(resolveColorHex(c)));
-    return isColorLabel && hasHexMatch;
-  }, [resolvedAxes.color.label, uniqueColors]);
+  const isVisualColorAxis = useMemo(
+    () => isColorSwatchAxis(resolvedAxes.color.label, uniqueColors),
+    [resolvedAxes.color.label, uniqueColors],
+  );
 
   // Pre-select single options if an axis has only 1 choice available
   useEffect(() => {
@@ -1245,7 +1248,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               if (endX == null) return;
               const diff = endX - startX;
               if (Math.abs(diff) < 35) return;
-              setMediaIdx((i) => (diff < 0 ? (i + 1) % media.length : (i - 1 + media.length) % media.length));
+              setMediaIdx((i) =>
+                diff < 0 ? (i + 1) % media.length : (i - 1 + media.length) % media.length,
+              );
             }}
           >
             {media.length > 0 ? (

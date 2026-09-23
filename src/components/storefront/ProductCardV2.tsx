@@ -252,7 +252,7 @@ export function ProductCardV2({
         <div className="mt-2.5 text-start space-y-1">
           {/* Color Dots */}
           {settings?.product_card_color_dots !== false && (
-            <ColorDots variants={variants} maxVisible={4} />
+            <ColorDots variants={variants} product={product} maxVisible={4} />
           )}
 
           {/* Product Title */}

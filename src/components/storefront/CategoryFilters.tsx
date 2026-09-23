@@ -3,6 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { resolveColorHex } from "@/lib/color-names";
 import { useStorefront, formatPrice } from "@/lib/storefront-context";
+import { resolveVariantAxis } from "@/lib/addons/addon-registry";
+import { isColorSwatchAxis, useStoreAxisDefaults } from "@/lib/variant-axes";
+import { formatSizeWithUnit } from "@/lib/format";
+import { translateOptionValue } from "@/lib/variant-i18n";
 import { X, RotateCcw } from "lucide-react";
 
 export interface FilterState {
@@ -18,6 +22,8 @@ interface CategoryFiltersProps {
   filters: FilterState;
   onChange: (updater: (prev: FilterState) => FilterState) => void;
   availableSizes: string[];
+  /** Unit per size value (e.g. "g"), so chips read "250 g" rather than "250". */
+  sizeUnits?: Record<string, string>;
   availableColors: Array<{ name: string; hex: string | null }>;
   minCatalogPrice: number;
   maxCatalogPrice: number;
@@ -29,6 +35,7 @@ export function CategoryFilters({
   filters,
   onChange,
   availableSizes,
+  sizeUnits,
   availableColors,
   minCatalogPrice,
   maxCatalogPrice,
@@ -37,6 +44,27 @@ export function CategoryFilters({
 }: CategoryFiltersProps) {
   const { lang, t, currency } = useStorefront();
   const isAr = lang === "ar";
+  const axisLang = isAr ? "ar" : "en";
+
+  // Filter headings follow the store's own option names (a roastery's "size"
+  // is the bag weight and its "color" is the grind), not the column names.
+  const axisDefaults = useStoreAxisDefaults();
+  const sizeLabel = resolveVariantAxis({
+    axis: "size",
+    addonDefaults: axisDefaults,
+    lang: axisLang,
+    hasValues: availableSizes.length > 0,
+  }).label;
+  const colorLabel = resolveVariantAxis({
+    axis: "color",
+    addonDefaults: axisDefaults,
+    lang: axisLang,
+    hasValues: availableColors.length > 0,
+  }).label;
+  const colorSwatches = isColorSwatchAxis(
+    colorLabel,
+    availableColors.map((c) => c.name),
+  );
 
   const hasActiveFilters = Boolean(
     filters.size ||
@@ -100,7 +128,7 @@ export function CategoryFilters({
         <div className="space-y-2.5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("المقاس", "Size")}
+              {sizeLabel}
             </span>
             {filters.size && (
               <Button
@@ -130,7 +158,7 @@ export function CategoryFilters({
                       : "bg-card text-foreground border-border hover:border-primary/50"
                   }`}
                 >
-                  {s}
+                  {formatSizeWithUnit(s, sizeUnits?.[s], axisLang) || s}
                 </Button>
               );
             })}
@@ -143,7 +171,7 @@ export function CategoryFilters({
         <div className="space-y-2.5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("اللون", "Color")}
+              {colorLabel}
             </span>
             {filters.color && (
               <Button
@@ -161,6 +189,25 @@ export function CategoryFilters({
             {availableColors.map((c) => {
               const hex = c.hex || resolveColorHex(c.name) || "#94a3b8";
               const active = filters.color === c.name;
+              if (!colorSwatches) {
+                return (
+                  <Button
+                    key={c.name}
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    aria-pressed={active}
+                    onClick={() => onChange((prev) => ({ ...prev, color: active ? null : c.name }))}
+                    className={`h-auto rounded-md border px-2.5 py-1 text-xs font-medium transition-all ${
+                      active
+                        ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                        : "bg-card text-foreground border-border hover:border-primary/50"
+                    }`}
+                  >
+                    {translateOptionValue(c.name, axisLang) || c.name}
+                  </Button>
+                );
+              }
               return (
                 <Button
                   key={c.name}

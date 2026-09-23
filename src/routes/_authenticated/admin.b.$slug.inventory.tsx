@@ -4889,9 +4889,9 @@ function BulkVariantDialog({
                 <thead className="bg-secondary">
                   <tr>
                     {[
-                      isAr ? "المقاس" : "Size",
-                      isAr ? "اللون" : "Color",
-                      isAr ? "الخامة" : "Fabric",
+                      sizeAxis.label,
+                      colorAxis.label,
+                      fabricAxis.label,
                       "SKU",
                       isAr ? "الباركود (EAN-13)" : "Barcode (EAN-13)",
                       ...(canViewFinancials ? [isAr ? "التكلفة" : "Cost"] : []),

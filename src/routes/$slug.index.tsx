@@ -72,6 +72,7 @@ export type ProductRow = {
     stock_main: number;
     stock_incubator?: number;
     size: string | null;
+    size_unit?: string | null;
     color: string | null;
     image_url?: string | null;
   }>;
