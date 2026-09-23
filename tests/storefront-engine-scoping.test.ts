@@ -36,12 +36,12 @@ describe("storefront engine resolver", () => {
     );
   });
 
-  it("stays in sync with the route's own footer condition", () => {
-    // If the route branch is edited, this test should fail so the resolver is updated with it.
+  it("is the single source of truth for the storefront footer branch", () => {
+    // The route used to hand-roll this condition, which is how the "minimal"
+    // value drifted out of sync. It must go through the resolver now.
     const route = read("src/routes/$slug.route.tsx");
-    expect(route).toContain('settings?.footer_layout !== "simple"');
-    expect(route).toContain('settings?.footer_layout === "columns"');
-    expect(route).toContain("settings?.storefront_design_version === 2");
+    expect(route).toContain('resolveFooterVariant(settings) === "columns"');
+    expect(route).not.toContain('settings?.footer_layout !== "simple"');
   });
 });
 

@@ -35,9 +35,17 @@ export function isStorefrontV2(settings: EngineSettings): boolean {
  * over the engine default, which is how a Storefront 2.0 brand can keep the
  * classic footer.
  */
+/**
+ * Values the simple footer has been stored as. The settings dropdown wrote
+ * "minimal" while the storefront only ever checked for "simple", so brands that
+ * chose the simple footer silently kept the columns one. Both spellings are
+ * accepted so those brands heal without a data migration.
+ */
+const SIMPLE_FOOTER_VALUES = new Set(["simple", "minimal"]);
+
 export function resolveFooterVariant(settings: EngineSettings): FooterVariant {
   const layout = settings?.footer_layout;
-  if (layout === "simple") return "simple";
+  if (layout && SIMPLE_FOOTER_VALUES.has(layout)) return "simple";
   if (layout === "columns") return "columns";
   return isStorefrontV2(settings) ? "columns" : "simple";
 }

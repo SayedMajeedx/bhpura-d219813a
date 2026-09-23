@@ -8,11 +8,13 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/settings")({
       queryKey: ["auth_user"],
       queryFn: async () => {
         const { data, error } = await supabase.auth.getUser();
-        if (error || !data.user) throw redirect({ to: "/auth" });
-        return data.user;
+        if (error) return null;
+        return data.user ?? null;
       },
       staleTime: 1000 * 60 * 5,
     });
+
+    if (!user) throw redirect({ to: "/auth" });
 
     const profile = await queryClient.ensureQueryData({
       queryKey: ["caller_permissions", user.id],

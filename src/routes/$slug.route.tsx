@@ -45,6 +45,7 @@ import { FooterV2 } from "@/components/storefront/FooterV2";
 import { normalizeVertical, normalizeModuleOverrides } from "@/lib/store-profile";
 import { isColorDark, hexToRgba } from "@/components/storefront/storefront-utils";
 import { isReservedStorefrontSlug } from "@/lib/seo/reserved-slugs";
+import { resolveFooterVariant } from "@/lib/storefront-engine";
 
 export const Route = createFileRoute("/$slug")({
   staleTime: 10_000,
@@ -521,7 +522,6 @@ function StorefrontLayout() {
       sizeGuides={bootstrapData?.size_guides ?? []}
       addons={bootstrapData?.addons ?? []}
     >
-      <StorefrontAnalytics />
       <StoreShell />
     </StorefrontProvider>
   );
@@ -647,6 +647,13 @@ function StoreShell() {
         } as React.CSSProperties
       }
     >
+      {/* Note: `html.lang-ar body` in styles.css pins the admin Arabic stack
+          (Readex Pro first) and outspecifies anything set here. It is harmless
+          only because <body> owns no text directly — every storefront string
+          lives inside this shell, which sets the brand's own font. Any text
+          rendered outside this element re-triggers a ~118 KB face download,
+          which is exactly what the consent banner used to do. Keep storefront
+          UI inside the shell. */}
       {typographyFaces && <style>{typographyFaces}</style>}
       <div
         className={`sticky top-0 z-40 ${isGlass ? "backdrop-blur-md" : ""}`}
@@ -666,6 +673,11 @@ function StoreShell() {
       </main>
       <StorefrontFooter />
       <WhatsAppFab />
+      {/* Inside the shell on purpose: the consent banner used to render outside
+          this element and inherited the admin font stack, which pulled ~229 KB
+          of fonts (Readex Pro + Zarid Display) that nothing else on the
+          storefront uses. */}
+      <StorefrontAnalytics />
     </div>
   );
 }
@@ -788,10 +800,9 @@ function StorefrontFooter() {
   const [openCompany, setOpenCompany] = useState(false);
   const [openHelp, setOpenHelp] = useState(false);
 
-  if (
-    settings?.footer_layout !== "simple" &&
-    (settings?.footer_layout === "columns" || settings?.storefront_design_version === 2)
-  ) {
+  // Single source of truth, shared with the settings UI so the two can never
+  // disagree about which footer a brand is actually getting.
+  if (resolveFooterVariant(settings) === "columns") {
     return <FooterV2 />;
   }
 

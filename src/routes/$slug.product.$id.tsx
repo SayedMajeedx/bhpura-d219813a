@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import { isCatalogMode, shouldShowPrices, buildWhatsAppInquiryUrl } from "@/lib/storefront-mode";
 import { NotifyMeForm } from "@/components/storefront/NotifyMeForm";
+import { useStickyCtaOffset } from "@/hooks/use-sticky-cta-offset";
 import { AddonSlot } from "@/components/addons/AddonSlot";
 import { useAddons } from "@/components/addons/AddonsProvider";
 import { useVocabulary } from "@/hooks/use-vocabulary";
@@ -426,6 +427,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     gcTime: 30 * 60_000,
     refetchOnWindowFocus: false,
   });
+
+  const stickyCtaRef = useStickyCtaOffset<HTMLDivElement>();
 
   const socialProofQuery = useQuery({
     queryKey: ["storefront", brand.slug, "social-proof", product?.id],
@@ -2333,8 +2336,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           )}
         </div>
 
-        {/* Mobile sticky purchase bar */}
+        {/* Mobile sticky purchase bar. Publishes its height so bottom-fixed
+            overlays (consent banner) stack above it rather than over it. */}
         <div
+          ref={stickyCtaRef}
           className="md:hidden fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 backdrop-blur px-3 py-2 shadow-[0_-4px_16px_-8px_rgba(0,0,0,0.15)]"
           style={{ paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom, 0px))" }}
         >

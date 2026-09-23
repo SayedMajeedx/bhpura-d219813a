@@ -179,7 +179,10 @@ export function StorefrontAnalytics() {
   return (
     <Card
       dir={lang === "ar" ? "rtl" : "ltr"}
-      className="fixed inset-x-3 bottom-3 z-[100] mx-auto max-w-2xl p-4 shadow-2xl"
+      className="fixed inset-x-3 z-[100] mx-auto max-w-2xl p-4 shadow-2xl"
+      // Clears a bottom-fixed CTA bar (mobile purchase bar) when one is present,
+      // so the banner never covers the primary action.
+      style={{ bottom: "calc(0.75rem + var(--sf-sticky-cta-h, 0px))" }}
     >
       <h2 className="font-semibold">{t("خيارات الخصوصية", "Privacy choices")}</h2>
       <p className="mt-1 text-sm text-muted-foreground">

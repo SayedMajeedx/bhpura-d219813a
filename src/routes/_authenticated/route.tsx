@@ -10,15 +10,21 @@ export const Route = createFileRoute("/_authenticated")({
     const storefrontReturn = readStorefrontOAuthReturn();
     if (storefrontReturn) throw redirect({ to: storefrontReturn as any });
 
+    // A redirect must never be thrown from inside a queryFn: TanStack Query
+    // treats it as a query error and retries with backoff, so the router never
+    // sees it and the route hangs on its pending component forever. Resolve the
+    // session to a value here, then redirect from beforeLoad's own scope.
     const user = await queryClient.ensureQueryData({
       queryKey: ["auth_user"],
       queryFn: async () => {
         const { data, error } = await supabase.auth.getUser();
-        if (error || !data.user) throw redirect({ to: "/auth" });
-        return data.user;
+        if (error) return null;
+        return data.user ?? null;
       },
       staleTime: 1000 * 60 * 5, // 5 min cache
     });
+
+    if (!user) throw redirect({ to: "/auth" });
 
     const profile = await queryClient.ensureQueryData({
       queryKey: ["auth_profile_role", user.id],

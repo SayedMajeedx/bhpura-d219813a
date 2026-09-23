@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
+import { resolveFooterVariant } from "@/lib/storefront-engine";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
 import { ColorField } from "@/features/settings/shared/ColorField";
@@ -277,16 +278,16 @@ export function DesignV2Group() {
         <div className="space-y-1.5">
           <Label className="text-xs font-medium">{isAr ? "تخطيط التذييل" : "Footer layout"}</Label>
           <Select
-            value={bs.footer_layout || "minimal"}
+            // Legacy rows stored the simple footer as "minimal"; normalise so the
+            // control reflects what the storefront actually renders.
+            value={resolveFooterVariant(bs)}
             onValueChange={(val) => setBs({ footer_layout: val })}
           >
             <SelectTrigger className="h-9 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="minimal">
-                {isAr ? "بسيط (الحالي)" : "Minimal (current)"}
-              </SelectItem>
+              <SelectItem value="simple">{isAr ? "بسيط (الحالي)" : "Minimal (current)"}</SelectItem>
               <SelectItem value="columns">
                 {isAr ? "أعمدة (بريميوم)" : "Columns (premium)"}
               </SelectItem>

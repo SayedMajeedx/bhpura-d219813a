@@ -42,10 +42,13 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/incubators")
       queryKey: ["auth_user"],
       queryFn: async () => {
         const { data, error } = await supabase.auth.getUser();
-        if (error || !data.user) throw redirect({ to: "/auth" });
-        return data.user;
+        if (error) return null;
+        return data.user ?? null;
       },
     });
+
+    if (!user) throw redirect({ to: "/auth" });
+
     const { data: profile } = await (supabase as any)
       .from("profiles")
       .select("role,status,permissions")
