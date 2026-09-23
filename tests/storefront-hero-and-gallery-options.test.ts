@@ -4,12 +4,13 @@ import path from "path";
 import { SETTINGS_REGISTRY } from "../src/features/settings/registry";
 
 describe("Storefront Hero & PDP Gallery Options Suite", () => {
-  it("registers all 5 hero and gallery settings in SETTINGS_REGISTRY with correct metadata", () => {
+  it("registers all 6 hero and gallery settings in SETTINGS_REGISTRY with correct metadata", () => {
     const keys = [
       "hero_layout",
       "hero_aspect_mobile",
       "hero_height_desktop",
       "hero_show_arrows",
+      "hero_video_fit",
       "pdp_gallery_aspect_ratio",
     ];
 
@@ -31,6 +32,11 @@ describe("Storefront Hero & PDP Gallery Options Suite", () => {
     expect(heroAspectMobile?.level).toBe("basic");
     expect(heroAspectMobile?.tab).toBe("storefront");
     expect(heroAspectMobile?.group).toBe("home_hero");
+
+    const heroVideoFit = SETTINGS_REGISTRY.find((s) => s.key === "hero_video_fit");
+    expect(heroVideoFit?.level).toBe("basic");
+    expect(heroVideoFit?.tab).toBe("storefront");
+    expect(heroVideoFit?.group).toBe("home_hero");
 
     const heroHeightDesktop = SETTINGS_REGISTRY.find((s) => s.key === "hero_height_desktop");
     expect(heroHeightDesktop?.level).toBe("advanced");
@@ -55,7 +61,7 @@ describe("Storefront Hero & PDP Gallery Options Suite", () => {
     expect(basicSettings.length).toBeLessThanOrEqual(45);
   });
 
-  it("HeroV2 component contains full-bleed, mobile aspect ratios, and chevron arrows", () => {
+  it("HeroV2 component contains full-bleed, mobile aspect ratios, ambient cinema glow, and pure arrows", () => {
     const heroCode = fs.readFileSync(
       path.resolve(__dirname, "../src/components/storefront/HeroV2.tsx"),
       "utf-8",
@@ -71,16 +77,23 @@ describe("Storefront Hero & PDP Gallery Options Suite", () => {
     expect(heroCode).toContain("aspect-[9/16]");
     expect(heroCode).toContain("aspect-square");
 
-    // Desktop height modes
+    // Ambient Cinema Glow & video fit support
+    expect(heroCode).toContain("hero_video_fit");
+    expect(heroCode).toContain("useAmbientGlow");
+    expect(heroCode).toContain("scale-125 blur-3xl opacity-40");
+
+    // Desktop height modes & adaptive clamp typography
     expect(heroCode).toContain("hero_height_desktop");
     expect(heroCode).toContain("sm:h-[400px]");
     expect(heroCode).toContain("sm:h-[500px]");
     expect(heroCode).toContain("sm:h-[620px]");
+    expect(heroCode).toContain("clamp(1.15rem");
 
-    // Luxury chevron navigation arrows
+    // Pure chevron navigation arrows without circles
     expect(heroCode).toContain("ChevronLeft");
     expect(heroCode).toContain("ChevronRight");
     expect(heroCode).toContain("hero_show_arrows");
+    expect(heroCode).not.toContain("rounded-full bg-black/35");
   });
 
   it("ImageZoom uses preset product and bounded container to prevent mobile blowout", () => {
@@ -108,12 +121,13 @@ describe("Storefront Hero & PDP Gallery Options Suite", () => {
     expect(pdpCode).not.toContain('aspectRatio="aspect-auto h-full"');
     expect(pdpCode).toContain('aspectRatio="w-full h-full"');
 
-    // Logical RTL navigation buttons
-    expect(pdpCode).toContain("start-3");
-    expect(pdpCode).toContain("end-3");
+    // Logical RTL navigation buttons (pure floating arrows without circles)
+    expect(pdpCode).toContain("start-2");
+    expect(pdpCode).toContain("end-2");
     expect(pdpCode).toContain("rtl:rotate-180");
+    expect(pdpCode).not.toContain("rounded-full shadow-md border border-border-subtle");
 
     // Root container overflow containment
-    expect(pdpCode).toContain("overflow-x-clip");
+    expect(pdpCode).toContain("overflow-x-hidden");
   });
 });

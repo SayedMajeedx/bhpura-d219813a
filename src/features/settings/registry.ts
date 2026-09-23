@@ -897,6 +897,21 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
   },
   {
     scope: "v2_only",
+    key: "hero_video_fit",
+    table: "business_settings",
+    tab: "storefront",
+    group: "home_hero",
+    level: "basic",
+    owner: "settings",
+    type: "select",
+    label: { ar: "تأطير فيديو الهيرو وعرض المشهد", en: "Hero Video Presentation & Framing" },
+    keywords: {
+      ar: ["تأطير الفيديو", "فيديو الهيرو", "خلفية سينمائية", "اقتصاص الفيديو"],
+      en: ["hero video fit", "ambient video", "cinema glow", "video framing"],
+    },
+  },
+  {
+    scope: "v2_only",
     key: "hero_overlay_strength",
     table: "business_settings",
     tab: "storefront",

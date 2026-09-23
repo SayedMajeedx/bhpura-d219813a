@@ -275,6 +275,7 @@ export type PublicSettings = {
     | null;
   hero_show_arrows?: boolean | null;
   pdp_gallery_aspect_ratio?: "3:4" | "1:1" | "4:5" | string | null;
+  hero_video_fit?: "contain_ambient" | "cover" | "top" | string | null;
 };
 
 export type CustomFieldValue = {

@@ -203,7 +203,7 @@ export function HomeHeroGroup() {
                 </SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {isAr
                 ? "ملء الشاشة يمتد بعرض الشاشة بالكامل بدون إطار أبيض ومندمج مع الترويسة."
                 : "Full-bleed spans edge-to-edge seamlessly under the header with zero white frame."}
@@ -239,10 +239,47 @@ export function HomeHeroGroup() {
                 </SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {isAr
                 ? "يضبط تناسب المشغل ليتوافق مع أبعاد الفيديوهات الرأسية بدون قص الرأس أو النص."
                 : "Optimizes the mobile container to fit vertical videos without clipping heads or text."}
+            </p>
+          </div>
+
+          {/* Hero Video Fit / Framing */}
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label className="text-xs font-medium">
+              {isAr ? "تأطير وعرض فيديو الهيرو" : "Hero Video Presentation & Framing"}
+            </Label>
+            <Select
+              value={bs.hero_video_fit || "contain_ambient"}
+              onValueChange={(val) => setBs({ hero_video_fit: val })}
+            >
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="contain_ambient">
+                  {isAr
+                    ? "احتواء سينمائي ذكي مع هالة ضبابية (موصى به — يمنع قص الفيديو والنصوص تماماً)"
+                    : "Ambient Cinema Glow (No Cropping — Recommended)"}
+                </SelectItem>
+                <SelectItem value="cover">
+                  {isAr
+                    ? "ملء كامل مع اقتصاص ذكي (Fill & Smart Crop)"
+                    : "Fill & Smart Crop"}
+                </SelectItem>
+                <SelectItem value="top">
+                  {isAr
+                    ? "محاذاة للأعلى (Top-aligned Crop — تركيز على الوجه والملابس العلوية)"
+                    : "Top-aligned Crop (Focus on Upper Frame)"}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {isAr
+                ? "الاحتواء السينمائي يعرض الفيديو كاملاً 100% بدون قص أطراف أو نصوص مدمجة، مع خلفية حية ضبابية تملأ الشاشة بأناقة."
+                : "Ambient Cinema Glow keeps 100% of the video canvas and burned-in text visible with glowing edge ambiance."}
             </p>
           </div>
         </div>
@@ -283,12 +320,12 @@ export function HomeHeroGroup() {
                 </Select>
               </div>
 
-              <div className="flex items-center justify-between rounded-lg border border-border/60 p-3 bg-card">
+              <div className="flex items-center justify-between rounded-lg border border-border p-3 bg-card">
                 <div className="space-y-0.5">
                   <Label className="text-xs font-medium cursor-pointer">
                     {isAr ? "أسهم التنقل بين الشرائح" : "Slide Navigation Arrows"}
                   </Label>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     {isAr
                       ? "إظهار أزرار عائمة للتنقل السريع بين الشرائح على الشاشات الكبيرة"
                       : "Floating chevron buttons to cycle slides on desktop"}

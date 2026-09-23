@@ -386,6 +386,7 @@ export const Route = createFileRoute("/$slug")({
       hero_aspect_mobile: s?.hero_aspect_mobile ?? "portrait_4_5",
       hero_show_arrows: s?.hero_show_arrows ?? true,
       pdp_gallery_aspect_ratio: s?.pdp_gallery_aspect_ratio ?? "3:4",
+      hero_video_fit: s?.hero_video_fit ?? "contain_ambient",
     };
 
     const rawHero = brand.hero_media as any;
@@ -618,7 +619,7 @@ function StoreShell() {
   return (
     <div
       dir={lang === "ar" ? "rtl" : "ltr"}
-      className="storefront-shell min-h-screen flex flex-col w-full max-w-full overflow-x-clip"
+      className="storefront-shell min-h-screen flex flex-col w-full max-w-full overflow-x-hidden"
       style={
         {
           backgroundColor: settings.background_color,

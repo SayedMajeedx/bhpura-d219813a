@@ -1599,6 +1599,7 @@ export type Database = {
           hero_aspect_mobile: string;
           hero_show_arrows: boolean;
           pdp_gallery_aspect_ratio: string;
+          hero_video_fit: string;
         };
         Insert: {
           address?: string | null;
@@ -1796,6 +1797,7 @@ export type Database = {
           hero_aspect_mobile?: string;
           hero_show_arrows?: boolean;
           pdp_gallery_aspect_ratio?: string;
+          hero_video_fit?: string;
         };
         Update: {
           address?: string | null;
@@ -1993,6 +1995,7 @@ export type Database = {
           hero_aspect_mobile?: string;
           hero_show_arrows?: boolean;
           pdp_gallery_aspect_ratio?: string;
+          hero_video_fit?: string;
         };
         Relationships: [
           {
@@ -7377,6 +7380,7 @@ export type Database = {
           hero_aspect_mobile: string | null;
           hero_show_arrows: boolean | null;
           pdp_gallery_aspect_ratio: string | null;
+          hero_video_fit: string | null;
         };
         Relationships: [
           {

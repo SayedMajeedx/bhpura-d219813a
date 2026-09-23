@@ -3,6 +3,7 @@ import { useStorefront, type HeroContentSlide } from "@/lib/storefront-context";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 import { isLikelyImageUrl } from "@/lib/media-delivery";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export interface HeroV2Props {
   slides: HeroContentSlide[];
@@ -90,6 +91,9 @@ export function HeroV2({ slides, background }: HeroV2Props) {
   const mobileRatio = settings.hero_aspect_mobile ?? "portrait_4_5";
   const desktopHeight = settings.hero_height_desktop ?? "standard";
   const showArrows = hasMultiple && settings.hero_show_arrows !== false;
+  const videoFit = settings.hero_video_fit ?? "contain_ambient";
+  const useAmbientGlow =
+    videoFit === "contain_ambient" || (desktopHeight === "compact" && videoFit !== "cover");
 
   const mobileRatioClass =
     mobileRatio === "story_9_16"
@@ -236,14 +240,37 @@ export function HeroV2({ slides, background }: HeroV2Props) {
                 )}
 
                 {isVideo && (
-                  <OptimizedVideo
-                    src={mediaUrl}
-                    poster={posterUrl}
-                    active={isActive && isInViewport}
-                    prepare={idx === preparedVideoIndex}
-                    wrapperClassName="absolute inset-0 size-full pointer-events-none"
-                    className="size-full object-cover"
-                  />
+                  <>
+                    {/* Ambient Blurred Video Canvas (Cinema Mode for no-crop presentation) */}
+                    {useAmbientGlow && (
+                      <OptimizedVideo
+                        src={mediaUrl}
+                        poster={posterUrl}
+                        active={isActive && isInViewport}
+                        prepare={false}
+                        wrapperClassName="absolute inset-0 size-full pointer-events-none overflow-hidden"
+                        className="size-full object-cover scale-125 blur-3xl opacity-40"
+                      />
+                    )}
+
+                    {/* Foreground Video (Respects aspect ratio without violent cropping) */}
+                    <OptimizedVideo
+                      src={mediaUrl}
+                      poster={posterUrl}
+                      active={isActive && isInViewport}
+                      prepare={idx === preparedVideoIndex}
+                      wrapperClassName={`absolute inset-0 size-full pointer-events-none flex items-center justify-center ${
+                        useAmbientGlow ? "z-0" : ""
+                      }`}
+                      className={
+                        useAmbientGlow
+                          ? "size-full max-h-full max-w-full object-contain"
+                          : videoFit === "top"
+                            ? "size-full object-cover object-top"
+                            : "size-full object-cover"
+                      }
+                    />
+                  </>
                 )}
 
                 {/* High-Contrast Luxury Vignette Scrim */}
@@ -255,13 +282,30 @@ export function HeroV2({ slides, background }: HeroV2Props) {
                 />
 
                 {/* Text / Action Content */}
-                <div className="absolute inset-0 flex flex-col justify-end p-4 sm:p-10 pb-8 sm:pb-14 text-white z-10 pointer-events-none">
-                  <div className="max-w-2xl space-y-2 pointer-events-auto">
+                <div
+                  className={`absolute inset-0 flex flex-col justify-end text-white z-10 pointer-events-none px-6 sm:px-10 ${
+                    desktopHeight === "compact"
+                      ? "p-4 sm:px-8 sm:py-4 pb-6 sm:pb-7"
+                      : desktopHeight === "cinematic"
+                        ? "p-6 sm:p-12 pb-10 sm:pb-16"
+                        : "p-4 sm:p-10 pb-8 sm:pb-14"
+                  }`}
+                >
+                  <div
+                    className={`max-w-2xl pointer-events-auto ${
+                      desktopHeight === "compact" ? "space-y-1 sm:space-y-1.5" : "space-y-2"
+                    }`}
+                  >
                     {title && (
                       <h1
                         className="font-bold tracking-tight text-white drop-shadow-md text-balance"
                         style={{
-                          fontSize: "clamp(1.35rem, 1rem + 2.2vw, 2.75rem)",
+                          fontSize:
+                            desktopHeight === "compact"
+                              ? "clamp(1.15rem, 0.85rem + 1.2vw, 1.85rem)"
+                              : desktopHeight === "cinematic"
+                                ? "clamp(1.5rem, 1.2rem + 2.4vw, 3.2rem)"
+                                : "clamp(1.35rem, 1rem + 2.2vw, 2.75rem)",
                           lineHeight: 1.18,
                           ...(heroTitleColor ? { color: heroTitleColor } : {}),
                         }}
@@ -270,7 +314,13 @@ export function HeroV2({ slides, background }: HeroV2Props) {
                       </h1>
                     )}
                     {body && (
-                      <p className="line-clamp-2 text-xs sm:text-base text-white/90 drop-shadow-sm max-w-xl">
+                      <p
+                        className={`line-clamp-2 ${
+                          desktopHeight === "compact"
+                            ? "text-xs sm:text-sm line-clamp-1 sm:line-clamp-2"
+                            : "text-xs sm:text-base"
+                        } text-white/90 drop-shadow-sm max-w-xl`}
+                      >
                         {body}
                       </p>
                     )}
@@ -278,7 +328,11 @@ export function HeroV2({ slides, background }: HeroV2Props) {
                       {button && (
                         <a
                           href={slide.button_href || "#products"}
-                          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 py-2.5 sm:px-6 sm:py-3 text-xs sm:text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]"
+                          className={`inline-flex ${
+                            desktopHeight === "compact"
+                              ? "min-h-10 px-4 py-2 text-xs sm:text-sm"
+                              : "min-h-11 px-5 py-2.5 sm:px-6 sm:py-3 text-xs sm:text-sm"
+                          } items-center justify-center rounded-xl bg-primary font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]`}
                         >
                           {button}
                         </a>
@@ -286,7 +340,11 @@ export function HeroV2({ slides, background }: HeroV2Props) {
                       {(brand as any)?.modules?.made_to_order && (
                         <a
                           href={`/${brand.slug}/custom-order`}
-                          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 px-4 py-2.5 sm:px-5 sm:py-3 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]"
+                          className={`inline-flex ${
+                            desktopHeight === "compact"
+                              ? "min-h-10 px-3.5 py-2 text-xs sm:text-sm"
+                              : "min-h-11 px-4 py-2.5 sm:px-5 sm:py-3 text-xs sm:text-sm"
+                          } items-center justify-center rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 font-semibold text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]`}
                         >
                           {isAr ? "طلب مخصص" : "Bespoke Order"}
                         </a>
@@ -298,25 +356,29 @@ export function HeroV2({ slides, background }: HeroV2Props) {
             );
           })}
 
-          {/* Luxury Floating Chevron Slide Navigation Arrows */}
+          {/* Luxury Floating Chevron Slide Navigation Arrows (Pure Arrows, No Circles) */}
           {showArrows && (
             <>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 aria-label={isAr ? "الشريحة السابقة" : "Previous slide"}
                 onClick={() => goTo(isAr ? activeIdx + 1 : activeIdx - 1)}
-                className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 hidden md:grid size-11 place-items-center rounded-full bg-black/35 hover:bg-black/55 text-white backdrop-blur-md border border-white/20 shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none cursor-pointer"
+                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 hidden md:flex items-center justify-center min-h-11 min-w-11 p-2 text-white/85 hover:text-white transition-all duration-200 hover:scale-120 active:scale-90 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none cursor-pointer bg-transparent hover:bg-transparent border-0 shadow-none"
               >
-                <ChevronLeft className="size-6 text-white" />
-              </button>
-              <button
+                <ChevronLeft className="size-9 sm:size-11 text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.85)] filter" />
+              </Button>
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 aria-label={isAr ? "الشريحة التالية" : "Next slide"}
                 onClick={() => goTo(isAr ? activeIdx - 1 : activeIdx + 1)}
-                className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 hidden md:grid size-11 place-items-center rounded-full bg-black/35 hover:bg-black/55 text-white backdrop-blur-md border border-white/20 shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none cursor-pointer"
+                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 hidden md:flex items-center justify-center min-h-11 min-w-11 p-2 text-white/85 hover:text-white transition-all duration-200 hover:scale-120 active:scale-90 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none cursor-pointer bg-transparent hover:bg-transparent border-0 shadow-none"
               >
-                <ChevronRight className="size-6 text-white" />
-              </button>
+                <ChevronRight className="size-9 sm:size-11 text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.85)] filter" />
+              </Button>
             </>
           )}
 
@@ -359,14 +421,16 @@ export function HeroV2({ slides, background }: HeroV2Props) {
             aria-label={isAr ? "شرائح الواجهة" : "Hero slides"}
           >
             {slides.map((_, i) => (
-              <button
+              <Button
                 key={i}
                 type="button"
+                variant="ghost"
+                size="icon"
                 role="tab"
                 aria-selected={activeIdx === i}
                 aria-label={`${isAr ? "شريحة" : "Slide"} ${i + 1}`}
                 onClick={() => goTo(i)}
-                className="grid min-h-11 min-w-11 place-items-center"
+                className="grid min-h-11 min-w-11 place-items-center bg-transparent hover:bg-transparent border-0 p-0 shadow-none"
               >
                 <span
                   aria-hidden="true"
@@ -376,7 +440,7 @@ export function HeroV2({ slides, background }: HeroV2Props) {
                       : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
                   }`}
                 />
-              </button>
+              </Button>
             ))}
           </div>
         )}

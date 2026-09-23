@@ -312,6 +312,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const [tailoringNotes, setTailoringNotes] = useState("");
   const [uploadingField, setUploadingField] = useState<Record<string, boolean>>({});
   const optionsRef = useRef<HTMLDivElement | null>(null);
+  const galleryTouchStartX = useRef<number | null>(null);
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["storefront", brand.slug, "product", id],
@@ -1228,11 +1229,24 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         : "aspect-[3/4]";
 
   return (
-    <div className="mx-auto max-w-5xl px-4 sm:px-6 py-3 sm:py-8 pb-28 md:pb-10 overflow-x-clip w-full">
-      <div className="grid md:grid-cols-12 gap-6 lg:gap-10 items-start">
+    <div className="mx-auto max-w-5xl px-4 sm:px-6 py-3 sm:py-8 pb-28 md:pb-10 overflow-x-hidden w-full max-w-full">
+      <div className="grid md:grid-cols-12 gap-6 lg:gap-10 items-start w-full max-w-full">
         <div className="md:col-span-5 max-w-[420px] mx-auto md:max-w-none w-full min-w-0">
           <div
-            className={`relative ${galleryRatioClass} max-h-[520px] bg-muted rounded-2xl overflow-hidden shadow-sm border border-border-subtle mx-auto w-full`}
+            className={`relative ${galleryRatioClass} max-h-[520px] bg-muted rounded-2xl overflow-hidden shadow-sm border border-border-subtle mx-auto w-full max-w-full select-none`}
+            onTouchStart={(e) => {
+              galleryTouchStartX.current = e.touches[0]?.clientX ?? null;
+            }}
+            onTouchEnd={(e) => {
+              const startX = galleryTouchStartX.current;
+              galleryTouchStartX.current = null;
+              if (startX == null || media.length <= 1) return;
+              const endX = e.changedTouches[0]?.clientX;
+              if (endX == null) return;
+              const diff = endX - startX;
+              if (Math.abs(diff) < 35) return;
+              setMediaIdx((i) => (diff < 0 ? (i + 1) % media.length : (i - 1 + media.length) % media.length));
+            }}
           >
             {media.length > 0 ? (
               <>
@@ -1287,20 +1301,20 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                       variant="ghost"
                       size="icon"
                       onClick={() => setMediaIdx((i) => (i - 1 + media.length) % media.length)}
-                      className="absolute top-1/2 start-3 -translate-y-1/2 h-11 w-11 bg-background/90 hover:bg-background text-foreground rounded-full shadow-md border border-border-subtle transition-transform active:scale-95 z-20"
+                      className="absolute top-1/2 start-2 -translate-y-1/2 min-h-11 min-w-11 p-2 text-white/90 hover:text-white transition-all active:scale-90 z-20 bg-transparent hover:bg-transparent border-0 shadow-none flex items-center justify-center cursor-pointer"
                       aria-label={t("الصورة السابقة", "Previous media")}
                     >
-                      <ChevronLeft className="h-5 w-5 rtl:rotate-180" />
+                      <ChevronLeft className="size-8 rtl:rotate-180 text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)] filter" />
                     </Button>
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
                       onClick={() => setMediaIdx((i) => (i + 1) % media.length)}
-                      className="absolute top-1/2 end-3 -translate-y-1/2 h-11 w-11 bg-background/90 hover:bg-background text-foreground rounded-full shadow-md border border-border-subtle transition-transform active:scale-95 z-20"
+                      className="absolute top-1/2 end-2 -translate-y-1/2 min-h-11 min-w-11 p-2 text-white/90 hover:text-white transition-all active:scale-90 z-20 bg-transparent hover:bg-transparent border-0 shadow-none flex items-center justify-center cursor-pointer"
                       aria-label={t("الصورة التالية", "Next media")}
                     >
-                      <ChevronRight className="h-5 w-5 rtl:rotate-180" />
+                      <ChevronRight className="size-8 rtl:rotate-180 text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)] filter" />
                     </Button>
                   </>
                 )}
@@ -1357,7 +1371,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           )}
         </div>
 
-        <div className="md:col-span-7">
+        <div className="md:col-span-7 w-full min-w-0 overflow-hidden">
           <div className="mb-1 flex items-start justify-between gap-3 sm:mb-2">
             <h1
               className="font-display text-2xl sm:text-3xl"
