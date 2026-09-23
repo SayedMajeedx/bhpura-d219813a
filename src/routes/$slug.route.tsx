@@ -666,7 +666,9 @@ function StoreShell() {
         style={{
           backgroundColor: "var(--sf-header-bg)",
           color: "var(--sf-header-fg)",
-          borderBottom: "1px solid rgba(0, 0, 0, 0.08)",
+          // Inset hairline instead of a border: it adds no layout height, so a
+          // full-bleed hero can sit flush under the header without a seam.
+          boxShadow: "inset 0 -1px 0 rgba(0, 0, 0, 0.08)",
           transform: "translateZ(0)",
         }}
       >

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { isStorefrontV2 } from "@/lib/storefront-engine";
+import { aspectFromSize, prepareHeroImage, probeMediaAspect } from "@/lib/media-aspect";
 import { useI18n } from "@/lib/i18n";
 import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
 import { AdvancedOnly } from "@/features/settings/FieldVisibility";
@@ -17,7 +18,6 @@ import {
 } from "@/components/ui/select";
 import { ColorField } from "@/features/settings/shared/ColorField";
 import { HeroSlidesEditor, type HeroSlide } from "./HeroSlidesEditor";
-import { ImageCropperDialog } from "@/components/image-cropper-dialog";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { VIDEO_PRESETS, type OptimizedVideoResult } from "@/lib/video-optimizer";
 import { VideoOptimizerDialog } from "@/components/admin/video/VideoOptimizerDialog";
@@ -28,7 +28,14 @@ interface MediaItem {
   type: "image" | "video";
   url: string;
   posterUrl?: string;
+  aspect?: number;
+  /** Optional phone-specific cut of the same type, shown below 640px. */
+  mobileUrl?: string;
+  mobilePosterUrl?: string;
+  mobileAspect?: number;
 }
+
+type BgVariant = "main" | "mobile";
 
 export function HomeHeroGroup() {
   const { lang } = useI18n();
@@ -41,8 +48,10 @@ export function HomeHeroGroup() {
   const isV2 = isStorefrontV2(bs);
 
   const [uploadingBg, setUploadingBg] = useState(false);
-  const [backgroundCropSrc, setBackgroundCropSrc] = useState<string | null>(null);
-  const [pendingOptimizeBgVideo, setPendingOptimizeBgVideo] = useState<File | null>(null);
+  const [pendingOptimizeBgVideo, setPendingOptimizeBgVideo] = useState<{
+    file: File;
+    variant: BgVariant;
+  } | null>(null);
 
   // Parse hero_media
   const heroMedia = (
@@ -74,34 +83,79 @@ export function HomeHeroGroup() {
     });
   };
 
-  const handleUploadBgFile = async (file: File) => {
+  /** Stores one uploaded file as the background or as its phone version. */
+  const applyBgUpload = (
+    variant: BgVariant,
+    media: {
+      type: "image" | "video";
+      url: string;
+      posterUrl?: string | null;
+      aspect: number | null;
+    },
+  ) => {
+    if (variant === "mobile") {
+      if (!backgroundMedia) return;
+      updateBackground({
+        ...backgroundMedia,
+        mobileUrl: media.url,
+        mobilePosterUrl: media.posterUrl ?? undefined,
+        mobileAspect: media.aspect ?? undefined,
+      });
+      return;
+    }
+    // Replacing the main file keeps an existing phone version of the same type.
+    const keepMobile =
+      backgroundMedia?.mobileUrl && backgroundMedia.type === media.type
+        ? {
+            mobileUrl: backgroundMedia.mobileUrl,
+            mobilePosterUrl: backgroundMedia.mobilePosterUrl,
+            mobileAspect: backgroundMedia.mobileAspect,
+          }
+        : {};
+    updateBackground({
+      type: media.type,
+      url: media.url,
+      ...(media.posterUrl ? { posterUrl: media.posterUrl } : {}),
+      ...(media.aspect ? { aspect: media.aspect } : {}),
+      ...keepMobile,
+    });
+  };
+
+  const handleUploadBgFile = async (file: File, variant: BgVariant = "main") => {
     const isVid = file.type.startsWith("video") || /\.(mp4|webm|mov|m4v|mkv)$/i.test(file.name);
     if (isVid) {
-      setPendingOptimizeBgVideo(file);
-    } else {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setBackgroundCropSrc(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      setPendingOptimizeBgVideo({ file, variant });
+      return;
+    }
+    try {
+      setUploadingBg(true);
+      // Keep the original shape: Smart Fit adapts the frame, so no forced 16:9 crop.
+      const { blob, aspect } = await prepareHeroImage(file);
+      const url = await uploadPublicMedia(brandId, blob, "hero");
+      applyBgUpload(variant, { type: "image", url, aspect });
+      toast.success(isAr ? "تم حفظ وتطبيق صورة الخلفية" : "Background image saved");
+    } catch (err: any) {
+      toast.error(err?.message || (isAr ? "فشل حفظ الصورة" : "Failed to save image"));
+    } finally {
+      setUploadingBg(false);
     }
   };
 
   const handleConfirmBgVideo = async (result: OptimizedVideoResult) => {
-    if (!brandId) return;
+    if (!brandId || !pendingOptimizeBgVideo) return;
+    const { variant } = pendingOptimizeBgVideo;
     try {
       setUploadingBg(true);
-      const [url, posterUrl] = await Promise.all([
+      const [url, posterUrl, aspect] = await Promise.all([
         uploadPublicMedia(brandId, result.file, "hero"),
         result.posterBlob && result.posterBlob.size > 0
           ? uploadPublicMedia(brandId, result.posterBlob, "hero")
           : Promise.resolve(null),
+        aspectFromSize(result.width, result.height)
+          ? Promise.resolve(aspectFromSize(result.width, result.height))
+          : probeMediaAspect(result.file),
       ]);
-      updateBackground({
-        type: "video",
-        url,
-        ...(posterUrl ? { posterUrl } : {}),
-      });
+      applyBgUpload(variant, { type: "video", url, posterUrl, aspect });
       const presetLabel = isAr
         ? VIDEO_PRESETS[result.preset].labelAr
         : VIDEO_PRESETS[result.preset].labelEn;
@@ -126,20 +180,6 @@ export function HomeHeroGroup() {
     }
   };
 
-  const confirmBgCrop = async (blob: Blob) => {
-    try {
-      setUploadingBg(true);
-      const url = await uploadPublicMedia(brandId, blob, "hero");
-      updateBackground({ type: "image", url });
-      setBackgroundCropSrc(null);
-      toast.success(isAr ? "تم حفظ وتطبيق صورة الخلفية" : "Background image saved");
-    } catch (err: any) {
-      toast.error(err.message || (isAr ? "فشل حفظ الصورة" : "Failed to save image"));
-    } finally {
-      setUploadingBg(false);
-    }
-  };
-
   const handleOptimizeExistingBgVideo = async () => {
     if (!backgroundMedia?.url || backgroundMedia.type !== "video") return;
     try {
@@ -154,7 +194,7 @@ export function HomeHeroGroup() {
       const blob = await response.blob();
       const file = new File([blob], "current-hero-video.mp4", { type: blob.type || "video/mp4" });
 
-      setPendingOptimizeBgVideo(file);
+      setPendingOptimizeBgVideo({ file, variant: "main" });
     } catch (err: any) {
       toast.error(
         err?.message || (isAr ? "فشل جلب الفيديو الحالي" : "Failed to fetch current video"),
@@ -241,8 +281,8 @@ export function HomeHeroGroup() {
             </Select>
             <p className="text-xs text-muted-foreground">
               {isAr
-                ? "يضبط تناسب المشغل ليتوافق مع أبعاد الفيديوهات الرأسية بدون قص الرأس أو النص."
-                : "Optimizes the mobile container to fit vertical videos without clipping heads or text."}
+                ? "يُستخدم مع أوضاع الملء والاقتصاص. الملاءمة الذكية تتبع أبعاد كل ملف مرفوع تلقائياً."
+                : "Used by the Fill & Crop modes. Smart Fit follows each upload's own shape automatically."}
             </p>
           </div>
 
@@ -261,13 +301,11 @@ export function HomeHeroGroup() {
               <SelectContent>
                 <SelectItem value="contain_ambient">
                   {isAr
-                    ? "احتواء سينمائي ذكي مع هالة ضبابية (موصى به — يمنع قص الفيديو والنصوص تماماً)"
-                    : "Ambient Cinema Glow (No Cropping — Recommended)"}
+                    ? "ملاءمة ذكية بعرض الشاشة — بدون أي قص (موصى به)"
+                    : "Smart Fit — Edge-to-Edge, No Cropping (Recommended)"}
                 </SelectItem>
                 <SelectItem value="cover">
-                  {isAr
-                    ? "ملء كامل مع اقتصاص ذكي (Fill & Smart Crop)"
-                    : "Fill & Smart Crop"}
+                  {isAr ? "ملء كامل مع اقتصاص ذكي (Fill & Smart Crop)" : "Fill & Smart Crop"}
                 </SelectItem>
                 <SelectItem value="top">
                   {isAr
@@ -278,8 +316,8 @@ export function HomeHeroGroup() {
             </Select>
             <p className="text-xs text-muted-foreground">
               {isAr
-                ? "الاحتواء السينمائي يعرض الفيديو كاملاً 100% بدون قص أطراف أو نصوص مدمجة، مع خلفية حية ضبابية تملأ الشاشة بأناقة."
-                : "Ambient Cinema Glow keeps 100% of the video canvas and burned-in text visible with glowing edge ambiance."}
+                ? "الملاءمة الذكية تجعل إطار الواجهة بعرض الشاشة يأخذ شكل الشريحة الأولى، فيظهر الفيديو أو الصورة كاملاً مع النصوص المدمجة على الجوال والكمبيوتر. الشرائح بأبعاد مختلفة تُعرض كاملة فوق خلفية ضبابية من نفس الوسائط."
+                : "Smart Fit shapes the full-width hero frame to your first slide, so the whole video or image — including burned-in text — shows on phones and desktops. Slides with a different shape are shown whole over a blurred fill of the same media."}
             </p>
           </div>
         </div>
@@ -288,9 +326,7 @@ export function HomeHeroGroup() {
         <AdvancedOnly
           fieldKey="hero_height_desktop"
           reason={
-            isAr
-              ? "تخصيص ارتفاع الهيرو وأسهم التنقل"
-              : "Customize desktop hero height and arrows"
+            isAr ? "تخصيص ارتفاع الهيرو وأسهم التنقل" : "Customize desktop hero height and arrows"
           }
         >
           <div className="rounded-xl border border-border p-4 bg-muted/5 space-y-4 pt-4">
@@ -528,24 +564,24 @@ export function HomeHeroGroup() {
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
             {isAr
-              ? "صورة أو فيديو ثابت بنسبة 16:9 يظهر كخلفية للواجهة الرئيسية في حال عدم تفعيل السلايدر المتعدد."
-              : "Fixed 16:9 image or video used as canvas background when not cycling multiple slides."}
+              ? "صورة أو فيديو يظهر كخلفية للواجهة وللشرائح النصية. مع الملاءمة الذكية يتكيف الإطار مع أبعاده."
+              : "Image or video used as the hero canvas and behind text-only slides. Smart Fit adapts the frame to its shape."}
           </p>
         </div>
 
         {backgroundMedia ? (
-          <div className="relative rounded-xl border border-border overflow-hidden bg-muted/20 aspect-[16/9] max-h-72 flex items-center justify-center">
+          <div className="relative rounded-xl border border-border overflow-hidden bg-neutral-950 aspect-[16/9] max-h-72 flex items-center justify-center">
             {backgroundMedia.type === "video" ? (
               <video
                 src={backgroundMedia.url}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
                 autoPlay
                 loop
                 muted
                 playsInline
               />
             ) : (
-              <img src={backgroundMedia.url} alt="" className="w-full h-full object-cover" />
+              <img src={backgroundMedia.url} alt="" className="w-full h-full object-contain" />
             )}
             <div className="absolute top-3 end-3 flex items-center gap-2 bg-background/90 backdrop-blur-sm p-1.5 rounded-lg border border-border shadow-sm">
               {backgroundMedia.type === "video" && (
@@ -588,8 +624,8 @@ export function HomeHeroGroup() {
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {isAr
-                  ? "ارفع صورة عالية الدقة أو فيديو قصير (MP4/WebM) بنسبة 16:9"
-                  : "Upload a high-res image or short video (MP4/WebM) in 16:9"}
+                  ? "ارفع صورة عالية الدقة أو فيديو قصير (MP4/WebM) بأي أبعاد — يُحفظ كما هو"
+                  : "Upload a high-res image or short video (MP4/WebM) in any shape — kept as uploaded"}
               </p>
             </div>
 
@@ -615,21 +651,86 @@ export function HomeHeroGroup() {
           </div>
         )}
 
-        <ImageCropperDialog
-          open={Boolean(backgroundCropSrc)}
-          imageSrc={backgroundCropSrc}
-          preset="hero"
-          busy={uploadingBg}
-          heroPreview
-          title={isAr ? "تأطير صورة خلفية الواجهة" : "Frame Hero Background"}
-          description={
-            isAr
-              ? "اسحب وكبّر الصورة لتحديد الموضع المناسب بنسبة 16:9 لظهور مثالي على كافة الشاشات."
-              : "Position and crop for a crisp 16:9 responsive presentation."
-          }
-          onCancel={() => setBackgroundCropSrc(null)}
-          onConfirm={confirmBgCrop}
-        />
+        {backgroundMedia && (
+          <div className="space-y-2 rounded-lg border border-dashed border-border p-3">
+            <div className="flex items-center justify-between gap-2">
+              <Label className="text-xs font-medium">
+                {isAr ? "نسخة الجوال (اختياري)" : "Phone version (optional)"}
+              </Label>
+              {backgroundMedia.mobileUrl && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs text-destructive hover:bg-destructive/10"
+                  onClick={() =>
+                    updateBackground({
+                      ...backgroundMedia,
+                      mobileUrl: undefined,
+                      mobilePosterUrl: undefined,
+                      mobileAspect: undefined,
+                    })
+                  }
+                >
+                  <Trash2 className="size-3.5 me-1" />
+                  <span>{isAr ? "حذف" : "Remove"}</span>
+                </Button>
+              )}
+            </div>
+            {backgroundMedia.mobileUrl && (
+              <div className="flex justify-center rounded bg-neutral-950 p-1">
+                {backgroundMedia.type === "video" ? (
+                  <video
+                    src={backgroundMedia.mobileUrl}
+                    poster={backgroundMedia.mobilePosterUrl}
+                    muted
+                    playsInline
+                    preload="metadata"
+                    className="max-h-48 rounded"
+                  />
+                ) : (
+                  <img
+                    src={backgroundMedia.mobileUrl}
+                    alt=""
+                    className="max-h-48 w-auto rounded object-contain"
+                  />
+                )}
+              </div>
+            )}
+            <label className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border border-border px-3 text-xs text-muted-foreground hover:bg-secondary">
+              {uploadingBg ? <Loader2 className="size-3.5 animate-spin" /> : null}
+              <span>
+                {backgroundMedia.mobileUrl
+                  ? isAr
+                    ? "استبدال نسخة الجوال"
+                    : "Replace phone version"
+                  : isAr
+                    ? "رفع نسخة طولية للجوال"
+                    : "Upload a vertical phone version"}
+              </span>
+              <input
+                type="file"
+                accept={
+                  backgroundMedia.type === "video"
+                    ? "video/mp4,video/webm,video/quicktime"
+                    : "image/jpeg,image/png,image/webp"
+                }
+                className="hidden"
+                disabled={uploadingBg}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (file) void handleUploadBgFile(file, "mobile");
+                }}
+              />
+            </label>
+            <p className="text-xs text-muted-foreground">
+              {isAr
+                ? "تظهر على الجوال بدلاً من الخلفية الرئيسية. الأفضل 4:5 أو 9:16 وبنفس نوع الملف."
+                : "Shown on phones instead of the main background. 4:5 or 9:16 of the same type works best."}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* 3. Hero Slides Manager */}
@@ -645,12 +746,22 @@ export function HomeHeroGroup() {
           </p>
         </div>
 
-        <HeroSlidesEditor brandId={brandId} slides={slides} onChange={updateSlides} />
+        <HeroSlidesEditor
+          brandId={brandId}
+          slides={slides}
+          onChange={updateSlides}
+          background={backgroundMedia}
+          framing={{
+            fit: bs.hero_video_fit || "contain_ambient",
+            mobileRatio: bs.hero_aspect_mobile || "portrait_4_5",
+            desktopHeight: bs.hero_height_desktop || "standard",
+          }}
+        />
       </div>
 
       <VideoOptimizerDialog
         open={!!pendingOptimizeBgVideo}
-        file={pendingOptimizeBgVideo}
+        file={pendingOptimizeBgVideo?.file ?? null}
         brandId={brandId}
         onOpenChange={(open) => {
           if (!open) setPendingOptimizeBgVideo(null);

@@ -17,6 +17,19 @@ export type HeroSlide = {
   media_iframe_url_ar?: string;
   media_poster_url_en?: string;
   media_poster_url_ar?: string;
+  media_aspect?: number;
+  media_aspect_en?: number;
+  media_aspect_ar?: number;
+  /** Optional phone-specific cut, shown below 640px instead of the main media. */
+  media_url_mobile_en?: string;
+  media_url_mobile_ar?: string;
+  media_poster_url_mobile_en?: string;
+  media_poster_url_mobile_ar?: string;
+  media_aspect_mobile_en?: number;
+  media_aspect_mobile_ar?: number;
+  /** Focal point (0–100 %) kept in view whenever the media has to be cropped. */
+  focal_x?: number;
+  focal_y?: number;
   button_en: string;
   button_ar: string;
   button_href: string;

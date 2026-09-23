@@ -6,7 +6,7 @@ const PRESET_WIDTHS: Record<ResponsiveImagePreset, number[]> = {
   thumb: [96, 160, 240, 320],
   card: [240, 360, 480, 640],
   product: [360, 480, 640, 800],
-  hero: [380, 640, 960, 1280, 1600],
+  hero: [380, 640, 960, 1280, 1600, 1920],
   content: [320, 480, 768, 1080],
 };
 

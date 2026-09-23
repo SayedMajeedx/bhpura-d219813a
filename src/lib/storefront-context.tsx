@@ -56,7 +56,17 @@ export type HomepageEditorialSections = Record<
   "best" | "sale" | "trending",
   EditorialSectionConfig
 >;
-export type HeroMediaItem = { type: "image" | "video"; url: string; posterUrl?: string };
+export type HeroMediaItem = {
+  type: "image" | "video";
+  url: string;
+  posterUrl?: string;
+  /** Intrinsic width / height, recorded at upload. */
+  aspect?: number;
+  /** Optional phone-specific cut, shown below 640px instead of `url`. */
+  mobileUrl?: string;
+  mobilePosterUrl?: string;
+  mobileAspect?: number;
+};
 export type HeroContentSlide = {
   id: string;
   type: "text" | "image" | "video";
@@ -74,6 +84,20 @@ export type HeroContentSlide = {
   media_poster_url?: string;
   media_poster_url_en?: string;
   media_poster_url_ar?: string;
+  /** Intrinsic width / height of each language's media, recorded at upload. */
+  media_aspect?: number;
+  media_aspect_en?: number;
+  media_aspect_ar?: number;
+  /** Optional phone-specific cut, shown below 640px instead of the main media. */
+  media_url_mobile_en?: string;
+  media_url_mobile_ar?: string;
+  media_poster_url_mobile_en?: string;
+  media_poster_url_mobile_ar?: string;
+  media_aspect_mobile_en?: number;
+  media_aspect_mobile_ar?: number;
+  /** Focal point (0–100 %) kept in view whenever the media has to be cropped. */
+  focal_x?: number;
+  focal_y?: number;
   button_en: string;
   button_ar: string;
   button_href: string;
@@ -267,12 +291,7 @@ export type PublicSettings = {
   hero_layout?: "full_bleed" | "contained" | string | null;
   hero_height_desktop?: "compact" | "standard" | "cinematic" | string | null;
   hero_aspect_mobile?:
-    | "portrait_4_5"
-    | "story_9_16"
-    | "square_1_1"
-    | "landscape_4_3"
-    | string
-    | null;
+    "portrait_4_5" | "story_9_16" | "square_1_1" | "landscape_4_3" | string | null;
   hero_show_arrows?: boolean | null;
   pdp_gallery_aspect_ratio?: "3:4" | "1:1" | "4:5" | string | null;
   hero_video_fit?: "contain_ambient" | "cover" | "top" | string | null;
