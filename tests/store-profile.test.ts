@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync, existsSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import {
   resolveStoreModules,
@@ -8,6 +8,19 @@ import {
   legacyBusinessTypeToVertical,
 } from "../src/lib/store-profile";
 import { orderSizingPresetsForVertical } from "../src/lib/variant-sku-utils";
+
+// The product page is split across its route and src/features/product-page (Phase 5).
+const productPageSource = () =>
+  [
+    "src/routes/$slug.product.$id.tsx",
+    ...["components", "lib"].flatMap((dir) =>
+      readdirSync(`src/features/product-page/${dir}`)
+        .sort()
+        .map((file) => `src/features/product-page/${dir}/${file}`),
+    ),
+  ]
+    .map((file) => readFileSync(file, "utf8"))
+    .join("\n");
 
 describe("store-profile pure library", () => {
   it("resolves default modules correctly for each vertical", () => {
@@ -102,7 +115,7 @@ describe("storefront & admin gating (source checks)", () => {
   });
 
   it("gates SizeGuideModal on product page behind modules.size_guide", () => {
-    const code = readFileSync(resolve(__dirname, "../src/routes/$slug.product.$id.tsx"), "utf-8");
+    const code = productPageSource();
     expect(
       code.includes("storefront.product.optionsAside") ||
         code.includes("modules.size_guide && <SizeGuideModal"),
