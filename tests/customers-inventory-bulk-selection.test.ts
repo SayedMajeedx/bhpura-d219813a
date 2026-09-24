@@ -6,7 +6,7 @@ const read = (path: string) => readFileSync(path, "utf8");
 describe("customers and inventory bulk selection", () => {
   it("paginates filtered customers and products with consistent page sizes", () => {
     const customersRoute = read("src/routes/_authenticated/admin.b.$slug.customers.tsx");
-    const inventoryRoute = read("src/routes/_authenticated/admin.b.$slug.inventory.tsx");
+    const inventoryRoute = read("src/features/inventory/components/ProductsSection.tsx");
     const pagination = read("src/components/list-pagination.tsx");
 
     expect(customersRoute).toContain("paginatedCustomers");
@@ -43,13 +43,16 @@ describe("customers and inventory bulk selection", () => {
   });
 
   it("brand-scopes both individual and bulk product deletion", () => {
-    const route = read("src/routes/_authenticated/admin.b.$slug.inventory.tsx");
-    expect(route).toMatch(
+    // Product list code moved to src/features/inventory (Phase 5).
+    const productActions = read("src/features/inventory/hooks/use-product-actions.ts");
+    const bulkActions = read("src/features/inventory/hooks/use-product-bulk-actions.ts");
+    const section = read("src/features/inventory/components/ProductsSection.tsx");
+    expect(productActions).toMatch(
       /from\("products"\)[\s\S]*?\.delete\(\)[\s\S]*?\.eq\("id", id\)[\s\S]*?\.eq\("brand_id", brandId\)/,
     );
-    expect(route).toMatch(
+    expect(bulkActions).toMatch(
       /from\("products"\)[\s\S]*?\.delete\(\)[\s\S]*?\.eq\("brand_id", brandId\)[\s\S]*?\.in\("id", ids\)/,
     );
-    expect(route).toContain("setBulkDeleteOpen(true)");
+    expect(section).toContain("setBulkDeleteOpen(true)");
   });
 });

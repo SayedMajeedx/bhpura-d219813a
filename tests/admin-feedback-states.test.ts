@@ -17,8 +17,13 @@ describe("admin feedback states", () => {
   it("gives mobile and desktop users a useful empty-state action", () => {
     expect(customers).toContain("No matching customers");
     expect(customers).toContain("Clear Filters");
-    expect(inventory).toContain("No matching products");
-    expect(inventory).toContain("Add Product");
+    // The inventory empty state moved to its own component (Phase 5).
+    const inventoryEmpty = readFileSync(
+      "src/features/inventory/components/InventoryEmptyState.tsx",
+      "utf8",
+    );
+    expect(inventoryEmpty).toContain("No matching products");
+    expect(inventoryEmpty).toContain("Add Product");
   });
 
   it("shows the shared save action only when the unified settings form is dirty", () => {
