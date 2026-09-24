@@ -37,7 +37,7 @@ const BUDGETS = {
  *   admin.b.$slug.orders.$id.tsx (Phase 5, now ~980 lines).
  */
 const GIANT_FILES_BUDGETS: Record<string, number> = {
-  "src/routes/_authenticated/admin.b.$slug.orders.index.tsx": 3456,
+  "src/routes/_authenticated/admin.b.$slug.orders.index.tsx": 2495,
   "src/routes/$slug.checkout.tsx": 2809,
   "src/features/settings/registry.ts": 2616,
   "src/routes/$slug.product.$id.tsx": 2431,
