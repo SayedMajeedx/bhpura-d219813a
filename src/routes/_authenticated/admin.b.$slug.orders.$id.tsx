@@ -1,90 +1,46 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useEffect, useRef, lazy } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { getPaymentGatewayReference } from "@/lib/payment-reference";
-import { AddonSlot } from "@/components/addons/AddonSlot";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Plus,
-  Minus,
   Check,
-  Pencil,
-  Trash2,
   Printer,
   Save,
-  Search,
   Receipt,
   Link as LinkIcon,
-  ScanLine,
-  Mail,
   Loader2,
-  X,
-  Tag,
-  CheckCircle2,
-  ImageIcon,
-  Truck,
   MoreHorizontal,
   UserRound,
   Package,
   CreditCard,
-  Scissors,
-  SlidersHorizontal,
   FileText,
-  ChevronsUpDown,
 } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { formatNotifiedTimeAgo } from "@/lib/courier-whatsapp";
 import { CourierWhatsAppModal } from "@/components/courier/CourierWhatsAppModal";
-import { formatDate, formatMoney, formatOrderStatus } from "@/lib/format";
+import { formatOrderStatus } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
 import { getOrderCustomerName, getOrderCustomerPhone } from "@/lib/order-customer-snapshot";
-import { formatAddressLine, type StructuredAddress } from "@/lib/bahrain-regions";
 import { printThermalReceipt } from "@/lib/thermal-print";
 import { cn, getFriendlyErrorMessage } from "@/lib/utils";
-import {
-  resolvePaymentStatus,
-  PAYMENT_BADGE_CLASSES,
-  type PaymentBadge,
-} from "@/lib/payment-status";
+import { resolvePaymentStatus, type PaymentBadge } from "@/lib/payment-status";
 import { logActivity, logActivityBatch } from "@/lib/activity-log";
 import { ManagePaymentModal } from "@/components/orders/ManagePaymentModal";
 import { ActivityLogList } from "@/components/activity-log-list";
-import { BarcodeScanner } from "@/components/barcode-scanner";
 import { useBrand } from "@/lib/brand-context";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useProfile } from "@/lib/profile-context";
-import { DeliveryAddressCard } from "@/components/delivery-address-card";
-import { calculateOrderPackagingCogs } from "@/lib/bom-calculator";
 import { getFulfillmentLabel } from "@/lib/status-labels";
 import { OrderUnifiedHeader } from "@/components/orders/OrderUnifiedHeader";
 import { OrderStickyBottomBar } from "@/components/orders/OrderStickyBottomBar";
@@ -96,7 +52,6 @@ import {
   blankOrderItem,
   filterCustomers,
   filterVariantsForSearch,
-  formatDeliveryAddress,
   isOrderDirty,
   normalizeOrderMin,
   isUntouchedDraft,
@@ -106,15 +61,24 @@ import {
   promoFailureMessage,
   promoSignature,
   recalcOrderItem,
-  simplifyItem,
 } from "@/features/orders/lib/order-editor";
-import { BhdFeeInput } from "@/features/orders/components/BhdFeeInput";
+import {
+  haveOrderItemsChanged,
+  orderChangeLogs,
+  orderItemRow,
+  orderSaveBlocker,
+  orderSavePayload,
+} from "@/features/orders/lib/order-save";
 import { useOrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
 import { useBenefitReview } from "@/features/orders/hooks/use-benefit-review";
+import { useCustomerFitPassport } from "@/features/orders/hooks/use-customer-fit-passport";
 import { ProductSearchDialog } from "@/features/orders/components/ProductSearchDialog";
 import { OutOfStockConfirmDialog } from "@/features/orders/components/OutOfStockConfirmDialog";
 import { NewCustomerDialog } from "@/features/orders/components/NewCustomerDialog";
 import { renderOrderPrimaryAction } from "@/features/orders/components/order-primary-action";
+import { OrderCustomerCard } from "@/features/orders/components/OrderCustomerCard";
+import { OrderItemsCard } from "@/features/orders/components/OrderItemsCard";
+import { OrderFinancialCard } from "@/features/orders/components/OrderFinancialCard";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/orders/$id")({
   component: OrderDetail,
@@ -196,24 +160,10 @@ function OrderDetail() {
 
   const [order, setOrder] = useState<Order | null>(null);
   const [items, setItems] = useState<Item[]>([]);
-  const customerPassportQ = useQuery({
-    queryKey: ["admin-order-fit-passport", brandId, order?.customer_id],
-    enabled:
-      Boolean(storeProfile.modules.fit_passport) && !isCourier && Boolean(order?.customer_id),
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("customer_fit_passports")
-        .select("measurements,preferred_length_unit,version")
-        .eq("brand_id", brandId)
-        .eq("customer_id", order!.customer_id)
-        .maybeSingle();
-      if (error) throw error;
-      return data as {
-        measurements: unknown;
-        preferred_length_unit: "in" | "cm";
-        version: number;
-      } | null;
-    },
+  const customerPassportQ = useCustomerFitPassport({
+    brandId,
+    customerId: order?.customer_id,
+    enabled: Boolean(storeProfile.modules.fit_passport) && !isCourier,
   });
   const [customerPickerOpen, setCustomerPickerOpen] = useState(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState("");
@@ -791,20 +741,8 @@ function OrderDetail() {
 
   const save = async () => {
     if (isReadOnly) return;
-    if (id === "new" && !order.customer_id && items.length === 0) {
-      return toast.error(
-        lang === "ar"
-          ? "أضف عميلاً أو منتجاً واحداً على الأقل قبل حفظ الطلب."
-          : "Add at least one customer or product before saving the order.",
-      );
-    }
-    const fulfillmentMethod = order.fulfillment_method ?? "delivery";
-    if (fulfillmentMethod === "pickup" && !order.branch_id) {
-      return toast.error(lang === "ar" ? "اختر فرع الاستلام" : "Select a pickup branch");
-    }
-    if (fulfillmentMethod === "delivery" && !order.shipping_address_id) {
-      return toast.error(lang === "ar" ? "اختر عنوان التوصيل" : "Select a delivery address");
-    }
+    const saveBlocker = orderSaveBlocker(order, items, id, lang);
+    if (saveBlocker) return toast.error(saveBlocker);
     setSaving(true);
     const {
       data: { user },
@@ -814,33 +752,7 @@ function OrderDetail() {
       return;
     }
 
-    const orderPayload = {
-      customer_id: order.customer_id,
-      status: order.status,
-      notes: order.notes,
-      fulfillment_method: fulfillmentMethod,
-      branch_id: fulfillmentMethod === "pickup" ? (order.branch_id ?? null) : null,
-      shipping_address_id:
-        fulfillmentMethod === "delivery" ? (order.shipping_address_id ?? null) : null,
-      digital_delivery_channel:
-        fulfillmentMethod === "digital" ? order.digital_delivery_channel : null,
-      digital_delivery_contact:
-        fulfillmentMethod === "digital" ? order.digital_delivery_contact : null,
-      payment_method: order.payment_method ?? null,
-      payment_status: order.payment_status ?? "unpaid",
-      fulfillment_status: order.fulfillment_status ?? "ON_HOLD",
-      discount: totals.discount,
-      tax_rate: order.tax_rate,
-      tax_amount: totals.taxAmount,
-      promo_code: appliedPromo?.code ?? null,
-      promo_code_id: appliedPromo?.id || null,
-      shipping: totals.shipping,
-      subtotal: totals.subtotal,
-      total: totals.total,
-      advance_paid: totals.advancePaid,
-      currency,
-      order_date: order.order_date,
-    };
+    const orderPayload = orderSavePayload(order, totals, appliedPromo, currency);
 
     if (id === "new") {
       const { data: created, error: createError } = await (supabase.from("orders") as any)
@@ -864,24 +776,9 @@ function OrderDetail() {
           }
         }
         const { error: itemError } = await (supabase.from("order_items") as any).insert(
-          items.map((item) => ({
-            user_id: user.id,
-            brand_id: brandId,
-            order_id: created.id,
-            product_id: item.product_id ?? null,
-            variant_id: item.variant_id ?? null,
-            description: item.description,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            unit_cost: item.unit_cost == null ? null : Number(item.unit_cost),
-            original_price: item.original_price ?? null,
-            customizations: item.customizations,
-            customization_total: item.customization_total,
-            line_total: item.line_total,
-            location: item.location ?? "main",
-            selected_variant: item.selected_variant ?? null,
-            custom_field_values: item.custom_field_values ?? [],
-          })),
+          items.map((item) =>
+            orderItemRow(item, { user_id: user.id, brand_id: brandId, order_id: created.id }),
+          ),
         );
         if (itemError) {
           await supabase.from("orders").delete().eq("id", created.id);
@@ -909,78 +806,16 @@ function OrderDetail() {
 
     // ── Activity log: detect changes vs saved state
     const prev = (orderQ.data ?? {}) as any;
-    const prevStatus = prev.status;
-    const newStatus = order.status;
-    const statusChanged = prevStatus !== newStatus;
-
-    const logs: Array<{ action: string; en: string; ar: string; order_id: string }> = [];
-    if (statusChanged) {
-      logs.push({
-        action: "status_change",
-        order_id: order.id,
-        en: `Order status changed from "${prev.status ?? "—"}" to "${order.status}"`,
-        ar: `تم تغيير حالة الطلب من "${prev.status ?? "—"}" إلى "${order.status}"`,
-      });
-    }
-    const prevPay = prev.payment_status ?? "unpaid";
-    const nextPay = order.payment_status ?? "unpaid";
-    if (prevPay !== nextPay) {
-      logs.push({
-        action: "payment_change",
-        order_id: order.id,
-        en: `Payment status manually changed from "${prevPay}" to "${nextPay}"`,
-        ar: `تم تغيير حالة الدفع يدوياً من "${prevPay}" إلى "${nextPay}"`,
-      });
-    }
-    const prevAdvance = Number(prev.advance_paid ?? 0);
-    const nextAdvance = totals.advancePaid;
-    if (prevAdvance !== nextAdvance) {
-      logs.push({
-        action: "advance_change",
-        order_id: order.id,
-        en: `Advance payment updated from ${prevAdvance} to ${nextAdvance} ${currency}`,
-        ar: `تم تحديث المبلغ المقدم من ${prevAdvance} إلى ${nextAdvance} ${currency}`,
-      });
-    }
+    const logs = orderChangeLogs(prev, order, totals.advancePaid, currency);
 
     // Only update order_items if they actually changed
     const originalItems = (orderQ.data?.order_items ?? []) as any[];
-    let itemsModified = originalItems.length !== items.length;
-    if (!itemsModified) {
-      for (const item of items) {
-        const orig = originalItems.find((o) => o.id === item.id);
-        if (!orig) {
-          itemsModified = true;
-          break;
-        }
-        const sOrig = simplifyItem(orderItemFromRow(orig));
-        const sItem = simplifyItem(item);
-        if (JSON.stringify(sOrig) !== JSON.stringify(sItem)) {
-          itemsModified = true;
-          break;
-        }
-      }
-    }
+    const itemsModified = haveOrderItemsChanged(originalItems, items);
 
     if (itemsModified) {
-      const itemsPayload = items.map((i) => ({
-        user_id: user.id,
-        brand_id: brandId,
-        order_id: order.id,
-        product_id: i.product_id ?? null,
-        variant_id: i.variant_id ?? null,
-        description: i.description,
-        quantity: i.quantity,
-        unit_price: i.unit_price,
-        unit_cost: i.unit_cost == null ? null : Number(i.unit_cost),
-        original_price: i.original_price ?? null,
-        customizations: i.customizations,
-        customization_total: i.customization_total,
-        line_total: i.line_total,
-        location: i.location ?? "main",
-        selected_variant: i.selected_variant ?? null,
-        custom_field_values: i.custom_field_values ?? [],
-      }));
+      const itemsPayload = items.map((i) =>
+        orderItemRow(i, { user_id: user.id, brand_id: brandId, order_id: order.id }),
+      );
 
       const { error: repErr } = await (supabase.rpc as any)("replace_order_items", {
         p_order_id: order.id,
@@ -1500,1318 +1335,60 @@ function OrderDetail() {
                 mobileTab !== "customer" && "hidden sm:block",
               )}
             >
-              <Card
-                id="sec-overview"
-                className="scroll-mt-24 overflow-hidden rounded-2xl border border-border-subtle bg-card/60 p-4 shadow-sm sm:bg-card sm:p-6 sm:shadow-lg"
-              >
-                <div className="grid grid-cols-1 gap-4">
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <Label className="font-semibold text-sm">{t("orderDetail.customer")}</Label>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2.5 text-xs font-semibold text-primary"
-                        onClick={() => setNewCustomerOpen(true)}
-                      >
-                        <Plus className="h-3.5 w-3.5 me-1" />
-                        {lang === "ar" ? "زبون جديد" : "New Customer"}
-                      </Button>
-                    </div>
-
-                    <Popover open={customerPickerOpen} onOpenChange={setCustomerPickerOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={customerPickerOpen}
-                          className="w-full justify-between h-10 px-3 font-normal bg-background hover:bg-muted/40"
-                        >
-                          <span className="truncate">
-                            {order.customer_id
-                              ? (() => {
-                                  const c = (customersQ.data ?? []).find(
-                                    (x: any) => x.id === order.customer_id,
-                                  );
-                                  return c
-                                    ? `${c.name}${c.phone ? ` (${c.phone})` : ""}`
-                                    : t("orderDetail.customer");
-                                })()
-                              : t("orderDetail.noCustomerOption")}
-                          </span>
-                          <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent
-                        className="w-[--radix-popover-trigger-width] p-0"
-                        align="start"
-                      >
-                        <Command shouldFilter={false}>
-                          <CommandInput
-                            placeholder={
-                              lang === "ar"
-                                ? "بحث بالاسم أو الهاتف أو البريد..."
-                                : "Search customer by name, phone, or email..."
-                            }
-                            value={customerSearchQuery}
-                            onValueChange={setCustomerSearchQuery}
-                          />
-                          <CommandList className="max-h-60 overflow-y-auto">
-                            <CommandEmpty className="p-3 text-center text-xs text-muted-foreground">
-                              {lang === "ar" ? "لم يتم العثور على زبائن" : "No customers found"}
-                            </CommandEmpty>
-                            <CommandGroup>
-                              <CommandItem
-                                value="none"
-                                onSelect={() => {
-                                  setOrder({
-                                    ...order,
-                                    customer_id: null,
-                                    shipping_address_id: null,
-                                  });
-                                  setCustomerPickerOpen(false);
-                                  setCustomerSearchQuery("");
-                                }}
-                                className="cursor-pointer text-xs font-medium text-muted-foreground"
-                              >
-                                <Check
-                                  className={cn(
-                                    "me-2 h-4 w-4",
-                                    !order.customer_id ? "opacity-100 text-primary" : "opacity-0",
-                                  )}
-                                />
-                                {t("orderDetail.noCustomerOption")}
-                              </CommandItem>
-                              {filteredCustomers.map((c: any) => {
-                                const isSelected = order.customer_id === c.id;
-                                return (
-                                  <CommandItem
-                                    key={c.id}
-                                    value={c.id}
-                                    onSelect={() => {
-                                      const def =
-                                        (addressesQ.data ?? []).find(
-                                          (a) => a.customer_id === c.id && a.is_default,
-                                        ) ??
-                                        (addressesQ.data ?? []).find((a) => a.customer_id === c.id);
-                                      setOrder({
-                                        ...order,
-                                        customer_id: c.id,
-                                        shipping_address_id: def?.id ?? null,
-                                      });
-                                      setCustomerPickerOpen(false);
-                                      setCustomerSearchQuery("");
-                                    }}
-                                    className="cursor-pointer text-xs py-2"
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "me-2 h-4 w-4 shrink-0",
-                                        isSelected ? "opacity-100 text-primary" : "opacity-0",
-                                      )}
-                                    />
-                                    <div className="flex flex-col min-w-0">
-                                      <span className="font-semibold text-foreground truncate">
-                                        {c.name}
-                                      </span>
-                                      {(c.phone || c.email) && (
-                                        <span className="text-xs text-muted-foreground font-mono truncate">
-                                          {[c.phone, c.email].filter(Boolean).join(" • ")}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </CommandItem>
-                                );
-                              })}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                </div>
-                {order.customer_id &&
-                  (() => {
-                    const selected = (customersQ.data ?? []).find(
-                      (c: any) => c.id === order.customer_id,
-                    );
-                    if (!selected) return null;
-                    const customerAddrs = (addressesQ.data ?? []).filter(
-                      (a) => a.customer_id === order.customer_id,
-                    );
-                    const legacyLines = formatDeliveryAddress(selected, lang);
-                    return (
-                      <div className="mt-4 pt-4 border-t border-border text-start">
-                        <p className="text-xs text-muted-foreground mb-1">
-                          {order.fulfillment_method === "digital"
-                            ? lang === "ar"
-                              ? "بيانات العميل"
-                              : "Customer details"
-                            : t("orderDetail.deliveryAddress")}
-                        </p>
-                        <p className="font-medium">{selected.name}</p>
-                        {selected.email && (
-                          <p className="text-sm text-muted-foreground flex items-center gap-1.5 break-all">
-                            <Mail className="h-3.5 w-3.5 shrink-0" />
-                            <a href={`mailto:${selected.email}`} className="hover:underline">
-                              {selected.email}
-                            </a>
-                          </p>
-                        )}
-                        {selected.phone && (
-                          <p className="text-sm text-muted-foreground">{selected.phone}</p>
-                        )}
-                        {order.fulfillment_method === "delivery" &&
-                        legacyLines.length > 0 &&
-                        customerAddrs.length === 0
-                          ? legacyLines.map((line, index) => (
-                              <p key={index} className="text-sm text-muted-foreground">
-                                {line}
-                              </p>
-                            ))
-                          : null}
-                      </div>
-                    );
-                  })()}
-                {(() => {
-                  const method = order.fulfillment_method ?? "delivery";
-                  const deliveryEnabled = Boolean((settingsQ.data as any).delivery_enabled);
-                  const pickupEnabled = Boolean((settingsQ.data as any).pickup_enabled);
-                  const digitalEnabled = Boolean((settingsQ.data as any).digital_delivery_enabled);
-                  const defaultDeliveryFee = Number((settingsQ.data as any).delivery_fee ?? 0);
-                  const selectedCustomer = (customersQ.data ?? []).find(
-                    (c: any) => c.id === order.customer_id,
-                  );
-                  const selectedAddress = (addressesQ.data ?? []).find(
-                    (a) => a.id === order.shipping_address_id,
-                  );
-                  const storedAddressSnapshot = (order as any)
-                    .delivery_address_snapshot as StructuredAddress | null;
-                  const snapshotMatchesSavedSelection =
-                    storedAddressSnapshot &&
-                    (!order.shipping_address_id ||
-                      !storedAddressSnapshot.id ||
-                      storedAddressSnapshot.id === order.shipping_address_id);
-                  const addressSnapshot =
-                    (snapshotMatchesSavedSelection ? storedAddressSnapshot : null) ??
-                    selectedAddress ??
-                    storedAddressSnapshot ??
-                    (selectedCustomer as StructuredAddress | null);
-                  const selectedBranch = (branchesQ.data ?? []).find(
-                    (b: any) => b.id === order.branch_id,
-                  );
-                  const address = selectedAddress
-                    ? formatAddressLine(selectedAddress as StructuredAddress, lang)
-                    : formatDeliveryAddress(selectedCustomer, lang).join("، ");
-                  const branchName = selectedBranch
-                    ? lang === "ar"
-                      ? selectedBranch.name_ar || selectedBranch.name_en
-                      : selectedBranch.name_en || selectedBranch.name_ar
-                    : null;
-                  const branchLocation = selectedBranch
-                    ? lang === "ar"
-                      ? selectedBranch.location_ar || selectedBranch.location_en
-                      : selectedBranch.location_en || selectedBranch.location_ar
-                    : null;
-                  const customerAddresses = (addressesQ.data ?? []).filter(
-                    (item) => item.customer_id === order.customer_id,
-                  );
-                  const defaultAddress =
-                    customerAddresses.find((item) => item.is_default) ??
-                    customerAddresses[0] ??
-                    null;
-                  const title =
-                    method === "digital"
-                      ? lang === "ar"
-                        ? "تسليم رقمي"
-                        : "Digital delivery"
-                      : method === "pickup"
-                        ? lang === "ar"
-                          ? "استلام"
-                          : "Pickup"
-                        : lang === "ar"
-                          ? "توصيل"
-                          : "Delivery";
-                  return (
-                    <div className="mt-5 overflow-hidden rounded-xl border bg-muted/20 text-start shadow-sm">
-                      <div className="flex flex-col gap-2.5 border-b bg-muted/50 px-4 py-3">
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground">
-                            {lang === "ar" ? "طريقة التسليم" : "FULFILLMENT"}
-                          </p>
-                          <p className="text-base font-semibold leading-tight text-foreground mt-0.5">
-                            {title}
-                          </p>
-                        </div>
-                        <div className="w-full">
-                          <Label className="sr-only">
-                            {lang === "ar" ? "طريقة التسليم" : "Fulfillment method"}
-                          </Label>
-                          <Select
-                            value={method}
-                            onValueChange={(value) =>
-                              setOrder({
-                                ...order,
-                                fulfillment_method: value,
-                                branch_id: value === "pickup" ? (order.branch_id ?? null) : null,
-                                shipping_address_id:
-                                  value === "delivery"
-                                    ? (order.shipping_address_id ?? defaultAddress?.id ?? null)
-                                    : null,
-                                shipping:
-                                  value === "delivery"
-                                    ? isCreationMode
-                                      ? defaultDeliveryFee
-                                      : Number(order.shipping ?? defaultDeliveryFee)
-                                    : 0,
-                              })
-                            }
-                          >
-                            <SelectTrigger className="bg-background">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {(pickupEnabled || method === "pickup") && (
-                                <SelectItem value="pickup">
-                                  {lang === "ar" ? "استلام" : "Pickup"}
-                                </SelectItem>
-                              )}
-                              {(deliveryEnabled || method === "delivery") && (
-                                <SelectItem value="delivery">
-                                  {lang === "ar" ? "توصيل للمنزل" : "Home Delivery"}
-                                </SelectItem>
-                              )}
-                              {(digitalEnabled || method === "digital") && (
-                                <SelectItem value="digital">
-                                  {lang === "ar" ? "تسليم رقمي" : "Digital Delivery"}
-                                </SelectItem>
-                              )}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <div className="p-4">
-                        {method === "delivery" && isAdmin && (
-                          <div className="mb-4 space-y-3 rounded-lg border bg-background p-3">
-                            <Label>
-                              {lang === "ar" ? "مندوب التوصيل المسند" : "Assigned courier"}
-                            </Label>
-                            <Select
-                              value={order.assigned_to ?? "unassigned"}
-                              onValueChange={assignCourier}
-                            >
-                              <SelectTrigger className="mt-1">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="unassigned">
-                                  {lang === "ar" ? "غير مسند" : "Unassigned"}
-                                </SelectItem>
-                                {(couriersQ.data ?? []).map((courier: any) => (
-                                  <SelectItem key={courier.id} value={courier.id}>
-                                    {courier.name || courier.email}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-
-                            {(() => {
-                              if (!order.assigned_to) return null;
-                              const assignedCourierObj = (couriersQ.data ?? []).find(
-                                (c: any) => c.id === order.assigned_to,
-                              );
-                              const notifiedAgo = formatNotifiedTimeAgo(
-                                (order as any).courier_notified_at,
-                                lang,
-                              );
-                              return (
-                                <div className="space-y-2 pt-2 border-t">
-                                  <div className="flex flex-wrap items-center justify-between gap-2">
-                                    {notifiedAgo ? (
-                                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800 text-xs font-bold px-2.5 py-1">
-                                        🔔{" "}
-                                        {lang === "ar"
-                                          ? `تم الإشعار (${notifiedAgo})`
-                                          : `Notified ${notifiedAgo}`}
-                                      </span>
-                                    ) : (
-                                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800 text-xs font-bold px-2.5 py-1">
-                                        ⏳{" "}
-                                        {lang === "ar"
-                                          ? "لم يتم الإشعار عبر واتساب بعد"
-                                          : "WhatsApp notification pending"}
-                                      </span>
-                                    )}
-
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 shadow-sm flex items-center gap-1.5"
-                                      onClick={() => setWaModalOpen(true)}
-                                    >
-                                      📱{" "}
-                                      {lang === "ar"
-                                        ? `إشعار ${assignedCourierObj?.name ? assignedCourierObj.name.split(" ")[0] : "المندوب"} عبر واتساب`
-                                        : `Notify ${assignedCourierObj?.name ? assignedCourierObj.name.split(" ")[0] : "Courier"} on WhatsApp`}
-                                    </Button>
-                                  </div>
-                                </div>
-                              );
-                            })()}
-
-                            <div className="flex flex-wrap items-center gap-2 border-t pt-3 text-sm">
-                              <span className="text-muted-foreground">
-                                {lang === "ar" ? "حالة التوصيل:" : "Delivery status:"}
-                              </span>
-                              <span className="rounded-full bg-primary/10 px-2.5 py-1 font-semibold text-primary">
-                                {getFulfillmentLabel(order.fulfillment_status, lang)}
-                              </span>
-                              {order.payment_method === "cod" && (
-                                <span
-                                  className={`rounded-full px-2.5 py-1 font-medium ${order.cod_collected_at ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}
-                                >
-                                  {order.cod_collected_at
-                                    ? `${lang === "ar" ? "تم استلام النقد" : "Cash received"}: ${formatMoney(Number(order.cod_collected_amount || 0), order.currency || "BHD")}`
-                                    : lang === "ar"
-                                      ? "النقد بانتظار التحصيل"
-                                      : "Cash collection pending"}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                        {method === "digital" ? (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                              <Label>{lang === "ar" ? "قناة التسليم" : "Delivery channel"}</Label>
-                              <Select
-                                value={order.digital_delivery_channel ?? "email"}
-                                onValueChange={(value) =>
-                                  setOrder({ ...order, digital_delivery_channel: value })
-                                }
-                              >
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="email">
-                                    {lang === "ar" ? "البريد الإلكتروني" : "Email"}
-                                  </SelectItem>
-                                  <SelectItem value="whatsapp">
-                                    {lang === "ar" ? "واتساب" : "WhatsApp"}
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <Label>
-                                {order.digital_delivery_channel === "whatsapp"
-                                  ? lang === "ar"
-                                    ? "رقم أو معرّف واتساب"
-                                    : "WhatsApp number or user ID"
-                                  : lang === "ar"
-                                    ? "البريد الإلكتروني"
-                                    : "Email address"}
-                              </Label>
-                              <Input
-                                dir="ltr"
-                                value={order.digital_delivery_contact ?? ""}
-                                onChange={(e) =>
-                                  setOrder({ ...order, digital_delivery_contact: e.target.value })
-                                }
-                              />
-                            </div>
-                          </div>
-                        ) : method === "pickup" ? (
-                          <div className="space-y-2">
-                            <Label>{lang === "ar" ? "فرع الاستلام" : "Pickup location"}</Label>
-                            <Select
-                              value={order.branch_id ?? ""}
-                              onValueChange={(branchId) =>
-                                setOrder({ ...order, branch_id: branchId })
-                              }
-                            >
-                              <SelectTrigger className="text-start">
-                                <SelectValue
-                                  placeholder={lang === "ar" ? "اختر الفرع" : "Select a branch"}
-                                />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {(branchesQ.data ?? []).map((branch: any) => {
-                                  const name =
-                                    lang === "ar"
-                                      ? branch.name_ar || branch.name_en
-                                      : branch.name_en || branch.name_ar;
-                                  const location =
-                                    lang === "ar"
-                                      ? branch.location_ar || branch.location_en
-                                      : branch.location_en || branch.location_ar;
-                                  return (
-                                    <SelectItem key={branch.id} value={branch.id}>
-                                      {name}
-                                      {location ? ` — ${location}` : ""}
-                                    </SelectItem>
-                                  );
-                                })}
-                              </SelectContent>
-                            </Select>
-                            {selectedBranch && (
-                              <p className="text-sm text-muted-foreground">
-                                <span className="font-medium text-foreground">{branchName}</span>
-                                {branchLocation ? ` — ${branchLocation}` : ""}
-                              </p>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="grid gap-4 grid-cols-1">
-                            <div className="space-y-2">
-                              <div className="flex flex-wrap items-center justify-between gap-2">
-                                <Label>
-                                  {lang === "ar" ? "عنوان التوصيل" : "Delivery address"}
-                                </Label>
-                                {defaultAddress && (
-                                  <button
-                                    type="button"
-                                    className="text-xs font-medium text-primary hover:underline"
-                                    onClick={() =>
-                                      setOrder({ ...order, shipping_address_id: defaultAddress.id })
-                                    }
-                                  >
-                                    {lang === "ar"
-                                      ? "استخدام عنوان ملف العميل"
-                                      : "Use Customer Profile Address"}
-                                  </button>
-                                )}
-                              </div>
-                              <Select
-                                value={order.shipping_address_id ?? ""}
-                                onValueChange={(addressId) =>
-                                  setOrder({ ...order, shipping_address_id: addressId })
-                                }
-                              >
-                                <SelectTrigger className="text-start">
-                                  <SelectValue
-                                    placeholder={
-                                      lang === "ar" ? "اختر عنواناً" : "Select an address"
-                                    }
-                                  />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {customerAddresses.map((savedAddress) => (
-                                    <SelectItem key={savedAddress.id} value={savedAddress.id}>
-                                      {savedAddress.label || t("customers.address")}
-                                      {savedAddress.is_default ? " ★" : ""} —{" "}
-                                      {formatAddressLine(savedAddress as StructuredAddress, lang) ||
-                                        "—"}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              {addressSnapshot && (
-                                <DeliveryAddressCard
-                                  address={addressSnapshot}
-                                  lang={lang}
-                                  compact
-                                  showLabel={false}
-                                />
-                              )}
-                              <p className="hidden text-sm text-muted-foreground">
-                                {address ||
-                                  (lang === "ar"
-                                    ? "لا يوجد عنوان توصيل محفوظ لهذا العميل"
-                                    : "No saved delivery address for this customer")}
-                              </p>
-                            </div>
-                            <div>
-                              <Label>{lang === "ar" ? "رسوم التوصيل" : "Delivery fee"}</Label>
-                              <BhdFeeInput
-                                value={Number(order.shipping ?? 0)}
-                                disabled={isReadOnly}
-                                onChange={(shipping) => setOrder({ ...order, shipping })}
-                              />
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                {formatMoney(Number(order.shipping ?? 0), order.currency ?? "BHD")}
-                              </p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })()}
-                <div className="mt-4 grid grid-cols-1 gap-4">
-                  <div>
-                    <Label>{t("orderDetail.notes")}</Label>
-                    <Textarea
-                      value={order.notes ?? ""}
-                      onChange={(e) => setOrder({ ...order, notes: e.target.value })}
-                      rows={3}
-                      placeholder={lang === "ar" ? "ملاحظات داخلية للطلب" : "Internal order notes"}
-                    />
-                  </div>
-                  <div>
-                    <Label className="flex items-center gap-1.5 text-blue-700 dark:text-blue-400 font-bold mb-1.5">
-                      <Truck className="h-4 w-4" />
-                      {lang === "ar"
-                        ? "ملاحظات التوصيل وسجل السائق"
-                        : "Courier Delivery Notes & Trace"}
-                    </Label>
-                    <Textarea
-                      value={order.delivery_notes ?? ""}
-                      onChange={(e) => setOrder({ ...order, delivery_notes: e.target.value })}
-                      rows={3}
-                      placeholder={
-                        lang === "ar"
-                          ? "ملاحظات السائق وسجل التوصيل"
-                          : "Driver notes and courier logs"
-                      }
-                      className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800 font-mono text-xs"
-                    />
-                  </div>
-                </div>
-              </Card>
+              <OrderCustomerCard
+                addressesQ={addressesQ}
+                assignCourier={assignCourier}
+                branchesQ={branchesQ}
+                couriersQ={couriersQ}
+                customerPickerOpen={customerPickerOpen}
+                customerSearchQuery={customerSearchQuery}
+                customersQ={customersQ}
+                filteredCustomers={filteredCustomers}
+                isAdmin={isAdmin}
+                isCreationMode={isCreationMode}
+                isReadOnly={isReadOnly}
+                lang={lang}
+                order={order}
+                setCustomerPickerOpen={setCustomerPickerOpen}
+                setCustomerSearchQuery={setCustomerSearchQuery}
+                setNewCustomerOpen={setNewCustomerOpen}
+                setOrder={setOrder}
+                setWaModalOpen={setWaModalOpen}
+                settingsQ={settingsQ}
+                t={t}
+              />
             </div>
 
             {/* LEFT COLUMN (65% width) - Products, Line Items & Notes */}
             <div className="space-y-3 sm:space-y-6 lg:col-span-2">
-              <Card
-                id="sec-items"
-                className={cn(
-                  "scroll-mt-24 overflow-hidden rounded-2xl border border-border-subtle bg-card/60 p-4 shadow-sm  sm:bg-card sm:p-6 sm:shadow-lg",
-                  mobileTab !== "items" && "hidden sm:block",
-                )}
-              >
-                <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
-                  <h3 className="font-display text-lg">{t("orderDetail.lineItems")}</h3>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Button
-                      size="sm"
-                      className="bg-primary text-primary-foreground font-semibold"
-                      onClick={() => setProductSearchOpen(true)}
-                    >
-                      <Search className="h-3.5 w-3.5 me-1.5" />
-                      {lang === "ar" ? "بحث المنتجات والـ SKU" : "Search Products & SKUs"}
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={openBarcodeScanner}>
-                      <ScanLine className="h-3.5 w-3.5 me-1.5" />
-                      {lang === "ar" ? "مسح الباركود" : "Scan Barcode"}
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={addItem}>
-                      <Plus className="h-3.5 w-3.5 me-1.5" /> {t("orderDetail.addLine")}
-                    </Button>
-                  </div>
-                </div>
-                {items.length === 0 && (
-                  <p className="text-sm text-muted-foreground">{t("orderDetail.noLines")}</p>
-                )}
-                <div className="space-y-3">
-                  {items.map((it, idx) => {
-                    const variant = it.variant_id
-                      ? (variantsQ.data ?? []).find((x: any) => x.id === it.variant_id)
-                      : null;
-                    const product =
-                      (variant
-                        ? productsQ.data?.find((x: any) => x.id === (variant as any).product_id)
-                        : null) ??
-                      (it.product_id
-                        ? (productsQ.data ?? []).find((x: any) => x.id === it.product_id)
-                        : null) ??
-                      (productsQ.data ?? []).find((x: any) =>
-                        it.description && x.name
-                          ? String(it.description)
-                              .trim()
-                              .toLowerCase()
-                              .includes(String(x.name).trim().toLowerCase()) ||
-                            String(x.name)
-                              .trim()
-                              .toLowerCase()
-                              .includes(String(it.description).trim().toLowerCase())
-                          : false,
-                      );
-
-                    const getMediaUrl = (obj: any) => {
-                      if (!obj) return null;
-                      if (typeof obj.image_url === "string" && obj.image_url) return obj.image_url;
-                      if (typeof obj.image === "string" && obj.image) return obj.image;
-                      if (Array.isArray(obj.images) && obj.images[0]) return obj.images[0];
-                      if (Array.isArray(obj.media) && obj.media[0]) {
-                        const m = obj.media[0];
-                        return typeof m === "string" ? m : m.url || m.poster_url || null;
-                      }
-                      return null;
-                    };
-
-                    const imageUrl = getMediaUrl(variant) || getMediaUrl(product);
-                    const sku = (variant as any)?.sku || (product as any)?.sku;
-                    const mainStock = Number((variant as any)?.stock_main ?? 0);
-                    const incStock = Number((variant as any)?.stock_incubator ?? 0);
-                    const isAr = lang === "ar";
-                    return (
-                      <div
-                        key={idx}
-                        className="space-y-3 rounded-xl border border-border-strong bg-card p-3.5 shadow-xs transition-all"
-                      >
-                        {/* Item Thumbnail & SKU Header */}
-                        <div className="flex items-center gap-3 pb-2.5 border-b border-border-subtle">
-                          <div className="h-12 w-12 rounded-lg border bg-muted/30 overflow-hidden shrink-0 flex items-center justify-center">
-                            {imageUrl ? (
-                              <img
-                                src={imageUrl}
-                                alt={it.description || ""}
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <ImageIcon className="h-5 w-5 text-muted-foreground" />
-                            )}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-sm truncate text-foreground">
-                              {it.description ||
-                                (product?.name ?? (isAr ? "منتج مخصص" : "Custom Item"))}
-                            </p>
-                            {sku ? (
-                              <span className="inline-flex items-center text-xs font-mono font-medium px-2 py-0.5 rounded bg-muted/80 text-muted-foreground border border-border-subtle mt-1">
-                                SKU: {sku}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">
-                                {it.location === "custom" || !it.variant_id
-                                  ? vocabulary.custom_order?.[lang] ||
-                                    (isAr ? "طلب مخصص" : "Custom Order")
-                                  : variant
-                                    ? `${variant.size || ""} ${variant.color || ""}`.trim() ||
-                                      (isAr ? "خيار" : "Variant")
-                                    : isAr
-                                      ? "بند مخصص"
-                                      : "Custom Line"}
-                              </span>
-                            )}
-                          </div>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-8 text-xs font-semibold gap-1.5 shrink-0 rounded-lg border border-border-strong touch-manipulation"
-                            onClick={() => setEditingItemSheetIdx(idx)}
-                          >
-                            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                            <span>{isAr ? "تعديل المنتج" : "Product / Edit"}</span>
-                          </Button>
-                        </div>
-
-                        {/* Mobile Read-Only Compact Summary Row (< 640px) */}
-                        <div className="flex sm:hidden items-center justify-between gap-2 pt-1 pb-0.5">
-                          <div className="flex items-center gap-1.5 text-xs font-semibold">
-                            <span className="bg-muted/80 text-foreground px-2.5 py-1 rounded-md border border-border-subtle">
-                              {it.quantity} × {formatMoney(it.unit_price, currency)}
-                            </span>
-                          </div>
-                          <div className="text-end">
-                            <span className="text-xs text-muted-foreground font-semibold block">
-                              {isAr ? "المجموع" : "Total"}
-                            </span>
-                            <span className="font-extrabold text-sm text-foreground">
-                              {formatMoney(it.line_total, currency)}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Desktop Full Inline Input Grid (>= 640px) */}
-                        <div className="hidden sm:grid sm:grid-cols-12 gap-3">
-                          <div className="sm:col-span-3">
-                            <Label>{t("orderDetail.fromInventory")}</Label>
-                            <Select
-                              value={it.variant_id ?? "custom"}
-                              onValueChange={(v) => {
-                                if (v === "custom") {
-                                  updateItem(idx, { variant_id: null });
-                                } else {
-                                  pickVariant(idx, v);
-                                }
-                              }}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder={t("orderDetail.pickVariant")} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="custom">
-                                  {vocabulary.custom_sizing?.[lang]
-                                    ? `${vocabulary.custom_sizing[lang]} / ${isAr ? "بدون مخزون جاهز" : "No Ready Stock"}`
-                                    : isAr
-                                      ? "طلب مخصص / بدون مخزون جاهز"
-                                      : "Custom Order / No Ready Stock"}
-                                </SelectItem>
-                                {(variantsQ.data ?? []).map((v: any) => {
-                                  const p = productsQ.data?.find((x: any) => x.id === v.product_id);
-                                  if (!p) return null;
-                                  return (
-                                    <SelectItem key={v.id} value={v.id}>
-                                      {p.name} {v.size ? `· ${v.size}` : ""}{" "}
-                                      {v.color ? `· ${v.color}` : ""} —{" "}
-                                      {formatMoney(v.selling_price, currency)}
-                                    </SelectItem>
-                                  );
-                                })}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="sm:col-span-3">
-                            <Label className="text-xs text-muted-foreground mb-1 block">
-                              {t("orderDetail.description")}
-                            </Label>
-                            {editingItems[idx] ? (
-                              <Textarea
-                                rows={2}
-                                value={it.description}
-                                placeholder={
-                                  isAr
-                                    ? "اكتب اسم أو وصف البند المخصص..."
-                                    : "Enter item description..."
-                                }
-                                onChange={(e) => updateItem(idx, { description: e.target.value })}
-                                className="text-xs leading-snug rounded-xl resize-none"
-                              />
-                            ) : (
-                              <div className="text-xs font-medium text-foreground bg-muted/20 border border-border-subtle rounded-lg p-2.5 min-h-[42px] flex items-center">
-                                {it.description ||
-                                  (isAr ? "لا يوجد وصف إضافي" : "No additional description")}
-                              </div>
-                            )}
-                          </div>
-                          <div className="sm:col-span-2">
-                            <Label>{t("orderDetail.qty")}</Label>
-                            <div className="flex items-center rounded-lg border border-border-strong bg-background overflow-hidden h-9 shadow-2xs mt-1">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-9 w-8 shrink-0 rounded-none hover:bg-muted active:scale-95 text-muted-foreground hover:text-foreground"
-                                onClick={() =>
-                                  updateItem(idx, {
-                                    quantity: Math.max(1, Number(it.quantity || 1) - 1),
-                                  })
-                                }
-                                title={isAr ? "إنقاص الكمية" : "Decrease quantity"}
-                              >
-                                <Minus className="h-3.5 w-3.5" />
-                              </Button>
-                              <Input
-                                type="number"
-                                min={1}
-                                value={it.quantity}
-                                onChange={(e) =>
-                                  updateItem(idx, { quantity: Math.max(1, Number(e.target.value)) })
-                                }
-                                className="h-9 w-12 border-0 p-0 text-center font-bold text-xs focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-9 w-8 shrink-0 rounded-none hover:bg-muted active:scale-95 text-muted-foreground hover:text-foreground"
-                                onClick={() =>
-                                  updateItem(idx, { quantity: Number(it.quantity || 1) + 1 })
-                                }
-                                title={isAr ? "زيادة الكمية" : "Increase quantity"}
-                              >
-                                <Plus className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          </div>
-                          <div className="sm:col-span-3">
-                            <Label className="text-xs text-muted-foreground mb-1 block">
-                              {t("orderDetail.unitPrice")}
-                            </Label>
-                            {editingItems[idx] ? (
-                              <Input
-                                type="number"
-                                step="0.001"
-                                value={it.unit_price}
-                                onChange={(e) =>
-                                  updateItem(idx, { unit_price: Number(e.target.value) })
-                                }
-                                className="h-9 text-xs font-bold rounded-xl"
-                              />
-                            ) : (
-                              <div className="text-xs font-bold text-foreground bg-muted/20 border border-border-subtle rounded-lg p-2.5 min-h-[42px] flex items-center">
-                                {formatMoney(it.unit_price, currency)}
-                              </div>
-                            )}
-                            {Number(it.original_price ?? (variant as any)?.original_price ?? 0) >
-                              Number(it.unit_price) && (
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                {isAr ? "السعر الأصلي" : "Original"}:{" "}
-                                <span className="line-through">
-                                  {formatMoney(
-                                    Number(it.original_price ?? (variant as any)?.original_price),
-                                    currency,
-                                  )}
-                                </span>
-                                <span className="mx-1">·</span>
-                                {isAr ? "سعر التخفيض" : "Sale"}:{" "}
-                                <span className="font-medium text-foreground">
-                                  {formatMoney(it.unit_price, currency)}
-                                </span>
-                              </p>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Custom Item / Specifications */}
-                        {!it.product_id ||
-                        it.location === "custom" ||
-                        it.variant_id === "custom" ||
-                        (it.custom_field_values && it.custom_field_values.length > 0) ||
-                        editingItems[idx] ? (
-                          <div className="space-y-2">
-                            {(!it.product_id ||
-                              it.location === "custom" ||
-                              it.variant_id === "custom") && (
-                              <div className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary flex flex-wrap items-center justify-between gap-2">
-                                <span className="flex items-center gap-1.5">
-                                  {storeProfile.modules.made_to_order ? (
-                                    <Scissors className="h-4 w-4" />
-                                  ) : (
-                                    <FileText className="h-4 w-4" />
-                                  )}
-                                  {storeProfile.modules.made_to_order
-                                    ? vocabulary.custom_order?.[lang]
-                                      ? `${vocabulary.custom_order[lang]} / ${isAr ? "بند يدوي (لا يخصم من المخزون)" : "Manual Item (No Ready Stock Deduction)"}`
-                                      : isAr
-                                        ? "طلب مخصص / بند يدوي (لا يخصم من المخزون)"
-                                        : "Custom Order / Manual Item (No Ready Stock Deduction)"
-                                    : isAr
-                                      ? "بند يدوي إضافي (لا يخصم من المخزون)"
-                                      : "Manual Item (No Ready Stock Deduction)"}
-                                </span>
-                                <div className="flex items-center gap-2">
-                                  {it.unit_cost != null && Number(it.unit_cost) > 0 ? (
-                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-800 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">
-                                      {isAr ? "التكلفة المسجلة:" : "Cost:"}{" "}
-                                      {formatMoney(it.unit_cost, currency)}
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-800 dark:text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-md">
-                                      {isAr
-                                        ? "بدون تكلفة مسجلة (اضغط تعديل لإضافتها)"
-                                        : "No cost set (click edit to set)"}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
-                            {editingItems[idx] ? (
-                              storeProfile.modules.made_to_order ? (
-                                <AddonSlot
-                                  placement="admin.order.itemPanel"
-                                  props={{
-                                    item: it,
-                                    isAr,
-                                    passport: customerPassportQ.data,
-                                    productCategory: product?.category,
-                                    productName: product?.name,
-                                    fitPassportEnabled: storeProfile.modules.fit_passport,
-                                    onChange: (patch: any) => updateItem(idx, patch),
-                                  }}
-                                />
-                              ) : null
-                            ) : (
-                              (it.selected_variant ||
-                                (it.custom_field_values && it.custom_field_values.length > 0)) && (
-                                <div className="rounded-xl border border-border bg-muted/30 p-3 text-xs space-y-2">
-                                  <div className="font-bold text-xs text-foreground flex items-center gap-1.5">
-                                    {storeProfile.modules.made_to_order ? (
-                                      <Scissors className="h-3.5 w-3.5 text-primary" />
-                                    ) : (
-                                      <SlidersHorizontal className="h-3.5 w-3.5 text-primary" />
-                                    )}
-                                    <span>
-                                      {vocabulary.customization_options?.[lang] ||
-                                        (isAr ? "المواصفات والخيارات" : "Specifications & Options")}
-                                    </span>
-                                  </div>
-                                  {it.selected_variant &&
-                                    (() => {
-                                      const itemAxes = resolveAllVariantAxes({
-                                        product,
-                                        addonDefaults,
-                                        lang: isAr ? "ar" : "en",
-                                      });
-                                      return (
-                                        <div className="flex flex-wrap gap-2">
-                                          {it.selected_variant.size && itemAxes.size.visible && (
-                                            <span className="inline-flex items-center gap-1 bg-background border border-border-strong px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
-                                              <span className="text-muted-foreground">
-                                                {itemAxes.size.label}:
-                                              </span>
-                                              <b>
-                                                {String(it.selected_variant?.size ?? "").includes(
-                                                  "custom",
-                                                ) ||
-                                                String(it.selected_variant?.size ?? "").includes(
-                                                  "خاص",
-                                                ) ||
-                                                String(it.selected_variant?.size ?? "").includes(
-                                                  vocabulary.custom_order?.[lang] || "custom",
-                                                )
-                                                  ? vocabulary.custom_sizing?.[lang] ||
-                                                    (isAr ? "قياسات خاصة" : "Custom Sizing")
-                                                  : it.selected_variant.size}
-                                              </b>
-                                            </span>
-                                          )}
-                                          {it.selected_variant.color && itemAxes.color.visible && (
-                                            <span className="inline-flex items-center gap-1.5 bg-background border border-border-strong px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
-                                              <span className="text-muted-foreground">
-                                                {itemAxes.color.label}:
-                                              </span>
-                                              <b>{it.selected_variant.color}</b>
-                                            </span>
-                                          )}
-                                          {it.selected_variant.fabric &&
-                                            itemAxes.fabric.visible && (
-                                              <span className="inline-flex items-center gap-1 bg-background border border-border-strong px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
-                                                <span className="text-muted-foreground">
-                                                  {itemAxes.fabric.label}:
-                                                </span>
-                                                <b>{it.selected_variant.fabric}</b>
-                                              </span>
-                                            )}
-                                        </div>
-                                      );
-                                    })()}
-                                  {it.custom_field_values && it.custom_field_values.length > 0 && (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 pt-1 border-t border-border-subtle">
-                                      {it.custom_field_values.map((cf, i) => (
-                                        <div key={i} className="text-xs">
-                                          <span className="font-bold text-muted-foreground">
-                                            {isAr
-                                              ? cf.label_ar || cf.label_en || cf.key
-                                              : cf.label_en || cf.label_ar || cf.key}
-                                            :{" "}
-                                          </span>
-                                          <span className="text-foreground font-medium">
-                                            {cf.value}
-                                          </span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              )
-                            )}
-                          </div>
-                        ) : (
-                          it.variant_id && (
-                            <div>
-                              <Label className="text-xs">
-                                {isAr ? "خصم المخزون من" : "Deduct Stock From"}
-                              </Label>
-                              <div className="flex flex-wrap gap-2 mt-1">
-                                {(
-                                  [
-                                    {
-                                      key: "main",
-                                      en: `Direct Sales · Main (${mainStock})`,
-                                      ar: `الرئيسي (${mainStock})`,
-                                    },
-                                    {
-                                      key: "incubator",
-                                      en: `Incubator (${incStock})`,
-                                      ar: `الحاضنة (${incStock})`,
-                                    },
-                                  ] as const
-                                ).map((opt) => {
-                                  const active = it.location === opt.key;
-                                  return (
-                                    <button
-                                      key={opt.key}
-                                      type="button"
-                                      onClick={() => updateItem(idx, { location: opt.key })}
-                                      className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                                        active
-                                          ? "bg-primary text-primary-foreground border-primary"
-                                          : "border-border hover:bg-secondary"
-                                      }`}
-                                    >
-                                      {isAr ? opt.ar : opt.en}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )
-                        )}
-
-                        {Boolean(it.product_id) && (
-                          <div>
-                            <Label className="text-xs">{t("orderDetail.customizations")}</Label>
-                            <div className="flex flex-wrap gap-2 mt-1">
-                              {(customQ.data ?? [])
-                                .filter((c: any) => {
-                                  const pIds = Array.isArray(c.product_ids) ? c.product_ids : [];
-                                  if (pIds.length === 0) return true;
-                                  return pIds.includes(it.product_id);
-                                })
-                                .map((c: any) => {
-                                  const active = it.customizations.some((x) => x.name === c.name);
-                                  return (
-                                    <button
-                                      key={c.id}
-                                      type="button"
-                                      onClick={() =>
-                                        toggleCustom(idx, {
-                                          name: c.name,
-                                          price_delta: Number(c.price_delta),
-                                        })
-                                      }
-                                      className={`text-xs px-2 py-1 rounded-full border ${
-                                        active
-                                          ? "bg-primary text-primary-foreground border-primary"
-                                          : "border-border hover:bg-secondary"
-                                      }`}
-                                    >
-                                      {c.name} +{formatMoney(c.price_delta, currency)}
-                                    </button>
-                                  );
-                                })}
-                              {(customQ.data ?? []).filter((c: any) => {
-                                const pIds = Array.isArray(c.product_ids) ? c.product_ids : [];
-                                if (pIds.length === 0) return true;
-                                return pIds.includes(it.product_id);
-                              }).length === 0 && (
-                                <span className="text-xs text-muted-foreground">
-                                  {t("orderDetail.addonsHint")}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                        <div className="flex items-center justify-between pt-2 border-t border-border">
-                          <span className="text-sm text-muted-foreground">
-                            {t("orderDetail.lineTotal")}
-                          </span>
-                          <div className="flex items-center gap-3">
-                            <span className="font-medium">
-                              {formatMoney(it.line_total, currency)}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setItems(items.filter((_, i) => i !== idx))}
-                              aria-label={lang === "ar" ? "حذف بند الطلب" : "Remove order item"}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-
-                        {/* Centered Modal Dialog for Web Desktop View (min-width: 768px) */}
-                        <Dialog
-                          open={editingItemSheetIdx === idx}
-                          onOpenChange={(open) => setEditingItemSheetIdx(open ? idx : null)}
-                        >
-                          <DialogContent className="sm:max-w-[560px] w-[95vw] rounded-2xl p-6 font-sans border border-border-strong bg-card shadow-2xl space-y-5">
-                            <DialogHeader className="text-start pb-3 border-b border-border-subtle pe-8 ps-0 space-y-1">
-                              <DialogTitle className="text-lg font-extrabold text-foreground flex items-center gap-2">
-                                <Pencil className="h-4.5 w-4.5 text-primary shrink-0" />
-                                <span>{isAr ? "تعديل المنتج" : "Edit Product"}</span>
-                              </DialogTitle>
-                              <DialogDescription className="text-xs text-muted-foreground truncate">
-                                {it.description ||
-                                  (product?.name ?? (isAr ? "منتج مخصص" : "Custom Item"))}
-                              </DialogDescription>
-                            </DialogHeader>
-
-                            <div className="space-y-4 py-1">
-                              {/* Inventory Variant Picker */}
-                              <div>
-                                <Label className="text-xs font-semibold">
-                                  {t("orderDetail.fromInventory")}
-                                </Label>
-                                <Select
-                                  value={it.variant_id ?? "custom"}
-                                  onValueChange={(v) => {
-                                    if (v === "custom") {
-                                      updateItem(idx, { variant_id: null });
-                                    } else {
-                                      pickVariant(idx, v);
-                                    }
-                                  }}
-                                >
-                                  <SelectTrigger className="mt-1.5 h-10 rounded-xl">
-                                    <SelectValue placeholder={t("orderDetail.pickVariant")} />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="custom">
-                                      {vocabulary.custom_sizing?.[lang]
-                                        ? `${vocabulary.custom_sizing[lang]} / ${isAr ? "بدون مخزون جاهز" : "No Ready Stock"}`
-                                        : isAr
-                                          ? "طلب مخصص / بدون مخزون جاهز"
-                                          : "Custom Order / No Ready Stock"}
-                                    </SelectItem>
-                                    {(variantsQ.data ?? []).map((v: any) => {
-                                      const p = productsQ.data?.find(
-                                        (x: any) => x.id === v.product_id,
-                                      );
-                                      if (!p) return null;
-                                      return (
-                                        <SelectItem key={v.id} value={v.id}>
-                                          {p.name} {v.size ? `· ${v.size}` : ""}{" "}
-                                          {v.color ? `· ${v.color}` : ""} —{" "}
-                                          {formatMoney(v.selling_price, currency)}
-                                        </SelectItem>
-                                      );
-                                    })}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-
-                              {/* Description */}
-                              <div>
-                                <Label className="text-xs font-semibold">
-                                  {t("orderDetail.description")}
-                                </Label>
-                                <Textarea
-                                  rows={2}
-                                  value={it.description}
-                                  onChange={(e) => updateItem(idx, { description: e.target.value })}
-                                  className="mt-1.5 text-xs rounded-xl resize-none"
-                                />
-                              </div>
-
-                              {/* Quantity, Unit Price & Product Cost (COGS) */}
-                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                <div>
-                                  <Label className="text-xs font-semibold">
-                                    {t("orderDetail.qty")}
-                                  </Label>
-                                  <div className="flex items-center rounded-xl border border-border bg-background overflow-hidden h-10 mt-1.5">
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-10 w-10 shrink-0"
-                                      onClick={() =>
-                                        updateItem(idx, {
-                                          quantity: Math.max(1, Number(it.quantity || 1) - 1),
-                                        })
-                                      }
-                                      aria-label={isAr ? "إنقاص" : "Decrease"}
-                                    >
-                                      <Minus className="h-4 w-4" />
-                                    </Button>
-                                    <Input
-                                      type="number"
-                                      min={1}
-                                      value={it.quantity}
-                                      onChange={(e) =>
-                                        updateItem(idx, {
-                                          quantity: Math.max(1, Number(e.target.value)),
-                                        })
-                                      }
-                                      className="h-10 border-0 text-center font-bold text-sm bg-transparent"
-                                    />
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-10 w-10 shrink-0"
-                                      onClick={() =>
-                                        updateItem(idx, {
-                                          quantity: Number(it.quantity || 1) + 1,
-                                        })
-                                      }
-                                      aria-label={isAr ? "إضافة" : "Add"}
-                                    >
-                                      <Plus className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </div>
-
-                                <div>
-                                  <Label className="text-xs font-semibold">
-                                    {t("orderDetail.unitPrice")}
-                                  </Label>
-                                  <Input
-                                    type="number"
-                                    step="0.001"
-                                    value={it.unit_price}
-                                    onChange={(e) =>
-                                      updateItem(idx, { unit_price: Number(e.target.value) })
-                                    }
-                                    className="mt-1.5 h-10 text-sm font-bold rounded-xl"
-                                  />
-                                </div>
-
-                                <div>
-                                  <Label className="text-xs font-semibold">
-                                    {isAr ? "تكلفة المنتج (COGS)" : "Product Cost (COGS)"}
-                                  </Label>
-                                  <Input
-                                    type="number"
-                                    step="0.001"
-                                    placeholder="0.000"
-                                    value={it.unit_cost ?? ""}
-                                    onChange={(e) =>
-                                      updateItem(idx, {
-                                        unit_cost:
-                                          e.target.value === "" ? null : Number(e.target.value),
-                                      })
-                                    }
-                                    className="mt-1.5 h-10 text-sm rounded-xl"
-                                  />
-                                </div>
-                              </div>
-
-                              {/* Made-To-Order & Tailoring Specs Customizer */}
-                              <AddonSlot
-                                placement="admin.order.itemPanel"
-                                props={{
-                                  item: it,
-                                  isAr,
-                                  passport: customerPassportQ.data,
-                                  productCategory: product?.category,
-                                  productName: product?.name,
-                                  fitPassportEnabled: storeProfile.modules.fit_passport,
-                                  onChange: (patch: any) => updateItem(idx, patch),
-                                }}
-                              />
-                            </div>
-
-                            <DialogFooter className="flex flex-row justify-end items-center gap-2.5 pt-3 border-t border-border-subtle">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                className="h-10 px-4 rounded-xl text-xs font-semibold"
-                                onClick={() => setEditingItemSheetIdx(null)}
-                              >
-                                {isAr ? "إلغاء" : "Cancel"}
-                              </Button>
-                              <Button
-                                type="button"
-                                className="h-10 px-5 font-bold text-xs rounded-xl bg-primary text-primary-foreground shadow-md hover:bg-primary/90"
-                                onClick={() => setEditingItemSheetIdx(null)}
-                              >
-                                {isAr ? "حفظ التعديلات" : "Save Changes"}
-                              </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
-                      </div>
-                    );
-                  })}
-                </div>
-                <BarcodeScanner
-                  open={scannerOpen}
-                  onOpenChange={setScannerOpen}
-                  onDetected={handleScanned}
-                  cameraStreamPromise={cameraStreamPromise}
-                />
-              </Card>
+              <OrderItemsCard
+                addItem={addItem}
+                addonDefaults={addonDefaults}
+                cameraStreamPromise={cameraStreamPromise}
+                currency={currency}
+                customQ={customQ}
+                customerPassportQ={customerPassportQ}
+                editingItemSheetIdx={editingItemSheetIdx}
+                editingItems={editingItems}
+                handleScanned={handleScanned}
+                items={items}
+                lang={lang}
+                mobileTab={mobileTab}
+                openBarcodeScanner={openBarcodeScanner}
+                pickVariant={pickVariant}
+                productsQ={productsQ}
+                scannerOpen={scannerOpen}
+                setEditingItemSheetIdx={setEditingItemSheetIdx}
+                setItems={setItems}
+                setProductSearchOpen={setProductSearchOpen}
+                setScannerOpen={setScannerOpen}
+                storeProfile={storeProfile}
+                t={t}
+                toggleCustom={toggleCustom}
+                updateItem={updateItem}
+                variantsQ={variantsQ}
+                vocabulary={vocabulary}
+              />
 
               <div className="lg:hidden">
                 <Label>{t("orderDetail.notes")}</Label>
@@ -2821,542 +1398,46 @@ function OrderDetail() {
                   rows={5}
                 />
               </div>
-              <Card
-                className={cn(
-                  "overflow-hidden border border-border-subtle shadow-xs rounded-2xl bg-card p-4 space-y-4",
-                  mobileTab !== "items" && "hidden sm:block",
-                )}
-              >
-                {order.payment_method === "benefit" && order.benefit_receipt_key && (
-                  <div className="rounded-xl border-2 border-amber-300 bg-amber-50 p-4 text-amber-950">
-                    <div className="mb-3 flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <ImageIcon className="h-5 w-5" />
-                        <span className="font-semibold">
-                          {lang === "ar" ? "إيصال تحويل بنفت" : "Benefit transfer receipt"}
-                        </span>
-                      </div>
-                      <span
-                        className={`rounded-full px-2 py-1 text-xs font-semibold ${order.payment_status === "paid" ? "bg-emerald-100 text-emerald-800" : "bg-amber-200 text-amber-900"}`}
-                      >
-                        {order.payment_status === "paid"
-                          ? lang === "ar"
-                            ? "تم التحقق"
-                            : "Verified"
-                          : lang === "ar"
-                            ? "بانتظار التحقق"
-                            : "Pending verification"}
-                      </span>
-                    </div>
-                    {receiptViewQ.isLoading ? (
-                      <div className="flex h-52 items-center justify-center rounded-lg border bg-white">
-                        <Loader2 className="h-6 w-6 animate-spin" />
-                      </div>
-                    ) : receiptViewQ.data?.url ? (
-                      <a
-                        href={receiptViewQ.data.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="block overflow-hidden rounded-lg border bg-white"
-                      >
-                        <img
-                          src={receiptViewQ.data.url}
-                          alt="Benefit payment receipt"
-                          className="h-52 w-full object-contain"
-                        />
-                      </a>
-                    ) : (
-                      <div className="rounded-lg border bg-white p-5 text-center text-sm text-muted-foreground">
-                        {order.benefit_receipt_deleted_at
-                          ? lang === "ar"
-                            ? "تم حذف صورة الإيصال حسب سياسة الاحتفاظ."
-                            : "Receipt image removed under the retention policy."
-                          : lang === "ar"
-                            ? "تعذر تحميل صورة الإيصال الخاصة."
-                            : "The private receipt could not be loaded."}
-                      </div>
-                    )}
-                    {order.payment_status !== "paid" && (
-                      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                        <Button
-                          type="button"
-                          className="bg-emerald-700 text-white hover:bg-emerald-800"
-                          onClick={approveBenefitPayment}
-                          disabled={approvingBenefit || rejectingBenefit}
-                        >
-                          {approvingBenefit ? (
-                            <Loader2 className="me-2 h-4 w-4 animate-spin" />
-                          ) : (
-                            <CheckCircle2 className="me-2 h-4 w-4" />
-                          )}
-                          {lang === "ar" ? "اعتماد الدفع" : "Approve Payment"}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          onClick={() => setRejectReasonOpen(true)}
-                          disabled={approvingBenefit || rejectingBenefit}
-                        >
-                          {rejectingBenefit && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-                          {lang === "ar" ? "رفض الإيصال" : "Reject Receipt"}
-                        </Button>
-                      </div>
-                    )}
-                    <Dialog
-                      open={rejectReasonOpen}
-                      onOpenChange={(open) => {
-                        setRejectReasonOpen(open);
-                        if (!open) setRejectReason("");
-                      }}
-                    >
-                      <DialogContent className="max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>
-                            {lang === "ar" ? "رفض إيصال بنفت باي" : "Reject BenefitPay receipt"}
-                          </DialogTitle>
-                          <DialogDescription>
-                            {lang === "ar"
-                              ? "سيُرسل سبب الرفض للعميل، وستُحذف صورة الإيصال الخاصة فوراً."
-                              : "The reason will be emailed to the customer and the private receipt image will be deleted immediately."}
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-2">
-                          <Label htmlFor="benefit-rejection-reason">
-                            {lang === "ar" ? "سبب الرفض" : "Rejection reason"}
-                          </Label>
-                          <Textarea
-                            id="benefit-rejection-reason"
-                            value={rejectReason}
-                            onChange={(event) => setRejectReason(event.target.value)}
-                            maxLength={500}
-                            dir={lang === "ar" ? "rtl" : "ltr"}
-                            placeholder={
-                              lang === "ar"
-                                ? "مثال: الإيصال غير واضح أو لا يطابق مبلغ الطلب"
-                                : "For example: receipt is unclear or does not match the order amount"
-                            }
-                          />
-                          <p className="text-xs text-muted-foreground">
-                            {rejectReason.trim().length}/500
-                          </p>
-                        </div>
-                        <DialogFooter>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setRejectReasonOpen(false)}
-                          >
-                            {lang === "ar" ? "إلغاء" : "Cancel"}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            onClick={rejectBenefitPayment}
-                            disabled={rejectingBenefit || rejectReason.trim().length < 3}
-                          >
-                            {rejectingBenefit && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-                            {lang === "ar"
-                              ? "رفض الإيصال وإرسال السبب"
-                              : "Reject and notify customer"}
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                )}
-                {/* Consolidated Financial Card Header with Toggle Button */}
-                <div className="flex items-center justify-between border-b border-border-subtle pb-2.5">
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="h-4 w-4 text-primary" />
-                    <span className="text-xs font-semibold text-foreground">
-                      {lang === "ar" ? "الملخص المالي والرسوم" : "Financial Summary & Ledger"}
-                    </span>
-                  </div>
-                  {!isReadOnly && (
-                    <Button
-                      type="button"
-                      variant={isEditingFees ? "secondary" : "outline"}
-                      size="sm"
-                      onClick={() => setIsEditingFees(!isEditingFees)}
-                      className="h-7 px-2.5 text-xs font-bold rounded-xl gap-1.5 border-border-strong"
-                    >
-                      <Pencil className="h-3 w-3" />
-                      <span>
-                        {isEditingFees
-                          ? lang === "ar"
-                            ? "إغلاق التعديل"
-                            : "Done Editing"
-                          : lang === "ar"
-                            ? "تعديل الرسوم والخصم"
-                            : "Edit Fees & Discounts"}
-                      </span>
-                    </Button>
-                  )}
-                </div>
-
-                {/* Integrated Order & Payment Channel Summary Strip */}
-                <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted/40 p-2.5 text-xs">
-                  <div>
-                    <span className="text-xs text-muted-foreground block font-medium">
-                      {t("orderDetail.orderDate")}
-                    </span>
-                    <span className="font-bold text-foreground">
-                      {formatDate(order.order_date, lang === "ar" ? "ar-BH" : "en-BH")}
-                    </span>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-xs text-muted-foreground block font-medium">
-                        {t("orderDetail.paymentMethod")}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setManagePaymentOpen(true)}
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline focus-visible:outline-none cursor-pointer"
-                        title={lang === "ar" ? "تعديل طريقة الدفع" : "Edit payment method"}
-                      >
-                        <Pencil className="h-2.5 w-2.5 shrink-0" />
-                        <span>{lang === "ar" ? "تغيير" : "Edit"}</span>
-                      </button>
-                    </div>
-                    <span className="font-bold text-foreground block mt-0.5">
-                      {tPayment(order.payment_method, lang) ||
-                        (lang === "ar" ? "غير محدد" : "Not specified")}
-                    </span>
-                  </div>
-                  {getPaymentGatewayReference(order) && (
-                    <div className="col-span-2 border-t border-border-subtle pt-1.5 flex items-center justify-between font-mono text-xs">
-                      <span className="text-muted-foreground">Gateway Ref:</span>
-                      <span className="font-bold text-foreground truncate max-w-[200px]">
-                        {getPaymentGatewayReference(order)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Collapsible Fee & Discount Edit Inputs */}
-                {isEditingFees && (
-                  <div className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-3 animate-fade-in">
-                    <div className="rounded-lg border bg-background p-2.5 space-y-2">
-                      <Label className="text-xs font-bold">
-                        {lang === "ar" ? "تطبيق رمز خصم" : "Apply Promo Code"}
-                      </Label>
-                      {appliedPromo ? (
-                        <div className="flex items-center justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-emerald-900 text-xs font-medium">
-                          <div className="flex min-w-0 items-center gap-2">
-                            <Tag className="h-3.5 w-3.5 shrink-0" />
-                            <span className="truncate font-mono font-bold">
-                              {appliedPromo.code}
-                            </span>
-                            <span>− {formatMoney(appliedPromo.amount, currency)}</span>
-                          </div>
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            className="h-6 w-6 shrink-0"
-                            onClick={removeAdminPromo}
-                            disabled={isReadOnly}
-                            aria-label={lang === "ar" ? "إزالة الخصم" : "Remove discount"}
-                            title={lang === "ar" ? "إزالة الخصم" : "Remove discount"}
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex gap-2">
-                          <Input
-                            value={promoInput}
-                            onChange={(event) => setPromoInput(event.target.value.toUpperCase())}
-                            onKeyDown={(event) => {
-                              if (event.key === "Enter") {
-                                event.preventDefault();
-                                void applyAdminPromo();
-                              }
-                            }}
-                            placeholder="EID20"
-                            className="uppercase h-8 text-xs font-mono"
-                            disabled={isReadOnly || checkingPromo}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={applyAdminPromo}
-                            disabled={isReadOnly || checkingPromo}
-                            className="h-8 text-xs font-bold"
-                          >
-                            {checkingPromo && <Loader2 className="me-1 h-3.5 w-3.5 animate-spin" />}
-                            {lang === "ar" ? "تطبيق" : "Apply"}
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      <div>
-                        <div className="flex items-center justify-between mb-1 text-xs">
-                          <Label className="text-xs font-bold">{t("orderDetail.discount")}</Label>
-                          {!appliedPromo && !isReadOnly && (
-                            <div className="flex items-center rounded-md border p-0.5 text-xs bg-background">
-                              <button
-                                type="button"
-                                className={cn(
-                                  "px-1.5 py-0.5 rounded font-bold transition-colors",
-                                  discountMode === "fixed"
-                                    ? "bg-primary text-primary-foreground shadow-2xs"
-                                    : "text-muted-foreground",
-                                )}
-                                onClick={() => setDiscountMode("fixed")}
-                              >
-                                {currency}
-                              </button>
-                              <button
-                                type="button"
-                                className={cn(
-                                  "px-1.5 py-0.5 rounded font-bold transition-colors",
-                                  discountMode === "percent"
-                                    ? "bg-primary text-primary-foreground shadow-2xs"
-                                    : "text-muted-foreground",
-                                )}
-                                onClick={() => {
-                                  setDiscountMode("percent");
-                                  if (totals.subtotal > 0 && order.discount > 0) {
-                                    const pct = (order.discount / totals.subtotal) * 100;
-                                    setDiscountPercentInput(pct.toFixed(1));
-                                  }
-                                }}
-                              >
-                                %
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                        {discountMode === "percent" && !appliedPromo ? (
-                          <div className="relative">
-                            <Input
-                              type="number"
-                              step="0.1"
-                              min="0"
-                              max="100"
-                              placeholder="10"
-                              value={discountPercentInput}
-                              disabled={isReadOnly}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setDiscountPercentInput(val);
-                                const pct = Number(val) || 0;
-                                const calculated = Number(
-                                  ((totals.subtotal * pct) / 100).toFixed(3),
-                                );
-                                setOrder({ ...order, discount: calculated });
-                              }}
-                              className="h-8 text-xs font-mono"
-                            />
-                            <span className="absolute end-2.5 top-2 text-xs text-muted-foreground font-bold">
-                              %
-                            </span>
-                          </div>
-                        ) : (
-                          <Input
-                            type="number"
-                            step="0.001"
-                            value={order.discount}
-                            disabled={isReadOnly || !!appliedPromo}
-                            onChange={(e) =>
-                              setOrder({ ...order, discount: Number(e.target.value) })
-                            }
-                            className="h-8 text-xs font-mono"
-                          />
-                        )}
-                      </div>
-
-                      <div>
-                        <Label className="text-xs font-bold mb-1 block">
-                          {t("orderDetail.shipping")}
-                        </Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={order.shipping}
-                          onChange={(e) => setOrder({ ...order, shipping: Number(e.target.value) })}
-                          className="h-8 text-xs font-mono"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      <div>
-                        <div className="flex items-center justify-between mb-1 text-xs">
-                          <Label className="text-xs font-bold">{t("orderDetail.taxRate")}</Label>
-                          {!isReadOnly && (
-                            <button
-                              type="button"
-                              className="text-xs text-primary font-bold hover:underline"
-                              onClick={() => {
-                                if (Number(order.tax_rate) > 0) {
-                                  setLastNonZeroTaxRate(Number(order.tax_rate));
-                                  setOrder({ ...order, tax_rate: 0 });
-                                } else {
-                                  setOrder({ ...order, tax_rate: lastNonZeroTaxRate || 10 });
-                                }
-                              }}
-                            >
-                              {Number(order.tax_rate) === 0 ? "Exempt (0%)" : "Tax Exempt?"}
-                            </button>
-                          )}
-                        </div>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={order.tax_rate}
-                          onChange={(e) => setOrder({ ...order, tax_rate: Number(e.target.value) })}
-                          className="h-8 text-xs font-mono"
-                        />
-                      </div>
-
-                      <div>
-                        <Label className="text-xs font-bold mb-1 block">
-                          {t("orderDetail.advancePaid")}
-                        </Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min={0}
-                          value={order.advance_paid ?? 0}
-                          onChange={(e) =>
-                            setOrder({ ...order, advance_paid: Number(e.target.value) })
-                          }
-                          className="h-8 text-xs font-mono font-bold text-foreground"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div className="space-y-1 border-t border-border pt-3 text-sm">
-                  <Row
-                    label={t("orderDetail.subtotal")}
-                    value={formatMoney(totals.subtotal, currency)}
-                  />
-                  <Row
-                    label={`${t("orderDetail.discount")}${order.promo_code ? ` (Promo: ${order.promo_code})` : ""}`}
-                    value={`− ${formatMoney(totals.discount, currency)}`}
-                  />
-                  <Row
-                    label={`${t("orderDetail.vat")} (${order.tax_rate}%)`}
-                    value={formatMoney(totals.taxAmount, currency)}
-                  />
-                  <Row
-                    label={t("orderDetail.shipping")}
-                    value={formatMoney(totals.shipping, currency)}
-                  />
-                  <div className="flex justify-between items-center pt-2 border-t border-border">
-                    <span className="font-display text-lg">{t("orderDetail.total")}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-display text-lg">
-                        {formatMoney(totals.total, currency)}
-                      </span>
-                      <span
-                        className={`text-xs  px-2 py-0.5 rounded-full border ${PAYMENT_BADGE_CLASSES[paymentBadge]}`}
-                      >
-                        {t(`payStatus.${paymentBadge}`)}
-                      </span>
-                    </div>
-                  </div>
-                  {totals.advancePaid > 0 && (
-                    <>
-                      <Row
-                        label={t("orderDetail.advancePaid")}
-                        value={`− ${formatMoney(totals.advancePaid, currency)}`}
-                      />
-                      <div className="flex justify-between pt-1 font-medium">
-                        <span>{t("orderDetail.remaining")}</span>
-                        <span>{formatMoney(totals.remaining, currency)}</span>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {/* Direct Order COGS Breakdown Badge */}
-                {(() => {
-                  const isAr = lang === "ar";
-                  const productCogsTotal = items.reduce((sum, it: any) => {
-                    const qty = Number(it.quantity || 1);
-                    const unitCost = Number(it.unit_cost || 0);
-                    return sum + unitCost * qty;
-                  }, 0);
-
-                  // This card is an estimated order margin, so show the configured BOM
-                  // before fulfillment as well. Financial reports recognize actual COGS
-                  // according to the order lifecycle.
-                  const packagingCogsTotal = calculateOrderPackagingCogs(
-                    items,
-                    true,
-                    productsQ.data ?? [],
-                    variantsQ.data ?? [],
-                    bomItemsQ.data ?? [],
-                    packagingMaterialsQ.data ?? [],
-                  );
-
-                  const orderTotalCogs = productCogsTotal + packagingCogsTotal;
-                  const orderNetProfit = totals.total - orderTotalCogs;
-
-                  return (
-                    <div className="mt-3 rounded-xl border border-primary/20 bg-primary/5 p-3.5 space-y-2 text-xs">
-                      <div className="flex items-center justify-between font-bold text-foreground">
-                        <span className="flex items-center gap-1.5">
-                          <Package className="h-4 w-4 text-primary shrink-0" />
-                          <span>
-                            {isAr
-                              ? "تكاليف الإنتاج والتغليف المباشرة للطلب (Order COGS)"
-                              : "Direct Order COGS Breakdown"}
-                          </span>
-                        </span>
-                        <span className="font-mono text-sm font-extrabold text-primary">
-                          {formatMoney(orderTotalCogs, currency)}
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 font-mono text-xs pt-1.5 border-t border-border-subtle text-muted-foreground">
-                        <div>
-                          <span>{isAr ? "تكلفة المنتجات:" : "Product Cost:"} </span>
-                          <strong className="text-foreground">
-                            {formatMoney(productCogsTotal, currency)}
-                          </strong>
-                        </div>
-                        <div>
-                          <span>{isAr ? "تكلفة مواد التغليف:" : "Packaging Cost:"} </span>
-                          <strong className="text-foreground">
-                            {formatMoney(packagingCogsTotal, currency)}
-                          </strong>
-                        </div>
-                      </div>
-
-                      <div
-                        className={cn(
-                          "flex justify-between items-center text-xs font-extrabold pt-1.5 border-t border-border-subtle",
-                          totals.remaining > 0
-                            ? "text-amber-700 dark:text-amber-300"
-                            : "text-emerald-600 dark:text-emerald-400",
-                        )}
-                      >
-                        <span>
-                          {totals.remaining > 0
-                            ? isAr
-                              ? "الربح الإجمالي المتوقع بعد التحصيل الكامل:"
-                              : "Estimated gross profit after full collection:"
-                            : isAr
-                              ? "الربح الإجمالي التقديري:"
-                              : "Estimated gross profit:"}
-                        </span>
-                        <span className="font-mono text-sm font-extrabold">
-                          {formatMoney(orderNetProfit, currency)}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </Card>
+              <OrderFinancialCard
+                appliedPromo={appliedPromo}
+                applyAdminPromo={applyAdminPromo}
+                approveBenefitPayment={approveBenefitPayment}
+                approvingBenefit={approvingBenefit}
+                bomItemsQ={bomItemsQ}
+                checkingPromo={checkingPromo}
+                currency={currency}
+                discountMode={discountMode}
+                discountPercentInput={discountPercentInput}
+                isEditingFees={isEditingFees}
+                isReadOnly={isReadOnly}
+                items={items}
+                lang={lang}
+                lastNonZeroTaxRate={lastNonZeroTaxRate}
+                mobileTab={mobileTab}
+                order={order}
+                packagingMaterialsQ={packagingMaterialsQ}
+                paymentBadge={paymentBadge}
+                productsQ={productsQ}
+                promoInput={promoInput}
+                receiptViewQ={receiptViewQ}
+                rejectBenefitPayment={rejectBenefitPayment}
+                rejectReason={rejectReason}
+                rejectReasonOpen={rejectReasonOpen}
+                rejectingBenefit={rejectingBenefit}
+                removeAdminPromo={removeAdminPromo}
+                setDiscountMode={setDiscountMode}
+                setDiscountPercentInput={setDiscountPercentInput}
+                setIsEditingFees={setIsEditingFees}
+                setLastNonZeroTaxRate={setLastNonZeroTaxRate}
+                setManagePaymentOpen={setManagePaymentOpen}
+                setOrder={setOrder}
+                setPromoInput={setPromoInput}
+                setRejectReason={setRejectReason}
+                setRejectReasonOpen={setRejectReasonOpen}
+                t={t}
+                totals={totals}
+                variantsQ={variantsQ}
+              />
             </div>
           </div>
         </fieldset>
@@ -3602,30 +1683,6 @@ function OrderDetail() {
       />
     </>
   );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between text-muted-foreground">
-      <span>{label}</span>
-      <span>{value}</span>
-    </div>
-  );
-}
-
-const PAYMENT_LABELS: Record<string, { en: string; ar: string }> = {
-  cash: { en: "Cash", ar: "نقدًا" },
-  card: { en: "Card", ar: "بطاقة" },
-  bank_transfer: { en: "Bank transfer", ar: "تحويل بنكي" },
-  transfer: { en: "Bank transfer", ar: "تحويل بنكي" },
-  benefit: { en: "Benefit", ar: "بنفت" },
-  apple_pay: { en: "Apple Pay", ar: "أبل باي" },
-  google_pay: { en: "Google Pay", ar: "جوجل باي" },
-  cod: { en: "Cash on delivery", ar: "الدفع عند الاستلام" },
-};
-function tPayment(s: string | null | undefined, lang: "en" | "ar") {
-  if (!s) return "";
-  return PAYMENT_LABELS[s]?.[lang] ?? s;
 }
 
 const InvoicePreview = lazy(() => import("@/components/orders/InvoicePreview"));

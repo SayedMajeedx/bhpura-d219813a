@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { orderSaveBlocker } from "../src/features/orders/lib/order-save";
 
 const list = readFileSync("src/routes/_authenticated/admin.b.$slug.orders.index.tsx", "utf8");
 const detail = readFileSync("src/routes/_authenticated/admin.b.$slug.orders.$id.tsx", "utf8");
@@ -18,13 +19,15 @@ describe("manual order creation", () => {
   });
 
   it("requires meaningful data before the first database insert", () => {
-    const saveHandler = detail.slice(
-      detail.indexOf("const save = async"),
-      detail.indexOf("// Activity log", detail.indexOf("const save = async")),
+    const pickup = { fulfillment_method: "pickup", branch_id: "b1" };
+    expect(orderSaveBlocker({ ...pickup, customer_id: null }, [], "new", "ar")).toBe(
+      "أضف عميلاً أو منتجاً واحداً على الأقل قبل حفظ الطلب.",
     );
-    expect(saveHandler).toContain('id === "new" && !order.customer_id && items.length === 0');
-    expect(saveHandler).toContain("أضف عميلاً أو منتجاً واحداً على الأقل قبل حفظ الطلب.");
-    expect(saveHandler.indexOf("Add at least one customer or product")).toBeLessThan(
+    expect(orderSaveBlocker({ ...pickup, customer_id: "c1" }, [], "new", "en")).toBeNull();
+    expect(orderSaveBlocker({ ...pickup, customer_id: null }, [], "o1", "en")).toBeNull();
+    // The check runs before any insert: save returns on a blocker first.
+    const saveHandler = detail.slice(detail.indexOf("const save = async"));
+    expect(saveHandler.indexOf("orderSaveBlocker(")).toBeLessThan(
       saveHandler.indexOf('.from("orders")'),
     );
   });

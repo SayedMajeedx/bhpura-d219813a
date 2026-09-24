@@ -159,10 +159,13 @@ describe("Phase 3: Explicit is_made_to_order flag & inventory decoupling", () =>
   });
 
   describe("admin order details stock checking", () => {
-    const orderDetails = readFileSync(
+    // Order lines render in src/features/orders/components/OrderLineCard.tsx (Phase 5).
+    const orderDetails = [
       "src/routes/_authenticated/admin.b.$slug.orders.$id.tsx",
-      "utf8",
-    );
+      "src/features/orders/components/OrderLineCard.tsx",
+    ]
+      .map((file) => readFileSync(file, "utf8"))
+      .join("\n");
 
     it("determines custom item by location === 'custom' or !variant_id rather than size string", () => {
       expect(orderDetails).toMatch(
