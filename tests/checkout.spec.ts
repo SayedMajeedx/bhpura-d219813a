@@ -8,6 +8,7 @@ import {
   guardWrites,
   inStock,
   type LiveVariant,
+  waitForHydration,
 } from "./helpers/storefront-e2e";
 
 /**
@@ -81,6 +82,7 @@ test.describe("Storefront checkout", () => {
     await page.goto(`/${SLUG}/checkout?lang=en`, { waitUntil: "domcontentloaded" });
     const placeOrder = page.locator("button:visible", { hasText: "Place order" }).first();
     await expect(placeOrder).toBeVisible({ timeout: 60_000 });
+    await waitForHydration(placeOrder);
     await expect(page.getByText(variant!.products.name).first()).toBeVisible();
 
     await page.locator("#checkout-name").fill("E2E Test Shopper");
@@ -169,6 +171,7 @@ test.describe("Storefront checkout", () => {
     await page.goto(`/${SLUG}/checkout?lang=en`, { waitUntil: "domcontentloaded" });
     const placeOrder = page.locator("button:visible", { hasText: "Place order" }).first();
     await expect(placeOrder).toBeVisible({ timeout: 60_000 });
+    await waitForHydration(placeOrder);
 
     // Terms not accepted yet: the button stays disabled.
     await expect(placeOrder).toBeDisabled();

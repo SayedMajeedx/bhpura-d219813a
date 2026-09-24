@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 /**
  * Shared set-up for storefront end-to-end specs that run against the live
@@ -100,4 +100,18 @@ export async function fetchLiveProducts(): Promise<LiveProduct[]> {
   });
   const res = await fetch(`${SUPABASE_URL}/rest/v1/products?${query}`, { headers });
   return (await res.json()) as LiveProduct[];
+}
+
+/**
+ * Wait until React has hydrated this element. Storefront pages are
+ * server-rendered, so buttons are visible before they respond; a click on a
+ * cold dev server can land before hydration and do nothing.
+ */
+export async function waitForHydration(locator: Locator, timeout = 60_000) {
+  await expect
+    .poll(
+      () => locator.evaluate((el) => Object.keys(el).some((key) => key.startsWith("__reactProps"))),
+      { timeout, message: "the page never hydrated" },
+    )
+    .toBe(true);
 }

@@ -8,6 +8,7 @@ import {
   inStock,
   type LiveProduct,
   type LiveVariant,
+  waitForHydration,
 } from "./helpers/storefront-e2e";
 
 /**
@@ -61,6 +62,8 @@ test.describe("Product page add to cart", () => {
 
     await page.goto(`/${SLUG}/product/${product.id}?lang=en`, { waitUntil: "domcontentloaded" });
     await expect(page.locator("main h1").first()).toBeVisible({ timeout: 60_000 });
+    const addToCart = page.locator("main button:visible", { hasText: "Add to cart" }).first();
+    await waitForHydration(addToCart);
 
     // Made-to-order products offer "Ready Size" / "Custom Size"; the ready size is the stock item.
     const readySize = page.locator("main").getByRole("button", { name: "Ready Size" });
@@ -72,7 +75,6 @@ test.describe("Product page add to cart", () => {
       .first();
     await sizeButton.click();
 
-    const addToCart = page.locator("main button:visible", { hasText: "Add to cart" }).first();
     await expect(addToCart).toBeEnabled();
     await addToCart.click();
 
