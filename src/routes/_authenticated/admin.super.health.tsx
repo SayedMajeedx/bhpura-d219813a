@@ -44,7 +44,8 @@ function SystemHealthPage() {
     queryKey: ["system-health-events"],
     queryFn: async () => {
       const [{ data, error }, readyResponse] = await Promise.all([
-        (supabase.from("system_health_events" as never) as any)
+        supabase
+          .from("system_health_events")
           .select("id,service,status,correlation_id,duration_ms,metrics,error_code,created_at")
           .order("created_at", { ascending: false })
           .limit(500),

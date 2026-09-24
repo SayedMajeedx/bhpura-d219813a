@@ -317,7 +317,8 @@ export const updatePlatformBillingMode = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await requireSuperAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await (supabaseAdmin.from("system_settings" as never) as any)
+    const { error } = await supabaseAdmin
+      .from("system_settings")
       .update({
         billing_interval_mode: data.mode,
         updated_at: new Date().toISOString(),

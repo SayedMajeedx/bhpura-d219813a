@@ -106,17 +106,15 @@ function ImportCenterPage() {
   } = useQuery<ImportRunRecord[]>({
     queryKey: ["import-runs-hub", brandId],
     queryFn: async () => {
-      const { data, error } = await (supabase.from("import_runs" as never) as any)
+      const { data, error } = await supabase
+        .from("import_runs")
         .select(
           "id,brand_id,session_id,source,entity_type,status,total_count,success_count,skipped_count,failed_count,created_at",
         )
         .eq("brand_id", brandId)
         .order("created_at", { ascending: false })
         .limit(30);
-      if (error) {
-        console.warn("Could not fetch import_runs:", error.message);
-        return [];
-      }
+      if (error) return [];
       return (data || []) as ImportRunRecord[];
     },
   });

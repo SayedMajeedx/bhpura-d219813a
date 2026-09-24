@@ -142,11 +142,10 @@ function ExportCenterPage() {
   const { data: categories = [] } = useQuery({
     queryKey: ["export-categories", brandId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("categories")
         .select("id, name, name_ar, name_en")
         .eq("brand_id", brandId);
-      if (error) return [];
       return data || [];
     },
   });
@@ -155,13 +154,13 @@ function ExportCenterPage() {
     queryKey: ["export-runs-history", brandId],
     queryFn: async () => {
       try {
-        const { data, error } = await (supabase.from("export_runs" as never) as any)
+        const { data, error } = await supabase
+          .from("export_runs")
           .select("id, preset, entity_type, file_format, record_count, file_name, created_at")
           .eq("brand_id", brandId)
           .order("created_at", { ascending: false })
           .limit(20);
-        if (error) throw error;
-        if (data && data.length > 0) return data;
+        if (!error && data && data.length > 0) return data;
       } catch {
         // Fall back to local storage
       }
@@ -171,13 +170,14 @@ function ExportCenterPage() {
   });
 
   // Calculate high-level stats
-  const totalVariants = useMemo(() => {
-    return products.reduce((acc, p: any) => acc + (p.product_variants?.length || 1), 0);
-  }, [products]);
-
-  const totalRevenue = useMemo(() => {
-    return orders.reduce((acc, o: any) => acc + (Number(o.total) || 0), 0);
-  }, [orders]);
+  const totalVariants = useMemo(
+    () => products.reduce((acc, p: any) => acc + (p.product_variants?.length || 1), 0),
+    [products],
+  );
+  const totalRevenue = useMemo(
+    () => orders.reduce((acc, o: any) => acc + (Number(o.total) || 0), 0),
+    [orders],
+  );
 
   // Full Store Backup handler
   const handleFullStoreBackup = () => {

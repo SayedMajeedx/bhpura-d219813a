@@ -131,13 +131,15 @@ export const createTenantRequest = createServerFn({ method: "POST" })
       if (!data.selectedPlanId || !data.selectedPlanVersionId || !billingInterval) {
         throw new Error("INVALID_PLAN_SELECTION");
       }
-      const { data: plan } = await (supabaseAdmin.from("saas_plans" as never) as any)
+      const { data: plan } = await supabaseAdmin
+        .from("saas_plans")
         .select("id,code,name_ar,name_en,is_active,is_public,trial_days")
         .eq("id", data.selectedPlanId)
         .eq("is_active", true)
         .eq("is_public", true)
         .maybeSingle();
-      const { data: version } = await (supabaseAdmin.from("saas_plan_versions" as never) as any)
+      const { data: version } = await supabaseAdmin
+        .from("saas_plan_versions")
         .select("id,plan_id,version_number,currency,price_monthly,price_annual,is_current")
         .eq("id", data.selectedPlanVersionId)
         .eq("plan_id", data.selectedPlanId)
@@ -200,13 +202,15 @@ export const createTenantRequest = createServerFn({ method: "POST" })
 export const getPublicOnboardingPlans = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const now = new Date().toISOString();
-  const { data: sysSettings } = await (supabaseAdmin.from("system_settings" as never) as any)
+  const { data: sysSettings } = await supabaseAdmin
+    .from("system_settings")
     .select("billing_interval_mode")
     .eq("id", 1)
     .maybeSingle();
   const globalMode = sysSettings?.billing_interval_mode || "both";
 
-  const { data: plans, error } = await (supabaseAdmin.from("saas_plans" as never) as any)
+  const { data: plans, error } = await supabaseAdmin
+    .from("saas_plans")
     .select(
       "id,code,name_en,name_ar,description_en,description_ar,sort_order,trial_days,badge_color,billing_interval_mode",
     )
@@ -217,7 +221,8 @@ export const getPublicOnboardingPlans = createServerFn({ method: "GET" }).handle
 
   const result = [];
   for (const plan of plans ?? []) {
-    const { data: version } = await (supabaseAdmin.from("saas_plan_versions" as never) as any)
+    const { data: version } = await supabaseAdmin
+      .from("saas_plan_versions")
       .select(
         "id,version_number,currency,price_monthly,price_annual,effective_from,effective_until",
       )
@@ -227,20 +232,22 @@ export const getPublicOnboardingPlans = createServerFn({ method: "GET" }).handle
       .or(`effective_until.is.null,effective_until.gt.${now}`)
       .maybeSingle();
     if (!version) continue;
-    const { data: allocations } = await (supabaseAdmin.from("saas_plan_features" as never) as any)
+    const { data: allocations } = await supabaseAdmin
+      .from("saas_plan_features")
       .select("feature_key,boolean_value,numeric_value")
       .eq("plan_version_id", version.id);
     const featureKeys = (allocations ?? [])
-      .filter((item: any) => item.boolean_value !== false && item.numeric_value !== 0)
-      .map((item: any) => item.feature_key);
+      .filter((item) => item.boolean_value !== false && item.numeric_value !== 0)
+      .map((item) => item.feature_key);
     const { data: features } = featureKeys.length
-      ? await (supabaseAdmin.from("saas_features" as never) as any)
+      ? await supabaseAdmin
+          .from("saas_features")
           .select("key,name_en,name_ar,unit,sort_order")
           .in("key", featureKeys)
           .order("sort_order", { ascending: true })
       : { data: [] };
     const featureMap = new Map<string, any>(
-      (features ?? []).map((feature: any) => [feature.key, feature]),
+      (features ?? []).map((feature) => [feature.key, feature]),
     );
     result.push({
       ...plan,
@@ -248,8 +255,8 @@ export const getPublicOnboardingPlans = createServerFn({ method: "GET" }).handle
       platform_billing_interval_mode: globalMode,
       version,
       features: (allocations ?? [])
-        .filter((item: any) => featureMap.has(item.feature_key))
-        .map((item: any) => ({ ...featureMap.get(item.feature_key), ...item })),
+        .filter((item) => featureMap.has(item.feature_key))
+        .map((item) => ({ ...featureMap.get(item.feature_key), ...item })),
     });
   }
   return result;
@@ -260,7 +267,8 @@ export const getPublicOnboardingPlans = createServerFn({ method: "GET" }).handle
 // the trial plan is intentionally allowed to remain hidden from paid pricing.
 export const getOnboardingTrialDays = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await (supabaseAdmin.from("saas_plans" as never) as any)
+  const { data, error } = await supabaseAdmin
+    .from("saas_plans")
     .select("trial_days")
     .eq("code", "trial")
     .eq("is_active", true)
@@ -430,7 +438,8 @@ export const approveTenantRequest = createServerFn({ method: "POST" })
       (request.request_type === "trial" ? "trial" : "annual");
 
     if (!resolvedPlanId && request.request_type === "trial") {
-      const { data: trialPlan } = await (context.supabase.from("saas_plans" as never) as any)
+      const { data: trialPlan } = await context.supabase
+        .from("saas_plans")
         .select("id")
         .eq("code", "trial")
         .eq("is_active", true)
@@ -438,9 +447,8 @@ export const approveTenantRequest = createServerFn({ method: "POST" })
       resolvedPlanId = trialPlan?.id ?? null;
     }
     if (resolvedPlanId && !resolvedPlanVersionId) {
-      const { data: currentVersion } = await (
-        context.supabase.from("saas_plan_versions" as never) as any
-      )
+      const { data: currentVersion } = await context.supabase
+        .from("saas_plan_versions")
         .select("id")
         .eq("plan_id", resolvedPlanId)
         .eq("is_current", true)
@@ -450,17 +458,15 @@ export const approveTenantRequest = createServerFn({ method: "POST" })
     if (!resolvedPlanId || !resolvedPlanVersionId) throw new Error("PLAN_SELECTION_REQUIRED");
     let resolvedTrialDays = 3;
     if (request.request_type === "trial") {
-      const { data: trialConfiguration } = await (
-        context.supabase.from("saas_plans" as never) as any
-      )
+      const { data: trialConfiguration } = await context.supabase
+        .from("saas_plans")
         .select("trial_days")
         .eq("id", resolvedPlanId)
         .single();
       resolvedTrialDays = Math.max(1, Number(trialConfiguration?.trial_days || 3));
     }
-    const { data: validatedVersion } = await (
-      context.supabase.from("saas_plan_versions" as never) as any
-    )
+    const { data: validatedVersion } = await context.supabase
+      .from("saas_plan_versions")
       .select("id,plan_id,price_monthly,price_annual")
       .eq("id", resolvedPlanVersionId)
       .eq("plan_id", resolvedPlanId)
@@ -541,26 +547,26 @@ export const approveTenantRequest = createServerFn({ method: "POST" })
       if (resolvedPlanId && resolvedPlanVersionId) {
         const periodEnd =
           resolvedInterval === "trial"
-            ? trialEndsAt
+            ? (trialEndsAt ?? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString())
             : resolvedInterval === "monthly"
               ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
               : new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString();
-        const { error: subscriptionError } = await (
-          context.supabase.from("brand_subscriptions" as never) as any
-        ).upsert(
-          {
-            brand_id: brandRow.id,
-            plan_id: resolvedPlanId,
-            plan_version_id: resolvedPlanVersionId,
-            billing_interval: resolvedInterval,
-            status: resolvedInterval === "trial" ? "trialing" : "active",
-            current_period_start: new Date().toISOString(),
-            current_period_end: periodEnd,
-            trial_ends_at: resolvedInterval === "trial" ? trialEndsAt : null,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "brand_id" },
-        );
+        const { error: subscriptionError } = await context.supabase
+          .from("brand_subscriptions")
+          .upsert(
+            {
+              brand_id: brandRow.id,
+              plan_id: resolvedPlanId,
+              plan_version_id: resolvedPlanVersionId,
+              billing_interval: resolvedInterval,
+              status: resolvedInterval === "trial" ? "trialing" : "active",
+              current_period_start: new Date().toISOString(),
+              current_period_end: periodEnd,
+              trial_ends_at: resolvedInterval === "trial" ? trialEndsAt : null,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "brand_id" },
+          );
         if (subscriptionError) throw new Error("SUBSCRIPTION_ACTIVATION_FAILED");
       }
     }
@@ -640,7 +646,8 @@ export const registerInstantTrial = createServerFn({ method: "POST" })
     const normalizedSlug = data.slug.trim().toLowerCase();
 
     // 1. Check if slug already exists
-    const { data: existingBrand } = await (supabaseAdmin.from("brands" as never) as any)
+    const { data: existingBrand } = await supabaseAdmin
+      .from("brands")
       .select("id")
       .eq("slug", normalizedSlug)
       .maybeSingle();
@@ -650,14 +657,16 @@ export const registerInstantTrial = createServerFn({ method: "POST" })
     }
 
     // 2. Check if email already exists in profiles
-    const { data: existingProfile } = await (supabaseAdmin.from("profiles" as never) as any)
+    const { data: existingProfile } = await supabaseAdmin
+      .from("profiles")
       .select("id, brand_id, role")
       .eq("email", normalizedEmail)
       .maybeSingle();
 
     if (existingProfile) {
       if (existingProfile.brand_id) {
-        const { data: userBrand } = await (supabaseAdmin.from("brands" as never) as any)
+        const { data: userBrand } = await supabaseAdmin
+          .from("brands")
           .select("id, slug, plan_type, trial_ends_at, subscription_status")
           .eq("id", existingProfile.brand_id)
           .maybeSingle();
@@ -714,7 +723,7 @@ export const registerInstantTrial = createServerFn({ method: "POST" })
     const userId = authData.user.id;
 
     // 4. Ensure profile exists
-    await (supabaseAdmin.from("profiles" as never) as any).upsert(
+    await supabaseAdmin.from("profiles").upsert(
       {
         id: userId,
         email: normalizedEmail,
@@ -731,7 +740,7 @@ export const registerInstantTrial = createServerFn({ method: "POST" })
     const trialDays = 3;
     const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString();
 
-    const { data: brandId, error: createError } = await (supabaseAdmin.rpc as any)(
+    const { data: brandId, error: createError } = await supabaseAdmin.rpc(
       "create_tenant_with_defaults",
       {
         p_slug: normalizedSlug,
@@ -749,7 +758,8 @@ export const registerInstantTrial = createServerFn({ method: "POST" })
     }
 
     // 6. Update brand with trial details and ensure active status
-    await (supabaseAdmin.from("brands" as never) as any)
+    await supabaseAdmin
+      .from("brands")
       .update({
         plan_type: "trial",
         trial_ends_at: trialEndsAt,
@@ -761,7 +771,8 @@ export const registerInstantTrial = createServerFn({ method: "POST" })
       .eq("id", brandId);
 
     // 6b. Update business_settings with chosen vertical and empty module overrides
-    await (supabaseAdmin.from("business_settings" as never) as any)
+    await supabaseAdmin
+      .from("business_settings")
       .update({
         store_vertical: data.storeVertical,
         store_modules: {},
@@ -784,7 +795,8 @@ export const registerInstantTrial = createServerFn({ method: "POST" })
     }
 
     // 7. Associate brand_id in profile
-    await (supabaseAdmin.from("profiles" as never) as any)
+    await supabaseAdmin
+      .from("profiles")
       .update({
         brand_id: brandId,
         role: "brand_admin",

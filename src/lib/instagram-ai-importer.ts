@@ -1054,17 +1054,14 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
 
       // Check import_runs for previous Instagram imports
       try {
-        const { data: existingRuns } = await (supabaseAdmin.from("import_runs" as never) as any)
+        const { data: existingRuns } = await supabaseAdmin
+          .from("import_runs")
           .select("issues")
           .eq("brand_id", brandId)
           .eq("source", "instagram");
-        if (Array.isArray(existingRuns)) {
-          for (const run of existingRuns) {
-            const ids = run?.issues?.imported_post_ids;
-            if (Array.isArray(ids)) {
-              ids.forEach((id: string) => existingPostIds.add(String(id)));
-            }
-          }
+        for (const run of existingRuns ?? []) {
+          const ids = (run?.issues as { imported_post_ids?: string[] } | null)?.imported_post_ids;
+          if (Array.isArray(ids)) ids.forEach((id: string) => existingPostIds.add(String(id)));
         }
       } catch (err) {
         console.warn("Could not query import_runs for existing Instagram posts:", err);
@@ -1072,19 +1069,20 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
 
       // Also check legacy products with instagram_post_id in custom_fields
       try {
-        const { data: existingProducts } = await (supabaseAdmin.from("products" as never) as any)
+        const { data: existingProducts } = await supabaseAdmin
+          .from("products")
           .select("id, custom_fields")
           .eq("brand_id", brandId);
-        if (Array.isArray(existingProducts)) {
-          for (const row of existingProducts) {
-            if (Array.isArray(row.custom_fields)) {
-              const field = row.custom_fields.find((f: any) => f?.key === "instagram_post_id");
-              if (field?.value) existingPostIds.add(String(field.value));
-            } else if (row.custom_fields && typeof row.custom_fields === "object") {
-              if (row.custom_fields.instagram_post_id) {
-                existingPostIds.add(String(row.custom_fields.instagram_post_id));
-              }
+        for (const row of existingProducts ?? []) {
+          const cf = row.custom_fields;
+          if (Array.isArray(cf)) {
+            for (const item of cf as Record<string, unknown>[]) {
+              if (item?.key === "instagram_post_id" && item.value)
+                existingPostIds.add(String(item.value));
             }
+          } else if (cf && typeof cf === "object" && !Array.isArray(cf)) {
+            const val = (cf as Record<string, unknown>).instagram_post_id;
+            if (val) existingPostIds.add(String(val));
           }
         }
       } catch (err) {
@@ -1130,9 +1128,8 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
         const price = typeof p.price === "number" && !isNaN(p.price) ? p.price : 0;
 
         // Insert product: custom_fields MUST be empty [] so customer customization engine is clean
-        const { data: prodData, error: prodErr } = await (
-          supabaseAdmin.from("products" as never) as any
-        )
+        const { data: prodData, error: prodErr } = await supabaseAdmin
+          .from("products")
           .insert({
             user_id: userId,
             brand_id: brandId,
@@ -1218,9 +1215,9 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
         }
 
         if (variantRows.length > 0) {
-          const { error: varErr } = await (
-            supabaseAdmin.from("product_variants" as never) as any
-          ).insert(variantRows);
+          const { error: varErr } = await supabaseAdmin
+            .from("product_variants")
+            .insert(variantRows);
 
           if (varErr) {
             console.error("Failed to insert product variants:", varErr);
@@ -1232,8 +1229,9 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
       // Record completed import run for audit trail and deduplication
       if (insertedCount > 0) {
         try {
-          await (supabaseAdmin.from("import_runs" as never) as any).insert({
+          await supabaseAdmin.from("import_runs").insert({
             brand_id: brandId,
+            session_id: crypto.randomUUID(),
             created_by: userId,
             source: "instagram",
             entity_type: "products",

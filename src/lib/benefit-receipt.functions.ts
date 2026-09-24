@@ -143,10 +143,10 @@ export const rejectBenefitReceipt = createServerFn({ method: "POST" })
       .maybeSingle();
     if (orderErr || !order) throw new Error("ORDER_NOT_FOUND");
 
-    const { data: result, error } = await context.supabase.rpc(
-      "reject_benefit_payment" as never,
-      { p_order_id: data.orderId, p_reason: data.reason } as never,
-    );
+    const { data: result, error } = await context.supabase.rpc("reject_benefit_payment", {
+      p_order_id: data.orderId,
+      p_reason: data.reason,
+    });
     if (error) throw error;
     const objectKey = (result as { object_key?: string } | null)?.object_key;
     if (objectKey) {
@@ -154,7 +154,8 @@ export const rejectBenefitReceipt = createServerFn({ method: "POST" })
       if (!isPrivateReceiptKey(objectKey, order.brand_id)) throw new Error("INVALID_RECEIPT_KEY");
       await deletePrivateObject(objectKey);
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      await (supabaseAdmin.from("orders") as any)
+      await supabaseAdmin
+        .from("orders")
         .update({
           benefit_receipt_key: null,
           benefit_receipt_url: null,

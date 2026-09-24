@@ -23,7 +23,7 @@ describe("onboarding SaaS catalog contract", () => {
   });
 
   it("activates the exact selected version as the brand subscription", () => {
-    expect(onboarding).toContain('from("brand_subscriptions" as never)');
+    expect(onboarding).toContain('from("brand_subscriptions")');
     expect(onboarding).toContain("plan_version_id: resolvedPlanVersionId");
     expect(onboarding).toContain("billing_interval: resolvedInterval");
   });

@@ -157,16 +157,13 @@ function RootComponent() {
       const detail = (event as CustomEvent).detail;
       if (!detail?.token) return;
       const { supabase } = await import("@/integrations/supabase/client");
-      await supabase.rpc(
-        "register_mobile_push_device" as never,
-        {
-          p_token: detail.token,
-          p_enabled: detail.enabled !== false,
-          p_platform: detail.platform === "ios" ? "ios" : "android",
-          p_device_name: navigator.userAgent.slice(0, 180),
-          p_preferences: detail.preferences ?? {},
-        } as never,
-      );
+      await supabase.rpc("register_mobile_push_device", {
+        p_token: detail.token,
+        p_enabled: detail.enabled !== false,
+        p_platform: detail.platform === "ios" ? "ios" : "android",
+        p_device_name: navigator.userAgent.slice(0, 180),
+        p_preferences: detail.preferences ?? {},
+      });
     };
     window.addEventListener("boutq:native-push", handleNativePush);
     return () => window.removeEventListener("boutq:native-push", handleNativePush);
@@ -179,19 +176,16 @@ function RootComponent() {
       // This intentionally succeeds only after the storefront customer has
       // authenticated and has a Pura customer membership. The native shell
       // repeats the event after each navigation, including immediately after login.
-      await supabase.rpc(
-        "register_customer_push_device" as never,
-        {
-          p_brand_slug: detail.brandSlug || "pura",
-          p_token: detail.token,
-          p_enabled: detail.enabled !== false,
-          p_order_updates: detail.orders !== false,
-          p_marketing: detail.marketing === true,
-          p_platform: detail.platform === "ios" ? "ios" : "android",
-          p_device_name: navigator.userAgent.slice(0, 180),
-          p_token_provider: detail.tokenProvider || "fcm",
-        } as never,
-      );
+      await supabase.rpc("register_customer_push_device", {
+        p_brand_slug: detail.brandSlug || "pura",
+        p_token: detail.token,
+        p_enabled: detail.enabled !== false,
+        p_order_updates: detail.orders !== false,
+        p_marketing: detail.marketing === true,
+        p_platform: detail.platform === "ios" ? "ios" : "android",
+        p_device_name: navigator.userAgent.slice(0, 180),
+        p_token_provider: detail.tokenProvider || "fcm",
+      });
     };
     window.addEventListener("pura:native-push", handleCustomerNativePush);
     window.addEventListener("boutq-store:native-push", handleCustomerNativePush);
