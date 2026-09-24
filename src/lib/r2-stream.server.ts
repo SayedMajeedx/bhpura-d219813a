@@ -58,7 +58,9 @@ async function getR2Config(isPrivate: boolean = false): Promise<R2Config> {
     try {
       const g = globalThis as any;
       env = g["__CLOUDFLARE_ENV__"] || g["__env__"] || g["process"]?.["env"] || process.env;
-    } catch {}
+    } catch {
+      // No global env in this runtime; the missing-config check below reports it.
+    }
   }
 
   const g = globalThis as any;

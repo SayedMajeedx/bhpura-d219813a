@@ -2,16 +2,7 @@ import * as React from "react";
 import { VERTICAL_LABELS } from "@/lib/store-profile";
 import { getBrandTemplate } from "@/lib/brand-templates";
 import type { BrandWizardData } from "./types";
-import {
-  Store,
-  Palette,
-  User,
-  ShieldCheck,
-  CheckCircle2,
-  ExternalLink,
-  Layers,
-  Sparkles,
-} from "lucide-react";
+import { Store, ShieldCheck } from "lucide-react";
 
 interface StepReviewProps {
   data: BrandWizardData;

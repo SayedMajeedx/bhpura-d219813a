@@ -18,7 +18,6 @@ describe("Storefront 2.0 Layer 3 Tests", () => {
     });
 
     it("falls back to standard navigation when document.startViewTransition is absent", () => {
-      const originalDoc = global.document;
       // In jsdom document.startViewTransition is typically undefined
       const navigateFn = vi.fn();
       navigateWithViewTransition(navigateFn);
@@ -47,7 +46,7 @@ describe("Storefront 2.0 Layer 3 Tests", () => {
       const verticals = Object.keys(BRAND_TEMPLATES);
       expect(verticals.length).toBe(12);
 
-      for (const [v, template] of Object.entries(BRAND_TEMPLATES)) {
+      for (const template of Object.values(BRAND_TEMPLATES)) {
         expect(template.design).toBeDefined();
         const preset = template.design?.preset;
         expect(["editorial", "fresh", "tech"]).toContain(preset);

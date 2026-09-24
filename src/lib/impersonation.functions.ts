@@ -88,7 +88,9 @@ export const stopImpersonationSession = createServerFn({ method: "POST" })
       try {
         const payload = JSON.parse(Buffer.from(cookieVal, "base64").toString("utf-8"));
         targetTenantId = payload.targetTenantId;
-      } catch {}
+      } catch {
+        // Malformed cookie: nothing to restore; it is cleared below.
+      }
     }
     await clearImpersonationCookie();
 

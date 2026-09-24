@@ -139,7 +139,6 @@ export function InventoryHistorySheet({
   brandId,
   slug,
   variantId,
-  productId,
   productName,
   variantLabel,
 }: InventoryHistorySheetProps) {

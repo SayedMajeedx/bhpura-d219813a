@@ -635,6 +635,11 @@ export function hasArabicLetters(text: string): boolean {
   return /[\u0600-\u06FF\u0750-\u077F]/.test(text);
 }
 
+/** True when the text contains a Latin word, as opposed to only digits or units. */
+export function hasLatinLetters(text: string): boolean {
+  return /[A-Za-z]/.test(text);
+}
+
 /**
  * Normalizes text for dictionary comparison (trims, handles tatweel, spaces).
  */
@@ -692,8 +697,12 @@ export function parseBilingualOption(value: string): { ar?: string; en?: string 
     if (main && sub) {
       const mainIsAr = hasArabicLetters(main);
       const subIsAr = hasArabicLetters(sub);
-      if (mainIsAr && !subIsAr) return { ar: main, en: sub };
-      if (!mainIsAr && subIsAr) return { ar: sub, en: main };
+      // A side with no Latin letters (e.g. "53", "250 g") is a measurement, not
+      // an English rendering of the Arabic side. "53 (بني)" is a size with a
+      // colour, so treating it as a bilingual pair would silently drop one of
+      // them; translateOptionValue handles those composites part-wise instead.
+      if (mainIsAr && !subIsAr && hasLatinLetters(sub)) return { ar: main, en: sub };
+      if (!mainIsAr && subIsAr && hasLatinLetters(main)) return { ar: sub, en: main };
     }
   }
 
@@ -792,6 +801,22 @@ export function translateOptionValue(
   if (bilingual) {
     if (targetLang === "ar" && bilingual.ar) return bilingual.ar;
     if (targetLang === "en" && bilingual.en) return bilingual.en;
+  }
+
+  // 1b. Composite "<measure> (<attribute>)" such as "53 (بني)" or "250 g (وسط)".
+  // These are two facts, not two languages, so translate each part and keep the
+  // shape. Dropping the parenthetical used to lose the colour entirely.
+  const composite = raw.match(/^([^()]+?)\s*\(([^()]+)\)$/);
+  if (composite) {
+    const head = composite[1].trim();
+    const tail = composite[2].trim();
+    if (head && tail) {
+      const translatedHead = translateOptionValue(head, targetLang) || head;
+      const translatedTail = translateOptionValue(tail, targetLang) || tail;
+      if (translatedHead !== head || translatedTail !== tail) {
+        return `${translatedHead} (${translatedTail})`;
+      }
+    }
   }
 
   const isRawArabic = hasArabicLetters(raw);

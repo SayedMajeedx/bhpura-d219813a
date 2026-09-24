@@ -9,3 +9,4 @@ routeTree.gen.ts
 supabase/migrations/*.sql
 scripts/database/*.sql
 .worktrees
+scratch

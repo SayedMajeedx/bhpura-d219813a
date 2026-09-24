@@ -10,11 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { supabase } from "@/lib/supabase";
-import {
-  resolveMobileVocabulary,
-  type MobileStoreVocabulary,
-  DEFAULT_MOBILE_VOCABULARY,
-} from "./store-vocabulary";
+import { resolveMobileVocabulary, type MobileStoreVocabulary } from "./store-vocabulary";
 
 export type StaffProfile = {
   id: string;

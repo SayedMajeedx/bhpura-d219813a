@@ -3,7 +3,7 @@ import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "r
 import * as Clipboard from "expo-clipboard";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppIcon } from "@/components/icons";
-import { Card, Field, PrimaryButton, SecondaryButton } from "@/components/ui";
+import { Card, Field, SecondaryButton } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { colors, radius } from "@/theme";

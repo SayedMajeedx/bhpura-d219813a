@@ -4,6 +4,7 @@ import { useBrandSettingsFormContext } from "@/features/settings/use-brand-setti
 import { useSettingsLevel } from "@/features/settings/settings-level";
 import { SETTINGS_REGISTRY, type SettingsTabId } from "@/features/settings/registry";
 import { getStorefrontUrl } from "@/lib/storefront-url";
+import { isSettingApplicable } from "@/lib/storefront-engine";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -26,16 +27,11 @@ interface SettingsHeaderProps {
   onTogglePreview?: () => void;
 }
 
-export function SettingsHeader({
-  activeTab,
-  onTabChange,
-  isPreviewOpen,
-  onTogglePreview,
-}: SettingsHeaderProps) {
+export function SettingsHeader({ onTabChange }: SettingsHeaderProps) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const { form, isDirty, dirtyCount, isSaving, save, reset } = useBrandSettingsFormContext();
-  const { level, toggleLevel, isAdvanced } = useSettingsLevel();
+  const { toggleLevel, isAdvanced } = useSettingsLevel();
   const brand = form.brand;
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -83,6 +79,9 @@ export function SettingsHeader({
 
     return SETTINGS_REGISTRY.filter((entry) => {
       if (!entry.tab || entry.owner === "system") return false;
+      // Never surface a setting the active storefront engine cannot read —
+      // it would navigate to a group where the control is hidden.
+      if (!isSettingApplicable(entry.scope, form.bs)) return false;
       const labelMatch =
         entry.label.ar.toLowerCase().includes(q) || entry.label.en.toLowerCase().includes(q);
       const keyMatch = entry.key.toLowerCase().includes(q);
@@ -91,7 +90,7 @@ export function SettingsHeader({
         (entry.keywords?.en?.some((k) => k.toLowerCase().includes(q)) ?? false);
       return labelMatch || keyMatch || keywordMatch;
     }).slice(0, 8);
-  }, [searchQuery]);
+  }, [searchQuery, form.bs]);
 
   const handleSelectSearchResult = (entry: (typeof SETTINGS_REGISTRY)[0]) => {
     setSearchQuery("");

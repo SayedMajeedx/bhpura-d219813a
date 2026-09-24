@@ -18,7 +18,7 @@ The CI pipeline is implemented via GitHub Actions in [`.github/workflows/ci.yml`
      - `npm ci` (reproducible dependency installation)
      - `npm run format:check` (Prettier code formatting validation)
      - `npm run typecheck` (TypeScript type checking)
-     - `npm run lint` (ESLint validation with suppression checks)
+     - `npm run lint` (ESLint with `--max-warnings 0`: any error or warning fails CI; there is no suppressions file, so exceptions must be inline `eslint-disable-next-line` comments that state the reason)
      - `npm run test` (Vitest unit tests)
    - **Local Command**: `npm run check`
 

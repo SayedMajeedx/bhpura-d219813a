@@ -7,7 +7,7 @@ import { AppTopBar } from "@/components/topbar";
 import { Card, ModalSheet, StatusPill } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
-import { colors, radius, shadow } from "@/theme";
+import { colors, radius } from "@/theme";
 
 type HubItem = {
   id: string;
@@ -25,7 +25,7 @@ export default function MoreHubScreen() {
   const insets = useSafeAreaInsets();
   const { profile, activeBrand, brands, setActiveBrandId, signOut, isAdmin, hasPermission } =
     useAuth();
-  const { t, isAr, lang, toggleLang } = useI18n();
+  const { t, isAr, toggleLang } = useI18n();
   const [brandModalOpen, setBrandModalOpen] = useState(false);
 
   const sections: { titleAr: string; titleEn: string; items: HubItem[] }[] = [

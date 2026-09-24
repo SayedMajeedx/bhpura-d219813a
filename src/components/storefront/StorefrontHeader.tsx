@@ -30,7 +30,7 @@ function StoreHeader() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2 flex flex-col gap-2">
         {/* Mobile 1-Row Header: [Menu] [Logo] [Search] [Cart] for V2 */}
         {isV2 ? (
-          <div className="flex md:hidden h-14 items-center justify-between gap-2">
+          <div className="flex md:hidden min-h-14 h-auto py-1 items-center justify-between gap-2">
             <div className="shrink-0">
               <MobileStorefrontDropdown />
             </div>
@@ -50,7 +50,13 @@ function StoreHeader() {
                   height={40}
                   fetchPriority="high"
                   decoding="async"
-                  className="shrink-0 object-contain max-h-9 w-auto"
+                  className="shrink-0 object-contain"
+                  style={{
+                    height: logoSize,
+                    maxHeight: Math.min(logoSize, 64),
+                    width: "auto",
+                    maxWidth: logoSize * 3,
+                  }}
                 />
               )}
               {settings.show_header_name && (

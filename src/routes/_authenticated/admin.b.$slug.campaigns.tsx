@@ -656,7 +656,9 @@ function CampaignsPage() {
           bulkWindowRef.current.location.href = url;
           try {
             bulkWindowRef.current.focus();
-          } catch {}
+          } catch {
+            // Browsers may refuse to focus another window; navigation already happened.
+          }
         } else {
           const win = window.open(url, "whatsapp_campaign_window");
           if (!win) {

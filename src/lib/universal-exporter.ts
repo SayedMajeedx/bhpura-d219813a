@@ -1,5 +1,4 @@
 ﻿import { supabase } from "@/integrations/supabase/client";
-import { sanitizeGCCPhone } from "@/lib/os-formatting";
 
 export type ExportFormat = "xlsx" | "csv" | "json";
 export type ExportEntityType = "products" | "customers" | "orders" | "expenses" | "full_backup";
@@ -710,7 +709,7 @@ export async function logExportRun(params: {
     };
     const updated = [newEntry, ...existing].slice(0, 50);
     localStorage.setItem(storageKey, JSON.stringify(updated));
-  } catch (localErr) {
+  } catch {
     // Ignore storage quota errors
   }
 }

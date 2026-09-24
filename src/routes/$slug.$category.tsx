@@ -262,7 +262,7 @@ function CategoryPage() {
         const { data, error } = await supabase
           .from("products")
           .select(
-            "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, custom_fields, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, color)",
+            "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, custom_fields, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, size_unit, color)",
           )
           .eq("brand_id", brand.id)
           .eq("is_active", true)
@@ -279,7 +279,7 @@ function CategoryPage() {
         let query = supabase
           .from("products")
           .select(
-            "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, custom_fields, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, color)",
+            "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, custom_fields, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, size_unit, color)",
           )
           .eq("brand_id", brand.id)
           .eq("is_active", true);
@@ -313,7 +313,7 @@ function CategoryPage() {
       const { data, error } = await supabase
         .from("products")
         .select(
-          "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, custom_fields, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, color)",
+          "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, custom_fields, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, size_unit, color)",
         )
         .eq("brand_id", brand.id)
         .eq("is_active", true)
@@ -497,6 +497,15 @@ function CategoryPage() {
 
   const availableColors = useMemo(() => {
     return extractUniqueVariantColors(allVariants);
+  }, [allVariants]);
+
+  const sizeUnits = useMemo(() => {
+    const units: Record<string, string> = {};
+    allVariants.forEach((v) => {
+      const size = v.size?.trim();
+      if (size && v.size_unit && !units[size]) units[size] = v.size_unit;
+    });
+    return units;
   }, [allVariants]);
 
   const { minCatalogPrice, maxCatalogPrice } = useMemo(() => {
@@ -766,15 +775,18 @@ function CategoryPage() {
               </div>
 
               <div className="flex items-center gap-3 ms-auto">
-                <CategoryFiltersSheet
-                  filters={filters}
-                  onChange={setFilters}
-                  availableSizes={availableSizes}
-                  availableColors={availableColors}
-                  minCatalogPrice={minCatalogPrice}
-                  maxCatalogPrice={maxCatalogPrice}
-                  totalFilteredCount={filteredProducts.length}
-                />
+                {settings?.category_filters_enabled !== false && (
+                  <CategoryFiltersSheet
+                    filters={filters}
+                    onChange={setFilters}
+                    availableSizes={availableSizes}
+                    sizeUnits={sizeUnits}
+                    availableColors={availableColors}
+                    minCatalogPrice={minCatalogPrice}
+                    maxCatalogPrice={maxCatalogPrice}
+                    totalFilteredCount={filteredProducts.length}
+                  />
+                )}
 
                 <select
                   id="category-sort"
@@ -796,17 +808,20 @@ function CategoryPage() {
 
             {/* Desktop 2-column layout: Sidebar + Grid */}
             <div className="flex gap-8 items-start">
-              <aside className="hidden lg:block w-60 shrink-0 sticky top-24">
-                <CategoryFilters
-                  filters={filters}
-                  onChange={setFilters}
-                  availableSizes={availableSizes}
-                  availableColors={availableColors}
-                  minCatalogPrice={minCatalogPrice}
-                  maxCatalogPrice={maxCatalogPrice}
-                  totalFilteredCount={filteredProducts.length}
-                />
-              </aside>
+              {settings?.category_filters_enabled !== false && (
+                <aside className="hidden lg:block w-60 shrink-0 sticky top-24">
+                  <CategoryFilters
+                    filters={filters}
+                    onChange={setFilters}
+                    availableSizes={availableSizes}
+                    sizeUnits={sizeUnits}
+                    availableColors={availableColors}
+                    minCatalogPrice={minCatalogPrice}
+                    maxCatalogPrice={maxCatalogPrice}
+                    totalFilteredCount={filteredProducts.length}
+                  />
+                </aside>
+              )}
 
               <div className="flex-1 min-w-0">
                 <ProductGrid

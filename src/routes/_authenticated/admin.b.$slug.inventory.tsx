@@ -91,7 +91,6 @@ import {
   formatSkuToken,
   makeEan13,
   splitVariantValues,
-  UNIVERSAL_SIZING_PRESETS,
   PLACEHOLDER_SIZE_VALUES,
 } from "@/lib/variant-sku-utils";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
@@ -122,7 +121,6 @@ import {
   customFieldPresetsFrom,
   sizingPresetsFrom,
   sizingPresetOrderFrom,
-  type VariantAxisConfig,
 } from "@/lib/addons/addon-registry";
 import {
   getVerticalSizingPresets,
@@ -2707,7 +2705,8 @@ function ProductDialog({
     let createdProductId: string | undefined;
 
     const primaryMediaImage = form.media.find((m) => m.type === "image" || !m.type)?.url;
-    const effectiveImageUrl = primaryMediaImage || (form.image_url.trim() ? form.image_url.trim() : null);
+    const effectiveImageUrl =
+      primaryMediaImage || (form.image_url.trim() ? form.image_url.trim() : null);
 
     if (product) {
       if (form.is_active) {
@@ -4888,9 +4887,9 @@ function BulkVariantDialog({
                 <thead className="bg-secondary">
                   <tr>
                     {[
-                      isAr ? "المقاس" : "Size",
-                      isAr ? "اللون" : "Color",
-                      isAr ? "الخامة" : "Fabric",
+                      sizeAxis.label,
+                      colorAxis.label,
+                      fabricAxis.label,
                       "SKU",
                       isAr ? "الباركود (EAN-13)" : "Barcode (EAN-13)",
                       ...(canViewFinancials ? [isAr ? "التكلفة" : "Cost"] : []),
@@ -5873,9 +5872,6 @@ function VariantMobileCard({
   isSelected,
   onToggleSelect,
   product,
-  sizeAxis,
-  colorAxis,
-  fabricAxis,
   onDuplicate,
   onOpenHistory,
 }: {
@@ -5894,9 +5890,6 @@ function VariantMobileCard({
   isSelected: boolean;
   onToggleSelect: () => void;
   product?: Product;
-  sizeAxis?: VariantAxisConfig;
-  colorAxis?: VariantAxisConfig;
-  fabricAxis?: VariantAxisConfig;
   onDuplicate?: (v: Variant) => void;
   onOpenHistory?: (v: Variant) => void;
 }) {
@@ -5940,10 +5933,6 @@ function VariantMobileCard({
     }
     update(v, { selling_price: salePrice });
   };
-
-  const isSizeVis = sizeAxis ? sizeAxis.visible : true;
-  const isColorVis = colorAxis ? colorAxis.visible : true;
-  const isFabricVis = fabricAxis ? fabricAxis.visible : true;
 
   return (
     <div
@@ -6806,7 +6795,7 @@ function VariantList({
 
   const normalizeBarcode = (value: unknown) =>
     String(value ?? "")
-      .replace(/[\u0000-\u001f\u007f]/g, "")
+      .replace(/\p{Cc}/gu, "")
       .trim()
       .toUpperCase();
   const barcodeInUse = (value: unknown, exceptId?: string) => {
@@ -7235,9 +7224,6 @@ function VariantList({
             isSelected={selectedIds.has(v.id)}
             onToggleSelect={() => toggleSelect(v.id)}
             product={product}
-            sizeAxis={sizeAxis}
-            colorAxis={colorAxis}
-            fabricAxis={fabricAxis}
             onDuplicate={startAdding}
             onOpenHistory={setHistoryVariant}
           />

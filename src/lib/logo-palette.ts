@@ -191,9 +191,6 @@ export function ensureContrast(
   const fgHsl = rgbToHsl(hexToRgb(foreground).r, hexToRgb(foreground).g, hexToRgb(foreground).b);
   const shouldDarken = bgLum > 0.5;
 
-  let bestColor = foreground;
-  let bestRatio = currentRatio;
-
   for (let step = 1; step <= 50; step++) {
     const targetL = shouldDarken
       ? Math.max(0, fgHsl.l - step * 2)
@@ -201,11 +198,6 @@ export function ensureContrast(
 
     const testHex = hslToHex(fgHsl.h, fgHsl.s, targetL);
     const testRatio = getContrastRatio(testHex, background);
-
-    if (testRatio > bestRatio) {
-      bestRatio = testRatio;
-      bestColor = testHex;
-    }
 
     if (testRatio >= minRatio) {
       return testHex;
@@ -264,7 +256,6 @@ export function quantizePixels(
   maxColors: number = 8,
 ): { color: string; count: number; rgb: RGB }[] {
   const binMap = new Map<number, { rSum: number; gSum: number; bSum: number; count: number }>();
-  const totalPixels = pixels.length / 4;
 
   for (let i = 0; i < pixels.length; i += 4) {
     const a = pixels[i + 3];

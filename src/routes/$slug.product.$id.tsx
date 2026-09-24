@@ -1,9 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import {
-  publicSupabase as supabase,
-  supabase as authenticatedSupabase,
-} from "@/integrations/supabase/client";
+import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import {
   useStorefront,
   formatPrice,
@@ -40,10 +37,12 @@ import {
 } from "lucide-react";
 import { isCatalogMode, shouldShowPrices, buildWhatsAppInquiryUrl } from "@/lib/storefront-mode";
 import { NotifyMeForm } from "@/components/storefront/NotifyMeForm";
+import { useStickyCtaOffset } from "@/hooks/use-sticky-cta-offset";
 import { AddonSlot } from "@/components/addons/AddonSlot";
 import { useAddons } from "@/components/addons/AddonsProvider";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { variantAxisDefaultsFrom, resolveAllVariantAxes } from "@/lib/addons/addon-registry";
+import { isColorSwatchAxis } from "@/lib/variant-axes";
 import { formatCustomField } from "@/lib/addons/custom-fields";
 import { ProductShareModal } from "@/components/storefront/ProductShareModal";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
@@ -269,7 +268,7 @@ function variantSortKey(v: Variant): [number, string] {
   return [num, label.toLowerCase()];
 }
 
-import { COLOR_MAP, resolveColorHex } from "@/lib/color-names";
+import { resolveColorHex } from "@/lib/color-names";
 
 const parsePriceDelta = (valStr: string): number => {
   if (!valStr) return 0;
@@ -290,7 +289,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     | undefined;
   const params = Route.useParams() as any;
   const id = splatId || params?.id || params?._splat || params?.["_"] || params?.["$"] || "";
-  const { brand, settings, currency, lang, t, addToCart, isWishlisted, toggleWishlist, session } =
+  const { brand, settings, currency, lang, t, addToCart, isWishlisted, toggleWishlist } =
     useStorefront();
   const { addons } = useAddons();
   const { vocabulary } = useVocabulary();
@@ -311,6 +310,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const [tailoringNotes, setTailoringNotes] = useState("");
   const [uploadingField, setUploadingField] = useState<Record<string, boolean>>({});
   const optionsRef = useRef<HTMLDivElement | null>(null);
+  const galleryTouchStartX = useRef<number | null>(null);
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["storefront", brand.slug, "product", id],
@@ -405,7 +405,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       },
       product.id,
     );
-  }, [product, currency, lang]);
+  }, [product, currency, lang, brand?.slug]);
 
   const { data: recommendationCatalog = [] } = useQuery({
     queryKey: ["storefront", brand.slug, "product-recommendations"],
@@ -427,6 +427,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     refetchOnWindowFocus: false,
   });
 
+  const stickyCtaRef = useStickyCtaOffset<HTMLDivElement>();
+
   const socialProofQuery = useQuery({
     queryKey: ["storefront", brand.slug, "social-proof", product?.id],
     queryFn: async () => {
@@ -438,7 +440,12 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         settings?.social_proof_threshold ?? 3,
       );
     },
-    enabled: Boolean(brand?.id && product?.id && settings?.storefront_design_version === 2),
+    enabled: Boolean(
+      brand?.id &&
+      product?.id &&
+      settings?.storefront_design_version === 2 &&
+      settings?.social_proof_enabled !== false,
+    ),
     staleTime: 10 * 60_000,
   });
 
@@ -553,7 +560,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
 
   useVariantTranslations(allOptionTerms, lang === "ar" ? "ar" : "en");
 
-  const addonAxisDefaults = useMemo(() => variantAxisDefaultsFrom(addons), [addons]);
+  const storeVertical = settings?.store_vertical ?? null;
+  const addonAxisDefaults = useMemo(
+    () => variantAxisDefaultsFrom(addons, storeVertical),
+    [addons, storeVertical],
+  );
   const resolvedAxes = useMemo(() => {
     const base = resolveAllVariantAxes({
       product,
@@ -675,12 +686,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     variants,
   ]);
 
-  const isVisualColorAxis = useMemo(() => {
-    const label = (resolvedAxes.color.label || "").toLowerCase();
-    const isColorLabel = label.includes("لون") || label.includes("color");
-    const hasHexMatch = uniqueColors.some((c) => Boolean(resolveColorHex(c)));
-    return isColorLabel && hasHexMatch;
-  }, [resolvedAxes.color.label, uniqueColors]);
+  const isVisualColorAxis = useMemo(
+    () => isColorSwatchAxis(resolvedAxes.color.label, uniqueColors),
+    [resolvedAxes.color.label, uniqueColors],
+  );
 
   // Pre-select single options if an axis has only 1 choice available
   useEffect(() => {
@@ -1211,11 +1220,36 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       })
     : null;
 
+  const pdpGalleryRatio = settings?.pdp_gallery_aspect_ratio ?? "3:4";
+  const galleryRatioClass =
+    pdpGalleryRatio === "1:1"
+      ? "aspect-square"
+      : pdpGalleryRatio === "4:5"
+        ? "aspect-[4/5]"
+        : "aspect-[3/4]";
+
   return (
-    <div className="mx-auto max-w-5xl px-4 sm:px-6 py-3 sm:py-8 pb-28 md:pb-10">
-      <div className="grid md:grid-cols-12 gap-6 lg:gap-10 items-start">
-        <div className="md:col-span-5 max-w-[420px] mx-auto md:max-w-none w-full">
-          <div className="relative aspect-[3/4] max-h-[500px] bg-muted rounded-2xl overflow-hidden shadow-sm border border-border-subtle mx-auto w-full">
+    <div className="mx-auto max-w-5xl px-4 sm:px-6 py-3 sm:py-8 pb-28 md:pb-10 overflow-x-hidden w-full max-w-full">
+      <div className="grid md:grid-cols-12 gap-6 lg:gap-10 items-start w-full max-w-full">
+        <div className="md:col-span-5 max-w-[420px] mx-auto md:max-w-none w-full min-w-0">
+          <div
+            className={`relative ${galleryRatioClass} max-h-[520px] bg-muted rounded-2xl overflow-hidden shadow-sm border border-border-subtle mx-auto w-full max-w-full select-none`}
+            onTouchStart={(e) => {
+              galleryTouchStartX.current = e.touches[0]?.clientX ?? null;
+            }}
+            onTouchEnd={(e) => {
+              const startX = galleryTouchStartX.current;
+              galleryTouchStartX.current = null;
+              if (startX == null || media.length <= 1) return;
+              const endX = e.changedTouches[0]?.clientX;
+              if (endX == null) return;
+              const diff = endX - startX;
+              if (Math.abs(diff) < 35) return;
+              setMediaIdx((i) =>
+                diff < 0 ? (i + 1) % media.length : (i - 1 + media.length) % media.length,
+              );
+            }}
+          >
             {media.length > 0 ? (
               <>
                 {media[mediaIdx % media.length].type === "video" ? (
@@ -1240,12 +1274,13 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                     playsInline
                     controls
                   />
-                ) : settings?.storefront_design_version === 2 ? (
+                ) : settings?.storefront_design_version === 2 &&
+                  settings?.pdp_image_zoom !== false ? (
                   <ImageZoom
                     src={media[mediaIdx % media.length].url}
                     alt={displayName}
-                    className="w-full h-full"
-                    aspectRatio="aspect-auto h-full"
+                    className="w-full h-full max-w-full"
+                    aspectRatio="w-full h-full"
                     style={{
                       viewTransitionName: `product-img-${product.id.replace(/[^a-zA-Z0-9_-]/g, "_")}`,
                     }}
@@ -1256,7 +1291,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                     preset="product"
                     sizes="(min-width: 1024px) 55vw, 100vw"
                     alt={displayName}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover max-w-full"
                     fetchPriority="high"
                     loading="eager"
                   />
@@ -1268,20 +1303,20 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                       variant="ghost"
                       size="icon"
                       onClick={() => setMediaIdx((i) => (i - 1 + media.length) % media.length)}
-                      className="absolute top-1/2 left-3 -translate-y-1/2 h-11 w-11 bg-background/90 hover:bg-background text-foreground rounded-full shadow-md border border-border-subtle transition-transform active:scale-95 z-20"
-                      aria-label="Previous media"
+                      className="absolute top-1/2 start-2 -translate-y-1/2 min-h-11 min-w-11 p-2 text-white/90 hover:text-white transition-all active:scale-90 z-20 bg-transparent hover:bg-transparent border-0 shadow-none flex items-center justify-center cursor-pointer"
+                      aria-label={t("الصورة السابقة", "Previous media")}
                     >
-                      <ChevronLeft className="h-5 w-5" />
+                      <ChevronLeft className="size-8 rtl:rotate-180 text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)] filter" />
                     </Button>
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
                       onClick={() => setMediaIdx((i) => (i + 1) % media.length)}
-                      className="absolute top-1/2 right-3 -translate-y-1/2 h-11 w-11 bg-background/90 hover:bg-background text-foreground rounded-full shadow-md border border-border-subtle transition-transform active:scale-95 z-20"
-                      aria-label="Next media"
+                      className="absolute top-1/2 end-2 -translate-y-1/2 min-h-11 min-w-11 p-2 text-white/90 hover:text-white transition-all active:scale-90 z-20 bg-transparent hover:bg-transparent border-0 shadow-none flex items-center justify-center cursor-pointer"
+                      aria-label={t("الصورة التالية", "Next media")}
                     >
-                      <ChevronRight className="h-5 w-5" />
+                      <ChevronRight className="size-8 rtl:rotate-180 text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)] filter" />
                     </Button>
                   </>
                 )}
@@ -1338,7 +1373,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           )}
         </div>
 
-        <div className="md:col-span-7">
+        <div className="md:col-span-7 w-full min-w-0 overflow-hidden">
           <div className="mb-1 flex items-start justify-between gap-3 sm:mb-2">
             <h1
               className="font-display text-2xl sm:text-3xl"
@@ -1392,17 +1427,19 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           </div>
 
           {/* Social Proof Badge */}
-          {settings?.storefront_design_version === 2 && socialProofQuery.data && (
-            <div className="mb-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-semibold border border-amber-500/20">
-              <Sparkles className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-              <span>
-                {t(
-                  `تم شراؤه ${socialProofQuery.data} مرات خلال الأسبوع الماضي`,
-                  `Purchased ${socialProofQuery.data} times in the last 7 days`,
-                )}
-              </span>
-            </div>
-          )}
+          {settings?.storefront_design_version === 2 &&
+            settings?.social_proof_enabled !== false &&
+            socialProofQuery.data && (
+              <div className="mb-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-semibold border border-amber-500/20">
+                <Sparkles className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                <span>
+                  {t(
+                    `تم شراؤه ${socialProofQuery.data} مرات خلال الأسبوع الماضي`,
+                    `Purchased ${socialProofQuery.data} times in the last 7 days`,
+                  )}
+                </span>
+              </div>
+            )}
 
           {displayDescription && (
             <p className="text-muted-foreground mb-4 sm:mb-6 whitespace-pre-line text-sm sm:text-base">
@@ -1477,7 +1514,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     {t(
-                      "يتم تجهيز هذه القطعة خصيصاً على قياساتكِ الفردية لضمان أفضل ملاءمة وأناقة.",
+                      "يتم تجهيز هذه القطعة خصيصاً على قياساتك الفردية لضمان أفضل ملاءمة وأناقة.",
                       "This piece is tailored specifically to your personal measurements for a perfect fit.",
                     )}
                   </p>
@@ -2222,25 +2259,15 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               </Button>
             </div>
           ) : selectedVariantOutOfStock ? (
-            <div className="space-y-3">
-              <NotifyMeForm
-                brandId={brand.id}
-                productId={product.id}
-                variantId={variant?.id}
-                productName={displayName}
-                variantLabel={
-                  variant
-                    ? [
-                        formatSizeWithUnit(variant.size, variant.size_unit, lang),
-                        variant.color,
-                        variant.fabric,
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")
-                    : null
-                }
-              />
-            </div>
+            settings?.back_in_stock_enabled !== false ? (
+              <div className="space-y-3">
+                <NotifyMeForm brandId={brand.id} productId={product.id} variantId={variant?.id} />
+              </div>
+            ) : (
+              <div className="rounded-xl border border-border bg-muted/40 p-4 text-center text-sm font-medium text-muted-foreground">
+                {t("هذا المنتج غير متوفر حالياً", "This product is currently out of stock")}
+              </div>
+            )
           ) : (
             <div className="hidden md:flex gap-2">
               <Button
@@ -2298,7 +2325,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           {settings?.storefront_design_version === 2 && (
             <ProductAccordion
               description={displayDescription}
-              fabricCare={variant?.fabric ? `${variant.fabric}` : null}
+              fabricCare={
+                variant?.fabric
+                  ? `${variant.fabric}`
+                  : (lang === "ar" ? settings?.fabric_care_ar : settings?.fabric_care_en) || null
+              }
               hasSizeGuide={Boolean(
                 modules?.size_guide || (product?.size_guide_id && !product?.size_guide_hidden),
               )}
@@ -2315,8 +2346,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           )}
         </div>
 
-        {/* Mobile sticky purchase bar */}
+        {/* Mobile sticky purchase bar. Publishes its height so bottom-fixed
+            overlays (consent banner) stack above it rather than over it. */}
         <div
+          ref={stickyCtaRef}
           className="md:hidden fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 backdrop-blur px-3 py-2 shadow-[0_-4px_16px_-8px_rgba(0,0,0,0.15)]"
           style={{ paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom, 0px))" }}
         >
@@ -2439,7 +2472,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       )}
 
       {/* Layer 2 Recently Viewed Carousel */}
-      <RecentlyViewed excludeProductId={product.id} />
+      {settings?.recently_viewed_enabled !== false && (
+        <RecentlyViewed excludeProductId={product.id} />
+      )}
     </div>
   );
 }
@@ -2454,7 +2489,7 @@ function RecommendationRail({
   const { brand, currency, lang, t, settings } = useStorefront();
 
   return (
-    <section aria-label={title}>
+    <section aria-label={title} className="w-full overflow-hidden">
       <div className="mb-4 flex items-end justify-between gap-3">
         <h2 className="font-display text-xl sm:text-2xl">{title}</h2>
         <span className="hidden text-xs text-muted-foreground sm:block">

@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureSessionUser } from "@/lib/auth/ensure-session-user";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,7 +50,6 @@ import {
   CheckCheck,
   Eye,
   EyeOff,
-  Share2,
   ShieldCheck,
   MessageCircle,
 } from "lucide-react";
@@ -68,15 +68,9 @@ import { useEntitlements } from "@/lib/saas-billing/use-entitlements";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/team")({
   beforeLoad: async ({ context: { queryClient }, params }) => {
-    const user = await queryClient.ensureQueryData({
-      queryKey: ["auth_user"],
-      queryFn: async () => {
-        const { data, error } = await supabase.auth.getUser();
-        if (error || !data.user) throw redirect({ to: "/auth" });
-        return data.user;
-      },
-      staleTime: 1000 * 60 * 5,
-    });
+    const user = await ensureSessionUser(queryClient);
+
+    if (!user) throw redirect({ to: "/auth" });
 
     const profile = await queryClient.ensureQueryData({
       queryKey: ["auth_profile_role", user.id],

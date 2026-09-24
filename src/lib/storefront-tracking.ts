@@ -47,7 +47,7 @@ export async function trackProductEngagement(
       });
       return;
     }
-  } catch (err) {
+  } catch {
     // Fall back to publicSupabase RPC if direct fetch encounters an error
     try {
       await (publicSupabase.rpc as any)("record_storefront_product_engagement", {

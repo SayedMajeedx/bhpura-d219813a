@@ -1,13 +1,22 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingBag, ArrowRight, ArrowLeft, Check, Minus, Plus } from "lucide-react";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { useStorefront, formatPrice } from "@/lib/storefront-context";
-import { buildCartItem, canQuickAddToCart } from "@/lib/cart/add-to-cart";
-import { resolveColorHex, extractUniqueVariantColors } from "@/lib/color-names";
+import { buildCartItem } from "@/lib/cart/add-to-cart";
+import { resolveColorHex } from "@/lib/color-names";
+import { fetchProductDetail } from "@/lib/storefront-queries";
+import {
+  formatAxisValue,
+  pickVariantForAxis,
+  useVariantAxes,
+  type VariantLike,
+} from "@/lib/variant-axes";
+import type { ProductVariantLabels } from "@/lib/addons/addon-registry";
 import { toast } from "sonner";
 
 export interface QuickViewModalProps {
@@ -31,6 +40,8 @@ export interface QuickViewModalProps {
       size?: string | null;
       size_unit?: string | null;
       fabric?: string | null;
+      option_four?: string | null;
+      option_five?: string | null;
       selling_price?: number | null;
       original_price?: number | null;
       stock_main?: number | null;
@@ -41,16 +52,37 @@ export interface QuickViewModalProps {
   brandSlug: string;
 }
 
-export function QuickViewModal({ open, onOpenChange, product, brandSlug }: QuickViewModalProps) {
-  const { lang, currency, addToCart, t } = useStorefront();
+type QuickViewVariant = NonNullable<QuickViewModalProps["product"]["product_variants"]>[number];
+
+export function QuickViewModal({
+  open,
+  onOpenChange,
+  product: cardProduct,
+  brandSlug,
+}: QuickViewModalProps) {
+  const { lang, currency, addToCart, t, brand } = useStorefront();
   const navigate = useNavigate();
   const isAr = lang === "ar";
   const NextIcon = isAr ? ArrowLeft : ArrowRight;
 
-  const variants = product.product_variants || [];
-  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
-    variants.length > 0 ? variants[0].id : null,
-  );
+  // Cards carry a trimmed product (no per-product option labels, units or
+  // extra option columns). Load the same record the product page uses, sharing
+  // its cache, and show the card data until it arrives.
+  const { data: fullProduct } = useQuery({
+    queryKey: ["storefront", brand.slug, "product", cardProduct.id],
+    queryFn: () => fetchProductDetail(brand.id, cardProduct.id),
+    enabled: open,
+    staleTime: 5 * 60_000,
+  });
+  const product = {
+    ...cardProduct,
+    ...((fullProduct as Partial<QuickViewModalProps["product"]> | null) ?? {}),
+  } as QuickViewModalProps["product"] & ProductVariantLabels;
+
+  const variants: QuickViewVariant[] = product.product_variants || [];
+  const inStock = (v: QuickViewVariant) =>
+    Number(v.stock_main ?? 0) + Number(v.stock_incubator ?? 0) > 0;
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [qty, setQty] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
@@ -72,7 +104,9 @@ export function QuickViewModal({ open, onOpenChange, product, brandSlug }: Quick
   }
 
   const selectedVariant =
-    variants.find((v) => v.id === selectedVariantId) || (variants.length > 0 ? variants[0] : null);
+    variants.find((v) => v.id === selectedVariantId) ||
+    variants.find(inStock) ||
+    (variants.length > 0 ? variants[0] : null);
 
   const activePrice = Number(selectedVariant?.selling_price ?? product.base_price ?? 0);
   const rawOriginal = selectedVariant?.original_price ?? product.original_price;
@@ -83,28 +117,18 @@ export function QuickViewModal({ open, onOpenChange, product, brandSlug }: Quick
     Boolean(product.is_made_to_order) ||
     (Array.isArray(product.custom_fields) && product.custom_fields.length > 0);
 
-  const colors = extractUniqueVariantColors(variants);
-  const sizes = Array.from(new Set(variants.map((v) => v.size).filter(Boolean))) as string[];
+  // Labels and swatch-vs-chip rendering come from the store's axis setup
+  // (vertical, addon packs, per-product overrides), never from column names.
+  const axes = useVariantAxes(product, variants as VariantLike[]);
 
-  const handleSelectColor = (colorName: string) => {
-    const matching = variants.find(
-      (v) => v.color?.trim().toLowerCase() === colorName.trim().toLowerCase(),
-    );
-    if (matching) {
-      setSelectedVariantId(matching.id);
-      if (matching.image_url) {
-        const idx = mediaList.indexOf(matching.image_url);
-        if (idx >= 0) setSelectedImageIdx(idx);
-      }
+  const handleSelectOption = (field: (typeof axes)[number]["field"], value: string) => {
+    const matching = pickVariantForAxis(variants, selectedVariant, field, value);
+    if (!matching) return;
+    setSelectedVariantId(matching.id);
+    if (matching.image_url) {
+      const idx = mediaList.indexOf(matching.image_url);
+      if (idx >= 0) setSelectedImageIdx(idx);
     }
-  };
-
-  const handleSelectSize = (sizeStr: string) => {
-    const currentColor = selectedVariant?.color;
-    const matching =
-      variants.find((v) => v.size === sizeStr && (!currentColor || v.color === currentColor)) ||
-      variants.find((v) => v.size === sizeStr);
-    if (matching) setSelectedVariantId(matching.id);
   };
 
   const handleAddToCart = () => {
@@ -224,82 +248,79 @@ export function QuickViewModal({ open, onOpenChange, product, brandSlug }: Quick
                 )}
               </div>
 
-              {/* Color swatches */}
-              {colors.length > 0 && (
-                <div className="mt-5">
-                  <label className="text-xs font-medium text-foreground">
-                    {t("اللون", "Color")}:{" "}
-                    <span className="font-normal text-muted-foreground">
-                      {selectedVariant?.color || colors[0].name}
-                    </span>
-                  </label>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {colors.map((c) => {
-                      const isSelected = selectedVariant?.color === c.name;
-                      return (
-                        <Button
-                          key={c.name}
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleSelectColor(c.name)}
-                          className={`relative flex h-8 w-8 items-center justify-center rounded-full hover:bg-transparent border p-0 transition-all ${
-                            isSelected
-                              ? "border-primary ring-2 ring-primary ring-offset-2"
-                              : "border-border hover:scale-105"
-                          }`}
-                          style={{ backgroundColor: c.hex || "#e5e7eb" }}
-                          title={c.name}
-                        >
-                          {isSelected && (
-                            <Check
-                              className={`h-3.5 w-3.5 ${
-                                c.hex &&
-                                ["#ffffff", "#fffff0", "#fffdd0"].includes(c.hex.toLowerCase())
-                                  ? "text-black"
-                                  : "text-white"
+              {/* Option axes (colour, size, grind, weight, …) */}
+              {axes.map((axis) => {
+                const current = selectedVariant?.[axis.field]?.trim() || "";
+                return (
+                  <div key={axis.key} className="mt-4 first:mt-5">
+                    <div className="text-xs font-medium text-foreground">
+                      {axis.label}:{" "}
+                      <span className="font-normal text-muted-foreground">
+                        {current ? formatAxisValue(axis, current, lang, variants) : ""}
+                      </span>
+                    </div>
+                    <div
+                      className="mt-2 flex flex-wrap gap-2"
+                      role="radiogroup"
+                      aria-label={axis.label}
+                    >
+                      {axis.values.map((value) => {
+                        const isSelected = current.toLowerCase() === value.toLowerCase();
+                        const display = formatAxisValue(axis, value, lang, variants);
+                        if (axis.swatch) {
+                          const hex = resolveColorHex(value) || "#e5e7eb";
+                          const light = ["#ffffff", "#fffff0", "#fffdd0", "#e5e7eb"].includes(
+                            hex.toLowerCase(),
+                          );
+                          return (
+                            <Button
+                              key={value}
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              role="radio"
+                              aria-checked={isSelected}
+                              aria-label={display}
+                              title={display}
+                              onClick={() => handleSelectOption(axis.field, value)}
+                              className={`relative flex h-8 w-8 items-center justify-center rounded-full hover:bg-transparent border p-0 transition-all ${
+                                isSelected
+                                  ? "border-primary ring-2 ring-primary ring-offset-2"
+                                  : "border-border hover:scale-105"
                               }`}
-                            />
-                          )}
-                        </Button>
-                      );
-                    })}
+                              style={{ backgroundColor: hex }}
+                            >
+                              {isSelected && (
+                                <Check
+                                  className={`h-3.5 w-3.5 ${light ? "text-black" : "text-white"}`}
+                                />
+                              )}
+                            </Button>
+                          );
+                        }
+                        return (
+                          <Button
+                            key={value}
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            role="radio"
+                            aria-checked={isSelected}
+                            onClick={() => handleSelectOption(axis.field, value)}
+                            className={`h-auto min-w-10 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${
+                              isSelected
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border bg-card text-foreground hover:bg-muted"
+                            }`}
+                          >
+                            {display}
+                          </Button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
-
-              {/* Size selection */}
-              {sizes.length > 0 && (
-                <div className="mt-4">
-                  <label className="text-xs font-medium text-foreground">
-                    {t("المقاس", "Size")}:{" "}
-                    <span className="font-normal text-muted-foreground">
-                      {selectedVariant?.size || sizes[0]}
-                    </span>
-                  </label>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {sizes.map((sz) => {
-                      const isSelected = selectedVariant?.size === sz;
-                      return (
-                        <Button
-                          key={sz}
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleSelectSize(sz)}
-                          className={`h-auto rounded-md min-w-10 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${
-                            isSelected
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-border bg-card text-foreground hover:bg-muted"
-                          }`}
-                        >
-                          {sz}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                );
+              })}
 
               {/* Quantity selector */}
               {!isBespoke && (

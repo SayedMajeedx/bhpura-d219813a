@@ -1740,8 +1740,8 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
     },
     highlights: [
       {
-        ar: "محاور مخصصة: الوزن، نوع الطحنة، والمعالجة",
-        en: "Custom axes: Weight, Grind Type, and Process",
+        ar: "محاور مخصصة: الوزن، درجة التحميص، والمعالجة",
+        en: "Custom axes: Weight, Roast Level, and Process",
       },
       {
         ar: "نماذج أوزان المحاصيل (250g، 500g، 1kg) وأظرف التقطير",

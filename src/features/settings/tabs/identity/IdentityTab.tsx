@@ -1,8 +1,8 @@
 import * as React from "react";
-import { useState, useEffect, useContext } from "react";
+import { useState, useContext } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
-import { Sparkles, ArrowRight, X, Palette, Image, Type, Compass, Phone } from "lucide-react";
+import { Sparkles, X, Palette, Image, Type, Compass, Phone } from "lucide-react";
 import {
   GroupNavigator,
   SettingsNavContext,

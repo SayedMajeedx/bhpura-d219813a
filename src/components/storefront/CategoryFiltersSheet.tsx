@@ -9,6 +9,7 @@ interface CategoryFiltersSheetProps {
   filters: FilterState;
   onChange: (updater: (prev: FilterState) => FilterState) => void;
   availableSizes: string[];
+  sizeUnits?: Record<string, string>;
   availableColors: Array<{ name: string; hex: string | null }>;
   minCatalogPrice: number;
   maxCatalogPrice: number;
@@ -19,6 +20,7 @@ export function CategoryFiltersSheet({
   filters,
   onChange,
   availableSizes,
+  sizeUnits,
   availableColors,
   minCatalogPrice,
   maxCatalogPrice,
@@ -69,6 +71,7 @@ export function CategoryFiltersSheet({
             filters={filters}
             onChange={onChange}
             availableSizes={availableSizes}
+            sizeUnits={sizeUnits}
             availableColors={availableColors}
             minCatalogPrice={minCatalogPrice}
             maxCatalogPrice={maxCatalogPrice}

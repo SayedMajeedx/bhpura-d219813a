@@ -21,7 +21,7 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
   const [success, setSuccess] = useState(false);
 
   const title = isAr
-    ? settings?.newsletter_title_ar || "اشتركي في نشرتنا لتصلكِ أحدث التشكيلات والعروض"
+    ? settings?.newsletter_title_ar || "اشترك في نشرتنا لتصلك أحدث المنتجات والعروض"
     : settings?.newsletter_title_en || "Subscribe for exclusive updates & new arrivals";
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -63,7 +63,7 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
       setSuccess(true);
       toast.success(
         t(
-          "شكراً لاشتراككِ! سنوافيكِ بجديدنا دائماً",
+          "شكراً لاشتراكك! سنوافيك بجديدنا دائماً",
           "Thank you for subscribing! We will keep you updated.",
         ),
       );
@@ -71,7 +71,7 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
       const code = String(err?.message ?? "");
       toast.error(
         code.includes("RATE_LIMITED")
-          ? t("محاولات كثيرة، حاولي لاحقاً", "Too many attempts, please try again later")
+          ? t("محاولات كثيرة، يرجى المحاولة لاحقاً", "Too many attempts, please try again later")
           : t("حدث خطأ، يرجى المحاولة لاحقاً", "An error occurred, please try again"),
       );
     } finally {
@@ -85,7 +85,7 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
         className={`flex items-center gap-2 text-xs text-primary font-medium p-3 rounded-lg bg-primary/10 border border-primary/20 ${className}`}
       >
         <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
-        <span>{t("تم تسجيل اشتراككِ بنجاح!", "You have successfully subscribed!")}</span>
+        <span>{t("تم تسجيل اشتراكك بنجاح!", "You have successfully subscribed!")}</span>
       </div>
     );
   }
@@ -103,7 +103,7 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
           variant="ghost"
           size="sm"
           onClick={() => setChannel("whatsapp")}
-          className={`h-auto flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all hover:bg-white/10 ${
+          className={`h-auto min-h-11 flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition-all hover:bg-white/10 ${
             channel === "whatsapp"
               ? "bg-white/20 text-white shadow-xs font-semibold"
               : "opacity-60 hover:opacity-100"
@@ -118,7 +118,7 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
           variant="ghost"
           size="sm"
           onClick={() => setChannel("email")}
-          className={`h-auto flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all hover:bg-white/10 ${
+          className={`h-auto min-h-11 flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition-all hover:bg-white/10 ${
             channel === "email"
               ? "bg-white/20 text-white shadow-xs font-semibold"
               : "opacity-60 hover:opacity-100"
@@ -143,13 +143,13 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
           onChange={(e) => setContact(e.target.value)}
           dir="ltr"
           required
-          className="h-9 text-xs bg-white/10 border-white/15 text-white placeholder:text-white/40 focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
+          className="h-11 text-xs bg-white/10 border-white/15 text-white placeholder:text-white/40 focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
         />
         <Button
           type="submit"
           disabled={submitting}
           size="sm"
-          className="h-9 px-3 gap-1 shrink-0 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium"
+          className="h-11 px-3 gap-1 shrink-0 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium"
         >
           {submitting ? (
             <span className="h-3.5 w-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />

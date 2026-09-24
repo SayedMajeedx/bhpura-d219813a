@@ -68,8 +68,8 @@ function errorResponse(
  */
 export async function handlePublicApiV1Request(
   request: Request,
-  env: Cloudflare.Env,
-  ctx?: ExecutionContext,
+  _env: Cloudflare.Env,
+  _ctx?: ExecutionContext,
 ): Promise<Response> {
   const startTime = Date.now();
   const requestId =

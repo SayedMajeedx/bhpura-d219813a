@@ -8,10 +8,8 @@ test.describe("Product Card & Quick View Suite", () => {
     await page.goto("/pura?preview=1&design=2", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1500);
 
-    // Look for product card containers
-    const productCard = page
-      .locator('article, [data-product-id], [class*="product-card"], a[href*="/product/"]')
-      .first();
+    // Product cards only: hero slides are also <article> elements.
+    const productCard = page.locator("[data-product-id]").first();
     await expect(productCard).toBeVisible();
 
     // Verify card image has 3:4 aspect ratio or container sizing

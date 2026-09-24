@@ -1,3 +1,5 @@
+import type { SettingsScope } from "@/lib/storefront-engine";
+
 export type SettingsTabId = "identity" | "storefront" | "orders" | "notifications" | "account";
 export type SettingsLevel = "basic" | "advanced";
 export type SettingsOwner =
@@ -9,6 +11,12 @@ export type SettingsOwner =
   | "system"; // لا يُعدَّل يدوياً (created_at, user_id, next_invoice_number...)
 
 export interface SettingsFieldDef {
+  /**
+   * Which storefront engine / footer actually reads this setting. Absent means
+   * every brand. Fields scoped to the inactive engine are hidden from the
+   * settings UI and from search, so merchants never tune a dead control.
+   */
+  scope?: SettingsScope;
   key: string; // اسم العمود
   table: "business_settings" | "brands";
   tab: SettingsTabId | null; // null عندما owner !== "settings"
@@ -375,6 +383,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["نص الترويسة", "أيقونات الترويسة"], en: ["header fg"] },
   },
   {
+    scope: "simple_footer",
     key: "footer_bg",
     table: "business_settings",
     tab: "identity",
@@ -386,6 +395,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["تذييل", "فوتر"], en: ["footer bg"] },
   },
   {
+    scope: "simple_footer",
     key: "footer_fg",
     table: "business_settings",
     tab: "identity",
@@ -741,6 +751,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["نبذة إنجليزي"], en: ["about brand english"] },
   },
   {
+    scope: "v1_only",
     key: "show_hero_title",
     table: "business_settings",
     tab: "storefront",
@@ -752,6 +763,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["عرض العنوان", "هيرو"], en: ["show hero title"] },
   },
   {
+    scope: "v1_only",
     key: "show_hero_about",
     table: "business_settings",
     tab: "storefront",
@@ -785,6 +797,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["عنوان ترحيبي عربي"], en: ["hero title ar"] },
   },
   {
+    scope: "v1_only",
     key: "hero_title_size",
     table: "business_settings",
     tab: "storefront",
@@ -796,6 +809,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["حجم خط العنوان"], en: ["hero title font size"] },
   },
   {
+    scope: "v1_only",
     key: "hero_title_color",
     table: "business_settings",
     tab: "storefront",
@@ -807,6 +821,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["لون عنوان الواجهة"], en: ["hero title color"] },
   },
   {
+    scope: "v1_only",
     key: "hero_title_align",
     table: "business_settings",
     tab: "storefront",
@@ -821,6 +836,82 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     },
   },
   {
+    scope: "v2_only",
+    key: "hero_layout",
+    table: "business_settings",
+    tab: "storefront",
+    group: "home_hero",
+    level: "basic",
+    owner: "settings",
+    type: "select",
+    label: { ar: "نمط عرض الهيرو (ملء الشاشة / بطاقة)", en: "Hero Display Layout" },
+    keywords: {
+      ar: ["عرض الهيرو", "ملء الشاشة", "بطاقة", "واجهة كاملة"],
+      en: ["hero layout", "full bleed", "contained", "banner style"],
+    },
+  },
+  {
+    scope: "v2_only",
+    key: "hero_aspect_mobile",
+    table: "business_settings",
+    tab: "storefront",
+    group: "home_hero",
+    level: "basic",
+    owner: "settings",
+    type: "select",
+    label: { ar: "تناسب فيديو وصور الهيرو للجوال", en: "Mobile Hero Media Aspect Ratio" },
+    keywords: {
+      ar: ["فيديو الجوال", "تناسب الهيرو للجوال", "ريلز", "طولي"],
+      en: ["mobile hero ratio", "reels video", "portrait hero", "aspect ratio"],
+    },
+  },
+  {
+    scope: "v2_only",
+    key: "hero_height_desktop",
+    table: "business_settings",
+    tab: "storefront",
+    group: "home_hero",
+    level: "advanced",
+    owner: "settings",
+    type: "select",
+    label: { ar: "ارتفاع الهيرو على الكمبيوتر", en: "Desktop Hero Height" },
+    keywords: {
+      ar: ["ارتفاع الهيرو", "كمبيوتر", "مدمج", "سينمائي"],
+      en: ["desktop hero height", "compact", "standard", "cinematic"],
+    },
+  },
+  {
+    scope: "v2_only",
+    key: "hero_show_arrows",
+    table: "business_settings",
+    tab: "storefront",
+    group: "home_hero",
+    level: "advanced",
+    owner: "settings",
+    type: "boolean",
+    label: { ar: "إظهار أسهم التنقل بين شرائح الهيرو", en: "Show Hero Slide Arrows" },
+    keywords: {
+      ar: ["أسهم الهيرو", "تنقل الشرائح", "سلايدر"],
+      en: ["hero arrows", "slide navigation", "chevron buttons"],
+    },
+  },
+  {
+    scope: "v2_only",
+    key: "hero_video_fit",
+    table: "business_settings",
+    tab: "storefront",
+    group: "home_hero",
+    level: "basic",
+    owner: "settings",
+    type: "select",
+    label: { ar: "تأطير فيديو الهيرو وعرض المشهد", en: "Hero Video Presentation & Framing" },
+    keywords: {
+      ar: ["تأطير الفيديو", "فيديو الهيرو", "خلفية سينمائية", "اقتصاص الفيديو"],
+      en: ["hero video fit", "ambient video", "cinema glow", "video framing"],
+    },
+  },
+  {
+    scope: "v2_only",
     key: "hero_overlay_strength",
     table: "business_settings",
     tab: "storefront",
@@ -832,6 +923,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["تظليل الهيرو", "شفافية الهيرو"], en: ["hero overlay", "overlay opacity"] },
   },
   {
+    scope: "v2_only",
     key: "hero_title_color_v2",
     table: "business_settings",
     tab: "storefront",
@@ -1024,6 +1116,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["موضع شريط الثقة"], en: ["trust bar position"] },
   },
   {
+    scope: "v2_only",
     key: "brand_story_enabled",
     table: "business_settings",
     tab: "storefront",
@@ -1035,6 +1128,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["قصة البراند", "عن المتجر"], en: ["brand story", "about brand"] },
   },
   {
+    scope: "v2_only",
     key: "brand_story_image_url",
     table: "business_settings",
     tab: "storefront",
@@ -1046,6 +1140,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["صورة قصة البراند"], en: ["brand story image"] },
   },
   {
+    scope: "v2_only",
     key: "product_card_hover_image",
     table: "business_settings",
     tab: "storefront",
@@ -1057,6 +1152,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["تبديل صورة", "تحويم"], en: ["hover image", "secondary image"] },
   },
   {
+    scope: "v2_only",
     key: "product_card_color_dots",
     table: "business_settings",
     tab: "storefront",
@@ -1071,6 +1167,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["نقاط ألوان", "خيارات ألوان"], en: ["color dots", "swatches"] },
   },
   {
+    scope: "v2_only",
     key: "product_card_quick_add",
     table: "business_settings",
     tab: "storefront",
@@ -1082,6 +1179,21 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["إضافة سريعة", "شراء سريع"], en: ["quick add", "add to cart"] },
   },
   {
+    key: "pdp_layout",
+    table: "business_settings",
+    tab: null,
+    group: null,
+    level: "advanced",
+    owner: "system",
+    type: "select",
+    label: {
+      ar: "تخطيط صفحة المنتج (غير مستخدم — لا يوجد تخطيط بديل)",
+      en: "Product page layout (unused — no alternative layout exists)",
+    },
+    keywords: { ar: ["تخطيط المنتج"], en: ["pdp layout"] },
+  },
+  {
+    scope: "v2_only",
     key: "new_badge_days",
     table: "business_settings",
     tab: "storefront",
@@ -1093,6 +1205,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["شارة جديد", "أيام"], en: ["new badge days", "badge threshold"] },
   },
   {
+    scope: "v2_only",
     key: "category_filters_enabled",
     table: "business_settings",
     tab: "storefront",
@@ -1104,17 +1217,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["فلاتر", "تصفية", "فرز"], en: ["filters", "category filters"] },
   },
   {
-    key: "pdp_layout",
-    table: "business_settings",
-    tab: "storefront",
-    group: "design_v2",
-    level: "advanced",
-    owner: "settings",
-    type: "select",
-    label: { ar: "تخطيط صفحة المنتج (PDP)", en: "Product Detail Page (PDP) Layout" },
-    keywords: { ar: ["تخطيط المنتج", "صفحة المنتج"], en: ["pdp layout", "product layout"] },
-  },
-  {
+    scope: "v2_only",
     key: "pdp_image_zoom",
     table: "business_settings",
     tab: "storefront",
@@ -1126,6 +1229,22 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["تكبير صور", "زوم"], en: ["image zoom", "lightbox"] },
   },
   {
+    scope: "v2_only",
+    key: "pdp_gallery_aspect_ratio",
+    table: "business_settings",
+    tab: "storefront",
+    group: "design_v2",
+    level: "advanced",
+    owner: "settings",
+    type: "select",
+    label: { ar: "تناسب صور معرض المنتج", en: "Product Gallery Aspect Ratio" },
+    keywords: {
+      ar: ["تناسب صور المنتج", "معرض الصور", "مربع", "طولي"],
+      en: ["pdp gallery aspect ratio", "product image ratio", "portrait", "square"],
+    },
+  },
+  {
+    scope: "v2_only",
     key: "social_proof_enabled",
     table: "business_settings",
     tab: "storefront",
@@ -1137,6 +1256,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["إثبات اجتماعي", "اشترى مؤخراً"], en: ["social proof", "recent sales"] },
   },
   {
+    scope: "v2_only",
     key: "recently_viewed_enabled",
     table: "business_settings",
     tab: "storefront",
@@ -1148,6 +1268,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["مشاهدة مؤخراً", "تاريخ التصفح"], en: ["recently viewed"] },
   },
   {
+    scope: "v2_only",
     key: "motion_enabled",
     table: "business_settings",
     tab: "storefront",
@@ -1159,6 +1280,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["حركة", "انتقالات", "أنيميشن"], en: ["motion", "animations"] },
   },
   {
+    scope: "v2_only",
     key: "quick_view_enabled",
     table: "business_settings",
     tab: "storefront",
@@ -1173,6 +1295,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["معاينة سريعة"], en: ["quick view", "preview modal"] },
   },
   {
+    scope: "v2_only",
     key: "fabric_care_ar",
     table: "business_settings",
     tab: "storefront",
@@ -1187,6 +1310,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["عناية أقمشة", "غسيل"], en: ["fabric care arabic"] },
   },
   {
+    scope: "v2_only",
     key: "fabric_care_en",
     table: "business_settings",
     tab: "storefront",
@@ -1313,6 +1437,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["شعار التذييل", "حجم شعار الفوتر"], en: ["footer logo size"] },
   },
   {
+    scope: "simple_footer",
     key: "show_footer_name",
     table: "business_settings",
     tab: "storefront",
@@ -1346,6 +1471,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["نمط الفوتر", "تنسيق الفوتر"], en: ["footer layout", "columns"] },
   },
   {
+    scope: "columns_footer",
     key: "footer_show_payment_methods",
     table: "business_settings",
     tab: "storefront",
@@ -1360,6 +1486,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     },
   },
   {
+    scope: "columns_footer",
     key: "newsletter_enabled",
     table: "business_settings",
     tab: "storefront",
@@ -1374,6 +1501,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["نشرة بريدية", "اشتراك"], en: ["newsletter", "subscribe"] },
   },
   {
+    scope: "columns_footer",
     key: "newsletter_title_ar",
     table: "business_settings",
     tab: "storefront",
@@ -1385,6 +1513,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["عنوان النشرة عربي"], en: ["newsletter title ar"] },
   },
   {
+    scope: "columns_footer",
     key: "newsletter_title_en",
     table: "business_settings",
     tab: "storefront",
@@ -1736,6 +1865,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["خصم مجموعة", "بندل"], en: ["bundle discount", "bundle percent"] },
   },
   {
+    scope: "v2_only",
     key: "back_in_stock_enabled",
     table: "business_settings",
     tab: "storefront",

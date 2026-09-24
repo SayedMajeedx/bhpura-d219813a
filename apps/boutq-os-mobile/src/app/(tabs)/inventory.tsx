@@ -19,7 +19,7 @@ import { useAuth } from "@/lib/auth";
 import { formatMoney } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
-import { colors, radius, shadow } from "@/theme";
+import { colors, radius } from "@/theme";
 
 type Variant = {
   id: string;

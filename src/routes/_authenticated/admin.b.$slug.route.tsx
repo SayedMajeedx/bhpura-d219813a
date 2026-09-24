@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureSessionUser } from "@/lib/auth/ensure-session-user";
 import { BrandProvider, type Brand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
@@ -67,17 +68,9 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
       }
     };
 
-    const user = await fetchWithRetry(() =>
-      queryClient.ensureQueryData({
-        queryKey: ["auth_user"],
-        queryFn: async () => {
-          const { data, error } = await supabase.auth.getUser();
-          if (error || !data.user) throw redirect({ to: "/auth" });
-          return data.user;
-        },
-        staleTime: 1000 * 60 * 5,
-      }),
-    );
+    const user = await ensureSessionUser(queryClient);
+
+    if (!user) throw redirect({ to: "/auth" });
 
     // Concurrently fetch target brand, caller profile, and business settings with 5m staleTime
     const [brand, profile, iconSettings] = await Promise.all([
@@ -93,9 +86,9 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
               .eq("slug", params.slug)
               .maybeSingle();
 
-            if (brandErr || !brand) {
-              throw redirect({ to: "/admin" });
-            }
+            // Resolve to null and let beforeLoad redirect; a redirect thrown
+            // here would be swallowed and retried as a query error.
+            if (brandErr || !brand) return null;
             return brand;
           },
           staleTime: 1000 * 60 * 5,
@@ -137,6 +130,8 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
         }),
       ),
     ]);
+
+    if (!brand) throw redirect({ to: "/admin" });
 
     const email = (user.email || "").toLowerCase();
     const isFixedSuperAdmin = email === "majeed@hotmail.it" || email === "majeed@hotmail.com";

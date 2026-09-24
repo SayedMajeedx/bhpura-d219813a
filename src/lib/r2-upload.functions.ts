@@ -11,44 +11,6 @@ import(/* @vite-ignore */ vinxiHttp)
   })
   .catch(() => {});
 
-function getPlatformEnv(name: string): string | undefined {
-  const viteName = name.startsWith("VITE_") ? name : `VITE_${name}`;
-  const unprefixed = name.startsWith("VITE_") ? name.slice(5) : name;
-
-  const searchNames = [name, viteName, unprefixed];
-  if (name === "R2_SECRET_ACCESS_KEY") {
-    searchNames.push("SECRET_ACCESS_KEY");
-  }
-
-  try {
-    if (getEventFn) {
-      const event = getEventFn();
-      const env =
-        event?.context?.cloudflare?.env ||
-        (event?.context as any)?.env ||
-        event?.context?.cloudflare ||
-        (event?.context as any)?.cloudflare?.env;
-      if (env) {
-        for (const key of searchNames) {
-          if (env[key]) return env[key];
-        }
-      }
-    }
-  } catch {}
-
-  try {
-    const g = globalThis as any;
-    const liveEnv = g["__CLOUDFLARE_ENV__"] || g["process"]?.["env"] || process.env;
-    if (liveEnv) {
-      for (const key of searchNames) {
-        if (liveEnv[key]) return liveEnv[key];
-      }
-    }
-  } catch {}
-
-  return undefined;
-}
-
 const mediaKinds = [
   "logo",
   "favicon",
@@ -146,14 +108,18 @@ export function r2Client(): { client: R2CompatClient; bucket: string; publicBase
         event?.context?.cloudflare ||
         (event?.context as any)?.cloudflare?.env;
     }
-  } catch {}
+  } catch {
+    // No request context in this runtime; try the global env next.
+  }
 
   // Safe global fallback
   if (!env) {
     try {
       const g = globalThis as any;
       env = g["__CLOUDFLARE_ENV__"] || g["__env__"] || g["process"]?.["env"] || process.env;
-    } catch {}
+    } catch {
+      // No global env in this runtime; the missing-config check below reports it.
+    }
   }
 
   const g = globalThis as any;

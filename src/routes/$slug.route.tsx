@@ -28,9 +28,7 @@ import {
 import { buildOrganizationSchema, buildWebSiteSchema } from "@/lib/seo/structured-data";
 import {
   renderTrustBadgeIcon,
-  getDynamicTrustBadges,
   resolveStorefrontTrustBadges,
-  DEFAULT_TRUST_BADGES,
   type TrustBadgesConfig,
 } from "@/lib/trust-badges";
 import { useQueryClient } from "@tanstack/react-query";
@@ -45,6 +43,7 @@ import { FooterV2 } from "@/components/storefront/FooterV2";
 import { normalizeVertical, normalizeModuleOverrides } from "@/lib/store-profile";
 import { isColorDark, hexToRgba } from "@/components/storefront/storefront-utils";
 import { isReservedStorefrontSlug } from "@/lib/seo/reserved-slugs";
+import { resolveFooterVariant } from "@/lib/storefront-engine";
 
 export const Route = createFileRoute("/$slug")({
   staleTime: 10_000,
@@ -347,6 +346,45 @@ export const Route = createFileRoute("/$slug")({
       storefront_loader_text_en: s?.storefront_loader_text_en ?? null,
       storefront_loader_text_ar: s?.storefront_loader_text_ar ?? null,
       trust_badges: normalizedTrustBadges,
+      storefront_design_version: s?.storefront_design_version ?? 1,
+      trust_bar_enabled: s?.trust_bar_enabled ?? true,
+      trust_bar_position: s?.trust_bar_position ?? "below_hero",
+      brand_story_enabled: s?.brand_story_enabled ?? true,
+      brand_story_title_ar: s?.brand_story_title_ar ?? null,
+      brand_story_title_en: s?.brand_story_title_en ?? null,
+      brand_story_subtitle_ar: s?.brand_story_subtitle_ar ?? null,
+      brand_story_subtitle_en: s?.brand_story_subtitle_en ?? null,
+      brand_story_description_ar: s?.brand_story_description_ar ?? null,
+      brand_story_description_en: s?.brand_story_description_en ?? null,
+      brand_story_image_url: s?.brand_story_image_url ?? null,
+      social_proof_enabled: s?.social_proof_enabled ?? true,
+      recently_viewed_enabled: s?.recently_viewed_enabled ?? s?.recent_views_enabled ?? true,
+      recent_views_enabled: s?.recently_viewed_enabled ?? s?.recent_views_enabled ?? true,
+      product_card_hover_image: s?.product_card_hover_image ?? true,
+      product_card_color_dots: s?.product_card_color_dots ?? true,
+      product_card_quick_add: s?.product_card_quick_add ?? true,
+      quick_view_enabled: s?.quick_view_enabled ?? true,
+      pdp_image_zoom: s?.pdp_image_zoom ?? true,
+      category_filters_enabled: s?.category_filters_enabled ?? true,
+      back_in_stock_enabled: s?.back_in_stock_enabled ?? true,
+      fabric_care_ar: s?.fabric_care_ar ?? null,
+      fabric_care_en: s?.fabric_care_en ?? null,
+      shipping_returns_ar: s?.shipping_returns_ar ?? null,
+      shipping_returns_en: s?.shipping_returns_en ?? null,
+      newsletter_enabled: s?.newsletter_enabled ?? true,
+      newsletter_title_ar: s?.newsletter_title_ar ?? null,
+      newsletter_title_en: s?.newsletter_title_en ?? null,
+      footer_show_payment_methods: s?.footer_show_payment_methods ?? true,
+      footer_layout: s?.footer_layout ?? "columns",
+      motion_enabled: s?.motion_enabled ?? true,
+      hero_overlay_strength: s?.hero_overlay_strength ?? 45,
+      hero_title_color_v2: s?.hero_title_color_v2 ?? null,
+      hero_layout: s?.hero_layout ?? "full_bleed",
+      hero_height_desktop: s?.hero_height_desktop ?? "standard",
+      hero_aspect_mobile: s?.hero_aspect_mobile ?? "portrait_4_5",
+      hero_show_arrows: s?.hero_show_arrows ?? true,
+      pdp_gallery_aspect_ratio: s?.pdp_gallery_aspect_ratio ?? "3:4",
+      hero_video_fit: s?.hero_video_fit ?? "contain_ambient",
     };
 
     const rawHero = brand.hero_media as any;
@@ -488,7 +526,6 @@ function StorefrontLayout() {
       sizeGuides={bootstrapData?.size_guides ?? []}
       addons={bootstrapData?.addons ?? []}
     >
-      <StorefrontAnalytics />
       <StoreShell />
     </StorefrontProvider>
   );
@@ -580,7 +617,7 @@ function StoreShell() {
   return (
     <div
       dir={lang === "ar" ? "rtl" : "ltr"}
-      className="storefront-shell min-h-screen flex flex-col w-full max-w-full overflow-x-clip"
+      className="storefront-shell min-h-screen flex flex-col w-full max-w-full overflow-x-hidden"
       style={
         {
           backgroundColor: settings.background_color,
@@ -614,13 +651,22 @@ function StoreShell() {
         } as React.CSSProperties
       }
     >
+      {/* Note: `html.lang-ar body` in styles.css pins the admin Arabic stack
+          (Readex Pro first) and outspecifies anything set here. It is harmless
+          only because <body> owns no text directly — every storefront string
+          lives inside this shell, which sets the brand's own font. Any text
+          rendered outside this element re-triggers a ~118 KB face download,
+          which is exactly what the consent banner used to do. Keep storefront
+          UI inside the shell. */}
       {typographyFaces && <style>{typographyFaces}</style>}
       <div
         className={`sticky top-0 z-40 ${isGlass ? "backdrop-blur-md" : ""}`}
         style={{
           backgroundColor: "var(--sf-header-bg)",
           color: "var(--sf-header-fg)",
-          borderBottom: "1px solid rgba(0, 0, 0, 0.08)",
+          // Inset hairline instead of a border: it adds no layout height, so a
+          // full-bleed hero can sit flush under the header without a seam.
+          boxShadow: "inset 0 -1px 0 rgba(0, 0, 0, 0.08)",
           transform: "translateZ(0)",
         }}
       >
@@ -633,6 +679,11 @@ function StoreShell() {
       </main>
       <StorefrontFooter />
       <WhatsAppFab />
+      {/* Inside the shell on purpose: the consent banner used to render outside
+          this element and inherited the admin font stack, which pulled ~229 KB
+          of fonts (Readex Pro + Zarid Display) that nothing else on the
+          storefront uses. */}
+      <StorefrontAnalytics />
     </div>
   );
 }
@@ -755,7 +806,9 @@ function StorefrontFooter() {
   const [openCompany, setOpenCompany] = useState(false);
   const [openHelp, setOpenHelp] = useState(false);
 
-  if (settings?.footer_layout === "columns" || settings?.storefront_design_version === 2) {
+  // Single source of truth, shared with the settings UI so the two can never
+  // disagree about which footer a brand is actually getting.
+  if (resolveFooterVariant(settings) === "columns") {
     return <FooterV2 />;
   }
 

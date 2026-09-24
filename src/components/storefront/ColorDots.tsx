@@ -1,8 +1,13 @@
 import React from "react";
 import { resolveColorHex, extractUniqueVariantColors } from "@/lib/color-names";
+import { resolveVariantAxis, type ProductVariantLabels } from "@/lib/addons/addon-registry";
+import { isColorSwatchAxis, useStoreAxisDefaults } from "@/lib/variant-axes";
+import { useStorefront } from "@/lib/storefront-context";
 
 interface ColorDotsProps {
   variants?: Array<{ color?: string | null }>;
+  /** Product whose per-product option labels (if any) decide what the colour slot means. */
+  product?: ProductVariantLabels | null;
   maxVisible?: number;
   className?: string;
   onColorSelect?: (colorName: string) => void;
@@ -15,10 +20,28 @@ export function ColorDots({
   className = "",
   onColorSelect,
   selectedColor,
+  product,
 }: ColorDotsProps) {
+  const { lang } = useStorefront();
+  const axisDefaults = useStoreAxisDefaults();
   const colors = extractUniqueVariantColors(variants);
 
-  if (colors.length === 0) {
+  // The colour column only holds colours in some stores (a roastery keeps the
+  // grind there). Dots appear only when the slot really means colour.
+  const { label } = resolveVariantAxis({
+    axis: "color",
+    product,
+    addonDefaults: axisDefaults,
+    lang: lang === "ar" ? "ar" : "en",
+    hasValues: colors.length > 0,
+  });
+  if (
+    colors.length === 0 ||
+    !isColorSwatchAxis(
+      label,
+      colors.map((c) => c.name),
+    )
+  ) {
     return null;
   }
 

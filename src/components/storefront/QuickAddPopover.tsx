@@ -3,6 +3,9 @@ import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { useStorefront } from "@/lib/storefront-context";
 import { buildCartItem, canQuickAddToCart } from "@/lib/cart/add-to-cart";
+import { isCatalogMode } from "@/lib/storefront-mode";
+import { formatSizeWithUnit } from "@/lib/format";
+import { translateOptionValue } from "@/lib/variant-i18n";
 import { toast } from "sonner";
 import { ShoppingBag, Check } from "lucide-react";
 
@@ -13,10 +16,39 @@ interface QuickAddPopoverProps {
 }
 
 export function QuickAddPopover({ product, variants = [], onOpenQuickView }: QuickAddPopoverProps) {
-  const { brand, addToCart, t, lang } = useStorefront();
+  const { brand, addToCart, t, lang, settings } = useStorefront();
   const navigate = useNavigate();
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [justAdded, setJustAdded] = useState(false);
+  const isAr = lang === "ar";
+
+  const storeVertical = (
+    settings?.store_vertical ||
+    (brand as any)?.store_vertical ||
+    "general"
+  ).toLowerCase();
+
+  const isFood = ["food", "sweets", "cafe", "coffee", "bakery", "restaurant"].includes(
+    storeVertical,
+  );
+  const isPerfume = ["perfumes", "beauty", "cosmetics"].includes(storeVertical);
+  const isElectronics = ["electronics"].includes(storeVertical);
+
+  const customSizeLabel =
+    (isAr ? product.variant_label_size_ar : product.variant_label_size_en) ||
+    (isAr ? product.variant_label_size_en : product.variant_label_size_ar);
+
+  const promptText = customSizeLabel
+    ? isAr
+      ? `اختر ${customSizeLabel} للإضافة السريعة`
+      : `Select ${customSizeLabel} for quick add`
+    : isFood
+      ? t("اختر الوزن أو الحجم للإضافة السريعة", "Select weight or size for quick add")
+      : isPerfume
+        ? t("اختر الحجم أو السعة للإضافة السريعة", "Select volume or size for quick add")
+        : isElectronics
+          ? t("اختر الطراز أو السعة للإضافة السريعة", "Select model or capacity for quick add")
+          : t("اختر الخيار للإضافة السريعة", "Select option for quick add");
 
   // If product requires bespoke tailoring or custom fields, direct to PDP
   const canQuick = canQuickAddToCart(product);
@@ -79,9 +111,30 @@ export function QuickAddPopover({ product, variants = [], onOpenQuickView }: Qui
     }, 1200);
   };
 
-  // Extract unique size options if multiple variants
-  const hasMultipleSizes =
-    availableVariants.length > 1 && availableVariants.some((v) => Boolean(v.size));
+  const formatVariantLabel = (v: any) => {
+    const formattedSize = v.size ? formatSizeWithUnit(v.size, v.size_unit, lang) : "";
+    // The attribute shown next to the size (colour, fabric, …) is stored in the
+    // merchant's own language, so it has to go through the option lexicon too —
+    // otherwise an English storefront shows "53 (بني)".
+    const extraParts = [v.color, v.fabric, v.option_four, v.option_five, v.name]
+      .filter(Boolean)
+      .filter((part) => part !== v.size)
+      .map((part) => translateOptionValue(String(part), lang) || String(part));
+    const extra = extraParts.length > 0 ? extraParts[0] : "";
+
+    if (formattedSize && extra) {
+      return `${formattedSize} (${extra})`;
+    }
+    if (formattedSize) return formattedSize;
+    if (extra) return extra;
+    return v.name || (isAr ? "خيار" : "Option");
+  };
+
+  const hasMultipleVariants = availableVariants.length > 1;
+
+  // Catalog / inquiry-only storefronts have no cart, so a grid quick-add would
+  // dead-end. The card's own link to the product page remains.
+  if (isCatalogMode(settings)) return null;
 
   return (
     <div
@@ -91,14 +144,14 @@ export function QuickAddPopover({ product, variants = [], onOpenQuickView }: Qui
       }}
       className="hidden lg:flex flex-col gap-1.5 w-full bg-background/95 backdrop-blur-md p-2 rounded-lg border border-border shadow-md transition-all duration-200"
     >
-      {hasMultipleSizes ? (
+      {hasMultipleVariants ? (
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium text-muted-foreground text-center">
-            {t("اختاري المقاس للإضافة السريعة", "Select size for quick add")}
+            {promptText}
           </span>
           <div className="flex flex-wrap items-center justify-center gap-1 max-h-24 overflow-y-auto py-0.5">
             {availableVariants.map((v) => {
-              const label = v.size || v.name || t("مقاس موحد", "One Size");
+              const label = formatVariantLabel(v);
               const isAdded = justAdded && selectedVariantId === v.id;
               return (
                 <Button

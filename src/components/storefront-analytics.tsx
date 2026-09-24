@@ -49,6 +49,9 @@ export function StorefrontAnalytics() {
     w.gtag =
       w.gtag ||
       function () {
+        // gtag.js requires the real Arguments object here; a rest-param array
+        // is treated as a data-layer event and silently breaks consent/config.
+        // eslint-disable-next-line prefer-rest-params
         w.dataLayer.push(arguments);
       };
     w.gtag("consent", "default", {
@@ -95,8 +98,16 @@ export function StorefrontAnalytics() {
       }
       if (effective.marketing && metaId) {
         if (!w.fbq) {
+          // Meta's official pixel stub: calls are forwarded or queued with the
+          // original Arguments object, which fbevents.js replays verbatim.
           const fbq: any = function () {
-            fbq.callMethod ? fbq.callMethod.apply(fbq, arguments) : fbq.queue.push(arguments);
+            if (fbq.callMethod) {
+              // eslint-disable-next-line prefer-spread, prefer-rest-params
+              fbq.callMethod.apply(fbq, arguments);
+            } else {
+              // eslint-disable-next-line prefer-rest-params
+              fbq.queue.push(arguments);
+            }
           };
           fbq.queue = [];
           fbq.loaded = true;
@@ -179,7 +190,10 @@ export function StorefrontAnalytics() {
   return (
     <Card
       dir={lang === "ar" ? "rtl" : "ltr"}
-      className="fixed inset-x-3 bottom-3 z-[100] mx-auto max-w-2xl p-4 shadow-2xl"
+      className="fixed inset-x-3 z-[100] mx-auto max-w-2xl p-4 shadow-2xl"
+      // Clears a bottom-fixed CTA bar (mobile purchase bar) when one is present,
+      // so the banner never covers the primary action.
+      style={{ bottom: "calc(0.75rem + var(--sf-sticky-cta-h, 0px))" }}
     >
       <h2 className="font-semibold">{t("خيارات الخصوصية", "Privacy choices")}</h2>
       <p className="mt-1 text-sm text-muted-foreground">
@@ -207,21 +221,29 @@ export function StorefrontAnalytics() {
         </div>
       )}
       <div className="mt-3 flex flex-wrap gap-2">
-        <Button onClick={() => save({ decided: true, analytics: true, marketing: true })}>
+        <Button
+          size="touch"
+          onClick={() => save({ decided: true, analytics: true, marketing: true })}
+        >
           {t("قبول الكل", "Accept all")}
         </Button>
         <Button
           variant="outline"
+          size="touch"
           onClick={() => save({ decided: true, analytics: false, marketing: false })}
         >
           {t("الضروري فقط", "Essential only")}
         </Button>
         {customizing ? (
-          <Button variant="secondary" onClick={() => save({ ...choice, decided: true })}>
+          <Button
+            variant="secondary"
+            size="touch"
+            onClick={() => save({ ...choice, decided: true })}
+          >
             {t("حفظ", "Save choices")}
           </Button>
         ) : (
-          <Button variant="ghost" onClick={() => setCustomizing(true)}>
+          <Button variant="ghost" size="touch" onClick={() => setCustomizing(true)}>
             {t("تخصيص", "Customize")}
           </Button>
         )}

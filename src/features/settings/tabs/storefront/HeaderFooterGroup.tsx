@@ -1,5 +1,6 @@
 import { useI18n } from "@/lib/i18n";
 import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
+import { resolveFooterVariant } from "@/lib/storefront-engine";
 import { AdvancedOnly } from "@/features/settings/FieldVisibility";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -13,10 +14,10 @@ export function HeaderFooterGroup() {
   const isAr = lang === "ar";
   const { form, setBs } = useBrandSettingsFormContext();
   const bs = form.bs;
+  // "Show store name in footer" is only read by the classic (simple) footer.
+  // A Storefront 2.0 brand that keeps footer_layout = "simple" still gets it.
+  const footerVariant = resolveFooterVariant(bs);
   const brand = form.brand;
-
-  const brandDisplayName =
-    (isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug || "Boutique";
 
   const headerLogoSize = bs.logo_size ?? 36;
   const footerLogoSize = bs.footer_logo_size ?? 28;
@@ -147,20 +148,22 @@ export function HeaderFooterGroup() {
           </p>
         </div>
 
-        <div className="flex items-center justify-between gap-4 rounded-xl border border-border p-3.5 bg-background">
-          <div>
-            <Label className="cursor-pointer text-xs font-semibold">
-              {isAr ? "عرض اسم المتجر في التذييل" : "Show store name in footer"}
-            </Label>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {isAr ? "إظهار اسم العلامة في أسفل الفوتر" : "Display brand name next to copyright"}
-            </p>
+        {footerVariant === "simple" && (
+          <div className="flex items-center justify-between gap-4 rounded-xl border border-border p-3.5 bg-background">
+            <div>
+              <Label className="cursor-pointer text-xs font-semibold">
+                {isAr ? "عرض اسم المتجر في التذييل" : "Show store name in footer"}
+              </Label>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {isAr ? "إظهار اسم العلامة في أسفل الفوتر" : "Display brand name next to copyright"}
+              </p>
+            </div>
+            <Switch
+              checked={bs.show_footer_name ?? true}
+              onCheckedChange={(checked) => setBs({ show_footer_name: checked })}
+            />
           </div>
-          <Switch
-            checked={bs.show_footer_name ?? true}
-            onCheckedChange={(checked) => setBs({ show_footer_name: checked })}
-          />
-        </div>
+        )}
 
         {/* Footer Trust Badges Editor */}
         <div className="pt-2">

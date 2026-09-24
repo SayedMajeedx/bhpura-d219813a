@@ -10,23 +10,21 @@ import {
   Text,
   View,
 } from "react-native";
-import { Image } from "expo-image";
 import * as Clipboard from "expo-clipboard";
 import { AppIcon } from "@/components/icons";
 import {
   Card,
   EmptyState,
-  IconButton,
   ModalSheet,
   PrimaryButton,
   SecondaryButton,
   StatusPill,
 } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
-import { formatMoney, formatTimeAgo } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
-import { colors, radius, shadow } from "@/theme";
+import { colors, radius } from "@/theme";
 
 type OrderDetail = {
   id: string;
@@ -142,7 +140,8 @@ export default function OrderDetailScreen() {
   }, [loadOrder]);
 
   const updateOrderFields = async (fields: Partial<OrderDetail>, successMsg?: string) => {
-    if (!order) return;
+    // Ignore repeat taps while an update is in flight.
+    if (!order || updating) return;
     setUpdating(true);
     try {
       const { error } = await supabase.from("orders").update(fields).eq("id", order.id);

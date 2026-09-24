@@ -8,7 +8,7 @@ import { colors, radius } from "@/theme";
 
 export default function IntegrationsScreen() {
   const insets = useSafeAreaInsets();
-  const { t, isAr } = useI18n();
+  const { isAr } = useI18n();
 
   const gateways = [
     {

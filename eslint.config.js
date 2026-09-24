@@ -26,6 +26,8 @@ export default tseslint.config(
       // doesn't consult .gitignore on its own — without this, a machine
       // that happens to have one cached lints thousands of vendor files.
       ".local-tools/**",
+      // Gitignored local scratch output (verification scripts, screenshots).
+      "scratch/**",
     ],
   },
   {

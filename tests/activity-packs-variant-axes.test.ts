@@ -4,10 +4,7 @@ import {
   variantAxisDefaultsFrom,
   resolveVariantAxis,
 } from "../src/lib/addons/addon-registry";
-import {
-  DEFAULT_MOBILE_VOCABULARY,
-  resolveMobileVocabulary,
-} from "../apps/boutq-os-mobile/src/lib/store-vocabulary";
+import { resolveMobileVocabulary } from "../apps/boutq-os-mobile/src/lib/store-vocabulary";
 
 describe("Activity Packs & Variant Axes Resolution", () => {
   it("all 7 activity packs and extension manifests validate cleanly in registry", () => {

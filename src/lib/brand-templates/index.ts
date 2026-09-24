@@ -1,9 +1,4 @@
-import {
-  STORE_VERTICALS,
-  VERTICAL_LABELS,
-  VERTICAL_MODULE_DEFAULTS,
-  type StoreVertical,
-} from "@/lib/store-profile";
+import { VERTICAL_LABELS, VERTICAL_MODULE_DEFAULTS, type StoreVertical } from "@/lib/store-profile";
 import { DEFAULT_VERTICAL_CATEGORIES } from "@/lib/addons/vertical-categories";
 import { FONT_MOOD_PRESETS } from "@/components/settings/QuickThemeCustomizer";
 import type { BrandTemplate, BrandDesignConfig } from "./types";

@@ -10,7 +10,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AppIcon } from "@/components/icons";
 import { AppTopBar } from "@/components/topbar";
 import { EmptyState, SearchInput, SegmentedControl, StatusPill } from "@/components/ui";
 import { useAuth } from "@/lib/auth";

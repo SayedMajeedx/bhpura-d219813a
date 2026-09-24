@@ -15,8 +15,8 @@ export const coffeeRoasteryManifest: AddonManifest = {
       en: "Roastery vocabulary, roasting and grind notes",
     },
     {
-      ar: "محاور مخصصة: الوزن، نوع الطحنة، ونوع المعالجة",
-      en: "Tailored axes: Weight, Grind Type, and Process",
+      ar: "محاور مخصصة: الوزن، درجة التحميص، ونوع المعالجة",
+      en: "Tailored axes: Weight, Roast Level, and Process",
     },
     {
       ar: "نماذج أوزان المحاصيل (250g، 500g، 1kg) وأظرف التقطير",
@@ -47,7 +47,7 @@ export const coffeeRoasteryManifest: AddonManifest = {
     },
     variantAxisDefaults: {
       size: { ar: "الوزن / الحجم", en: "Weight / Size" },
-      color: { ar: "نوع الطحنة", en: "Grind Type" },
+      color: { ar: "درجة التحميص", en: "Roast Level" },
       fabric: { ar: "المعالجة", en: "Process" },
     },
     sizingPresets: [

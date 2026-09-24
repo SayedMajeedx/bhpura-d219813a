@@ -5,7 +5,7 @@ export const META_DESCRIPTION_LIMIT = 160;
 export function sanitizeMetaText(value: unknown, maxLength: number): string {
   return String(value ?? "")
     .replace(/<[^>]*>/g, " ")
-    .replace(/[\u0000-\u001F\u007F]/g, " ")
+    .replace(/\p{Cc}/gu, " ")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, maxLength);

@@ -58,7 +58,7 @@ function ExportCenterPage() {
   // -------------------------------------------------------------
   // Data Queries
   // -------------------------------------------------------------
-  const { data: products = [], isLoading: productsLoading } = useQuery({
+  const { data: products = [] } = useQuery({
     queryKey: ["export-products", brandId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -83,7 +83,7 @@ function ExportCenterPage() {
     },
   });
 
-  const { data: customers = [], isLoading: customersLoading } = useQuery({
+  const { data: customers = [] } = useQuery({
     queryKey: ["export-customers", brandId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -99,7 +99,7 @@ function ExportCenterPage() {
     },
   });
 
-  const { data: orders = [], isLoading: ordersLoading } = useQuery({
+  const { data: orders = [] } = useQuery({
     queryKey: ["export-orders", brandId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -123,7 +123,7 @@ function ExportCenterPage() {
     },
   });
 
-  const { data: expenses = [], isLoading: expensesLoading } = useQuery({
+  const { data: expenses = [] } = useQuery({
     queryKey: ["export-expenses", brandId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -162,7 +162,7 @@ function ExportCenterPage() {
           .limit(20);
         if (error) throw error;
         if (data && data.length > 0) return data;
-      } catch (e) {
+      } catch {
         // Fall back to local storage
       }
       const local = localStorage.getItem(`boutq_export_runs_${brandId}`);
@@ -383,10 +383,8 @@ function ExportCenterPage() {
           <ProductExportSection
             brandId={brandId}
             brandSlug={brandSlug}
-            currency={currency}
             products={products}
             categories={categories}
-            isLoading={productsLoading}
             isAr={isAr}
             onExportSuccess={refetchHistory}
           />
@@ -397,10 +395,8 @@ function ExportCenterPage() {
           <CustomerExportSection
             brandId={brandId}
             brandSlug={brandSlug}
-            currency={currency}
             customers={customers}
             orders={orders}
-            isLoading={customersLoading}
             isAr={isAr}
             onExportSuccess={refetchHistory}
           />
@@ -411,10 +407,8 @@ function ExportCenterPage() {
           <OrderExportSection
             brandId={brandId}
             brandSlug={brandSlug}
-            currency={currency}
             orders={orders}
             customers={customers}
-            isLoading={ordersLoading}
             isAr={isAr}
             onExportSuccess={refetchHistory}
           />
@@ -425,9 +419,7 @@ function ExportCenterPage() {
           <ExpenseExportSection
             brandId={brandId}
             brandSlug={brandSlug}
-            currency={currency}
             expenses={expenses}
-            isLoading={expensesLoading}
             isAr={isAr}
             onExportSuccess={refetchHistory}
           />
@@ -453,19 +445,15 @@ function ExportCenterPage() {
 function ProductExportSection({
   brandId,
   brandSlug,
-  currency,
   products,
   categories,
-  isLoading,
   isAr,
   onExportSuccess,
 }: {
   brandId: string;
   brandSlug: string;
-  currency: string;
   products: any[];
   categories: any[];
-  isLoading: boolean;
   isAr: boolean;
   onExportSuccess: () => void;
 }) {
@@ -875,19 +863,15 @@ function ProductExportSection({
 function CustomerExportSection({
   brandId,
   brandSlug,
-  currency,
   customers,
   orders,
-  isLoading,
   isAr,
   onExportSuccess,
 }: {
   brandId: string;
   brandSlug: string;
-  currency: string;
   customers: any[];
   orders: any[];
-  isLoading: boolean;
   isAr: boolean;
   onExportSuccess: () => void;
 }) {
@@ -1221,19 +1205,15 @@ function CustomerExportSection({
 function OrderExportSection({
   brandId,
   brandSlug,
-  currency,
   orders,
   customers,
-  isLoading,
   isAr,
   onExportSuccess,
 }: {
   brandId: string;
   brandSlug: string;
-  currency: string;
   orders: any[];
   customers: any[];
-  isLoading: boolean;
   isAr: boolean;
   onExportSuccess: () => void;
 }) {
@@ -1641,17 +1621,13 @@ function OrderExportSection({
 function ExpenseExportSection({
   brandId,
   brandSlug,
-  currency,
   expenses,
-  isLoading,
   isAr,
   onExportSuccess,
 }: {
   brandId: string;
   brandSlug: string;
-  currency: string;
   expenses: any[];
-  isLoading: boolean;
   isAr: boolean;
   onExportSuccess: () => void;
 }) {

@@ -26,14 +26,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  STORE_VERTICALS,
-  STORE_MODULES,
-  VERTICAL_LABELS,
-  MODULE_LABELS,
-  type StoreVertical,
-  type StoreModuleId,
-} from "@/lib/store-profile";
+import { STORE_VERTICALS, VERTICAL_LABELS, type StoreVertical } from "@/lib/store-profile";
 import { resolveFitProfiles, type FitProfileDefinition } from "@/lib/addons/addon-presets";
 import {
   listAddons,
@@ -67,12 +60,6 @@ import {
 import { Link } from "@tanstack/react-router";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useBrandAddons } from "@/hooks/use-brand-addons";
-
-const MODULE_TO_ADDON: Record<StoreModuleId, AddonId> = {
-  size_guide: "size-guides",
-  fit_passport: "fit-passport",
-  made_to_order: "made-to-order",
-};
 
 function renderAddonIcon(iconName: string) {
   switch (iconName) {
@@ -298,11 +285,6 @@ export function StoreProfileCard({
         toast.error(err.message || (isAr ? "فشل إيقاف الإضافة" : "Failed to disable addon"));
       }
     }
-  };
-
-  const handleModuleToggle = async (id: StoreModuleId, checked: boolean) => {
-    const addonId = MODULE_TO_ADDON[id];
-    return handleToggleAddon(addonId, checked);
   };
 
   const handleConfirmResetDefaults = async () => {

@@ -1,5 +1,5 @@
 import { STORE_VERTICALS, VERTICAL_ICON_NAMES, VERTICAL_LABELS } from "@/lib/store-profile";
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import {
   TrustBadgesConfig,
   TrustBadgeItem,
-  TRUST_ICON_CATALOG,
   BADGE_COLOR_PRESETS,
   renderTrustBadgeIcon,
   resolveTrustBadgeIcon,

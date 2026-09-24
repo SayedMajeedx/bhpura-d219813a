@@ -18,6 +18,11 @@ export type StoreVocabulary = {
   ready_made: VocabularyEntry;
   made_to_order: VocabularyEntry;
   sizing_guide: VocabularyEntry;
+  product_noun: VocabularyEntry;
+  collections_noun: VocabularyEntry;
+  specifications_label: VocabularyEntry;
+  care_instructions_label: VocabularyEntry;
+  variant_picker_prompt: VocabularyEntry;
 };
 
 export const DEFAULT_VOCABULARY: StoreVocabulary = {
@@ -41,7 +46,49 @@ export const DEFAULT_VOCABULARY: StoreVocabulary = {
   ready_made: { ar: "جاهز", en: "Ready-made" },
   made_to_order: { ar: "صنع حسب الطلب", en: "Made to order" },
   sizing_guide: { ar: "دليل المقاسات", en: "Size Guide" },
+  product_noun: { ar: "المنتج", en: "Product" },
+  collections_noun: { ar: "التشكيلات", en: "Collections" },
+  specifications_label: { ar: "المواصفات والتفاصيل", en: "Specifications & Details" },
+  care_instructions_label: { ar: "العناية والاستخدام", en: "Care & Usage" },
+  variant_picker_prompt: { ar: "اختر الخيار المناسب", en: "Select option" },
 };
+
+export function getVerticalVocabularyOverrides(vertical?: string | null): Partial<StoreVocabulary> {
+  const v = (vertical || "").toLowerCase();
+  if (v === "coffee" || v === "food" || v === "cafe") {
+    return {
+      specifications_label: { ar: "المكونات والتحضير", en: "Ingredients & Details" },
+      care_instructions_label: { ar: "إرشادات الحفظ والتقديم", en: "Storage & Serving" },
+      sizing_guide: { ar: "دليل الأحجام والأوزان", en: "Size & Weight Guide" },
+      variant_picker_prompt: { ar: "اختر الحجم أو الوزن", en: "Select size or weight" },
+    };
+  }
+  if (v === "perfumes" || v === "beauty") {
+    return {
+      specifications_label: { ar: "المكونات العطرية", en: "Fragrance Notes" },
+      care_instructions_label: { ar: "إرشادات الاستخدام", en: "Usage Guidelines" },
+      sizing_guide: { ar: "دليل الأحجام", en: "Size Guide" },
+      variant_picker_prompt: { ar: "اختر الحجم أو العبوة", en: "Select size or bottle" },
+    };
+  }
+  if (v === "electronics") {
+    return {
+      specifications_label: { ar: "المواصفات التقنية", en: "Technical Specifications" },
+      care_instructions_label: { ar: "إرشادات التشغيل والضمان", en: "Operating & Warranty" },
+      sizing_guide: { ar: "دليل المواصفات", en: "Specs Guide" },
+      variant_picker_prompt: { ar: "اختر الطراز أو السعة", en: "Select model or capacity" },
+    };
+  }
+  if (v === "fashion" || v === "clothing" || v === "apparel") {
+    return {
+      specifications_label: { ar: "الخامة والتفاصيل", en: "Fabric & Details" },
+      care_instructions_label: { ar: "تعليمات الغسيل والعناية", en: "Washing & Care Instructions" },
+      sizing_guide: { ar: "دليل المقاسات", en: "Size Guide" },
+      variant_picker_prompt: { ar: "اختر المقاس", en: "Select size" },
+    };
+  }
+  return {};
+}
 
 export function resolveVocabulary(
   base: StoreVocabulary = DEFAULT_VOCABULARY,
@@ -63,6 +110,11 @@ export function resolveVocabulary(
     ready_made: { ...base.ready_made },
     made_to_order: { ...base.made_to_order },
     sizing_guide: { ...base.sizing_guide },
+    product_noun: { ...base.product_noun },
+    collections_noun: { ...base.collections_noun },
+    specifications_label: { ...base.specifications_label },
+    care_instructions_label: { ...base.care_instructions_label },
+    variant_picker_prompt: { ...base.variant_picker_prompt },
   };
 
   for (const override of overrides) {

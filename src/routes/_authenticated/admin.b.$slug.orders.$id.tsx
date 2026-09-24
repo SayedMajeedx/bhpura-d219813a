@@ -1342,7 +1342,7 @@ function OrderDetail() {
   const handleScanned = (code: string) => {
     const normalizeScan = (value: unknown) =>
       String(value ?? "")
-        .replace(/[\u0000-\u001f\u007f]/g, "")
+        .replace(/\p{Cc}/gu, "")
         .trim()
         .toUpperCase();
     const trimmed = normalizeScan(code);
@@ -1444,15 +1444,6 @@ function OrderDetail() {
       : [...it.customizations, c];
     updateItem(idx, { customizations: newCust });
   };
-
-  const DEDUCTING = new Set([
-    "confirmed",
-    "paid",
-    "shipped",
-    "completed",
-    "packing",
-    "ready_for_pickup",
-  ]);
 
   const save = async () => {
     if (isReadOnly) return;

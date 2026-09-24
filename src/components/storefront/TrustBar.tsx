@@ -11,8 +11,12 @@ export interface TrustBarProps {
 }
 
 export function TrustBar({ className }: TrustBarProps) {
-  const { brand, settings, lang } = useStorefront();
+  const { settings, lang } = useStorefront();
   const isAr = lang === "ar";
+
+  if (settings?.trust_bar_enabled === false) {
+    return null;
+  }
 
   const activeItems = resolveStorefrontTrustBadges({
     config: settings?.trust_badges,

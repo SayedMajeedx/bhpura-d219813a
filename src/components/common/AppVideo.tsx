@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect, type VideoHTMLAttributes } from "react";
 import { ResponsiveImage } from "@/components/responsive-media";
+import { useIsHeroMobile } from "@/lib/hero-media";
 
 export type VideoVariant = "hero" | "content" | "modal";
 
@@ -63,6 +64,8 @@ export interface AppVideoProps extends Omit<
   webmSrc?: string | null;
   mp4Src?: string | null;
   poster?: string | null;
+  /** Phone-specific poster, matching a phone-specific `src`. */
+  mobilePoster?: string | null;
   variant?: VideoVariant;
   active?: boolean;
   prepare?: boolean;
@@ -78,6 +81,7 @@ export function AppVideo({
   webmSrc,
   mp4Src,
   poster,
+  mobilePoster,
   variant = "content",
   active = true,
   prepare = false,
@@ -90,6 +94,8 @@ export function AppVideo({
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const isMobile = useIsHeroMobile();
+  const videoPoster = (isMobile && mobilePoster) || poster;
 
   // Variant behavior configuration
   const isHero = variant === "hero";
@@ -185,6 +191,7 @@ export function AppVideo({
       >
         <ResponsiveImage
           src={poster}
+          mobileSrc={mobilePoster}
           preset="hero"
           sizes="100vw"
           alt=""
@@ -203,14 +210,15 @@ export function AppVideo({
       {poster && (
         <ResponsiveImage
           src={poster}
+          mobileSrc={mobilePoster}
           preset="hero"
           sizes="100vw"
           alt=""
           loading={active ? "eager" : "lazy"}
           fetchPriority={active && isHero ? "high" : "auto"}
-          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ease-out z-0 ${
+          className={`absolute inset-0 h-full w-full transition-opacity duration-500 ease-out z-0 ${
             isVideoPlaying ? "opacity-0 pointer-events-none" : "opacity-100"
-          } ${className ?? ""}`}
+          } ${className ?? "object-cover"}`}
         />
       )}
 
@@ -219,7 +227,7 @@ export function AppVideo({
           key={src || "app-video"}
           ref={videoRef}
           {...(!hasSources && src ? { src } : {})}
-          poster={poster ?? undefined}
+          poster={videoPoster ?? undefined}
           autoPlay={shouldAutoPlay}
           muted={shouldMute}
           loop={shouldLoop}

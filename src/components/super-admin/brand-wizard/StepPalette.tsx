@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { FONT_MOOD_PRESETS, type FontMoodPreset } from "@/components/settings/QuickThemeCustomizer";
+import { FONT_MOOD_PRESETS } from "@/components/settings/QuickThemeCustomizer";
 import {
   extractLogoPalette,
   derivePalette,
@@ -10,7 +10,7 @@ import {
   type PaletteMood,
 } from "@/lib/logo-palette";
 import type { BrandWizardData } from "./types";
-import { Upload, Sparkles, Check, AlertCircle, RefreshCw } from "lucide-react";
+import { Upload, Sparkles, Check, AlertCircle } from "lucide-react";
 
 interface StepPaletteProps {
   data: BrandWizardData;

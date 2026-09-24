@@ -32,14 +32,18 @@ export function ProductGrid({
       if (saved === "1" || saved === "2") {
         setMobileCols(saved);
       }
-    } catch {}
+    } catch {
+      // Storage unavailable (e.g. private mode): keep the default columns.
+    }
   }, []);
 
   const toggleMobileCols = (cols: "1" | "2") => {
     setMobileCols(cols);
     try {
       localStorage.setItem("storefront-mobile-cols", cols);
-    } catch {}
+    } catch {
+      // Storage unavailable: the choice just isn't remembered.
+    }
   };
 
   if (loading) {

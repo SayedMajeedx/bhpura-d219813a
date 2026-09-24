@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useStorefront } from "@/lib/storefront-context";
+import { useStorefront, type HeroContentSlide } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState, useRef, useEffect, type AnchorHTMLAttributes } from "react";
@@ -72,6 +72,7 @@ export type ProductRow = {
     stock_main: number;
     stock_incubator?: number;
     size: string | null;
+    size_unit?: string | null;
     color: string | null;
     image_url?: string | null;
   }>;
@@ -336,10 +337,16 @@ function StoreHome() {
     );
   }
 
+  const showTrustBarBelowHero =
+    settings?.trust_bar_enabled !== false &&
+    (settings?.trust_bar_position === "below_hero" ||
+      settings?.trust_bar_position === "both" ||
+      !settings?.trust_bar_position);
+
   return (
     <div>
       <HeroBanner />
-      <TrustBar />
+      {showTrustBarBelowHero && <TrustBar />}
       <section className="w-full" style={{ backgroundColor: promoAreaBackground }}>
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
           <PromoCards />
@@ -380,12 +387,16 @@ function StoreHome() {
       </section>
 
       {/* Brand Story Section (Layer 2) */}
-      {settings.storefront_design_version === 2 && <BrandStorySection />}
+      {settings.storefront_design_version === 2 && settings.brand_story_enabled !== false && (
+        <BrandStorySection />
+      )}
 
       {/* Recently Viewed Carousel (Layer 2) */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <RecentlyViewed />
-      </div>
+      {settings.recently_viewed_enabled !== false && (
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <RecentlyViewed />
+        </div>
+      )}
     </div>
   );
 }
@@ -609,17 +620,66 @@ function HeroBanner() {
   const { brand, settings } = useStorefront();
   const prioritizeHero = !settings.home_promo_cards.some((card) => Boolean(card?.image_url));
   const background = brand.hero_media?.background;
+  const bgUrl = typeof background === "string" ? background : background?.url;
+  const bgType: HeroContentSlide["type"] =
+    typeof background === "object" && background?.type === "video"
+      ? "video"
+      : bgUrl && /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(bgUrl)
+        ? "video"
+        : bgUrl
+          ? "image"
+          : "text";
+  const bgPoster = typeof background === "object" ? background?.posterUrl : undefined;
+  const bgAspect = typeof background === "object" ? background?.aspect : undefined;
+  // The background is language-neutral, so its phone cut serves both languages.
+  const bgMobile =
+    typeof background === "object" && background?.mobileUrl
+      ? {
+          media_url_mobile_ar: background.mobileUrl,
+          media_url_mobile_en: background.mobileUrl,
+          media_poster_url_mobile_ar: background.mobilePosterUrl,
+          media_poster_url_mobile_en: background.mobilePosterUrl,
+          media_aspect_mobile_ar: background.mobileAspect,
+          media_aspect_mobile_en: background.mobileAspect,
+        }
+      : {};
+
   const slides = brand.hero_media?.slides?.length
-    ? brand.hero_media.slides
+    ? brand.hero_media.slides.map((s) => {
+        const hasOwnMedia = Boolean(
+          s.media_url?.trim() || s.media_url_ar?.trim() || s.media_url_en?.trim(),
+        );
+        if (!hasOwnMedia && bgUrl) {
+          return {
+            ...s,
+            type: s.type === "text" ? bgType : s.type,
+            media_url: bgUrl,
+            media_url_ar: s.media_url_ar || bgUrl,
+            media_url_en: s.media_url_en || bgUrl,
+            media_poster_url: s.media_poster_url || bgPoster,
+            media_poster_url_ar: s.media_poster_url_ar || bgPoster,
+            media_poster_url_en: s.media_poster_url_en || bgPoster,
+            media_aspect: s.media_aspect ?? bgAspect,
+            media_aspect_ar: s.media_aspect_ar ?? bgAspect,
+            media_aspect_en: s.media_aspect_en ?? bgAspect,
+            ...bgMobile,
+          };
+        }
+        return s;
+      })
     : [
         {
-          id: "legacy-hero",
-          type: "text" as const,
+          id: "hero-slide-default",
+          type: bgType,
           title_en: settings.hero_title_en || brand.name_en,
           title_ar: settings.hero_title_ar || brand.name_ar || brand.name_en,
           body_en: brand.about_en || "A curated collection made for you.",
           body_ar: brand.about_ar || "مجموعة مختارة بعناية لك.",
-          media_url: "",
+          media_url: bgUrl || "",
+          media_poster_url_ar: bgPoster,
+          media_poster_url_en: bgPoster,
+          media_aspect: bgAspect,
+          ...bgMobile,
           button_en: "Shop now",
           button_ar: "تسوّق الآن",
           button_href: "#products",
@@ -627,7 +687,7 @@ function HeroBanner() {
       ];
 
   if (settings.storefront_design_version === 2) {
-    return <HeroV2 slides={slides} />;
+    return <HeroV2 slides={slides} background={background} />;
   }
 
   return (

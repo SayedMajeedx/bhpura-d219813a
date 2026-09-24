@@ -88,8 +88,8 @@ export function NativeTools({
 
   useEffect(() => {
     if (externalScanner) {
-      void openScanner();
-      onExternalScannerChange?.(false);
+      void latest.current.openScanner();
+      latest.current.onExternalScannerChange?.(false);
     }
   }, [externalScanner]);
 
@@ -97,6 +97,16 @@ export function NativeTools({
     setOpen(nextOpen);
     onExternalOpenChange?.(nextOpen);
   };
+
+  // Effects and the pan responder below run on specific triggers only, but
+  // must call the newest callbacks — read them through this ref, not deps.
+  const latest = useRef({
+    openScanner,
+    onExternalScannerChange,
+    handleOpenChange,
+    onPushRegistration,
+  });
+  latest.current = { openScanner, onExternalScannerChange, handleOpenChange, onPushRegistration };
 
   // Draggable floating button animation setup
   const initialX = SCREEN_WIDTH - BUTTON_SIZE - 12;
@@ -132,7 +142,7 @@ export function NativeTools({
 
           // Pure tap without movement opens the modal
           if (!isDragging.current && Math.abs(gesture.dx) < 6 && Math.abs(gesture.dy) < 6) {
-            handleOpenChange(true);
+            latest.current.handleOpenChange(true);
             return;
           }
 
@@ -154,7 +164,7 @@ export function NativeTools({
           }).start();
         },
       }),
-    [insets.top, insets.bottom, SCREEN_WIDTH, SCREEN_HEIGHT],
+    [insets.top, insets.bottom, SCREEN_WIDTH, SCREEN_HEIGHT, pan],
   );
 
   useEffect(() => {
@@ -169,7 +179,7 @@ export function NativeTools({
       setPushToken(notifications.token);
       setPushPreferences(notifications.preferences);
       if (notifications.enabled && notifications.token) {
-        onPushRegistration(notifications.token, true, notifications.preferences);
+        latest.current.onPushRegistration(notifications.token, true, notifications.preferences);
       }
     });
   }, []);

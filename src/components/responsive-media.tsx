@@ -5,12 +5,15 @@ import {
   isLikelyImageUrl,
   type ResponsiveImagePreset,
 } from "@/lib/media-delivery";
+import { HERO_MOBILE_QUERY } from "@/lib/hero-media";
 import { AppVideo } from "@/components/common/AppVideo";
 
 type ResponsiveImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, "srcSet"> & {
   src: string;
   preset?: ResponsiveImagePreset;
   quality?: number;
+  /** Phone-specific cut, chosen by the browser via <picture> below 640px. */
+  mobileSrc?: string | null;
 };
 
 export function ResponsiveImage({
@@ -19,6 +22,7 @@ export function ResponsiveImage({
   quality,
   sizes,
   onError,
+  mobileSrc,
   ...props
 }: ResponsiveImageProps) {
   const [fallback, setFallback] = useState(false);
@@ -77,7 +81,7 @@ export function ResponsiveImage({
     );
   }
 
-  return (
+  const image = (
     <img
       {...props}
       width={props.width ?? intrinsicSize.width}
@@ -98,11 +102,25 @@ export function ResponsiveImage({
       }}
     />
   );
+
+  if (!mobileSrc || mobileSrc === src) return image;
+
+  const mobileSrcSet = fallback
+    ? mobileSrc
+    : cloudflareImageSrcSet(mobileSrc, preset, quality) || mobileSrc;
+  return (
+    // `display: contents` keeps the <img> laid out exactly as without <picture>.
+    <picture style={{ display: "contents" }}>
+      <source media={HERO_MOBILE_QUERY} srcSet={mobileSrcSet} sizes="100vw" />
+      {image}
+    </picture>
+  );
 }
 
 type OptimizedVideoProps = Omit<VideoHTMLAttributes<HTMLVideoElement>, "src" | "poster"> & {
   src?: string | null;
   poster?: string | null;
+  mobilePoster?: string | null;
   streamIframeUrl?: string | null;
   active?: boolean;
   prepare?: boolean;
@@ -112,6 +130,7 @@ type OptimizedVideoProps = Omit<VideoHTMLAttributes<HTMLVideoElement>, "src" | "
 export function OptimizedVideo({
   src,
   poster,
+  mobilePoster,
   streamIframeUrl,
   active = true,
   prepare = false,
@@ -121,6 +140,7 @@ export function OptimizedVideo({
   ...props
 }: OptimizedVideoProps) {
   const resolvedPoster = isLikelyImageUrl(poster) ? poster : null;
+  const resolvedMobilePoster = isLikelyImageUrl(mobilePoster) ? mobilePoster : null;
 
   if (streamIframeUrl) {
     const separator = streamIframeUrl.includes("?") ? "&" : "?";
@@ -130,6 +150,7 @@ export function OptimizedVideo({
         {!active && resolvedPoster ? (
           <ResponsiveImage
             src={resolvedPoster}
+            mobileSrc={resolvedMobilePoster}
             preset="hero"
             alt=""
             className="h-full w-full object-cover"
@@ -153,6 +174,7 @@ export function OptimizedVideo({
       key={src || "opt-video"}
       src={src}
       poster={resolvedPoster}
+      mobilePoster={resolvedMobilePoster}
       variant="hero"
       active={active}
       prepare={prepare}

@@ -12,7 +12,6 @@ interface DashboardCommandHeaderProps {
 
 export function DashboardCommandHeader({
   lang,
-  slug,
   brandName,
   salesTransactionCount,
   periodLabel,

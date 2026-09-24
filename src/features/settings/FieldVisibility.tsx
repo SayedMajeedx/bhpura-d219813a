@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useSettingsLevel } from "./settings-level";
-import { SlidersHorizontal, Sparkles } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 

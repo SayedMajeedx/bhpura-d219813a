@@ -16,10 +16,59 @@ import { HeroSlideLivePreview, type HeroSlide } from "./HeroSlideLivePreview";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { VIDEO_PRESETS, type OptimizedVideoResult } from "@/lib/video-optimizer";
 import { VideoOptimizerDialog } from "@/components/admin/video/VideoOptimizerDialog";
+import { aspectFromSize, prepareHeroImage, probeMediaAspect } from "@/lib/media-aspect";
+import { resolveHeroSlideMedia, type HeroBackgroundInput } from "@/lib/hero-media";
+import {
+  HeroFocalPointPicker,
+  HeroFramePreview,
+  type HeroFramingSettings,
+} from "./HeroFramingTools";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
 export type { HeroSlide };
+
+type MediaVariant = "main" | "mobile";
+
+/** Field patch for one uploaded file, keyed by language and main/phone variant. */
+function slideMediaPatch(
+  language: "en" | "ar",
+  variant: MediaVariant,
+  media: { url: string; aspect: number | null; posterUrl?: string | null },
+): Partial<HeroSlide> {
+  const aspect = media.aspect ?? undefined;
+  if (variant === "mobile") {
+    return language === "ar"
+      ? {
+          media_url_mobile_ar: media.url,
+          media_aspect_mobile_ar: aspect,
+          media_poster_url_mobile_ar: media.posterUrl ?? undefined,
+        }
+      : {
+          media_url_mobile_en: media.url,
+          media_aspect_mobile_en: aspect,
+          media_poster_url_mobile_en: media.posterUrl ?? undefined,
+        };
+  }
+  const shared = {
+    media_url: media.url,
+    ...(aspect ? { media_aspect: aspect } : {}),
+    ...(media.posterUrl ? { media_poster_url: media.posterUrl } : {}),
+  };
+  return language === "ar"
+    ? {
+        ...shared,
+        media_url_ar: media.url,
+        media_aspect_ar: aspect,
+        ...(media.posterUrl ? { media_poster_url_ar: media.posterUrl } : {}),
+      }
+    : {
+        ...shared,
+        media_url_en: media.url,
+        media_aspect_en: aspect,
+        ...(media.posterUrl ? { media_poster_url_en: media.posterUrl } : {}),
+      };
+}
 
 export type MediaItem = { type: "image" | "video"; url: string };
 
@@ -54,6 +103,9 @@ export interface HeroSlidesEditorProps {
   uploading?: boolean;
   uploadSlideMedia?: (file: File, index: number, language?: "en" | "ar") => Promise<void>;
   primaryColor?: string;
+  /** Storefront hero settings, so previews match what shoppers will see. */
+  framing?: HeroFramingSettings;
+  background?: HeroBackgroundInput;
 }
 
 export function HeroSlidesEditor({
@@ -66,6 +118,8 @@ export function HeroSlidesEditor({
   uploading: propUploading,
   uploadSlideMedia: propUploadSlideMedia,
   primaryColor,
+  framing = {},
+  background,
 }: HeroSlidesEditorProps) {
   const { lang } = useI18n();
   const isAr = propIsAr ?? lang === "ar";
@@ -75,6 +129,7 @@ export function HeroSlidesEditor({
     file: File;
     index: number;
     language?: "en" | "ar";
+    variant: MediaVariant;
   } | null>(null);
 
   const slides = propSlides ?? propState?.slides ?? [];
@@ -94,27 +149,29 @@ export function HeroSlidesEditor({
     handleUpdateSlides(updated);
   };
 
-  const uploadMedia = async (file: File, index: number, language?: "en" | "ar") => {
-    if (propUploadSlideMedia) {
+  const uploadMedia = async (
+    file: File,
+    index: number,
+    language?: "en" | "ar",
+    variant: MediaVariant = "main",
+  ) => {
+    if (propUploadSlideMedia && variant === "main") {
       await propUploadSlideMedia(file, index, language);
       return;
     }
     if (!brandId) return;
     const isVideo = file.type.startsWith("video/") || /\.(mp4|webm|mov|m4v)$/i.test(file.name);
     if (isVideo) {
-      setPendingOptimizeVideo({ file, index, language });
+      setPendingOptimizeVideo({ file, index, language, variant });
       return;
     }
 
     try {
       setInternalUploading(true);
-      const url = await uploadPublicMedia(brandId, file, "hero");
-      const patch: Partial<HeroSlide> =
-        language === "ar"
-          ? { media_url_ar: url, media_url: url }
-          : { media_url_en: url, media_url: url };
-
-      update(index, patch);
+      // Keep the original shape; only oversized images are downscaled.
+      const { blob, aspect } = await prepareHeroImage(file);
+      const url = await uploadPublicMedia(brandId, blob, "hero");
+      update(index, slideMediaPatch(language ?? "en", variant, { url, aspect }));
       toast.success(isAr ? "تم رفع الصورة بنجاح" : "Image uploaded successfully");
     } catch (e: any) {
       toast.error(e?.message || (isAr ? "فشل رفع الصورة" : "Image upload failed"));
@@ -125,30 +182,20 @@ export function HeroSlidesEditor({
 
   const handleConfirmSlideVideo = async (result: OptimizedVideoResult) => {
     if (!pendingOptimizeVideo || !brandId) return;
-    const { index, language } = pendingOptimizeVideo;
+    const { index, language, variant } = pendingOptimizeVideo;
     try {
       setInternalUploading(true);
-      const [url, posterUrl] = await Promise.all([
+      const [url, posterUrl, aspect] = await Promise.all([
         uploadPublicMedia(brandId, result.file, "hero"),
         result.posterBlob && result.posterBlob.size > 0
           ? uploadPublicMedia(brandId, result.posterBlob, "hero")
           : Promise.resolve(null),
+        aspectFromSize(result.width, result.height)
+          ? Promise.resolve(aspectFromSize(result.width, result.height))
+          : probeMediaAspect(result.file),
       ]);
 
-      const patch: Partial<HeroSlide> =
-        language === "ar"
-          ? {
-              media_url_ar: url,
-              media_url: url,
-              ...(posterUrl ? { media_poster_url_ar: posterUrl, media_poster_url: posterUrl } : {}),
-            }
-          : {
-              media_url_en: url,
-              media_url: url,
-              ...(posterUrl ? { media_poster_url_en: posterUrl, media_poster_url: posterUrl } : {}),
-            };
-
-      update(index, patch);
+      update(index, slideMediaPatch(language ?? "en", variant, { url, aspect, posterUrl }));
       const presetLabel = isAr
         ? VIDEO_PRESETS[result.preset].labelAr
         : VIDEO_PRESETS[result.preset].labelEn;
@@ -194,7 +241,7 @@ export function HeroSlidesEditor({
         type: blob.type || "video/mp4",
       });
 
-      setPendingOptimizeVideo({ file, index, language });
+      setPendingOptimizeVideo({ file, index, language, variant: "main" });
     } catch (e: any) {
       toast.error(
         e?.message || (isAr ? "فشل جلب الفيديو الحالي" : "Failed to fetch current video"),
@@ -319,7 +366,9 @@ export function HeroSlidesEditor({
                             onClick={() =>
                               update(
                                 index,
-                                language === "ar" ? { media_url_ar: "" } : { media_url_en: "" },
+                                language === "ar"
+                                  ? { media_url_ar: "", media_aspect_ar: undefined }
+                                  : { media_url_en: "", media_aspect_en: undefined },
                               )
                             }
                           >
@@ -369,12 +418,35 @@ export function HeroSlidesEditor({
                     <p className="text-xs leading-relaxed text-muted-foreground">
                       {slide.type === "video"
                         ? language === "ar"
-                          ? "الموصى به: أفقي 16:9 | 15 ثانية كحد أقصى | 100MB | MP4"
-                          : "Recommended: 16:9 Horizontal | Max 15s | Max 100MB | MP4"
+                          ? "أي أبعاد — تُعرض كاملة. الأفضل للكمبيوتر أفقي 16:9 | 15 ثانية | 100MB | MP4"
+                          : "Any shape — shown in full. Best for desktop: 16:9 | Max 15s | 100MB | MP4"
                         : language === "ar"
-                          ? "الموصى به: 1920×1080 بكسل (16:9) | JPG، PNG، WebP"
-                          : "Recommended: 1920x1080px (16:9) | JPG, PNG, WebP"}
+                          ? "أي أبعاد — تُحفظ كما هي. الأفضل للكمبيوتر 1920×1080 | JPG، PNG، WebP"
+                          : "Any shape — kept as uploaded. Best for desktop: 1920×1080 | JPG, PNG, WebP"}
                     </p>
+                    <MobileVariantField
+                      slide={slide}
+                      language={language}
+                      isAr={isAr}
+                      uploading={uploading}
+                      onUpload={(file) => void uploadMedia(file, index, language, "mobile")}
+                      onRemove={() =>
+                        update(
+                          index,
+                          language === "ar"
+                            ? {
+                                media_url_mobile_ar: undefined,
+                                media_poster_url_mobile_ar: undefined,
+                                media_aspect_mobile_ar: undefined,
+                              }
+                            : {
+                                media_url_mobile_en: undefined,
+                                media_poster_url_mobile_en: undefined,
+                                media_aspect_mobile_en: undefined,
+                              },
+                        )
+                      }
+                    />
                   </div>
                 );
               })}
@@ -464,6 +536,24 @@ export function HeroSlidesEditor({
             </>
           )}
 
+          <HeroFocalPointPicker
+            imageUrl={
+              resolveHeroSlideMedia(slide, isAr ? "ar" : "en", background).main?.posterUrl ?? null
+            }
+            slide={slide}
+            fitSetting={framing.fit}
+            isAr={isAr}
+            onChange={(patch) => update(index, patch)}
+          />
+
+          <HeroFramePreview
+            slides={slides}
+            index={index}
+            background={background}
+            framing={framing}
+            isAr={isAr}
+          />
+
           <HeroSlideLivePreview slide={slide} isAr={isAr} color={slideAccentColor} />
         </div>
       ))}
@@ -478,6 +568,93 @@ export function HeroSlidesEditor({
         onConfirm={handleConfirmSlideVideo}
         onCancel={() => setPendingOptimizeVideo(null)}
       />
+    </div>
+  );
+}
+
+/** Optional phone-specific cut for one language, shown below 640px instead of the main file. */
+function MobileVariantField({
+  slide,
+  language,
+  isAr,
+  uploading,
+  onUpload,
+  onRemove,
+}: {
+  slide: HeroSlide;
+  language: "en" | "ar";
+  isAr: boolean;
+  uploading: boolean;
+  onUpload: (file: File) => void;
+  onRemove: () => void;
+}) {
+  const url = language === "ar" ? slide.media_url_mobile_ar : slide.media_url_mobile_en;
+  const poster =
+    (language === "ar" ? slide.media_poster_url_mobile_ar : slide.media_poster_url_mobile_en) ||
+    (slide.type === "video" ? undefined : url);
+  const isVideo = slide.type === "video";
+
+  return (
+    <div className="space-y-2 rounded-md border border-dashed border-border p-2.5">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-medium">
+          {isAr ? "نسخة الجوال (اختياري)" : "Phone version (optional)"}
+        </span>
+        {url && (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="h-7 text-xs text-destructive hover:bg-destructive/10"
+            onClick={onRemove}
+          >
+            {isAr ? "إزالة" : "Remove"}
+          </Button>
+        )}
+      </div>
+      {url && (
+        <div className="flex justify-center rounded bg-neutral-950 p-1">
+          {poster ? (
+            <ResponsiveImage
+              src={poster}
+              preset="card"
+              alt=""
+              className="max-h-40 w-auto rounded object-contain"
+            />
+          ) : (
+            <video src={url} muted playsInline preload="metadata" className="max-h-40 rounded" />
+          )}
+        </div>
+      )}
+      <label className="flex min-h-11 cursor-pointer items-center justify-center rounded-md border border-border px-3 text-xs text-muted-foreground hover:bg-secondary">
+        {uploading
+          ? "…"
+          : url
+            ? isAr
+              ? "استبدال نسخة الجوال"
+              : "Replace phone version"
+            : isAr
+              ? "رفع نسخة طولية للجوال"
+              : "Upload a vertical phone version"}
+        <input
+          type="file"
+          accept={
+            isVideo ? "video/mp4,video/webm,video/quicktime" : "image/jpeg,image/png,image/webp"
+          }
+          className="hidden"
+          disabled={uploading}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) onUpload(file);
+            event.target.value = "";
+          }}
+        />
+      </label>
+      <p className="text-xs text-muted-foreground">
+        {isAr
+          ? "تظهر على الجوال بدلاً من الملف الرئيسي. الأفضل 4:5 أو 9:16."
+          : "Shown on phones instead of the main file. 4:5 or 9:16 works best."}
+      </p>
     </div>
   );
 }

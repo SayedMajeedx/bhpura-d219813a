@@ -4,12 +4,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Crown,
   Search,
-  Filter,
   Instagram,
   Phone,
-  MessageCircle,
   Sparkles,
-  CheckCircle2,
   Clock,
   Gift,
   Trash2,
@@ -17,10 +14,7 @@ import {
   Shirt,
   UtensilsCrossed,
   Store,
-  ChevronDown,
   Edit3,
-  Calendar,
-  AlertCircle,
   HelpCircle,
   RefreshCw,
   Eye,
@@ -29,7 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,

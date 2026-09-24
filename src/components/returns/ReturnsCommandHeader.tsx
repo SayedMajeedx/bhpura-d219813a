@@ -13,7 +13,6 @@ interface ReturnsCommandHeaderProps {
 export function ReturnsCommandHeader({
   lang,
   brandName,
-  totalReturns,
   pendingReviewCount,
   onOpenPolicy,
   onNewReturn,

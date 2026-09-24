@@ -1050,14 +1050,6 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
 
     try {
       // Check existing imports to prevent duplicates
-      const { data: existingProducts, error: existingError } = await (
-        supabaseAdmin.from("products" as never) as any
-      )
-        .select("id, custom_fields")
-        .eq("brand_id", brandId);
-      if (existingError)
-        throw new Error(`Failed to check existing imports: ${existingError.message}`);
-
       const existingPostIds = new Set<string>();
 
       // Check import_runs for previous Instagram imports

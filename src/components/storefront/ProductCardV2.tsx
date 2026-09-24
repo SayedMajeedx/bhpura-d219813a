@@ -5,7 +5,7 @@ import { ResponsiveImage } from "@/components/responsive-media";
 import { ColorDots } from "@/components/storefront/ColorDots";
 import { QuickAddPopover } from "@/components/storefront/QuickAddPopover";
 import { useStorefront, formatPrice } from "@/lib/storefront-context";
-import { shouldShowPrices } from "@/lib/storefront-mode";
+import { isCatalogMode, shouldShowPrices } from "@/lib/storefront-mode";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { Heart, Eye } from "lucide-react";
 import { QuickViewModal } from "@/components/storefront/QuickViewModal";
@@ -32,6 +32,10 @@ export function ProductCardV2({
 
   // Quick View state
   const [quickViewOpen, setQuickViewOpen] = useState(false);
+  // Quick view is an add-to-cart surface (price, quantity, cart CTA), so it is
+  // suppressed on catalog / inquiry-only storefronts. The card still links to
+  // the product page, which has the inquiry flow.
+  const showQuickView = settings?.quick_view_enabled !== false && !isCatalogMode(settings);
   const handleTriggerQuickView = (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
@@ -134,26 +138,33 @@ export function ProductCardV2({
     setIsHovered(false);
   };
 
-  const activeImage = isHovered && secondaryImage && hasHoveredOnce ? secondaryImage : primaryImage;
+  const allowHoverImage = settings?.product_card_hover_image !== false;
+  const activeImage =
+    isHovered && allowHoverImage && secondaryImage && hasHoveredOnce
+      ? secondaryImage
+      : primaryImage;
 
   return (
     <div
       ref={revealRef}
+      data-product-id={product.id}
       className={`group relative sf-reveal sf-cv-card ${staggerClass} ${className || "w-full"}`}
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
     >
       {/* Quick View Button (Desktop) */}
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-touch"
-        onClick={handleTriggerQuickView}
-        aria-label={t("معاينة سريعة", "Quick view")}
-        className="absolute end-12 top-2.5 z-20 hidden md:inline-flex rounded-full bg-background/90 text-foreground shadow-xs border border-border backdrop-blur-xs transition-[transform,colors] duration-200 hover:scale-110 active:scale-95 hover:bg-background hover:text-primary"
-      >
-        <Eye className="h-4 w-4" />
-      </Button>
+      {showQuickView && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-touch"
+          onClick={handleTriggerQuickView}
+          aria-label={t("معاينة سريعة", "Quick view")}
+          className="absolute end-12 top-2.5 z-20 hidden md:inline-flex rounded-full bg-background/90 text-foreground shadow-xs border border-border backdrop-blur-xs transition-[transform,colors] duration-200 hover:scale-110 active:scale-95 hover:bg-background hover:text-primary"
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+      )}
 
       {/* Wishlist Button */}
       <Button
@@ -219,13 +230,15 @@ export function ProductCardV2({
           {isOos && (
             <div className="absolute inset-0 bg-background/80 backdrop-blur-[2px] grid place-items-center p-3 text-center z-10">
               <span className="bg-background/95 border border-border px-3 py-1.5 rounded-full text-xs font-semibold text-foreground shadow-sm">
-                {t("نفد — نبّهني عند التوفر", "Sold out — Notify me")}
+                {settings?.back_in_stock_enabled !== false
+                  ? t("نفد — نبّهني عند التوفر", "Sold out — Notify me")
+                  : t("نفد من المخزون", "Out of stock")}
               </span>
             </div>
           )}
 
           {/* Desktop Quick Add Popover Overlay on Hover */}
-          {!isOos && (
+          {!isOos && settings?.product_card_quick_add !== false && (
             <div className="absolute bottom-2 inset-x-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto">
               <QuickAddPopover
                 product={product}
@@ -239,7 +252,9 @@ export function ProductCardV2({
         {/* Product Details Info */}
         <div className="mt-2.5 text-start space-y-1">
           {/* Color Dots */}
-          <ColorDots variants={variants} maxVisible={4} />
+          {settings?.product_card_color_dots !== false && (
+            <ColorDots variants={variants} product={product} maxVisible={4} />
+          )}
 
           {/* Product Title */}
           <h3
@@ -281,12 +296,14 @@ export function ProductCardV2({
       </Link>
 
       {/* Quick View Modal */}
-      <QuickViewModal
-        open={quickViewOpen}
-        onOpenChange={setQuickViewOpen}
-        product={product}
-        brandSlug={brand.slug}
-      />
+      {showQuickView && (
+        <QuickViewModal
+          open={quickViewOpen}
+          onOpenChange={setQuickViewOpen}
+          product={product}
+          brandSlug={brand.slug}
+        />
+      )}
     </div>
   );
 }

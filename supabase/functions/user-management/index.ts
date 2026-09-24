@@ -788,7 +788,9 @@ async function handleUpdate(
   if (status === "inactive") {
     try {
       await supabase.auth.admin.signOut(userId, "global");
-    } catch (_) {}
+    } catch {
+      // Best effort: the status change already applies on next token refresh.
+    }
   }
 
   return new Response(JSON.stringify({ success: true }), {
@@ -878,7 +880,9 @@ async function handleDelete(
     }
     try {
       await supabase.auth.admin.signOut(userId, "global");
-    } catch (_) {}
+    } catch {
+      // Best effort: the removal already applies on next token refresh.
+    }
     return new Response(JSON.stringify({ success: true, customer_identity_preserved: true }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

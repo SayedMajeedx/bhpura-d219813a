@@ -9,7 +9,6 @@ import {
   ChevronRight,
   ChevronLeft,
   ShieldCheck,
-  Layers,
 } from "lucide-react";
 import { AddonIcon } from "@/lib/addons/addon-icons";
 import { featuredAddonsFor } from "@/lib/addons/featured-addons";

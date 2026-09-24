@@ -16,22 +16,15 @@ import {
   Monitor,
   LayoutDashboard,
   HelpCircle,
-  Clock,
   Layers,
   ChevronDown,
   ChevronUp,
   CheckCircle2,
   Lock,
 } from "lucide-react";
-import type {
-  AddonId,
-  AddonManifest,
-  BrandAddonRow,
-  AddonSettingsField,
-} from "@/lib/addons/addon-types";
+import type { AddonId, AddonManifest, BrandAddonRow } from "@/lib/addons/addon-types";
 import { AddonIcon } from "@/lib/addons/addon-icons";
 import { ADDON_SHOWCASE_DATA } from "@/lib/addons/addon-showcase-data";
-import { cn } from "@/lib/utils";
 
 interface AddonDetailPageProps {
   manifest: AddonManifest;

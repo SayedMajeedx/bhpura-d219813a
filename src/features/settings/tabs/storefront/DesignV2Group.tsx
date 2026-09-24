@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
+import { resolveFooterVariant } from "@/lib/storefront-engine";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
 import { ColorField } from "@/features/settings/shared/ColorField";
@@ -88,8 +89,8 @@ const TOGGLES: Array<{ key: BoolKey; ar: string; en: string; hintAr: string; hin
     key: "social_proof_enabled",
     ar: "دليل اجتماعي حقيقي",
     en: "Real social proof",
-    hintAr: '"طُلب N مرة هذا الأسبوع" من الطلبات الفعلية فقط',
-    hintEn: '"Ordered N times this week" from real orders only',
+    hintAr: '"تم شراؤه N مرات" في صفحة المنتج من الطلبات الفعلية',
+    hintEn: '"Purchased N times" on product page from real orders',
   },
   {
     key: "recently_viewed_enabled",
@@ -139,13 +140,7 @@ const TOGGLE_SECTIONS: Array<{ ar: string; en: string; keys: BoolKey[] }> = [
   {
     ar: "الصفحة الرئيسية",
     en: "Homepage",
-    keys: [
-      "trust_bar_enabled",
-      "brand_story_enabled",
-      "social_proof_enabled",
-      "recently_viewed_enabled",
-      "motion_enabled",
-    ],
+    keys: ["trust_bar_enabled", "brand_story_enabled", "recently_viewed_enabled", "motion_enabled"],
   },
   {
     ar: "بطاقة المنتج",
@@ -160,7 +155,12 @@ const TOGGLE_SECTIONS: Array<{ ar: string; en: string; keys: BoolKey[] }> = [
   {
     ar: "صفحة المنتج والأقسام",
     en: "Product page & categories",
-    keys: ["pdp_image_zoom", "category_filters_enabled", "back_in_stock_enabled"],
+    keys: [
+      "social_proof_enabled",
+      "pdp_image_zoom",
+      "category_filters_enabled",
+      "back_in_stock_enabled",
+    ],
   },
   {
     ar: "التذييل",
@@ -278,36 +278,19 @@ export function DesignV2Group() {
         <div className="space-y-1.5">
           <Label className="text-xs font-medium">{isAr ? "تخطيط التذييل" : "Footer layout"}</Label>
           <Select
-            value={bs.footer_layout || "minimal"}
+            // Legacy rows stored the simple footer as "minimal"; normalise so the
+            // control reflects what the storefront actually renders.
+            value={resolveFooterVariant(bs)}
             onValueChange={(val) => setBs({ footer_layout: val })}
           >
             <SelectTrigger className="h-9 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="minimal">
-                {isAr ? "بسيط (الحالي)" : "Minimal (current)"}
-              </SelectItem>
+              <SelectItem value="simple">{isAr ? "بسيط (الحالي)" : "Minimal (current)"}</SelectItem>
               <SelectItem value="columns">
                 {isAr ? "أعمدة (بريميوم)" : "Columns (premium)"}
               </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs font-medium">
-            {isAr ? "تخطيط صفحة المنتج" : "Product page layout"}
-          </Label>
-          <Select
-            value={bs.pdp_layout || "accordion"}
-            onValueChange={(val) => setBs({ pdp_layout: val })}
-          >
-            <SelectTrigger className="h-9 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="accordion">{isAr ? "أكورديون" : "Accordion"}</SelectItem>
-              <SelectItem value="flat">{isAr ? "مسطّح (الحالي)" : "Flat (current)"}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -323,6 +306,30 @@ export function DesignV2Group() {
             value={bs.new_badge_days ?? 14}
             onChange={(e) => setBs({ new_badge_days: Math.max(0, Number(e.target.value) || 0) })}
           />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium">
+            {isAr ? "تناسب صور معرض المنتج" : "PDP Gallery Aspect Ratio"}
+          </Label>
+          <Select
+            value={bs.pdp_gallery_aspect_ratio || "3:4"}
+            onValueChange={(val) => setBs({ pdp_gallery_aspect_ratio: val })}
+          >
+            <SelectTrigger className="h-9 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="3:4">
+                {isAr ? "طولي 3:4 (أزياء وعبايات)" : "Portrait 3:4 (Fashion)"}
+              </SelectItem>
+              <SelectItem value="1:1">
+                {isAr ? "مربع 1:1 (إكسسوارات وعطور)" : "Square 1:1 (Accessories)"}
+              </SelectItem>
+              <SelectItem value="4:5">
+                {isAr ? "طولي 4:5 (افتتاحي)" : "Portrait 4:5 (Editorial)"}
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -363,7 +370,7 @@ export function DesignV2Group() {
           <Input
             dir="rtl"
             className="mt-1 h-9 text-xs"
-            placeholder="اشتركي لتصلك التشكيلات الجديدة"
+            placeholder="اشترك لتصلك أحدث المنتجات والعروض"
             value={bs.newsletter_title_ar ?? ""}
             onChange={(e) => setBs({ newsletter_title_ar: e.target.value || null })}
           />
@@ -452,11 +459,13 @@ export function DesignV2Group() {
         )}
       </div>
 
-      {/* Fabric & care text (PDP accordion) */}
+      {/* Fabric & care / specifications text (PDP accordion) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-border">
         <div>
           <Label className="text-xs font-medium">
-            {isAr ? "القماش والعناية (عربي)" : "Fabric & care (Arabic)"}
+            {isAr
+              ? "المواصفات والعناية / القماش (عربي)"
+              : "Specifications & care / Fabric (Arabic)"}
           </Label>
           <Textarea
             dir="rtl"
@@ -468,7 +477,9 @@ export function DesignV2Group() {
         </div>
         <div>
           <Label className="text-xs font-medium">
-            {isAr ? "القماش والعناية (إنجليزي)" : "Fabric & care (English)"}
+            {isAr
+              ? "المواصفات والعناية / القماش (إنجليزي)"
+              : "Specifications & care / Fabric (English)"}
           </Label>
           <Textarea
             dir="ltr"

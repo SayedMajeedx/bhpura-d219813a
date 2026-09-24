@@ -1,18 +1,13 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureSessionUser } from "@/lib/auth/ensure-session-user";
 import { SettingsPage } from "@/features/settings/SettingsPage";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/settings")({
   beforeLoad: async ({ context: { queryClient }, params }) => {
-    const user = await queryClient.ensureQueryData({
-      queryKey: ["auth_user"],
-      queryFn: async () => {
-        const { data, error } = await supabase.auth.getUser();
-        if (error || !data.user) throw redirect({ to: "/auth" });
-        return data.user;
-      },
-      staleTime: 1000 * 60 * 5,
-    });
+    const user = await ensureSessionUser(queryClient);
+
+    if (!user) throw redirect({ to: "/auth" });
 
     const profile = await queryClient.ensureQueryData({
       queryKey: ["caller_permissions", user.id],

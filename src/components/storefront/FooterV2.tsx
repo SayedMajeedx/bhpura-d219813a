@@ -1,20 +1,10 @@
 import React, { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { useStorefront, pickName } from "@/lib/storefront-context";
+import { useStorefront } from "@/lib/storefront-context";
 import { NewsletterForm } from "@/components/storefront/NewsletterForm";
 import { TrustBar } from "@/components/storefront/TrustBar";
-import {
-  Instagram,
-  Phone,
-  Mail,
-  MapPin,
-  Clock,
-  MessageCircle,
-  ChevronDown,
-  CreditCard,
-  ShieldCheck,
-} from "lucide-react";
+import { Instagram, ChevronDown } from "lucide-react";
 
 export function FooterV2() {
   const { brand, settings, lang, t } = useStorefront();
@@ -142,7 +132,7 @@ export function FooterV2() {
               className="text-xs font-semibold uppercase tracking-wider opacity-90 border-b border-white/10 pb-2"
               style={{ color: "var(--sf-footer-fg)" }}
             >
-              {t("تسوّقي", "Shop")}
+              {t("تسوّق", "Shop")}
             </h4>
             <nav className="flex flex-col space-y-2 text-xs">
               <Link
@@ -275,10 +265,10 @@ export function FooterV2() {
               variant="ghost"
               size="sm"
               onClick={() => toggleSection("shop")}
-              className="h-auto rounded-md w-full flex items-center justify-between py-2 text-xs font-semibold"
+              className="h-auto min-h-11 rounded-md w-full flex items-center justify-between py-2 text-xs font-semibold"
               style={{ color: "var(--sf-footer-fg)" }}
             >
-              <span>{t("تسوّقي", "Shop")}</span>
+              <span>{t("تسوّق", "Shop")}</span>
               <ChevronDown
                 className={`h-4 w-4 transition-transform duration-200 ${
                   openSections.shop ? "rotate-180" : ""
@@ -290,7 +280,7 @@ export function FooterV2() {
                 <Link
                   to="/$slug/$category"
                   params={{ slug: brand.slug, category: "all" }}
-                  className="opacity-75 hover:opacity-100 py-1"
+                  className="opacity-75 hover:opacity-100 py-1 min-h-11 flex items-center"
                   style={{ color: "var(--sf-footer-fg)" }}
                 >
                   {t("كل المنتجات", "All Products")}
@@ -298,7 +288,7 @@ export function FooterV2() {
                 <Link
                   to="/$slug/$category"
                   params={{ slug: brand.slug, category: "new" }}
-                  className="opacity-75 hover:opacity-100 py-1"
+                  className="opacity-75 hover:opacity-100 py-1 min-h-11 flex items-center"
                   style={{ color: "var(--sf-footer-fg)" }}
                 >
                   {t("وصل حديثاً", "New Arrivals")}
@@ -321,7 +311,7 @@ export function FooterV2() {
               variant="ghost"
               size="sm"
               onClick={() => toggleSection("help")}
-              className="h-auto rounded-md w-full flex items-center justify-between py-2 text-xs font-semibold"
+              className="h-auto min-h-11 rounded-md w-full flex items-center justify-between py-2 text-xs font-semibold"
               style={{ color: "var(--sf-footer-fg)" }}
             >
               <span>{t("المساعدة وخدمة العملاء", "Customer Care")}</span>
@@ -336,7 +326,7 @@ export function FooterV2() {
                 <Link
                   to="/$slug/account"
                   params={{ slug: brand.slug }}
-                  className="opacity-75 hover:opacity-100 py-1"
+                  className="opacity-75 hover:opacity-100 py-1 min-h-11 flex items-center"
                   style={{ color: "var(--sf-footer-fg)" }}
                 >
                   {t("تتبع الطلبات وحسابي", "Track Order & Account")}
@@ -346,7 +336,7 @@ export function FooterV2() {
                     key={p.idx}
                     to="/$slug/page/$idx"
                     params={{ slug: brand.slug, idx: String(p.idx) }}
-                    className="opacity-75 hover:opacity-100 py-1"
+                    className="opacity-75 hover:opacity-100 py-1 min-h-11 flex items-center"
                     style={{ color: "var(--sf-footer-fg)" }}
                   >
                     {p.title}

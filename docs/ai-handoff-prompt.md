@@ -24,7 +24,7 @@ You are a senior engineer working in the repository **`SayedMajeedx/bhpura-d2198
 - CI runs on **Node 20**; local machine has Node 24. Keep everything Node-20 compatible.
 - Local git: `core.autocrlf=false`; committed files are LF. Do not introduce CRLF.
 - `.prettierrc`: `printWidth 100, semi, doubleQuotes, trailingComma all, endOfLine auto`. `.prettierignore` excludes `supabase/migrations/*.sql`, `routeTree.gen.ts`, lockfiles.
-- ESLint (`eslint.config.js`): `@typescript-eslint/no-unused-vars` is currently **"off"**; `no-explicit-any` off; prettier runs as an ESLint rule; `eslint-suppressions.json` exists and ESLint reports "suppressions left that do not occur anymore".
+- ESLint (`eslint.config.js`): `@typescript-eslint/no-unused-vars` is **"warn"** (`_`-prefixed names allowed); `no-explicit-any` off; prettier runs as an ESLint rule. `npm run lint` runs with `--max-warnings 0` and there is no `eslint-suppressions.json` (removed 2026-09-23), so the codebase must stay free of errors _and_ warnings.
 - A dead-code cleanup already landed (`chore: remove unused imports, dead types and unreferenced locals`), so the codebase currently has ~0 unused locals/imports.
 - Largest files (lines): `src/routes/_authenticated/admin.b.$slug.inventory.tsx` 7,406; `admin.b.$slug.settings.tsx` 6,719; `admin.b.$slug.orders.$id.tsx` 5,412; `src/routes/$slug.product.$id.tsx` 2,352.
 - A complete, verified implementation plan for the catalog-mode feature exists at **`docs/storefront-mode-implementation-plan.md`**. Task 4 executes it.
@@ -53,7 +53,7 @@ You are a senior engineer working in the repository **`SayedMajeedx/bhpura-d2198
 ### 1a. Formatting gate
 
 - `npx prettier --write tests/store-readiness.test.ts`, then `npm run format:check` must exit 0.
-- `npx eslint . --prune-suppressions` to drop stale entries in `eslint-suppressions.json`; confirm `npm run lint` still exits 0 (warnings are allowed, errors are not).
+- Confirm `npm run lint` exits 0. It runs with `--max-warnings 0`, so warnings fail it too; do not reintroduce a suppressions file.
 
 ### 1b. Dependency audit (`npm audit --audit-level=high` must exit 0)
 

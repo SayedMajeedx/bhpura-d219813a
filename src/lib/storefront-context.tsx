@@ -56,7 +56,17 @@ export type HomepageEditorialSections = Record<
   "best" | "sale" | "trending",
   EditorialSectionConfig
 >;
-export type HeroMediaItem = { type: "image" | "video"; url: string; posterUrl?: string };
+export type HeroMediaItem = {
+  type: "image" | "video";
+  url: string;
+  posterUrl?: string;
+  /** Intrinsic width / height, recorded at upload. */
+  aspect?: number;
+  /** Optional phone-specific cut, shown below 640px instead of `url`. */
+  mobileUrl?: string;
+  mobilePosterUrl?: string;
+  mobileAspect?: number;
+};
 export type HeroContentSlide = {
   id: string;
   type: "text" | "image" | "video";
@@ -74,6 +84,20 @@ export type HeroContentSlide = {
   media_poster_url?: string;
   media_poster_url_en?: string;
   media_poster_url_ar?: string;
+  /** Intrinsic width / height of each language's media, recorded at upload. */
+  media_aspect?: number;
+  media_aspect_en?: number;
+  media_aspect_ar?: number;
+  /** Optional phone-specific cut, shown below 640px instead of the main media. */
+  media_url_mobile_en?: string;
+  media_url_mobile_ar?: string;
+  media_poster_url_mobile_en?: string;
+  media_poster_url_mobile_ar?: string;
+  media_aspect_mobile_en?: number;
+  media_aspect_mobile_ar?: number;
+  /** Focal point (0–100 %) kept in view whenever the media has to be cropped. */
+  focal_x?: number;
+  focal_y?: number;
   button_en: string;
   button_ar: string;
   button_href: string;
@@ -244,8 +268,33 @@ export type PublicSettings = {
   footer_layout?: "columns" | "minimal" | "classic" | string;
   new_badge_days?: number;
   recent_views_enabled?: boolean;
+  recently_viewed_enabled?: boolean;
   social_proof_threshold?: number;
   motion_enabled?: boolean;
+  hero_overlay_strength?: number | null;
+  hero_title_color_v2?: string | null;
+  brand_story_enabled?: boolean;
+  social_proof_enabled?: boolean;
+  product_card_hover_image?: boolean;
+  product_card_color_dots?: boolean;
+  product_card_quick_add?: boolean;
+  quick_view_enabled?: boolean;
+  pdp_image_zoom?: boolean;
+  category_filters_enabled?: boolean;
+  back_in_stock_enabled?: boolean;
+  fabric_care_ar?: string | null;
+  fabric_care_en?: string | null;
+  shipping_returns_ar?: string | null;
+  shipping_returns_en?: string | null;
+  pdp_layout?: string | null;
+  bundle_discount_percent?: number | null;
+  hero_layout?: "full_bleed" | "contained" | string | null;
+  hero_height_desktop?: "compact" | "standard" | "cinematic" | string | null;
+  hero_aspect_mobile?:
+    "portrait_4_5" | "story_9_16" | "square_1_1" | "landscape_4_3" | string | null;
+  hero_show_arrows?: boolean | null;
+  pdp_gallery_aspect_ratio?: "3:4" | "1:1" | "4:5" | string | null;
+  hero_video_fit?: "contain_ambient" | "cover" | "top" | string | null;
 };
 
 export type CustomFieldValue = {
@@ -412,7 +461,7 @@ export function StorefrontProvider({
       let storedLang: string | null = null;
       if (urlLang === "en" || urlLang === "ar") {
         storedLang = urlLang;
-        if (urlLang !== lang) setLangState(urlLang);
+        setLangState(urlLang); // React skips the render when unchanged
         try {
           localStorage.setItem(langKey, urlLang);
           const cookieFlags = "; path=/; max-age=31536000; SameSite=Lax";
@@ -424,7 +473,7 @@ export function StorefrontProvider({
       } else {
         storedLang = localStorage.getItem(langKey);
         if (storedLang === "en" || storedLang === "ar") {
-          if (storedLang !== lang) setLangState(storedLang);
+          setLangState(storedLang);
           try {
             const cookieFlags = "; path=/; max-age=31536000; SameSite=Lax";
             document.cookie = `boutq_lang_${brand.slug}=${storedLang}${cookieFlags}`;
@@ -519,7 +568,7 @@ export function StorefrontProvider({
     } finally {
       setStorageHydrated(true);
     }
-  }, [cartKey, langKey, wishlistKey]);
+  }, [cartKey, langKey, wishlistKey, brand.slug]);
 
   useEffect(() => {
     if (!storageHydrated) return;
