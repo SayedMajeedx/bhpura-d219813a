@@ -2,29 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
-import { Button } from "@/components/ui/button";
-import {
-  ReceiptText,
-  Trash2,
-  AlertCircle,
-  Download,
-  Clock3,
-  CircleDollarSign,
-  Truck,
-  ChevronLeft,
-  ChevronRight,
-  Package,
-  CheckSquare,
-  Square,
-  CheckCircle2,
-} from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Download } from "lucide-react";
 import { buildWhatsAppLink } from "@/lib/os-formatting";
 import { OrdersCommandHeader } from "@/components/orders/OrdersCommandHeader";
 import { OrdersScopeSwitcher } from "@/components/orders/OrdersScopeSwitcher";
@@ -35,7 +13,7 @@ import { toast } from "sonner";
 import { CourierWhatsAppModal } from "@/components/courier/CourierWhatsAppModal";
 import { useT, useI18n } from "@/lib/i18n";
 import { resolvePaymentStatus, PAYMENT_BADGE_CLASSES } from "@/lib/payment-status";
-import { matchesPaymentMethodFilter, type PaymentMethodFilter } from "@/lib/payment-method";
+import { type PaymentMethodFilter } from "@/lib/payment-method";
 import { useBrand } from "@/lib/brand-context";
 import { useProfile } from "@/lib/profile-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
@@ -56,14 +34,7 @@ import {
   deleteOrdersWithPrivateReceipts,
 } from "@/lib/benefit-receipt.functions";
 import { Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { getOrderCustomerContact, getOrderCustomerName } from "@/lib/order-customer-snapshot";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
+import { getOrderCustomerContact } from "@/lib/order-customer-snapshot";
 import { getOrderWorkflow } from "@/lib/order-workflow";
 import { getFulfillmentBadgeDetails } from "@/lib/status-labels";
 import { orderRequiresCourier } from "@/lib/order-fulfillment";
@@ -74,12 +45,18 @@ import { OrderQuickInspectSheet } from "@/features/orders/components/OrderQuickI
 import { OrderImporterModal } from "@/features/orders/components/OrderImporterModal";
 import { renderOrderQueueAction } from "@/features/orders/components/order-queue-action";
 import { useBrandCouriers } from "@/features/orders/hooks/use-brand-couriers";
+import {
+  filterQueueOrders,
+  orderTabCounts,
+  sortQueueOrders,
+} from "@/features/orders/lib/order-queue";
+import { orderQueueTabs } from "@/features/orders/lib/order-queue-tabs";
+import { useCompleteDelivery } from "@/features/orders/hooks/use-complete-delivery";
+import { UrgentOrdersBanner } from "@/features/orders/components/UrgentOrdersBanner";
+import { OrderBatchActionsBar } from "@/features/orders/components/OrderBatchActionsBar";
+import { OrderListPagination } from "@/features/orders/components/OrderListPagination";
 import { OrderFulfillmentModal } from "@/features/orders/components/OrderFulfillmentModal";
 import { CashCollectionModal } from "@/features/orders/components/CashCollectionModal";
-import {
-  normalizedFulfillmentStage,
-  orderNeedsOperatorAction,
-} from "@/features/orders/lib/order-queue";
 import { authenticatedJsonHeaders, copyInvoiceLink } from "@/features/orders/actions/order-links";
 type OrdersSearch = {
   tab?: string;
@@ -253,94 +230,17 @@ function OrdersList() {
   const [cashModalNotes, setCashModalNotes] = useState<string>("");
   const [isSubmittingCash, setIsSubmittingCash] = useState<boolean>(false);
 
-  const handleCompleteDelivery = async (order: any, amountToCollect: number, notes?: string) => {
-    if (amountToCollect < 0) {
-      toast.error(
-        lang === "ar"
-          ? "لا يمكن أن يكون المبلغ المحصل بالسالب"
-          : "Collected amount cannot be negative",
-      );
-      return;
-    }
-    const ordersQueryKey = ["orders", brandId, isCourier ? "assigned-courier" : "office"];
-    const previousOrders = qc.getQueryData<any[]>(ordersQueryKey);
-    setUpdatingOrderId(order.id);
-    setIsSubmittingCash(true);
-    qc.setQueryData<any[]>(ordersQueryKey, (current) =>
-      current?.map((item) =>
-        item.id === order.id
-          ? {
-              ...item,
-              status: "completed",
-              fulfillment_status: "COMPLETED",
-              delivered_at: new Date().toISOString(),
-            }
-          : item,
-      ),
-    );
-    try {
-      // 1. Try atomic RPC first
-      const { error: rpcErr } = await (supabase.rpc as any)("courier_complete_delivery", {
-        p_order_id: order.id,
-        p_collected_amount: amountToCollect,
-        p_notes: notes || null,
-      });
-
-      if (rpcErr) {
-        // 2. Direct table update fallback if RPC function missing or column schema mismatch
-        const currentPaid = Number(order.advance_paid ?? order.paid_amount ?? 0);
-        const newPaid = currentPaid + amountToCollect;
-        const total = Number(order.total || 0);
-        const newStatus =
-          newPaid >= total
-            ? "paid"
-            : newPaid > 0
-              ? "partially_paid"
-              : order.payment_status || "unpaid";
-
-        let updatedNotes = order.delivery_notes || "";
-        if (notes && notes.trim()) {
-          const timestamp = new Date().toISOString().slice(0, 16).replace("T", " ");
-          updatedNotes = updatedNotes
-            ? `${updatedNotes}\n[${timestamp}]: ${notes.trim()}`
-            : notes.trim();
-        }
-
-        const { error: updateErr } = await supabase
-          .from("orders")
-          .update({
-            advance_paid: newPaid,
-            cod_collected_amount: amountToCollect,
-            cod_collected_at: new Date().toISOString(),
-            payment_status: newStatus,
-            fulfillment_status: "COMPLETED",
-            status: "completed",
-            delivery_notes: updatedNotes || null,
-            delivered_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          } as any)
-          .eq("id", order.id);
-
-        if (updateErr) throw updateErr;
-      }
-
-      toast.success(
-        lang === "ar"
-          ? "تم تسجيل تسليم الطلب وتأكيد التحصيل بنجاح!"
-          : "Delivery completed and payment confirmed!",
-      );
-      setCashModalOrder(null);
-      setCashCollectedAmount("");
-      setCashModalNotes("");
-      qc.invalidateQueries({ queryKey: ["orders", brandId] });
-    } catch (err: any) {
-      qc.setQueryData(ordersQueryKey, previousOrders);
-      toast.error(err.message || "Failed to complete delivery");
-    } finally {
-      setUpdatingOrderId(null);
-      setIsSubmittingCash(false);
-    }
-  };
+  const { handleCompleteDelivery } = useCompleteDelivery({
+    brandId,
+    isCourier,
+    lang,
+    qc,
+    setCashCollectedAmount,
+    setCashModalNotes,
+    setCashModalOrder,
+    setIsSubmittingCash,
+    setUpdatingOrderId,
+  });
 
   const del = async (id: string) => {
     try {
@@ -551,191 +451,41 @@ function OrdersList() {
   const normalizedSearch = deferredSearch.trim().toLowerCase();
 
   // Premium Quick Tabs counts in real time
-  const tabCounts = useMemo(() => {
-    let all = 0;
-    let unpaid = 0;
-    let action_required = 0;
-    let to_prepare = 0;
-    let shipped = 0;
-    let completed = 0;
-
-    for (const order of orders) {
-      if (order.status === "archived_historical" && !includeHistorical) {
-        continue;
-      }
-
-      const workflow = getOrderWorkflow(order, { productionStages: hasMadeToOrder });
-
-      all++;
-      if (workflow.awaitingPayment) unpaid++;
-      if (workflow.needsAttention) action_required++;
-      if (
-        !workflow.terminal &&
-        [
-          "pending",
-          "packing",
-          "on_hold",
-          "needs_packing",
-          ...(hasMadeToOrder
-            ? [
-                "received_from_workshop",
-                "sent_to_workshop",
-                "received_from_tailor",
-                "sent_to_tailor",
-              ]
-            : []),
-        ].includes(workflow.fulfillment) &&
-        (!workflow.awaitingPayment || workflow.isCod)
-      ) {
-        to_prepare++;
-      }
-      if (workflow.withCourier) shipped++;
-      if (workflow.fulfillment === "completed") completed++;
-    }
-
-    return { all, unpaid, action_required, to_prepare, shipped, completed };
-  }, [orders, includeHistorical, hasMadeToOrder]);
+  const tabCounts = useMemo(
+    () => orderTabCounts(orders, { includeHistorical, hasMadeToOrder }),
+    [orders, includeHistorical, hasMadeToOrder],
+  );
 
   // Combined search, standard drop-down filters, and our premium quick tab filter
-  const filteredOrders = useMemo(() => {
-    return orders.filter((order) => {
-      // Hide archived historical orders by default unless includeHistorical is toggled on
-      if (order.status === "archived_historical" && !includeHistorical) {
-        return false;
-      }
+  const filteredOrders = useMemo(
+    () =>
+      filterQueueOrders(orders, {
+        search: normalizedSearch,
+        paymentFilter,
+        fulfillmentStatusFilter,
+        fulfillmentMethodFilter,
+        gatewayFilter,
+        tabFilter,
+        includeHistorical,
+        hasMadeToOrder,
+      }),
+    [
+      orders,
+      normalizedSearch,
+      paymentFilter,
+      fulfillmentStatusFilter,
+      fulfillmentMethodFilter,
+      gatewayFilter,
+      tabFilter,
+      includeHistorical,
+      hasMadeToOrder,
+    ],
+  );
 
-      const matchesSearch =
-        !normalizedSearch ||
-        [
-          order.invoice_number,
-          getOrderCustomerName(order),
-          order.status,
-          order.payment_method,
-          order.digital_delivery_contact,
-        ].some((value) =>
-          String(value ?? "")
-            .toLowerCase()
-            .includes(normalizedSearch),
-        );
-
-      if (!matchesSearch) return false;
-      const paymentBadge = resolvePaymentStatus(
-        order.payment_status,
-        order.status,
-        Number(order.total),
-        Number(order.advance_paid ?? 0),
-      );
-      const ff = String(order.fulfillment_status || "").toUpperCase();
-      const isPendingVerification =
-        String(order.status ?? "").toLowerCase() === "pending_verification" &&
-        paymentBadge === "unpaid" &&
-        !["COMPLETED", "DELIVERED", "CANCELLED"].includes(ff);
-      if (
-        paymentFilter !== "all" &&
-        (paymentFilter === "pending_verification"
-          ? !isPendingVerification
-          : paymentBadge !== paymentFilter || isPendingVerification)
-      ) {
-        return false;
-      }
-      if (
-        fulfillmentStatusFilter !== "all" &&
-        normalizedFulfillmentStage(order) !== fulfillmentStatusFilter
-      ) {
-        return false;
-      }
-      if (
-        fulfillmentMethodFilter !== "all" &&
-        order.fulfillment_method !== fulfillmentMethodFilter
-      ) {
-        return false;
-      }
-      if (!matchesPaymentMethodFilter(order.payment_method, gatewayFilter)) return false;
-
-      // Quick tab routing
-      if (tabFilter === "unpaid") {
-        return getOrderWorkflow(order, { productionStages: hasMadeToOrder }).awaitingPayment;
-      }
-      if (tabFilter === "action_required") {
-        return orderNeedsOperatorAction(order, hasMadeToOrder);
-      }
-      if (tabFilter === "to_prepare") {
-        const wf = getOrderWorkflow(order, { productionStages: hasMadeToOrder });
-        return (
-          !wf.terminal &&
-          [
-            "pending",
-            "packing",
-            "on_hold",
-            "needs_packing",
-            ...(hasMadeToOrder
-              ? [
-                  "received_from_workshop",
-                  "sent_to_workshop",
-                  "received_from_tailor",
-                  "sent_to_tailor",
-                ]
-              : []),
-          ].includes(wf.fulfillment) &&
-          (!wf.awaitingPayment || wf.isCod)
-        );
-      }
-      if (tabFilter === "shipped") {
-        return normalizedFulfillmentStage(order) === "out_for_delivery";
-      }
-      if (tabFilter === "completed") {
-        return normalizedFulfillmentStage(order) === "completed";
-      }
-
-      return true; // tabFilter === "all"
-    });
-  }, [
-    orders,
-    normalizedSearch,
-    paymentFilter,
-    fulfillmentStatusFilter,
-    fulfillmentMethodFilter,
-    gatewayFilter,
-    tabFilter,
-    includeHistorical,
-    hasMadeToOrder,
-  ]);
-
-  const sortedOrders = useMemo(() => {
-    const list = [...filteredOrders];
-    list.sort((a, b) => {
-      let valA: any = "";
-      let valB: any = "";
-
-      if (sortField === "invoice_number") {
-        valA = a.invoice_number ?? 0;
-        valB = b.invoice_number ?? 0;
-        return sortDirection === "asc" ? valA - valB : valB - valA;
-      } else if (sortField === "created_at") {
-        valA = new Date(a.created_at ?? a.order_date).getTime();
-        valB = new Date(b.created_at ?? b.order_date).getTime();
-        return sortDirection === "asc" ? valA - valB : valB - valA;
-      } else if (sortField === "customer") {
-        valA = getOrderCustomerName(a);
-        valB = getOrderCustomerName(b);
-      } else if (sortField === "status") {
-        valA = a.status ?? "";
-        valB = b.status ?? "";
-      } else if (sortField === "total") {
-        valA = Number(a.total ?? 0);
-        valB = Number(b.total ?? 0);
-        return sortDirection === "asc" ? valA - valB : valB - valA;
-      }
-
-      valA = String(valA).toLowerCase();
-      valB = String(valB).toLowerCase();
-
-      if (valA < valB) return sortDirection === "asc" ? -1 : 1;
-      if (valA > valB) return sortDirection === "asc" ? 1 : -1;
-      return 0;
-    });
-    return list;
-  }, [filteredOrders, sortField, sortDirection]);
+  const sortedOrders = useMemo(
+    () => sortQueueOrders(filteredOrders, sortField, sortDirection),
+    [filteredOrders, sortField, sortDirection],
+  );
 
   const paginatedOrders = useMemo(() => {
     const start = (page - 1) * pageSize;
@@ -747,50 +497,7 @@ function OrdersList() {
 
   const totalPages = Math.ceil(sortedOrders.length / pageSize) || 1;
 
-  const tabsList = [
-    {
-      id: "action_required",
-      label_en: "Needs attention",
-      label_ar: "يحتاج متابعة",
-      count: tabCounts.action_required,
-      icon: Clock3,
-    },
-    {
-      id: "unpaid",
-      label_en: "Awaiting payment",
-      label_ar: "بانتظار الدفع",
-      count: tabCounts.unpaid,
-      icon: CircleDollarSign,
-    },
-    {
-      id: "to_prepare",
-      label_en: "To prepare",
-      label_ar: "قيد التجهيز",
-      count: tabCounts.to_prepare,
-      icon: Package,
-    },
-    {
-      id: "shipped",
-      label_en: "With courier",
-      label_ar: "مع المندوب",
-      count: tabCounts.shipped,
-      icon: Truck,
-    },
-    {
-      id: "completed",
-      label_en: "Completed",
-      label_ar: "مكتملة",
-      count: tabCounts.completed,
-      icon: CheckCircle2,
-    },
-    {
-      id: "all",
-      label_en: "All orders",
-      label_ar: "كل الطلبات",
-      count: tabCounts.all,
-      icon: ReceiptText,
-    },
-  ] as const;
+  const tabsList = orderQueueTabs(tabCounts);
 
   const activeFilterCount = [
     paymentFilter !== "all",
@@ -889,39 +596,13 @@ function OrdersList() {
 
       {/* 2b. Urgent Order Exceptions Banner */}
       {tabCounts.action_required > 0 && tabFilter !== "action_required" && (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200">
-          <div className="flex items-center gap-2.5">
-            <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-            <div className="text-xs font-medium">
-              <span className="font-bold">
-                {lang === "ar"
-                  ? `تنبيه: ${tabCounts.action_required} طلب يحتاج إجراءً فورياً`
-                  : `Attention: ${tabCounts.action_required} order(s) require immediate action`}
-              </span>
-              <span className="opacity-80 ms-1.5 hidden sm:inline">
-                {lang === "ar"
-                  ? hasMadeToOrder
-                    ? "(تحصيل عند الاستلام، تسليم غير مكتمل، أو تفاصيل الطلب)"
-                    : "(تحصيل عند الاستلام، تسليم غير مكتمل، أو تأكيد الدفع)"
-                  : hasMadeToOrder
-                    ? "(COD collection, failed delivery, or custom specifications)"
-                    : "(COD collection, failed delivery, or payment verification)"}
-              </span>
-            </div>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setTabFilter("action_required");
-              setPage(1);
-            }}
-            className="h-7 text-xs font-bold border-amber-500/40 hover:bg-amber-500/20 text-amber-900 dark:text-amber-100 shrink-0"
-          >
-            {lang === "ar" ? "معالجة التنبيهات الآن" : "Resolve Exceptions Now"}
-          </Button>
-        </div>
+        <UrgentOrdersBanner
+          hasMadeToOrder={hasMadeToOrder}
+          lang={lang}
+          setPage={setPage}
+          setTabFilter={setTabFilter}
+          tabCounts={tabCounts}
+        />
       )}
 
       {/* 3. Compact Command Toolbar */}
@@ -961,134 +642,18 @@ function OrdersList() {
       />
 
       {isAdmin && (
-        <div
-          className={cn(
-            "flex-col gap-2 rounded-xl border border-border-strong bg-card p-3 shadow-sm sm:flex sm:flex-row sm:items-center sm:justify-between",
-            selectedOrderIds.size > 0 ? "flex" : "hidden",
-          )}
-        >
-          <div className="flex items-center gap-2 text-xs font-semibold">
-            <CheckSquare className="h-4 w-4 text-primary" />
-            <span>
-              {lang === "ar"
-                ? `${selectedOrderIds.size} طلب محدد`
-                : `${selectedOrderIds.size} selected`}
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 gap-1.5 text-xs"
-              disabled={allFilteredOrdersSelected}
-              onClick={() =>
-                setSelectedOrderIds(new Set(sortedOrders.map((order: any) => order.id)))
-              }
-            >
-              <CheckSquare className="h-3.5 w-3.5" />
-              {lang === "ar" ? "تحديد الكل" : "Select all"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 gap-1.5 text-xs"
-              disabled={selectedOrderIds.size === 0}
-              onClick={() => setSelectedOrderIds(new Set())}
-            >
-              <Square className="h-3.5 w-3.5" />
-              {lang === "ar" ? "إلغاء تحديد الكل" : "Deselect all"}
-            </Button>
-            {selectedOrderIds.size > 0 && (
-              <>
-                {/* Batch Fulfillment Status Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={isBatchUpdating}
-                      className="h-8 gap-1.5 text-xs font-semibold"
-                    >
-                      <Package className="h-3.5 w-3.5 text-primary" />
-                      {lang === "ar" ? "تحديث حالة التجهيز" : "Update fulfillment"}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-52">
-                    <DropdownMenuItem
-                      onClick={() => handleBatchFulfillmentUpdate("PACKING")}
-                      className="text-xs cursor-pointer"
-                    >
-                      {lang === "ar" ? "قيد التجهيز والتغليف" : "Mark as Packing"}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleBatchFulfillmentUpdate("READY_FOR_PICKUP")}
-                      className="text-xs cursor-pointer"
-                    >
-                      {lang === "ar" ? "جاهز للتسليم / للشحن" : "Ready for pickup / dispatch"}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleBatchFulfillmentUpdate("OUT_FOR_DELIVERY")}
-                      className="text-xs cursor-pointer"
-                    >
-                      {lang === "ar" ? "خرج مع المندوب للتوصيل" : "Out for delivery"}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleBatchFulfillmentUpdate("COMPLETED", "completed")}
-                      className="text-xs cursor-pointer font-semibold text-emerald-600 dark:text-emerald-400"
-                    >
-                      {lang === "ar" ? "اكتمال وتسليم الطلب" : "Mark as Completed"}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
-                {/* Batch Assign Courier Dropdown */}
-                {(couriersQ.data?.length ?? 0) > 0 && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={isBatchUpdating}
-                        className="h-8 gap-1.5 text-xs font-semibold"
-                      >
-                        <Truck className="h-3.5 w-3.5 text-blue-600" />
-                        {lang === "ar" ? "تعيين المندوب" : "Assign courier"}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                      {(couriersQ.data ?? []).map((courier: any) => (
-                        <DropdownMenuItem
-                          key={courier.id}
-                          onClick={() => handleBatchAssignCourier(courier.id)}
-                          className="text-xs cursor-pointer"
-                        >
-                          {courier.name || courier.email}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  className="h-8 gap-1.5 text-xs font-semibold"
-                  onClick={() => setBulkDeleteOpen(true)}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  {lang === "ar"
-                    ? `حذف المحدد (${selectedOrderIds.size})`
-                    : `Delete selected (${selectedOrderIds.size})`}
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
+        <OrderBatchActionsBar
+          allFilteredOrdersSelected={allFilteredOrdersSelected}
+          couriersQ={couriersQ}
+          handleBatchAssignCourier={handleBatchAssignCourier}
+          handleBatchFulfillmentUpdate={handleBatchFulfillmentUpdate}
+          isBatchUpdating={isBatchUpdating}
+          lang={lang}
+          selectedOrderIds={selectedOrderIds}
+          setBulkDeleteOpen={setBulkDeleteOpen}
+          setSelectedOrderIds={setSelectedOrderIds}
+          sortedOrders={sortedOrders}
+        />
       )}
 
       {/* 4. Mobile Purpose-Built Order Cards (375px) */}
@@ -1210,74 +775,15 @@ function OrdersList() {
       </div>
 
       {/* Pagination Controls */}
-      <div className="mt-4 flex flex-col items-center justify-between gap-3 rounded-2xl border border-border-strong bg-card p-3 text-sm shadow-sm select-none sm:flex-row sm:p-4">
-        <div className="flex items-center gap-2">
-          <span className="text-muted-foreground text-xs sm:text-sm">
-            {lang === "ar" ? "الطلبات لكل صفحة:" : "Orders per page:"}
-          </span>
-          <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
-            <SelectTrigger className="h-8 w-20 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
-          <span className="text-muted-foreground text-xs ms-2">
-            {lang === "ar"
-              ? `عرض ${Math.min((page - 1) * pageSize + 1, sortedOrders.length)}-${Math.min(page * pageSize, sortedOrders.length)} من ${sortedOrders.length} طلب`
-              : `Showing ${Math.min((page - 1) * pageSize + 1, sortedOrders.length)}-${Math.min(page * pageSize, sortedOrders.length)} of ${sortedOrders.length} orders`}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-8 px-2.5 text-xs font-semibold gap-1 rounded-lg"
-            onClick={() => setPage((p) => Math.max(p - 1, 1))}
-            disabled={page <= 1}
-          >
-            {lang === "ar" ? (
-              <>
-                <span>السابق</span>
-                <ChevronRight className="h-3.5 w-3.5" />
-              </>
-            ) : (
-              <>
-                <ChevronLeft className="h-3.5 w-3.5" />
-                <span>Previous</span>
-              </>
-            )}
-          </Button>
-          <div className="text-xs px-2 font-medium text-foreground">
-            {lang === "ar" ? `صفحة ${page} من ${totalPages}` : `Page ${page} of ${totalPages}`}
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-8 px-2.5 text-xs font-semibold gap-1 rounded-lg"
-            onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-            disabled={page >= totalPages}
-          >
-            {lang === "ar" ? (
-              <>
-                <ChevronLeft className="h-3.5 w-3.5" />
-                <span>التالي</span>
-              </>
-            ) : (
-              <>
-                <span>Next</span>
-                <ChevronRight className="h-3.5 w-3.5" />
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
+      <OrderListPagination
+        lang={lang}
+        page={page}
+        pageSize={pageSize}
+        setPage={setPage}
+        setPageSize={setPageSize}
+        sortedOrders={sortedOrders}
+        totalPages={totalPages}
+      />
       {isAdmin && (
         <AlertDialog
           open={deleteTarget !== null}
