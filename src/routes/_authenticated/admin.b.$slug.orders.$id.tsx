@@ -37,16 +37,12 @@ import {
   CheckCircle2,
   ImageIcon,
   Truck,
-  UserPlus,
   MoreHorizontal,
   UserRound,
   Package,
   CreditCard,
   Scissors,
   SlidersHorizontal,
-  PackageCheck,
-  Box,
-  Store,
   FileText,
   ChevronsUpDown,
 } from "lucide-react";
@@ -60,16 +56,6 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -80,7 +66,6 @@ import {
 import { formatNotifiedTimeAgo } from "@/lib/courier-whatsapp";
 import { CourierWhatsAppModal } from "@/components/courier/CourierWhatsAppModal";
 import { formatDate, formatMoney, formatOrderStatus } from "@/lib/format";
-import { queryKeys } from "@/lib/query-keys";
 import { useT, useI18n } from "@/lib/i18n";
 import { getOrderCustomerName, getOrderCustomerPhone } from "@/lib/order-customer-snapshot";
 import { formatAddressLine, type StructuredAddress } from "@/lib/bahrain-regions";
@@ -95,14 +80,10 @@ import { logActivity, logActivityBatch } from "@/lib/activity-log";
 import { ManagePaymentModal } from "@/components/orders/ManagePaymentModal";
 import { ActivityLogList } from "@/components/activity-log-list";
 import { BarcodeScanner } from "@/components/barcode-scanner";
-import { PhoneInput } from "@/components/phone-input";
 import { useBrand } from "@/lib/brand-context";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useProfile } from "@/lib/profile-context";
-import { getBenefitReceiptViewUrl, rejectBenefitReceipt } from "@/lib/benefit-receipt.functions";
 import { DeliveryAddressCard } from "@/components/delivery-address-card";
-import { getOrderWorkflow } from "@/lib/order-workflow";
-import { detectOrderType } from "@/lib/order-type-detector";
 import { calculateOrderPackagingCogs } from "@/lib/bom-calculator";
 import { getFulfillmentLabel } from "@/lib/status-labels";
 import { OrderUnifiedHeader } from "@/components/orders/OrderUnifiedHeader";
@@ -128,6 +109,12 @@ import {
   simplifyItem,
 } from "@/features/orders/lib/order-editor";
 import { BhdFeeInput } from "@/features/orders/components/BhdFeeInput";
+import { useOrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
+import { useBenefitReview } from "@/features/orders/hooks/use-benefit-review";
+import { ProductSearchDialog } from "@/features/orders/components/ProductSearchDialog";
+import { OutOfStockConfirmDialog } from "@/features/orders/components/OutOfStockConfirmDialog";
+import { NewCustomerDialog } from "@/features/orders/components/NewCustomerDialog";
+import { renderOrderPrimaryAction } from "@/features/orders/components/order-primary-action";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/orders/$id")({
   component: OrderDetail,
@@ -166,123 +153,31 @@ function OrderDetail() {
   const { profile: storeProfile } = useAdminStoreProfile(brandId);
   const addonDefaults = variantAxisDefaultsFrom(storeProfile.addons, storeProfile.vertical);
   const { vocabulary } = useVocabulary();
-  const [approvingBenefit, setApprovingBenefit] = useState(false);
-  const [rejectingBenefit, setRejectingBenefit] = useState(false);
-  const [rejectReasonOpen, setRejectReasonOpen] = useState(false);
-  const [rejectReason, setRejectReason] = useState("");
+  const {
+    orderQ,
+    productsQ,
+    variantsQ,
+    bomItemsQ,
+    packagingMaterialsQ,
+    customersQ,
+    couriersQ,
+    addressesQ,
+    receiptViewQ,
+    branchesQ,
+    customQ,
+    settingsQ,
+  } = useOrderDetailData({ id, brandId, isCourier, isAdmin });
+  const {
+    approvingBenefit,
+    rejectingBenefit,
+    rejectReasonOpen,
+    setRejectReasonOpen,
+    rejectReason,
+    setRejectReason,
+    approveBenefitPayment,
+    rejectBenefitPayment,
+  } = useBenefitReview({ id, brandId, lang, orderQ });
 
-  const orderQ = useQuery({
-    queryKey: ["order", id, isCourier ? "assigned-courier" : "office"],
-    // A courier can be working from a phone with an intermittent realtime
-    // socket. Keep both courier and office views synchronized regardless.
-    refetchInterval: isCourier ? 10_000 : 30_000,
-    refetchOnWindowFocus: true,
-    enabled: id !== "new",
-    queryFn: async () => {
-      let query = supabase
-        .from("orders")
-        .select(
-          "*, customers(*), order_items(*), shipping_address:customer_addresses!orders_shipping_address_id_fkey(*)",
-        )
-        .eq("id", id);
-      if (isCourier) {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) throw new Error("Not authenticated");
-        query = (query as any).eq("assigned_to", user.id).eq("fulfillment_method", "delivery");
-      }
-      const { data, error } = await query.maybeSingle();
-      if (error) throw error;
-      if (!data) throw new Error("Order not found. It may have been deleted.");
-      return data as Order;
-    },
-  });
-
-  useEffect(() => {
-    const channel = supabase
-      .channel(`order-detail-${id}`)
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${id}` },
-        () => {
-          void qc.invalidateQueries({ queryKey: ["order", id] });
-          void qc.invalidateQueries({ queryKey: ["orders", brandId] });
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "activity_logs", filter: `order_id=eq.${id}` },
-        () => void qc.invalidateQueries({ queryKey: ["activity_logs"] }),
-      )
-      .subscribe((status) => {
-        if (status === "CHANNEL_ERROR") {
-          // Handled gracefully, Supabase will auto-reconnect
-        }
-      });
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [id, qc, brandId]);
-
-  const productsQ = useQuery({
-    queryKey: queryKeys.products.all(brandId),
-    enabled: !isCourier,
-    queryFn: async () =>
-      (await supabase.from("products").select("*").eq("brand_id", brandId)).data ?? [],
-  });
-  const variantsQ = useQuery({
-    queryKey: queryKeys.variants.all(brandId),
-    enabled: !isCourier,
-    queryFn: async () =>
-      (await supabase.from("product_variants").select("*").eq("brand_id", brandId)).data ?? [],
-  });
-  const bomItemsQ = useQuery({
-    queryKey: ["product-bom-items-all", brandId],
-    enabled: !isCourier,
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("product_bom_items")
-        .select("product_id, packaging_material_id, quantity_per_unit")
-        .eq("brand_id", brandId);
-      if (error) return [];
-      return (data ?? []) as any[];
-    },
-  });
-  const packagingMaterialsQ = useQuery({
-    queryKey: ["packaging-materials", brandId],
-    enabled: !isCourier,
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("packaging_materials")
-        .select("*")
-        .eq("brand_id", brandId);
-      if (error) return [];
-      return (data ?? []) as any[];
-    },
-  });
-  const customersQ = useQuery({
-    queryKey: ["customers", brandId],
-    enabled: !isCourier,
-    queryFn: async () =>
-      (await supabase.from("customers").select("*").eq("brand_id", brandId).order("name")).data ??
-      [],
-  });
-  const couriersQ = useQuery({
-    queryKey: ["couriers", brandId],
-    enabled: isAdmin,
-    queryFn: async () => {
-      const { data, error } = await (supabase.from("profiles") as any)
-        .select("id, name, email, phone")
-        .eq("brand_id", brandId)
-        .eq("role", "courier")
-        .eq("status", "active")
-        .order("name");
-      if (error) throw error;
-      return (data as any[]) ?? [];
-    },
-  });
   const [waModalOpen, setWaModalOpen] = useState(false);
 
   const assignCourier = async (courierId: string) => {
@@ -298,119 +193,6 @@ function OrderDetail() {
       setWaModalOpen(true);
     }
   };
-  const addressesQ = useQuery({
-    queryKey: ["customer_addresses", brandId],
-    enabled: !isCourier,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customer_addresses")
-        .select("*")
-        .eq("brand_id", brandId);
-      if (error) throw error;
-      return (data ?? []) as SavedAddress[];
-    },
-  });
-
-  const receiptViewQ = useQuery({
-    queryKey: ["benefit-receipt-view", id, orderQ.data?.benefit_receipt_key],
-    enabled:
-      !isCourier &&
-      Boolean(orderQ.data?.payment_method === "benefit" && orderQ.data?.benefit_receipt_key),
-    staleTime: 4 * 60 * 1000,
-    refetchInterval: 4 * 60 * 1000,
-    queryFn: async () => getBenefitReceiptViewUrl({ data: { orderId: id } }),
-    retry: false,
-  });
-
-  const approveBenefitPayment = async () => {
-    setApprovingBenefit(true);
-    try {
-      const { error } = await supabase.rpc("approve_benefit_payment" as any, { p_order_id: id });
-      if (error) throw error;
-
-      await orderQ.refetch();
-      qc.invalidateQueries({ queryKey: ["orders", brandId] });
-      toast.success(
-        lang === "ar" ? "تم التحقق من الدفع واعتماده" : "Payment verified and approved",
-      );
-    } catch (error: any) {
-      toast.error(
-        error?.message ?? (lang === "ar" ? "تعذر اعتماد الدفع" : "Could not approve payment"),
-      );
-    } finally {
-      setApprovingBenefit(false);
-    }
-  };
-
-  const rejectBenefitPayment = async () => {
-    const reason = rejectReason.trim();
-    if (reason.length < 3) {
-      toast.error(
-        lang === "ar"
-          ? "يرجى إدخال سبب الرفض ليظهر للعميل"
-          : "Enter a rejection reason for the customer",
-      );
-      return;
-    }
-    setRejectingBenefit(true);
-    try {
-      await rejectBenefitReceipt({ data: { orderId: id, reason } });
-      toast.success(
-        lang === "ar" ? "تم رفض الإيصال وحذف الصورة" : "Receipt rejected and image deleted",
-      );
-      await orderQ.refetch();
-      qc.removeQueries({ queryKey: ["benefit-receipt-view", id] });
-      qc.invalidateQueries({ queryKey: ["orders", brandId] });
-      setRejectReasonOpen(false);
-      setRejectReason("");
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : lang === "ar"
-            ? "تعذر رفض الإيصال"
-            : "Unable to reject receipt",
-      );
-    } finally {
-      setRejectingBenefit(false);
-    }
-  };
-  const branchesQ = useQuery({
-    queryKey: ["branches", brandId],
-    enabled: !isCourier,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("branches")
-        .select("id, name_ar, name_en, location_ar, location_en")
-        .eq("brand_id", brandId);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-  const customQ = useQuery({
-    queryKey: ["customizations", brandId],
-    enabled: !isCourier,
-    queryFn: async () =>
-      (
-        await supabase
-          .from("customization_options")
-          .select("*")
-          .eq("brand_id", brandId)
-          .order("name")
-      ).data ?? [],
-  });
-  const settingsQ = useQuery({
-    queryKey: queryKeys.brand.businessSettings(brandId),
-    enabled: !isCourier,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("business_settings")
-        .select("*")
-        .eq("brand_id", brandId)
-        .maybeSingle();
-      return data;
-    },
-  });
 
   const [order, setOrder] = useState<Order | null>(null);
   const [items, setItems] = useState<Item[]>([]);
@@ -514,109 +296,7 @@ function OrderDetail() {
   const [discountPercentInput, setDiscountPercentInput] = useState<string>("");
   const [lastNonZeroTaxRate, setLastNonZeroTaxRate] = useState<number>(10);
   const [newCustomerOpen, setNewCustomerOpen] = useState(false);
-  const [newCustName, setNewCustName] = useState("");
-  const [newCustPhone, setNewCustPhone] = useState("");
-  const [newCustEmail, setNewCustEmail] = useState("");
-  const [newCustRegion, setNewCustRegion] = useState("");
-  const [newCustBlock, setNewCustBlock] = useState("");
-  const [newCustRoad, setNewCustRoad] = useState("");
-  const [newCustHouse, setNewCustHouse] = useState("");
-  const [newCustFlat, setNewCustFlat] = useState("");
-  const [creatingCustomer, setCreatingCustomer] = useState(false);
   const promoContextRef = useRef<string | null>(null);
-
-  const handleCreateInlineCustomer = async () => {
-    if (!newCustName.trim()) {
-      return toast.error(lang === "ar" ? "أدخل اسم العميل" : "Customer name is required");
-    }
-    setCreatingCustomer(true);
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const brandId = (settingsQ.data as any)?.brand_id || (brand as any)?.id;
-
-      // 1. Insert customer
-      const { data: cust, error: custErr } = await (supabase.from("customers") as any)
-        .insert({
-          user_id: user.id,
-          brand_id: brandId,
-          name: newCustName.trim(),
-          phone: newCustPhone.trim() || null,
-          email: newCustEmail.trim().toLowerCase() || null,
-          region: newCustRegion.trim() || null,
-          block: newCustBlock.trim() || null,
-          road: newCustRoad.trim() || null,
-          house: newCustHouse.trim() || null,
-          flat: newCustFlat.trim() || null,
-        })
-        .select()
-        .single();
-
-      if (custErr) throw custErr;
-
-      // 2. Insert default address if address details provided
-      let addressId: string | null = null;
-      if (newCustRegion || newCustBlock || newCustRoad || newCustHouse) {
-        const { data: addr, error: addrErr } = await (supabase.from("customer_addresses") as any)
-          .insert({
-            user_id: user.id,
-            brand_id: brandId,
-            customer_id: cust.id,
-            label: "Home",
-            region: newCustRegion.trim() || null,
-            block: newCustBlock.trim() || null,
-            road: newCustRoad.trim() || null,
-            house: newCustHouse.trim() || null,
-            flat: newCustFlat.trim() || null,
-            is_default: true,
-          })
-          .select()
-          .single();
-
-        if (!addrErr && addr) {
-          addressId = addr.id;
-        }
-      }
-
-      toast.success(
-        lang === "ar"
-          ? `تم إضافة العميل "${cust.name}" بنجاح!`
-          : `Customer "${cust.name}" created successfully!`,
-      );
-
-      // Auto-assign to current order!
-      setOrder({
-        ...order,
-        customer_id: cust.id,
-        shipping_address_id: addressId,
-      });
-
-      // Refetch queries
-      qc.invalidateQueries({ queryKey: ["customers", brandId] });
-      qc.invalidateQueries({ queryKey: ["customer_addresses", brandId] });
-
-      // Reset form & close modal
-      setNewCustName("");
-      setNewCustPhone("");
-      setNewCustEmail("");
-      setNewCustRegion("");
-      setNewCustBlock("");
-      setNewCustRoad("");
-      setNewCustHouse("");
-      setNewCustFlat("");
-      setNewCustomerOpen(false);
-    } catch (err: unknown) {
-      toast.error(
-        getFriendlyErrorMessage(err) ||
-          (lang === "ar" ? "تعذر إنشاء العميل" : "Failed to create customer"),
-      );
-    } finally {
-      setCreatingCustomer(false);
-    }
-  };
 
   const filteredVariantsForSearch = useMemo(
     () => filterVariantsForSearch(variantsQ.data ?? [], productsQ.data ?? [], productSearchQuery),
@@ -1538,462 +1218,21 @@ function OrderDetail() {
     if (!ok) toast.error(t("orders.popupBlocked"));
   };
 
-  const renderTopPrimaryAction = () => {
-    if (isCreationMode || !order || isReadOnly) return null;
-    const computedOrderType = detectOrderType(items, order?.order_type);
-    const workflow = getOrderWorkflow(
-      { ...order, order_type: computedOrderType },
-      { productionStages: storeProfile.modules.made_to_order },
-    );
-
-    if (storeProfile.modules.made_to_order && workflow.nextAction === "send_to_tailor") {
-      return (
-        <Button
-          className="bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
-          onClick={async () => {
-            try {
-              const { error } = await supabase
-                .from("orders")
-                .update({
-                  status: "sent_to_tailor",
-                  fulfillment_status: "SENT_TO_TAILOR",
-                  updated_at: new Date().toISOString(),
-                } as any)
-                .eq("id", order.id);
-              if (error) throw error;
-              toast.success(
-                vocabulary.sent_to_workshop_success[lang] ||
-                  (lang === "ar" ? "تم تحويل الطلب للورشة وتحديث الحالة" : "Sent to workshop"),
-              );
-              await logActivity({
-                action: "status_change",
-                order_id: order.id,
-                en: "Sent order to workshop for processing",
-                ar: "تحويل الطلب إلى الورشة للتجهيز",
-              });
-              await orderQ.refetch();
-              qc.invalidateQueries({ queryKey: ["orders", brandId] });
-              qc.invalidateQueries({ queryKey: ["activity_logs"] });
-            } catch (err: unknown) {
-              toast.error(
-                getFriendlyErrorMessage(err) ||
-                  (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
-              );
-            }
-          }}
-        >
-          <Scissors className="h-4 w-4 me-1.5" />
-          {vocabulary.sent_to_workshop[lang] ||
-            (lang === "ar" ? "إرسال للورشة" : "Send to Workshop")}
-        </Button>
-      );
-    }
-
-    if (storeProfile.modules.made_to_order && workflow.nextAction === "receive_from_tailor") {
-      return (
-        <Button
-          className="bg-teal-600 hover:bg-teal-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
-          onClick={async () => {
-            try {
-              const { error } = await supabase
-                .from("orders")
-                .update({
-                  status: "received_from_tailor",
-                  fulfillment_status: "RECEIVED_FROM_TAILOR",
-                  updated_at: new Date().toISOString(),
-                } as any)
-                .eq("id", order.id);
-              if (error) throw error;
-              toast.success(
-                vocabulary.received_from_workshop_success[lang] ||
-                  (lang === "ar" ? "تم استلام الطلب من الورشة وتجهيزه" : "Received from workshop"),
-              );
-              await logActivity({
-                action: "status_change",
-                order_id: order.id,
-                en: "Received customized order from workshop",
-                ar: "تم استلام الطلب الجاهز من الورشة",
-              });
-              await orderQ.refetch();
-              qc.invalidateQueries({ queryKey: ["orders", brandId] });
-              qc.invalidateQueries({ queryKey: ["activity_logs"] });
-            } catch (err: unknown) {
-              toast.error(
-                getFriendlyErrorMessage(err) ||
-                  (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
-              );
-            }
-          }}
-        >
-          <PackageCheck className="h-4 w-4 me-1.5" />
-          {vocabulary.received_from_workshop[lang] ||
-            (lang === "ar" ? "استلام من الورشة" : "Receive from Workshop")}
-        </Button>
-      );
-    }
-
-    if (workflow.nextAction === "start_packing") {
-      return (
-        <Button
-          className="bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
-          onClick={async () => {
-            try {
-              const { error } = await supabase
-                .from("orders")
-                .update({
-                  status: "packing",
-                  fulfillment_status: "PACKING",
-                  updated_at: new Date().toISOString(),
-                } as any)
-                .eq("id", order.id);
-              if (error) throw error;
-              toast.success(
-                lang === "ar" ? "بدء تعبئة وتغليف الطلب الجاهز" : "Start packing order",
-              );
-              await logActivity({
-                action: "status_change",
-                order_id: order.id,
-                en: "Started packing order items",
-                ar: "بدء تعبئة وتغليف منتجات الطلب",
-              });
-              await orderQ.refetch();
-              qc.invalidateQueries({ queryKey: ["orders", brandId] });
-              qc.invalidateQueries({ queryKey: ["activity_logs"] });
-            } catch (err: unknown) {
-              toast.error(
-                getFriendlyErrorMessage(err) ||
-                  (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
-              );
-            }
-          }}
-        >
-          <Box className="h-4 w-4 me-1.5" />
-          {lang === "ar" ? "بدء التعبئة والتغليف" : "Start Packing"}
-        </Button>
-      );
-    }
-
-    if (workflow.nextAction === "mark_ready_pickup") {
-      return (
-        <Button
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
-          onClick={async () => {
-            try {
-              const { error } = await supabase
-                .from("orders")
-                .update({
-                  status: "ready_for_pickup",
-                  fulfillment_status: "READY_FOR_PICKUP",
-                  updated_at: new Date().toISOString(),
-                } as any)
-                .eq("id", order.id);
-              if (error) throw error;
-              toast.success(
-                lang === "ar" ? "تم تجهيز الطلب للاستلام في المحل" : "Marked ready for pickup",
-              );
-              await logActivity({
-                action: "status_change",
-                order_id: order.id,
-                en: "Marked order ready for in-store pickup",
-                ar: "تجهيز الطلب للاستلام من الفرع/المحل",
-              });
-              await orderQ.refetch();
-              qc.invalidateQueries({ queryKey: ["orders", brandId] });
-              qc.invalidateQueries({ queryKey: ["activity_logs"] });
-            } catch (err: unknown) {
-              toast.error(
-                getFriendlyErrorMessage(err) ||
-                  (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
-              );
-            }
-          }}
-        >
-          <Store className="h-4 w-4 me-1.5" />
-          {lang === "ar" ? "جاهز للاستلام" : "Mark Ready for Pickup"}
-        </Button>
-      );
-    }
-
-    if (workflow.nextAction === "mark_shipped") {
-      return (
-        <Button
-          className="bg-sky-600 hover:bg-sky-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
-          onClick={async () => {
-            try {
-              const { error } = await supabase
-                .from("orders")
-                .update({
-                  status: "shipped",
-                  fulfillment_status: "SHIPPED",
-                  updated_at: new Date().toISOString(),
-                } as any)
-                .eq("id", order.id);
-              if (error) throw error;
-              toast.success(
-                lang === "ar" ? "تم شحن الطلب وتسليمه للمندوب" : "Marked shipped / in transit",
-              );
-              await logActivity({
-                action: "status_change",
-                order_id: order.id,
-                en: "Marked order shipped / handed to courier",
-                ar: "تم تسليم الطلب لشركة الشحن/المندوب",
-              });
-              await orderQ.refetch();
-              qc.invalidateQueries({ queryKey: ["orders", brandId] });
-              qc.invalidateQueries({ queryKey: ["activity_logs"] });
-            } catch (err: unknown) {
-              toast.error(
-                getFriendlyErrorMessage(err) ||
-                  (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
-              );
-            }
-          }}
-        >
-          <Truck className="h-4 w-4 me-1.5" />
-          {lang === "ar" ? "تم الشحن" : "Mark Shipped"}
-        </Button>
-      );
-    }
-
-    if (workflow.nextAction === "mark_completed") {
-      return (
-        <Button
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
-          onClick={async () => {
-            try {
-              const { error } = await supabase
-                .from("orders")
-                .update({
-                  status: "completed",
-                  fulfillment_status: "COMPLETED",
-                  delivered_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString(),
-                } as any)
-                .eq("id", order.id);
-              if (error) throw error;
-              toast.success(
-                lang === "ar" ? "تم تسليم الطلب وإتمامه بنجاح" : "Order completed successfully",
-              );
-              await logActivity({
-                action: "status_change",
-                order_id: order.id,
-                en: "Completed order delivery",
-                ar: "تم إكمال وتسليم الطلب بنجاح",
-              });
-              await orderQ.refetch();
-              qc.invalidateQueries({ queryKey: ["orders", brandId] });
-              qc.invalidateQueries({ queryKey: ["activity_logs"] });
-            } catch (err: unknown) {
-              toast.error(
-                getFriendlyErrorMessage(err) ||
-                  (lang === "ar" ? "تعذر إكمال التسليم" : "Unable to complete order"),
-              );
-            }
-          }}
-        >
-          <CheckCircle2 className="h-4 w-4 me-1.5" />
-          {lang === "ar" ? "إكمال التسليم" : "Complete Order"}
-        </Button>
-      );
-    }
-
-    if (workflow.nextAction === "pack_and_ship") {
-      return (
-        <Button
-          className="bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
-          onClick={async () => {
-            try {
-              const { error } = await supabase
-                .from("orders")
-                .update({
-                  fulfillment_status: "ASSIGNED",
-                  updated_at: new Date().toISOString(),
-                } as any)
-                .eq("id", order.id);
-              if (error) throw error;
-              toast.success(
-                lang === "ar" ? "تم جاهزية الطلب وتعيينه للمندوب" : "Packed & Assigned to Courier",
-              );
-              await orderQ.refetch();
-              qc.invalidateQueries({ queryKey: ["orders", brandId] });
-            } catch (err: unknown) {
-              toast.error(
-                getFriendlyErrorMessage(err) ||
-                  (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
-              );
-            }
-          }}
-        >
-          <Truck className="h-4 w-4 me-1.5" />
-          {lang === "ar" ? "تجهيز وتعيين المندوب" : "Pack & Assign"}
-        </Button>
-      );
-    }
-
-    if (workflow.nextAction === "confirm_pickup") {
-      return (
-        <Button
-          className="bg-sky-600 hover:bg-sky-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
-          onClick={async () => {
-            try {
-              const { error } = await supabase
-                .from("orders")
-                .update({
-                  fulfillment_status: "SHIPPED",
-                  updated_at: new Date().toISOString(),
-                } as any)
-                .eq("id", order.id);
-              if (error) throw error;
-              toast.success(
-                lang === "ar"
-                  ? "تم استلام الشحنة من المندوب وخرجت للتوصيل"
-                  : "Courier picked up parcel - Out for Delivery",
-              );
-              await orderQ.refetch();
-              qc.invalidateQueries({ queryKey: ["orders", brandId] });
-            } catch (err: unknown) {
-              toast.error(
-                getFriendlyErrorMessage(err) ||
-                  (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
-              );
-            }
-          }}
-        >
-          <Truck className="h-4 w-4 me-1.5" />
-          {lang === "ar" ? "تأكيد استلام المندوب (خرج للتوصيل)" : "Confirm Pickup (Start Transit)"}
-        </Button>
-      );
-    }
-
-    if (workflow.nextAction === "validate_payment") {
-      return (
-        <Button
-          className="bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
-          disabled={approvingBenefit}
-          onClick={approveBenefitPayment}
-        >
-          {approvingBenefit ? (
-            <Loader2 className="h-4 w-4 me-1.5 animate-spin" />
-          ) : (
-            <Receipt className="h-4 w-4 me-1.5" />
-          )}
-          {lang === "ar" ? "اعتماد دفع البنفت" : "Approve Benefit Payment"}
-        </Button>
-      );
-    }
-
-    if (workflow.nextAction === "mark_delivered" || workflow.nextAction === "collect_and_deliver") {
-      return (
-        <Button
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
-          onClick={async () => {
-            try {
-              const updatePayload: Record<string, any> = {
-                fulfillment_status: "COMPLETED",
-                status: "completed",
-                delivered_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              };
-              if (
-                workflow.nextAction === "collect_and_deliver" ||
-                workflow.nextAction === "collect_and_hand_over" ||
-                order.payment_method === "cod"
-              ) {
-                updatePayload.payment_status = "paid";
-              }
-              const { error } = await supabase
-                .from("orders")
-                .update(updatePayload as any)
-                .eq("id", order.id);
-              if (error) throw error;
-              toast.success(
-                lang === "ar" ? "تم تسجيل تسليم الطلب وإتمامه" : "Order delivered & completed",
-              );
-              await orderQ.refetch();
-              qc.invalidateQueries({ queryKey: ["orders", brandId] });
-            } catch (err: unknown) {
-              toast.error(
-                getFriendlyErrorMessage(err) ||
-                  (lang === "ar" ? "تعذر إكمال التسليم" : "Unable to complete delivery"),
-              );
-            }
-          }}
-        >
-          <CheckCircle2 className="h-4 w-4 me-1.5" />
-          {lang === "ar" ? "تسليم الطلب" : "Mark Delivered"}
-        </Button>
-      );
-    }
-
-    if (workflow.nextAction === "prepare_pickup") {
-      return (
-        <Button
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
-          onClick={async () => {
-            try {
-              const { error } = await supabase
-                .from("orders")
-                .update({
-                  fulfillment_status: "READY_FOR_PICKUP",
-                  updated_at: new Date().toISOString(),
-                } as any)
-                .eq("id", order.id);
-              if (error) throw error;
-              toast.success(lang === "ar" ? "تم تجهيز الطلب للاستلام" : "Ready for pickup");
-              await orderQ.refetch();
-              qc.invalidateQueries({ queryKey: ["orders", brandId] });
-            } catch (err: unknown) {
-              toast.error(
-                getFriendlyErrorMessage(err) ||
-                  (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
-              );
-            }
-          }}
-        >
-          <CheckCircle2 className="h-4 w-4 me-1.5" />
-          {lang === "ar" ? "تجهيز للاستلام" : "Prepare for Pickup"}
-        </Button>
-      );
-    }
-
-    if (
-      workflow.nextAction === "hand_over_pickup" ||
-      workflow.nextAction === "collect_and_hand_over"
-    ) {
-      return (
-        <Button
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
-          onClick={async () => {
-            try {
-              const { error } = await supabase
-                .from("orders")
-                .update({
-                  fulfillment_status: "COMPLETED",
-                  status: "completed",
-                  delivered_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString(),
-                } as any)
-                .eq("id", order.id);
-              if (error) throw error;
-              toast.success(lang === "ar" ? "تم تسليم الطلب للعميل" : "Handed over to customer");
-              await orderQ.refetch();
-              qc.invalidateQueries({ queryKey: ["orders", brandId] });
-            } catch (err: unknown) {
-              toast.error(
-                getFriendlyErrorMessage(err) ||
-                  (lang === "ar" ? "تعذر إكمال التسليم" : "Unable to complete handover"),
-              );
-            }
-          }}
-        >
-          <CheckCircle2 className="h-4 w-4 me-1.5" />
-          {lang === "ar" ? "تسليم العميل" : "Hand Over"}
-        </Button>
-      );
-    }
-
-    return null;
-  };
+  const renderTopPrimaryAction = () =>
+    renderOrderPrimaryAction({
+      approveBenefitPayment,
+      approvingBenefit,
+      brandId,
+      isCreationMode,
+      isReadOnly,
+      items,
+      lang,
+      order,
+      orderQ,
+      qc,
+      storeProfile,
+      vocabulary,
+    });
 
   const handleDirectOrderStatusChange = async (newStatus: string, newFulfillmentStatus: string) => {
     if (!order) return;
@@ -4299,300 +3538,40 @@ function OrderDetail() {
         />
 
         {/* Product Search & Autocomplete Modal */}
-        <Dialog open={productSearchOpen} onOpenChange={setProductSearchOpen}>
-          <DialogContent className="max-w-xl p-0 overflow-hidden">
-            <DialogHeader className="p-4 pb-2 border-b">
-              <DialogTitle className="flex items-center gap-2 text-base">
-                <Search className="h-4 w-4 text-primary" />
-                {lang === "ar"
-                  ? "البحث عن منتج أو SKU أو باركود"
-                  : "Search Product, SKU, or Barcode"}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="p-4 space-y-3">
-              <div className="relative">
-                <Search className="absolute start-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  autoFocus
-                  placeholder={
-                    lang === "ar"
-                      ? "اكتب للبحث بالاسم، الرمز (SKU)، المقاس، أو الباركود..."
-                      : "Type product title, SKU, size, or barcode..."
-                  }
-                  value={productSearchQuery}
-                  onChange={(e) => setProductSearchQuery(e.target.value)}
-                  className="ps-9 h-10 text-sm font-medium"
-                />
-                {productSearchQuery && (
-                  <button
-                    type="button"
-                    className="absolute end-3 top-3 text-muted-foreground hover:text-foreground"
-                    onClick={() => setProductSearchQuery("")}
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-
-              <div className="max-h-[380px] overflow-y-auto space-y-2 pe-1">
-                {filteredVariantsForSearch.length === 0 ? (
-                  <div className="p-8 text-center text-sm text-muted-foreground">
-                    {lang === "ar"
-                      ? `لم يتم العثور على منتجات تطابق "${productSearchQuery}"`
-                      : `No products found matching "${productSearchQuery}"`}
-                  </div>
-                ) : (
-                  filteredVariantsForSearch.map((v: any) => {
-                    const p = (productsQ.data ?? []).find((x: any) => x.id === v.product_id);
-                    const title = (p as any)?.name || "Product";
-                    const sku = v.sku || (p as any)?.sku;
-                    const mainStock = Number(v.stock_main ?? 0);
-                    const incStock = Number(v.stock_incubator ?? 0);
-                    const fallbackStock = Number(v.stock ?? v.quantity ?? (p as any)?.stock ?? 0);
-                    const totalStock =
-                      mainStock + incStock > 0 ? mainStock + incStock : fallbackStock;
-                    const price = Number(
-                      v.selling_price ??
-                        v.price_override ??
-                        v.price ??
-                        (p as any)?.selling_price ??
-                        (p as any)?.base_price ??
-                        (p as any)?.price ??
-                        0,
-                    );
-                    const getMediaUrl = (obj: any) => {
-                      if (!obj) return null;
-                      if (typeof obj.image_url === "string" && obj.image_url) return obj.image_url;
-                      if (typeof obj.image === "string" && obj.image) return obj.image;
-                      if (Array.isArray(obj.images) && obj.images[0]) return obj.images[0];
-                      return null;
-                    };
-                    const img = getMediaUrl(v) || getMediaUrl(p);
-
-                    return (
-                      <div
-                        key={v.id}
-                        className="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-border-strong hover:border-primary/60 hover:bg-primary/5 cursor-pointer transition-all"
-                        onClick={() => handleSelectVariantFromModal(v)}
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="h-11 w-11 rounded-lg border bg-muted/40 overflow-hidden shrink-0 flex items-center justify-center">
-                            {img ? (
-                              <img src={img} alt={title} className="h-full w-full object-cover" />
-                            ) : (
-                              <ImageIcon className="h-5 w-5 text-muted-foreground" />
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-semibold text-xs sm:text-sm text-foreground truncate">
-                              {title}
-                            </p>
-                            <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
-                              {sku && (
-                                <span className="font-mono bg-muted/80 px-1.5 py-0.5 rounded text-xs">
-                                  {sku}
-                                </span>
-                              )}
-                              {(v.size || v.color) && (
-                                <span>{[v.size, v.color].filter(Boolean).join(" / ")}</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="text-end shrink-0">
-                          <p className="font-bold text-sm text-foreground">
-                            {formatMoney(price, currency)}
-                          </p>
-                          <span
-                            className={cn(
-                              "text-xs font-semibold px-1.5 py-0.5 rounded inline-block mt-0.5",
-                              totalStock > 0
-                                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
-                                : "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300",
-                            )}
-                          >
-                            {totalStock > 0
-                              ? `${lang === "ar" ? "متوفر" : "In Stock"}: ${totalStock}`
-                              : lang === "ar"
-                                ? "نفذت الكمية"
-                                : "Out of Stock"}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <ProductSearchDialog
+          open={productSearchOpen}
+          onOpenChange={setProductSearchOpen}
+          query={productSearchQuery}
+          onQueryChange={setProductSearchQuery}
+          results={filteredVariantsForSearch}
+          products={productsQ.data ?? []}
+          currency={currency}
+          lang={lang}
+          onSelect={(v) => handleSelectVariantFromModal(v)}
+        />
 
         {/* Out-of-stock Variant Confirmation Dialog */}
-        <AlertDialog
-          open={Boolean(outOfStockConfirmVariant)}
-          onOpenChange={(open) => {
-            if (!open) setOutOfStockConfirmVariant(null);
-          }}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                {lang === "ar" ? "تنبيه: الصنف نافد من المخزون" : "Notice: Item is Out of Stock"}
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                {lang === "ar"
-                  ? "هذا الصنف رصيده الحالي 0 في المخزون. هل ترغب في إضافته إلى الطلب على أي حال؟"
-                  : "This item currently has 0 units in stock. Do you want to add it to the order anyway?"}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setOutOfStockConfirmVariant(null)}>
-                {lang === "ar" ? "إلغاء" : "Cancel"}
-              </AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                onClick={() => {
-                  if (outOfStockConfirmVariant) {
-                    handleSelectVariantFromModal(outOfStockConfirmVariant, true);
-                    setOutOfStockConfirmVariant(null);
-                  }
-                }}
-              >
-                {lang === "ar" ? "إضافة على أي حال" : "Add Anyway"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <OutOfStockConfirmDialog
+          variant={outOfStockConfirmVariant}
+          onClose={() => setOutOfStockConfirmVariant(null)}
+          onConfirm={(variant) => handleSelectVariantFromModal(variant, true)}
+          lang={lang}
+        />
 
         {/* Inline New Customer Dialog */}
-        <Dialog open={newCustomerOpen} onOpenChange={setNewCustomerOpen}>
-          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto w-[95vw] p-4 sm:p-6 rounded-2xl">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-                <UserPlus className="h-5 w-5 text-primary shrink-0" />
-                {lang === "ar" ? "إضافة زبون جديد" : "Create New Customer"}
-              </DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm">
-                {lang === "ar"
-                  ? "أدخل بيانات الزبون وسيتم تعيينه مباشرة لهذا الطلب بدون فقدان التغييرات."
-                  : "Enter customer details. They will be assigned to this order draft immediately."}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-2">
-              <div>
-                <Label className="text-xs font-semibold">
-                  {lang === "ar" ? "اسم الزبون *" : "Full Name *"}
-                </Label>
-                <Input
-                  className="h-11 mt-1 text-sm"
-                  placeholder={lang === "ar" ? "مثال: علي محمد" : "e.g. Ali Mohamed"}
-                  value={newCustName}
-                  onChange={(e) => setNewCustName(e.target.value)}
-                />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs font-semibold">
-                    {lang === "ar" ? "رقم الهاتف" : "Phone Number"}
-                  </Label>
-                  <div className="mt-1">
-                    <PhoneInput
-                      value={newCustPhone}
-                      onChange={setNewCustPhone}
-                      placeholder="33000000"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-xs font-semibold">
-                    {lang === "ar" ? "البريد الإلكتروني" : "Email Address"}
-                  </Label>
-                  <Input
-                    className="h-11 mt-1 text-sm text-start"
-                    dir="ltr"
-                    type="email"
-                    placeholder="ali@example.com"
-                    value={newCustEmail}
-                    onChange={(e) => setNewCustEmail(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="border-t pt-3 space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-semibold text-muted-foreground">
-                    {lang === "ar" ? "عنوان التوصيل الافتراضي" : "Default Delivery Address"}
-                  </Label>
-                  <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                    {lang === "ar" ? "اختياري" : "Optional"}
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <Input
-                    className="h-10 text-sm"
-                    placeholder={lang === "ar" ? "المنطقة (مثال: المنامة)" : "Region (e.g. Manama)"}
-                    value={newCustRegion}
-                    onChange={(e) => setNewCustRegion(e.target.value)}
-                  />
-                  <Input
-                    className="h-10 text-sm"
-                    placeholder={lang === "ar" ? "المجمع (مثال: 321)" : "Block (e.g. 321)"}
-                    value={newCustBlock}
-                    onChange={(e) => setNewCustBlock(e.target.value)}
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  <Input
-                    className="h-10 text-sm"
-                    placeholder={lang === "ar" ? "الطريق" : "Road"}
-                    value={newCustRoad}
-                    onChange={(e) => setNewCustRoad(e.target.value)}
-                  />
-                  <Input
-                    className="h-10 text-sm"
-                    placeholder={lang === "ar" ? "المنزل" : "House"}
-                    value={newCustHouse}
-                    onChange={(e) => setNewCustHouse(e.target.value)}
-                  />
-                  <Input
-                    className="h-10 text-sm"
-                    placeholder={lang === "ar" ? "الشقة" : "Flat"}
-                    value={newCustFlat}
-                    onChange={(e) => setNewCustFlat(e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-            <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setNewCustomerOpen(false)}
-                className="w-full sm:w-auto h-11"
-              >
-                {lang === "ar" ? "إلغاء" : "Cancel"}
-              </Button>
-              <Button
-                type="button"
-                onClick={handleCreateInlineCustomer}
-                disabled={creatingCustomer || !newCustName.trim()}
-                className="w-full sm:w-auto h-11 bg-primary text-primary-foreground font-medium"
-              >
-                {creatingCustomer ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin me-2" />
-                    {lang === "ar" ? "جاري الحفظ..." : "Creating..."}
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="h-4 w-4 me-2" />
-                    {lang === "ar" ? "حفظ وتعين الزبون" : "Save & Assign Customer"}
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <NewCustomerDialog
+          open={newCustomerOpen}
+          onOpenChange={setNewCustomerOpen}
+          brandId={(settingsQ.data as any)?.brand_id || (brand as any)?.id}
+          lang={lang}
+          onCreated={(customerId, addressId) =>
+            setOrder({
+              ...order,
+              customer_id: customerId,
+              shipping_address_id: addressId,
+            })
+          }
+        />
       </div>
 
       {/* 5. Mobile Thumb-Zone Sticky Bottom Bar (<768px) - OUTSIDE animated scroll view */}
