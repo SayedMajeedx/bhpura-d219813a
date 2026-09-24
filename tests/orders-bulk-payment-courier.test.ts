@@ -52,8 +52,9 @@ describe("orders list payment and courier rules", () => {
 
   it("updates a changed order in the list cache before reconciling with the server", () => {
     const routeSource = readFileSync("src/routes/api.orders.status.ts", "utf8");
+    // The row status actions moved to src/features/orders/components (Phase 5).
     const pageSource = readFileSync(
-      "src/routes/_authenticated/admin.b.$slug.orders.index.tsx",
+      "src/features/orders/components/order-queue-action.tsx",
       "utf8",
     );
     expect(routeSource).toContain("order: updatedOrder");
