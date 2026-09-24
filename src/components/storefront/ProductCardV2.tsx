@@ -147,6 +147,7 @@ export function ProductCardV2({
   return (
     <div
       ref={revealRef}
+      data-product-id={product.id}
       className={`group relative sf-reveal sf-cv-card ${staggerClass} ${className || "w-full"}`}
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}

@@ -17,8 +17,12 @@ test.describe("Product Detail Page 2.0 (PDP) Suite", () => {
     const price = page.locator("text=/BHD|BD|د.ب|\\d+(\\.\\d{2,3})?/i").first();
     await expect(price).toBeVisible();
 
-    // Verify product image or gallery container
-    const imageContainer = page.locator('img, [data-zoom], [class*="aspect-"]').first();
+    // Verify product image or gallery container (inside <main>: the header logo is
+    // also an <img>, and the mobile header is hidden at desktop width).
+    const imageContainer = page
+      .locator("main")
+      .locator('img, [data-zoom], [class*="aspect-"]')
+      .first();
     await expect(imageContainer).toBeVisible();
   });
 
@@ -28,8 +32,11 @@ test.describe("Product Detail Page 2.0 (PDP) Suite", () => {
     });
     await page.waitForTimeout(1500);
 
-    // Find accordion trigger buttons
-    const accordionTriggers = page.locator("button[aria-expanded], [data-accordion] button");
+    // Find accordion trigger buttons (inside <main>: the header menu button also has
+    // aria-expanded and is hidden at desktop width).
+    const accordionTriggers = page
+      .locator("main")
+      .locator("button[aria-expanded], [data-accordion] button");
     const count = await accordionTriggers.count();
 
     if (count > 0) {
