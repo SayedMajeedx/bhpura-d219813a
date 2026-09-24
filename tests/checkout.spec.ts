@@ -1,4 +1,15 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
+import {
+  ANON_KEY,
+  FAKE_ORDER_ID,
+  SLUG,
+  SUPABASE_URL,
+  fetchLiveProducts,
+  guardWrites,
+  inStock,
+  type LiveVariant,
+  waitForHydration,
+} from "./helpers/storefront-e2e";
 
 /**
  * Storefront checkout, end to end: a cart with a real in-stock product, the
@@ -12,99 +23,17 @@ import { test, expect, type Page } from "@playwright/test";
  * - any non-GET request to Supabase REST, Storage or Edge Functions is stubbed.
  */
 
-const SLUG = "pura";
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-const FAKE_ORDER_ID = "00000000-0000-4000-8000-0000000e2e01";
-
-// RPCs the storefront may call that only read data. Anything else is stubbed.
-const READ_ONLY_RPCS = new Set([
-  "get_storefront_page_data",
-  "get_storefront_trending",
-  "get_storefront_best_sellers",
-  "get_public_branches",
-  "check_registered_customer_exists",
-  "validate_promo_code",
-  "has_storefront_membership",
-]);
-
-type WriteGuard = {
-  orderPayloads: Array<Record<string, unknown>>;
-  stubbedWrites: string[];
-};
-
-async function guardWrites(page: Page): Promise<WriteGuard> {
-  const guard: WriteGuard = { orderPayloads: [], stubbedWrites: [] };
-
-  // Registered first, so it runs after the RPC handler below: REST, Storage and
-  // Edge Function writes never leave the browser.
-  await page.route(/\/(rest|storage|functions)\/v1\//, async (route) => {
-    const request = route.request();
-    if (["GET", "HEAD", "OPTIONS"].includes(request.method())) return route.fallback();
-    guard.stubbedWrites.push(`${request.method()} ${new URL(request.url()).pathname}`);
-    return route.fulfill({ status: 201, contentType: "application/json", body: "[]" });
-  });
-
-  await page.route("**/rest/v1/rpc/**", async (route) => {
-    const name = new URL(route.request().url()).pathname.split("/rpc/")[1] ?? "";
-    if (name === "place_storefront_order") {
-      guard.orderPayloads.push(route.request().postDataJSON() as Record<string, unknown>);
-      return route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ order_id: FAKE_ORDER_ID, confirmation_email_token: null }),
-      });
-    }
-    if (READ_ONLY_RPCS.has(name)) return route.continue();
-    guard.stubbedWrites.push(`rpc ${name}`);
-    return route.fulfill({ status: 200, contentType: "application/json", body: "null" });
-  });
-
-  return guard;
-}
-
-type LiveVariant = {
-  id: string;
+type CartVariant = LiveVariant & {
   product_id: string;
-  size: string | null;
-  color: string | null;
-  fabric: string | null;
-  selling_price: number;
-  stock_main: number | null;
-  stock_incubator: number | null;
   products: { name: string; image_url: string | null };
 };
 
-/** A live, in-stock variant of the store (read-only REST query). */
-async function findInStockVariant(): Promise<LiveVariant | null> {
-  const headers = { apikey: ANON_KEY!, Authorization: `Bearer ${ANON_KEY}` };
-  const brandRes = await fetch(`${SUPABASE_URL}/rest/v1/brands?slug=eq.${SLUG}&select=id`, {
-    headers,
-  });
-  const [brand] = (await brandRes.json()) as Array<{ id: string }>;
-  if (!brand) return null;
-  // Same shape the storefront reads (variants are only readable through products).
-  const query = new URLSearchParams({
-    select:
-      "id,name,image_url,is_made_to_order,custom_fields,product_variants(id,size,color,fabric,selling_price,stock_main,stock_incubator)",
-    brand_id: `eq.${brand.id}`,
-    is_active: "eq.true",
-  });
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/products?${query}`, { headers });
-  const products = (await res.json()) as Array<{
-    id: string;
-    name: string;
-    image_url: string | null;
-    is_made_to_order: boolean | null;
-    custom_fields: unknown[] | null;
-    product_variants: Array<Omit<LiveVariant, "product_id" | "products">>;
-  }>;
+/** A live, in-stock variant of the store. */
+async function findInStockVariant(): Promise<CartVariant | null> {
   // The store sells made-to-order abayas; their measurement fields are checked by
   // place_storefront_order, which this test answers itself.
-  for (const product of products) {
-    const variant = product.product_variants.find(
-      (v) => Number(v.stock_main ?? 0) + Number(v.stock_incubator ?? 0) > 0,
-    );
+  for (const product of await fetchLiveProducts()) {
+    const variant = product.product_variants.find(inStock);
     if (variant) {
       return {
         ...variant,
@@ -153,6 +82,7 @@ test.describe("Storefront checkout", () => {
     await page.goto(`/${SLUG}/checkout?lang=en`, { waitUntil: "domcontentloaded" });
     const placeOrder = page.locator("button:visible", { hasText: "Place order" }).first();
     await expect(placeOrder).toBeVisible({ timeout: 60_000 });
+    await waitForHydration(placeOrder);
     await expect(page.getByText(variant!.products.name).first()).toBeVisible();
 
     await page.locator("#checkout-name").fill("E2E Test Shopper");
@@ -241,6 +171,7 @@ test.describe("Storefront checkout", () => {
     await page.goto(`/${SLUG}/checkout?lang=en`, { waitUntil: "domcontentloaded" });
     const placeOrder = page.locator("button:visible", { hasText: "Place order" }).first();
     await expect(placeOrder).toBeVisible({ timeout: 60_000 });
+    await waitForHydration(placeOrder);
 
     // Terms not accepted yet: the button stays disabled.
     await expect(placeOrder).toBeDisabled();
