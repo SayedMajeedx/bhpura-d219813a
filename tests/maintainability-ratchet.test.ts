@@ -40,7 +40,7 @@ const BUDGETS = {
 const GIANT_FILES_BUDGETS: Record<string, number> = {
   "src/routes/$slug.checkout.tsx": 2809,
   "src/features/settings/registry.ts": 2616,
-  "src/routes/$slug.product.$id.tsx": 2431,
+  "src/routes/$slug.product.$id.tsx": 1458,
   "src/routes/_authenticated/admin.b.$slug.content-studio.tsx": 2488,
   "src/routes/_authenticated/admin.b.$slug.dashboard.tsx": 2105,
   "src/components/subscription/BrandSubscriptionHub.tsx": 1972,

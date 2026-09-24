@@ -1,7 +1,20 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { resolveFooterVariant } from "../src/lib/storefront-engine";
+
+// The product page is split across its route and src/features/product-page (Phase 5).
+const productPageSource = () =>
+  [
+    "src/routes/$slug.product.$id.tsx",
+    ...["components", "lib"].flatMap((dir) =>
+      readdirSync(`src/features/product-page/${dir}`)
+        .sort()
+        .map((file) => `src/features/product-page/${dir}/${file}`),
+    ),
+  ]
+    .map((file) => readFileSync(file, "utf8"))
+    .join("\n");
 
 const read = (p: string) => readFileSync(resolve(process.cwd(), p), "utf8");
 
@@ -37,7 +50,7 @@ describe("consent banner does not cover the mobile purchase bar", () => {
     // Cleaned up so other routes are not offset by a stale value.
     expect(hook).toContain("removeProperty");
 
-    const pdp = read("src/routes/$slug.product.$id.tsx");
+    const pdp = productPageSource();
     expect(pdp).toContain("useStickyCtaOffset");
     expect(pdp).toContain("ref={stickyCtaRef}");
   });

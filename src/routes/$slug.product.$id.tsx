@@ -9,31 +9,11 @@ import {
 } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { formatSizeWithUnit } from "@/lib/format";
-import { translateOptionValue } from "@/lib/variant-i18n";
 import { useVariantTranslations } from "@/lib/use-variant-translations";
-import {
-  ChevronLeft,
-  ChevronRight,
-  ShoppingBag,
-  AlertCircle,
-  Heart,
-  Upload,
-  X,
-  Loader2,
-  Ruler,
-  Scissors,
-  Sparkles,
-  Check,
-  Truck,
-  FileText,
-  MessageCircle,
-  Bell,
-} from "lucide-react";
+import { ShoppingBag, AlertCircle, Heart, Sparkles, Truck, MessageCircle } from "lucide-react";
 import { isCatalogMode, shouldShowPrices, buildWhatsAppInquiryUrl } from "@/lib/storefront-mode";
 import { NotifyMeForm } from "@/components/storefront/NotifyMeForm";
 import { useStickyCtaOffset } from "@/hooks/use-sticky-cta-offset";
@@ -47,8 +27,7 @@ import { ProductShareModal } from "@/components/storefront/ProductShareModal";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { toast } from "sonner";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
-import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
-import { isLikelyImageUrl } from "@/lib/media-delivery";
+import { ResponsiveImage } from "@/components/responsive-media";
 import {
   fetchActiveBrandIdentity,
   fetchBestSellerRows,
@@ -60,11 +39,30 @@ import {
   type StorefrontProductDetail as Product,
   type StorefrontVariant as Variant,
 } from "@/lib/data/storefront";
-import { uploadPublicMedia } from "@/lib/r2-upload";
 import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
+import {
+  matchingVariantsFor,
+  offeredSizes,
+  outOfStockByValue,
+  parsePriceDelta,
+  sortVariants,
+  uniqueOptionValues,
+  type VariantSelection,
+} from "@/features/product-page/lib/variant-options";
+import {
+  discountPercentFor,
+  displayPriceFor,
+  matchingPriceRange,
+  originalPriceFor,
+} from "@/features/product-page/lib/pdp-pricing";
+import type { CustomField } from "@/features/product-page/types";
+import { ProductGallery } from "@/features/product-page/components/ProductGallery";
+import { ProductOptionPickers } from "@/features/product-page/components/ProductOptionPickers";
+import { ProductAddonsPicker } from "@/features/product-page/components/ProductAddonsPicker";
+import { ProductCustomFields } from "@/features/product-page/components/ProductCustomFields";
+import { ProductMobileBuyBar } from "@/features/product-page/components/ProductMobileBuyBar";
 import { buildProductSchema, buildBreadcrumbsSchema } from "@/lib/seo/structured-data";
 import { ProductAccordion } from "@/components/storefront/ProductAccordion";
-import { ImageZoom } from "@/components/storefront/ImageZoom";
 import { BundleOffer } from "@/components/storefront/BundleOffer";
 import { RecentlyViewed, recordRecentlyViewed } from "@/components/storefront/RecentlyViewed";
 import { getProductRecentPurchaseCount } from "@/lib/storefront-social-proof";
@@ -192,36 +190,8 @@ export const Route = createFileRoute("/$slug/product/$id")({
   component: ProductDetail,
 });
 
-type CustomField = {
-  key: string;
-  label_ar: string | null;
-  label_en: string | null;
-  type: "text" | "number" | "select" | "file";
-  options?: string[];
-  required?: boolean;
-};
-
 /** Best sellers ranked for the product page's badges and rails. */
 const PDP_BEST_SELLER_LIMIT = 10;
-
-/** Natural sort key: extract leading number so "52" < "54" < "60". */
-function variantSortKey(v: Variant): [number, string] {
-  const label = [v.size, v.color, v.fabric].filter(Boolean).join(" · ");
-  const m = /-?\d+(?:\.\d+)?/.exec(label);
-  const num = m ? Number(m[0]) : Number.POSITIVE_INFINITY;
-  return [num, label.toLowerCase()];
-}
-
-import { resolveColorHex } from "@/lib/color-names";
-
-const parsePriceDelta = (valStr: string): number => {
-  if (!valStr) return 0;
-  const match = /\+\s*(\d+(?:\.\d+)?)\s*(?:BHD|BHD\b|د\.ب|BHD|BD\b|BD)?/i.exec(valStr);
-  if (match) {
-    return Number(match[1]);
-  }
-  return 0;
-};
 
 function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const loaderData = Route.useLoaderData() as
@@ -358,13 +328,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   }, [bestSellerRows, product?.id, recommendationCatalog, relatedIds]);
 
   const variants = useMemo<Variant[]>(() => {
-    const list = product?.product_variants ?? [];
-    return [...list].sort((a, b) => {
-      const [an, al] = variantSortKey(a);
-      const [bn, bl] = variantSortKey(b);
-      if (an !== bn) return an - bn;
-      return al.localeCompare(bl, undefined, { numeric: true, sensitivity: "base" });
-    });
+    return sortVariants(product?.product_variants ?? []);
   }, [product]);
   const variant = variantId ? variants.find((v) => v.id === variantId) : null;
 
@@ -396,34 +360,15 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     }
   }, [variant?.image_url, media]);
 
-  const uniqueColors = useMemo(() => {
-    const colors = variants.map((v) => v.color).filter(Boolean) as string[];
-    return Array.from(new Set(colors));
-  }, [variants]);
+  const uniqueColors = useMemo(() => uniqueOptionValues(variants, (v) => v.color), [variants]);
 
-  const uniqueSizes = useMemo(() => {
-    const allPlaceholder = variants.length > 0 && variants.every(isPlaceholderVariant);
-    const sizes = variants
-      .filter((v) => !allPlaceholder || !isPlaceholderVariant(v))
-      .map((v) => v.size)
-      .filter(Boolean) as string[];
-    return Array.from(new Set(sizes));
-  }, [variants]);
+  const uniqueSizes = useMemo(() => offeredSizes(variants), [variants]);
 
-  const uniqueFabrics = useMemo(() => {
-    const fabrics = variants.map((v) => v.fabric).filter(Boolean) as string[];
-    return Array.from(new Set(fabrics));
-  }, [variants]);
+  const uniqueFabrics = useMemo(() => uniqueOptionValues(variants, (v) => v.fabric), [variants]);
 
-  const uniqueFour = useMemo(() => {
-    const opts = variants.map((v) => v.option_four).filter(Boolean) as string[];
-    return Array.from(new Set(opts));
-  }, [variants]);
+  const uniqueFour = useMemo(() => uniqueOptionValues(variants, (v) => v.option_four), [variants]);
 
-  const uniqueFive = useMemo(() => {
-    const opts = variants.map((v) => v.option_five).filter(Boolean) as string[];
-    return Array.from(new Set(opts));
-  }, [variants]);
+  const uniqueFive = useMemo(() => uniqueOptionValues(variants, (v) => v.option_five), [variants]);
 
   const allOptionTerms = useMemo(() => {
     return [...uniqueSizes, ...uniqueColors, ...uniqueFabrics, ...uniqueFour, ...uniqueFive];
@@ -476,86 +421,30 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   ]);
 
   // Dynamic out of stock maps for each option dimension, checking current other active options
-  const isColorOutOfStock = useMemo(() => {
-    return uniqueColors.reduce(
-      (acc, col) => {
-        const matching = variants.filter((v) => {
-          const colorMatch = v.color === col;
-          const sizeMatch = !selectedSize || v.size === selectedSize;
-          const fabricMatch = !selectedFabric || v.fabric === selectedFabric;
-          const fourMatch = !selectedOptionFour || v.option_four === selectedOptionFour;
-          const fiveMatch = !selectedOptionFive || v.option_five === selectedOptionFive;
-          return colorMatch && sizeMatch && fabricMatch && fourMatch && fiveMatch;
-        });
-        acc[col] =
-          matching.length === 0 ||
-          matching.every((v) => Number(v.stock_main ?? 0) + Number(v.stock_incubator ?? 0) <= 0);
-        return acc;
-      },
-      {} as Record<string, boolean>,
-    );
-  }, [
-    uniqueColors,
-    selectedSize,
-    selectedFabric,
-    selectedOptionFour,
-    selectedOptionFive,
-    variants,
-  ]);
+  const optionSelection = useMemo<VariantSelection>(
+    () => ({
+      size: selectedSize,
+      color: selectedColor,
+      fabric: selectedFabric,
+      four: selectedOptionFour,
+      five: selectedOptionFive,
+    }),
+    [selectedSize, selectedColor, selectedFabric, selectedOptionFour, selectedOptionFive],
+  );
+  const isColorOutOfStock = useMemo(
+    () => outOfStockByValue(variants, "color", uniqueColors, optionSelection),
+    [variants, uniqueColors, optionSelection],
+  );
 
-  const isSizeOutOfStock = useMemo(() => {
-    return uniqueSizes.reduce(
-      (acc, sz) => {
-        const matching = variants.filter((v) => {
-          const sizeMatch = v.size === sz;
-          const colorMatch = !selectedColor || v.color === selectedColor;
-          const fabricMatch = !selectedFabric || v.fabric === selectedFabric;
-          const fourMatch = !selectedOptionFour || v.option_four === selectedOptionFour;
-          const fiveMatch = !selectedOptionFive || v.option_five === selectedOptionFive;
-          return colorMatch && sizeMatch && fabricMatch && fourMatch && fiveMatch;
-        });
-        acc[sz] =
-          matching.length === 0 ||
-          matching.every((v) => Number(v.stock_main ?? 0) + Number(v.stock_incubator ?? 0) <= 0);
-        return acc;
-      },
-      {} as Record<string, boolean>,
-    );
-  }, [
-    uniqueSizes,
-    selectedColor,
-    selectedFabric,
-    selectedOptionFour,
-    selectedOptionFive,
-    variants,
-  ]);
+  const isSizeOutOfStock = useMemo(
+    () => outOfStockByValue(variants, "size", uniqueSizes, optionSelection),
+    [variants, uniqueSizes, optionSelection],
+  );
 
-  const isFabricOutOfStock = useMemo(() => {
-    return uniqueFabrics.reduce(
-      (acc, fb) => {
-        const matching = variants.filter((v) => {
-          const fabricMatch = v.fabric === fb;
-          const colorMatch = !selectedColor || v.color === selectedColor;
-          const sizeMatch = !selectedSize || v.size === selectedSize;
-          const fourMatch = !selectedOptionFour || v.option_four === selectedOptionFour;
-          const fiveMatch = !selectedOptionFive || v.option_five === selectedOptionFive;
-          return colorMatch && sizeMatch && fabricMatch && fourMatch && fiveMatch;
-        });
-        acc[fb] =
-          matching.length === 0 ||
-          matching.every((v) => Number(v.stock_main ?? 0) + Number(v.stock_incubator ?? 0) <= 0);
-        return acc;
-      },
-      {} as Record<string, boolean>,
-    );
-  }, [
-    uniqueFabrics,
-    selectedColor,
-    selectedSize,
-    selectedOptionFour,
-    selectedOptionFive,
-    variants,
-  ]);
+  const isFabricOutOfStock = useMemo(
+    () => outOfStockByValue(variants, "fabric", uniqueFabrics, optionSelection),
+    [variants, uniqueFabrics, optionSelection],
+  );
 
   const isVisualColorAxis = useMemo(
     () => isColorSwatchAxis(resolvedAxes.color.label, uniqueColors),
@@ -714,23 +603,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const basePrice = Number(product?.base_price || 0);
 
   // Find all variants that match the currently selected attributes (even if partially selected)
-  const matchingVariants = useMemo(() => {
-    return variants.filter((v) => {
-      const colorMatch = !selectedColor || v.color === selectedColor;
-      const sizeMatch = !selectedSize || v.size === selectedSize;
-      const fabricMatch = !selectedFabric || v.fabric === selectedFabric;
-      const fourMatch = !selectedOptionFour || v.option_four === selectedOptionFour;
-      const fiveMatch = !selectedOptionFive || v.option_five === selectedOptionFive;
-      return colorMatch && sizeMatch && fabricMatch && fourMatch && fiveMatch;
-    });
-  }, [
-    selectedColor,
-    selectedSize,
-    selectedFabric,
-    selectedOptionFour,
-    selectedOptionFive,
-    variants,
-  ]);
+  const matchingVariants = useMemo(
+    () => matchingVariantsFor(variants, optionSelection),
+    [variants, optionSelection],
+  );
 
   // Compute prices for matching variants
   const matchingPrices = useMemo(() => {
@@ -780,19 +656,19 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
 
   const hasVariants = variants.length > 0;
 
-  const minMatchingPrice =
-    matchingPrices.length > 0 ? Math.min(...matchingPrices) : basePrice + selectedAddOnPrice;
-  const maxMatchingPrice =
-    matchingPrices.length > 0 ? Math.max(...matchingPrices) : basePrice + selectedAddOnPrice;
+  const { min: minMatchingPrice, max: maxMatchingPrice } = matchingPriceRange(
+    matchingPrices,
+    basePrice,
+    selectedAddOnPrice,
+  );
 
-  // Single matched variant (if unique)
-  const isUniqueVariantMatched = matchingVariants.length === 1;
-  const matchedVariant = isUniqueVariantMatched ? matchingVariants[0] : null;
-
-  // Final displayPrice (use the unique matched variant, or fallback to minMatchingPrice)
-  const displayPrice = matchedVariant
-    ? Number(matchedVariant.selling_price || basePrice) + selectedAddOnPrice
-    : minMatchingPrice;
+  // The unique matched variant's price, else the lowest matching price.
+  const displayPrice = displayPriceFor(
+    matchingVariants,
+    basePrice,
+    selectedAddOnPrice,
+    minMatchingPrice,
+  );
 
   const maxStock = Number(variant?.stock_main ?? 0) + Number(variant?.stock_incubator ?? 0);
 
@@ -1035,24 +911,14 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       : t("السعر عند الطلب", "Price on request");
 
   // Calculate original price only when displaying a single price
-  const variantPriceDelta = variant ? Number(variant.selling_price || basePrice) - basePrice : 0;
-  const variantOriginalDelta = variant
-    ? Number(variant.original_price || basePrice) - basePrice
-    : 0;
-  const productOriginalPrice = Number((product as any).original_price || 0);
-
-  const originalPrice =
-    !isRange && variantOriginalDelta > variantPriceDelta
-      ? basePrice + variantOriginalDelta
-      : !isRange && productOriginalPrice > basePrice
-        ? productOriginalPrice + variantPriceDelta
-        : 0;
-
+  const originalPrice = originalPriceFor({
+    isRange,
+    variant,
+    basePrice,
+    productOriginalPrice: Number((product as any).original_price || 0),
+  });
   const originalPriceWithAddons = originalPrice > 0 ? originalPrice + selectedAddOnPrice : 0;
-  const discountPercent =
-    originalPriceWithAddons > displayPrice
-      ? Math.round((1 - displayPrice / originalPriceWithAddons) * 100)
-      : 0;
+  const discountPercent = discountPercentFor(originalPriceWithAddons, displayPrice);
 
   const inquiryUrl = isCatalogMode(settings)
     ? buildWhatsAppInquiryUrl({
@@ -1092,147 +958,18 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-3 sm:py-8 pb-28 md:pb-10 overflow-x-hidden w-full max-w-full">
       <div className="grid md:grid-cols-12 gap-6 lg:gap-10 items-start w-full max-w-full">
-        <div className="md:col-span-5 max-w-[420px] mx-auto md:max-w-none w-full min-w-0">
-          <div
-            className={`relative ${galleryRatioClass} max-h-[520px] bg-muted rounded-2xl overflow-hidden shadow-sm border border-border-subtle mx-auto w-full max-w-full select-none`}
-            onTouchStart={(e) => {
-              galleryTouchStartX.current = e.touches[0]?.clientX ?? null;
-            }}
-            onTouchEnd={(e) => {
-              const startX = galleryTouchStartX.current;
-              galleryTouchStartX.current = null;
-              if (startX == null || media.length <= 1) return;
-              const endX = e.changedTouches[0]?.clientX;
-              if (endX == null) return;
-              const diff = endX - startX;
-              if (Math.abs(diff) < 35) return;
-              setMediaIdx((i) =>
-                diff < 0 ? (i + 1) % media.length : (i - 1 + media.length) % media.length,
-              );
-            }}
-          >
-            {media.length > 0 ? (
-              <>
-                {media[mediaIdx % media.length].type === "video" ? (
-                  <OptimizedVideo
-                    src={
-                      media[mediaIdx % media.length].stream_iframe_url
-                        ? undefined
-                        : media[mediaIdx % media.length].url
-                    }
-                    streamIframeUrl={media[mediaIdx % media.length].stream_iframe_url}
-                    poster={
-                      media[mediaIdx % media.length].poster_url ??
-                      (isLikelyImageUrl(media[mediaIdx % media.length].url)
-                        ? media[mediaIdx % media.length].url
-                        : undefined)
-                    }
-                    className="h-full w-full object-cover"
-                    wrapperClassName="h-full w-full overflow-hidden bg-black/90"
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    controls
-                  />
-                ) : settings?.storefront_design_version === 2 &&
-                  settings?.pdp_image_zoom !== false ? (
-                  <ImageZoom
-                    src={media[mediaIdx % media.length].url}
-                    alt={displayName}
-                    className="w-full h-full max-w-full"
-                    aspectRatio="w-full h-full"
-                    style={{
-                      viewTransitionName: `product-img-${product.id.replace(/[^a-zA-Z0-9_-]/g, "_")}`,
-                    }}
-                  />
-                ) : (
-                  <ResponsiveImage
-                    src={media[mediaIdx % media.length].url}
-                    preset="product"
-                    sizes="(min-width: 1024px) 55vw, 100vw"
-                    alt={displayName}
-                    className="w-full h-full object-cover max-w-full"
-                    fetchPriority="high"
-                    loading="eager"
-                  />
-                )}
-                {media.length > 1 && (
-                  <>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setMediaIdx((i) => (i - 1 + media.length) % media.length)}
-                      className="absolute top-1/2 start-2 -translate-y-1/2 min-h-11 min-w-11 p-2 text-white/90 hover:text-white transition-all active:scale-90 z-20 bg-transparent hover:bg-transparent border-0 shadow-none flex items-center justify-center cursor-pointer"
-                      aria-label={t("الصورة السابقة", "Previous media")}
-                    >
-                      <ChevronLeft className="size-8 rtl:rotate-180 text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)] filter" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setMediaIdx((i) => (i + 1) % media.length)}
-                      className="absolute top-1/2 end-2 -translate-y-1/2 min-h-11 min-w-11 p-2 text-white/90 hover:text-white transition-all active:scale-90 z-20 bg-transparent hover:bg-transparent border-0 shadow-none flex items-center justify-center cursor-pointer"
-                      aria-label={t("الصورة التالية", "Next media")}
-                    >
-                      <ChevronRight className="size-8 rtl:rotate-180 text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)] filter" />
-                    </Button>
-                  </>
-                )}
-              </>
-            ) : (
-              <div className="w-full h-full grid place-items-center text-muted-foreground">
-                {t("لا توجد صورة", "No image")}
-              </div>
-            )}
-          </div>
-          {media.length > 1 && (
-            <div className="mt-3 flex gap-2.5 overflow-x-auto pb-2 scrollbar-thin">
-              {media.map((m, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setMediaIdx(i)}
-                  className={`relative h-18 w-18 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${
-                    i === mediaIdx % media.length
-                      ? "ring-2 ring-primary border-primary shadow-sm opacity-100"
-                      : "border-border-subtle hover:border-primary/50 opacity-75 hover:opacity-100"
-                  }`}
-                  style={i === mediaIdx % media.length ? { borderColor: primary } : undefined}
-                >
-                  {m.type === "video" ? (
-                    <div className="relative w-full h-full bg-black/90 flex items-center justify-center">
-                      {m.poster_url || isLikelyImageUrl(m.url) ? (
-                        <img
-                          src={m.poster_url || m.url}
-                          alt={`${displayName} - preview ${i + 1}`}
-                          className="w-full h-full object-cover opacity-60"
-                        />
-                      ) : (
-                        <div className="size-full bg-muted/60" />
-                      )}
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                        <div className="h-6 w-6 rounded-full bg-white/90 text-black flex items-center justify-center text-xs font-bold shadow-md">
-                          ▶
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <ResponsiveImage
-                      src={m.url}
-                      preset="thumb"
-                      sizes="80px"
-                      alt={displayName}
-                      className="w-full h-full object-cover"
-                    />
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <ProductGallery
+          displayName={displayName}
+          galleryRatioClass={galleryRatioClass}
+          galleryTouchStartX={galleryTouchStartX}
+          media={media}
+          mediaIdx={mediaIdx}
+          primary={primary}
+          product={product}
+          setMediaIdx={setMediaIdx}
+          settings={settings}
+          t={t}
+        />
 
         <div className="md:col-span-7 w-full min-w-0 overflow-hidden">
           <div className="mb-1 flex items-start justify-between gap-3 sm:mb-2">
@@ -1309,481 +1046,61 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           )}
 
           {(hasVariants || customFields.length > 0) && (
-            <div ref={optionsRef} className="mb-6 space-y-4 scroll-mt-24">
-              {showSizeModeToggle && (
-                <div className="rounded-xl border bg-muted/30 p-2">
-                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
-                    {t("طريقة اختيار المقاس", "Sizing Method")}
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      type="button"
-                      variant={sizeMode === "ready" ? "default" : "outline"}
-                      onClick={() => {
-                        setSizeMode("ready");
-                        setErrorMsg(null);
-                        setCfValues((prev) => {
-                          const next = { ...prev };
-                          Object.keys(next).forEach((k) => {
-                            if (isMeasurementField(k)) {
-                              delete next[k];
-                            }
-                          });
-                          return next;
-                        });
-                        setMeasurementsApplied(false);
-                      }}
-                      className={`h-11 rounded-lg font-semibold flex items-center justify-center gap-2 ${
-                        sizeMode === "ready" ? "shadow-sm" : ""
-                      }`}
-                    >
-                      <Ruler className="h-4 w-4" />
-                      <span>{t("مقاس جاهز", "Ready Size")}</span>
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={sizeMode === "custom" ? "default" : "outline"}
-                      onClick={() => {
-                        setSizeMode("custom");
-                        setErrorMsg(null);
-                      }}
-                      className={`h-11 rounded-lg font-semibold flex items-center justify-center gap-2 ${
-                        sizeMode === "custom" ? "shadow-sm" : ""
-                      }`}
-                    >
-                      <Scissors className="h-4 w-4" />
-                      <span>
-                        {vocabulary.custom_sizing?.[lang] || t("مقاس مخصص", "Custom Size")}
-                      </span>
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {!showSizeModeToggle && isMadeToOrder && !hasReadySizes && (
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-primary shrink-0" />
-                      <span className="text-sm font-bold text-foreground">
-                        {vocabulary.made_to_order?.[lang] || t("صنع حسب الطلب", "Made to Order")}
-                      </span>
-                    </div>
-                    <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
-                      {vocabulary.custom_order?.[lang] || t("خاص", "Bespoke")}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {t(
-                      "يتم تجهيز هذه القطعة خصيصاً على قياساتك الفردية لضمان أفضل ملاءمة وأناقة.",
-                      "This piece is tailored specifically to your personal measurements for a perfect fit.",
-                    )}
-                  </p>
-                  <div className="pt-2 flex items-center justify-between border-t border-primary/10">
-                    <span className="text-xs text-muted-foreground">
-                      {t("تحتاجين مساعدة في القياسات؟", "Need measuring guidance?")}
-                    </span>
-                    <AddonSlot
-                      placement="storefront.product.optionsAside"
-                      props={{
-                        product,
-                        selectedSize: null,
-                        uniqueSizes: [],
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* 🔵 Circular Color Swatches OR 🏷️ Option Pills (Flavors / Types / Roasts) */}
-              {uniqueColors.length > 0 &&
-                (resolvedAxes.color.visible || uniqueColors.length > 1) && (
-                  <div>
-                    <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
-                      <span>
-                        {resolvedAxes.color.label || (lang === "ar" ? "الخيار" : "Option")}:
-                      </span>
-                      {selectedColor && (
-                        <span className="text-muted-foreground font-normal">
-                          {translateOptionValue(selectedColor, lang)}
-                        </span>
-                      )}
-                    </div>
-                    {isVisualColorAxis ? (
-                      <div className="flex flex-wrap gap-2.5">
-                        {uniqueColors.map((color) => {
-                          const active = selectedColor === color;
-                          const oos = !isTailoringActive && Boolean(isColorOutOfStock[color]);
-                          const hex = resolveColorHex(color);
-                          const ringStyle = active ? { borderColor: primary } : {};
-                          const localizedColor = translateOptionValue(color, lang);
-                          return (
-                            <Button
-                              key={color}
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => {
-                                setSelectedColor(color);
-                                setErrorMsg(null);
-                              }}
-                              className={`h-11 w-11 rounded-full border-2 p-0 relative ${
-                                active
-                                  ? "scale-110 shadow-sm"
-                                  : "border-transparent hover:scale-105"
-                              } ${oos ? "opacity-45 cursor-not-allowed" : ""}`}
-                              style={ringStyle}
-                              title={
-                                localizedColor +
-                                (oos ? ` (${t("غير متوفر جاهز", "out of ready stock")})` : "")
-                              }
-                              aria-label={localizedColor}
-                            >
-                              {hex ? (
-                                <span
-                                  className="h-7 w-7 rounded-full border shadow-inner block relative overflow-hidden"
-                                  style={{ backgroundColor: hex }}
-                                >
-                                  {oos && (
-                                    <span className="absolute inset-0 w-full h-[2px] bg-destructive/80 rotate-45 origin-center top-1/2 -translate-y-1/2" />
-                                  )}
-                                </span>
-                              ) : (
-                                <span className="h-7 w-7 rounded-full border bg-muted flex items-center justify-center text-xs font-bold uppercase truncate shadow-inner relative overflow-hidden">
-                                  {localizedColor.slice(0, 2)}
-                                  {oos && (
-                                    <span className="absolute inset-0 w-full h-[2px] bg-destructive/80 rotate-45 origin-center top-1/2 -translate-y-1/2" />
-                                  )}
-                                </span>
-                              )}
-                            </Button>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {uniqueColors.map((color) => {
-                          const active = selectedColor === color;
-                          const oos = !isTailoringActive && Boolean(isColorOutOfStock[color]);
-                          return (
-                            <Button
-                              key={color}
-                              type="button"
-                              variant={active ? "default" : "outline"}
-                              onClick={() => {
-                                setSelectedColor(color);
-                                setErrorMsg(null);
-                              }}
-                              className={`min-h-11 px-4 py-2 rounded-lg text-sm font-medium ${
-                                oos
-                                  ? "line-through opacity-45 cursor-not-allowed bg-muted text-muted-foreground border-dashed"
-                                  : ""
-                              }`}
-                            >
-                              {translateOptionValue(color, lang)}
-                            </Button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-              {/* 📏 Size Selection Pills (if any) */}
-              {uniqueSizes.length > 0 &&
-                resolvedAxes.size.visible &&
-                (!showSizeModeToggle || sizeMode === "ready") && (
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="text-sm font-semibold flex items-center gap-1.5">
-                        <span>{resolvedAxes.size.label}:</span>
-                        {selectedSize && (
-                          <span className="text-muted-foreground font-normal">
-                            {formatSizeWithUnit(
-                              selectedSize,
-                              variants.find((v) => v.size === selectedSize && v.size_unit)
-                                ?.size_unit ||
-                                variants.find((v) => v.size === selectedSize)?.size_unit,
-                              lang,
-                            )}
-                          </span>
-                        )}
-                      </div>
-                      <AddonSlot
-                        placement="storefront.product.optionsAside"
-                        props={{
-                          product,
-                          selectedSize,
-                          onSelectSize: (sz: string) => setSelectedSize(sz),
-                          uniqueSizes,
-                        }}
-                      />
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {uniqueSizes.map((sz) => {
-                        const active = selectedSize === sz;
-                        const matchingVariant = variants.find((v) => v.size === sz && v.size_unit);
-                        const unit =
-                          matchingVariant?.size_unit ||
-                          variants.find((v) => v.size === sz)?.size_unit;
-                        const sizeLabel = formatSizeWithUnit(sz, unit, lang);
-                        const oos =
-                          isSizeOutOfStock[sz] ||
-                          Number(
-                            variants
-                              .filter((v) => v.size === sz)
-                              .reduce(
-                                (acc, v) =>
-                                  acc + Number(v.stock_main || 0) + Number(v.stock_incubator || 0),
-                                0,
-                              ),
-                          ) <= 0;
-                        return (
-                          <Button
-                            key={sz}
-                            type="button"
-                            variant={active ? "default" : "outline"}
-                            onClick={() => {
-                              setSelectedSize(sz);
-                              setErrorMsg(null);
-                            }}
-                            className={`min-h-11 px-4 py-2 rounded-lg text-sm font-medium ${
-                              oos
-                                ? "line-through opacity-45 cursor-not-allowed bg-muted text-muted-foreground border-dashed"
-                                : ""
-                            }`}
-                          >
-                            {sizeLabel}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-              {/* 🧵 Fabric Selection Pills (if any) */}
-              {uniqueFabrics.length > 0 && (
-                <div>
-                  <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
-                    <span>
-                      {resolvedAxes.fabric.label || (lang === "ar" ? "الخامة" : "Fabric")}:
-                    </span>
-                    {selectedFabric && (
-                      <span className="text-muted-foreground font-normal">
-                        {translateOptionValue(selectedFabric, lang)}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {uniqueFabrics.map((fb) => {
-                      const active = selectedFabric === fb;
-                      const oos =
-                        !isTailoringActive &&
-                        (isFabricOutOfStock[fb] ||
-                          Number(
-                            variants
-                              .filter((v) => v.fabric === fb)
-                              .reduce(
-                                (acc, v) =>
-                                  acc + Number(v.stock_main || 0) + Number(v.stock_incubator || 0),
-                                0,
-                              ),
-                          ) <= 0);
-                      return (
-                        <Button
-                          key={fb}
-                          type="button"
-                          variant={active ? "default" : "outline"}
-                          onClick={() => {
-                            setSelectedFabric(fb);
-                            setErrorMsg(null);
-                          }}
-                          className={`min-h-11 px-4 py-2 rounded-lg text-sm font-medium ${
-                            oos
-                              ? "line-through opacity-45 cursor-not-allowed bg-muted text-muted-foreground border-dashed"
-                              : ""
-                          }`}
-                        >
-                          {translateOptionValue(fb, lang)}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* 🏷️ Option Four Selection Pills (if any) */}
-              {uniqueFour.length > 0 && (
-                <div>
-                  <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
-                    <span>
-                      {resolvedAxes.four.label || (lang === "ar" ? "الخيار 4" : "Option 4")}:
-                    </span>
-                    {selectedOptionFour && (
-                      <span className="text-muted-foreground font-normal">
-                        {translateOptionValue(selectedOptionFour, lang)}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {uniqueFour.map((opt) => {
-                      const active = selectedOptionFour === opt;
-                      return (
-                        <Button
-                          key={opt}
-                          type="button"
-                          variant={active ? "default" : "outline"}
-                          onClick={() => {
-                            setSelectedOptionFour(opt);
-                            setErrorMsg(null);
-                          }}
-                          className="min-h-11 px-4 py-2 rounded-lg text-sm font-medium"
-                        >
-                          {translateOptionValue(opt, lang)}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* 🏷️ Option Five Selection Pills (if any) */}
-              {uniqueFive.length > 0 && (
-                <div>
-                  <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
-                    <span>
-                      {resolvedAxes.five.label || (lang === "ar" ? "الخيار 5" : "Option 5")}:
-                    </span>
-                    {selectedOptionFive && (
-                      <span className="text-muted-foreground font-normal">
-                        {translateOptionValue(selectedOptionFive, lang)}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {uniqueFive.map((opt) => {
-                      const active = selectedOptionFive === opt;
-                      return (
-                        <Button
-                          key={opt}
-                          type="button"
-                          variant={active ? "default" : "outline"}
-                          onClick={() => {
-                            setSelectedOptionFive(opt);
-                            setErrorMsg(null);
-                          }}
-                          className="min-h-11 px-4 py-2 rounded-lg text-sm font-medium"
-                        >
-                          {translateOptionValue(opt, lang)}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Fallback general buttons if no properties could be isolated or visible */}
-              {(!resolvedAxes.color.visible || uniqueColors.length === 0) &&
-                (!resolvedAxes.size.visible || uniqueSizes.length === 0) &&
-                (!resolvedAxes.fabric.visible || uniqueFabrics.length === 0) &&
-                (!resolvedAxes.four.visible || uniqueFour.length === 0) &&
-                (!resolvedAxes.five.visible || uniqueFive.length === 0) &&
-                hasVariants &&
-                (!showSizeModeToggle || sizeMode === "ready") &&
-                !isTailoringActive &&
-                !variants.every(isPlaceholderVariant) && (
-                  <div>
-                    <div className="text-sm font-medium mb-2">{t("الخيارات", "Options")}</div>
-                    <div className="flex flex-wrap gap-2">
-                      {variants.map((v) => {
-                        const oos = Number(v.stock_main || 0) + Number(v.stock_incubator || 0) <= 0;
-                        const active = v.id === variantId;
-                        const label =
-                          [
-                            formatSizeWithUnit(v.size, v.size_unit, lang),
-                            translateOptionValue(v.color, lang),
-                            translateOptionValue(v.fabric, lang),
-                            translateOptionValue(v.option_four, lang),
-                            translateOptionValue(v.option_five, lang),
-                          ]
-                            .filter(Boolean)
-                            .join(" · ") || t("متغيّر", "Variant");
-                        return (
-                          <Button
-                            key={v.id}
-                            type="button"
-                            variant={active ? "default" : "outline"}
-                            disabled={oos}
-                            onClick={() => {
-                              setVariantId(v.id);
-                              setQty(1);
-                              setErrorMsg(null);
-                            }}
-                            className={`min-h-11 px-4 py-2 rounded-lg text-sm font-medium ${
-                              oos ? "opacity-40 line-through cursor-not-allowed" : ""
-                            }`}
-                            aria-pressed={active}
-                          >
-                            {label}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-            </div>
+            <ProductOptionPickers
+              hasReadySizes={hasReadySizes}
+              hasVariants={hasVariants}
+              isColorOutOfStock={isColorOutOfStock}
+              isFabricOutOfStock={isFabricOutOfStock}
+              isMadeToOrder={isMadeToOrder}
+              isMeasurementField={isMeasurementField}
+              isSizeOutOfStock={isSizeOutOfStock}
+              isTailoringActive={isTailoringActive}
+              isVisualColorAxis={isVisualColorAxis}
+              lang={lang}
+              optionsRef={optionsRef}
+              primary={primary}
+              product={product}
+              resolvedAxes={resolvedAxes}
+              selectedColor={selectedColor}
+              selectedFabric={selectedFabric}
+              selectedOptionFive={selectedOptionFive}
+              selectedOptionFour={selectedOptionFour}
+              selectedSize={selectedSize}
+              setCfValues={setCfValues}
+              setErrorMsg={setErrorMsg}
+              setMeasurementsApplied={setMeasurementsApplied}
+              setQty={setQty}
+              setSelectedColor={setSelectedColor}
+              setSelectedFabric={setSelectedFabric}
+              setSelectedOptionFive={setSelectedOptionFive}
+              setSelectedOptionFour={setSelectedOptionFour}
+              setSelectedSize={setSelectedSize}
+              setSizeMode={setSizeMode}
+              setVariantId={setVariantId}
+              showSizeModeToggle={showSizeModeToggle}
+              sizeMode={sizeMode}
+              t={t}
+              uniqueColors={uniqueColors}
+              uniqueFabrics={uniqueFabrics}
+              uniqueFive={uniqueFive}
+              uniqueFour={uniqueFour}
+              uniqueSizes={uniqueSizes}
+              variantId={variantId}
+              variants={variants}
+              vocabulary={vocabulary}
+            />
           )}
 
           {applicableAddons.length > 0 && (
-            <div className="mb-6 space-y-3 rounded-xl border bg-card p-4 shadow-sm">
-              <div className="flex items-center gap-2 text-sm font-semibold">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <span>
-                  {t("الإضافات والتخصيصات المتاحة", "Available Add-ons & Customizations")}
-                </span>
-              </div>
-              <div className="grid gap-2">
-                {applicableAddons.map((addon: any) => {
-                  const isSelected = selectedAddonIds.includes(addon.id);
-                  const delta = Number(addon.price_delta || 0);
-                  return (
-                    <button
-                      key={addon.id}
-                      type="button"
-                      onClick={() => toggleAddon(addon.id)}
-                      className={`flex items-center justify-between gap-3 rounded-lg border p-3 text-start transition-all ${
-                        isSelected
-                          ? "border-primary bg-primary/5 text-primary font-medium ring-1 ring-primary"
-                          : "border-border hover:border-muted-foreground/40 bg-background"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div
-                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors ${
-                            isSelected
-                              ? "bg-primary border-primary text-primary-foreground"
-                              : "border-muted-foreground/40"
-                          }`}
-                        >
-                          {isSelected && <Check className="h-3.5 w-3.5 stroke-[3]" />}
-                        </div>
-                        <span className="text-sm truncate">{addon.name}</span>
-                      </div>
-                      {shouldShowPrices(settings) &&
-                        (delta > 0 ? (
-                          <span className="shrink-0 text-xs font-semibold dir-ltr">
-                            + {formatPrice(delta, currency, lang)}
-                          </span>
-                        ) : (
-                          <span className="shrink-0 text-xs text-muted-foreground font-medium">
-                            {t("مجاني", "Free")}
-                          </span>
-                        ))}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            <ProductAddonsPicker
+              applicableAddons={applicableAddons}
+              currency={currency}
+              lang={lang}
+              selectedAddonIds={selectedAddonIds}
+              settings={settings}
+              t={t}
+              toggleAddon={toggleAddon}
+            />
           )}
 
           <AddonSlot
@@ -1799,230 +1116,24 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           />
 
           {visibleCustomFields.length > 0 && (!showSizeModeToggle || sizeMode === "custom") && (
-            <div className="mb-6 space-y-4 rounded-xl border bg-card p-4 shadow-sm">
-              {showSizeModeToggle && sizeMode === "custom" && (
-                <div className="rounded-lg bg-primary/10 border border-primary/20 p-3 text-xs font-medium text-primary flex items-center gap-2 mb-2">
-                  <Scissors className="h-4 w-4 shrink-0" />
-                  <span>
-                    {vocabulary.customization_options?.[lang] ||
-                      t(
-                        "يرجى إدخال تفاصيل وخيارات الطلب أدناه:",
-                        "Please enter your custom details and options below:",
-                      )}
-                  </span>
-                </div>
-              )}
-              {visibleCustomFields.map((f) => {
-                const label = cfLabel(f);
-                const val = cfValues[f.key] ?? "";
-                const set = (v: string) => {
-                  setCfValues((s) => ({ ...s, [f.key]: v }));
-                  setErrorMsg(null);
-                };
-                const isUploading = uploadingField[f.key];
-
-                const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  try {
-                    setUploadingField((prev) => ({ ...prev, [f.key]: true }));
-                    const url = await uploadPublicMedia(brand.id, file, "product");
-                    set(url);
-                    toast.success(t("تم رفع الملف بنجاح", "File uploaded successfully"));
-                  } catch (err: any) {
-                    toast.error(err.message ?? t("فشل في رفع الملف", "File upload failed"));
-                  } finally {
-                    setUploadingField((prev) => ({ ...prev, [f.key]: false }));
-                  }
-                };
-
-                return (
-                  <div key={f.key} className="space-y-1">
-                    <label className="block text-sm font-semibold mb-1">
-                      {label}
-                      {f.required && <span className="text-destructive ms-1">*</span>}
-                    </label>
-                    {f.type === "select" ? (
-                      <select
-                        value={val}
-                        onChange={(e) => set(e.target.value)}
-                        className="w-full h-11 rounded-md border border-input bg-background px-3 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                      >
-                        <option value="">{t("اختر...", "Select...")}</option>
-                        {(f.options ?? []).map((o) => (
-                          <option key={o} value={o}>
-                            {o}
-                          </option>
-                        ))}
-                      </select>
-                    ) : f.type === "file" ? (
-                      <div className="space-y-2">
-                        {val ? (
-                          <div className="flex items-center justify-between p-3 border rounded-xl bg-muted/30">
-                            <div className="flex items-center gap-3 min-w-0">
-                              {/\.(jpg|jpeg|png|gif|webp|svg)$/i.test(val) ? (
-                                <img
-                                  src={val}
-                                  alt=""
-                                  className="h-12 w-12 rounded object-cover border"
-                                />
-                              ) : (
-                                <div className="h-12 w-12 rounded bg-primary/10 grid place-items-center text-primary text-xs font-bold uppercase">
-                                  FILE
-                                </div>
-                              )}
-                              <div className="min-w-0">
-                                <div className="text-xs text-muted-foreground truncate">
-                                  {t("الملف المرفوع", "Uploaded file")}
-                                </div>
-                                <a
-                                  href={val}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="text-xs text-primary font-medium hover:underline truncate block"
-                                >
-                                  {val}
-                                </a>
-                              </div>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="text-muted-foreground hover:text-destructive shrink-0"
-                              onClick={() => set("")}
-                              aria-label={t("إزالة", "Remove")}
-                              title={t("إزالة", "Remove")}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="relative">
-                            <input
-                              type="file"
-                              accept="image/*,application/pdf"
-                              onChange={handleFileChange}
-                              className="hidden"
-                              id={`file-input-${f.key}`}
-                              disabled={isUploading}
-                            />
-                            <label
-                              htmlFor={`file-input-${f.key}`}
-                              className={`flex min-h-[56px] w-full cursor-pointer items-center justify-center gap-2.5 rounded-xl border border-dashed border-muted-foreground/30 px-4 py-3 text-sm font-medium transition hover:bg-muted/40 ${
-                                isUploading ? "pointer-events-none opacity-50" : ""
-                              }`}
-                            >
-                              {isUploading ? (
-                                <>
-                                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                                  <span className="text-muted-foreground">
-                                    {t("جاري الرفع...", "Uploading...")}
-                                  </span>
-                                </>
-                              ) : (
-                                <>
-                                  <Upload className="h-4 w-4 text-muted-foreground" />
-                                  <span>
-                                    {t(
-                                      "انقر لرفع الشعار أو الملف الخاص بك",
-                                      "Click to upload your logo or file",
-                                    )}
-                                  </span>
-                                </>
-                              )}
-                            </label>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <Input
-                        type={f.type === "number" ? "number" : "text"}
-                        value={val}
-                        onChange={(e) => set(e.target.value)}
-                        placeholder={(() => {
-                          if (lang === "ar") {
-                            if ((f as any).placeholder_ar) return (f as any).placeholder_ar;
-                            if ((f as any).placeholder) return (f as any).placeholder;
-                          } else {
-                            if ((f as any).placeholder_en) return (f as any).placeholder_en;
-                            if ((f as any).placeholder) return (f as any).placeholder;
-                          }
-                          const lStr = (
-                            (lang === "ar" ? f.label_ar || f.label_en : f.label_en || f.label_ar) ||
-                            f.key ||
-                            ""
-                          ).toLowerCase();
-                          if (lStr.includes("length") || lStr.includes("طول")) {
-                            return lang === "ar" ? "مثال: 56 (بالإنش)" : "e.g. 56 (in inches)";
-                          }
-                          if (lStr.includes("bust") || lStr.includes("صدر")) {
-                            return lang === "ar" ? "مثال: 22 (بالإنش)" : "e.g. 22 (in inches)";
-                          }
-                          if (lStr.includes("sleeve") || lStr.includes("كم")) {
-                            return lang === "ar" ? "مثال: 28 (بالإنش)" : "e.g. 28 (in inches)";
-                          }
-                          if (lStr.includes("shoulder") || lStr.includes("كتف")) {
-                            return lang === "ar" ? "مثال: 15 (بالإنش)" : "e.g. 15 (in inches)";
-                          }
-                          if (/waist|hips|height|size|measurement|خصر|ورك|قياس|مقاس/.test(lStr)) {
-                            return lang === "ar"
-                              ? "أدخل القياس بالإنش (مثال: 56)"
-                              : "Enter measurement in inches (e.g. 56)";
-                          }
-                          return lang === "ar"
-                            ? "أدخل التفاصيل المطلوبة..."
-                            : "Type required details here...";
-                        })()}
-                        className="w-full h-11 rounded-xl shadow-2xs"
-                      />
-                    )}
-                  </div>
-                );
-              })}
-
-              {/* 📝 Customer Tailoring & Workshop Notes Box */}
-              {modules.made_to_order && (
-                <div className="space-y-2 pt-3 border-t border-border-subtle">
-                  <div className="flex items-center justify-between">
-                    <label className="flex items-center gap-2 text-xs sm:text-sm font-bold text-foreground">
-                      <FileText className="h-4 w-4 text-primary shrink-0" />
-                      <span>
-                        {vocabulary.workshop_notes_label?.[lang] ||
-                          t(
-                            "ملاحظات وتفاصيل التجهيز (اختياري)",
-                            "Production & Workshop Notes (Optional)",
-                          )}
-                      </span>
-                    </label>
-                    <span className="text-xs text-muted-foreground font-normal">
-                      {vocabulary.workshop_instructions?.[lang] ||
-                        t("تعليمات للورشة", "Workshop notes")}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {vocabulary.workshop_notes_placeholder?.[lang]
-                      ? `${t("ملاحظات خاصة:", "Special instructions:")} ${vocabulary.workshop_notes_placeholder[lang]}`
-                      : t(
-                          "اكتب هنا أي تفاصيل خاصة للتجهيز ترغب بإبلاغ الورشة بها",
-                          "Add any specific production instructions for the workshop",
-                        )}
-                  </p>
-                  <Textarea
-                    rows={3}
-                    value={tailoringNotes}
-                    onChange={(e) => setTailoringNotes(e.target.value)}
-                    placeholder={
-                      vocabulary.workshop_notes_placeholder?.[lang] ||
-                      (lang === "ar"
-                        ? "أدخل الملاحظات والتعليمات الخاصة هنا..."
-                        : "Type any special requests or notes here...")
-                    }
-                    className="text-xs bg-background resize-none leading-relaxed rounded-xl border border-input shadow-2xs focus-visible:ring-2 focus-visible:ring-ring"
-                  />
-                </div>
-              )}
-            </div>
+            <ProductCustomFields
+              brand={brand}
+              cfLabel={cfLabel}
+              cfValues={cfValues}
+              lang={lang}
+              modules={modules}
+              setCfValues={setCfValues}
+              setErrorMsg={setErrorMsg}
+              setTailoringNotes={setTailoringNotes}
+              setUploadingField={setUploadingField}
+              showSizeModeToggle={showSizeModeToggle}
+              sizeMode={sizeMode}
+              t={t}
+              tailoringNotes={tailoringNotes}
+              uploadingField={uploadingField}
+              visibleCustomFields={visibleCustomFields}
+              vocabulary={vocabulary}
+            />
           )}
 
           <AddonSlot
@@ -2209,110 +1320,26 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
 
         {/* Mobile sticky purchase bar. Publishes its height so bottom-fixed
             overlays (consent banner) stack above it rather than over it. */}
-        <div
-          ref={stickyCtaRef}
-          className="md:hidden fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 backdrop-blur px-3 py-2 shadow-[0_-4px_16px_-8px_rgba(0,0,0,0.15)]"
-          style={{ paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom, 0px))" }}
-        >
-          <div className="mx-auto max-w-6xl flex items-center gap-2">
-            <div className="min-w-0 flex-1">
-              <div className="text-xs uppercase tracking-wider text-muted-foreground truncate">
-                {variant
-                  ? [
-                      (showSizeModeToggle && sizeMode === "custom") ||
-                      (!hasReadySizes && isTailoringActive)
-                        ? vocabulary.custom_sizing?.[lang] || t("قياس خاص", "Custom Sizing")
-                        : formatSizeWithUnit(variant.size, variant.size_unit, lang),
-                      variant.color,
-                      variant.fabric,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ") || t("مختار", "Selected")
-                  : t("اختر الخيار", "Choose option")}
-              </div>
-              <div className="text-base font-semibold truncate" style={{ color: primary }}>
-                {!shouldShowPrices(settings) ? (
-                  <span className="text-xs font-normal text-muted-foreground">
-                    {t("تواصل معنا للسعر", "Contact us for price")}
-                  </span>
-                ) : (
-                  priceLabel
-                )}
-              </div>
-            </div>
-            {isCatalogMode(settings) ? (
-              <Button
-                type="button"
-                className="h-11 px-4 font-semibold bg-primary text-primary-foreground gap-2"
-                onClick={() => {
-                  if (inquiryUrl) {
-                    void trackProductEngagement(brand.slug, product.id, "inquiry");
-                    window.open(inquiryUrl, "_blank", "noopener,noreferrer");
-                  } else {
-                    toast.error(
-                      t(
-                        "رقم التواصل عبر واتساب غير متوفر حالياً",
-                        "WhatsApp contact number is not available",
-                      ),
-                    );
-                  }
-                }}
-                aria-label={t("طلب عبر واتساب", "Inquire via WhatsApp")}
-              >
-                <MessageCircle className="h-4 w-4" />
-                <span>{t("طلب عبر واتساب", "Inquire")}</span>
-              </Button>
-            ) : selectedVariantOutOfStock ? (
-              <Button
-                type="button"
-                className="flex-1 h-11 px-4 font-semibold bg-primary text-primary-foreground gap-2"
-                onClick={scrollToOptions}
-              >
-                <Bell className="h-4 w-4" />
-                <span>{t("أشعرني عند التوفر", "Notify When Available")}</span>
-              </Button>
-            ) : (
-              <>
-                <Button
-                  className="h-11 px-3 font-semibold bg-primary text-primary-foreground"
-                  disabled={selectedVariantOutOfStock}
-                  aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
-                  onClick={() => doAdd(false)}
-                  aria-label={
-                    isTailoringActive
-                      ? vocabulary.custom_order?.[lang]
-                        ? lang === "ar"
-                          ? `طلب ${vocabulary.custom_order[lang]} القطعة`
-                          : `Order ${vocabulary.custom_order[lang]} Piece`
-                        : t("طلب تجهيز القطعة", "Order Custom Piece")
-                      : t("أضف للسلة", "Add to cart")
-                  }
-                >
-                  {isTailoringActive ? (
-                    <Sparkles className="h-4 w-4" />
-                  ) : (
-                    <ShoppingBag className="h-4 w-4" />
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-11 px-4 font-semibold border-2"
-                  disabled={selectedVariantOutOfStock}
-                  aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
-                  onClick={() => doAdd(true)}
-                >
-                  {isTailoringActive
-                    ? vocabulary.custom_order?.[lang]
-                      ? lang === "ar"
-                        ? `إتمام طلب ال${vocabulary.custom_order[lang]}`
-                        : `Complete ${vocabulary.custom_order[lang]}`
-                      : t("إتمام الطلب", "Complete Order")
-                    : t("اشتر الآن", "Buy now")}
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
+        <ProductMobileBuyBar
+          brand={brand}
+          doAdd={doAdd}
+          hasReadySizes={hasReadySizes}
+          inquiryUrl={inquiryUrl}
+          isTailoringActive={isTailoringActive}
+          lang={lang}
+          priceLabel={priceLabel}
+          primary={primary}
+          product={product}
+          scrollToOptions={scrollToOptions}
+          selectedVariantOutOfStock={selectedVariantOutOfStock}
+          settings={settings}
+          showSizeModeToggle={showSizeModeToggle}
+          sizeMode={sizeMode}
+          stickyCtaRef={stickyCtaRef}
+          t={t}
+          variant={variant}
+          vocabulary={vocabulary}
+        />
       </div>
 
       {(relatedProducts.length > 0 || bestSellingProducts.length > 0) && (

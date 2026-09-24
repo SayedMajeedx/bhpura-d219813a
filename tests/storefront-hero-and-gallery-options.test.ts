@@ -3,6 +3,20 @@ import fs from "fs";
 import path from "path";
 import { SETTINGS_REGISTRY } from "../src/features/settings/registry";
 
+// The product page is split across its route and src/features/product-page (Phase 5).
+const productPageSource = () =>
+  [
+    "src/routes/$slug.product.$id.tsx",
+    ...["components", "lib"].flatMap((dir) =>
+      fs
+        .readdirSync(`src/features/product-page/${dir}`)
+        .sort()
+        .map((file) => `src/features/product-page/${dir}/${file}`),
+    ),
+  ]
+    .map((file) => fs.readFileSync(file, "utf8"))
+    .join("\n");
+
 describe("Storefront Hero & PDP Gallery Options Suite", () => {
   it("registers all 6 hero and gallery settings in SETTINGS_REGISTRY with correct metadata", () => {
     const keys = [
@@ -106,10 +120,7 @@ describe("Storefront Hero & PDP Gallery Options Suite", () => {
   });
 
   it("PDP route enforces gallery aspect ratio, RTL logical arrow positioning, and overflow containment", () => {
-    const pdpCode = fs.readFileSync(
-      path.resolve(__dirname, "../src/routes/$slug.product.$id.tsx"),
-      "utf-8",
-    );
+    const pdpCode = productPageSource();
 
     // Gallery aspect ratio from settings
     expect(pdpCode).toContain("pdp_gallery_aspect_ratio");
