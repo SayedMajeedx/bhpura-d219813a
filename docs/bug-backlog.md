@@ -8,6 +8,30 @@ Line numbers are as of 2026-09-24 and may drift; search for the quoted code.
 
 ---
 
+## Orders (`src/routes/_authenticated/admin.b.$slug.orders.$id.tsx`, `src/features/orders/`)
+
+### 10. HIGH — Product cost and stock can reach customers through the public invoice
+
+- **Where**: in the order editor, `handleSelectVariantFromModal` (the "add product" search) builds the line with `selected_variant: variant`, where `variant` is a full `product_variants` row (`variantsQ` selects `*`).
+- **Chain**:
+  - `replace_order_items` stores `v_item->'selected_variant'` as-is. Verified on production (read-only) on 2026-09-24.
+  - `getPublicInvoice` (`src/lib/public-invoice.functions.ts`) returns `order_items.selected_variant` on the public, unauthenticated invoice link.
+- **Effect**: a customer opening their invoice link can read the variant's `cost_price`, stock counts, barcode and SKU in the network response. Production had 0 affected rows on 2026-09-24 (3 of 7 items have `selected_variant`, none with `cost_price`). Every item added through the search modal from now on is affected.
+- **Fix**:
+  1. Store only `{ size, color, fabric }`, as the barcode and variant-picker paths already do.
+  2. Make `getPublicInvoice` return only those three keys.
+  3. Optionally strip other keys in `replace_order_items`. That needs a migration and owner approval.
+  4. Clean existing rows with an owner-approved update.
+
+### 11. The three "add item" paths build lines differently
+
+- **Where**: the order editor's `handleSelectVariantFromModal` (search), `handleScanned` (barcode) and `pickVariant` (variant picker).
+- **Problem**:
+  - The search path sets `original_price` to the selling price. The other two use the variant's `original_price`, so a sale item added by search looks undiscounted. This may affect the promo rule `NO_ELIGIBLE_ITEMS` and the sale display on invoices.
+  - The search path joins the description with `" — "`; the other two use newlines.
+  - The search path stores the whole variant (see #10) and no `custom_field_values`.
+- **Fix**: one pure `orderItemFromVariant(variant, product, axes)` in `src/features/orders/lib/order-editor.ts`, used by all three, with tests. Agree the `original_price` rule with the owner first.
+
 ## Inventory (`src/features/inventory/`)
 
 ### 1. Categories cache key shared by three different queries
