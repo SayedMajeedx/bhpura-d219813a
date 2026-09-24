@@ -86,7 +86,11 @@ export function useOrderLineActions({
         customization_total: 0,
         line_total: price,
         location: preferredLoc,
-        selected_variant: variant,
+        selected_variant: {
+          size: variant.size || null,
+          color: variant.color || null,
+          fabric: variant.fabric || null,
+        },
       },
     ]);
     toast.success(

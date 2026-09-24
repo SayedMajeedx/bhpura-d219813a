@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { variantSpecs } from "@/lib/order-variant-specs";
 
 const inputSchema = z.object({ id: z.string().uuid() });
 
@@ -67,5 +68,20 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
 
     // The query above is intentionally allowlisted. Never replace it with `*`:
     // new internal order fields must not become public automatically.
-    return { order, settings, shippingAddress, branch, brandAddons: brandAddons ?? [] };
+    // selected_variant is free-form JSON; older admin-created lines stored whole
+    // variant rows (cost price, stock). Only size, colour and fabric are public.
+    const publicOrder = {
+      ...order,
+      order_items: (order.order_items ?? []).map((item: { selected_variant?: unknown }) => ({
+        ...item,
+        selected_variant: variantSpecs(item.selected_variant),
+      })),
+    };
+    return {
+      order: publicOrder,
+      settings,
+      shippingAddress,
+      branch,
+      brandAddons: brandAddons ?? [],
+    };
   });
