@@ -1,4 +1,6 @@
 import { execSync } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 export function checkMigrationDrift() {
   console.log("Checking Supabase migration drift between local and linked database...");
@@ -67,6 +69,6 @@ export function checkMigrationDrift() {
   console.log(`Zero migration drift verified across ${entries.length} recorded versions.`);
 }
 
-if (process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, "/"))) {
+if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   checkMigrationDrift();
 }

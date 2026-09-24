@@ -16,6 +16,7 @@ Welcome to the Boutq OS engineering documentation. This directory contains archi
 | **[`ci-cd.md`](./ci-cd.md)**                                                               | Continuous integration pipeline jobs, branch protection rules, local validation commands, and production deployment/rollback protocols.          |
 | **[`observability-and-reliability.md`](./observability-and-reliability.md)**               | Machine-readable health probes (`/api/health/live`, `/api/health/ready`), background job failure boundaries, and alerting guidelines.            |
 | **[`database-recovery.md`](./database-recovery.md)**                                       | Production database migration safety, additive schema rules, restore drills, and drift avoidance.                                                |
+| **[`database-reconciliation.md`](./database-reconciliation.md)**                           | Phase 2 audit: 100% schema alignment verification and ledger reconciliation plan for all 32 local and 23 remote migrations.                      |
 | **[`security/credential-rotation-runbook.md`](./security/credential-rotation-runbook.md)** | Operational checklist for rotating production API keys, Supabase credentials, and payment gateway secrets.                                       |
 | **[`release/`](./release/)**                                                               | Post-launch QA audits, audit screenshots, and chunk exception documentation.                                                                     |
 
