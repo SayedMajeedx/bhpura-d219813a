@@ -79,12 +79,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { parseVariantPrompt, type VariantGenerationPlan } from "@/lib/generate-variants.functions";
-import {
-  formatSkuToken,
-  makeEan13,
-  splitVariantValues,
-  PLACEHOLDER_SIZE_VALUES,
-} from "@/lib/variant-sku-utils";
+import { PLACEHOLDER_SIZE_VALUES } from "@/lib/variant-sku-utils";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 import { InventoryCommandHeader } from "@/components/inventory/InventoryCommandHeader";
@@ -129,6 +124,12 @@ import type {
   BulkVariantRow,
 } from "@/features/inventory/types";
 import { SIZE_UNITS, SIZE_UNIT_LABELS } from "@/features/inventory/lib/size-units";
+import {
+  batchSalePriceValue,
+  buildBulkVariantRows,
+  bulkRowPricing,
+  hasInvalidBulkRows,
+} from "@/features/inventory/lib/bulk-variants";
 import { useInventoryAxisDefaults } from "@/features/inventory/hooks/use-inventory-axis-defaults";
 import { prefetchOptionTranslations } from "@/features/inventory/lib/option-translations";
 import { VariantImageUploader } from "@/features/inventory/components/VariantImageUploader";
@@ -3475,66 +3476,31 @@ function BulkVariantDialog({
   };
 
   const buildPreview = () => {
-    const sizes = splitVariantValues(sizesText);
-    const colors = splitVariantValues(colorsText);
-    const combinations = Math.max(1, sizes.length) * Math.max(1, colors.length);
-    if (combinations > 100)
+    const result = buildBulkVariantRows({
+      sizesText,
+      colorsText,
+      plan,
+      basePrice: Number(product?.base_price ?? 0),
+      costPrice: Number(product?.cost_price ?? 0),
+      salePriceText,
+      existingBarcodes: variants.map((v) => v.barcode).filter(Boolean) as string[],
+    });
+    if (result.kind === "error") {
       return toast.error(
-        isAr ? "الحد الأقصى 100 متغير في المرة الواحدة" : "Maximum 100 variants per batch",
+        result.reason === "too-many"
+          ? isAr
+            ? "الحد الأقصى 100 متغير في المرة الواحدة"
+            : "Maximum 100 variants per batch"
+          : result.reason === "missing-base-sku"
+            ? isAr
+              ? "أدخل رمز المنتج الأساسي"
+              : "Enter a base SKU"
+            : isAr
+              ? "لا يمكن أن يكون سعر التخفيض أعلى من السعر الأساسي."
+              : "Sale price cannot be higher than the regular price.",
       );
-    if (!plan.base_sku.trim())
-      return toast.error(isAr ? "أدخل رمز المنتج الأساسي" : "Enter a base SKU");
-
-    const basePrice = Number(product?.base_price ?? 0);
-    const enteredSalePrice = salePriceText.trim() === "" ? null : Number(salePriceText);
-    if (
-      enteredSalePrice !== null &&
-      (!Number.isFinite(enteredSalePrice) || enteredSalePrice < 0 || enteredSalePrice > basePrice)
-    )
-      return toast.error(
-        isAr
-          ? "لا يمكن أن يكون سعر التخفيض أعلى من السعر الأساسي."
-          : "Sale price cannot be higher than the regular price.",
-      );
-
-    const salePrice =
-      enteredSalePrice !== null && enteredSalePrice > 0 && enteredSalePrice < basePrice
-        ? enteredSalePrice
-        : null;
-
-    const usedBarcodes = new Set(variants.map((v) => v.barcode).filter(Boolean) as string[]);
-    const sizeAxis = sizes.length ? sizes : [""];
-    const colorAxis = colors.length ? colors : [""];
-
-    const generated = sizeAxis.flatMap((size) =>
-      colorAxis.map((color) => {
-        const tokens = [color ? formatSkuToken(color) : "", size ? formatSkuToken(size) : ""]
-          .filter(Boolean)
-          .join("-");
-
-        const baseSkuFormatted = plan.base_sku.trim().toUpperCase();
-        const sku = `${baseSkuFormatted}${tokens ? `-${tokens}` : ""}`;
-
-        const sizeSpecificStock =
-          size && plan.size_stock_map && plan.size_stock_map[size] !== undefined
-            ? plan.size_stock_map[size]
-            : plan.stock_main;
-
-        return {
-          ...plan,
-          stock_main: sizeSpecificStock,
-          cost_price: Number(product?.cost_price ?? 0),
-          selling_price: salePrice ?? basePrice,
-          sale_price: salePrice === null ? "" : String(salePrice),
-          size,
-          color,
-          size_unit: plan.size_unit,
-          sku,
-          barcode: makeEan13(usedBarcodes),
-        } as BulkVariantRow;
-      }),
-    );
-    setRows(generated);
+    }
+    setRows(result.rows);
   };
 
   const patchRow = (index: number, patch: Partial<BulkVariantRow>) =>
@@ -3555,47 +3521,17 @@ function BulkVariantDialog({
   };
 
   const applyBatchSalePrice = () => {
-    const val = Number(batchSalePrice);
-    const basePrice = Number(product?.base_price ?? 0);
-    if (isNaN(val) || val < 0 || val > basePrice) {
+    const formatted = batchSalePriceValue(batchSalePrice, Number(product?.base_price ?? 0));
+    if (formatted === null) {
       toast.error(isAr ? "سعر التخفيض غير صالح" : "Invalid sale price");
       return;
     }
-    const formatted = val > 0 && val < basePrice ? String(val) : "";
     setRows((current) => current.map((row) => ({ ...row, sale_price: formatted })));
     setBatchSalePrice("");
   };
 
   const saveAll = async () => {
-    const existingSkus = new Set(variants.map((v) => v.sku?.trim().toUpperCase()).filter(Boolean));
-    const existingBarcodes = new Set(
-      variants.map((v) => v.barcode?.trim().toUpperCase()).filter(Boolean),
-    );
-    const seenSkus = new Set<string>();
-    const seenBarcodes = new Set<string>();
-    const invalid = rows.some((row) => {
-      const sku = row.sku.trim().toUpperCase();
-      const barcode = row.barcode.trim().toUpperCase();
-      const bad =
-        !sku ||
-        !barcode ||
-        existingSkus.has(sku) ||
-        existingBarcodes.has(barcode) ||
-        seenSkus.has(sku) ||
-        seenBarcodes.has(barcode) ||
-        (row.sale_price !== "" &&
-          (!Number.isFinite(Number(row.sale_price)) ||
-            Number(row.sale_price) < 0 ||
-            Number(row.sale_price) > Number(product?.base_price ?? 0))) ||
-        row.cost_price < 0 ||
-        !Number.isInteger(row.stock_main) ||
-        row.stock_main < 0 ||
-        !Number.isInteger(row.stock_incubator) ||
-        row.stock_incubator < 0;
-      seenSkus.add(sku);
-      seenBarcodes.add(barcode);
-      return bad;
-    });
+    const invalid = hasInvalidBulkRows(rows, variants, Number(product?.base_price ?? 0));
     if (!rows.length || invalid)
       return toast.error(
         isAr
@@ -3620,14 +3556,7 @@ function BulkVariantDialog({
           sku: row.sku.trim(),
           barcode: row.barcode.trim(),
           cost_price: Number(product?.cost_price ?? 0),
-          selling_price:
-            Number(row.sale_price) > 0 && Number(row.sale_price) < Number(product?.base_price ?? 0)
-              ? Number(row.sale_price)
-              : Number(product?.base_price ?? 0),
-          original_price:
-            Number(row.sale_price) > 0 && Number(row.sale_price) < Number(product?.base_price ?? 0)
-              ? Number(product?.base_price ?? 0)
-              : null,
+          ...bulkRowPricing(row.sale_price, Number(product?.base_price ?? 0)),
           stock_main: row.stock_main,
           stock_incubator: row.stock_incubator,
           stock: Number(row.stock_main || 0) + Number(row.stock_incubator || 0),
