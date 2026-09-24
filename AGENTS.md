@@ -72,7 +72,7 @@ node scripts/maintainability-metrics.mjs # Architecture metrics & debt ratchet c
   - Cards & presentation: `src/components/storefront/product-card.tsx` (`ProductCard` / `ProductCardV2`)
   - Variant axes & SKUs: `src/lib/variant-axes.ts`, `src/lib/variant-sku-utils.ts`, `src/lib/variant-i18n.ts`
 - **Orders & Checkout**:
-  - Admin order processing: `src/routes/_authenticated/admin.b.$slug.orders.$id.tsx`, `src/components/orders/`
+  - Admin order editor: `src/features/orders/` (`components/` for the cards, dialogs and line editor; `hooks/` for data, save, payment, promo and line actions; `actions/` for print/share and status changes; `lib/` for pure, unit-tested rules such as totals, save payloads and change detection). The route `src/routes/_authenticated/admin.b.$slug.orders.$id.tsx` holds the editor state and layout. Shared order UI: `src/components/orders/`
   - Storefront checkout: `src/routes/$slug.checkout.tsx`, `src/routes/$slug.thank-you.$orderId.tsx`
   - State machine & returns: `src/lib/order-workflow.ts`, `src/lib/returns.functions.ts`
 - **Storefront Hero & Media**:
