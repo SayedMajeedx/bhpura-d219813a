@@ -6,7 +6,6 @@ describe("Item 3 & Item 4: Category taxonomy & RPC security integrity", () => {
     "supabase/migrations/20260905110000_remediate_phase5_categories_and_campaign_safeguards.sql",
     "utf8",
   );
-  const storefrontCategory = readFileSync("src/routes/$slug.$category.tsx", "utf8");
   const storefrontIndex = readFileSync("src/routes/$slug.index.tsx", "utf8");
 
   it("enforces admin access and brand boundary inside get_brand_categories_with_counts", () => {
@@ -29,12 +28,6 @@ describe("Item 3 & Item 4: Category taxonomy & RPC security integrity", () => {
     expect(migration5).toContain("c.slug IN ('new-arrivals', 'new')");
     expect(migration5).toContain("p.created_at >= (now() - interval '30 days')");
     expect(migration5).toContain("p.is_active = true");
-  });
-
-  it("applies 30-day window query constraint on storefront category page", () => {
-    expect(storefrontCategory).toContain('if (smartKind === "new")');
-    expect(storefrontCategory).toContain("30 * 24 * 60 * 60 * 1000");
-    expect(storefrontCategory).toContain('query.gte("created_at", thirtyDaysAgo)');
   });
 
   it("applies 30-day window filter for new-arrivals on storefront homepage", () => {

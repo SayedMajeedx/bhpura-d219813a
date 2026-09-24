@@ -4,7 +4,7 @@ import { useStorefront } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OsEmptyState } from "@/components/os/os-empty-state";
-import { type ProductRow } from "@/routes/$slug.index";
+import { type ProductRow } from "@/lib/data/storefront";
 import { ProductCard } from "./product-card";
 
 export function ProductGrid({

@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import { useStorefront } from "@/lib/storefront-context";
 import { ProductCard } from "@/components/storefront/product-card";
-import { type ProductRow } from "@/routes/$slug.index";
+import { storefrontQueries } from "@/lib/data/storefront";
 import { Clock } from "lucide-react";
 
 const STORAGE_PREFIX = "boutq_rv_";
@@ -55,26 +54,8 @@ export function RecentlyViewed({ excludeProductId, className = "" }: RecentlyVie
   }, [brand.slug, excludeProductId, isEnabled]);
 
   const { data: products = [] } = useQuery({
-    queryKey: ["storefront", brand.slug, "recently-viewed", productIds.join(",")],
+    ...storefrontQueries.productsByIds(brand, "recently-viewed", productIds),
     enabled: isEnabled && productIds.length > 0,
-    queryFn: async () => {
-      if (!productIds.length) return [];
-      const { data, error } = await supabase
-        .from("products")
-        .select(
-          "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, custom_fields, is_active, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, color)",
-        )
-        .eq("brand_id", brand.id)
-        .eq("is_active", true)
-        .in("id", productIds);
-
-      if (error) return [];
-      const list = (data ?? []) as unknown as ProductRow[];
-      // Preserve recent order
-      const map = new Map(list.map((p) => [p.id, p]));
-      return productIds.map((id) => map.get(id)).filter(Boolean) as ProductRow[];
-    },
-    staleTime: 5 * 60_000,
   });
 
   if (!isEnabled || !products || products.length === 0) {

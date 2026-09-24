@@ -98,5 +98,34 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Phase 4 data layer: the public storefront reads its catalog only through
+    // `@/lib/data/storefront`, so one cache key always holds one column list.
+    // Admin screens are not covered yet (their domains migrate later).
+    files: ["src/routes/$slug.*", "src/components/storefront/**"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(products|product_variants|categories|customization_options)$/]",
+          message:
+            "Storefront catalog reads go through `@/lib/data/storefront` (storefrontQueries / fetchers), not direct Supabase calls.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='rpc'][arguments.0.value=/^get_storefront_(page_data|best_sellers|trending)$/]",
+          message:
+            "Use the fetchers in `@/lib/data/storefront` for storefront page data and rankings.",
+        },
+        {
+          selector:
+            "CallExpression[callee.expression.property.name='rpc'][arguments.0.value=/^get_storefront_(page_data|best_sellers|trending)$/]",
+          message:
+            "Use the fetchers in `@/lib/data/storefront` for storefront page data and rankings.",
+        },
+      ],
+    },
+  },
   eslintPluginPrettier,
 );

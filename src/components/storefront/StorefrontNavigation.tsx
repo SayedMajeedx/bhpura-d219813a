@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { publicSupabase as supabase } from "@/integrations/supabase/client";
+import { storefrontQueries } from "@/lib/data/storefront";
 import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -22,6 +22,9 @@ import {
   User,
   Grid2X2,
 } from "lucide-react";
+
+/** How many products the header search lists while typing. */
+const HEADER_SEARCH_RESULT_LIMIT = 8;
 
 function NavCategoryItem({
   category,
@@ -141,20 +144,8 @@ function MobileStorefrontDropdown() {
   const drawerBg = isGlass ? hexToRgba(menuBackground, 0.65) : menuBackground;
 
   const { data: categories = [] } = useQuery({
-    queryKey: ["storefront", brand.slug, "categories"],
-    queryFn: async () => {
-      const { data, error } = await (supabase.from("categories") as any)
-        .select("id, name_en, name_ar, parent_id, slug, image_url, menu_icon_url, sort_order")
-        .eq("brand_id", brand.id)
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
-      if (error) throw error;
-      return data ?? [];
-    },
+    ...storefrontQueries.categories(brand),
     enabled: isOpen,
-    staleTime: 5 * 60_000,
-    gcTime: 30 * 60_000,
-    refetchOnWindowFocus: false,
   });
 
   const close = () => {
@@ -582,21 +573,7 @@ function DesktopSubMenu({
 
 function DesktopStoreNavigation() {
   const { brand, lang, t } = useStorefront();
-  const { data = [] } = useQuery({
-    queryKey: ["storefront", brand.slug, "categories"],
-    queryFn: async () => {
-      const { data, error } = await (supabase.from("categories") as any)
-        .select("id, name_en, name_ar, parent_id, slug, sort_order")
-        .eq("brand_id", brand.id)
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
-      if (error) throw error;
-      return data ?? [];
-    },
-    staleTime: 5 * 60_000,
-    gcTime: 30 * 60_000,
-    refetchOnWindowFocus: false,
-  });
+  const { data = [] } = useQuery(storefrontQueries.categories(brand));
 
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
   const timeoutRef = useRef<any>(null);
@@ -738,36 +715,12 @@ function SearchBar() {
   }, [q]);
 
   const { data, isFetching } = useQuery({
-    queryKey: ["storefront", brand.slug, "live-search", debounced],
+    ...storefrontQueries.quickSearch(brand, debounced, HEADER_SEARCH_RESULT_LIMIT),
     enabled: modalOpen && debounced.length >= 2,
-    queryFn: async () => {
-      const pattern = `%${debounced.replace(/[%_]/g, (m: string) => `\\${m}`)}%`;
-      const { data, error } = await supabase
-        .from("products")
-        .select(
-          "id, name, name_ar, name_en, category, image_url, media, product_variants(selling_price, original_price)",
-        )
-        .eq("brand_id", brand.id)
-        .eq("is_active", true)
-        .or(`name.ilike.${pattern},name_ar.ilike.${pattern},name_en.ilike.${pattern}`)
-        .limit(8);
-      if (error) throw error;
-      return (data ?? []) as unknown as Array<{
-        id: string;
-        name: string;
-        name_ar: string | null;
-        name_en: string | null;
-        category: string | null;
-        image_url: string | null;
-        media: Array<{ type: "image" | "video"; url: string }> | null;
-        product_variants: Array<{ selling_price: number; original_price: number | null }>;
-      }>;
-    },
-    staleTime: 15_000,
   });
 
-  const { data: categories = [] } = useQuery<any[]>({
-    queryKey: ["storefront", brand.slug, "categories"],
+  const { data: categories = [] } = useQuery({
+    ...storefrontQueries.categories(brand),
     enabled: modalOpen,
   });
 

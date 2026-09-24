@@ -1,9 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Heart } from "lucide-react";
-import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import { useStorefront } from "@/lib/storefront-context";
-import { type ProductRow } from "./$slug.index";
+import { storefrontQueries } from "@/lib/data/storefront";
 import { ProductGrid } from "@/components/storefront/product-grid";
 
 export const Route = createFileRoute("/$slug/wishlist")({ component: WishlistPage });
@@ -11,23 +10,7 @@ export const Route = createFileRoute("/$slug/wishlist")({ component: WishlistPag
 function WishlistPage() {
   const { brand, wishlist, t } = useStorefront();
   const { data = [], isLoading } = useQuery({
-    queryKey: ["storefront", brand.slug, "wishlist", wishlist],
-    queryFn: async () => {
-      if (!wishlist.length) return [];
-      const { data, error } = await supabase
-        .from("products")
-        .select(
-          "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, color)",
-        )
-        .eq("brand_id", brand.id)
-        .eq("is_active", true)
-        .in("id", wishlist);
-      if (error) throw error;
-      const order = new Map(wishlist.map((id, index) => [id, index]));
-      return ((data ?? []) as unknown as ProductRow[]).sort(
-        (a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0),
-      );
-    },
+    ...storefrontQueries.productsByIds(brand, "wishlist", wishlist),
     enabled: wishlist.length > 0,
   });
   return (
