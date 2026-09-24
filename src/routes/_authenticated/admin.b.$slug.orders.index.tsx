@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   ReceiptText,
   Trash2,
@@ -11,18 +10,14 @@ import {
   Download,
   Clock3,
   CircleDollarSign,
-  CreditCard,
   Truck,
   ChevronLeft,
   ChevronRight,
   Package,
-  PackageCheck,
   CheckSquare,
   Square,
-  Check,
   CheckCircle2,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -30,7 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { formatMoney } from "@/lib/format";
 import { buildWhatsAppLink } from "@/lib/os-formatting";
 import { OrdersCommandHeader } from "@/components/orders/OrdersCommandHeader";
 import { OrdersScopeSwitcher } from "@/components/orders/OrdersScopeSwitcher";
@@ -38,7 +32,6 @@ import { OrdersToolbar } from "@/components/orders/OrdersToolbar";
 import { OrdersWorkQueue } from "@/components/orders/OrdersWorkQueue";
 import { OrderMobileCard } from "@/components/orders/OrderMobileCard";
 import { toast } from "sonner";
-import { generateCourierWhatsAppUrl, recordCourierNotified } from "@/lib/courier-whatsapp";
 import { CourierWhatsAppModal } from "@/components/courier/CourierWhatsAppModal";
 import { useT, useI18n } from "@/lib/i18n";
 import { resolvePaymentStatus, PAYMENT_BADGE_CLASSES } from "@/lib/payment-status";
@@ -62,14 +55,9 @@ import {
   deleteOrderWithPrivateReceipt,
   deleteOrdersWithPrivateReceipts,
 } from "@/lib/benefit-receipt.functions";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  getOrderCustomerContact,
-  getOrderCustomerName,
-  getOrderCustomerPhone,
-} from "@/lib/order-customer-snapshot";
+import { getOrderCustomerContact, getOrderCustomerName } from "@/lib/order-customer-snapshot";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -84,7 +72,10 @@ import { useAddons } from "@/components/addons/AddonsProvider";
 
 import { OrderQuickInspectSheet } from "@/features/orders/components/OrderQuickInspectSheet";
 import { OrderImporterModal } from "@/features/orders/components/OrderImporterModal";
-import { DeliveryAddressSnapshot } from "@/features/orders/components/DeliveryAddressSnapshot";
+import { renderOrderQueueAction } from "@/features/orders/components/order-queue-action";
+import { useBrandCouriers } from "@/features/orders/hooks/use-brand-couriers";
+import { OrderFulfillmentModal } from "@/features/orders/components/OrderFulfillmentModal";
+import { CashCollectionModal } from "@/features/orders/components/CashCollectionModal";
 import {
   normalizedFulfillmentStage,
   orderNeedsOperatorAction,
@@ -389,20 +380,7 @@ function OrdersList() {
   };
 
   // Fetch Couriers Query
-  const couriersQ = useQuery({
-    queryKey: ["couriers", brandId],
-    enabled: Boolean(brandId),
-    queryFn: async () => {
-      const { data, error } = await (supabase.from("profiles") as any)
-        .select("id, name, email, phone")
-        .eq("brand_id", brandId)
-        .eq("role", "courier")
-        .eq("status", "active")
-        .order("name");
-      if (error) throw error;
-      return (data as any[]) ?? [];
-    },
-  });
+  const couriersQ = useBrandCouriers(brandId);
 
   const handleQuickAssignCourier = async (orderId: string, courierId: string) => {
     const targetOrder = orders.find((order: any) => order.id === orderId);
@@ -834,662 +812,29 @@ function OrdersList() {
     setPage(1);
   };
 
-  const renderContextualButton = (o: any) => {
-    const workflow = getOrderWorkflow(o, { productionStages: hasMadeToOrder });
-    const paymentBadge = resolvePaymentStatus(
-      o.payment_status,
-      o.status,
-      Number(o.total),
-      Number(o.advance_paid ?? 0),
+  const renderContextualButton = (o: any) =>
+    renderOrderQueueAction(
+      {
+        brandId,
+        handleCompleteDelivery,
+        hasMadeToOrder,
+        isSubmittingCash,
+        lang,
+        qc,
+        setCashCollectedAmount,
+        setCashModalNotes,
+        setCashModalOrder,
+        setFulfillNotes,
+        setIsFulfillModalOpen,
+        setSelectedCourierId,
+        setSelectedFulfillOrder,
+        setUpdatingOrderId,
+        slug,
+        updatingOrderId,
+        vocabulary,
+      },
+      o,
     );
-    const isPaid = paymentBadge === "paid";
-    const isPartiallyPaid = paymentBadge === "partial";
-    const isRefunded = paymentBadge === "refunded";
-    const ff = String(o.fulfillment_status || "ON_HOLD").toUpperCase();
-    const orderStatus = String(o.status || "").toUpperCase();
-    const isUpdating = updatingOrderId === o.id;
-    const isDelivered =
-      ["COMPLETED", "DELIVERED"].includes(ff) || ["COMPLETED", "DELIVERED"].includes(orderStatus);
-    const isCancelled = ff === "CANCELLED" || orderStatus === "CANCELLED";
-    const isOutForDelivery = [
-      "SHIPPED",
-      "ASSIGNED",
-      "OUT_FOR_DELIVERY",
-      "READY_FOR_DELIVERY",
-    ].includes(ff);
-
-    const method = String(o.payment_method || "").toLowerCase();
-    const isCod = ["cash", "cod"].includes(method);
-
-    const isPickup = String(o.fulfillment_method || "").toLowerCase() === "pickup";
-    const isDigital = String(o.fulfillment_method || "").toLowerCase() === "digital";
-
-    if (isDelivered) {
-      return (
-        <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 shadow-sm dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400">
-          <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-          {isPickup
-            ? lang === "ar"
-              ? "تم الاستلام"
-              : "Picked Up"
-            : lang === "ar"
-              ? "تم التوصيل"
-              : "Delivered"}
-        </span>
-      );
-    }
-
-    if (isCancelled || isRefunded) {
-      return (
-        <span className="inline-flex items-center rounded-md border border-border bg-muted/50 px-3 py-1.5 text-xs font-semibold text-muted-foreground">
-          {isRefunded
-            ? lang === "ar"
-              ? "تم الاسترجاع"
-              : "Refunded"
-            : lang === "ar"
-              ? "ملغي"
-              : "Cancelled"}
-        </span>
-      );
-    }
-
-    const handleStatusUpdate = async (payload: Record<string, any>, successMsg: string) => {
-      setUpdatingOrderId(o.id);
-      try {
-        const res = await fetch("/api/orders/status", {
-          method: "PATCH",
-          headers: await authenticatedJsonHeaders(),
-          body: JSON.stringify({ id: o.id, admin_override: true, ...payload }),
-        });
-        const data = await res.json<{
-          error?: string;
-          error_ar?: string;
-          order?: Record<string, any>;
-        }>();
-        if (!res.ok) throw new Error(data.error_ar && lang === "ar" ? data.error_ar : data.error);
-        if (data.order) {
-          qc.setQueriesData<any[]>({ queryKey: ["orders", brandId] }, (current) =>
-            current?.map((item) =>
-              item.id === o.id
-                ? {
-                    ...item,
-                    ...data.order,
-                    customers: item.customers,
-                    order_items: item.order_items,
-                  }
-                : item,
-            ),
-          );
-        }
-        toast.success(successMsg);
-        await qc.invalidateQueries({ queryKey: ["orders", brandId] });
-      } catch (err: any) {
-        toast.error(err.message || "Failed to update order status");
-      } finally {
-        setUpdatingOrderId(null);
-      }
-    };
-
-    if (workflow.nextAction === "resolve_delivery_failure") {
-      return (
-        <Button size="sm" variant="destructive" className="h-8 px-3 text-xs font-semibold" asChild>
-          <Link
-            to="/admin/b/$slug/orders/$id"
-            params={{ slug, id: o.id }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {lang === "ar" ? "معالجة المشكلة" : "Resolve issue"}
-          </Link>
-        </Button>
-      );
-    }
-
-    if (workflow.nextAction === "review_order") {
-      return (
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-8 px-3 text-xs font-semibold border-primary/40 text-primary hover:bg-primary/10"
-          asChild
-        >
-          <Link
-            to="/admin/b/$slug/orders/$id"
-            params={{ slug, id: o.id }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {lang === "ar" ? "معاينة الطلب" : "Review order"}
-          </Link>
-        </Button>
-      );
-    }
-
-    if (
-      hasMadeToOrder &&
-      (workflow.nextAction === "send_to_tailor" || workflow.nextAction === "send_to_workshop")
-    ) {
-      return (
-        <Button
-          size="sm"
-          className="h-8 text-xs px-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold shadow-2xs transition-all dark:bg-purple-700 dark:hover:bg-purple-800"
-          disabled={updatingOrderId !== null}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleStatusUpdate(
-              { fulfillment_status: "SENT_TO_TAILOR" },
-              vocabulary.sent_to_workshop_success[lang] ||
-                (lang === "ar" ? "تم الإرسال للورشة بنجاح!" : "Order sent to workshop!"),
-            );
-          }}
-        >
-          {isUpdating ? (
-            <Loader2 className="animate-spin h-3.5 w-3.5" />
-          ) : (
-            vocabulary.sent_to_workshop[lang] ||
-            (lang === "ar" ? "إرسال للورشة" : "Send to Workshop")
-          )}
-        </Button>
-      );
-    }
-
-    if (
-      hasMadeToOrder &&
-      (workflow.nextAction === "receive_from_tailor" ||
-        workflow.nextAction === "receive_from_workshop")
-    ) {
-      return (
-        <Button
-          size="sm"
-          className="h-8 text-xs px-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold shadow-2xs transition-all dark:bg-teal-700 dark:hover:bg-teal-800"
-          disabled={updatingOrderId !== null}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleStatusUpdate(
-              { fulfillment_status: "RECEIVED_FROM_TAILOR" },
-              vocabulary.received_from_workshop_success[lang] ||
-                (lang === "ar" ? "تم استلام الطلب من الورشة بنجاح!" : "Received from workshop!"),
-            );
-          }}
-        >
-          {isUpdating ? (
-            <Loader2 className="animate-spin h-3.5 w-3.5" />
-          ) : (
-            vocabulary.received_from_workshop[lang] ||
-            (lang === "ar" ? "استلام من الورشة" : "Receive from Workshop")
-          )}
-        </Button>
-      );
-    }
-
-    if (workflow.nextAction === "start_packing") {
-      return (
-        <Button
-          size="sm"
-          className="h-8 text-xs px-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold shadow-2xs transition-all dark:bg-amber-700 dark:hover:bg-amber-800"
-          disabled={updatingOrderId !== null}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (isPickup) {
-              handleStatusUpdate(
-                { fulfillment_status: "PACKING" },
-                lang === "ar" ? "جارٍ التجهيز والتغليف!" : "Packing started!",
-              );
-            } else {
-              setSelectedFulfillOrder(o);
-              setSelectedCourierId(o.assigned_to ?? "unassigned");
-              setFulfillNotes(o.delivery_notes ?? "");
-              setIsFulfillModalOpen(true);
-            }
-          }}
-        >
-          {isUpdating ? (
-            <Loader2 className="animate-spin h-3.5 w-3.5" />
-          ) : lang === "ar" ? (
-            "تجهيز الطلب"
-          ) : (
-            "Prepare Order"
-          )}
-        </Button>
-      );
-    }
-
-    if (workflow.nextAction === "mark_ready_pickup") {
-      return (
-        <Button
-          size="sm"
-          className="h-8 text-xs px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-2xs transition-all dark:bg-indigo-700 dark:hover:bg-indigo-800"
-          disabled={updatingOrderId !== null}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleStatusUpdate(
-              { fulfillment_status: "READY_FOR_PICKUP" },
-              lang === "ar" ? "تم تحديد الطلب كجاهز للاستلام!" : "Marked ready for pickup!",
-            );
-          }}
-        >
-          {isUpdating ? (
-            <Loader2 className="animate-spin h-3.5 w-3.5" />
-          ) : lang === "ar" ? (
-            "جاهز للاستلام"
-          ) : (
-            "Mark Ready"
-          )}
-        </Button>
-      );
-    }
-
-    if (workflow.nextAction === "mark_shipped") {
-      return (
-        <Button
-          size="sm"
-          className="h-8 text-xs px-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-2xs transition-all"
-          disabled={updatingOrderId !== null}
-          onClick={(e) => {
-            e.stopPropagation();
-            setSelectedFulfillOrder(o);
-            setSelectedCourierId(o.assigned_to ?? "unassigned");
-            setFulfillNotes(o.delivery_notes ?? "");
-            setIsFulfillModalOpen(true);
-          }}
-        >
-          {isUpdating ? (
-            <Loader2 className="animate-spin h-3.5 w-3.5" />
-          ) : lang === "ar" ? (
-            "تحديث الشحن"
-          ) : (
-            "Fulfill / Ship"
-          )}
-        </Button>
-      );
-    }
-
-    if (workflow.nextAction === "mark_completed") {
-      return (
-        <Button
-          size="sm"
-          className="h-8 text-xs px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-2xs transition-all dark:bg-emerald-700 dark:hover:bg-emerald-800"
-          disabled={updatingOrderId !== null}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleStatusUpdate(
-              { fulfillment_status: "COMPLETED" },
-              lang === "ar" ? "تم إتمام الطلب بنجاح!" : "Order completed!",
-            );
-          }}
-        >
-          {isUpdating ? (
-            <Loader2 className="animate-spin h-3.5 w-3.5" />
-          ) : lang === "ar" ? (
-            "إتمام الطلب"
-          ) : (
-            "Complete Order"
-          )}
-        </Button>
-      );
-    }
-
-    if (isPickup) {
-      // B. STORE PICKUP WORKFLOW
-
-      // 1. BenefitPay Manual Validation (Pickup)
-      if (workflow.nextAction === "validate_payment") {
-        return (
-          <Button
-            size="sm"
-            className="h-8 text-xs px-3.5 bg-violet-600 hover:bg-violet-700 text-white font-bold shadow-2xs transition-all dark:bg-violet-700 dark:hover:bg-violet-800"
-            disabled={updatingOrderId !== null}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleStatusUpdate(
-                { payment_status: "paid", fulfillment_status: "READY_FOR_PICKUP" },
-                lang === "ar"
-                  ? "تم تأكيد الدفع وتجهيز الطلب للاستلام!"
-                  : "Payment validated and pickup prepared!",
-              );
-            }}
-          >
-            {isUpdating ? (
-              <Loader2 className="animate-spin h-3.5 w-3.5" />
-            ) : (
-              <span className="flex items-center gap-1.5">
-                <CreditCard className="h-3.5 w-3.5" />
-                {lang === "ar" ? "تأكيد وتجهيز" : "Validate & Prepare"}
-              </span>
-            )}
-          </Button>
-        );
-      }
-
-      // 2. Card / Paid Pickup Preparation
-      if (workflow.nextAction === "prepare_pickup" && (isPaid || !isCod)) {
-        return (
-          <Button
-            size="sm"
-            className="h-8 text-xs px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold dark:bg-indigo-800 dark:hover:bg-indigo-900"
-            disabled={updatingOrderId !== null}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleStatusUpdate(
-                { fulfillment_status: "READY_FOR_PICKUP" },
-                lang === "ar" ? "تم تحديد الطلب كجاهز للاستلام!" : "Order marked ready for pickup!",
-              );
-            }}
-          >
-            {isUpdating ? (
-              <Loader2 className="animate-spin h-3.5 w-3.5" />
-            ) : lang === "ar" ? (
-              "جاهز للاستلام"
-            ) : (
-              "Mark Ready"
-            )}
-          </Button>
-        );
-      }
-
-      // 3. Pay at Store Preparation (Unpaid COD)
-      if (workflow.nextAction === "prepare_pickup" && isCod && !isPaid) {
-        return (
-          <Button
-            size="sm"
-            className="h-8 text-xs px-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold dark:bg-amber-800 dark:hover:bg-amber-900"
-            disabled={updatingOrderId !== null}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleStatusUpdate(
-                { fulfillment_status: "READY_FOR_PICKUP" },
-                lang === "ar" ? "تم تجهيز الطلب للاستلام!" : "Order prepared!",
-              );
-            }}
-          >
-            {isUpdating ? (
-              <Loader2 className="animate-spin h-3.5 w-3.5" />
-            ) : lang === "ar" ? (
-              "تجهيز الطلب"
-            ) : (
-              "Prepare Order"
-            )}
-          </Button>
-        );
-      }
-
-      // 4. Pickup Handover
-      if (
-        workflow.nextAction === "hand_over_pickup" ||
-        workflow.nextAction === "collect_and_hand_over"
-      ) {
-        if (workflow.nextAction === "collect_and_hand_over") {
-          const totalAmt = Number(o.total || 0);
-          const paidAmt = Number(o.paid_amount ?? o.advance_paid ?? 0);
-          const remainingBal = Math.max(0, totalAmt - paidAmt);
-          const isPartial = paidAmt > 0 && remainingBal > 0;
-          return (
-            <Button
-              size="sm"
-              className="h-8 bg-amber-500 px-3 text-xs font-semibold text-black hover:bg-amber-600"
-              disabled={updatingOrderId !== null || isSubmittingCash}
-              onClick={(e) => {
-                e.stopPropagation();
-                setCashModalOrder(o);
-                setCashCollectedAmount(remainingBal.toFixed(3));
-                setCashModalNotes("");
-              }}
-            >
-              {isUpdating ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : lang === "ar" ? (
-                isPartial ? (
-                  "استلام المتبقي وتسليم الطلب"
-                ) : (
-                  "استلام المبلغ وتسليم الطلب"
-                )
-              ) : isPartial ? (
-                "Collect Balance & Hand Over"
-              ) : (
-                "Collect & Hand Over"
-              )}
-            </Button>
-          );
-        } else {
-          return (
-            <Button
-              size="sm"
-              className="h-8 text-xs px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold dark:bg-emerald-800 dark:hover:bg-emerald-900"
-              disabled={updatingOrderId !== null}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleStatusUpdate(
-                  { fulfillment_status: "COMPLETED", status: "completed" },
-                  lang === "ar"
-                    ? "تم تسليم الطلب للعميل بالكامل!"
-                    : "Order handed over to customer!",
-                );
-              }}
-            >
-              {isUpdating ? (
-                <Loader2 className="animate-spin h-3.5 w-3.5" />
-              ) : lang === "ar" ? (
-                "تسليم للعميل"
-              ) : (
-                "Hand Over"
-              )}
-            </Button>
-          );
-        }
-      }
-    } else if (!isDigital) {
-      // A. DELIVERY WORKFLOW
-
-      // 1. BenefitPay Manual Validation
-      if (workflow.nextAction === "validate_payment") {
-        return (
-          <Button
-            size="sm"
-            className="h-8 text-xs px-3.5 bg-violet-600 hover:bg-violet-700 text-white font-bold shadow-2xs transition-all dark:bg-violet-700 dark:hover:bg-violet-800"
-            disabled={updatingOrderId !== null}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleStatusUpdate(
-                { payment_status: "paid" },
-                lang === "ar" ? "تم تسجيل وتأكيد الدفع بنجاح!" : "Order payment marked as Paid!",
-              );
-            }}
-          >
-            {isUpdating ? (
-              <Loader2 className="animate-spin h-3.5 w-3.5" />
-            ) : (
-              <span className="flex items-center gap-1.5">
-                <CreditCard className="h-3.5 w-3.5" />
-                {lang === "ar" ? "تأكيد الدفع" : "Validate Payment"}
-              </span>
-            )}
-          </Button>
-        );
-      }
-
-      // 2. Packing & Shipping (Card or Validated BenefitPay)
-      if (workflow.nextAction === "pack_and_ship" && isPaid) {
-        return (
-          <Button
-            size="sm"
-            className="h-8 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-3 shadow"
-            disabled={updatingOrderId !== null}
-            onClick={(e) => {
-              e.stopPropagation();
-              setSelectedFulfillOrder(o);
-              setSelectedCourierId(o.assigned_to ?? "unassigned");
-              setFulfillNotes(o.delivery_notes ?? "");
-              setIsFulfillModalOpen(true);
-            }}
-          >
-            {lang === "ar" ? "تعبئة وشحن" : "Fulfill / Pack"}
-          </Button>
-        );
-      }
-
-      // 3. COD Dispatch
-      if (workflow.nextAction === "pack_and_ship" && isCod) {
-        return (
-          <Button
-            size="sm"
-            className="h-8 font-semibold bg-amber-500 hover:bg-amber-600 text-black text-xs px-3 shadow"
-            disabled={updatingOrderId !== null}
-            onClick={(e) => {
-              e.stopPropagation();
-              setSelectedFulfillOrder(o);
-              setSelectedCourierId(o.assigned_to ?? "unassigned");
-              setFulfillNotes(o.delivery_notes ?? "");
-              setIsFulfillModalOpen(true);
-            }}
-          >
-            {lang === "ar" ? "تجهيز وشحن COD" : "Pack & Ship COD"}
-          </Button>
-        );
-      }
-
-      // 3.5 Confirm Courier Pickup
-      if (workflow.nextAction === "confirm_pickup") {
-        return (
-          <Button
-            size="sm"
-            className="h-8 font-semibold bg-sky-600 hover:bg-sky-700 text-white text-xs px-3 shadow"
-            disabled={updatingOrderId !== null}
-            onClick={(e) => {
-              e.stopPropagation();
-              setUpdatingOrderId(o.id);
-              handleStatusUpdate(
-                { fulfillment_status: "SHIPPED" },
-                lang === "ar"
-                  ? "تم استلام الشحنة من المندوب وخرجت للتوصيل!"
-                  : "Courier picked up parcel - Out for Delivery!",
-              );
-            }}
-          >
-            {updatingOrderId === o.id ? (
-              <Loader2 className="animate-spin h-3.5 w-3.5" />
-            ) : (
-              <span className="flex items-center gap-1">
-                <Truck className="h-3.5 w-3.5" />
-                {lang === "ar" ? "تأكيد استلام المندوب" : "Confirm Courier Pickup"}
-              </span>
-            )}
-          </Button>
-        );
-      }
-
-      // 4. Delivery Handover & Cash Collection Actions (Courier / Driver)
-      if (
-        workflow.nextAction === "mark_delivered" ||
-        workflow.nextAction === "collect_and_deliver"
-      ) {
-        const totalAmt = Number(o.total || 0);
-        const paidAmt = Number(o.paid_amount ?? o.advance_paid ?? 0);
-        const remainingBal = Math.max(0, totalAmt - paidAmt);
-
-        if (workflow.nextAction === "mark_delivered") {
-          return (
-            <Button
-              size="sm"
-              className="h-8 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 shadow dark:bg-emerald-800 dark:hover:bg-emerald-900"
-              disabled={updatingOrderId !== null || isSubmittingCash}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleCompleteDelivery(o, 0);
-              }}
-            >
-              {isSubmittingCash && updatingOrderId === o.id ? (
-                <Loader2 className="animate-spin h-3.5 w-3.5" />
-              ) : (
-                <span className="flex items-center gap-1">
-                  <Check className="h-3.5 w-3.5" />
-                  {lang === "ar" ? "تأكيد التسليم" : "Mark as Delivered"}
-                </span>
-              )}
-            </Button>
-          );
-        }
-
-        if (isPartiallyPaid || (paidAmt > 0 && remainingBal > 0)) {
-          return (
-            <Button
-              size="sm"
-              className="h-8 font-semibold bg-amber-500 hover:bg-amber-600 text-black text-xs px-3 shadow"
-              disabled={updatingOrderId !== null || isSubmittingCash}
-              onClick={(e) => {
-                e.stopPropagation();
-                setCashModalOrder(o);
-                setCashCollectedAmount(remainingBal.toFixed(3));
-                setCashModalNotes("");
-              }}
-            >
-              <span className="flex items-center gap-1">
-                <CircleDollarSign className="h-3.5 w-3.5" />
-                {lang === "ar" ? "تحصيل المتبقي وتسليم" : "Collect Remaining & Complete"}
-              </span>
-            </Button>
-          );
-        }
-
-        // Unpaid COD Order
-        return (
-          <Button
-            size="sm"
-            className="h-8 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 shadow dark:bg-emerald-800 dark:hover:bg-emerald-900"
-            disabled={updatingOrderId !== null || isSubmittingCash}
-            onClick={(e) => {
-              e.stopPropagation();
-              setCashModalOrder(o);
-              setCashCollectedAmount(totalAmt.toFixed(3));
-              setCashModalNotes("");
-            }}
-          >
-            <span className="flex items-center gap-1">
-              <CircleDollarSign className="h-3.5 w-3.5" />
-              {lang === "ar" ? "تحصيل نقدًا وتسليم" : "Collect Cash & Complete"}
-            </span>
-          </Button>
-        );
-      }
-    } else if (workflow.nextAction === "deliver_digital") {
-      return (
-        <Button size="sm" className="h-8 px-3 text-xs font-semibold" asChild>
-          <Link
-            to="/admin/b/$slug/orders/$id"
-            params={{ slug, id: o.id }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {lang === "ar" ? "إرسال الطلب الرقمي" : "Deliver digital order"}
-          </Link>
-        </Button>
-      );
-    }
-
-    // Shipped Track button fallback
-    if (isOutForDelivery) {
-      return (
-        <Button size="sm" variant="outline" className="h-8 text-xs px-3" asChild>
-          <Link
-            to="/admin/b/$slug/orders/$id"
-            params={{ slug, id: o.id }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {lang === "ar" ? "تتبع" : "Track"}
-          </Link>
-        </Button>
-      );
-    }
-
-    // General fallback -> details
-    return (
-      <Button size="sm" variant="ghost" className="h-8 text-xs px-3" asChild>
-        <Link
-          to="/admin/b/$slug/orders/$id"
-          params={{ slug, id: o.id }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {lang === "ar" ? "تفاصيل" : "View"}
-        </Link>
-      </Button>
-    );
-  };
 
   if (ordersQ.isLoading) {
     return <RoutePendingSkeleton />;
@@ -2005,463 +1350,39 @@ function OrdersList() {
       )}
 
       {/* Interactive Packing Verification & Fulfillment Modal */}
-      <Dialog open={isFulfillModalOpen} onOpenChange={setIsFulfillModalOpen}>
-        <DialogContent
-          className="max-w-[calc(100vw-2rem)] sm:max-w-lg bg-background border rounded-2xl shadow-2xl p-6 overflow-hidden max-h-[90vh] flex flex-col"
-          dir={lang === "ar" ? "rtl" : "ltr"}
-        >
-          {selectedFulfillOrder && (
-            <>
-              {/* Header: Order Number, Customer Name & Address Snapshot */}
-              <DialogHeader className="pb-3 border-b shrink-0">
-                <div className="flex items-center justify-between gap-2">
-                  <DialogTitle className="text-lg font-bold flex items-center gap-2">
-                    <PackageCheck className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
-                    <span>
-                      {lang === "ar"
-                        ? `قائمة التعبئة والتجهيز #${selectedFulfillOrder.invoice_number}`
-                        : `Packing Slip Verification #${selectedFulfillOrder.invoice_number}`}
-                    </span>
-                  </DialogTitle>
-                </div>
-                <div className="mt-1 text-xs text-muted-foreground flex flex-col gap-0.5">
-                  <div className="font-semibold text-foreground text-sm flex items-center gap-1.5">
-                    <span>
-                      {getOrderCustomerName(selectedFulfillOrder) ||
-                        (lang === "ar" ? "عميل زائر" : "Customer")}
-                    </span>
-                    {getOrderCustomerPhone(selectedFulfillOrder) && (
-                      <span className="text-xs font-normal text-muted-foreground">
-                        ({getOrderCustomerPhone(selectedFulfillOrder)})
-                      </span>
-                    )}
-                  </div>
-                  <DeliveryAddressSnapshot customer={selectedFulfillOrder.customers} lang={lang} />
-                </div>
-              </DialogHeader>
-
-              <div className="space-y-4 py-3 overflow-y-auto flex-1 pe-1 text-sm">
-                {/* Pick Checklist Header */}
-                {(() => {
-                  const modalItems = selectedFulfillOrder.order_items ?? [];
-                  const checkedCount = modalItems.filter((it: any) => checkedItems[it.id]).length;
-                  const allChecked = modalItems.length > 0 && checkedCount === modalItems.length;
-
-                  const toggleAll = () => {
-                    const nextState = !allChecked;
-                    const next: Record<string, boolean> = {};
-                    modalItems.forEach((it: any) => {
-                      next[it.id] = nextState;
-                    });
-                    setCheckedItems(next);
-                  };
-
-                  return (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between gap-2 bg-muted/40 p-2.5 rounded-xl border">
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="h-4 w-4 text-primary shrink-0" />
-                          <span className="font-semibold text-xs text-foreground">
-                            {lang === "ar" ? "قائمة فحص المنتجات" : "Pick & Pack Checklist"}
-                          </span>
-                          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                            {checkedCount} / {modalItems.length} {lang === "ar" ? "جاهز" : "packed"}
-                          </span>
-                        </div>
-                        {modalItems.length > 0 && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            type="button"
-                            onClick={toggleAll}
-                            className="h-7 text-xs font-semibold px-2 text-primary hover:text-primary/90"
-                          >
-                            {allChecked
-                              ? lang === "ar"
-                                ? "إلغاء تحديد الكل"
-                                : "Uncheck All"
-                              : lang === "ar"
-                                ? "تحديد الكل"
-                                : "Check All"}
-                          </Button>
-                        )}
-                      </div>
-
-                      {/* Items List */}
-                      {modalItems.length === 0 ? (
-                        <div className="p-4 text-center text-xs text-muted-foreground border rounded-xl bg-muted/20">
-                          {lang === "ar"
-                            ? "لا توجد تفاصيل منتجات مسجلة لهذا الطلب."
-                            : "No item line details recorded for this order."}
-                        </div>
-                      ) : (
-                        <div className="space-y-2 max-h-[220px] overflow-y-auto pe-1">
-                          {modalItems.map((item: any, idx: number) => {
-                            const isChecked = Boolean(checkedItems[item.id]);
-                            const imgUrl =
-                              item.products?.main_image ||
-                              item.products?.image_url ||
-                              item.product_variants?.products?.main_image ||
-                              item.selected_variant?.image_url;
-                            const sku = item.product_variants?.sku || item.sku || null;
-                            const title =
-                              item.description ||
-                              item.products?.title ||
-                              (lang === "ar" ? "منتج" : "Product");
-
-                            return (
-                              <div
-                                key={item.id || idx}
-                                onClick={() =>
-                                  setCheckedItems((prev) => ({
-                                    ...prev,
-                                    [item.id]: !prev[item.id],
-                                  }))
-                                }
-                                className={cn(
-                                  "flex items-center gap-3 p-2.5 rounded-xl border transition-all cursor-pointer select-none",
-                                  isChecked
-                                    ? "bg-emerald-50/80 border-emerald-300 dark:bg-emerald-950/30 dark:border-emerald-800"
-                                    : "bg-card border-border hover:border-primary/50",
-                                )}
-                              >
-                                <Checkbox
-                                  checked={isChecked}
-                                  onCheckedChange={(checked) =>
-                                    setCheckedItems((prev) => ({
-                                      ...prev,
-                                      [item.id]: Boolean(checked),
-                                    }))
-                                  }
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="h-5 w-5 rounded-md border-primary/50"
-                                />
-
-                                {imgUrl ? (
-                                  <img
-                                    src={imgUrl}
-                                    alt={title}
-                                    className="h-10 w-10 object-cover rounded-lg border shrink-0 bg-background"
-                                  />
-                                ) : (
-                                  <div className="h-10 w-10 rounded-lg border bg-muted/60 flex items-center justify-center shrink-0">
-                                    <Package className="h-5 w-5 text-muted-foreground" />
-                                  </div>
-                                )}
-
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex items-center justify-between gap-2">
-                                    <span
-                                      className={cn(
-                                        "font-semibold text-xs sm:text-sm truncate",
-                                        isChecked && "line-through text-muted-foreground",
-                                      )}
-                                    >
-                                      <span className="font-bold text-primary me-1">
-                                        {item.quantity}x
-                                      </span>{" "}
-                                      {title}
-                                    </span>
-                                    <span className="text-xs font-mono font-bold shrink-0 text-muted-foreground">
-                                      {formatMoney(
-                                        Number(item.line_total || item.unit_price * item.quantity),
-                                        selectedFulfillOrder.currency || "BHD",
-                                        locale,
-                                      )}
-                                    </span>
-                                  </div>
-                                  {sku && (
-                                    <div className="text-xs text-muted-foreground font-mono mt-0.5">
-                                      SKU: {sku}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-
-                {/* Courier & Shipping Details */}
-                <div className="space-y-3 pt-2 border-t">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-muted-foreground block">
-                      {lang === "ar" ? "تعيين مندوب التوصيل" : "Driver / Courier"}
-                    </label>
-                    <Select value={selectedCourierId} onValueChange={setSelectedCourierId}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue
-                          placeholder={lang === "ar" ? "اختر مندوب التوصيل" : "Select a courier"}
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="unassigned">
-                          {lang === "ar"
-                            ? "غير مسند (تعبئة بدون تعيين)"
-                            : "Unassigned (Pack without assigning)"}
-                        </SelectItem>
-                        {(couriersQ.data ?? []).map((courier: any) => (
-                          <SelectItem key={courier.id} value={courier.id}>
-                            {courier.name || courier.email}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-muted-foreground block">
-                      {lang === "ar" ? "ملاحظات الشحن أو رقم التتبع" : "Delivery Notes or Tracking"}
-                    </label>
-                    <Input
-                      value={fulfillNotes}
-                      onChange={(e) => setFulfillNotes(e.target.value)}
-                      placeholder={
-                        lang === "ar"
-                          ? "أدخل رقم التتبع أو أي تعليمات خاصة للتوصيل..."
-                          : "Enter tracking number or special packing notes..."
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Primary Action Button Footer */}
-              <div className="pt-3 border-t shrink-0 flex items-center justify-end gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={isFulfilling}
-                  onClick={() => setIsFulfillModalOpen(false)}
-                >
-                  {lang === "ar" ? "إلغاء" : "Cancel"}
-                </Button>
-                <Button
-                  size="sm"
-                  className={cn(
-                    "font-bold shadow-md transition-all px-4",
-                    (selectedFulfillOrder.order_items ?? []).every((it: any) => checkedItems[it.id])
-                      ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                      : "bg-amber-600 hover:bg-amber-700 text-white",
-                  )}
-                  disabled={isFulfilling}
-                  onClick={async () => {
-                    if (!selectedFulfillOrder) return;
-                    setIsFulfilling(true);
-                    try {
-                      const res = await fetch("/api/orders/status", {
-                        method: "PATCH",
-                        headers: await authenticatedJsonHeaders(),
-                        body: JSON.stringify({
-                          id: selectedFulfillOrder.id,
-                          fulfillment_status: "ASSIGNED",
-                          assigned_to:
-                            selectedCourierId === "unassigned" ? null : selectedCourierId,
-                          delivery_notes: fulfillNotes,
-                          admin_override: ["cash", "cod"].includes(
-                            String(selectedFulfillOrder.payment_method || "").toLowerCase(),
-                          ),
-                        }),
-                      });
-                      const data = await res.json<{ error?: string; error_ar?: string }>();
-                      if (!res.ok)
-                        throw new Error(
-                          data.error_ar && lang === "ar" ? data.error_ar : data.error,
-                        );
-                      toast.success(
-                        lang === "ar"
-                          ? "تم تأكيد تعبئة الطلب وتجهيزه للشحن!"
-                          : "Order packed and dispatched successfully!",
-                      );
-
-                      if (selectedCourierId !== "unassigned") {
-                        const courierObj = (couriersQ.data ?? []).find(
-                          (c: any) => c.id === selectedCourierId,
-                        );
-                        if (courierObj && courierObj.phone) {
-                          const waUrl = generateCourierWhatsAppUrl({
-                            order: selectedFulfillOrder,
-                            courierPhone: courierObj.phone,
-                            courierName: courierObj.name || courierObj.email,
-                            brandSlug: slug,
-                            lang,
-                          });
-                          toast(
-                            lang === "ar"
-                              ? `تم إسناد الطلب إلى "${courierObj.name || "المندوب"}"`
-                              : `Assigned to ${courierObj.name || "Courier"}`,
-                            {
-                              action: {
-                                label:
-                                  lang === "ar" ? "📱 إشعار عبر واتساب" : "📱 Notify on WhatsApp",
-                                onClick: async () => {
-                                  await recordCourierNotified(selectedFulfillOrder.id);
-                                  qc.invalidateQueries({ queryKey: ["orders", brandId] });
-                                  window.open(waUrl, "_blank", "noopener,noreferrer");
-                                },
-                              },
-                              duration: 10000,
-                            },
-                          );
-                        }
-                      }
-
-                      qc.invalidateQueries({ queryKey: ["orders", brandId] });
-                      setIsFulfillModalOpen(false);
-                    } catch (err: any) {
-                      toast.error(err.message || "Failed to fulfill order");
-                    } finally {
-                      setIsFulfilling(false);
-                    }
-                  }}
-                >
-                  {isFulfilling ? (
-                    <Loader2 className="animate-spin h-4 w-4 me-1.5 inline" />
-                  ) : (
-                    <PackageCheck className="h-4 w-4 me-1.5 inline" />
-                  )}
-                  {lang === "ar" ? "تأكيد التعبئة والتجهيز للشحن" : "Confirm Packed & Dispatch"}
-                </Button>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      <OrderFulfillmentModal
+        brandId={brandId}
+        checkedItems={checkedItems}
+        couriersQ={couriersQ}
+        fulfillNotes={fulfillNotes}
+        isFulfillModalOpen={isFulfillModalOpen}
+        isFulfilling={isFulfilling}
+        lang={lang}
+        locale={locale}
+        qc={qc}
+        selectedCourierId={selectedCourierId}
+        selectedFulfillOrder={selectedFulfillOrder}
+        setCheckedItems={setCheckedItems}
+        setFulfillNotes={setFulfillNotes}
+        setIsFulfillModalOpen={setIsFulfillModalOpen}
+        setIsFulfilling={setIsFulfilling}
+        setSelectedCourierId={setSelectedCourierId}
+        slug={slug}
+      />
 
       {/* 💵 Cash Collection & Courier Delivery Completion Modal */}
-      <Dialog
-        open={Boolean(cashModalOrder)}
-        onOpenChange={(open) => {
-          if (!open) setCashModalOrder(null);
-        }}
-      >
-        <DialogContent
-          className="max-w-[calc(100vw-2rem)] sm:max-w-md bg-background border rounded-2xl shadow-xl"
-          dir={lang === "ar" ? "rtl" : "ltr"}
-        >
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-lg font-bold">
-              <CircleDollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-              {lang === "ar" ? "تأكيد تحصيل المبلغ والتسليم" : "Confirm Cash & Delivery"}
-            </DialogTitle>
-          </DialogHeader>
-
-          {cashModalOrder && (
-            <div className="space-y-4 py-2">
-              <div className="rounded-xl bg-muted/60 border p-3.5 space-y-1.5 text-sm">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">
-                    {lang === "ar" ? "رقم الفاتورة / الطلب:" : "Invoice / Order #"}
-                  </span>
-                  <span className="font-mono font-bold text-primary">
-                    #{cashModalOrder.invoice_number || cashModalOrder.id.slice(0, 8)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">
-                    {lang === "ar" ? "العميل:" : "Customer:"}
-                  </span>
-                  <span className="font-semibold">
-                    {getOrderCustomerName(cashModalOrder) || (lang === "ar" ? "عميل" : "Customer")}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">
-                    {lang === "ar" ? "إجمالي الطلب:" : "Total Amount:"}
-                  </span>
-                  <span className="font-semibold">
-                    {formatMoney(
-                      Number(cashModalOrder.total),
-                      cashModalOrder.currency ?? "BHD",
-                      locale,
-                    )}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-emerald-700 dark:text-emerald-400 font-bold border-t pt-2 mt-1">
-                  <span>{lang === "ar" ? "المبلغ المتبقي للتحصيل:" : "Remaining Balance:"}</span>
-                  <span className="text-base font-extrabold">
-                    {formatMoney(
-                      Math.max(
-                        0,
-                        Number(cashModalOrder.total) -
-                          Number(cashModalOrder.paid_amount ?? cashModalOrder.advance_paid ?? 0),
-                      ),
-                      cashModalOrder.currency ?? "BHD",
-                      locale,
-                    )}
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-foreground block">
-                  {lang === "ar" ? "المبلغ المستلم نقداً (د.ب)" : "Cash Amount Received (BHD)"}
-                </label>
-                <Input
-                  type="number"
-                  step="0.001"
-                  min="0"
-                  value={cashCollectedInput}
-                  onChange={(e) => setCashCollectedAmount(e.target.value)}
-                  placeholder="0.000"
-                  className="font-mono text-lg font-extrabold h-11 border-emerald-300 focus:border-emerald-500 dark:border-emerald-800"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-muted-foreground block">
-                  {lang === "ar" ? "ملاحظات التوصيل (اختياري)" : "Delivery Notes (Optional)"}
-                </label>
-                <Input
-                  value={cashModalNotes}
-                  onChange={(e) => setCashModalNotes(e.target.value)}
-                  placeholder={
-                    lang === "ar"
-                      ? "مثال: تم الاستلام من البواب / تحصيل عبر بنفت باج"
-                      : "e.g. Received at gate / BenefitPay transfer"
-                  }
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCashModalOrder(null)}
-                  disabled={isSubmittingCash}
-                >
-                  {lang === "ar" ? "إلغاء" : "Cancel"}
-                </Button>
-                <Button
-                  size="sm"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md"
-                  disabled={isSubmittingCash}
-                  onClick={() => {
-                    const amt = Number(cashCollectedInput);
-                    if (isNaN(amt) || amt < 0) {
-                      toast.error(
-                        lang === "ar"
-                          ? "يرجى إدخال مبلغ صحيح (غير سالب)"
-                          : "Please enter a valid non-negative amount",
-                      );
-                      return;
-                    }
-                    handleCompleteDelivery(cashModalOrder, amt, cashModalNotes);
-                  }}
-                >
-                  {isSubmittingCash ? (
-                    <Loader2 className="animate-spin h-4 w-4 me-1.5 inline" />
-                  ) : null}
-                  {lang === "ar" ? "تأكيد التحصيل والتسليم" : "Confirm Cash & Complete"}
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <CashCollectionModal
+        cashCollectedInput={cashCollectedInput}
+        cashModalNotes={cashModalNotes}
+        cashModalOrder={cashModalOrder}
+        handleCompleteDelivery={handleCompleteDelivery}
+        isSubmittingCash={isSubmittingCash}
+        lang={lang}
+        locale={locale}
+        setCashCollectedAmount={setCashCollectedAmount}
+        setCashModalNotes={setCashModalNotes}
+        setCashModalOrder={setCashModalOrder}
+      />
       <OrderQuickInspectSheet
         order={inspectOrder}
         slug={slug}
