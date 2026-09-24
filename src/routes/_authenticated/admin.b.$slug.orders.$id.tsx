@@ -8,19 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Check,
-  Printer,
-  Save,
-  Receipt,
-  Link as LinkIcon,
-  Loader2,
-  MoreHorizontal,
-  UserRound,
-  Package,
-  CreditCard,
-  FileText,
-} from "lucide-react";
+import { Printer, Receipt, Link as LinkIcon, MoreHorizontal } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -29,50 +17,45 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { CourierWhatsAppModal } from "@/components/courier/CourierWhatsAppModal";
-import { formatOrderStatus } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
-import { getOrderCustomerName, getOrderCustomerPhone } from "@/lib/order-customer-snapshot";
-import { printThermalReceipt } from "@/lib/thermal-print";
-import { cn, getFriendlyErrorMessage } from "@/lib/utils";
+import { getOrderCustomerPhone } from "@/lib/order-customer-snapshot";
+import { cn } from "@/lib/utils";
 import { resolvePaymentStatus, type PaymentBadge } from "@/lib/payment-status";
-import { logActivity, logActivityBatch } from "@/lib/activity-log";
 import { ManagePaymentModal } from "@/components/orders/ManagePaymentModal";
-import { ActivityLogList } from "@/components/activity-log-list";
 import { useBrand } from "@/lib/brand-context";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useProfile } from "@/lib/profile-context";
-import { getFulfillmentLabel } from "@/lib/status-labels";
 import { OrderUnifiedHeader } from "@/components/orders/OrderUnifiedHeader";
 import { OrderStickyBottomBar } from "@/components/orders/OrderStickyBottomBar";
 import { OrderSalesDocumentsCard } from "@/components/orders/OrderSalesDocumentsCard";
 import { useVocabulary } from "@/hooks/use-vocabulary";
-import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
-import type { Order, OrderItem as Item, SavedAddress } from "@/features/orders/types";
+import { variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
+import type { Order, OrderItem as Item } from "@/features/orders/types";
 import {
-  blankOrderItem,
   filterCustomers,
-  filterVariantsForSearch,
   isOrderDirty,
   normalizeOrderMin,
   isUntouchedDraft,
   newDraftOrder,
   orderItemFromRow,
   orderTotals,
-  promoFailureMessage,
   promoSignature,
-  recalcOrderItem,
 } from "@/features/orders/lib/order-editor";
-import {
-  haveOrderItemsChanged,
-  orderChangeLogs,
-  orderItemRow,
-  orderSaveBlocker,
-  orderSavePayload,
-} from "@/features/orders/lib/order-save";
 import { useOrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
 import { useBenefitReview } from "@/features/orders/hooks/use-benefit-review";
 import { useCustomerFitPassport } from "@/features/orders/hooks/use-customer-fit-passport";
 import { ProductSearchDialog } from "@/features/orders/components/ProductSearchDialog";
+import { useCancelOrderEdit } from "@/features/orders/hooks/use-cancel-order-edit";
+import { useOrderPromoCode } from "@/features/orders/hooks/use-order-promo-code";
+import { useSaveOrder } from "@/features/orders/hooks/use-save-order";
+import { useOrderPaymentDetails } from "@/features/orders/hooks/use-order-payment-details";
+import { useOrderLineActions } from "@/features/orders/hooks/use-order-line-actions";
+import { createOrderDocumentActions } from "@/features/orders/actions/order-document-actions";
+import { createOrderStatusChange } from "@/features/orders/actions/order-status-change";
+import { OrderMobileSectionNav } from "@/features/orders/components/OrderMobileSectionNav";
+import { OrderDesktopSectionNav } from "@/features/orders/components/OrderDesktopSectionNav";
+import { OrderInvoiceSection } from "@/features/orders/components/OrderInvoiceSection";
+import { OrderActivitySection } from "@/features/orders/components/OrderActivitySection";
 import { OutOfStockConfirmDialog } from "@/features/orders/components/OutOfStockConfirmDialog";
 import { NewCustomerDialog } from "@/features/orders/components/NewCustomerDialog";
 import { renderOrderPrimaryAction } from "@/features/orders/components/order-primary-action";
@@ -167,7 +150,32 @@ function OrderDetail() {
   });
   const [customerPickerOpen, setCustomerPickerOpen] = useState(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState("");
-  const [outOfStockConfirmVariant, setOutOfStockConfirmVariant] = useState<any | null>(null);
+  const {
+    addItem,
+    cameraStreamPromise,
+    filteredVariantsForSearch,
+    handleScanned,
+    handleSelectVariantFromModal,
+    openBarcodeScanner,
+    outOfStockConfirmVariant,
+    pickVariant,
+    productSearchOpen,
+    productSearchQuery,
+    scannerOpen,
+    setOutOfStockConfirmVariant,
+    setProductSearchOpen,
+    setProductSearchQuery,
+    setScannerOpen,
+    toggleCustom,
+    updateItem,
+  } = useOrderLineActions({
+    addonDefaults,
+    items,
+    lang,
+    productsQ,
+    setItems,
+    variantsQ,
+  });
 
   const filteredCustomers = useMemo(
     () => filterCustomers(customersQ.data ?? [], customerSearchQuery),
@@ -240,79 +248,11 @@ function OrderDetail() {
     amount: number;
   } | null>(null);
   const [checkingPromo, setCheckingPromo] = useState(false);
-  const [productSearchOpen, setProductSearchOpen] = useState(false);
-  const [productSearchQuery, setProductSearchQuery] = useState("");
   const [discountMode, setDiscountMode] = useState<"fixed" | "percent">("fixed");
   const [discountPercentInput, setDiscountPercentInput] = useState<string>("");
   const [lastNonZeroTaxRate, setLastNonZeroTaxRate] = useState<number>(10);
   const [newCustomerOpen, setNewCustomerOpen] = useState(false);
   const promoContextRef = useRef<string | null>(null);
-
-  const filteredVariantsForSearch = useMemo(
-    () => filterVariantsForSearch(variantsQ.data ?? [], productsQ.data ?? [], productSearchQuery),
-    [productSearchQuery, variantsQ.data, productsQ.data],
-  );
-
-  const handleSelectVariantFromModal = (variant: any, force = false) => {
-    const mainStock = Number(variant.stock_main ?? 0);
-    const incStock = Number(variant.stock_incubator ?? 0);
-    const fallbackStock = Number(variant.stock ?? variant.quantity ?? 0);
-    const totalStock = mainStock + incStock > 0 ? mainStock + incStock : fallbackStock;
-
-    if (!force && totalStock <= 0) {
-      setOutOfStockConfirmVariant(variant);
-      return;
-    }
-
-    const p = (productsQ.data ?? []).find((x: any) => x.id === variant.product_id);
-    const isAr = lang === "ar";
-    const axes = resolveAllVariantAxes({
-      product: p,
-      addonDefaults,
-      lang: isAr ? "ar" : "en",
-    });
-    const variantTitle = [
-      p ? (p as any).name : "",
-      variant.size && axes.size.visible ? `${axes.size.label}: ${variant.size}` : "",
-      variant.color && axes.color.visible ? `${axes.color.label}: ${variant.color}` : "",
-      variant.fabric && axes.fabric.visible ? `${axes.fabric.label}: ${variant.fabric}` : "",
-    ]
-      .filter(Boolean)
-      .join(" — ");
-    const price = Number(
-      variant.selling_price ??
-        variant.price_override ??
-        variant.price ??
-        (p as any)?.selling_price ??
-        (p as any)?.base_price ??
-        (p as any)?.price ??
-        0,
-    );
-    const preferredLoc: "main" | "incubator" = (variant.stock_main ?? 0) > 0 ? "main" : "incubator";
-
-    setItems((prev) => [
-      ...prev,
-      {
-        product_id: variant.product_id,
-        variant_id: variant.id,
-        description: variantTitle || "Custom Item",
-        quantity: 1,
-        unit_price: price,
-        unit_cost: (variant as any).cost_price == null ? null : Number((variant as any).cost_price),
-        original_price: price,
-        customizations: [],
-        customization_total: 0,
-        line_total: price,
-        location: preferredLoc,
-        selected_variant: variant,
-      },
-    ]);
-    toast.success(
-      isAr ? `تمت إضافة "${variantTitle}" إلى الطلب!` : `Added "${variantTitle}" to order!`,
-    );
-    setProductSearchOpen(false);
-    setProductSearchQuery("");
-  };
 
   const serverOrder = orderQ.data as any;
   const isBlankDraft = id === "new" || isUntouchedDraft(serverOrder);
@@ -450,47 +390,18 @@ function OrderDetail() {
     }
   }, [items, order?.customer_id, appliedPromo, lang]);
 
-  const applyAdminPromo = async () => {
-    if (!order) return;
-    const code = promoInput.trim().toUpperCase();
-    if (!code) return toast.error(lang === "ar" ? "أدخل رمز الخصم." : "Enter a promo code.");
-    if (!items.length || totals.subtotal <= 0)
-      return toast.error(
-        lang === "ar" ? "أضف منتجات إلى الطلب أولاً." : "Add products to the order first.",
-      );
-    setCheckingPromo(true);
-    const { data, error } = await supabase.rpc("validate_promo_code" as any, {
-      p_brand_slug: brand.slug,
-      p_code: code,
-      p_subtotal: totals.subtotal,
-      p_items: items.map((item) => ({
-        variant_id: item.variant_id,
-        line_total: Number(item.line_total.toFixed(3)),
-      })),
-      p_customer_id: order.customer_id ?? null,
-    });
-    setCheckingPromo(false);
-    if (error)
-      return toast.error(
-        error.message ||
-          (lang === "ar" ? "تعذر التحقق من الرمز." : "Could not validate this promo code."),
-      );
-    const result = data as any;
-    if (!result?.valid) return toast.error(promoFailureMessage(result, lang));
-    const amount = Number(result.discount_amount ?? 0);
-    const active = { code: String(result.code), id: String(result.promo_code_id), amount };
-    setPromoInput(active.code);
-    setAppliedPromo(active);
-    setOrder({ ...order, discount: amount, promo_code: active.code, promo_code_id: active.id });
-    toast.success(lang === "ar" ? "تم تطبيق رمز الخصم." : "Promo code applied.");
-  };
-
-  const removeAdminPromo = () => {
-    if (!order) return;
-    setAppliedPromo(null);
-    setPromoInput("");
-    setOrder({ ...order, discount: 0, promo_code: null, promo_code_id: null });
-  };
+  const { applyAdminPromo, removeAdminPromo } = useOrderPromoCode({
+    brand,
+    items,
+    lang,
+    order,
+    promoInput,
+    setAppliedPromo,
+    setCheckingPromo,
+    setOrder,
+    setPromoInput,
+    totals,
+  });
 
   const paymentBadge: PaymentBadge = useMemo(
     () =>
@@ -504,88 +415,14 @@ function OrderDetail() {
   const [mobileTab, setMobileTab] = useState<"items" | "customer" | "activity">("items");
   const [editingItemSheetIdx, setEditingItemSheetIdx] = useState<number | null>(null);
 
-  const handleSavePaymentDetails = async (updatedFields: {
-    payment_status: PaymentBadge;
-    payment_method: string;
-    advance_paid: number;
-    payment_reference?: string;
-  }) => {
-    if (!order) return;
-    const oldStatus = order.payment_status;
-    const oldMethod = order.payment_method;
-    const oldAdvance = order.advance_paid;
-
-    const finalMethod =
-      !updatedFields.payment_method || updatedFields.payment_method === "unspecified"
-        ? null
-        : updatedFields.payment_method;
-
-    const nextOrder = {
-      ...order,
-      payment_status: updatedFields.payment_status,
-      payment_method: finalMethod,
-      advance_paid: updatedFields.advance_paid,
-      payment_reference: updatedFields.payment_reference || order.payment_reference,
-    };
-    setOrder(nextOrder);
-
-    // If order is saved in DB, persist change immediately
-    if (order.id && !order.id.startsWith("draft_")) {
-      const { error } = await supabase
-        .from("orders")
-        .update({
-          payment_status: updatedFields.payment_status,
-          payment_method: finalMethod,
-          advance_paid: updatedFields.advance_paid,
-          payment_reference: updatedFields.payment_reference || order.payment_reference,
-        } as any)
-        .eq("id", order.id);
-
-      if (error) {
-        setOrder({ ...order });
-        throw error;
-      }
-
-      // Keep initialSnapshot in sync so isDirty is computed accurately
-      if (initialSnapshotRef.current) {
-        initialSnapshotRef.current = {
-          ...initialSnapshotRef.current,
-          order: {
-            ...initialSnapshotRef.current.order,
-            payment_status: updatedFields.payment_status,
-            payment_method: finalMethod,
-            advance_paid: updatedFields.advance_paid,
-            payment_reference: updatedFields.payment_reference || order.payment_reference,
-          },
-        };
-      }
-
-      // Log Activity Entry
-      await logActivity({
-        action: "payment_update",
-        order_id: order.id,
-        en: `Updated payment status to ${updatedFields.payment_status.toUpperCase()} (${(finalMethod || "unspecified").toUpperCase()}), Advance: BHD ${updatedFields.advance_paid.toFixed(3)}`,
-        ar: `تحديث حالة الدفع إلى ${updatedFields.payment_status} (${finalMethod || "غير محدد"})، المبلغ المستلم: ${updatedFields.advance_paid.toFixed(3)} د.ب`,
-        metadata: {
-          oldStatus,
-          oldMethod,
-          oldAdvance,
-          ...updatedFields,
-          payment_method: finalMethod,
-        },
-      });
-
-      qc.invalidateQueries({ queryKey: ["activity_logs"] });
-      qc.invalidateQueries({ queryKey: ["order", order.id] });
-      qc.invalidateQueries({ queryKey: ["orders", brandId] });
-      qc.invalidateQueries({ queryKey: ["orders"] });
-      await orderQ.refetch();
-    }
-  };
-
-  const [scannerOpen, setScannerOpen] = useState(false);
-  const [cameraStreamPromise, setCameraStreamPromise] = useState<Promise<MediaStream> | null>(null);
-  const cameraStreamRef = useRef<MediaStream | null>(null);
+  const { handleSavePaymentDetails } = useOrderPaymentDetails({
+    brandId,
+    initialSnapshotRef,
+    order,
+    orderQ,
+    qc,
+    setOrder,
+  });
 
   const currency = order?.currency ?? "BHD";
   const isClosedOrder = serverOrder?.status === "completed" || serverOrder?.status === "paid";
@@ -593,273 +430,42 @@ function OrderDetail() {
   const isReadOnly = !isCreationMode && !editingUnlocked;
   const canUnlockEditing = !isCourier && (isAdmin || !isClosedOrder);
 
-  const cancelEditing = () => {
-    if (
-      isDirty &&
-      !window.confirm(
-        lang === "ar"
-          ? "هل تريد إلغاء التعديل وتجاهل جميع التغييرات غير المحفوظة؟"
-          : "Cancel editing and discard all unsaved changes?",
-      )
-    ) {
-      return;
-    }
+  const { cancelEditing } = useCancelOrderEdit({
+    initialSnapshotRef,
+    isDirty,
+    lang,
+    orderQ,
+    setAppliedPromo,
+    setEditingItemSheetIdx,
+    setEditingUnlocked,
+    setIsEditingFees,
+    setItems,
+    setOrder,
+    setPromoInput,
+  });
 
-    const snapshot = initialSnapshotRef.current;
-    if (snapshot) {
-      setOrder((current: any) => ({ ...(current ?? {}), ...snapshot.order }));
-      setItems(snapshot.items.map((item) => ({ ...item })));
-    }
-    const savedPromo = (orderQ.data as any)?.promo_code ?? null;
-    setPromoInput(savedPromo ?? "");
-    setAppliedPromo(
-      savedPromo
-        ? {
-            code: savedPromo,
-            id: (orderQ.data as any)?.promo_code_id ?? "",
-            amount: Number((orderQ.data as any)?.discount ?? 0),
-          }
-        : null,
-    );
-    setEditingItemSheetIdx(null);
-    setIsEditingFees(false);
-    setEditingUnlocked(false);
-  };
-
-  const addItem = () => {
-    setItems([...items, blankOrderItem()]);
-  };
-
-  const openBarcodeScanner = () => {
-    cameraStreamRef.current?.getTracks().forEach((track) => track.stop());
-    cameraStreamRef.current = null;
-    /* The scanner component owns camera acquisition. Avoid opening a competing
-       warm-up stream here; it prevents autofocus on several mobile browsers. */
-    setCameraStreamPromise(null);
-    setScannerOpen(true);
-  };
-
-  const handleScanned = (code: string) => {
-    const normalizeScan = (value: unknown) =>
-      String(value ?? "")
-        .replace(/\p{Cc}/gu, "")
-        .trim()
-        .toUpperCase();
-    const trimmed = normalizeScan(code);
-    if (!trimmed) return;
-    const variants = variantsQ.data ?? [];
-    const products = productsQ.data ?? [];
-    const v =
-      variants.find((x: any) => normalizeScan(x.barcode) === trimmed) ??
-      variants.find((x: any) => normalizeScan(x.sku) === trimmed);
-    if (!v) {
-      toast.error(
-        lang === "ar" ? `لم يتم العثور على الباركود: ${trimmed}` : `Barcode not found: ${trimmed}`,
-      );
-      return;
-    }
-    const p = products.find((x: any) => x.id === v.product_id);
-    const isAr = lang === "ar";
-    const axes = resolveAllVariantAxes({
-      product: p,
-      addonDefaults,
-      lang: isAr ? "ar" : "en",
-    });
-    const lines = [p?.name || (v as any).title || "Product"];
-    if (v.size && axes.size.visible) lines.push(`${axes.size.label}: ${v.size}`);
-    if (v.color && axes.color.visible) lines.push(`${axes.color.label}: ${v.color}`);
-    if (v.fabric && axes.fabric.visible) lines.push(`${axes.fabric.label}: ${v.fabric}`);
-    setItems([
-      ...items,
-      {
-        product_id: p?.id ?? null,
-        variant_id: v.id,
-        description: lines.join("\n"),
-        quantity: 1,
-        unit_price: Number(v.selling_price || 0),
-        unit_cost: (v as any).cost_price == null ? null : Number((v as any).cost_price),
-        original_price:
-          (v as any).original_price == null ? null : Number((v as any).original_price),
-        customizations: [],
-        customization_total: 0,
-        line_total: Number(v.selling_price || 0),
-        location: "main",
-        selected_variant: {
-          size: v.size || null,
-          color: v.color || null,
-          fabric: v.fabric || null,
-        },
-        custom_field_values: [],
-      },
-    ]);
-    toast.success(
-      lang === "ar" ? `تمت إضافة ${p?.name || "المنتج"} بنجاح!` : `Added ${p?.name || "product"}!`,
-    );
-  };
-
-  const updateItem = (idx: number, patch: Partial<Item>) => {
-    setItems(items.map((it, i) => (i === idx ? recalcOrderItem({ ...it, ...patch }) : it)));
-  };
-
-  const pickVariant = (idx: number, variantId: string) => {
-    const v = variantsQ.data?.find((x: any) => x.id === variantId);
-    const p = productsQ.data?.find((x: any) => x.id === v?.product_id);
-    if (!v || !p) return;
-    const isAr = lang === "ar";
-    const axes = resolveAllVariantAxes({
-      product: p,
-      addonDefaults,
-      lang: isAr ? "ar" : "en",
-    });
-    const lines = [p.name];
-    if (v.size && axes.size.visible) lines.push(`${axes.size.label}: ${v.size}`);
-    if (v.color && axes.color.visible) lines.push(`${axes.color.label}: ${v.color}`);
-    if (v.fabric && axes.fabric.visible) lines.push(`${axes.fabric.label}: ${v.fabric}`);
-    updateItem(idx, {
-      product_id: p.id,
-      variant_id: v.id,
-      description: lines.join("\n"),
-      unit_price: Number(v.selling_price),
-      unit_cost: (v as any).cost_price == null ? null : Number((v as any).cost_price),
-      original_price: (v as any).original_price == null ? null : Number((v as any).original_price),
-      selected_variant: {
-        size: v.size || null,
-        color: v.color || null,
-        fabric: v.fabric || null,
-      },
-    });
-  };
-
-  const toggleCustom = (idx: number, c: { name: string; price_delta: number }) => {
-    const it = items[idx];
-    const exists = it.customizations.find((x) => x.name === c.name);
-    const newCust = exists
-      ? it.customizations.filter((x) => x.name !== c.name)
-      : [...it.customizations, c];
-    updateItem(idx, { customizations: newCust });
-  };
-
-  const save = async () => {
-    if (isReadOnly) return;
-    const saveBlocker = orderSaveBlocker(order, items, id, lang);
-    if (saveBlocker) return toast.error(saveBlocker);
-    setSaving(true);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setSaving(false);
-      return;
-    }
-
-    const orderPayload = orderSavePayload(order, totals, appliedPromo, currency);
-
-    if (id === "new") {
-      const { data: created, error: createError } = await (supabase.from("orders") as any)
-        .insert({
-          ...orderPayload,
-          user_id: user.id,
-          brand_id: brandId,
-          invoice_number: 0,
-        })
-        .select("id")
-        .single();
-      if (createError || !created) {
-        setSaving(false);
-        return toast.error(createError?.message || "ORDER_CREATE_FAILED");
-      }
-      if (items.length > 0) {
-        for (const it of items) {
-          const isCustom = it.location === "custom" || !it.variant_id;
-          if (isCustom && !it.location) {
-            it.location = "custom";
-          }
-        }
-        const { error: itemError } = await (supabase.from("order_items") as any).insert(
-          items.map((item) =>
-            orderItemRow(item, { user_id: user.id, brand_id: brandId, order_id: created.id }),
-          ),
-        );
-        if (itemError) {
-          await supabase.from("orders").delete().eq("id", created.id);
-          setSaving(false);
-          return toast.error(itemError.message);
-        }
-      }
-      localStorage.removeItem(`boutq_draft_${brandId}_new`);
-      toast.success(lang === "ar" ? "تم إنشاء الطلب بنجاح" : "Order created successfully");
-      initialSnapshotRef.current = null;
-      setOrder(null);
-      setItems([]);
-      router.navigate({ to: "/admin/b/$slug/orders/$id", params: { slug, id: created.id } });
-      return;
-    }
-
-    const { error: oe } = await supabase
-      .from("orders")
-      .update(orderPayload as any)
-      .eq("id", order.id);
-    if (oe) {
-      setSaving(false);
-      return toast.error(oe.message);
-    }
-
-    // ── Activity log: detect changes vs saved state
-    const prev = (orderQ.data ?? {}) as any;
-    const logs = orderChangeLogs(prev, order, totals.advancePaid, currency);
-
-    // Only update order_items if they actually changed
-    const originalItems = (orderQ.data?.order_items ?? []) as any[];
-    const itemsModified = haveOrderItemsChanged(originalItems, items);
-
-    if (itemsModified) {
-      const itemsPayload = items.map((i) =>
-        orderItemRow(i, { user_id: user.id, brand_id: brandId, order_id: order.id }),
-      );
-
-      const { error: repErr } = await (supabase.rpc as any)("replace_order_items", {
-        p_order_id: order.id,
-        p_items: itemsPayload,
-      });
-
-      if (repErr) {
-        setSaving(false);
-        if (repErr.message?.includes("INSUFFICIENT_STOCK")) {
-          return toast.error(t("orderDetail.insufficientStock"));
-        }
-        return toast.error(repErr.message);
-      }
-    }
-
-    if (logs.length > 0) await logActivityBatch(logs);
-
-    // Refetch fresh order from Supabase to sync local state and snapshot
-    const refetched = await orderQ.refetch();
-    const freshOrder = (refetched.data ?? order) as any;
-    setOrder(freshOrder);
-
-    const loadedItems: Item[] = (freshOrder.order_items ?? []).map(orderItemFromRow);
-    setItems(loadedItems);
-
-    initialSnapshotRef.current = {
-      order: normalizeOrderMin(freshOrder),
-      items: loadedItems,
-    };
-
-    toast.success(lang === "ar" ? "تم الحفظ بنجاح" : "Saved successfully");
-    try {
-      localStorage.removeItem(`boutq_draft_${brandId}_${id}`);
-      localStorage.removeItem(`boutq_draft_${brandId}_new`);
-    } catch {
-      // ignore storage errors
-    }
-    setHasSavedDraft(true);
-    setEditingUnlocked(false);
-    setSaving(false);
-    qc.invalidateQueries({ queryKey: ["orders", brandId] });
-    qc.invalidateQueries({ queryKey: ["variants"] });
-    qc.invalidateQueries({ queryKey: ["activity_logs"] });
-  };
+  const { save } = useSaveOrder({
+    appliedPromo,
+    brandId,
+    currency,
+    id,
+    initialSnapshotRef,
+    isReadOnly,
+    items,
+    lang,
+    order,
+    orderQ,
+    qc,
+    router,
+    setEditingUnlocked,
+    setHasSavedDraft,
+    setItems,
+    setOrder,
+    setSaving,
+    slug,
+    t,
+    totals,
+  });
   saveRef.current = save;
 
   useEffect(() => {
@@ -951,107 +557,17 @@ function OrderDetail() {
       </div>
     );
 
-  const copyLink = async () => {
-    const url = `${window.location.origin}/invoice/${order.public_invoice_token}`;
-    try {
-      if (navigator?.clipboard?.writeText) {
-        await navigator.clipboard.writeText(url);
-      } else {
-        const ta = document.createElement("textarea");
-        ta.value = url;
-        ta.style.position = "fixed";
-        ta.style.opacity = "0";
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-      }
-      toast.success(t("orders.linkCopied"));
-    } catch {
-      toast.error(t("orders.linkFailed"));
-    }
-  };
-
-  const handlePrintA4 = async () => {
-    try {
-      const el = document.querySelector<HTMLElement>(".printable-invoice");
-      const { downloadInvoicePdf } = await import("@/lib/download-invoice-pdf");
-      await downloadInvoicePdf(el, `invoice-${order.invoice_number ?? order.id}`);
-    } catch (err) {
-      console.error("PDF download failed", err);
-      toast.error(
-        (err as Error)?.message ?? (lang === "ar" ? "فشل تحميل ملف PDF" : "PDF download failed"),
-      );
-    }
-  };
-
-  const printReceipt = () => {
-    const settings: any = settingsQ.data ?? {};
-    const LEGACY_BRAND_NAMES = new Set(["Abaya Atelier", "أباية أتيليه"]);
-    const rawBrand = (settings.business_name ?? "").trim();
-    const brand =
-      !rawBrand || LEGACY_BRAND_NAMES.has(rawBrand)
-        ? lang === "ar"
-          ? "بوتيك"
-          : "Boutq"
-        : rawBrand;
-
-    const paymentLabel = order.payment_method ? t(`payment.${order.payment_method}`) : "";
-    const statusLabel = formatOrderStatus(order.status, order.fulfillment_method, lang);
-
-    const ok = printThermalReceipt({
-      brand,
-      invoiceNumber: order.invoice_number,
-      orderDate: order.order_date,
-      status: statusLabel,
-      customerName: getOrderCustomerName(order) || null,
-      customerPhone: getOrderCustomerPhone(order) || null,
-      paymentMethod: paymentLabel || null,
-      items: items.map((i) => ({
-        description: i.description,
-        quantity: i.quantity,
-        unit_price: i.unit_price,
-        customization_total: i.customization_total,
-        line_total: i.line_total,
-        customizations: i.customizations,
-        selected_variant: i.selected_variant,
-        custom_field_values: i.custom_field_values,
-        product: (productsQ.data ?? []).find((p: any) => p.id === i.product_id),
-      })),
-      brandAddons: storeProfile.addons,
-      storeVertical: storeProfile.vertical,
-      subtotal: totals.subtotal,
-      discount: totals.discount,
-      taxRate: Number(order.tax_rate ?? 0),
-      taxAmount: totals.taxAmount,
-      shipping: totals.shipping,
-      total: totals.total,
-      currency,
-      lang,
-      labels: {
-        receipt: t("orders.printReceipt"),
-        invoiceNumber: t("orders.invoice") + " #",
-        date: t("orders.date"),
-        status: t("orders.status"),
-        payment: t("orderDetail.paymentMethod"),
-        customer: t("orderDetail.customer"),
-        item: t("orderDetail.description"),
-        qty: t("orderDetail.qty"),
-        price: t("orderDetail.unitPrice"),
-        total: t("orderDetail.total"),
-        subtotal: t("orderDetail.subtotal"),
-        discount: t("orderDetail.discount"),
-        vat: t("orderDetail.vat"),
-        shipping: t("orderDetail.shipping"),
-        grandTotal: t("orderDetail.grandTotal"),
-        thankYou:
-          settings.footer_note?.trim() ||
-          (lang === "ar" ? "شكراً لتسوّقكم معنا" : "Thank you for your order"),
-      },
-      footerNote: null,
-    });
-    if (!ok) toast.error(t("orders.popupBlocked"));
-  };
+  const { copyLink, handlePrintA4, printReceipt } = createOrderDocumentActions({
+    order,
+    items,
+    t,
+    lang,
+    settingsQ,
+    productsQ,
+    storeProfile,
+    totals,
+    currency,
+  });
 
   const renderTopPrimaryAction = () =>
     renderOrderPrimaryAction({
@@ -1069,49 +585,13 @@ function OrderDetail() {
       vocabulary,
     });
 
-  const handleDirectOrderStatusChange = async (newStatus: string, newFulfillmentStatus: string) => {
-    if (!order) return;
-    try {
-      const updatePayload: any = {
-        status: newStatus,
-        fulfillment_status: newFulfillmentStatus,
-        updated_at: new Date().toISOString(),
-      };
-      if (newStatus === "completed") {
-        updatePayload.delivered_at = new Date().toISOString();
-      }
-
-      const { error } = await supabase.from("orders").update(updatePayload).eq("id", order.id);
-
-      if (error) throw error;
-
-      const labelAr = getFulfillmentLabel(newFulfillmentStatus, "ar");
-      const labelEn = getFulfillmentLabel(newFulfillmentStatus, "en");
-
-      toast.success(
-        lang === "ar"
-          ? `تم تحديث حالة الطلب إلى "${labelAr}"`
-          : `Updated order status to "${labelEn}"`,
-      );
-
-      await logActivity({
-        action: "status_change",
-        order_id: order.id,
-        en: `Updated order status to "${labelEn}"`,
-        ar: `تحديث حالة الطلب إلى "${labelAr}"`,
-      });
-
-      await orderQ.refetch();
-      qc.invalidateQueries({ queryKey: ["orders", brandId] });
-      qc.invalidateQueries({ queryKey: ["activity_logs"] });
-    } catch (err: unknown) {
-      toast.error(
-        getFriendlyErrorMessage(err) ||
-          (lang === "ar" ? "تعذر تحديث حالة الطلب" : "Unable to update order status"),
-      );
-      throw err;
-    }
-  };
+  const handleDirectOrderStatusChange = createOrderStatusChange({
+    order,
+    lang,
+    orderQ,
+    qc,
+    brandId,
+  });
 
   return (
     <>
@@ -1169,157 +649,24 @@ function OrderDetail() {
         />
 
         {/* Mobile workflow navigation. Creation mode must expose customer details too. */}
-        <div
-          className={cn(
-            "no-print my-3 grid gap-1 rounded-2xl border border-border-strong bg-muted/60 p-1.5 shadow-2xs select-none sm:hidden",
-            isCreationMode ? "grid-cols-2" : "grid-cols-3",
-          )}
-        >
-          <button
-            type="button"
-            onClick={() => setMobileTab("items")}
-            className={cn(
-              "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-extrabold transition-all touch-manipulation min-h-10",
-              mobileTab === "items"
-                ? "bg-card text-foreground shadow-xs border border-border-strong font-bold"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <Package className="h-4 w-4 shrink-0" />
-            <span>{lang === "ar" ? "المنتجات" : "Items"}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setMobileTab("customer")}
-            className={cn(
-              "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-extrabold transition-all touch-manipulation min-h-10",
-              mobileTab === "customer"
-                ? "bg-card text-foreground shadow-xs border border-border-strong font-bold"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <UserRound className="h-4 w-4 shrink-0" />
-            <span>{lang === "ar" ? "العميل والتوصيل" : "Customer"}</span>
-          </button>
-          {!isCreationMode && (
-            <button
-              type="button"
-              onClick={() => setMobileTab("activity")}
-              className={cn(
-                "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-extrabold transition-all touch-manipulation min-h-10",
-                mobileTab === "activity"
-                  ? "bg-card text-foreground shadow-xs border border-border-strong font-bold"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              <Receipt className="h-4 w-4 shrink-0" />
-              <span>{lang === "ar" ? "النشاط" : "Activity"}</span>
-            </button>
-          )}
-        </div>
+        <OrderMobileSectionNav
+          isCreationMode={isCreationMode}
+          lang={lang}
+          mobileTab={mobileTab}
+          setMobileTab={setMobileTab}
+        />
 
         {/* Desktop Section Navigation Bar (≥ 768px) */}
         {!isCreationMode && (
-          <div className="no-print mb-3 hidden sm:flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border-strong bg-card/90 p-1.5 shadow-sm select-none sm:mb-6 sm:rounded-xl">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => scrollToSection("sec-overview")}
-                className={cn(
-                  "min-h-11 justify-center rounded-xl px-3.5 py-1.5 text-xs font-bold transition-colors flex items-center gap-1.5 whitespace-nowrap touch-manipulation",
-                  activeSection === "sec-overview"
-                    ? "bg-foreground text-background font-bold shadow-2xs"
-                    : "hover:bg-muted text-muted-foreground",
-                )}
-              >
-                <UserRound className="h-3.5 w-3.5" />
-                <span>{lang === "ar" ? "نظرة عامة" : "Overview"}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollToSection("sec-items")}
-                className={cn(
-                  "min-h-11 justify-center rounded-xl px-3.5 py-1.5 text-xs font-bold transition-colors flex items-center gap-1.5 whitespace-nowrap touch-manipulation",
-                  activeSection === "sec-items"
-                    ? "bg-foreground text-background font-bold shadow-2xs"
-                    : "hover:bg-muted text-muted-foreground",
-                )}
-              >
-                <Package className="h-3.5 w-3.5" />
-                <span>{lang === "ar" ? "المنتجات" : "Items"}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollToSection("sec-documents")}
-                className={cn(
-                  "min-h-11 justify-center rounded-xl px-3.5 py-1.5 text-xs font-bold transition-colors flex items-center gap-1.5 whitespace-nowrap touch-manipulation",
-                  activeSection === "sec-documents"
-                    ? "bg-foreground text-background font-bold shadow-2xs"
-                    : "hover:bg-muted text-muted-foreground",
-                )}
-              >
-                <FileText className="h-3.5 w-3.5" />
-                <span>{lang === "ar" ? "المستندات" : "Documents"}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollToSection("sec-invoice")}
-                className={cn(
-                  "min-h-11 justify-center rounded-xl px-3.5 py-1.5 text-xs font-bold transition-colors flex items-center gap-1.5 whitespace-nowrap touch-manipulation",
-                  activeSection === "sec-invoice"
-                    ? "bg-foreground text-background font-bold shadow-2xs"
-                    : "hover:bg-muted text-muted-foreground",
-                )}
-              >
-                <CreditCard className="h-3.5 w-3.5" />
-                <span>{lang === "ar" ? "الفاتورة" : "Invoice"}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollToSection("sec-activity")}
-                className={cn(
-                  "min-h-11 justify-center rounded-xl px-3.5 py-1.5 text-xs font-bold transition-colors flex items-center gap-1.5 whitespace-nowrap touch-manipulation",
-                  activeSection === "sec-activity"
-                    ? "bg-foreground text-background font-bold shadow-2xs"
-                    : "hover:bg-muted text-muted-foreground",
-                )}
-              >
-                <MoreHorizontal className="h-3.5 w-3.5" />
-                <span>{lang === "ar" ? "المزيد" : "More"}</span>
-              </button>
-            </div>
-
-            {/* Left Side: Dynamic Save Button & Unsaved Notation */}
-            {!isReadOnly && (
-              <div className="flex items-center gap-2.5 px-1 py-0.5">
-                {isDirty ? (
-                  <>
-                    <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 animate-fade-in inline">
-                      {lang === "ar" ? "توجد تغييرات غير محفوظة" : "Unsaved changes"}
-                    </span>
-                    <Button
-                      onClick={save}
-                      disabled={saving}
-                      size="sm"
-                      className="shadow-xs font-bold h-9 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-md ring-2 ring-emerald-500/30"
-                    >
-                      {saving ? (
-                        <Loader2 className="h-4 w-4 me-1.5 animate-spin" />
-                      ) : (
-                        <Save className="h-4 w-4 me-1.5" />
-                      )}
-                      {lang === "ar" ? "حفظ التغييرات" : "Save Changes"}
-                    </Button>
-                  </>
-                ) : (
-                  <span className="text-xs text-muted-foreground font-medium flex items-center gap-1.5 px-2 py-1 bg-muted/40 rounded-lg">
-                    <Check className="h-3.5 w-3.5 text-emerald-600" />
-                    {lang === "ar" ? "محفوظ" : "Saved"}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
+          <OrderDesktopSectionNav
+            activeSection={activeSection}
+            isDirty={isDirty}
+            isReadOnly={isReadOnly}
+            lang={lang}
+            save={save}
+            saving={saving}
+            scrollToSection={scrollToSection}
+          />
         )}
 
         {/* Editor - hidden on print */}
@@ -1463,81 +810,23 @@ function OrderDetail() {
         )}
 
         {/* Invoice Preview Section Anchor */}
-        <div
-          id="sec-invoice"
-          className={cn("scroll-mt-24", mobileTab !== "activity" && "hidden sm:block")}
-        >
-          <div className="no-print mb-4 rounded-xl border bg-card">
-            <button
-              type="button"
-              onClick={() => setInvoicePreviewOpen((open) => !open)}
-              className="flex w-full items-center justify-between px-4 py-3 text-start font-medium hover:bg-muted/40"
-              aria-expanded={invoicePreviewOpen}
-            >
-              <span>{lang === "ar" ? "معاينة الفاتورة" : "Preview Invoice"}</span>
-              <span className="text-sm text-muted-foreground">
-                {invoicePreviewOpen ? "−" : "+"}
-              </span>
-            </button>
-          </div>
-          <div className={invoicePreviewOpen ? "block" : "hidden print:block"}>
-            {/* Printable invoice */}
-            {(() => {
-              const addrs = (addressesQ.data ?? []).filter(
-                (a) => a.customer_id === order.customer_id,
-              );
-              const chosen =
-                ((order as any).delivery_address_snapshot as SavedAddress | null) ??
-                addrs.find((a) => a.id === order.shipping_address_id) ??
-                addrs.find((a) => a.is_default) ??
-                null;
-              return (
-                <InvoicePreview
-                  order={{
-                    ...order,
-                    subtotal: totals.subtotal,
-                    tax_amount: totals.taxAmount,
-                    total: totals.total,
-                    advance_paid: totals.advancePaid,
-                  }}
-                  items={items.map((it) => ({
-                    ...it,
-                    product: (productsQ.data ?? []).find((p: any) => p.id === it.product_id),
-                  }))}
-                  settings={settingsQ.data}
-                  shippingAddress={chosen}
-                  paymentBadge={paymentBadge}
-                  brandAddons={storeProfile.addons}
-                  storeVertical={storeProfile.vertical}
-                />
-              );
-            })()}
-          </div>
-        </div>
+        <OrderInvoiceSection
+          addressesQ={addressesQ}
+          invoicePreviewOpen={invoicePreviewOpen}
+          items={items}
+          lang={lang}
+          mobileTab={mobileTab}
+          order={order}
+          paymentBadge={paymentBadge}
+          productsQ={productsQ}
+          setInvoicePreviewOpen={setInvoicePreviewOpen}
+          settingsQ={settingsQ}
+          storeProfile={storeProfile}
+          totals={totals}
+        />
 
         {/* Activity Trail Section Anchor */}
-        <div
-          id="sec-activity"
-          className={cn(
-            "no-print mx-auto max-w-6xl scroll-mt-24 px-1 pb-4 sm:p-6 lg:p-8",
-            mobileTab !== "activity" && "hidden sm:block",
-          )}
-        >
-          <details className="group overflow-hidden rounded-2xl border border-border-subtle bg-card/60 shadow-sm sm:hidden">
-            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-bold marker:content-none">
-              <span>{lang === "ar" ? "سجل النشاطات" : "Activity history"}</span>
-              <span className="text-lg text-muted-foreground transition-transform group-open:rotate-45">
-                +
-              </span>
-            </summary>
-            <div className="border-t border-border-subtle p-4">
-              <ActivityLogList orderId={order.id} scope="order" brandId={brand.id} />
-            </div>
-          </details>
-          <div className="hidden sm:block">
-            <ActivityLogList orderId={order.id} scope="order" brandId={brand.id} />
-          </div>
-        </div>
+        <OrderActivitySection brand={brand} lang={lang} mobileTab={mobileTab} order={order} />
 
         <Dialog open={mobileActionsOpen} onOpenChange={setMobileActionsOpen}>
           <DialogContent
@@ -1685,5 +974,4 @@ function OrderDetail() {
   );
 }
 
-const InvoicePreview = lazy(() => import("@/components/orders/InvoicePreview"));
 const SendInvoiceDialog = lazy(() => import("@/components/orders/SendInvoiceDialog"));

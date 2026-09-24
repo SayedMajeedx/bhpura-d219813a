@@ -1,6 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { orderItemFromRow } from "../src/features/orders/lib/order-editor";
+
+// The order editor is split across its route and src/features/orders (Phase 5).
+const orderDetailSource = () =>
+  [
+    "src/routes/_authenticated/admin.b.$slug.orders.$id.tsx",
+    ...["actions", "components", "hooks", "lib"].flatMap((dir) =>
+      readdirSync(`src/features/orders/${dir}`)
+        .sort()
+        .map((file) => `src/features/orders/${dir}/${file}`),
+    ),
+  ]
+    .map((file) => readFileSync(file, "utf8"))
+    .join("\n");
 
 describe("custom tailoring order location", () => {
   const migration = readFileSync(
@@ -22,7 +35,7 @@ describe("custom tailoring order location", () => {
     expect(orderItemFromRow({ location: "custom" }).location).toBe("custom");
     expect(orderItemFromRow({ location: "incubator" }).location).toBe("incubator");
     expect(orderItemFromRow({ location: null }).location).toBe("main");
-    const route = readFileSync("src/routes/_authenticated/admin.b.$slug.orders.$id.tsx", "utf8");
+    const route = orderDetailSource();
     expect(route.match(/map\(orderItemFromRow\)/g)?.length).toBeGreaterThanOrEqual(2);
   });
 

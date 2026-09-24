@@ -1,11 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { hasAvailableStock, type ProductRow } from "../src/lib/data/storefront/types";
 import {
   PRODUCT_CARD_SELECT,
   PRODUCT_DETAIL_BASE_SELECT,
   PRODUCT_DETAIL_SELECT,
 } from "../src/lib/data/storefront/selects";
+
+// The order editor is split across its route and src/features/orders (Phase 5).
+const orderDetailSource = () =>
+  [
+    "src/routes/_authenticated/admin.b.$slug.orders.$id.tsx",
+    ...["actions", "components", "hooks", "lib"].flatMap((dir) =>
+      readdirSync(`src/features/orders/${dir}`)
+        .sort()
+        .map((file) => `src/features/orders/${dir}/${file}`),
+    ),
+  ]
+    .map((file) => readFileSync(file, "utf8"))
+    .join("\n");
 
 describe("Phase 3: Explicit is_made_to_order flag & inventory decoupling", () => {
   const migration = readFileSync(
@@ -159,13 +172,7 @@ describe("Phase 3: Explicit is_made_to_order flag & inventory decoupling", () =>
   });
 
   describe("admin order details stock checking", () => {
-    // Order lines render in src/features/orders/components/OrderLineCard.tsx (Phase 5).
-    const orderDetails = [
-      "src/routes/_authenticated/admin.b.$slug.orders.$id.tsx",
-      "src/features/orders/components/OrderLineCard.tsx",
-    ]
-      .map((file) => readFileSync(file, "utf8"))
-      .join("\n");
+    const orderDetails = orderDetailSource();
 
     it("determines custom item by location === 'custom' or !variant_id rather than size string", () => {
       expect(orderDetails).toMatch(

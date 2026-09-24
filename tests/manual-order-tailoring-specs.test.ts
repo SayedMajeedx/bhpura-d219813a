@@ -1,9 +1,22 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { isOrderDirty, orderItemFromRow } from "../src/features/orders/lib/order-editor";
 import { orderItemRow } from "../src/features/orders/lib/order-save";
 
-const orderDetail = readFileSync("src/routes/_authenticated/admin.b.$slug.orders.$id.tsx", "utf8");
+// The order editor is split across its route and src/features/orders (Phase 5).
+const orderDetailSource = () =>
+  [
+    "src/routes/_authenticated/admin.b.$slug.orders.$id.tsx",
+    ...["actions", "components", "hooks", "lib"].flatMap((dir) =>
+      readdirSync(`src/features/orders/${dir}`)
+        .sort()
+        .map((file) => `src/features/orders/${dir}/${file}`),
+    ),
+  ]
+    .map((file) => readFileSync(file, "utf8"))
+    .join("\n");
+
+const orderDetail = orderDetailSource();
 const invoiceFn = readFileSync("src/lib/public-invoice.functions.ts", "utf8");
 const publicInvoice = readFileSync("src/routes/invoice.$id.tsx", "utf8");
 const thermalPrint = readFileSync("src/lib/thermal-print.ts", "utf8");
