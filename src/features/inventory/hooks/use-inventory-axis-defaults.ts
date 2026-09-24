@@ -54,3 +54,28 @@ export function resolveVariantRowAxes(
     five: axis("five", variant.option_five),
   };
 }
+
+/**
+ * Axes for a product's whole variant list: like a single row, but an axis the
+ * store hides is shown when any variant has a value for it.
+ */
+export function resolveVariantListAxes(
+  product: ProductVariantLabels | null | undefined,
+  addonDefaults: ReturnType<typeof variantAxisDefaultsFrom>,
+  lang: "ar" | "en",
+  variants: Array<{
+    color?: string | null;
+    fabric?: string | null;
+    option_four?: string | null;
+    option_five?: string | null;
+  }>,
+): VariantRowAxes {
+  const firstValue = (pick: (v: (typeof variants)[number]) => string | null | undefined) =>
+    variants.map(pick).find((value) => Boolean(value && value.trim()));
+  return resolveVariantRowAxes(product, addonDefaults, lang, {
+    color: firstValue((v) => v.color),
+    fabric: firstValue((v) => v.fabric),
+    option_four: firstValue((v) => v.option_four),
+    option_five: firstValue((v) => v.option_five),
+  });
+}
