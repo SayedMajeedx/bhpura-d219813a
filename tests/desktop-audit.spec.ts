@@ -388,8 +388,14 @@ test("Comprehensive 1920x1080 Desktop UX Audit across all routes", async ({ page
     const headingScope = page.url().includes("/auth")
       ? page.locator("h1")
       : page.locator("main h1");
-    await expect(headingScope, `${path} must expose one page heading`).toHaveCount(1);
-    await expect(headingScope, `${path} page heading must be visible`).toBeVisible();
+    // Same allowance as the hang check above: on a cold dev server the first
+    // visit to a route compiles its modules, which can take well over 5s in CI.
+    await expect(headingScope, `${path} must expose one page heading`).toHaveCount(1, {
+      timeout: 30_000,
+    });
+    await expect(headingScope, `${path} page heading must be visible`).toBeVisible({
+      timeout: 30_000,
+    });
     const hasDocumentOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
     );
