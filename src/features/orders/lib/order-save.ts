@@ -1,3 +1,4 @@
+import { variantSpecs } from "@/lib/order-variant-specs";
 import type { Order, OrderItem } from "@/features/orders/types";
 import {
   orderItemFromRow,
@@ -98,7 +99,7 @@ export function orderItemRow(
     customization_total: item.customization_total,
     line_total: item.line_total,
     location: item.location ?? "main",
-    selected_variant: item.selected_variant ?? null,
+    selected_variant: variantSpecs(item.selected_variant),
     custom_field_values: item.custom_field_values ?? [],
   };
 }
