@@ -1,4 +1,4 @@
-﻿import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 
 export type ExportFormat = "xlsx" | "csv" | "json";
 export type ExportEntityType = "products" | "customers" | "orders" | "expenses" | "full_backup";
@@ -676,7 +676,7 @@ export async function logExportRun(params: {
     const { data: userRes } = await supabase.auth.getUser();
     const userId = userRes?.user?.id;
     if (userId) {
-      await (supabase.from("export_runs" as never) as any).insert({
+      await supabase.from("export_runs").insert({
         brand_id: params.brandId,
         created_by: userId,
         session_id: sessionId,

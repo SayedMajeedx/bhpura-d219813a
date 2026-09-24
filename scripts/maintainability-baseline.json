@@ -1,11 +1,11 @@
 {
-  "timestamp": "2026-09-24T05:26:46.934Z",
+  "timestamp": "2026-09-24T07:34:03.569Z",
   "summary": {
     "totalSourceFiles": 592,
     "filesOver1000": 31,
-    "asAny": 990,
-    "colonAny": 785,
-    "asNever": 40,
+    "asAny": 954,
+    "colonAny": 778,
+    "asNever": 0,
     "tsIgnore": 0,
     "tsExpectError": 0,
     "eslintDisable": 10,
@@ -21,9 +21,9 @@
     }
   },
   "typeEscapes": {
-    "asAny": 990,
-    "colonAny": 785,
-    "asNever": 40,
+    "asAny": 954,
+    "colonAny": 778,
+    "asNever": 0,
     "tsIgnore": 0,
     "tsExpectError": 0,
     "eslintDisable": 10
@@ -31,7 +31,7 @@
   "filesOver1000": [
     {
       "file": "src/routes/_authenticated/admin.b.$slug.inventory.tsx",
-      "lines": 8459
+      "lines": 8455
     },
     {
       "file": "src/routes/_authenticated/admin.b.$slug.orders.$id.tsx",
@@ -103,7 +103,7 @@
     },
     {
       "file": "src/routes/_authenticated/admin.b.$slug.import.tsx",
-      "lines": 1463
+      "lines": 1461
     },
     {
       "file": "src/components/reviews/ReviewStoryDialog.tsx",
@@ -127,7 +127,7 @@
     },
     {
       "file": "src/lib/instagram-ai-importer.ts",
-      "lines": 1262
+      "lines": 1260
     },
     {
       "file": "src/routes/_authenticated/admin.brands.tsx",
@@ -143,7 +143,7 @@
     },
     {
       "file": "src/routes/onboard.tsx",
-      "lines": 1094
+      "lines": 1092
     },
     {
       "file": "src/routes/_authenticated/admin.b.$slug.customers.$customerId.tsx",
@@ -590,7 +590,7 @@
     "src/lib/auth/ensure-session-user.ts": 39,
     "src/lib/bahrain-regions.ts": 138,
     "src/lib/benefit-receipt-cleanup.server.ts": 84,
-    "src/lib/benefit-receipt.functions.ts": 273,
+    "src/lib/benefit-receipt.functions.ts": 274,
     "src/lib/benefit-receipt.ts": 36,
     "src/lib/bom-calculator.ts": 321,
     "src/lib/bottom-bar-store.ts": 37,
@@ -630,7 +630,7 @@
     "src/lib/impersonation-cookies.server.ts": 157,
     "src/lib/impersonation.functions.ts": 229,
     "src/lib/impersonation.server.ts": 44,
-    "src/lib/instagram-ai-importer.ts": 1262,
+    "src/lib/instagram-ai-importer.ts": 1260,
     "src/lib/inventory-health.ts": 16,
     "src/lib/inventory-labels.ts": 28,
     "src/lib/invoice-assets.functions.ts": 26,
@@ -647,7 +647,7 @@
     "src/lib/nabda-otp.server.ts": 97,
     "src/lib/numeric-input-behavior.ts": 79,
     "src/lib/observability.server.ts": 169,
-    "src/lib/onboarding.functions.ts": 802,
+    "src/lib/onboarding.functions.ts": 814,
     "src/lib/order-customer-snapshot.ts": 60,
     "src/lib/order-email-outbox.server.ts": 103,
     "src/lib/order-fulfillment.ts": 7,
@@ -685,7 +685,7 @@
     "src/lib/route-permissions.ts": 33,
     "src/lib/runtime-env.ts": 57,
     "src/lib/saas-billing/entitlements-engine.server.ts": 404,
-    "src/lib/saas-billing/saas-billing.functions.ts": 940,
+    "src/lib/saas-billing/saas-billing.functions.ts": 941,
     "src/lib/saas-billing/saas-billing.types.ts": 230,
     "src/lib/saas-billing/use-entitlements.ts": 151,
     "src/lib/saas-subscription.functions.ts": 373,
@@ -724,7 +724,7 @@
     "src/lib/turnstile.server.ts": 57,
     "src/lib/typography.ts": 456,
     "src/lib/universal-exporter.ts": 715,
-    "src/lib/universal-importer.ts": 387,
+    "src/lib/universal-importer.ts": 390,
     "src/lib/use-variant-translations.ts": 75,
     "src/lib/utils.ts": 16,
     "src/lib/variant-axes.ts": 172,
@@ -734,7 +734,7 @@
     "src/lib/webhooks/webhook-dispatcher.server.ts": 245,
     "src/lib/white-label-builds.server.ts": 91,
     "src/router.tsx": 29,
-    "src/routes/__root.tsx": 213,
+    "src/routes/__root.tsx": 207,
     "src/routes/_authenticated/admin.b.$slug.abandoned-carts.tsx": 267,
     "src/routes/_authenticated/admin.b.$slug.addons.tsx": 71,
     "src/routes/_authenticated/admin.b.$slug.campaigns.tsx": 1479,
@@ -747,10 +747,10 @@
     "src/routes/_authenticated/admin.b.$slug.discounts.tsx": 871,
     "src/routes/_authenticated/admin.b.$slug.expenses.tsx": 1431,
     "src/routes/_authenticated/admin.b.$slug.export.tsx": 1937,
-    "src/routes/_authenticated/admin.b.$slug.import.tsx": 1463,
+    "src/routes/_authenticated/admin.b.$slug.import.tsx": 1461,
     "src/routes/_authenticated/admin.b.$slug.incubators.tsx": 1512,
     "src/routes/_authenticated/admin.b.$slug.integrations.tsx": 1202,
-    "src/routes/_authenticated/admin.b.$slug.inventory.tsx": 8459,
+    "src/routes/_authenticated/admin.b.$slug.inventory.tsx": 8455,
     "src/routes/_authenticated/admin.b.$slug.loyalty.tsx": 244,
     "src/routes/_authenticated/admin.b.$slug.orders.$id.tsx": 5022,
     "src/routes/_authenticated/admin.b.$slug.orders.index.tsx": 3456,
@@ -777,7 +777,7 @@
     "src/routes/_authenticated/admin.orders.tsx": 6,
     "src/routes/_authenticated/admin.settings.tsx": 6,
     "src/routes/_authenticated/admin.super.grants.tsx": 74,
-    "src/routes/_authenticated/admin.super.health.tsx": 224,
+    "src/routes/_authenticated/admin.super.health.tsx": 225,
     "src/routes/_authenticated/admin.super.requests.tsx": 656,
     "src/routes/_authenticated/admin.super.settings.tsx": 661,
     "src/routes/_authenticated/admin.team.tsx": 6,
@@ -813,7 +813,7 @@
     "src/routes/grant.tsx": 644,
     "src/routes/index.tsx": 150,
     "src/routes/invoice.$id.tsx": 863,
-    "src/routes/onboard.tsx": 1094,
+    "src/routes/onboard.tsx": 1092,
     "src/routes/platform.$filename.ts": 19,
     "src/routes/reset-password.tsx": 350,
     "src/routes/review.$token.tsx": 255,

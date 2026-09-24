@@ -157,9 +157,10 @@ export const importProductCatalog = createServerFn({ method: "POST" })
       await verifyBrandAccess(data.brandId, context);
 
       const sessionId = data.importSessionId ?? crypto.randomUUID();
-      let run: any = null;
+      let run: { id: string } | null = null;
       try {
-        const { data: runData } = await (context.supabase.from("import_runs" as never) as any)
+        const { data: runData } = await context.supabase
+          .from("import_runs")
           .insert({
             brand_id: data.brandId,
             created_by: userId,
@@ -343,7 +344,8 @@ export const importProductCatalog = createServerFn({ method: "POST" })
       const status = failedCount > 0 || skippedCount > 0 ? "partial" : "completed";
       if (run?.id) {
         try {
-          await (context.supabase.from("import_runs" as never) as any)
+          await context.supabase
+            .from("import_runs")
             .update({
               status,
               success_count: successCount,
@@ -369,7 +371,8 @@ export const importProductCatalog = createServerFn({ method: "POST" })
       console.error("[Product Import Pipeline Exception]:", err);
       if (auditRunId) {
         try {
-          await (context.supabase.from("import_runs" as never) as any)
+          await context.supabase
+            .from("import_runs")
             .update({
               status: "failed",
               failed_count: data.products.length,

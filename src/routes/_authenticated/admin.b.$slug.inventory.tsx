@@ -512,6 +512,9 @@ function Inventory() {
   );
 }
 
+const DEFAULT_PRODUCT_MAPPINGS = { name: -1, price: -1, image: -1, stock: -1 };
+type ImportIssueItem = { row: number; code: string; name: string };
+
 const PRODUCT_HEADER_MAPS = {
   name: ["title", "name", "اسم المنتج", "عنوان المنتج", "product name", "product_name"],
   price: [
@@ -545,41 +548,33 @@ const PRODUCT_HEADER_MAPS = {
   ],
 };
 
-function ProductImporterModal({
-  brandId,
-  onComplete,
-  isOpen: controlledIsOpen,
-  onOpenChange: setControlledIsOpen,
-  renderTrigger,
-}: {
+function ProductImporterModal(props: {
   brandId: string;
   onComplete: () => void;
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
   renderTrigger?: (onClick: () => void) => React.ReactNode;
 }) {
+  const {
+    brandId,
+    onComplete,
+    isOpen: controlledIsOpen,
+    onOpenChange: setControlledIsOpen,
+    renderTrigger,
+  } = props;
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
   const setIsOpen = setControlledIsOpen || setInternalIsOpen;
   const [step, setStep] = useState<"preset" | "mapper" | "importing" | "success">("preset");
-  const [preset, setPreset] = useState<"shopify" | "salla" | "zid" | "woocommerce" | "custom">(
-    "custom",
-  );
+  const [preset, setPreset] = useState<string>("custom");
   const [parsedRows, setParsedRows] = useState<string[][]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
-  const [mappings, setMappings] = useState<Record<string, number>>({
-    name: -1,
-    price: -1,
-    image: -1,
-    stock: -1,
-  });
+  const [mappings, setMappings] = useState<Record<string, number>>(DEFAULT_PRODUCT_MAPPINGS);
   const [progress, setProgress] = useState("");
   const [successCount, setSuccessCount] = useState(0);
   const [skippedCount, setSkippedCount] = useState(0);
   const [failedCount, setFailedCount] = useState(0);
-  const [importIssues, setImportIssues] = useState<
-    Array<{ row: number; code: string; name: string }>
-  >([]);
+  const [importIssues, setImportIssues] = useState<ImportIssueItem[]>([]);
   const [importSessionId, setImportSessionId] = useState(() => crypto.randomUUID());
   const [totalCount, setTotalCount] = useState(0);
   const { lang } = useI18n();
@@ -588,7 +583,8 @@ function ProductImporterModal({
     queryKey: ["product-import-history", brandId],
     enabled: isOpen,
     queryFn: async () => {
-      const { data, error } = await (supabase.from("import_runs" as never) as any)
+      const { data, error } = await supabase
+        .from("import_runs")
         .select(
           "id,session_id,source,status,total_count,success_count,skipped_count,failed_count,created_at",
         )
@@ -597,7 +593,7 @@ function ProductImporterModal({
         .order("created_at", { ascending: false })
         .limit(30);
       if (error) throw error;
-      const sessions = new Map<string, any>();
+      const sessions = new Map<string, NonNullable<typeof data>[number]>();
       for (const row of data ?? []) {
         const existing = sessions.get(row.session_id);
         const current = existing ?? { ...row };

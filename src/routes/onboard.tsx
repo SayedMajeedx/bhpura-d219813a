@@ -192,13 +192,11 @@ function OnboardPage() {
         if (Array.isArray(data)) {
           const filtered = data.filter((p) => p.code !== "lifetime_founder" && p.code !== "trial");
           setPlans(filtered);
-          const mode = data[0]?.platform_billing_interval_mode || "both";
+          const m = data[0]?.platform_billing_interval_mode;
+          const mode = m === "monthly_only" || m === "annual_only" ? m : "both";
           setPlatformBillingMode(mode);
-          if (mode === "monthly_only") {
-            setBillingInterval("monthly");
-          } else if (mode === "annual_only") {
-            setBillingInterval("annual");
-          }
+          if (mode === "monthly_only") setBillingInterval("monthly");
+          else if (mode === "annual_only") setBillingInterval("annual");
         }
       })
       .catch(() => {});
