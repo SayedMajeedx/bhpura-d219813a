@@ -41,7 +41,9 @@ describe("Phase 3: Explicit is_made_to_order flag & inventory decoupling", () =>
     const inventory = readFileSync("src/routes/_authenticated/admin.b.$slug.inventory.tsx", "utf8");
 
     it("includes is_made_to_order in Product type", () => {
-      expect(inventory).toMatch(/is_made_to_order\?: boolean \| null;/);
+      // The inventory types moved to src/features/inventory/types.ts (Phase 5).
+      const types = readFileSync("src/features/inventory/types.ts", "utf8");
+      expect(types).toMatch(/is_made_to_order\?: boolean \| null;/);
     });
 
     it("initializes and resets is_made_to_order in form state", () => {
