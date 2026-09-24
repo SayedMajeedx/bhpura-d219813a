@@ -59,7 +59,7 @@ media and framing), with unit tests on the pure logic.
   Functions.
 - Refactors must preserve behaviour. If you find a real bug, stop and report it
   separately (what, where, evidence, proposed fix) instead of silently changing
-  behaviour inside a refactor commit.
+  behaviour inside a refactor commit, and add it to `docs/bug-backlog.md`.
 - Delete code only when you've proven it is unused: grep for every reference, check
   `git log -S` for when it stopped being used, and name the commit in your message.
 - Keep the zero-warning gate. Never add a suppressions file. A justified exception is
