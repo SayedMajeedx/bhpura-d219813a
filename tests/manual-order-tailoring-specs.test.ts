@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { isOrderDirty } from "../src/features/orders/lib/order-editor";
+import { isOrderDirty, orderItemFromRow } from "../src/features/orders/lib/order-editor";
+import { orderItemRow } from "../src/features/orders/lib/order-save";
 
 const orderDetail = readFileSync("src/routes/_authenticated/admin.b.$slug.orders.$id.tsx", "utf8");
 const invoiceFn = readFileSync("src/lib/public-invoice.functions.ts", "utf8");
@@ -20,10 +21,28 @@ describe("Custom Tailoring & Made-To-Order Specifications", () => {
   });
 
   it("persists selected_variant and custom_field_values in order_items creation and updates", () => {
-    expect(orderDetail).toContain("selected_variant: item.selected_variant ?? null");
-    expect(orderDetail).toContain("custom_field_values: item.custom_field_values ?? []");
-    expect(orderDetail).toContain("selected_variant: i.selected_variant ?? null");
-    expect(orderDetail).toContain("custom_field_values: i.custom_field_values ?? []");
+    const specs = { size: "52", color: "Black", fabric: "Crepe" };
+    const fields = [{ key: "sleeve", label_ar: null, label_en: "Sleeve", value: "60" }];
+    const row = orderItemRow(
+      {
+        description: "Abaya",
+        quantity: 1,
+        unit_price: 30,
+        customizations: [],
+        customization_total: 0,
+        line_total: 30,
+        location: "custom",
+        selected_variant: specs,
+        custom_field_values: fields,
+      },
+      { user_id: "u1", brand_id: "b1", order_id: "o1" },
+    );
+    expect(row).toMatchObject({ selected_variant: specs, custom_field_values: fields });
+    // Both new orders and edits save lines through orderItemRow.
+    expect(orderDetail.match(/orderItemRow\(/g)?.length).toBeGreaterThanOrEqual(2);
+    expect(
+      orderItemFromRow({ selected_variant: specs, custom_field_values: fields }),
+    ).toMatchObject({ selected_variant: specs, custom_field_values: fields });
   });
 
   it("fetches selected_variant in public invoice query and renders variant specs", () => {
