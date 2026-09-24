@@ -17,7 +17,7 @@ description: >
 - تعديل `head()` أو أي `<meta>`/`<link>` في صفحات `/{slug}/**`.
 - إضافة/تعديل صور، فيديو، خطوط، أو أي حزمة JS تُحمَّل في المتجر.
 - إضافة صفحة عامة جديدة للمتجر.
-- قبل فتح أي PR من خطة `docs/storefront-2-premium-upgrade-plan.md`.
+- قبل فتح أي PR يمس واجهات الستور فرونت (مثل خطة `docs/archive/storefront-2-premium-upgrade-plan.md` أو وثيقة `docs/storefront-architecture.md`).
 
 ## ميزانية الأداء (ملزمة — Lighthouse mobile على `/pura`)
 

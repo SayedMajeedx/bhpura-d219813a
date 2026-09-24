@@ -14,11 +14,40 @@ This runbook protects the live Boutq database from schema drift. Production chan
 
 ```sh
 npm run db:migrations:check
+npm run db:migrations:drift
 npx supabase migration list
 npx supabase db query --linked --file scripts/database/production-feature-probes.sql
 ```
 
 Save the output of `production-schema-inventory.sql` outside the repository as the before-change schema manifest. It contains schema metadata, not business rows.
+
+## Migration ledger reconciliation runbook
+
+When `npm run db:migrations:drift` or `npx supabase migration list` flags local-only or remote-only migrations, follow this strict protocol:
+
+1. **Read-Only Audit First (Zero Writes)**:
+   - Run `npx supabase migration list` to isolate the exact list of local-only and remote-only versions.
+   - For remote-only rows, inspect `supabase_migrations.schema_migrations` to retrieve the applied SQL.
+   - For local-only files, query `pg_catalog`, `pg_proc`, `information_schema.tables`, and `information_schema.columns` to verify if the underlying DDL objects already exist in the database.
+   - Document every version in a reconciliation audit (see [`docs/database-reconciliation.md`](./database-reconciliation.md) for the September 2026 baseline audit).
+
+2. **Ledger Repair Protocol**:
+   - Never apply DDL for objects that already exist.
+   - If a migration was already applied out-of-band or with an earlier timestamp, update the ledger (`supabase_migrations.schema_migrations`) rather than re-executing SQL against production tables:
+     - Mark legacy/superseded timestamps as reverted:
+       ```sh
+       npx supabase migration repair --status reverted <legacy_version>
+       ```
+     - Mark canonical local migration files as applied:
+       ```sh
+       npx supabase migration repair --status applied <canonical_version>
+       ```
+   - Alternatively, execute an atomic transaction directly in `supabase_migrations.schema_migrations` to swap timestamps and insert missing records without touching application data.
+
+3. **Post-Reconciliation Validation**:
+   - Re-run `npm run db:migrations:drift` — must output exit code 0 (`Zero migration drift verified`).
+   - Run `npm run db:migrations:check` — all local filenames must be unique, valid, and non-empty.
+   - Run `npx supabase db query --linked --file scripts/database/production-feature-probes.sql` to verify application invariants.
 
 ## Deployment sequence
 
