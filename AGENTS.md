@@ -67,7 +67,7 @@ node scripts/maintainability-metrics.mjs # Architecture metrics & debt ratchet c
 ## 5. "Where Do I Change X?" (Quick Reference)
 
 - **Products & Catalog**:
-  - Admin management: `src/routes/_authenticated/admin.b.$slug.inventory.tsx`, `src/components/inventory/`
+  - Admin management: `src/features/inventory/` (`components/` for the product list, product editor and variant table; `hooks/` for data and mutations; `lib/` for pure, unit-tested rules). The route `src/routes/_authenticated/admin.b.$slug.inventory.tsx` only loads data and picks the tab. Shared inventory UI: `src/components/inventory/`
   - Storefront product page: `src/routes/$slug.product.$id.tsx`
   - Cards & presentation: `src/components/storefront/product-card.tsx` (`ProductCard` / `ProductCardV2`)
   - Variant axes & SKUs: `src/lib/variant-axes.ts`, `src/lib/variant-sku-utils.ts`, `src/lib/variant-i18n.ts`

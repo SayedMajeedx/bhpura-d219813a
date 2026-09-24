@@ -1,12 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import {
-  type ComponentType,
-  useEffect,
-  useState,
-  useMemo,
-  useCallback,
-  useDeferredValue,
-} from "react";
+import { useEffect, useState, useMemo, useCallback, useDeferredValue } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
@@ -49,6 +42,7 @@ import {
 import { DeleteProductDialog } from "@/features/inventory/components/DeleteProductDialog";
 import { InventoryEmptyState } from "@/features/inventory/components/InventoryEmptyState";
 import { useInventoryCategories } from "@/features/inventory/hooks/use-inventory-categories";
+import { ProductDialog } from "@/features/inventory/components/ProductDialog";
 
 export function ProductsSection({
   initialFilter,
@@ -60,7 +54,6 @@ export function ProductsSection({
   currency,
   onChanged,
   salesHistory,
-  ProductDialog,
 }: {
   initialFilter?: string;
   initialAction?: string;
@@ -71,11 +64,6 @@ export function ProductsSection({
   currency: string;
   onChanged: () => void;
   salesHistory: any[];
-  /** The product editor; passed in until it moves out of the inventory route. */
-  ProductDialog: ComponentType<{
-    product: Product | null;
-    onSaved: (newProductId?: string) => void;
-  }>;
 }) {
   const navigate = useNavigate();
   const brand = useBrand();

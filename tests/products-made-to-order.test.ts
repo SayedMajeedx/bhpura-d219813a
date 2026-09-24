@@ -38,7 +38,13 @@ describe("Phase 3: Explicit is_made_to_order flag & inventory decoupling", () =>
   });
 
   describe("admin inventory management", () => {
-    const inventory = readFileSync("src/routes/_authenticated/admin.b.$slug.inventory.tsx", "utf8");
+    // The product editor moved out of the inventory route into src/features/inventory (Phase 5).
+    const inventory = [
+      "src/features/inventory/lib/product-form.ts",
+      "src/features/inventory/components/ProductCustomizerTab.tsx",
+    ]
+      .map((file) => readFileSync(file, "utf8"))
+      .join("\n");
 
     it("includes is_made_to_order in Product type", () => {
       // The inventory types moved to src/features/inventory/types.ts (Phase 5).

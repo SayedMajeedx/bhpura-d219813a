@@ -16,7 +16,8 @@ describe("image crop contracts", () => {
   it("uses named presets across every production crop upload surface", () => {
     const files = [
       "src/routes/_authenticated/admin.b.$slug.categories.tsx",
-      "src/routes/_authenticated/admin.b.$slug.inventory.tsx",
+      // The product editor's crop moved out of the inventory route (Phase 5).
+      "src/features/inventory/components/ProductDialog.tsx",
       "src/routes/_authenticated/admin.b.$slug.pages.tsx",
       "src/features/settings/tabs/identity/BasicsGroup.tsx",
       "src/features/settings/tabs/storefront/HomeHeroGroup.tsx",

@@ -37,7 +37,7 @@ const KNOWN_CONTRIBUTION_CONSUMERS: Record<string, ContributionConsumerDefinitio
     description: "Merged into modular navigation items for admin sidebar and mobile navigation",
   },
   customFieldPresets: {
-    files: ["src/routes/_authenticated/admin.b.$slug.inventory.tsx"],
+    files: ["src/features/inventory/hooks/use-product-dialog-data.ts"],
     expectedIdentifiers: ["customFieldPresetsFrom"],
     description: "Extracted via customFieldPresetsFrom for product custom field options",
   },
@@ -71,7 +71,7 @@ const KNOWN_CONTRIBUTION_CONSUMERS: Record<string, ContributionConsumerDefinitio
       "Extracted via productionStagesFrom or hasMadeToOrder to toggle workshop stage pipelines in orders",
   },
   variantAxisDefaults: {
-    files: ["src/routes/_authenticated/admin.b.$slug.inventory.tsx"],
+    files: ["src/features/inventory/hooks/use-inventory-axis-defaults.ts"],
     expectedIdentifiers: ["variantAxisDefaultsFrom"],
     description: "Extracted via variantAxisDefaultsFrom for vertical variant axis labels",
   },
