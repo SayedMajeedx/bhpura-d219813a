@@ -64,7 +64,7 @@ const KNOWN_CONTRIBUTION_CONSUMERS: Record<string, ContributionConsumerDefinitio
   productionStages: {
     files: [
       "src/routes/_authenticated/admin.b.$slug.orders.index.tsx",
-      "src/routes/_authenticated/admin.b.$slug.orders.$id.tsx",
+      "src/features/orders/components/order-primary-action.tsx",
     ],
     expectedIdentifiers: ["productionStages"],
     description:

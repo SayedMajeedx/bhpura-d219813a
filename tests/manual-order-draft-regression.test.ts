@@ -12,7 +12,9 @@ describe("manual order creation", () => {
     );
     expect(createHandler).toContain('id: "new"');
     expect(createHandler).not.toContain('.from("orders")');
-    expect(detail).toContain('enabled: id !== "new"');
+    // The order query moved to src/features/orders/hooks (Phase 5).
+    const detailData = readFileSync("src/features/orders/hooks/use-order-detail-data.ts", "utf8");
+    expect(detailData).toContain('enabled: id !== "new"');
   });
 
   it("requires meaningful data before the first database insert", () => {

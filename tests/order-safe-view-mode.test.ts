@@ -13,7 +13,12 @@ describe("existing order safe view mode", () => {
 
   it("keeps closed-order editing restricted and explains the safe state", () => {
     expect(detail).toContain("!isCourier && (isAdmin || !isClosedOrder)");
-    expect(detail).toContain("isCreationMode || !order || isReadOnly");
+    // The primary workflow action moved to src/features/orders/components (Phase 5).
+    const primaryAction = readFileSync(
+      "src/features/orders/components/order-primary-action.tsx",
+      "utf8",
+    );
+    expect(primaryAction).toContain("isCreationMode || !order || isReadOnly");
     expect(header).toContain('isAr ? "تعديل الطلب" : "Edit Order"');
     expect(header).toContain("safe view mode");
     expect(header).toContain("disabled={isReadOnly || !onOpenPaymentModal}");
