@@ -62,6 +62,10 @@ test.describe("Product page add to cart", () => {
     await page.goto(`/${SLUG}/product/${product.id}?lang=en`, { waitUntil: "domcontentloaded" });
     await expect(page.locator("main h1").first()).toBeVisible({ timeout: 60_000 });
 
+    // Made-to-order products offer "Ready Size" / "Custom Size"; the ready size is the stock item.
+    const readySize = page.locator("main").getByRole("button", { name: "Ready Size" });
+    if (await readySize.count()) await readySize.first().click();
+
     const sizeButton = page
       .locator("main")
       .getByRole("button", { name: new RegExp(`^${escapeRegExp(variant.size!.trim())}\\b`) })
@@ -72,18 +76,36 @@ test.describe("Product page add to cart", () => {
     await expect(addToCart).toBeEnabled();
     await addToCart.click();
 
-    await expect
-      .poll(
-        () =>
-          page.evaluate(
-            (key) => JSON.parse(window.localStorage.getItem(key) ?? "[]"),
-            `storefront-cart:${SLUG}`,
-          ),
-        { timeout: 15_000 },
-      )
-      .toEqual([
-        expect.objectContaining({ variant_id: variant.id, product_id: product.id, qty: 1 }),
-      ]);
+    // If the page refuses the item, fail with its own message.
+    const refusal = page.locator('main [role="alert"], [data-sonner-toast][data-type="error"]');
+    const refused = await refusal
+      .first()
+      .waitFor({ state: "visible", timeout: 3_000 })
+      .then(() => true)
+      .catch(() => false);
+    if (refused) {
+      throw new Error(`Add to cart was refused: ${await refusal.first().innerText()}`);
+    }
+
+    const readCart = () =>
+      page.evaluate(
+        (key) => JSON.parse(window.localStorage.getItem(key) ?? "[]"),
+        `storefront-cart:${SLUG}`,
+      );
+    try {
+      await expect
+        .poll(readCart, { timeout: 15_000 })
+        .toEqual([
+          expect.objectContaining({ variant_id: variant.id, product_id: product.id, qty: 1 }),
+        ]);
+    } catch (error) {
+      // Show what the page offered, so a CI failure explains itself.
+      const buttons = await page.locator("main button:visible").allInnerTexts();
+      console.log("[product page e2e] size", variant.size, "variant", variant.id);
+      console.log("[product page e2e] cart", JSON.stringify(await readCart()));
+      console.log("[product page e2e] buttons", JSON.stringify(buttons.map((b) => b.trim())));
+      throw error;
+    }
 
     // Adding to the cart never places an order.
     expect(guard.orderPayloads).toHaveLength(0);
