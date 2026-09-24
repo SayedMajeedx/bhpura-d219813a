@@ -6,6 +6,12 @@ import { Sparkles, HelpCircle, Copy, History } from "lucide-react";
 import { toast } from "sonner";
 import { formatSizeWithUnit, splitCompositeVariantSize } from "@/lib/format";
 
+import {
+  decideSalePrice,
+  marginPercent,
+  saleInputValue,
+  stockRunRate,
+} from "@/features/inventory/lib/variant-metrics";
 import type { Product, Variant } from "@/features/inventory/types";
 import { InventoryDeleteAction } from "@/features/inventory/components/InventoryDeleteAction";
 import { VariantImageUploader } from "@/features/inventory/components/VariantImageUploader";
@@ -50,9 +56,7 @@ export function VariantMobileCard({
   onOpenHistory?: (v: Variant) => void;
 }) {
   const [costVal, setCostVal] = useState(String(v.cost_price));
-  const [sellingVal, setSellingVal] = useState(
-    Number(v.original_price || 0) > Number(v.selling_price || 0) ? String(v.selling_price) : "",
-  );
+  const [sellingVal, setSellingVal] = useState(saleInputValue(v));
 
   useEffect(() => {
     setCostVal(String(v.cost_price));
@@ -60,26 +64,18 @@ export function VariantMobileCard({
 
   useEffect(() => {
     setSellingVal(
-      Number(v.original_price || 0) > Number(v.selling_price || 0) ? String(v.selling_price) : "",
+      saleInputValue({ original_price: v.original_price, selling_price: v.selling_price }),
     );
   }, [v.original_price, v.selling_price]);
 
   const costNum = Number(costVal) || 0;
   const sellingNum = sellingVal ? Number(sellingVal) : Number(product?.base_price ?? 0);
-  const currentMargin = sellingNum > 0 ? ((sellingNum - costNum) / sellingNum) * 100 : 0;
+  const currentMargin = marginPercent(sellingNum, costNum);
 
   const commitSalePrice = (rawValue: string) => {
-    const regularPrice = Number(product?.base_price ?? 0);
-    const salePrice = rawValue === "" ? 0 : Number(rawValue);
-    if (rawValue === "" || salePrice === 0 || salePrice === regularPrice) {
-      setSellingVal("");
-      update(v, { selling_price: regularPrice });
-      return;
-    }
-    if (!Number.isFinite(salePrice) || salePrice < 0 || salePrice > regularPrice) {
-      setSellingVal(
-        Number(v.original_price || 0) > Number(v.selling_price || 0) ? String(v.selling_price) : "",
-      );
+    const decision = decideSalePrice(rawValue, Number(product?.base_price ?? 0));
+    if (decision.kind === "invalid") {
+      setSellingVal(saleInputValue(v));
       toast.error(
         isAr
           ? "لا يمكن أن يكون سعر التخفيض أعلى من السعر الأساسي. امسح الحقل لإزالة التخفيض."
@@ -87,7 +83,8 @@ export function VariantMobileCard({
       );
       return;
     }
-    update(v, { selling_price: salePrice });
+    if (decision.kind === "clear") setSellingVal("");
+    update(v, { selling_price: decision.sellingPrice });
   };
 
   return (
@@ -375,33 +372,23 @@ export function VariantMobileCard({
           )}
         </div>
         {(() => {
-          const stock = (v.stock_main ?? 0) + (v.stock_incubator ?? 0);
-          const qtySold = salesByVariant.get(v.id) || 0;
-          const variantCreatedAt = v.created_at ? new Date(v.created_at) : null;
-          const daysElapsed = variantCreatedAt
-            ? Math.max(
-                1,
-                Math.min(
-                  45,
-                  Math.ceil(
-                    (new Date().getTime() - variantCreatedAt.getTime()) / (1000 * 60 * 60 * 24),
-                  ),
-                ),
-              )
-            : 45;
-          const dailyVelocity = qtySold / daysElapsed;
-
+          const runRate = stockRunRate({
+            stockMain: v.stock_main,
+            stockIncubator: v.stock_incubator,
+            qtySold: salesByVariant.get(v.id) || 0,
+            createdAt: v.created_at,
+          });
           let runRateText = isAr ? "لا مبيعات مؤخراً" : "No recent sales";
           let runRateColor = "text-muted-foreground";
-
-          if (stock <= 0) {
+          if (runRate.kind === "out") {
             runRateText = isAr ? "نفد المخزون" : "Out of stock";
             runRateColor = "text-rose-600 dark:text-rose-500 font-extrabold";
-          } else if (dailyVelocity > 0) {
-            const days = Math.ceil(stock / dailyVelocity);
-            runRateText = isAr ? `ينفد خلال ${days} يوم` : `Out of stock in ${days} d`;
+          } else if (runRate.kind === "days-left") {
+            runRateText = isAr
+              ? `ينفد خلال ${runRate.days} يوم`
+              : `Out of stock in ${runRate.days} d`;
             runRateColor =
-              days <= 7
+              runRate.days <= 7
                 ? "text-amber-600 dark:text-amber-500 font-extrabold animate-pulse"
                 : "text-emerald-600 dark:text-emerald-500 font-extrabold";
           }
