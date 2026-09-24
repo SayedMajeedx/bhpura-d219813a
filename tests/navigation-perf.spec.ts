@@ -195,6 +195,20 @@ test.describe("P0 - Strict Navigation Performance & Transition Timings", () => {
     await page.goto("/admin/b/test-brand/orders");
     await page.waitForLoadState("networkidle");
 
+    // Warm-up: visit Inventory once and come back before timing. This suite
+    // runs on the Vite dev server, where every module of a route is a separate
+    // request fetched level by level, so a first visit times the dev server's
+    // module waterfall rather than the app's navigation. Production bundles the
+    // route into one chunk that is preloaded on hover. The timed navigation
+    // below therefore measures the app itself: feedback, routing and render.
+    await page.locator("a[href*='inventory']").first().click();
+    await expect(page.locator('main [data-route-heading="inventory"]')).toBeVisible({
+      timeout: 10000,
+    });
+    await page.goBack();
+    await page.waitForURL("**/orders**", { timeout: 10000 });
+    await page.waitForLoadState("networkidle");
+
     // Click link to Inventory in sidebar
     const navLink = page.locator("a[href*='inventory']").first();
     await expect(navLink, "Inventory link must be visible").toBeVisible({ timeout: 10000 });
