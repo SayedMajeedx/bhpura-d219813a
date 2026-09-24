@@ -142,3 +142,19 @@ export function batchSalePriceValue(input: string, basePrice: number): string | 
   if (isNaN(value) || value < 0 || value > basePrice) return null;
   return value > 0 && value < basePrice ? String(value) : "";
 }
+
+/** Toast text after the AI (or quick) parser fills the plan. */
+export function parsedPlanMessage(sizeCount: number, colorCount: number, isAr: boolean): string {
+  if (isAr) {
+    if (sizeCount > 0 && colorCount > 0)
+      return `تم استخراج ${sizeCount} مقاس و ${colorCount} لون بنجاح`;
+    if (sizeCount > 0) return `تم استخراج ${sizeCount} مقاس بنجاح`;
+    if (colorCount > 0) return `تم استخراج ${colorCount} ألوان بنجاح`;
+    return "تم تحليل البيانات بنجاح";
+  }
+  if (sizeCount > 0 && colorCount > 0)
+    return `Extracted ${sizeCount} sizes and ${colorCount} colors`;
+  if (sizeCount > 0) return `Extracted ${sizeCount} sizes`;
+  if (colorCount > 0) return `Extracted ${colorCount} colors`;
+  return "Data extracted successfully";
+}

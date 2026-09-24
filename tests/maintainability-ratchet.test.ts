@@ -35,7 +35,7 @@ const BUDGETS = {
  * When Phase 5 extracts subcomponents and logic, lower each file's budget accordingly.
  */
 const GIANT_FILES_BUDGETS: Record<string, number> = {
-  "src/routes/_authenticated/admin.b.$slug.inventory.tsx": 5514,
+  "src/routes/_authenticated/admin.b.$slug.inventory.tsx": 4730,
   "src/routes/_authenticated/admin.b.$slug.orders.$id.tsx": 5022,
   "src/routes/_authenticated/admin.b.$slug.orders.index.tsx": 3456,
   "src/routes/$slug.checkout.tsx": 2809,

@@ -42,12 +42,12 @@ const KNOWN_CONTRIBUTION_CONSUMERS: Record<string, ContributionConsumerDefinitio
     description: "Extracted via customFieldPresetsFrom for product custom field options",
   },
   sizingPresetOrder: {
-    files: ["src/routes/_authenticated/admin.b.$slug.inventory.tsx"],
+    files: ["src/features/inventory/components/BulkVariantDialog.tsx"],
     expectedIdentifiers: ["sizingPresetOrderFrom"],
     description: "Extracted via sizingPresetOrderFrom to prioritize vertical sizing presets",
   },
   sizingPresets: {
-    files: ["src/routes/_authenticated/admin.b.$slug.inventory.tsx"],
+    files: ["src/features/inventory/components/BulkVariantDialog.tsx"],
     expectedIdentifiers: ["sizingPresetsFrom"],
     description: "Extracted via sizingPresetsFrom to supply vertical sizing templates",
   },

@@ -4,6 +4,7 @@ import {
   buildBulkVariantRows,
   bulkRowPricing,
   hasInvalidBulkRows,
+  parsedPlanMessage,
 } from "../src/features/inventory/lib/bulk-variants";
 import type { VariantGenerationPlan } from "../src/lib/generate-variants.functions";
 import type { BulkVariantRow } from "../src/features/inventory/types";
@@ -123,5 +124,16 @@ describe("bulk pricing", () => {
     expect(batchSalePriceValue("0", 30)).toBe("");
     expect(batchSalePriceValue("31", 30)).toBeNull();
     expect(batchSalePriceValue("x", 30)).toBeNull();
+  });
+});
+
+describe("parsedPlanMessage", () => {
+  it("names what the parser found", () => {
+    expect(parsedPlanMessage(3, 2, false)).toBe("Extracted 3 sizes and 2 colors");
+    expect(parsedPlanMessage(3, 0, false)).toBe("Extracted 3 sizes");
+    expect(parsedPlanMessage(0, 2, false)).toBe("Extracted 2 colors");
+    expect(parsedPlanMessage(0, 0, false)).toBe("Data extracted successfully");
+    expect(parsedPlanMessage(3, 2, true)).toBe("تم استخراج 3 مقاس و 2 لون بنجاح");
+    expect(parsedPlanMessage(0, 0, true)).toBe("تم تحليل البيانات بنجاح");
   });
 });
