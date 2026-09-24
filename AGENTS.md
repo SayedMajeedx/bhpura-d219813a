@@ -76,7 +76,7 @@ node scripts/maintainability-metrics.mjs # Architecture metrics & debt ratchet c
   - Storefront checkout: `src/routes/$slug.checkout.tsx`, `src/routes/$slug.thank-you.$orderId.tsx`
   - State machine & returns: `src/lib/order-workflow.ts`, `src/lib/returns.functions.ts`
 - **Storefront Hero & Media**:
-  - Components: `src/components/storefront/hero-banner.tsx` (V1), `src/components/storefront/v2/HeroV2.tsx` (V2)
+  - Components: `HeroBanner` in `src/routes/$slug.index.tsx` (V1), `src/components/storefront/HeroV2.tsx` (V2)
   - Resolvers & aspect logic: `src/lib/hero-media.ts`, `src/lib/media-aspect.ts`
   - Admin banner configuration: `src/features/settings/` (storefront tab, group `home_hero`)
 - **Store Settings & Identity**:
@@ -93,7 +93,7 @@ node scripts/maintainability-metrics.mjs # Architecture metrics & debt ratchet c
 ## 6. Core Domain Concepts
 
 1. **Store Verticals & Addon Packs** (`src/lib/addons/addon-registry.ts`): Stores belong to business verticals (`fashion`, `abaya`, `perfume`, `coffee`, `jewelry`, etc.). Verticals determine starter packs, default design presets, and category templates.
-2. **Dynamic Variant Option Axes** (`src/lib/variant-axes.ts`): **Never label variant options by database column names** (`option1`, `option2`). Always resolve human-readable axes dynamically: Color, Size, Style, Fabric, Custom.
+2. **Dynamic Variant Option Axes** (`src/lib/variant-axes.ts`): Variants store options in generic columns (`size`, `color`, `fabric`, `option_four`, `option_five`) whose meaning depends on the store (a roastery keeps the roast level in `color`). **Never label or render an option by its column name**: resolve labels and swatch-vs-chip rendering with `useVariantAxes` / `describeVariantAxes`, which combine the store vertical, installed addon packs and per-product label overrides.
 3. **Hero Media Pipeline** (`src/lib/hero-media.ts`, `docs/media-video-pipeline.md`): Media items can be image or video. Videos are transcoded in-browser using WebCodecs + `mediabunny` into faststart MP4s. Resolvers choose optimal dimensions and crop focal points.
 4. **Store Vocabulary** (`src/lib/store-vocabulary.ts`): Terminology adapts per vertical (e.g. "Abayas" vs "Products", "Tailoring" vs "Customization").
 5. **Storefront Modes** (`src/lib/storefront-mode.ts`): Brands can operate as full e-commerce (`ecommerce`), browsing only (`catalog_only`), or WhatsApp/contact inquiries (`inquiry`).
@@ -106,7 +106,7 @@ node scripts/maintainability-metrics.mjs # Architecture metrics & debt ratchet c
 - **Design Tokens**: Never hardcode hex colors or arbitrary pixel radii. Use semantic tokens (`bg-primary`, `text-muted-foreground`, `border-border`). Follow [`.agents/rules/AGENTS.md`](./.agents/rules/AGENTS.md).
 - **RTL & Bilingual**: All UI components must support Arabic (RTL) and English (LTR). Use logical margins/padding or direction-aware flex layouts.
 - **Shared Resolvers Over Surface-Specific Hacks**: Never duplicate resolution logic in a route; place canonical logic in `src/lib/` (e.g., `resolveHeroMedia`, `calculateStock`).
-- **Data Access Layer**: Transitioning towards centralized data access modules (see roadmap Phase 4). Isolate query keys and brand scopes.
+- **Data Access Layer** (`src/lib/data/`, see its README): reads and writes live in one module per domain with `selects.ts` (column lists), `keys.ts` (query-key factories), `queries.ts` (fetchers + `queryOptions`) and `types.ts`. Screens call `useQuery(xxxQueries.foo(...))` and never build keys or queries by hand. Migrated so far: the public storefront catalog (`src/lib/data/storefront/`), enforced by ESLint on `src/routes/$slug.*` and `src/components/storefront/**`. Admin domains (orders, products, customers, inventory, settings) are still direct calls and migrate next.
 
 ---
 

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { publicSupabase as supabase } from "@/integrations/supabase/client";
+import { fetchStorefrontPageData } from "@/lib/data/storefront";
 
 export const Route = createFileRoute("/$slug/manifest.webmanifest")({
   server: {
@@ -13,9 +13,7 @@ export const Route = createFileRoute("/$slug/manifest.webmanifest")({
 
           // 1. Try public RPC first (SECURITY DEFINER)
           try {
-            const { data: pageData } = await (supabase.rpc as any)("get_storefront_page_data", {
-              p_brand_slug: slug,
-            });
+            const pageData = await fetchStorefrontPageData(slug);
             if (pageData?.brand) {
               brand = pageData.brand;
               settings = pageData.settings;

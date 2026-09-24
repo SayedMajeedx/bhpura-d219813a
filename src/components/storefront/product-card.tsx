@@ -4,7 +4,7 @@ import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { shouldShowPrices } from "@/lib/storefront-mode";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
-import { type ProductRow } from "@/routes/$slug.index";
+import { type ProductRow } from "@/lib/data/storefront";
 import { Button } from "@/components/ui/button";
 
 import { ProductCardV2 } from "@/components/storefront/ProductCardV2";

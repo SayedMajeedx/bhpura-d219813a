@@ -15,12 +15,13 @@ import { BrandStorySection } from "@/components/storefront/BrandStorySection";
 import { RecentlyViewed } from "@/components/storefront/RecentlyViewed";
 import { isLikelyImageUrl } from "@/lib/media-delivery";
 import {
+  PAGE_DATA_RANKING_LIMIT,
   fetchStorefrontPageData,
-  fetchBestSellerRows,
-  fetchStorefrontCategories,
-  fetchStorefrontProducts,
-  fetchTrendingRows,
-} from "@/lib/storefront-queries";
+  hasAvailableStock,
+  storefrontQueries,
+  type ProductRow,
+  type StorefrontCategory,
+} from "@/lib/data/storefront";
 
 function getDescendantCategories(catId: string, categories: any[]): any[] {
   const descendants: any[] = [];
@@ -37,55 +38,15 @@ function getDescendantCategories(catId: string, categories: any[]): any[] {
 export const Route = createFileRoute("/$slug/")({
   loader: async ({ params }) => {
     const pageData = await fetchStorefrontPageData(params.slug);
-    if (!pageData) return { products: [], categories: [], bestSellerRows: [], trendingRows: [] };
     return {
-      products: pageData.products ?? [],
-      categories: pageData.categories ?? [],
-      bestSellerRows: pageData.bestSellerRows ?? [],
-      trendingRows: pageData.trendingRows ?? [],
+      products: pageData?.products ?? [],
+      categories: pageData?.categories ?? [],
+      bestSellerRows: pageData?.bestSellerRows ?? [],
+      trendingRows: pageData?.trendingRows ?? [],
     };
   },
   component: StoreHome,
 });
-
-export type ProductRow = {
-  id: string;
-  name: string;
-  name_ar: string | null;
-  name_en: string | null;
-  description: string | null;
-  description_ar: string | null;
-  description_en: string | null;
-  category: string | null;
-  image_url: string | null;
-  media: unknown;
-  brand_id: string;
-  created_at: string;
-  featured_trending?: boolean;
-  show_sale_badge?: boolean;
-  is_made_to_order?: boolean;
-  custom_fields?: unknown;
-  product_variants: Array<{
-    id: string;
-    selling_price: number;
-    original_price: number | null;
-    stock_main: number;
-    stock_incubator?: number;
-    size: string | null;
-    size_unit?: string | null;
-    color: string | null;
-    image_url?: string | null;
-  }>;
-};
-
-export function hasAvailableStock(product: ProductRow): boolean {
-  if (product.is_made_to_order) {
-    return true;
-  }
-  return product.product_variants.some(
-    (variant) => Number(variant.stock_main || 0) + Number(variant.stock_incubator || 0) > 0,
-  );
-}
 
 function availableFirst(products: ProductRow[]): ProductRow[] {
   return products
@@ -97,16 +58,6 @@ function availableFirst(products: ProductRow[]): ProductRow[] {
     )
     .map(({ product }) => product);
 }
-
-type CategoryRow = {
-  id: string;
-  name_en: string;
-  name_ar: string | null;
-  slug: string | null;
-  image_url: string | null;
-  parent_id: string | null;
-  sort_order: number;
-};
 
 function StoreHome() {
   const { brand, settings } = useStorefront();
@@ -126,40 +77,26 @@ function StoreHome() {
     prevCatRef.current = activeCat;
   }, [activeCat]);
 
+  // The loader's page data seeds each query; the shared options keep the same
+  // columns when the client refetches.
   const { data: products, isLoading } = useQuery({
-    queryKey: ["storefront", brand.slug, "products"],
-    queryFn: () => fetchStorefrontProducts(brand.id) as Promise<ProductRow[]>,
-    initialData: loaderData.products as ProductRow[],
-    staleTime: 5 * 60_000,
-    gcTime: 30 * 60_000,
-    refetchOnWindowFocus: false,
+    ...storefrontQueries.products(brand),
+    initialData: loaderData.products,
   });
 
   const { data: categories } = useQuery({
-    queryKey: ["storefront", brand.slug, "categories"],
-    queryFn: () => fetchStorefrontCategories(brand.id) as Promise<CategoryRow[]>,
-    initialData: loaderData.categories as CategoryRow[],
-    staleTime: 5 * 60_000,
-    gcTime: 30 * 60_000,
-    refetchOnWindowFocus: false,
+    ...storefrontQueries.categories(brand),
+    initialData: loaderData.categories,
   });
 
   const { data: bestSellerRows } = useQuery({
-    queryKey: ["storefront", brand.slug, "best-sellers"],
-    queryFn: () => fetchBestSellerRows(brand.slug),
+    ...storefrontQueries.bestSellers(brand, PAGE_DATA_RANKING_LIMIT),
     initialData: loaderData.bestSellerRows,
-    staleTime: 5 * 60_000,
-    gcTime: 30 * 60_000,
-    refetchOnWindowFocus: false,
   });
 
   const { data: trendingRows } = useQuery({
-    queryKey: ["storefront", brand.slug, "trending"],
-    queryFn: () => fetchTrendingRows(brand.slug),
+    ...storefrontQueries.trending(brand, PAGE_DATA_RANKING_LIMIT),
     initialData: loaderData.trendingRows,
-    staleTime: 5 * 60_000,
-    gcTime: 30 * 60_000,
-    refetchOnWindowFocus: false,
   });
 
   // Directly map merchandising sections with NO deduplication logic
@@ -1077,7 +1014,7 @@ function Categories({
   navigation = false,
 }: {
   products: ProductRow[];
-  categories: CategoryRow[];
+  categories: StorefrontCategory[];
   activeCategorySlugs: string[];
   setActiveCategorySlugs: (path: string[]) => void;
   navigation?: boolean;
@@ -1122,7 +1059,7 @@ function Categories({
 
     // Loop to build subcategory rows
     while (true) {
-      let levelCategories: CategoryRow[] = [];
+      let levelCategories: StorefrontCategory[] = [];
 
       if (levelIndex === 0) {
         // Level 0 is special because we use merged. We don't need a row for level 0 here as we render it explicitly.

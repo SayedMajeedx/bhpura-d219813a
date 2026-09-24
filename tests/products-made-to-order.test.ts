@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
+import { hasAvailableStock, type ProductRow } from "../src/lib/data/storefront/types";
+import {
+  PRODUCT_CARD_SELECT,
+  PRODUCT_DETAIL_BASE_SELECT,
+  PRODUCT_DETAIL_SELECT,
+} from "../src/lib/data/storefront/selects";
 
 describe("Phase 3: Explicit is_made_to_order flag & inventory decoupling", () => {
   const migration = readFileSync(
@@ -62,15 +68,12 @@ describe("Phase 3: Explicit is_made_to_order flag & inventory decoupling", () =>
   });
 
   describe("storefront queries and Product Detail Page (PDP)", () => {
-    const queries = readFileSync("src/lib/storefront-queries.ts", "utf8");
     const pdp = readFileSync("src/routes/$slug.product.$id.tsx", "utf8");
 
-    it("queries is_made_to_order in storefront-queries", () => {
-      expect(queries).toContain("is_made_to_order, base_price");
-    });
-
-    it("includes is_made_to_order in PDP primary fields", () => {
-      expect(pdp).toContain("custom_fields, is_made_to_order, base_price");
+    it("fetches is_made_to_order for the product page, quick view and product grids", () => {
+      expect(PRODUCT_DETAIL_SELECT).toContain("is_made_to_order");
+      expect(PRODUCT_DETAIL_BASE_SELECT).toContain("is_made_to_order");
+      expect(PRODUCT_CARD_SELECT).toContain("is_made_to_order");
     });
 
     it("decouples isTailoringActive and showSizeModeToggle to require is_made_to_order", () => {
@@ -93,15 +96,57 @@ describe("Phase 3: Explicit is_made_to_order flag & inventory decoupling", () =>
 
   describe("product card & storefront catalog stock check", () => {
     const card = readFileSync("src/components/storefront/product-card.tsx", "utf8");
-    const catalog = readFileSync("src/routes/$slug.index.tsx", "utf8");
 
     it("calculates oos in product card using is_made_to_order instead of custom_fields length", () => {
       expect(card).toContain("const isMadeToOrder = Boolean(product.is_made_to_order);");
       expect(card).toContain("const oos = !isMadeToOrder && totalStock <= 0;");
     });
 
-    it("uses product.is_made_to_order in hasAvailableStock in catalog index", () => {
-      expect(catalog).toContain("if (product.is_made_to_order) {");
+    it("treats made-to-order products as available even with no stock", () => {
+      const product = (overrides: Partial<ProductRow>): ProductRow => ({
+        id: "p",
+        name: "Abaya",
+        name_ar: null,
+        name_en: null,
+        description: null,
+        description_ar: null,
+        description_en: null,
+        category: null,
+        image_url: null,
+        media: null,
+        brand_id: "b",
+        created_at: "2026-09-01T00:00:00Z",
+        product_variants: [
+          {
+            id: "v",
+            selling_price: 10,
+            original_price: null,
+            stock_main: 0,
+            size: null,
+            color: null,
+          },
+        ],
+        ...overrides,
+      });
+      expect(hasAvailableStock(product({ is_made_to_order: true }))).toBe(true);
+      expect(hasAvailableStock(product({ is_made_to_order: false }))).toBe(false);
+      expect(
+        hasAvailableStock(
+          product({
+            product_variants: [
+              {
+                id: "v",
+                selling_price: 10,
+                original_price: null,
+                stock_main: 0,
+                stock_incubator: 2,
+                size: null,
+                color: null,
+              },
+            ],
+          }),
+        ),
+      ).toBe(true);
     });
   });
 

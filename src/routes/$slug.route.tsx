@@ -8,7 +8,6 @@ import {
 } from "@tanstack/react-router";
 import React, { useEffect, useState } from "react";
 import { AddonSlot } from "@/components/addons/AddonSlot";
-import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import {
   StorefrontProvider,
   useStorefront,
@@ -44,6 +43,7 @@ import { normalizeVertical, normalizeModuleOverrides } from "@/lib/store-profile
 import { isColorDark, hexToRgba } from "@/components/storefront/storefront-utils";
 import { isReservedStorefrontSlug } from "@/lib/seo/reserved-slugs";
 import { resolveFooterVariant } from "@/lib/storefront-engine";
+import { fetchStorefrontPageData } from "@/lib/data/storefront";
 
 export const Route = createFileRoute("/$slug")({
   staleTime: 10_000,
@@ -89,12 +89,10 @@ export const Route = createFileRoute("/$slug")({
       }
     }
 
-    const { data: pageData, error } = await (supabase.rpc as any)("get_storefront_page_data", {
-      p_brand_slug: params.slug,
-    });
-    if (error || !pageData || !pageData.brand) throw notFound();
+    const pageData = await fetchStorefrontPageData(params.slug).catch(() => null);
+    if (!pageData?.brand) throw notFound();
 
-    const brand = pageData.brand;
+    const brand = pageData.brand as unknown as Brand;
     if (pageData.is_suspended) {
       return {
         brand: brand as unknown as Brand,

@@ -1,8 +1,14 @@
-import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import { useStorefront } from "@/lib/storefront-context";
-import { hasAvailableStock, type ProductRow } from "@/routes/$slug.index";
+import {
+  fetchStorefrontPageMeta,
+  hasAvailableStock,
+  storefrontQueries,
+  type CategoryProductsScope,
+  type ProductRow,
+  type StorefrontCategory,
+} from "@/lib/data/storefront";
 import { ProductGrid } from "@/components/storefront/product-grid";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
@@ -34,36 +40,16 @@ export const Route = createFileRoute("/$slug/$category")({
     "Cache-Control": "public, max-age=10, stale-while-revalidate=60",
   }),
   loader: async ({ params }) => {
-    const { data: baseBrand, error: brandError } = await supabase
-      .from("brands")
-      .select("id, name_en, name_ar, logo_url")
-      .eq("slug", params.slug)
-      .eq("is_active", true)
-      .maybeSingle();
-    if (brandError || !baseBrand) return { page: null, brand: null, faviconUrl: null };
-    const { data: seoBrand } = await supabase
-      .from("brands")
-      .select("meta_title, meta_description")
-      .eq("id", baseBrand.id)
-      .maybeSingle();
-    const brand = {
-      ...baseBrand,
-      meta_title: (seoBrand as any)?.meta_title ?? null,
-      meta_description: (seoBrand as any)?.meta_description ?? null,
-    };
-    const { data: settings } = await supabase
-      .from("brand_public_settings")
-      .select("pages, logo_url, favicon_url")
-      .eq("brand_id", brand.id)
-      .maybeSingle();
-    const pages = Array.isArray((settings as any)?.pages) ? (settings as any).pages : [];
-    const page = pages.find((item: any) => item?.slug === params.category) ?? null;
-    return {
-      page,
-      brand,
-      faviconUrl:
-        (settings as any)?.favicon_url || (settings as any)?.logo_url || brand.logo_url || null,
-    };
+    const meta = await fetchStorefrontPageMeta(params.slug);
+    if (!meta) return { page: null, brand: null, faviconUrl: null };
+    const page =
+      meta.pages.find(
+        (item): item is { slug: string } =>
+          typeof item === "object" &&
+          item !== null &&
+          (item as { slug?: unknown }).slug === params.category,
+      ) ?? null;
+    return { page, brand: meta.brand, faviconUrl: meta.faviconUrl };
   },
   head: ({ loaderData }) => {
     const page = loaderData?.page as any;
@@ -164,28 +150,8 @@ function CategoryPage() {
         ? "offers"
         : null;
 
-  // Fetch all active categories to reconstruct full parent-child routing context locally
-  const categoriesQuery = useQuery({
-    queryKey: ["storefront", brand.slug, "all-categories"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("categories")
-        .select("id, slug, name_en, name_ar, parent_id, image_url")
-        .eq("brand_id", brand.id)
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as Array<{
-        id: string;
-        slug: string;
-        name_en: string;
-        name_ar: string | null;
-        parent_id: string | null;
-        image_url: string | null;
-      }>;
-    },
-    staleTime: 5 * 60_000,
-  });
+  // All active categories: shared with the menus and home page (same key, same columns).
+  const categoriesQuery = useQuery(storefrontQueries.categories(brand));
 
   const activeCategory = useMemo(() => {
     if (smartKind) return null;
@@ -199,132 +165,50 @@ function CategoryPage() {
     setSelectedSubCategorySlugs([]);
   }, [categorySlug]);
 
+  // Smart collections are not rows in `categories`; describe them locally.
+  const smartCategory = useMemo<StorefrontCategory | null>(() => {
+    if (!smartKind) return null;
+    return {
+      id: smartKind,
+      slug: categorySlug,
+      name_en:
+        smartKind === "new" ? "New arrivals" : smartKind === "best" ? "Most selling" : "Sale",
+      name_ar:
+        smartKind === "new" ? "وصل حديثاً" : smartKind === "best" ? "الأكثر مبيعاً" : "تنزيلات",
+      parent_id: null,
+      image_url: null,
+      menu_icon_url: null,
+      sort_order: null,
+    };
+  }, [smartKind, categorySlug]);
+
   const categoryQuery = useQuery({
-    queryKey: ["storefront", brand.slug, "category", categorySlug],
-    queryFn: async () => {
-      if (smartKind)
-        return {
-          id: smartKind,
-          slug: categorySlug,
-          name_en:
-            smartKind === "new" ? "New arrivals" : smartKind === "best" ? "Most selling" : "Sale",
-          name_ar:
-            smartKind === "new" ? "وصل حديثاً" : smartKind === "best" ? "الأكثر مبيعاً" : "تنزيلات",
-          image_url: null,
-        };
-      const { data, error } = await (supabase.from("categories") as any)
-        .select("id, slug, name_en, name_ar, image_url, parent_id")
-        .eq("brand_id", brand.id)
-        .eq("is_active", true)
-        .eq("slug", categorySlug)
-        .maybeSingle();
-      if (error) throw error;
-      if (!data) throw notFound();
-      return data as {
-        id: string;
-        slug: string;
-        name_en: string;
-        name_ar: string | null;
-        image_url: string | null;
-        parent_id: string | null;
-      };
-    },
-    enabled: !cmsPage,
-    staleTime: 5 * 60_000,
-    gcTime: 30 * 60_000,
-    refetchOnWindowFocus: false,
+    ...storefrontQueries.category(brand, categorySlug),
+    enabled: !cmsPage && !smartKind,
   });
 
-  const category = categoryQuery.data;
+  // null when the slug matches no active category: the page renders empty.
+  const category = smartCategory ?? categoryQuery.data ?? null;
 
-  // Parent Category Product Rollup
+  // Products for a smart collection, or for this category and all its descendants.
+  const productsScope = useMemo<CategoryProductsScope | null>(() => {
+    if (smartKind) return { kind: smartKind };
+    if (!activeCategory) return null;
+    const rollup = [
+      activeCategory,
+      ...getDescendantCategories(activeCategory.id, categoriesQuery.data ?? []),
+    ];
+    const values = [...new Set(rollup.flatMap((c) => [c.slug, c.name_en]).filter(Boolean))];
+    return { kind: "categories", values };
+  }, [smartKind, activeCategory, categoriesQuery.data]);
+
   const productsQuery = useQuery({
-    queryKey: [
-      "storefront",
-      brand.slug,
-      "category-products-rollup",
+    ...storefrontQueries.categoryProducts(
+      brand,
       categorySlug,
-      activeCategory?.id,
-      smartKind,
-      categoriesQuery.data?.length,
-    ],
-    enabled:
-      (Boolean(activeCategory) || Boolean(smartKind)) && !cmsPage && !categoriesQuery.isLoading,
-    queryFn: async () => {
-      if (smartKind === "best") {
-        const { data: ranked, error: rankError } = await (supabase.rpc as any)(
-          "get_storefront_best_sellers",
-          { p_brand_slug: brand.slug, p_limit: 24 },
-        );
-        if (rankError) throw rankError;
-        const ids = (ranked ?? []).map((row: any) => row.product_id);
-        if (!ids.length) return [] as ProductRow[];
-        const { data, error } = await supabase
-          .from("products")
-          .select(
-            "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, custom_fields, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, size_unit, color)",
-          )
-          .eq("brand_id", brand.id)
-          .eq("is_active", true)
-          .in("id", ids);
-        if (error) throw error;
-        const order = new Map<string, number>(
-          ids.map((id: string, index: number) => [id, index] as [string, number]),
-        );
-        return ((data ?? []) as unknown as ProductRow[]).sort(
-          (a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99),
-        );
-      }
-      if (smartKind === "new" || smartKind === "offers") {
-        let query = supabase
-          .from("products")
-          .select(
-            "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, custom_fields, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, size_unit, color)",
-          )
-          .eq("brand_id", brand.id)
-          .eq("is_active", true);
-
-        if (smartKind === "new") {
-          const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-          query = query.gte("created_at", thirtyDaysAgo);
-        }
-
-        const { data, error } = await query
-          .order("created_at", { ascending: false })
-          .limit(smartKind === "new" ? 60 : 200);
-        if (error) throw error;
-        const rows = (data ?? []) as unknown as ProductRow[];
-        return smartKind === "offers"
-          ? rows.filter((product) =>
-              product.product_variants.some(
-                (variant) =>
-                  Number(variant.original_price || 0) > Number(variant.selling_price || 0),
-              ),
-            )
-          : rows;
-      }
-
-      const descendants = getDescendantCategories(activeCategory!.id, categoriesQuery.data ?? []);
-      const rollupCategories = [activeCategory!, ...descendants];
-
-      const values = [
-        ...new Set(rollupCategories.flatMap((c) => [c.slug, c.name_en]).filter(Boolean)),
-      ];
-      const { data, error } = await supabase
-        .from("products")
-        .select(
-          "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, custom_fields, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, size_unit, color)",
-        )
-        .eq("brand_id", brand.id)
-        .eq("is_active", true)
-        .in("category", values)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as unknown as ProductRow[];
-    },
-    staleTime: 5 * 60_000,
-    gcTime: 30 * 60_000,
-    refetchOnWindowFocus: false,
+      productsScope ?? { kind: "categories", values: [] },
+    ),
+    enabled: Boolean(productsScope) && !cmsPage && !categoriesQuery.isLoading,
   });
 
   const title = category
@@ -567,12 +451,11 @@ function CategoryPage() {
 
   return (
     <main>
-      {categoryQuery.data && (
+      {category && (
         <JsonLd
           schema={[
             buildCollectionSchema(
-              (lang === "ar" ? categoryQuery.data.name_ar : categoryQuery.data.name_en) ||
-                categorySlug,
+              (lang === "ar" ? category.name_ar : category.name_en) || categorySlug,
               filteredProducts.map((p: any) => ({
                 id: p.id,
                 name_en: p.name_en || p.name,
@@ -592,9 +475,7 @@ function CategoryPage() {
                 url: `https://boutq.store/${brand.slug}`,
               },
               {
-                name:
-                  (lang === "ar" ? categoryQuery.data.name_ar : categoryQuery.data.name_en) ||
-                  categorySlug,
+                name: (lang === "ar" ? category.name_ar : category.name_en) || categorySlug,
                 url: `https://boutq.store/${brand.slug}/${categorySlug}`,
               },
             ]),

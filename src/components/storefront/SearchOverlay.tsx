@@ -1,11 +1,14 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { publicSupabase as supabase } from "@/integrations/supabase/client";
+import { storefrontQueries } from "@/lib/data/storefront";
 import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
 import { cloudflareImageUrl } from "@/lib/media-delivery";
 import { Search, X, Sparkles, Clock, ArrowRight, ArrowLeft, ShoppingBag } from "lucide-react";
+
+/** How many products the overlay lists while typing. */
+const OVERLAY_RESULT_LIMIT = 10;
 
 interface SearchOverlayProps {
   isOpen: boolean;
@@ -110,59 +113,19 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
     }
   }, [isOpen]);
 
-  // Categories query for empty state discovery
-  const { data: topCategories = [] } = useQuery({
-    queryKey: ["storefront-overlay-categories", brand.id],
-    queryFn: async () => {
-      const { data, error } = await (supabase.from("categories") as any)
-        .select("id, name_en, name_ar, slug")
-        .eq("brand_id", brand.id)
-        .eq("is_active", true)
-        .is("parent_id", null)
-        .order("sort_order", { ascending: true })
-        .limit(8);
-      if (error) return [];
-      return data ?? [];
-    },
-    staleTime: 5 * 60_000,
+  // Top-level categories for the empty state, from the shared categories cache.
+  const { data: categories = [] } = useQuery({
+    ...storefrontQueries.categories(brand),
     enabled: isOpen,
   });
+  const topCategories = useMemo(
+    () => categories.filter((category) => !category.parent_id).slice(0, 8),
+    [categories],
+  );
 
   // Live product search
   const { data: results = [], isFetching } = useQuery({
-    queryKey: ["storefront-overlay-search", brand.id, debounced],
-    queryFn: async () => {
-      if (!debounced || debounced.length < 2) return [];
-      const clean = debounced.toLowerCase();
-
-      const { data, error } = await supabase
-        .from("products")
-        .select(
-          `
-          id,
-          name,
-          name_en,
-          name_ar,
-          image_url,
-          media,
-          category,
-          product_variants (
-            id,
-            selling_price,
-            original_price,
-            stock
-          )
-        `,
-        )
-        .eq("brand_id", brand.id)
-        .eq("is_active", true)
-        .or(`name.ilike.%${clean}%,name_en.ilike.%${clean}%,name_ar.ilike.%${clean}%`)
-        .limit(10);
-
-      if (error) return [];
-      return data ?? [];
-    },
-    staleTime: 60_000,
+    ...storefrontQueries.quickSearch(brand, debounced, OVERLAY_RESULT_LIMIT),
     enabled: isOpen && debounced.length >= 2,
   });
 

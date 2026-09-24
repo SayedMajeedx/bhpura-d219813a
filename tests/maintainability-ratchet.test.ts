@@ -11,17 +11,18 @@ import { collectMaintainabilityMetrics } from "../scripts/maintainability-metric
  * When a phase lands and a count drops, lower the budget in the same PR
  * so the ground that was won cannot be quietly given back.
  *
- * Recorded on 2026-09-24 (Phase 0 baseline).
+ * Recorded on 2026-09-24 (Phase 0 baseline). Lowered on 2026-09-24 after
+ * Phases 3–4 (type escapes and the storefront catalog data layer).
  */
 
 const BUDGETS = {
-  asAny: 990,
-  colonAny: 785,
-  asNever: 40,
+  asAny: 936,
+  colonAny: 776,
+  asNever: 0,
   tsIgnore: 0,
   tsExpectError: 0,
   eslintDisable: 10,
-  directSupabaseCalls: 392,
+  directSupabaseCalls: 369,
   readFileSyncTestFiles: 71,
   filesOver1000: 31,
   maxLinesForNewFile: 600,
@@ -39,7 +40,7 @@ const GIANT_FILES_BUDGETS: Record<string, number> = {
   "src/routes/_authenticated/admin.b.$slug.orders.index.tsx": 3456,
   "src/routes/$slug.checkout.tsx": 2809,
   "src/features/settings/registry.ts": 2616,
-  "src/routes/$slug.product.$id.tsx": 2570,
+  "src/routes/$slug.product.$id.tsx": 2431,
   "src/routes/_authenticated/admin.b.$slug.content-studio.tsx": 2488,
   "src/routes/_authenticated/admin.b.$slug.dashboard.tsx": 2105,
   "src/components/subscription/BrandSubscriptionHub.tsx": 1972,
@@ -55,13 +56,13 @@ const GIANT_FILES_BUDGETS: Record<string, number> = {
   "src/routes/_authenticated/admin.b.$slug.import.tsx": 1463,
   "src/components/reviews/ReviewStoryDialog.tsx": 1442,
   "src/routes/_authenticated/admin.b.$slug.expenses.tsx": 1431,
-  "src/routes/$slug.index.tsx": 1360,
+  "src/routes/$slug.index.tsx": 1297,
   "src/components/inventory/InstagramImporterModal.tsx": 1328,
   "src/lib/public-api/public-api-router.server.ts": 1271,
   "src/lib/instagram-ai-importer.ts": 1262,
   "src/routes/_authenticated/admin.brands.tsx": 1228,
   "src/routes/_authenticated/admin.b.$slug.integrations.tsx": 1202,
-  "src/routes/$slug.route.tsx": 1197,
+  "src/routes/$slug.route.tsx": 1195,
   "src/routes/onboard.tsx": 1094,
   "src/routes/_authenticated/admin.b.$slug.customers.$customerId.tsx": 1084,
   "src/routes/_authenticated/admin.b.$slug.pages.tsx": 1065,

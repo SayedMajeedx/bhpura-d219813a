@@ -1,6 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import {
   useStorefront,
   formatPrice,
@@ -55,7 +54,12 @@ import {
   fetchBestSellerRows,
   fetchProductDetail,
   fetchRecommendationCatalog,
-} from "@/lib/storefront-queries";
+  storefrontKeys,
+  storefrontQueries,
+  type RecommendationProduct,
+  type StorefrontProductDetail as Product,
+  type StorefrontVariant as Variant,
+} from "@/lib/data/storefront";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
 import { buildProductSchema, buildBreadcrumbsSchema } from "@/lib/seo/structured-data";
@@ -102,10 +106,10 @@ export const Route = createFileRoute("/$slug/product/$id")({
     const [product, recommendationCatalog, bestSellerRows] = await Promise.all([
       fetchProductDetail(brand.id, params.id),
       fetchRecommendationCatalog(brand.id),
-      fetchBestSellerRows(brand.slug, 10),
+      fetchBestSellerRows(brand.slug, PDP_BEST_SELLER_LIMIT),
     ]);
 
-    return { brand, product: product as any, recommendationCatalog, bestSellerRows, initialLang };
+    return { brand, product, recommendationCatalog, bestSellerRows, initialLang };
   },
   head: ({ loaderData, params }) => {
     const product = loaderData?.product as any;
@@ -188,21 +192,6 @@ export const Route = createFileRoute("/$slug/product/$id")({
   component: ProductDetail,
 });
 
-type Variant = {
-  id: string;
-  size: string | null;
-  size_unit: string | null;
-  color: string | null;
-  fabric: string | null;
-  option_four?: string | null;
-  option_five?: string | null;
-  selling_price: number;
-  original_price: number | null;
-  stock_main: number;
-  stock_incubator?: number;
-  image_url?: string | null;
-};
-
 type CustomField = {
   key: string;
   label_ar: string | null;
@@ -212,53 +201,8 @@ type CustomField = {
   required?: boolean;
 };
 
-type Product = {
-  id: string;
-  category: string | null;
-  name: string;
-  name_ar: string | null;
-  name_en: string | null;
-  description: string | null;
-  description_ar: string | null;
-  description_en: string | null;
-  image_url: string | null;
-  media: unknown;
-  custom_fields: CustomField[] | null;
-  product_variants: Variant[];
-  base_price?: number | null;
-  original_price?: number | null;
-  is_made_to_order?: boolean | null;
-  size_guide_id?: string | null;
-  size_guide_hidden?: boolean | null;
-  variant_label_size_ar?: string | null;
-  variant_label_size_en?: string | null;
-  variant_label_color_ar?: string | null;
-  variant_label_color_en?: string | null;
-  variant_label_fabric_ar?: string | null;
-  variant_label_fabric_en?: string | null;
-  variant_label_four_ar?: string | null;
-  variant_label_four_en?: string | null;
-  variant_label_five_ar?: string | null;
-  variant_label_five_en?: string | null;
-};
-
-type RecommendationProduct = {
-  id: string;
-  name: string;
-  name_ar: string | null;
-  name_en: string | null;
-  category: string | null;
-  image_url: string | null;
-  media: unknown;
-  is_made_to_order?: boolean | null;
-  product_variants: Array<{
-    id: string;
-    selling_price: number;
-    original_price: number | null;
-    stock_main: number;
-    stock_incubator?: number;
-  }>;
-};
+/** Best sellers ranked for the product page's badges and rails. */
+const PDP_BEST_SELLER_LIMIT = 10;
 
 /** Natural sort key: extract leading number so "52" < "54" < "60". */
 function variantSortKey(v: Variant): [number, string] {
@@ -312,75 +256,28 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const optionsRef = useRef<HTMLDivElement | null>(null);
   const galleryTouchStartX = useRef<number | null>(null);
 
+  // Links shared with a corrupted id ("…-b5/a-33d84/9e04b8": a "7" turned into
+  // "/") are repaired from the full path and tried after the id itself.
+  const repairedId = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    const match = window.location.pathname.match(/\/product\/(.+)$/i);
+    const suffix = match?.[1] ? decodeURIComponent(match[1]) : id;
+    const repaired = suffix.replace(/\//g, "7").trim();
+    return repaired && repaired !== id ? repaired : null;
+  }, [id]);
+
   const { data: product, isLoading } = useQuery({
-    queryKey: ["storefront", brand.slug, "product", id],
+    ...storefrontQueries.product(brand, id, repairedId ? [repairedId] : []),
     initialData: loaderData?.product ?? undefined,
-    queryFn: async () => {
-      const primaryFields =
-        "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, is_made_to_order, base_price, size_guide_id, size_guide_hidden, product_variants(id, size, size_unit, color, fabric, option_four, option_five, selling_price, original_price, stock_main, stock_incubator, image_url)";
-      const fullFields = `${primaryFields}, variant_label_size_ar, variant_label_size_en, variant_label_color_ar, variant_label_color_en, variant_label_fabric_ar, variant_label_fabric_en, variant_label_four_ar, variant_label_four_en, variant_label_five_ar, variant_label_five_en`;
-
-      const fetchByTargetId = async (targetId: string) => {
-        // Try full fields with custom variant labels
-        const { data: fullData, error: fullError } = await supabase
-          .from("products")
-          .select(fullFields)
-          .eq("id", targetId)
-          .eq("brand_id", brand.id)
-          .eq("is_active", true)
-          .maybeSingle();
-
-        if (fullData) return fullData as unknown as Product;
-
-        // Resilient fallback if full fields query fails due to missing column permissions
-        if (fullError) {
-          const { data: fallbackData } = await supabase
-            .from("products")
-            .select(primaryFields)
-            .eq("id", targetId)
-            .eq("brand_id", brand.id)
-            .eq("is_active", true)
-            .maybeSingle();
-
-          if (fallbackData) return fallbackData as unknown as Product;
-        }
-
-        return null;
-      };
-
-      // 1. Try direct exact match with id
-      const directData = await fetchByTargetId(id);
-      if (directData) return directData;
-
-      // 2. Extract full path after /product/ to catch corrupted URLs with slashes (e.g. 6d8a9ec5-ed96-461b-b5/a-33d84/9e04b8)
-      let fullPathSuffix = id;
-      if (typeof window !== "undefined") {
-        const match = window.location.pathname.match(/\/product\/(.+)$/i);
-        if (match?.[1]) {
-          fullPathSuffix = decodeURIComponent(match[1]);
-        }
-      }
-
-      // Repair corrupted URL where '7' was replaced by '/' or encoded
-      const repairedId = fullPathSuffix.replace(/\//g, "7").trim();
-      if (repairedId && repairedId !== id) {
-        const repairedData = await fetchByTargetId(repairedId);
-        if (repairedData) {
-          // Silently clean up browser URL to canonical format
-          if (typeof window !== "undefined" && window.history?.replaceState) {
-            const canonicalUrl = `/${brand.slug}/product/${repairedData.id}`;
-            window.history.replaceState(null, "", canonicalUrl);
-          }
-          return repairedData;
-        }
-      }
-
-      return null;
-    },
-    staleTime: 5 * 60_000,
-    gcTime: 30 * 60_000,
-    refetchOnWindowFocus: false,
   });
+
+  // When the repaired id found the product, show the canonical URL.
+  useEffect(() => {
+    if (!product || !repairedId || product.id !== repairedId) return;
+    if (typeof window !== "undefined" && window.history?.replaceState) {
+      window.history.replaceState(null, "", `/${brand.slug}/product/${product.id}`);
+    }
+  }, [product, repairedId, brand.slug]);
 
   useEffect(() => {
     if (!product) return;
@@ -408,29 +305,14 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   }, [product, currency, lang, brand?.slug]);
 
   const { data: recommendationCatalog = [] } = useQuery({
-    queryKey: ["storefront", brand.slug, "product-recommendations"],
+    ...storefrontQueries.recommendations(brand),
     initialData: loaderData?.recommendationCatalog ?? undefined,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select(
-          "id, name, name_ar, name_en, category, image_url, media, product_variants(id, selling_price, original_price, stock_main)",
-        )
-        .eq("brand_id", brand.id)
-        .eq("is_active", true)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as unknown as RecommendationProduct[];
-    },
-    staleTime: 5 * 60_000,
-    gcTime: 30 * 60_000,
-    refetchOnWindowFocus: false,
   });
 
   const stickyCtaRef = useStickyCtaOffset<HTMLDivElement>();
 
   const socialProofQuery = useQuery({
-    queryKey: ["storefront", brand.slug, "social-proof", product?.id],
+    queryKey: storefrontKeys.socialProof(brand.slug, product?.id),
     queryFn: async () => {
       if (!brand?.id || !product?.id) return null;
       return getProductRecentPurchaseCount(
@@ -450,19 +332,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   });
 
   const { data: bestSellerRows = [] } = useQuery({
-    queryKey: ["storefront", brand.slug, "best-sellers"],
+    ...storefrontQueries.bestSellers(brand, PDP_BEST_SELLER_LIMIT),
     initialData: loaderData?.bestSellerRows ?? undefined,
-    queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("get_storefront_best_sellers", {
-        p_brand_slug: brand.slug,
-        p_limit: 10,
-      });
-      if (error) throw error;
-      return (data ?? []) as Array<{ product_id: string; units_sold: number }>;
-    },
-    staleTime: 5 * 60_000,
-    gcTime: 30 * 60_000,
-    refetchOnWindowFocus: false,
   });
 
   const relatedProducts = useMemo(
@@ -802,18 +673,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   }, [brand.slug, product?.id]);
 
   const { data: customizationOptions = [] } = useQuery({
-    queryKey: ["customization-options", brand.id],
+    ...storefrontQueries.customizationOptions(brand),
     enabled: Boolean(brand.id),
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customization_options")
-        .select("*")
-        .eq("brand_id", brand.id)
-        .order("name");
-      if (error) return [];
-      return data ?? [];
-    },
-    staleTime: 5 * 60_000,
   });
 
   const applicableAddons = useMemo(() => {

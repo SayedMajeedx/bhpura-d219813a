@@ -9,7 +9,7 @@ import { ResponsiveImage } from "@/components/responsive-media";
 import { useStorefront, formatPrice } from "@/lib/storefront-context";
 import { buildCartItem } from "@/lib/cart/add-to-cart";
 import { resolveColorHex } from "@/lib/color-names";
-import { fetchProductDetail } from "@/lib/storefront-queries";
+import { storefrontQueries } from "@/lib/data/storefront";
 import {
   formatAxisValue,
   pickVariantForAxis,
@@ -69,10 +69,8 @@ export function QuickViewModal({
   // extra option columns). Load the same record the product page uses, sharing
   // its cache, and show the card data until it arrives.
   const { data: fullProduct } = useQuery({
-    queryKey: ["storefront", brand.slug, "product", cardProduct.id],
-    queryFn: () => fetchProductDetail(brand.id, cardProduct.id),
+    ...storefrontQueries.product(brand, cardProduct.id),
     enabled: open,
-    staleTime: 5 * 60_000,
   });
   const product = {
     ...cardProduct,

@@ -6,29 +6,14 @@ import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { ProductGrid } from "@/components/storefront/product-grid";
 import { Search } from "lucide-react";
 import { OsEmptyState } from "@/components/os/os-empty-state";
-import { fetchActiveBrandIdentity, fetchStorefrontSearch } from "@/lib/storefront-queries";
+import {
+  fetchActiveBrandIdentity,
+  fetchStorefrontSearch,
+  storefrontQueries,
+  type ProductRow,
+} from "@/lib/data/storefront";
 
 type SearchParams = { q: string };
-
-type ProductRow = {
-  id: string;
-  name: string;
-  name_ar: string | null;
-  name_en: string | null;
-  description: string | null;
-  description_ar: string | null;
-  description_en: string | null;
-  category: string | null;
-  image_url: string | null;
-  media: Array<{ type: "image" | "video"; url: string }> | null;
-  product_variants: Array<{
-    id: string;
-    selling_price: number;
-    original_price: number | null;
-    stock_main: number;
-    stock_incubator?: number;
-  }>;
-};
 
 export const Route = createFileRoute("/$slug/search")({
   validateSearch: (s): SearchParams => ({ q: typeof s.q === "string" ? s.q : "" }),
@@ -52,9 +37,8 @@ function SearchPage() {
   const [sort, setSort] = useState<"new" | "price-low" | "price-high">("new");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["storefront", brand.slug, "search", term],
-    queryFn: () => fetchStorefrontSearch(brand.id, term) as Promise<ProductRow[]>,
-    initialData: loaderData.term === term ? (loaderData.results as ProductRow[]) : undefined,
+    ...storefrontQueries.search(brand, term),
+    initialData: loaderData.term === term ? loaderData.results : undefined,
     enabled: Boolean(term),
   });
 
