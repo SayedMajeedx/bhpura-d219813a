@@ -41,15 +41,7 @@ type DashboardMetrics = {
 };
 
 export function DashboardScreen() {
-  const {
-    profile,
-    brands,
-    activeBrand,
-    activeBrandId,
-    setActiveBrandId,
-    currency,
-    canViewFinancials,
-  } = useAuth();
+  const { brands, activeBrandId, setActiveBrandId, currency, canViewFinancials } = useAuth();
   const { t, isAr } = useI18n();
 
   const [orders, setOrders] = useState<OrderRow[]>([]);

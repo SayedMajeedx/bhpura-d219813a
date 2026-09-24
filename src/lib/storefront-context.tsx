@@ -461,7 +461,7 @@ export function StorefrontProvider({
       let storedLang: string | null = null;
       if (urlLang === "en" || urlLang === "ar") {
         storedLang = urlLang;
-        if (urlLang !== lang) setLangState(urlLang);
+        setLangState(urlLang); // React skips the render when unchanged
         try {
           localStorage.setItem(langKey, urlLang);
           const cookieFlags = "; path=/; max-age=31536000; SameSite=Lax";
@@ -473,7 +473,7 @@ export function StorefrontProvider({
       } else {
         storedLang = localStorage.getItem(langKey);
         if (storedLang === "en" || storedLang === "ar") {
-          if (storedLang !== lang) setLangState(storedLang);
+          setLangState(storedLang);
           try {
             const cookieFlags = "; path=/; max-age=31536000; SameSite=Lax";
             document.cookie = `boutq_lang_${brand.slug}=${storedLang}${cookieFlags}`;
@@ -568,7 +568,7 @@ export function StorefrontProvider({
     } finally {
       setStorageHydrated(true);
     }
-  }, [cartKey, langKey, wishlistKey]);
+  }, [cartKey, langKey, wishlistKey, brand.slug]);
 
   useEffect(() => {
     if (!storageHydrated) return;

@@ -66,12 +66,7 @@ import type { BrandLoyaltyProgram, LoyaltyAccount, LoyaltyTier } from "@/lib/loy
 import { getOrCreateCartSessionId } from "@/lib/abandoned-cart-session";
 import { isCatalogMode } from "@/lib/storefront-mode";
 import { formatCustomFieldsList } from "@/lib/addons/custom-fields";
-import {
-  type ShippingZone,
-  COUNTRIES_DATABASE,
-  getCountryByCode,
-  calculateShippingFee,
-} from "@/lib/shipping";
+import { type ShippingZone, getCountryByCode, calculateShippingFee } from "@/lib/shipping";
 import { CountryFlag } from "@/components/ui/country-flag";
 
 export const Route = createFileRoute("/$slug/checkout")({
@@ -414,9 +409,8 @@ function Checkout() {
     if (selectedDestination === "BH") {
       setSelectedCountryCode("BH");
     } else if (selectedZone && selectedZone.countries && selectedZone.countries.length > 0) {
-      if (!selectedZone.countries.includes(selectedCountryCode)) {
-        setSelectedCountryCode(selectedZone.countries[0]);
-      }
+      const countries = selectedZone.countries;
+      setSelectedCountryCode((current) => (countries.includes(current) ? current : countries[0]));
     }
   }, [selectedDestination, selectedZone]);
 

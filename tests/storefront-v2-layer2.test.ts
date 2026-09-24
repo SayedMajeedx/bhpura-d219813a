@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { resolveColorHex, extractUniqueVariantColors, COLOR_MAP } from "../src/lib/color-names";
+import { describe, it, expect, beforeEach } from "vitest";
+import { resolveColorHex, extractUniqueVariantColors } from "../src/lib/color-names";
 import { canQuickAddToCart, buildCartItem } from "../src/lib/cart/add-to-cart";
 import {
   recordRecentlyViewed,

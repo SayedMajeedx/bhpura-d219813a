@@ -62,6 +62,14 @@ const FULFILLMENT_STATUS_FILTER_OPTIONS = [
   { value: "cancelled", ar: "ملغي", en: "Cancelled" },
 ] as const;
 
+// Values match orders.fulfillment_method; labels match the invoice wording.
+const FULFILLMENT_METHOD_FILTER_OPTIONS = [
+  { value: "all", ar: "الكل", en: "All" },
+  { value: "delivery", ar: "توصيل للمنزل", en: "Home delivery" },
+  { value: "pickup", ar: "استلام", en: "Pickup" },
+  { value: "digital", ar: "تسليم رقمي", en: "Digital delivery" },
+] as const;
+
 const GATEWAY_FILTER_OPTIONS: Array<{ value: PaymentMethodFilter; ar: string; en: string }> = [
   { value: "all", ar: "الكل", en: "All" },
   { value: "benefit", ar: "بنفت", en: "Benefit" },
@@ -198,6 +206,28 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
                 </Select>
               </div>
 
+              {/* Fulfillment Method Filter */}
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  {isAr ? "طريقة التسليم" : "Fulfillment Method"}
+                </label>
+                <Select
+                  value={fulfillmentMethodFilter}
+                  onValueChange={onFulfillmentMethodFilterChange}
+                >
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FULFILLMENT_METHOD_FILTER_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {isAr ? opt.ar : opt.en}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Gateway Filter */}
               <div className="space-y-1">
                 <label className="text-xs font-medium text-muted-foreground">
@@ -281,6 +311,28 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
                     </SelectTrigger>
                     <SelectContent>
                       {fulfillmentOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {isAr ? opt.ar : opt.en}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Fulfillment Method Filter */}
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    {isAr ? "طريقة التسليم" : "Fulfillment Method"}
+                  </label>
+                  <Select
+                    value={fulfillmentMethodFilter}
+                    onValueChange={onFulfillmentMethodFilterChange}
+                  >
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FULFILLMENT_METHOD_FILTER_OPTIONS.map((opt) => (
                         <SelectItem key={opt.value} value={opt.value}>
                           {isAr ? opt.ar : opt.en}
                         </SelectItem>

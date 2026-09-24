@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useI18n, useT } from "@/lib/i18n";
+import { useI18n } from "@/lib/i18n";
 import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
 import { AdvancedOnly } from "@/features/settings/FieldVisibility";
 import { Label } from "@/components/ui/label";
@@ -16,16 +16,7 @@ import {
   getShippingPricingDescription,
 } from "@/lib/shipping";
 import { CountryFlag } from "@/components/ui/country-flag";
-import {
-  AlertCircle,
-  Banknote,
-  CreditCard,
-  Plus,
-  QrCode,
-  Sparkles,
-  Trash2,
-  Truck,
-} from "lucide-react";
+import { Banknote, CreditCard, Plus, QrCode, Sparkles, Trash2, Truck } from "lucide-react";
 
 export function FulfillmentGroup() {
   const { lang } = useI18n();

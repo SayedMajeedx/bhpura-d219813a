@@ -6,7 +6,6 @@
 //     returns immediately (202 Accepted) — the client no longer waits on the
 //     ~1-3s Zoho SMTPS handshake, avoiding "CPU Time exceeded".
 
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const allowedOrigins = Array.from(
@@ -78,22 +77,6 @@ function escapeHtml(s: unknown) {
     /[&<>"']/g,
     (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
   );
-}
-
-type SmtpConfig = {
-  host: string;
-  port: number;
-  username: string;
-  password: string;
-  fromAddress: string;
-};
-
-function parseSmtpHost(value: string | null | undefined) {
-  const raw = String(value ?? "")
-    .trim()
-    .replace(/^smtps?:\/\//i, "");
-  const [host, port] = raw.split(":");
-  return { host: host || "smtp.zoho.com", port: Number(port) || 465 };
 }
 
 function eventCopy(
@@ -714,8 +697,6 @@ async function sendAndLog(
       email: order.customer_email_snapshot || order.customer?.email || "",
     };
     const to = (order.customer?.email ?? "").trim();
-    let customerResult: CustomerEmailDeliveryResult;
-    let adminResult: AdminEmailDeliveryResult;
 
     // Define customer delivery routine
     const customerPromise = (async (): Promise<CustomerEmailDeliveryResult> => {
@@ -819,9 +800,8 @@ async function sendAndLog(
     })();
 
     // Run both concurrently in parallel
-    const [cRes, aRes] = await Promise.all([customerPromise, adminPromise]);
-    customerResult = cRes;
-    adminResult = aRes;
+    const [customerResult, adminResult]: [CustomerEmailDeliveryResult, AdminEmailDeliveryResult] =
+      await Promise.all([customerPromise, adminPromise]);
 
     return { customer: customerResult, admin: adminResult };
   } catch (err: any) {
@@ -868,7 +848,7 @@ async function secretsEqual(left: string, right: string): Promise<boolean> {
   return mismatch === 0;
 }
 
-Deno.serve(async (req, info) => {
+Deno.serve(async (req) => {
   const corsHeaders = corsHeadersFor(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405, corsHeaders);

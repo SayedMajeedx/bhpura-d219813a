@@ -16,8 +16,6 @@ import {
   Loader2,
   Check,
   Share2,
-  MessageCircle,
-  HelpCircle,
   Zap,
 } from "lucide-react";
 import { publicSupabase } from "@/integrations/supabase/client";

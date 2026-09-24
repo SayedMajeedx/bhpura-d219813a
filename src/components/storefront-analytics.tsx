@@ -49,6 +49,9 @@ export function StorefrontAnalytics() {
     w.gtag =
       w.gtag ||
       function () {
+        // gtag.js requires the real Arguments object here; a rest-param array
+        // is treated as a data-layer event and silently breaks consent/config.
+        // eslint-disable-next-line prefer-rest-params
         w.dataLayer.push(arguments);
       };
     w.gtag("consent", "default", {
@@ -95,8 +98,16 @@ export function StorefrontAnalytics() {
       }
       if (effective.marketing && metaId) {
         if (!w.fbq) {
+          // Meta's official pixel stub: calls are forwarded or queued with the
+          // original Arguments object, which fbevents.js replays verbatim.
           const fbq: any = function () {
-            fbq.callMethod ? fbq.callMethod.apply(fbq, arguments) : fbq.queue.push(arguments);
+            if (fbq.callMethod) {
+              // eslint-disable-next-line prefer-spread, prefer-rest-params
+              fbq.callMethod.apply(fbq, arguments);
+            } else {
+              // eslint-disable-next-line prefer-rest-params
+              fbq.queue.push(arguments);
+            }
           };
           fbq.queue = [];
           fbq.loaded = true;

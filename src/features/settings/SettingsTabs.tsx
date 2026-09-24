@@ -6,17 +6,7 @@ import { StorefrontTab } from "@/features/settings/tabs/storefront/StorefrontTab
 import { OrdersTab } from "@/features/settings/tabs/orders/OrdersTab";
 import { NotificationsTab } from "@/features/settings/tabs/notifications/NotificationsTab";
 import { AccountTab } from "@/features/settings/tabs/account/AccountTab";
-import {
-  Bell,
-  Building2,
-  CreditCard,
-  KeyRound,
-  Package,
-  Palette,
-  Shield,
-  ShoppingBag,
-  Store,
-} from "lucide-react";
+import { Bell, CreditCard, Palette, Shield, Store } from "lucide-react";
 
 export interface SettingsTabsProps {
   activeTab: SettingsTabId;

@@ -346,7 +346,6 @@ Password: ${data.owner_password || "(as provided)"}`;
         {!isExecuting && (
           <div className="grid grid-cols-4 gap-2 mt-5">
             {STEPS.map((step, idx) => {
-              const Icon = step.icon;
               const isCurrent = currentStep === step.id;
               const isPassed = STEPS.findIndex((s) => s.id === currentStep) > idx;
 

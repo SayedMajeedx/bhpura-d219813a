@@ -4,7 +4,7 @@ import { AdvancedOnly } from "@/features/settings/FieldVisibility";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, MessageSquare, Sparkles, Truck } from "lucide-react";
+import { Mail, Sparkles, Truck } from "lucide-react";
 
 export function TemplatesGroup() {
   const { lang } = useI18n();

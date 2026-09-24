@@ -19,9 +19,6 @@ export function HeaderFooterGroup() {
   const footerVariant = resolveFooterVariant(bs);
   const brand = form.brand;
 
-  const brandDisplayName =
-    (isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug || "Boutique";
-
   const headerLogoSize = bs.logo_size ?? 36;
   const footerLogoSize = bs.footer_logo_size ?? 28;
 

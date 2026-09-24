@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { OsEmptyState } from "@/components/os/os-empty-state";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Accordion,
@@ -351,7 +350,6 @@ function PagesAndPolicies() {
     const cleanedSocials = socials
       .map((social) => ({ name: social.name.trim(), url: social.url.trim() }))
       .filter((social) => social.name && social.url);
-    const number = waNumber.replace(/\s+/g, "").replace(/^00/, "+");
     const pagesPayload = {
       items: cleanedPages,
       footer_titles: {

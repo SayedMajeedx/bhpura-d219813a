@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ArrowLeftRight, Check, Sparkles, Layers, Tag, Palette, Upload } from "lucide-react";
+import { ArrowLeftRight, Check, Sparkles, Layers, Tag, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";

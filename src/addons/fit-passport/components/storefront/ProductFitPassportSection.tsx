@@ -28,7 +28,6 @@ export interface ProductFitPassportSectionProps {
 export function ProductFitPassportSection({
   product,
   customFields = [],
-  cfValues = {},
   setCfValues,
   sizeMode = "custom",
   customer: propCustomer,
@@ -121,6 +120,7 @@ export function ProductFitPassportSection({
   }, [
     customerId,
     fitPassportQ.data?.measurements,
+    fitPassportQ.data?.tailoring_notes,
     fitProfileType,
     brand?.slug,
     isGuest,

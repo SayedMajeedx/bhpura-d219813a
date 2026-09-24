@@ -120,6 +120,9 @@ export function SizeGuidesStudioPage() {
   const qc = useQueryClient();
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // True while the form holds an unsaved new guide (blank, template or
+  // duplicate). The sync effect must not replace it with an existing guide.
+  const [isNewDraft, setIsNewDraft] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [pasteDialogOpen, setPasteDialogOpen] = useState(false);
@@ -196,6 +199,7 @@ export function SizeGuidesStudioPage() {
 
   // Sync selected guide with form
   useEffect(() => {
+    if (isNewDraft) return;
     if (guides.length > 0) {
       const found = selectedId ? guides.find((g) => g.id === selectedId) : null;
       const target = found || guides.find((g) => g.is_default) || guides[0];
@@ -228,9 +232,10 @@ export function SizeGuidesStudioPage() {
       // No guides at all -> offer creating from default abaya template
       setForm(emptyForm());
     }
-  }, [guides, selectedId, isLoading, allCategories]);
+  }, [guides, selectedId, isLoading, allCategories, form.id, isNewDraft]);
 
   const selectGuide = (guide: SizeGuide) => {
+    setIsNewDraft(false);
     setSelectedId(guide.id);
     const assigned = allCategories.filter((c) => c.size_guide_id === guide.id).map((c) => c.id);
     setForm({
@@ -274,6 +279,7 @@ export function SizeGuidesStudioPage() {
       is_active: true,
       assignedCategoryIds: [],
     };
+    setIsNewDraft(true);
     setSelectedId(null);
     setForm(newForm);
     setTemplateDialogOpen(false);
@@ -288,6 +294,7 @@ export function SizeGuidesStudioPage() {
       is_default: false,
       assignedCategoryIds: [],
     };
+    setIsNewDraft(true);
     setSelectedId(null);
     setForm(newForm);
     toast.success(isAr ? "تم إنشاء نسخة من الدليل" : "Guide duplicated");
@@ -427,6 +434,7 @@ export function SizeGuidesStudioPage() {
       await qc.invalidateQueries({ queryKey: ["storefront", brand.slug] });
 
       if (savedId) {
+        setIsNewDraft(false);
         setSelectedId(savedId);
       }
       toast.success(isAr ? "تم حفظ دليل المقاسات بنجاح" : "Size guide saved successfully");
@@ -462,6 +470,7 @@ export function SizeGuidesStudioPage() {
       if (error) throw error;
 
       await qc.invalidateQueries({ queryKey: ["admin", brandId] });
+      setIsNewDraft(false);
       setSelectedId(null);
       setDeleteConfirmOpen(false);
       toast.success(isAr ? "تم حذف دليل المقاسات" : "Size guide deleted");
@@ -535,6 +544,7 @@ export function SizeGuidesStudioPage() {
             variant="outline"
             size="sm"
             onClick={() => {
+              setIsNewDraft(true);
               setSelectedId(null);
               setForm(emptyForm());
             }}

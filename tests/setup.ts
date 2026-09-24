@@ -20,3 +20,13 @@ Object.defineProperty(window, "matchMedia", {
     dispatchEvent: vi.fn(),
   })),
 });
+
+// jsdom does not implement window.open and logs "Not implemented" for every
+// call (e.g. WhatsApp share buttons). Behave like a blocked popup instead.
+if (typeof window !== "undefined") {
+  Object.defineProperty(window, "open", {
+    writable: true,
+    configurable: true,
+    value: vi.fn(() => null),
+  });
+}

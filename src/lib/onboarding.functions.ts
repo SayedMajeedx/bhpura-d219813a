@@ -71,7 +71,7 @@ async function requireSuperAdmin(context: any) {
 // 1. Get secure pre-signed upload URL for onboarding receipt screenshot explicitly bound to R2_PRIVATE_BUCKET scope
 export const getOnboardingReceiptUploadUrl = createServerFn({ method: "POST" })
   .validator((raw: unknown) => CreateUploadInput.parse(raw))
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }) => {
     await requireValidTurnstile(data.turnstileToken);
     let env: any = null;
     try {

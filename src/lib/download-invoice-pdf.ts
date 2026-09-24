@@ -20,7 +20,7 @@ export async function downloadInvoicePdf(element: HTMLElement | null, filename: 
     import("jspdf"),
   ]);
 
-  const safeName = filename.replace(/[^a-zA-Z0-9-_\.\u0600-\u06FF]+/g, "_");
+  const safeName = filename.replace(/[^a-zA-Z0-9-_.\u0600-\u06FF]+/g, "_");
   const finalName = safeName.toLowerCase().endsWith(".pdf") ? safeName : `${safeName}.pdf`;
 
   // Build a fixed-width render shell. Mobile browsers still evaluate Tailwind's

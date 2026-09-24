@@ -1,5 +1,3 @@
-import { getEnvVariable } from "@/integrations/supabase/auth-middleware";
-
 export type ResponsiveImagePreset = "thumb" | "card" | "product" | "hero" | "content";
 
 const PRESET_WIDTHS: Record<ResponsiveImagePreset, number[]> = {

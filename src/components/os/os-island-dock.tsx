@@ -18,12 +18,7 @@ export interface OsIslandDockProps {
   isHidden?: boolean;
 }
 
-export function OsIslandDock({
-  items,
-  className,
-  lang = "ar",
-  isHidden = false,
-}: OsIslandDockProps) {
+export function OsIslandDock({ items, className, isHidden = false }: OsIslandDockProps) {
   return (
     <nav
       role="navigation"

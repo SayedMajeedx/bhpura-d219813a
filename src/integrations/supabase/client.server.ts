@@ -54,7 +54,9 @@ function getEnvSync(name: string): string | undefined {
         if (env[unprefixed]) return env[unprefixed];
       }
     }
-  } catch {}
+  } catch {
+    // No request context in this runtime; fall through to process.env.
+  }
 
   // 2. Try process.env
   try {
@@ -65,7 +67,9 @@ function getEnvSync(name: string): string | undefined {
       if (liveEnv[viteName]) return liveEnv[viteName];
       if (liveEnv[unprefixed]) return liveEnv[unprefixed];
     }
-  } catch {}
+  } catch {
+    // No process global in this runtime; the variable is simply unset.
+  }
 
   return undefined;
 }

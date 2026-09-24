@@ -91,15 +91,12 @@ export function calculateIncomeStatement(
   const grossMarginPercent = netRevenue > 0 ? (grossProfit / netRevenue) * 100 : 0;
 
   let operatingExpenses = 0; // Fixed OpEx (Rent, Salaries, Marketing, Utilities)
-  let packagingInventoryPurchases = 0; // Bulk packaging purchases (Asset addition, NOT period expense)
 
   expenses.forEach((e) => {
-    const amt = Number(e.amount || 0);
-    if (e.expense_type === "cogs") {
-      packagingInventoryPurchases += amt;
-    } else {
-      operatingExpenses += amt;
-    }
+    // Bulk packaging purchases ("cogs" expenses) are an inventory asset, not a
+    // period expense: they reach the P&L through packagingBomCogs as orders ship.
+    if (e.expense_type === "cogs") return;
+    operatingExpenses += Number(e.amount || 0);
   });
 
   // Calculate gateway processing fees

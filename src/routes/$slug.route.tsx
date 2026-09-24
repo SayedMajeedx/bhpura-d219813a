@@ -28,9 +28,7 @@ import {
 import { buildOrganizationSchema, buildWebSiteSchema } from "@/lib/seo/structured-data";
 import {
   renderTrustBadgeIcon,
-  getDynamicTrustBadges,
   resolveStorefrontTrustBadges,
-  DEFAULT_TRUST_BADGES,
   type TrustBadgesConfig,
 } from "@/lib/trust-badges";
 import { useQueryClient } from "@tanstack/react-query";

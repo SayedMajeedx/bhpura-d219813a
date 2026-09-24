@@ -43,7 +43,7 @@ interface RecentlyViewedProps {
 }
 
 export function RecentlyViewed({ excludeProductId, className = "" }: RecentlyViewedProps) {
-  const { brand, lang, t, settings } = useStorefront();
+  const { brand, t, settings } = useStorefront();
   const [productIds, setProductIds] = useState<string[]>([]);
 
   const isEnabled = settings?.recently_viewed_enabled !== false;
@@ -54,7 +54,7 @@ export function RecentlyViewed({ excludeProductId, className = "" }: RecentlyVie
     setProductIds(ids);
   }, [brand.slug, excludeProductId, isEnabled]);
 
-  const { data: products = [], isLoading } = useQuery({
+  const { data: products = [] } = useQuery({
     queryKey: ["storefront", brand.slug, "recently-viewed", productIds.join(",")],
     enabled: isEnabled && productIds.length > 0,
     queryFn: async () => {

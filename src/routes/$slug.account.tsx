@@ -1223,7 +1223,7 @@ function AddressesSection({
   customer: Customer | null | undefined;
   loadingCustomer: boolean;
 }) {
-  const { t } = useStorefront();
+  const { t, brand } = useStorefront();
   const qc = useQueryClient();
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState(emptyAddress());
@@ -1548,7 +1548,7 @@ function AddressesSection({
       <div className="text-xs text-muted-foreground pt-4 border-t">
         <Link
           to="/$slug"
-          params={{ slug: useStorefront().brand.slug }}
+          params={{ slug: brand.slug }}
           className="hover:underline transition-all font-semibold flex items-center gap-1"
           style={{ color: "var(--sf-link)" }}
         >

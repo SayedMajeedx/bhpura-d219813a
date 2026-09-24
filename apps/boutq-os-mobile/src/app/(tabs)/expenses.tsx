@@ -24,7 +24,7 @@ import {
 import { AppIcon, Icons } from "@/components/icons";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
-import { colors, radius, shadow } from "@/theme";
+import { colors, radius } from "@/theme";
 import { formatDate, formatMoney } from "@/lib/format";
 
 type ExpenseItem = {

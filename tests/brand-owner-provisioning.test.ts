@@ -2,14 +2,23 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 
 const brandsPage = readFileSync("src/routes/_authenticated/admin.brands.tsx", "utf8");
+// Brands are created through the setup wizard, which calls the shared client.
+const brandWizard = readFileSync(
+  "src/components/super-admin/brand-wizard/BrandWizardDialog.tsx",
+  "utf8",
+);
+const provisioningClient = readFileSync("src/lib/brand-provisioning.ts", "utf8");
 const userManagement = readFileSync("supabase/functions/user-management/index.ts", "utf8");
 
 describe("brand owner provisioning contract", () => {
   it("requires owner identity in the super-admin brand form", () => {
-    expect(brandsPage).toContain("owner_name: owner.name.trim()");
-    expect(brandsPage).toContain("owner_email: owner.email.trim()");
-    expect(brandsPage).toContain('action", "provision-brand"');
-    expect(brandsPage).not.toContain('p_owner_name: "Super Admin Deployment"');
+    expect(brandsPage).toContain("<BrandWizardDialog");
+    expect(brandWizard).toContain("owner_name: data.owner_name.trim()");
+    expect(brandWizard).toContain("owner_email: data.owner_email.trim()");
+    expect(provisioningClient).toContain('action", "provision-brand"');
+    for (const source of [brandsPage, brandWizard, provisioningClient]) {
+      expect(source).not.toContain('p_owner_name: "Super Admin Deployment"');
+    }
   });
 
   it("creates or links the owner as the first active brand admin", () => {
@@ -22,7 +31,9 @@ describe("brand owner provisioning contract", () => {
   it("uses the configured trial duration for manually provisioned brands", () => {
     expect(userManagement).toContain('.eq("code", "trial")');
     expect(userManagement).toContain("trialDays * 24 * 60 * 60 * 1000");
-    expect(brandsPage).not.toContain("Date.now() + 3 * 24 * 60 * 60 * 1000");
+    for (const source of [brandsPage, brandWizard, provisioningClient]) {
+      expect(source).not.toContain("Date.now() + 3 * 24 * 60 * 60 * 1000");
+    }
   });
 
   it("protects the last active brand administrator", () => {

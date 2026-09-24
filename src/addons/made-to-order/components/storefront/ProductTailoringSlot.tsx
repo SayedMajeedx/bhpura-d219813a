@@ -12,10 +12,9 @@ export interface ProductTailoringSlotProps {
 export function ProductTailoringSlot({
   showSizeModeToggle,
   sizeMode,
-  setSizeMode,
   passportConfigured,
 }: ProductTailoringSlotProps) {
-  const { lang, t } = useStorefront();
+  const { t } = useStorefront();
 
   if (!showSizeModeToggle || sizeMode !== "custom") return null;
 

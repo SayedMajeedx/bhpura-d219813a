@@ -25,7 +25,6 @@ export function PaymentsGroup() {
   const isAr = lang === "ar";
   const { form, setBs, brandId } = useBrandSettingsFormContext();
   const bs = form.bs;
-  const brand = form.brand;
 
   const [showSecretKey, setShowSecretKey] = useState(false);
   const [uploadingQr, setUploadingQr] = useState(false);

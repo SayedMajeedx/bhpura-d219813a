@@ -3,7 +3,6 @@ import { Heart } from "lucide-react";
 import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { shouldShowPrices } from "@/lib/storefront-mode";
 import { ResponsiveImage } from "@/components/responsive-media";
-import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { type ProductRow } from "@/routes/$slug.index";
 import { Button } from "@/components/ui/button";

@@ -1,9 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import {
-  publicSupabase as supabase,
-  supabase as authenticatedSupabase,
-} from "@/integrations/supabase/client";
+import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import {
   useStorefront,
   formatPrice,
@@ -271,7 +268,7 @@ function variantSortKey(v: Variant): [number, string] {
   return [num, label.toLowerCase()];
 }
 
-import { COLOR_MAP, resolveColorHex } from "@/lib/color-names";
+import { resolveColorHex } from "@/lib/color-names";
 
 const parsePriceDelta = (valStr: string): number => {
   if (!valStr) return 0;
@@ -292,7 +289,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     | undefined;
   const params = Route.useParams() as any;
   const id = splatId || params?.id || params?._splat || params?.["_"] || params?.["$"] || "";
-  const { brand, settings, currency, lang, t, addToCart, isWishlisted, toggleWishlist, session } =
+  const { brand, settings, currency, lang, t, addToCart, isWishlisted, toggleWishlist } =
     useStorefront();
   const { addons } = useAddons();
   const { vocabulary } = useVocabulary();
@@ -408,7 +405,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       },
       product.id,
     );
-  }, [product, currency, lang]);
+  }, [product, currency, lang, brand?.slug]);
 
   const { data: recommendationCatalog = [] } = useQuery({
     queryKey: ["storefront", brand.slug, "product-recommendations"],
@@ -2264,23 +2261,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           ) : selectedVariantOutOfStock ? (
             settings?.back_in_stock_enabled !== false ? (
               <div className="space-y-3">
-                <NotifyMeForm
-                  brandId={brand.id}
-                  productId={product.id}
-                  variantId={variant?.id}
-                  productName={displayName}
-                  variantLabel={
-                    variant
-                      ? [
-                          formatSizeWithUnit(variant.size, variant.size_unit, lang),
-                          variant.color,
-                          variant.fabric,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")
-                      : null
-                  }
-                />
+                <NotifyMeForm brandId={brand.id} productId={product.id} variantId={variant?.id} />
               </div>
             ) : (
               <div className="rounded-xl border border-border bg-muted/40 p-4 text-center text-sm font-medium text-muted-foreground">

@@ -11,19 +11,10 @@ export interface NotifyMeFormProps {
   brandId: string;
   productId: string;
   variantId?: string | null;
-  productName: string;
-  variantLabel?: string | null;
   className?: string;
 }
 
-export function NotifyMeForm({
-  brandId,
-  productId,
-  variantId,
-  productName,
-  variantLabel,
-  className,
-}: NotifyMeFormProps) {
+export function NotifyMeForm({ brandId, productId, variantId, className }: NotifyMeFormProps) {
   const { lang } = useStorefront();
   const isAr = lang === "ar";
 

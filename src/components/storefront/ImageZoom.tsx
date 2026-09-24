@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { ZoomIn, X } from "lucide-react";
+import { ZoomIn } from "lucide-react";
 
 interface ImageZoomProps {
   src: string;

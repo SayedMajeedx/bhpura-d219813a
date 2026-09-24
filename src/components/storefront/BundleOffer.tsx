@@ -1,9 +1,7 @@
 import React, { useState } from "react";
-import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { useStorefront, formatPrice } from "@/lib/storefront-context";
 import { buildCartItem } from "@/lib/cart/add-to-cart";
-import { ResponsiveImage } from "@/components/responsive-media";
 import { toast } from "sonner";
 import { Plus, Check, ShoppingBag, Sparkles } from "lucide-react";
 
@@ -14,7 +12,7 @@ interface BundleOfferProps {
 }
 
 export function BundleOffer({ mainProduct, mainVariant, bundleItems = [] }: BundleOfferProps) {
-  const { brand, addToCart, currency, lang, t } = useStorefront();
+  const { addToCart, currency, lang, t } = useStorefront();
   const isAr = lang === "ar";
 
   // Select first complementary item by default

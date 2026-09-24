@@ -35,7 +35,6 @@ interface OrderQuickViewModalProps {
   onPrintThermal: (order: any) => void;
   onWhatsAppCustomer: (order: any) => void;
   onWhatsAppCourier?: (order: any, courier: any) => void;
-  onAssignCourier?: (orderId: string, courierId: string) => void;
 }
 
 export function OrderQuickViewModal({
@@ -48,7 +47,6 @@ export function OrderQuickViewModal({
   onPrintThermal,
   onWhatsAppCustomer,
   onWhatsAppCourier,
-  onAssignCourier,
 }: OrderQuickViewModalProps) {
   const { isAdmin } = useProfile();
   const brandId = order?.brand_id;

@@ -1620,9 +1620,7 @@ function OrdersList() {
         lang={lang}
         filteredCount={filteredOrders.length}
         isCourier={isCourier}
-        brandId={brandId}
         onCreateNew={create}
-        onRefresh={() => qc.invalidateQueries({ queryKey: ["orders", brandId] })}
         renderImporter={
           <>
             <div

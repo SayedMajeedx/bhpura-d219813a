@@ -27,16 +27,11 @@ interface SettingsHeaderProps {
   onTogglePreview?: () => void;
 }
 
-export function SettingsHeader({
-  activeTab,
-  onTabChange,
-  isPreviewOpen,
-  onTogglePreview,
-}: SettingsHeaderProps) {
+export function SettingsHeader({ onTabChange }: SettingsHeaderProps) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const { form, isDirty, dirtyCount, isSaving, save, reset } = useBrandSettingsFormContext();
-  const { level, toggleLevel, isAdvanced } = useSettingsLevel();
+  const { toggleLevel, isAdvanced } = useSettingsLevel();
   const brand = form.brand;
 
   const [searchQuery, setSearchQuery] = useState("");

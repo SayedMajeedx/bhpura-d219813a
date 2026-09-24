@@ -1,20 +1,10 @@
 import React, { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { useStorefront, pickName } from "@/lib/storefront-context";
+import { useStorefront } from "@/lib/storefront-context";
 import { NewsletterForm } from "@/components/storefront/NewsletterForm";
 import { TrustBar } from "@/components/storefront/TrustBar";
-import {
-  Instagram,
-  Phone,
-  Mail,
-  MapPin,
-  Clock,
-  MessageCircle,
-  ChevronDown,
-  CreditCard,
-  ShieldCheck,
-} from "lucide-react";
+import { Instagram, ChevronDown } from "lucide-react";
 
 export function FooterV2() {
   const { brand, settings, lang, t } = useStorefront();

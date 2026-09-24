@@ -12,9 +12,7 @@ interface OrdersCommandHeaderProps {
   lang: "en" | "ar";
   filteredCount: number;
   isCourier: boolean;
-  brandId: string;
   onCreateNew: () => void;
-  onRefresh: () => void;
   renderImporter?: React.ReactNode;
 }
 
@@ -22,9 +20,7 @@ export const OrdersCommandHeader: React.FC<OrdersCommandHeaderProps> = ({
   lang,
   filteredCount,
   isCourier,
-  brandId,
   onCreateNew,
-  onRefresh,
   renderImporter,
 }) => {
   const isAr = lang === "ar";

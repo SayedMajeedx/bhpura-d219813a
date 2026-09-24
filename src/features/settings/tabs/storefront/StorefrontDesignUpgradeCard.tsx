@@ -2,15 +2,7 @@ import * as React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Sparkles,
-  CheckCircle2,
-  ArrowRight,
-  ArrowLeft,
-  Smartphone,
-  ShieldCheck,
-  Zap,
-} from "lucide-react";
+import { Sparkles, ArrowRight, ArrowLeft, Smartphone, ShieldCheck, Zap } from "lucide-react";
 import { useBrandSettingsFormContext } from "../../use-brand-settings-form";
 import { useI18n } from "@/lib/i18n";
 

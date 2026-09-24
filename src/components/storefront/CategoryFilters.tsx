@@ -2,12 +2,12 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { resolveColorHex } from "@/lib/color-names";
-import { useStorefront, formatPrice } from "@/lib/storefront-context";
+import { useStorefront } from "@/lib/storefront-context";
 import { resolveVariantAxis } from "@/lib/addons/addon-registry";
 import { isColorSwatchAxis, useStoreAxisDefaults } from "@/lib/variant-axes";
 import { formatSizeWithUnit } from "@/lib/format";
 import { translateOptionValue } from "@/lib/variant-i18n";
-import { X, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 
 export interface FilterState {
   size: string | null;
@@ -42,7 +42,7 @@ export function CategoryFilters({
   totalFilteredCount,
   className = "",
 }: CategoryFiltersProps) {
-  const { lang, t, currency } = useStorefront();
+  const { lang, t } = useStorefront();
   const isAr = lang === "ar";
   const axisLang = isAr ? "ar" : "en";
 

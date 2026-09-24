@@ -5,7 +5,6 @@ import {
   ensureContrast,
   extractPaletteFromImageData,
   getContrastRatio,
-  getRelativeLuminance,
   hexToRgb,
   normalizeHex,
   quantizePixels,

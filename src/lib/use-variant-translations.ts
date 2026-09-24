@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   getUntranslatedTerms,
@@ -18,6 +18,10 @@ export function useVariantTranslations(
   targetLang: "ar" | "en",
 ) {
   const translateFn = useServerFn(translateOptionTerms);
+  // The server-fn wrapper is not guaranteed stable between renders; keep the
+  // effect keyed on the missing terms only, calling the newest wrapper.
+  const translateRef = useRef(translateFn);
+  translateRef.current = translateFn;
   const [version, setVersion] = useState(0);
 
   // Compute clean deduplicated list of non-empty strings
@@ -26,20 +30,24 @@ export function useVariantTranslations(
   );
 
   const missing = getUntranslatedTerms(stringTerms, targetLang);
+  // Stable string key for the effect ("\u0001" never appears in option values).
+  const missingKey = missing.join("\u0001");
 
   useEffect(() => {
-    if (missing.length === 0) return;
+    if (!missingKey) return;
+    const pending = missingKey.split("\u0001");
 
     let isMounted = true;
     const sourceLang = targetLang === "en" ? "ar" : "en";
 
-    translateFn({
-      data: {
-        terms: missing,
-        from: sourceLang,
-        to: targetLang,
-      },
-    })
+    translateRef
+      .current({
+        data: {
+          terms: pending,
+          from: sourceLang,
+          to: targetLang,
+        },
+      })
       .then((res) => {
         if (!isMounted || !res?.translations) return;
         registerDynamicTranslations(res.translations, targetLang);
@@ -52,7 +60,7 @@ export function useVariantTranslations(
     return () => {
       isMounted = false;
     };
-  }, [missing.join(","), targetLang]);
+  }, [missingKey, targetLang]);
 
   /**
    * Helper that returns the translated string reactively

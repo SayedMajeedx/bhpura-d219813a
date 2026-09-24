@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { BrandWizardData } from "./types";
-import { KeyRound, Smartphone, ShieldCheck, Calendar, Sparkles } from "lucide-react";
+import { KeyRound, ShieldCheck, Calendar, Sparkles } from "lucide-react";
 
 interface StepAdminPlanProps {
   data: BrandWizardData;

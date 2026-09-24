@@ -83,7 +83,7 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
   const finish = useCallback(
     (value: string) => {
       if (handledRef.current) return;
-      const code = value.replace(/[\u0000-\u001f\u007f]/g, "").trim();
+      const code = value.replace(/\p{Cc}/gu, "").trim();
       if (!code) return;
       handledRef.current = true;
       stop();

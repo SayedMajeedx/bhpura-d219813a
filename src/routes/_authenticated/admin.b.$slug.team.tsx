@@ -50,7 +50,6 @@ import {
   CheckCheck,
   Eye,
   EyeOff,
-  Share2,
   ShieldCheck,
   MessageCircle,
 } from "lucide-react";
