@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { isOrderDirty } from "../src/features/orders/lib/order-editor";
 
 const orderDetail = readFileSync("src/routes/_authenticated/admin.b.$slug.orders.$id.tsx", "utf8");
 const invoiceFn = readFileSync("src/lib/public-invoice.functions.ts", "utf8");
@@ -10,10 +11,12 @@ const orderItems = readFileSync("src/components/orders/OrderItemsSection.tsx", "
 
 describe("Custom Tailoring & Made-To-Order Specifications", () => {
   it("includes tailoring and variant specifications for size, color, fabric, and custom notes", () => {
+    // The order editor's item type moved to src/features/orders/types.ts (Phase 5).
+    const orderTypes = readFileSync("src/features/orders/types.ts", "utf8");
     expect(orderDetail).toContain("selected_variant");
-    expect(orderDetail).toContain("fabric?: string | null");
-    expect(orderDetail).toContain("color?: string | null");
-    expect(orderDetail).toContain("size?: string | null");
+    expect(orderTypes).toContain("fabric?: string | null");
+    expect(orderTypes).toContain("color?: string | null");
+    expect(orderTypes).toContain("size?: string | null");
   });
 
   it("persists selected_variant and custom_field_values in order_items creation and updates", () => {
@@ -48,9 +51,35 @@ describe("Custom Tailoring & Made-To-Order Specifications", () => {
   });
 
   it("accurately tracks form dirtiness for description, selected_variant, and custom fields", () => {
-    expect(orderDetail).toContain("const simplifyItem =");
-    expect(orderDetail).toContain("const normalizeOrderMin =");
-    expect(orderDetail).toContain('description: (it.description ?? "").trim()');
+    const item = {
+      description: "Abaya",
+      quantity: 1,
+      unit_price: 30,
+      customizations: [],
+      customization_total: 0,
+      line_total: 30,
+      location: "custom" as const,
+      selected_variant: { size: "52", color: null, fabric: null },
+      custom_field_values: [{ key: "sleeve", label_ar: null, label_en: "Sleeve", value: "60" }],
+    };
+    const snapshot = { order: { id: "o1", notes: "" }, items: [item] };
+    const dirty = (items: (typeof item)[]) => isOrderDirty(snapshot, snapshot.order, items);
+
+    expect(dirty([{ ...item }])).toBe(false);
+    expect(dirty([{ ...item, description: " Abaya " }])).toBe(false);
+    expect(dirty([{ ...item, description: "Kaftan" }])).toBe(true);
+    expect(dirty([{ ...item, selected_variant: { size: "54", color: null, fabric: null } }])).toBe(
+      true,
+    );
+    expect(
+      dirty([
+        {
+          ...item,
+          custom_field_values: [{ key: "sleeve", label_ar: null, label_en: "Sleeve", value: "62" }],
+        },
+      ]),
+    ).toBe(true);
+    expect(isOrderDirty(snapshot, { id: "o1", notes: "Rush" }, [item])).toBe(true);
     expect(orderDetail).toContain("brand_id: brandId");
   });
 });

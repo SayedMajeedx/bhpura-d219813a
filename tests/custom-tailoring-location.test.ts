@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
+import { orderItemFromRow } from "../src/features/orders/lib/order-editor";
 
 describe("custom tailoring order location", () => {
   const migration = readFileSync(
@@ -17,9 +18,12 @@ describe("custom tailoring order location", () => {
   });
 
   it("preserves custom location when an order is opened and saved", () => {
+    // The order editor loads rows through orderItemFromRow both on open and after save.
+    expect(orderItemFromRow({ location: "custom" }).location).toBe("custom");
+    expect(orderItemFromRow({ location: "incubator" }).location).toBe("incubator");
+    expect(orderItemFromRow({ location: null }).location).toBe("main");
     const route = readFileSync("src/routes/_authenticated/admin.b.$slug.orders.$id.tsx", "utf8");
-    expect(route).toContain('location: "main" | "incubator" | "custom"');
-    expect(route.match(/i\.location === "custom"/g)?.length).toBeGreaterThanOrEqual(2);
+    expect(route.match(/map\(orderItemFromRow\)/g)?.length).toBeGreaterThanOrEqual(2);
   });
 
   it("does not expose the database constraint name to shoppers", () => {

@@ -83,7 +83,7 @@ import { formatDate, formatMoney, formatOrderStatus } from "@/lib/format";
 import { queryKeys } from "@/lib/query-keys";
 import { useT, useI18n } from "@/lib/i18n";
 import { getOrderCustomerName, getOrderCustomerPhone } from "@/lib/order-customer-snapshot";
-import { regionLabel, formatAddressLine, type StructuredAddress } from "@/lib/bahrain-regions";
+import { formatAddressLine, type StructuredAddress } from "@/lib/bahrain-regions";
 import { printThermalReceipt } from "@/lib/thermal-print";
 import { cn, getFriendlyErrorMessage } from "@/lib/utils";
 import {
@@ -110,54 +110,24 @@ import { OrderStickyBottomBar } from "@/components/orders/OrderStickyBottomBar";
 import { OrderSalesDocumentsCard } from "@/components/orders/OrderSalesDocumentsCard";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
-
-function formatDeliveryAddress(
-  c:
-    | {
-        region?: string | null;
-        road?: string | null;
-        house?: string | null;
-        flat?: string | null;
-        address?: string | null;
-        city?: string | null;
-      }
-    | null
-    | undefined,
-  lang: "en" | "ar",
-): string[] {
-  if (!c) return [];
-  const region = regionLabel(c.region, lang) || c.city || "";
-  const road = c.road?.trim() || "";
-  const house = c.house?.trim() || "";
-  const flat = c.flat?.trim() || "";
-  const parts =
-    lang === "ar"
-      ? [region, road, house, flat] // المنطقة، طريق، منزل، شقة
-      : [flat, house, road, region]; // Flat, House, Road, Region
-  const filtered = parts.filter((p) => p && p.length > 0);
-  if (filtered.length === 0 && c.address) return c.address.split(/\r?\n/).filter(Boolean);
-  const sep = lang === "ar" ? "، " : ", ";
-  return filtered.length ? [filtered.join(sep)] : [];
-}
-
-type SavedAddress = {
-  id: string;
-  customer_id: string;
-  label: string | null;
-  region: string | null;
-  block: string | null;
-  road: string | null;
-  house: string | null;
-  flat: string | null;
-  floor: string | null;
-  landmark: string | null;
-  formatted_address: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  place_id: string | null;
-  delivery_notes: string | null;
-  is_default: boolean;
-};
+import type { Order, OrderItem as Item, SavedAddress } from "@/features/orders/types";
+import {
+  blankOrderItem,
+  filterCustomers,
+  filterVariantsForSearch,
+  formatDeliveryAddress,
+  isOrderDirty,
+  normalizeOrderMin,
+  isUntouchedDraft,
+  newDraftOrder,
+  orderItemFromRow,
+  orderTotals,
+  promoFailureMessage,
+  promoSignature,
+  recalcOrderItem,
+  simplifyItem,
+} from "@/features/orders/lib/order-editor";
+import { BhdFeeInput } from "@/features/orders/components/BhdFeeInput";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/orders/$id")({
   component: OrderDetail,
@@ -180,75 +150,6 @@ function OrderErrorBoundary({ error }: { error?: Error }) {
       </Card>
     </div>
   );
-}
-
-type Order = any;
-type Item = {
-  id?: string;
-  product_id?: string | null;
-  variant_id?: string | null;
-  description: string;
-  quantity: number;
-  unit_price: number;
-  unit_cost?: number | null;
-  original_price?: number | null;
-  customizations: { name: string; price_delta: number }[];
-  customization_total: number;
-  line_total: number;
-  location: "main" | "incubator" | "custom";
-  selected_variant?: { size?: string | null; color?: string | null; fabric?: string | null } | null;
-  custom_field_values?: Array<{
-    key: string;
-    label_ar: string | null;
-    label_en: string | null;
-    value: string;
-  }>;
-};
-
-function BhdFeeInput({
-  value,
-  disabled,
-  onChange,
-}: {
-  value: number;
-  disabled?: boolean;
-  onChange: (value: number) => void;
-}) {
-  const [display, setDisplay] = useState(Number(value || 0).toFixed(3));
-  useEffect(() => setDisplay(Number(value || 0).toFixed(3)), [value]);
-  const commit = () => {
-    const parsed = Math.max(0, Number(display) || 0);
-    setDisplay(parsed.toFixed(3));
-    onChange(parsed);
-  };
-  return (
-    <Input
-      inputMode="decimal"
-      value={display}
-      disabled={disabled}
-      onChange={(event) => setDisplay(event.target.value.replace(/[^0-9.]/g, ""))}
-      onBlur={commit}
-      onKeyDown={(event) => {
-        if (event.key === "Enter") {
-          event.preventDefault();
-          commit();
-        }
-      }}
-    />
-  );
-}
-
-function normalizeCustomFieldValues(value: unknown): Item["custom_field_values"] {
-  if (Array.isArray(value)) return value as Item["custom_field_values"];
-  if (value && typeof value === "object") {
-    return Object.entries(value as Record<string, unknown>).map(([key, fieldValue]) => ({
-      key,
-      label_ar: null,
-      label_en: key,
-      value: String(fieldValue ?? ""),
-    }));
-  }
-  return [];
 }
 
 // ItemTailoringCustomizer extracted to @/addons/made-to-order via <AddonSlot placement="admin.order.itemPanel" />
@@ -536,24 +437,10 @@ function OrderDetail() {
   const [customerSearchQuery, setCustomerSearchQuery] = useState("");
   const [outOfStockConfirmVariant, setOutOfStockConfirmVariant] = useState<any | null>(null);
 
-  const filteredCustomers = useMemo(() => {
-    const list = customersQ.data ?? [];
-    const q = customerSearchQuery.trim().toLowerCase();
-    if (!q) return list.slice(0, 50);
-    const qDigits = q.replace(/\D/g, "");
-    return list
-      .filter((c: any) => {
-        const name = (c.name || "").toLowerCase();
-        const email = (c.email || "").toLowerCase();
-        const phone = c.phone || "";
-        const phoneDigits = phone.replace(/\D/g, "");
-        const matchesName = name.includes(q);
-        const matchesEmail = email.includes(q);
-        const matchesPhone = qDigits.length > 0 && phoneDigits.includes(qDigits);
-        return matchesName || matchesEmail || matchesPhone;
-      })
-      .slice(0, 50);
-  }, [customersQ.data, customerSearchQuery]);
+  const filteredCustomers = useMemo(
+    () => filterCustomers(customersQ.data ?? [], customerSearchQuery),
+    [customersQ.data, customerSearchQuery],
+  );
   const [editingUnlocked, setEditingUnlocked] = useState(false);
   const [invoicePreviewOpen, setInvoicePreviewOpen] = useState(false);
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
@@ -605,104 +492,15 @@ function OrderDetail() {
 
   useEffect(() => {
     if (id !== "new" || order || !settingsQ.data) return;
-    const settings = settingsQ.data as any;
-    const fulfillmentMethod = settings.delivery_enabled
-      ? "delivery"
-      : settings.pickup_enabled
-        ? "pickup"
-        : settings.digital_delivery_enabled
-          ? "digital"
-          : "delivery";
-    const shipping = fulfillmentMethod === "delivery" ? Number(settings.delivery_fee ?? 0) : 0;
-    const draft = {
-      id: "new",
-      brand_id: brandId,
-      invoice_number: 0,
-      currency: settings.currency ?? "BHD",
-      tax_rate: settings.default_tax_rate ?? 15,
-      fulfillment_method: fulfillmentMethod,
-      shipping,
-      subtotal: 0,
-      total: shipping,
-      discount: 0,
-      advance_paid: 0,
-      status: "draft",
-      payment_status: "unpaid",
-      fulfillment_status: "ON_HOLD",
-      payment_method: null,
-      customer_id: null,
-      shipping_address_id: null,
-      branch_id: null,
-      notes: "",
-      delivery_notes: "",
-      order_date: new Date().toISOString().slice(0, 10),
-    };
+    const draft = newDraftOrder(settingsQ.data, brandId, new Date().toISOString().slice(0, 10));
     setOrder(draft);
     initialSnapshotRef.current = { order: draft, items: [] };
   }, [brandId, id, order, settingsQ.data]);
 
-  const simplifyItem = (it: Item) => ({
-    id: it.id ?? null,
-    product_id: it.product_id ?? null,
-    variant_id: it.variant_id ?? null,
-    description: (it.description ?? "").trim(),
-    quantity: Number(it.quantity || 0),
-    unit_price: Number(it.unit_price || 0),
-    unit_cost: it.unit_cost == null ? null : Number(it.unit_cost),
-    original_price: it.original_price == null ? null : Number(it.original_price),
-    line_total: Number(it.line_total || 0),
-    location: it.location ?? "main",
-    customizations: it.customizations ?? [],
-    customization_total: Number(it.customization_total || 0),
-    selected_variant: it.selected_variant
-      ? {
-          size: it.selected_variant.size ?? null,
-          color: it.selected_variant.color ?? null,
-          fabric: it.selected_variant.fabric ?? null,
-        }
-      : null,
-    custom_field_values: (it.custom_field_values ?? []).map((cf) => ({
-      key: cf.key,
-      value: cf.value,
-    })),
-  });
-
-  const normalizeOrderMin = (o: any) => ({
-    id: o?.id ?? null,
-    notes: o?.notes ?? "",
-    delivery_notes: o?.delivery_notes ?? "",
-    customer_id: o?.customer_id ?? null,
-    shipping_address_id: o?.shipping_address_id ?? null,
-    branch_id: o?.branch_id ?? null,
-    fulfillment_method: o?.fulfillment_method ?? "delivery",
-    digital_delivery_channel: o?.digital_delivery_channel ?? null,
-    digital_delivery_contact: o?.digital_delivery_contact ?? null,
-    payment_status: o?.payment_status ?? "unpaid",
-    fulfillment_status: o?.fulfillment_status ?? "ON_HOLD",
-    status: o?.status ?? "draft",
-    payment_method: o?.payment_method ?? null,
-    discount: Number(o?.discount ?? 0),
-    shipping: Number(o?.shipping ?? 0),
-    tax_rate: Number(o?.tax_rate ?? 0),
-    advance_paid: Number(o?.advance_paid ?? 0),
-    order_date: o?.order_date ?? "",
-  });
-
-  const isDirty = useMemo(() => {
-    if (!initialSnapshotRef.current || !order) return false;
-    const snap = initialSnapshotRef.current;
-
-    const currentOrderMin = normalizeOrderMin(order);
-    const snapOrderMin = normalizeOrderMin(snap.order);
-
-    const orderChanged = JSON.stringify(currentOrderMin) !== JSON.stringify(snapOrderMin);
-
-    const itemsChanged =
-      JSON.stringify(items.map(simplifyItem)) !==
-      JSON.stringify((snap.items ?? []).map(simplifyItem));
-
-    return orderChanged || itemsChanged;
-  }, [items, order]);
+  const isDirty = useMemo(
+    () => isOrderDirty(initialSnapshotRef.current, order, items),
+    [items, order],
+  );
 
   const [appliedPromo, setAppliedPromo] = useState<{
     code: string;
@@ -820,27 +618,10 @@ function OrderDetail() {
     }
   };
 
-  const filteredVariantsForSearch = useMemo(() => {
-    if (!productSearchQuery.trim()) return (variantsQ.data ?? []).slice(0, 25);
-    const tokens = productSearchQuery.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    const products = productsQ.data ?? [];
-    return (variantsQ.data ?? [])
-      .filter((v: any) => {
-        const p = products.find((x: any) => x.id === v.product_id);
-        const title = String((p as any)?.name ?? "").toLowerCase();
-        const titleAr = String((p as any)?.name_ar ?? "").toLowerCase();
-        const titleEn = String((p as any)?.name_en ?? "").toLowerCase();
-        const sku = String(v.sku ?? (p as any)?.sku ?? "").toLowerCase();
-        const barcode = String(v.barcode ?? "").toLowerCase();
-        const size = String(v.size ?? "").toLowerCase();
-        const color = String(v.color ?? "").toLowerCase();
-        const fabric = String(v.fabric ?? "").toLowerCase();
-
-        const fullSearchableBlob = `${title} ${titleAr} ${titleEn} ${sku} ${barcode} ${size} ${color} ${fabric}`;
-        return tokens.every((token) => fullSearchableBlob.includes(token));
-      })
-      .slice(0, 35);
-  }, [productSearchQuery, variantsQ.data, productsQ.data]);
+  const filteredVariantsForSearch = useMemo(
+    () => filterVariantsForSearch(variantsQ.data ?? [], productsQ.data ?? [], productSearchQuery),
+    [productSearchQuery, variantsQ.data, productsQ.data],
+  );
 
   const handleSelectVariantFromModal = (variant: any, force = false) => {
     const mainStock = Number(variant.stock_main ?? 0);
@@ -904,12 +685,7 @@ function OrderDetail() {
   };
 
   const serverOrder = orderQ.data as any;
-  const isBlankDraft =
-    id === "new" ||
-    (serverOrder?.status === "draft" &&
-      !serverOrder?.customer_id &&
-      !serverOrder?.payment_method &&
-      (serverOrder?.order_items?.length ?? 0) === 0);
+  const isBlankDraft = id === "new" || isUntouchedDraft(serverOrder);
 
   useEffect(() => {
     if (orderQ.data) {
@@ -922,26 +698,7 @@ function OrderDetail() {
         return;
 
       setOrder(orderQ.data);
-      const loadedItems = (orderQ.data.order_items ?? []).map((i: any) => ({
-        id: i.id,
-        product_id: i.product_id,
-        variant_id: i.variant_id,
-        description: i.description,
-        quantity: i.quantity,
-        unit_price: Number(i.unit_price),
-        unit_cost: i.unit_cost == null ? null : Number(i.unit_cost),
-        original_price: i.original_price == null ? null : Number(i.original_price),
-        customizations: i.customizations ?? [],
-        customization_total: Number(i.customization_total),
-        line_total: Number(i.line_total),
-        location: (i.location === "custom"
-          ? "custom"
-          : i.location === "incubator"
-            ? "incubator"
-            : "main") as Item["location"],
-        selected_variant: i.selected_variant ?? null,
-        custom_field_values: normalizeCustomFieldValues(i.custom_field_values),
-      }));
+      const loadedItems = (orderQ.data.order_items ?? []).map(orderItemFromRow);
 
       // Check localStorage for uncommitted draft backup
       const cacheKey = `boutq_draft_${brandId}_${id}`;
@@ -971,14 +728,7 @@ function OrderDetail() {
         items: loadedItems,
       };
 
-      promoContextRef.current = JSON.stringify({
-        customer: (orderQ.data as any).customer_id ?? null,
-        items: loadedItems.map((item: Item) => [
-          item.variant_id ?? null,
-          item.quantity,
-          Number(item.line_total).toFixed(3),
-        ]),
-      });
+      promoContextRef.current = promoSignature((orderQ.data as any).customer_id, loadedItems);
       setEditingUnlocked(false);
       const savedPromo = (orderQ.data as any).promo_code;
       setPromoInput(savedPromo ?? "");
@@ -1026,53 +776,29 @@ function OrderDetail() {
     )
       return;
     const source = orderQ.data as any;
-    const untouchedDraft =
-      source?.status === "draft" &&
-      !source?.customer_id &&
-      !source?.payment_method &&
-      (source?.order_items?.length ?? 0) === 0;
+    const untouchedDraft = isUntouchedDraft(source);
     const configuredFee = Number((settingsQ.data as any).delivery_fee ?? 0);
     if (untouchedDraft && configuredFee > 0)
       setOrder((current: any) => (current ? { ...current, shipping: configuredFee } : current));
   }, [order, orderQ.data, settingsQ.data]);
 
-  const totals = useMemo(() => {
-    const subtotal = items.reduce((s, i) => s + i.line_total, 0);
-    const discount = Number(order?.discount ?? 0);
-    const shipping = Number(order?.shipping ?? 0);
-    const taxable = Math.max(0, subtotal - discount);
-    const isInclusive = Boolean((settingsQ.data as any)?.vat_inclusive);
-    const taxRate = Number(order?.tax_rate ?? 0);
-    let taxAmount = 0;
-    let total = 0;
-    if (isInclusive) {
-      taxAmount = taxable - taxable / (1 + taxRate / 100);
-      total = taxable + shipping;
-    } else {
-      taxAmount = (taxable * taxRate) / 100;
-      total = taxable + taxAmount + shipping;
-    }
-    const advancePaid = Math.max(0, Number(order?.advance_paid ?? 0));
-    const remaining = Math.max(0, total - advancePaid);
-    return { subtotal, discount, shipping, taxAmount, total, advancePaid, remaining };
-  }, [
-    items,
-    order?.discount,
-    order?.shipping,
-    order?.tax_rate,
-    order?.advance_paid,
-    settingsQ.data,
-  ]);
+  const totals = useMemo(
+    () =>
+      orderTotals(
+        items,
+        {
+          discount: order?.discount,
+          shipping: order?.shipping,
+          tax_rate: order?.tax_rate,
+          advance_paid: order?.advance_paid,
+        },
+        Boolean((settingsQ.data as any)?.vat_inclusive),
+      ),
+    [items, order?.discount, order?.shipping, order?.tax_rate, order?.advance_paid, settingsQ.data],
+  );
 
   useEffect(() => {
-    const signature = JSON.stringify({
-      customer: order?.customer_id ?? null,
-      items: items.map((item) => [
-        item.variant_id ?? null,
-        item.quantity,
-        Number(item.line_total).toFixed(3),
-      ]),
-    });
+    const signature = promoSignature(order?.customer_id, items);
     if (promoContextRef.current === null) {
       promoContextRef.current = signature;
       return;
@@ -1093,47 +819,6 @@ function OrderDetail() {
       }
     }
   }, [items, order?.customer_id, appliedPromo, lang]);
-
-  const promoFailureMessage = (result: any) => {
-    switch (result?.reason) {
-      case "FIRST_ORDER_ONLY":
-        return lang === "ar"
-          ? "رمز الخصم هذا مخصص للعملاء الجدد فقط."
-          : "This promo code is restricted to first-time customers only.";
-      case "PREVIOUS_ORDER_REQUIRED":
-        return lang === "ar"
-          ? "رمز الخصم هذا مخصص للعملاء الذين لديهم طلب سابق فقط."
-          : "This promo code is only available to customers with a previous order.";
-      case "MINIMUM_NOT_MET":
-        return lang === "ar"
-          ? `يتطلب رمز الخصم هذا حداً أدنى للشراء بقيمة ${formatMoney(Number(result.minimum_order_amount), "BHD")}.`
-          : `This promo code requires a minimum purchase value of ${formatMoney(Number(result.minimum_order_amount), "BHD")}.`;
-      case "NO_ELIGIBLE_ITEMS":
-        return lang === "ar"
-          ? "لا يمكن تطبيق رمز الخصم هذا على المنتجات المخفضة مسبقاً."
-          : "This promo code cannot be applied to items already on discount/sale.";
-      case "CODE_INACTIVE":
-        return lang === "ar"
-          ? "رمز الخصم هذا لم يعد نشطاً."
-          : "This promotional code is no longer active.";
-      case "USAGE_LIMIT_REACHED":
-        return lang === "ar"
-          ? "وصل هذا العميل إلى الحد المسموح لاستخدام الرمز."
-          : "This customer has reached the usage limit for this promo code.";
-      case "CUSTOMER_REQUIRED":
-        return lang === "ar"
-          ? "اختر عميلاً قبل تطبيق رمز الخصم."
-          : "Select a customer before applying this promo code.";
-      case "CODE_NOT_FOUND":
-        return lang === "ar"
-          ? "رمز الخصم غير موجود لهذا المتجر."
-          : "This promo code does not exist for this brand.";
-      default:
-        return lang === "ar"
-          ? "تعذر تطبيق رمز الخصم. تحقق من شروط الرمز."
-          : "This promo code could not be applied. Check its eligibility rules.";
-    }
-  };
 
   const applyAdminPromo = async () => {
     if (!order) return;
@@ -1161,7 +846,7 @@ function OrderDetail() {
           (lang === "ar" ? "تعذر التحقق من الرمز." : "Could not validate this promo code."),
       );
     const result = data as any;
-    if (!result?.valid) return toast.error(promoFailureMessage(result));
+    if (!result?.valid) return toast.error(promoFailureMessage(result, lang));
     const amount = Number(result.discount_amount ?? 0);
     const active = { code: String(result.code), id: String(result.promo_code_id), amount };
     setPromoInput(active.code);
@@ -1312,22 +997,7 @@ function OrderDetail() {
   };
 
   const addItem = () => {
-    setItems([
-      ...items,
-      {
-        description: "",
-        quantity: 1,
-        unit_price: 0,
-        unit_cost: null,
-        original_price: null,
-        customizations: [],
-        customization_total: 0,
-        line_total: 0,
-        location: "main",
-        selected_variant: { size: "", color: "", fabric: "" },
-        custom_field_values: [],
-      },
-    ]);
+    setItems([...items, blankOrderItem()]);
   };
 
   const openBarcodeScanner = () => {
@@ -1397,14 +1067,8 @@ function OrderDetail() {
     );
   };
 
-  const recalc = (i: Item): Item => {
-    const custTotal = i.customizations.reduce((s, c) => s + Number(c.price_delta), 0);
-    const line = (Number(i.unit_price) + custTotal) * Number(i.quantity);
-    return { ...i, customization_total: custTotal, line_total: line };
-  };
-
   const updateItem = (idx: number, patch: Partial<Item>) => {
-    setItems(items.map((it, i) => (i === idx ? recalc({ ...it, ...patch }) : it)));
+    setItems(items.map((it, i) => (i === idx ? recalcOrderItem({ ...it, ...patch }) : it)));
   };
 
   const pickVariant = (idx: number, variantId: string) => {
@@ -1609,21 +1273,7 @@ function OrderDetail() {
           itemsModified = true;
           break;
         }
-        const sOrig = simplifyItem({
-          ...orig,
-          unit_price: Number(orig.unit_price),
-          unit_cost: orig.unit_cost == null ? null : Number(orig.unit_cost),
-          original_price: orig.original_price == null ? null : Number(orig.original_price),
-          customization_total: Number(orig.customization_total || 0),
-          line_total: Number(orig.line_total || 0),
-          location:
-            orig.location === "custom"
-              ? "custom"
-              : orig.location === "incubator"
-                ? "incubator"
-                : "main",
-          custom_field_values: normalizeCustomFieldValues(orig.custom_field_values),
-        });
+        const sOrig = simplifyItem(orderItemFromRow(orig));
         const sItem = simplifyItem(item);
         if (JSON.stringify(sOrig) !== JSON.stringify(sItem)) {
           itemsModified = true;
@@ -1673,26 +1323,7 @@ function OrderDetail() {
     const freshOrder = (refetched.data ?? order) as any;
     setOrder(freshOrder);
 
-    const loadedItems: Item[] = (freshOrder.order_items ?? []).map((i: any) => ({
-      id: i.id,
-      product_id: i.product_id,
-      variant_id: i.variant_id,
-      description: i.description,
-      quantity: i.quantity,
-      unit_price: Number(i.unit_price),
-      unit_cost: i.unit_cost == null ? null : Number(i.unit_cost),
-      original_price: i.original_price == null ? null : Number(i.original_price),
-      customizations: i.customizations ?? [],
-      customization_total: Number(i.customization_total),
-      line_total: Number(i.line_total),
-      location: (i.location === "custom"
-        ? "custom"
-        : i.location === "incubator"
-          ? "incubator"
-          : "main") as Item["location"],
-      selected_variant: i.selected_variant ?? null,
-      custom_field_values: normalizeCustomFieldValues(i.custom_field_values),
-    }));
+    const loadedItems: Item[] = (freshOrder.order_items ?? []).map(orderItemFromRow);
     setItems(loadedItems);
 
     initialSnapshotRef.current = {
