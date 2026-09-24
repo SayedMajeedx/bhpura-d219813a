@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_PRODUCT_MAPPINGS,
+  buildProductImportPayload,
   detectProductColumns,
   mergeImportRunsBySession,
 } from "../src/features/inventory/lib/product-import";
@@ -81,5 +82,108 @@ describe("size units", () => {
       expect(SIZE_UNIT_LABELS[unit]?.ar, unit).toBeTruthy();
       expect(SIZE_UNIT_LABELS[unit]?.en, unit).toBeTruthy();
     }
+  });
+});
+
+describe("buildProductImportPayload", () => {
+  const sku = () => "GEN";
+
+  it("merges Shopify variant rows by Handle and reads size/colour options", () => {
+    const headers = [
+      "Handle",
+      "Title",
+      "Option1 Name",
+      "Option1 Value",
+      "Option2 Name",
+      "Option2 Value",
+      "Variant SKU",
+      "Variant Price",
+      "Variant Inventory Qty",
+      "Image Src",
+    ];
+    const rows = [
+      [
+        "black-abaya",
+        "Black Abaya",
+        "Size",
+        "M",
+        "Color",
+        "Black",
+        "BA-M",
+        "25.500",
+        "3",
+        "https://img/1.jpg",
+      ],
+      ["black-abaya", "", "Size", "L", "Color", "Black", "BA-L", "25.500", "0", ""],
+    ];
+    const { products, invalidCount } = buildProductImportPayload({
+      rows,
+      headers,
+      preset: "shopify",
+      mappings: DEFAULT_PRODUCT_MAPPINGS,
+      isAr: false,
+      makeSku: sku,
+    });
+    expect(invalidCount).toBe(0);
+    expect(products).toHaveLength(1);
+    expect(products[0].name).toBe("Black Abaya");
+    expect(products[0].image_url).toBe("https://img/1.jpg");
+    expect(
+      products[0].variants.map((v) => [v.sku, v.size, v.color, v.selling_price, v.stock_main]),
+    ).toEqual([
+      ["BA-M", "M", "Black", 25.5, 3],
+      ["BA-L", "L", "Black", 25.5, 0],
+    ]);
+  });
+
+  it("reads Salla/Zid Arabic columns and keeps the first image", () => {
+    const { products } = buildProductImportPayload({
+      rows: [["عباية كحلي", "30", "https://a.jpg, https://b.jpg", "5", "AB-1"]],
+      headers: ["اسم المنتج", "السعر", "صورة المنتج", "الكمية", "رمز المنتج"],
+      preset: "salla",
+      mappings: DEFAULT_PRODUCT_MAPPINGS,
+      isAr: true,
+      makeSku: sku,
+    });
+    expect(products[0]).toMatchObject({
+      name: "عباية كحلي",
+      name_ar: "عباية كحلي",
+      name_en: null,
+      image_url: "https://a.jpg",
+    });
+    expect(products[0].variants[0]).toMatchObject({
+      sku: "AB-1",
+      selling_price: 30,
+      stock_main: 5,
+    });
+  });
+
+  it("uses confirmed mappings for a custom file and generates missing SKUs", () => {
+    const { products } = buildProductImportPayload({
+      rows: [["12.5", "Scarf"]],
+      headers: ["Cost", "Item"],
+      preset: "custom",
+      mappings: { name: 1, price: 0, image: -1, stock: -1 },
+      isAr: false,
+      makeSku: sku,
+    });
+    expect(products[0].name).toBe("Scarf");
+    expect(products[0].variants[0]).toMatchObject({ sku: "GEN", selling_price: 12.5 });
+  });
+
+  it("drops rows without a name and counts them", () => {
+    const { products, invalidCount } = buildProductImportPayload({
+      rows: [
+        ["", "10"],
+        ["Shawl", "8"],
+      ],
+      headers: ["Name", "Price"],
+      preset: "custom",
+      mappings: { name: 0, price: 1, image: -1, stock: -1 },
+      isAr: false,
+      makeSku: sku,
+    });
+    expect(products.map((p) => p.name)).toEqual(["Shawl"]);
+    expect(invalidCount).toBe(1);
   });
 });
