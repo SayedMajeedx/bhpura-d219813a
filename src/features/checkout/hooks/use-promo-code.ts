@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { validatePromoCode, type PromoValidation } from "@/lib/data/promo-codes";
 import type { AppliedPromo, Storefront } from "@/features/checkout/types";
 import { promoRejectionMessage } from "@/features/checkout/lib/promo-rejection";
 
@@ -39,16 +39,19 @@ export function usePromoCode({
       variant_id: item.variant_id && item.variant_id.trim() ? item.variant_id : null,
       line_total: Number((item.price * item.qty).toFixed(3)),
     }));
-    const { data, error } = await supabase.rpc("validate_promo_code" as any, {
-      p_brand_slug: brand.slug,
-      p_code: code,
-      p_subtotal: cartTotal,
-      p_items: promoItems,
-      p_customer_id: null,
-    });
-    setCheckingPromo(false);
-    if (error) return toast.error(t("تعذر التحقق من الرمز", "Could not validate this code"));
-    const result = data as any;
+    let result: PromoValidation | null;
+    try {
+      result = await validatePromoCode({
+        brandSlug: brand.slug,
+        code,
+        subtotal: cartTotal,
+        items: promoItems,
+      });
+    } catch {
+      return toast.error(t("تعذر التحقق من الرمز", "Could not validate this code"));
+    } finally {
+      setCheckingPromo(false);
+    }
     if (!result?.valid) {
       setAppliedPromo(null);
       return toast.error(promoRejectionMessage(result, { currency, lang, t }));

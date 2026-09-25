@@ -1,5 +1,6 @@
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { validatePromoCode, type PromoValidation } from "@/lib/data/promo-codes";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
 import type { Order } from "@/features/orders/types";
@@ -40,23 +41,26 @@ export function useOrderPromoCode({
         lang === "ar" ? "أضف منتجات إلى الطلب أولاً." : "Add products to the order first.",
       );
     setCheckingPromo(true);
-    const { data, error } = await supabase.rpc("validate_promo_code" as any, {
-      p_brand_slug: brand.slug,
-      p_code: code,
-      p_subtotal: totals.subtotal,
-      p_items: items.map((item) => ({
-        variant_id: item.variant_id,
-        line_total: Number(item.line_total.toFixed(3)),
-      })),
-      p_customer_id: order.customer_id ?? null,
-    });
-    setCheckingPromo(false);
-    if (error)
+    let result: PromoValidation | null;
+    try {
+      result = await validatePromoCode({
+        brandSlug: brand.slug,
+        code,
+        subtotal: totals.subtotal,
+        items: items.map((item) => ({
+          variant_id: item.variant_id,
+          line_total: Number(item.line_total.toFixed(3)),
+        })),
+        customerId: order.customer_id,
+      });
+    } catch (error) {
       return toast.error(
-        error.message ||
+        getFriendlyErrorMessage(error) ||
           (lang === "ar" ? "تعذر التحقق من الرمز." : "Could not validate this promo code."),
       );
-    const result = data as any;
+    } finally {
+      setCheckingPromo(false);
+    }
     if (!result?.valid) return toast.error(promoFailureMessage(result, lang));
     const amount = Number(result.discount_amount ?? 0);
     const active = { code: String(result.code), id: String(result.promo_code_id), amount };

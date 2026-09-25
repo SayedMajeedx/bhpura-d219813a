@@ -133,6 +133,11 @@ export default tseslint.config(
         },
         {
           selector:
+            "CallExpression[callee.property.name='rpc'][arguments.0.value='validate_promo_code']",
+          message: "Use `validatePromoCode` from `@/lib/data/promo-codes`.",
+        },
+        {
+          selector:
             "CallExpression[callee.property.name='rpc'][arguments.0.value=/^get_storefront_(page_data|best_sellers|trending)$/]",
           message:
             "Use the fetchers in `@/lib/data/storefront` for storefront page data and rankings.",
@@ -184,6 +189,11 @@ export default tseslint.config(
           selector:
             "CallExpression[callee.expression.property.name='rpc'][arguments.0.value='rpc_reporting_incubator_sales']",
           message: "Use `reportingQueries.incubatorSales` from `@/lib/data/reporting`.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='rpc'][arguments.0.value='validate_promo_code']",
+          message: "Use `validatePromoCode` from `@/lib/data/promo-codes`.",
         },
       ],
     },
@@ -306,13 +316,13 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(business_settings|orders|order_items)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(business_settings|orders|order_items|promo_codes|product_variants)$/]",
           message:
             "Read the settings row and orders through `@/lib/data/business-settings` and `@/lib/data/orders`.",
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(business-settings.*|business-name|content-studio-settings|review-story-(brand|order)|discounts-analytics)$/]",
+            "ArrayExpression > Literal:first-child[value=/^(business-settings.*|business-name|content-studio-settings|review-story-(brand|order)|discounts-analytics|promo-codes|discounts-product-variants)$/]",
           message: "Use `businessSettingsQueries.detail` instead of a hand-built settings key.",
         },
       ],
