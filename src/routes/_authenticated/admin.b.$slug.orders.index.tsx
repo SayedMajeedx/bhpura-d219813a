@@ -39,7 +39,7 @@ import { getFulfillmentBadgeDetails } from "@/lib/status-labels";
 import { orderRequiresCourier } from "@/lib/order-fulfillment";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { useAddons } from "@/components/addons/AddonsProvider";
-import { ordersQueries, type OrderListRow } from "@/lib/data/orders";
+import { invalidateOrders, ordersKeys, ordersQueries, type OrderListRow } from "@/lib/data/orders";
 
 import { OrderQuickInspectSheet } from "@/features/orders/components/OrderQuickInspectSheet";
 import { OrderImporterModal } from "@/features/orders/components/OrderImporterModal";
@@ -246,7 +246,7 @@ function OrdersList() {
     try {
       await deleteOrderWithPrivateReceipt({ data: { orderId: id } });
       toast.success(lang === "ar" ? "تم حذف الطلب بنجاح" : "Order deleted successfully");
-      qc.invalidateQueries({ queryKey: ["orders", brandId] });
+      invalidateOrders(qc, brandId);
     } catch (err: any) {
       toast.error(err.message || "Failed to delete order");
     } finally {
@@ -269,7 +269,7 @@ function OrdersList() {
       );
       setSelectedOrderIds(new Set());
       setBulkDeleteOpen(false);
-      await qc.invalidateQueries({ queryKey: ["orders", brandId] });
+      await invalidateOrders(qc, brandId);
     } catch (error: any) {
       toast.error(
         error?.message || (lang === "ar" ? "تعذر حذف الطلبات" : "Unable to delete orders"),
@@ -308,7 +308,7 @@ function OrdersList() {
       if (targetOrder && courierObj) {
         setWaModalState({ isOpen: true, order: targetOrder, courier: courierObj });
       }
-      qc.invalidateQueries({ queryKey: ["orders", brandId] });
+      invalidateOrders(qc, brandId);
     } catch {
       toast.error(lang === "ar" ? "فشل تعيين المندوب" : "Failed to assign courier");
     }
@@ -344,7 +344,7 @@ function OrdersList() {
           : `Updated fulfillment status for ${orderIds.length} orders`,
       );
       setSelectedOrderIds(new Set());
-      await qc.invalidateQueries({ queryKey: ["orders", brandId] });
+      await invalidateOrders(qc, brandId);
     } catch (error: any) {
       toast.error(
         error?.message || (lang === "ar" ? "فشل تحديث الطلبات" : "Failed to update orders"),
@@ -378,7 +378,7 @@ function OrdersList() {
           : `Courier assigned to ${orderIds.length} orders`,
       );
       setSelectedOrderIds(new Set());
-      await qc.invalidateQueries({ queryKey: ["orders", brandId] });
+      await invalidateOrders(qc, brandId);
     } catch (error: any) {
       toast.error(
         error?.message || (lang === "ar" ? "فشل تعيين المندوب" : "Failed to assign courier"),
@@ -411,8 +411,8 @@ function OrdersList() {
 
   useRealtimeInvalidate(
     [
-      { table: "orders", brandId, queryKey: ["orders", brandId] },
-      { table: "order_items", brandId, queryKey: ["orders", brandId] },
+      { table: "orders", brandId, queryKey: ordersKeys.all(brandId) },
+      { table: "order_items", brandId, queryKey: ordersKeys.all(brandId) },
     ],
     `orders-list-${brandId}`,
   );
@@ -882,7 +882,7 @@ function OrdersList() {
           lang={lang}
           brandSlug={slug}
           onNotified={async () => {
-            await qc.invalidateQueries({ queryKey: ["orders", brandId] });
+            await invalidateOrders(qc, brandId);
             await qc.invalidateQueries({ queryKey: ["activity_logs"] });
           }}
         />
@@ -892,7 +892,7 @@ function OrdersList() {
         brandId={brandId}
         isOpen={isOrderImporterOpen}
         onOpenChange={setIsOrderImporterOpen}
-        onComplete={() => qc.invalidateQueries({ queryKey: ["orders", brandId] })}
+        onComplete={() => invalidateOrders(qc, brandId)}
       />
     </div>
   );

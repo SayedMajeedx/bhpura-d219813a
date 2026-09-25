@@ -1,5 +1,4 @@
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Receipt,
@@ -21,6 +20,7 @@ import { useVocabulary } from "@/hooks/use-vocabulary";
 import type { QueryClient } from "@tanstack/react-query";
 import type { Order, OrderItem } from "@/features/orders/types";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
+import { invalidateOrders, updateOrder, type OrderPatch } from "@/lib/data/orders";
 
 export type OrderPrimaryActionContext = {
   approveBenefitPayment: () => Promise<void>;
@@ -70,15 +70,11 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
         className="bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
         onClick={async () => {
           try {
-            const { error } = await supabase
-              .from("orders")
-              .update({
-                status: "sent_to_tailor",
-                fulfillment_status: "SENT_TO_TAILOR",
-                updated_at: new Date().toISOString(),
-              } as any)
-              .eq("id", order.id);
-            if (error) throw error;
+            await updateOrder(brandId, order.id, {
+              status: "sent_to_tailor",
+              fulfillment_status: "SENT_TO_TAILOR",
+              updated_at: new Date().toISOString(),
+            });
             toast.success(
               vocabulary.sent_to_workshop_success[lang] ||
                 (lang === "ar" ? "تم تحويل الطلب للورشة وتحديث الحالة" : "Sent to workshop"),
@@ -90,7 +86,7 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
               ar: "تحويل الطلب إلى الورشة للتجهيز",
             });
             await orderQ.refetch();
-            qc.invalidateQueries({ queryKey: ["orders", brandId] });
+            invalidateOrders(qc, brandId);
             qc.invalidateQueries({ queryKey: ["activity_logs"] });
           } catch (err: unknown) {
             toast.error(
@@ -112,15 +108,11 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
         className="bg-teal-600 hover:bg-teal-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
         onClick={async () => {
           try {
-            const { error } = await supabase
-              .from("orders")
-              .update({
-                status: "received_from_tailor",
-                fulfillment_status: "RECEIVED_FROM_TAILOR",
-                updated_at: new Date().toISOString(),
-              } as any)
-              .eq("id", order.id);
-            if (error) throw error;
+            await updateOrder(brandId, order.id, {
+              status: "received_from_tailor",
+              fulfillment_status: "RECEIVED_FROM_TAILOR",
+              updated_at: new Date().toISOString(),
+            });
             toast.success(
               vocabulary.received_from_workshop_success[lang] ||
                 (lang === "ar" ? "تم استلام الطلب من الورشة وتجهيزه" : "Received from workshop"),
@@ -132,7 +124,7 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
               ar: "تم استلام الطلب الجاهز من الورشة",
             });
             await orderQ.refetch();
-            qc.invalidateQueries({ queryKey: ["orders", brandId] });
+            invalidateOrders(qc, brandId);
             qc.invalidateQueries({ queryKey: ["activity_logs"] });
           } catch (err: unknown) {
             toast.error(
@@ -155,15 +147,11 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
         className="bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
         onClick={async () => {
           try {
-            const { error } = await supabase
-              .from("orders")
-              .update({
-                status: "packing",
-                fulfillment_status: "PACKING",
-                updated_at: new Date().toISOString(),
-              } as any)
-              .eq("id", order.id);
-            if (error) throw error;
+            await updateOrder(brandId, order.id, {
+              status: "packing",
+              fulfillment_status: "PACKING",
+              updated_at: new Date().toISOString(),
+            });
             toast.success(lang === "ar" ? "بدء تعبئة وتغليف الطلب الجاهز" : "Start packing order");
             await logActivity({
               action: "status_change",
@@ -172,7 +160,7 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
               ar: "بدء تعبئة وتغليف منتجات الطلب",
             });
             await orderQ.refetch();
-            qc.invalidateQueries({ queryKey: ["orders", brandId] });
+            invalidateOrders(qc, brandId);
             qc.invalidateQueries({ queryKey: ["activity_logs"] });
           } catch (err: unknown) {
             toast.error(
@@ -194,15 +182,11 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
         className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
         onClick={async () => {
           try {
-            const { error } = await supabase
-              .from("orders")
-              .update({
-                status: "ready_for_pickup",
-                fulfillment_status: "READY_FOR_PICKUP",
-                updated_at: new Date().toISOString(),
-              } as any)
-              .eq("id", order.id);
-            if (error) throw error;
+            await updateOrder(brandId, order.id, {
+              status: "ready_for_pickup",
+              fulfillment_status: "READY_FOR_PICKUP",
+              updated_at: new Date().toISOString(),
+            });
             toast.success(
               lang === "ar" ? "تم تجهيز الطلب للاستلام في المحل" : "Marked ready for pickup",
             );
@@ -213,7 +197,7 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
               ar: "تجهيز الطلب للاستلام من الفرع/المحل",
             });
             await orderQ.refetch();
-            qc.invalidateQueries({ queryKey: ["orders", brandId] });
+            invalidateOrders(qc, brandId);
             qc.invalidateQueries({ queryKey: ["activity_logs"] });
           } catch (err: unknown) {
             toast.error(
@@ -235,15 +219,11 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
         className="bg-sky-600 hover:bg-sky-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
         onClick={async () => {
           try {
-            const { error } = await supabase
-              .from("orders")
-              .update({
-                status: "shipped",
-                fulfillment_status: "SHIPPED",
-                updated_at: new Date().toISOString(),
-              } as any)
-              .eq("id", order.id);
-            if (error) throw error;
+            await updateOrder(brandId, order.id, {
+              status: "shipped",
+              fulfillment_status: "SHIPPED",
+              updated_at: new Date().toISOString(),
+            });
             toast.success(
               lang === "ar" ? "تم شحن الطلب وتسليمه للمندوب" : "Marked shipped / in transit",
             );
@@ -254,7 +234,7 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
               ar: "تم تسليم الطلب لشركة الشحن/المندوب",
             });
             await orderQ.refetch();
-            qc.invalidateQueries({ queryKey: ["orders", brandId] });
+            invalidateOrders(qc, brandId);
             qc.invalidateQueries({ queryKey: ["activity_logs"] });
           } catch (err: unknown) {
             toast.error(
@@ -276,16 +256,12 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
         className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
         onClick={async () => {
           try {
-            const { error } = await supabase
-              .from("orders")
-              .update({
-                status: "completed",
-                fulfillment_status: "COMPLETED",
-                delivered_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              } as any)
-              .eq("id", order.id);
-            if (error) throw error;
+            await updateOrder(brandId, order.id, {
+              status: "completed",
+              fulfillment_status: "COMPLETED",
+              delivered_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
             toast.success(
               lang === "ar" ? "تم تسليم الطلب وإتمامه بنجاح" : "Order completed successfully",
             );
@@ -296,7 +272,7 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
               ar: "تم إكمال وتسليم الطلب بنجاح",
             });
             await orderQ.refetch();
-            qc.invalidateQueries({ queryKey: ["orders", brandId] });
+            invalidateOrders(qc, brandId);
             qc.invalidateQueries({ queryKey: ["activity_logs"] });
           } catch (err: unknown) {
             toast.error(
@@ -318,19 +294,15 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
         className="bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
         onClick={async () => {
           try {
-            const { error } = await supabase
-              .from("orders")
-              .update({
-                fulfillment_status: "ASSIGNED",
-                updated_at: new Date().toISOString(),
-              } as any)
-              .eq("id", order.id);
-            if (error) throw error;
+            await updateOrder(brandId, order.id, {
+              fulfillment_status: "ASSIGNED",
+              updated_at: new Date().toISOString(),
+            });
             toast.success(
               lang === "ar" ? "تم جاهزية الطلب وتعيينه للمندوب" : "Packed & Assigned to Courier",
             );
             await orderQ.refetch();
-            qc.invalidateQueries({ queryKey: ["orders", brandId] });
+            invalidateOrders(qc, brandId);
           } catch (err: unknown) {
             toast.error(
               getFriendlyErrorMessage(err) ||
@@ -351,21 +323,17 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
         className="bg-sky-600 hover:bg-sky-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
         onClick={async () => {
           try {
-            const { error } = await supabase
-              .from("orders")
-              .update({
-                fulfillment_status: "SHIPPED",
-                updated_at: new Date().toISOString(),
-              } as any)
-              .eq("id", order.id);
-            if (error) throw error;
+            await updateOrder(brandId, order.id, {
+              fulfillment_status: "SHIPPED",
+              updated_at: new Date().toISOString(),
+            });
             toast.success(
               lang === "ar"
                 ? "تم استلام الشحنة من المندوب وخرجت للتوصيل"
                 : "Courier picked up parcel - Out for Delivery",
             );
             await orderQ.refetch();
-            qc.invalidateQueries({ queryKey: ["orders", brandId] });
+            invalidateOrders(qc, brandId);
           } catch (err: unknown) {
             toast.error(
               getFriendlyErrorMessage(err) ||
@@ -403,7 +371,7 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
         className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
         onClick={async () => {
           try {
-            const updatePayload: Record<string, any> = {
+            const updatePayload: OrderPatch = {
               fulfillment_status: "COMPLETED",
               status: "completed",
               delivered_at: new Date().toISOString(),
@@ -416,16 +384,12 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
             ) {
               updatePayload.payment_status = "paid";
             }
-            const { error } = await supabase
-              .from("orders")
-              .update(updatePayload as any)
-              .eq("id", order.id);
-            if (error) throw error;
+            await updateOrder(brandId, order.id, updatePayload);
             toast.success(
               lang === "ar" ? "تم تسجيل تسليم الطلب وإتمامه" : "Order delivered & completed",
             );
             await orderQ.refetch();
-            qc.invalidateQueries({ queryKey: ["orders", brandId] });
+            invalidateOrders(qc, brandId);
           } catch (err: unknown) {
             toast.error(
               getFriendlyErrorMessage(err) ||
@@ -446,17 +410,13 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
         className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
         onClick={async () => {
           try {
-            const { error } = await supabase
-              .from("orders")
-              .update({
-                fulfillment_status: "READY_FOR_PICKUP",
-                updated_at: new Date().toISOString(),
-              } as any)
-              .eq("id", order.id);
-            if (error) throw error;
+            await updateOrder(brandId, order.id, {
+              fulfillment_status: "READY_FOR_PICKUP",
+              updated_at: new Date().toISOString(),
+            });
             toast.success(lang === "ar" ? "تم تجهيز الطلب للاستلام" : "Ready for pickup");
             await orderQ.refetch();
-            qc.invalidateQueries({ queryKey: ["orders", brandId] });
+            invalidateOrders(qc, brandId);
           } catch (err: unknown) {
             toast.error(
               getFriendlyErrorMessage(err) ||
@@ -480,19 +440,15 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
         className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
         onClick={async () => {
           try {
-            const { error } = await supabase
-              .from("orders")
-              .update({
-                fulfillment_status: "COMPLETED",
-                status: "completed",
-                delivered_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              } as any)
-              .eq("id", order.id);
-            if (error) throw error;
+            await updateOrder(brandId, order.id, {
+              fulfillment_status: "COMPLETED",
+              status: "completed",
+              delivered_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
             toast.success(lang === "ar" ? "تم تسليم الطلب للعميل" : "Handed over to customer");
             await orderQ.refetch();
-            qc.invalidateQueries({ queryKey: ["orders", brandId] });
+            invalidateOrders(qc, brandId);
           } catch (err: unknown) {
             toast.error(
               getFriendlyErrorMessage(err) ||

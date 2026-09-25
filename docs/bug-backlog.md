@@ -19,6 +19,18 @@ Line numbers are as of 2026-09-24 and may drift; search for the quoted code.
   - The search path sets no `custom_field_values`.
 - **Fix**: one pure `orderItemFromVariant(variant, product, axes)` in `src/features/orders/lib/order-editor.ts`, used by all three, with tests. Agree the `original_price` rule with the owner first.
 
+### 14. Courier "delivered" writes twice, and its fallback cannot write
+
+- **Where**: `src/components/orders/CourierOrderView.tsx`, `updateStatus("delivered")`.
+- **Problem**: after `courier_update_delivery` succeeds, the view still sends a direct `orders` update, with `payment_status` computed from `Math.max(orderTotal, …)` (always "paid") and `fulfillment_status: "COMPLETED"` over the RPC's `delivered`. Couriers have no UPDATE policy on `orders`, so that update is filtered out silently: when the RPC fails, the "fallback" never writes either. `codConfirmed || true` is always true.
+- **Fix**: rely on the RPC alone for couriers (it already checks the assignment and the cash due), surface its errors (`COD_AMOUNT_MISMATCH`, `COD_CONFIRMATION_REQUIRED`), and drop the direct update and the `|| true`.
+
+### 15. Reconciliation and address clean-up ignore write errors
+
+- **Where**: `src/components/accounting/CashFlowLiquidityTab.tsx` (`handleUpdateReconciliation`) and `src/components/customer-address-manager.tsx` (duplicate clean-up).
+- **Problem**: both `await supabase.from("orders").update(...)` without reading `error`, so a failed write still shows the success toast (the clean-up then deletes the duplicate address the order still points at).
+- **Fix**: move both to `updateOrder` from `@/lib/data/orders` (it throws) when accounting and customers join the data layer; stop the clean-up on the first failure.
+
 ## Shared admin caches
 
 ### 13. One cache key, several sort orders

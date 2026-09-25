@@ -14,6 +14,7 @@ import { formatMoney } from "@/lib/format";
 import { Truck, CheckCircle2 } from "lucide-react";
 import { getOrderCustomerName, getOrderCustomerPhone } from "@/lib/order-customer-snapshot";
 import { DeliveryAddressCard } from "@/components/delivery-address-card";
+import { courierUpdateDelivery, updateOrder, type OrderDetail } from "@/lib/data/orders";
 
 function normalizeWhatsAppNumber(value: string | null | undefined) {
   const digits = String(value ?? "").replace(/\D/g, "");
@@ -76,7 +77,7 @@ export default function CourierOrderView({
   slug,
   onUpdated,
 }: {
-  order: any;
+  order: OrderDetail;
   slug: string;
   onUpdated: () => void | Promise<void>;
 }) {
@@ -123,13 +124,12 @@ export default function CourierOrderView({
     const whatsappWindow = phone ? window.open("about:blank", "_blank") : null;
     setSaving(true);
     try {
-      const { error: rpcErr } = await (supabase.rpc as any)("courier_update_delivery", {
-        p_order_id: order.id,
-        p_status: status,
-        p_notes: notes || null,
-        p_cod_collected: status === "delivered" && isCodOrHasDue ? codConfirmed || true : false,
-        p_cod_amount:
-          status === "delivered" && isCodOrHasDue ? Number(codAmount) || amountDue : null,
+      const rpcErr = await courierUpdateDelivery({
+        orderId: order.id,
+        status,
+        notes: notes || null,
+        codCollected: status === "delivered" && isCodOrHasDue ? codConfirmed || true : false,
+        codAmount: status === "delivered" && isCodOrHasDue ? Number(codAmount) || amountDue : null,
       });
 
       if (status === "delivered") {
@@ -142,34 +142,29 @@ export default function CourierOrderView({
               ? "partially_paid"
               : order.payment_status || "unpaid";
 
-        const { error: directErr } = await supabase
-          .from("orders")
-          .update({
-            fulfillment_status: "COMPLETED",
-            status: "completed",
-            payment_status: newPaymentStatus,
-            advance_paid: newPaid,
-            cod_collected_amount: collectedAmt,
-            cod_collected_at: new Date().toISOString(),
-            delivered_at: new Date().toISOString(),
-            delivery_notes: notes || order.delivery_notes || null,
-            updated_at: new Date().toISOString(),
-          } as any)
-          .eq("id", order.id);
+        const directErr = await updateOrder(order.brand_id, order.id, {
+          fulfillment_status: "COMPLETED",
+          status: "completed",
+          payment_status: newPaymentStatus,
+          advance_paid: newPaid,
+          cod_collected_amount: collectedAmt,
+          cod_collected_at: new Date().toISOString(),
+          delivered_at: new Date().toISOString(),
+          delivery_notes: notes || order.delivery_notes || null,
+          updated_at: new Date().toISOString(),
+        }).then(
+          () => null,
+          (error: unknown) => error,
+        );
 
         if (rpcErr && directErr) throw directErr;
       } else if (rpcErr) {
         const targetFulfillment = status === "out_for_delivery" ? "SHIPPED" : status;
-        const { error: directErr } = await supabase
-          .from("orders")
-          .update({
-            fulfillment_status: targetFulfillment,
-            delivery_notes: notes || order.delivery_notes || null,
-            updated_at: new Date().toISOString(),
-          } as any)
-          .eq("id", order.id);
-
-        if (directErr) throw directErr;
+        await updateOrder(order.brand_id, order.id, {
+          fulfillment_status: targetFulfillment,
+          delivery_notes: notes || order.delivery_notes || null,
+          updated_at: new Date().toISOString(),
+        });
       }
 
       toast.success(lang === "ar" ? "تم تحديث حالة التوصيل والتسليم" : "Delivery status updated");

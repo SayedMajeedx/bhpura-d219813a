@@ -62,6 +62,6 @@ describe("orders list payment and courier rules", () => {
     expect(pageSource).toContain(
       "qc.setQueriesData<OrderListRow[]>({ queryKey: ordersKeys.lists(brandId) }",
     );
-    expect(pageSource).toContain('await qc.invalidateQueries({ queryKey: ["orders", brandId] })');
+    expect(pageSource).toContain("await invalidateOrders(qc, brandId)");
   });
 });

@@ -14,12 +14,15 @@ type Request = {
   select: string;
   filters: Array<[string, ...unknown[]]>;
   single: boolean;
+  write?: { kind: "update" | "insert" | "delete"; payload?: unknown };
 };
 type Reply = { data: unknown; error: unknown };
 
 const requests: Request[] = [];
 let respond: (request: Request) => Reply = () => ({ data: [], error: null });
 let signedInUser: { id: string } | null = { id: "courier-1" };
+const rpcCalls: Array<[string, Record<string, unknown>]> = [];
+let rpcReply: (fn: string) => Reply = () => ({ data: null, error: null });
 
 function builder(table: string) {
   const request: Request = { table, select: "", filters: [], single: false };
@@ -31,6 +34,13 @@ function builder(table: string) {
     },
     eq: (...args: unknown[]) => (request.filters.push(["eq", ...args]), chain),
     order: (...args: unknown[]) => (request.filters.push(["order", ...args]), chain),
+    update: (payload: unknown) => ((request.write = { kind: "update", payload }), chain),
+    insert: (payload: unknown) => ((request.write = { kind: "insert", payload }), chain),
+    delete: () => ((request.write = { kind: "delete" }), chain),
+    single() {
+      request.single = true;
+      return Promise.resolve(respond(request));
+    },
     maybeSingle() {
       request.single = true;
       return Promise.resolve(respond(request));
@@ -48,17 +58,36 @@ vi.mock("../src/integrations/supabase/client", () => ({
   supabase: {
     from: (table: string) => builder(table),
     auth: { getUser: () => Promise.resolve({ data: { user: signedInUser } }) },
+    rpc: (fn: string, args: Record<string, unknown>) => {
+      rpcCalls.push([fn, args]);
+      return Promise.resolve(rpcReply(fn));
+    },
   },
 }));
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     from: (table: string) => builder(table),
     auth: { getUser: () => Promise.resolve({ data: { user: signedInUser } }) },
+    rpc: (fn: string, args: Record<string, unknown>) => {
+      rpcCalls.push([fn, args]);
+      return Promise.resolve(rpcReply(fn));
+    },
   },
 }));
 
-const { fetchOrderDetail, fetchOrderList, ordersKeys, ordersQueries, ORDER_DETAIL_SELECT } =
-  await import("../src/lib/data/orders");
+const {
+  approveBenefitPayment,
+  courierUpdateDelivery,
+  createOrderWithItems,
+  fetchOrderDetail,
+  fetchOrderList,
+  invalidateOrders,
+  ordersKeys,
+  ordersQueries,
+  replaceOrderItems,
+  updateOrder,
+  ORDER_DETAIL_SELECT,
+} = await import("../src/lib/data/orders");
 
 const eqs = (request: Request) =>
   Object.fromEntries(
@@ -69,6 +98,8 @@ beforeEach(() => {
   requests.length = 0;
   respond = () => ({ data: [], error: null });
   signedInUser = { id: "courier-1" };
+  rpcCalls.length = 0;
+  rpcReply = () => ({ data: null, error: null });
 });
 
 describe("orders query keys", () => {
@@ -152,5 +183,108 @@ describe("fetchOrderDetail", () => {
     await expect(fetchOrderDetail("b1", "o1", "assigned-courier")).rejects.toThrow(
       "Not authenticated",
     );
+  });
+});
+
+describe("order writes", () => {
+  it("update one order of the brand", async () => {
+    respond = () => ({ data: null, error: null });
+    await updateOrder("b1", "o1", { status: "packing", fulfillment_status: "PACKING" });
+    expect(requests[0].write).toEqual({
+      kind: "update",
+      payload: { status: "packing", fulfillment_status: "PACKING" },
+    });
+    expect(eqs(requests[0])).toEqual({ id: "o1", brand_id: "b1" });
+  });
+
+  it("throw when an update fails", async () => {
+    respond = () => ({ data: null, error: new Error("denied") });
+    await expect(updateOrder("b1", "o1", { status: "packing" })).rejects.toThrow("denied");
+  });
+
+  it("create an order with its lines, stamped with the brand", async () => {
+    respond = (r) =>
+      r.table === "orders" ? { data: { id: "new-1" }, error: null } : { data: null, error: null };
+    const id = await createOrderWithItems("b1", { user_id: "u1", total: 5 }, (orderId) => [
+      { order_id: orderId, user_id: "u1", brand_id: "b1", description: "Abaya" },
+    ]);
+    expect(id).toBe("new-1");
+    expect(requests[0].write).toEqual({
+      kind: "insert",
+      payload: { user_id: "u1", total: 5, brand_id: "b1" },
+    });
+    expect(requests[1]).toMatchObject({
+      table: "order_items",
+      write: { kind: "insert", payload: [{ order_id: "new-1", description: "Abaya" }] },
+    });
+  });
+
+  it("delete the new order again when its lines fail", async () => {
+    respond = (r) =>
+      r.table === "orders" && r.write?.kind === "insert"
+        ? { data: { id: "new-1" }, error: null }
+        : r.table === "order_items"
+          ? { data: null, error: new Error("bad line") }
+          : { data: null, error: null };
+    await expect(
+      createOrderWithItems("b1", { user_id: "u1" }, () => [
+        { order_id: "new-1", user_id: "u1", brand_id: "b1", description: "x" },
+      ]),
+    ).rejects.toThrow("bad line");
+    const rollback = requests[2];
+    expect(rollback.write).toEqual({ kind: "delete" });
+    expect(eqs(rollback)).toEqual({ id: "new-1", brand_id: "b1" });
+  });
+
+  it("skip the lines insert for an order without lines", async () => {
+    respond = () => ({ data: { id: "new-1" }, error: null });
+    await createOrderWithItems("b1", { user_id: "u1" }, () => []);
+    expect(requests.map((r) => r.table)).toEqual(["orders"]);
+  });
+
+  it("call the order RPCs with their typed arguments", async () => {
+    await replaceOrderItems("o1", []);
+    await approveBenefitPayment("o1");
+    const err = await courierUpdateDelivery({
+      orderId: "o1",
+      status: "out_for_delivery",
+      notes: null,
+      codCollected: false,
+      codAmount: null,
+    });
+    expect(err).toBeNull();
+    expect(rpcCalls).toEqual([
+      ["replace_order_items", { p_order_id: "o1", p_items: [] }],
+      ["approve_benefit_payment", { p_order_id: "o1" }],
+      [
+        "courier_update_delivery",
+        {
+          p_order_id: "o1",
+          p_status: "out_for_delivery",
+          p_notes: undefined,
+          p_cod_collected: false,
+          p_cod_amount: undefined,
+        },
+      ],
+    ]);
+  });
+
+  it("surface RPC failures: thrown for writes, returned for courier fallbacks", async () => {
+    rpcReply = () => ({ data: null, error: new Error("INSUFFICIENT_STOCK") });
+    await expect(replaceOrderItems("o1", [])).rejects.toThrow("INSUFFICIENT_STOCK");
+    const err = await courierUpdateDelivery({
+      orderId: "o1",
+      status: "delivered",
+      notes: "left at door",
+      codCollected: true,
+      codAmount: 12,
+    });
+    expect(err).toBeInstanceOf(Error);
+  });
+
+  it("invalidate the brand's queue and open orders together", () => {
+    const invalidateQueries = vi.fn();
+    invalidateOrders({ invalidateQueries } as never, "b1");
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["orders", "b1"] });
   });
 });

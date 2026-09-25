@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { rejectBenefitReceipt } from "@/lib/benefit-receipt.functions";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
+import {
+  approveBenefitPayment as approveBenefitTransfer,
+  invalidateOrders,
+} from "@/lib/data/orders";
 
 /** Approving or rejecting a BenefitPay transfer receipt the customer uploaded. */
 export function useBenefitReview({
@@ -26,11 +29,10 @@ export function useBenefitReview({
   const approveBenefitPayment = async () => {
     setApprovingBenefit(true);
     try {
-      const { error } = await supabase.rpc("approve_benefit_payment" as any, { p_order_id: id });
-      if (error) throw error;
+      await approveBenefitTransfer(id);
 
       await orderQ.refetch();
-      qc.invalidateQueries({ queryKey: ["orders", brandId] });
+      invalidateOrders(qc, brandId);
       toast.success(
         lang === "ar" ? "تم التحقق من الدفع واعتماده" : "Payment verified and approved",
       );
@@ -61,7 +63,7 @@ export function useBenefitReview({
       );
       await orderQ.refetch();
       qc.removeQueries({ queryKey: ["benefit-receipt-view", id] });
-      qc.invalidateQueries({ queryKey: ["orders", brandId] });
+      invalidateOrders(qc, brandId);
       setRejectReasonOpen(false);
       setRejectReason("");
     } catch (error) {

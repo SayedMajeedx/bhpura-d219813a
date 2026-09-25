@@ -1,8 +1,13 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
-import { ordersKeys } from "@/lib/data/orders";
+import {
+  courierCompleteDelivery,
+  invalidateOrders,
+  ordersKeys,
+  updateOrder,
+  type OrderListRow,
+} from "@/lib/data/orders";
 
 import type { Dispatch, SetStateAction } from "react";
 
@@ -28,7 +33,14 @@ export function useCompleteDelivery({
   setIsSubmittingCash: Dispatch<SetStateAction<boolean>>;
   setUpdatingOrderId: Dispatch<SetStateAction<string | null>>;
 }) {
-  const handleCompleteDelivery = async (order: any, amountToCollect: number, notes?: string) => {
+  const handleCompleteDelivery = async (
+    order: Pick<
+      OrderListRow,
+      "id" | "total" | "advance_paid" | "payment_status" | "delivery_notes"
+    >,
+    amountToCollect: number,
+    notes?: string,
+  ) => {
     if (amountToCollect < 0) {
       toast.error(
         lang === "ar"
@@ -38,10 +50,10 @@ export function useCompleteDelivery({
       return;
     }
     const ordersQueryKey = ordersKeys.list(brandId, isCourier ? "assigned-courier" : "office");
-    const previousOrders = qc.getQueryData<any[]>(ordersQueryKey);
+    const previousOrders = qc.getQueryData<OrderListRow[]>(ordersQueryKey);
     setUpdatingOrderId(order.id);
     setIsSubmittingCash(true);
-    qc.setQueryData<any[]>(ordersQueryKey, (current) =>
+    qc.setQueryData<OrderListRow[]>(ordersQueryKey, (current) =>
       current?.map((item) =>
         item.id === order.id
           ? {
@@ -55,15 +67,11 @@ export function useCompleteDelivery({
     );
     try {
       // 1. Try atomic RPC first
-      const { error: rpcErr } = await (supabase.rpc as any)("courier_complete_delivery", {
-        p_order_id: order.id,
-        p_collected_amount: amountToCollect,
-        p_notes: notes || null,
-      });
+      const rpcErr = await courierCompleteDelivery(order.id, amountToCollect, notes || null);
 
       if (rpcErr) {
         // 2. Direct table update fallback if RPC function missing or column schema mismatch
-        const currentPaid = Number(order.advance_paid ?? order.paid_amount ?? 0);
+        const currentPaid = Number(order.advance_paid ?? 0);
         const newPaid = currentPaid + amountToCollect;
         const total = Number(order.total || 0);
         const newStatus =
@@ -81,22 +89,17 @@ export function useCompleteDelivery({
             : notes.trim();
         }
 
-        const { error: updateErr } = await supabase
-          .from("orders")
-          .update({
-            advance_paid: newPaid,
-            cod_collected_amount: amountToCollect,
-            cod_collected_at: new Date().toISOString(),
-            payment_status: newStatus,
-            fulfillment_status: "COMPLETED",
-            status: "completed",
-            delivery_notes: updatedNotes || null,
-            delivered_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          } as any)
-          .eq("id", order.id);
-
-        if (updateErr) throw updateErr;
+        await updateOrder(brandId, order.id, {
+          advance_paid: newPaid,
+          cod_collected_amount: amountToCollect,
+          cod_collected_at: new Date().toISOString(),
+          payment_status: newStatus,
+          fulfillment_status: "COMPLETED",
+          status: "completed",
+          delivery_notes: updatedNotes || null,
+          delivered_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
       }
 
       toast.success(
@@ -107,7 +110,7 @@ export function useCompleteDelivery({
       setCashModalOrder(null);
       setCashCollectedAmount("");
       setCashModalNotes("");
-      qc.invalidateQueries({ queryKey: ordersKeys.all(brandId) });
+      invalidateOrders(qc, brandId);
     } catch (err: any) {
       qc.setQueryData(ordersQueryKey, previousOrders);
       toast.error(err.message || "Failed to complete delivery");

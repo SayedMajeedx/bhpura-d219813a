@@ -1,11 +1,10 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { logActivity } from "@/lib/activity-log";
 import type { Order, OrderSnapshot } from "@/features/orders/types";
 import type { Dispatch, SetStateAction } from "react";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
 import { orderPaymentUpdate, type PaymentDetailsInput } from "@/features/orders/lib/order-payment";
-import { ordersKeys } from "@/lib/data/orders";
+import { invalidateOrders, updateOrder } from "@/lib/data/orders";
 
 /** Saving payment status, method, advance and reference from the payment modal; saved orders persist and log it immediately. */
 export function useOrderPaymentDetails({
@@ -37,9 +36,9 @@ export function useOrderPaymentDetails({
 
     // If order is saved in DB, persist change immediately
     if (order.id && !order.id.startsWith("draft_")) {
-      const { error } = await supabase.from("orders").update(paymentFields).eq("id", order.id);
-
-      if (error) {
+      try {
+        await updateOrder(brandId, order.id, paymentFields);
+      } catch (error) {
         setOrder({ ...order });
         throw error;
       }
@@ -71,8 +70,7 @@ export function useOrderPaymentDetails({
       });
 
       qc.invalidateQueries({ queryKey: ["activity_logs"] });
-      qc.invalidateQueries({ queryKey: ordersKeys.all(brandId) });
-      qc.invalidateQueries({ queryKey: ["orders"] });
+      invalidateOrders(qc, brandId);
       await orderQ.refetch();
     }
   };

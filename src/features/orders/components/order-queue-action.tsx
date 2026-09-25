@@ -7,7 +7,7 @@ import { resolvePaymentStatus } from "@/lib/payment-status";
 import { Loader2 } from "lucide-react";
 import { getOrderWorkflow } from "@/lib/order-workflow";
 import { useVocabulary } from "@/hooks/use-vocabulary";
-import { ordersKeys, type OrderListRow } from "@/lib/data/orders";
+import { invalidateOrders, ordersKeys, type OrderListRow } from "@/lib/data/orders";
 
 import { authenticatedJsonHeaders } from "@/features/orders/actions/order-links";
 import type { Dispatch, SetStateAction } from "react";
@@ -103,7 +103,7 @@ export function queueActionState(ctx: OrderQueueActionContext, o: Order) {
         );
       }
       toast.success(successMsg);
-      await qc.invalidateQueries({ queryKey: ["orders", brandId] });
+      await invalidateOrders(qc, brandId);
     } catch (err: any) {
       toast.error(err.message || "Failed to update order status");
     } finally {

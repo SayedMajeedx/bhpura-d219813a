@@ -135,5 +135,30 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Admin orders data layer: order reads, writes and cache keys go through
+    // `@/lib/data/orders` (ordersQueries, mutations, ordersKeys). Hand-built
+    // keys are how two readers silently missed the cache after the keys moved.
+    files: [
+      "src/features/orders/**",
+      "src/components/orders/**",
+      "src/routes/_authenticated/admin.b.$slug.orders.*",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(orders|order_items)$/]",
+          message:
+            "Order reads and writes go through `@/lib/data/orders` (ordersQueries / updateOrder / ...), not direct Supabase calls.",
+        },
+        {
+          selector: "ArrayExpression > Literal:first-child[value=/^orders?$/]",
+          message: "Build order cache keys with `ordersKeys` (or call `invalidateOrders`).",
+        },
+      ],
+    },
+  },
   eslintPluginPrettier,
 );
