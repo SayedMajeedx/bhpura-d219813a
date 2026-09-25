@@ -184,8 +184,15 @@ test("a return's detail page loads, selecting only variant columns that exist", 
   const returnRequests: string[] = [];
   await mockAdmin(page, returnRequests);
 
+  // A cold first load can land on /auth before the mocked session is read
+  // (the same race admin.spec.ts handles): navigate again when it does.
   await page.goto(`/admin/b/test-brand/returns/${RETURN_ID}`);
-  await expect(page.getByText("RET-2026-0001").first()).toBeVisible({ timeout: 30_000 });
+  await page.waitForLoadState("domcontentloaded");
+  if (page.url().includes("/auth")) {
+    await page.goto(`/admin/b/test-brand/returns/${RETURN_ID}`);
+    await page.waitForLoadState("domcontentloaded");
+  }
+  await expect(page.getByText("RET-2026-0001").first()).toBeVisible({ timeout: 45_000 });
 
   const detailRequest = returnRequests.find((url) => url.includes(`id=eq.${RETURN_ID}`));
   expect(detailRequest, "the detail page requests its return").toBeTruthy();
