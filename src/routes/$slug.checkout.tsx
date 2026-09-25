@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useStorefront, formatPrice } from "@/lib/storefront-context";
 import { displayVariantParts } from "@/lib/variant-sku-utils";
 import { BAHRAIN_REGIONS } from "@/lib/bahrain-regions";
@@ -30,10 +29,7 @@ import { toast } from "sonner";
 import {
   Loader2,
   CreditCard,
-  Banknote,
-  QrCode,
   Truck,
-  Store,
   User,
   Download,
   Mail,
@@ -48,32 +44,27 @@ import {
   Gift,
 } from "lucide-react";
 import { ShareCartModal } from "@/components/storefront/ShareCartModal";
-import { uploadBenefitReceipt } from "@/lib/benefit-receipt";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  calculateOrderLoyaltyPoints,
-  redeemLoyaltyPoints,
-  awardOrderLoyaltyPoints,
-} from "@/lib/loyalty.functions";
-import {
-  syncStorefrontCartActivity,
-  restoreAbandonedCart,
-  markCartRecoveredOnOrder,
-} from "@/lib/abandoned-carts.functions";
-import type { BrandLoyaltyProgram, LoyaltyAccount, LoyaltyTier } from "@/lib/loyalty.types";
-import { getOrCreateCartSessionId } from "@/lib/abandoned-cart-session";
 import { isCatalogMode } from "@/lib/storefront-mode";
 import { formatCustomFieldsList } from "@/lib/addons/custom-fields";
-import { type ShippingZone, getCountryByCode, calculateShippingFee } from "@/lib/shipping";
+import { getCountryByCode, calculateShippingFee } from "@/lib/shipping";
 import { CountryFlag } from "@/components/ui/country-flag";
+import { usePaymentReturnError } from "@/features/checkout/hooks/use-payment-return-error";
+import { useCheckoutForm } from "@/features/checkout/hooks/use-checkout-form";
+import { useCustomerPrefill } from "@/features/checkout/hooks/use-customer-prefill";
+import { useRegisteredAccountCheck } from "@/features/checkout/hooks/use-registered-account-check";
+import { useCheckoutFulfillment } from "@/features/checkout/hooks/use-checkout-fulfillment";
+import { usePickupAndDigital } from "@/features/checkout/hooks/use-pickup-and-digital";
+import { usePromoCode } from "@/features/checkout/hooks/use-promo-code";
+import { useAbandonedCart } from "@/features/checkout/hooks/use-abandoned-cart";
+import { useCheckoutLoyalty } from "@/features/checkout/hooks/use-checkout-loyalty";
+import { usePlaceOrder } from "@/features/checkout/hooks/use-place-order";
 
 export const Route = createFileRoute("/$slug/checkout")({
   component: Checkout,
 });
-
-type Fulfillment = "delivery" | "pickup" | "digital";
 
 function Checkout() {
   const { brand, settings, cart, cartTotal, currency, lang, t, clearCart, addToCart, session } =
@@ -86,454 +77,66 @@ function Checkout() {
     }
   }, [brand.slug, navigate, settings]);
 
-  const [submitting, setSubmitting] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-  const [idempotencyKey] = useState(() => crypto.randomUUID());
-  const [paymentErrorState, setPaymentErrorState] = useState<{
-    status: string;
-    orderId: string;
-  } | null>(null);
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const { paymentErrorState, mounted } = usePaymentReturnError(t);
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const searchParams = new URLSearchParams(window.location.search);
-      const paymentError = searchParams.get("payment_error");
-      const orderId = searchParams.get("order_id");
-      if (paymentError) {
-        if (orderId) {
-          setPaymentErrorState({ status: paymentError, orderId });
-        } else {
-          toast.error(
-            t(
-              "فشلت عملية الدفع بالبطاقة. يرجى التحقق من بيانات البطاقة والمحاولة مرة أخرى.",
-              "Card payment failed. Please check your card details and try again.",
-            ),
-            { duration: 6000 },
-          );
-        }
-        // Clear the query parameter so it doesn't fire again on refresh
-        const cleanUrl = window.location.pathname;
-        window.history.replaceState({}, document.title, cleanUrl);
-      }
-    }
-  }, [mounted, t]);
-
-  const [customerId, setCustomerId] = useState<string | null>(null);
-  const [loyaltyAccount, setLoyaltyAccount] = useState<LoyaltyAccount | null>(null);
-  const [loyaltyProgram, setLoyaltyProgram] = useState<BrandLoyaltyProgram | null>(null);
-  const [loyaltyTier, setLoyaltyTier] = useState<LoyaltyTier | null>(null);
-  const [pointsToRedeemInput, setPointsToRedeemInput] = useState<string>("");
-  const [redeemedPoints, setRedeemedPoints] = useState<number>(0);
   const [marketingConsent, setMarketingConsent] = useState<boolean>(true);
-  const [cartSessionId] = useState<string>(() => getOrCreateCartSessionId(brand.id));
 
-  const [form, setForm] = useState<{
-    name: string;
-    phone: string;
-    email: string;
-    label: string;
-    region: string;
-    block: string;
-    road: string;
-    house: string;
-    flat: string;
-    notes: string;
-  }>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = sessionStorage.getItem("checkout_form");
-        if (saved) return JSON.parse(saved);
-      } catch {
-        /* ignore invalid session storage */
-      }
-    }
-    return {
-      name: "",
-      phone: "",
-      email: "",
-      label: "",
-      region: "",
-      block: "",
-      road: "",
-      house: "",
-      flat: "",
-      notes: "",
-    };
-  });
-  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string>("");
+  const {
+    form,
+    setForm,
+    isGift,
+    setIsGift,
+    giftRecipient,
+    setGiftRecipient,
+    giftMessage,
+    setGiftMessage,
+  } = useCheckoutForm();
+  const {
+    customerId,
+    savedAddresses,
+    selectedAddressId,
+    setSelectedAddressId,
+    handleAddressChange,
+  } = useCustomerPrefill({ brand, session, setForm });
   const [saveToProfile, setSaveToProfile] = useState(false);
   const [whatsappOrderUpdates, setWhatsappOrderUpdates] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [isGift, setIsGift] = useState(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = sessionStorage.getItem("boutq_gift_details");
-        if (saved) return JSON.parse(saved).is_gift === true;
-      } catch {
-        // sessionStorage can be unavailable (private mode, quota) — gift details just won't persist.
-      }
-    }
-    return false;
-  });
-  const [giftRecipient, setGiftRecipient] = useState(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = sessionStorage.getItem("boutq_gift_details");
-        if (saved) return JSON.parse(saved).recipient_name || "";
-      } catch {
-        // sessionStorage can be unavailable (private mode, quota) — gift details just won't persist.
-      }
-    }
-    return "";
-  });
-  const [giftMessage, setGiftMessage] = useState(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = sessionStorage.getItem("boutq_gift_details");
-        if (saved) return JSON.parse(saved).gift_message || "";
-      } catch {
-        // sessionStorage can be unavailable (private mode, quota) — gift details just won't persist.
-      }
-    }
-    return "";
-  });
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        sessionStorage.setItem(
-          "boutq_gift_details",
-          JSON.stringify({
-            is_gift: isGift,
-            recipient_name: giftRecipient,
-            gift_message: giftMessage,
-          }),
-        );
-      } catch {
-        // sessionStorage can be unavailable (private mode, quota) — gift details just won't persist.
-      }
-    }
-  }, [isGift, giftRecipient, giftMessage]);
+  const {
+    showAccountPopup,
+    setShowAccountPopup,
+    setIgnoredAccountWarning,
+    checkRegisteredAccount,
+  } = useRegisteredAccountCheck({ brand, session });
 
-  const [showAccountPopup, setShowAccountPopup] = useState<{
-    show: boolean;
-    field: "email" | "phone" | null;
-    value: string;
-  }>({
-    show: false,
-    field: null,
-    value: "",
-  });
-  const [ignoredAccountWarning, setIgnoredAccountWarning] = useState(false);
-
-  const checkRegisteredAccount = async (field: "email" | "phone", value: string) => {
-    if (!value || session || ignoredAccountWarning) return;
-    try {
-      const { data: exists, error } = await supabase.rpc("check_registered_customer_exists", {
-        p_brand_id: brand.id,
-        p_email: field === "email" ? value.trim() : "",
-        p_phone: field === "phone" ? value.trim() : "",
-      });
-
-      if (error) {
-        console.error("Error executing check_registered_customer_exists RPC:", error);
-        return;
-      }
-
-      if (exists === true) {
-        setShowAccountPopup({
-          show: true,
-          field,
-          value,
-        });
-      }
-    } catch (e) {
-      console.error("Failed to check registered account via RPC", e);
-    }
-  };
-
-  // Pre-fill from linked customer when signed in
-  useEffect(() => {
-    if (!session?.user) return;
-    (async () => {
-      try {
-        const { data: customer } = await supabase
-          .from("customers")
-          .select("id, name, phone, email, region, block, road, house, flat")
-          .eq("brand_id", brand.id)
-          .eq("auth_user_id", session.user.id)
-          .maybeSingle();
-
-        if (customer) {
-          setCustomerId(customer.id);
-          // Fetch saved addresses from customer_addresses
-          const { data: addresses } = await supabase
-            .from("customer_addresses")
-            .select("id, label, region, block, road, house, flat, is_default")
-            .eq("customer_id", customer.id);
-
-          if (addresses && addresses.length > 0) {
-            setSavedAddresses(addresses);
-            const defaultAddr = addresses.find((a) => a.is_default) || addresses[0];
-            setSelectedAddressId(defaultAddr.id);
-            setForm((f) => ({
-              ...f,
-              name: f.name || customer.name || "",
-              phone: f.phone || customer.phone || "",
-              email: f.email || customer.email || session.user.email || "",
-              label: defaultAddr.label || "",
-              region: defaultAddr.region || "",
-              block: defaultAddr.block || "",
-              road: defaultAddr.road || "",
-              house: defaultAddr.house || "",
-              flat: defaultAddr.flat || "",
-            }));
-          } else {
-            setForm((f) => ({
-              ...f,
-              name: f.name || customer.name || "",
-              phone: f.phone || customer.phone || "",
-              email: f.email || customer.email || session.user.email || "",
-              region: f.region || customer.region || "",
-              block: f.block || (customer as any).block || "",
-              road: f.road || customer.road || "",
-              house: f.house || customer.house || "",
-              flat: f.flat || customer.flat || "",
-            }));
-          }
-        } else if (session.user.email) {
-          setForm((f) => ({ ...f, email: f.email || session.user.email || "" }));
-        }
-      } catch (e) {
-        console.error("checkout prefill failed", e);
-      }
-    })();
-  }, [session, brand.id]);
-
-  const handleAddressChange = (addressId: string) => {
-    setSelectedAddressId(addressId);
-    if (addressId === "manual") {
-      setForm((f) => ({
-        ...f,
-        label: "",
-        region: "",
-        block: "",
-        road: "",
-        house: "",
-        flat: "",
-      }));
-    } else {
-      const selected = savedAddresses.find((a) => a.id === addressId);
-      if (selected) {
-        setForm((f) => ({
-          ...f,
-          label: selected.label || "",
-          region: selected.region || "",
-          block: selected.block || "",
-          road: selected.road || "",
-          house: selected.house || "",
-          flat: selected.flat || "",
-        }));
-      }
-    }
-  };
-
-  const fulfillmentOptions = useMemo(() => {
-    const opts: Array<{ id: Fulfillment; ar: string; en: string; icon: any; fee: number }> = [];
-    if (settings.delivery_enabled)
-      opts.push({
-        id: "delivery",
-        ar: "توصيل",
-        en: "Delivery",
-        icon: Truck,
-        fee: settings.delivery_fee,
-      });
-    if (settings.pickup_enabled)
-      opts.push({
-        id: "pickup",
-        ar: "استلام",
-        en: "Pickup",
-        icon: Store,
-        fee: 0,
-      });
-    if (settings.digital_delivery_enabled)
-      opts.push({
-        id: "digital",
-        ar: "تسليم رقمي",
-        en: "Digital delivery",
-        icon: Download,
-        fee: 0,
-      });
-    return opts;
-  }, [
-    settings.delivery_enabled,
-    settings.pickup_enabled,
-    settings.digital_delivery_enabled,
-    settings.delivery_fee,
-  ]);
-
-  const [fulfillment, setFulfillment] = useState<Fulfillment>(() => {
-    if (typeof window !== "undefined") {
-      const saved = sessionStorage.getItem("checkout_fulfillment");
-      if (saved) return saved as any;
-    }
-    return fulfillmentOptions[0]?.id ?? "delivery";
-  });
-  useEffect(() => {
-    if (fulfillmentOptions.length > 0 && !fulfillmentOptions.find((o) => o.id === fulfillment)) {
-      setFulfillment(fulfillmentOptions[0].id);
-    }
-  }, [fulfillmentOptions, fulfillment]);
-
-  // Delivery destination: "BH" (default domestic) or zone ID
-  const [selectedDestination, setSelectedDestination] = useState<string>("BH");
-  const zones = useMemo(
-    () => (settings.shipping_zones ?? []) as ShippingZone[],
-    [settings.shipping_zones],
-  );
-
-  // Selected country code (when international destination is chosen)
-  const [selectedCountryCode, setSelectedCountryCode] = useState<string>("BH");
-
-  const selectedZone = useMemo(() => {
-    if (selectedDestination === "BH") return undefined;
-    return zones.find((z) => z.id === selectedDestination);
-  }, [zones, selectedDestination]);
-
-  useEffect(() => {
-    if (selectedDestination === "BH") {
-      setSelectedCountryCode("BH");
-    } else if (selectedZone && selectedZone.countries && selectedZone.countries.length > 0) {
-      const countries = selectedZone.countries;
-      setSelectedCountryCode((current) => (countries.includes(current) ? current : countries[0]));
-    }
-  }, [selectedDestination, selectedZone]);
-
-  const availableMethods = useMemo(() => {
-    const base: Array<{
-      id: "cod" | "card" | "benefit";
-      ar: string;
-      en: string;
-      icon: any;
-    }> = [
-      settings.cod_enabled && {
-        id: "cod" as const,
-        ar: "الدفع عند الاستلام",
-        en: "Cash on delivery",
-        icon: Banknote,
-      },
-      settings.card_enabled && {
-        id: "card" as const,
-        ar: "الدفع بالبطاقة",
-        en: "Card payment",
-        icon: CreditCard,
-      },
-      settings.benefit_enabled && {
-        id: "benefit" as const,
-        ar: "عن طريق البنفت",
-        en: "Benefit Pay",
-        icon: QrCode,
-      },
-    ].filter(Boolean) as any;
-
-    // Restrict payment methods based on destination zone (admin-configurable)
-    if (fulfillment === "delivery" && selectedDestination !== "BH") {
-      const allowed = Array.isArray(selectedZone?.allowed_payment_methods)
-        ? selectedZone.allowed_payment_methods
-        : ["card", "benefit"];
-      return base.filter((m) => allowed.includes(m.id));
-    }
-
-    return base;
-  }, [
-    settings.cod_enabled,
-    settings.card_enabled,
-    settings.benefit_enabled,
+  const {
+    fulfillmentOptions,
     fulfillment,
+    setFulfillment,
     selectedDestination,
+    setSelectedDestination,
+    zones,
+    selectedCountryCode,
+    setSelectedCountryCode,
     selectedZone,
-  ]);
+    availableMethods,
+    method,
+    setMethod,
+    estimatedDeliveryText,
+  } = useCheckoutFulfillment({ settings, lang });
 
-  const [method, setMethod] = useState<"cod" | "card" | "benefit" | "">(() => {
-    if (typeof window !== "undefined") {
-      const saved = sessionStorage.getItem("checkout_method");
-      if (saved) return saved as any;
-    }
-    return "";
-  });
-
-  useEffect(() => {
-    if (availableMethods.length > 0) {
-      if (!method || !availableMethods.some((m) => m.id === method)) {
-        setMethod(availableMethods[0]?.id ?? "");
-      }
-    }
-  }, [method, availableMethods]);
-
-  const estimatedDeliveryText = useMemo(() => {
-    if (fulfillment === "pickup") {
-      return lang === "ar" ? "بعد إشعار جاهزية الطلب" : "After your ready notification";
-    }
-    if (fulfillment === "digital") {
-      return lang === "ar" ? "فوري بعد إتمام الطلب" : "Instant upon order completion";
-    }
-    if (selectedDestination === "BH") {
-      return lang === "ar"
-        ? settings.delivery_estimate_ar || "خلال 24 - 48 ساعة داخل البحرين"
-        : settings.delivery_estimate_en || "Within 24 - 48 hours in Bahrain";
-    }
-    if (selectedZone) {
-      return lang === "ar"
-        ? selectedZone.estimate_ar || "خلال 3 - 5 أيام عمل"
-        : selectedZone.estimate_en || "3 - 5 business days";
-    }
-    return lang === "ar" ? "خلال 3 - 5 أيام عمل" : "3 - 5 business days";
-  }, [
-    fulfillment,
-    selectedDestination,
-    selectedZone,
-    settings.delivery_estimate_ar,
-    settings.delivery_estimate_en,
-    lang,
-  ]);
-
-  const [branches, setBranches] = useState<
-    Array<{
-      id: string;
-      name_ar: string | null;
-      name_en: string | null;
-      location_ar: string | null;
-      location_en: string | null;
-      notes_ar: string | null;
-      notes_en: string | null;
-    }>
-  >([]);
-  const [branchId, setBranchId] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      const saved = sessionStorage.getItem("checkout_branchId");
-      if (saved) return saved;
-    }
-    return "";
-  });
-  const [digitalChannel, setDigitalChannel] = useState<"email" | "whatsapp">(() => {
-    if (typeof window !== "undefined") {
-      const saved = sessionStorage.getItem("checkout_digitalChannel");
-      if (saved) return saved as any;
-    }
-    return "email";
-  });
-  const [digitalContact, setDigitalContact] = useState(() => {
-    if (typeof window !== "undefined") {
-      const saved = sessionStorage.getItem("checkout_digitalContact");
-      if (saved) return saved;
-    }
-    return "";
-  });
+  const {
+    branches,
+    branchId,
+    setBranchId,
+    digitalChannel,
+    setDigitalChannel,
+    digitalContact,
+    setDigitalContact,
+    branchLabel,
+    branchLoc,
+  } = usePickupAndDigital({ brand, settings, lang });
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -545,25 +148,9 @@ function Checkout() {
       sessionStorage.setItem("checkout_digitalContact", digitalContact);
     }
   }, [form, method, fulfillment, branchId, digitalChannel, digitalContact]);
-  const [promoInput, setPromoInput] = useState("");
-  const [appliedPromo, setAppliedPromo] = useState<{ code: string; amount: number } | null>(null);
-  const [checkingPromo, setCheckingPromo] = useState(false);
+  const { promoInput, setPromoInput, appliedPromo, setAppliedPromo, checkingPromo, applyPromo } =
+    usePromoCode({ brand, cart, cartTotal, currency, lang, t });
   const [benefitReceipt, setBenefitReceipt] = useState<File | null>(null);
-  useEffect(() => {
-    if (!settings.pickup_enabled) return;
-    (async () => {
-      const { data } = await supabase.rpc("get_public_branches" as any, {
-        p_brand_id: brand.id,
-      });
-      const list = (data ?? []) as any[];
-      setBranches(list);
-      setBranchId((cur) => cur || (list[0]?.id ?? ""));
-    })();
-  }, [brand.id, settings.pickup_enabled]);
-  const branchLabel = (b: (typeof branches)[number]) =>
-    lang === "ar" ? b.name_ar || b.name_en || "" : b.name_en || b.name_ar || "";
-  const branchLoc = (b: (typeof branches)[number]) =>
-    lang === "ar" ? b.location_ar || b.location_en || "" : b.location_en || b.location_ar || "";
 
   // Total quantity of items in cart for per-piece / bundle shipping formula
   const totalCartQuantity = useMemo(() => {
@@ -579,220 +166,37 @@ function Checkout() {
     );
   }, [fulfillment, selectedZone, totalCartQuantity, settings.delivery_fee]);
 
-  // 1. Fetch Loyalty Program and Customer Account
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data: prog } = await (supabase as any)
-          .from("brand_loyalty_programs")
-          .select("*")
-          .eq("brand_id", brand.id)
-          .maybeSingle();
-        if (prog) setLoyaltyProgram(prog);
-
-        if (customerId) {
-          const { data: acc } = await (supabase as any)
-            .from("loyalty_accounts")
-            .select("*")
-            .eq("brand_id", brand.id)
-            .eq("customer_id", customerId)
-            .maybeSingle();
-          if (acc) {
-            setLoyaltyAccount(acc);
-            const { data: tier } = await (supabase as any)
-              .from("brand_loyalty_tiers")
-              .select("*")
-              .eq("brand_id", brand.id)
-              .eq("tier_key", acc.current_tier_key)
-              .maybeSingle();
-            if (tier) setLoyaltyTier(tier);
-          }
-        }
-      } catch (e) {
-        console.error("Loyalty program fetch failed", e);
-      }
-    })();
-  }, [brand.id, customerId]);
-
-  // 2. Restore Abandoned Cart if ?recover=TOKEN in URL
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const recoverToken = params.get("recover");
-    const couponParam = params.get("coupon");
-
-    if (recoverToken) {
-      (async () => {
-        try {
-          const res = await restoreAbandonedCart({
-            brandSlug: brand.slug,
-            recoveryToken: recoverToken,
-          });
-          if (res?.success && Array.isArray(res.items)) {
-            clearCart();
-            for (const item of res.items) {
-              addToCart({
-                cart_line_id: item.cart_line_id || crypto.randomUUID(),
-                variant_id: item.variant_id ?? null,
-                product_id: item.product_id,
-                name: item.title || item.name || "Product",
-                image: item.image_url || item.image || null,
-                price: Number(item.price || item.unit_price || 0),
-                size: item.size || null,
-                color: item.color || null,
-                fabric: item.fabric || null,
-                qty: Number(item.qty || item.quantity || 1),
-                max_stock: Number(item.stock_available || 999),
-                custom_fields: Array.isArray(item.custom_fields) ? item.custom_fields : undefined,
-              });
-            }
-            toast.success(
-              lang === "ar"
-                ? "تمت استعادة محتويات سلتك بنجاح!"
-                : "Your abandoned cart has been restored!",
-            );
-            if (res.guest_name || res.guest_phone || res.guest_email) {
-              setForm((prev) => ({
-                ...prev,
-                name: prev.name || res.guest_name || "",
-                phone: prev.phone || res.guest_phone || "",
-                email: prev.email || res.guest_email || "",
-              }));
-            }
-            if (couponParam) {
-              setPromoInput(couponParam.toUpperCase());
-            }
-          }
-        } catch (e) {
-          console.error("Cart restore error:", e);
-        }
-      })();
-    }
-  }, [addToCart, brand.slug, clearCart, lang]);
-
-  // 3. Debounced Sync of Active Cart Activity
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      syncStorefrontCartActivity({
-        brandId: brand.id,
-        sessionId: cartSessionId,
-        customerId: customerId,
-        guestEmail: form.email || undefined,
-        guestPhone: form.phone || undefined,
-        guestName: form.name || undefined,
-        cartItems: cart.map((item) => ({
-          cart_line_id: item.cart_line_id,
-          product_id: item.product_id,
-          variant_id: item.variant_id ?? null,
-          name: item.name,
-          title: item.name,
-          image: item.image,
-          image_url: item.image ?? null,
-          qty: item.qty,
-          quantity: item.qty,
-          price: item.price,
-          unit_price: item.price,
-          line_total: Number((item.price * item.qty).toFixed(3)),
-        })),
-        subtotal: cartTotal,
-        currency: currency,
-        marketingConsent: marketingConsent,
-      }).catch((err) => console.warn("Cart activity sync failed:", err));
-    }, 1500);
-
-    return () => clearTimeout(timer);
-  }, [
+  const { cartSessionId } = useAbandonedCart({
+    brand,
     cart,
     cartTotal,
-    customerId,
-    form.name,
-    form.phone,
-    form.email,
-    marketingConsent,
-    brand.id,
-    cartSessionId,
     currency,
-  ]);
+    lang,
+    clearCart,
+    addToCart,
+    customerId,
+    form,
+    setForm,
+    setPromoInput,
+    marketingConsent,
+  });
 
   const promoDiscount = Math.min(appliedPromo?.amount ?? 0, cartTotal);
 
-  const maxRedemptionPercent =
-    loyaltyProgram?.max_redemption_percentage ?? loyaltyProgram?.max_redemption_percent ?? 50;
-  const redemptionRate = Number(loyaltyProgram?.redemption_rate || 0.01);
-
-  const maxAllowedLoyaltyDiscount = useMemo(() => {
-    return Math.max(0, (cartTotal * maxRedemptionPercent) / 100);
-  }, [cartTotal, maxRedemptionPercent]);
-
-  const maxRedeemablePoints = useMemo(() => {
-    if (!loyaltyProgram?.is_enabled || redemptionRate <= 0) return 0;
-    const maxByCart = Math.floor(maxAllowedLoyaltyDiscount / redemptionRate);
-    const maxByAccount = loyaltyAccount?.active_points || 0;
-    return Math.max(0, Math.min(maxByCart, maxByAccount));
-  }, [loyaltyProgram, redemptionRate, maxAllowedLoyaltyDiscount, loyaltyAccount]);
-
-  const effectiveRedeemedPoints = useMemo(() => {
-    if (!loyaltyProgram?.is_enabled || redeemedPoints <= 0) return 0;
-    const minRedemption =
-      loyaltyProgram?.min_points_to_redeem ?? loyaltyProgram?.min_redemption_points ?? 100;
-    if (redeemedPoints < minRedemption) return 0;
-    return Math.min(redeemedPoints, maxRedeemablePoints);
-  }, [loyaltyProgram, redeemedPoints, maxRedeemablePoints]);
-
-  const loyaltyDiscount = useMemo(() => {
-    if (!loyaltyProgram?.is_enabled || effectiveRedeemedPoints <= 0) return 0;
-    const rawDisc = Number((effectiveRedeemedPoints * redemptionRate).toFixed(3));
-    const maxApplicable = Math.max(
-      0,
-      Math.min(maxAllowedLoyaltyDiscount, cartTotal - promoDiscount),
-    );
-    return Number(Math.min(rawDisc, maxApplicable).toFixed(3));
-  }, [
+  const {
+    loyaltyAccount,
     loyaltyProgram,
+    pointsToRedeemInput,
+    setPointsToRedeemInput,
+    redeemedPoints,
     effectiveRedeemedPoints,
-    redemptionRate,
-    maxAllowedLoyaltyDiscount,
-    cartTotal,
-    promoDiscount,
-  ]);
-
-  useEffect(() => {
-    if (!redeemedPoints || !loyaltyProgram?.is_enabled) return;
-    const minRedemption =
-      loyaltyProgram?.min_points_to_redeem ?? loyaltyProgram?.min_redemption_points ?? 100;
-    if (maxRedeemablePoints < minRedemption || cartTotal <= 0) {
-      setRedeemedPoints(0);
-      setPointsToRedeemInput("");
-      toast.info(
-        lang === "ar"
-          ? "تم إلغاء خصم نقاط المكافآت لتغير إجمالي السلة عن الحد الأدنى"
-          : "Loyalty points discount removed as cart total fell below redemption threshold",
-      );
-    } else if (redeemedPoints > maxRedeemablePoints) {
-      setRedeemedPoints(maxRedeemablePoints);
-      setPointsToRedeemInput(String(maxRedeemablePoints));
-      toast.info(
-        lang === "ar"
-          ? `تم تحديث خصم النقاط تلقائياً ليلائم السلة الجديدة (${maxRedeemablePoints} نقطة)`
-          : `Loyalty points adjusted to fit new cart subtotal (${maxRedeemablePoints} pts)`,
-      );
-    }
-  }, [cartTotal, maxRedeemablePoints, loyaltyProgram, lang, redeemedPoints]);
+    loyaltyDiscount,
+    estimatedPointsToEarn,
+    handleApplyPoints,
+    handleRemovePoints,
+  } = useCheckoutLoyalty({ brand, customerId, cartTotal, promoDiscount, currency, lang });
 
   const grandTotal = Math.max(0, cartTotal - promoDiscount - loyaltyDiscount) + shipping;
-
-  const estimatedPointsToEarn = useMemo(() => {
-    if (!loyaltyProgram?.is_enabled) return 0;
-    const res = calculateOrderLoyaltyPoints({
-      subtotal: cartTotal,
-      discount: promoDiscount + loyaltyDiscount,
-      tax: 0,
-      shipping: 0,
-      program: loyaltyProgram,
-      tierMultiplier: loyaltyTier?.points_multiplier || 1.0,
-    });
-    return res.finalPoints;
-  }, [loyaltyProgram, cartTotal, promoDiscount, loyaltyDiscount, loyaltyTier]);
 
   useEffect(() => {
     if (!cart.length) return;
@@ -812,137 +216,41 @@ function Checkout() {
     );
   }, [cart, cartTotal, currency]);
 
-  useEffect(() => {
-    setAppliedPromo(null);
-  }, [cart, brand.id]);
-
-  const applyPromo = async () => {
-    const code = promoInput.trim().toUpperCase();
-    if (!code) return toast.error(t("أدخل رمز الخصم", "Enter a promo code"));
-    setCheckingPromo(true);
-    const promoItems = cart.map((item) => ({
-      variant_id: item.variant_id && item.variant_id.trim() ? item.variant_id : null,
-      line_total: Number((item.price * item.qty).toFixed(3)),
-    }));
-    const { data, error } = await supabase.rpc("validate_promo_code" as any, {
-      p_brand_slug: brand.slug,
-      p_code: code,
-      p_subtotal: cartTotal,
-      p_items: promoItems,
-      p_customer_id: null,
-    });
-    setCheckingPromo(false);
-    if (error) return toast.error(t("تعذر التحقق من الرمز", "Could not validate this code"));
-    const result = data as any;
-    if (!result?.valid) {
-      setAppliedPromo(null);
-      if (result?.reason === "MINIMUM_NOT_MET")
-        return toast.error(
-          t(
-            `الحد الأدنى للطلب ${formatPrice(Number(result.minimum_order_amount), currency, lang)}`,
-            `Minimum order is ${formatPrice(Number(result.minimum_order_amount), currency, lang)}`,
-          ),
-        );
-      if (result?.reason === "CODE_INACTIVE")
-        return toast.error(
-          t("رمز الخصم هذا لم يعد نشطاً.", "This promotional code is no longer active."),
-        );
-      if (result?.reason === "FIRST_ORDER_ONLY")
-        return toast.error(
-          t(
-            "رمز الخصم هذا مخصص للعملاء الجدد فقط.",
-            "This promo code is restricted to first-time customers only.",
-          ),
-        );
-      if (result?.reason === "PREVIOUS_ORDER_REQUIRED")
-        return toast.error(
-          t(
-            "رمز الخصم هذا مخصص للعملاء الذين لديهم طلب سابق فقط.",
-            "This promo code is only available to customers with a previous order.",
-          ),
-        );
-      if (result?.reason === "AUTH_REQUIRED")
-        return toast.error(t("سجّل الدخول لاستخدام هذا الرمز.", "Sign in to use this promo code."));
-      if (result?.reason === "USAGE_LIMIT_REACHED")
-        return toast.error(
-          t(
-            "لقد وصلت إلى الحد المسموح لاستخدام هذا الرمز.",
-            "You have reached this code's usage limit.",
-          ),
-        );
-      if (result?.reason === "NO_ELIGIBLE_ITEMS")
-        return toast.error(
-          t(
-            "لا يمكن تطبيق رمز الخصم هذا على المنتجات المخفضة مسبقاً.",
-            "This promo code cannot be applied to items already on discount/sale.",
-          ),
-        );
-      if (result?.reason === "CODE_NOT_FOUND")
-        return toast.error(
-          t("رمز الخصم غير موجود لهذا المتجر.", "This promo code does not exist for this brand."),
-        );
-      return toast.error(
-        t(
-          "تعذر تطبيق رمز الخصم. تحقق من شروطه.",
-          "This promo code could not be applied. Check its eligibility rules.",
-        ),
-      );
-    }
-    setAppliedPromo({ code: result.code, amount: Number(result.discount_amount) });
-    setPromoInput(result.code);
-    toast.success(t("تم تطبيق الخصم", "Promo code applied"));
-  };
-
-  const handleApplyPoints = () => {
-    const pts = parseInt(pointsToRedeemInput, 10);
-    if (isNaN(pts) || pts <= 0) {
-      setRedeemedPoints(0);
-      return toast.error(lang === "ar" ? "أدخل عدد نقاط صحيح" : "Enter a valid points amount");
-    }
-    const maxAvailable = loyaltyAccount?.active_points || 0;
-    if (pts > maxAvailable) {
-      return toast.error(
-        lang === "ar"
-          ? `رصيد نقاطك المتاح هو ${maxAvailable} نقطة فقط`
-          : `You only have ${maxAvailable} points available`,
-      );
-    }
-    const minRedemption =
-      loyaltyProgram?.min_points_to_redeem ?? loyaltyProgram?.min_redemption_points ?? 100;
-    if (pts < minRedemption) {
-      return toast.error(
-        lang === "ar"
-          ? `الحد الأدنى لاستخدام النقاط هو ${minRedemption} نقطة`
-          : `Minimum points to redeem is ${minRedemption}`,
-      );
-    }
-    const maxPercent =
-      loyaltyProgram?.max_redemption_percentage ?? loyaltyProgram?.max_redemption_percent ?? 50;
-    const maxDiscountAllowed = (cartTotal * maxPercent) / 100;
-    const calculatedDisc = pts * Number(loyaltyProgram?.redemption_rate || 0.01);
-    if (calculatedDisc > maxDiscountAllowed) {
-      const allowedPts = Math.floor(
-        maxDiscountAllowed / Number(loyaltyProgram?.redemption_rate || 0.01),
-      );
-      return toast.error(
-        lang === "ar"
-          ? `أقصى خصم مسموح بالنقاط لهذا الطلب هو ${allowedPts} نقطة (${maxDiscountAllowed.toFixed(3)} ${currency})`
-          : `Max points allowed for this order is ${allowedPts} (${maxDiscountAllowed.toFixed(3)} ${currency})`,
-      );
-    }
-    setRedeemedPoints(pts);
-    toast.success(
-      lang === "ar"
-        ? `تم تطبيق خصم النقاط (${calculatedDisc.toFixed(3)} ${currency})`
-        : `Points discount applied (${calculatedDisc.toFixed(3)} ${currency})`,
-    );
-  };
-
-  const handleRemovePoints = () => {
-    setRedeemedPoints(0);
-    setPointsToRedeemInput("");
-    toast.info(lang === "ar" ? "تم إزالة خصم النقاط" : "Points discount removed");
-  };
+  const { submitting, submit } = usePlaceOrder({
+    brand,
+    session,
+    cart,
+    cartTotal,
+    grandTotal,
+    shipping,
+    currency,
+    lang,
+    t,
+    clearCart,
+    form,
+    acceptedTerms,
+    saveToProfile,
+    whatsappOrderUpdates,
+    isGift,
+    giftRecipient,
+    giftMessage,
+    fulfillment,
+    selectedDestination,
+    selectedCountryCode,
+    selectedZone,
+    method,
+    benefitReceipt,
+    branches,
+    branchId,
+    digitalChannel,
+    digitalContact,
+    appliedPromo,
+    setAppliedPromo,
+    customerId,
+    effectiveRedeemedPoints,
+    cartSessionId,
+    paymentErrorState,
+  });
 
   if (cart.length === 0) {
     return (
@@ -965,390 +273,6 @@ function Checkout() {
       </div>
     );
   }
-
-  const submit = async () => {
-    if (!form.name.trim() || (fulfillment !== "digital" && !form.phone.trim())) {
-      toast.error(t("الاسم والهاتف مطلوبان", "Name and phone are required"));
-      return;
-    }
-    const customerEmail = form.email.trim();
-    if (customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
-      toast.error(
-        t(
-          "يرجى إدخال بريد إلكتروني صحيح لتصلك تحديثات الطلب",
-          "Enter a valid email address to receive order updates",
-        ),
-      );
-      return;
-    }
-    if (!acceptedTerms) {
-      toast.error(
-        t(
-          "يرجى الموافقة على الشروط والأحكام وسياسة الخصوصية",
-          "Please accept the terms and conditions and privacy policy",
-        ),
-      );
-      return;
-    }
-    if (fulfillment === "delivery") {
-      if (selectedDestination === "BH") {
-        if (!form.region || !form.block.trim() || !form.road.trim() || !form.house.trim()) {
-          toast.error(
-            t(
-              "يرجى تعبئة كامل عنوان التوصيل داخل البحرين",
-              "Please complete the delivery address in Bahrain",
-            ),
-          );
-          return;
-        }
-      } else {
-        if (!form.region.trim() || !form.road.trim() || !form.house.trim()) {
-          toast.error(
-            t(
-              "يرجى إدخال المدينة، والحي، وتفاصيل العنوان للشحن الدولي",
-              "Please enter city, district, and street address for international shipping",
-            ),
-          );
-          return;
-        }
-      }
-    }
-    if (!method) {
-      toast.error(t("اختر طريقة دفع", "Choose a payment method"));
-      return;
-    }
-    if (method === "benefit" && !benefitReceipt) {
-      toast.error(
-        t(
-          "يرجى إرفاق صورة إيصال التحويل لتأكيد الطلب",
-          "Please attach the transfer receipt to confirm your order",
-        ),
-      );
-      return;
-    }
-    if (fulfillment === "pickup" && branches.length > 0 && !branchId) {
-      toast.error(t("اختر الفرع", "Select a branch"));
-      return;
-    }
-    if (fulfillment === "digital") {
-      const contact = digitalContact.trim();
-      if (!contact) {
-        toast.error(
-          t(
-            "أدخل البريد الإلكتروني أو رقم/معرّف واتساب",
-            "Enter the email or WhatsApp number/user ID",
-          ),
-        );
-        return;
-      }
-      if (digitalChannel === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact)) {
-        toast.error(t("أدخل بريداً إلكترونياً صحيحاً", "Enter a valid email address"));
-        return;
-      }
-    }
-    setSubmitting(true);
-    try {
-      let orderId = paymentErrorState?.orderId;
-      let confirmationToken = null;
-
-      if (method === "card" && paymentErrorState?.orderId) {
-        orderId = paymentErrorState.orderId;
-      } else {
-        const benefitReceiptId =
-          method === "benefit" && benefitReceipt
-            ? await uploadBenefitReceipt(brand.id, benefitReceipt)
-            : null;
-        const { data, error } = await supabase.rpc("place_storefront_order", {
-          p_brand_slug: brand.slug,
-          p_customer: {
-            name: form.name,
-            phone: form.phone,
-            email: customerEmail,
-            label:
-              selectedDestination === "BH"
-                ? form.label
-                : [
-                    getCountryByCode(selectedCountryCode)?.name_en || selectedCountryCode,
-                    form.label,
-                  ]
-                    .filter(Boolean)
-                    .join(" - "),
-            region: form.region,
-            block: form.block,
-            road: form.road,
-            house: form.house,
-            flat: form.flat,
-            save_to_profile: Boolean(session?.user && saveToProfile),
-          },
-          p_items: cart.map((c) => ({
-            variant_id: c.variant_id && c.variant_id.trim() ? c.variant_id : null,
-            quantity: c.qty,
-            selected_variant: {
-              size: c.size,
-              color: c.color,
-              fabric: c.fabric ?? null,
-            },
-            custom_fields: c.custom_fields ?? [],
-            custom_field_values: c.custom_fields ?? [],
-          })),
-          p_payment_method: method,
-          p_notes: (() => {
-            const giftNote = isGift
-              ? `🎁 [طلب إهداء / Gift Order]\nالمستلم: ${giftRecipient || "غير محدد"}\nرسالة الإهداء: ${giftMessage || "بدون رسالة"}`
-              : "";
-            const userNote = form.notes?.trim() || "";
-            return [giftNote, userNote].filter(Boolean).join("\n\n") || undefined;
-          })(),
-          p_fulfillment: fulfillment,
-          p_branch_id: fulfillment === "pickup" ? branchId || null : null,
-          p_digital_channel: fulfillment === "digital" ? digitalChannel : null,
-          p_digital_contact: fulfillment === "digital" ? digitalContact.trim() : null,
-          p_promo_code: appliedPromo?.code ?? null,
-          p_benefit_receipt_id: benefitReceiptId,
-          p_shipping_fee: shipping,
-          p_shipping_zone:
-            fulfillment === "delivery"
-              ? selectedDestination === "BH"
-                ? lang === "ar"
-                  ? "البحرين - توصيل محلي"
-                  : "Bahrain - Local Delivery"
-                : selectedZone
-                  ? lang === "ar"
-                    ? `${selectedZone.name_ar} (${getCountryByCode(selectedCountryCode)?.name_ar || selectedCountryCode})`
-                    : `${selectedZone.name_en} (${getCountryByCode(selectedCountryCode)?.name_en || selectedCountryCode})`
-                  : lang === "ar"
-                    ? "شحن دولي"
-                    : "International Shipping"
-              : null,
-          p_idempotency_key: idempotencyKey,
-        } as any);
-        if (error) throw error;
-        orderId = (data as any)?.order_id;
-        confirmationToken = (data as any)?.confirmation_email_token;
-        if (brand.slug === "pura" && whatsappOrderUpdates && orderId && confirmationToken) {
-          const { error: whatsappOptInError } = await supabase.rpc(
-            "record_order_whatsapp_opt_in" as any,
-            {
-              p_order_id: orderId,
-              p_confirmation_token: confirmationToken,
-            },
-          );
-          if (whatsappOptInError) {
-            console.warn("[checkout] WhatsApp order-update consent could not be recorded");
-          }
-        }
-
-        // 1. Loyalty redemption
-        if (effectiveRedeemedPoints > 0 && customerId && orderId) {
-          try {
-            await redeemLoyaltyPoints({
-              brandId: brand.id,
-              customerId,
-              pointsToRedeem: effectiveRedeemedPoints,
-              orderSubtotal: cartTotal,
-              idempotencyKey: `${idempotencyKey}_redeem`,
-              orderId: String(orderId),
-            });
-          } catch (ptsErr) {
-            console.warn("Points redemption error:", ptsErr);
-          }
-        }
-
-        // 2. Award points for order
-        if (orderId) {
-          try {
-            await awardOrderLoyaltyPoints({
-              brandId: brand.id,
-              orderId: String(orderId),
-              idempotencyKey: `${idempotencyKey}_award`,
-            });
-          } catch (ptsAwardErr) {
-            console.warn("Points award error:", ptsAwardErr);
-          }
-        }
-
-        // 3. Mark cart recovered
-        if (orderId) {
-          try {
-            await markCartRecoveredOnOrder({
-              brandId: brand.id,
-              orderId: String(orderId),
-              customerId: customerId || undefined,
-              sessionId: cartSessionId,
-              guestEmail: form.email || undefined,
-              guestPhone: form.phone || undefined,
-            });
-          } catch (cartRecoverErr) {
-            console.warn("Cart recovery mark error:", cartRecoverErr);
-          }
-        }
-      }
-      trackStorefrontEvent(
-        "purchase",
-        {
-          transaction_id: String(orderId ?? ""),
-          currency,
-          value: Number(grandTotal.toFixed(3)),
-          shipping: Number(shipping.toFixed(3)),
-          coupon: appliedPromo?.code ?? undefined,
-          items: cart.map((item) => ({
-            item_id: item.product_id,
-            item_name: item.name,
-            price: item.price,
-            quantity: item.qty,
-          })),
-        },
-        String(orderId ?? ""),
-      );
-      // If they chose to pay via Card, redirect to payment gateway
-      if (method === "card") {
-        const toastId = toast.loading(
-          t("جاري تحويلك لبوابة الدفع...", "Redirecting you to the payment gateway..."),
-        );
-        try {
-          const chargeRes = await fetch("/api/public/payments/create-tap-charge", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              orderId: String(orderId),
-              brandId: brand.id,
-              confirmationToken,
-            }),
-          });
-
-          if (!chargeRes.ok) {
-            const errData = await chargeRes.json<{ error?: string }>();
-            throw new Error(errData.error || "Failed to initiate card payment.");
-          }
-
-          const { redirectUrl } = await chargeRes.json<{ redirectUrl: string }>();
-          toast.dismiss(toastId);
-          window.location.href = redirectUrl;
-          return;
-        } catch (paymentErr: any) {
-          toast.dismiss(toastId);
-          throw new Error(paymentErr.message || "Failed to initiate payment gateway.");
-        }
-      }
-
-      toast.success(t("تم استلام طلبك!", "Order placed!"));
-      if (typeof window !== "undefined") {
-        sessionStorage.removeItem("checkout_form");
-        sessionStorage.removeItem("checkout_method");
-        sessionStorage.removeItem("checkout_fulfillment");
-        sessionStorage.removeItem("checkout_branchId");
-        sessionStorage.removeItem("checkout_digitalChannel");
-        sessionStorage.removeItem("checkout_digitalContact");
-      }
-      clearCart();
-      await navigate({
-        to: "/$slug/thank-you/$orderId",
-        params: { slug: brand.slug, orderId: String(orderId ?? "") },
-        search: { fulfillment, channel: fulfillment === "digital" ? digitalChannel : "email" },
-      });
-    } catch (e: any) {
-      const msg = String(e?.message ?? e);
-      if (msg.includes("INSUFFICIENT_STOCK")) {
-        toast.error(t("المخزون غير كافٍ لأحد المنتجات", "Insufficient stock for one item"));
-      } else if (msg.includes("order_items_location_check")) {
-        toast.error(
-          t(
-            "تعذر تجهيز الطلب المخصص حالياً. حدّث الصفحة وحاول مرة أخرى.",
-            "Custom order checkout is temporarily unavailable. Refresh and try again.",
-          ),
-        );
-      } else if (msg.includes("PAYMENT_METHOD_DISABLED")) {
-        toast.error(t("طريقة الدفع غير متاحة", "Payment method unavailable"));
-      } else if (
-        msg.includes("DELIVERY_DISABLED") ||
-        msg.includes("PICKUP_DISABLED") ||
-        msg.includes("DIGITAL_DELIVERY_DISABLED")
-      ) {
-        toast.error(t("طريقة التسليم غير متاحة", "Fulfillment method unavailable"));
-      } else if (
-        msg.includes("DIGITAL_CONTACT") ||
-        msg.includes("DIGITAL_EMAIL") ||
-        msg.includes("DIGITAL_CHANNEL")
-      ) {
-        toast.error(t("تحقق من بيانات التسليم الرقمي", "Check the digital delivery details"));
-      } else if (msg.includes("PROMO_FIRST_ORDER_ONLY")) {
-        setAppliedPromo(null);
-        toast.error(
-          t(
-            "رمز الخصم هذا مخصص للعملاء الجدد فقط.",
-            "This promo code is restricted to first-time customers only.",
-          ),
-        );
-      } else if (msg.includes("PROMO_USAGE_LIMIT_REACHED")) {
-        setAppliedPromo(null);
-        toast.error(
-          t(
-            "لقد وصلت إلى الحد المسموح لاستخدام هذا الرمز.",
-            "You have reached this code's usage limit.",
-          ),
-        );
-      } else if (msg.includes("PROMO_PREVIOUS_ORDER_REQUIRED")) {
-        setAppliedPromo(null);
-        toast.error(
-          t(
-            "رمز الخصم هذا مخصص للعملاء الذين لديهم طلب سابق فقط.",
-            "This promo code is only available to customers with a previous order.",
-          ),
-        );
-      } else if (msg.includes("PROMO_NO_ELIGIBLE_ITEMS")) {
-        setAppliedPromo(null);
-        toast.error(
-          t(
-            "لا يمكن تطبيق رمز الخصم هذا على المنتجات المخفضة مسبقاً.",
-            "This promo code cannot be applied to items already on discount/sale.",
-          ),
-        );
-      } else if (msg.includes("PROMO_AUTH_REQUIRED")) {
-        setAppliedPromo(null);
-        toast.error(t("سجّل الدخول لاستخدام هذا الرمز.", "Sign in to use this promo code."));
-      } else if (msg.includes("RECEIPT_STORAGE_UNREACHABLE")) {
-        toast.error(
-          t(
-            "تعذر الوصول إلى التخزين الآمن للإيصال. حاول مرة أخرى أو تواصل مع المتجر.",
-            "The secure receipt upload could not be reached. Please retry or contact the store.",
-          ),
-        );
-      } else if (msg.includes("BENEFIT_RECEIPT")) {
-        toast.error(
-          t(
-            "تعذر التحقق من إيصال التحويل. أعد رفع الصورة وحاول مرة أخرى.",
-            "The transfer receipt could not be verified. Upload it again and retry.",
-          ),
-        );
-      } else if (msg.includes("CUSTOMER_ACCOUNT_EXISTS_SIGN_IN_REQUIRED")) {
-        toast.error(
-          t(
-            "هذا البريد الإلكتروني أو رقم الهاتف مرتبط بحساب موجود. سجّل الدخول لإكمال الطلب بأمان.",
-            "This email or phone belongs to an existing account. Sign in to continue securely.",
-          ),
-        );
-      } else if (msg.includes("CUSTOMER_CONTACT_ALREADY_REGISTERED")) {
-        toast.error(
-          t(
-            "البريد الإلكتروني أو رقم الهاتف مستخدم في حساب عميل آخر.",
-            "This email or phone is already used by another customer account.",
-          ),
-        );
-      } else if (msg.includes("PROMO_")) {
-        setAppliedPromo(null);
-        toast.error(
-          t(
-            "رمز الخصم لم يعد صالحاً لهذا الطلب",
-            "The promo code is no longer valid for this order",
-          ),
-        );
-      } else {
-        toast.error(msg);
-      }
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   if (isCatalogMode(settings)) {
     return null;
