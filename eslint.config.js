@@ -170,13 +170,13 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(orders|order_items|expenses|business_settings|products|product_variants|product_bom_items|packaging_materials|customers|customer_addresses|return_requests)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(orders|order_items|expenses|business_settings|products|product_variants|product_bom_items|packaging_materials|customers|customer_addresses|return_requests|message_templates)$/]",
           message:
             "Orders, expenses, business settings, the catalog and customers go through `@/lib/data/{orders,expenses,business-settings,catalog,customers}`, not direct Supabase calls.",
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(orders?|expenses|business-settings|cogs|orders-reconciliation|expenses-business-settings|products|variants|packaging-materials|product-bom-items(-all)?|customers|customer_addresses|dashboard-(orders-with-items|recent-orders|expenses|expenses-full|business-settings|products|variants|customers|pending-returns|incubator-sales|catalog-inquiries|reporting-overview(-previous)?))$/]",
+            "ArrayExpression > Literal:first-child[value=/^(orders?|expenses|business-settings|cogs|orders-reconciliation|expenses-business-settings|products|variants|packaging-materials|product-bom-items(-all)?|customers|customer_addresses|message-templates|dashboard-(orders-with-items|recent-orders|expenses|expenses-full|business-settings|products|variants|customers|pending-returns|incubator-sales|catalog-inquiries|reporting-overview(-previous)?))$/]",
           message:
             "Build these cache keys with `ordersKeys` / `expensesKeys` / `businessSettingsKeys` / `catalogKeys` / `customersKeys` (or the invalidate helpers).",
         },
@@ -256,7 +256,7 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(customers|customer_addresses|business_settings|orders|order_items|categories)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(customers|customer_addresses|business_settings|orders|order_items|categories|message_templates)$/]",
           message:
             "Customers, categories, the settings row and orders go through `@/lib/data/{customers,categories,business-settings,orders}`, not direct Supabase calls.",
         },
@@ -267,7 +267,7 @@ export default tseslint.config(
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(customers|customer_addresses|customer-profile(-addresses|-orders)?|customer-orders|campaigns-customer-orders|export-orders|breadcrumb-order-number)$/]",
+            "ArrayExpression > Literal:first-child[value=/^(customers|customer_addresses|customer-profile(-addresses|-orders)?|customer-orders|campaigns-customer-orders|export-orders|breadcrumb-order-number|message-templates|campaign-templates)$/]",
           message: "Build these cache keys with `customersKeys` (or `invalidateCustomers`).",
         },
       ],
