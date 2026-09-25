@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { loyaltyQueries } from "@/lib/data/loyalty";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
@@ -12,7 +12,6 @@ import { LoyaltyTiersManager } from "@/components/loyalty/LoyaltyTiersManager";
 import { LoyaltyLedgerTable } from "@/components/loyalty/LoyaltyLedgerTable";
 import { LoyaltySettingsEditor } from "@/components/loyalty/LoyaltySettingsEditor";
 import { LoyaltyManualAdjustmentDialog } from "@/components/loyalty/LoyaltyManualAdjustmentDialog";
-import type { BrandLoyaltyProgram, LoyaltyTier } from "@/lib/loyalty.types";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/loyalty")({
   component: LoyaltyDashboardPage,
@@ -28,79 +27,21 @@ function LoyaltyDashboardPage() {
   const [adjustOpen, setAdjustOpen] = useState(false);
 
   // 1. Fetch loyalty program settings
-  const { data: program } = useQuery<BrandLoyaltyProgram | null>({
-    queryKey: ["brand_loyalty_program", brand.id],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("brand_loyalty_programs")
-        .select("*")
-        .eq("brand_id", brand.id)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-  });
+  const { data: program } = useQuery(loyaltyQueries.program(brand.id));
 
   // 2. Fetch loyalty tiers
-  const { data: tiers = [] } = useQuery<LoyaltyTier[]>({
-    queryKey: ["brand_loyalty_tiers", brand.id],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("brand_loyalty_tiers")
-        .select("*")
-        .eq("brand_id", brand.id)
-        .order("min_spend", { ascending: true });
-      if (error) throw error;
-      return data || [];
-    },
-  });
+  const { data: tiers = [] } = useQuery(loyaltyQueries.tiers(brand.id));
 
   // 3. Fetch loyalty ledger
   const {
     data: ledger = [],
     isLoading: loadingLedger,
     refetch: refetchLedger,
-  } = useQuery({
-    queryKey: ["brand_loyalty_ledger", brand.id],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("loyalty_ledger")
-        .select("*, customers(name, email, phone)")
-        .eq("brand_id", brand.id)
-        .order("created_at", { ascending: false })
-        .limit(200);
-      if (error) throw error;
-      return data || [];
-    },
-  });
+  } = useQuery(loyaltyQueries.ledger(brand.id));
 
   // 4. Fetch loyalty accounts aggregate KPI summary
   const { data: accountsSummary = { totalActive: 0, totalRedeemed: 0, customerCount: 0 } } =
-    useQuery({
-      queryKey: ["brand_loyalty_accounts_summary", brand.id],
-      queryFn: async () => {
-        const { data, error } = await (supabase as any)
-          .from("loyalty_accounts")
-          .select("active_points, lifetime_spent_points")
-          .eq("brand_id", brand.id);
-        if (error) throw error;
-
-        const totalActive = (data || []).reduce(
-          (acc: number, row: any) => acc + (row.active_points || 0),
-          0,
-        );
-        const totalRedeemed = (data || []).reduce(
-          (acc: number, row: any) => acc + (row.lifetime_spent_points || 0),
-          0,
-        );
-
-        return {
-          totalActive,
-          totalRedeemed,
-          customerCount: (data || []).length,
-        };
-      },
-    });
+    useQuery(loyaltyQueries.summary(brand.id));
 
   const redemptionRate = program?.redemption_rate || 0.01;
   const estimatedActiveValue = (accountsSummary.totalActive * redemptionRate).toFixed(3);

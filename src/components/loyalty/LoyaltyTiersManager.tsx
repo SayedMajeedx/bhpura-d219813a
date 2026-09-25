@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { invalidateLoyalty, saveLoyaltyTiers } from "@/lib/data/loyalty";
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,18 +35,11 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
   // Initialize missing tiers if needed
   const initTiersMutation = useMutation({
     mutationFn: async () => {
-      const inserts = DEFAULT_LOYALTY_TIERS.map((tier) => ({
-        brand_id: brandId,
-        ...tier,
-      }));
-      const { error } = await (supabase as any)
-        .from("brand_loyalty_tiers")
-        .upsert(inserts, { onConflict: "brand_id,tier_key" });
-      if (error) throw error;
+      await saveLoyaltyTiers(brandId, [...DEFAULT_LOYALTY_TIERS]);
     },
     onSuccess: () => {
       toast.success(isAr ? "تم إعداد المستويات الافتراضية بنجاح" : "Default tiers initialized");
-      queryClient.invalidateQueries({ queryKey: ["brand_loyalty_tiers", brandId] });
+      void invalidateLoyalty(queryClient, brandId);
     },
     onError: (err: any) => {
       toast.error(err.message || (isAr ? "فشل تهيئة المستويات" : "Failed to initialize tiers"));
@@ -55,19 +48,11 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
 
   const saveTierMutation = useMutation({
     mutationFn: async (tier: LoyaltyTier) => {
-      const { error } = await (supabase as any).from("brand_loyalty_tiers").upsert(
-        {
-          ...tier,
-          brand_id: brandId,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "brand_id,tier_key" },
-      );
-      if (error) throw error;
+      await saveLoyaltyTiers(brandId, [{ ...tier, updated_at: new Date().toISOString() }]);
     },
     onSuccess: () => {
       toast.success(isAr ? "تم تحديث المستوى بنجاح" : "Tier updated successfully");
-      queryClient.invalidateQueries({ queryKey: ["brand_loyalty_tiers", brandId] });
+      void invalidateLoyalty(queryClient, brandId);
       setEditingTier(null);
     },
     onError: (err: any) => {

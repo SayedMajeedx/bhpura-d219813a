@@ -16,8 +16,8 @@ import { collectMaintainabilityMetrics } from "../scripts/maintainability-metric
  */
 
 const BUDGETS = {
-  asAny: 747,
-  colonAny: 738,
+  asAny: 732,
+  colonAny: 736,
   asNever: 0,
   tsIgnore: 0,
   tsExpectError: 0,

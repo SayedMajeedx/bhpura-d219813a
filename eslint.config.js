@@ -128,6 +128,11 @@ export default tseslint.config(
         },
         {
           selector:
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(brand_loyalty_programs|brand_loyalty_tiers|loyalty_accounts|loyalty_ledger)$/]",
+          message: "Loyalty reads go through `@/lib/data/loyalty`.",
+        },
+        {
+          selector:
             "CallExpression[callee.property.name='rpc'][arguments.0.value=/^get_storefront_(page_data|best_sellers|trending)$/]",
           message:
             "Use the fetchers in `@/lib/data/storefront` for storefront page data and rankings.",
@@ -233,7 +238,6 @@ export default tseslint.config(
       "src/routes/_authenticated/admin.b.$slug.campaigns.tsx",
       "src/routes/_authenticated/admin.b.$slug.export.tsx",
       "src/components/communications/CustomerPushCenter.tsx",
-      "src/components/loyalty/LoyaltyManualAdjustmentDialog.tsx",
       "src/components/spotlight-command-palette.tsx",
       "src/components/app-shell.tsx",
     ],
@@ -341,6 +345,40 @@ export default tseslint.config(
           selector:
             "ArrayExpression > Literal:first-child[value=/^(categories|admin-categories-overview)$/]",
           message: "Build these cache keys with `categoriesKeys` (or `invalidateCategories`).",
+        },
+      ],
+    },
+  },
+  {
+    // Loyalty data layer: program, tiers, accounts and ledger under
+    // ["loyalty", brandId]. The manual adjustment dialog also picks customers,
+    // so this block forbids the customers tables too (a later block replaces
+    // the whole rule for a file).
+    files: ["src/routes/_authenticated/admin.b.$slug.loyalty.tsx", "src/components/loyalty/**"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(brand_loyalty_programs|brand_loyalty_tiers|loyalty_accounts|loyalty_ledger|customers|customer_addresses)$/]",
+          message:
+            "Loyalty goes through `@/lib/data/loyalty` and customers through `@/lib/data/customers`.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='rpc'][arguments.0.value='rpc_manual_adjust_loyalty_points']",
+          message: "Use `adjustLoyaltyPoints` from `@/lib/data/loyalty`.",
+        },
+        {
+          selector:
+            "CallExpression[callee.expression.property.name='rpc'][arguments.0.value='rpc_manual_adjust_loyalty_points']",
+          message: "Use `adjustLoyaltyPoints` from `@/lib/data/loyalty`.",
+        },
+        {
+          selector:
+            "ArrayExpression > Literal:first-child[value=/^(loyalty|brand_loyalty_.*|customer_loyalty_.*|brand_customers_select|customers)$/]",
+          message:
+            "Build these cache keys with `loyaltyKeys` / `customersKeys` (or `invalidateLoyalty`).",
         },
       ],
     },

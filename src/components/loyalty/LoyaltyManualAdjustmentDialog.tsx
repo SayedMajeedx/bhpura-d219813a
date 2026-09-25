@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { adjustLoyaltyPoints, invalidateLoyalty } from "@/lib/data/loyalty";
 import { customersQueries } from "@/lib/data/customers";
 import { useI18n } from "@/lib/i18n";
 import {
@@ -72,21 +72,17 @@ export function LoyaltyManualAdjustmentDialog({
 
       const pointsDelta = adjustmentType === "add" ? pointsAmount : -pointsAmount;
 
-      const { data, error } = await (supabase as any).rpc("rpc_manual_adjust_loyalty_points", {
-        p_brand_id: brandId,
-        p_customer_id: selectedCustomerId,
-        p_points_delta: pointsDelta,
-        p_reason_ar: trimmedReasonAr || trimmedReasonEn,
-        p_reason_en: trimmedReasonEn || trimmedReasonAr,
+      return adjustLoyaltyPoints({
+        brandId,
+        customerId: selectedCustomerId,
+        pointsDelta,
+        reasonAr: trimmedReasonAr || trimmedReasonEn,
+        reasonEn: trimmedReasonEn || trimmedReasonAr,
       });
-
-      if (error) throw error;
-      return data;
     },
     onSuccess: () => {
       toast.success(isAr ? "تم تعديل رصيد النقاط بنجاح" : "Loyalty balance adjusted successfully");
-      queryClient.invalidateQueries({ queryKey: ["brand_loyalty_ledger", brandId] });
-      queryClient.invalidateQueries({ queryKey: ["brand_loyalty_accounts", brandId] });
+      void invalidateLoyalty(queryClient, brandId);
       onOpenChange(false);
       setSelectedCustomerId("");
       setPointsAmount(50);

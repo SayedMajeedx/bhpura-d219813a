@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { invalidateLoyalty, saveLoyaltyProgram } from "@/lib/data/loyalty";
 import { useI18n } from "@/lib/i18n";
 import {
   Dialog,
@@ -62,21 +62,13 @@ export function LoyaltySettingsEditor({
 
   const saveMutation = useMutation({
     mutationFn: async (updated: Partial<BrandLoyaltyProgram>) => {
-      const { error } = await (supabase as any).from("brand_loyalty_programs").upsert(
-        {
-          brand_id: brandId,
-          ...updated,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "brand_id" },
-      );
-      if (error) throw error;
+      await saveLoyaltyProgram(brandId, updated);
     },
     onSuccess: () => {
       toast.success(
         isAr ? "تم حفظ إعدادات برنامج الولاء بنجاح" : "Loyalty program settings saved successfully",
       );
-      queryClient.invalidateQueries({ queryKey: ["brand_loyalty_program", brandId] });
+      void invalidateLoyalty(queryClient, brandId);
       onOpenChange(false);
     },
     onError: (err: any) => {
