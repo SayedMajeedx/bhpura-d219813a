@@ -48,13 +48,6 @@ Found while moving customers into `src/lib/data/customers`. The calls kept their
 
 ## Inventory (`src/features/inventory/`)
 
-### 1. Categories cache key shared by three different queries
-
-- **Where**: `hooks/use-inventory-categories.ts`, `hooks/use-product-dialog-data.ts` and `src/routes/_authenticated/admin.b.$slug.categories.tsx` all use `queryKey: ["categories", brandId]`.
-- **Problem**: the three return different data. The Categories page loads all categories (`select("*")`, including inactive ones). The inventory list loads active ones only and returns `[]` on error. The product editor loads active ones only and throws on error. Whichever runs first fills the shared cache.
-- **Effect**: after the Categories page is opened, the inventory category filter, the bulk "Change category" dialog and the product editor can show inactive categories.
-- **Fix**: give each shape its own key, ideally through an admin data module (`src/lib/data/`, Phase 4 pattern), e.g. `["admin", brandId, "categories", "active"]`. Keep the invalidations in the Categories page working for both keys.
-
 ### 2. Duplicating a product drops variant and product fields
 
 - **Where**: `lib/product-list.ts`, `duplicateProductValues` and `duplicateVariantValues`.
@@ -124,6 +117,15 @@ Found while moving the catalog writes into `src/lib/data/catalog` (the calls now
   - "Apply to all" can fail to delete the old lines and then insert the new ones, so every product has its packaging lines twice and packaging cost (COGS) doubles. It is also not atomic: a failure halfway leaves some products changed.
   - The sync reports materials as updated when they were not.
 - **Fix**: surface the errors (toast, stop before the next step). For "apply to all", stop on the first error, ideally as one server-side transaction (RPC). In the sync, count only successful writes.
+
+## Categories (`src/routes/_authenticated/admin.b.$slug.categories.tsx`, `src/lib/data/categories`)
+
+### 20. Reordering categories ignores write errors
+
+- **Where**: the Categories page's up/down buttons (`move`), through `setCategorySortOrders`.
+- **Problem**: the position updates run in parallel and their errors are never read. When two categories share a position, every category is renumbered in one batch, so a partial failure leaves a mixed order.
+- **Effect**: a failed move shows no error and the list simply refreshes into the old (or a half-applied) order.
+- **Fix**: read the errors and toast on failure; ideally one RPC that rewrites the order in a transaction.
 
 ## Checkout (`src/routes/$slug.checkout.tsx`, `src/features/checkout/`)
 

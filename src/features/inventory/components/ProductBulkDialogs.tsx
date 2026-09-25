@@ -121,7 +121,7 @@ export function BulkCategoryDialog({
                 {isAr ? "بدون قسم (إلغاء تعيين القسم)" : "No category (Unassign)"}
               </option>
               {categories.map((c) => {
-                const val = c.slug || c.name_en;
+                const val = c.slug || c.name_en || "";
                 const label = isAr ? c.name_ar || c.name_en : c.name_en;
                 return (
                   <option key={c.id} value={val}>

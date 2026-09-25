@@ -1,6 +1,7 @@
 import { brandKeys } from "@/lib/data/brands";
 import { businessSettingsKeys } from "@/lib/data/business-settings";
 import { catalogKeys } from "@/lib/data/catalog";
+import { categoriesKeys } from "@/lib/data/categories";
 import { customersKeys } from "@/lib/data/customers/keys";
 import { expensesKeys } from "@/lib/data/expenses";
 import { ordersKeys } from "@/lib/data/orders/keys";
@@ -45,8 +46,8 @@ export const queryKeys = {
 
   // Categories & Catalog Hierarchy
   categories: {
-    all: (brandId: string) => ["categories", brandId] as const,
-    overview: (brandId: string) => ["admin-categories-overview", brandId] as const,
+    all: categoriesKeys.all,
+    overview: categoriesKeys.overview,
   },
 
   // Variants & Options

@@ -56,7 +56,7 @@ interface InventoryWorkQueueProps {
   currency?: string;
   categories?: Array<{
     id: string;
-    name_en: string;
+    name_en: string | null;
     name_ar: string | null;
     slug: string | null;
   }>;
