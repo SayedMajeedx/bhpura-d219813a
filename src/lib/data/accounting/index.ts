@@ -102,25 +102,40 @@ export function invalidatePurchaseOrders(qc: QueryClient, brandId: string) {
   return qc.invalidateQueries({ queryKey: accountingKeys.purchaseOrders(brandId) });
 }
 
-/** Sets a cash account's balance (scoped to the brand). */
-export async function setCashAccountBalance(brandId: string, accountId: string, balance: number) {
-  const { error } = await supabase
-    .from("cash_flow_accounts")
-    .update({ balance })
-    .eq("id", accountId)
-    .eq("brand_id", brandId);
-  if (error) throw error;
+/** Why the database refused a transfer (the codes `transfer_cash_to_bank` raises). */
+export type CashTransferRefusal =
+  | "INVALID_TRANSFER_AMOUNT"
+  | "NOT_AUTHORIZED"
+  | "CASH_ACCOUNTS_MISSING"
+  | "INSUFFICIENT_CASH_BALANCE";
+
+const CASH_TRANSFER_REFUSALS: readonly CashTransferRefusal[] = [
+  "INVALID_TRANSFER_AMOUNT",
+  "NOT_AUTHORIZED",
+  "CASH_ACCOUNTS_MISSING",
+  "INSUFFICIENT_CASH_BALANCE",
+];
+
+/** The refusal code in a failed transfer's error, if it is one. */
+export function cashTransferRefusal(error: unknown): CashTransferRefusal | null {
+  const message = (error as { message?: unknown } | null)?.message;
+  if (typeof message !== "string") return null;
+  return CASH_TRANSFER_REFUSALS.find((code) => message.includes(code)) ?? null;
 }
 
-/** Logs a movement between the brand's cash accounts. */
-export async function recordAccountTransaction(
-  brandId: string,
-  transaction: Omit<TablesInsert<"account_transactions">, "brand_id">,
-) {
-  const { error } = await supabase
-    .from("account_transactions")
-    .insert({ ...transaction, brand_id: brandId });
+/**
+ * Moves cash from the brand's cash box to its bank account and logs the move,
+ * in one database transaction that refuses more than the cash box holds.
+ * Returns the logged transaction's id.
+ */
+export async function transferCashToBank(brandId: string, amount: number, notes?: string) {
+  const { data, error } = await supabase.rpc("transfer_cash_to_bank", {
+    p_brand_id: brandId,
+    p_amount: amount,
+    p_notes: notes?.trim() || undefined,
+  });
   if (error) throw error;
+  return data;
 }
 
 export async function createVendor(

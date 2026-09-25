@@ -57,21 +57,13 @@ Found while moving customers into `src/lib/data/customers`. The calls kept their
 
 ## Accounting (`src/components/accounting/`, `src/lib/data/accounting`)
 
-### 24. The cash box to bank transfer can lose or create money
+### 25. Nothing puts money in the cash box
 
-Found while moving the accounting tabs into `src/lib/data/accounting`. The calls kept their behaviour and point here.
+Found while fixing #24 (the transfer is now one database function that refuses more than the cash box holds).
 
-- **Where**: `CashFlowLiquidityTab.tsx`, `handleTransferFunds`.
-- **Problem**:
-  - The transfer is three separate writes (cash box balance, bank balance, transaction log), and each one's error is ignored.
-  - The new balances come from the balances on screen, not the database.
-  - The cash box is clamped at 0, but the bank always gets the full amount.
-  - With no accounts yet, the screen falls back to placeholder ids (`"cash"`, `"bank"`) that match no row.
-- **Effect**:
-  - The success toast shows even when nothing was written, or only part of it (for example, the bank credited with no log entry).
-  - Two transfers from stale screens overwrite each other's balance.
-  - Moving more than the cash box holds adds money to the bank that never left the cash box.
-- **Fix**: one RPC that checks the cash box balance, moves the amount and logs it in a single transaction (and creates the two accounts when missing). Show its error.
+- **Where**: `CashFlowLiquidityTab.tsx` and `FinancialReportsTab.tsx` read `cash_flow_accounts`; nothing in the app or the database creates those accounts or adds to their balances. Production has no rows in `cash_flow_accounts` and none in `account_transactions`.
+- **Effect**: the cash box and bank cards always show the zero fallbacks, the cash flow statement starts from zero, and every transfer is refused ("no cash box and bank account yet"). Reconciling a cash order does not credit the cash box.
+- **Fix** (product decision): create the two accounts per brand, and choose what credits the cash box (reconciled cash orders, a manual "cash in" entry, or both), in the same database function style as the transfer.
 
 ## Inventory (`src/features/inventory/`)
 

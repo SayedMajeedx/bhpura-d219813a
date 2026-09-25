@@ -8,7 +8,7 @@ vi.stubGlobal("fetch", () => {
 
 type Request = {
   table: string;
-  op: "select" | "insert" | "update";
+  op: "select" | "insert" | "update" | "rpc";
   payload?: unknown;
   select?: string;
   filters: Array<[string, ...unknown[]]>;
@@ -48,7 +48,16 @@ function builder(table: string) {
   return chain;
 }
 
-const client = { supabase: { from: (table: string) => builder(table) } };
+const client = {
+  supabase: {
+    from: (table: string) => builder(table),
+    rpc: (fn: string, args: unknown) => {
+      const request: Request = { table: fn, op: "rpc", payload: args, filters: [] };
+      requests.push(request);
+      return Promise.resolve(respond(request));
+    },
+  },
+};
 vi.mock("../src/integrations/supabase/client", () => client);
 vi.mock("@/integrations/supabase/client", () => client);
 
@@ -106,35 +115,25 @@ describe("the accounting tabs' writes", () => {
       vendor_id: "v1",
       total_amount: 100,
     });
-    await accounting.recordAccountTransaction("b1", {
-      amount: 10,
-      transaction_type: "transfer",
-    });
     expect(
       requests.map((r) => [r.table, r.op, (r.payload as { brand_id: string }).brand_id]),
     ).toEqual([
       ["vendors", "insert", "b1"],
       ["purchase_orders", "insert", "b1"],
-      ["account_transactions", "insert", "b1"],
     ]);
   });
 
   it("update only the brand's own rows and throw on error", async () => {
-    await accounting.setCashAccountBalance("b1", "acc-1", 50);
     await accounting.updatePurchaseOrder("b1", "po-1", { paid_amount: 20 });
-    expect(requests[0]).toMatchObject({ table: "cash_flow_accounts", payload: { balance: 50 } });
+    expect(requests[0]).toMatchObject({ table: "purchase_orders", payload: { paid_amount: 20 } });
     expect(eqs(requests[0])).toEqual([
-      ["id", "acc-1"],
-      ["brand_id", "b1"],
-    ]);
-    expect(eqs(requests[1])).toEqual([
       ["id", "po-1"],
       ["brand_id", "b1"],
     ]);
 
     respond = () => ({ error: denied });
     await expect(accounting.createVendor("b1", { name: "x" })).rejects.toBe(denied);
-    await expect(accounting.setCashAccountBalance("b1", "acc-1", 0)).rejects.toBe(denied);
+    await expect(accounting.updatePurchaseOrder("b1", "po-1", {})).rejects.toBe(denied);
   });
 
   it("refresh both vendor lists after a new vendor, and nothing else", async () => {
@@ -155,5 +154,36 @@ describe("the accounting tabs' writes", () => {
         .getAll()
         .map((query) => query.state.isInvalidated),
     ).toEqual([true, true, false, false]);
+  });
+});
+
+describe("the cash box to bank transfer (bug backlog #24)", () => {
+  it("is one database call for the brand, never separate balance writes", async () => {
+    respond = () => ({ data: "tx-1", error: null });
+    expect(await accounting.transferCashToBank("b1", 25, "  Friday deposit ")).toBe("tx-1");
+    expect(requests).toEqual([
+      {
+        table: "transfer_cash_to_bank",
+        op: "rpc",
+        payload: { p_brand_id: "b1", p_amount: 25, p_notes: "Friday deposit" },
+        filters: [],
+      },
+    ]);
+    // Blank notes are left to the database's default note.
+    await accounting.transferCashToBank("b1", 25, "   ");
+    expect((requests[1].payload as { p_notes?: string }).p_notes).toBeUndefined();
+  });
+
+  it("throws the database's refusal, which the screen can name", async () => {
+    const refusal = { message: "INSUFFICIENT_CASH_BALANCE", code: "P0001" };
+    respond = () => ({ data: null, error: refusal });
+    const failure = accounting.transferCashToBank("b1", 1000);
+    await expect(failure).rejects.toBe(refusal);
+    expect(accounting.cashTransferRefusal(refusal)).toBe("INSUFFICIENT_CASH_BALANCE");
+    expect(accounting.cashTransferRefusal({ message: "CASH_ACCOUNTS_MISSING" })).toBe(
+      "CASH_ACCOUNTS_MISSING",
+    );
+    expect(accounting.cashTransferRefusal({ message: "network down" })).toBeNull();
+    expect(accounting.cashTransferRefusal(null)).toBeNull();
   });
 });
