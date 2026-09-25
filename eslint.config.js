@@ -393,5 +393,35 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Incubators data layer: partners, stock held, sales, payments and the
+    // stock moves, under ["incubators", brandId]; the catalog reads come from
+    // `@/lib/data/catalog`.
+    files: [
+      "src/routes/_authenticated/admin.b.$slug.incubators.tsx",
+      "src/components/incubators/**",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(incubators|incubator_inventory|incubator_sales|incubator_payments|products|product_variants)$/]",
+          message:
+            "Incubators go through `@/lib/data/incubators` and the catalog through `@/lib/data/catalog`.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='rpc'][arguments.0.value=/^(transfer_stock_to_incubator|return_stock_from_incubator|record_incubator_sale|reverse_incubator_sale|record_incubator_payment|update_incubator_inventory_item|sync_incubator_inventory_prices)$/]",
+          message: "Use the incubator writes in `@/lib/data/incubators`.",
+        },
+        {
+          selector:
+            "ArrayExpression > Literal:first-child[value=/^(incubators.*|incubator_.*|brand_products_for_incubator|batch-transfer-variants-with-allocations|inventory_(variants|products))$/]",
+          message: "Build these cache keys with `incubatorsKeys` (or `invalidateIncubators`).",
+        },
+      ],
+    },
+  },
   eslintPluginPrettier,
 );

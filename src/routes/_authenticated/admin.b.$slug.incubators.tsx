@@ -2,6 +2,21 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { catalogKeys, catalogQueries } from "@/lib/data/catalog";
+import {
+  createIncubator,
+  incubatorsKeys,
+  incubatorsQueries,
+  invalidateIncubators,
+  recordIncubatorPayment,
+  recordIncubatorSale,
+  returnStockFromIncubator,
+  reverseIncubatorSale,
+  syncIncubatorPrices,
+  transferStockToIncubator,
+  updateIncubator,
+  updateIncubatorItem,
+} from "@/lib/data/incubators";
 import { ensureSessionUser } from "@/lib/auth/ensure-session-user";
 import { useBrand } from "@/lib/brand-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
@@ -36,6 +51,13 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { BatchIncubatorTransferModal } from "@/components/incubators/BatchIncubatorTransferModal";
+
+/** The page's own row types over the typed rows (JSON and joined columns narrowed). */
+const asIncubators = (rows: unknown[]) => rows as Incubator[];
+const asStock = (rows: unknown[]) => rows as StockItem[];
+const asSales = (rows: unknown[]) => rows as Sale[];
+const asPayments = (rows: unknown[]) => rows as Payment[];
+const asProductOptions = (rows: unknown[]) => rows as ProductOption[];
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/incubators")({
   beforeLoad: async ({ context: { queryClient }, params }) => {
@@ -133,8 +155,6 @@ type ProductOption = {
   products: { name: string; name_ar: string | null } | null;
 };
 
-const db = supabase as any;
-
 function IncubatorsPage() {
   const brand = useBrand();
   const { lang } = useI18n();
@@ -160,112 +180,41 @@ function IncubatorsPage() {
 
   useRealtimeInvalidate(
     [
-      { table: "incubators", brandId: brand.id, queryKey: ["incubators", brand.id] },
+      { table: "incubators", brandId: brand.id, queryKey: incubatorsKeys.list(brand.id) },
       {
         table: "incubator_inventory",
         brandId: brand.id,
-        queryKey: ["incubator_inventory", brand.id],
+        queryKey: incubatorsKeys.inventory(brand.id),
       },
-      {
-        table: "incubator_sales",
-        brandId: brand.id,
-        queryKey: ["incubator_sales", brand.id],
-      },
+      { table: "incubator_sales", brandId: brand.id, queryKey: incubatorsKeys.sales(brand.id) },
       {
         table: "incubator_payments",
         brandId: brand.id,
-        queryKey: ["incubator_payments", brand.id],
+        queryKey: incubatorsKeys.payments(brand.id),
       },
       {
         table: "product_variants",
         brandId: brand.id,
-        queryKey: ["incubator_product_options", brand.id],
+        queryKey: incubatorsKeys.transferOptions(brand.id),
       },
     ],
     `incubators-${brand.id}`,
   );
 
-  const incubatorsQ = useQuery({
-    queryKey: ["incubators", brand.id],
-    queryFn: async () => {
-      const { data, error } = await db
-        .from("incubators")
-        .select("*")
-        .eq("brand_id", brand.id)
-        .order("name");
-      if (error) throw error;
-      return (data ?? []) as Incubator[];
-    },
-  });
+  const incubatorsQ = useQuery({ ...incubatorsQueries.list(brand.id), select: asIncubators });
   const incubators = incubatorsQ.data ?? [];
   const currentId = selectedId ?? incubators[0]?.id ?? null;
   const current = incubators.find((item) => item.id === currentId) ?? null;
 
-  const inventoryQ = useQuery({
-    queryKey: ["incubator_inventory", brand.id],
-    queryFn: async () => {
-      const { data, error } = await db
-        .from("incubator_inventory")
-        .select(
-          "*, product_variants(id,sku,barcode,size,color,stock_main,selling_price,products(id,name,name_ar,image_url))",
-        )
-        .eq("brand_id", brand.id)
-        .order("updated_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as StockItem[];
-    },
-  });
-  const salesQ = useQuery({
-    queryKey: ["incubator_sales", brand.id],
-    queryFn: async () => {
-      const { data, error } = await db
-        .from("incubator_sales")
-        .select("*, product_variants(sku,products(name,name_ar))")
-        .eq("brand_id", brand.id)
-        .order("sold_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as Sale[];
-    },
-  });
-  const paymentsQ = useQuery({
-    queryKey: ["incubator_payments", brand.id],
-    queryFn: async () => {
-      const { data, error } = await db
-        .from("incubator_payments")
-        .select("*")
-        .eq("brand_id", brand.id)
-        .order("payment_date", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as Payment[];
-    },
-  });
+  const inventoryQ = useQuery({ ...incubatorsQueries.inventory(brand.id), select: asStock });
+  const salesQ = useQuery({ ...incubatorsQueries.sales(brand.id), select: asSales });
+  const paymentsQ = useQuery({ ...incubatorsQueries.payments(brand.id), select: asPayments });
   const productsQ = useQuery({
-    queryKey: ["incubator_product_options", brand.id],
-    queryFn: async () => {
-      const { data, error } = await db
-        .from("product_variants")
-        .select(
-          "id,sku,barcode,size,color,stock_main,selling_price,products!inner(name,name_ar,brand_id)",
-        )
-        .eq("products.brand_id", brand.id)
-        .gt("stock_main", 0)
-        .order("sku");
-      if (error) throw error;
-      return (data ?? []) as ProductOption[];
-    },
+    ...incubatorsQueries.transferOptions(brand.id),
+    select: asProductOptions,
   });
-  const allBrandProductsQ = useQuery({
-    queryKey: ["brand_products_for_incubator", brand.id],
-    queryFn: async () => {
-      const { data, error } = await db
-        .from("products")
-        .select("id, name, name_ar, base_price, category")
-        .eq("brand_id", brand.id)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as any[];
-    },
-  });
+  // The batch transfer's product list comes from the shared catalog.
+  const allBrandProductsQ = useQuery(catalogQueries.products(brand.id));
 
   const allStock = inventoryQ.data ?? [];
   const allSales = salesQ.data ?? [];
@@ -304,19 +253,13 @@ function IncubatorsPage() {
     }
     setBusy(true);
     try {
-      const { error } = await db.rpc("reverse_incubator_sale", {
-        p_sale_id: saleId,
-        p_reason: "Manual reversal from admin panel",
-      });
-      if (error) throw error;
+      await reverseIncubatorSale(saleId, "Manual reversal from admin panel");
       toast.success(
         isAr
           ? "تم إلغاء عملية البيع وإعادة البضاعة للمخزون"
           : "Sale reversed and stock restored to incubator",
       );
-      qc.invalidateQueries({ queryKey: ["incubator_sales", brand.id] });
-      qc.invalidateQueries({ queryKey: ["incubator_inventory", brand.id] });
-      qc.invalidateQueries({ queryKey: ["incubators", brand.id] });
+      void invalidateIncubators(qc, brand.id);
     } catch (err: any) {
       toast.error(err.message || (isAr ? "فشل إلغاء عملية البيع" : "Failed to reverse sale"));
     } finally {
@@ -353,12 +296,10 @@ function IncubatorsPage() {
 
   async function invalidateData() {
     await Promise.all([
-      qc.invalidateQueries({ queryKey: ["incubators", brand.id] }),
-      qc.invalidateQueries({ queryKey: ["incubator_inventory", brand.id] }),
-      qc.invalidateQueries({ queryKey: ["incubator_sales", brand.id] }),
-      qc.invalidateQueries({ queryKey: ["incubator_payments", brand.id] }),
-      qc.invalidateQueries({ queryKey: ["incubator_product_options", brand.id] }),
-      qc.invalidateQueries({ queryKey: ["products", brand.id] }),
+      invalidateIncubators(qc, brand.id),
+      qc.invalidateQueries({ queryKey: catalogKeys.products(brand.id) }),
+      // Transfers, sales and returns change the variants' main stock.
+      qc.invalidateQueries({ queryKey: catalogKeys.variants(brand.id) }),
     ]);
   }
 
@@ -366,12 +307,8 @@ function IncubatorsPage() {
     if (!currentId) return;
     setSyncing(true);
     try {
-      const { data, error } = await db.rpc("sync_incubator_inventory_prices", {
-        p_incubator_id: currentId,
-      });
-      if (error) throw error;
+      const count = await syncIncubatorPrices(currentId);
       await invalidateData();
-      const count = Number(data ?? 0);
       toast.success(
         isAr
           ? count > 0
@@ -389,100 +326,93 @@ function IncubatorsPage() {
   }
 
   async function saveExternalCode(item: StockItem, externalCode: string) {
-    const { error } = await db.rpc("update_incubator_inventory_item", {
-      p_inventory_id: item.id,
-      p_external_code: externalCode.trim(),
-      p_consignment_price: Number(item.consignment_price),
-      p_commission_type: item.commission_type,
-      p_commission_value: Number(item.commission_value),
+    await updateIncubatorItem({
+      inventoryId: item.id,
+      externalCode: externalCode.trim(),
+      consignmentPrice: Number(item.consignment_price),
+      commissionType: item.commission_type,
+      commissionValue: Number(item.commission_value),
     });
-    if (error) throw error;
-    await qc.invalidateQueries({ queryKey: ["incubator_inventory", brand.id] });
+    await qc.invalidateQueries({ queryKey: incubatorsKeys.inventory(brand.id) });
   }
 
   async function submit(form: HTMLFormElement) {
     const values = Object.fromEntries(new FormData(form));
     setBusy(true);
     try {
-      let result: { error: any };
       if (dialog === "incubator") {
-        result = await db.from("incubators").insert({
+        await createIncubator(brand.id, {
           brand_id: brand.id,
           name: String(values.name).trim(),
           contact_name: String(values.contact_name || "").trim() || null,
           phone: String(values.phone || "").trim() || null,
           email: String(values.email || "").trim() || null,
-          commission_type: values.commission_type,
+          commission_type: String(values.commission_type),
           commission_value: Number(values.commission_value || 0),
           settlement_day: values.settlement_day ? Number(values.settlement_day) : null,
-          packaging_policy: values.packaging_policy,
+          packaging_policy: String(values.packaging_policy),
           fixed_packaging_cost: Number(values.fixed_packaging_cost || 0),
           currency: current?.currency || "BHD",
           notes: String(values.notes || "").trim() || null,
         });
       } else if (dialog === "edit_incubator" && currentId) {
-        result = await db
-          .from("incubators")
-          .update({
-            name: String(values.name).trim(),
-            contact_name: String(values.contact_name || "").trim() || null,
-            phone: String(values.phone || "").trim() || null,
-            email: String(values.email || "").trim() || null,
-            commission_type: values.commission_type,
-            commission_value: Number(values.commission_value || 0),
-            settlement_day: values.settlement_day ? Number(values.settlement_day) : null,
-            packaging_policy: values.packaging_policy,
-            fixed_packaging_cost: Number(values.fixed_packaging_cost || 0),
-            notes: String(values.notes || "").trim() || null,
-            is_active: values.is_active === "true",
-          })
-          .eq("id", currentId)
-          .eq("brand_id", brand.id);
+        await updateIncubator(brand.id, currentId, {
+          name: String(values.name).trim(),
+          contact_name: String(values.contact_name || "").trim() || null,
+          phone: String(values.phone || "").trim() || null,
+          email: String(values.email || "").trim() || null,
+          commission_type: String(values.commission_type),
+          commission_value: Number(values.commission_value || 0),
+          settlement_day: values.settlement_day ? Number(values.settlement_day) : null,
+          packaging_policy: String(values.packaging_policy),
+          fixed_packaging_cost: Number(values.fixed_packaging_cost || 0),
+          notes: String(values.notes || "").trim() || null,
+          is_active: values.is_active === "true",
+        });
       } else if (dialog === "edit_item" && activeItem) {
-        result = await db.rpc("update_incubator_inventory_item", {
-          p_inventory_id: activeItem.id,
-          p_external_code: String(values.external_code || "").trim(),
-          p_consignment_price: Number(values.price),
-          p_commission_type: values.commission_type,
-          p_commission_value: Number(values.commission_value || 0),
+        await updateIncubatorItem({
+          inventoryId: activeItem.id,
+          externalCode: String(values.external_code || "").trim(),
+          consignmentPrice: Number(values.price),
+          commissionType: String(values.commission_type),
+          commissionValue: Number(values.commission_value || 0),
         });
       } else if (dialog === "transfer") {
-        result = await db.rpc("transfer_stock_to_incubator", {
-          p_incubator_id: currentId,
-          p_variant_id: values.variant_id,
-          p_quantity: Number(values.quantity),
-          p_external_code: String(values.external_code || "").trim() || null,
-          p_price: Number(values.price),
-          p_commission_type: values.commission_type,
-          p_commission_value: Number(values.commission_value || 0),
-          p_notes: String(values.notes || "").trim() || null,
+        await transferStockToIncubator({
+          incubatorId: currentId as string,
+          variantId: String(values.variant_id),
+          quantity: Number(values.quantity),
+          externalCode: String(values.external_code || "").trim() || null,
+          price: Number(values.price),
+          commissionType: String(values.commission_type),
+          commissionValue: Number(values.commission_value || 0),
+          notes: String(values.notes || "").trim() || null,
         });
       } else if (dialog === "sale" && activeItem) {
-        result = await db.rpc("record_incubator_sale", {
-          p_incubator_id: currentId,
-          p_variant_id: activeItem.variant_id,
-          p_quantity: Number(values.quantity),
-          p_unit_price: Number(values.price),
-          p_sold_at: new Date(String(values.sold_at)).toISOString(),
+        await recordIncubatorSale({
+          incubatorId: currentId as string,
+          variantId: activeItem.variant_id,
+          quantity: Number(values.quantity),
+          unitPrice: Number(values.price),
+          soldAt: new Date(String(values.sold_at)).toISOString(),
         });
       } else if (dialog === "return" && activeItem) {
-        result = await db.rpc("return_stock_from_incubator", {
-          p_incubator_id: currentId,
-          p_variant_id: activeItem.variant_id,
-          p_quantity: Number(values.quantity),
-          p_notes: String(values.notes || "").trim() || null,
+        await returnStockFromIncubator({
+          incubatorId: currentId as string,
+          variantId: activeItem.variant_id,
+          quantity: Number(values.quantity),
+          notes: String(values.notes || "").trim() || null,
         });
       } else {
-        result = await db.rpc("record_incubator_payment", {
-          p_incubator_id: currentId,
-          p_amount: Number(values.amount),
-          p_payment_date: values.payment_date,
-          p_payment_method: String(values.payment_method || "").trim() || null,
-          p_reference: String(values.reference || "").trim() || null,
-          p_notes: String(values.notes || "").trim() || null,
+        await recordIncubatorPayment({
+          incubatorId: currentId as string,
+          amount: Number(values.amount),
+          paymentDate: String(values.payment_date),
+          paymentMethod: String(values.payment_method || "").trim() || null,
+          reference: String(values.reference || "").trim() || null,
+          notes: String(values.notes || "").trim() || null,
         });
       }
-      if (result.error) throw result.error;
       toast.success(isAr ? "تم حفظ العملية وتحديث المخزون" : "Saved and inventory updated");
       setDialog(null);
       setActiveItem(null);
