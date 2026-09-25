@@ -39,16 +39,16 @@ green then continue with X") and expect a short report after each step.
 
 Measured with `node scripts/maintainability-metrics.mjs`:
 
-| Metric                                | Roadmap start (09-24) | Now              |
-| ------------------------------------- | --------------------- | ---------------- |
-| Files over 1000 lines                 | 31                    | 23               |
-| `as any`                              | 990                   | 840              |
-| `: any`                               | 784                   | 750              |
-| `as never`                            | 40                    | 0                |
-| Direct Supabase calls in screens      | 393                   | 317              |
-| Test files using `readFileSync`       | 71                    | 71               |
-| Tests                                 | 1078                  | 1310             |
-| Migration drift (local vs production) | 32 / 23 one-sided     | 0 (261 versions) |
+| Metric                                | Roadmap start (09-24) | Now                                                            |
+| ------------------------------------- | --------------------- | -------------------------------------------------------------- |
+| Files over 1000 lines                 | 31                    | 23                                                             |
+| `as any`                              | 990                   | 840                                                            |
+| `: any`                               | 784                   | 750                                                            |
+| `as never`                            | 40                    | 0                                                              |
+| Direct Supabase calls in screens      | 393                   | 317 (406 with casts counted, see `docs/maintainability.md` §4) |
+| Test files using `readFileSync`       | 71                    | 71                                                             |
+| Tests                                 | 1078                  | 1310                                                           |
+| Migration drift (local vs production) | 32 / 23 one-sided     | 0 (261 versions)                                               |
 
 ### Phases
 

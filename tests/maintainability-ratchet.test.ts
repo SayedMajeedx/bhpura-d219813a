@@ -13,6 +13,11 @@ import { collectMaintainabilityMetrics } from "../scripts/maintainability-metric
  *
  * Recorded on 2026-09-24 (Phase 0 baseline). Lowered on 2026-09-24 after
  * Phases 3–4 (type escapes and the storefront catalog data layer).
+ *
+ * `directSupabaseCalls` was re-based once, on 2026-09-25, when the metric
+ * started counting calls behind a cast (`(supabase as any).from(`), which it
+ * had missed: same code, 195 -> 251. It is a measurement correction, not new
+ * debt, and the budget only moves down from here.
  */
 
 const BUDGETS = {
@@ -22,7 +27,7 @@ const BUDGETS = {
   tsIgnore: 0,
   tsExpectError: 0,
   eslintDisable: 10,
-  directSupabaseCalls: 195,
+  directSupabaseCalls: 251,
   readFileSyncTestFiles: 71,
   filesOver1000: 23,
   maxLinesForNewFile: 600,

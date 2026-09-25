@@ -35,6 +35,19 @@ function walk(dir, filter, out = []) {
  * Collect all maintainability metrics across the repository.
  * @param {string} [rootDir]
  */
+/**
+ * A direct Supabase client call. The optional group also counts calls behind
+ * a cast, `(supabase as any).from(` (often split over two lines), which the
+ * first version of this pattern missed.
+ */
+export const SUPABASE_CALL_PATTERN =
+  /(?:supabase|supabaseAdmin|publicSupabase)(?:\s+as\s+\w+\s*\))?\s*\.\s*(?:from|rpc|auth|storage|functions|channel|removeChannel)\b/;
+
+/** How many direct Supabase calls a source text contains. */
+export function countDirectSupabaseCalls(content) {
+  return (content.match(new RegExp(SUPABASE_CALL_PATTERN.source, "g")) || []).length;
+}
+
 export function collectMaintainabilityMetrics(rootDir = REPO_ROOT) {
   const srcDir = path.join(rootDir, "src");
   const testsDir = path.join(rootDir, "tests");
@@ -84,8 +97,7 @@ export function collectMaintainabilityMetrics(rootDir = REPO_ROOT) {
   filesOver1000.sort((a, b) => b.lines - a.lines);
 
   // Direct Supabase calls in src/routes, src/components, src/features
-  const supabaseCallPattern =
-    /(?:supabase|supabaseAdmin|publicSupabase)\s*\.\s*(?:from|rpc|auth|storage|functions|channel|removeChannel)\b/g;
+  const supabaseCallPattern = new RegExp(SUPABASE_CALL_PATTERN.source, "g");
 
   const directSupabaseByDir = {
     "src/routes": 0,
