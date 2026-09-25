@@ -44,7 +44,9 @@ describe("incubator sales reporting and packaging contracts", () => {
   });
 
   it("merges confirmed incubator sales into dashboard and reports", () => {
-    expect(dashboard).toContain('queryKey: ["dashboard-incubator-sales", brandId]');
+    // The RPC call itself lives in src/lib/data/reporting (behaviour-tested in
+    // tests/dashboard-and-storefront-orders-data.test.ts).
+    expect(dashboard).toContain("reportingQueries.incubatorSales(brandId, slug)");
     expect(dashboard).toContain("incubatorRevenue");
     expect(reporting).toContain('rpc("rpc_reporting_incubator_sales"');
     expect(reporting).toContain("incubator_commissions");

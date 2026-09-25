@@ -127,6 +127,13 @@ Found while moving the catalog writes into `src/lib/data/catalog` (the calls now
 
 ## Checkout (`src/routes/$slug.checkout.tsx`, `src/features/checkout/`)
 
+### 19. The thank-you page's order lookup can never read the order
+
+- **Where**: `src/routes/$slug.thank-you.$orderId.tsx`, `storefrontQueries.orderConfirmation` (`fetchOrderConfirmation` in `src/lib/data/storefront/queries.ts`).
+- **Problem**: the page reads the order's `fulfillment_method` and `digital_delivery_channel` "to prevent URL manipulation", but through `publicSupabase`, which stays anonymous even for a signed-in shopper, and `orders` has no policy for anonymous reads (checked live: only office, courier and `storefront_user_owns_customer` policies). The read always returns null.
+- **Effect**: the page always shows the pickup / delivery / digital message from the URL (`?fulfillment=&channel=`). The payment redirect sets those from the order server-side, so the message is right in practice, but a changed URL changes it, and the lookup costs a request for nothing.
+- **Fix**: either drop the lookup and trust the server-built redirect, or read it through a narrow `security definer` RPC keyed by order id plus the order's public token, then update the checkout browser test.
+
 ### 12. "Choose another payment method" does nothing
 
 - **Where**: `components/PaymentFailedCard.tsx`, the outline button scrolls to `document.getElementById("payment-methods-section")`.

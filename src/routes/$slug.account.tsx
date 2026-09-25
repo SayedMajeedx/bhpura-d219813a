@@ -255,22 +255,9 @@ function AccountPage() {
 
   const { data: customer, isLoading: loadingCustomer } = useCustomer();
 
-  const { data: orders, isLoading: loadingOrders } = useQuery({
-    queryKey: ["storefront-account-orders", customer?.id],
-    enabled: !!customer?.id,
-    queryFn: async (): Promise<OrderRow[]> => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select(
-          "id, invoice_number, order_date, status, payment_status, fulfillment_status, total, currency, public_invoice_token, order_items(id, description, quantity, unit_price)",
-        )
-        .eq("customer_id", customer!.id)
-        .order("created_at", { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      return (data ?? []) as unknown as OrderRow[];
-    },
-  });
+  const { data: orders, isLoading: loadingOrders } = useQuery(
+    ownCustomerQueries.orders(brand.id, customer?.id),
+  );
 
   const { data: addresses, isLoading: loadingAddresses } = useQuery(
     ownCustomerQueries.addresses(brand.id, customer?.id),

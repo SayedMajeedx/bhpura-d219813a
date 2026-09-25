@@ -1,7 +1,6 @@
 import React from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { formatMoney, formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12,6 +11,7 @@ import { printDeliveryNote } from "@/lib/thermal-print";
 import { getFulfillmentBadgeDetails, getFulfillmentMethodLabel } from "@/lib/status-labels";
 import { RETURN_STATUS_CONFIG, type ReturnStatus } from "@/lib/returns.types";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
+import { returnsQueries } from "@/lib/data/returns";
 
 interface OrderSalesDocumentsCardProps {
   order: any;
@@ -69,26 +69,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
   );
 
   // 1. Fetch linked return requests for this order
-  const returnRequestsQ = useQuery({
-    queryKey: ["order-return-requests", brandId, order?.id],
-    enabled: Boolean(brandId && order?.id && order.id !== "new"),
-    queryFn: async () => {
-      const { data, error } = await (supabase.from("return_requests") as any)
-        .select(
-          "id, return_number, type, status, refund_status, net_refund_amount, reason, created_at",
-        )
-        .eq("brand_id", brandId)
-        .eq("order_id", order.id)
-        .order("created_at", { ascending: false });
-      if (error) {
-        if (error.code !== "PGRST301") {
-          console.warn("Could not query return_requests for order:", error);
-        }
-        return [];
-      }
-      return data ?? [];
-    },
-  });
+  const returnRequestsQ = useQuery(returnsQueries.forOrder(brandId, order?.id ?? ""));
 
   const linkedReturns = returnRequestsQ.data ?? [];
   const publicInvoiceUrl = order?.public_invoice_token
