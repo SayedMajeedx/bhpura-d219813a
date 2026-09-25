@@ -1,12 +1,25 @@
 ﻿import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
+
+// The home page is split across its route and src/features/storefront-home (Phase 5).
+const homeSource = () =>
+  [
+    "src/routes/$slug.index.tsx",
+    ...["components", "lib"].flatMap((dir) =>
+      readdirSync(`src/features/storefront-home/${dir}`)
+        .sort()
+        .map((file) => `src/features/storefront-home/${dir}/${file}`),
+    ),
+  ]
+    .map((file) => readFileSync(file, "utf8"))
+    .join("\n");
 
 describe("Item 3 & Item 4: Category taxonomy & RPC security integrity", () => {
   const migration5 = readFileSync(
     "supabase/migrations/20260905110000_remediate_phase5_categories_and_campaign_safeguards.sql",
     "utf8",
   );
-  const storefrontIndex = readFileSync("src/routes/$slug.index.tsx", "utf8");
+  const storefrontIndex = homeSource();
 
   it("enforces admin access and brand boundary inside get_brand_categories_with_counts", () => {
     expect(migration5).toContain(

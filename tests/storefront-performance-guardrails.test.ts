@@ -1,12 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
+// The home page is split across its route and src/features/storefront-home (Phase 5).
+const homeSource = () =>
+  [
+    "src/routes/$slug.index.tsx",
+    ...["components", "lib"].flatMap((dir) =>
+      readdirSync(`src/features/storefront-home/${dir}`)
+        .sort()
+        .map((file) => `src/features/storefront-home/${dir}/${file}`),
+    ),
+  ]
+    .map((file) => readFileSync(file, "utf8"))
+    .join("\n");
+
 describe("storefront performance guardrails", () => {
   it("prioritizes the actual first promo image LCP candidate", () => {
-    const home = read("src/routes/$slug.index.tsx");
+    const home = homeSource();
 
     expect(home).toContain("firstImageIndex");
     expect(home).toContain('fetchPriority={index === firstImageIndex ? "high" : "auto"}');
@@ -15,7 +28,7 @@ describe("storefront performance guardrails", () => {
   });
 
   it("does not eagerly prioritize every hero carousel slide", () => {
-    const home = read("src/routes/$slug.index.tsx");
+    const home = homeSource();
 
     expect(home).toContain("prioritizeHero && slideIndex === 0");
     expect(home).toContain('loading={slideIndex === 0 ? "eager" : "lazy"}');
@@ -34,7 +47,7 @@ describe("storefront performance guardrails", () => {
   });
 
   it("continues the final editorial color through the products area", () => {
-    const home = read("src/routes/$slug.index.tsx");
+    const home = homeSource();
 
     expect(home).toContain("productsAreaBackground");
     expect(home).toContain("style={{ backgroundColor: productsAreaBackground }}");
