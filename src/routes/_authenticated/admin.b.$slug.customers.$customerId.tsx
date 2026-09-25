@@ -22,6 +22,15 @@ import {
   UserPlus,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  customersKeys,
+  customersQueries,
+  fetchCustomerIdentities,
+  type CustomerProfile,
+  invalidateCustomers,
+  updateCustomer,
+} from "@/lib/data/customers";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n, useT } from "@/lib/i18n";
 import { formatMoney } from "@/lib/format";
@@ -54,25 +63,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import {
-  CustomerAddressManager,
-  type ManagedCustomerAddress,
-} from "@/components/customer-address-manager";
+import { CustomerAddressManager } from "@/components/customer-address-manager";
 import { AddonSlot } from "@/components/addons/AddonSlot";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/customers/$customerId")({
   component: CustomerProfilePage,
 });
-
-type CustomerProfile = {
-  id: string;
-  name: string;
-  phone: string | null;
-  email: string | null;
-  notes: string | null;
-};
-
-type CustomerAddress = ManagedCustomerAddress;
 
 type CustomerOrder = {
   id: string;
@@ -129,34 +125,9 @@ function CustomerProfilePage() {
   const [editing, setEditing] = useState(false);
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
 
-  const customerQ = useQuery({
-    queryKey: ["customer-profile", brand.id, customerId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customers")
-        .select("id, name, phone, email, notes")
-        .eq("brand_id", brand.id)
-        .eq("id", customerId)
-        .maybeSingle();
-      if (error) throw error;
-      return data as CustomerProfile | null;
-    },
-  });
+  const customerQ = useQuery(customersQueries.detail(brand.id, customerId));
 
-  const addressesQ = useQuery({
-    queryKey: ["customer-profile-addresses", brand.id, customerId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customer_addresses")
-        .select("id, label, region, block, road, house, flat, delivery_notes, is_default")
-        .eq("brand_id", brand.id)
-        .eq("customer_id", customerId)
-        .order("is_default", { ascending: false })
-        .order("created_at");
-      if (error) throw error;
-      return data as CustomerAddress[];
-    },
-  });
+  const addressesQ = useQuery(customersQueries.customerAddresses(brand.id, customerId));
 
   const ordersQ = useQuery({
     queryKey: ["customer-profile-orders", brand.id, customerId],
@@ -523,7 +494,7 @@ function CustomerProfilePage() {
               lang={lang}
               onChanged={() =>
                 qc.invalidateQueries({
-                  queryKey: ["customer-profile-addresses", brand.id, customerId],
+                  queryKey: customersKeys.customerAddresses(brand.id, customerId),
                 })
               }
             />
@@ -812,8 +783,7 @@ function CustomerProfilePage() {
         onOpenChange={setEditing}
         onSaved={() => {
           setEditing(false);
-          qc.invalidateQueries({ queryKey: ["customer-profile", brand.id, customerId] });
-          qc.invalidateQueries({ queryKey: ["customers", brand.id] });
+          void invalidateCustomers(qc, brand.id);
         }}
       />
 
@@ -977,11 +947,12 @@ function EditCustomerDialog({
     const phone = form.phone.replace(/\D/g, "");
     const email = form.email.trim().toLowerCase();
     if (phone || email) {
-      const { data, error } = await supabase
-        .from("customers")
-        .select("id, phone, email")
-        .eq("brand_id", brandId);
-      if (error) return toast.error(error.message);
+      let data: Awaited<ReturnType<typeof fetchCustomerIdentities>>;
+      try {
+        data = await fetchCustomerIdentities(brandId);
+      } catch (error) {
+        return toast.error(getFriendlyErrorMessage(error));
+      }
       if (
         phone &&
         (data ?? []).some(
@@ -1010,18 +981,18 @@ function EditCustomerDialog({
         );
     }
     setSaving(true);
-    const { error } = await supabase
-      .from("customers")
-      .update({
+    try {
+      await updateCustomer(brandId, customer.id, {
         name: form.name.trim(),
         phone: phone || null,
         email: email || null,
         notes: form.notes.trim() || null,
-      })
-      .eq("brand_id", brandId)
-      .eq("id", customer.id);
-    setSaving(false);
-    if (error) return toast.error(error.message);
+      });
+    } catch (error) {
+      return toast.error(getFriendlyErrorMessage(error));
+    } finally {
+      setSaving(false);
+    }
     toast.success(lang === "ar" ? "تم تحديث ملف العميل" : "Customer profile updated");
     onSaved();
   };

@@ -8,6 +8,7 @@ import { businessSettingsKeys, businessSettingsQueries } from "@/lib/data/busine
 import { expensesKeys, expensesQueries } from "@/lib/data/expenses";
 import { ordersKeys, ordersQueries } from "@/lib/data/orders";
 import { catalogKeys, catalogQueries } from "@/lib/data/catalog";
+import { customersKeys, customersQueries } from "@/lib/data/customers";
 
 /**
  * Everything the dashboard reads: settings, the Reports accounting rows for
@@ -109,16 +110,7 @@ export function useDashboardData({
 
   // 4. Fetch all customers
   const customersQ = useQuery({
-    queryKey: ["dashboard-customers", brandId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customers")
-        .select("id, name, phone")
-        .eq("brand_id", brandId);
-      if (error) throw error;
-      return data ?? [];
-    },
-    staleTime: 60_000,
+    ...customersQueries.contacts(brandId),
     refetchOnWindowFocus: false,
   });
 
@@ -182,7 +174,7 @@ export function useDashboardData({
   useRealtimeInvalidate(
     [
       { table: "orders", brandId, queryKey: ordersKeys.all(brandId) },
-      { table: "orders", brandId, queryKey: ["dashboard-customers", brandId] },
+      { table: "orders", brandId, queryKey: customersKeys.contacts(brandId) },
       { table: "order_items", brandId, queryKey: ordersKeys.all(brandId) },
       { table: "products", brandId, queryKey: catalogKeys.products(brandId) },
       { table: "product_variants", brandId, queryKey: catalogKeys.variants(brandId) },

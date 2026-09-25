@@ -1,6 +1,13 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { MapPin, Pencil, Plus, Trash2, Star, Check, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  createCustomerAddress,
+  deleteCustomerAddress,
+  mergeDuplicateAddress,
+  setDefaultCustomerAddress,
+  updateCustomerAddress,
+} from "@/lib/data/customers";
 import { DeliveryAddressCard } from "@/components/delivery-address-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,6 +76,13 @@ const EMPTY_FORM: AddressForm = {
   region: "",
   delivery_notes: "",
 };
+
+/** Runs a write and returns its error, or null when it succeeded. */
+const failureOf = (write: Promise<unknown>) =>
+  write.then(
+    () => null,
+    (reason: unknown) => reason,
+  );
 
 export function CustomerAddressManager({
   addresses,
@@ -162,14 +176,9 @@ export function CustomerAddressManager({
       delivery_notes: form.delivery_notes.trim() || null,
     };
 
-    let error: { message: string } | null = null;
+    let error: unknown = null;
     if (editing) {
-      const result = await (supabase.from("customer_addresses") as any)
-        .update(payload)
-        .eq("id", editing.id)
-        .eq("customer_id", customerId)
-        .eq("brand_id", brandId);
-      error = result.error;
+      error = await failureOf(updateCustomerAddress(brandId, customerId, editing.id, payload));
     } else {
       const {
         data: { user },
@@ -197,21 +206,18 @@ export function CustomerAddressManager({
 
       if (existingDup) {
         // Update existing address instead of creating a duplicate row!
-        const result = await (supabase.from("customer_addresses") as any)
-          .update(payload)
-          .eq("id", existingDup.id)
-          .eq("customer_id", customerId)
-          .eq("brand_id", brandId);
-        error = result.error;
+        error = await failureOf(
+          updateCustomerAddress(brandId, customerId, existingDup.id, payload),
+        );
       } else {
-        const result = await (supabase.from("customer_addresses") as any).insert({
-          ...payload,
-          user_id: user.id,
-          brand_id: brandId,
-          customer_id: customerId,
-          is_default: addresses.length === 0,
-        });
-        error = result.error;
+        error = await failureOf(
+          createCustomerAddress(brandId, {
+            ...payload,
+            user_id: user.id,
+            customer_id: customerId,
+            is_default: addresses.length === 0,
+          }),
+        );
       }
     }
 
@@ -239,12 +245,7 @@ export function CustomerAddressManager({
   const remove = async () => {
     if (!deleting) return;
     const wasDefault = deleting.is_default;
-    const { error } = await supabase
-      .from("customer_addresses")
-      .delete()
-      .eq("id", deleting.id)
-      .eq("customer_id", customerId)
-      .eq("brand_id", brandId);
+    const error = await failureOf(deleteCustomerAddress(brandId, customerId, deleting.id));
     if (error)
       return toast.error(
         isAr
@@ -255,12 +256,11 @@ export function CustomerAddressManager({
     if (wasDefault) {
       const replacement = addresses.find((address) => address.id !== deleting.id);
       if (replacement) {
-        const { error: defaultError } = await supabase
-          .from("customer_addresses")
-          .update({ is_default: true })
-          .eq("id", replacement.id)
-          .eq("customer_id", customerId)
-          .eq("brand_id", brandId);
+        const defaultError = await failureOf(
+          updateCustomerAddress(brandId, customerId, replacement.id, {
+            is_default: true,
+          }),
+        );
         if (defaultError)
           toast.error(isAr ? "تعذر تعيين العنوان الافتراضي." : "Failed to set default address.");
       }
@@ -274,20 +274,7 @@ export function CustomerAddressManager({
   const makeDefault = async (targetId: string) => {
     setSaving(true);
     try {
-      await supabase
-        .from("customer_addresses")
-        .update({ is_default: false })
-        .eq("customer_id", customerId)
-        .eq("brand_id", brandId);
-
-      const { error } = await supabase
-        .from("customer_addresses")
-        .update({ is_default: true })
-        .eq("id", targetId)
-        .eq("customer_id", customerId)
-        .eq("brand_id", brandId);
-
-      if (error) throw error;
+      await setDefaultCustomerAddress(brandId, customerId, targetId);
 
       toast.success(isAr ? "تم تعيين العنوان كعنوان افتراضي" : "Set as default address");
       onChanged();
@@ -327,12 +314,7 @@ export function CustomerAddressManager({
 
           for (const dup of duplicates) {
             duplicateCount++;
-            await supabase
-              .from("orders")
-              .update({ shipping_address_id: primary.id })
-              .eq("shipping_address_id", dup.id);
-
-            await supabase.from("customer_addresses").delete().eq("id", dup.id);
+            await mergeDuplicateAddress(brandId, customerId, primary.id, dup.id);
           }
         }
       }
@@ -348,11 +330,13 @@ export function CustomerAddressManager({
         toast.info(isAr ? "لا توجد عناوين مكررة لتنظيفها" : "No duplicate addresses found");
       }
     } catch {
+      // Stopped at the first failure; duplicates merged before it are gone.
       toast.error(
         isAr
           ? "تعذر تنظيف العناوين المكررة، يرجى المحاولة مرة أخرى."
           : "Failed to clean up duplicate addresses. Please try again.",
       );
+      onChanged();
     } finally {
       setSaving(false);
     }

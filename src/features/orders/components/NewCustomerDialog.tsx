@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { createCustomer, createCustomerAddress, invalidateCustomers } from "@/lib/data/customers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,46 +55,34 @@ export function NewCustomerDialog({
       if (!user) throw new Error("Not authenticated");
 
       // 1. Insert customer
-      const { data: cust, error: custErr } = await (supabase.from("customers") as any)
-        .insert({
+      const cust = await createCustomer(brandId, {
+        user_id: user.id,
+        brand_id: brandId,
+        name: newCustName.trim(),
+        phone: newCustPhone.trim() || null,
+        email: newCustEmail.trim().toLowerCase() || null,
+        region: newCustRegion.trim() || null,
+        block: newCustBlock.trim() || null,
+        road: newCustRoad.trim() || null,
+        house: newCustHouse.trim() || null,
+        flat: newCustFlat.trim() || null,
+      });
+
+      // 2. Insert default address if address details provided
+      let addressId: string | null = null;
+      if (newCustRegion || newCustBlock || newCustRoad || newCustHouse) {
+        // Best-effort: a failed address leaves the order without one (bug backlog #17).
+        addressId = await createCustomerAddress(brandId, {
           user_id: user.id,
-          brand_id: brandId,
-          name: newCustName.trim(),
-          phone: newCustPhone.trim() || null,
-          email: newCustEmail.trim().toLowerCase() || null,
+          customer_id: cust.id,
+          label: "Home",
           region: newCustRegion.trim() || null,
           block: newCustBlock.trim() || null,
           road: newCustRoad.trim() || null,
           house: newCustHouse.trim() || null,
           flat: newCustFlat.trim() || null,
-        })
-        .select()
-        .single();
-
-      if (custErr) throw custErr;
-
-      // 2. Insert default address if address details provided
-      let addressId: string | null = null;
-      if (newCustRegion || newCustBlock || newCustRoad || newCustHouse) {
-        const { data: addr, error: addrErr } = await (supabase.from("customer_addresses") as any)
-          .insert({
-            user_id: user.id,
-            brand_id: brandId,
-            customer_id: cust.id,
-            label: "Home",
-            region: newCustRegion.trim() || null,
-            block: newCustBlock.trim() || null,
-            road: newCustRoad.trim() || null,
-            house: newCustHouse.trim() || null,
-            flat: newCustFlat.trim() || null,
-            is_default: true,
-          })
-          .select()
-          .single();
-
-        if (!addrErr && addr) {
-          addressId = addr.id;
-        }
+          is_default: true,
+        }).catch(() => null);
       }
 
       toast.success(
@@ -106,8 +95,7 @@ export function NewCustomerDialog({
       onCreated(cust.id, addressId);
 
       // Refetch queries
-      qc.invalidateQueries({ queryKey: ["customers", brandId] });
-      qc.invalidateQueries({ queryKey: ["customer_addresses", brandId] });
+      void invalidateCustomers(qc, brandId);
 
       // Reset form & close modal
       setNewCustName("");

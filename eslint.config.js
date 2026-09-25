@@ -154,15 +154,15 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(orders|order_items|expenses|business_settings|products|product_variants|product_bom_items|packaging_materials)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(orders|order_items|expenses|business_settings|products|product_variants|product_bom_items|packaging_materials|customers|customer_addresses)$/]",
           message:
-            "Orders, expenses, business settings and the catalog go through `@/lib/data/{orders,expenses,business-settings,catalog}`, not direct Supabase calls.",
+            "Orders, expenses, business settings, the catalog and customers go through `@/lib/data/{orders,expenses,business-settings,catalog,customers}`, not direct Supabase calls.",
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(orders?|expenses|business-settings|cogs|orders-reconciliation|expenses-business-settings|products|variants|packaging-materials|product-bom-items(-all)?|dashboard-(orders-with-items|recent-orders|expenses|expenses-full|business-settings|products|variants))$/]",
+            "ArrayExpression > Literal:first-child[value=/^(orders?|expenses|business-settings|cogs|orders-reconciliation|expenses-business-settings|products|variants|packaging-materials|product-bom-items(-all)?|customers|customer_addresses|dashboard-(orders-with-items|recent-orders|expenses|expenses-full|business-settings|products|variants|customers))$/]",
           message:
-            "Build these cache keys with `ordersKeys` / `expensesKeys` / `businessSettingsKeys` / `catalogKeys` (or the invalidate helpers).",
+            "Build these cache keys with `ordersKeys` / `expensesKeys` / `businessSettingsKeys` / `catalogKeys` / `customersKeys` (or the invalidate helpers).",
         },
       ],
     },
@@ -201,6 +201,38 @@ export default tseslint.config(
           selector:
             "ArrayExpression > Literal:first-child[value=/^(products|variants|packaging-materials|product-bom-items(-all)?)$/]",
           message: "Build these cache keys with `catalogKeys` (or `invalidateCatalog`).",
+        },
+      ],
+    },
+  },
+  {
+    // Customers data layer: the admin customers list and profile and the
+    // address manager read and write customers and saved addresses through
+    // `@/lib/data/customers`. The saved-addresses key used to hold a brand's
+    // addresses in some screens and one customer's in others.
+    files: [
+      "src/routes/_authenticated/admin.b.$slug.customers.*",
+      "src/components/customer-address-manager.tsx",
+      "src/routes/_authenticated/admin.b.$slug.import.tsx",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(customers|customer_addresses)$/]",
+          message:
+            "Customers and saved addresses go through `@/lib/data/customers`, not direct Supabase calls.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='rpc'][arguments.0.value='delete_brand_customers']",
+          message: "Use `deleteCustomers` from `@/lib/data/customers`.",
+        },
+        {
+          selector:
+            "ArrayExpression > Literal:first-child[value=/^(customers|customer_addresses|customer-profile(-addresses)?)$/]",
+          message: "Build these cache keys with `customersKeys` (or `invalidateCustomers`).",
         },
       ],
     },

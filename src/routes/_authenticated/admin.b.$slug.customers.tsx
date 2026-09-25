@@ -54,6 +54,22 @@ import {
 import { buildCustomerCrmStats, type CustomerMetricOrder } from "@/lib/commerce-metrics";
 import { getNavFilterContext, saveNavFilterContext } from "@/lib/os-productivity";
 import { queryKeys } from "@/lib/query-keys";
+import {
+  createCustomer,
+  createCustomerAddress,
+  customersKeys,
+  customersQueries,
+  deleteCustomerAddress,
+  deleteCustomers,
+  fetchCustomerIdentities,
+  invalidateCustomers,
+  setDefaultCustomerAddress,
+  updateCustomer,
+  updateCustomerAddress,
+  type CustomerAddressRow,
+} from "@/lib/data/customers";
+import { invalidateOrders } from "@/lib/data/orders";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 import { parseCSV } from "@/lib/csv-parser";
 import { sanitizeGCCPhone } from "@/lib/os-formatting";
 
@@ -97,6 +113,10 @@ type Customer = {
   house: string | null;
   flat: string | null;
 };
+
+/** The edit dialog lists a customer's addresses oldest first; the shared list puts the default first. */
+const oldestFirst = (addresses: CustomerAddressRow[]) =>
+  [...addresses].sort((a, b) => a.created_at.localeCompare(b.created_at));
 
 type Address = {
   id: string;
@@ -806,7 +826,7 @@ function CustomersPage() {
   useRealtimeInvalidate(
     [
       { table: "customers", brandId, queryKey: queryKeys.customers.all(brandId) },
-      { table: "customer_addresses", brandId, queryKey: ["customer_addresses", brandId] },
+      { table: "customer_addresses", brandId, queryKey: customersKeys.addresses(brandId) },
     ],
     `customers-list-${brandId}`,
   );
@@ -816,33 +836,11 @@ function CustomersPage() {
     isLoading: customersLoading,
     isError: customersError,
     refetch: refetchCustomers,
-  } = useQuery({
-    queryKey: queryKeys.customers.all(brandId),
-    staleTime: 30_000,
-    refetchOnWindowFocus: false,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customers")
-        .select("*")
-        .eq("brand_id", brandId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data as Customer[];
-    },
-  });
+  } = useQuery({ ...customersQueries.list(brandId), refetchOnWindowFocus: false });
 
   const addressesQ = useQuery({
-    queryKey: ["customer_addresses", brandId],
-    staleTime: 30_000,
+    ...customersQueries.addresses(brandId),
     refetchOnWindowFocus: false,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customer_addresses")
-        .select("*")
-        .eq("brand_id", brandId);
-      if (error) throw error;
-      return data as Address[];
-    },
   });
   const defaultByCustomer = new Map<string, Address>();
   (addressesQ.data ?? []).forEach((a) => {
@@ -884,15 +882,14 @@ function CustomersPage() {
   );
 
   const del = async (id: string) => {
-    const { error } = await supabase.rpc("delete_brand_customers", {
-      p_brand_id: brandId,
-      p_customer_ids: [id],
-    });
-    if (error) toast.error(error.message);
-    else {
-      toast.success(t("common.delete"));
-      qc.invalidateQueries({ queryKey: queryKeys.customers.all(brandId) });
+    try {
+      await deleteCustomers(brandId, [id]);
+    } catch (error) {
+      toast.error(getFriendlyErrorMessage(error));
+      return;
     }
+    toast.success(t("common.delete"));
+    void invalidateCustomers(qc, brandId);
   };
 
   const [segmentScope, setSegmentScope] = useState<CustomerSegmentScope>("all");
@@ -982,15 +979,11 @@ function CustomersPage() {
     if (ids.length === 0) return;
     setBulkDeleting(true);
     try {
-      const { error } = await supabase.rpc("delete_brand_customers", {
-        p_brand_id: brandId,
-        p_customer_ids: ids,
-      });
-      if (error) throw error;
+      await deleteCustomers(brandId, ids);
       toast.success(isAr ? `تم حذف ${ids.length} عميل` : `${ids.length} customers deleted`);
       setSelectedCustomerIds(new Set());
       setBulkDeleteOpen(false);
-      await qc.invalidateQueries({ queryKey: queryKeys.customers.all(brandId) });
+      await invalidateCustomers(qc, brandId);
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -1300,7 +1293,7 @@ function CustomersPage() {
         brandId={brandId}
         isOpen={isCustomerImporterOpen}
         onOpenChange={setIsCustomerImporterOpen}
-        onComplete={() => qc.invalidateQueries({ queryKey: queryKeys.customers.all(brandId) })}
+        onComplete={() => void invalidateCustomers(qc, brandId)}
       />
     </div>
   );
@@ -1339,18 +1332,8 @@ function CustomerDialog({ customer, onSaved }: { customer: Customer | null; onSa
   }, [customer]);
 
   const addressesQ = useQuery({
-    queryKey: ["customer_addresses", customer?.id ?? "new"],
-    queryFn: async () => {
-      if (!customer) return [] as Address[];
-      const { data, error } = await supabase
-        .from("customer_addresses")
-        .select("*")
-        .eq("customer_id", customer.id)
-        .order("created_at");
-      if (error) throw error;
-      return data as Address[];
-    },
-    enabled: !!customer,
+    ...customersQueries.customerAddresses(brand.id, customer?.id ?? ""),
+    select: oldestFirst,
   });
 
   const save = async () => {
@@ -1363,11 +1346,12 @@ function CustomerDialog({ customer, onSaved }: { customer: Customer | null; onSa
     const normalizedPhone = f.phone.replace(/\D/g, "");
     const normalizedEmail = f.email.trim().toLowerCase();
     if (normalizedPhone || normalizedEmail) {
-      const { data: phoneRows, error: phoneError } = await supabase
-        .from("customers")
-        .select("id, phone, email")
-        .eq("brand_id", brand.id);
-      if (phoneError) return toast.error(phoneError.message);
+      let phoneRows: Awaited<ReturnType<typeof fetchCustomerIdentities>>;
+      try {
+        phoneRows = await fetchCustomerIdentities(brand.id);
+      } catch (phoneError) {
+        return toast.error(getFriendlyErrorMessage(phoneError));
+      }
       const duplicatePhone =
         normalizedPhone &&
         (phoneRows ?? []).some(
@@ -1415,8 +1399,8 @@ function CustomerDialog({ customer, onSaved }: { customer: Customer | null; onSa
             .filter(Boolean)
             .join(" · ")
         : null;
-      const { data: created, error } = await (supabase.from("customers") as any)
-        .insert({
+      try {
+        const created = await createCustomer(brand.id, {
           name: f.name.trim(),
           phone: normalizedPhone || null,
           email: normalizedEmail || null,
@@ -1430,42 +1414,39 @@ function CustomerDialog({ customer, onSaved }: { customer: Customer | null; onSa
           city: initialAddr.region.trim() || null,
           address: composedAddress,
           user_id: user.id,
-        })
-        .select("id")
-        .single();
-      if (error || !created) return toast.error(error?.message ?? "Failed");
-
-      if (hasAddr) {
-        const { error: aerr } = await (supabase.from("customer_addresses") as any).insert({
-          user_id: user.id,
-          customer_id: created.id,
-          label: initialAddr.label || "Primary",
-          region: initialAddr.region.trim() || null,
-          block: initialAddr.block.trim() || null,
-          road: initialAddr.road.trim() || null,
-          house: initialAddr.house.trim() || null,
-          flat: initialAddr.flat.trim() || null,
-          is_default: true,
         });
-        if (aerr) return toast.error(aerr.message);
+
+        if (hasAddr) {
+          await createCustomerAddress(brand.id, {
+            user_id: user.id,
+            customer_id: created.id,
+            label: initialAddr.label || "Primary",
+            region: initialAddr.region.trim() || null,
+            block: initialAddr.block.trim() || null,
+            road: initialAddr.road.trim() || null,
+            house: initialAddr.house.trim() || null,
+            flat: initialAddr.flat.trim() || null,
+            is_default: true,
+          });
+        }
+      } catch (error) {
+        return toast.error(getFriendlyErrorMessage(error) || "Failed");
       }
     } else {
-      const { error } = await supabase
-        .from("customers")
-        .update({
+      try {
+        await updateCustomer(brand.id, customer.id, {
           name: f.name.trim(),
           phone: normalizedPhone || null,
           email: normalizedEmail || null,
           notes: f.notes,
-        })
-        .eq("brand_id", brand.id)
-        .eq("id", customer.id);
-      if (error) return toast.error(error.message);
+        });
+      } catch (error) {
+        return toast.error(getFriendlyErrorMessage(error));
+      }
     }
     toast.success(t("common.save"));
-    qc.invalidateQueries({ queryKey: queryKeys.customers.all(brand.id) });
-    qc.invalidateQueries({ queryKey: ["customer_addresses", brand.id] });
-    qc.invalidateQueries({ queryKey: queryKeys.orders.all(brand.id) });
+    void invalidateCustomers(qc, brand.id);
+    void invalidateOrders(qc, brand.id);
     onSaved();
   };
 
@@ -1644,6 +1625,7 @@ function AddressManager({
 }) {
   const t = useT();
   const qc = useQueryClient();
+  const brandId = useBrand().id;
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState({
     label: "",
@@ -1656,28 +1638,26 @@ function AddressManager({
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const invalidate = () => {
-    qc.invalidateQueries({ queryKey: ["customer_addresses"] });
-    qc.invalidateQueries({ queryKey: ["customer_addresses", customerId] });
-    qc.invalidateQueries({ queryKey: ["orders"] });
+    void qc.invalidateQueries({ queryKey: customersKeys.addresses(brandId) });
+    void invalidateOrders(qc, brandId);
   };
 
   const setDefault = async (id: string) => {
-    await supabase
-      .from("customer_addresses")
-      .update({ is_default: false })
-      .eq("customer_id", customerId);
-    const { error } = await supabase
-      .from("customer_addresses")
-      .update({ is_default: true })
-      .eq("id", id);
-    if (error) return toast.error(error.message);
+    try {
+      await setDefaultCustomerAddress(brandId, customerId, id);
+    } catch (error) {
+      return toast.error(getFriendlyErrorMessage(error));
+    }
     toast.success(t("customers.setDefault"));
     invalidate();
   };
 
   const remove = async (id: string) => {
-    const { error } = await supabase.from("customer_addresses").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    try {
+      await deleteCustomerAddress(brandId, customerId, id);
+    } catch (error) {
+      return toast.error(getFriendlyErrorMessage(error));
+    }
     invalidate();
   };
 
@@ -1699,17 +1679,16 @@ function AddressManager({
       house: draft.house,
       flat: draft.flat || null,
     };
-    let error;
-    if (editingId) {
-      ({ error } = await supabase.from("customer_addresses").update(payload).eq("id", editingId));
-    } else {
-      const shouldBeDefault = addresses.length === 0;
-      ({ error } = await (supabase.from("customer_addresses") as any).insert({
-        ...payload,
-        is_default: shouldBeDefault,
-      }));
+    try {
+      if (editingId) {
+        await updateCustomerAddress(brandId, customerId, editingId, payload);
+      } else {
+        const shouldBeDefault = addresses.length === 0;
+        await createCustomerAddress(brandId, { ...payload, is_default: shouldBeDefault });
+      }
+    } catch (error) {
+      return toast.error(getFriendlyErrorMessage(error));
     }
-    if (error) return toast.error(error.message);
     setAdding(false);
     setEditingId(null);
     setDraft({ label: "", region: "", block: "", road: "", house: "", flat: "" });

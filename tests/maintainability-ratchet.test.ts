@@ -16,13 +16,13 @@ import { collectMaintainabilityMetrics } from "../scripts/maintainability-metric
  */
 
 const BUDGETS = {
-  asAny: 795,
+  asAny: 787,
   colonAny: 744,
   asNever: 0,
   tsIgnore: 0,
   tsExpectError: 0,
   eslintDisable: 10,
-  directSupabaseCalls: 286,
+  directSupabaseCalls: 254,
   readFileSyncTestFiles: 71,
   filesOver1000: 23,
   maxLinesForNewFile: 600,
@@ -43,7 +43,7 @@ const GIANT_FILES_BUDGETS: Record<string, number> = {
   "src/components/subscription/BrandSubscriptionHub.tsx": 1972,
   "src/routes/_authenticated/admin.b.$slug.export.tsx": 1937,
   "src/lib/addons/addon-showcase-data.ts": 1893,
-  "src/routes/_authenticated/admin.b.$slug.customers.tsx": 1808,
+  "src/routes/_authenticated/admin.b.$slug.customers.tsx": 1787,
   "src/components/super/SuperPlansManager.tsx": 1728,
   "src/routes/_authenticated/admin.b.$slug.team.tsx": 1715,
   "src/addons/size-guides/components/admin/SizeGuideStudioPage.tsx": 1703,
@@ -59,7 +59,7 @@ const GIANT_FILES_BUDGETS: Record<string, number> = {
   "src/routes/_authenticated/admin.brands.tsx": 1228,
   "src/routes/_authenticated/admin.b.$slug.integrations.tsx": 1202,
   "src/routes/onboard.tsx": 1094,
-  "src/routes/_authenticated/admin.b.$slug.customers.$customerId.tsx": 1084,
+  "src/routes/_authenticated/admin.b.$slug.customers.$customerId.tsx": 1055,
   "src/routes/_authenticated/admin.b.$slug.pages.tsx": 1065,
 };
 
