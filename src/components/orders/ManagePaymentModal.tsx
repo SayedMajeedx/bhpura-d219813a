@@ -66,8 +66,7 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
   const originalStatus = ((order?.payment_status as PaymentBadge) || "unpaid") as PaymentBadge;
   const originalMethod = order?.payment_method || "unspecified";
   const originalAdvance = Number(order?.advance_paid ?? totals.advancePaid ?? 0);
-  const originalReference =
-    order?.payment_reference || order?.gateway_reference || order?.benefit_receipt_key || "";
+  const originalReference = order?.payment_reference || order?.benefit_receipt_key || "";
   const hasChanges =
     paymentStatus !== originalStatus ||
     paymentMethod !== originalMethod ||
@@ -79,9 +78,7 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
       setPaymentStatus((order.payment_status as PaymentBadge) || "unpaid");
       setPaymentMethod(order.payment_method || "unspecified");
       setAdvanceAmount(String(order.advance_paid ?? totals.advancePaid ?? 0));
-      setPaymentRef(
-        order.payment_reference || order.gateway_reference || order.benefit_receipt_key || "",
-      );
+      setPaymentRef(order.payment_reference || order.benefit_receipt_key || "");
     }
   }, [order, open, totals.advancePaid]);
 
