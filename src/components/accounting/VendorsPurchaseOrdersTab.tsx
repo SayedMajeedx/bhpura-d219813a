@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
@@ -18,6 +17,14 @@ import {
 import { Building2, Plus, Phone, Mail } from "lucide-react";
 import { formatMoney, formatDate } from "@/lib/format";
 import { toast } from "sonner";
+import {
+  accountingQueries,
+  createPurchaseOrder,
+  createVendor,
+  invalidatePurchaseOrders,
+  invalidateVendors,
+  updatePurchaseOrder,
+} from "@/lib/data/accounting";
 
 export function VendorsPurchaseOrdersTab() {
   const { lang } = useI18n();
@@ -44,32 +51,10 @@ export function VendorsPurchaseOrdersTab() {
   const [isSaving, setIsSaving] = useState(false);
 
   // Fetch Vendors
-  const vendorsQ = useQuery({
-    queryKey: ["vendors-full", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("vendors")
-        .select("*")
-        .eq("brand_id", brandId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as any[];
-    },
-  });
+  const vendorsQ = useQuery(accountingQueries.vendors(brandId));
 
   // Fetch Purchase Orders
-  const posQ = useQuery({
-    queryKey: ["purchase-orders", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("purchase_orders")
-        .select("*, vendors(name)")
-        .eq("brand_id", brandId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as any[];
-    },
-  });
+  const posQ = useQuery(accountingQueries.purchaseOrders(brandId));
 
   const vendors: any[] = vendorsQ.data ?? [];
   const pos: any[] = posQ.data ?? [];
@@ -89,18 +74,15 @@ export function VendorsPurchaseOrdersTab() {
 
     setIsSaving(true);
     try {
-      const { error } = await (supabase as any).from("vendors").insert({
-        brand_id: brandId,
+      await createVendor(brandId, {
         name: vendorName,
         contact_person: vendorContact,
         phone: vendorPhone,
         email: vendorEmail,
-      } as any);
-      if (error) throw error;
+      });
 
       toast.success(isAr ? "تم إضافة المورد بنجاح" : "Vendor added");
-      qc.invalidateQueries({ queryKey: ["vendors-full", brandId] });
-      qc.invalidateQueries({ queryKey: ["vendors", brandId] });
+      invalidateVendors(qc, brandId);
       setVendorModalOpen(false);
       setVendorName("");
       setVendorContact("");
@@ -128,18 +110,16 @@ export function VendorsPurchaseOrdersTab() {
 
     setIsSaving(true);
     try {
-      const { error } = await (supabase as any).from("purchase_orders").insert({
-        brand_id: brandId,
+      await createPurchaseOrder(brandId, {
         po_number: poNumber,
         vendor_id: selectedVendorId,
         total_amount: poTotalAmount,
         paid_amount: poPaidAmount,
         status: poPaidAmount >= poTotalAmount ? "received" : "ordered",
-      } as any);
-      if (error) throw error;
+      });
 
       toast.success(isAr ? "تم إنشاء أمر الشراء بنجاح" : "Purchase order created");
-      qc.invalidateQueries({ queryKey: ["purchase-orders", brandId] });
+      invalidatePurchaseOrders(qc, brandId);
       setPoModalOpen(false);
       setPoTotalAmount(0);
       setPoPaidAmount(0);
@@ -161,18 +141,13 @@ export function VendorsPurchaseOrdersTab() {
       const total = Number(po.total_amount || 0);
       const newPaid = Math.min(total, currentPaid + addPaidAmt);
 
-      const { error } = await (supabase as any)
-        .from("purchase_orders")
-        .update({
-          paid_amount: newPaid,
-          status: newPaid >= total ? "received" : "ordered",
-        } as any)
-        .eq("id", po.id)
-        .eq("brand_id", brandId);
-      if (error) throw error;
+      await updatePurchaseOrder(brandId, po.id, {
+        paid_amount: newPaid,
+        status: newPaid >= total ? "received" : "ordered",
+      });
 
       toast.success(isAr ? "تم تسجيل الدفعة بنجاح" : "Payment recorded");
-      qc.invalidateQueries({ queryKey: ["purchase-orders", brandId] });
+      invalidatePurchaseOrders(qc, brandId);
     } catch (err: any) {
       console.error("PO payment error:", err);
       toast.error(

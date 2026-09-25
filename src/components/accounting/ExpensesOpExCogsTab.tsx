@@ -27,6 +27,7 @@ import {
   updateExpense,
 } from "@/lib/data/expenses";
 import { catalogKeys } from "@/lib/data/catalog";
+import { accountingQueries } from "@/lib/data/accounting";
 
 interface ExpensesOpExCogsTabProps {
   activeRange?: { from: string; to: string };
@@ -62,18 +63,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
   const expensesQ = useQuery(expensesQueries.list(brandId));
 
   // Fetch vendors
-  const vendorsQ = useQuery({
-    queryKey: ["vendors", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("vendors")
-        .select("id, name")
-        .eq("brand_id", brandId)
-        .order("name", { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as any[];
-    },
-  });
+  const vendorsQ = useQuery(accountingQueries.vendorOptions(brandId));
 
   const vendors: any[] = vendorsQ.data ?? [];
 

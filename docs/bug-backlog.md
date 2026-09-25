@@ -55,6 +55,24 @@ Found while moving customers into `src/lib/data/customers`. The calls kept their
 - **Effect**: if clearing fails, the brand has two default templates and the dialog preselects either one.
 - **Fix**: stop when clearing fails, or clear and set in one update / RPC (same shape as #17).
 
+## Accounting (`src/components/accounting/`, `src/lib/data/accounting`)
+
+### 24. The cash box to bank transfer can lose or create money
+
+Found while moving the accounting tabs into `src/lib/data/accounting`. The calls kept their behaviour and point here.
+
+- **Where**: `CashFlowLiquidityTab.tsx`, `handleTransferFunds`.
+- **Problem**:
+  - The transfer is three separate writes (cash box balance, bank balance, transaction log), and each one's error is ignored.
+  - The new balances come from the balances on screen, not the database.
+  - The cash box is clamped at 0, but the bank always gets the full amount.
+  - With no accounts yet, the screen falls back to placeholder ids (`"cash"`, `"bank"`) that match no row.
+- **Effect**:
+  - The success toast shows even when nothing was written, or only part of it (for example, the bank credited with no log entry).
+  - Two transfers from stale screens overwrite each other's balance.
+  - Moving more than the cash box holds adds money to the bank that never left the cash box.
+- **Fix**: one RPC that checks the cash box balance, moves the amount and logs it in a single transaction (and creates the two accounts when missing). Show its error.
+
 ## Inventory (`src/features/inventory/`)
 
 ### 2. Duplicating a product drops variant and product fields
