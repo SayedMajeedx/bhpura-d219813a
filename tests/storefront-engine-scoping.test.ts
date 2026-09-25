@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { SETTINGS_REGISTRY } from "../src/features/settings/registry";
@@ -11,6 +11,19 @@ import {
 } from "../src/lib/storefront-engine";
 
 const read = (p: string) => readFileSync(resolve(process.cwd(), p), "utf8");
+
+// The storefront shell is split across its route and src/features/storefront-shell (Phase 5).
+const shellSource = () =>
+  [
+    "src/routes/$slug.route.tsx",
+    ...["components", "lib"].flatMap((dir) =>
+      readdirSync(`src/features/storefront-shell/${dir}`)
+        .sort()
+        .map((file) => `src/features/storefront-shell/${dir}/${file}`),
+    ),
+  ]
+    .map((file) => read(file))
+    .join("\n");
 
 describe("storefront engine resolver", () => {
   it("treats only version 2 as Storefront 2.0", () => {
@@ -39,7 +52,7 @@ describe("storefront engine resolver", () => {
   it("is the single source of truth for the storefront footer branch", () => {
     // The route used to hand-roll this condition, which is how the "minimal"
     // value drifted out of sync. It must go through the resolver now.
-    const route = read("src/routes/$slug.route.tsx");
+    const route = shellSource();
     expect(route).toContain('resolveFooterVariant(settings) === "columns"');
     expect(route).not.toContain('settings?.footer_layout !== "simple"');
   });
@@ -201,7 +214,7 @@ describe("Storefront 2.0 hero controls are consumed", () => {
   });
 
   it("propagates both fields through the storefront loader", () => {
-    const route = read("src/routes/$slug.route.tsx");
+    const route = shellSource();
     expect(route).toContain("hero_overlay_strength: s?.hero_overlay_strength ?? 45");
     expect(route).toContain("hero_title_color_v2: s?.hero_title_color_v2 ?? null");
   });

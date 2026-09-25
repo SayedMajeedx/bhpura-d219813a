@@ -24,7 +24,7 @@ const BUDGETS = {
   eslintDisable: 10,
   directSupabaseCalls: 369,
   readFileSyncTestFiles: 71,
-  filesOver1000: 24,
+  filesOver1000: 23,
   maxLinesForNewFile: 600,
   maxLinesForExistingFile: 1000,
 } as const;
@@ -58,7 +58,6 @@ const GIANT_FILES_BUDGETS: Record<string, number> = {
   "src/lib/instagram-ai-importer.ts": 1262,
   "src/routes/_authenticated/admin.brands.tsx": 1228,
   "src/routes/_authenticated/admin.b.$slug.integrations.tsx": 1202,
-  "src/routes/$slug.route.tsx": 1195,
   "src/routes/onboard.tsx": 1094,
   "src/routes/_authenticated/admin.b.$slug.customers.$customerId.tsx": 1084,
   "src/routes/_authenticated/admin.b.$slug.pages.tsx": 1065,

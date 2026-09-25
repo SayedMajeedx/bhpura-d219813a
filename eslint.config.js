@@ -109,6 +109,7 @@ export default tseslint.config(
       "src/features/storefront-home/**",
       "src/features/product-page/**",
       "src/features/checkout/**",
+      "src/features/storefront-shell/**",
     ],
     rules: {
       "no-restricted-syntax": [

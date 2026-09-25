@@ -4,6 +4,19 @@ import { resolve } from "node:path";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
+// The storefront shell is split across its route and src/features/storefront-shell (Phase 5).
+const shellSource = () =>
+  [
+    "src/routes/$slug.route.tsx",
+    ...["components", "lib"].flatMap((dir) =>
+      readdirSync(`src/features/storefront-shell/${dir}`)
+        .sort()
+        .map((file) => `src/features/storefront-shell/${dir}/${file}`),
+    ),
+  ]
+    .map((file) => read(file))
+    .join("\n");
+
 // The home page is split across its route and src/features/storefront-home (Phase 5).
 const homeSource = () =>
   [
@@ -55,7 +68,7 @@ describe("storefront performance guardrails", () => {
   });
 
   it("keeps the footer flush with the storefront content", () => {
-    const shell = read("src/routes/$slug.route.tsx");
+    const shell = shellSource();
 
     expect(shell).toContain('className="border-t py-5 sm:py-6"');
     expect(shell).not.toContain('className="border-t mt-8 sm:mt-10 py-5 sm:py-6"');
