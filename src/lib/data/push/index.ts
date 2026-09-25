@@ -61,6 +61,18 @@ export function invalidatePush(qc: QueryClient, brandId: string) {
 }
 
 /**
+ * Where a tapped campaign notification opens: the brand's own storefront, its
+ * custom domain or else `https://<slug>.boutq.store`. Always absolute: the
+ * customer's phone opens it (unlike `getStorefrontUrl`, which returns a
+ * relative path on localhost).
+ */
+export function campaignTargetUrl(brand: { slug: string; custom_domain?: string | null }) {
+  const domain = brand.custom_domain?.trim();
+  if (domain) return `https://${domain}`;
+  return `https://${brand.slug.trim().toLowerCase()}.boutq.store`;
+}
+
+/**
  * Queues a marketing notification to every subscribed customer of the brand,
  * or to one customer. A missing customer is omitted: the function defaults it
  * to NULL (everyone).

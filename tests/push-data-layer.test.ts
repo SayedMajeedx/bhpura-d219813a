@@ -83,6 +83,19 @@ describe("push reads", () => {
   });
 });
 
+describe("campaignTargetUrl (bug backlog #23)", () => {
+  it("opens the brand's own storefront, not Pura's", () => {
+    expect(push.campaignTargetUrl({ slug: "noor" })).toBe("https://noor.boutq.store");
+    expect(push.campaignTargetUrl({ slug: "pura" })).toBe("https://pura.boutq.store");
+  });
+
+  it("prefers the brand's custom domain", () => {
+    expect(push.campaignTargetUrl({ slug: "noor", custom_domain: "shop.noor.bh" })).toBe(
+      "https://shop.noor.bh",
+    );
+  });
+});
+
 describe("createPushCampaign", () => {
   it("queues a campaign for everyone by leaving the customer to the NULL default", async () => {
     await push.createPushCampaign({
