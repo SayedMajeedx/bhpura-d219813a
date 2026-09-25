@@ -1,6 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  incubatorsQueries,
+  invalidateIncubators,
+  transferStockToIncubator,
+} from "@/lib/data/incubators";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
 import { formatMoney } from "@/lib/format";
@@ -89,7 +93,8 @@ interface TransferRowState {
   selected: boolean;
 }
 
-const db = supabase as any;
+/** The modal's own variant type over the typed rows. */
+const asBatchVariants = (rows: unknown[]) => rows as BatchTransferVariant[];
 
 export function BatchIncubatorTransferModal({
   open,
@@ -115,19 +120,8 @@ export function BatchIncubatorTransferModal({
 
   // Fetch all active incubators for this brand
   const incubatorsQ = useQuery({
-    queryKey: ["incubators-active", brandId],
-    queryFn: async () => {
-      const { data, error } = await db
-        .from("incubators")
-        .select("id, name, commission_type, commission_value, currency, settlement_day, is_active")
-        .eq("brand_id", brandId)
-        .eq("is_active", true)
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return (data || []) as any[];
-    },
-    enabled: open,
-    staleTime: 30_000,
+    ...incubatorsQueries.active(brandId),
+    enabled: open && Boolean(brandId),
   });
 
   const activeIncubators = useMemo(() => incubatorsQ.data || [], [incubatorsQ.data]);
@@ -150,20 +144,9 @@ export function BatchIncubatorTransferModal({
   const productIds = useMemo(() => targetProducts.map((p) => p.id), [targetProducts]);
 
   const fetchedVariantsQ = useQuery({
-    queryKey: ["batch-transfer-variants-with-allocations", brandId, productIds],
-    queryFn: async () => {
-      if (productIds.length === 0) return [];
-      const { data, error } = await db
-        .from("product_variants")
-        .select(
-          `id, product_id, sku, barcode, size, color, stock_main, stock_incubator, selling_price, cost_price, incubator_inventory(quantity, incubator_id)`,
-        )
-        .in("product_id", productIds);
-      if (error) throw error;
-      return (data || []) as BatchTransferVariant[];
-    },
+    ...incubatorsQueries.batchVariants(brandId, productIds),
+    select: asBatchVariants,
     enabled: open && productIds.length > 0 && !variantsByProduct && !allVariants,
-    staleTime: 10_000,
   });
 
   // Build row states whenever targetProducts or variants change
@@ -408,18 +391,16 @@ export function BatchIncubatorTransferModal({
 
       for (const row of activeRows) {
         try {
-          const { error } = await db.rpc("transfer_stock_to_incubator", {
-            p_incubator_id: selectedIncubatorId,
-            p_variant_id: row.variantId,
-            p_quantity: row.transferQty,
-            p_external_code: row.externalCode.trim() || null,
-            p_price: Number(row.consignmentPrice),
-            p_commission_type: commType,
-            p_commission_value: commVal,
-            p_notes: transferNotes.trim() || null,
+          await transferStockToIncubator({
+            incubatorId: selectedIncubatorId,
+            variantId: row.variantId,
+            quantity: row.transferQty,
+            externalCode: row.externalCode.trim() || null,
+            price: Number(row.consignmentPrice),
+            commissionType: commType,
+            commissionValue: commVal,
+            notes: transferNotes.trim() || null,
           });
-
-          if (error) throw error;
           successCount++;
         } catch (err: any) {
           console.error(`Failed transferring variant ${row.variantId}:`, err);
@@ -436,13 +417,8 @@ export function BatchIncubatorTransferModal({
 
         // Invalidate all inventory and incubator queries
         await Promise.all([
-          qc.invalidateQueries({ queryKey: ["inventory_variants", brandId] }),
-          qc.invalidateQueries({ queryKey: ["inventory_products", brandId] }),
           qc.invalidateQueries({ queryKey: catalogKeys.variants(brandId) }),
-          qc.invalidateQueries({ queryKey: ["incubator_stock", selectedIncubatorId] }),
-          qc.invalidateQueries({ queryKey: ["incubator_movements", selectedIncubatorId] }),
-          qc.invalidateQueries({ queryKey: ["incubator_summary", brandId] }),
-          qc.invalidateQueries({ queryKey: ["incubators", brandId] }),
+          invalidateIncubators(qc, brandId),
         ]);
 
         if (onSuccess) onSuccess();

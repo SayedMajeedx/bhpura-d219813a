@@ -11,7 +11,7 @@ describe("incubator page management", () => {
   it("allows existing incubator details to be edited", () => {
     expect(page).toContain('setDialog("edit_incubator")');
     expect(page).toContain('dialog === "edit_incubator" && currentId');
-    expect(page).toContain('.from("incubators")');
+    expect(page).toContain("await updateIncubator(brand.id, currentId, {");
     expect(page).toContain('is_active: values.is_active === "true"');
   });
 

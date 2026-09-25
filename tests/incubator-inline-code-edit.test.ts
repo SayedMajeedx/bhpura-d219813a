@@ -20,7 +20,8 @@ describe("inline incubator code editing", () => {
   });
 
   it("uses the secured item update RPC and refreshes the authoritative query", () => {
-    expect(page).toContain('db.rpc("update_incubator_inventory_item"');
-    expect(page).toContain('queryKey: ["incubator_inventory", brand.id]');
+    // The secured RPC is wrapped by the incubators data layer (tests/incubators-data-layer.test.ts).
+    expect(page).toContain("await updateIncubatorItem({");
+    expect(page).toContain("queryKey: incubatorsKeys.inventory(brand.id)");
   });
 });

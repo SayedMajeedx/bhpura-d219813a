@@ -24,7 +24,7 @@ describe("incubator price refresh and direction", () => {
   });
 
   it("makes Refresh invoke synchronization instead of only invalidating queries", () => {
-    expect(page).toContain('db.rpc("sync_incubator_inventory_prices"');
+    expect(page).toContain("await syncIncubatorPrices(currentId)");
     expect(page).toContain("onClick={refreshPrices}");
   });
 

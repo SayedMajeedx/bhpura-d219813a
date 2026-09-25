@@ -29,6 +29,6 @@ describe("incubator item code editing and synchronization", () => {
     expect(page).toContain('setDialog("edit_item")');
     expect(page).toContain('dialog === "edit_item" && activeItem');
     expect(page).toContain('name="external_code"');
-    expect(page).toContain('db.rpc("update_incubator_inventory_item"');
+    expect(page).toContain("await updateIncubatorItem({");
   });
 });
