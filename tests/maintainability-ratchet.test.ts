@@ -24,7 +24,7 @@ const BUDGETS = {
   eslintDisable: 10,
   directSupabaseCalls: 369,
   readFileSyncTestFiles: 71,
-  filesOver1000: 26,
+  filesOver1000: 25,
   maxLinesForNewFile: 600,
   maxLinesForExistingFile: 1000,
 } as const;
@@ -40,7 +40,6 @@ const BUDGETS = {
 const GIANT_FILES_BUDGETS: Record<string, number> = {
   "src/features/settings/registry.ts": 2616,
   "src/routes/_authenticated/admin.b.$slug.content-studio.tsx": 2488,
-  "src/routes/_authenticated/admin.b.$slug.dashboard.tsx": 1232,
   "src/components/subscription/BrandSubscriptionHub.tsx": 1972,
   "src/routes/_authenticated/admin.b.$slug.export.tsx": 1937,
   "src/lib/addons/addon-showcase-data.ts": 1893,
