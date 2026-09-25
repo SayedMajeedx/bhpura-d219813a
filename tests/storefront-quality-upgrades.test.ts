@@ -1,7 +1,20 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(path, "utf8");
+
+// The checkout is split across its route and src/features/checkout (Phase 5).
+const checkoutSource = () =>
+  [
+    "src/routes/$slug.checkout.tsx",
+    ...["hooks", "lib"].flatMap((dir) =>
+      readdirSync(`src/features/checkout/${dir}`)
+        .sort()
+        .map((file) => `src/features/checkout/${dir}/${file}`),
+    ),
+  ]
+    .map((file) => readFileSync(file, "utf8"))
+    .join("\n");
 
 describe("storefront quality upgrades", () => {
   it("keeps admin-only chart and PDF libraries out of forced shared chunks", () => {
@@ -27,7 +40,7 @@ describe("storefront quality upgrades", () => {
   });
 
   it("makes email optional and requires explicit terms acceptance", () => {
-    const checkout = read("src/routes/$slug.checkout.tsx");
+    const checkout = checkoutSource();
     expect(checkout).toContain("customerEmail &&");
     expect(checkout).toContain("!acceptedTerms");
     expect(checkout).toContain('category: "terms-conditions"');

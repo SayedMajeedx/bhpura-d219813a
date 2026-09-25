@@ -15,6 +15,19 @@ const orderDetailSource = () =>
     .map((file) => readFileSync(file, "utf8"))
     .join("\n");
 
+// The checkout is split across its route and src/features/checkout (Phase 5).
+const checkoutSource = () =>
+  [
+    "src/routes/$slug.checkout.tsx",
+    ...["hooks", "lib"].flatMap((dir) =>
+      readdirSync(`src/features/checkout/${dir}`)
+        .sort()
+        .map((file) => `src/features/checkout/${dir}/${file}`),
+    ),
+  ]
+    .map((file) => readFileSync(file, "utf8"))
+    .join("\n");
+
 describe("custom tailoring order location", () => {
   const migration = readFileSync(
     "supabase/migrations/20260903213000_allow_custom_tailoring_order_location.sql",
@@ -40,7 +53,7 @@ describe("custom tailoring order location", () => {
   });
 
   it("does not expose the database constraint name to shoppers", () => {
-    const checkout = readFileSync("src/routes/$slug.checkout.tsx", "utf8");
+    const checkout = checkoutSource();
     expect(checkout).toContain('msg.includes("order_items_location_check")');
     expect(checkout).toContain("تعذر تجهيز الطلب المخصص حالياً");
   });
