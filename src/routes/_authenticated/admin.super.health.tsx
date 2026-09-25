@@ -7,6 +7,7 @@ import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { fetchCallerProfile } from "@/lib/data/profiles";
 
 type HealthEvent = {
   id: string;
@@ -25,11 +26,7 @@ export const Route = createFileRoute("/_authenticated/admin/super/health")({
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) throw redirect({ to: "/auth" });
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle();
+    const profile = await fetchCallerProfile(user.id);
     if ((user.email || "").toLowerCase() !== SUPER_ADMIN_EMAIL && profile?.role !== "super_admin") {
       throw redirect({ to: "/admin" });
     }

@@ -1,6 +1,7 @@
 import { brandKeys } from "@/lib/data/brands";
 import { businessSettingsKeys } from "@/lib/data/business-settings";
 import { catalogKeys } from "@/lib/data/catalog";
+import { profilesKeys } from "@/lib/data/profiles";
 import { messageTemplatesKeys } from "@/lib/data/message-templates";
 import { categoriesKeys } from "@/lib/data/categories";
 import { customersKeys } from "@/lib/data/customers/keys";
@@ -36,8 +37,7 @@ export const queryKeys = {
 
   // Couriers
   couriers: {
-    all: (brandId: string) => ["couriers", brandId] as const,
-    detail: (brandId: string, courierId: string) => ["couriers", brandId, courierId] as const,
+    all: profilesKeys.couriers,
   },
 
   // Products & Catalog

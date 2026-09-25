@@ -342,7 +342,7 @@ export function OrderFulfillmentModal({
                         const waUrl = generateCourierWhatsAppUrl({
                           order: selectedFulfillOrder,
                           courierPhone: courierObj.phone,
-                          courierName: courierObj.name || courierObj.email,
+                          courierName: courierObj.name || courierObj.email || "",
                           brandSlug: slug,
                           lang,
                         });

@@ -42,6 +42,7 @@ import { SuperPlansManager } from "@/components/super/SuperPlansManager";
 import { SuperAddonsManager } from "@/components/super/SuperAddonsManager";
 import { SuperOverridesManager } from "@/components/super/SuperOverridesManager";
 import { SuperGrantsManager } from "@/components/super/SuperGrantsManager";
+import { fetchCallerProfile } from "@/lib/data/profiles";
 
 export const Route = createFileRoute("/_authenticated/admin/super/requests")({
   beforeLoad: async () => {
@@ -50,11 +51,7 @@ export const Route = createFileRoute("/_authenticated/admin/super/requests")({
     } = await supabase.auth.getUser();
     if (!user) throw redirect({ to: "/auth" });
     const email = (user.email || "").toLowerCase();
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle();
+    const profile = await fetchCallerProfile(user.id);
     const isSuperAdmin = email === SUPER_ADMIN_EMAIL || profile?.role === "super_admin";
     if (!isSuperAdmin) throw redirect({ to: "/admin" });
   },

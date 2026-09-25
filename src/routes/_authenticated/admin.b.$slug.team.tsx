@@ -65,6 +65,7 @@ import { TeamCommandHeader } from "@/components/team/TeamCommandHeader";
 import { TeamScopeSwitcher, type TeamStatusScope } from "@/components/team/TeamScopeSwitcher";
 import { queryKeys } from "@/lib/query-keys";
 import { useEntitlements } from "@/lib/saas-billing/use-entitlements";
+import { profilesQueries } from "@/lib/data/profiles";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/team")({
   beforeLoad: async ({ context: { queryClient }, params }) => {
@@ -72,18 +73,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/team")({
 
     if (!user) throw redirect({ to: "/auth" });
 
-    const profile = await queryClient.ensureQueryData({
-      queryKey: ["auth_profile_role", user.id],
-      queryFn: async () => {
-        const { data } = await supabase
-          .from("profiles")
-          .select("role, status, email")
-          .eq("id", user.id)
-          .maybeSingle();
-        return data ?? null;
-      },
-      staleTime: 1000 * 60 * 5,
-    });
+    const profile = await queryClient.ensureQueryData(profilesQueries.caller(user.id));
 
     const role = profile?.role;
     const allowed =

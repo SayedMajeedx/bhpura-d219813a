@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { useQueryClient } from "@tanstack/react-query";
 import { evaluatePasswordStrength } from "@/lib/team-credentials-utils";
+import { profilesKeys, updateProfile } from "@/lib/data/profiles";
 
 export const Route = createFileRoute("/first-login")({
   ssr: false,
@@ -51,8 +52,7 @@ export const Route = createFileRoute("/first-login")({
     }
 
     const requiresPasswordChange =
-      Boolean((profile as any)?.must_change_password) ||
-      Boolean(user.user_metadata?.must_change_password);
+      Boolean(profile?.must_change_password) || Boolean(user.user_metadata?.must_change_password);
 
     if (!requiresPasswordChange) {
       throw redirect({ to: "/admin" });
@@ -168,16 +168,16 @@ function FirstLoginPage() {
       // 2. Clear must_change_password in profiles via RPC
       const { error: rpcError } = await supabase.rpc("complete_first_sign_in_password_change");
       if (rpcError) {
-        // Fallback direct update on profile
-        await supabase
-          .from("profiles")
-          .update({ must_change_password: false, updated_at: new Date().toISOString() })
-          .eq("id", user.id);
+        // Fallback direct update on profile (best-effort, as before)
+        await updateProfile(user.id, {
+          must_change_password: false,
+          updated_at: new Date().toISOString(),
+        }).catch(() => undefined);
       }
 
       // 3. Invalidate relevant queries so the router layout recognizes the change
       await queryClient.invalidateQueries({ queryKey: ["auth_user"] });
-      await queryClient.invalidateQueries({ queryKey: ["auth_profile_role"] });
+      await queryClient.invalidateQueries({ queryKey: profilesKeys.callers() });
       await queryClient.invalidateQueries({ queryKey: ["profile"] });
 
       setIsSuccess(true);

@@ -5,6 +5,7 @@ import { Crown, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SuperGrantsManager } from "@/components/super/SuperGrantsManager";
 import { Link } from "@tanstack/react-router";
+import { fetchCallerProfile } from "@/lib/data/profiles";
 
 export const Route = createFileRoute("/_authenticated/admin/super/grants")({
   beforeLoad: async () => {
@@ -14,11 +15,7 @@ export const Route = createFileRoute("/_authenticated/admin/super/grants")({
     if (!user) throw redirect({ to: "/auth" });
 
     const email = (user.email || "").toLowerCase();
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle();
+    const profile = await fetchCallerProfile(user.id);
 
     const isSuperAdmin = email === SUPER_ADMIN_EMAIL || profile?.role === "super_admin";
     if (!isSuperAdmin) throw redirect({ to: "/admin" });

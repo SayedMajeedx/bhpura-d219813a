@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchInvoiceNumbers } from "@/lib/data/orders";
+import { fetchProfileNames } from "@/lib/data/profiles";
 import { useI18n } from "@/lib/i18n";
 import {
   History,
@@ -222,13 +223,11 @@ export function InventoryHistorySheet({
         new Set(rows.map((r) => r.created_by).filter((uid): uid is string => Boolean(uid))),
       );
       if (userIds.length > 0) {
-        const { data: profs } = await (supabase.from("profiles") as any)
-          .select("id, full_name, email")
-          .in("id", userIds);
-        if (profs) {
+        const profs = await fetchProfileNames(userIds);
+        if (profs.length > 0) {
           const map: Record<string, { full_name: string; email: string }> = {};
-          profs.forEach((p: any) => {
-            map[p.id] = { full_name: p.full_name, email: p.email };
+          profs.forEach((p) => {
+            map[p.id] = { full_name: p.full_name ?? "", email: p.email ?? "" };
           });
           setProfileMap((prev) => ({ ...prev, ...map }));
         }

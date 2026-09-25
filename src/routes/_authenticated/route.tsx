@@ -1,9 +1,9 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
 import { ensureSessionUser } from "@/lib/auth/ensure-session-user";
 import { AppShell } from "@/components/app-shell";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { readStorefrontOAuthReturn } from "@/lib/storefront-oauth-return";
+import { profilesQueries } from "@/lib/data/profiles";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -16,18 +16,7 @@ export const Route = createFileRoute("/_authenticated")({
 
     if (!user) throw redirect({ to: "/auth" });
 
-    const profile = await queryClient.ensureQueryData({
-      queryKey: ["auth_profile_role", user.id],
-      queryFn: async () => {
-        const { data } = await supabase
-          .from("profiles")
-          .select("status, role, must_change_password")
-          .eq("id", user.id)
-          .maybeSingle();
-        return data ?? null;
-      },
-      staleTime: 1000 * 60 * 5, // 5 min cache
-    });
+    const profile = await queryClient.ensureQueryData(profilesQueries.caller(user.id));
 
     const dashboardRoles = new Set(["super_admin", "admin", "brand_admin", "staff", "courier"]);
     if (!profile || profile.status !== "active" || !dashboardRoles.has(profile.role ?? "")) {
@@ -35,8 +24,7 @@ export const Route = createFileRoute("/_authenticated")({
     }
 
     const requiresPasswordChange =
-      Boolean((profile as any)?.must_change_password) ||
-      Boolean(user?.user_metadata?.must_change_password);
+      Boolean(profile?.must_change_password) || Boolean(user?.user_metadata?.must_change_password);
 
     if (requiresPasswordChange) {
       throw redirect({ to: "/first-login" });

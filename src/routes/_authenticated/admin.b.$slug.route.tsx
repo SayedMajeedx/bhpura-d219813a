@@ -9,6 +9,7 @@ import { RotateCw, AlertTriangle, ArrowLeft } from "lucide-react";
 import { TrialExpiredPaywall } from "@/components/admin/TrialExpiredPaywall";
 import { AddonsProvider } from "@/components/addons/AddonsProvider";
 import { useBrandAddons } from "@/hooks/use-brand-addons";
+import { profilesQueries } from "@/lib/data/profiles";
 
 function getImpersonationToken(request?: Request): string | null {
   if (typeof document !== "undefined") {
@@ -94,20 +95,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
           staleTime: 1000 * 60 * 5,
         }),
       ),
-      fetchWithRetry(() =>
-        queryClient.ensureQueryData({
-          queryKey: ["caller_profile", user.id],
-          queryFn: async () => {
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("role, status, brand_id, email")
-              .eq("id", user.id)
-              .maybeSingle();
-            return profile ?? null;
-          },
-          staleTime: 1000 * 60 * 5,
-        }),
-      ),
+      fetchWithRetry(() => queryClient.ensureQueryData(profilesQueries.caller(user.id))),
       fetchWithRetry(() =>
         queryClient.ensureQueryData({
           queryKey: ["brand_icon_settings", params.slug],

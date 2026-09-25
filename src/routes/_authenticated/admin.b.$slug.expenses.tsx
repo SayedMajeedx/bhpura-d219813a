@@ -143,6 +143,7 @@ import {
   type ScannedExpense,
   type ScannedLineItem,
 } from "@/lib/scan-receipt.functions";
+import { permissionsOf, profilesQueries } from "@/lib/data/profiles";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/expenses")({
   beforeLoad: async ({ context: { queryClient }, params }) => {
@@ -150,24 +151,13 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/expenses")({
 
     if (!user) throw redirect({ to: "/auth" });
 
-    const profile = await queryClient.ensureQueryData({
-      queryKey: ["caller_permissions", user.id],
-      queryFn: async () => {
-        const { data } = await (supabase as any)
-          .from("profiles")
-          .select("role, status, email, permissions")
-          .eq("id", user.id)
-          .maybeSingle();
-        return data ?? null;
-      },
-      staleTime: 1000 * 60 * 5,
-    });
+    const profile = await queryClient.ensureQueryData(profilesQueries.caller(user.id));
 
     const email = (user.email || "").toLowerCase();
     const isFixedSuperAdmin = email === "majeed@hotmail.it";
     const role = profile?.role;
     const status = profile?.status ?? "active";
-    const permissions = (profile?.permissions as string[]) || [];
+    const permissions = permissionsOf(profile);
     const hasFinancials = permissions.includes("view_financials");
     const allowed =
       isFixedSuperAdmin ||

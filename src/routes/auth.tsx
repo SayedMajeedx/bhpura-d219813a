@@ -26,6 +26,7 @@ import {
 import { applyRememberMe } from "@/lib/session-persistence";
 import { translateAuthError } from "@/lib/auth-errors";
 import { readStorefrontOAuthReturn } from "@/lib/storefront-oauth-return";
+import { fetchCallerProfile } from "@/lib/data/profiles";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -76,11 +77,7 @@ function AuthPage() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role, status, must_change_password")
-        .eq("id", user!.id)
-        .maybeSingle();
+      const profile = await fetchCallerProfile(user!.id);
       const dashboardRoles = new Set(["super_admin", "admin", "brand_admin", "staff", "courier"]);
       if (!profile || profile.status !== "active" || !dashboardRoles.has(profile.role ?? "")) {
         await supabase.auth.signOut();
@@ -94,7 +91,7 @@ function AuthPage() {
       await new Promise((r) => setTimeout(r, 100));
 
       const requiresPasswordChange =
-        Boolean((profile as any)?.must_change_password) ||
+        Boolean(profile?.must_change_password) ||
         Boolean(user?.user_metadata?.must_change_password);
 
       if (requiresPasswordChange) {
@@ -115,18 +112,10 @@ function AuthPage() {
       const { data, error } = await supabase.auth.signInWithPasskey();
       if (error) throw error;
       if (!data.user) throw new Error("Passkey sign-in did not return a user.");
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("role, status, must_change_password")
-        .eq("id", data.user.id)
-        .maybeSingle();
+      // A failed read comes back as no profile, which the check below rejects.
+      const profile = await fetchCallerProfile(data.user.id);
       const dashboardRoles = new Set(["super_admin", "admin", "brand_admin", "staff", "courier"]);
-      if (
-        profileError ||
-        !profile ||
-        profile.status !== "active" ||
-        !dashboardRoles.has(profile.role ?? "")
-      ) {
+      if (!profile || profile.status !== "active" || !dashboardRoles.has(profile.role ?? "")) {
         await supabase.auth.signOut();
         throw new Error(
           lang === "ar"
@@ -136,7 +125,7 @@ function AuthPage() {
       }
       applyRememberMe(true);
       const requiresPasswordChange =
-        Boolean((profile as any)?.must_change_password) ||
+        Boolean(profile?.must_change_password) ||
         Boolean(data.user?.user_metadata?.must_change_password);
 
       if (requiresPasswordChange) {

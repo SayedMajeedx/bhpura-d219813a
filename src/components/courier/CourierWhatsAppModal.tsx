@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +17,7 @@ import {
   recordCourierNotified,
   formatNotifiedTimeAgo,
 } from "@/lib/courier-whatsapp";
+import { updateProfile } from "@/lib/data/profiles";
 
 interface CourierWhatsAppModalProps {
   isOpen: boolean;
@@ -89,15 +89,11 @@ export function CourierWhatsAppModal({
     try {
       // 1. If phone was added/updated, update the courier's profile
       if (cleanPhone !== (courier.phone || "").trim()) {
-        const { error: profileErr } = await supabase
-          .from("profiles")
-          .update({ phone: cleanPhone } as any)
-          .eq("id", courier.id);
-
-        if (profileErr) {
-          console.warn("[CourierWhatsAppModal] Failed to update courier phone:", profileErr);
-        } else {
+        try {
+          await updateProfile(courier.id, { phone: cleanPhone });
           courier.phone = cleanPhone;
+        } catch (profileErr) {
+          console.warn("[CourierWhatsAppModal] Failed to update courier phone:", profileErr);
         }
       }
 

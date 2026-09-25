@@ -99,6 +99,29 @@ export default tseslint.config(
     },
   },
   {
+    // Profiles data layer: route guards read the caller through
+    // `profilesQueries.caller` / `fetchCallerProfile`, courier lists through
+    // `profilesQueries.couriers`. Listed first: the domain blocks below replace
+    // this rule for their files, so each of them forbids `profiles` too.
+    files: ["src/routes/**", "src/components/**", "src/features/**"],
+    ignores: ["src/routes/api.*", "src/routes/first-login.tsx"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "CallExpression[callee.property.name='from'][arguments.0.value='profiles']",
+          message:
+            "Profiles go through `@/lib/data/profiles` (caller profile, couriers, names, updateProfile).",
+        },
+        {
+          selector:
+            "ArrayExpression > Literal:first-child[value=/^(auth_profile_role|caller_profile|caller_permissions)$/]",
+          message: "Use `profilesQueries.caller` / `profilesKeys` for the caller's profile.",
+        },
+      ],
+    },
+  },
+  {
     // Phase 4 data layer: the public storefront reads its catalog only through
     // `@/lib/data/storefront`, so one cache key always holds one column list.
     // Admin screens are not covered yet (their domains migrate later). The
@@ -116,19 +139,19 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(products|product_variants|categories|customization_options)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(products|product_variants|categories|customization_options|profiles)$/]",
           message:
             "Storefront catalog reads go through `@/lib/data/storefront` (storefrontQueries / fetchers), not direct Supabase calls.",
         },
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(customers|customer_addresses|orders|order_items)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(customers|customer_addresses|orders|order_items|profiles)$/]",
           message:
             "The shopper's own records and orders go through `@/lib/data/customers` (ownCustomerQueries, fetchOwnCustomer, the customer mutations) and `@/lib/data/storefront` (orderConfirmation).",
         },
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(brand_loyalty_programs|brand_loyalty_tiers|loyalty_accounts|loyalty_ledger)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(brand_loyalty_programs|brand_loyalty_tiers|loyalty_accounts|loyalty_ledger|profiles)$/]",
           message: "Loyalty reads go through `@/lib/data/loyalty`.",
         },
         {
@@ -170,7 +193,7 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(orders|order_items|expenses|business_settings|products|product_variants|product_bom_items|packaging_materials|customers|customer_addresses|return_requests|message_templates)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(orders|order_items|expenses|business_settings|products|product_variants|product_bom_items|packaging_materials|customers|customer_addresses|return_requests|message_templates|profiles)$/]",
           message:
             "Orders, expenses, business settings, the catalog and customers go through `@/lib/data/{orders,expenses,business-settings,catalog,customers}`, not direct Supabase calls.",
         },
@@ -214,7 +237,7 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(products|product_variants|product_bom_items|packaging_materials|business_settings|orders|order_items|categories)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(products|product_variants|product_bom_items|packaging_materials|business_settings|orders|order_items|categories|profiles)$/]",
           message:
             "The admin catalog, categories, the settings row and orders go through `@/lib/data/{catalog,categories,business-settings,orders}`, not direct Supabase calls.",
         },
@@ -256,7 +279,7 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(customers|customer_addresses|business_settings|orders|order_items|categories|message_templates)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(customers|customer_addresses|business_settings|orders|order_items|categories|message_templates|profiles)$/]",
           message:
             "Customers, categories, the settings row and orders go through `@/lib/data/{customers,categories,business-settings,orders}`, not direct Supabase calls.",
         },
@@ -289,7 +312,7 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(business_settings|brands)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(business_settings|brands|profiles)$/]",
           message:
             "Settings go through `@/lib/data/business-settings` and `@/lib/data/brands` (queries and mutations), not direct Supabase calls.",
         },
@@ -316,7 +339,7 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(business_settings|orders|order_items|promo_codes|product_variants)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(business_settings|orders|order_items|promo_codes|product_variants|profiles)$/]",
           message:
             "Read the settings row and orders through `@/lib/data/business-settings` and `@/lib/data/orders`.",
         },
@@ -336,7 +359,8 @@ export default tseslint.config(
       "no-restricted-syntax": [
         "error",
         {
-          selector: "CallExpression[callee.property.name='from'][arguments.0.value='categories']",
+          selector:
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(categories|profiles)$/]",
           message: "Categories go through `@/lib/data/categories` (queries and mutations).",
         },
         {
@@ -370,7 +394,7 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(brand_loyalty_programs|brand_loyalty_tiers|loyalty_accounts|loyalty_ledger|customers|customer_addresses)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(brand_loyalty_programs|brand_loyalty_tiers|loyalty_accounts|loyalty_ledger|customers|customer_addresses|profiles)$/]",
           message:
             "Loyalty goes through `@/lib/data/loyalty` and customers through `@/lib/data/customers`.",
         },
@@ -406,7 +430,7 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(incubators|incubator_inventory|incubator_sales|incubator_payments|products|product_variants)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(incubators|incubator_inventory|incubator_sales|incubator_payments|products|product_variants|profiles)$/]",
           message:
             "Incubators go through `@/lib/data/incubators` and the catalog through `@/lib/data/catalog`.",
         },
