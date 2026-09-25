@@ -5,6 +5,7 @@ import { getBenefitReceiptViewUrl } from "@/lib/benefit-receipt.functions";
 import { queryKeys } from "@/lib/query-keys";
 import type { SavedAddress } from "@/features/orders/types";
 import { ordersKeys, ordersQueries } from "@/lib/data/orders";
+import { businessSettingsQueries } from "@/lib/data/business-settings";
 
 /**
  * Everything the order editor reads: the order (polled, plus realtime updates),
@@ -160,16 +161,8 @@ export function useOrderDetailData({
       ).data ?? [],
   });
   const settingsQ = useQuery({
-    queryKey: queryKeys.brand.businessSettings(brandId),
-    enabled: !isCourier,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("business_settings")
-        .select("*")
-        .eq("brand_id", brandId)
-        .maybeSingle();
-      return data;
-    },
+    ...businessSettingsQueries.detail(brandId),
+    enabled: !isCourier && Boolean(brandId),
   });
 
   return {

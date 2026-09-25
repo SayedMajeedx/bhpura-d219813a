@@ -4,6 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchCatalogInquiriesReporting, fetchReportingOverview } from "@/lib/reporting.functions";
 import { isCatalogMode } from "@/lib/storefront-mode";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
+import { businessSettingsKeys, businessSettingsQueries } from "@/lib/data/business-settings";
+import { expensesKeys, expensesQueries } from "@/lib/data/expenses";
+import { ordersKeys, ordersQueries } from "@/lib/data/orders";
 
 /**
  * Everything the dashboard reads: settings, the Reports accounting rows for
@@ -32,30 +35,9 @@ export function useDashboardData({
   }, []);
   const reportingTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-  // 1. Fetch Business settings
+  // 1. Business settings (the whole row; null when the brand has none yet)
   const businessSettings = useQuery({
-    queryKey: ["dashboard-business-settings", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("business_settings")
-        .select(
-          "business_name, currency, card_processing_fee, benefit_processing_fee, bom_enabled, storefront_mode",
-        )
-        .eq("brand_id", brandId)
-        .maybeSingle();
-      if (error) throw error;
-      return (
-        data ?? {
-          business_name: "",
-          currency: "BHD",
-          card_processing_fee: 0,
-          benefit_processing_fee: 0,
-          bom_enabled: true,
-          storefront_mode: "shop",
-        }
-      );
-    },
-    staleTime: 60_000,
+    ...businessSettingsQueries.detail(brandId),
     refetchOnWindowFocus: false,
   });
 
@@ -189,52 +171,18 @@ export function useDashboardData({
     refetchOnWindowFocus: false,
   });
 
-  // 5. Fetch all orders (and order items)
-  const ordersQ = useQuery({
-    queryKey: ["dashboard-orders-with-items", brandId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select(
-          "id, invoice_number, created_at, currency, total, status, fulfillment_status, payment_status, customer_id, customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot, customers(name), payment_method, order_items(id, description, product_id, variant_id, quantity, unit_price, unit_cost, line_total, packaging_cost_snapshot)",
-        )
-        .eq("brand_id", brandId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data as any[]) ?? [];
-    },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-  });
+  // 5. Every order with its lines (shared with the finance reports)
+  const ordersQ = useQuery({ ...ordersQueries.finance(brandId), refetchOnWindowFocus: false });
 
-  // 6. Fetch recent 5 orders for operational feed
+  // 6. Recent 5 orders for the operational feed
   const recentOrdersQ = useQuery({
-    queryKey: ["dashboard-recent-orders", brandId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select(
-          "id, invoice_number, created_at, currency, total, status, fulfillment_status, fulfillment_method, payment_status, customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot, customers(name)",
-        )
-        .eq("brand_id", brandId)
-        .order("created_at", { ascending: false })
-        .limit(5);
-      if (error) throw error;
-      return (data as any[]) ?? [];
-    },
-    staleTime: 60_000,
+    ...ordersQueries.recent(brandId, 5),
     refetchOnWindowFocus: false,
   });
 
-  // 7. Fetch all manual expenses
+  // 7. Manual expenses (shared with the expenses page and reports)
   const expensesQ = useQuery({
-    queryKey: ["dashboard-expenses", brandId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("expenses").select("*").eq("brand_id", brandId);
-      if (error) throw error;
-      return data ?? [];
-    },
-    staleTime: 60_000,
+    ...expensesQueries.list(brandId),
     enabled: Boolean(canViewFinancials && brandId),
     refetchOnWindowFocus: false,
   });
@@ -282,17 +230,16 @@ export function useDashboardData({
 
   useRealtimeInvalidate(
     [
-      { table: "orders", brandId, queryKey: ["dashboard-orders-with-items", brandId] },
-      { table: "orders", brandId, queryKey: ["dashboard-recent-orders", brandId] },
+      { table: "orders", brandId, queryKey: ordersKeys.all(brandId) },
       { table: "orders", brandId, queryKey: ["dashboard-customers", brandId] },
-      { table: "order_items", brandId, queryKey: ["dashboard-orders-with-items", brandId] },
+      { table: "order_items", brandId, queryKey: ordersKeys.all(brandId) },
       { table: "products", brandId, queryKey: ["dashboard-products", brandId] },
       { table: "product_variants", brandId, queryKey: ["dashboard-variants", brandId] },
-      { table: "expenses", brandId, queryKey: ["dashboard-expenses", brandId] },
+      { table: "expenses", brandId, queryKey: expensesKeys.all(brandId) },
       { table: "return_requests", brandId, queryKey: ["dashboard-reporting-overview", slug] },
       { table: "product_bom_items", brandId, queryKey: ["dashboard-reporting-overview", slug] },
       { table: "packaging_materials", brandId, queryKey: ["dashboard-reporting-overview", slug] },
-      { table: "business_settings", brandId, queryKey: ["dashboard-business-settings", brandId] },
+      { table: "business_settings", brandId, queryKey: businessSettingsKeys.detail(brandId) },
     ],
     `dashboard-realtime:${brandId}`,
   );

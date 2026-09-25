@@ -1,3 +1,5 @@
+import { businessSettingsKeys } from "@/lib/data/business-settings";
+import { expensesKeys } from "@/lib/data/expenses";
 import { ordersKeys } from "@/lib/data/orders/keys";
 
 /**
@@ -13,7 +15,7 @@ export const queryKeys = {
     all: ["brand"] as const,
     profile: (brandId: string) => ["brand", brandId] as const,
     settings: (brandId: string) => ["brand", brandId, "settings"] as const,
-    businessSettings: (brandId: string) => ["business-settings", brandId] as const,
+    businessSettings: businessSettingsKeys.detail,
     storeProfile: (brandId: string) => ["store-profile", brandId] as const,
   },
 
@@ -59,7 +61,7 @@ export const queryKeys = {
 
   // Expenses
   expenses: {
-    all: (brandId: string) => ["expenses", brandId] as const,
+    all: expensesKeys.all,
   },
 
   // Team & Staff

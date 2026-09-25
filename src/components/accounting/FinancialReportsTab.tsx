@@ -9,6 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Download, Printer, PieChart, Calculator, Info } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { calculateIncomeStatement, calculateCashFlowStatement } from "@/lib/double-entry-ledger";
+import { businessSettingsQueries } from "@/lib/data/business-settings";
+import { expensesQueries } from "@/lib/data/expenses";
+import { ordersQueries } from "@/lib/data/orders";
 
 export function FinancialReportsTab() {
   const { lang } = useI18n();
@@ -18,42 +21,14 @@ export function FinancialReportsTab() {
 
   const [reportType, setActiveReportType] = useState<"pnl" | "cash_flow">("pnl");
 
-  // Fetch business settings
-  const settingsQ = useQuery({
-    queryKey: ["dashboard-business-settings", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("business_settings")
-        .select("card_processing_fee, benefit_processing_fee, bom_enabled")
-        .eq("brand_id", brandId)
-        .maybeSingle();
-      if (error) throw error;
-      return data ?? { card_processing_fee: 0, benefit_processing_fee: 0, bom_enabled: true };
-    },
-  });
+  // Business settings (fees, BOM)
+  const settingsQ = useQuery(businessSettingsQueries.detail(brandId));
 
-  // Fetch orders
-  const ordersQ = useQuery({
-    queryKey: ["dashboard-orders-with-items", brandId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*, order_items(*)")
-        .eq("brand_id", brandId);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
+  // Every order with its lines (shared with the dashboard)
+  const ordersQ = useQuery(ordersQueries.finance(brandId));
 
-  // Fetch expenses
-  const expensesQ = useQuery({
-    queryKey: ["dashboard-expenses-full", brandId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("expenses").select("*").eq("brand_id", brandId);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
+  // Expenses (shared with the expenses page and dashboard)
+  const expensesQ = useQuery(expensesQueries.list(brandId));
 
   // Fetch cash accounts
   const accountsQ = useQuery({

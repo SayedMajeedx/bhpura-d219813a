@@ -61,6 +61,15 @@ import { queryKeys } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
 import { deletePublicMediaUrl, uploadPublicMedia } from "@/lib/r2-upload";
 import { syncSingleExpenseToPackagingMaterial } from "@/lib/packaging-sync";
+import { businessSettingsQueries } from "@/lib/data/business-settings";
+import {
+  createExpense,
+  deleteExpense,
+  expensesQueries,
+  invalidateExpenses,
+  updateExpense,
+} from "@/lib/data/expenses";
+import { ordersQueries } from "@/lib/data/orders";
 
 import { ExpensesCommandHeader } from "@/components/expenses/ExpensesCommandHeader";
 import { ExpensesScopeSwitcher } from "@/components/expenses/ExpensesScopeSwitcher";
@@ -229,26 +238,8 @@ function ExpensesPage() {
   const brand = useBrand();
   const brandId = brand.id;
 
-  const q = useQuery({
-    queryKey: queryKeys.expenses.all(brandId),
-    queryFn: async () => {
-      try {
-        const { data, error } = await (supabase.from("expenses") as any)
-          .select("*")
-          .eq("brand_id", brandId)
-          .order("expense_date", { ascending: false });
-        if (error) {
-          console.error("[expenses]", error);
-          return [] as Expense[];
-        }
-        return (data ?? []) as Expense[];
-      } catch (err) {
-        console.error("[expenses]", err);
-        return [] as Expense[];
-      }
-    },
-    retry: false,
-  });
+  // Expenses (shared with the OpEx/COGS and reports tabs and the dashboard)
+  const q = useQuery({ ...expensesQueries.list(brandId), retry: false });
 
   const [editing, setEditing] = useState<Expense | null>(null);
   const [open, setOpen] = useState(false);
@@ -306,18 +297,7 @@ function ExpensesPage() {
   const currency = list[0]?.currency ?? "BHD";
   useMemo(() => filteredList.reduce((s, e) => s + Number(e.amount || 0), 0), [filteredList]);
 
-  const settingsQ = useQuery({
-    queryKey: ["expenses-business-settings", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("business_settings")
-        .select("card_processing_fee, benefit_processing_fee, bom_enabled")
-        .eq("brand_id", brandId)
-        .maybeSingle();
-      if (error) throw error;
-      return data ?? { card_processing_fee: 0, benefit_processing_fee: 0, bom_enabled: true };
-    },
-  });
+  const settingsQ = useQuery(businessSettingsQueries.detail(brandId));
 
   const productsQ = useQuery({
     queryKey: queryKeys.products.all(brandId),
@@ -353,40 +333,7 @@ function ExpensesPage() {
   });
 
   // ── COGS: use the immutable unit-cost snapshot captured on each order item ──
-  const cogsQ = useQuery({
-    queryKey: ["cogs", brandId, activeRange.from, activeRange.to],
-    queryFn: async () => {
-      let q2 = (supabase as any)
-        .from("orders")
-        .select(
-          "id, invoice_number, created_at, currency, total, payment_method, status, fulfillment_status, order_items(id, description, quantity, unit_price, unit_cost, line_total, variant_id, product_id, packaging_cost_snapshot)",
-        )
-        .eq("brand_id", brandId)
-        .in("status", [
-          "confirmed",
-          "paid",
-          "shipped",
-          "completed",
-          "delivered",
-          "ready_for_pickup",
-          "picked_up",
-        ])
-        .order("created_at", { ascending: false });
-      if (activeRange.from) q2 = q2.gte("created_at", activeRange.from);
-      if (activeRange.to) {
-        // Include the whole last day
-        const endDay = new Date(activeRange.to);
-        endDay.setDate(endDay.getDate() + 1);
-        q2 = q2.lt("created_at", endDay.toISOString().slice(0, 10));
-      }
-      const { data, error } = await q2;
-      if (error) {
-        console.error("[cogs]", error);
-        return [];
-      }
-      return (data ?? []) as CogOrder[];
-    },
-  });
+  const cogsQ = useQuery(ordersQueries.cogs(brandId, activeRange.from, activeRange.to));
 
   const downloadCogsCsv = () => {
     const rows = cogsQ.data ?? [];
@@ -434,14 +381,17 @@ function ExpensesPage() {
     setDeleting(true);
     try {
       const target = list.find((expense) => expense.id === id);
-      const { error } = await (supabase.from("expenses") as any).delete().eq("id", id);
+      const error = await deleteExpense(brandId, id).then(
+        () => null,
+        (err: { message: string }) => err,
+      );
       if (error) toast.error(error.message);
       else {
         toast.success(t("common.delete"));
         setDeleteTargetId(null);
         if (target?.receipt_url)
           void deletePublicMediaUrl(brandId, target.receipt_url).catch(() => undefined);
-        await qc.invalidateQueries({ queryKey: queryKeys.expenses.all(brandId) });
+        await invalidateExpenses(qc, brandId);
       }
     } finally {
       setDeleting(false);
@@ -712,7 +662,7 @@ function ExpensesPage() {
           categories={categories}
           onSaved={() => {
             setOpen(false);
-            void qc.invalidateQueries({ queryKey: queryKeys.expenses.all(brandId) });
+            void invalidateExpenses(qc, brandId);
           }}
         />
       )}
@@ -729,7 +679,7 @@ function ExpensesPage() {
           onSaved={() => {
             setReviewOpen(false);
             setScanned(null);
-            qc.invalidateQueries({ queryKey: queryKeys.expenses.all(brandId) });
+            invalidateExpenses(qc, brandId);
           }}
         />
       )}
@@ -838,10 +788,8 @@ function ExpenseDialog({
         notes: form.notes.trim() || null,
         receipt_url: uploadedUrl ?? expense?.receipt_url ?? null,
       };
-      const { error } = expense
-        ? await (supabase.from("expenses") as any).update(payload).eq("id", expense.id)
-        : await (supabase.from("expenses") as any).insert(payload);
-      if (error) throw error;
+      if (expense) await updateExpense(brand.id, expense.id, payload);
+      else await createExpense(payload);
       if (uploadedUrl && expense?.receipt_url && uploadedUrl !== expense.receipt_url) {
         void deletePublicMediaUrl(brand.id, expense.receipt_url).catch(() => undefined);
       }
@@ -1171,8 +1119,7 @@ function ReceiptReviewDialog({
         tax_rate: Number(form.tax_rate) || 0,
         line_items: form.items,
       };
-      const { error } = await (supabase.from("expenses") as any).insert(payload);
-      if (error) throw error;
+      await createExpense(payload);
       toast.success(t("common.save"));
       onSaved();
     } catch (e: any) {
@@ -1405,27 +1352,3 @@ function ReceiptReviewDialog({
     </Dialog>
   );
 }
-
-// ============================================================================
-// Types for COGS
-// ============================================================================
-type CogItem = {
-  id: string;
-  description: string;
-  quantity: number;
-  unit_price: number;
-  unit_cost: number | null;
-  line_total: number;
-  variant_id: string | null;
-};
-type CogOrder = {
-  id: string;
-  invoice_number: number;
-  created_at: string;
-  currency: string;
-  total: number;
-  payment_method: string | null;
-  status?: string | null;
-  fulfillment_status?: string | null;
-  order_items: CogItem[];
-};

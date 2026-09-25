@@ -136,26 +136,33 @@ export default tseslint.config(
     },
   },
   {
-    // Admin orders data layer: order reads, writes and cache keys go through
-    // `@/lib/data/orders` (ordersQueries, mutations, ordersKeys). Hand-built
-    // keys are how two readers silently missed the cache after the keys moved.
+    // Admin orders and finance data layer: orders, expenses and business
+    // settings are read and written through `@/lib/data/{orders,expenses,
+    // business-settings}`, with their key factories. Hand-built keys are how two
+    // readers silently missed the cache after the order keys moved, and how the
+    // dashboard and reports filled one key with different column lists.
     files: [
       "src/features/orders/**",
       "src/components/orders/**",
       "src/routes/_authenticated/admin.b.$slug.orders.*",
+      "src/features/dashboard/**",
+      "src/components/accounting/**",
+      "src/routes/_authenticated/admin.b.$slug.expenses.tsx",
     ],
     rules: {
       "no-restricted-syntax": [
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(orders|order_items)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(orders|order_items|expenses|business_settings)$/]",
           message:
-            "Order reads and writes go through `@/lib/data/orders` (ordersQueries / updateOrder / ...), not direct Supabase calls.",
+            "Orders, expenses and business settings go through `@/lib/data/{orders,expenses,business-settings}`, not direct Supabase calls.",
         },
         {
-          selector: "ArrayExpression > Literal:first-child[value=/^orders?$/]",
-          message: "Build order cache keys with `ordersKeys` (or call `invalidateOrders`).",
+          selector:
+            "ArrayExpression > Literal:first-child[value=/^(orders?|expenses|business-settings|cogs|orders-reconciliation|expenses-business-settings|dashboard-(orders-with-items|recent-orders|expenses|expenses-full|business-settings))$/]",
+          message:
+            "Build these cache keys with `ordersKeys` / `expensesKeys` / `businessSettingsKeys` (or the invalidate helpers).",
         },
       ],
     },

@@ -18,6 +18,7 @@ import {
 import { Wallet, Building, ArrowRightLeft, CheckCircle2, Clock, ShieldCheck } from "lucide-react";
 import { formatMoney, formatDate } from "@/lib/format";
 import { toast } from "sonner";
+import { invalidateOrders, ordersQueries, updateOrder } from "@/lib/data/orders";
 
 export function CashFlowLiquidityTab() {
   const { lang } = useI18n();
@@ -45,21 +46,7 @@ export function CashFlowLiquidityTab() {
   });
 
   // Fetch orders with cash/benefit reconciliation status
-  const ordersQ = useQuery({
-    queryKey: ["orders-reconciliation", brandId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select(
-          "id, invoice_number, created_at, total, status, payment_status, payment_method, reconciliation_status, customer_name_snapshot, customers(name)",
-        )
-        .eq("brand_id", brandId)
-        .order("created_at", { ascending: false })
-        .limit(20);
-      if (error) throw error;
-      return (data ?? []) as any[];
-    },
-  });
+  const ordersQ = useQuery(ordersQueries.reconciliation(brandId, 20));
 
   const accounts: any[] = accountsQ.data ?? [];
   const orders: any[] = ordersQ.data ?? [];
@@ -84,15 +71,10 @@ export function CashFlowLiquidityTab() {
     nextStatus: "reconciled" | "pending" | "unreconciled",
   ) => {
     try {
-      await supabase
-        .from("orders")
-        .update({ reconciliation_status: nextStatus } as any)
-        .eq("id", orderId)
-        .eq("brand_id", brandId);
+      await updateOrder(brandId, orderId, { reconciliation_status: nextStatus });
 
       toast.success(isAr ? "تم تحديث حالة التسوية النقدية" : "Reconciliation status updated");
-      qc.invalidateQueries({ queryKey: ["orders-reconciliation", brandId] });
-      qc.invalidateQueries({ queryKey: ["dashboard-orders-with-items", brandId] });
+      invalidateOrders(qc, brandId);
     } catch (err: any) {
       console.error("Reconciliation update error:", err);
       toast.error(

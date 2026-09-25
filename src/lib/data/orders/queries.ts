@@ -1,7 +1,14 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ordersKeys } from "./keys";
-import { ORDER_DETAIL_SELECT, ORDER_LIST_SELECT } from "./selects";
+import {
+  ORDER_COGS_SELECT,
+  ORDER_DETAIL_SELECT,
+  ORDER_FINANCE_SELECT,
+  ORDER_LIST_SELECT,
+  ORDER_RECENT_SELECT,
+  ORDER_RECONCILIATION_SELECT,
+} from "./selects";
 import type { OrderDetail, OrderListRow, OrderScope } from "./types";
 
 /**
@@ -62,6 +69,79 @@ export async function fetchOrderDetail(
   return data;
 }
 
+/** Every order of the brand for the finance views, newest first. */
+export async function fetchFinanceOrders(brandId: string) {
+  const { data, error } = await supabase
+    .from("orders")
+    .select(ORDER_FINANCE_SELECT)
+    .eq("brand_id", brandId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+export type OrderFinanceRow = Awaited<ReturnType<typeof fetchFinanceOrders>>[number];
+
+/** The brand's latest orders. */
+export async function fetchRecentOrders(brandId: string, limit: number) {
+  const { data, error } = await supabase
+    .from("orders")
+    .select(ORDER_RECENT_SELECT)
+    .eq("brand_id", brandId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data ?? [];
+}
+export type OrderRecentRow = Awaited<ReturnType<typeof fetchRecentOrders>>[number];
+
+/** The brand's latest orders with their cash reconciliation status. */
+export async function fetchReconciliationOrders(brandId: string, limit: number) {
+  const { data, error } = await supabase
+    .from("orders")
+    .select(ORDER_RECONCILIATION_SELECT)
+    .eq("brand_id", brandId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data ?? [];
+}
+export type OrderReconciliationRow = Awaited<ReturnType<typeof fetchReconciliationOrders>>[number];
+
+/** Statuses whose lines count as cost of goods sold. */
+export const COGS_ORDER_STATUSES = [
+  "confirmed",
+  "paid",
+  "shipped",
+  "completed",
+  "delivered",
+  "ready_for_pickup",
+  "picked_up",
+];
+
+/**
+ * Orders whose lines count as COGS, created in `[from, to]` (whole days,
+ * `YYYY-MM-DD`; an empty bound is open), newest first.
+ */
+export async function fetchCogsOrders(brandId: string, from: string, to: string) {
+  let query = supabase
+    .from("orders")
+    .select(ORDER_COGS_SELECT)
+    .eq("brand_id", brandId)
+    .in("status", COGS_ORDER_STATUSES)
+    .order("created_at", { ascending: false });
+  if (from) query = query.gte("created_at", from);
+  if (to) {
+    // Include the whole last day
+    const endDay = new Date(to);
+    endDay.setDate(endDay.getDate() + 1);
+    query = query.lt("created_at", endDay.toISOString().slice(0, 10));
+  }
+  const { data, error } = await query;
+  if (error) throw error;
+  return data ?? [];
+}
+export type OrderCogsRow = Awaited<ReturnType<typeof fetchCogsOrders>>[number];
+
 /**
  * Ready-made `useQuery` options. Spread them and add screen-specific options;
  * never override `queryFn`.
@@ -73,6 +153,32 @@ export const ordersQueries = {
       queryFn: () => fetchOrderList(brandId, scope),
       staleTime: 30_000,
       ...pollingFor(scope),
+    }),
+
+  finance: (brandId: string) =>
+    queryOptions({
+      queryKey: ordersKeys.finance(brandId),
+      queryFn: () => fetchFinanceOrders(brandId),
+      staleTime: 60_000,
+    }),
+
+  recent: (brandId: string, limit: number) =>
+    queryOptions({
+      queryKey: ordersKeys.recent(brandId, limit),
+      queryFn: () => fetchRecentOrders(brandId, limit),
+      staleTime: 60_000,
+    }),
+
+  reconciliation: (brandId: string, limit: number) =>
+    queryOptions({
+      queryKey: ordersKeys.reconciliation(brandId, limit),
+      queryFn: () => fetchReconciliationOrders(brandId, limit),
+    }),
+
+  cogs: (brandId: string, from: string, to: string) =>
+    queryOptions({
+      queryKey: ordersKeys.cogs(brandId, from, to),
+      queryFn: () => fetchCogsOrders(brandId, from, to),
     }),
 
   detail: (brandId: string, orderId: string, scope: OrderScope) =>

@@ -16,6 +16,16 @@ export const ordersKeys = {
   lists: (brandId: string) => [...ordersKeys.all(brandId), "list"] as const,
   list: (brandId: string, scope: OrderScope) => [...ordersKeys.lists(brandId), scope] as const,
 
+  /** Finance views (dashboard and reports): every order, newest first. */
+  finance: (brandId: string) => [...ordersKeys.all(brandId), "finance"] as const,
+  recent: (brandId: string, limit: number) =>
+    [...ordersKeys.all(brandId), "recent", limit] as const,
+  reconciliation: (brandId: string, limit: number) =>
+    [...ordersKeys.all(brandId), "reconciliation", limit] as const,
+  /** Orders that count for COGS in a date range (`YYYY-MM-DD`, empty for open). */
+  cogs: (brandId: string, from: string, to: string) =>
+    [...ordersKeys.all(brandId), "cogs", from, to] as const,
+
   details: (brandId: string) => [...ordersKeys.all(brandId), "detail"] as const,
   /** Without `scope`, matches the order in every scope (use it to invalidate). */
   detail: (brandId: string, orderId: string, scope?: OrderScope) =>
