@@ -8,26 +8,21 @@ import {
   useStoreModules,
 } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { formatSizeWithUnit } from "@/lib/format";
 import { useVariantTranslations } from "@/lib/use-variant-translations";
-import { ShoppingBag, AlertCircle, Heart, Sparkles, Truck, MessageCircle } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { isCatalogMode, shouldShowPrices, buildWhatsAppInquiryUrl } from "@/lib/storefront-mode";
-import { NotifyMeForm } from "@/components/storefront/NotifyMeForm";
 import { useStickyCtaOffset } from "@/hooks/use-sticky-cta-offset";
 import { AddonSlot } from "@/components/addons/AddonSlot";
 import { useAddons } from "@/components/addons/AddonsProvider";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { variantAxisDefaultsFrom, resolveAllVariantAxes } from "@/lib/addons/addon-registry";
 import { isColorSwatchAxis } from "@/lib/variant-axes";
-import { formatCustomField } from "@/lib/addons/custom-fields";
-import { ProductShareModal } from "@/components/storefront/ProductShareModal";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { toast } from "sonner";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
-import { ResponsiveImage } from "@/components/responsive-media";
 import {
   fetchActiveBrandIdentity,
   fetchBestSellerRows,
@@ -39,7 +34,6 @@ import {
   type StorefrontProductDetail as Product,
   type StorefrontVariant as Variant,
 } from "@/lib/data/storefront";
-import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
 import {
   matchingVariantsFor,
   offeredSizes,
@@ -47,6 +41,7 @@ import {
   parsePriceDelta,
   sortVariants,
   uniqueOptionValues,
+  withOfferedAxes,
   type VariantSelection,
 } from "@/features/product-page/lib/variant-options";
 import {
@@ -56,6 +51,16 @@ import {
   originalPriceFor,
 } from "@/features/product-page/lib/pdp-pricing";
 import type { CustomField } from "@/features/product-page/types";
+import { productMediaList } from "@/features/product-page/lib/product-media";
+import {
+  PDP_BEST_SELLER_LIMIT,
+  useProductRecommendations,
+} from "@/features/product-page/hooks/use-product-recommendations";
+import {
+  cartTargetVariant,
+  productCartLine,
+  productSelectionError,
+} from "@/features/product-page/lib/cart-line";
 import { ProductGallery } from "@/features/product-page/components/ProductGallery";
 import { ProductOptionPickers } from "@/features/product-page/components/ProductOptionPickers";
 import { ProductAddonsPicker } from "@/features/product-page/components/ProductAddonsPicker";
@@ -67,6 +72,10 @@ import { BundleOffer } from "@/components/storefront/BundleOffer";
 import { RecentlyViewed, recordRecentlyViewed } from "@/components/storefront/RecentlyViewed";
 import { getProductRecentPurchaseCount } from "@/lib/storefront-social-proof";
 
+import { RecommendationRail } from "@/features/product-page/components/RecommendationRail";
+import { ProductPurchaseActions } from "@/features/product-page/components/ProductPurchaseActions";
+import { useVariantSelectionSync } from "@/features/product-page/hooks/use-variant-selection-sync";
+import { ProductTitleAndPrice } from "@/features/product-page/components/ProductTitleAndPrice";
 export const Route = createFileRoute("/$slug/product/$id")({
   loader: async ({ params, location }) => {
     let initialLang: "ar" | "en" = "ar";
@@ -190,9 +199,6 @@ export const Route = createFileRoute("/$slug/product/$id")({
   component: ProductDetail,
 });
 
-/** Best sellers ranked for the product page's badges and rails. */
-const PDP_BEST_SELLER_LIMIT = 10;
-
 function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const loaderData = Route.useLoaderData() as
     | {
@@ -274,11 +280,6 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     );
   }, [product, currency, lang, brand?.slug]);
 
-  const { data: recommendationCatalog = [] } = useQuery({
-    ...storefrontQueries.recommendations(brand),
-    initialData: loaderData?.recommendationCatalog ?? undefined,
-  });
-
   const stickyCtaRef = useStickyCtaOffset<HTMLDivElement>();
 
   const socialProofQuery = useQuery({
@@ -301,57 +302,22 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     staleTime: 10 * 60_000,
   });
 
-  const { data: bestSellerRows = [] } = useQuery({
-    ...storefrontQueries.bestSellers(brand, PDP_BEST_SELLER_LIMIT),
-    initialData: loaderData?.bestSellerRows ?? undefined,
+  const { relatedProducts, bestSellingProducts } = useProductRecommendations({
+    brand,
+    product,
+    initialCatalog: loaderData?.recommendationCatalog ?? undefined,
+    initialBestSellerRows: loaderData?.bestSellerRows ?? undefined,
   });
-
-  const relatedProducts = useMemo(
-    () =>
-      product?.category
-        ? recommendationCatalog
-            .filter((item) => item.id !== product.id && item.category === product.category)
-            .slice(0, 8)
-        : [],
-    [product, recommendationCatalog],
-  );
-  const relatedIds = useMemo(
-    () => new Set(relatedProducts.map((item) => item.id)),
-    [relatedProducts],
-  );
-  const bestSellingProducts = useMemo(() => {
-    const ranks = new Map(bestSellerRows.map((row, index) => [row.product_id, index]));
-    return recommendationCatalog
-      .filter((item) => item.id !== product?.id && !relatedIds.has(item.id) && ranks.has(item.id))
-      .sort((a, b) => (ranks.get(a.id) ?? 99) - (ranks.get(b.id) ?? 99))
-      .slice(0, 8);
-  }, [bestSellerRows, product?.id, recommendationCatalog, relatedIds]);
 
   const variants = useMemo<Variant[]>(() => {
     return sortVariants(product?.product_variants ?? []);
   }, [product]);
   const variant = variantId ? variants.find((v) => v.id === variantId) : null;
 
-  const media = useMemo(() => {
-    if (!product) return [];
-    const arr = Array.isArray(product.media)
-      ? (product.media as Array<{
-          type: "image" | "video";
-          url: string;
-          stream_uid?: string;
-          stream_iframe_url?: string;
-          poster_url?: string;
-        }>)
-      : [];
-    const list = [...arr];
-    if (product.image_url && !list.some((m) => m.url === product.image_url)) {
-      list.unshift({ type: "image" as const, url: product.image_url });
-    }
-    if (variant?.image_url && !list.some((m) => m.url === variant.image_url)) {
-      list.unshift({ type: "image" as const, url: variant.image_url });
-    }
-    return list;
-  }, [product, variant?.image_url]);
+  const media = useMemo(
+    () => productMediaList(product, variant?.image_url),
+    [product, variant?.image_url],
+  );
 
   useEffect(() => {
     if (variant?.image_url) {
@@ -381,44 +347,33 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     () => variantAxisDefaultsFrom(addons, storeVertical),
     [addons, storeVertical],
   );
-  const resolvedAxes = useMemo(() => {
-    const base = resolveAllVariantAxes({
+  const resolvedAxes = useMemo(
+    () =>
+      withOfferedAxes(
+        resolveAllVariantAxes({
+          product,
+          addonDefaults: addonAxisDefaults,
+          lang: lang === "ar" ? "ar" : "en",
+        }),
+        {
+          size: uniqueSizes,
+          color: uniqueColors,
+          fabric: uniqueFabrics,
+          four: uniqueFour,
+          five: uniqueFive,
+        },
+      ),
+    [
       product,
-      addonDefaults: addonAxisDefaults,
-      lang: lang === "ar" ? "ar" : "en",
-    });
-    return {
-      size: {
-        ...base.size,
-        visible: base.size.visible || uniqueSizes.length > 0,
-      },
-      color: {
-        ...base.color,
-        visible: base.color.visible || uniqueColors.length > 0,
-      },
-      fabric: {
-        ...base.fabric,
-        visible: base.fabric.visible || uniqueFabrics.length > 0,
-      },
-      four: {
-        ...base.four,
-        visible: base.four.visible || uniqueFour.length > 0,
-      },
-      five: {
-        ...base.five,
-        visible: base.five.visible || uniqueFive.length > 0,
-      },
-    };
-  }, [
-    product,
-    addonAxisDefaults,
-    lang,
-    uniqueSizes,
-    uniqueColors,
-    uniqueFabrics,
-    uniqueFour,
-    uniqueFive,
-  ]);
+      addonAxisDefaults,
+      lang,
+      uniqueSizes,
+      uniqueColors,
+      uniqueFabrics,
+      uniqueFour,
+      uniqueFive,
+    ],
+  );
 
   // Dynamic out of stock maps for each option dimension, checking current other active options
   const optionSelection = useMemo<VariantSelection>(
@@ -451,73 +406,26 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     [resolvedAxes.color.label, uniqueColors],
   );
 
-  // Pre-select single options if an axis has only 1 choice available
-  useEffect(() => {
-    if (uniqueSizes.length === 1 && !selectedSize) {
-      setSelectedSize(uniqueSizes[0]);
-    }
-  }, [uniqueSizes, selectedSize]);
-
-  useEffect(() => {
-    if (uniqueColors.length === 1 && !selectedColor) {
-      setSelectedColor(uniqueColors[0]);
-    }
-  }, [uniqueColors, selectedColor]);
-
-  useEffect(() => {
-    if (uniqueFabrics.length === 1 && !selectedFabric) {
-      setSelectedFabric(uniqueFabrics[0]);
-    }
-  }, [uniqueFabrics, selectedFabric]);
-
-  useEffect(() => {
-    if (uniqueFour.length === 1 && !selectedOptionFour) {
-      setSelectedOptionFour(uniqueFour[0]);
-    }
-  }, [uniqueFour, selectedOptionFour]);
-
-  useEffect(() => {
-    if (uniqueFive.length === 1 && !selectedOptionFive) {
-      setSelectedOptionFive(uniqueFive[0]);
-    }
-  }, [uniqueFive, selectedOptionFive]);
-
-  // Auto-initialize attributes only when a single variant is available
-  useEffect(() => {
-    if (variants.length === 1 && !variantId) {
-      const first = variants[0];
-      setVariantId(first.id);
-      setSelectedColor(first.color ?? null);
-      setSelectedSize(first.size ?? null);
-      setSelectedFabric(first.fabric ?? null);
-      setSelectedOptionFour(first.option_four ?? null);
-      setSelectedOptionFive(first.option_five ?? null);
-    }
-  }, [variants, variantId]);
-
-  // Sync selected attributes back to variantId
-  useEffect(() => {
-    const match = variants.find((v) => {
-      const colorMatch = !selectedColor || v.color === selectedColor;
-      const sizeMatch = !selectedSize || v.size === selectedSize;
-      const fabricMatch = !selectedFabric || v.fabric === selectedFabric;
-      const fourMatch = !selectedOptionFour || v.option_four === selectedOptionFour;
-      const fiveMatch = !selectedOptionFive || v.option_five === selectedOptionFive;
-      return colorMatch && sizeMatch && fabricMatch && fourMatch && fiveMatch;
-    });
-    if (match) {
-      setVariantId(match.id);
-    } else {
-      setVariantId(null);
-    }
-  }, [
-    selectedColor,
-    selectedSize,
-    selectedFabric,
-    selectedOptionFour,
-    selectedOptionFive,
+  useVariantSelectionSync({
     variants,
-  ]);
+    variantId,
+    setVariantId,
+    uniqueSizes,
+    uniqueColors,
+    uniqueFabrics,
+    uniqueFour,
+    uniqueFive,
+    selectedSize,
+    setSelectedSize,
+    selectedColor,
+    setSelectedColor,
+    selectedFabric,
+    setSelectedFabric,
+    selectedOptionFour,
+    setSelectedOptionFour,
+    selectedOptionFive,
+    setSelectedOptionFive,
+  });
 
   // Dynamic image swapping based on selected color name matching media filename/URL
   useEffect(() => {
@@ -694,58 +602,22 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
 
   const selectedVariantOutOfStock = Boolean(!isTailoringActive && variant && maxStock <= 0);
 
-  const validate = (): string | null => {
-    if (showSizeModeToggle) {
-      if (sizeMode === "ready") {
-        if (hasVariants && !variant) {
-          return t("يرجى اختيار مقاس جاهز أولاً", "Please select a ready size first");
-        }
-        if (
-          variant &&
-          Number(variant.stock_main || 0) + Number(variant.stock_incubator || 0) <= 0
-        ) {
-          return t("هذا المقاس غير متوفر حالياً", "This size is out of stock");
-        }
-      } else {
-        if (hasMeasurementFields && !measurementsApplied) {
-          return t(
-            "يرجى تطبيق المقاسات المطلوبة لإكمال الطلب",
-            "Please apply the required measurements to continue",
-          );
-        }
-        for (const f of visibleCustomFields) {
-          if (f.required && !(cfValues[f.key] ?? "").trim()) {
-            return t(`الحقل مطلوب: ${cfLabel(f)}`, `Required field: ${cfLabel(f)}`);
-          }
-        }
-      }
-    } else {
-      const isPureCustom = hasCustomFields && uniqueSizes.length === 0;
-      if (!isPureCustom) {
-        if (hasVariants && !variant) {
-          return t("يرجى اختيار مقاس/خيار أولاً", "Please select a size or option first");
-        }
-        if (
-          variant &&
-          Number(variant.stock_main || 0) + Number(variant.stock_incubator || 0) <= 0
-        ) {
-          return t("هذا الخيار غير متوفر حالياً", "This option is out of stock");
-        }
-      }
-      if (isTailoringActive && hasMeasurementFields && !measurementsApplied) {
-        return t(
-          "يرجى تطبيق المقاسات المطلوبة لإكمال الطلب",
-          "Please apply the required measurements to continue",
-        );
-      }
-      for (const f of visibleCustomFields) {
-        if (f.required && !(cfValues[f.key] ?? "").trim()) {
-          return t(`الحقل مطلوب: ${cfLabel(f)}`, `Required field: ${cfLabel(f)}`);
-        }
-      }
-    }
-    return null;
-  };
+  const validate = (): string | null =>
+    productSelectionError({
+      showSizeModeToggle,
+      sizeMode,
+      hasVariants,
+      variant,
+      hasMeasurementFields,
+      measurementsApplied,
+      visibleCustomFields,
+      cfValues,
+      hasCustomFields,
+      uniqueSizes,
+      isTailoringActive,
+      cfLabel,
+      t,
+    });
 
   const doAdd = (thenBuy = false) => {
     if (isCatalogMode(settings)) return;
@@ -756,13 +628,13 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       scrollToOptions();
       return;
     }
-    const targetVariant = isTailoringActive
-      ? variant ||
-        matchingVariants[0] ||
-        variants.find((v) => !selectedColor || v.color === selectedColor) ||
-        variants[0] ||
-        null
-      : variant;
+    const targetVariant = cartTargetVariant({
+      isTailoringActive,
+      variant,
+      matchingVariants,
+      variants,
+      selectedColor,
+    });
 
     if (!targetVariant && hasVariants && !isTailoringActive) {
       const msg = t("يرجى اختيار خيار أولاً", "Please select an option first");
@@ -773,68 +645,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     }
     setErrorMsg(null);
 
-    const activeCustomFields =
-      showSizeModeToggle && sizeMode === "ready" ? [] : visibleCustomFields;
-    const custom = activeCustomFields
-      .map((f) => {
-        const val = (cfValues[f.key] ?? "").trim();
-        const price_delta = parsePriceDelta(val);
-        return {
-          key: f.key,
-          label_ar: f.label_ar,
-          label_en: f.label_en,
-          value: val,
-          type: f.type,
-          price_delta,
-        };
-      })
-      .filter((v) => v.value.length > 0);
-
-    if (measurementsApplied) {
-      Object.entries(cfValues).forEach(([k, v]) => {
-        if (isMeasurementField(k) && v && !custom.some((c) => c.key === k)) {
-          const fmtAr = formatCustomField({ key: k, value: String(v) }, "ar");
-          const fmtEn = formatCustomField({ key: k, value: String(v) }, "en");
-          if (fmtAr && fmtEn) {
-            custom.push({
-              key: k,
-              label_ar: fmtAr.label,
-              label_en: fmtEn.label,
-              value: lang === "ar" ? fmtAr.value : fmtEn.value,
-              type: "text",
-              price_delta: 0,
-            });
-          }
-        }
-      });
-    }
-
-    const chosenAddons = applicableAddons.filter((a: any) => selectedAddonIds.includes(a.id));
-    for (const addon of chosenAddons) {
-      const delta = Number(addon.price_delta || 0);
-      custom.push({
-        key: `addon_${addon.id}`,
-        label_ar: addon.name,
-        label_en: addon.name,
-        value: delta > 0 ? `+ ${formatPrice(delta, currency, lang)}` : t("مجاني", "Free"),
-        type: "select",
-        price_delta: delta,
-      });
-    }
-
     if (tailoringNotes.trim()) {
-      custom.push({
-        key: "tailoring_notes",
-        label_ar:
-          vocabulary.workshop_notes_label?.[lang] ||
-          (lang === "ar" ? "ملاحظات وتفاصيل التجهيز" : "Production & Workshop Notes"),
-        label_en:
-          vocabulary.workshop_notes_label?.[lang] ||
-          (lang === "ar" ? "ملاحظات وتفاصيل التجهيز" : "Production & Workshop Notes"),
-        value: tailoringNotes.trim(),
-        type: "text",
-        price_delta: 0,
-      });
       try {
         localStorage.setItem(`pura_guest_tailoring_notes_${brand.slug}`, tailoringNotes.trim());
       } catch {
@@ -842,60 +653,35 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       }
     }
 
-    const fileField = activeCustomFields.find((f) => f.type === "file");
-    const file_url = fileField ? (cfValues[fileField.key] ?? "").trim() : "";
-    const textField = activeCustomFields.find((f) => f.type === "text");
-    const custom_text = textField ? (cfValues[textField.key] ?? "").trim() : "";
-
-    const selected_customizations = {
-      options: custom.map((c) => ({
-        name: lang === "ar" ? c.label_ar || c.label_en : c.label_en || c.label_ar,
-        value: c.value,
-        price_delta: c.price_delta,
-      })),
-      custom_text: tailoringNotes.trim() || custom_text,
-      file_url,
-    };
-
-    const effectiveSize =
-      showSizeModeToggle && sizeMode === "custom"
-        ? vocabulary.custom_sizing?.[lang] || t("قياسات خاصة / حسب الطلب", "Custom Sizing")
-        : targetVariant?.size && !isPlaceholderVariant(targetVariant)
-          ? targetVariant.size
-          : isTailoringActive
-            ? vocabulary.custom_sizing?.[lang] ||
-              vocabulary.custom_order?.[lang] ||
-              t("حسب الطلب", "Made to order")
-            : targetVariant?.size || null;
-
-    addToCart({
-      cart_line_id: "",
-      variant_id: targetVariant?.id ?? null,
-      product_id: product.id,
-      name: displayName,
-      name_ar: product.name_ar,
-      name_en: product.name_en,
-      image:
-        targetVariant?.image_url ||
-        media.find((m) => m.type === "image")?.url ||
-        product.image_url ||
-        null,
-      price: displayPrice,
-      original_price: originalPriceWithAddons > displayPrice ? originalPriceWithAddons : null,
-      size: effectiveSize,
-      size_unit: targetVariant?.size_unit || null,
-      color: targetVariant?.color || selectedColor || null,
-      fabric: targetVariant?.fabric || selectedFabric || null,
-      option_four: targetVariant?.option_four || selectedOptionFour || null,
-      option_five: targetVariant?.option_five || selectedOptionFive || null,
-      qty,
-      max_stock: isTailoringActive
-        ? 999
-        : Number(targetVariant?.stock_main ?? 0) + Number(targetVariant?.stock_incubator ?? 0) ||
-          999,
-      custom_fields: custom,
-      selected_customizations,
-    } as any);
+    addToCart(
+      productCartLine({
+        showSizeModeToggle,
+        sizeMode,
+        visibleCustomFields,
+        cfValues,
+        measurementsApplied,
+        isMeasurementField,
+        lang,
+        applicableAddons,
+        selectedAddonIds,
+        currency,
+        t,
+        tailoringNotes,
+        vocabulary,
+        targetVariant,
+        isTailoringActive,
+        product,
+        displayName,
+        media,
+        displayPrice,
+        originalPriceWithAddons,
+        selectedColor,
+        selectedFabric,
+        selectedOptionFour,
+        selectedOptionFive,
+        qty,
+      }) as any,
+    );
     if (thenBuy) {
       navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });
     } else {
@@ -972,57 +758,20 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         />
 
         <div className="md:col-span-7 w-full min-w-0 overflow-hidden">
-          <div className="mb-1 flex items-start justify-between gap-3 sm:mb-2">
-            <h1
-              className="font-display text-2xl sm:text-3xl"
-              style={{ color: "var(--sf-product-title, var(--sf-heading))" }}
-            >
-              {displayName}
-            </h1>
-            <div className="flex items-center gap-2 shrink-0">
-              <ProductShareModal
-                isAr={lang === "ar"}
-                productName={displayName}
-                priceFormatted={priceLabel}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="shrink-0 rounded-full h-11 w-11"
-                onClick={() => toggleWishlist(product.id)}
-                aria-label={t("المفضلة", "Wishlist")}
-              >
-                <Heart
-                  className={`h-5 w-5 ${isWishlisted(product.id) ? "fill-red-600 text-red-600" : ""}`}
-                />
-              </Button>
-            </div>
-          </div>
-          <div
-            className="mb-3 flex flex-wrap items-center gap-3 text-xl font-semibold sm:mb-4 sm:text-2xl"
-            style={{ color: "var(--sf-price, var(--sf-heading))" }}
-          >
-            {!shouldShowPrices(settings) ? (
-              <span className="text-base font-normal text-muted-foreground">
-                {t("تواصل معنا للسعر", "Contact us for price")}
-              </span>
-            ) : (
-              <>
-                <span>{priceLabel}</span>
-                {originalPrice > displayPrice && (
-                  <span className="text-base font-normal text-muted-foreground line-through">
-                    {formatPrice(originalPrice, currency, lang)}
-                  </span>
-                )}
-                {discountPercent > 0 && (
-                  <span className="rounded-full bg-neutral-950 px-3 py-1 text-xs text-white">
-                    {t(`وفر ${discountPercent}%`, `Save ${discountPercent}%`)}
-                  </span>
-                )}
-              </>
-            )}
-          </div>
+          <ProductTitleAndPrice
+            currency={currency}
+            discountPercent={discountPercent}
+            displayName={displayName}
+            displayPrice={displayPrice}
+            isWishlisted={isWishlisted}
+            lang={lang}
+            originalPrice={originalPrice}
+            priceLabel={priceLabel}
+            product={product}
+            settings={settings}
+            t={t}
+            toggleWishlist={toggleWishlist}
+          />
 
           {/* Social Proof Badge */}
           {settings?.storefront_design_version === 2 &&
@@ -1145,153 +894,23 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             }}
           />
 
-          {!isCatalogMode(settings) && (variant || isTailoringActive) && (
-            <div className="mb-4 flex items-center">
-              <div>
-                <div className="text-sm font-medium mb-2">{t("الكمية", "Quantity")}</div>
-                <div className="inline-flex items-center border rounded-lg overflow-hidden">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label={t("تقليل الكمية", "Decrease quantity")}
-                    className="h-11 w-11 rounded-none"
-                    onClick={() => setQty((q) => Math.max(1, q - 1))}
-                  >
-                    −
-                  </Button>
-                  <span className="px-4 text-sm font-medium">{qty}</span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label={t("زيادة الكمية", "Increase quantity")}
-                    className="h-11 w-11 rounded-none"
-                    disabled={isTailoringActive ? false : qty >= maxStock}
-                    onClick={() =>
-                      setQty((q) => (isTailoringActive ? q + 1 : Math.min(maxStock, q + 1)))
-                    }
-                  >
-                    +
-                  </Button>
-                </div>
-              </div>
-              <div className="ms-3 mt-6">
-                {isTailoringActive ? (
-                  <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs text-primary font-medium">
-                    {vocabulary.made_to_order?.[lang] || t("صنع حسب الطلب", "Made to order")}
-                  </span>
-                ) : maxStock > 0 && maxStock <= 5 ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-700 dark:text-amber-300 font-semibold animate-pulse">
-                    <span>🔥</span>
-                    <span>
-                      {t(`متبقي ${maxStock} قطع فقط!`, `Only ${maxStock} left in stock!`)}
-                    </span>
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-1 text-xs text-foreground">
-                    {maxStock} {t("متوفر", "available")}
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-
-          {errorMsg && (
-            <div
-              role="alert"
-              className="mb-3 flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-            >
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              <span>{errorMsg}</span>
-            </div>
-          )}
-
-          {isCatalogMode(settings) ? (
-            <div className="hidden md:flex gap-2">
-              <Button
-                type="button"
-                className="flex-1 h-12 font-semibold shadow-sm hover:opacity-90 bg-primary text-primary-foreground gap-2"
-                onClick={() => {
-                  if (inquiryUrl) {
-                    void trackProductEngagement(brand.slug, product.id, "inquiry");
-                    window.open(inquiryUrl, "_blank", "noopener,noreferrer");
-                  } else {
-                    toast.error(
-                      t(
-                        "رقم التواصل عبر واتساب غير متوفر حالياً",
-                        "WhatsApp contact number is not available",
-                      ),
-                    );
-                  }
-                }}
-              >
-                <MessageCircle className="h-5 w-5" />
-                <span>{t("طلب عبر واتساب", "Inquire via WhatsApp")}</span>
-              </Button>
-            </div>
-          ) : selectedVariantOutOfStock ? (
-            settings?.back_in_stock_enabled !== false ? (
-              <div className="space-y-3">
-                <NotifyMeForm brandId={brand.id} productId={product.id} variantId={variant?.id} />
-              </div>
-            ) : (
-              <div className="rounded-xl border border-border bg-muted/40 p-4 text-center text-sm font-medium text-muted-foreground">
-                {t("هذا المنتج غير متوفر حالياً", "This product is currently out of stock")}
-              </div>
-            )
-          ) : (
-            <div className="hidden md:flex gap-2">
-              <Button
-                className="flex-1 h-12 font-semibold shadow-sm hover:opacity-90 bg-primary text-primary-foreground gap-2"
-                disabled={selectedVariantOutOfStock}
-                aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
-                onClick={() => doAdd(false)}
-              >
-                {isTailoringActive ? (
-                  <Sparkles className="h-4 w-4" />
-                ) : (
-                  <ShoppingBag className="h-4 w-4" />
-                )}
-                <span>
-                  {isTailoringActive
-                    ? vocabulary.custom_order?.[lang]
-                      ? lang === "ar"
-                        ? `طلب ${vocabulary.custom_order[lang]} القطعة`
-                        : `Order ${vocabulary.custom_order[lang]} Piece`
-                      : t("طلب تجهيز القطعة", "Order Custom Piece")
-                    : t("أضف للسلة", "Add to cart")}
-                </span>
-              </Button>
-              <Button
-                variant="outline"
-                className="h-12 border-2 font-semibold hover:opacity-90"
-                disabled={selectedVariantOutOfStock}
-                aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
-                onClick={() => doAdd(true)}
-              >
-                {isTailoringActive
-                  ? vocabulary.custom_order?.[lang]
-                    ? lang === "ar"
-                      ? `إتمام طلب ال${vocabulary.custom_order[lang]}`
-                      : `Complete ${vocabulary.custom_order[lang]}`
-                    : t("إتمام الطلب الآن", "Complete Order Now")
-                  : t("اشتر الآن", "Buy now")}
-              </Button>
-            </div>
-          )}
-
-          {settings.delivery_estimate_enabled !== false && !isCatalogMode(settings) && (
-            <div className="mt-4 flex items-center gap-2.5 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
-              <Truck className="h-4 w-4 text-primary shrink-0" />
-              <span className="font-medium text-foreground">
-                {lang === "ar"
-                  ? settings.delivery_estimate_ar ||
-                    "التوصيل المتوقع خلال 24 - 48 ساعة داخل البحرين"
-                  : settings.delivery_estimate_en || "Estimated delivery within 24 - 48 hours"}
-              </span>
-            </div>
-          )}
+          <ProductPurchaseActions
+            brand={brand}
+            doAdd={doAdd}
+            errorMsg={errorMsg}
+            inquiryUrl={inquiryUrl}
+            isTailoringActive={isTailoringActive}
+            lang={lang}
+            maxStock={maxStock}
+            product={product}
+            qty={qty}
+            selectedVariantOutOfStock={selectedVariantOutOfStock}
+            setQty={setQty}
+            settings={settings}
+            t={t}
+            variant={variant}
+            vocabulary={vocabulary}
+          />
 
           {/* Layer 2 Product Accordions */}
           {settings?.storefront_design_version === 2 && (
@@ -1364,95 +983,5 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         <RecentlyViewed excludeProductId={product.id} />
       )}
     </div>
-  );
-}
-
-function RecommendationRail({
-  title,
-  products,
-}: {
-  title: string;
-  products: RecommendationProduct[];
-}) {
-  const { brand, currency, lang, t, settings } = useStorefront();
-
-  return (
-    <section aria-label={title} className="w-full overflow-hidden">
-      <div className="mb-4 flex items-end justify-between gap-3">
-        <h2 className="font-display text-xl sm:text-2xl">{title}</h2>
-        <span className="hidden text-xs text-muted-foreground sm:block">
-          {t("اسحب للمزيد", "Scroll for more")}
-        </span>
-      </div>
-      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:gap-4 sm:px-0 [scrollbar-width:thin]">
-        {products.map((item) => {
-          const variants = item.product_variants
-            .filter((variant) => Number(variant.selling_price || 0) >= 0)
-            .sort((a, b) => Number(a.selling_price) - Number(b.selling_price));
-          const discounted = variants.find(
-            (variant) => Number(variant.original_price || 0) > Number(variant.selling_price || 0),
-          );
-          const priced = discounted ?? variants[0];
-          const media = Array.isArray(item.media)
-            ? (item.media as Array<{ type: string; url: string }>)
-            : [];
-          const cover = media.find((entry) => entry.type === "image")?.url || item.image_url;
-          const name = pickName(lang, item);
-
-          return (
-            <Link
-              key={item.id}
-              to="/$slug/product/$id"
-              params={{ slug: brand.slug, id: item.id }}
-              className="group w-[8.75rem] shrink-0 snap-start sm:w-[10.5rem]"
-              onClick={() => {
-                void trackProductEngagement(brand.slug, item.id, "click");
-              }}
-            >
-              <div className="aspect-[3/4] overflow-hidden rounded-xl bg-muted">
-                {cover ? (
-                  <ResponsiveImage
-                    src={cover}
-                    preset="thumb"
-                    sizes="(min-width: 640px) 168px, 140px"
-                    alt={name}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="grid h-full place-items-center px-3 text-center text-xs text-muted-foreground">
-                    {t("لا توجد صورة", "No image")}
-                  </div>
-                )}
-              </div>
-              <div className="mt-2 min-w-0">
-                <div className="line-clamp-2 min-h-10 text-sm font-medium leading-5">{name}</div>
-                {priced && (
-                  <div
-                    className="mt-1 flex flex-wrap items-baseline gap-x-2 text-xs font-semibold"
-                    style={{ color: "var(--sf-heading)" }}
-                  >
-                    {!shouldShowPrices(settings) ? (
-                      <span className="font-normal text-muted-foreground">
-                        {t("تواصل معنا للسعر", "Contact us for price")}
-                      </span>
-                    ) : (
-                      <>
-                        <span>{formatPrice(Number(priced.selling_price), currency, lang)}</span>
-                        {Number(priced.original_price || 0) > Number(priced.selling_price) && (
-                          <span className="font-normal text-muted-foreground line-through">
-                            {formatPrice(Number(priced.original_price), currency, lang)}
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            </Link>
-          );
-        })}
-      </div>
-    </section>
   );
 }
