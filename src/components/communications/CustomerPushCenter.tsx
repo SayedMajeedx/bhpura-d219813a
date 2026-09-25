@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { AlertTriangle, BellRing, RefreshCw, Send } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { createPushCampaign, invalidatePush, pushQueries } from "@/lib/data/push";
 import { customersQueries } from "@/lib/data/customers";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -28,6 +28,9 @@ type PushEvent = {
   created_at: string;
 };
 
+/** The campaign list with `status` read as the page's own type. */
+const asPushEvents = (rows: unknown[]) => rows as PushEvent[];
+
 export function CustomerPushCenter({ brandId, isAr }: { brandId: string; isAr: boolean }) {
   const qc = useQueryClient();
   const [target, setTarget] = useState("all");
@@ -35,36 +38,10 @@ export function CustomerPushCenter({ brandId, isAr }: { brandId: string; isAr: b
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
   const customers = useQuery(customersQueries.directory(brandId, 1000));
-  const devices = useQuery({
-    queryKey: ["customer-push-devices", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("customer_push_devices")
-        .select("id,customer_id,enabled,marketing_enabled")
-        .eq("brand_id", brandId)
-        .eq("enabled", true);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-  const history = useQuery({
-    queryKey: ["customer-push-events", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("customer_push_events")
-        .select(
-          "id,title,body,status,customer_id,recipient_count,accepted_count,failed_count,created_at",
-        )
-        .eq("brand_id", brandId)
-        .eq("event_type", "marketing")
-        .order("created_at", { ascending: false })
-        .limit(30);
-      if (error) throw error;
-      return (data ?? []) as PushEvent[];
-    },
-  });
+  const devices = useQuery(pushQueries.devices(brandId));
+  const history = useQuery({ ...pushQueries.campaigns(brandId), select: asPushEvents });
   const installedCustomers = useMemo(
-    () => new Set((devices.data ?? []).map((d: any) => d.customer_id)),
+    () => new Set((devices.data ?? []).map((d) => d.customer_id)),
     [devices.data],
   );
   const hasRecipients =
@@ -87,13 +64,17 @@ export function CustomerPushCenter({ brandId, isAr }: { brandId: string; isAr: b
           : "This customer has no registered app device",
       );
     setSending(true);
-    const { error } = await (supabase as any).rpc("create_customer_push_campaign", {
-      p_brand_id: brandId,
-      p_title: title.trim(),
-      p_body: body.trim(),
-      p_customer_id: target === "all" ? null : target,
-      p_target_url: "https://pura.boutq.store",
-    });
+    // Every brand's campaign links to Pura's store (bug backlog #23).
+    const error = await createPushCampaign({
+      brandId,
+      title: title.trim(),
+      body: body.trim(),
+      customerId: target === "all" ? null : target,
+      targetUrl: "https://pura.boutq.store",
+    }).then(
+      () => null,
+      (reason: unknown) => reason,
+    );
     setSending(false);
     if (error)
       return toast.error(
@@ -105,7 +86,7 @@ export function CustomerPushCenter({ brandId, isAr }: { brandId: string; isAr: b
     setBody("");
     setTarget("all");
     toast.success(isAr ? "تمت جدولة الإشعار للإرسال" : "Push notification queued");
-    void qc.invalidateQueries({ queryKey: ["customer-push-events", brandId] });
+    void invalidatePush(qc, brandId);
   };
   return (
     <div className="grid gap-3.5 xl:grid-cols-[minmax(0,1fr)_minmax(360px,.75fr)]">
