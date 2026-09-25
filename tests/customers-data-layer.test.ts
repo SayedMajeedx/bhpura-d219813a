@@ -39,6 +39,8 @@ function builder(table: string) {
     delete: write("delete"),
     eq: record("eq"),
     order: record("order"),
+    or: record("or"),
+    limit: record("limit"),
     single: () => chain,
     maybeSingle: () => chain,
     then(resolve: (reply: Reply) => unknown, reject?: (reason: unknown) => unknown) {
@@ -228,6 +230,106 @@ describe("saved-address writes", () => {
   it("reports a duplicate that could not be deleted (bug backlog #15)", async () => {
     respond = (request) => (request.op === "delete" ? { error: denied } : { error: null });
     await expect(customers.mergeDuplicateAddress("b1", "c1", "keep", "dup")).rejects.toBe(denied);
+  });
+});
+
+describe("pickers, campaigns, export and search", () => {
+  it("give each picker size its own key under the brand", () => {
+    const { customersKeys } = customers;
+    expect(customersKeys.directory("b1", 100)).not.toEqual(customersKeys.directory("b1", 1000));
+    for (const key of [
+      customersKeys.directory("b1", 100),
+      customersKeys.audience("b1"),
+      customersKeys.exportRows("b1"),
+    ]) {
+      expect(key.slice(0, 2)).toEqual(["customers", "b1"]);
+    }
+  });
+
+  it("list a picker's customers by name, up to its limit, within the brand", async () => {
+    await customers.fetchCustomerDirectory("b1", 100);
+    expect(requests[0].select).toBe("id, name, phone, email");
+    expect(filters(requests[0], "eq")).toEqual([["brand_id", "b1"]]);
+    expect(filters(requests[0], "order")).toEqual([["name"]]);
+    expect(filters(requests[0], "limit")).toEqual([[100]]);
+  });
+
+  it("read the campaign audience with its consent columns", async () => {
+    await customers.fetchCustomerAudience("b1");
+    expect(requests[0].select).toBe("id, name, phone, marketing_consent, opted_out_at");
+    expect(filters(requests[0], "eq")).toEqual([["brand_id", "b1"]]);
+  });
+
+  it("export only its columns, newest first, and read a failure as no customers", async () => {
+    await customers.fetchCustomersForExport("b1");
+    expect(requests[0].select).toBe("id, name, phone, email, notes, created_at");
+    expect(filters(requests[0], "order")).toEqual([["created_at", { ascending: false }]]);
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    respond = () => ({ data: null, error: denied });
+    expect(await customers.fetchCustomersForExport("b1")).toEqual([]);
+    expect(log).toHaveBeenCalled();
+    log.mockRestore();
+  });
+
+  it("search name, phone and email within the brand, six at most", async () => {
+    await customers.searchCustomers("b1", "sara");
+    expect(filters(requests[0], "eq")).toEqual([["brand_id", "b1"]]);
+    expect(filters(requests[0], "or")).toEqual([
+      ["name.ilike.%sara%,phone.ilike.%sara%,email.ilike.%sara%"],
+    ]);
+    expect(filters(requests[0], "limit")).toEqual([[6]]);
+    respond = () => ({ data: null, error: denied });
+    expect(await customers.searchCustomers("b1", "sara")).toEqual([]);
+  });
+});
+
+describe("the shopper's own records", () => {
+  it("keep their own keys, apart from the admin's view of the same customer", () => {
+    const { customersKeys } = customers;
+    expect(customersKeys.ownAddresses("b1", "c1")).not.toEqual(
+      customersKeys.customerAddresses("b1", "c1"),
+    );
+    expect(customersKeys.ownProfile("b1", "u1").slice(0, 3)).toEqual(customersKeys.own("b1"));
+    expect(customersKeys.ownAddresses("b1", "c1").slice(0, 3)).toEqual(customersKeys.own("b1"));
+  });
+
+  it("read the customer linked to the login within the brand, and throw on error", async () => {
+    respond = () => ({ data: null, error: null });
+    expect(await customers.fetchOwnCustomer("b1", "u1")).toBeNull();
+    expect(filters(requests[0], "eq")).toEqual([
+      ["brand_id", "b1"],
+      ["auth_user_id", "u1"],
+    ]);
+    respond = () => ({ data: null, error: denied });
+    await expect(customers.fetchOwnCustomer("b1", "u1")).rejects.toBe(denied);
+  });
+
+  it("list the shopper's addresses default first, then newest first", async () => {
+    await customers.fetchOwnAddresses("b1", "c1");
+    expect(filters(requests[0], "eq")).toEqual([
+      ["brand_id", "b1"],
+      ["customer_id", "c1"],
+    ]);
+    expect(filters(requests[0], "order")).toEqual([
+      ["is_default", { ascending: false }],
+      ["created_at", { ascending: false }],
+    ]);
+  });
+
+  it("do not run the profile query before the shopper is signed in", () => {
+    expect(customers.ownCustomerQueries.profile("b1", undefined).enabled).toBe(false);
+    expect(customers.ownCustomerQueries.addresses("b1", undefined).enabled).toBe(false);
+  });
+
+  it("clear the default flag within the brand and report a failure", async () => {
+    await customers.clearDefaultCustomerAddress("b1", "c1");
+    expect(requests[0].payload).toEqual({ is_default: false });
+    expect(filters(requests[0], "eq")).toEqual([
+      ["customer_id", "c1"],
+      ["brand_id", "b1"],
+    ]);
+    respond = () => ({ error: denied });
+    await expect(customers.clearDefaultCustomerAddress("b1", "c1")).rejects.toBe(denied);
   });
 });
 

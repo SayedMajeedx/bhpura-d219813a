@@ -4,6 +4,7 @@ import { SpotlightCommandPalette } from "@/components/spotlight-command-palette"
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { customersQueries } from "@/lib/data/customers";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { useProfile } from "@/lib/profile-context";
@@ -363,17 +364,10 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
     activeNavItem?.to.includes("/customers") && trailingSegment && trailingSegment !== "new",
   );
 
+  // Shares the profile page's cache entry.
   const customerBreadcrumbQuery = useQuery({
-    queryKey: ["breadcrumb-customer-name", trailingSegment],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("customers")
-        .select("name, id")
-        .eq("id", trailingSegment!)
-        .maybeSingle();
-      return data;
-    },
-    enabled: isCustomerRoute,
+    ...customersQueries.detail(activeBrand?.id ?? "", trailingSegment ?? ""),
+    enabled: isCustomerRoute && Boolean(activeBrand?.id),
     staleTime: 5 * 60_000,
   });
 
@@ -425,12 +419,7 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
           label: orderLabel,
         });
       } else if (isCustomerRoute) {
-        const cachedCustomer = queryClient.getQueryData([
-          "customer-profile",
-          trailingSegment,
-          activeBrand?.id,
-        ]) as any;
-        const customerName = customerBreadcrumbQuery.data?.name ?? cachedCustomer?.name;
+        const customerName = customerBreadcrumbQuery.data?.name;
         items.push({
           label: customerName || decodeURIComponent(trailingSegment.slice(0, 8)),
         });

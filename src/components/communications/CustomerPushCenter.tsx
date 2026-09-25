@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { AlertTriangle, BellRing, RefreshCw, Send } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { customersQueries } from "@/lib/data/customers";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,7 +16,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type Customer = { id: string; name: string | null; phone: string | null; email: string | null };
 type PushEvent = {
   id: string;
   title: string;
@@ -34,19 +34,7 @@ export function CustomerPushCenter({ brandId, isAr }: { brandId: string; isAr: b
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
-  const customers = useQuery({
-    queryKey: ["push-customers", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("customers")
-        .select("id,name,phone,email")
-        .eq("brand_id", brandId)
-        .order("name")
-        .limit(1000);
-      if (error) throw error;
-      return (data ?? []) as Customer[];
-    },
-  });
+  const customers = useQuery(customersQueries.directory(brandId, 1000));
   const devices = useQuery({
     queryKey: ["customer-push-devices", brandId],
     queryFn: async () => {

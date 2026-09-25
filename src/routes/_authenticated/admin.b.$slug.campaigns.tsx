@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { customersQueries } from "@/lib/data/customers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -131,18 +132,7 @@ function CampaignsPage() {
     },
   });
 
-  const customersQ = useQuery({
-    queryKey: ["campaigns-customers", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("customers")
-        .select("id, name, phone, marketing_consent, opted_out_at")
-        .eq("brand_id", brandId)
-        .order("name");
-      if (error) throw error;
-      return (data ?? []) as Customer[];
-    },
-  });
+  const customersQ = useQuery(customersQueries.audience(brandId));
 
   const ordersQ = useQuery({
     queryKey: ["campaigns-customer-orders", brandId],

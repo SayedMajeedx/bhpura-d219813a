@@ -5,10 +5,11 @@ import { moveOrdersToAddress } from "@/lib/data/orders/mutations";
 import { customersKeys } from "./keys";
 
 /**
- * Admin customer writes. Every write is scoped by `brand_id` on top of RLS,
- * typed against the generated schema, and throws on error. After a write, call
- * `invalidateCustomers`: it refreshes the list, the profiles and the saved
- * addresses of the brand.
+ * Customer writes, from the admin screens and from the shopper's own account
+ * page (RLS decides who may write which rows). Every write is scoped by
+ * `brand_id` on top of RLS, typed against the generated schema, and throws on
+ * error. After a write, call `invalidateCustomers`: it refreshes everything
+ * cached about the brand's customers.
  */
 
 export type NewCustomer = TablesInsert<"customers">;
@@ -100,6 +101,16 @@ export async function deleteCustomerAddress(
   if (error) throw error;
 }
 
+/** Clears the customer's default address flag on every saved address. */
+export async function clearDefaultCustomerAddress(brandId: string, customerId: string) {
+  const { error } = await supabase
+    .from("customer_addresses")
+    .update({ is_default: false })
+    .eq("customer_id", customerId)
+    .eq("brand_id", brandId);
+  if (error) throw error;
+}
+
 /**
  * Makes one address the customer's default. Clearing the old default ignores
  * its error, as it always has (bug backlog #17); setting the new one throws.
@@ -109,11 +120,7 @@ export async function setDefaultCustomerAddress(
   customerId: string,
   addressId: string,
 ) {
-  await supabase
-    .from("customer_addresses")
-    .update({ is_default: false })
-    .eq("customer_id", customerId)
-    .eq("brand_id", brandId);
+  await clearDefaultCustomerAddress(brandId, customerId).catch(() => undefined);
   await updateCustomerAddress(brandId, customerId, addressId, { is_default: true });
 }
 

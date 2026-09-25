@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { customersQueries } from "@/lib/data/customers";
 import { useI18n } from "@/lib/i18n";
 import {
   Dialog,
@@ -45,19 +46,10 @@ export function LoyaltyManualAdjustmentDialog({
   const [reasonEn, setReasonEn] = useState<string>("");
 
   // Fetch customers for selector
+  // Only the first 100 by name (bug backlog #18).
   const { data: customers = [] } = useQuery({
-    queryKey: ["brand_customers_select", brandId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customers")
-        .select("id, name, email, phone")
-        .eq("brand_id", brandId)
-        .order("name", { ascending: true })
-        .limit(100);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: open,
+    ...customersQueries.directory(brandId, 100),
+    enabled: open && Boolean(brandId),
   });
 
   const adjustMutation = useMutation({

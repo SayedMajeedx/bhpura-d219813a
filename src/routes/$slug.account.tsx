@@ -3,7 +3,18 @@ import { useEffect, useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useStorefront, formatPrice, useStoreModules } from "@/lib/storefront-context";
-import { cn } from "@/lib/utils";
+import { cn, getFriendlyErrorMessage } from "@/lib/utils";
+import {
+  clearDefaultCustomerAddress,
+  createCustomerAddress,
+  customersKeys,
+  deleteCustomerAddress,
+  ownCustomerQueries,
+  setDefaultCustomerAddress,
+  updateCustomer,
+  type OwnAddress,
+  type OwnCustomer,
+} from "@/lib/data/customers";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { OsEmptyState } from "@/components/os/os-empty-state";
@@ -54,15 +65,7 @@ export const Route = createFileRoute("/$slug/account")({
   component: AccountPage,
 });
 
-type Customer = {
-  id: string;
-  brand_id: string;
-  user_id: string;
-  name: string;
-  phone: string | null;
-  email: string | null;
-  created_at?: string;
-};
+type Customer = OwnCustomer;
 
 type OrderRow = {
   id: string;
@@ -77,25 +80,7 @@ type OrderRow = {
   order_items: Array<{ id: string; description: string; quantity: number; unit_price: number }>;
 };
 
-type Address = {
-  id: string;
-  brand_id: string;
-  customer_id: string;
-  label: string | null;
-  region: string | null;
-  block: string | null;
-  road: string | null;
-  house: string | null;
-  flat: string | null;
-  floor: string | null;
-  landmark: string | null;
-  formatted_address: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  place_id: string | null;
-  delivery_notes: string | null;
-  is_default: boolean;
-};
+type Address = OwnAddress;
 
 function statusMeta(
   status: string,
@@ -287,22 +272,9 @@ function AccountPage() {
     },
   });
 
-  const { data: addresses, isLoading: loadingAddresses } = useQuery({
-    queryKey: ["storefront-account-addresses", customer?.id],
-    enabled: !!customer?.id,
-    queryFn: async (): Promise<Address[]> => {
-      const { data, error } = await supabase
-        .from("customer_addresses")
-        .select(
-          "id, brand_id, customer_id, label, region, block, road, house, flat, floor, landmark, formatted_address, latitude, longitude, place_id, delivery_notes, is_default",
-        )
-        .eq("customer_id", customer!.id)
-        .order("is_default", { ascending: false })
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as Address[];
-    },
-  });
+  const { data: addresses, isLoading: loadingAddresses } = useQuery(
+    ownCustomerQueries.addresses(brand.id, customer?.id),
+  );
 
   const { data: storeCredit = 0 } = useQuery({
     queryKey: ["storefront-account-store-credit", brand.id, customer?.id],
@@ -691,20 +663,7 @@ function SignOutButton() {
 
 function useCustomer() {
   const { brand, session } = useStorefront();
-  return useQuery({
-    queryKey: ["storefront-account-customer", brand.id, session?.user?.id],
-    enabled: !!session?.user?.id,
-    queryFn: async (): Promise<Customer | null> => {
-      const { data, error } = await supabase
-        .from("customers")
-        .select("id, brand_id, user_id, name, phone, email, created_at")
-        .eq("brand_id", brand.id)
-        .eq("auth_user_id", session!.user!.id)
-        .maybeSingle();
-      if (error) throw error;
-      return data as Customer | null;
-    },
-  });
+  return useQuery(ownCustomerQueries.profile(brand.id, session?.user?.id));
 }
 
 function OrdersSection({
@@ -1093,18 +1052,19 @@ function ProfileSection({
     const name = form.name.trim();
     if (!name) return toast.error(t("الاسم مطلوب", "Name is required"));
     setSaving(true);
-    const { error } = await supabase
-      .from("customers")
-      .update({
+    try {
+      await updateCustomer(customer.brand_id, customer.id, {
         name,
         phone: form.phone.trim() || null,
         email: form.email.trim() || null,
-      })
-      .eq("id", customer.id);
-    setSaving(false);
-    if (error) return toast.error(error.message);
+      });
+    } catch (error) {
+      return toast.error(getFriendlyErrorMessage(error));
+    } finally {
+      setSaving(false);
+    }
     toast.success(t("تم حفظ التغييرات بنجاح", "Your changes have been saved successfully"));
-    qc.invalidateQueries({ queryKey: ["storefront-account-customer"] });
+    qc.invalidateQueries({ queryKey: customersKeys.own(customer.brand_id) });
   };
 
   return (
@@ -1253,54 +1213,57 @@ function AddressesSection({
       return toast.error(t("المنطقة مطلوبة", "Region is required"));
     }
     setSaving(true);
-    if (form.is_default) {
-      await supabase
-        .from("customer_addresses")
-        .update({ is_default: false })
-        .eq("customer_id", customer.id);
+    try {
+      if (form.is_default) {
+        // Best-effort, its error is ignored as before (bug backlog #17).
+        await clearDefaultCustomerAddress(customer.brand_id, customer.id).catch(() => undefined);
+      }
+      await createCustomerAddress(customer.brand_id, {
+        customer_id: customer.id,
+        user_id: customer.user_id,
+        label: form.label.trim() || null,
+        region: form.region.trim() || null,
+        block: form.block.trim() || null,
+        road: form.road.trim() || null,
+        house: form.house.trim() || null,
+        flat: form.flat.trim() || null,
+        floor: form.floor.trim() || null,
+        landmark: form.landmark.trim() || null,
+        delivery_notes: form.delivery_notes.trim() || null,
+        is_default: form.is_default,
+      });
+    } catch (error) {
+      return toast.error(getFriendlyErrorMessage(error));
+    } finally {
+      setSaving(false);
     }
-    const { error } = await supabase.from("customer_addresses").insert({
-      customer_id: customer.id,
-      brand_id: customer.brand_id,
-      user_id: customer.user_id,
-      label: form.label.trim() || null,
-      region: form.region.trim() || null,
-      block: form.block.trim() || null,
-      road: form.road.trim() || null,
-      house: form.house.trim() || null,
-      flat: form.flat.trim() || null,
-      floor: form.floor.trim() || null,
-      landmark: form.landmark.trim() || null,
-      delivery_notes: form.delivery_notes.trim() || null,
-      is_default: form.is_default,
-    });
-    setSaving(false);
-    if (error) return toast.error(error.message);
     toast.success(t("تم إضافة العنوان بنجاح", "Address added successfully"));
     setForm(emptyAddress());
     setAdding(false);
-    qc.invalidateQueries({ queryKey: ["storefront-account-addresses", customer.id] });
+    refreshAddresses();
   };
 
+  const refreshAddresses = () =>
+    qc.invalidateQueries({ queryKey: customersKeys.ownAddresses(customer.brand_id, customer.id) });
+
   const remove = async (id: string) => {
-    const { error } = await supabase.from("customer_addresses").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    try {
+      await deleteCustomerAddress(customer.brand_id, customer.id, id);
+    } catch (error) {
+      return toast.error(getFriendlyErrorMessage(error));
+    }
     toast.success(t("تم حذف العنوان بنجاح", "Address deleted successfully"));
-    qc.invalidateQueries({ queryKey: ["storefront-account-addresses", customer.id] });
+    refreshAddresses();
   };
 
   const setDefault = async (id: string) => {
-    await supabase
-      .from("customer_addresses")
-      .update({ is_default: false })
-      .eq("customer_id", customer.id);
-    const { error } = await supabase
-      .from("customer_addresses")
-      .update({ is_default: true })
-      .eq("id", id);
-    if (error) return toast.error(error.message);
+    try {
+      await setDefaultCustomerAddress(customer.brand_id, customer.id, id);
+    } catch (error) {
+      return toast.error(getFriendlyErrorMessage(error));
+    }
     toast.success(t("تم التحديد كعنوان افتراضي", "Set as default shipping destination"));
-    qc.invalidateQueries({ queryKey: ["storefront-account-addresses", customer.id] });
+    refreshAddresses();
   };
 
   return (
