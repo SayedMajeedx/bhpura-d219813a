@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n, useT } from "@/lib/i18n";
 import {
@@ -16,7 +15,12 @@ import { Label } from "@/components/ui/label";
 import { Package, Plus, Trash2, Box, Info, Sparkles } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { toast } from "sonner";
-import { catalogKeys, catalogQueries } from "@/lib/data/catalog";
+import {
+  applyBomToAllProducts,
+  catalogKeys,
+  catalogQueries,
+  saveProductBom,
+} from "@/lib/data/catalog";
 
 interface ProductBomModalProps {
   open: boolean;
@@ -129,35 +133,7 @@ export function ProductBomModal({
     if (!productId || !brandId) return;
     setIsSaving(true);
     try {
-      // 1. Update direct_packaging_cost on product
-      const { error: pErr } = await (supabase as any)
-        .from("products")
-        .update({ direct_packaging_cost: directCost } as any)
-        .eq("id", productId)
-        .eq("brand_id", brandId);
-      if (pErr) throw pErr;
-
-      // 2. Delete existing BOM items for product
-      const { error: dErr } = await (supabase as any)
-        .from("product_bom_items")
-        .delete()
-        .eq("product_id", productId)
-        .eq("brand_id", brandId);
-      if (dErr) throw dErr;
-
-      // 3. Insert new BOM items
-      if (selectedMaterials.length > 0) {
-        const rowsToInsert = selectedMaterials.map((sm) => ({
-          brand_id: brandId,
-          product_id: productId,
-          packaging_material_id: sm.packaging_material_id,
-          quantity_per_unit: sm.quantity_per_unit,
-        }));
-        const { error: iErr } = await (supabase as any)
-          .from("product_bom_items")
-          .insert(rowsToInsert as any);
-        if (iErr) throw iErr;
-      }
+      await saveProductBom(brandId, productId, directCost, selectedMaterials);
 
       toast.success(isAr ? "تم حفظ تكاليف التغليف بنجاح" : "BOM packaging saved successfully");
       qc.invalidateQueries({ queryKey: catalogKeys.products(brandId) });
@@ -180,43 +156,8 @@ export function ProductBomModal({
     if (!brandId) return;
     setIsSaving(true);
     try {
-      // 1. Fetch all product IDs for this brand
-      const { data: allProducts, error: pFetchErr } = await (supabase as any)
-        .from("products")
-        .select("id")
-        .eq("brand_id", brandId);
-      if (pFetchErr) throw pFetchErr;
-
-      const pIds = (allProducts ?? []).map((p: any) => p.id);
-      if (pIds.length === 0) return;
-
-      // 2. Update direct_packaging_cost on all products
-      await (supabase as any)
-        .from("products")
-        .update({ direct_packaging_cost: directCost } as any)
-        .eq("brand_id", brandId);
-
-      // 3. Delete existing BOM items for all products of this brand
-      await (supabase as any).from("product_bom_items").delete().eq("brand_id", brandId);
-
-      // 4. Insert new BOM items for all products
-      if (selectedMaterials.length > 0) {
-        const rowsToInsert: any[] = [];
-        for (const pid of pIds) {
-          for (const sm of selectedMaterials) {
-            rowsToInsert.push({
-              brand_id: brandId,
-              product_id: pid,
-              packaging_material_id: sm.packaging_material_id,
-              quantity_per_unit: sm.quantity_per_unit,
-            });
-          }
-        }
-        const { error: iErr } = await (supabase as any)
-          .from("product_bom_items")
-          .insert(rowsToInsert as any);
-        if (iErr) throw iErr;
-      }
+      const productCount = await applyBomToAllProducts(brandId, directCost, selectedMaterials);
+      if (productCount === 0) return;
 
       toast.success(
         isAr

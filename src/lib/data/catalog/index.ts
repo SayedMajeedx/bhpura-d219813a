@@ -1,6 +1,10 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import { catalogKeys } from "./keys";
+
+export * from "./keys";
+export * from "./mutations";
 
 /**
  * The admin catalog: a brand's products, variants, packaging BOM and
@@ -37,17 +41,6 @@ export type AdminProduct = Omit<Tables<"products">, "media" | "custom_fields"> &
 };
 export type AdminVariant = Tables<"product_variants">;
 export type PackagingMaterial = Tables<"packaging_materials">;
-
-export const catalogKeys = {
-  products: (brandId: string) => ["products", brandId] as const,
-  variants: (brandId: string) => ["variants", brandId] as const,
-  bomItems: (brandId: string) => ["product-bom-items-all", brandId] as const,
-  /** Every product's own BOM of the brand (prefix of `productBom`). */
-  productBoms: (brandId: string) => ["product-bom-items", brandId] as const,
-  productBom: (brandId: string, productId: string) =>
-    [...catalogKeys.productBoms(brandId), productId] as const,
-  packagingMaterials: (brandId: string) => ["packaging-materials", brandId] as const,
-};
 
 /** The brand's products, newest first. */
 export async function fetchAdminProducts(brandId: string): Promise<AdminProduct[]> {
@@ -111,6 +104,52 @@ export async function fetchPackagingMaterials(brandId: string): Promise<Packagin
     .order("created_at", { ascending: false });
   if (error) throw error;
   return data ?? [];
+}
+
+/**
+ * How many products the brand has (the plan's product limit). A failed count
+ * reads as zero, so it never blocks creating a product.
+ */
+export async function countAdminProducts(brandId: string): Promise<number> {
+  const { count } = await supabase
+    .from("products")
+    .select("id", { count: "exact", head: true })
+    .eq("brand_id", brandId);
+  return count || 0;
+}
+
+/** How many variants one product has. */
+export async function countProductVariants(brandId: string, productId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from("product_variants")
+    .select("id", { count: "exact", head: true })
+    .eq("product_id", productId)
+    .eq("brand_id", brandId);
+  if (error) throw error;
+  return count ?? 0;
+}
+
+/**
+ * What barcode labels print from, read fresh so new variants are included:
+ * product names (newest first) and every variant with a barcode (oldest first).
+ */
+export async function fetchBarcodeLabelData(brandId: string) {
+  const [products, variants] = await Promise.all([
+    supabase
+      .from("products")
+      .select("id, name")
+      .eq("brand_id", brandId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("product_variants")
+      .select("product_id, barcode, size, color, selling_price")
+      .eq("brand_id", brandId)
+      .not("barcode", "is", null)
+      .order("created_at"),
+  ]);
+  const error = products.error ?? variants.error;
+  if (error) throw error;
+  return { products: products.data ?? [], variants: variants.data ?? [] };
 }
 
 /** Admin screens edit the catalog while others read it; 30s keeps lists fresh without refetch storms. */

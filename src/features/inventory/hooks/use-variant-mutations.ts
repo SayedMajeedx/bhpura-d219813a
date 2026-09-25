@@ -1,6 +1,14 @@
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
+import { getFriendlyErrorMessage } from "@/lib/utils";
+import {
+  adjustVariantStock,
+  createVariants,
+  deleteVariants,
+  updateProduct,
+  updateVariant,
+} from "@/lib/data/catalog";
 import type { Product, Variant } from "@/features/inventory/types";
 import type { VariantRowAxes } from "@/features/inventory/hooks/use-inventory-axis-defaults";
 import { prefetchOptionTranslations } from "@/features/inventory/lib/option-translations";
@@ -64,30 +72,34 @@ export function useVariantMutations({
       },
       product,
     );
-    const { error } = await (supabase.from("product_variants") as any).insert({
-      user_id: user.id,
-      brand_id: brandId,
-      product_id: productId,
-      ...values,
-    });
-    if (error) return toast.error(error.message);
+    try {
+      await createVariants(brandId, [
+        {
+          user_id: user.id,
+          brand_id: brandId,
+          product_id: productId,
+          ...values,
+        },
+      ]);
+    } catch (error) {
+      return toast.error(getFriendlyErrorMessage(error));
+    }
     prefetchOptionTranslations([finalColor, row.fabric, row.option_four, row.option_five], isAr);
 
     if (finalColor && !product?.variant_label_color_ar) {
-      await (supabase.from("products") as any)
-        .update({
-          variant_label_color_ar: colorAxis.label || "النكهة / الخيار",
-          variant_label_color_en: "Flavor / Option",
-        })
-        .eq("id", productId);
+      // Best-effort, its error is ignored as before (bug backlog #16).
+      await updateProduct(brandId, productId, {
+        variant_label_color_ar: colorAxis.label || "النكهة / الخيار",
+        variant_label_color_en: "Flavor / Option",
+      }).catch(() => undefined);
     }
 
     if (variants.length === 0) {
-      const { error: activationError } = await supabase
-        .from("products")
-        .update({ is_active: true })
-        .eq("id", productId);
-      if (activationError) {
+      const activated = await updateProduct(brandId, productId, { is_active: true }).then(
+        () => true,
+        () => false,
+      );
+      if (!activated) {
         onChanged();
         return toast.error(
           isAr
@@ -124,16 +136,16 @@ export function useVariantMutations({
     // Handle stock updates via ledger RPC
     let stockUpdated = false;
     if (patch.stock_main !== undefined && Number(patch.stock_main) !== Number(v.stock_main ?? 0)) {
-      const { error: stockErr } = await (supabase.rpc as any)("rpc_adjust_variant_stock", {
-        p_variant_id: v.id,
-        p_location: "main",
-        p_mode: "set",
-        p_value: Math.max(0, Number(patch.stock_main)),
-        p_reason: "manual_adjustment",
-        p_note: "Admin variant table inline edit",
-      });
-      if (stockErr) {
-        toast.error(stockErr.message);
+      try {
+        await adjustVariantStock({
+          variantId: v.id,
+          location: "main",
+          mode: "set",
+          value: Math.max(0, Number(patch.stock_main)),
+          note: "Admin variant table inline edit",
+        });
+      } catch (stockErr) {
+        toast.error(getFriendlyErrorMessage(stockErr));
         return;
       }
       stockUpdated = true;
@@ -143,16 +155,16 @@ export function useVariantMutations({
       patch.stock_incubator !== undefined &&
       Number(patch.stock_incubator) !== Number(v.stock_incubator ?? 0)
     ) {
-      const { error: incErr } = await (supabase.rpc as any)("rpc_adjust_variant_stock", {
-        p_variant_id: v.id,
-        p_location: "incubator",
-        p_mode: "set",
-        p_value: Math.max(0, Number(patch.stock_incubator)),
-        p_reason: "manual_adjustment",
-        p_note: "Admin variant table inline edit",
-      });
-      if (incErr) {
-        toast.error(incErr.message);
+      try {
+        await adjustVariantStock({
+          variantId: v.id,
+          location: "incubator",
+          mode: "set",
+          value: Math.max(0, Number(patch.stock_incubator)),
+          note: "Admin variant table inline edit",
+        });
+      } catch (incErr) {
+        toast.error(getFriendlyErrorMessage(incErr));
         return;
       }
       stockUpdated = true;
@@ -161,11 +173,10 @@ export function useVariantMutations({
     const normalizedPatch = variantColumnPatch(patch, Number(product?.base_price ?? 0));
 
     if (Object.keys(normalizedPatch).length > 0) {
-      const { error } = await (supabase.from("product_variants") as any)
-        .update(normalizedPatch)
-        .eq("id", v.id);
-      if (error) {
-        toast.error(error.message);
+      try {
+        await updateVariant(brandId, v.id, normalizedPatch);
+      } catch (error) {
+        toast.error(getFriendlyErrorMessage(error));
         return;
       }
       prefetchOptionTranslations(
@@ -185,9 +196,13 @@ export function useVariantMutations({
   };
 
   const del = async (id: string) => {
-    const { error } = await supabase.from("product_variants").delete().eq("id", id);
-    if (error) toast.error(error.message);
-    else onChanged();
+    try {
+      await deleteVariants(brandId, [id]);
+    } catch (error) {
+      toast.error(getFriendlyErrorMessage(error));
+      return;
+    }
+    onChanged();
   };
 
   return { add, update, del };

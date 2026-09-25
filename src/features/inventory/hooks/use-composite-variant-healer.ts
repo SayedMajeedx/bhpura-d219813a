@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { useBrand } from "@/lib/brand-context";
+import { getFriendlyErrorMessage } from "@/lib/utils";
+import { updateProduct, updateVariant } from "@/lib/data/catalog";
 import { splitCompositeVariantSize } from "@/lib/format";
 import type { Product, Variant } from "@/features/inventory/types";
 
@@ -23,6 +25,7 @@ export function useCompositeVariantHealer({
   isAr: boolean;
   onChanged: () => void;
 }) {
+  const brandId = useBrand().id;
   // 1-Click Auto-Healer: Detect variants where size contains merged attributes (e.g. "700 - عادية" with color null)
   const [isHealing, setIsHealing] = useState(false);
   const compositeVariants = useMemo(() => {
@@ -40,25 +43,19 @@ export function useCompositeVariantHealer({
       for (const v of compositeVariants) {
         const split = splitCompositeVariantSize(v.size, v.size_unit);
         if (split.isComposite) {
-          const { error: vErr } = await (supabase.from("product_variants") as any)
-            .update({
-              size: split.size,
-              size_unit: split.unit || v.size_unit || "g",
-              color: split.option,
-            })
-            .eq("id", v.id);
-          if (vErr) throw vErr;
+          await updateVariant(brandId, v.id, {
+            size: split.size,
+            size_unit: split.unit || v.size_unit || "g",
+            color: split.option,
+          });
         }
       }
 
       if (!product?.variant_label_color_ar) {
-        const { error: pErr } = await (supabase.from("products") as any)
-          .update({
-            variant_label_color_ar: colorLabel || "النكهة / الخيار",
-            variant_label_color_en: "Flavor / Option",
-          })
-          .eq("id", productId);
-        if (pErr) console.warn("Could not update product axis label:", pErr);
+        await updateProduct(brandId, productId, {
+          variant_label_color_ar: colorLabel || "النكهة / الخيار",
+          variant_label_color_en: "Flavor / Option",
+        }).catch((pErr: unknown) => console.warn("Could not update product axis label:", pErr));
       }
 
       toast.success(
@@ -67,8 +64,8 @@ export function useCompositeVariantHealer({
           : `Successfully healed ${compositeVariants.length} variants into clean sizes & options!`,
       );
       onChanged();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to auto-heal variants");
+    } catch (err) {
+      toast.error(getFriendlyErrorMessage(err) || "Failed to auto-heal variants");
     } finally {
       setIsHealing(false);
     }

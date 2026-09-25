@@ -167,5 +167,43 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Admin catalog data layer: the inventory screens, the BOM editor and the
+    // packaging tab read and write products, variants, stock, packaging
+    // materials and BOM lines through `@/lib/data/catalog`, so every write is
+    // brand-scoped and typed, and the lists are refreshed through `catalogKeys`.
+    files: [
+      "src/features/inventory/**",
+      "src/components/inventory/**",
+      "src/components/products/**",
+      "src/routes/_authenticated/admin.b.$slug.inventory.tsx",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(products|product_variants|product_bom_items|packaging_materials)$/]",
+          message:
+            "The admin catalog goes through `@/lib/data/catalog` (catalogQueries, fetchers and mutations), not direct Supabase calls.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='rpc'][arguments.0.value='rpc_adjust_variant_stock']",
+          message: "Use `adjustVariantStock` from `@/lib/data/catalog` for manual stock changes.",
+        },
+        {
+          selector:
+            "CallExpression[callee.expression.property.name='rpc'][arguments.0.value='rpc_adjust_variant_stock']",
+          message: "Use `adjustVariantStock` from `@/lib/data/catalog` for manual stock changes.",
+        },
+        {
+          selector:
+            "ArrayExpression > Literal:first-child[value=/^(products|variants|packaging-materials|product-bom-items(-all)?)$/]",
+          message: "Build these cache keys with `catalogKeys` (or `invalidateCatalog`).",
+        },
+      ],
+    },
+  },
   eslintPluginPrettier,
 );

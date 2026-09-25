@@ -11,7 +11,7 @@ import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { queryKeys } from "@/lib/query-keys";
 import { InventoryCommandHeader } from "@/components/inventory/InventoryCommandHeader";
 import { PackagingMaterialsTab } from "@/components/inventory/PackagingMaterialsTab";
-import { catalogQueries } from "@/lib/data/catalog";
+import { catalogQueries, invalidateCatalog } from "@/lib/data/catalog";
 
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { OsEmptyState } from "@/components/os/os-empty-state";
@@ -198,10 +198,7 @@ function Inventory() {
           pendingNotifyCount={backInStockRequests.data ?? 0}
           businessName={businessName.data?.business_name ?? null}
           currency={businessName.data?.currency ?? "BHD"}
-          onChanged={() => {
-            qc.invalidateQueries({ queryKey: queryKeys.products.all(brandId) });
-            qc.invalidateQueries({ queryKey: queryKeys.variants.all(brandId) });
-          }}
+          onChanged={() => void invalidateCatalog(qc, brandId)}
           salesHistory={salesHistory.data ?? []}
         />
       ) : tab === "packaging" ? (

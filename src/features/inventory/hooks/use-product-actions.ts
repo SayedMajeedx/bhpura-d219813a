@@ -1,11 +1,17 @@
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { printLabels } from "@/components/barcode-label";
 import { useBrand } from "@/lib/brand-context";
 import { useT } from "@/lib/i18n";
 import { deletePublicMediaUrl } from "@/lib/r2-upload";
 import { getStorefrontUrl } from "@/lib/storefront-url";
 import { useEntitlements } from "@/lib/saas-billing/use-entitlements";
+import { getFriendlyErrorMessage } from "@/lib/utils";
+import {
+  createProduct,
+  createVariants,
+  deleteProducts,
+  fetchBarcodeLabelData,
+} from "@/lib/data/catalog";
 import type { Product, Variant } from "@/features/inventory/types";
 import {
   barcodeLabelsFor,
@@ -39,18 +45,20 @@ export function useProductActions({
 
   const del = async (id: string) => {
     const product = products.find((item) => item.id === id);
-    const { error } = await supabase.from("products").delete().eq("id", id).eq("brand_id", brandId);
-    if (error) toast.error(error.message);
-    else {
-      const urls = new Set(
-        [product?.image_url, ...(product?.media ?? []).map((item) => item.url)].filter(
-          (url): url is string => Boolean(url),
-        ),
-      );
-      for (const url of urls) void deletePublicMediaUrl(brandId, url).catch(() => undefined);
-      toast.success(t("common.delete"));
-      onChanged();
+    try {
+      await deleteProducts(brandId, [id]);
+    } catch (error) {
+      toast.error(getFriendlyErrorMessage(error));
+      return;
     }
+    const urls = new Set(
+      [product?.image_url, ...(product?.media ?? []).map((item) => item.url)].filter(
+        (url): url is string => Boolean(url),
+      ),
+    );
+    for (const url of urls) void deletePublicMediaUrl(brandId, url).catch(() => undefined);
+    toast.success(t("common.delete"));
+    onChanged();
   };
 
   const handleDuplicateProduct = async (productToDuplicate: Product) => {
@@ -69,23 +77,27 @@ export function useProductActions({
         }
       }
 
-      const { data: insertedProduct, error: prodErr } = await (supabase.from("products") as any)
-        .insert(duplicateProductValues(productToDuplicate, brandId, isAr))
-        .select()
-        .single();
-
-      if (prodErr || !insertedProduct) {
+      let insertedProductId: string;
+      try {
+        insertedProductId = await createProduct(
+          brandId,
+          duplicateProductValues(productToDuplicate, brandId, isAr),
+        );
+      } catch (prodErr) {
         toast.error(
-          prodErr?.message || (isAr ? "فشل تكرار المنتج" : "Failed to duplicate product"),
+          getFriendlyErrorMessage(prodErr) ||
+            (isAr ? "فشل تكرار المنتج" : "Failed to duplicate product"),
         );
         return;
       }
 
       const originalVariants = variants.filter((v) => v.product_id === productToDuplicate.id);
       if (originalVariants.length > 0) {
-        await (supabase.from("product_variants") as any).insert(
-          duplicateVariantValues(originalVariants, insertedProduct.id, brandId),
-        );
+        // Best-effort, its error is ignored as before (bug backlog #16).
+        await createVariants(
+          brandId,
+          duplicateVariantValues(originalVariants, insertedProductId, brandId),
+        ).catch(() => undefined);
       }
 
       toast.success(
@@ -126,40 +138,18 @@ export function useProductActions({
 
   /** Labels for every barcode in the store, read fresh so new variants are included. */
   const printAll = async () => {
-    const [
-      { data: freshProducts, error: productsError },
-      { data: freshVariants, error: variantsError },
-    ] = await Promise.all([
-      supabase
-        .from("products")
-        .select("id, name")
-        .eq("brand_id", brandId)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("product_variants")
-        .select("product_id, barcode, size, color, selling_price")
-        .eq("brand_id", brandId)
-        .not("barcode", "is", null)
-        .order("created_at"),
-    ]);
-
-    if (productsError || variantsError) {
+    let fresh: Awaited<ReturnType<typeof fetchBarcodeLabelData>>;
+    try {
+      fresh = await fetchBarcodeLabelData(brandId);
+    } catch (error) {
       toast.error(
-        productsError?.message ??
-          variantsError?.message ??
+        getFriendlyErrorMessage(error) ||
           (isAr ? "تعذر تحميل الباركودات" : "Could not load barcodes"),
       );
       return;
     }
 
-    const labels = barcodeLabelsFor(
-      (freshProducts ?? products) as Pick<Product, "id" | "name">[],
-      (freshVariants ?? variants) as Pick<
-        Variant,
-        "product_id" | "barcode" | "size" | "color" | "selling_price"
-      >[],
-      businessName,
-    );
+    const labels = barcodeLabelsFor(fresh.products, fresh.variants, businessName);
     if (labels.length === 0) {
       toast.error(isAr ? "لا توجد باركودات للطباعة" : "No barcodes to print");
       return;

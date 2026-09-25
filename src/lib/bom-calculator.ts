@@ -1,5 +1,3 @@
-import { supabase } from "@/integrations/supabase/client";
-
 export interface PackagingMaterial {
   id: string;
   brand_id: string;
@@ -207,91 +205,6 @@ export function calculateOrderPackagingCogs(
   // Otherwise calculate with deduction_rule breakdown (per_item * qty + per_order * 1)
   const breakdown = calculateOrderPackagingBreakdown(items, packagingMaterials);
   return breakdown.totalCost;
-}
-
-/**
- * Automatically deduct packaging stock when an order is completed.
- */
-export async function deductOrderPackagingStock(
-  brandId: string,
-  productId: string | null | undefined,
-  quantitySold: number,
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    if (!brandId || quantitySold <= 0) return { success: true };
-
-    // Check if BOM deduction is enabled for this brand
-    const { data: st } = await (supabase as any)
-      .from("business_settings")
-      .select("bom_enabled")
-      .eq("brand_id", brandId)
-      .maybeSingle();
-
-    if (st && st.bom_enabled === false) {
-      return { success: true };
-    }
-
-    // 1. If productId provided, fetch BOM items attached to this product
-    if (productId) {
-      const { data: bomItems, error } = await (supabase as any)
-        .from("product_bom_items")
-        .select(
-          "packaging_material_id, quantity_per_unit, packaging_materials(id, stock_quantity, deduction_rule)",
-        )
-        .eq("product_id", productId)
-        .eq("brand_id", brandId);
-
-      if (!error && bomItems && bomItems.length > 0) {
-        for (const item of bomItems) {
-          const mat = item.packaging_materials as any;
-          if (!mat) continue;
-          const currentQty = Number(mat.stock_quantity || 0);
-          const isPerOrder = mat.deduction_rule === "per_order";
-          const neededQty = Number(item.quantity_per_unit || 1) * (isPerOrder ? 1 : quantitySold);
-          const nextQty = Math.max(0, currentQty - neededQty);
-
-          await (supabase as any)
-            .from("packaging_materials")
-            .update({ stock_quantity: nextQty } as any)
-            .eq("id", mat.id)
-            .eq("brand_id", brandId);
-        }
-        return { success: true };
-      }
-    }
-
-    // 2. If no productId or no specific BOM, deduct from brand's distinct packaging materials
-    const { data: brandBoms } = await (supabase as any)
-      .from("product_bom_items")
-      .select(
-        "packaging_material_id, quantity_per_unit, packaging_materials(id, stock_quantity, deduction_rule)",
-      )
-      .eq("brand_id", brandId);
-
-    if (brandBoms && brandBoms.length > 0) {
-      const seen = new Set<string>();
-      for (const item of brandBoms) {
-        if (seen.has(item.packaging_material_id)) continue;
-        seen.add(item.packaging_material_id);
-        const mat = item.packaging_materials as any;
-        if (!mat) continue;
-        const currentQty = Number(mat.stock_quantity || 0);
-        const isPerOrder = mat.deduction_rule === "per_order";
-        const neededQty = Number(item.quantity_per_unit || 1) * (isPerOrder ? 1 : quantitySold);
-        const nextQty = Math.max(0, currentQty - neededQty);
-
-        await (supabase as any)
-          .from("packaging_materials")
-          .update({ stock_quantity: nextQty } as any)
-          .eq("id", mat.id)
-          .eq("brand_id", brandId);
-      }
-    }
-
-    return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Failed to deduct packaging stock" };
-  }
 }
 
 /**

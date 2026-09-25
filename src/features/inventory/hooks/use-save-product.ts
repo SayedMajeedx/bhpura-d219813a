@@ -3,6 +3,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
 import { useT } from "@/lib/i18n";
 import { useEntitlements } from "@/lib/saas-billing/use-entitlements";
+import { getFriendlyErrorMessage } from "@/lib/utils";
+import {
+  countAdminProducts,
+  countProductVariants,
+  createProduct,
+  createVariants,
+  syncVariantsWithProduct,
+  updateProduct,
+} from "@/lib/data/catalog";
 import type { Product } from "@/features/inventory/types";
 import { prefetchOptionTranslations } from "@/features/inventory/lib/option-translations";
 import {
@@ -60,49 +69,34 @@ export function useSaveProduct({
     const columns = productColumnsFrom(form);
 
     if (product) {
-      if (form.is_active) {
-        const { count, error: variantCountError } = await supabase
-          .from("product_variants")
-          .select("id", { count: "exact", head: true })
-          .eq("product_id", product.id);
-        if (variantCountError) return toast.error(variantCountError.message);
-        if (!count) {
-          // Smart default: Automatically create a standard default variant so merchant isn't blocked
-          await (supabase.from("product_variants") as any).insert({
-            user_id: user.id,
-            brand_id: brand.id,
-            product_id: product.id,
-            ...defaultVariantValues(form, isAr),
-          });
+      try {
+        if (form.is_active) {
+          const count = await countProductVariants(brand.id, product.id);
+          if (!count) {
+            // Smart default: Automatically create a standard default variant so merchant isn't blocked
+            // (best-effort, its error is ignored as before: bug backlog #16).
+            await createVariants(brand.id, [
+              {
+                user_id: user.id,
+                brand_id: brand.id,
+                product_id: product.id,
+                ...defaultVariantValues(form, isAr),
+              },
+            ]).catch(() => undefined);
+          }
         }
+        await updateProduct(brand.id, product.id, columns);
+        await syncVariantsWithProduct(brand.id, product.id, columns);
+      } catch (error) {
+        return toast.error(getFriendlyErrorMessage(error));
       }
-      const patch = columns;
-      const { error } = await (supabase as any).from("products").update(patch).eq("id", product.id);
-      if (error) return toast.error(error.message);
-      const { error: variantDefaultsError } = await (supabase.from("product_variants") as any)
-        .update({ cost_price: patch.cost_price })
-        .eq("product_id", product.id);
-      if (variantDefaultsError) return toast.error(variantDefaultsError.message);
-      const { error: inheritedPriceError } = await (supabase.from("product_variants") as any)
-        .update({ selling_price: patch.base_price, original_price: null })
-        .eq("product_id", product.id)
-        .is("original_price", null);
-      if (inheritedPriceError) return toast.error(inheritedPriceError.message);
-      const { error: saleOriginalError } = await (supabase.from("product_variants") as any)
-        .update({ original_price: patch.base_price })
-        .eq("product_id", product.id)
-        .not("original_price", "is", null);
-      if (saleOriginalError) return toast.error(saleOriginalError.message);
     } else {
       const productLimit = entitlements?.limits?.["products.limit"];
       const isUnlimited = productLimit === -1;
       if (!isUnlimited && typeof productLimit === "number" && productLimit > 0) {
-        const { count: currentProductCount } = await supabase
-          .from("products")
-          .select("id", { count: "exact", head: true })
-          .eq("brand_id", brand.id);
+        const currentProductCount = await countAdminProducts(brand.id);
 
-        if ((currentProductCount || 0) >= productLimit) {
+        if (currentProductCount >= productLimit) {
           return toast.error(
             isAr
               ? `لقد بلغت الحد الأقصى للمنتجات المسموح بها في باقتك (${productLimit} منتج). يرجى ترقية باقتك لإضافة المزيد.`
@@ -116,23 +110,22 @@ export function useSaveProduct({
         brand_id: brand.id,
         ...columns,
       };
-      const { data: newProd, error } = await (supabase.from("products") as any)
-        .insert(payload)
-        .select("id")
-        .single();
-      if (error) return toast.error(error.message);
-
-      createdProductId = newProd?.id;
+      try {
+        createdProductId = await createProduct(brand.id, payload);
+      } catch (error) {
+        return toast.error(getFriendlyErrorMessage(error));
+      }
       // Auto-create default standard variant for instant purchaseability
-      if (newProd?.id) {
-        await (supabase.from("product_variants") as any).insert({
+      // (best-effort, its error is ignored as before: bug backlog #16).
+      await createVariants(brand.id, [
+        {
           user_id: user.id,
           brand_id: brand.id,
-          product_id: newProd.id,
+          product_id: createdProductId,
           ...defaultVariantValues(form, isAr),
-        });
-        prefetchOptionTranslations([form.fabric_type], isAr);
-      }
+        },
+      ]).catch(() => undefined);
+      prefetchOptionTranslations([form.fabric_type], isAr);
     }
     commitMedia();
     if (product) {
