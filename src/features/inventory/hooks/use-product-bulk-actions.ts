@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { deleteProducts, updateProducts } from "@/lib/data/catalog";
 import { deletePublicMediaUrl } from "@/lib/r2-upload";
 import type { Product } from "@/features/inventory/types";
 
@@ -40,12 +40,7 @@ export function useProductBulkActions({
     const selectedProducts = products.filter((product) => selectedProductIds.has(product.id));
     setBulkDeleting(true);
     try {
-      const { error } = await supabase
-        .from("products")
-        .delete()
-        .eq("brand_id", brandId)
-        .in("id", ids);
-      if (error) throw error;
+      await deleteProducts(brandId, ids);
       const mediaUrls = new Set(
         selectedProducts
           .flatMap((product) => [
@@ -81,11 +76,7 @@ export function useProductBulkActions({
         bulkSelectedCategory && bulkSelectedCategory.trim() !== ""
           ? bulkSelectedCategory.trim()
           : null;
-      const { error } = await (supabase.from("products") as any)
-        .update({ category: catToSave })
-        .eq("brand_id", brandId)
-        .in("id", ids);
-      if (error) throw error;
+      await updateProducts(brandId, ids, { category: catToSave });
       toast.success(
         isAr
           ? catToSave

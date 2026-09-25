@@ -94,6 +94,22 @@ Line numbers are as of 2026-09-24 and may drift; search for the quoted code.
 - **Problem**: the name says it strips fit-passport fields before saving a product, but it strips nothing.
 - **Fix**: find out what it was meant to remove (git history, `src/addons/fit-passport/`). Implement it with a test, or delete it.
 
+### 16. Catalog writes that ignore their errors
+
+Found while moving the catalog writes into `src/lib/data/catalog` (the calls now end in `.catch(() => undefined)`, or the mutation says so, and point here).
+
+- **Where**:
+  - `hooks/use-save-product.ts`: the automatic default variant, both when an active product with no variants is saved and when a product is created.
+  - `hooks/use-product-actions.ts`, `handleDuplicateProduct`: copying the variants to the duplicate.
+  - `hooks/use-variant-mutations.ts`, `add`: setting the product's colour/option axis label.
+  - `src/lib/data/catalog/mutations.ts`, `applyBomToAllProducts` (the BOM editor's "apply to all products"): the direct-cost update and the removal of the old BOM lines.
+  - `src/lib/packaging-sync.ts`, `syncPackagingExpensesToInventory`: the cost/stock update of an existing material (counted as "updated" even when it failed), and every write in `syncSingleExpenseToPackagingMaterial`.
+- **Effect**:
+  - A product can be saved or duplicated with no variant while the success toast shows, so it cannot be bought.
+  - "Apply to all" can fail to delete the old lines and then insert the new ones, so every product has its packaging lines twice and packaging cost (COGS) doubles. It is also not atomic: a failure halfway leaves some products changed.
+  - The sync reports materials as updated when they were not.
+- **Fix**: surface the errors (toast, stop before the next step). For "apply to all", stop on the first error, ideally as one server-side transaction (RPC). In the sync, count only successful writes.
+
 ## Checkout (`src/routes/$slug.checkout.tsx`, `src/features/checkout/`)
 
 ### 12. "Choose another payment method" does nothing

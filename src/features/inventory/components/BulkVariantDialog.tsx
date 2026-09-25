@@ -16,6 +16,7 @@ import { Wand as Wand2, Boxes, RefreshCw, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
+import { createVariants, updateProduct } from "@/lib/data/catalog";
 import { parseVariantPrompt, type VariantGenerationPlan } from "@/lib/generate-variants.functions";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 
@@ -229,7 +230,8 @@ export function BulkVariantDialog({
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) throw new Error("AUTH_REQUIRED");
-      const { error } = await (supabase.from("product_variants") as any).insert(
+      await createVariants(
+        brand.id,
         rows.map((row) => ({
           user_id: user.id,
           brand_id: brand.id,
@@ -247,16 +249,14 @@ export function BulkVariantDialog({
           stock: Number(row.stock_main || 0) + Number(row.stock_incubator || 0),
         })),
       );
-      if (error) throw error;
       const batchTerms = rows.flatMap((r) => [r.color, r.fabric]);
       prefetchOptionTranslations(batchTerms, isAr);
       let activationFailed = false;
       if (variants.length === 0) {
-        const { error: activationError } = await supabase
-          .from("products")
-          .update({ is_active: true })
-          .eq("id", productId);
-        activationFailed = Boolean(activationError);
+        activationFailed = await updateProduct(brand.id, productId, { is_active: true }).then(
+          () => false,
+          () => true,
+        );
       }
       if (activationFailed) {
         toast.error(

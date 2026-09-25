@@ -1,10 +1,18 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { useBrand } from "@/lib/brand-context";
+import { getFriendlyErrorMessage } from "@/lib/utils";
+import {
+  adjustVariantStock,
+  deleteVariants,
+  updateVariant,
+  updateVariants,
+} from "@/lib/data/catalog";
 import type { Variant } from "@/features/inventory/types";
 
 /** Row selection in the variants table and the actions applied to the selection. */
 export function useVariantBulkActions(variants: Variant[], onChanged: () => void, isAr: boolean) {
+  const brandId = useBrand().id;
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const isAllSelected = variants.length > 0 && selectedIds.size === variants.length;
 
@@ -37,32 +45,31 @@ export function useVariantBulkActions(variants: Variant[], onChanged: () => void
     if (val === null) return;
     const price = Number(val);
     if (isNaN(price) || price < 0) return toast.error(isAr ? "سعر غير صالح" : "Invalid price");
-    const { error } = await supabase
-      .from("product_variants")
-      .update({ selling_price: price })
-      .in("id", Array.from(selectedIds));
-    if (error) toast.error(error.message);
-    else {
-      toast.success(isAr ? "تم تحديث الأسعار بنجاح" : "Prices updated successfully");
-      setSelectedIds(new Set());
-      onChanged();
+    try {
+      await updateVariants(brandId, Array.from(selectedIds), { selling_price: price });
+    } catch (error) {
+      toast.error(getFriendlyErrorMessage(error));
+      return;
     }
+    toast.success(isAr ? "تم تحديث الأسعار بنجاح" : "Prices updated successfully");
+    setSelectedIds(new Set());
+    onChanged();
   };
 
   const bulkAddStock = async (amount: number) => {
     const selectedVariants = variants.filter((v) => selectedIds.has(v.id));
-    const promises = selectedVariants.map((v) =>
-      (supabase.rpc as any)("rpc_adjust_variant_stock", {
-        p_variant_id: v.id,
-        p_location: "main",
-        p_mode: "delta",
-        p_value: amount,
-        p_reason: "manual_adjustment",
-        p_note: `Bulk add stock +${amount}`,
-      }),
+    const results = await Promise.allSettled(
+      selectedVariants.map((v) =>
+        adjustVariantStock({
+          variantId: v.id,
+          location: "main",
+          mode: "delta",
+          value: amount,
+          note: `Bulk add stock +${amount}`,
+        }),
+      ),
     );
-    const results = await Promise.all(promises);
-    const hasError = results.some((r: any) => r.error);
+    const hasError = results.some((r) => r.status === "rejected");
     if (hasError) toast.error(isAr ? "فشل تحديث المخزون" : "Failed to update some stock entries");
     else {
       toast.success(
@@ -84,15 +91,13 @@ export function useVariantBulkActions(variants: Variant[], onChanged: () => void
     if (isNaN(markup) || markup < 0)
       return toast.error(isAr ? "نسبة مئوية غير صالحة" : "Invalid markup percentage");
     const selectedVariants = variants.filter((v) => selectedIds.has(v.id));
-    const promises = selectedVariants.map((v) => {
-      const newPrice = v.cost_price * (1 + markup / 100);
-      return supabase
-        .from("product_variants")
-        .update({ selling_price: Number(newPrice.toFixed(3)) })
-        .eq("id", v.id);
-    });
-    const results = await Promise.all(promises);
-    const hasError = results.some((r) => r.error);
+    const results = await Promise.allSettled(
+      selectedVariants.map((v) => {
+        const newPrice = v.cost_price * (1 + markup / 100);
+        return updateVariant(brandId, v.id, { selling_price: Number(newPrice.toFixed(3)) });
+      }),
+    );
+    const hasError = results.some((r) => r.status === "rejected");
     if (hasError)
       toast.error(isAr ? "فشل تطبيق الهامش الربحي" : "Failed to apply markup on some variants");
     else {
@@ -111,16 +116,15 @@ export function useVariantBulkActions(variants: Variant[], onChanged: () => void
       )
     )
       return;
-    const { error } = await supabase
-      .from("product_variants")
-      .delete()
-      .in("id", Array.from(selectedIds));
-    if (error) toast.error(error.message);
-    else {
-      toast.success(isAr ? "تم حذف المتغيرات بنجاح" : "Variants deleted successfully");
-      setSelectedIds(new Set());
-      onChanged();
+    try {
+      await deleteVariants(brandId, Array.from(selectedIds));
+    } catch (error) {
+      toast.error(getFriendlyErrorMessage(error));
+      return;
     }
+    toast.success(isAr ? "تم حذف المتغيرات بنجاح" : "Variants deleted successfully");
+    setSelectedIds(new Set());
+    onChanged();
   };
 
   return {

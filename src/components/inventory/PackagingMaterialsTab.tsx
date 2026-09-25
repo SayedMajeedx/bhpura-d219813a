@@ -30,7 +30,13 @@ import {
 import { formatMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { syncPackagingExpensesToInventory } from "@/lib/packaging-sync";
-import { catalogKeys, catalogQueries } from "@/lib/data/catalog";
+import {
+  catalogKeys,
+  catalogQueries,
+  createPackagingMaterial,
+  deletePackagingMaterial,
+  updatePackagingMaterial,
+} from "@/lib/data/catalog";
 
 export function PackagingMaterialsTab() {
   const { lang } = useI18n();
@@ -186,12 +192,7 @@ export function PackagingMaterialsTab() {
     if (!confirm(isAr ? "هل أنت تأكد من حذف مادة التغليف هذه؟" : "Delete this packaging material?"))
       return;
     try {
-      const { error } = await (supabase as any)
-        .from("packaging_materials")
-        .delete()
-        .eq("id", id)
-        .eq("brand_id", brandId);
-      if (error) throw error;
+      await deletePackagingMaterial(brandId, id);
       toast.success(isAr ? "تمت الحذف بنجاح" : "Material deleted");
       qc.invalidateQueries({ queryKey: catalogKeys.packagingMaterials(brandId) });
     } catch (err: any) {
@@ -208,23 +209,18 @@ export function PackagingMaterialsTab() {
     setIsSaving(true);
     try {
       if (editingItem) {
-        const { error } = await (supabase as any)
-          .from("packaging_materials")
-          .update({
-            name,
-            name_ar: nameAr,
-            sku,
-            stock_quantity: stock,
-            unit_cost: unitCost,
-            reorder_level: reorderLevel,
-            deduction_rule: deductionRule,
-          } as any)
-          .eq("id", editingItem.id)
-          .eq("brand_id", brandId);
-        if (error) throw error;
+        await updatePackagingMaterial(brandId, editingItem.id, {
+          name,
+          name_ar: nameAr,
+          sku,
+          stock_quantity: stock,
+          unit_cost: unitCost,
+          reorder_level: reorderLevel,
+          deduction_rule: deductionRule,
+        });
         toast.success(isAr ? "تم التحديث بنجاح" : "Updated successfully");
       } else {
-        const { error } = await (supabase as any).from("packaging_materials").insert({
+        await createPackagingMaterial(brandId, {
           brand_id: brandId,
           name,
           name_ar: nameAr,
@@ -233,8 +229,7 @@ export function PackagingMaterialsTab() {
           unit_cost: unitCost,
           reorder_level: reorderLevel,
           deduction_rule: deductionRule,
-        } as any);
-        if (error) throw error;
+        });
         toast.success(isAr ? "تمت الإضافة بنجاح" : "Added successfully");
       }
 

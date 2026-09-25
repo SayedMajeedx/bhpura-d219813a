@@ -43,16 +43,14 @@ describe("customers and inventory bulk selection", () => {
   });
 
   it("brand-scopes both individual and bulk product deletion", () => {
-    // Product list code moved to src/features/inventory (Phase 5).
+    // Product list code moved to src/features/inventory (Phase 5); the delete
+    // itself lives in the catalog data layer (its brand filter is covered by
+    // tests/catalog-mutations.test.ts).
     const productActions = read("src/features/inventory/hooks/use-product-actions.ts");
     const bulkActions = read("src/features/inventory/hooks/use-product-bulk-actions.ts");
     const section = read("src/features/inventory/components/ProductsSection.tsx");
-    expect(productActions).toMatch(
-      /from\("products"\)[\s\S]*?\.delete\(\)[\s\S]*?\.eq\("id", id\)[\s\S]*?\.eq\("brand_id", brandId\)/,
-    );
-    expect(bulkActions).toMatch(
-      /from\("products"\)[\s\S]*?\.delete\(\)[\s\S]*?\.eq\("brand_id", brandId\)[\s\S]*?\.in\("id", ids\)/,
-    );
+    expect(productActions).toContain("deleteProducts(brandId, [id])");
+    expect(bulkActions).toContain("deleteProducts(brandId, ids)");
     expect(section).toContain("setBulkDeleteOpen(true)");
   });
 });

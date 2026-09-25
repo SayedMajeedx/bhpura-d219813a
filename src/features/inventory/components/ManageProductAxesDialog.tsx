@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +13,9 @@ import {
 import { Check, RefreshCw, Sliders } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
+import { useBrand } from "@/lib/brand-context";
+import { getFriendlyErrorMessage } from "@/lib/utils";
+import { updateProduct } from "@/lib/data/catalog";
 
 import type { Product } from "@/features/inventory/types";
 
@@ -28,6 +30,7 @@ export function ManageProductAxesDialog({
 }) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
+  const brandId = useBrand().id;
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -64,30 +67,26 @@ export function ManageProductAxesDialog({
   const handleSave = async () => {
     setSaving(true);
     try {
-      const { error } = await (supabase.from("products") as any)
-        .update({
-          variant_label_size_ar: form.variant_label_size_ar.trim() || null,
-          variant_label_size_en: form.variant_label_size_en.trim() || null,
-          variant_label_color_ar: form.variant_label_color_ar.trim() || null,
-          variant_label_color_en: form.variant_label_color_en.trim() || null,
-          variant_label_fabric_ar: form.variant_label_fabric_ar.trim() || null,
-          variant_label_fabric_en: form.variant_label_fabric_en.trim() || null,
-          variant_label_four_ar: form.variant_label_four_ar.trim() || null,
-          variant_label_four_en: form.variant_label_four_en.trim() || null,
-          variant_label_five_ar: form.variant_label_five_ar.trim() || null,
-          variant_label_five_en: form.variant_label_five_en.trim() || null,
-        })
-        .eq("id", productId);
-
-      if (error) throw error;
+      await updateProduct(brandId, productId, {
+        variant_label_size_ar: form.variant_label_size_ar.trim() || null,
+        variant_label_size_en: form.variant_label_size_en.trim() || null,
+        variant_label_color_ar: form.variant_label_color_ar.trim() || null,
+        variant_label_color_en: form.variant_label_color_en.trim() || null,
+        variant_label_fabric_ar: form.variant_label_fabric_ar.trim() || null,
+        variant_label_fabric_en: form.variant_label_fabric_en.trim() || null,
+        variant_label_four_ar: form.variant_label_four_ar.trim() || null,
+        variant_label_four_en: form.variant_label_four_en.trim() || null,
+        variant_label_five_ar: form.variant_label_five_ar.trim() || null,
+        variant_label_five_en: form.variant_label_five_en.trim() || null,
+      });
 
       toast.success(
         isAr ? "تم حفظ وتحديث خصائص ومحاور المنتج بنجاح!" : "Variant axes updated successfully!",
       );
       setOpen(false);
       onChanged();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update axes");
+    } catch (err) {
+      toast.error(getFriendlyErrorMessage(err) || "Failed to update axes");
     } finally {
       setSaving(false);
     }
