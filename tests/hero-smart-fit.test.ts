@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import fs from "fs";
+import fs, { readdirSync } from "fs";
 import path from "path";
 import {
   aspectFromSize,
@@ -8,6 +8,19 @@ import {
   isValidAspect,
 } from "../src/lib/media-aspect";
 import { imageWidths } from "../src/lib/media-delivery";
+
+// The storefront shell is split across its route and src/features/storefront-shell (Phase 5).
+const shellSource = () =>
+  [
+    "src/routes/$slug.route.tsx",
+    ...["components", "lib"].flatMap((dir) =>
+      readdirSync(`src/features/storefront-shell/${dir}`)
+        .sort()
+        .map((file) => `src/features/storefront-shell/${dir}/${file}`),
+    ),
+  ]
+    .map((file) => fs.readFileSync(file, "utf-8"))
+    .join("\n");
 
 const WIDESCREEN = 16 / 9;
 
@@ -62,10 +75,7 @@ describe("hero smart fit", () => {
   });
 
   it("the storefront header draws its hairline without adding layout height", () => {
-    const routeCode = fs.readFileSync(
-      path.resolve(__dirname, "../src/routes/$slug.route.tsx"),
-      "utf-8",
-    );
+    const routeCode = shellSource();
     expect(routeCode).toContain('boxShadow: "inset 0 -1px 0 rgba(0, 0, 0, 0.08)"');
     expect(routeCode).not.toContain('borderBottom: "1px solid rgba(0, 0, 0, 0.08)"');
   });

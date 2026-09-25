@@ -18,6 +18,19 @@ const productPageSource = () =>
 
 const read = (p: string) => readFileSync(resolve(process.cwd(), p), "utf8");
 
+// The storefront shell is split across its route and src/features/storefront-shell (Phase 5).
+const shellSource = () =>
+  [
+    "src/routes/$slug.route.tsx",
+    ...["components", "lib"].flatMap((dir) =>
+      readdirSync(`src/features/storefront-shell/${dir}`)
+        .sort()
+        .map((file) => `src/features/storefront-shell/${dir}/${file}`),
+    ),
+  ]
+    .map((file) => read(file))
+    .join("\n");
+
 /**
  * Regressions found by driving the real storefront and admin in a browser.
  * Each test pins a specific defect that was measured, not inferred.
@@ -25,11 +38,12 @@ const read = (p: string) => readFileSync(resolve(process.cwd(), p), "utf8");
 
 describe("consent banner does not cover the mobile purchase bar", () => {
   it("renders inside the storefront shell", () => {
-    const route = read("src/routes/$slug.route.tsx");
+    const route = shellSource();
+    const shell = read("src/features/storefront-shell/components/StoreShell.tsx");
     // Mounted outside the shell it inherited the admin font stack and pulled
     // ~229 KB of fonts (Readex Pro + Zarid Display) nothing else uses.
-    const shellIndex = route.indexOf("storefront-shell");
-    const analyticsIndex = route.lastIndexOf("<StorefrontAnalytics />");
+    const shellIndex = shell.indexOf('"storefront-shell ');
+    const analyticsIndex = shell.lastIndexOf("<StorefrontAnalytics />");
     expect(shellIndex).toBeGreaterThan(-1);
     expect(analyticsIndex).toBeGreaterThan(shellIndex);
     // And it must not also sit next to <StoreShell /> any more.
@@ -137,7 +151,7 @@ describe("footer layout value mismatch", () => {
   });
 
   it("routes the storefront footer through the shared resolver", () => {
-    const route = read("src/routes/$slug.route.tsx");
+    const route = shellSource();
     expect(route).toContain('resolveFooterVariant(settings) === "columns"');
     // The old hand-rolled condition must be gone so the two cannot diverge.
     expect(route).not.toContain('settings?.footer_layout !== "simple" &&');

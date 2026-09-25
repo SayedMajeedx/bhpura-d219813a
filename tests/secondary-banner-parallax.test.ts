@@ -4,6 +4,19 @@ import { resolve } from "node:path";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
+// The storefront shell is split across its route and src/features/storefront-shell (Phase 5).
+const shellSource = () =>
+  [
+    "src/routes/$slug.route.tsx",
+    ...["components", "lib"].flatMap((dir) =>
+      readdirSync(`src/features/storefront-shell/${dir}`)
+        .sort()
+        .map((file) => `src/features/storefront-shell/${dir}/${file}`),
+    ),
+  ]
+    .map((file) => read(file))
+    .join("\n");
+
 // The home page is split across its route and src/features/storefront-home (Phase 5).
 const homeSource = () =>
   [
@@ -19,7 +32,7 @@ const homeSource = () =>
 
 describe("secondary banner parallax guardrails", () => {
   it("defaults the per-store feature off and exposes it through public settings", () => {
-    const route = read("src/routes/$slug.route.tsx");
+    const route = shellSource();
     const migration = read(
       "supabase/migrations/20260813173000_add_secondary_banner_backgrounds.sql",
     );
