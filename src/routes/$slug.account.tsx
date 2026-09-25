@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate, Navigate } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useStorefront, formatPrice, useStoreModules } from "@/lib/storefront-context";
 import { cn, getFriendlyErrorMessage } from "@/lib/utils";
 import {
@@ -15,6 +14,7 @@ import {
   type OwnAddress,
   type OwnCustomer,
 } from "@/lib/data/customers";
+import { returnsQueries } from "@/lib/data/returns";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { OsEmptyState } from "@/components/os/os-empty-state";
@@ -275,40 +275,7 @@ function AccountPage() {
     data: customerReturns = [],
     isLoading: loadingReturns,
     refetch: refetchReturns,
-  } = useQuery({
-    queryKey: ["storefront-account-returns", brand.id, customer?.id],
-    enabled: !!brand.id && !!customer?.id,
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("return_requests")
-        .select(
-          `
-          id,
-          return_number,
-          status,
-          type,
-          created_at,
-          net_refund_amount,
-          reason,
-          order:orders (
-            invoice_number,
-            total
-          ),
-          items:return_items (
-            id,
-            quantity,
-            unit_price,
-            product:products (name_ar, name_en)
-          )
-        `,
-        )
-        .eq("brand_id", brand.id)
-        .eq("customer_id", customer!.id)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data as any[]) || [];
-    },
-  });
+  } = useQuery(returnsQueries.customer(brand.id, customer?.id ?? ""));
 
   const [returnModalOrder, setReturnModalOrder] = useState<any>(null);
 

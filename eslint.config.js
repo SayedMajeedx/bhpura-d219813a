@@ -145,7 +145,7 @@ export default tseslint.config(
         },
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(customers|customer_addresses|orders|order_items|profiles)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(customers|customer_addresses|orders|order_items|return_requests|brand_return_policies|profiles)$/]",
           message:
             "The shopper's own records and orders go through `@/lib/data/customers` (ownCustomerQueries, fetchOwnCustomer, the customer mutations) and `@/lib/data/storefront` (orderConfirmation).",
         },
@@ -312,7 +312,7 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(business_settings|brands|profiles)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(business_settings|brands|brand_return_policies|profiles)$/]",
           message:
             "Settings go through `@/lib/data/business-settings` and `@/lib/data/brands` (queries and mutations), not direct Supabase calls.",
         },
@@ -443,6 +443,28 @@ export default tseslint.config(
           selector:
             "ArrayExpression > Literal:first-child[value=/^(incubators.*|incubator_.*|brand_products_for_incubator|batch-transfer-variants-with-allocations|inventory_(variants|products))$/]",
           message: "Build these cache keys with `incubatorsKeys` (or `invalidateIncubators`).",
+        },
+      ],
+    },
+  },
+  {
+    // Returns data layer: the return policy is read and saved through
+    // `@/lib/data/returns`. (The admin returns list, detail and dialogs still
+    // read directly until bug backlog #22 is fixed.)
+    files: ["src/components/returns/ReturnPolicyEditor.tsx"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(brand_return_policies|profiles)$/]",
+          message:
+            "The return policy goes through `@/lib/data/returns` (returnsQueries.policy, saveReturnPolicy).",
+        },
+        {
+          selector:
+            "ArrayExpression > Literal:first-child[value=/^(brand-return-policy|readiness-return-policy|storefront-return-policy)$/]",
+          message: "Use `returnsKeys.policy` (or `invalidateReturns`).",
         },
       ],
     },

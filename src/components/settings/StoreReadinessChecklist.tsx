@@ -25,6 +25,11 @@ import { useAddons } from "@/components/addons/AddonsProvider";
 import { readinessChecksFrom } from "@/lib/addons/addon-registry";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { brandQueries } from "@/lib/data/brands";
+import { returnsQueries, type ReturnPolicyRow } from "@/lib/data/returns";
+
+/** Whether the policy has written terms in either language (counts as a policy page). */
+const hasPolicyTerms = (policy: ReturnPolicyRow | null) =>
+  Boolean(policy?.policy_terms_ar || policy?.policy_terms_en);
 
 export interface BusinessSettingsData {
   logo_url?: string | null;
@@ -460,17 +465,8 @@ export function StoreReadinessChecklist({
 
   // 3. Query return policy terms as an alternative fulfillment for policy requirement
   const returnPolicyQ = useQuery({
-    queryKey: ["readiness-return-policy", brandId],
-    enabled: Boolean(brandId),
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("brand_return_policies")
-        .select("id, policy_terms_ar, policy_terms_en")
-        .eq("brand_id", brandId)
-        .maybeSingle();
-      if (error) return false;
-      return Boolean(data?.policy_terms_ar || data?.policy_terms_en);
-    },
+    ...returnsQueries.policy(brandId),
+    select: hasPolicyTerms,
   });
 
   // 4. The brand's profile (logo), shared with the settings form

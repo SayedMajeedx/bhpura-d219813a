@@ -136,6 +136,15 @@ Found while moving the catalog writes into `src/lib/data/catalog` (the calls now
 - **Effect**: a failed move shows no error and the list simply refreshes into the old (or a half-applied) order.
 - **Fix**: read the errors and toast on failure; ideally one RPC that rewrites the order in a transaction.
 
+## Returns (`src/routes/_authenticated/admin.b.$slug.returns.*`, `src/components/returns/`)
+
+### 22. The admin returns screens ask for variant columns that do not exist
+
+- **Where**: the returns list (`admin.b.$slug.returns.index.tsx`) and detail (`admin.b.$slug.returns.$id.tsx`) select `variant:product_variants (id, variant_name, sku, stock_quantity)`; `ReturnExchangeDialog.tsx` selects `variant_name` and `stock_quantity` from `product_variants`; `ReturnInspectionDialog.tsx` reads `item.variant?.stock_quantity`.
+- **Problem**: `product_variants` has no `variant_name` and no `stock_quantity` column (checked live 2026-09-25; the stock is `stock_main`, and a variant's name comes from its option columns and SKU). PostgREST fails the whole request when a selected column is missing. This has been so since the returns system shipped (`c7fb1b68`, 2026-08-29).
+- **Effect**: the admin returns list always loads as empty, a return's detail page cannot load, the exchange dialog offers no replacement variants, and inspection shows a stock of 0. Production has 0 returns so far, so nobody has hit it.
+- **Fix**: select `sku, size, color, stock_main` (and the option columns) instead; show the variant as its option values or SKU (the order screens' convention, see `describeVariantAxes`) and the stock as `stock_main`; update `src/lib/returns.types.ts`. Then move the admin returns reads into `@/lib/data/returns` (typed, so a missing column fails the build) and add a browser test for the returns list.
+
 ## Checkout (`src/routes/$slug.checkout.tsx`, `src/features/checkout/`)
 
 ### 19. The thank-you page's order lookup can never read the order
