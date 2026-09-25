@@ -3,7 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getBenefitReceiptViewUrl } from "@/lib/benefit-receipt.functions";
 import { queryKeys } from "@/lib/query-keys";
-import type { Order, SavedAddress } from "@/features/orders/types";
+import type { SavedAddress } from "@/features/orders/types";
+import { ordersKeys, ordersQueries } from "@/lib/data/orders";
 
 /**
  * Everything the order editor reads: the order (polled, plus realtime updates),
@@ -24,31 +25,8 @@ export function useOrderDetailData({
 }) {
   const qc = useQueryClient();
   const orderQ = useQuery({
-    queryKey: ["order", id, isCourier ? "assigned-courier" : "office"],
-    // A courier can be working from a phone with an intermittent realtime
-    // socket. Keep both courier and office views synchronized regardless.
-    refetchInterval: isCourier ? 10_000 : 30_000,
-    refetchOnWindowFocus: true,
+    ...ordersQueries.detail(brandId, id, isCourier ? "assigned-courier" : "office"),
     enabled: id !== "new",
-    queryFn: async () => {
-      let query = supabase
-        .from("orders")
-        .select(
-          "*, customers(*), order_items(*), shipping_address:customer_addresses!orders_shipping_address_id_fkey(*)",
-        )
-        .eq("id", id);
-      if (isCourier) {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) throw new Error("Not authenticated");
-        query = (query as any).eq("assigned_to", user.id).eq("fulfillment_method", "delivery");
-      }
-      const { data, error } = await query.maybeSingle();
-      if (error) throw error;
-      if (!data) throw new Error("Order not found. It may have been deleted.");
-      return data as Order;
-    },
   });
 
   useEffect(() => {
@@ -58,8 +36,7 @@ export function useOrderDetailData({
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${id}` },
         () => {
-          void qc.invalidateQueries({ queryKey: ["order", id] });
-          void qc.invalidateQueries({ queryKey: ["orders", brandId] });
+          void qc.invalidateQueries({ queryKey: ordersKeys.all(brandId) });
         },
       )
       .on(

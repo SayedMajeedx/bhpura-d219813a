@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useT, useI18n } from "@/lib/i18n";
 import { logActivityBatch } from "@/lib/activity-log";
-import type { Order, OrderItem as Item } from "@/features/orders/types";
+import type { Order, OrderItem as Item, OrderSnapshot } from "@/features/orders/types";
 import {
   normalizeOrderMin,
   orderItemFromRow,
@@ -48,11 +48,11 @@ export function useSaveOrder({
   brandId: string;
   currency: string;
   id: string;
-  initialSnapshotRef: React.MutableRefObject<{ order: Order; items: OrderItem[] } | null>;
+  initialSnapshotRef: React.MutableRefObject<OrderSnapshot | null>;
   isReadOnly: boolean;
   items: OrderItem[];
   lang: ReturnType<typeof useI18n>["lang"];
-  order: Order;
+  order: Order | null;
   orderQ: OrderDetailData["orderQ"];
   qc: ReturnType<typeof useQueryClient>;
   router: ReturnType<typeof useRouter>;
@@ -66,7 +66,7 @@ export function useSaveOrder({
   totals: ReturnType<typeof orderTotals>;
 }) {
   const save = async () => {
-    if (isReadOnly) return;
+    if (isReadOnly || !order) return;
     const saveBlocker = orderSaveBlocker(order, items, id, lang);
     if (saveBlocker) return toast.error(saveBlocker);
     setSaving(true);
@@ -161,7 +161,7 @@ export function useSaveOrder({
 
     // Refetch fresh order from Supabase to sync local state and snapshot
     const refetched = await orderQ.refetch();
-    const freshOrder = (refetched.data ?? order) as any;
+    const freshOrder = refetched.data ?? order;
     setOrder(freshOrder);
 
     const loadedItems: Item[] = (freshOrder.order_items ?? []).map(orderItemFromRow);

@@ -36,7 +36,8 @@ src/lib/data/<domain>/
 | Domain                                                                        | Folder        | Enforced by ESLint                                   |
 | ----------------------------------------------------------------------------- | ------------- | ---------------------------------------------------- |
 | Public storefront catalog (products, categories, rankings, search, page data) | `storefront/` | `src/routes/$slug.*`, `src/components/storefront/**` |
-| Orders, admin products and inventory, customers, settings                     | not yet       | —                                                    |
+| Admin orders: queue and order detail reads (`ordersQueries`, `ordersKeys`)    | `orders/`     | not yet (order writes still direct; next step)       |
+| Admin products and inventory, customers, settings                             | not yet       | —                                                    |
 
 Usage:
 

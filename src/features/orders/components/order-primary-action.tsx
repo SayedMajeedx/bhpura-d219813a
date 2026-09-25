@@ -58,7 +58,7 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
     vocabulary,
   } = ctx;
   if (isCreationMode || !order || isReadOnly) return null;
-  const computedOrderType = detectOrderType(items, order?.order_type);
+  const computedOrderType = detectOrderType(items);
   const workflow = getOrderWorkflow(
     { ...order, order_type: computedOrderType },
     { productionStages: storeProfile.modules.made_to_order },

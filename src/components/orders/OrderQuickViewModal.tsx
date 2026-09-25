@@ -24,6 +24,7 @@ import {
 import { useProfile } from "@/lib/profile-context";
 import { getStoredPaymentMethodPresentation } from "@/lib/payment-method";
 import { orderRequiresCourier } from "@/lib/order-fulfillment";
+import type { OrderListRow } from "@/lib/data/orders";
 
 interface OrderQuickViewModalProps {
   lang: "ar" | "en";
@@ -32,8 +33,8 @@ interface OrderQuickViewModalProps {
   couriers?: any[];
   onClose: () => void;
   onCopyInvoice: (orderId: string) => void;
-  onPrintThermal: (order: any) => void;
-  onWhatsAppCustomer: (order: any) => void;
+  onPrintThermal: (order: OrderListRow) => void;
+  onWhatsAppCustomer: (order: OrderListRow) => void;
   onWhatsAppCourier?: (order: any, courier: any) => void;
 }
 

@@ -1658,7 +1658,7 @@ function AddressManager({
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["customer_addresses"] });
     qc.invalidateQueries({ queryKey: ["customer_addresses", customerId] });
-    qc.invalidateQueries({ queryKey: ["order"] });
+    qc.invalidateQueries({ queryKey: ["orders"] });
   };
 
   const setDefault = async (id: string) => {

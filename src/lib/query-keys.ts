@@ -1,3 +1,5 @@
+import { ordersKeys } from "@/lib/data/orders/keys";
+
 /**
  * Centralized React Query Key Factory for Boutq OS
  *
@@ -15,17 +17,9 @@ export const queryKeys = {
     storeProfile: (brandId: string) => ["store-profile", brandId] as const,
   },
 
-  // Orders
+  // Orders: lists and details live in `@/lib/data/orders` (`ordersKeys`).
   orders: {
-    all: (brandId: string) => ["orders", brandId] as const,
-    list: (brandId: string, scope?: string) =>
-      scope ? (["orders", brandId, scope] as const) : (["orders", brandId] as const),
-    detail: (brandId: string, orderId: string) => ["orders", brandId, orderId] as const,
-    items: (brandId: string, orderId: string) => ["orders", brandId, orderId, "items"] as const,
-    activities: (brandId: string, orderId?: string) =>
-      orderId
-        ? (["orders", brandId, orderId, "activities"] as const)
-        : (["orders", brandId, "activities"] as const),
+    all: ordersKeys.all,
   },
 
   // Customers

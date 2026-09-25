@@ -25,6 +25,7 @@ import {
   normalizeTypography,
   typographyVariables,
 } from "@/lib/typography";
+import { ordersKeys, type OrderDetail } from "@/lib/data/orders";
 
 type BrandRow = {
   id: string;
@@ -408,10 +409,14 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
           label: translated[lang],
         });
       } else if (isOrderRoute) {
-        const cachedOrder =
-          (queryClient.getQueryData(["order", trailingSegment, "office"]) as any) ||
-          (queryClient.getQueryData(["order", trailingSegment, "assigned-courier"]) as any) ||
-          (queryClient.getQueryData(["order", trailingSegment]) as any);
+        const cachedOrder = activeBrand?.id
+          ? (queryClient.getQueryData<OrderDetail>(
+              ordersKeys.detail(activeBrand.id, trailingSegment, "office"),
+            ) ??
+            queryClient.getQueryData<OrderDetail>(
+              ordersKeys.detail(activeBrand.id, trailingSegment, "assigned-courier"),
+            ))
+          : undefined;
         const invoiceNum = orderNumberQuery.data?.invoice_number ?? cachedOrder?.invoice_number;
         const orderLabel = invoiceNum
           ? `${lang === "ar" ? "الطلب" : "Order"} #${invoiceNum}`

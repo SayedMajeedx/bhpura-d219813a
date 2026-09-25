@@ -62,7 +62,7 @@ export function OrderBatchActionsBar({
           size="sm"
           className="h-8 gap-1.5 text-xs"
           disabled={allFilteredOrdersSelected}
-          onClick={() => setSelectedOrderIds(new Set(sortedOrders.map((order: any) => order.id)))}
+          onClick={() => setSelectedOrderIds(new Set(sortedOrders.map((order) => order.id)))}
         >
           <CheckSquare className="h-3.5 w-3.5" />
           {lang === "ar" ? "تحديد الكل" : "Select all"}

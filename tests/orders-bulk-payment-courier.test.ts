@@ -58,7 +58,10 @@ describe("orders list payment and courier rules", () => {
       "utf8",
     );
     expect(routeSource).toContain("order: updatedOrder");
-    expect(pageSource).toContain("qc.setQueriesData<any[]>");
+    // In-place updates target list keys only, never an open order's detail.
+    expect(pageSource).toContain(
+      "qc.setQueriesData<OrderListRow[]>({ queryKey: ordersKeys.lists(brandId) }",
+    );
     expect(pageSource).toContain('await qc.invalidateQueries({ queryKey: ["orders", brandId] })');
   });
 });

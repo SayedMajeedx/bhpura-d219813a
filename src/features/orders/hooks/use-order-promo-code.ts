@@ -23,7 +23,7 @@ export function useOrderPromoCode({
   brand: ReturnType<typeof useBrand>;
   items: OrderItem[];
   lang: ReturnType<typeof useI18n>["lang"];
-  order: Order;
+  order: Order | null;
   promoInput: string;
   setAppliedPromo: Dispatch<SetStateAction<{ code: string; id: string; amount: number } | null>>;
   setCheckingPromo: Dispatch<SetStateAction<boolean>>;

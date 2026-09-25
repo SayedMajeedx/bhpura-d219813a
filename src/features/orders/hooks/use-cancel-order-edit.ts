@@ -1,5 +1,5 @@
 import { useI18n } from "@/lib/i18n";
-import type { Order } from "@/features/orders/types";
+import type { Order, OrderSnapshot } from "@/features/orders/types";
 import type { Dispatch, SetStateAction } from "react";
 import type { OrderItem } from "@/features/orders/types";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
@@ -18,7 +18,7 @@ export function useCancelOrderEdit({
   setOrder,
   setPromoInput,
 }: {
-  initialSnapshotRef: React.MutableRefObject<{ order: Order; items: OrderItem[] } | null>;
+  initialSnapshotRef: React.MutableRefObject<OrderSnapshot | null>;
   isDirty: boolean;
   lang: ReturnType<typeof useI18n>["lang"];
   orderQ: OrderDetailData["orderQ"];
@@ -47,14 +47,14 @@ export function useCancelOrderEdit({
       setOrder((current: any) => ({ ...(current ?? {}), ...snapshot.order }));
       setItems(snapshot.items.map((item) => ({ ...item })));
     }
-    const savedPromo = (orderQ.data as any)?.promo_code ?? null;
+    const savedPromo = orderQ.data?.promo_code ?? null;
     setPromoInput(savedPromo ?? "");
     setAppliedPromo(
       savedPromo
         ? {
             code: savedPromo,
-            id: (orderQ.data as any)?.promo_code_id ?? "",
-            amount: Number((orderQ.data as any)?.discount ?? 0),
+            id: orderQ.data?.promo_code_id ?? "",
+            amount: Number(orderQ.data?.discount ?? 0),
           }
         : null,
     );

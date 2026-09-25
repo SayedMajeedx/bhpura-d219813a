@@ -33,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { OrderListRow } from "@/lib/data/orders";
 
 interface OrdersWorkQueueProps {
   lang: "en" | "ar";
@@ -41,15 +42,15 @@ interface OrdersWorkQueueProps {
   couriers?: any[];
   isLoading: boolean;
   isError: boolean;
-  getPaymentBadge: (order: any) => { label: string; className: string } | null;
-  getFulfillmentBadge: (order: any) => { label: string; classes: string } | null;
-  renderPrimaryAction: (order: any) => React.ReactNode;
+  getPaymentBadge: (order: OrderListRow) => { label: string; className: string } | null;
+  getFulfillmentBadge: (order: OrderListRow) => { label: string; classes: string } | null;
+  renderPrimaryAction: (order: OrderListRow) => React.ReactNode;
   onCopyInvoice: (orderId: string) => void;
-  onPrintThermal: (order: any) => void;
-  onWhatsAppCustomer: (order: any) => void;
+  onPrintThermal: (order: OrderListRow) => void;
+  onWhatsAppCustomer: (order: OrderListRow) => void;
   onWhatsAppCourier?: (order: any, courier: any) => void;
   onAssignCourier?: (orderId: string, courierId: string) => void;
-  onQuickViewOrder: (order: any) => void;
+  onQuickViewOrder: (order: OrderListRow) => void;
   onDeleteOrder?: (orderId: string) => void;
   selectedOrderIds: ReadonlySet<string>;
   onToggleOrder: (orderId: string, selected: boolean) => void;

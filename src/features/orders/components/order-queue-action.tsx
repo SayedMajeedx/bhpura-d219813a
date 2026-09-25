@@ -7,6 +7,7 @@ import { resolvePaymentStatus } from "@/lib/payment-status";
 import { Loader2 } from "lucide-react";
 import { getOrderWorkflow } from "@/lib/order-workflow";
 import { useVocabulary } from "@/hooks/use-vocabulary";
+import { ordersKeys, type OrderListRow } from "@/lib/data/orders";
 
 import { authenticatedJsonHeaders } from "@/features/orders/actions/order-links";
 import type { Dispatch, SetStateAction } from "react";
@@ -88,7 +89,7 @@ export function queueActionState(ctx: OrderQueueActionContext, o: Order) {
       }>();
       if (!res.ok) throw new Error(data.error_ar && lang === "ar" ? data.error_ar : data.error);
       if (data.order) {
-        qc.setQueriesData<any[]>({ queryKey: ["orders", brandId] }, (current) =>
+        qc.setQueriesData<OrderListRow[]>({ queryKey: ordersKeys.lists(brandId) }, (current) =>
           current?.map((item) =>
             item.id === o.id
               ? {

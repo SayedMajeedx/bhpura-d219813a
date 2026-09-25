@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
+import { ordersKeys } from "@/lib/data/orders";
 
 import type { Dispatch, SetStateAction } from "react";
 
@@ -36,7 +37,7 @@ export function useCompleteDelivery({
       );
       return;
     }
-    const ordersQueryKey = ["orders", brandId, isCourier ? "assigned-courier" : "office"];
+    const ordersQueryKey = ordersKeys.list(brandId, isCourier ? "assigned-courier" : "office");
     const previousOrders = qc.getQueryData<any[]>(ordersQueryKey);
     setUpdatingOrderId(order.id);
     setIsSubmittingCash(true);
@@ -106,7 +107,7 @@ export function useCompleteDelivery({
       setCashModalOrder(null);
       setCashCollectedAmount("");
       setCashModalNotes("");
-      qc.invalidateQueries({ queryKey: ["orders", brandId] });
+      qc.invalidateQueries({ queryKey: ordersKeys.all(brandId) });
     } catch (err: any) {
       qc.setQueryData(ordersQueryKey, previousOrders);
       toast.error(err.message || "Failed to complete delivery");
