@@ -26,6 +26,19 @@ export const ordersKeys = {
   cogs: (brandId: string, from: string, to: string) =>
     [...ordersKeys.all(brandId), "cogs", from, to] as const,
 
+  /** Readers outside the queue and editor (see `readers.ts`). */
+  customerMetrics: (brandId: string) => [...ordersKeys.all(brandId), "customer-metrics"] as const,
+  customerOrders: (brandId: string, customerId: string) =>
+    [...ordersKeys.all(brandId), "customer", customerId] as const,
+  promoUsage: (brandId: string) => [...ordersKeys.all(brandId), "promo-usage"] as const,
+  variantSales: (brandId: string, days: number) =>
+    [...ordersKeys.all(brandId), "variant-sales", days] as const,
+  exportRows: (brandId: string) => [...ordersKeys.all(brandId), "export"] as const,
+  story: (brandId: string, orderId: string) =>
+    [...ordersKeys.all(brandId), "story", orderId] as const,
+  invoiceNumber: (brandId: string, orderId: string) =>
+    [...ordersKeys.all(brandId), "invoice-number", orderId] as const,
+
   details: (brandId: string) => [...ordersKeys.all(brandId), "detail"] as const,
   /** Without `scope`, matches the order in every scope (use it to invalidate). */
   detail: (brandId: string, orderId: string, scope?: OrderScope) =>

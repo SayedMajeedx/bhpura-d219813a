@@ -52,7 +52,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { buildCustomerCrmStats, type CustomerMetricOrder } from "@/lib/commerce-metrics";
+import { buildCustomerCrmStats } from "@/lib/commerce-metrics";
 import { getNavFilterContext, saveNavFilterContext } from "@/lib/os-productivity";
 import { queryKeys } from "@/lib/query-keys";
 import {
@@ -69,7 +69,7 @@ import {
   updateCustomerAddress,
   type CustomerAddressRow,
 } from "@/lib/data/customers";
-import { invalidateOrders } from "@/lib/data/orders";
+import { invalidateOrders, ordersQueries } from "@/lib/data/orders";
 import { getFriendlyErrorMessage } from "@/lib/utils";
 import { parseCSV } from "@/lib/csv-parser";
 import { sanitizeGCCPhone } from "@/lib/os-formatting";
@@ -855,17 +855,8 @@ function CustomersPage() {
   const currency = businessName.data?.currency ?? "BHD";
 
   const ordersQ = useQuery({
-    queryKey: ["customer-orders", brandId],
-    staleTime: 30_000,
+    ...ordersQueries.customerMetrics(brandId),
     refetchOnWindowFocus: false,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("id, customer_id, total, created_at, status, payment_status, fulfillment_status")
-        .eq("brand_id", brandId);
-      if (error) throw error;
-      return data as Array<CustomerMetricOrder & { id: string }>;
-    },
   });
 
   const customerCrmStats = useMemo(

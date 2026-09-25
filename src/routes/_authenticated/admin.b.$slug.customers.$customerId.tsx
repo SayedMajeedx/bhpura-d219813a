@@ -21,7 +21,7 @@ import {
   RefreshCw,
   UserPlus,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { ordersQueries } from "@/lib/data/orders";
 import {
   customersKeys,
   customersQueries,
@@ -129,21 +129,7 @@ function CustomerProfilePage() {
 
   const addressesQ = useQuery(customersQueries.customerAddresses(brand.id, customerId));
 
-  const ordersQ = useQuery({
-    queryKey: ["customer-profile-orders", brand.id, customerId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select(
-          "id, invoice_number, order_date, status, fulfillment_status, payment_status, fulfillment_method, advance_paid, payment_method, total, currency",
-        )
-        .eq("brand_id", brand.id)
-        .eq("customer_id", customerId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data as CustomerOrder[];
-    },
-  });
+  const ordersQ = useQuery(ordersQueries.customerOrders(brand.id, customerId));
 
   const PAGE_SIZE = 8;
   const [currentPage, setCurrentPage] = useState(1);

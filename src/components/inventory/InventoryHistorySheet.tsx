@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchInvoiceNumbers } from "@/lib/data/orders";
 import { useI18n } from "@/lib/i18n";
 import {
   History,
@@ -206,11 +207,8 @@ export function InventoryHistorySheet({
         ),
       );
       if (orderIds.length > 0) {
-        const { data: ords } = await supabase
-          .from("orders")
-          .select("id, invoice_number")
-          .in("id", orderIds);
-        if (ords) {
+        const ords = await fetchInvoiceNumbers(brandId, orderIds);
+        if (ords.length > 0) {
           const map: Record<string, { invoice_number: string }> = {};
           ords.forEach((o: any) => {
             map[o.id] = { invoice_number: o.invoice_number };

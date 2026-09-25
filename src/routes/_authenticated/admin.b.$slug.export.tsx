@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { ordersQueries } from "@/lib/data/orders";
 import { customersQueries } from "@/lib/data/customers";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
@@ -86,29 +87,7 @@ function ExportCenterPage() {
 
   const { data: customers = [] } = useQuery(customersQueries.exportRows(brandId));
 
-  const { data: orders = [] } = useQuery({
-    queryKey: ["export-orders", brandId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select(
-          `
-          id, invoice_number, total, subtotal, shipping, discount, tax_amount,
-          payment_method, payment_status, status, fulfillment_status, delivery_notes, created_at, customer_id,
-          order_items (
-            id, description, quantity, unit_price, unit_cost, line_total
-          )
-        `,
-        )
-        .eq("brand_id", brandId)
-        .order("created_at", { ascending: false });
-      if (error) {
-        console.error("Failed to query orders for export:", error);
-        return [];
-      }
-      return data || [];
-    },
-  });
+  const { data: orders = [] } = useQuery(ordersQueries.exportRows(brandId));
 
   const { data: expenses = [] } = useQuery({
     queryKey: ["export-expenses", brandId],

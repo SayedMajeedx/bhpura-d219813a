@@ -189,9 +189,9 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(products|product_variants|product_bom_items|packaging_materials|business_settings)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(products|product_variants|product_bom_items|packaging_materials|business_settings|orders|order_items)$/]",
           message:
-            "The admin catalog goes through `@/lib/data/catalog` and the settings row through `@/lib/data/business-settings`, not direct Supabase calls.",
+            "The admin catalog, the settings row and orders go through `@/lib/data/{catalog,business-settings,orders}`, not direct Supabase calls.",
         },
         {
           selector:
@@ -205,7 +205,7 @@ export default tseslint.config(
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(products|variants|packaging-materials|product-bom-items(-all)?)$/]",
+            "ArrayExpression > Literal:first-child[value=/^(products|variants|packaging-materials|product-bom-items(-all)?|inventory-sales-past45)$/]",
           message: "Build these cache keys with `catalogKeys` (or `invalidateCatalog`).",
         },
       ],
@@ -232,9 +232,9 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(customers|customer_addresses|business_settings)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(customers|customer_addresses|business_settings|orders|order_items)$/]",
           message:
-            "Customers and saved addresses go through `@/lib/data/customers` and the settings row through `@/lib/data/business-settings`, not direct Supabase calls.",
+            "Customers, the settings row and orders go through `@/lib/data/{customers,business-settings,orders}`, not direct Supabase calls.",
         },
         {
           selector:
@@ -243,7 +243,7 @@ export default tseslint.config(
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(customers|customer_addresses|customer-profile(-addresses)?)$/]",
+            "ArrayExpression > Literal:first-child[value=/^(customers|customer_addresses|customer-profile(-addresses|-orders)?|customer-orders|campaigns-customer-orders|export-orders|breadcrumb-order-number)$/]",
           message: "Build these cache keys with `customersKeys` (or `invalidateCustomers`).",
         },
       ],
@@ -292,13 +292,13 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value='business_settings']",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(business_settings|orders|order_items)$/]",
           message:
-            "Read the settings row with `businessSettingsQueries.detail` (`@/lib/data/business-settings`).",
+            "Read the settings row and orders through `@/lib/data/business-settings` and `@/lib/data/orders`.",
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(business-settings.*|business-name|content-studio-settings|review-story-brand)$/]",
+            "ArrayExpression > Literal:first-child[value=/^(business-settings.*|business-name|content-studio-settings|review-story-(brand|order)|discounts-analytics)$/]",
           message: "Use `businessSettingsQueries.detail` instead of a hand-built settings key.",
         },
       ],

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { ordersQueries } from "@/lib/data/orders";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { customersQueries } from "@/lib/data/customers";
 import { Button } from "@/components/ui/button";
@@ -45,7 +46,7 @@ import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 import { useBrand } from "@/lib/brand-context";
 import { queryKeys } from "@/lib/query-keys";
-import { buildCustomerCrmStats, type CustomerMetricOrder } from "@/lib/commerce-metrics";
+import { buildCustomerCrmStats } from "@/lib/commerce-metrics";
 import { isMarketingEligible } from "@/lib/marketing-eligibility";
 
 import { CampaignsCommandHeader } from "@/components/campaigns/CampaignsCommandHeader";
@@ -135,17 +136,7 @@ function CampaignsPage() {
 
   const customersQ = useQuery(customersQueries.audience(brandId));
 
-  const ordersQ = useQuery({
-    queryKey: ["campaigns-customer-orders", brandId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("id, customer_id, total, created_at, status, payment_status, fulfillment_status")
-        .eq("brand_id", brandId);
-      if (error) throw error;
-      return data as Array<CustomerMetricOrder & { id: string }>;
-    },
-  });
+  const ordersQ = useQuery(ordersQueries.customerMetrics(brandId));
 
   const customerCrmStats = useMemo(() => buildCustomerCrmStats(ordersQ.data ?? []), [ordersQ.data]);
 
