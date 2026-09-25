@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { Tags, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { ordersQueries, type OrderPromoRow } from "@/lib/data/orders";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
@@ -28,6 +29,23 @@ import {
 import { DiscountsToolbar } from "@/components/discounts/DiscountsToolbar";
 import { DiscountsWorkQueue } from "@/components/discounts/DiscountsWorkQueue";
 import { DiscountMobileCard } from "@/components/discounts/DiscountMobileCard";
+
+/** Redemptions and revenue per promo code, leaving out cancelled and draft orders. */
+function promoUsageFrom(orders: OrderPromoRow[]) {
+  const usageMap: Record<string, { count: number; revenue: number }> = {};
+  orders.forEach((o) => {
+    if (!o.promo_code_id) return;
+    const status = String(o.status || "").toLowerCase();
+    if (["cancelled", "draft"].includes(status)) return;
+
+    if (!usageMap[o.promo_code_id]) {
+      usageMap[o.promo_code_id] = { count: 0, revenue: 0 };
+    }
+    usageMap[o.promo_code_id].count += 1;
+    usageMap[o.promo_code_id].revenue += Number(o.total || 0);
+  });
+  return usageMap;
+}
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/discounts")({
   component: DiscountCodes,
@@ -138,31 +156,7 @@ function DiscountCodes() {
   });
 
   // Client-side analytics aggregation to show redemption counts and revenue driven
-  const analyticsQ = useQuery({
-    queryKey: ["discounts-analytics", brand.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("promo_code_id, total, status")
-        .eq("brand_id", brand.id)
-        .not("promo_code_id", "is", null);
-      if (error) throw error;
-
-      const usageMap: Record<string, { count: number; revenue: number }> = {};
-      (data ?? []).forEach((o: any) => {
-        if (!o.promo_code_id) return;
-        const status = String(o.status || "").toLowerCase();
-        if (["cancelled", "draft"].includes(status)) return;
-
-        if (!usageMap[o.promo_code_id]) {
-          usageMap[o.promo_code_id] = { count: 0, revenue: 0 };
-        }
-        usageMap[o.promo_code_id].count += 1;
-        usageMap[o.promo_code_id].revenue += Number(o.total || 0);
-      });
-      return usageMap;
-    },
-  });
+  const analyticsQ = useQuery({ ...ordersQueries.promoOrders(brand.id), select: promoUsageFrom });
 
   const variantsQ = useQuery({
     queryKey: ["discounts-product-variants", brand.id],

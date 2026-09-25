@@ -27,7 +27,7 @@ import {
   normalizeTypography,
   typographyVariables,
 } from "@/lib/typography";
-import { ordersKeys, type OrderDetail } from "@/lib/data/orders";
+import { ordersKeys, ordersQueries, type OrderDetail } from "@/lib/data/orders";
 
 type BrandRow = {
   id: string;
@@ -344,17 +344,8 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
   );
 
   const orderNumberQuery = useQuery({
-    queryKey: ["breadcrumb-order-number", trailingSegment],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("orders")
-        .select("invoice_number, id")
-        .eq("id", trailingSegment!)
-        .maybeSingle();
-      return data;
-    },
-    enabled: isOrderRoute,
-    staleTime: 5 * 60_000,
+    ...ordersQueries.invoiceNumber(activeBrand?.id ?? "", trailingSegment ?? ""),
+    enabled: isOrderRoute && Boolean(activeBrand?.id),
   });
 
   const isCustomerRoute = Boolean(

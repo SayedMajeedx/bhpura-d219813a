@@ -10,6 +10,15 @@ import {
   ORDER_RECONCILIATION_SELECT,
 } from "./selects";
 import type { OrderDetail, OrderListRow, OrderScope } from "./types";
+import {
+  fetchCustomerMetricOrders,
+  fetchCustomerOrders,
+  fetchOrderForStory,
+  fetchOrderInvoiceNumber,
+  fetchOrdersForExport,
+  fetchPromoOrders,
+  fetchVariantSales,
+} from "./readers";
 
 /**
  * Admin order reads. Every fetcher filters by `brand_id` on top of RLS. A
@@ -147,6 +156,52 @@ export type OrderCogsRow = Awaited<ReturnType<typeof fetchCogsOrders>>[number];
  * never override `queryFn`.
  */
 export const ordersQueries = {
+  customerMetrics: (brandId: string) =>
+    queryOptions({
+      queryKey: ordersKeys.customerMetrics(brandId),
+      queryFn: () => fetchCustomerMetricOrders(brandId),
+      enabled: Boolean(brandId),
+      staleTime: 30_000,
+    }),
+  customerOrders: (brandId: string, customerId: string) =>
+    queryOptions({
+      queryKey: ordersKeys.customerOrders(brandId, customerId),
+      queryFn: () => fetchCustomerOrders(brandId, customerId),
+      enabled: Boolean(brandId && customerId),
+    }),
+  promoOrders: (brandId: string) =>
+    queryOptions({
+      queryKey: ordersKeys.promoUsage(brandId),
+      queryFn: () => fetchPromoOrders(brandId),
+      enabled: Boolean(brandId),
+    }),
+  variantSales: (brandId: string, days: number) =>
+    queryOptions({
+      queryKey: ordersKeys.variantSales(brandId, days),
+      queryFn: () => fetchVariantSales(brandId, days),
+      enabled: Boolean(brandId),
+      staleTime: 30_000,
+    }),
+  exportRows: (brandId: string) =>
+    queryOptions({
+      queryKey: ordersKeys.exportRows(brandId),
+      queryFn: () => fetchOrdersForExport(brandId),
+      enabled: Boolean(brandId),
+    }),
+  story: (brandId: string, orderId: string) =>
+    queryOptions({
+      queryKey: ordersKeys.story(brandId, orderId),
+      queryFn: () => fetchOrderForStory(brandId, orderId),
+      enabled: Boolean(brandId && orderId),
+      staleTime: 60_000,
+    }),
+  invoiceNumber: (brandId: string, orderId: string) =>
+    queryOptions({
+      queryKey: ordersKeys.invoiceNumber(brandId, orderId),
+      queryFn: () => fetchOrderInvoiceNumber(brandId, orderId),
+      enabled: Boolean(brandId && orderId),
+      staleTime: 5 * 60_000,
+    }),
   list: (brandId: string, scope: OrderScope) =>
     queryOptions({
       queryKey: ordersKeys.list(brandId, scope),

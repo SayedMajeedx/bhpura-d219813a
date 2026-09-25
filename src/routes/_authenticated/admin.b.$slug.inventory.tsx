@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { ordersQueries } from "@/lib/data/orders";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, RefreshCw } from "lucide-react";
@@ -99,21 +100,8 @@ function Inventory() {
   });
 
   const salesHistory = useQuery({
-    queryKey: ["inventory-sales-past45", brandId],
-    staleTime: 30_000,
+    ...ordersQueries.variantSales(brandId, 45),
     refetchOnWindowFocus: false,
-    queryFn: async () => {
-      const past45Days = new Date();
-      past45Days.setDate(past45Days.getDate() - 45);
-      const { data, error } = await supabase
-        .from("orders")
-        .select("id, created_at, order_items(variant_id, quantity)")
-        .eq("brand_id", brandId)
-        .in("status", ["confirmed", "paid", "shipped", "completed"])
-        .gte("created_at", past45Days.toISOString());
-      if (error) throw error;
-      return (data ?? []) as any[];
-    },
   });
 
   if (!brandId) {

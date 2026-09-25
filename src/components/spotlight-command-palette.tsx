@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { searchOrders } from "@/lib/data/orders";
 import { searchCustomers } from "@/lib/data/customers";
 import { useI18n } from "@/lib/i18n";
 import { formatMoney } from "@/lib/format";
@@ -72,26 +73,9 @@ export function SpotlightCommandPalette({
       if (!bId) return { orders: [], products: [], customers: [] };
 
       const term = `%${q}%`;
-      const isNum = !isNaN(Number(q));
-
-      // Build order query safely without invalid ilike on integer invoice_number
-      let orderQuery = supabase
-        .from("orders")
-        .select("id, invoice_number, total, currency, created_at, customer_name_snapshot")
-        .eq("brand_id", bId);
-
-      if (isNum) {
-        orderQuery = orderQuery.or(
-          `invoice_number.eq.${parseInt(q, 10)},customer_name_snapshot.ilike.${term}`,
-        );
-      } else {
-        orderQuery = orderQuery.or(
-          `customer_name_snapshot.ilike.${term},customer_phone_snapshot.ilike.${term}`,
-        );
-      }
 
       const [ordersRes, productsRes, customersRes] = await Promise.all([
-        orderQuery.limit(6),
+        searchOrders(bId, q),
         supabase
           .from("products")
           .select("id, name_en, name_ar, base_price, image_url, product_variants(selling_price)")
@@ -102,7 +86,7 @@ export function SpotlightCommandPalette({
       ]);
 
       return {
-        orders: ordersRes.data ?? [],
+        orders: ordersRes,
         products: productsRes.data ?? [],
         customers: customersRes,
       };

@@ -12,6 +12,7 @@ import {
   Star,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { ordersQueries } from "@/lib/data/orders";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
@@ -55,25 +56,7 @@ function CustomerReviewsPage() {
     staleTime: 5 * 60_000,
   });
 
-  const orderDetailsQ = useQuery({
-    queryKey: ["review-story-order", storyReview?.order_id],
-    enabled: Boolean(storyReview?.order_id),
-    queryFn: async () => {
-      if (!storyReview?.order_id) return null;
-      const { data, error } = await (supabase.from("orders") as any)
-        .select(
-          "id, order_date, created_at, order_items(id, description, product_id, products(id, image_url, media))",
-        )
-        .eq("id", storyReview.order_id)
-        .maybeSingle();
-      if (error) {
-        console.warn("Could not fetch order items for review story:", error);
-        return null;
-      }
-      return data;
-    },
-    staleTime: 60_000,
-  });
+  const orderDetailsQ = useQuery(ordersQueries.story(brand.id, storyReview?.order_id ?? ""));
 
   const brandPhone = brandStyleQ.data?.phone || brandStyleQ.data?.whatsapp_number || null;
   const brandInstagram = useMemo(() => {
