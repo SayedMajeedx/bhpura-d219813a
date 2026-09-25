@@ -78,7 +78,6 @@ export function PackagingMaterialsTab() {
 
       await invalidateBusinessSettings(qc, brandId);
       await qc.invalidateQueries({ queryKey: reportingKeys.overviews(brand.slug) });
-      await qc.invalidateQueries({ queryKey: reportingKeys.previousOverviews(brand.slug) });
       await qc.invalidateQueries({ queryKey: ["cogs", brandId] });
 
       if (checked) {

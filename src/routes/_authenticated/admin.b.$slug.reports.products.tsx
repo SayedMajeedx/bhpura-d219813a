@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { subDays, startOfDay, endOfDay } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { useI18n, useT } from "@/lib/i18n";
-import { fetchReportingProducts, fetchCatalogInquiriesReporting } from "@/lib/reporting.functions";
 import { useBrand } from "@/lib/brand-context";
 import { ReportsToolbar } from "@/components/reports/ReportsToolbar";
 import { formatMoney } from "@/lib/format";
@@ -20,6 +19,7 @@ import {
 } from "@/components/ui/table";
 import { AlertCircle, PackageX, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { reportingQueries } from "@/lib/data/reporting";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports/products")({
   component: ReportsProducts,
@@ -43,50 +43,25 @@ function ReportsProducts() {
     data: productsData,
     isLoading,
     error,
-  } = useQuery({
-    queryKey: [
-      "reports-products",
+  } = useQuery(
+    reportingQueries.products(
       slug,
-      date?.from?.toISOString(),
-      date?.to?.toISOString(),
+      date?.from && date?.to ? { from: date.from, to: date.to } : undefined,
       timezone,
       includeHistorical,
       sortBy,
-    ],
-    queryFn: async () => {
-      if (!date?.from || !date?.to) return null;
-      return await fetchReportingProducts(
-        { from: date.from, to: date.to },
-        timezone,
-        includeHistorical,
-        200,
-        0,
-        sortBy,
-        slug,
-      );
-    },
-    enabled: !!date?.from && !!date?.to,
-  });
+    ),
+  );
 
   const brand = useBrand();
 
-  const { data: inquiriesData } = useQuery({
-    queryKey: [
-      "reports-products-inquiries",
-      brand?.id,
+  const { data: inquiriesData } = useQuery(
+    reportingQueries.catalogInquiries(
+      brand?.id ?? "",
       date?.from?.toISOString(),
       date?.to?.toISOString(),
-    ],
-    queryFn: async () => {
-      if (!brand?.id) return null;
-      return await fetchCatalogInquiriesReporting(
-        brand.id,
-        date?.from?.toISOString(),
-        date?.to?.toISOString(),
-      );
-    },
-    enabled: !!brand?.id,
-  });
+    ),
+  );
 
   const inquiriesByProduct = useMemo(() => {
     const map = new Map<string, number>();

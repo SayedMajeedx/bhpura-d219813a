@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { subDays, startOfDay, endOfDay } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { useI18n } from "@/lib/i18n";
-import { fetchReportingOverview } from "@/lib/reporting.functions";
 import { ReportsToolbar } from "@/components/reports/ReportsToolbar";
 import { KpiCard } from "@/components/reports/kpi-card";
 import { formatMoney } from "@/lib/format";
@@ -30,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { reportingQueries } from "@/lib/data/reporting";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports/")({
   component: ReportsOverview,
@@ -46,44 +46,24 @@ function ReportsOverview() {
   const [selectedCurrency, setSelectedCurrency] = useState("");
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const query = useQuery({
-    queryKey: [
-      "reports-overview",
+    ...reportingQueries.overview(
       slug,
-      date?.from?.toISOString(),
-      date?.to?.toISOString(),
+      date?.from && date?.to ? { from: date.from, to: date.to } : undefined,
       timezone,
       includeHistorical,
-    ],
-    queryFn: () =>
-      fetchReportingOverview(
-        { from: date!.from!, to: date!.to! },
-        timezone,
-        includeHistorical,
-        slug,
-      ),
-    enabled: !!date?.from && !!date?.to,
+    ),
     retry: 1,
   });
   const periodMs = date?.from && date?.to ? date.to.getTime() - date.from.getTime() + 1 : 0;
   const previousTo = date?.from ? new Date(date.from.getTime() - 1) : null;
   const previousFrom = previousTo ? new Date(previousTo.getTime() - periodMs + 1) : null;
   const previousQuery = useQuery({
-    queryKey: [
-      "reports-overview-previous",
+    ...reportingQueries.overview(
       slug,
-      previousFrom?.toISOString(),
-      previousTo?.toISOString(),
+      previousFrom && previousTo ? { from: previousFrom, to: previousTo } : undefined,
       timezone,
       includeHistorical,
-    ],
-    queryFn: () =>
-      fetchReportingOverview(
-        { from: previousFrom!, to: previousTo! },
-        timezone,
-        includeHistorical,
-        slug,
-      ),
-    enabled: !!previousFrom && !!previousTo,
+    ),
     retry: 1,
   });
 

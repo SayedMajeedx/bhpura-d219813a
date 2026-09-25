@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { QueryClient } from "@tanstack/react-query";
 
 // These tests must never reach a real database: any network call fails loudly.
 vi.stubGlobal("fetch", () => {
@@ -132,15 +133,70 @@ describe("returns", () => {
 });
 
 describe("reporting", () => {
-  it("keep the key values the packaging tab and realtime refresh invalidate", () => {
-    expect(reporting.reportingKeys.overview("pura", "a", "b", "tz").slice(0, 2)).toEqual([
-      "dashboard-reporting-overview",
-      "pura",
+  const range = { from: new Date("2026-09-01T00:00:00Z"), to: new Date("2026-09-30T23:59:59Z") };
+  const previous = {
+    from: new Date("2026-08-01T00:00:00Z"),
+    to: new Date("2026-08-31T23:59:59Z"),
+  };
+
+  it("keep every report of a store under its prefix, with every argument in the key", () => {
+    const { reportingQueries: q } = reporting;
+    const keys = [
+      q.overview("pura", range, "tz", false).queryKey,
+      q.sales("pura", range, "day", "tz", false).queryKey,
+      q.products("pura", range, "tz", false, "revenue").queryKey,
+      q.customers("pura", range, "tz", true).queryKey,
+      q.incubatorSales("b1", "pura").queryKey,
+    ];
+    for (const key of keys) expect(key.slice(0, 2)).toEqual(["reports", "pura"]);
+    expect(q.overview("pura", range, "tz", true).queryKey).not.toEqual(keys[0]);
+    expect(q.products("pura", range, "tz", false, "units").queryKey).not.toEqual(keys[2]);
+  });
+
+  it("share one overview between the dashboard and the Reports page for the same period", () => {
+    const dashboard = reporting.reportingQueries.overview("pura", range, "tz", false);
+    const reports = reporting.reportingQueries.overview("pura", { ...range }, "tz", false);
+    expect(reports.queryKey).toEqual(dashboard.queryKey);
+    // A comparison period is another range of the same overview, under the same prefix.
+    const prior = reporting.reportingQueries.overview("pura", previous, "tz", false).queryKey;
+    expect(prior.slice(0, 3)).toEqual([...reporting.reportingKeys.overviews("pura")]);
+  });
+
+  it("refresh every period's overview after a cost change, and nothing of other stores", async () => {
+    const qc = new QueryClient();
+    for (const [slug, period] of [
+      ["pura", range],
+      ["pura", previous],
+      ["other", range],
+    ] as const) {
+      qc.setQueryData(reporting.reportingQueries.overview(slug, period, "tz", false).queryKey, {});
+    }
+    await qc.invalidateQueries({ queryKey: reporting.reportingKeys.overviews("pura") });
+    const stale = qc
+      .getQueryCache()
+      .getAll()
+      .map((query) => [query.queryKey[1], query.state.isInvalidated]);
+    expect(stale).toEqual([
+      ["pura", true],
+      ["pura", true],
+      ["other", false],
     ]);
-    expect(reporting.reportingKeys.previousOverview("pura", "a", "b", "tz").slice(0, 2)).toEqual([
-      "dashboard-reporting-overview-previous",
-      "pura",
-    ]);
+  });
+
+  it("wait for a complete date range before reading a report", () => {
+    const { reportingQueries: q } = reporting;
+    for (const options of [
+      q.overview("pura", undefined, "tz", false),
+      q.sales("pura", undefined, "day", "tz", false),
+      q.products("pura", undefined, "tz", false, "revenue"),
+      q.customers("pura", undefined, "tz", false),
+    ]) {
+      expect(options.enabled).toBe(false);
+      expect(options.queryKey.slice(0, 2)).toEqual(["reports", "pura"]);
+      expect(options.queryKey.at(-1)).toBe("pending");
+    }
+    expect(q.overview("", range, "tz", false).enabled).toBe(false);
+    expect(q.catalogInquiries("").enabled).toBe(false);
   });
 
   it("read 60 days of daily incubator sales and name the fields for the charts", async () => {
