@@ -1,8 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+
+// The home page is split across its route and src/features/storefront-home (Phase 5).
+const homeSource = () =>
+  [
+    "src/routes/$slug.index.tsx",
+    ...["components", "lib"].flatMap((dir) =>
+      readdirSync(`src/features/storefront-home/${dir}`)
+        .sort()
+        .map((file) => `src/features/storefront-home/${dir}/${file}`),
+    ),
+  ]
+    .map((file) => readFileSync(file, "utf8"))
+    .join("\n");
 
 describe("homepage editorial sections", () => {
   it("stores independent per-section display and background settings", () => {
@@ -19,7 +32,7 @@ describe("homepage editorial sections", () => {
   });
 
   it("renders editorial surfaces full width with bounded product content", () => {
-    const home = read("src/routes/$slug.index.tsx");
+    const home = homeSource();
     expect(home).toContain("settings.homepage_editorial_sections[kind]");
     expect(home).toContain('<section className="w-full overflow-hidden"');
     expect(home).toContain('className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14"');
@@ -27,7 +40,7 @@ describe("homepage editorial sections", () => {
   });
 
   it("joins the promo cards to the first visible editorial background with balanced spacing", () => {
-    const home = read("src/routes/$slug.index.tsx");
+    const home = homeSource();
     expect(home).toContain("const leadingEditorialKind");
     expect(home).toContain("style={{ backgroundColor: promoAreaBackground }}");
     expect(home).toContain('className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8"');
@@ -38,10 +51,15 @@ describe("homepage editorial sections", () => {
   });
 
   it("keeps the hero, navigation, footer, and product cards outside the editorial wrapper", () => {
-    const home = read("src/routes/$slug.index.tsx");
-    const editorialStart = home.indexOf("function MerchandisingSection");
-    const heroStart = home.indexOf("function HeroBanner");
-    expect(heroStart).toBeGreaterThan(editorialStart);
+    const home = homeSource();
+    const hero = [
+      "src/features/storefront-home/components/HeroBanner.tsx",
+      "src/features/storefront-home/components/HeroContentCarousel.tsx",
+    ]
+      .map((file) => read(file))
+      .join("\n");
+    expect(home).toContain("function MerchandisingSection");
+    expect(hero).not.toContain("homepage_editorial_sections");
     expect(read("src/components/storefront/product-card.tsx")).not.toContain(
       "homepage_editorial_sections",
     );

@@ -1,8 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+
+// The home page is split across its route and src/features/storefront-home (Phase 5).
+const homeSource = () =>
+  [
+    "src/routes/$slug.index.tsx",
+    ...["components", "lib"].flatMap((dir) =>
+      readdirSync(`src/features/storefront-home/${dir}`)
+        .sort()
+        .map((file) => `src/features/storefront-home/${dir}/${file}`),
+    ),
+  ]
+    .map((file) => readFileSync(file, "utf8"))
+    .join("\n");
 
 describe("secondary banner parallax guardrails", () => {
   it("defaults the per-store feature off and exposes it through public settings", () => {
@@ -17,9 +30,14 @@ describe("secondary banner parallax guardrails", () => {
   });
 
   it("is scoped to editorial and category banners, not hero or product components", () => {
-    const home = read("src/routes/$slug.index.tsx");
+    const home = homeSource();
     const category = read("src/routes/$slug.$category.tsx");
-    const hero = home.slice(home.indexOf("function HeroBanner"));
+    const hero = [
+      "src/features/storefront-home/components/HeroBanner.tsx",
+      "src/features/storefront-home/components/HeroContentCarousel.tsx",
+    ]
+      .map((file) => read(file))
+      .join("\n");
     expect(home).toContain("settings.homepage_editorial_sections[kind]");
     expect(category).toContain("<SecondaryBannerParallax");
     expect(home).toContain("editorial.banner_image_url");

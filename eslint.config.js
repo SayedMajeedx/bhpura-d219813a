@@ -101,8 +101,15 @@ export default tseslint.config(
   {
     // Phase 4 data layer: the public storefront reads its catalog only through
     // `@/lib/data/storefront`, so one cache key always holds one column list.
-    // Admin screens are not covered yet (their domains migrate later).
-    files: ["src/routes/$slug.*", "src/components/storefront/**"],
+    // Admin screens are not covered yet (their domains migrate later). The
+    // storefront feature slices hold code split out of the $slug routes.
+    files: [
+      "src/routes/$slug.*",
+      "src/components/storefront/**",
+      "src/features/storefront-home/**",
+      "src/features/product-page/**",
+      "src/features/checkout/**",
+    ],
     rules: {
       "no-restricted-syntax": [
         "error",

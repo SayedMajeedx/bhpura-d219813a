@@ -3,6 +3,19 @@ import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
+// The home page is split across its route and src/features/storefront-home (Phase 5).
+const homeSource = () =>
+  [
+    "src/routes/$slug.index.tsx",
+    ...["components", "lib"].flatMap((dir) =>
+      readdirSync(`src/features/storefront-home/${dir}`)
+        .sort()
+        .map((file) => `src/features/storefront-home/${dir}/${file}`),
+    ),
+  ]
+    .map((file) => readFileSync(file, "utf8"))
+    .join("\n");
+
 // The dashboard is split across its route and src/features/dashboard (Phase 5).
 const dashboardSource = () =>
   [
@@ -46,7 +59,7 @@ describe("storefront quality upgrades", () => {
   });
 
   it("prioritizes available inventory in storefront lists", () => {
-    const home = read("src/routes/$slug.index.tsx");
+    const home = homeSource();
     const category = read("src/routes/$slug.$category.tsx");
     expect(home).toContain("function availableFirst");
     expect(home).toContain("hasAvailableStock(b.product)");
