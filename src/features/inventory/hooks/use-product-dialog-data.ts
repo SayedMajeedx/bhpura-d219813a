@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { categoriesQueries } from "@/lib/data/categories";
 import { useAddons } from "@/components/addons/AddonsProvider";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { CUSTOMIZER_PRESETS } from "@/lib/addons/addon-presets";
@@ -27,23 +28,7 @@ export function useProductDialogData(brandId: string) {
     }));
   }, [addons, storeProfile?.addons]);
 
-  const categoriesQ = useQuery({
-    queryKey: ["categories", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase.from("categories") as any)
-        .select("id, name_en, name_ar, slug")
-        .eq("brand_id", brandId)
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as Array<{
-        id: string;
-        name_en: string;
-        name_ar: string | null;
-        slug: string | null;
-      }>;
-    },
-  });
+  const categoriesQ = useQuery(categoriesQueries.active(brandId));
 
   const sizeGuidesQ = useQuery({
     queryKey: ["admin-size-guides-list", brandId],

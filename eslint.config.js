@@ -199,9 +199,9 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(products|product_variants|product_bom_items|packaging_materials|business_settings|orders|order_items)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(products|product_variants|product_bom_items|packaging_materials|business_settings|orders|order_items|categories)$/]",
           message:
-            "The admin catalog, the settings row and orders go through `@/lib/data/{catalog,business-settings,orders}`, not direct Supabase calls.",
+            "The admin catalog, categories, the settings row and orders go through `@/lib/data/{catalog,categories,business-settings,orders}`, not direct Supabase calls.",
         },
         {
           selector:
@@ -215,7 +215,7 @@ export default tseslint.config(
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(products|variants|packaging-materials|product-bom-items(-all)?|inventory-sales-past45)$/]",
+            "ArrayExpression > Literal:first-child[value=/^(products|variants|packaging-materials|product-bom-items(-all)?|inventory-sales-past45|categories)$/]",
           message: "Build these cache keys with `catalogKeys` (or `invalidateCatalog`).",
         },
       ],
@@ -242,9 +242,9 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(customers|customer_addresses|business_settings|orders|order_items)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(customers|customer_addresses|business_settings|orders|order_items|categories)$/]",
           message:
-            "Customers, the settings row and orders go through `@/lib/data/{customers,business-settings,orders}`, not direct Supabase calls.",
+            "Customers, categories, the settings row and orders go through `@/lib/data/{customers,categories,business-settings,orders}`, not direct Supabase calls.",
         },
         {
           selector:
@@ -310,6 +310,37 @@ export default tseslint.config(
           selector:
             "ArrayExpression > Literal:first-child[value=/^(business-settings.*|business-name|content-studio-settings|review-story-(brand|order)|discounts-analytics)$/]",
           message: "Use `businessSettingsQueries.detail` instead of a hand-built settings key.",
+        },
+      ],
+    },
+  },
+  {
+    // Categories data layer: one key per shape under ["categories", brandId]
+    // (bug backlog #1 was three shapes under one key).
+    files: ["src/routes/_authenticated/admin.b.$slug.categories.tsx"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "CallExpression[callee.property.name='from'][arguments.0.value='categories']",
+          message: "Categories go through `@/lib/data/categories` (queries and mutations).",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='rpc'][arguments.0.value=/^(delete_category|get_brand_categories_with_counts)$/]",
+          message:
+            "Use `deleteCategory` / `categoriesQueries.overview` from `@/lib/data/categories`.",
+        },
+        {
+          selector:
+            "CallExpression[callee.expression.property.name='rpc'][arguments.0.value=/^(delete_category|get_brand_categories_with_counts)$/]",
+          message:
+            "Use `deleteCategory` / `categoriesQueries.overview` from `@/lib/data/categories`.",
+        },
+        {
+          selector:
+            "ArrayExpression > Literal:first-child[value=/^(categories|admin-categories-overview)$/]",
+          message: "Build these cache keys with `categoriesKeys` (or `invalidateCategories`).",
         },
       ],
     },

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { categoriesQueries } from "@/lib/data/categories";
 import { ordersQueries } from "@/lib/data/orders";
 import { customersQueries } from "@/lib/data/customers";
 import { useBrand } from "@/lib/brand-context";
@@ -105,16 +106,7 @@ function ExportCenterPage() {
     },
   });
 
-  const { data: categories = [] } = useQuery({
-    queryKey: ["export-categories", brandId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("categories")
-        .select("id, name, name_ar, name_en")
-        .eq("brand_id", brandId);
-      return data || [];
-    },
-  });
+  const { data: categories = [] } = useQuery(categoriesQueries.exportRows(brandId));
 
   const { data: exportHistory = [], refetch: refetchHistory } = useQuery({
     queryKey: ["export-runs-history", brandId],

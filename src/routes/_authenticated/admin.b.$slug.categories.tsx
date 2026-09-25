@@ -2,6 +2,17 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  categoriesKeys,
+  categoriesQueries,
+  createCategory,
+  deleteCategory,
+  invalidateCategories,
+  setCategorySortOrders,
+  updateCategory,
+  type CategoryWithCounts,
+} from "@/lib/data/categories";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,22 +40,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/categories")
   component: CategoriesPage,
 });
 
-type Category = {
-  id: string;
-  brand_id: string;
-  name_en: string;
-  parent_id: string | null;
-  name_ar: string | null;
-  slug: string | null;
-  image_url: string | null;
-  menu_icon_url: string | null;
-  sort_order: number;
-  is_active: boolean;
-  size_guide_id?: string | null;
-  product_count?: number;
-  total_product_count?: number;
-  is_smart?: boolean;
-};
+type Category = CategoryWithCounts;
 
 function slugify(v: string) {
   return v
@@ -67,92 +63,13 @@ function CategoriesPage() {
 
   useRealtimeInvalidate(
     [
-      { table: "categories", brandId, queryKey: ["admin-categories-overview", brandId] },
-      { table: "products", brandId, queryKey: ["admin-categories-overview", brandId] },
+      { table: "categories", brandId, queryKey: categoriesKeys.overview(brandId) },
+      { table: "products", brandId, queryKey: categoriesKeys.overview(brandId) },
     ],
     `categories-${brandId}`,
   );
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["admin-categories-overview", brandId],
-    queryFn: async () => {
-      // 1. Try atomic server RPC calculation
-      try {
-        const { data: rpcData, error: rpcError } = await (supabase.rpc as any)(
-          "get_brand_categories_with_counts",
-          { p_brand_id: brandId },
-        );
-        if (!rpcError && Array.isArray(rpcData) && rpcData.length > 0) {
-          return rpcData as Category[];
-        }
-      } catch (err) {
-        console.warn("Falling back to client-side category count calculation:", err);
-      }
-
-      // 2. Client-side fallback if RPC is ever unreachable
-      const [{ data: cats, error: catErr }, { data: prods }] = await Promise.all([
-        (supabase.from("categories") as any)
-          .select("*")
-          .eq("brand_id", brandId)
-          .order("sort_order", { ascending: true }),
-        supabase
-          .from("products")
-          .select("id, category, is_active, show_sale_badge")
-          .eq("brand_id", brandId),
-      ]);
-      if (catErr) throw catErr;
-
-      const productsList = prods ?? [];
-      const totalActiveProducts = productsList.filter((p: any) => p.is_active).length;
-
-      const categoriesWithCount = (cats ?? []).map((cat: any) => {
-        const slug = cat.slug || "";
-        const nameEn = cat.name_en || "";
-
-        if (["new-arrivals", "new"].includes(slug)) {
-          return {
-            ...cat,
-            product_count: totalActiveProducts,
-            total_product_count: totalActiveProducts,
-            is_smart: true,
-          };
-        }
-        if (["most-selling", "best-sellers", "best-selling"].includes(slug)) {
-          return {
-            ...cat,
-            product_count: 1,
-            total_product_count: 1,
-            is_smart: true,
-          };
-        }
-        if (["sale", "offers", "discounts"].includes(slug)) {
-          const saleCount = productsList.filter(
-            (p: any) => p.is_active && p.show_sale_badge,
-          ).length;
-          return {
-            ...cat,
-            product_count: saleCount || totalActiveProducts,
-            total_product_count: saleCount || totalActiveProducts,
-            is_smart: true,
-          };
-        }
-
-        const matches = productsList.filter(
-          (p: any) => p.category === slug || p.category === nameEn || p.category === cat.id,
-        );
-        const activeMatches = matches.filter((p: any) => p.is_active);
-
-        return {
-          ...cat,
-          product_count: activeMatches.length,
-          total_product_count: matches.length,
-          is_smart: false,
-        };
-      });
-
-      return categoriesWithCount as Category[];
-    },
-  });
+  const { data, isLoading } = useQuery(categoriesQueries.overview(brandId));
 
   const move = async (c: Category, dir: -1 | 1) => {
     const list = data ?? [];
@@ -165,22 +82,17 @@ function CategoriesPage() {
       const reordered = [...list];
       reordered.splice(index, 1);
       reordered.splice(targetIndex, 0, c);
-      const updates = reordered.map((cat, idx) =>
-        (supabase.from("categories") as any).update({ sort_order: idx + 1 }).eq("id", cat.id),
+      await setCategorySortOrders(
+        brandId,
+        reordered.map((cat, idx) => ({ id: cat.id, sort_order: idx + 1 })),
       );
-      await Promise.all(updates);
     } else {
-      await Promise.all([
-        (supabase.from("categories") as any)
-          .update({ sort_order: targetCat.sort_order })
-          .eq("id", c.id),
-        (supabase.from("categories") as any)
-          .update({ sort_order: c.sort_order })
-          .eq("id", targetCat.id),
+      await setCategorySortOrders(brandId, [
+        { id: c.id, sort_order: targetCat.sort_order },
+        { id: targetCat.id, sort_order: c.sort_order },
       ]);
     }
-    qc.invalidateQueries({ queryKey: ["admin-categories-overview", brandId] });
-    qc.invalidateQueries({ queryKey: ["categories", brandId] });
+    void invalidateCategories(qc, brandId);
   };
 
   const remove = async (c: Category) => {
@@ -192,10 +104,13 @@ function CategoriesPage() {
       )
     )
       return;
-    const { data: res, error } = await (supabase.rpc as any)("delete_category", { p_id: c.id });
-    if (error) return toast.error(error.message);
-    const mode = res?.mode;
-    const linked = res?.linked_products ?? 0;
+    let mode: string | undefined;
+    let linked = 0;
+    try {
+      ({ mode, linkedProducts: linked } = await deleteCategory(c.id));
+    } catch (error) {
+      return toast.error(getFriendlyErrorMessage(error));
+    }
     if (mode === "soft")
       toast.success(
         isAr
@@ -203,8 +118,7 @@ function CategoriesPage() {
           : `Deactivated — linked to ${linked} product(s)`,
       );
     else toast.success(isAr ? "تم الحذف" : "Deleted");
-    qc.invalidateQueries({ queryKey: ["admin-categories-overview", brandId] });
-    qc.invalidateQueries({ queryKey: ["categories", brandId] });
+    void invalidateCategories(qc, brandId);
   };
 
   const handleSyncVerticalDefaults = async () => {
@@ -240,10 +154,7 @@ function CategoriesPage() {
           : `Categories initialized successfully (+${res.insertedCount}, -${res.removedCount} empty)`,
       );
 
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: ["admin-categories-overview", brandId] }),
-        qc.invalidateQueries({ queryKey: ["categories", brandId] }),
-      ]);
+      await invalidateCategories(qc, brandId);
     } catch (err: any) {
       toast.error(err.message || (isAr ? "فشل تحديث الأقسام" : "Failed to sync categories"));
     } finally {
@@ -298,8 +209,7 @@ function CategoriesPage() {
           onSaved={() => {
             setOpen(false);
             setEditing(null);
-            qc.invalidateQueries({ queryKey: ["admin-categories-overview", brandId] });
-            qc.invalidateQueries({ queryKey: ["categories", brandId] });
+            void invalidateCategories(qc, brandId);
           }}
         />
       </Dialog>
@@ -319,17 +229,7 @@ function CategoryDialog({
   const { lang } = useI18n();
   const isAr = lang === "ar";
 
-  const { data: categories = [] } = useQuery({
-    queryKey: ["categories", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase.from("categories") as any)
-        .select("*")
-        .eq("brand_id", brandId)
-        .order("sort_order", { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as Category[];
-    },
-  });
+  const { data: categories = [] } = useQuery(categoriesQueries.list(brandId));
 
   const parentOptions = categories.filter((c) => c.id !== category?.id);
   const [form, setForm] = useState({
@@ -418,10 +318,12 @@ function CategoryDialog({
       is_active: form.is_active,
       size_guide_id: form.size_guide_id || null,
     };
-    const { error } = category
-      ? await (supabase.from("categories") as any).update(payload).eq("id", category.id)
-      : await (supabase.from("categories") as any).insert(payload);
-    if (error) return toast.error(error.message);
+    try {
+      if (category) await updateCategory(brandId, category.id, payload);
+      else await createCategory(brandId, payload);
+    } catch (error) {
+      return toast.error(getFriendlyErrorMessage(error));
+    }
     toast.success(isAr ? "تم الحفظ" : "Saved");
     onSaved();
   };

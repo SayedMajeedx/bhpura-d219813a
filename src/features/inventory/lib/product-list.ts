@@ -178,7 +178,7 @@ export function filterInventoryProducts({
 
 export type InventoryCategory = {
   id: string;
-  name_en: string;
+  name_en: string | null;
   name_ar: string | null;
   slug: string | null;
 };
