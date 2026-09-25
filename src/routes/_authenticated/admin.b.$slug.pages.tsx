@@ -1,7 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  businessSettingsQueries,
+  invalidateBusinessSettings,
+  updateBusinessSettings,
+  type StoredPages,
+} from "@/lib/data/business-settings";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -171,18 +177,7 @@ function PagesAndPolicies() {
   const [editorLanguage, setEditorLanguage] = useState<EditorLanguage>(isAr ? "ar" : "en");
   const [activeScope, setActiveScope] = useState<PagesScope>("pages");
 
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["business-settings-pages", brandId],
-    queryFn: async () => {
-      const { data: settings, error } = await supabase
-        .from("business_settings")
-        .select("pages, whatsapp_enabled, whatsapp_number, socials")
-        .eq("brand_id", brandId)
-        .maybeSingle();
-      if (error) throw error;
-      return settings as any;
-    },
-  });
+  const { data, isLoading, isError, refetch } = useQuery(businessSettingsQueries.detail(brandId));
 
   const [pages, setPages] = useState<PageSlot[]>([]);
   const [socials, setSocials] = useState<Social[]>([]);
@@ -201,7 +196,7 @@ function PagesAndPolicies() {
 
   useEffect(() => {
     if (!data) return;
-    const rawPagesData = data.pages;
+    const rawPagesData = data.pages as StoredPages;
     const rawPages = Array.isArray(rawPagesData)
       ? rawPagesData
       : Array.isArray(rawPagesData?.items)
@@ -359,18 +354,16 @@ function PagesAndPolicies() {
         help_ar: helpTitleAr.trim() || "المساعدة",
       },
     };
-    const { error } = await (supabase.from("business_settings") as any)
-      .update({
-        pages: pagesPayload,
-        socials: cleanedSocials,
-      })
-      .eq("brand_id", brandId);
-    setSaving(false);
-    if (error) toast.error(error.message);
-    else {
-      toast.success(isAr ? "تم حفظ الصفحات وترتيبها" : "Pages and order saved");
-      qc.invalidateQueries({ queryKey: ["business-settings-pages", brandId] });
+    try {
+      await updateBusinessSettings(brandId, { pages: pagesPayload, socials: cleanedSocials });
+    } catch (error) {
+      toast.error(getFriendlyErrorMessage(error));
+      return;
+    } finally {
+      setSaving(false);
     }
+    toast.success(isAr ? "تم حفظ الصفحات وترتيبها" : "Pages and order saved");
+    void invalidateBusinessSettings(qc, brandId);
   };
 
   if (isError) {

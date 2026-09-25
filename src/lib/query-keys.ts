@@ -1,3 +1,4 @@
+import { brandKeys } from "@/lib/data/brands";
 import { businessSettingsKeys } from "@/lib/data/business-settings";
 import { catalogKeys } from "@/lib/data/catalog";
 import { customersKeys } from "@/lib/data/customers/keys";
@@ -15,10 +16,10 @@ export const queryKeys = {
   // Brand Profile & Core Settings
   brand: {
     all: ["brand"] as const,
-    profile: (brandId: string) => ["brand", brandId] as const,
+    profile: brandKeys.profile,
     settings: (brandId: string) => ["brand", brandId, "settings"] as const,
     businessSettings: businessSettingsKeys.detail,
-    storeProfile: (brandId: string) => ["store-profile", brandId] as const,
+    storeProfile: businessSettingsKeys.storeProfile,
   },
 
   // Orders: lists and details live in `@/lib/data/orders` (`ordersKeys`).

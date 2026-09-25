@@ -2,6 +2,8 @@ import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-ro
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { brandKeys, brandQueries, updateBrand } from "@/lib/data/brands";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -166,20 +168,10 @@ function BrandsPage() {
     },
   });
 
-  const q = useQuery({
-    queryKey: ["brands"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("brands")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as unknown as Brand[];
-    },
-  });
+  const q = useQuery(brandQueries.list());
 
-  const brands = q.data ?? [];
-  const refresh = () => qc.invalidateQueries({ queryKey: ["brands"] });
+  const brands = (q.data ?? []) as unknown as Brand[];
+  const refresh = () => qc.invalidateQueries({ queryKey: brandKeys.list() });
 
   // Filter pending approvals
   const pendingApprovals = brands.filter(
@@ -905,8 +897,8 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
       return;
     }
     setSaving(true);
-    const { error } = await (supabase.from("brands") as any)
-      .update({
+    try {
+      await updateBrand(brand.id, {
         name_en: form.name_en.trim(),
         name_ar: form.name_ar.trim() || null,
         logo_url: form.logo_url.trim() || null,
@@ -915,10 +907,12 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
         meta_title: sanitizeMetaText(form.meta_title, META_TITLE_LIMIT) || null,
         meta_description: sanitizeMetaText(form.meta_description, META_DESCRIPTION_LIMIT) || null,
         is_active: form.is_active,
-      })
-      .eq("id", brand.id);
-    setSaving(false);
-    if (error) return toast.error(error.message);
+      });
+    } catch (error) {
+      return toast.error(getFriendlyErrorMessage(error));
+    } finally {
+      setSaving(false);
+    }
     toast.success(t("brands.updateSuccess"));
     onSaved();
   };

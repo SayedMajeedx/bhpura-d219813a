@@ -16,13 +16,13 @@ import { collectMaintainabilityMetrics } from "../scripts/maintainability-metric
  */
 
 const BUDGETS = {
-  asAny: 783,
+  asAny: 769,
   colonAny: 744,
   asNever: 0,
   tsIgnore: 0,
   tsExpectError: 0,
   eslintDisable: 10,
-  directSupabaseCalls: 240,
+  directSupabaseCalls: 228,
   readFileSyncTestFiles: 71,
   filesOver1000: 23,
   maxLinesForNewFile: 600,
@@ -56,11 +56,11 @@ const GIANT_FILES_BUDGETS: Record<string, number> = {
   "src/components/inventory/InstagramImporterModal.tsx": 1328,
   "src/lib/public-api/public-api-router.server.ts": 1271,
   "src/lib/instagram-ai-importer.ts": 1262,
-  "src/routes/_authenticated/admin.brands.tsx": 1228,
+  "src/routes/_authenticated/admin.brands.tsx": 1222,
   "src/routes/_authenticated/admin.b.$slug.integrations.tsx": 1202,
   "src/routes/onboard.tsx": 1094,
   "src/routes/_authenticated/admin.b.$slug.customers.$customerId.tsx": 1055,
-  "src/routes/_authenticated/admin.b.$slug.pages.tsx": 1065,
+  "src/routes/_authenticated/admin.b.$slug.pages.tsx": 1058,
 };
 
 // Baseline file inventory to determine which files are "NEW"

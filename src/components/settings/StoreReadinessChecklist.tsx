@@ -23,6 +23,8 @@ import type { SettingsTabId } from "@/features/settings/registry";
 import { normalizeWhatsAppDigits } from "@/lib/storefront-mode";
 import { useAddons } from "@/components/addons/AddonsProvider";
 import { readinessChecksFrom } from "@/lib/addons/addon-registry";
+import { businessSettingsQueries } from "@/lib/data/business-settings";
+import { brandQueries } from "@/lib/data/brands";
 
 export interface BusinessSettingsData {
   logo_url?: string | null;
@@ -453,45 +455,8 @@ export function StoreReadinessChecklist({
     },
   });
 
-  // 2. Query business_settings (payments, fulfillment, pages, logo)
-  const businessSettingsQ = useQuery({
-    queryKey: ["readiness-business-settings", brandId],
-    enabled: Boolean(brandId),
-    queryFn: async () => {
-      try {
-        const { data, error } = await (supabase.from("business_settings") as any)
-          .select(
-            "logo_url, cod_enabled, card_enabled, benefit_enabled, delivery_enabled, pickup_enabled, delivery_fee, shipping_zones, pages, storefront_mode, whatsapp_number, brand_palette",
-          )
-          .eq("brand_id", brandId)
-          .maybeSingle();
-
-        if (error) {
-          console.warn(
-            "[StoreReadinessChecklist] Extended query failed, falling back to base columns:",
-            error.message,
-          );
-          const fallback = await (supabase.from("business_settings") as any)
-            .select(
-              "logo_url, cod_enabled, card_enabled, benefit_enabled, delivery_enabled, pickup_enabled, delivery_fee, shipping_zones, pages",
-            )
-            .eq("brand_id", brandId)
-            .maybeSingle();
-
-          if (fallback.error) {
-            console.error("[StoreReadinessChecklist] Fallback query failed:", fallback.error);
-            return null;
-          }
-          return fallback.data as BusinessSettingsData;
-        }
-
-        return data as BusinessSettingsData;
-      } catch (err) {
-        console.error("[StoreReadinessChecklist] Query exception:", err);
-        return null;
-      }
-    },
-  });
+  // 2. The settings row (payments, fulfillment, pages, logo), shared with the settings form
+  const businessSettingsQ = useQuery(businessSettingsQueries.detail(brandId));
 
   // 3. Query return policy terms as an alternative fulfillment for policy requirement
   const returnPolicyQ = useQuery({
@@ -508,20 +473,8 @@ export function StoreReadinessChecklist({
     },
   });
 
-  // 4. Query brand details (logo)
-  const brandQ = useQuery({
-    queryKey: ["readiness-brand-details", brandId],
-    enabled: Boolean(brandId),
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("brands")
-        .select("logo_url")
-        .eq("id", brandId)
-        .maybeSingle();
-      if (error) return null;
-      return data;
-    },
-  });
+  // 4. The brand's profile (logo), shared with the settings form
+  const brandQ = useQuery(brandQueries.profile(brandId));
 
   const { addons } = useAddons();
   const addonChecks = React.useMemo(() => readinessChecksFrom(addons), [addons]);
@@ -554,10 +507,10 @@ export function StoreReadinessChecklist({
   const evaluation = evaluateStoreReadiness({
     logoUrl,
     activeProductsCount: productsQ.data ?? 0,
-    businessSettings: businessSettingsQ.data,
+    businessSettings: businessSettingsQ.data as BusinessSettingsData | undefined,
     brandLogoUrl: brandQ.data?.logo_url,
-    brandPalette: brandPalette ?? (businessSettingsQ.data as any)?.brand_palette,
-    storeVertical: storeVertical ?? (businessSettingsQ.data as any)?.store_vertical,
+    brandPalette: brandPalette ?? businessSettingsQ.data?.brand_palette,
+    storeVertical: storeVertical ?? businessSettingsQ.data?.store_vertical,
     lang,
     hasReturnPolicy: Boolean(returnPolicyQ.data),
   });

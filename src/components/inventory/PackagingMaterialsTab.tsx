@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  businessSettingsQueries,
+  invalidateBusinessSettings,
+  updateBusinessSettings,
+} from "@/lib/data/business-settings";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
@@ -61,33 +66,16 @@ export function PackagingMaterialsTab() {
 
   const [isTogglingBom, setIsTogglingBom] = useState(false);
 
-  const settingsQ = useQuery({
-    queryKey: ["business-settings-bom", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("business_settings")
-        .select("bom_enabled")
-        .eq("brand_id", brandId)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-  });
+  const settingsQ = useQuery(businessSettingsQueries.detail(brandId));
 
-  const bomEnabled = (settingsQ.data as any)?.bom_enabled !== false;
+  const bomEnabled = settingsQ.data?.bom_enabled !== false;
 
   const handleToggleBom = async (checked: boolean) => {
     setIsTogglingBom(true);
     try {
-      const { error } = await (supabase as any)
-        .from("business_settings")
-        .update({ bom_enabled: checked })
-        .eq("brand_id", brandId);
+      await updateBusinessSettings(brandId, { bom_enabled: checked });
 
-      if (error) throw error;
-
-      await qc.invalidateQueries({ queryKey: ["business-settings-bom", brandId] });
-      await qc.invalidateQueries({ queryKey: ["dashboard-business-settings", brandId] });
+      await invalidateBusinessSettings(qc, brandId);
       await qc.invalidateQueries({ queryKey: ["dashboard-reporting-overview", brand.slug] });
       await qc.invalidateQueries({
         queryKey: ["dashboard-reporting-overview-previous", brand.slug],

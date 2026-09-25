@@ -160,8 +160,8 @@ describe("storefront & admin gating (source checks)", () => {
       resolve(__dirname, "../src/components/settings/StoreProfileCard.tsx"),
       "utf-8",
     );
-    expect(code).toContain('.from("business_settings")');
-    expect(code).toContain(".upsert(");
+    // The upsert lives in the settings data layer (tests/settings-data-layer.test.ts).
+    expect(code).toContain("saveBusinessSettings(brandId,");
     expect(code).toContain("queryKeys.brand.businessSettings(brandId)");
     expect(code).toContain("queryKeys.brand.storeProfile(brandId)");
   });
@@ -171,9 +171,10 @@ describe("storefront & admin gating (source checks)", () => {
       resolve(__dirname, "../src/features/settings/use-brand-settings-form.tsx"),
       "utf-8",
     );
-    expect(code).toContain('.from("business_settings")');
-    expect(code).toContain(".upsert(");
-    expect(code).toContain("queryKeys.brand.storeProfile(brandId)");
+    // saveBusinessSettings upserts; invalidateBusinessSettings refreshes the store profile too
+    // (both covered in tests/settings-data-layer.test.ts).
+    expect(code).toContain("saveBusinessSettings(brandId,");
+    expect(code).toContain("invalidateBusinessSettings(queryClient, brandId)");
   });
 
   it("migration drops ON DELETE CASCADE on business_settings_user_id_fkey and heals missing rows", () => {
