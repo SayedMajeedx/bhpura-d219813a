@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { returnsQueries, type ReturnPolicyRow } from "@/lib/data/returns";
 import {
   Dialog,
   DialogContent,
@@ -53,6 +53,9 @@ interface SelectedReturnItem {
   selected: boolean;
 }
 
+/** The policy with its JSON lists narrowed to the shared return types. */
+const asReturnPolicy = (row: ReturnPolicyRow | null) => row as BrandReturnPolicy | null;
+
 export function CustomerReturnRequestModal({
   open,
   onOpenChange,
@@ -68,16 +71,9 @@ export function CustomerReturnRequestModal({
   const [submitting, setSubmitting] = useState(false);
 
   // Fetch brand return policy
-  const { data: policy } = useQuery<BrandReturnPolicy>({
-    queryKey: ["storefront-return-policy", brandId],
-    queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from("brand_return_policies")
-        .select("*")
-        .eq("brand_id", brandId)
-        .maybeSingle();
-      return (data as BrandReturnPolicy) || null;
-    },
+  const { data: policy } = useQuery({
+    ...returnsQueries.policy(brandId),
+    select: asReturnPolicy,
     enabled: open && !!brandId,
   });
 

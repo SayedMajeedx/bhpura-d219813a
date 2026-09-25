@@ -1,6 +1,11 @@
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  invalidateReturns,
+  returnsQueries,
+  saveReturnPolicy,
+  type ReturnPolicyRow,
+} from "@/lib/data/returns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,48 +27,45 @@ interface ReturnPolicyEditorProps {
   lang: "en" | "ar";
 }
 
+/** The policy a brand starts from before saving its own. */
+function defaultReturnPolicy(brandId: string): BrandReturnPolicy {
+  return {
+    id: "",
+    brand_id: brandId,
+    return_window_days: 14,
+    allow_partial_returns: true,
+    allow_discounted_items: true,
+    excluded_category_ids: [],
+    excluded_product_ids: [],
+    return_shipping_fee: 0,
+    customer_shipping_fee_borne_by: "customer",
+    allowed_compensation_methods: ["refund_original", "store_credit", "exchange"],
+    require_images: false,
+    auto_approve_policy: false,
+    policy_terms_ar:
+      "يحق للعميل استرجاع أو استبدال المنتجات خلال 14 يوماً من تاريخ الاستلام بشرط أن تكون بحالتها الأصلية غير مستخدمة.",
+    policy_terms_en:
+      "Customers may return or exchange items within 14 days of delivery provided they are unused and in original condition.",
+    notify_on_status_change: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  } as BrandReturnPolicy;
+}
+
 export function ReturnPolicyEditor({ brandId, lang }: ReturnPolicyEditorProps) {
   const isAr = lang === "ar";
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
 
-  const { data: policy, isLoading } = useQuery<BrandReturnPolicy>({
-    queryKey: ["brand-return-policy", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("brand_return_policies")
-        .select("*")
-        .eq("brand_id", brandId)
-        .maybeSingle();
-
-      if (error) throw error;
-      if (!data) {
-        // Return default configuration
-        return {
-          id: "",
-          brand_id: brandId,
-          return_window_days: 14,
-          allow_partial_returns: true,
-          allow_discounted_items: true,
-          excluded_category_ids: [],
-          excluded_product_ids: [],
-          return_shipping_fee: 0,
-          customer_shipping_fee_borne_by: "customer",
-          allowed_compensation_methods: ["refund_original", "store_credit", "exchange"],
-          require_images: false,
-          auto_approve_policy: false,
-          policy_terms_ar:
-            "يحق للعميل استرجاع أو استبدال المنتجات خلال 14 يوماً من تاريخ الاستلام بشرط أن تكون بحالتها الأصلية غير مستخدمة.",
-          policy_terms_en:
-            "Customers may return or exchange items within 14 days of delivery provided they are unused and in original condition.",
-          notify_on_status_change: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as BrandReturnPolicy;
-      }
-      return data as BrandReturnPolicy;
-    },
-    enabled: !!brandId,
+  // Shows the default policy until the brand saves its own.
+  const withDefaults = useCallback(
+    (row: ReturnPolicyRow | null) =>
+      (row as BrandReturnPolicy | null) ?? defaultReturnPolicy(brandId),
+    [brandId],
+  );
+  const { data: policy, isLoading } = useQuery({
+    ...returnsQueries.policy(brandId),
+    select: withDefaults,
   });
 
   const [form, setForm] = useState<Partial<BrandReturnPolicy>>({});
@@ -96,16 +98,12 @@ export function ReturnPolicyEditor({ brandId, lang }: ReturnPolicyEditorProps) {
         notify_on_status_change: form.notify_on_status_change ?? true,
       };
 
-      const { error } = await (supabase as any).from("brand_return_policies").upsert(payload, {
-        onConflict: "brand_id",
-      });
-
-      if (error) throw error;
+      await saveReturnPolicy(brandId, payload);
 
       toast.success(
         isAr ? "تم حفظ وتحديث سياسة الإرجاع بنجاح" : "Return policy updated successfully",
       );
-      queryClient.invalidateQueries({ queryKey: ["brand-return-policy", brandId] });
+      void invalidateReturns(queryClient, brandId);
     } catch (err: any) {
       toast.error(err.message || "Failed to save policy");
     } finally {
