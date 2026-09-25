@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchLoyaltyAccount, fetchLoyaltyProgram, fetchLoyaltyTier } from "@/lib/data/loyalty";
 import { calculateOrderLoyaltyPoints } from "@/lib/loyalty.functions";
 import type { BrandLoyaltyProgram, LoyaltyAccount, LoyaltyTier } from "@/lib/loyalty.types";
 import type { Storefront } from "@/features/checkout/types";
@@ -35,28 +35,15 @@ export function useCheckoutLoyalty({
   useEffect(() => {
     (async () => {
       try {
-        const { data: prog } = await (supabase as any)
-          .from("brand_loyalty_programs")
-          .select("*")
-          .eq("brand_id", brand.id)
-          .maybeSingle();
+        // Each read that fails counts as "none", as before.
+        const prog = await fetchLoyaltyProgram(brand.id).catch(() => null);
         if (prog) setLoyaltyProgram(prog);
 
         if (customerId) {
-          const { data: acc } = await (supabase as any)
-            .from("loyalty_accounts")
-            .select("*")
-            .eq("brand_id", brand.id)
-            .eq("customer_id", customerId)
-            .maybeSingle();
+          const acc = await fetchLoyaltyAccount(brand.id, customerId).catch(() => null);
           if (acc) {
             setLoyaltyAccount(acc);
-            const { data: tier } = await (supabase as any)
-              .from("brand_loyalty_tiers")
-              .select("*")
-              .eq("brand_id", brand.id)
-              .eq("tier_key", acc.current_tier_key)
-              .maybeSingle();
+            const tier = await fetchLoyaltyTier(brand.id, acc.current_tier_key).catch(() => null);
             if (tier) setLoyaltyTier(tier);
           }
         }

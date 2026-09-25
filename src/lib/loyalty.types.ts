@@ -44,7 +44,8 @@ export interface BrandLoyaltyProgram {
 export interface LoyaltyTier {
   id: string;
   brand_id: string;
-  tier_key: LoyaltyTierKey;
+  /** A `LoyaltyTierKey` for the default tiers; the column is free text. */
+  tier_key: string;
   name_ar: string;
   name_en: string;
   min_spend: number;
@@ -67,7 +68,8 @@ export interface LoyaltyAccount {
   pending_points: number;
   lifetime_points: number;
   lifetime_spent_points: number;
-  current_tier_key: LoyaltyTierKey;
+  /** A `LoyaltyTierKey` for the default tiers; the column is free text. */
+  current_tier_key: string;
   tier_achieved_at: string;
   created_at: string;
   updated_at: string;

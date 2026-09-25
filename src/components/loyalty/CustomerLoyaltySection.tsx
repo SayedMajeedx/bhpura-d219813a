@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { loyaltyQueries } from "@/lib/data/loyalty";
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -14,12 +14,6 @@ import {
   CheckCircle2,
   ShieldCheck,
 } from "lucide-react";
-import type {
-  LoyaltyAccount,
-  LoyaltyTier,
-  LoyaltyLedgerEntry,
-  BrandLoyaltyProgram,
-} from "@/lib/loyalty.types";
 import { DEFAULT_LOYALTY_TIERS } from "@/lib/loyalty.types";
 
 interface CustomerLoyaltySectionProps {
@@ -37,65 +31,16 @@ export function CustomerLoyaltySection({
   const isAr = lang === "ar";
 
   // 1. Fetch loyalty account
-  const { data: account } = useQuery<LoyaltyAccount | null>({
-    queryKey: ["customer_loyalty_account", brandId, customerId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("loyalty_accounts")
-        .select("*")
-        .eq("brand_id", brandId)
-        .eq("customer_id", customerId)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!customerId,
-  });
+  const { data: account } = useQuery(loyaltyQueries.account(brandId, customerId));
 
   // 2. Fetch brand loyalty program settings
-  const { data: program } = useQuery<BrandLoyaltyProgram | null>({
-    queryKey: ["customer_loyalty_program", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("brand_loyalty_programs")
-        .select("*")
-        .eq("brand_id", brandId)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-  });
+  const { data: program } = useQuery(loyaltyQueries.program(brandId));
 
   // 3. Fetch brand loyalty tiers
-  const { data: tiers = [] } = useQuery<LoyaltyTier[]>({
-    queryKey: ["customer_loyalty_tiers", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("brand_loyalty_tiers")
-        .select("*")
-        .eq("brand_id", brandId)
-        .order("min_spend", { ascending: true });
-      if (error) throw error;
-      return data || [];
-    },
-  });
+  const { data: tiers = [] } = useQuery(loyaltyQueries.tiers(brandId));
 
   // 4. Fetch customer's loyalty ledger history
-  const { data: ledger = [] } = useQuery<LoyaltyLedgerEntry[]>({
-    queryKey: ["customer_loyalty_ledger", brandId, customerId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("loyalty_ledger")
-        .select("*")
-        .eq("brand_id", brandId)
-        .eq("customer_id", customerId)
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!customerId,
-  });
+  const { data: ledger = [] } = useQuery(loyaltyQueries.customerLedger(brandId, customerId));
 
   const activePoints = account?.active_points ?? 0;
   const pendingPoints = account?.pending_points ?? 0;
