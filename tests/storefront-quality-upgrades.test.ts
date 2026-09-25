@@ -7,7 +7,7 @@ const read = (path: string) => readFileSync(path, "utf8");
 const checkoutSource = () =>
   [
     "src/routes/$slug.checkout.tsx",
-    ...["hooks", "lib"].flatMap((dir) =>
+    ...["components", "hooks", "lib"].flatMap((dir) =>
       readdirSync(`src/features/checkout/${dir}`)
         .sort()
         .map((file) => `src/features/checkout/${dir}/${file}`),

@@ -81,3 +81,11 @@ Line numbers are as of 2026-09-24 and may drift; search for the quoted code.
 - **Where**: `lib/product-form.ts`, `cleanPassportCustomFields(fields)` returns `fields` unchanged.
 - **Problem**: the name says it strips fit-passport fields before saving a product, but it strips nothing.
 - **Fix**: find out what it was meant to remove (git history, `src/addons/fit-passport/`). Implement it with a test, or delete it.
+
+## Checkout (`src/routes/$slug.checkout.tsx`, `src/features/checkout/`)
+
+### 12. "Choose another payment method" does nothing
+
+- **Where**: `components/PaymentFailedCard.tsx`, the outline button scrolls to `document.getElementById("payment-methods-section")`.
+- **Problem**: no element has the id `payment-methods-section`, so after a failed card payment the button does nothing.
+- **Fix**: give the payment method card (`components/PaymentMethodCard.tsx`) that id, and cover the button in the checkout browser test.

@@ -24,7 +24,7 @@ const BUDGETS = {
   eslintDisable: 10,
   directSupabaseCalls: 369,
   readFileSyncTestFiles: 71,
-  filesOver1000: 27,
+  filesOver1000: 26,
   maxLinesForNewFile: 600,
   maxLinesForExistingFile: 1000,
 } as const;
@@ -38,7 +38,6 @@ const BUDGETS = {
  *   admin.b.$slug.orders.index.tsx (Phase 5, now ~920 lines).
  */
 const GIANT_FILES_BUDGETS: Record<string, number> = {
-  "src/routes/$slug.checkout.tsx": 1733,
   "src/features/settings/registry.ts": 2616,
   "src/routes/_authenticated/admin.b.$slug.content-studio.tsx": 2488,
   "src/routes/_authenticated/admin.b.$slug.dashboard.tsx": 2105,
