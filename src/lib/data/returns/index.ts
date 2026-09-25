@@ -6,9 +6,10 @@ import type { TablesInsert } from "@/integrations/supabase/types";
  * Return requests and the brand's return policy: the dashboard's "waiting for
  * action" count, the order editor's linked returns, the shopper's returns on
  * the account page, and the policy (its editor, the readiness checklist and the
- * shopper's return request). The admin returns list and detail still read
- * directly: their select asks for variant columns that do not exist (bug
- * backlog #22).
+ * shopper's return request), and the admin returns list, detail and exchange
+ * picker. Variants are selected by their option columns, SKU and `stock_main`:
+ * `product_variants` has no `variant_name` or `stock_quantity`, which the
+ * first version of these screens asked for, so their requests always failed.
  */
 
 export const returnsKeys = {
@@ -20,6 +21,11 @@ export const returnsKeys = {
   customer: (brandId: string, customerId: string) =>
     [...returnsKeys.all(brandId), "customer", customerId] as const,
   policy: (brandId: string) => [...returnsKeys.all(brandId), "policy"] as const,
+  list: (brandId: string) => [...returnsKeys.all(brandId), "list"] as const,
+  detail: (brandId: string, returnId: string) =>
+    [...returnsKeys.all(brandId), "detail", returnId] as const,
+  exchangeVariants: (brandId: string) =>
+    [...returnsKeys.all(brandId), "exchange-variants"] as const,
 };
 
 /** Statuses of a return that still needs the merchant (review, inspection, receipt). */
@@ -100,7 +106,174 @@ export async function fetchReturnPolicy(brandId: string) {
 }
 export type ReturnPolicyRow = NonNullable<Awaited<ReturnType<typeof fetchReturnPolicy>>>;
 
+/** Every return of the brand with its order, customer and items, newest first. */
+export async function fetchAdminReturns(brandId: string) {
+  const { data, error } = await supabase
+    .from("return_requests")
+    .select(
+      `
+          *,
+          order:orders (
+            id,
+            invoice_number,
+            total,
+            subtotal,
+            discount,
+            tax_amount,
+            shipping,
+            advance_paid,
+            payment_status,
+            status,
+            created_at,
+            customer_name_snapshot,
+            customer_phone_snapshot,
+            customer_email_snapshot
+          ),
+          customer:customers (
+            id,
+            name,
+            phone,
+            email
+          ),
+          items:return_items (
+            id,
+            product_id,
+            variant_id,
+            quantity,
+            unit_price,
+            total_price,
+            condition,
+            restocked,
+            action_type,
+            product:products (
+              id,
+              name_en,
+              name_ar,
+              image_url
+            ),
+            variant:product_variants (
+              id, sku, size, size_unit, color, fabric, option_four, option_five, stock_main
+            )
+          )
+        `,
+    )
+    .eq("brand_id", brandId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** One return of the brand with its order, customer and items (with inspection details). */
+export async function fetchAdminReturn(brandId: string, returnId: string) {
+  const { data, error } = await supabase
+    .from("return_requests")
+    .select(
+      `
+          *,
+          order:orders (
+            id,
+            invoice_number,
+            total,
+            subtotal,
+            discount,
+            currency,
+            tax_amount,
+            tax_rate,
+            shipping,
+            advance_paid,
+            payment_status,
+            status,
+            created_at,
+            customer_name_snapshot,
+            customer_phone_snapshot,
+            customer_email_snapshot,
+            delivery_address_snapshot
+          ),
+          customer:customers (
+            id,
+            name,
+            phone,
+            email
+          ),
+          items:return_items (
+            id,
+            brand_id,
+            return_id,
+            order_item_id,
+            product_id,
+            variant_id,
+            quantity,
+            unit_price,
+            total_price,
+            reason,
+            item_images,
+            action_type,
+            condition,
+            restocked,
+            restocked_quantity,
+            restocked_at,
+            inspection_notes,
+            product:products (
+              id,
+              name_en,
+              name_ar,
+              image_url
+            ),
+            variant:product_variants (
+              id, sku, size, size_unit, color, fabric, option_four, option_five, stock_main
+            )
+          )
+        `,
+    )
+    .eq("id", returnId)
+    .eq("brand_id", brandId)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/** The brand's variants to exchange into, newest first, with their product and store stock. */
+export async function fetchExchangeVariants(brandId: string) {
+  const { data, error } = await supabase
+    .from("product_variants")
+    .select(
+      `
+          id, sku, size, size_unit, color, fabric, option_four, option_five, stock_main,
+          selling_price,
+          product_id,
+          product:products (
+            id,
+            name_en,
+            name_ar,
+            base_price
+          )
+        `,
+    )
+    .eq("brand_id", brandId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
 export const returnsQueries = {
+  list: (brandId: string) =>
+    queryOptions({
+      queryKey: returnsKeys.list(brandId),
+      queryFn: () => fetchAdminReturns(brandId),
+      enabled: Boolean(brandId),
+    }),
+  detail: (brandId: string, returnId: string) =>
+    queryOptions({
+      queryKey: returnsKeys.detail(brandId, returnId),
+      queryFn: () => fetchAdminReturn(brandId, returnId),
+      enabled: Boolean(brandId && returnId),
+    }),
+  exchangeVariants: (brandId: string) =>
+    queryOptions({
+      queryKey: returnsKeys.exchangeVariants(brandId),
+      queryFn: () => fetchExchangeVariants(brandId),
+      enabled: Boolean(brandId),
+    }),
   customer: (brandId: string, customerId: string) =>
     queryOptions({
       queryKey: returnsKeys.customer(brandId, customerId),

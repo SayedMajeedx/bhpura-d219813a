@@ -45,6 +45,11 @@ import {
   type ReturnItem,
   type ReturnStatus,
 } from "@/lib/returns.types";
+import { returnsKeys, returnsQueries } from "@/lib/data/returns";
+import { returnVariantLabel } from "@/lib/returns-variant";
+
+/** The shared return type over the typed row (JSON and status columns narrowed). */
+const asReturnRequest = (row: unknown) => row as ReturnRequest;
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/returns/$id")({
   component: ReturnDetailPage,
@@ -77,82 +82,9 @@ function ReturnDetailPage() {
     data: returnReq,
     isLoading,
     refetch,
-  } = useQuery<ReturnRequest>({
-    queryKey: ["admin-return-detail", brandId, id],
-    queryFn: async () => {
-      if (!brandId || !id) return null as any;
-
-      const { data, error } = await (supabase as any)
-        .from("return_requests")
-        .select(
-          `
-          *,
-          order:orders (
-            id,
-            invoice_number,
-            total,
-            subtotal,
-            discount,
-            currency,
-            tax_amount,
-            tax_rate,
-            shipping,
-            advance_paid,
-            payment_status,
-            status,
-            created_at,
-            customer_name_snapshot,
-            customer_phone_snapshot,
-            customer_email_snapshot,
-            delivery_address_snapshot
-          ),
-          customer:customers (
-            id,
-            name,
-            phone,
-            email
-          ),
-          items:return_items (
-            id,
-            brand_id,
-            return_id,
-            order_item_id,
-            product_id,
-            variant_id,
-            quantity,
-            unit_price,
-            total_price,
-            reason,
-            item_images,
-            action_type,
-            condition,
-            restocked,
-            restocked_quantity,
-            restocked_at,
-            inspection_notes,
-            product:products (
-              id,
-              name_en,
-              name_ar,
-              image_url
-            ),
-            variant:product_variants (
-              id,
-              variant_name,
-              sku,
-              stock_quantity
-            )
-          )
-        `,
-        )
-        .eq("id", id)
-        .eq("brand_id", brandId)
-        .single();
-
-      if (error) throw error;
-      return data as ReturnRequest;
-    },
-    enabled: !!brandId && !!id,
+  } = useQuery({
+    ...returnsQueries.detail(brandId ?? "", id ?? ""),
+    select: asReturnRequest,
   });
 
   // Fetch Activity Logs for this order/return
@@ -214,7 +146,7 @@ function ReturnDetailPage() {
 
       toast.success(isAr ? "تم تحديث حالة المرتجع بنجاح" : "Return status updated successfully");
       refetch();
-      queryClient.invalidateQueries({ queryKey: ["admin-returns-list", brandId] });
+      if (brandId) void queryClient.invalidateQueries({ queryKey: returnsKeys.list(brandId) });
     } catch (err: any) {
       toast.error(err.message || "Error updating return status");
     } finally {
@@ -438,7 +370,7 @@ function ReturnDetailPage() {
                             : item.product?.name_en || item.product?.name_ar}
                         </h4>
                         <p className="text-xs text-muted-foreground">
-                          {item.variant?.variant_name || item.variant?.sku || "Default SKU"}
+                          {returnVariantLabel(item.variant, isAr ? "ar" : "en") || "Default SKU"}
                         </p>
                         <div className="flex items-center gap-2 font-mono text-xs mt-0.5">
                           <span className="font-semibold text-foreground">
