@@ -40,8 +40,8 @@ describe("manual order creation", () => {
     expect(orderSaveBlocker({ ...pickup, customer_id: null }, [], "o1", "en")).toBeNull();
     // The check runs before any insert: save returns on a blocker first.
     const saveHandler = detail.slice(detail.indexOf("const save = async"));
-    expect(saveHandler.indexOf("orderSaveBlocker(")).toBeLessThan(
-      saveHandler.indexOf('.from("orders")'),
-    );
+    const firstInsert = saveHandler.indexOf("createOrderWithItems(");
+    expect(firstInsert).toBeGreaterThan(-1);
+    expect(saveHandler.indexOf("orderSaveBlocker(")).toBeLessThan(firstInsert);
   });
 });

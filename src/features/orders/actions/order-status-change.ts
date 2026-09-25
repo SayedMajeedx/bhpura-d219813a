@@ -1,5 +1,4 @@
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { getFriendlyErrorMessage } from "@/lib/utils";
 import { logActivity } from "@/lib/activity-log";
@@ -7,6 +6,7 @@ import { getFulfillmentLabel } from "@/lib/status-labels";
 import type { Order } from "@/features/orders/types";
 import type { QueryClient } from "@tanstack/react-query";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
+import { invalidateOrders, updateOrder, type OrderPatch } from "@/lib/data/orders";
 
 /**
  * Sets the order's status and fulfillment status directly (from the status
@@ -29,7 +29,7 @@ export function createOrderStatusChange({
   return async (newStatus: string, newFulfillmentStatus: string) => {
     if (!order) return;
     try {
-      const updatePayload: any = {
+      const updatePayload: OrderPatch = {
         status: newStatus,
         fulfillment_status: newFulfillmentStatus,
         updated_at: new Date().toISOString(),
@@ -38,9 +38,7 @@ export function createOrderStatusChange({
         updatePayload.delivered_at = new Date().toISOString();
       }
 
-      const { error } = await supabase.from("orders").update(updatePayload).eq("id", order.id);
-
-      if (error) throw error;
+      await updateOrder(brandId, order.id, updatePayload);
 
       const labelAr = getFulfillmentLabel(newFulfillmentStatus, "ar");
       const labelEn = getFulfillmentLabel(newFulfillmentStatus, "en");
@@ -59,7 +57,7 @@ export function createOrderStatusChange({
       });
 
       await orderQ.refetch();
-      qc.invalidateQueries({ queryKey: ["orders", brandId] });
+      invalidateOrders(qc, brandId);
       qc.invalidateQueries({ queryKey: ["activity_logs"] });
     } catch (err: unknown) {
       toast.error(

@@ -33,11 +33,11 @@ src/lib/data/<domain>/
 
 ## Status
 
-| Domain                                                                        | Folder        | Enforced by ESLint                                   |
-| ----------------------------------------------------------------------------- | ------------- | ---------------------------------------------------- |
-| Public storefront catalog (products, categories, rankings, search, page data) | `storefront/` | `src/routes/$slug.*`, `src/components/storefront/**` |
-| Admin orders: queue and order detail reads (`ordersQueries`, `ordersKeys`)    | `orders/`     | not yet (order writes still direct; next step)       |
-| Admin products and inventory, customers, settings                             | not yet       | —                                                    |
+| Domain                                                                                                   | Folder        | Enforced by ESLint                                                             |
+| -------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------------------------------------ |
+| Public storefront catalog (products, categories, rankings, search, page data)                            | `storefront/` | `src/routes/$slug.*`, `src/components/storefront/**`                           |
+| Admin orders: queue and order detail reads, order writes (`ordersQueries`, `ordersKeys`, `mutations.ts`) | `orders/`     | `src/features/orders/**`, `src/components/orders/**`, `admin.b.$slug.orders.*` |
+| Admin products and inventory, customers, settings                                                        | not yet       | —                                                                              |
 
 Usage:
 

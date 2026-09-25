@@ -20,6 +20,12 @@ import {
 import type { Dispatch, SetStateAction } from "react";
 import type { OrderItem } from "@/features/orders/types";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
+import {
+  createOrderWithItems,
+  invalidateOrders,
+  replaceOrderItems,
+  updateOrder,
+} from "@/lib/data/orders";
 
 /** Saves the order editor: creates a new order with its lines, or updates the order, replaces changed lines and logs status/payment changes. */
 export function useSaveOrder({
@@ -81,53 +87,42 @@ export function useSaveOrder({
     const orderPayload = orderSavePayload(order, totals, appliedPromo, currency);
 
     if (id === "new") {
-      const { data: created, error: createError } = await (supabase.from("orders") as any)
-        .insert({
-          ...orderPayload,
-          user_id: user.id,
-          brand_id: brandId,
-          invoice_number: 0,
-        })
-        .select("id")
-        .single();
-      if (createError || !created) {
-        setSaving(false);
-        return toast.error(createError?.message || "ORDER_CREATE_FAILED");
+      for (const it of items) {
+        const isCustom = it.location === "custom" || !it.variant_id;
+        if (isCustom && !it.location) {
+          it.location = "custom";
+        }
       }
-      if (items.length > 0) {
-        for (const it of items) {
-          const isCustom = it.location === "custom" || !it.variant_id;
-          if (isCustom && !it.location) {
-            it.location = "custom";
-          }
-        }
-        const { error: itemError } = await (supabase.from("order_items") as any).insert(
-          items.map((item) =>
-            orderItemRow(item, { user_id: user.id, brand_id: brandId, order_id: created.id }),
-          ),
+      let createdId: string;
+      try {
+        createdId = await createOrderWithItems(
+          brandId,
+          { ...orderPayload, user_id: user.id, brand_id: brandId, invoice_number: 0 },
+          (orderId) =>
+            items.map((item) =>
+              orderItemRow(item, { user_id: user.id, brand_id: brandId, order_id: orderId }),
+            ),
         );
-        if (itemError) {
-          await supabase.from("orders").delete().eq("id", created.id);
-          setSaving(false);
-          return toast.error(itemError.message);
-        }
+      } catch (createError) {
+        setSaving(false);
+        return toast.error(
+          (createError as { message?: string } | null)?.message || "ORDER_CREATE_FAILED",
+        );
       }
       localStorage.removeItem(`boutq_draft_${brandId}_new`);
       toast.success(lang === "ar" ? "تم إنشاء الطلب بنجاح" : "Order created successfully");
       initialSnapshotRef.current = null;
       setOrder(null);
       setItems([]);
-      router.navigate({ to: "/admin/b/$slug/orders/$id", params: { slug, id: created.id } });
+      router.navigate({ to: "/admin/b/$slug/orders/$id", params: { slug, id: createdId } });
       return;
     }
 
-    const { error: oe } = await supabase
-      .from("orders")
-      .update(orderPayload as any)
-      .eq("id", order.id);
-    if (oe) {
+    try {
+      await updateOrder(brandId, order.id, orderPayload);
+    } catch (oe) {
       setSaving(false);
-      return toast.error(oe.message);
+      return toast.error((oe as { message?: string }).message);
     }
 
     // ── Activity log: detect changes vs saved state
@@ -143,10 +138,10 @@ export function useSaveOrder({
         orderItemRow(i, { user_id: user.id, brand_id: brandId, order_id: order.id }),
       );
 
-      const { error: repErr } = await (supabase.rpc as any)("replace_order_items", {
-        p_order_id: order.id,
-        p_items: itemsPayload,
-      });
+      const repErr = await replaceOrderItems(order.id, itemsPayload).then(
+        () => null,
+        (error: { message?: string }) => error,
+      );
 
       if (repErr) {
         setSaving(false);
@@ -182,7 +177,7 @@ export function useSaveOrder({
     setHasSavedDraft(true);
     setEditingUnlocked(false);
     setSaving(false);
-    qc.invalidateQueries({ queryKey: ["orders", brandId] });
+    invalidateOrders(qc, brandId);
     qc.invalidateQueries({ queryKey: ["variants"] });
     qc.invalidateQueries({ queryKey: ["activity_logs"] });
   };

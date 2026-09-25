@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getOrderCustomerName, getOrderCustomerPhone } from "@/lib/order-customer-snapshot";
+import { invalidateOrders } from "@/lib/data/orders";
 
 import { DeliveryAddressSnapshot } from "@/features/orders/components/DeliveryAddressSnapshot";
 import { useBrandCouriers } from "@/features/orders/hooks/use-brand-couriers";
@@ -355,7 +356,7 @@ export function OrderFulfillmentModal({
                                 lang === "ar" ? "📱 إشعار عبر واتساب" : "📱 Notify on WhatsApp",
                               onClick: async () => {
                                 await recordCourierNotified(selectedFulfillOrder.id);
-                                qc.invalidateQueries({ queryKey: ["orders", brandId] });
+                                invalidateOrders(qc, brandId);
                                 window.open(waUrl, "_blank", "noopener,noreferrer");
                               },
                             },
@@ -365,7 +366,7 @@ export function OrderFulfillmentModal({
                       }
                     }
 
-                    qc.invalidateQueries({ queryKey: ["orders", brandId] });
+                    invalidateOrders(qc, brandId);
                     setIsFulfillModalOpen(false);
                   } catch (err: any) {
                     toast.error(err.message || "Failed to fulfill order");
