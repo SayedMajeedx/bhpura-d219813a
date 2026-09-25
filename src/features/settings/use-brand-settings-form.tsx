@@ -1,12 +1,15 @@
 import * as React from "react";
 import { useState, useEffect, useRef, useCallback, createContext, useContext } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { queryKeys } from "@/lib/query-keys";
 import { diffObjects } from "./diff";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
-import { businessSettingsQueries } from "@/lib/data/business-settings";
+import {
+  businessSettingsQueries,
+  invalidateBusinessSettings,
+  saveBusinessSettings,
+} from "@/lib/data/business-settings";
+import { brandQueries, invalidateBrand, updateBrand } from "@/lib/data/brands";
 
 type BusinessSettingsRow = Database["public"]["Tables"]["business_settings"]["Row"];
 type BrandRow = Database["public"]["Tables"]["brands"]["Row"];
@@ -64,22 +67,7 @@ export function useBrandSettingsForm(brandId: string): BrandSettingsFormState {
     isLoading: isBrandLoading,
     error: brandError,
     refetch: refetchBrandQuery,
-  } = useQuery({
-    queryKey: queryKeys.brand.profile(brandId),
-    queryFn: async () => {
-      if (!brandId) return null;
-      const { data, error } = await supabase
-        .from("brands")
-        .select(
-          "id, slug, name_en, name_ar, hero_media, about_ar, about_en, meta_title, meta_description, logo_url, custom_domain, support_access_enabled, primary_color, plan_type, trial_ends_at",
-        )
-        .eq("id", brandId)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    enabled: Boolean(brandId),
-  });
+  } = useQuery(brandQueries.profile(brandId));
 
   const [bs, setBsState] = useState<Partial<BusinessSettingsRow>>({});
   const [brand, setBrandState] = useState<Partial<BrandRow>>({});
@@ -187,28 +175,16 @@ export function useBrandSettingsForm(brandId: string): BrandSettingsFormState {
     setIsSaving(true);
     try {
       if (Object.keys(currentDiffBs).length > 0) {
-        const { error: bsErr } = await (supabase.from("business_settings") as any).upsert(
-          { ...currentDiffBs, brand_id: brandId },
-          { onConflict: "brand_id" },
-        );
-        if (bsErr) throw bsErr;
+        await saveBusinessSettings(brandId, currentDiffBs);
       }
 
       if (Object.keys(currentDiffBrand).length > 0) {
-        const { error: bErr } = await (supabase.from("brands") as any)
-          .update(currentDiffBrand)
-          .eq("id", brandId);
-        if (bErr) throw bErr;
+        await updateBrand(brandId, currentDiffBrand);
       }
 
-      // Invalidate relevant queries
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.brand.businessSettings(brandId) }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.brand.storeProfile(brandId) }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.brand.profile(brandId) }),
-        queryClient.invalidateQueries({ queryKey: ["business-settings-theme", brandId] }),
-        queryClient.invalidateQueries({ queryKey: ["brand-hero", brandId] }),
-        queryClient.invalidateQueries({ queryKey: ["brands"] }),
+        invalidateBusinessSettings(queryClient, brandId),
+        invalidateBrand(queryClient, brandId),
       ]);
 
       // Update snapshot

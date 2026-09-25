@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { saveBusinessSettings } from "@/lib/data/business-settings";
 import { queryKeys } from "@/lib/query-keys";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
@@ -191,15 +192,10 @@ export function StoreProfileCard({
     setSaving(true);
     try {
       // 1. Upsert business_settings store_vertical (never write deprecated store_modules)
-      const { error: bsError } = await (supabase.from("business_settings") as any).upsert(
-        {
-          brand_id: brandId,
-          store_vertical: pendingVertical,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "brand_id" },
-      );
-      if (bsError) throw bsError;
+      await saveBusinessSettings(brandId, {
+        store_vertical: pendingVertical,
+        updated_at: new Date().toISOString(),
+      });
 
       // 2. Install missing required starter pack add-ons
       const pendingStarter = starterPackFor(pendingVertical);
@@ -358,17 +354,11 @@ export function StoreProfileCard({
   const handleSave = async () => {
     setSaving(true);
     try {
-      const { error } = await (supabase.from("business_settings") as any).upsert(
-        {
-          brand_id: brandId,
-          store_vertical: vertical,
-          fit_profiles: fitProfiles,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "brand_id" },
-      );
-
-      if (error) throw error;
+      await saveBusinessSettings(brandId, {
+        store_vertical: vertical,
+        fit_profiles: fitProfiles,
+        updated_at: new Date().toISOString(),
+      });
 
       await qc.invalidateQueries({ queryKey: queryKeys.brand.storeProfile(brandId) });
       await qc.invalidateQueries({ queryKey: queryKeys.brand.businessSettings(brandId) });

@@ -249,5 +249,34 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Settings data layer: the settings form, its cards, the Pages screen and
+    // the packaging tab's BOM switch read and write `business_settings` and
+    // `brands` through `@/lib/data/{business-settings,brands}`, so one save
+    // refreshes every screen showing the same row.
+    files: [
+      "src/features/settings/**",
+      "src/components/settings/**",
+      "src/routes/_authenticated/admin.b.$slug.settings*",
+      "src/routes/_authenticated/admin.b.$slug.pages.tsx",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(business_settings|brands)$/]",
+          message:
+            "Settings go through `@/lib/data/business-settings` and `@/lib/data/brands` (queries and mutations), not direct Supabase calls.",
+        },
+        {
+          selector:
+            "ArrayExpression > Literal:first-child[value=/^(business-settings.*|brands?|store-profile|readiness-(business-settings|brand-details))$/]",
+          message:
+            "Build these cache keys with `businessSettingsKeys` / `brandKeys` (or the invalidate helpers).",
+        },
+      ],
+    },
+  },
   eslintPluginPrettier,
 );
