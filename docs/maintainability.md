@@ -76,6 +76,8 @@ npm run check
 
 ## 4. Direct Supabase Calls Breakdown
 
+> **Measurement note (2026-09-25):** the metric first missed calls behind a cast, `(supabase as any).from(...)`, often split over two lines. With the corrected pattern the Phase 0 baseline would have been higher: 406 instead of 317 on 2026-09-25 (`8ef1f289`). The ratchet budget was re-based once (195 -> 251, same code) and only moves down from there.
+
 Direct Supabase client calls (`from`, `rpc`, `auth`, `storage`, `functions`, `channel`) located inside user-interface and route directories:
 
 | Directory           | Direct Supabase Calls | Roadmap Objective                                               |
