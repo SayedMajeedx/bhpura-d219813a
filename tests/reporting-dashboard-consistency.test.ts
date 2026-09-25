@@ -43,7 +43,9 @@ describe("dashboard and reporting consistency", () => {
   it("uses exactly 30 calendar days and isolates every report cache by brand", () => {
     for (const source of [overview, sales, products, customers]) {
       expect(source).toContain("subDays(startOfDay(new Date()), 29)");
-      expect(source).toMatch(/queryKey:\s*\[\s*"reports-[^"]+",\s*slug,/);
+      // Keys come from reportingQueries, under ["reports", slug] (tested in
+      // dashboard-and-storefront-orders-data.test.ts).
+      expect(source).toMatch(/reportingQueries\.\w+\(\s*slug,/);
     }
   });
 
@@ -59,7 +61,7 @@ describe("dashboard and reporting consistency", () => {
   });
 
   it("uses the reporting accounting engine for dashboard financial KPIs", () => {
-    expect(dashboard).toContain("fetchReportingOverview");
+    expect(dashboard).toContain("reportingQueries.overview(");
     expect(dashboard).toContain("accountingRow?.net_revenue");
     expect(dashboard).toContain("accountingRow?.known_cogs_after_returns");
     expect(dashboard).toContain("accountingRow?.expenses");

@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { subDays, startOfDay, endOfDay } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { useI18n, useT } from "@/lib/i18n";
-import { fetchReportingCustomers } from "@/lib/reporting.functions";
 import { ReportsToolbar } from "@/components/reports/ReportsToolbar";
 import { KpiCard } from "@/components/reports/kpi-card";
 import { formatMoney } from "@/lib/format";
@@ -20,6 +19,7 @@ import {
 } from "@/components/ui/table";
 import { AlertCircle, UserPlus, Users as UsersIcon } from "lucide-react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
+import { reportingQueries } from "@/lib/data/reporting";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports/customers")({
   component: ReportsCustomers,
@@ -42,28 +42,14 @@ function ReportsCustomers() {
     data: customersData,
     isLoading,
     error,
-  } = useQuery({
-    queryKey: [
-      "reports-customers",
+  } = useQuery(
+    reportingQueries.customers(
       slug,
-      date?.from?.toISOString(),
-      date?.to?.toISOString(),
+      date?.from && date?.to ? { from: date.from, to: date.to } : undefined,
       timezone,
       includeHistorical,
-    ],
-    queryFn: async () => {
-      if (!date?.from || !date?.to) return null;
-      return await fetchReportingCustomers(
-        { from: date.from, to: date.to },
-        timezone,
-        includeHistorical,
-        200,
-        0,
-        slug,
-      );
-    },
-    enabled: !!date?.from && !!date?.to,
-  });
+    ),
+  );
 
   const pieData = customersData
     ? [

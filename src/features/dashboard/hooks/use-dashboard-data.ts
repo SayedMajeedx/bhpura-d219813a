@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchReportingOverview } from "@/lib/reporting.functions";
 import { isCatalogMode } from "@/lib/storefront-mode";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { businessSettingsKeys, businessSettingsQueries } from "@/lib/data/business-settings";
@@ -50,6 +49,7 @@ export function useDashboardData({
   const catalogInquiriesQ = useQuery({
     ...reportingQueries.catalogInquiries(brandId),
     enabled: Boolean(brandId) && isCatalog,
+    staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
 
@@ -57,37 +57,23 @@ export function useDashboardData({
 
   // Use the exact same accounting engine as Reports so dashboard KPIs cannot drift.
   const reportingOverviewQ = useQuery({
-    queryKey: reportingKeys.overview(
+    ...reportingQueries.overview(
       slug,
-      dashboardPeriods.start.toISOString(),
-      dashboardPeriods.end.toISOString(),
+      { from: dashboardPeriods.start, to: dashboardPeriods.end },
       reportingTimezone,
+      false,
     ),
-    queryFn: () =>
-      fetchReportingOverview(
-        { from: dashboardPeriods.start, to: dashboardPeriods.end },
-        reportingTimezone,
-        false,
-        slug,
-      ),
     staleTime: 60_000,
     enabled: Boolean(canViewFinancials && slug),
     refetchOnWindowFocus: false,
   });
   const previousReportingOverviewQ = useQuery({
-    queryKey: reportingKeys.previousOverview(
+    ...reportingQueries.overview(
       slug,
-      dashboardPeriods.previousStart.toISOString(),
-      dashboardPeriods.previousEnd.toISOString(),
+      { from: dashboardPeriods.previousStart, to: dashboardPeriods.previousEnd },
       reportingTimezone,
+      false,
     ),
-    queryFn: () =>
-      fetchReportingOverview(
-        { from: dashboardPeriods.previousStart, to: dashboardPeriods.previousEnd },
-        reportingTimezone,
-        false,
-        slug,
-      ),
     staleTime: 60_000,
     enabled: Boolean(canViewFinancials && slug),
     refetchOnWindowFocus: false,

@@ -115,8 +115,9 @@ export default tseslint.config(
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(auth_profile_role|caller_profile|caller_permissions)$/]",
-          message: "Use `profilesQueries.caller` / `profilesKeys` for the caller's profile.",
+            "ArrayExpression > Literal:first-child[value=/^(auth_profile_role|caller_profile|caller_permissions|reports-(overview(-previous)?|sales|products(-inquiries)?|customers))$/]",
+          message:
+            "Use `profilesQueries.caller` / `profilesKeys` for the caller's profile, and `reportingQueries` / `reportingKeys` for reports.",
         },
       ],
     },

@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { subDays, startOfDay, endOfDay } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { useI18n } from "@/lib/i18n";
-import { fetchReportingSales, ReportInterval } from "@/lib/reporting.functions";
+import { ReportInterval } from "@/lib/reporting.functions";
 import { ReportsToolbar } from "@/components/reports/ReportsToolbar";
 import { KpiCard } from "@/components/reports/kpi-card";
 import { formatMoney } from "@/lib/format";
@@ -28,6 +28,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { reportingQueries } from "@/lib/data/reporting";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports/sales")({
   component: ReportsSales,
@@ -45,26 +46,15 @@ function ReportsSales() {
   const [selectedCurrency, setSelectedCurrency] = useState("");
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-  const query = useQuery({
-    queryKey: [
-      "reports-sales",
+  const query = useQuery(
+    reportingQueries.sales(
       slug,
-      date?.from?.toISOString(),
-      date?.to?.toISOString(),
+      date?.from && date?.to ? { from: date.from, to: date.to } : undefined,
       interval,
       timezone,
       includeHistorical,
-    ],
-    queryFn: () =>
-      fetchReportingSales(
-        { from: date!.from!, to: date!.to! },
-        interval,
-        timezone,
-        includeHistorical,
-        slug,
-      ),
-    enabled: !!date?.from && !!date?.to,
-  });
+    ),
+  );
 
   const chartData = useMemo(() => {
     const rows = (query.data as any)?.timeseries || [];
