@@ -1,6 +1,7 @@
 import { brandKeys } from "@/lib/data/brands";
 import { businessSettingsKeys } from "@/lib/data/business-settings";
 import { catalogKeys } from "@/lib/data/catalog";
+import { messageTemplatesKeys } from "@/lib/data/message-templates";
 import { categoriesKeys } from "@/lib/data/categories";
 import { customersKeys } from "@/lib/data/customers/keys";
 import { expensesKeys } from "@/lib/data/expenses";
@@ -74,8 +75,7 @@ export const queryKeys = {
 
   // Message & Campaign Templates
   templates: {
-    message: (brandId: string) => ["message-templates", brandId] as const,
-    campaign: (brandId: string) => ["campaign-templates", brandId] as const,
+    message: messageTemplatesKeys.all,
   },
 
   // Storefront

@@ -3,7 +3,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
-import { queryKeys } from "@/lib/query-keys";
+import {
+  clearDefaultMessageTemplate,
+  createMessageTemplate,
+  deleteMessageTemplate,
+  invalidateMessageTemplates,
+  messageTemplatesQueries,
+  updateMessageTemplate,
+} from "@/lib/data/message-templates";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -43,6 +51,9 @@ type Tpl = {
   body: string;
   is_default: boolean;
 };
+
+/** The dialog's template type, with `channel` narrowed to the three it offers. */
+const asTemplates = (rows: unknown[]) => rows as Tpl[];
 
 const BRAND: Record<"en" | "ar", string> = { en: "Boutq", ar: "بوتيك" };
 const LEGACY_BRAND_NAMES = new Set(["Abaya Atelier", "أباية أتيليه"]);
@@ -103,6 +114,7 @@ export function ManageTemplatesDialog({
   onChanged: () => void;
 }) {
   const { lang } = useI18n();
+  const brandId = useBrand().id;
   const [editing, setEditing] = useState<Partial<Tpl> | null>(null);
 
   const startNew = () =>
@@ -124,23 +136,25 @@ export function ManageTemplatesDialog({
       is_default: !!editing.is_default,
     };
     if (payload.is_default) {
-      await supabase.from("message_templates").update({ is_default: false }).eq("user_id", user.id);
+      await clearDefaultMessageTemplate(brandId);
     }
-    let error;
-    if (editing.id) {
-      ({ error } = await supabase.from("message_templates").update(payload).eq("id", editing.id));
-    } else {
-      ({ error } = await (supabase.from("message_templates") as any).insert(payload));
+    try {
+      if (editing.id) await updateMessageTemplate(brandId, editing.id, payload);
+      else await createMessageTemplate(brandId, payload);
+    } catch (error) {
+      return toast.error(getFriendlyErrorMessage(error));
     }
-    if (error) return toast.error(error.message);
     toast.success(lang === "ar" ? "تم الحفظ" : "Saved");
     setEditing(null);
     onChanged();
   };
 
   const remove = async (id: string) => {
-    const { error } = await supabase.from("message_templates").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    try {
+      await deleteMessageTemplate(brandId, id);
+    } catch (error) {
+      return toast.error(getFriendlyErrorMessage(error));
+    }
     toast.success(lang === "ar" ? "تم الحذف" : "Deleted");
     onChanged();
   };
@@ -298,18 +312,7 @@ export default function SendInvoiceDialog({
 
   const brand = useBrand();
   const brandId = brand.id;
-  const templatesQ = useQuery({
-    queryKey: queryKeys.templates.message(brandId),
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("message_templates")
-        .select("*")
-        .eq("brand_id", brandId)
-        .order("created_at");
-      if (error) throw error;
-      return (data ?? []) as Tpl[];
-    },
-  });
+  const templatesQ = useQuery({ ...messageTemplatesQueries.list(brandId), select: asTemplates });
 
   const [selectedId, setSelectedId] = useState<string>("__default");
   const [phone, setPhone] = useState("");
@@ -437,7 +440,7 @@ export default function SendInvoiceDialog({
         open={manageOpen}
         onOpenChange={setManageOpen}
         templates={templatesQ.data ?? []}
-        onChanged={() => qc.invalidateQueries({ queryKey: queryKeys.templates.message(brandId) })}
+        onChanged={() => void invalidateMessageTemplates(qc, brandId)}
       />
     </>
   );

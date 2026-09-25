@@ -2,6 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  createMessageTemplate,
+  deleteMessageTemplate,
+  invalidateMessageTemplates,
+  messageTemplatesQueries,
+  updateMessageTemplate,
+} from "@/lib/data/message-templates";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 import { ordersQueries } from "@/lib/data/orders";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { customersQueries } from "@/lib/data/customers";
@@ -45,7 +53,6 @@ import {
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 import { useBrand } from "@/lib/brand-context";
-import { queryKeys } from "@/lib/query-keys";
 import { buildCustomerCrmStats } from "@/lib/commerce-metrics";
 import { isMarketingEligible } from "@/lib/marketing-eligibility";
 
@@ -67,7 +74,6 @@ type Customer = {
   marketing_consent?: boolean | null;
   opted_out_at?: string | null;
 };
-type Template = { id: string; name: string; body: string };
 type BulkStatus = "queued" | "sending" | "sent" | "skipped";
 
 function isMobileBrowser() {
@@ -120,19 +126,7 @@ function CampaignsPage() {
   const [bulkSent, setBulkSent] = useState<Record<string, BulkStatus>>({});
   const bulkWindowRef = useRef<Window | null>(null);
 
-  const templatesQ = useQuery({
-    queryKey: queryKeys.templates.campaign(brandId),
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("message_templates")
-        .select("id, name, body")
-        .eq("brand_id", brandId)
-        .eq("channel", CHANNEL)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as Template[];
-    },
-  });
+  const templatesQ = useQuery(messageTemplatesQueries.channel(brandId, CHANNEL));
 
   const customersQ = useQuery(customersQueries.audience(brandId));
 
@@ -169,24 +163,24 @@ function CampaignsPage() {
     } = await supabase.auth.getUser();
     if (!user) return;
 
-    if (saveMode === "update" && selectedId) {
-      const { error } = await supabase
-        .from("message_templates")
-        .update({ name, body: message })
-        .eq("id", selectedId);
-      if (error) return toast.error(error.message);
-    } else {
-      const { data, error } = await supabase
-        .from("message_templates")
-        .insert({ name, body: message, channel: CHANNEL, user_id: user.id } as any)
-        .select("id")
-        .single();
-      if (error) return toast.error(error.message);
-      if (data) setSelectedId(data.id);
+    try {
+      if (saveMode === "update" && selectedId) {
+        await updateMessageTemplate(brandId, selectedId, { name, body: message });
+      } else {
+        const id = await createMessageTemplate(brandId, {
+          name,
+          body: message,
+          channel: CHANNEL,
+          user_id: user.id,
+        });
+        setSelectedId(id);
+      }
+    } catch (error) {
+      return toast.error(getFriendlyErrorMessage(error));
     }
     toast.success(isAr ? "تم الحفظ" : "Saved");
     setSaveOpen(false);
-    qc.invalidateQueries({ queryKey: queryKeys.templates.campaign(brandId) });
+    void invalidateMessageTemplates(qc, brandId);
   };
 
   const deleteTemplate = async () => {
@@ -194,11 +188,14 @@ function CampaignsPage() {
     const tpl = (templatesQ.data ?? []).find((t) => t.id === selectedId);
     if (!tpl) return;
     if (!confirm(isAr ? `حذف قالب "${tpl.name}"؟` : `Delete template "${tpl.name}"?`)) return;
-    const { error } = await supabase.from("message_templates").delete().eq("id", selectedId);
-    if (error) return toast.error(error.message);
+    try {
+      await deleteMessageTemplate(brandId, selectedId);
+    } catch (error) {
+      return toast.error(getFriendlyErrorMessage(error));
+    }
     toast.success(isAr ? "تم الحفظ" : "Deleted");
     setSelectedId("");
-    qc.invalidateQueries({ queryKey: queryKeys.templates.campaign(brandId) });
+    void invalidateMessageTemplates(qc, brandId);
   };
 
   const insertPlaceholder = (token: string) => {

@@ -46,6 +46,15 @@ Found while moving customers into `src/lib/data/customers`. The calls kept their
 - **Effect**: in a brand with more than 100 customers, points cannot be awarded or deducted by hand for anyone past the 100th name.
 - **Fix**: a searchable picker (`searchCustomers` already exists in `@/lib/data/customers`), or the push centre's 1000 limit as a stopgap.
 
+## Messages (`src/lib/data/message-templates`)
+
+### 21. Making a template the default ignores the clearing error
+
+- **Where**: `src/components/orders/SendInvoiceDialog.tsx` (manage templates), through `clearDefaultMessageTemplate`.
+- **Problem**: the old default is cleared without reading the error, then the new one is saved. (The clearing itself used to run across every brand of the user; it is scoped to the brand since the data-layer move.)
+- **Effect**: if clearing fails, the brand has two default templates and the dialog preselects either one.
+- **Fix**: stop when clearing fails, or clear and set in one update / RPC (same shape as #17).
+
 ## Inventory (`src/features/inventory/`)
 
 ### 2. Duplicating a product drops variant and product fields
