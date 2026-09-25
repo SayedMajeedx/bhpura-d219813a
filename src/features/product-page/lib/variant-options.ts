@@ -108,3 +108,20 @@ export function parsePriceDelta(valStr: string): number {
   }
   return 0;
 }
+
+type AxisConfig = { visible: boolean };
+type AxesByKey<A extends AxisConfig> = Record<"size" | "color" | "fabric" | "four" | "five", A>;
+
+/** An axis is shown when the store shows it or when the product has values for it. */
+export function withOfferedAxes<A extends AxisConfig>(
+  base: AxesByKey<A>,
+  offered: Record<"size" | "color" | "fabric" | "four" | "five", string[]>,
+): AxesByKey<A> {
+  return {
+    size: { ...base.size, visible: base.size.visible || offered.size.length > 0 },
+    color: { ...base.color, visible: base.color.visible || offered.color.length > 0 },
+    fabric: { ...base.fabric, visible: base.fabric.visible || offered.fabric.length > 0 },
+    four: { ...base.four, visible: base.four.visible || offered.four.length > 0 },
+    five: { ...base.five, visible: base.five.visible || offered.five.length > 0 },
+  };
+}

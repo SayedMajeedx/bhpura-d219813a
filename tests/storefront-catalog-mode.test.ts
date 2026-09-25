@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
   isCatalogMode,
@@ -12,6 +12,17 @@ import {
 } from "../src/lib/storefront-mode";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+
+/** The product page route together with the feature files it was split into. */
+const productPageSource = () =>
+  [
+    "src/routes/$slug.product.$id.tsx",
+    ...readdirSync("src/features/product-page/components")
+      .sort()
+      .map((file) => `src/features/product-page/components/${file}`),
+  ]
+    .map(read)
+    .join("\n");
 
 describe("storefront catalog mode logic (src/lib/storefront-mode.ts)", () => {
   describe("isCatalogMode", () => {
@@ -204,7 +215,7 @@ describe("Catalog Mode Architectural Contracts & Server Guards", () => {
   });
 
   it("product details route replaces buy buttons with WhatsApp inquiry in catalog mode", () => {
-    const productRoute = read("src/routes/$slug.product.$id.tsx");
+    const productRoute = productPageSource();
 
     expect(productRoute).toContain("isCatalogMode(settings)");
     expect(productRoute).toContain("buildWhatsAppInquiryUrl");
