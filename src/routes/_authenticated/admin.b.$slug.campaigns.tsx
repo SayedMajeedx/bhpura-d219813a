@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { customersQueries } from "@/lib/data/customers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -148,18 +149,8 @@ function CampaignsPage() {
 
   const customerCrmStats = useMemo(() => buildCustomerCrmStats(ordersQ.data ?? []), [ordersQ.data]);
 
-  const businessQ = useQuery({
-    queryKey: ["campaigns-business", brandId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("business_settings")
-        .select("business_name")
-        .eq("brand_id", brandId)
-        .maybeSingle();
-      return data?.business_name ?? "";
-    },
-  });
-  const businessName = businessQ.data ?? "";
+  const businessQ = useQuery(businessSettingsQueries.detail(brandId));
+  const businessName = businessQ.data?.business_name ?? "";
 
   const onSelectTemplate = (id: string) => {
     setSelectedId(id);

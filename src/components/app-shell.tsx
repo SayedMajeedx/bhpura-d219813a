@@ -4,6 +4,7 @@ import { SpotlightCommandPalette } from "@/components/spotlight-command-palette"
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { businessSettingsQueries, type BusinessSettingsRow } from "@/lib/data/business-settings";
 import { customersQueries } from "@/lib/data/customers";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
@@ -40,6 +41,9 @@ type BrandRow = {
  * Theme is provided here rather than at the router root so the `.dark` class
  * is scoped to admin. Storefront appearance is the merchant's own setting.
  */
+/** The admin typography of the shared settings row. */
+const adminTypographyOf = (row: BusinessSettingsRow | null) => row?.admin_typography ?? null;
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
@@ -306,15 +310,8 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
     storeProfile.modules,
   ]);
   const adminTypographyQuery = useQuery({
-    queryKey: ["admin-typography", activeBrand?.id],
-    queryFn: async () => {
-      const { data, error } = await (supabase.from("business_settings") as any)
-        .select("admin_typography")
-        .eq("brand_id", activeBrand!.id)
-        .maybeSingle();
-      if (error) throw error;
-      return data?.admin_typography ?? null;
-    },
+    ...businessSettingsQueries.detail(activeBrand?.id ?? ""),
+    select: adminTypographyOf,
     enabled: Boolean(activeBrand?.id) && !isPlatformMode,
     staleTime: 5 * 60_000,
   });

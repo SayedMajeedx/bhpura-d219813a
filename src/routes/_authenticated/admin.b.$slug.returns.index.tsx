@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { useBrand } from "@/lib/brand-context";
 import { useProfile } from "@/lib/profile-context";
 import { useI18n } from "@/lib/i18n";
@@ -33,19 +34,7 @@ function ReturnsIndexPage() {
 
   const brandId = brand?.id;
 
-  const settingsQ = useQuery({
-    queryKey: ["business-settings-currency", brandId],
-    queryFn: async () => {
-      if (!brandId) return null;
-      const { data } = await (supabase as any)
-        .from("business_settings")
-        .select("currency")
-        .eq("brand_id", brandId)
-        .maybeSingle();
-      return data;
-    },
-    enabled: !!brandId,
-  });
+  const settingsQ = useQuery(businessSettingsQueries.detail(brandId ?? ""));
   const currency = settingsQ.data?.currency || (brand as any)?.currency || "BHD";
 
   // Fetch returns with related order, customer, and items

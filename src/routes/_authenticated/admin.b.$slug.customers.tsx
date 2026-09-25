@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, useNavigate, useRouterState, Link } from "@tan
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, useMemo, useDeferredValue } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { importCustomerDatabase } from "@/lib/customer-importer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -848,17 +849,8 @@ function CustomersPage() {
   });
 
   const businessName = useQuery({
-    queryKey: ["business-name", brandId],
-    staleTime: 30_000,
+    ...businessSettingsQueries.detail(brandId),
     refetchOnWindowFocus: false,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("business_settings")
-        .select("business_name, currency")
-        .eq("brand_id", brandId)
-        .maybeSingle();
-      return data ?? null;
-    },
   });
   const currency = businessName.data?.currency ?? "BHD";
 

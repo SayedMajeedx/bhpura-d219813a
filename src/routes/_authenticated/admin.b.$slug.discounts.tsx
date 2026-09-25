@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { Tags, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
@@ -111,18 +112,7 @@ function DiscountCodes() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
 
-  const settingsQ = useQuery({
-    queryKey: ["business-settings-currency", brand.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("business_settings")
-        .select("currency")
-        .eq("brand_id", brand.id)
-        .maybeSingle();
-      if (error) throw error;
-      return data ?? { currency: "BHD" };
-    },
-  });
+  const settingsQ = useQuery(businessSettingsQueries.detail(brand.id));
   const currency = settingsQ.data?.currency ?? "BHD";
 
   const getCurrencyPrecision = (curr: string) => {
