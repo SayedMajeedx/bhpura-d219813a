@@ -1,7 +1,22 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(path, "utf8");
+
+// The dashboard is split across its route and src/features/dashboard (Phase 5).
+const dashboardSource = () =>
+  [
+    "src/routes/_authenticated/admin.b.$slug.dashboard.tsx",
+    ...["components", "hooks", "lib"]
+      .filter((dir) => existsSync(`src/features/dashboard/${dir}`))
+      .flatMap((dir) =>
+        readdirSync(`src/features/dashboard/${dir}`)
+          .sort()
+          .map((file) => `src/features/dashboard/${dir}/${file}`),
+      ),
+  ]
+    .map((file) => readFileSync(file, "utf8"))
+    .join("\n");
 
 // The checkout is split across its route and src/features/checkout (Phase 5).
 const checkoutSource = () =>
@@ -49,7 +64,7 @@ describe("storefront quality upgrades", () => {
   });
 
   it("alerts admins about available products without images", () => {
-    const dashboard = read("src/routes/_authenticated/admin.b.$slug.dashboard.tsx");
+    const dashboard = dashboardSource();
     expect(dashboard).toContain("availableWithoutImages");
     expect(dashboard).toContain("منتجات متوفرة بلا صور");
   });
