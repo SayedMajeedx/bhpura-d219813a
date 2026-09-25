@@ -25,6 +25,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
+import { catalogQueries } from "@/lib/data/catalog";
 import { useBrand } from "@/lib/brand-context";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useI18n } from "@/lib/i18n";
@@ -219,30 +220,8 @@ function ContentStudioPage() {
       return (data ?? []) as Product[];
     },
   });
-  const variantsQ = useQuery({
-    queryKey: ["content-studio-variants", brand.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("product_variants")
-        .select(
-          "id,product_id,size,color,fabric,selling_price,original_price,image_url,stock_main,stock_incubator",
-        )
-        .eq("brand_id", brand.id);
-      if (error) throw error;
-      return (data ?? []) as Array<{
-        id: string;
-        product_id: string;
-        size: string | null;
-        color: string | null;
-        fabric: string | null;
-        selling_price: number | null;
-        original_price: number | null;
-        image_url: string | null;
-        stock_main: number | null;
-        stock_incubator: number | null;
-      }>;
-    },
-  });
+  // Prices, stock and images per variant, from the shared catalog.
+  const variantsQ = useQuery(catalogQueries.variants(brand.id));
   const settingsQ = useQuery(businessSettingsQueries.detail(brand.id));
   const products = productsQ.data ?? [];
   const selected = products.find((product) => product.id === productId) ?? products[0];

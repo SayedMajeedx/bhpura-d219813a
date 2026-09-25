@@ -2,7 +2,17 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { Tags, Calendar } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  createPromoCode,
+  deletePromoCode,
+  invalidatePromoCodes,
+  promoCodesKeys,
+  promoCodesQueries,
+  updatePromoCode,
+  type PromoCodeRow,
+} from "@/lib/data/promo-codes";
+import { catalogQueries } from "@/lib/data/catalog";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 import { ordersQueries, type OrderPromoRow } from "@/lib/data/orders";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { useBrand } from "@/lib/brand-context";
@@ -74,6 +84,9 @@ type Promo = {
 
 type PromoForm = Omit<Promo, "id" | "brand_id" | "created_at">;
 
+/** The list with `discount_type` narrowed to the two values the form offers. */
+const asPromos = (rows: PromoCodeRow[]) => rows as Promo[];
+
 const EMPTY: PromoForm = {
   code: "",
   discount_type: "percentage",
@@ -140,35 +153,13 @@ function DiscountCodes() {
     return 2;
   };
 
-  const promos = useQuery({
-    queryKey: ["promo-codes", brand.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("promo_codes")
-        .select(
-          "id,brand_id,code,discount_type,discount_value,minimum_order_amount,maximum_discount_amount,first_time_customers_only,returning_customers_only,exclude_sale_items,usage_limit_per_customer,is_active,created_at,exclude_low_margin,margin_threshold,start_date,end_date,max_redemptions",
-        )
-        .eq("brand_id", brand.id)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as Promo[];
-    },
-  });
+  const promos = useQuery({ ...promoCodesQueries.list(brand.id), select: asPromos });
 
   // Client-side analytics aggregation to show redemption counts and revenue driven
   const analyticsQ = useQuery({ ...ordersQueries.promoOrders(brand.id), select: promoUsageFrom });
 
-  const variantsQ = useQuery({
-    queryKey: ["discounts-product-variants", brand.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("product_variants")
-        .select("id, selling_price, cost_price")
-        .eq("brand_id", brand.id);
-      if (error) throw error;
-      return (data ?? []) as Array<{ id: string; selling_price: number; cost_price: number }>;
-    },
-  });
+  // The margin warning reads prices and costs from the shared catalog.
+  const variantsQ = useQuery(catalogQueries.variants(brand.id));
 
   // Debounced real-time profit margin evaluation to protect bottom-line during typing
   useEffect(() => {
@@ -230,7 +221,7 @@ function DiscountCodes() {
     const nextActive = !p.is_active;
 
     // Optimistically update query data
-    qc.setQueryData(["promo-codes", brand.id], (old: Promo[] | undefined) => {
+    qc.setQueryData(promoCodesKeys.list(brand.id), (old: PromoCodeRow[] | undefined) => {
       if (!old) return old;
       return old.map((item) => (item.id === p.id ? { ...item, is_active: nextActive } : item));
     });
@@ -242,24 +233,19 @@ function DiscountCodes() {
     );
 
     try {
-      const { error } = await supabase
-        .from("promo_codes")
-        .update({ is_active: nextActive })
-        .eq("id", p.id)
-        .eq("brand_id", brand.id);
-
-      if (error) throw error;
-    } catch (err: any) {
+      await updatePromoCode(brand.id, p.id, { is_active: nextActive });
+    } catch (err) {
       // Revert cache on error
-      qc.setQueryData(["promo-codes", brand.id], (old: Promo[] | undefined) => {
+      qc.setQueryData(promoCodesKeys.list(brand.id), (old: PromoCodeRow[] | undefined) => {
         if (!old) return old;
         return old.map((item) => (item.id === p.id ? { ...item, is_active: !nextActive } : item));
       });
+      const message = getFriendlyErrorMessage(err);
       toast.error(
-        ar ? `فشل في تحديث حالة الرمز: ${err.message}` : `Failed to update status: ${err.message}`,
+        ar ? `فشل في تحديث حالة الرمز: ${message}` : `Failed to update status: ${message}`,
       );
     } finally {
-      qc.invalidateQueries({ queryKey: ["promo-codes", brand.id] });
+      void invalidatePromoCodes(qc, brand.id);
     }
   };
 
@@ -329,35 +315,34 @@ function DiscountCodes() {
       updated_at: new Date().toISOString(),
     };
 
-    const query = editing
-      ? supabase.from("promo_codes").update(payload).eq("id", editing.id).eq("brand_id", brand.id)
-      : supabase.from("promo_codes").insert(payload);
-
-    const { error } = await query;
-    setSaving(false);
-    if (error) {
+    try {
+      if (editing) await updatePromoCode(brand.id, editing.id, payload);
+      else await createPromoCode(brand.id, payload);
+    } catch (error) {
       return toast.error(
-        error.code === "23505"
+        (error as { code?: string }).code === "23505"
           ? ar
             ? "هذا الرمز موجود بالفعل"
             : "This code already exists"
-          : error.message,
+          : getFriendlyErrorMessage(error),
       );
+    } finally {
+      setSaving(false);
     }
     toast.success(ar ? "تم حفظ رمز الخصم" : "Promo code saved");
     setOpen(false);
-    qc.invalidateQueries({ queryKey: ["promo-codes", brand.id] });
+    void invalidatePromoCodes(qc, brand.id);
   };
 
   const remove = async (p: Promo) => {
     if (!confirm(ar ? `حذف الرمز ${p.code}؟` : `Delete ${p.code}?`)) return;
-    const { error } = await supabase
-      .from("promo_codes")
-      .delete()
-      .eq("id", p.id)
-      .eq("brand_id", brand.id);
-    if (error) toast.error(error.message);
-    else qc.invalidateQueries({ queryKey: ["promo-codes", brand.id] });
+    try {
+      await deletePromoCode(brand.id, p.id);
+    } catch (error) {
+      toast.error(getFriendlyErrorMessage(error));
+      return;
+    }
+    void invalidatePromoCodes(qc, brand.id);
   };
 
   // Pre-calculate filter tabs counts
