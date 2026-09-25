@@ -68,15 +68,16 @@ node scripts/maintainability-metrics.mjs # Architecture metrics & debt ratchet c
 
 - **Products & Catalog**:
   - Admin management: `src/features/inventory/` (`components/` for the product list, product editor and variant table; `hooks/` for data and mutations; `lib/` for pure, unit-tested rules). The route `src/routes/_authenticated/admin.b.$slug.inventory.tsx` only loads data and picks the tab. Shared inventory UI: `src/components/inventory/`
-  - Storefront product page: `src/routes/$slug.product.$id.tsx`
+  - Storefront product page: `src/routes/$slug.product.$id.tsx` (composition) + `src/features/product-page/` (option rules, pricing, cart line, gallery, pickers)
   - Cards & presentation: `src/components/storefront/product-card.tsx` (`ProductCard` / `ProductCardV2`)
   - Variant axes & SKUs: `src/lib/variant-axes.ts`, `src/lib/variant-sku-utils.ts`, `src/lib/variant-i18n.ts`
 - **Orders & Checkout**:
   - Admin order editor: `src/features/orders/` (`components/` for the cards, dialogs and line editor; `hooks/` for data, save, payment, promo and line actions; `actions/` for print/share and status changes; `lib/` for pure, unit-tested rules such as totals, save payloads and change detection). The route `src/routes/_authenticated/admin.b.$slug.orders.$id.tsx` holds the editor state and layout. Shared order UI: `src/components/orders/`
-  - Storefront checkout: `src/routes/$slug.checkout.tsx`, `src/routes/$slug.thank-you.$orderId.tsx`
+  - Storefront checkout: `src/routes/$slug.checkout.tsx` (composition) + `src/features/checkout/` (validation, `place_storefront_order` args, hooks, sections); `src/routes/$slug.thank-you.$orderId.tsx`
+  - Admin dashboard: `src/features/dashboard/` (`useDashboardData`, pure metrics in `lib/dashboard-metrics.ts`, KPI cards)
   - State machine & returns: `src/lib/order-workflow.ts`, `src/lib/returns.functions.ts`
 - **Storefront Hero & Media**:
-  - Components: `HeroBanner` in `src/routes/$slug.index.tsx` (V1), `src/components/storefront/HeroV2.tsx` (V2)
+  - Components: `HeroBanner` in `src/features/storefront-home/components/` (V1), `src/components/storefront/HeroV2.tsx` (V2). Home page rules: `src/features/storefront-home/lib/home-products.ts`; storefront shell (settings normaliser, head, theme, footer): `src/features/storefront-shell/`
   - Resolvers & aspect logic: `src/lib/hero-media.ts`, `src/lib/media-aspect.ts`
   - Admin banner configuration: `src/features/settings/` (storefront tab, group `home_hero`)
 - **Store Settings & Identity**:
@@ -106,15 +107,15 @@ node scripts/maintainability-metrics.mjs # Architecture metrics & debt ratchet c
 - **Design Tokens**: Never hardcode hex colors or arbitrary pixel radii. Use semantic tokens (`bg-primary`, `text-muted-foreground`, `border-border`). Follow [`.agents/rules/AGENTS.md`](./.agents/rules/AGENTS.md).
 - **RTL & Bilingual**: All UI components must support Arabic (RTL) and English (LTR). Use logical margins/padding or direction-aware flex layouts.
 - **Shared Resolvers Over Surface-Specific Hacks**: Never duplicate resolution logic in a route; place canonical logic in `src/lib/` (e.g., `resolveHeroMedia`, `calculateStock`).
-- **Data Access Layer** (`src/lib/data/`, see its README): reads and writes live in one module per domain with `selects.ts` (column lists), `keys.ts` (query-key factories), `queries.ts` (fetchers + `queryOptions`) and `types.ts`. Screens call `useQuery(xxxQueries.foo(...))` and never build keys or queries by hand. Migrated so far: the public storefront catalog (`src/lib/data/storefront/`), enforced by ESLint on `src/routes/$slug.*` and `src/components/storefront/**`. Admin domains (orders, products, customers, inventory, settings) are still direct calls and migrate next.
+- **Data Access Layer** (`src/lib/data/`, see its README): reads and writes live in one module per domain with `selects.ts` (column lists), `keys.ts` (query-key factories), `queries.ts` (fetchers + `queryOptions`) and `types.ts`. Screens call `useQuery(xxxQueries.foo(...))` and never build keys or queries by hand. Migrated so far: the public storefront catalog (`storefront/`); admin orders reads + writes (`orders/`, incl. finance, COGS and reconciliation views); `business-settings/`; `expenses/`; admin catalog reads (`catalog/`: products, variants, BOM, packaging). ESLint `no-restricted-syntax` enforces them on the storefront routes and slices, and on the orders, dashboard, accounting and expenses screens (no direct `from(...)` for those tables, no hand-built keys). Still direct: catalog writes (inventory), customers, settings writes and smaller domains. Method: [`.agents/skills/data-layer-migration`](./.agents/skills/data-layer-migration/SKILL.md); status and next steps: [`docs/agent-handoff.md`](./docs/agent-handoff.md).
 
 ---
 
 ## 8. Database & Security Rules
 
-- **Production Database**: Linked to remote Supabase. Treat as **read-only** by default. Never execute `db reset`, `db push`, or unvetted DDL.
+- **Production Database**: Linked to remote Supabase. Treat as **read-only** by default (`npx supabase db query --linked "<select>"` is fine). Never execute `db reset`, `db push`, `migration repair`, or unvetted DDL; the owner applies migrations (`npx supabase db push --linked`) after reviewing a `--dry-run`.
 - **Row Level Security (RLS)**: Every multi-tenant table enforces RLS. Security functions live in Postgres (`can_access_brand`, `is_brand_owner`, `is_super_admin`). Always scope queries by `brand_id`.
-- **Additive Migrations**: Schema changes must be backward-compatible, sequential SQL scripts in `supabase/migrations/`. Check with `npm run db:migrations:check`.
+- **Additive Migrations**: Schema changes must be backward-compatible, sequential SQL scripts in `supabase/migrations/`. Check with `npm run db:migrations:check`. Local and production history match (zero drift); CI fails a PR whose migration is not applied yet, so apply (owner) → verify → regenerate types → open the PR.
 
 ---
 
@@ -154,3 +155,7 @@ Specialized knowledge and review workflows live in [`.agents/`](./.agents/):
 | **`order-inventory-logic`**            | Changing orders, stock, or ledger      | [`.agents/skills/order-inventory-logic/SKILL.md`](./.agents/skills/order-inventory-logic/SKILL.md)                       |
 | **`financial-data-consistency`**       | Modifying accounting, COGS, expenses   | [`.agents/skills/financial-data-consistency/SKILL.md`](./.agents/skills/financial-data-consistency/SKILL.md)             |
 | **`migration-hygiene`**                | Writing or testing database migrations | [`.agents/skills/migration-hygiene/SKILL.md`](./.agents/skills/migration-hygiene/SKILL.md)                               |
+| **`data-layer-migration`**             | Moving a domain into `src/lib/data/`   | [`.agents/skills/data-layer-migration/SKILL.md`](./.agents/skills/data-layer-migration/SKILL.md)                         |
+| **`giant-file-split`**                 | Splitting files over 1000 lines        | [`.agents/skills/giant-file-split/SKILL.md`](./.agents/skills/giant-file-split/SKILL.md)                                 |
+
+Continuing the maintainability roadmap? Start with [`docs/agent-handoff.md`](./docs/agent-handoff.md) (status, owner rules, next steps, method) and the helpers in [`scripts/refactor-tools/`](./scripts/refactor-tools/README.md).
