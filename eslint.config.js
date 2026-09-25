@@ -122,9 +122,9 @@ export default tseslint.config(
         },
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(customers|customer_addresses)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(customers|customer_addresses|orders|order_items)$/]",
           message:
-            "The shopper's own customer record and addresses go through `@/lib/data/customers` (ownCustomerQueries, fetchOwnCustomer and the customer mutations).",
+            "The shopper's own records and orders go through `@/lib/data/customers` (ownCustomerQueries, fetchOwnCustomer, the customer mutations) and `@/lib/data/storefront` (orderConfirmation).",
         },
         {
           selector:
@@ -160,15 +160,25 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(orders|order_items|expenses|business_settings|products|product_variants|product_bom_items|packaging_materials|customers|customer_addresses)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(orders|order_items|expenses|business_settings|products|product_variants|product_bom_items|packaging_materials|customers|customer_addresses|return_requests)$/]",
           message:
             "Orders, expenses, business settings, the catalog and customers go through `@/lib/data/{orders,expenses,business-settings,catalog,customers}`, not direct Supabase calls.",
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(orders?|expenses|business-settings|cogs|orders-reconciliation|expenses-business-settings|products|variants|packaging-materials|product-bom-items(-all)?|customers|customer_addresses|dashboard-(orders-with-items|recent-orders|expenses|expenses-full|business-settings|products|variants|customers))$/]",
+            "ArrayExpression > Literal:first-child[value=/^(orders?|expenses|business-settings|cogs|orders-reconciliation|expenses-business-settings|products|variants|packaging-materials|product-bom-items(-all)?|customers|customer_addresses|dashboard-(orders-with-items|recent-orders|expenses|expenses-full|business-settings|products|variants|customers|pending-returns|incubator-sales|catalog-inquiries|reporting-overview(-previous)?))$/]",
           message:
             "Build these cache keys with `ordersKeys` / `expensesKeys` / `businessSettingsKeys` / `catalogKeys` / `customersKeys` (or the invalidate helpers).",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='rpc'][arguments.0.value='rpc_reporting_incubator_sales']",
+          message: "Use `reportingQueries.incubatorSales` from `@/lib/data/reporting`.",
+        },
+        {
+          selector:
+            "CallExpression[callee.expression.property.name='rpc'][arguments.0.value='rpc_reporting_incubator_sales']",
+          message: "Use `reportingQueries.incubatorSales` from `@/lib/data/reporting`.",
         },
       ],
     },

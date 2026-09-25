@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { CheckCircle2 } from "lucide-react";
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { publicSupabase as supabase } from "@/integrations/supabase/client";
+import { storefrontQueries } from "@/lib/data/storefront";
 
 export const Route = createFileRoute("/$slug/thank-you/$orderId")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -29,19 +29,9 @@ function ThankYou() {
   }, [clearCart]);
 
   // Fetch actual order details from Supabase to prevent URL manipulation and ensure correct presentation
-  const { data: order, isLoading } = useQuery({
-    queryKey: ["storefront", "order", orderId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("fulfillment_method, digital_delivery_channel")
-        .eq("id", orderId)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!orderId,
-  });
+  const { data: order, isLoading } = useQuery(
+    storefrontQueries.orderConfirmation(brand.slug, orderId),
+  );
 
   const orderFulfillment = order?.fulfillment_method || fulfillment;
   const orderChannel = order?.digital_delivery_channel || channel;

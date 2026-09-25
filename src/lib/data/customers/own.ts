@@ -40,7 +40,29 @@ export async function fetchOwnAddresses(brandId: string, customerId: string) {
 }
 export type OwnAddress = Awaited<ReturnType<typeof fetchOwnAddresses>>[number];
 
+/** The shopper's latest 100 orders with their lines, newest first. */
+export async function fetchOwnOrders(brandId: string, customerId: string) {
+  const { data, error } = await supabase
+    .from("orders")
+    .select(
+      "id, invoice_number, order_date, status, payment_status, fulfillment_status, total, currency, public_invoice_token, order_items(id, description, quantity, unit_price)",
+    )
+    .eq("brand_id", brandId)
+    .eq("customer_id", customerId)
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  return data ?? [];
+}
+export type OwnOrder = Awaited<ReturnType<typeof fetchOwnOrders>>[number];
+
 export const ownCustomerQueries = {
+  orders: (brandId: string, customerId: string | undefined) =>
+    queryOptions({
+      queryKey: customersKeys.ownOrders(brandId, customerId ?? ""),
+      queryFn: () => fetchOwnOrders(brandId, customerId ?? ""),
+      enabled: Boolean(brandId && customerId),
+    }),
   profile: (brandId: string, authUserId: string | undefined) =>
     queryOptions({
       queryKey: customersKeys.ownProfile(brandId, authUserId ?? ""),

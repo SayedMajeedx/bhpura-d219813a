@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { reportingKeys } from "@/lib/data/reporting";
 import {
   businessSettingsQueries,
   invalidateBusinessSettings,
@@ -76,10 +77,8 @@ export function PackagingMaterialsTab() {
       await updateBusinessSettings(brandId, { bom_enabled: checked });
 
       await invalidateBusinessSettings(qc, brandId);
-      await qc.invalidateQueries({ queryKey: ["dashboard-reporting-overview", brand.slug] });
-      await qc.invalidateQueries({
-        queryKey: ["dashboard-reporting-overview-previous", brand.slug],
-      });
+      await qc.invalidateQueries({ queryKey: reportingKeys.overviews(brand.slug) });
+      await qc.invalidateQueries({ queryKey: reportingKeys.previousOverviews(brand.slug) });
       await qc.invalidateQueries({ queryKey: ["cogs", brandId] });
 
       if (checked) {

@@ -40,4 +40,6 @@ export const storefrontKeys = {
   customizationOptions: (slug: string) =>
     [...storefrontKeys.all(slug), "customization-options"] as const,
   pageMeta: (slug: string) => [...storefrontKeys.all(slug), "page-meta"] as const,
+  orderConfirmation: (slug: string, orderId: string) =>
+    [...storefrontKeys.all(slug), "order", orderId] as const,
 };

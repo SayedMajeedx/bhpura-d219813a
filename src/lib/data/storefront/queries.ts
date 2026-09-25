@@ -399,7 +399,28 @@ export async function fetchCustomizationOptions(brandId: string) {
  * `useQuery({ ...storefrontQueries.products(brand), initialData })`.
  * Never override `queryFn`: a key must always be filled by the same fetcher.
  */
+/**
+ * How an order is fulfilled, for the thank-you page. Read with the anonymous
+ * client, which RLS gives no access to orders, so this returns null for every
+ * shopper and the page uses its URL parameters (bug backlog #19).
+ */
+export async function fetchOrderConfirmation(orderId: string) {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("fulfillment_method, digital_delivery_channel")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 export const storefrontQueries = {
+  orderConfirmation: (slug: string, orderId: string) =>
+    queryOptions({
+      queryKey: storefrontKeys.orderConfirmation(slug, orderId),
+      queryFn: () => fetchOrderConfirmation(orderId),
+      enabled: Boolean(orderId),
+    }),
   products: (brand: StorefrontBrandRef) =>
     queryOptions({
       queryKey: storefrontKeys.products(brand.slug),

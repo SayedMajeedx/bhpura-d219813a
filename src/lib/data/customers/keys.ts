@@ -30,4 +30,6 @@ export const customersKeys = {
     [...customersKeys.own(brandId), "profile", authUserId] as const,
   ownAddresses: (brandId: string, customerId: string) =>
     [...customersKeys.own(brandId), "addresses", customerId] as const,
+  ownOrders: (brandId: string, customerId: string) =>
+    [...customersKeys.own(brandId), "orders", customerId] as const,
 };

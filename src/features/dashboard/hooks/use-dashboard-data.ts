@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { fetchCatalogInquiriesReporting, fetchReportingOverview } from "@/lib/reporting.functions";
+import { fetchReportingOverview } from "@/lib/reporting.functions";
 import { isCatalogMode } from "@/lib/storefront-mode";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { businessSettingsKeys, businessSettingsQueries } from "@/lib/data/business-settings";
@@ -9,6 +8,8 @@ import { expensesKeys, expensesQueries } from "@/lib/data/expenses";
 import { ordersKeys, ordersQueries } from "@/lib/data/orders";
 import { catalogKeys, catalogQueries } from "@/lib/data/catalog";
 import { customersKeys, customersQueries } from "@/lib/data/customers";
+import { reportingKeys, reportingQueries } from "@/lib/data/reporting";
+import { returnsQueries } from "@/lib/data/returns";
 
 /**
  * Everything the dashboard reads: settings, the Reports accounting rows for
@@ -47,10 +48,8 @@ export function useDashboardData({
 
   // Fetch catalog inquiries metrics when store is in catalog mode
   const catalogInquiriesQ = useQuery({
-    queryKey: ["dashboard-catalog-inquiries", brandId],
+    ...reportingQueries.catalogInquiries(brandId),
     enabled: Boolean(brandId) && isCatalog,
-    queryFn: () => fetchCatalogInquiriesReporting(brandId),
-    staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
 
@@ -58,13 +57,12 @@ export function useDashboardData({
 
   // Use the exact same accounting engine as Reports so dashboard KPIs cannot drift.
   const reportingOverviewQ = useQuery({
-    queryKey: [
-      "dashboard-reporting-overview",
+    queryKey: reportingKeys.overview(
       slug,
       dashboardPeriods.start.toISOString(),
       dashboardPeriods.end.toISOString(),
       reportingTimezone,
-    ],
+    ),
     queryFn: () =>
       fetchReportingOverview(
         { from: dashboardPeriods.start, to: dashboardPeriods.end },
@@ -77,13 +75,12 @@ export function useDashboardData({
     refetchOnWindowFocus: false,
   });
   const previousReportingOverviewQ = useQuery({
-    queryKey: [
-      "dashboard-reporting-overview-previous",
+    queryKey: reportingKeys.previousOverview(
       slug,
       dashboardPeriods.previousStart.toISOString(),
       dashboardPeriods.previousEnd.toISOString(),
       reportingTimezone,
-    ],
+    ),
     queryFn: () =>
       fetchReportingOverview(
         { from: dashboardPeriods.previousStart, to: dashboardPeriods.previousEnd },
@@ -132,42 +129,12 @@ export function useDashboardData({
 
   // Pending returns requiring inspection/action
   const pendingReturnsQ = useQuery({
-    queryKey: ["dashboard-pending-returns", brandId],
-    queryFn: async () => {
-      const { count, error } = await (supabase as any)
-        .from("return_requests")
-        .select("id", { count: "exact", head: true })
-        .eq("brand_id", brandId)
-        .in("status", ["new", "under_review", "under_inspection", "received"]);
-      if (error) return 0;
-      return count ?? 0;
-    },
-    staleTime: 60_000,
+    ...returnsQueries.pendingCount(brandId),
     refetchOnWindowFocus: false,
   });
 
   const incubatorSalesQ = useQuery({
-    queryKey: ["dashboard-incubator-sales", brandId],
-    queryFn: async () => {
-      const end = new Date();
-      const start = new Date(end);
-      start.setDate(start.getDate() - 60);
-      const { data, error } = await (supabase as any).rpc("rpc_reporting_incubator_sales", {
-        p_start_date: start.toISOString(),
-        p_end_date: end.toISOString(),
-        p_tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        p_interval: "day",
-        p_brand_slug: slug,
-      });
-      if (error) throw error;
-      return ((data?.timeseries ?? []) as any[]).map((row) => ({
-        ...row,
-        sold_at: row.time_bucket,
-        gross_amount: row.gross_amount,
-        quantity: row.sale_count,
-      }));
-    },
-    staleTime: 60_000,
+    ...reportingQueries.incubatorSales(brandId, slug),
     refetchOnWindowFocus: false,
   });
 
@@ -179,9 +146,9 @@ export function useDashboardData({
       { table: "products", brandId, queryKey: catalogKeys.products(brandId) },
       { table: "product_variants", brandId, queryKey: catalogKeys.variants(brandId) },
       { table: "expenses", brandId, queryKey: expensesKeys.all(brandId) },
-      { table: "return_requests", brandId, queryKey: ["dashboard-reporting-overview", slug] },
-      { table: "product_bom_items", brandId, queryKey: ["dashboard-reporting-overview", slug] },
-      { table: "packaging_materials", brandId, queryKey: ["dashboard-reporting-overview", slug] },
+      { table: "return_requests", brandId, queryKey: reportingKeys.overviews(slug) },
+      { table: "product_bom_items", brandId, queryKey: reportingKeys.overviews(slug) },
+      { table: "packaging_materials", brandId, queryKey: reportingKeys.overviews(slug) },
       { table: "business_settings", brandId, queryKey: businessSettingsKeys.detail(brandId) },
     ],
     `dashboard-realtime:${brandId}`,
