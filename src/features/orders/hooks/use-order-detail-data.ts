@@ -2,10 +2,10 @@ import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getBenefitReceiptViewUrl } from "@/lib/benefit-receipt.functions";
-import { queryKeys } from "@/lib/query-keys";
 import type { SavedAddress } from "@/features/orders/types";
 import { ordersKeys, ordersQueries } from "@/lib/data/orders";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
+import { catalogQueries } from "@/lib/data/catalog";
 
 /**
  * Everything the order editor reads: the order (polled, plus realtime updates),
@@ -57,40 +57,20 @@ export function useOrderDetailData({
   }, [id, qc, brandId]);
 
   const productsQ = useQuery({
-    queryKey: queryKeys.products.all(brandId),
-    enabled: !isCourier,
-    queryFn: async () =>
-      (await supabase.from("products").select("*").eq("brand_id", brandId)).data ?? [],
+    ...catalogQueries.products(brandId),
+    enabled: !isCourier && Boolean(brandId),
   });
   const variantsQ = useQuery({
-    queryKey: queryKeys.variants.all(brandId),
-    enabled: !isCourier,
-    queryFn: async () =>
-      (await supabase.from("product_variants").select("*").eq("brand_id", brandId)).data ?? [],
+    ...catalogQueries.variants(brandId),
+    enabled: !isCourier && Boolean(brandId),
   });
   const bomItemsQ = useQuery({
-    queryKey: ["product-bom-items-all", brandId],
-    enabled: !isCourier,
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("product_bom_items")
-        .select("product_id, packaging_material_id, quantity_per_unit")
-        .eq("brand_id", brandId);
-      if (error) return [];
-      return (data ?? []) as any[];
-    },
+    ...catalogQueries.bomItems(brandId),
+    enabled: !isCourier && Boolean(brandId),
   });
   const packagingMaterialsQ = useQuery({
-    queryKey: ["packaging-materials", brandId],
-    enabled: !isCourier,
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("packaging_materials")
-        .select("*")
-        .eq("brand_id", brandId);
-      if (error) return [];
-      return (data ?? []) as any[];
-    },
+    ...catalogQueries.packagingMaterials(brandId),
+    enabled: !isCourier && Boolean(brandId),
   });
   const customersQ = useQuery({
     queryKey: ["customers", brandId],

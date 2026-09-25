@@ -33,6 +33,7 @@ import {
   Square,
 } from "lucide-react";
 import { toast } from "sonner";
+import { catalogKeys } from "@/lib/data/catalog";
 
 export interface BatchTransferProduct {
   id: string;
@@ -437,7 +438,7 @@ export function BatchIncubatorTransferModal({
         await Promise.all([
           qc.invalidateQueries({ queryKey: ["inventory_variants", brandId] }),
           qc.invalidateQueries({ queryKey: ["inventory_products", brandId] }),
-          qc.invalidateQueries({ queryKey: ["dashboard-variants", brandId] }),
+          qc.invalidateQueries({ queryKey: catalogKeys.variants(brandId) }),
           qc.invalidateQueries({ queryKey: ["incubator_stock", selectedIncubatorId] }),
           qc.invalidateQueries({ queryKey: ["incubator_movements", selectedIncubatorId] }),
           qc.invalidateQueries({ queryKey: ["incubator_summary", brandId] }),

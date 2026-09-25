@@ -31,18 +31,6 @@ Line numbers are as of 2026-09-24 and may drift; search for the quoted code.
 - **Problem**: it `await`s `supabase.from("orders").update(...)` without reading `error`, then deletes the duplicate address, so a failed repoint leaves orders pointing at a deleted address while the success toast shows. (The cash-flow reconciliation half was fixed when accounting moved to `updateOrder`.)
 - **Fix**: use `updateOrder` from `@/lib/data/orders` (it throws) when customers join the data layer, and stop on the first failure.
 
-## Shared admin caches
-
-### 13. One cache key, several sort orders
-
-- **Where**: `["products", brandId]` / `queryKeys.products.all`, `["variants", brandId]` / `queryKeys.variants.all` and `["packaging-materials", brandId]`.
-- **Problem**: each key is filled by several screens with different queries:
-  - products: inventory sorts newest first; the order editor and expenses do not sort.
-  - variants: inventory sorts by `created_at`; the order editor and expenses do not sort.
-  - packaging materials: the packaging tab sorts newest first, the BOM modal by name, and four other readers (order editor, order quick view, dashboard, expenses) do not sort.
-- **Effect**: whichever screen loads first decides the order the others show, so the inventory and packaging lists can appear unsorted or in the wrong order.
-- **Fix**: move products, variants and packaging into `src/lib/data/` (one fetcher per key, as the storefront layer does), and sort in the screen when a screen needs its own order.
-
 ## Inventory (`src/features/inventory/`)
 
 ### 1. Categories cache key shared by three different queries

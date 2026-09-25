@@ -33,13 +33,14 @@ src/lib/data/<domain>/
 
 ## Status
 
-| Domain                                                                                                 | Folder               | Enforced by ESLint                                   |
-| ------------------------------------------------------------------------------------------------------ | -------------------- | ---------------------------------------------------- |
-| Public storefront catalog (products, categories, rankings, search, page data)                          | `storefront/`        | `src/routes/$slug.*`, `src/components/storefront/**` |
-| Admin orders: queue, order detail, finance views (dashboard, reports, COGS, reconciliation) and writes | `orders/`            | orders, dashboard, accounting and expenses screens   |
-| Business settings row (settings form, order editor, dashboard, reports)                                | `business-settings/` | orders, dashboard, accounting and expenses screens   |
-| Expenses: list and writes (expenses page, OpEx/COGS and reports tabs, dashboard)                       | `expenses/`          | orders, dashboard, accounting and expenses screens   |
-| Admin products and inventory, customers, settings                                                      | not yet              | —                                                    |
+| Domain                                                                                                        | Folder               | Enforced by ESLint                                                             |
+| ------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------ |
+| Public storefront catalog (products, categories, rankings, search, page data)                                 | `storefront/`        | `src/routes/$slug.*`, `src/components/storefront/**`                           |
+| Admin orders: queue, order detail, finance views (dashboard, reports, COGS, reconciliation) and writes        | `orders/`            | orders, dashboard, accounting and expenses screens                             |
+| Business settings row (settings form, order editor, dashboard, reports)                                       | `business-settings/` | orders, dashboard, accounting and expenses screens                             |
+| Expenses: list and writes (expenses page, OpEx/COGS and reports tabs, dashboard)                              | `expenses/`          | orders, dashboard, accounting and expenses screens                             |
+| Admin catalog reads: products, variants, packaging BOM and materials (inventory, orders, expenses, dashboard) | `catalog/`           | orders, dashboard, accounting and expenses screens (inventory writes are next) |
+| Customers, settings writes, inventory writes                                                                  | not yet              | —                                                                              |
 
 Usage:
 
