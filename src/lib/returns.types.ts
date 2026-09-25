@@ -76,19 +76,25 @@ export interface ReturnItem {
     name_en: string | null;
     image_url: string | null;
   } | null;
-  variant?: {
-    id: string;
-    variant_name: string | null;
-    sku: string | null;
-    stock_quantity: number;
-  } | null;
-  replacement_variant?: {
-    id: string;
-    variant_name: string | null;
-    sku: string | null;
-    selling_price: number;
-    stock_quantity: number;
-  } | null;
+  variant?: ReturnVariantRef | null;
+  replacement_variant?: (ReturnVariantRef & { selling_price: number }) | null;
+}
+
+/**
+ * A variant as the returns screens select it. `product_variants` has no name
+ * or single stock column: a variant is labelled by its option values (see
+ * `returnVariantLabel`) and its store stock is `stock_main`.
+ */
+export interface ReturnVariantRef {
+  id: string;
+  sku: string | null;
+  size: string | null;
+  size_unit: string | null;
+  color: string | null;
+  fabric: string | null;
+  option_four: string | null;
+  option_five: string | null;
+  stock_main: number;
 }
 
 export interface ReturnRequest {
@@ -194,8 +200,13 @@ export interface InventoryMovementLog {
   created_at: string;
   variant?: {
     id: string;
-    variant_name: string | null;
     sku: string | null;
+    size: string | null;
+    size_unit: string | null;
+    color: string | null;
+    fabric: string | null;
+    option_four: string | null;
+    option_five: string | null;
     product?: {
       name_en: string | null;
       name_ar: string | null;

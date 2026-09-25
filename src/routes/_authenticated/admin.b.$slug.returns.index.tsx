@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { useBrand } from "@/lib/brand-context";
 import { useProfile } from "@/lib/profile-context";
@@ -14,6 +13,10 @@ import { ReturnsCommandHeader } from "@/components/returns/ReturnsCommandHeader"
 import { ReturnsScopeSwitcher, type ReturnsScope } from "@/components/returns/ReturnsScopeSwitcher";
 import { ReturnPolicyEditor } from "@/components/returns/ReturnPolicyEditor";
 import { RETURN_STATUS_CONFIG, type ReturnRequest } from "@/lib/returns.types";
+import { returnsQueries } from "@/lib/data/returns";
+
+/** The shared return types over the typed rows (JSON and status columns narrowed). */
+const asReturnRequests = (rows: unknown[]) => rows as ReturnRequest[];
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/returns/")({
   component: ReturnsIndexPage,
@@ -38,70 +41,9 @@ function ReturnsIndexPage() {
   const currency = settingsQ.data?.currency || (brand as any)?.currency || "BHD";
 
   // Fetch returns with related order, customer, and items
-  const { data: returns = [], isLoading } = useQuery<ReturnRequest[]>({
-    queryKey: ["admin-returns-list", brandId],
-    queryFn: async () => {
-      if (!brandId) return [];
-
-      const { data, error } = await (supabase as any)
-        .from("return_requests")
-        .select(
-          `
-          *,
-          order:orders (
-            id,
-            invoice_number,
-            total,
-            subtotal,
-            discount,
-            tax_amount,
-            shipping,
-            advance_paid,
-            payment_status,
-            status,
-            created_at,
-            customer_name_snapshot,
-            customer_phone_snapshot,
-            customer_email_snapshot
-          ),
-          customer:customers (
-            id,
-            name,
-            phone,
-            email
-          ),
-          items:return_items (
-            id,
-            product_id,
-            variant_id,
-            quantity,
-            unit_price,
-            total_price,
-            condition,
-            restocked,
-            action_type,
-            product:products (
-              id,
-              name_en,
-              name_ar,
-              image_url
-            ),
-            variant:product_variants (
-              id,
-              variant_name,
-              sku,
-              stock_quantity
-            )
-          )
-        `,
-        )
-        .eq("brand_id", brandId)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return (data as ReturnRequest[]) || [];
-    },
-    enabled: !!brandId,
+  const { data: returns = [], isLoading } = useQuery({
+    ...returnsQueries.list(brandId ?? ""),
+    select: asReturnRequests,
   });
 
   // Calculate scope counts

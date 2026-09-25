@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +22,8 @@ import { toast } from "sonner";
 import { createExchangeReplacementOrder } from "@/lib/returns.functions";
 import { formatMoney } from "@/lib/format";
 import type { ReturnRequest } from "@/lib/returns.types";
+import { returnsQueries } from "@/lib/data/returns";
+import { returnVariantLabel } from "@/lib/returns-variant";
 
 interface ReturnExchangeDialogProps {
   open: boolean;
@@ -56,32 +57,7 @@ export function ReturnExchangeDialog({
 
   // Fetch available products & variants for brand
   const { data: variants = [], isLoading: loadingVariants } = useQuery({
-    queryKey: ["brand-exchange-variants", brandId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("product_variants")
-        .select(
-          `
-          id,
-          variant_name,
-          sku,
-          selling_price,
-          stock_quantity,
-          product_id,
-          product:products (
-            id,
-            name_en,
-            name_ar,
-            base_price
-          )
-        `,
-        )
-        .eq("brand_id", brandId)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return (data as any[]) || [];
-    },
+    ...returnsQueries.exchangeVariants(brandId),
     enabled: open && !!brandId,
   });
 
@@ -102,7 +78,8 @@ export function ReturnExchangeDialog({
     const prodName = isAr
       ? selected.product?.name_ar || selected.product?.name_en
       : selected.product?.name_en || selected.product?.name_ar;
-    const variantLabel = selected.variant_name ? ` - ${selected.variant_name}` : "";
+    const optionLabel = returnVariantLabel(selected, isAr ? "ar" : "en");
+    const variantLabel = optionLabel ? ` - ${optionLabel}` : "";
 
     const next = [...items];
     next[index] = {
@@ -233,8 +210,9 @@ export function ReturnExchangeDialog({
                           const name = isAr
                             ? v.product?.name_ar || v.product?.name_en
                             : v.product?.name_en || v.product?.name_ar;
-                          const varName = v.variant_name ? ` (${v.variant_name})` : "";
-                          const stock = v.stock_quantity ?? 0;
+                          const optionLabel = returnVariantLabel(v, isAr ? "ar" : "en");
+                          const varName = optionLabel ? ` (${optionLabel})` : "";
+                          const stock = v.stock_main ?? 0;
 
                           return (
                             <SelectItem

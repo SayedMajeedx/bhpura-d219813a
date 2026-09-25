@@ -39,6 +39,7 @@ function builder(table: string) {
     eq: record("eq"),
     order: record("order"),
     maybeSingle: () => chain,
+    single: () => chain,
     then(resolve: (reply: Reply) => unknown, reject?: (reason: unknown) => unknown) {
       return Promise.resolve(respond(request)).then(resolve, reject);
     },
@@ -87,6 +88,34 @@ describe("the return policy", () => {
     const spy = vi.spyOn(qc, "invalidateQueries");
     await returns.invalidateReturns(qc, "b1");
     expect(spy.mock.calls.map(([f]) => f?.queryKey)).toEqual([["returns", "b1"]]);
+  });
+});
+
+describe("the admin returns screens (bug backlog #22)", () => {
+  it("select variants by columns that exist: options, SKU and stock_main", async () => {
+    respond = () => ({ data: [], error: null });
+    await returns.fetchAdminReturns("b1");
+    await returns.fetchAdminReturn("b1", "r1");
+    await returns.fetchExchangeVariants("b1");
+    for (const request of requests) {
+      expect(request.select).toContain("stock_main");
+      expect(request.select).toContain("option_five");
+      expect(request.select).not.toContain("variant_name");
+      expect(request.select).not.toContain("stock_quantity");
+    }
+  });
+
+  it("scope every admin read by brand", async () => {
+    respond = () => ({ data: [], error: null });
+    await returns.fetchAdminReturns("b1");
+    await returns.fetchAdminReturn("b1", "r1");
+    await returns.fetchExchangeVariants("b1");
+    expect(filters(requests[0], "eq")).toEqual([["brand_id", "b1"]]);
+    expect(filters(requests[1], "eq")).toEqual([
+      ["id", "r1"],
+      ["brand_id", "b1"],
+    ]);
+    expect(filters(requests[2], "eq")).toEqual([["brand_id", "b1"]]);
   });
 });
 

@@ -33,6 +33,7 @@ import {
   type ReturnItem,
   type ReturnItemCondition,
 } from "@/lib/returns.types";
+import { returnVariantLabel } from "@/lib/returns-variant";
 
 interface ReturnInspectionDialogProps {
   open: boolean;
@@ -80,7 +81,8 @@ export function ReturnInspectionDialog({
 
   if (!item) return null;
 
-  const currentStock = item.variant?.stock_quantity ?? 0;
+  // The store's own stock of the variant (a restock adds to it).
+  const currentStock = item.variant?.stock_main ?? 0;
   const isSellable = condition === "sellable";
   const projectedStock = isSellable ? currentStock + item.quantity : currentStock;
 
@@ -145,7 +147,7 @@ export function ReturnInspectionDialog({
                   : item.product?.name_en || item.product?.name_ar}
               </h4>
               <p className="text-xs text-muted-foreground truncate">
-                {item.variant?.variant_name || item.variant?.sku || "Default Variant"}
+                {returnVariantLabel(item.variant, lang) || "Default Variant"}
               </p>
               <div className="flex items-center gap-2 text-xs font-mono mt-0.5">
                 <span className="font-semibold text-foreground">

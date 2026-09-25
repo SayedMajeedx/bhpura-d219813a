@@ -339,7 +339,7 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(business_settings|orders|order_items|promo_codes|product_variants|profiles)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(business_settings|orders|order_items|promo_codes|product_variants|return_requests|brand_return_policies|profiles)$/]",
           message:
             "Read the settings row and orders through `@/lib/data/business-settings` and `@/lib/data/orders`.",
         },
@@ -448,16 +448,16 @@ export default tseslint.config(
     },
   },
   {
-    // Returns data layer: the return policy is read and saved through
-    // `@/lib/data/returns`. (The admin returns list, detail and dialogs still
-    // read directly until bug backlog #22 is fixed.)
-    files: ["src/components/returns/ReturnPolicyEditor.tsx"],
+    // Returns data layer: requests, their items' variants and the return policy
+    // go through `@/lib/data/returns` (typed, so a missing column fails the
+    // build: bug #22 was two variant columns that never existed).
+    files: ["src/components/returns/**"],
     rules: {
       "no-restricted-syntax": [
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(brand_return_policies|profiles)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(return_requests|brand_return_policies|product_variants|profiles)$/]",
           message:
             "The return policy goes through `@/lib/data/returns` (returnsQueries.policy, saveReturnPolicy).",
         },
