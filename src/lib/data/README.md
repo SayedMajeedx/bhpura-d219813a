@@ -40,7 +40,8 @@ src/lib/data/<domain>/
 | Business settings row (settings form, order editor, dashboard, reports)                                                                                                 | `business-settings/` | orders, dashboard, accounting and expenses screens                                                           |
 | Expenses: list and writes (expenses page, OpEx/COGS and reports tabs, dashboard)                                                                                        | `expenses/`          | orders, dashboard, accounting and expenses screens                                                           |
 | Admin catalog: products, variants, stock, packaging BOM and materials; reads (inventory, orders, expenses, dashboard) and writes (inventory, BOM editor, packaging tab) | `catalog/`           | orders, dashboard, accounting and expenses screens; inventory, `components/inventory`, `components/products` |
-| Customers, settings writes                                                                                                                                              | not yet              | —                                                                                                            |
+| Customers and saved addresses (admin customers list and profile, address manager, order editor, dashboard)                                                              | `customers/`         | customers list and profile, address manager, import; orders, dashboard, accounting and expenses screens      |
+| Storefront account, checkout prefill and the smaller customer readers; settings writes                                                                                  | not yet              | —                                                                                                            |
 
 Usage:
 

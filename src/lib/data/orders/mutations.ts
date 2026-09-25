@@ -29,6 +29,20 @@ export async function updateOrder(brandId: string, orderId: string, patch: Order
   if (error) throw error;
 }
 
+/** Points the brand's orders that ship to one saved address at another. */
+export async function moveOrdersToAddress(
+  brandId: string,
+  fromAddressId: string,
+  toAddressId: string,
+) {
+  const { error } = await supabase
+    .from("orders")
+    .update({ shipping_address_id: toAddressId })
+    .eq("shipping_address_id", fromAddressId)
+    .eq("brand_id", brandId);
+  if (error) throw error;
+}
+
 /**
  * Creates an order with its lines. If the lines fail, the order is deleted
  * again so no empty order is left behind. Returns the new order's id.

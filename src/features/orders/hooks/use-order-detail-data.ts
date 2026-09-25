@@ -2,10 +2,14 @@ import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getBenefitReceiptViewUrl } from "@/lib/benefit-receipt.functions";
-import type { SavedAddress } from "@/features/orders/types";
 import { ordersKeys, ordersQueries } from "@/lib/data/orders";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { catalogQueries } from "@/lib/data/catalog";
+import { customersQueries, type CustomerRow } from "@/lib/data/customers";
+
+/** The customer picker lists customers by name; the shared list is newest first. */
+const byName = (customers: CustomerRow[]) =>
+  [...customers].sort((a, b) => a.name.localeCompare(b.name));
 
 /**
  * Everything the order editor reads: the order (polled, plus realtime updates),
@@ -73,11 +77,9 @@ export function useOrderDetailData({
     enabled: !isCourier && Boolean(brandId),
   });
   const customersQ = useQuery({
-    queryKey: ["customers", brandId],
-    enabled: !isCourier,
-    queryFn: async () =>
-      (await supabase.from("customers").select("*").eq("brand_id", brandId).order("name")).data ??
-      [],
+    ...customersQueries.list(brandId),
+    enabled: !isCourier && Boolean(brandId),
+    select: byName,
   });
   const couriersQ = useQuery({
     queryKey: ["couriers", brandId],
@@ -94,16 +96,8 @@ export function useOrderDetailData({
     },
   });
   const addressesQ = useQuery({
-    queryKey: ["customer_addresses", brandId],
-    enabled: !isCourier,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customer_addresses")
-        .select("*")
-        .eq("brand_id", brandId);
-      if (error) throw error;
-      return (data ?? []) as SavedAddress[];
-    },
+    ...customersQueries.addresses(brandId),
+    enabled: !isCourier && Boolean(brandId),
   });
 
   const receiptViewQ = useQuery({

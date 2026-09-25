@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateCustomers } from "@/lib/data/customers";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
@@ -280,7 +281,7 @@ function ImportCenterPage() {
             isAr={isAr}
             onComplete={() => {
               void refetchRuns();
-              void qc.invalidateQueries({ queryKey: ["customers", brandId] });
+              void invalidateCustomers(qc, brandId);
             }}
           />
         </TabsContent>

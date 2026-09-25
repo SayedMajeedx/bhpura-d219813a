@@ -31,6 +31,20 @@ Line numbers are as of 2026-09-24 and may drift; search for the quoted code.
 - **Problem**: it `await`s `supabase.from("orders").update(...)` without reading `error`, then deletes the duplicate address, so a failed repoint leaves orders pointing at a deleted address while the success toast shows. (The cash-flow reconciliation half was fixed when accounting moved to `updateOrder`.)
 - **Fix**: use `updateOrder` from `@/lib/data/orders` (it throws) when customers join the data layer, and stop on the first failure.
 
+## Customers (`src/lib/data/customers`, `src/routes/_authenticated/admin.b.$slug.customers*`)
+
+### 17. Customer address writes that ignore their errors
+
+Found while moving customers into `src/lib/data/customers`. The calls kept their behaviour and point here.
+
+- **Where**:
+  - `setDefaultCustomerAddress` (used by the customers list's address editor and `src/components/customer-address-manager.tsx`): clearing the old default ignores its error.
+  - `src/features/orders/components/NewCustomerDialog.tsx`: the new customer's address (`createCustomerAddress(...).catch(() => null)`).
+- **Effect**:
+  - If clearing fails and setting succeeds, the customer has two default addresses, and screens that take "the default" pick either one.
+  - The order editor's "new customer" can create the customer without the address the merchant typed, show a success toast, and leave the order with no shipping address.
+- **Fix**: stop when clearing fails (or clear and set in one update / RPC). In the dialog, show the address error and keep the dialog open with the customer already created.
+
 ## Inventory (`src/features/inventory/`)
 
 ### 1. Categories cache key shared by three different queries

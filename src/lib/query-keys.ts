@@ -1,5 +1,6 @@
 import { businessSettingsKeys } from "@/lib/data/business-settings";
 import { catalogKeys } from "@/lib/data/catalog";
+import { customersKeys } from "@/lib/data/customers/keys";
 import { expensesKeys } from "@/lib/data/expenses";
 import { ordersKeys } from "@/lib/data/orders/keys";
 
@@ -27,8 +28,7 @@ export const queryKeys = {
 
   // Customers
   customers: {
-    all: (brandId: string) => ["customers", brandId] as const,
-    detail: (brandId: string, customerId: string) => ["customers", brandId, customerId] as const,
+    all: customersKeys.all,
   },
 
   // Couriers
