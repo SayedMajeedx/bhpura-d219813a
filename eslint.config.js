@@ -122,6 +122,12 @@ export default tseslint.config(
         },
         {
           selector:
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(customers|customer_addresses)$/]",
+          message:
+            "The shopper's own customer record and addresses go through `@/lib/data/customers` (ownCustomerQueries, fetchOwnCustomer and the customer mutations).",
+        },
+        {
+          selector:
             "CallExpression[callee.property.name='rpc'][arguments.0.value=/^get_storefront_(page_data|best_sellers|trending)$/]",
           message:
             "Use the fetchers in `@/lib/data/storefront` for storefront page data and rankings.",
@@ -214,6 +220,12 @@ export default tseslint.config(
       "src/routes/_authenticated/admin.b.$slug.customers.*",
       "src/components/customer-address-manager.tsx",
       "src/routes/_authenticated/admin.b.$slug.import.tsx",
+      "src/routes/_authenticated/admin.b.$slug.campaigns.tsx",
+      "src/routes/_authenticated/admin.b.$slug.export.tsx",
+      "src/components/communications/CustomerPushCenter.tsx",
+      "src/components/loyalty/LoyaltyManualAdjustmentDialog.tsx",
+      "src/components/spotlight-command-palette.tsx",
+      "src/components/app-shell.tsx",
     ],
     rules: {
       "no-restricted-syntax": [

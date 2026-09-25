@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { customersQueries } from "@/lib/data/customers";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
@@ -83,21 +84,7 @@ function ExportCenterPage() {
     },
   });
 
-  const { data: customers = [] } = useQuery({
-    queryKey: ["export-customers", brandId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customers")
-        .select("id, name, phone, email, notes, created_at")
-        .eq("brand_id", brandId)
-        .order("created_at", { ascending: false });
-      if (error) {
-        console.error("Failed to query customers for export:", error);
-        return [];
-      }
-      return data || [];
-    },
-  });
+  const { data: customers = [] } = useQuery(customersQueries.exportRows(brandId));
 
   const { data: orders = [] } = useQuery({
     queryKey: ["export-orders", brandId],

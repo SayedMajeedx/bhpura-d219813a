@@ -22,7 +22,9 @@ describe("OS menu breadcrumbs", () => {
 
   it("resolves dynamic order numbers and customer names instead of raw UUIDs", () => {
     expect(shell).toContain("breadcrumb-order-number");
-    expect(shell).toContain("breadcrumb-customer-name");
+    // The customer name comes from the profile's cache entry in the customers data layer.
+    expect(shell).toContain("customersQueries.detail(");
+    expect(shell).toContain("customerBreadcrumbQuery.data?.name");
     expect(shell).toContain('`${lang === "ar" ? "الطلب" : "Order"} #${invoiceNum}`');
   });
 });

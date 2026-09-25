@@ -17,4 +17,17 @@ export const customersKeys = {
   /** One customer's saved addresses, default first. */
   customerAddresses: (brandId: string, customerId: string) =>
     [...customersKeys.addresses(brandId), customerId] as const,
+  /** Id, name and contact of up to `limit` customers, by name (pickers). */
+  directory: (brandId: string, limit: number) =>
+    [...customersKeys.all(brandId), "directory", limit] as const,
+  /** Customers with their marketing consent (campaigns). */
+  audience: (brandId: string) => [...customersKeys.all(brandId), "audience"] as const,
+  /** The columns the data export writes. */
+  exportRows: (brandId: string) => [...customersKeys.all(brandId), "export"] as const,
+  /** The signed-in shopper's own records on the storefront. */
+  own: (brandId: string) => [...customersKeys.all(brandId), "own"] as const,
+  ownProfile: (brandId: string, authUserId: string) =>
+    [...customersKeys.own(brandId), "profile", authUserId] as const,
+  ownAddresses: (brandId: string, customerId: string) =>
+    [...customersKeys.own(brandId), "addresses", customerId] as const,
 };

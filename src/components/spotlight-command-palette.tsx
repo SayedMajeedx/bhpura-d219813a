@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { searchCustomers } from "@/lib/data/customers";
 import { useI18n } from "@/lib/i18n";
 import { formatMoney } from "@/lib/format";
 import { useBrandOptional } from "@/lib/brand-context";
@@ -97,18 +98,13 @@ export function SpotlightCommandPalette({
           .eq("brand_id", bId)
           .or(`name_en.ilike.${term},name_ar.ilike.${term}`)
           .limit(6),
-        supabase
-          .from("customers")
-          .select("id, name, phone, email")
-          .eq("brand_id", bId)
-          .or(`name.ilike.${term},phone.ilike.${term},email.ilike.${term}`)
-          .limit(6),
+        searchCustomers(bId, q),
       ]);
 
       return {
         orders: ordersRes.data ?? [],
         products: productsRes.data ?? [],
-        customers: customersRes.data ?? [],
+        customers: customersRes,
       };
     },
     enabled: open && searchQuery.trim().length > 0,

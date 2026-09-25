@@ -10,6 +10,8 @@ import {
 import { DirectionProvider } from "@radix-ui/react-direction";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchOwnCustomer } from "@/lib/data/customers/own";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { westernNumeralLocale } from "@/lib/format";
 import { decodeCartSharePayload, fetchSharedCartByCode } from "@/lib/cart-sharing";
@@ -662,21 +664,21 @@ export function StorefrontProvider({
       };
     }
 
-    void supabase
-      .from("customers")
-      .select("id, name, phone, email")
-      .eq("brand_id", brand.id)
-      .eq("auth_user_id", session.user.id)
-      .maybeSingle()
-      .then(({ data, error }) => {
+    void fetchOwnCustomer(brand.id, session.user.id).then(
+      (customer) => {
         if (!active) return;
-        if (error) {
-          console.warn("Storefront customer lookup failed", error.message);
-          setTrackingCustomer(null);
-          return;
-        }
-        setTrackingCustomer(data ?? null);
-      });
+        setTrackingCustomer(
+          customer
+            ? { id: customer.id, name: customer.name, phone: customer.phone, email: customer.email }
+            : null,
+        );
+      },
+      (error: unknown) => {
+        if (!active) return;
+        console.warn("Storefront customer lookup failed", getFriendlyErrorMessage(error));
+        setTrackingCustomer(null);
+      },
+    );
 
     return () => {
       active = false;

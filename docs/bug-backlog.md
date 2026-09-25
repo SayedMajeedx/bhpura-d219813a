@@ -32,12 +32,19 @@ Line numbers are as of 2026-09-24 and may drift; search for the quoted code.
 Found while moving customers into `src/lib/data/customers`. The calls kept their behaviour and point here.
 
 - **Where**:
-  - `setDefaultCustomerAddress` (used by the customers list's address editor and `src/components/customer-address-manager.tsx`): clearing the old default ignores its error.
+  - `setDefaultCustomerAddress` (used by the customers list's address editor, `src/components/customer-address-manager.tsx` and the storefront account page `src/routes/$slug.account.tsx`): clearing the old default ignores its error. The account page's "add address as default" does the same (`clearDefaultCustomerAddress(...).catch(() => undefined)`).
   - `src/features/orders/components/NewCustomerDialog.tsx`: the new customer's address (`createCustomerAddress(...).catch(() => null)`).
 - **Effect**:
   - If clearing fails and setting succeeds, the customer has two default addresses, and screens that take "the default" pick either one.
   - The order editor's "new customer" can create the customer without the address the merchant typed, show a success toast, and leave the order with no shipping address.
 - **Fix**: stop when clearing fails (or clear and set in one update / RPC). In the dialog, show the address error and keep the dialog open with the customer already created.
+
+### 18. The loyalty adjustment dialog offers only the first 100 customers
+
+- **Where**: `src/components/loyalty/LoyaltyManualAdjustmentDialog.tsx`: `customersQueries.directory(brandId, 100)` (before: `.order("name").limit(100)`).
+- **Problem**: the customer selector is a plain list of the first 100 customers by name, with no search. The placeholder says "search or choose".
+- **Effect**: in a brand with more than 100 customers, points cannot be awarded or deducted by hand for anyone past the 100th name.
+- **Fix**: a searchable picker (`searchCustomers` already exists in `@/lib/data/customers`), or the push centre's 1000 limit as a stopgap.
 
 ## Inventory (`src/features/inventory/`)
 

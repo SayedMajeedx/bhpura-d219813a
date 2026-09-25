@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchOwnAddresses, fetchOwnCustomer, type OwnAddress } from "@/lib/data/customers";
 import type { SetCheckoutForm, Storefront } from "@/features/checkout/types";
 
 /**
@@ -16,7 +16,7 @@ export function useCustomerPrefill({
   setForm: SetCheckoutForm;
 }) {
   const [customerId, setCustomerId] = useState<string | null>(null);
-  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [savedAddresses, setSavedAddresses] = useState<OwnAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>("");
 
   // Pre-fill from linked customer when signed in
@@ -24,20 +24,13 @@ export function useCustomerPrefill({
     if (!session?.user) return;
     (async () => {
       try {
-        const { data: customer } = await supabase
-          .from("customers")
-          .select("id, name, phone, email, region, block, road, house, flat")
-          .eq("brand_id", brand.id)
-          .eq("auth_user_id", session.user.id)
-          .maybeSingle();
+        // A failed lookup reads as "no linked customer", as before.
+        const customer = await fetchOwnCustomer(brand.id, session.user.id).catch(() => null);
 
         if (customer) {
           setCustomerId(customer.id);
           // Fetch saved addresses from customer_addresses
-          const { data: addresses } = await supabase
-            .from("customer_addresses")
-            .select("id, label, region, block, road, house, flat, is_default")
-            .eq("customer_id", customer.id);
+          const addresses = await fetchOwnAddresses(brand.id, customer.id).catch(() => null);
 
           if (addresses && addresses.length > 0) {
             setSavedAddresses(addresses);
@@ -62,7 +55,7 @@ export function useCustomerPrefill({
               phone: f.phone || customer.phone || "",
               email: f.email || customer.email || session.user.email || "",
               region: f.region || customer.region || "",
-              block: f.block || (customer as any).block || "",
+              block: f.block || customer.block || "",
               road: f.road || customer.road || "",
               house: f.house || customer.house || "",
               flat: f.flat || customer.flat || "",

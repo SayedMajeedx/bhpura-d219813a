@@ -5,6 +5,7 @@ import { customersKeys } from "./keys";
 
 export * from "./keys";
 export * from "./mutations";
+export * from "./own";
 
 /**
  * A brand's customers and their saved delivery addresses, as the admin
@@ -88,6 +89,58 @@ export async function fetchCustomerAddresses(
   return data ?? [];
 }
 
+/** Id, name and contact of up to `limit` customers of the brand, by name (pickers). */
+export async function fetchCustomerDirectory(brandId: string, limit: number) {
+  const { data, error } = await supabase
+    .from("customers")
+    .select("id, name, phone, email")
+    .eq("brand_id", brandId)
+    .order("name")
+    .limit(limit);
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** Every customer of the brand with their marketing consent, by name. */
+export async function fetchCustomerAudience(brandId: string) {
+  const { data, error } = await supabase
+    .from("customers")
+    .select("id, name, phone, marketing_consent, opted_out_at")
+    .eq("brand_id", brandId)
+    .order("name");
+  if (error) throw error;
+  return data ?? [];
+}
+
+/**
+ * The columns the data export and backup write, newest first. A failure is
+ * logged and reads as no customers, so the other exports still work.
+ */
+export async function fetchCustomersForExport(brandId: string) {
+  const { data, error } = await supabase
+    .from("customers")
+    .select("id, name, phone, email, notes, created_at")
+    .eq("brand_id", brandId)
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.error("Failed to query customers for export:", error);
+    return [];
+  }
+  return data ?? [];
+}
+
+/** Up to six customers whose name, phone or email contains `query` (command palette). */
+export async function searchCustomers(brandId: string, query: string) {
+  const term = `%${query}%`;
+  const { data } = await supabase
+    .from("customers")
+    .select("id, name, phone, email")
+    .eq("brand_id", brandId)
+    .or(`name.ilike.${term},phone.ilike.${term},email.ilike.${term}`)
+    .limit(6);
+  return data ?? [];
+}
+
 /** Admin screens edit customers while others read them; 30s avoids refetch storms. */
 const CUSTOMERS_CACHE = { staleTime: 30_000 } as const;
 
@@ -124,5 +177,23 @@ export const customersQueries = {
       queryKey: customersKeys.customerAddresses(brandId, customerId),
       queryFn: () => fetchCustomerAddresses(brandId, customerId),
       enabled: Boolean(brandId && customerId),
+    }),
+  directory: (brandId: string, limit: number) =>
+    queryOptions({
+      queryKey: customersKeys.directory(brandId, limit),
+      queryFn: () => fetchCustomerDirectory(brandId, limit),
+      enabled: Boolean(brandId),
+    }),
+  audience: (brandId: string) =>
+    queryOptions({
+      queryKey: customersKeys.audience(brandId),
+      queryFn: () => fetchCustomerAudience(brandId),
+      enabled: Boolean(brandId),
+    }),
+  exportRows: (brandId: string) =>
+    queryOptions({
+      queryKey: customersKeys.exportRows(brandId),
+      queryFn: () => fetchCustomersForExport(brandId),
+      enabled: Boolean(brandId),
     }),
 };
