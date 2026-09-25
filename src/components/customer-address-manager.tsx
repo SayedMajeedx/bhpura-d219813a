@@ -330,11 +330,13 @@ export function CustomerAddressManager({
         toast.info(isAr ? "لا توجد عناوين مكررة لتنظيفها" : "No duplicate addresses found");
       }
     } catch {
+      // Stopped at the first failure; duplicates merged before it are gone.
       toast.error(
         isAr
           ? "تعذر تنظيف العناوين المكررة، يرجى المحاولة مرة أخرى."
           : "Failed to clean up duplicate addresses. Please try again.",
       );
+      onChanged();
     } finally {
       setSaving(false);
     }

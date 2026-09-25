@@ -218,6 +218,17 @@ describe("saved-address writes", () => {
     ]);
     expect(filters(requests[1], "eq")[0]).toEqual(["id", "dup"]);
   });
+
+  it("keeps the duplicate when its orders cannot be moved (bug backlog #15)", async () => {
+    respond = (request) => (request.table === "orders" ? { error: denied } : { error: null });
+    await expect(customers.mergeDuplicateAddress("b1", "c1", "keep", "dup")).rejects.toBe(denied);
+    expect(requests.map((r) => r.table)).toEqual(["orders"]);
+  });
+
+  it("reports a duplicate that could not be deleted (bug backlog #15)", async () => {
+    respond = (request) => (request.op === "delete" ? { error: denied } : { error: null });
+    await expect(customers.mergeDuplicateAddress("b1", "c1", "keep", "dup")).rejects.toBe(denied);
+  });
 });
 
 describe("invalidateCustomers", () => {

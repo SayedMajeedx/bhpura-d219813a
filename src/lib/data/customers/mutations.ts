@@ -119,8 +119,9 @@ export async function setDefaultCustomerAddress(
 
 /**
  * Folds a duplicate address into the one kept: the orders shipping to the
- * duplicate move to the kept address, then the duplicate is deleted. Both
- * steps ignore their errors, as they always have (bug backlog #15).
+ * duplicate move to the kept address, then the duplicate is deleted. When the
+ * orders cannot be moved the duplicate is kept, so no order is left pointing
+ * at a deleted address.
  */
 export async function mergeDuplicateAddress(
   brandId: string,
@@ -128,6 +129,6 @@ export async function mergeDuplicateAddress(
   keptAddressId: string,
   duplicateAddressId: string,
 ) {
-  await moveOrdersToAddress(brandId, duplicateAddressId, keptAddressId).catch(() => undefined);
-  await deleteCustomerAddress(brandId, customerId, duplicateAddressId).catch(() => undefined);
+  await moveOrdersToAddress(brandId, duplicateAddressId, keptAddressId);
+  await deleteCustomerAddress(brandId, customerId, duplicateAddressId);
 }

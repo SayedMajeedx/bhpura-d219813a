@@ -25,12 +25,6 @@ Line numbers are as of 2026-09-24 and may drift; search for the quoted code.
 - **Problem**: after `courier_update_delivery` succeeds, the view still sends a direct `orders` update, with `payment_status` computed from `Math.max(orderTotal, …)` (always "paid") and `fulfillment_status: "COMPLETED"` over the RPC's `delivered`. Couriers have no UPDATE policy on `orders`, so that update is filtered out silently: when the RPC fails, the "fallback" never writes either. `codConfirmed || true` is always true.
 - **Fix**: rely on the RPC alone for couriers (it already checks the assignment and the cash due), surface its errors (`COD_AMOUNT_MISMATCH`, `COD_CONFIRMATION_REQUIRED`), and drop the direct update and the `|| true`.
 
-### 15. Address clean-up ignores write errors
-
-- **Where**: `src/components/customer-address-manager.tsx` (duplicate clean-up).
-- **Problem**: it `await`s `supabase.from("orders").update(...)` without reading `error`, then deletes the duplicate address, so a failed repoint leaves orders pointing at a deleted address while the success toast shows. (The cash-flow reconciliation half was fixed when accounting moved to `updateOrder`.)
-- **Fix**: use `updateOrder` from `@/lib/data/orders` (it throws) when customers join the data layer, and stop on the first failure.
-
 ## Customers (`src/lib/data/customers`, `src/routes/_authenticated/admin.b.$slug.customers*`)
 
 ### 17. Customer address writes that ignore their errors
