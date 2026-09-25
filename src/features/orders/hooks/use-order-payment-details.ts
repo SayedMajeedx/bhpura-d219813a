@@ -1,11 +1,11 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { type PaymentBadge } from "@/lib/payment-status";
 import { logActivity } from "@/lib/activity-log";
 import type { Order } from "@/features/orders/types";
 import type { Dispatch, SetStateAction } from "react";
 import type { OrderItem } from "@/features/orders/types";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
+import { orderPaymentUpdate, type PaymentDetailsInput } from "@/features/orders/lib/order-payment";
 
 /** Saving payment status, method, advance and reference from the payment modal; saved orders persist and log it immediately. */
 export function useOrderPaymentDetails({
@@ -23,42 +23,21 @@ export function useOrderPaymentDetails({
   qc: ReturnType<typeof useQueryClient>;
   setOrder: Dispatch<SetStateAction<Order | null>>;
 }) {
-  const handleSavePaymentDetails = async (updatedFields: {
-    payment_status: PaymentBadge;
-    payment_method: string;
-    advance_paid: number;
-    payment_reference?: string;
-  }) => {
+  const handleSavePaymentDetails = async (updatedFields: PaymentDetailsInput) => {
     if (!order) return;
     const oldStatus = order.payment_status;
     const oldMethod = order.payment_method;
     const oldAdvance = order.advance_paid;
 
-    const finalMethod =
-      !updatedFields.payment_method || updatedFields.payment_method === "unspecified"
-        ? null
-        : updatedFields.payment_method;
+    const paymentFields = orderPaymentUpdate(updatedFields, order.payment_reference);
+    const finalMethod = paymentFields.payment_method;
 
-    const nextOrder = {
-      ...order,
-      payment_status: updatedFields.payment_status,
-      payment_method: finalMethod,
-      advance_paid: updatedFields.advance_paid,
-      payment_reference: updatedFields.payment_reference || order.payment_reference,
-    };
+    const nextOrder = { ...order, ...paymentFields };
     setOrder(nextOrder);
 
     // If order is saved in DB, persist change immediately
     if (order.id && !order.id.startsWith("draft_")) {
-      const { error } = await supabase
-        .from("orders")
-        .update({
-          payment_status: updatedFields.payment_status,
-          payment_method: finalMethod,
-          advance_paid: updatedFields.advance_paid,
-          payment_reference: updatedFields.payment_reference || order.payment_reference,
-        } as any)
-        .eq("id", order.id);
+      const { error } = await supabase.from("orders").update(paymentFields).eq("id", order.id);
 
       if (error) {
         setOrder({ ...order });
@@ -71,10 +50,7 @@ export function useOrderPaymentDetails({
           ...initialSnapshotRef.current,
           order: {
             ...initialSnapshotRef.current.order,
-            payment_status: updatedFields.payment_status,
-            payment_method: finalMethod,
-            advance_paid: updatedFields.advance_paid,
-            payment_reference: updatedFields.payment_reference || order.payment_reference,
+            ...paymentFields,
           },
         };
       }

@@ -4468,6 +4468,7 @@ export type Database = {
           payment_account: string | null;
           payment_gateway_reference: string | null;
           payment_method: string | null;
+          payment_reference: string | null;
           payment_status: string;
           promo_code: string | null;
           promo_code_id: string | null;
@@ -4538,6 +4539,7 @@ export type Database = {
           payment_account?: string | null;
           payment_gateway_reference?: string | null;
           payment_method?: string | null;
+          payment_reference?: string | null;
           payment_status?: string;
           promo_code?: string | null;
           promo_code_id?: string | null;
@@ -4608,6 +4610,7 @@ export type Database = {
           payment_account?: string | null;
           payment_gateway_reference?: string | null;
           payment_method?: string | null;
+          payment_reference?: string | null;
           payment_status?: string;
           promo_code?: string | null;
           promo_code_id?: string | null;
