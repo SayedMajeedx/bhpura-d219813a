@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Package, Plus, Trash2, Box, Info, Sparkles } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { toast } from "sonner";
+import { catalogKeys, catalogQueries } from "@/lib/data/catalog";
 
 interface ProductBomModalProps {
   open: boolean;
@@ -48,32 +49,19 @@ export function ProductBomModal({
   const [isSaving, setIsSaving] = useState(false);
 
   // Fetch brand packaging materials
-  const { data: materials = [] } = useQuery({
-    queryKey: ["packaging-materials", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("packaging_materials")
-        .select("*")
-        .eq("brand_id", brandId)
-        .order("name", { ascending: true });
-      if (error) throw error;
-      return data || [];
-    },
+  const materialsQ = useQuery({
+    ...catalogQueries.packagingMaterials(brandId),
     enabled: !!brandId && open,
   });
+  // Listed by name here; the shared list is newest first.
+  const materials = useMemo(
+    () => [...(materialsQ.data ?? [])].sort((a, b) => a.name.localeCompare(b.name)),
+    [materialsQ.data],
+  );
 
   // Fetch current product BOM items
   const { data: currentBom = [] } = useQuery({
-    queryKey: ["product-bom-items", brandId, productId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("product_bom_items")
-        .select("packaging_material_id, quantity_per_unit")
-        .eq("product_id", productId)
-        .eq("brand_id", brandId);
-      if (error) throw error;
-      return data || [];
-    },
+    ...catalogQueries.productBom(brandId, productId),
     enabled: !!productId && !!brandId && open,
   });
 
@@ -172,10 +160,9 @@ export function ProductBomModal({
       }
 
       toast.success(isAr ? "تم حفظ تكاليف التغليف بنجاح" : "BOM packaging saved successfully");
-      qc.invalidateQueries({ queryKey: ["dashboard-products", brandId] });
-      qc.invalidateQueries({ queryKey: ["products", brandId] });
-      qc.invalidateQueries({ queryKey: ["product-bom-items", brandId, productId] });
-      qc.invalidateQueries({ queryKey: ["product-bom-items-all", brandId] });
+      qc.invalidateQueries({ queryKey: catalogKeys.products(brandId) });
+      qc.invalidateQueries({ queryKey: catalogKeys.productBom(brandId, productId) });
+      qc.invalidateQueries({ queryKey: catalogKeys.bomItems(brandId) });
 
       onSaved?.();
       onOpenChange(false);
@@ -236,10 +223,9 @@ export function ProductBomModal({
           ? "تم تطبيق مواد التغليف على جميع منتجات المتجر بنجاح"
           : "Packaging BOM applied to all products successfully",
       );
-      qc.invalidateQueries({ queryKey: ["dashboard-products", brandId] });
-      qc.invalidateQueries({ queryKey: ["products", brandId] });
-      qc.invalidateQueries({ queryKey: ["product-bom-items", brandId] });
-      qc.invalidateQueries({ queryKey: ["product-bom-items-all", brandId] });
+      qc.invalidateQueries({ queryKey: catalogKeys.products(brandId) });
+      qc.invalidateQueries({ queryKey: catalogKeys.productBoms(brandId) });
+      qc.invalidateQueries({ queryKey: catalogKeys.bomItems(brandId) });
 
       onSaved?.();
       onOpenChange(false);

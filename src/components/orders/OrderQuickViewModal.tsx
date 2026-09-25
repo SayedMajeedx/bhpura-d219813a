@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { calculateOrderPackagingCogs } from "@/lib/bom-calculator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -25,6 +24,7 @@ import { useProfile } from "@/lib/profile-context";
 import { getStoredPaymentMethodPresentation } from "@/lib/payment-method";
 import { orderRequiresCourier } from "@/lib/order-fulfillment";
 import type { OrderListRow } from "@/lib/data/orders";
+import { catalogQueries } from "@/lib/data/catalog";
 
 interface OrderQuickViewModalProps {
   lang: "ar" | "en";
@@ -52,42 +52,10 @@ export function OrderQuickViewModal({
   const { isAdmin } = useProfile();
   const brandId = order?.brand_id;
 
-  const productsQ = useQuery({
-    queryKey: ["products", brandId],
-    enabled: Boolean(brandId),
-    queryFn: async () =>
-      (await supabase.from("products").select("*").eq("brand_id", brandId!)).data ?? [],
-  });
-  const variantsQ = useQuery({
-    queryKey: ["variants", brandId],
-    enabled: Boolean(brandId),
-    queryFn: async () =>
-      (await supabase.from("product_variants").select("*").eq("brand_id", brandId!)).data ?? [],
-  });
-  const bomItemsQ = useQuery({
-    queryKey: ["product-bom-items-all", brandId],
-    enabled: Boolean(brandId),
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("product_bom_items")
-        .select("product_id, packaging_material_id, quantity_per_unit")
-        .eq("brand_id", brandId!);
-      if (error) return [];
-      return (data ?? []) as any[];
-    },
-  });
-  const packagingMaterialsQ = useQuery({
-    queryKey: ["packaging-materials", brandId],
-    enabled: Boolean(brandId),
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("packaging_materials")
-        .select("*")
-        .eq("brand_id", brandId!);
-      if (error) return [];
-      return (data ?? []) as any[];
-    },
-  });
+  const productsQ = useQuery(catalogQueries.products(brandId ?? ""));
+  const variantsQ = useQuery(catalogQueries.variants(brandId ?? ""));
+  const bomItemsQ = useQuery(catalogQueries.bomItems(brandId ?? ""));
+  const packagingMaterialsQ = useQuery(catalogQueries.packagingMaterials(brandId ?? ""));
 
   if (!order) return null;
 

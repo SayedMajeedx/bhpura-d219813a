@@ -26,6 +26,7 @@ import {
   replaceOrderItems,
   updateOrder,
 } from "@/lib/data/orders";
+import { catalogKeys } from "@/lib/data/catalog";
 
 /** Saves the order editor: creates a new order with its lines, or updates the order, replaces changed lines and logs status/payment changes. */
 export function useSaveOrder({
@@ -178,7 +179,8 @@ export function useSaveOrder({
     setEditingUnlocked(false);
     setSaving(false);
     invalidateOrders(qc, brandId);
-    qc.invalidateQueries({ queryKey: ["variants"] });
+    // Saving lines moves stock.
+    qc.invalidateQueries({ queryKey: catalogKeys.variants(brandId) });
     qc.invalidateQueries({ queryKey: ["activity_logs"] });
   };
 

@@ -26,6 +26,7 @@ import {
   invalidateExpenses,
   updateExpense,
 } from "@/lib/data/expenses";
+import { catalogKeys } from "@/lib/data/catalog";
 
 interface ExpensesOpExCogsTabProps {
   activeRange?: { from: string; to: string };
@@ -239,7 +240,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
       void syncSingleExpenseToPackagingMaterial(supabase, brandId, payload).catch(() => undefined);
 
       invalidateExpenses(qc, brandId);
-      qc.invalidateQueries({ queryKey: ["packaging-materials", brandId] });
+      qc.invalidateQueries({ queryKey: catalogKeys.packagingMaterials(brandId) });
       setModalOpen(false);
     } catch (err: any) {
       console.error("Expense save error:", err);

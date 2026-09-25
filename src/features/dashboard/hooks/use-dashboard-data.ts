@@ -7,6 +7,7 @@ import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { businessSettingsKeys, businessSettingsQueries } from "@/lib/data/business-settings";
 import { expensesKeys, expensesQueries } from "@/lib/data/expenses";
 import { ordersKeys, ordersQueries } from "@/lib/data/orders";
+import { catalogKeys, catalogQueries } from "@/lib/data/catalog";
 
 /**
  * Everything the dashboard reads: settings, the Reports accounting rows for
@@ -94,65 +95,15 @@ export function useDashboardData({
     refetchOnWindowFocus: false,
   });
 
-  // 2. Fetch all products
-  const productsQ = useQuery({
-    queryKey: ["dashboard-products", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("products")
-        .select(
-          "id, name, name_ar, name_en, category, image_url, media, is_active, direct_packaging_cost",
-        )
-        .eq("brand_id", brandId);
-      if (error) throw error;
-      return (data ?? []) as any[];
-    },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-  });
+  // 2-3. The catalog (shared with inventory, orders and expenses)
+  const productsQ = useQuery({ ...catalogQueries.products(brandId), refetchOnWindowFocus: false });
 
-  // 3. Fetch all variants
-  const variantsQ = useQuery({
-    queryKey: ["dashboard-variants", brandId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("product_variants")
-        .select(
-          "id, product_id, size, color, selling_price, cost_price, stock_main, stock_incubator, created_at",
-        )
-        .eq("brand_id", brandId);
-      if (error) throw error;
-      return data ?? [];
-    },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-  });
+  const variantsQ = useQuery({ ...catalogQueries.variants(brandId), refetchOnWindowFocus: false });
 
-  const bomItemsQ = useQuery({
-    queryKey: ["product-bom-items-all", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("product_bom_items")
-        .select("product_id, packaging_material_id, quantity_per_unit")
-        .eq("brand_id", brandId);
-      if (error) return [];
-      return (data ?? []) as any[];
-    },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-  });
+  const bomItemsQ = useQuery({ ...catalogQueries.bomItems(brandId), refetchOnWindowFocus: false });
 
   const packagingMaterialsQ = useQuery({
-    queryKey: ["packaging-materials", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("packaging_materials")
-        .select("*")
-        .eq("brand_id", brandId);
-      if (error) return [];
-      return (data ?? []) as any[];
-    },
-    staleTime: 60_000,
+    ...catalogQueries.packagingMaterials(brandId),
     refetchOnWindowFocus: false,
   });
 
@@ -233,8 +184,8 @@ export function useDashboardData({
       { table: "orders", brandId, queryKey: ordersKeys.all(brandId) },
       { table: "orders", brandId, queryKey: ["dashboard-customers", brandId] },
       { table: "order_items", brandId, queryKey: ordersKeys.all(brandId) },
-      { table: "products", brandId, queryKey: ["dashboard-products", brandId] },
-      { table: "product_variants", brandId, queryKey: ["dashboard-variants", brandId] },
+      { table: "products", brandId, queryKey: catalogKeys.products(brandId) },
+      { table: "product_variants", brandId, queryKey: catalogKeys.variants(brandId) },
       { table: "expenses", brandId, queryKey: expensesKeys.all(brandId) },
       { table: "return_requests", brandId, queryKey: ["dashboard-reporting-overview", slug] },
       { table: "product_bom_items", brandId, queryKey: ["dashboard-reporting-overview", slug] },

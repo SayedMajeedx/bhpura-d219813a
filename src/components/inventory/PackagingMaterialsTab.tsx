@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
@@ -30,6 +30,7 @@ import {
 import { formatMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { syncPackagingExpensesToInventory } from "@/lib/packaging-sync";
+import { catalogKeys, catalogQueries } from "@/lib/data/catalog";
 
 export function PackagingMaterialsTab() {
   const { lang } = useI18n();
@@ -107,30 +108,21 @@ export function PackagingMaterialsTab() {
     }
   };
 
-  const materialsQ = useQuery({
-    queryKey: ["packaging-materials", brandId],
-    queryFn: async () => {
-      const { data: initial, error } = await (supabase as any)
-        .from("packaging_materials")
-        .select("*")
-        .eq("brand_id", brandId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
+  const materialsQ = useQuery(catalogQueries.packagingMaterials(brandId));
 
-      let list = (initial ?? []) as any[];
-      // If no packaging materials are registered, auto-sync from packaging expenses seamlessly
-      if (list.length === 0) {
-        await syncPackagingExpensesToInventory(supabase, brandId);
-        const { data: refreshed } = await (supabase as any)
-          .from("packaging_materials")
-          .select("*")
-          .eq("brand_id", brandId)
-          .order("created_at", { ascending: false });
-        list = (refreshed ?? []) as any[];
+  // A brand with no packaging materials yet gets them from its packaging
+  // expenses, once per visit. (This used to run inside the fetcher, which the
+  // key now shares with screens that must not write.)
+  const autoSynced = useRef(false);
+  useEffect(() => {
+    if (!materialsQ.isSuccess || materialsQ.data.length > 0 || autoSynced.current) return;
+    autoSynced.current = true;
+    void syncPackagingExpensesToInventory(supabase, brandId).then((result) => {
+      if (result.createdCount > 0) {
+        void qc.invalidateQueries({ queryKey: catalogKeys.packagingMaterials(brandId) });
       }
-      return list;
-    },
-  });
+    });
+  }, [brandId, materialsQ.isSuccess, materialsQ.data, qc]);
 
   const materials = (materialsQ.data ?? []).filter((m: any) => {
     const q = search.toLowerCase();
@@ -145,7 +137,7 @@ export function PackagingMaterialsTab() {
     setIsSyncing(true);
     try {
       const res = await syncPackagingExpensesToInventory(supabase, brandId);
-      qc.invalidateQueries({ queryKey: ["packaging-materials", brandId] });
+      qc.invalidateQueries({ queryKey: catalogKeys.packagingMaterials(brandId) });
       if (res.syncedCount > 0) {
         toast.success(
           isAr
@@ -201,7 +193,7 @@ export function PackagingMaterialsTab() {
         .eq("brand_id", brandId);
       if (error) throw error;
       toast.success(isAr ? "تمت الحذف بنجاح" : "Material deleted");
-      qc.invalidateQueries({ queryKey: ["packaging-materials", brandId] });
+      qc.invalidateQueries({ queryKey: catalogKeys.packagingMaterials(brandId) });
     } catch (err: any) {
       toast.error(err.message || "Failed to delete");
     }
@@ -246,7 +238,7 @@ export function PackagingMaterialsTab() {
         toast.success(isAr ? "تمت الإضافة بنجاح" : "Added successfully");
       }
 
-      qc.invalidateQueries({ queryKey: ["packaging-materials", brandId] });
+      qc.invalidateQueries({ queryKey: catalogKeys.packagingMaterials(brandId) });
       setOpenModal(false);
     } catch (err: any) {
       toast.error(err.message || "Error saving material");

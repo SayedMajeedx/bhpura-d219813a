@@ -11,11 +11,12 @@ import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { queryKeys } from "@/lib/query-keys";
 import { InventoryCommandHeader } from "@/components/inventory/InventoryCommandHeader";
 import { PackagingMaterialsTab } from "@/components/inventory/PackagingMaterialsTab";
+import { catalogQueries } from "@/lib/data/catalog";
 
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { OsEmptyState } from "@/components/os/os-empty-state";
 import { useEntitlements } from "@/lib/saas-billing/use-entitlements";
-import type { Product, Variant, Customization } from "@/features/inventory/types";
+import type { Customization } from "@/features/inventory/types";
 import { CustomizationsSection } from "@/features/inventory/components/CustomizationsSection";
 
 import { ProductsSection } from "@/features/inventory/components/ProductsSection";
@@ -57,39 +58,9 @@ function Inventory() {
     `inventory-${brandId}`,
   );
 
-  const products = useQuery({
-    queryKey: queryKeys.products.all(brandId),
-    staleTime: 30_000,
-    refetchOnWindowFocus: false,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .eq("brand_id", brandId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []).map((p: any) => ({
-        ...p,
-        media: Array.isArray(p.media) ? p.media : [],
-        custom_fields: Array.isArray(p.custom_fields) ? p.custom_fields : [],
-      })) as Product[];
-    },
-  });
+  const products = useQuery({ ...catalogQueries.products(brandId), refetchOnWindowFocus: false });
 
-  const variants = useQuery({
-    queryKey: queryKeys.variants.all(brandId),
-    staleTime: 30_000,
-    refetchOnWindowFocus: false,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("product_variants")
-        .select("*")
-        .eq("brand_id", brandId)
-        .order("created_at");
-      if (error) throw error;
-      return data as unknown as Variant[];
-    },
-  });
+  const variants = useQuery({ ...catalogQueries.variants(brandId), refetchOnWindowFocus: false });
 
   const customizations = useQuery({
     queryKey: queryKeys.customizations.all(brandId),

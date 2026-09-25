@@ -57,7 +57,6 @@ import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useI18n, useT } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
-import { queryKeys } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
 import { deletePublicMediaUrl, uploadPublicMedia } from "@/lib/r2-upload";
 import { syncSingleExpenseToPackagingMaterial } from "@/lib/packaging-sync";
@@ -70,6 +69,7 @@ import {
   updateExpense,
 } from "@/lib/data/expenses";
 import { ordersQueries } from "@/lib/data/orders";
+import { catalogQueries } from "@/lib/data/catalog";
 
 import { ExpensesCommandHeader } from "@/components/expenses/ExpensesCommandHeader";
 import { ExpensesScopeSwitcher } from "@/components/expenses/ExpensesScopeSwitcher";
@@ -299,38 +299,10 @@ function ExpensesPage() {
 
   const settingsQ = useQuery(businessSettingsQueries.detail(brandId));
 
-  const productsQ = useQuery({
-    queryKey: queryKeys.products.all(brandId),
-    queryFn: async () =>
-      (await supabase.from("products").select("*").eq("brand_id", brandId)).data ?? [],
-  });
-  const variantsQ = useQuery({
-    queryKey: queryKeys.variants.all(brandId),
-    queryFn: async () =>
-      (await supabase.from("product_variants").select("*").eq("brand_id", brandId)).data ?? [],
-  });
-  const bomItemsQ = useQuery({
-    queryKey: ["product-bom-items-all", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("product_bom_items")
-        .select("product_id, packaging_material_id, quantity_per_unit")
-        .eq("brand_id", brandId);
-      if (error) return [];
-      return (data ?? []) as any[];
-    },
-  });
-  const packagingMaterialsQ = useQuery({
-    queryKey: ["packaging-materials", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("packaging_materials")
-        .select("*")
-        .eq("brand_id", brandId);
-      if (error) return [];
-      return (data ?? []) as any[];
-    },
-  });
+  const productsQ = useQuery(catalogQueries.products(brandId));
+  const variantsQ = useQuery(catalogQueries.variants(brandId));
+  const bomItemsQ = useQuery(catalogQueries.bomItems(brandId));
+  const packagingMaterialsQ = useQuery(catalogQueries.packagingMaterials(brandId));
 
   // ── COGS: use the immutable unit-cost snapshot captured on each order item ──
   const cogsQ = useQuery(ordersQueries.cogs(brandId, activeRange.from, activeRange.to));

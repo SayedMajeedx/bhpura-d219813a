@@ -154,15 +154,15 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(orders|order_items|expenses|business_settings)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(orders|order_items|expenses|business_settings|products|product_variants|product_bom_items|packaging_materials)$/]",
           message:
-            "Orders, expenses and business settings go through `@/lib/data/{orders,expenses,business-settings}`, not direct Supabase calls.",
+            "Orders, expenses, business settings and the catalog go through `@/lib/data/{orders,expenses,business-settings,catalog}`, not direct Supabase calls.",
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(orders?|expenses|business-settings|cogs|orders-reconciliation|expenses-business-settings|dashboard-(orders-with-items|recent-orders|expenses|expenses-full|business-settings))$/]",
+            "ArrayExpression > Literal:first-child[value=/^(orders?|expenses|business-settings|cogs|orders-reconciliation|expenses-business-settings|products|variants|packaging-materials|product-bom-items(-all)?|dashboard-(orders-with-items|recent-orders|expenses|expenses-full|business-settings|products|variants))$/]",
           message:
-            "Build these cache keys with `ordersKeys` / `expensesKeys` / `businessSettingsKeys` (or the invalidate helpers).",
+            "Build these cache keys with `ordersKeys` / `expensesKeys` / `businessSettingsKeys` / `catalogKeys` (or the invalidate helpers).",
         },
       ],
     },
