@@ -2,7 +2,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { AlertTriangle, BellRing, RefreshCw, Send } from "lucide-react";
 import { toast } from "sonner";
-import { createPushCampaign, invalidatePush, pushQueries } from "@/lib/data/push";
+import {
+  campaignTargetUrl,
+  createPushCampaign,
+  invalidatePush,
+  pushQueries,
+} from "@/lib/data/push";
+import { useBrand } from "@/lib/brand-context";
 import { customersQueries } from "@/lib/data/customers";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -33,6 +39,7 @@ const asPushEvents = (rows: unknown[]) => rows as PushEvent[];
 
 export function CustomerPushCenter({ brandId, isAr }: { brandId: string; isAr: boolean }) {
   const qc = useQueryClient();
+  const brand = useBrand();
   const [target, setTarget] = useState("all");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -64,13 +71,12 @@ export function CustomerPushCenter({ brandId, isAr }: { brandId: string; isAr: b
           : "This customer has no registered app device",
       );
     setSending(true);
-    // Every brand's campaign links to Pura's store (bug backlog #23).
     const error = await createPushCampaign({
       brandId,
       title: title.trim(),
       body: body.trim(),
       customerId: target === "all" ? null : target,
-      targetUrl: "https://pura.boutq.store",
+      targetUrl: campaignTargetUrl(brand),
     }).then(
       () => null,
       (reason: unknown) => reason,
