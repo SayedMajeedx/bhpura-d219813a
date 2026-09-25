@@ -189,9 +189,9 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(products|product_variants|product_bom_items|packaging_materials)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(products|product_variants|product_bom_items|packaging_materials|business_settings)$/]",
           message:
-            "The admin catalog goes through `@/lib/data/catalog` (catalogQueries, fetchers and mutations), not direct Supabase calls.",
+            "The admin catalog goes through `@/lib/data/catalog` and the settings row through `@/lib/data/business-settings`, not direct Supabase calls.",
         },
         {
           selector:
@@ -232,9 +232,9 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(customers|customer_addresses)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(customers|customer_addresses|business_settings)$/]",
           message:
-            "Customers and saved addresses go through `@/lib/data/customers`, not direct Supabase calls.",
+            "Customers and saved addresses go through `@/lib/data/customers` and the settings row through `@/lib/data/business-settings`, not direct Supabase calls.",
         },
         {
           selector:
@@ -274,6 +274,32 @@ export default tseslint.config(
             "ArrayExpression > Literal:first-child[value=/^(business-settings.*|brands?|store-profile|readiness-(business-settings|brand-details))$/]",
           message:
             "Build these cache keys with `businessSettingsKeys` / `brandKeys` (or the invalidate helpers).",
+        },
+      ],
+    },
+  },
+  {
+    // Admin screens that show a slice of the settings row (currency, business
+    // name, contact) read the shared row, so a settings save refreshes them.
+    files: [
+      "src/routes/_authenticated/admin.b.$slug.discounts.tsx",
+      "src/routes/_authenticated/admin.b.$slug.returns.*",
+      "src/routes/_authenticated/admin.b.$slug.reviews.tsx",
+      "src/routes/_authenticated/admin.b.$slug.content-studio.tsx",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "CallExpression[callee.property.name='from'][arguments.0.value='business_settings']",
+          message:
+            "Read the settings row with `businessSettingsQueries.detail` (`@/lib/data/business-settings`).",
+        },
+        {
+          selector:
+            "ArrayExpression > Literal:first-child[value=/^(business-settings.*|business-name|content-studio-settings|review-story-brand)$/]",
+          message: "Use `businessSettingsQueries.detail` instead of a hand-built settings key.",
         },
       ],
     },

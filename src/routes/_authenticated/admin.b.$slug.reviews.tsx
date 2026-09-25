@@ -12,6 +12,7 @@ import {
   Star,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
 import {
@@ -50,20 +51,7 @@ function CustomerReviewsPage() {
   const [storyReview, setStoryReview] = useState<OrderReviewAdminRow | null>(null);
 
   const brandStyleQ = useQuery({
-    queryKey: ["review-story-brand", brand.id],
-    queryFn: async () => {
-      const { data, error } = await (supabase.from("business_settings") as any)
-        .select("business_name, phone, whatsapp_number, socials")
-        .eq("brand_id", brand.id)
-        .maybeSingle();
-      if (error) throw error;
-      return data as {
-        business_name?: string | null;
-        phone?: string | null;
-        whatsapp_number?: string | null;
-        socials?: Array<{ name?: string; url?: string }> | null;
-      } | null;
-    },
+    ...businessSettingsQueries.detail(brand.id),
     staleTime: 5 * 60_000,
   });
 
@@ -89,7 +77,9 @@ function CustomerReviewsPage() {
 
   const brandPhone = brandStyleQ.data?.phone || brandStyleQ.data?.whatsapp_number || null;
   const brandInstagram = useMemo(() => {
-    const rawSocials = Array.isArray(brandStyleQ.data?.socials) ? brandStyleQ.data!.socials : [];
+    const rawSocials = Array.isArray(brandStyleQ.data?.socials)
+      ? (brandStyleQ.data!.socials as Array<{ name?: string; url?: string }>)
+      : [];
     const ig = rawSocials.find(
       (s) =>
         s.name?.toLowerCase().includes("instagram") ||

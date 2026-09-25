@@ -16,13 +16,13 @@ import { collectMaintainabilityMetrics } from "../scripts/maintainability-metric
  */
 
 const BUDGETS = {
-  asAny: 769,
+  asAny: 764,
   colonAny: 744,
   asNever: 0,
   tsIgnore: 0,
   tsExpectError: 0,
   eslintDisable: 10,
-  directSupabaseCalls: 228,
+  directSupabaseCalls: 221,
   readFileSyncTestFiles: 71,
   filesOver1000: 23,
   maxLinesForNewFile: 600,
@@ -39,17 +39,17 @@ const BUDGETS = {
  */
 const GIANT_FILES_BUDGETS: Record<string, number> = {
   "src/features/settings/registry.ts": 2616,
-  "src/routes/_authenticated/admin.b.$slug.content-studio.tsx": 2488,
+  "src/routes/_authenticated/admin.b.$slug.content-studio.tsx": 2479,
   "src/components/subscription/BrandSubscriptionHub.tsx": 1972,
   "src/routes/_authenticated/admin.b.$slug.export.tsx": 1924,
   "src/lib/addons/addon-showcase-data.ts": 1893,
-  "src/routes/_authenticated/admin.b.$slug.customers.tsx": 1787,
+  "src/routes/_authenticated/admin.b.$slug.customers.tsx": 1779,
   "src/components/super/SuperPlansManager.tsx": 1728,
   "src/routes/_authenticated/admin.b.$slug.team.tsx": 1715,
   "src/addons/size-guides/components/admin/SizeGuideStudioPage.tsx": 1703,
   "src/routes/$slug.account.tsx": 1523,
   "src/routes/_authenticated/admin.b.$slug.incubators.tsx": 1512,
-  "src/routes/_authenticated/admin.b.$slug.campaigns.tsx": 1469,
+  "src/routes/_authenticated/admin.b.$slug.campaigns.tsx": 1460,
   "src/routes/_authenticated/admin.b.$slug.import.tsx": 1463,
   "src/components/reviews/ReviewStoryDialog.tsx": 1442,
   "src/routes/_authenticated/admin.b.$slug.expenses.tsx": 1326,

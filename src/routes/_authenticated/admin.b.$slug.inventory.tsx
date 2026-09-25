@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { useT, useI18n } from "@/lib/i18n";
@@ -93,17 +94,8 @@ function Inventory() {
   });
 
   const businessName = useQuery({
-    queryKey: ["business-name", brandId],
-    staleTime: 30_000,
+    ...businessSettingsQueries.detail(brandId),
     refetchOnWindowFocus: false,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("business_settings")
-        .select("business_name, currency")
-        .eq("brand_id", brandId)
-        .maybeSingle();
-      return data ?? null;
-    },
   });
 
   const salesHistory = useQuery({

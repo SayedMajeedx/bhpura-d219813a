@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { useBrand } from "@/lib/brand-context";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useI18n } from "@/lib/i18n";
@@ -242,17 +243,7 @@ function ContentStudioPage() {
       }>;
     },
   });
-  const settingsQ = useQuery({
-    queryKey: ["content-studio-settings", brand.id],
-    queryFn: async () => {
-      const { data, error } = await (supabase.from("business_settings") as any)
-        .select("business_name,phone,whatsapp_number,socials,logo_url,primary_color,currency")
-        .eq("brand_id", brand.id)
-        .maybeSingle();
-      if (error) throw error;
-      return data as any;
-    },
-  });
+  const settingsQ = useQuery(businessSettingsQueries.detail(brand.id));
   const products = productsQ.data ?? [];
   const selected = products.find((product) => product.id === productId) ?? products[0];
 
