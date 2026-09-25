@@ -1,6 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,8 +7,6 @@ import {
   ReceiptText,
   TrendingUp,
   CalendarDays,
-  Wallet,
-  PiggyBank,
   AlertCircle,
   ArrowUpRight,
   ArrowDownRight,
@@ -22,20 +18,13 @@ import {
   X,
   MessageCircle,
 } from "lucide-react";
-import { toast } from "sonner";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
 import { formatDate, formatMoney } from "@/lib/format";
-import { getItemPackagingCost } from "@/lib/bom-calculator";
-import { fetchReportingOverview, fetchCatalogInquiriesReporting } from "@/lib/reporting.functions";
-import { isCatalogMode } from "@/lib/storefront-mode";
 import { useI18n, useT } from "@/lib/i18n";
 import { useProfile } from "@/lib/profile-context";
 import { useBrand } from "@/lib/brand-context";
-import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useMemo, useState } from "react";
 import { getOrderCustomerName } from "@/lib/order-customer-snapshot";
-import { getOrderWorkflow } from "@/lib/order-workflow";
-import { isLowStock } from "@/lib/inventory-health";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { getStorefrontUrl } from "@/lib/storefront-url";
 import { useAddons } from "@/components/addons/AddonsProvider";
@@ -49,6 +38,17 @@ import { DashboardActivityQueue } from "@/components/dashboard/DashboardActivity
 import { ReviewRequestQueue } from "@/components/dashboard/ReviewRequestQueue";
 import { ReviewInsightsSummary } from "@/components/dashboard/ReviewInsightsSummary";
 import { DashboardActionStrip } from "@/components/dashboard/DashboardActionStrip";
+import { useDashboardData } from "@/features/dashboard/hooks/use-dashboard-data";
+import { useOnboardingMilestones } from "@/features/dashboard/hooks/use-onboarding-milestones";
+import {
+  customerSegments,
+  dashboardFinancials,
+  inventoryIntelFor,
+  ordersNeedingAction,
+  ordersToPrepareCount,
+  paidRevenueOrders,
+} from "@/features/dashboard/lib/dashboard-metrics";
+import { primaryKpisFor } from "@/features/dashboard/lib/dashboard-kpis";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/dashboard")({
   component: Dashboard,
@@ -66,895 +66,108 @@ function Dashboard() {
   const brandId = brand.id;
   const locale = lang === "ar" ? "ar-BH-u-nu-latn" : "en-US";
   const reportingPeriodLabel = isAr ? "آخر 30 يومًا" : "the last 30 days";
-  const dashboardPeriods = useMemo(() => {
-    const end = new Date();
-    const start = new Date(end);
-    start.setDate(start.getDate() - 29);
-    start.setHours(0, 0, 0, 0);
-    const periodDurationMs = end.getTime() - start.getTime();
-    const previousEnd = new Date(start.getTime() - 1);
-    const previousStart = new Date(previousEnd.getTime() - periodDurationMs);
-    return { start, end, previousStart, previousEnd };
-  }, []);
-  const reportingTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   const isMounted = typeof window !== "undefined";
   const [activeScope, setActiveScope] = useState<DashboardViewScope>("financials");
 
-  // Guided Onboarding Milestones State (Per-brand persistent tracking)
-  const [isPreviewed, setIsPreviewed] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return localStorage.getItem(`boutq_onboarding_previewed_${brandId}`) === "true";
-    } catch {
-      return false;
-    }
-  });
+  const {
+    isPreviewed,
+    isManualSaleCompleted,
+    isOnboardingDismissed,
+    handleCopyStoreLink,
+    handlePreviewStorefront,
+    togglePreviewMilestone,
+    toggleSaleMilestone,
+    handleDismissOnboarding,
+    handleRestoreOnboarding,
+  } = useOnboardingMilestones({ brand, brandId, isAr });
 
-  const [isManualSaleCompleted, setIsManualSaleCompleted] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return localStorage.getItem(`boutq_onboarding_sale_done_${brandId}`) === "true";
-    } catch {
-      return false;
-    }
-  });
-
-  const [isOnboardingDismissed, setIsOnboardingDismissed] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return localStorage.getItem(`boutq_onboarding_dismissed_${brandId}`) === "true";
-    } catch {
-      return false;
-    }
-  });
-
-  const handleCopyStoreLink = async () => {
-    const url = getStorefrontUrl(brand);
-    try {
-      await navigator.clipboard.writeText(url);
-      if (!isPreviewed) {
-        setIsPreviewed(true);
-        try {
-          localStorage.setItem(`boutq_onboarding_previewed_${brandId}`, "true");
-        } catch {
-          // localStorage can be unavailable (private mode, quota) — onboarding state just won't persist.
-        }
-      }
-      toast.success(
-        isAr
-          ? "تم نسخ رابط المتجر بنجاح واكتمال خطوة المعاينة والمشاركة!"
-          : "Store link copied! Sharing milestone completed.",
-      );
-    } catch {
-      toast.error(isAr ? "تعذر نسخ الرابط" : "Failed to copy link");
-    }
-  };
-
-  const handlePreviewStorefront = () => {
-    if (!isPreviewed) {
-      setIsPreviewed(true);
-      try {
-        localStorage.setItem(`boutq_onboarding_previewed_${brandId}`, "true");
-      } catch {
-        // localStorage can be unavailable (private mode, quota) — onboarding state just won't persist.
-      }
-    }
-    toast.success(
-      isAr
-        ? "تم تسجيل معاينة المتجر واكتمال الخطوة بنجاح!"
-        : "Storefront previewed! Milestone marked as completed.",
-    );
-  };
-
-  const togglePreviewMilestone = (completed: boolean) => {
-    setIsPreviewed(completed);
-    try {
-      localStorage.setItem(`boutq_onboarding_previewed_${brandId}`, String(completed));
-    } catch {
-      // localStorage can be unavailable (private mode, quota) — onboarding state just won't persist.
-    }
-    toast.success(
-      completed
-        ? isAr
-          ? "تم تحديد معاينة المتجر كمكتملة!"
-          : "Storefront preview marked as complete!"
-        : isAr
-          ? "تم التراجع عن إكمال الخطوة"
-          : "Milestone marked as incomplete",
-    );
-  };
-
-  const toggleSaleMilestone = (completed: boolean) => {
-    setIsManualSaleCompleted(completed);
-    try {
-      localStorage.setItem(`boutq_onboarding_sale_done_${brandId}`, String(completed));
-    } catch {
-      // localStorage can be unavailable (private mode, quota) — onboarding state just won't persist.
-    }
-    toast.success(
-      completed
-        ? isAr
-          ? "تم تحديد تسجيل أول عملية بيع كمكتملة!"
-          : "First sale milestone marked as complete!"
-        : isAr
-          ? "تم التراجع عن إكمال الخطوة"
-          : "Milestone marked as incomplete",
-    );
-  };
-
-  const handleDismissOnboarding = () => {
-    setIsOnboardingDismissed(true);
-    try {
-      localStorage.setItem(`boutq_onboarding_dismissed_${brandId}`, "true");
-    } catch {
-      // localStorage can be unavailable (private mode, quota) — onboarding state just won't persist.
-    }
-    toast.success(isAr ? "تم إخفاء لوحة الإطلاق بنجاح" : "Onboarding checklist dismissed");
-  };
-
-  const handleRestoreOnboarding = () => {
-    setIsOnboardingDismissed(false);
-    try {
-      localStorage.removeItem(`boutq_onboarding_dismissed_${brandId}`);
-    } catch {
-      // localStorage can be unavailable (private mode, quota) — onboarding state just won't persist.
-    }
-  };
-
-  // 1. Fetch Business settings
-  const businessSettings = useQuery({
-    queryKey: ["dashboard-business-settings", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("business_settings")
-        .select(
-          "business_name, currency, card_processing_fee, benefit_processing_fee, bom_enabled, storefront_mode",
-        )
-        .eq("brand_id", brandId)
-        .maybeSingle();
-      if (error) throw error;
-      return (
-        data ?? {
-          business_name: "",
-          currency: "BHD",
-          card_processing_fee: 0,
-          benefit_processing_fee: 0,
-          bom_enabled: true,
-          storefront_mode: "shop",
-        }
-      );
-    },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-  });
-
-  const isCatalog = isCatalogMode(businessSettings.data);
-
-  // Fetch catalog inquiries metrics when store is in catalog mode
-  const catalogInquiriesQ = useQuery({
-    queryKey: ["dashboard-catalog-inquiries", brandId],
-    enabled: Boolean(brandId) && isCatalog,
-    queryFn: () => fetchCatalogInquiriesReporting(brandId),
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-  });
-
-  const currency = businessSettings.data?.currency ?? "BHD";
-
-  // Use the exact same accounting engine as Reports so dashboard KPIs cannot drift.
-  const reportingOverviewQ = useQuery({
-    queryKey: [
-      "dashboard-reporting-overview",
-      slug,
-      dashboardPeriods.start.toISOString(),
-      dashboardPeriods.end.toISOString(),
-      reportingTimezone,
-    ],
-    queryFn: () =>
-      fetchReportingOverview(
-        { from: dashboardPeriods.start, to: dashboardPeriods.end },
-        reportingTimezone,
-        false,
-        slug,
-      ),
-    staleTime: 60_000,
-    enabled: Boolean(canViewFinancials && slug),
-    refetchOnWindowFocus: false,
-  });
-  const previousReportingOverviewQ = useQuery({
-    queryKey: [
-      "dashboard-reporting-overview-previous",
-      slug,
-      dashboardPeriods.previousStart.toISOString(),
-      dashboardPeriods.previousEnd.toISOString(),
-      reportingTimezone,
-    ],
-    queryFn: () =>
-      fetchReportingOverview(
-        { from: dashboardPeriods.previousStart, to: dashboardPeriods.previousEnd },
-        reportingTimezone,
-        false,
-        slug,
-      ),
-    staleTime: 60_000,
-    enabled: Boolean(canViewFinancials && slug),
-    refetchOnWindowFocus: false,
-  });
-
-  // 2. Fetch all products
-  const productsQ = useQuery({
-    queryKey: ["dashboard-products", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("products")
-        .select(
-          "id, name, name_ar, name_en, category, image_url, media, is_active, direct_packaging_cost",
-        )
-        .eq("brand_id", brandId);
-      if (error) throw error;
-      return (data ?? []) as any[];
-    },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-  });
-
-  // 3. Fetch all variants
-  const variantsQ = useQuery({
-    queryKey: ["dashboard-variants", brandId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("product_variants")
-        .select(
-          "id, product_id, size, color, selling_price, cost_price, stock_main, stock_incubator, created_at",
-        )
-        .eq("brand_id", brandId);
-      if (error) throw error;
-      return data ?? [];
-    },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-  });
-
-  const bomItemsQ = useQuery({
-    queryKey: ["product-bom-items-all", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("product_bom_items")
-        .select("product_id, packaging_material_id, quantity_per_unit")
-        .eq("brand_id", brandId);
-      if (error) return [];
-      return (data ?? []) as any[];
-    },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-  });
-
-  const packagingMaterialsQ = useQuery({
-    queryKey: ["packaging-materials", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("packaging_materials")
-        .select("*")
-        .eq("brand_id", brandId);
-      if (error) return [];
-      return (data ?? []) as any[];
-    },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-  });
-
-  // 4. Fetch all customers
-  const customersQ = useQuery({
-    queryKey: ["dashboard-customers", brandId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customers")
-        .select("id, name, phone")
-        .eq("brand_id", brandId);
-      if (error) throw error;
-      return data ?? [];
-    },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-  });
-
-  // 5. Fetch all orders (and order items)
-  const ordersQ = useQuery({
-    queryKey: ["dashboard-orders-with-items", brandId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select(
-          "id, invoice_number, created_at, currency, total, status, fulfillment_status, payment_status, customer_id, customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot, customers(name), payment_method, order_items(id, description, product_id, variant_id, quantity, unit_price, unit_cost, line_total, packaging_cost_snapshot)",
-        )
-        .eq("brand_id", brandId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data as any[]) ?? [];
-    },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-  });
-
-  // 6. Fetch recent 5 orders for operational feed
-  const recentOrdersQ = useQuery({
-    queryKey: ["dashboard-recent-orders", brandId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select(
-          "id, invoice_number, created_at, currency, total, status, fulfillment_status, fulfillment_method, payment_status, customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot, customers(name)",
-        )
-        .eq("brand_id", brandId)
-        .order("created_at", { ascending: false })
-        .limit(5);
-      if (error) throw error;
-      return (data as any[]) ?? [];
-    },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-  });
-
-  // 7. Fetch all manual expenses
-  const expensesQ = useQuery({
-    queryKey: ["dashboard-expenses", brandId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("expenses").select("*").eq("brand_id", brandId);
-      if (error) throw error;
-      return data ?? [];
-    },
-    staleTime: 60_000,
-    enabled: Boolean(canViewFinancials && brandId),
-    refetchOnWindowFocus: false,
-  });
-
-  // Pending returns requiring inspection/action
-  const pendingReturnsQ = useQuery({
-    queryKey: ["dashboard-pending-returns", brandId],
-    queryFn: async () => {
-      const { count, error } = await (supabase as any)
-        .from("return_requests")
-        .select("id", { count: "exact", head: true })
-        .eq("brand_id", brandId)
-        .in("status", ["new", "under_review", "under_inspection", "received"]);
-      if (error) return 0;
-      return count ?? 0;
-    },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-  });
-
-  const incubatorSalesQ = useQuery({
-    queryKey: ["dashboard-incubator-sales", brandId],
-    queryFn: async () => {
-      const end = new Date();
-      const start = new Date(end);
-      start.setDate(start.getDate() - 60);
-      const { data, error } = await (supabase as any).rpc("rpc_reporting_incubator_sales", {
-        p_start_date: start.toISOString(),
-        p_end_date: end.toISOString(),
-        p_tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        p_interval: "day",
-        p_brand_slug: slug,
-      });
-      if (error) throw error;
-      return ((data?.timeseries ?? []) as any[]).map((row) => ({
-        ...row,
-        sold_at: row.time_bucket,
-        gross_amount: row.gross_amount,
-        quantity: row.sale_count,
-      }));
-    },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-  });
-
-  useRealtimeInvalidate(
-    [
-      { table: "orders", brandId, queryKey: ["dashboard-orders-with-items", brandId] },
-      { table: "orders", brandId, queryKey: ["dashboard-recent-orders", brandId] },
-      { table: "orders", brandId, queryKey: ["dashboard-customers", brandId] },
-      { table: "order_items", brandId, queryKey: ["dashboard-orders-with-items", brandId] },
-      { table: "products", brandId, queryKey: ["dashboard-products", brandId] },
-      { table: "product_variants", brandId, queryKey: ["dashboard-variants", brandId] },
-      { table: "expenses", brandId, queryKey: ["dashboard-expenses", brandId] },
-      { table: "return_requests", brandId, queryKey: ["dashboard-reporting-overview", slug] },
-      { table: "product_bom_items", brandId, queryKey: ["dashboard-reporting-overview", slug] },
-      { table: "packaging_materials", brandId, queryKey: ["dashboard-reporting-overview", slug] },
-      { table: "business_settings", brandId, queryKey: ["dashboard-business-settings", brandId] },
-    ],
-    `dashboard-realtime:${brandId}`,
-  );
-
-  const isLoading =
-    businessSettings.isLoading ||
-    productsQ.isLoading ||
-    variantsQ.isLoading ||
-    customersQ.isLoading ||
-    ordersQ.isLoading ||
-    recentOrdersQ.isLoading ||
-    incubatorSalesQ.isLoading ||
-    (canViewFinancials
-      ? expensesQ.isLoading || reportingOverviewQ.isLoading || previousReportingOverviewQ.isLoading
-      : false);
-  const accountingRows = Array.isArray(reportingOverviewQ.data) ? reportingOverviewQ.data : [];
-  const accountingRow: any =
-    accountingRows.find((row: any) => row.currency === currency) ?? accountingRows[0];
-  const previousAccountingRows = Array.isArray(previousReportingOverviewQ.data)
-    ? previousReportingOverviewQ.data
-    : [];
-  const previousAccountingRow: any =
-    previousAccountingRows.find(
-      (row: any) => row.currency === (accountingRow?.currency || currency),
-    ) ?? previousAccountingRows[0];
-
-  // Filter confirmed/completed orders for revenue reporting
-  const validRevenueOrders = useMemo(() => {
-    return (ordersQ.data ?? []).filter((o) => {
-      const status = String(o.status || "").toLowerCase();
-      const fulfillment = String(o.fulfillment_status || "").toLowerCase();
-      return (
-        String(o.payment_status || "").toLowerCase() === "paid" &&
-        !["cancelled", "canceled", "refunded", "archived_historical"].includes(status) &&
-        !["cancelled", "canceled", "refunded"].includes(fulfillment)
-      );
-    });
-  }, [ordersQ.data]);
-
-  // Operational Actionable Orders (Orders needing triage/action)
-  const actionNeededOrders = useMemo(() => {
-    return (ordersQ.data ?? [])
-      .filter((o) => {
-        const wf = getOrderWorkflow(o, { productionStages: hasMadeToOrder });
-        return wf.needsAttention && !wf.terminal;
-      })
-      .slice(0, 5);
-  }, [ordersQ.data, hasMadeToOrder]);
-
-  // Financial intelligence aggregations
-  const financials = useMemo(() => {
-    const allOrders = validRevenueOrders;
-    const now = new Date();
-    const currentStart = new Date(now);
-    currentStart.setDate(currentStart.getDate() - 29);
-    currentStart.setHours(0, 0, 0, 0);
-    const priorStart = new Date(currentStart);
-    priorStart.setDate(priorStart.getDate() - 30);
-    const orders = allOrders.filter((o) => {
-      const timestamp = Date.parse(o.created_at);
-      return (
-        Number.isFinite(timestamp) &&
-        timestamp >= currentStart.getTime() &&
-        timestamp <= now.getTime()
-      );
-    });
-    const expenses = (expensesQ.data ?? []).filter((expense: any) => {
-      const rawDate = expense.expense_date || expense.created_at;
-      const timestamp = rawDate ? Date.parse(rawDate) : NaN;
-      return (
-        Number.isFinite(timestamp) &&
-        timestamp >= currentStart.getTime() &&
-        timestamp <= now.getTime()
-      );
-    });
-    const allIncubatorSales = incubatorSalesQ.data ?? [];
-    const incubatorSales = allIncubatorSales.filter((sale: any) => {
-      const timestamp = Date.parse(sale.sold_at);
-      return (
-        Number.isFinite(timestamp) &&
-        timestamp >= currentStart.getTime() &&
-        timestamp <= now.getTime()
-      );
-    });
-    const variants = variantsQ.data ?? [];
-
-    const variantCostMap = new Map<string, number>();
-    variants.forEach((v) => {
-      variantCostMap.set(v.id, Number(v.cost_price || 0));
-    });
-
-    const orderRevenue = orders.reduce((sum, o) => sum + Number(o.total || 0), 0);
-    const incubatorRevenue = incubatorSales.reduce(
-      (sum: number, sale: any) => sum + Number(sale.gross_amount || 0),
-      0,
-    );
-    const revenue = orderRevenue + incubatorRevenue;
-
-    let productCogs = 0;
-    let packagingBomCogs = 0;
-    const prods = productsQ.data ?? [];
-    const boms = bomItemsQ.data ?? [];
-    const mats = packagingMaterialsQ.data ?? [];
-
-    orders.forEach((order) => {
-      const isFulfilled = ["fulfilled", "delivered", "completed", "shipped", "picked_up"].includes(
-        String(order.fulfillment_status || order.status || "").toLowerCase(),
-      );
-      (order.order_items ?? []).forEach((item: any) => {
-        const itemCost =
-          item.unit_cost != null && !isNaN(Number(item.unit_cost))
-            ? Number(item.unit_cost)
-            : (variantCostMap.get(item.variant_id) ?? 0);
-        const qty = Number(item.quantity || 0);
-
-        productCogs += itemCost * qty;
-        if (isFulfilled && (businessSettings.data as any)?.bom_enabled !== false) {
-          const pkgCost = getItemPackagingCost(item, prods, variants, boms, mats);
-          packagingBomCogs += pkgCost * qty;
-        }
-      });
-    });
-
-    const incubatorCogs = incubatorSales.reduce(
-      (sum: number, sale: any) =>
-        sum + Number(sale.product_cost_snapshot || 0) + Number(sale.packaging_cost_snapshot || 0),
-      0,
-    );
-    const cogs = productCogs + packagingBomCogs + incubatorCogs;
-
-    const cardFeePercent = Number((businessSettings.data as any)?.card_processing_fee ?? 0);
-    const benefitFeePercent = Number((businessSettings.data as any)?.benefit_processing_fee ?? 0);
-
-    let paymentProcessingFees = 0;
-    orders.forEach((o) => {
-      const totalVal = Number(o.total || 0);
-      if (o.payment_method === "card") {
-        paymentProcessingFees += totalVal * (cardFeePercent / 100);
-      } else if (o.payment_method === "benefit") {
-        paymentProcessingFees += totalVal * (benefitFeePercent / 100);
-      }
-    });
-
-    // OpEx excludes bulk packaging asset purchases (expense_type === 'cogs')
-    const manualOpex = expenses
-      .filter((e: any) => (e.expense_type || "opex") === "opex")
-      .reduce((sum, e) => sum + Number(e.amount || 0), 0);
-
-    const incubatorCommissions = incubatorSales.reduce(
-      (sum: number, sale: any) => sum + Number(sale.commission_amount || 0),
-      0,
-    );
-    const opex = manualOpex + paymentProcessingFees + incubatorCommissions;
-    const reportRevenue = Number(accountingRow?.net_revenue ?? revenue);
-    const reportMerchRevenue = Number(
-      accountingRow?.net_merchandise_after_returns ?? accountingRow?.net_merch_sales ?? revenue,
-    );
-    const reportCogs = Number(
-      accountingRow?.known_cogs_after_returns ?? accountingRow?.known_cogs ?? cogs,
-    );
-    const reportOpex = Number(accountingRow?.expenses ?? opex);
-    const grossProfit = reportMerchRevenue - reportCogs;
-    const netProfit = grossProfit - reportOpex;
-    const grossMarginPercent =
-      reportMerchRevenue > 0 ? (grossProfit / reportMerchRevenue) * 100 : 0;
-    const current30Orders = orders;
-    const prior30Orders = allOrders.filter((o) => {
-      const timestamp = Date.parse(o.created_at);
-      return (
-        Number.isFinite(timestamp) &&
-        timestamp >= priorStart.getTime() &&
-        timestamp < currentStart.getTime()
-      );
-    });
-    const priorIncubatorSales = allIncubatorSales.filter((sale: any) => {
-      const timestamp = Date.parse(sale.sold_at);
-      return (
-        Number.isFinite(timestamp) &&
-        timestamp >= priorStart.getTime() &&
-        timestamp < currentStart.getTime()
-      );
-    });
-    const revenueWithIncubators = reportRevenue;
-    const revenuePrior = Number(
-      previousAccountingRow?.net_revenue ??
-        prior30Orders.reduce((sum, o) => sum + Number(o.total || 0), 0) +
-          priorIncubatorSales.reduce(
-            (sum: number, sale: any) => sum + Number(sale.gross_amount || 0),
-            0,
-          ),
-    );
-    const revenueDeltaPct =
-      revenuePrior > 0 ? ((revenueWithIncubators - revenuePrior) / revenuePrior) * 100 : null;
-
-    const ordersCurrent =
-      current30Orders.length +
-      incubatorSales.reduce((sum: number, sale: any) => sum + Number(sale.quantity || 0), 0);
-    const ordersPrior =
-      prior30Orders.length +
-      priorIncubatorSales.reduce((sum: number, sale: any) => sum + Number(sale.quantity || 0), 0);
-    const ordersDeltaPct =
-      ordersPrior > 0 ? ((ordersCurrent - ordersPrior) / ordersPrior) * 100 : null;
-
-    const aovCurrent = ordersCurrent > 0 ? revenueWithIncubators / ordersCurrent : 0;
-    const aovPrior = ordersPrior > 0 ? revenuePrior / ordersPrior : 0;
-    const aovDeltaPct = aovPrior > 0 ? ((aovCurrent - aovPrior) / aovPrior) * 100 : null;
-
-    // 30-Day Daily Sales Time Series Chart Data
-    const chartDataMap = new Map<string, { date: string; sales: number; orders: number }>();
-    for (let i = 29; i >= 0; i--) {
-      const d = new Date(currentStart);
-      d.setDate(currentStart.getDate() + (29 - i));
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-      const label = d.toLocaleDateString(locale, { day: "numeric", month: "short" });
-      chartDataMap.set(key, { date: label, sales: 0, orders: 0 });
-    }
-
-    orders.forEach((o) => {
-      if (!o.created_at) return;
-      const d = new Date(o.created_at);
-      if (isNaN(d.getTime())) return;
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-      if (chartDataMap.has(key)) {
-        const item = chartDataMap.get(key)!;
-        item.sales += Number(o.total || 0);
-        item.orders += 1;
-      }
-    });
-    incubatorSales.forEach((sale: any) => {
-      const d = new Date(sale.sold_at);
-      if (isNaN(d.getTime())) return;
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-      const item = chartDataMap.get(key);
-      if (item) {
-        item.sales += Number(sale.gross_amount || 0);
-        item.orders += Number(sale.quantity || 0);
-      }
-    });
-
-    const dailyChartSeries = Array.from(chartDataMap.values());
-
-    return {
-      revenue: reportRevenue,
-      storeRevenue: orderRevenue,
-      incubatorRevenue,
-      cogs: reportCogs,
-      opex: reportOpex,
-      totalExpenses: reportCogs + reportOpex,
-      netProfit,
-      grossMarginPercent,
-      revenueCurrent: revenueWithIncubators,
-      revenueDeltaPct,
-      ordersCurrent,
-      ordersDeltaPct,
-      aovCurrent,
-      aovDeltaPct,
-      dailyChartSeries,
-    };
-  }, [
-    validRevenueOrders,
-    expensesQ.data,
-    incubatorSalesQ.data,
-    variantsQ.data,
-    productsQ.data,
-    bomItemsQ.data,
-    packagingMaterialsQ.data,
-    businessSettings.data,
+  const {
+    businessSettings,
+    isCatalog,
+    catalogInquiriesQ,
+    currency,
+    reportingOverviewQ,
+    productsQ,
+    variantsQ,
+    bomItemsQ,
+    packagingMaterialsQ,
+    customersQ,
+    ordersQ,
+    recentOrdersQ,
+    expensesQ,
+    pendingReturnsQ,
+    incubatorSalesQ,
+    isLoading,
     accountingRow,
     previousAccountingRow,
-    locale,
-  ]);
+  } = useDashboardData({ brandId, slug, canViewFinancials });
+
+  // Filter confirmed/completed orders for revenue reporting
+  const validRevenueOrders = useMemo(() => paidRevenueOrders(ordersQ.data ?? []), [ordersQ.data]);
+
+  // Operational Actionable Orders (Orders needing triage/action)
+  const actionNeededOrders = useMemo(
+    () => ordersNeedingAction(ordersQ.data ?? [], hasMadeToOrder),
+    [ordersQ.data, hasMadeToOrder],
+  );
+
+  // Financial intelligence aggregations
+  const financials = useMemo(
+    () =>
+      dashboardFinancials({
+        validRevenueOrders,
+        expenseRows: expensesQ.data ?? [],
+        incubatorSaleRows: incubatorSalesQ.data ?? [],
+        variantRows: variantsQ.data ?? [],
+        productRows: productsQ.data ?? [],
+        bomItemRows: bomItemsQ.data ?? [],
+        packagingMaterialRows: packagingMaterialsQ.data ?? [],
+        settings: businessSettings.data,
+        accountingRow,
+        previousAccountingRow,
+        locale,
+        now: new Date(),
+      }),
+    [
+      validRevenueOrders,
+      expensesQ.data,
+      incubatorSalesQ.data,
+      variantsQ.data,
+      productsQ.data,
+      bomItemsQ.data,
+      packagingMaterialsQ.data,
+      businessSettings.data,
+      accountingRow,
+      previousAccountingRow,
+      locale,
+    ],
+  );
 
   // CRM segmentation distribution
-  const crmStats = useMemo(() => {
-    const orders = validRevenueOrders;
-    const customers = customersQ.data ?? [];
-
-    const nowMs = new Date().getTime();
-    const sixtyDaysMs = 60 * 24 * 60 * 60 * 1000;
-
-    const ordersByCustomer = new Map<string, typeof orders>();
-    orders.forEach((o) => {
-      if (o.customer_id) {
-        if (!ordersByCustomer.has(o.customer_id)) {
-          ordersByCustomer.set(o.customer_id, []);
-        }
-        ordersByCustomer.get(o.customer_id)!.push(o);
-      }
-    });
-
-    let vipCount = 0;
-    let churnRiskCount = 0;
-    const churnRiskVips: Array<{ id: string; name: string }> = [];
-
-    customers.forEach((c) => {
-      const custOrders = ordersByCustomer.get(c.id) ?? [];
-      const lifetimeSpend = custOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
-
-      let lastOrderMs = 0;
-      custOrders.forEach((o) => {
-        const ms = new Date(o.created_at).getTime();
-        if (ms > lastOrderMs) lastOrderMs = ms;
-      });
-
-      const isVip = lifetimeSpend > 250;
-      const isIdle60 = lastOrderMs > 0 && nowMs - lastOrderMs > sixtyDaysMs;
-
-      if (isVip) {
-        vipCount++;
-        if (isIdle60) {
-          churnRiskVips.push({ id: c.id, name: c.name });
-        }
-      }
-
-      if (isIdle60) {
-        churnRiskCount++;
-      }
-    });
-
-    return {
-      vipCount,
-      churnRiskCount,
-      churnRiskVips,
-    };
-  }, [validRevenueOrders, customersQ.data]);
+  const crmStats = useMemo(
+    () => customerSegments(validRevenueOrders, customersQ.data ?? [], new Date()),
+    [validRevenueOrders, customersQ.data],
+  );
 
   // Inventory velocity & stock depletion calculations
-  const inventoryIntel = useMemo(() => {
-    const products = productsQ.data ?? [];
-    const variants = variantsQ.data ?? [];
-    const orders = validRevenueOrders;
-
-    const past45Days = new Date();
-    past45Days.setDate(past45Days.getDate() - 45);
-    const past45DaysMs = past45Days.getTime();
-
-    const salesByVariant = new Map<string, number>();
-
-    orders.forEach((order) => {
-      const orderTime = new Date(order.created_at).getTime();
-      if (orderTime >= past45DaysMs) {
-        (order.order_items ?? []).forEach((item: any) => {
-          if (item.variant_id) {
-            salesByVariant.set(
-              item.variant_id,
-              (salesByVariant.get(item.variant_id) ?? 0) + Number(item.quantity || 0),
-            );
-          }
-        });
-      }
-    });
-
-    const getVariantStock = (v: any) => Number(v.stock_main || 0) + Number(v.stock_incubator || 0);
-
-    const getVariantDailyVelocity = (v: any) => {
-      const qtySold = salesByVariant.get(v.id) || 0;
-      const variantCreatedAt = v.created_at ? new Date(v.created_at) : null;
-      const daysElapsed = variantCreatedAt
-        ? Math.max(
-            1,
-            Math.min(
-              45,
-              Math.ceil(
-                (new Date().getTime() - variantCreatedAt.getTime()) / (1000 * 60 * 60 * 24),
-              ),
-            ),
-          )
-        : 45;
-      return qtySold / daysElapsed;
-    };
-
-    let deadStockCount = 0;
-    variants.forEach((v) => {
-      const qtySold = salesByVariant.get(v.id) || 0;
-      if (qtySold === 0) {
-        deadStockCount++;
-      }
-    });
-
-    const productStockMap = new Map<string, number>();
-    const productWeeklySalesMap = new Map<string, number>();
-
-    products.forEach((product) => {
-      const pVariants = variants.filter((v) => v.product_id === product.id);
-      const stock = pVariants.reduce((sum, v) => sum + getVariantStock(v), 0);
-      productStockMap.set(product.id, stock);
-
-      const productDailyVelocity = pVariants.reduce(
-        (sum, v) => sum + getVariantDailyVelocity(v),
-        0,
-      );
-      productWeeklySalesMap.set(product.id, productDailyVelocity * 7);
-    });
-
-    let lowStockCount = 0;
-    products.forEach((product) => {
-      const stock = productStockMap.get(product.id) ?? 0;
-      const weeklySales = productWeeklySalesMap.get(product.id) ?? 0;
-      if (isLowStock(stock, weeklySales)) {
-        lowStockCount++;
-      }
-    });
-
-    const availableWithoutImages = products
-      .filter((product) => {
-        if (!product.is_active || (productStockMap.get(product.id) ?? 0) <= 0) return false;
-        const media = Array.isArray(product.media) ? product.media : [];
-        const hasMedia = media.some((item: any) =>
-          typeof item === "string" ? Boolean(item.trim()) : Boolean(item?.url || item?.src),
-        );
-        return !product.image_url && !hasMedia;
-      })
-      .map((product) => ({
-        id: product.id,
-        name: lang === "ar" ? product.name_ar || product.name : product.name_en || product.name,
-        stock: productStockMap.get(product.id) ?? 0,
-      }));
-
-    const lowStockVariants: Array<{
-      id: string;
-      name: string;
-      stock: number;
-      daysLeft: number;
-    }> = [];
-
-    variants.forEach((v) => {
-      const product = products.find((p) => p.id === v.product_id);
-      if (!product) return;
-
-      const stock = getVariantStock(v);
-      const dailyVelocity = getVariantDailyVelocity(v);
-      if (dailyVelocity > 0) {
-        const daysLeft = Math.ceil(stock / dailyVelocity);
-        if (daysLeft <= 14) {
-          const sizeText = v.size ? ` (${v.size})` : "";
-          const colorText = v.color ? ` - ${v.color}` : "";
-          const pName =
-            lang === "ar" ? product.name_ar || product.name : product.name_en || product.name;
-          lowStockVariants.push({
-            id: v.id,
-            name: `${pName}${sizeText}${colorText}`,
-            stock,
-            daysLeft,
-          });
-        }
-      } else if (stock === 0) {
-        const sizeText = v.size ? ` (${v.size})` : "";
-        const colorText = v.color ? ` - ${v.color}` : "";
-        const pName =
-          lang === "ar" ? product.name_ar || product.name : product.name_en || product.name;
-        lowStockVariants.push({
-          id: v.id,
-          name: `${pName}${sizeText}${colorText}`,
-          stock: 0,
-          daysLeft: 0,
-        });
-      }
-    });
-
-    return {
-      deadStockCount,
-      lowStockCount,
-      outOfStockVariantCount: lowStockVariants.filter((item) => item.stock === 0).length,
-      lowStockVariants: lowStockVariants.sort((a, b) => a.daysLeft - b.daysLeft).slice(0, 5),
-      availableWithoutImages,
-    };
-  }, [productsQ.data, variantsQ.data, validRevenueOrders, lang]);
+  const inventoryIntel = useMemo(
+    () =>
+      inventoryIntelFor({
+        productRows: productsQ.data ?? [],
+        variantRows: variantsQ.data ?? [],
+        validRevenueOrders,
+        lang,
+        now: new Date(),
+      }),
+    [productsQ.data, variantsQ.data, validRevenueOrders, lang],
+  );
 
   // Orders awaiting merchant preparation & fulfillment (synchronized with orders page to_prepare tab)
-  const unfulfilledOrdersCount = useMemo(() => {
-    return (ordersQ.data ?? []).filter((o: any) => {
-      const workflow = getOrderWorkflow(o, { productionStages: hasMadeToOrder });
-      return (
-        !workflow.terminal &&
-        [
-          "pending",
-          "packing",
-          "on_hold",
-          "needs_packing",
-          ...(hasMadeToOrder
-            ? [
-                "received_from_workshop",
-                "sent_to_workshop",
-                "received_from_tailor",
-                "sent_to_tailor",
-              ]
-            : []),
-        ].includes(workflow.fulfillment) &&
-        (!workflow.awaitingPayment || workflow.isCod)
-      );
-    }).length;
-  }, [ordersQ.data, hasMadeToOrder]);
+  const unfulfilledOrdersCount = useMemo(
+    () => ordersToPrepareCount(ordersQ.data ?? [], hasMadeToOrder),
+    [ordersQ.data, hasMadeToOrder],
+  );
 
   // Loading skeleton placeholder
   if (isLoading) {
@@ -999,101 +212,15 @@ function Dashboard() {
   const isAllStepsCompleted = completedStepsCount === 3;
 
   // Primary Financial or Catalog KPIs
-  const primaryKpis = isCatalog
-    ? [
-        {
-          label: isAr ? "استفسارات واتساب" : "WhatsApp Inquiries",
-          value: `${catalogInquiriesQ.data?.totalInquiries ?? 0}`,
-          subValue: isAr
-            ? `معدل التحويل: ${(catalogInquiriesQ.data?.inquiryRate ?? 0).toFixed(1)}%`
-            : `Inquiry rate: ${(catalogInquiriesQ.data?.inquiryRate ?? 0).toFixed(1)}%`,
-          deltaPct: null,
-          icon: MessageCircle,
-          color: "text-emerald-500",
-          border: "hover:border-emerald-500/20",
-        },
-        {
-          label: isAr ? "مشاهدات المنتجات" : "Product Views",
-          value: `${catalogInquiriesQ.data?.totalViews ?? 0}`,
-          subValue: isAr
-            ? `النقرات: ${catalogInquiriesQ.data?.totalClicks ?? 0}`
-            : `Clicks: ${catalogInquiriesQ.data?.totalClicks ?? 0}`,
-          deltaPct: null,
-          icon: TrendingUp,
-          color: "text-sky-500",
-          border: "hover:border-sky-500/20",
-        },
-        {
-          label: isAr ? "أكثر المنتجات استفساراً" : "Top Inquired Product",
-          value:
-            catalogInquiriesQ.data?.productInquiries?.[0]?.productName ||
-            (isAr ? "لا توجد استفسارات بعد" : "No inquiries yet"),
-          subValue: catalogInquiriesQ.data?.productInquiries?.[0]
-            ? `${catalogInquiriesQ.data.productInquiries[0].inquiries} ${isAr ? "استفسار" : "inquiries"}`
-            : isAr
-              ? "عبر واتساب"
-              : "via WhatsApp",
-          icon: Package,
-          color: "text-blue-500",
-          border: "hover:border-blue-500/20",
-        },
-        {
-          label: isAr ? "إجمالي المبيعات المسجلة يدويًا" : "Manual Sales Recorded",
-          value: `${financials.ordersCurrent}`,
-          subValue: isAr ? "خلال الثلاثين يومًا الماضية" : "Over the last 30 days",
-          deltaPct: financials.ordersDeltaPct,
-          icon: ReceiptText,
-          color: "text-indigo-500",
-          border: "hover:border-indigo-500/20",
-        },
-      ]
-    : [
-        ...(canViewFinancials
-          ? [
-              {
-                label: isAr ? "الإيرادات وصافي الربح" : "Revenue & Net Profit",
-                value: formatMoney(financials.revenue, currency, locale),
-                subValue: `${isAr ? "صافي الربح" : "Net Profit"}: ${formatMoney(financials.netProfit, currency, locale)}`,
-                breakdown:
-                  financials.incubatorRevenue > 0
-                    ? isAr
-                      ? `(متجر: ${formatMoney(financials.storeRevenue, currency, locale)} | حاضنات: ${formatMoney(financials.incubatorRevenue, currency, locale)})`
-                      : `(Store: ${formatMoney(financials.storeRevenue, currency, locale)} | Incubators: ${formatMoney(financials.incubatorRevenue, currency, locale)})`
-                    : null,
-                deltaPct: financials.revenueDeltaPct,
-                icon: TrendingUp,
-                color: "text-emerald-500",
-                border: "hover:border-emerald-500/20",
-              },
-              {
-                label: isAr ? "متوسط قيمة الطلب" : "Average Order Value (AOV)",
-                value: formatMoney(financials.aovCurrent, currency, locale),
-                subValue: `${isAr ? "إجمالي الطلبات" : "Total Orders"}: ${financials.ordersCurrent}`,
-                deltaPct: financials.aovDeltaPct,
-                icon: Wallet,
-                color: "text-sky-500",
-                border: "hover:border-sky-500/20",
-              },
-              {
-                label: isAr ? "نسبة هامش الربح الإجمالي" : "Gross Margin %",
-                value: `${financials.grossMarginPercent.toFixed(1)}%`,
-                subValue: `${isAr ? "تكلفة المبيعات" : "COGS"}: ${formatMoney(financials.cogs, currency, locale)}`,
-                icon: PiggyBank,
-                color: "text-blue-500",
-                border: "hover:border-blue-500/20",
-              },
-            ]
-          : []),
-        {
-          label: isAr ? "إجمالي عمليات البيع" : "Total Sales Transactions",
-          value: `${financials.ordersCurrent}`,
-          subValue: isAr ? "خلال الثلاثين يومًا الماضية" : "Over the last 30 days",
-          deltaPct: financials.ordersDeltaPct,
-          icon: ReceiptText,
-          color: "text-indigo-500",
-          border: "hover:border-indigo-500/20",
-        },
-      ];
+  const primaryKpis = primaryKpisFor({
+    isCatalog,
+    isAr,
+    catalogInquiries: catalogInquiriesQ.data,
+    financials,
+    canViewFinancials,
+    currency,
+    locale,
+  });
 
   return (
     <div className="mx-auto max-w-[1500px] space-y-3.5 p-1 sm:p-2">

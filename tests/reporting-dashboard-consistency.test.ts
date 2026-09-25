@@ -1,9 +1,24 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(path, "utf8");
+
+// The dashboard is split across its route and src/features/dashboard (Phase 5).
+const dashboardSource = () =>
+  [
+    "src/routes/_authenticated/admin.b.$slug.dashboard.tsx",
+    ...["components", "hooks", "lib"]
+      .filter((dir) => existsSync(`src/features/dashboard/${dir}`))
+      .flatMap((dir) =>
+        readdirSync(`src/features/dashboard/${dir}`)
+          .sort()
+          .map((file) => `src/features/dashboard/${dir}/${file}`),
+      ),
+  ]
+    .map((file) => readFileSync(file, "utf8"))
+    .join("\n");
 const migration = read("supabase/migrations/20260825193000_reporting_dashboard_consistency.sql");
-const dashboard = read("src/routes/_authenticated/admin.b.$slug.dashboard.tsx");
+const dashboard = dashboardSource();
 const overview = read("src/routes/_authenticated/admin.b.$slug.reports.index.tsx");
 const sales = read("src/routes/_authenticated/admin.b.$slug.reports.sales.tsx");
 const products = read("src/routes/_authenticated/admin.b.$slug.reports.products.tsx");
