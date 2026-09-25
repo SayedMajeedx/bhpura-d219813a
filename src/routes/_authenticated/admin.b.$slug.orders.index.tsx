@@ -1,6 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { Download } from "lucide-react";
 import { buildWhatsAppLink } from "@/lib/os-formatting";
@@ -40,6 +39,7 @@ import { getFulfillmentBadgeDetails } from "@/lib/status-labels";
 import { orderRequiresCourier } from "@/lib/order-fulfillment";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { useAddons } from "@/components/addons/AddonsProvider";
+import { ordersQueries, type OrderListRow } from "@/lib/data/orders";
 
 import { OrderQuickInspectSheet } from "@/features/orders/components/OrderQuickInspectSheet";
 import { OrderImporterModal } from "@/features/orders/components/OrderImporterModal";
@@ -283,7 +283,7 @@ function OrdersList() {
   const couriersQ = useBrandCouriers(brandId);
 
   const handleQuickAssignCourier = async (orderId: string, courierId: string) => {
-    const targetOrder = orders.find((order: any) => order.id === orderId);
+    const targetOrder = orders.find((order) => order.id === orderId);
     if (!targetOrder || !orderRequiresCourier(targetOrder)) {
       toast.error(
         lang === "ar"
@@ -417,30 +417,7 @@ function OrdersList() {
     `orders-list-${brandId}`,
   );
 
-  const ordersQ = useQuery({
-    queryKey: ["orders", brandId, isCourier ? "assigned-courier" : "office"],
-    // Realtime can briefly disconnect on a courier's mobile device. A small
-    // interval makes order state changes reliably appear in every workspace.
-    refetchInterval: isCourier ? 10_000 : 30_000,
-    staleTime: 30_000,
-    refetchOnWindowFocus: true,
-    queryFn: async () => {
-      let query: any = supabase
-        .from("orders")
-        .select("*, customers(*), order_items(*)")
-        .eq("brand_id", brandId);
-      if (isCourier) {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) return [];
-        query = query.eq("assigned_to", user.id).eq("fulfillment_method", "delivery");
-      }
-      const { data, error } = await query.order("created_at", { ascending: false });
-      if (error) throw error;
-      return data as any[];
-    },
-  });
+  const ordersQ = useQuery(ordersQueries.list(brandId, isCourier ? "assigned-courier" : "office"));
 
   const create = async () => {
     navigate({ to: "/admin/b/$slug/orders/$id", params: { slug, id: "new" } });
@@ -519,7 +496,7 @@ function OrdersList() {
     setPage(1);
   };
 
-  const renderContextualButton = (o: any) =>
+  const renderContextualButton = (o: OrderListRow) =>
     renderOrderQueueAction(
       {
         brandId,
@@ -658,7 +635,7 @@ function OrdersList() {
 
       {/* 4. Mobile Purpose-Built Order Cards (375px) */}
       <div className="space-y-3 block sm:hidden">
-        {paginatedOrders.map((o: any) => {
+        {paginatedOrders.map((o) => {
           const paymentBadge = resolvePaymentStatus(
             (o as any).payment_status,
             o.status,
@@ -710,7 +687,7 @@ function OrdersList() {
           orders={paginatedOrders}
           isLoading={ordersQ.isLoading}
           isError={ordersQ.isError}
-          getPaymentBadge={(o: any) => {
+          getPaymentBadge={(o) => {
             const pb = resolvePaymentStatus(
               (o as any).payment_status,
               o.status,
@@ -724,7 +701,7 @@ function OrdersList() {
                 }
               : null;
           }}
-          getFulfillmentBadge={(o: any) =>
+          getFulfillmentBadge={(o) =>
             getFulfillmentBadgeDetails(
               getOrderWorkflow(o, { productionStages: hasMadeToOrder }).fulfillment,
               lang,
@@ -732,21 +709,21 @@ function OrdersList() {
               vocabulary,
             )
           }
-          renderPrimaryAction={(o: any) => renderContextualButton(o)}
+          renderPrimaryAction={(o) => renderContextualButton(o)}
           onCopyInvoice={(id: string) => {
             const ord = orders.find((x: any) => x.id === id);
             if (ord) copyInvoiceLink((ord as any).public_invoice_token, t);
           }}
-          onPrintThermal={(o: any) => {
+          onPrintThermal={(o) => {
             setInspectOrder(o);
           }}
-          onWhatsAppCustomer={(o: any) => {
+          onWhatsAppCustomer={(o) => {
             const phone = getOrderCustomerContact(o)?.phone;
             const waUrl = buildWhatsAppLink(phone);
             if (waUrl) window.open(waUrl, "_blank");
           }}
           couriers={couriersQ.data ?? []}
-          onQuickViewOrder={(o: any) => setInspectOrder(o)}
+          onQuickViewOrder={(o) => setInspectOrder(o)}
           onWhatsAppCourier={(o: any, courier: any) =>
             setWaModalState({ isOpen: true, order: o, courier })
           }

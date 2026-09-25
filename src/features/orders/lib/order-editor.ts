@@ -1,6 +1,13 @@
 import { regionLabel } from "@/lib/bahrain-regions";
 import { formatMoney } from "@/lib/format";
-import type { Order, OrderItem } from "@/features/orders/types";
+import type {
+  DraftOrder,
+  EditableOrderFields,
+  EditableOrderSource,
+  Order,
+  OrderItem,
+  OrderSnapshot,
+} from "@/features/orders/types";
 
 /**
  * Pure rules for the admin order editor: the new-order draft, loading items
@@ -103,7 +110,7 @@ export function recalcOrderItem(i: OrderItem): OrderItem {
  * The unsaved order shown at `/orders/new`: the store's first enabled
  * fulfillment method, its flat delivery fee and default tax rate.
  */
-export function newDraftOrder(settings: any, brandId: string, today: string) {
+export function newDraftOrder(settings: any, brandId: string, today: string): DraftOrder {
   const fulfillmentMethod = settings.delivery_enabled
     ? "delivery"
     : settings.pickup_enabled
@@ -177,7 +184,7 @@ export function simplifyItem(it: OrderItem) {
 }
 
 /** The order fields the editor can change, with defaults, for change detection. */
-export function normalizeOrderMin(o: Order) {
+export function normalizeOrderMin(o: EditableOrderSource | null | undefined): EditableOrderFields {
   return {
     id: o?.id ?? null,
     notes: o?.notes ?? "",
@@ -202,8 +209,8 @@ export function normalizeOrderMin(o: Order) {
 
 /** Whether the order or its lines differ from the last loaded or saved snapshot. */
 export function isOrderDirty(
-  snapshot: { order: Order; items: OrderItem[] } | null,
-  order: Order,
+  snapshot: OrderSnapshot | null,
+  order: Order | null,
   items: OrderItem[],
 ): boolean {
   if (!snapshot || !order) return false;

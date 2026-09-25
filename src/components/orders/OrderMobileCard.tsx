@@ -6,6 +6,7 @@ import { UserX, Phone, ExternalLink } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getStoredPaymentMethodPresentation } from "@/lib/payment-method";
 import { maskPhoneForList } from "@/lib/privacy";
+import type { OrderListRow } from "@/lib/data/orders";
 
 interface OrderMobileCardProps {
   lang: "en" | "ar";
@@ -13,7 +14,7 @@ interface OrderMobileCardProps {
   order: any;
   paymentBadge: { label: string; className: string } | null;
   fulfillmentBadge: { label: string; classes: string } | null;
-  renderPrimaryAction: (order: any) => React.ReactNode;
+  renderPrimaryAction: (order: OrderListRow) => React.ReactNode;
   selected: boolean;
   onSelectedChange: (selected: boolean) => void;
 }

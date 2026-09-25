@@ -58,7 +58,7 @@ export function OrderInvoiceSection({
         {(() => {
           const addrs = (addressesQ.data ?? []).filter((a) => a.customer_id === order.customer_id);
           const chosen =
-            ((order as any).delivery_address_snapshot as SavedAddress | null) ??
+            (order.delivery_address_snapshot as SavedAddress | null) ??
             addrs.find((a) => a.id === order.shipping_address_id) ??
             addrs.find((a) => a.is_default) ??
             null;

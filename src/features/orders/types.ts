@@ -1,7 +1,66 @@
 /** Shapes used by the admin order editor (`/admin/b/$slug/orders/$id`). */
 
-/** Order rows are still read untyped from Supabase; see `docs/maintainability-roadmap.md`. */
-export type Order = any;
+import type { OrderDetail } from "@/lib/data/orders";
+
+/** A new order before its first save: only the fields the editor fills in exist yet. */
+export type DraftOrder = Partial<OrderDetail> &
+  Pick<
+    OrderDetail,
+    | "id"
+    | "brand_id"
+    | "invoice_number"
+    | "currency"
+    | "tax_rate"
+    | "fulfillment_method"
+    | "shipping"
+    | "subtotal"
+    | "total"
+    | "discount"
+    | "advance_paid"
+    | "status"
+    | "payment_status"
+    | "fulfillment_status"
+    | "payment_method"
+    | "customer_id"
+    | "shipping_address_id"
+    | "branch_id"
+    | "notes"
+    | "delivery_notes"
+    | "order_date"
+  >;
+
+/** The order the editor works on: a saved order as `ordersQueries.detail` reads it, or a draft. */
+export type Order = OrderDetail | DraftOrder;
+
+/** The order fields the editor can change, with defaults (see `normalizeOrderMin`). */
+export type EditableOrderFields = {
+  id: string | null;
+  notes: string;
+  delivery_notes: string;
+  customer_id: string | null;
+  shipping_address_id: string | null;
+  branch_id: string | null;
+  fulfillment_method: string;
+  digital_delivery_channel: string | null;
+  digital_delivery_contact: string | null;
+  payment_status: string;
+  fulfillment_status: string;
+  status: string;
+  payment_method: string | null;
+  discount: number;
+  shipping: number;
+  tax_rate: number;
+  advance_paid: number;
+  order_date: string;
+};
+
+/** Anything carrying the editable fields: an order, a draft, or a snapshot. */
+export type EditableOrderSource = {
+  [K in keyof EditableOrderFields]?: EditableOrderFields[K] | null;
+};
+
+/** The editable fields and lines at the last load or save: change detection and "cancel" use it. */
+export type OrderSnapshot = { order: EditableOrderSource; items: OrderItem[] };
 
 /** One line in the order editor, as edited (numbers already parsed). */
 export type OrderItem = {

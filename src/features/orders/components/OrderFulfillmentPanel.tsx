@@ -59,8 +59,7 @@ export function OrderFulfillmentPanel({
   const defaultDeliveryFee = Number((settingsQ.data as any).delivery_fee ?? 0);
   const selectedCustomer = (customersQ.data ?? []).find((c: any) => c.id === order.customer_id);
   const selectedAddress = (addressesQ.data ?? []).find((a) => a.id === order.shipping_address_id);
-  const storedAddressSnapshot = (order as any)
-    .delivery_address_snapshot as StructuredAddress | null;
+  const storedAddressSnapshot = order.delivery_address_snapshot as StructuredAddress | null;
   const snapshotMatchesSavedSelection =
     storedAddressSnapshot &&
     (!order.shipping_address_id ||
@@ -181,7 +180,7 @@ export function OrderFulfillmentPanel({
               const assignedCourierObj = (couriersQ.data ?? []).find(
                 (c: any) => c.id === order.assigned_to,
               );
-              const notifiedAgo = formatNotifiedTimeAgo((order as any).courier_notified_at, lang);
+              const notifiedAgo = formatNotifiedTimeAgo(order.courier_notified_at, lang);
               return (
                 <div className="space-y-2 pt-2 border-t">
                   <div className="flex flex-wrap items-center justify-between gap-2">

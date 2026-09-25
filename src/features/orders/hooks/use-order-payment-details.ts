@@ -1,11 +1,11 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { logActivity } from "@/lib/activity-log";
-import type { Order } from "@/features/orders/types";
+import type { Order, OrderSnapshot } from "@/features/orders/types";
 import type { Dispatch, SetStateAction } from "react";
-import type { OrderItem } from "@/features/orders/types";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
 import { orderPaymentUpdate, type PaymentDetailsInput } from "@/features/orders/lib/order-payment";
+import { ordersKeys } from "@/lib/data/orders";
 
 /** Saving payment status, method, advance and reference from the payment modal; saved orders persist and log it immediately. */
 export function useOrderPaymentDetails({
@@ -17,8 +17,8 @@ export function useOrderPaymentDetails({
   setOrder,
 }: {
   brandId: string;
-  initialSnapshotRef: React.MutableRefObject<{ order: Order; items: OrderItem[] } | null>;
-  order: Order;
+  initialSnapshotRef: React.MutableRefObject<OrderSnapshot | null>;
+  order: Order | null;
   orderQ: OrderDetailData["orderQ"];
   qc: ReturnType<typeof useQueryClient>;
   setOrder: Dispatch<SetStateAction<Order | null>>;
@@ -71,8 +71,7 @@ export function useOrderPaymentDetails({
       });
 
       qc.invalidateQueries({ queryKey: ["activity_logs"] });
-      qc.invalidateQueries({ queryKey: ["order", order.id] });
-      qc.invalidateQueries({ queryKey: ["orders", brandId] });
+      qc.invalidateQueries({ queryKey: ordersKeys.all(brandId) });
       qc.invalidateQueries({ queryKey: ["orders"] });
       await orderQ.refetch();
     }

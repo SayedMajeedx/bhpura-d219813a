@@ -30,7 +30,7 @@ import { OrderStickyBottomBar } from "@/components/orders/OrderStickyBottomBar";
 import { OrderSalesDocumentsCard } from "@/components/orders/OrderSalesDocumentsCard";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
-import type { Order, OrderItem as Item } from "@/features/orders/types";
+import type { Order, OrderItem as Item, OrderSnapshot } from "@/features/orders/types";
 import {
   filterCustomers,
   isOrderDirty,
@@ -228,7 +228,7 @@ function OrderDetail() {
     }
   };
 
-  const initialSnapshotRef = useRef<{ order: any; items: Item[] } | null>(null);
+  const initialSnapshotRef = useRef<OrderSnapshot | null>(null);
 
   useEffect(() => {
     if (id !== "new" || order || !settingsQ.data) return;
@@ -260,11 +260,7 @@ function OrderDetail() {
   useEffect(() => {
     if (orderQ.data) {
       // Prevent background query revalidations from overwriting unsaved local edits
-      if (
-        initialSnapshotRef.current &&
-        (initialSnapshotRef.current.order as any)?.id === id &&
-        isDirty
-      )
+      if (initialSnapshotRef.current && initialSnapshotRef.current.order.id === id && isDirty)
         return;
 
       setOrder(orderQ.data);
@@ -298,16 +294,16 @@ function OrderDetail() {
         items: loadedItems,
       };
 
-      promoContextRef.current = promoSignature((orderQ.data as any).customer_id, loadedItems);
+      promoContextRef.current = promoSignature(orderQ.data.customer_id, loadedItems);
       setEditingUnlocked(false);
-      const savedPromo = (orderQ.data as any).promo_code;
+      const savedPromo = orderQ.data.promo_code;
       setPromoInput(savedPromo ?? "");
       setAppliedPromo(
         savedPromo
           ? {
               code: savedPromo,
-              id: (orderQ.data as any).promo_code_id ?? "",
-              amount: Number((orderQ.data as any).discount ?? 0),
+              id: orderQ.data.promo_code_id ?? "",
+              amount: Number(orderQ.data.discount ?? 0),
             }
           : null,
       );
@@ -897,11 +893,7 @@ function OrderDetail() {
           isOpen={waModalOpen}
           onClose={() => setWaModalOpen(false)}
           order={orderQ.data || order}
-          courier={
-            (couriersQ.data ?? []).find((c: any) => c.id === order.assigned_to) ||
-            (order.assigned_profile as any) ||
-            null
-          }
+          courier={(couriersQ.data ?? []).find((c: any) => c.id === order.assigned_to) || null}
           brandSlug={slug}
           lang={lang}
           onNotified={() => orderQ.refetch()}

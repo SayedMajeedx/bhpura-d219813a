@@ -113,7 +113,7 @@ export function renderPickupQueueAction(
   ) {
     if (workflow.nextAction === "collect_and_hand_over") {
       const totalAmt = Number(o.total || 0);
-      const paidAmt = Number(o.paid_amount ?? o.advance_paid ?? 0);
+      const paidAmt = Number(o.advance_paid ?? 0);
       const remainingBal = Math.max(0, totalAmt - paidAmt);
       const isPartial = paidAmt > 0 && remainingBal > 0;
       return (
@@ -294,7 +294,7 @@ export function renderDeliveryQueueAction(
   // 4. Delivery Handover & Cash Collection Actions (Courier / Driver)
   if (workflow.nextAction === "mark_delivered" || workflow.nextAction === "collect_and_deliver") {
     const totalAmt = Number(o.total || 0);
-    const paidAmt = Number(o.paid_amount ?? o.advance_paid ?? 0);
+    const paidAmt = Number(o.advance_paid ?? 0);
     const remainingBal = Math.max(0, totalAmt - paidAmt);
 
     if (workflow.nextAction === "mark_delivered") {

@@ -94,8 +94,7 @@ export function CashCollectionModal({
                   {formatMoney(
                     Math.max(
                       0,
-                      Number(cashModalOrder.total) -
-                        Number(cashModalOrder.paid_amount ?? cashModalOrder.advance_paid ?? 0),
+                      Number(cashModalOrder.total) - Number(cashModalOrder.advance_paid ?? 0),
                     ),
                     cashModalOrder.currency ?? "BHD",
                     locale,
