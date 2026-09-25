@@ -156,13 +156,13 @@ function RootComponent() {
     const handleNativePush = async (event: Event) => {
       const detail = (event as CustomEvent).detail;
       if (!detail?.token) return;
-      const { supabase } = await import("@/integrations/supabase/client");
-      await supabase.rpc("register_mobile_push_device", {
-        p_token: detail.token,
-        p_enabled: detail.enabled !== false,
-        p_platform: detail.platform === "ios" ? "ios" : "android",
-        p_device_name: navigator.userAgent.slice(0, 180),
-        p_preferences: detail.preferences ?? {},
+      const { registerMobilePushDevice } = await import("@/lib/data/push");
+      await registerMobilePushDevice({
+        token: detail.token,
+        enabled: detail.enabled !== false,
+        platform: detail.platform === "ios" ? "ios" : "android",
+        deviceName: navigator.userAgent.slice(0, 180),
+        preferences: detail.preferences ?? {},
       });
     };
     window.addEventListener("boutq:native-push", handleNativePush);
@@ -172,19 +172,19 @@ function RootComponent() {
     const handleCustomerNativePush = async (event: Event) => {
       const detail = (event as CustomEvent).detail;
       if (!detail?.token) return;
-      const { supabase } = await import("@/integrations/supabase/client");
+      const { registerCustomerPushDevice } = await import("@/lib/data/push");
       // This intentionally succeeds only after the storefront customer has
       // authenticated and has a Pura customer membership. The native shell
       // repeats the event after each navigation, including immediately after login.
-      await supabase.rpc("register_customer_push_device", {
-        p_brand_slug: detail.brandSlug || "pura",
-        p_token: detail.token,
-        p_enabled: detail.enabled !== false,
-        p_order_updates: detail.orders !== false,
-        p_marketing: detail.marketing === true,
-        p_platform: detail.platform === "ios" ? "ios" : "android",
-        p_device_name: navigator.userAgent.slice(0, 180),
-        p_token_provider: detail.tokenProvider || "fcm",
+      await registerCustomerPushDevice({
+        brandSlug: detail.brandSlug || "pura",
+        token: detail.token,
+        enabled: detail.enabled !== false,
+        orderUpdates: detail.orders !== false,
+        marketing: detail.marketing === true,
+        platform: detail.platform === "ios" ? "ios" : "android",
+        deviceName: navigator.userAgent.slice(0, 180),
+        tokenProvider: detail.tokenProvider || "fcm",
       });
     };
     window.addEventListener("pura:native-push", handleCustomerNativePush);

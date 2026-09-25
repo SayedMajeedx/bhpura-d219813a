@@ -55,6 +55,15 @@ Found while moving customers into `src/lib/data/customers`. The calls kept their
 - **Effect**: if clearing fails, the brand has two default templates and the dialog preselects either one.
 - **Fix**: stop when clearing fails, or clear and set in one update / RPC (same shape as #17).
 
+## Push (`src/components/communications/`, `src/lib/data/push`)
+
+### 23. Every brand's push campaign links to Pura's store
+
+- **Where**: `src/components/communications/CustomerPushCenter.tsx`, `createPushCampaign({ …, targetUrl: "https://pura.boutq.store" })`.
+- **Problem**: the target URL is hard-coded to Pura for every brand; `create_customer_push_campaign` stores it on the event as the link a tapped notification opens.
+- **Effect**: a marketing notification from any other brand would open Pura's storefront. No brand has registered devices yet (checked live), so none has gone out.
+- **Fix**: use the brand's own storefront URL (`getStorefrontUrl(brand, "/")`).
+
 ## Inventory (`src/features/inventory/`)
 
 ### 2. Duplicating a product drops variant and product fields
