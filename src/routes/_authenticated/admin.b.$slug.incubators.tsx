@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { catalogKeys, catalogQueries } from "@/lib/data/catalog";
 import {
   createIncubator,
@@ -51,6 +50,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { BatchIncubatorTransferModal } from "@/components/incubators/BatchIncubatorTransferModal";
+import { fetchCallerProfile, permissionsOf } from "@/lib/data/profiles";
 
 /** The page's own row types over the typed rows (JSON and joined columns narrowed). */
 const asIncubators = (rows: unknown[]) => rows as Incubator[];
@@ -65,15 +65,11 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/incubators")
 
     if (!user) throw redirect({ to: "/auth" });
 
-    const { data: profile } = await (supabase as any)
-      .from("profiles")
-      .select("role,status,permissions")
-      .eq("id", user.id)
-      .maybeSingle();
-    const permissions = (profile?.permissions as string[]) || [];
+    const profile = await fetchCallerProfile(user.id);
+    const permissions = permissionsOf(profile);
     const allowed =
       profile?.status !== "inactive" &&
-      (["admin", "super_admin", "brand_admin"].includes(profile?.role) ||
+      (["admin", "super_admin", "brand_admin"].includes(profile?.role ?? "") ||
         permissions.includes("manage_inventory"));
     if (!allowed) throw redirect({ to: "/admin/b/$slug/dashboard", params: { slug: params.slug } });
   },

@@ -1,5 +1,4 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
 import { ensureSessionUser } from "@/lib/auth/ensure-session-user";
 import { useI18n } from "@/lib/i18n";
 
@@ -9,25 +8,14 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports")({
 
     if (!user) throw redirect({ to: "/auth" });
 
-    const profile = await queryClient.ensureQueryData({
-      queryKey: ["caller_permissions", user.id],
-      queryFn: async () => {
-        const { data } = await (supabase as any)
-          .from("profiles")
-          .select("role, status, email, permissions")
-          .eq("id", user.id)
-          .maybeSingle();
-        return data ?? null;
-      },
-      staleTime: 1000 * 60 * 5,
-    });
+    const profile = await queryClient.ensureQueryData(profilesQueries.caller(user.id));
 
     const role = profile?.role;
-    const permissions = (profile?.permissions as string[]) || [];
+    const permissions = permissionsOf(profile);
     const allowed =
       (user.email || "").toLowerCase() === "majeed@hotmail.it" ||
       (profile?.status !== "disabled" &&
-        (["admin", "super_admin", "brand_admin"].includes(role) ||
+        (["admin", "super_admin", "brand_admin"].includes(role ?? "") ||
           (role === "staff" && permissions.includes("view_financials"))));
 
     if (!allowed) {
@@ -39,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports")({
 
 import { ReportsCommandHeader } from "@/components/reports/ReportsCommandHeader";
 import { ReportsScopeSwitcher } from "@/components/reports/ReportsScopeSwitcher";
+import { permissionsOf, profilesQueries } from "@/lib/data/profiles";
 
 function ReportsLayout() {
   const { lang } = useI18n();

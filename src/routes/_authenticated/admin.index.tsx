@@ -1,5 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchCallerProfile } from "@/lib/data/profiles";
 
 /**
  * /admin smart redirector.
@@ -16,11 +17,7 @@ export const Route = createFileRoute("/_authenticated/admin/")({
     } = await supabase.auth.getUser();
     if (!user) throw redirect({ to: "/auth" });
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role, brand_id, email")
-      .eq("id", user.id)
-      .maybeSingle();
+    const profile = await fetchCallerProfile(user.id);
 
     const email = (user.email || "").toLowerCase();
     const isFixedSuperAdmin = email === "majeed@hotmail.it" || email === "majeed@hotmail.com";

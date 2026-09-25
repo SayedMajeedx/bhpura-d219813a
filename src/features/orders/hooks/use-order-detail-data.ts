@@ -5,6 +5,7 @@ import { getBenefitReceiptViewUrl } from "@/lib/benefit-receipt.functions";
 import { ordersKeys, ordersQueries } from "@/lib/data/orders";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { catalogQueries } from "@/lib/data/catalog";
+import { profilesQueries } from "@/lib/data/profiles";
 import { customersQueries, type CustomerRow } from "@/lib/data/customers";
 
 /** The customer picker lists customers by name; the shared list is newest first. */
@@ -82,18 +83,8 @@ export function useOrderDetailData({
     select: byName,
   });
   const couriersQ = useQuery({
-    queryKey: ["couriers", brandId],
-    enabled: isAdmin,
-    queryFn: async () => {
-      const { data, error } = await (supabase.from("profiles") as any)
-        .select("id, name, email, phone")
-        .eq("brand_id", brandId)
-        .eq("role", "courier")
-        .eq("status", "active")
-        .order("name");
-      if (error) throw error;
-      return (data as any[]) ?? [];
-    },
+    ...profilesQueries.couriers(brandId),
+    enabled: isAdmin && Boolean(brandId),
   });
   const addressesQ = useQuery({
     ...customersQueries.addresses(brandId),
