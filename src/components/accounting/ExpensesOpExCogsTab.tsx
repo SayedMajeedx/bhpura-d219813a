@@ -19,6 +19,13 @@ import { Plus, Pencil, Trash2, Receipt, Calendar, Sparkles, Building2, Repeat } 
 import { formatMoney, formatDate } from "@/lib/format";
 import { toast } from "sonner";
 import { syncSingleExpenseToPackagingMaterial } from "@/lib/packaging-sync";
+import {
+  createExpense,
+  deleteExpense,
+  expensesQueries,
+  invalidateExpenses,
+  updateExpense,
+} from "@/lib/data/expenses";
 
 interface ExpensesOpExCogsTabProps {
   activeRange?: { from: string; to: string };
@@ -50,19 +57,8 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
 
   const calculatedUnitCost = expenseType === "cogs" && quantity > 0 ? amount / quantity : 0;
 
-  // Fetch expenses
-  const expensesQ = useQuery({
-    queryKey: ["dashboard-expenses-full", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("expenses")
-        .select("*, vendors(name)")
-        .eq("brand_id", brandId)
-        .order("expense_date", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as any[];
-    },
-  });
+  // Expenses with their vendor (shared with the expenses page, reports and dashboard)
+  const expensesQ = useQuery(expensesQueries.list(brandId));
 
   // Fetch vendors
   const vendorsQ = useQuery({
@@ -139,16 +135,9 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
   const handleDelete = async (id: string) => {
     if (!confirm(isAr ? "هل أنت تأكد من حذف هذا المصروف؟" : "Delete this expense?")) return;
     try {
-      const { error } = await supabase
-        .from("expenses")
-        .delete()
-        .eq("id", id)
-        .eq("brand_id", brandId);
-      if (error) throw error;
+      await deleteExpense(brandId, id);
       toast.success(isAr ? "تم الحذف بنجاح" : "Expense deleted");
-      qc.invalidateQueries({ queryKey: ["dashboard-expenses-full", brandId] });
-      qc.invalidateQueries({ queryKey: ["dashboard-expenses", brandId] });
-      qc.invalidateQueries({ queryKey: ["expenses", brandId] });
+      invalidateExpenses(qc, brandId);
     } catch (err: any) {
       console.error("Expense delete error:", err);
       toast.error(
@@ -172,10 +161,12 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
       const {
         data: { user },
       } = await supabase.auth.getUser();
+      // expenses.user_id is required: without a user the insert would fail anyway.
+      if (!user) throw new Error("NOT_AUTHENTICATED");
 
-      const payload: any = {
+      const payload = {
         brand_id: brandId,
-        user_id: user?.id || null,
+        user_id: user.id,
         description: description.trim(),
         amount: Number(amount) || 0,
         currency: "BHD",
@@ -191,11 +182,10 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
       };
 
       if (editingExpense) {
-        let { error } = await (supabase as any)
-          .from("expenses")
-          .update(payload)
-          .eq("id", editingExpense.id)
-          .eq("brand_id", brandId);
+        let error = await updateExpense(brandId, editingExpense.id, payload).then(
+          () => null,
+          (err: { message?: string }) => err,
+        );
         if (
           error &&
           (error.message?.includes("schema cache") || error.message?.includes("column"))
@@ -203,24 +193,25 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
           // Schema cache fallback retry
           const fallbackPayload = {
             brand_id: brandId,
-            user_id: user?.id || null,
+            user_id: user.id,
             description: description.trim(),
             amount: Number(amount) || 0,
             currency: "BHD",
             category,
             expense_date: expenseDate,
           };
-          const res = await (supabase as any)
-            .from("expenses")
-            .update(fallbackPayload)
-            .eq("id", editingExpense.id)
-            .eq("brand_id", brandId);
-          error = res.error;
+          error = await updateExpense(brandId, editingExpense.id, fallbackPayload).then(
+            () => null,
+            (err: { message?: string }) => err,
+          );
         }
         if (error) throw error;
         toast.success(isAr ? "تم تعديل المصروف بنجاح" : "Expense updated");
       } else {
-        let { error } = await (supabase as any).from("expenses").insert(payload);
+        let error = await createExpense(payload).then(
+          () => null,
+          (err: { message?: string }) => err,
+        );
         if (
           error &&
           (error.message?.includes("schema cache") || error.message?.includes("column"))
@@ -228,15 +219,17 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
           // Schema cache fallback retry
           const fallbackPayload = {
             brand_id: brandId,
-            user_id: user?.id || null,
+            user_id: user.id,
             description: description.trim(),
             amount: Number(amount) || 0,
             currency: "BHD",
             category,
             expense_date: expenseDate,
           };
-          const res = await (supabase as any).from("expenses").insert(fallbackPayload);
-          error = res.error;
+          error = await createExpense(fallbackPayload).then(
+            () => null,
+            (err: { message?: string }) => err,
+          );
         }
         if (error) throw error;
         toast.success(isAr ? "تم إضافة المصروف بنجاح" : "Expense added");
@@ -245,9 +238,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
       // Seamlessly mirror packaging / COGS material to packaging_materials inventory
       void syncSingleExpenseToPackagingMaterial(supabase, brandId, payload).catch(() => undefined);
 
-      qc.invalidateQueries({ queryKey: ["dashboard-expenses-full", brandId] });
-      qc.invalidateQueries({ queryKey: ["dashboard-expenses", brandId] });
-      qc.invalidateQueries({ queryKey: ["expenses", brandId] });
+      invalidateExpenses(qc, brandId);
       qc.invalidateQueries({ queryKey: ["packaging-materials", brandId] });
       setModalOpen(false);
     } catch (err: any) {

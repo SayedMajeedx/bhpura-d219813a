@@ -6,6 +6,7 @@ import { queryKeys } from "@/lib/query-keys";
 import { diffObjects } from "./diff";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { businessSettingsQueries } from "@/lib/data/business-settings";
 
 type BusinessSettingsRow = Database["public"]["Tables"]["business_settings"]["Row"];
 type BrandRow = Database["public"]["Tables"]["brands"]["Row"];
@@ -55,20 +56,7 @@ export function useBrandSettingsForm(brandId: string): BrandSettingsFormState {
     isLoading: isBsLoading,
     error: bsError,
     refetch: refetchBsQuery,
-  } = useQuery({
-    queryKey: queryKeys.brand.businessSettings(brandId),
-    queryFn: async () => {
-      if (!brandId) return null;
-      const { data, error } = await supabase
-        .from("business_settings")
-        .select("*")
-        .eq("brand_id", brandId)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    enabled: Boolean(brandId),
-  });
+  } = useQuery(businessSettingsQueries.detail(brandId));
 
   // 2. Fetch brand profile
   const {
