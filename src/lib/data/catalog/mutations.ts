@@ -262,3 +262,42 @@ export async function applyBomToAllProducts(
   }
   return productIds.length;
 }
+
+// ── Customization options (paid add-ons) ────────────────────────────────────
+
+export type NewCustomization = Omit<TablesInsert<"customization_options">, "brand_id">;
+export type CustomizationPatch = TablesUpdate<"customization_options">;
+
+/** Every view of the brand's add-ons (inventory tab, order editor) is stale after a write. */
+export function invalidateCustomizations(qc: QueryClient, brandId: string) {
+  return qc.invalidateQueries({ queryKey: catalogKeys.customizations(brandId) });
+}
+
+export async function createCustomization(brandId: string, values: NewCustomization) {
+  const { error } = await supabase
+    .from("customization_options")
+    .insert({ ...values, brand_id: brandId });
+  if (error) throw error;
+}
+
+export async function updateCustomization(
+  brandId: string,
+  customizationId: string,
+  patch: CustomizationPatch,
+) {
+  const { error } = await supabase
+    .from("customization_options")
+    .update(patch)
+    .eq("id", customizationId)
+    .eq("brand_id", brandId);
+  if (error) throw error;
+}
+
+export async function deleteCustomization(brandId: string, customizationId: string) {
+  const { error } = await supabase
+    .from("customization_options")
+    .delete()
+    .eq("id", customizationId)
+    .eq("brand_id", brandId);
+  if (error) throw error;
+}
