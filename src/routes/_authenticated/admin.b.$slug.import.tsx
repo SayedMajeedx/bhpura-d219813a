@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { invalidateCustomers } from "@/lib/data/customers";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
@@ -32,6 +31,7 @@ import { importProductCatalog } from "@/lib/universal-importer";
 import { importCustomerDatabase } from "@/lib/customer-importer";
 import { importHistoricalOrders } from "@/lib/order-importer";
 import { InstagramImporterModal } from "@/components/inventory/InstagramImporterModal";
+import { importExportQueries } from "@/lib/data/import-export";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/import")({
   component: ImportCenterPage,
@@ -104,20 +104,9 @@ function ImportCenterPage() {
     data: importRuns = [],
     isLoading: runsLoading,
     refetch: refetchRuns,
-  } = useQuery<ImportRunRecord[]>({
-    queryKey: ["import-runs-hub", brandId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("import_runs")
-        .select(
-          "id,brand_id,session_id,source,entity_type,status,total_count,success_count,skipped_count,failed_count,created_at",
-        )
-        .eq("brand_id", brandId)
-        .order("created_at", { ascending: false })
-        .limit(30);
-      if (error) return [];
-      return (data || []) as ImportRunRecord[];
-    },
+  } = useQuery({
+    ...importExportQueries.importRuns(brandId),
+    select: (rows) => rows as ImportRunRecord[],
   });
 
   // Calculate high-level summary metrics

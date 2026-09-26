@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { importProductCatalog } from "@/lib/universal-importer";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -22,6 +21,7 @@ import {
   buildProductImportPayload,
   mergeImportRunsBySession,
 } from "@/features/inventory/lib/product-import";
+import { importExportQueries } from "@/lib/data/import-export";
 
 type ImportIssueItem = { row: number; code: string; name: string };
 
@@ -57,21 +57,9 @@ export function ProductImporterModal(props: {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const importHistoryQuery = useQuery({
-    queryKey: ["product-import-history", brandId],
-    enabled: isOpen,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("import_runs")
-        .select(
-          "id,session_id,source,status,total_count,success_count,skipped_count,failed_count,created_at",
-        )
-        .eq("brand_id", brandId)
-        .eq("entity_type", "products")
-        .order("created_at", { ascending: false })
-        .limit(30);
-      if (error) throw error;
-      return mergeImportRunsBySession(data ?? [], 5);
-    },
+    ...importExportQueries.productImportRuns(brandId),
+    enabled: isOpen && Boolean(brandId),
+    select: (rows) => mergeImportRunsBySession(rows, 5),
   });
 
   const handleOpen = () => {

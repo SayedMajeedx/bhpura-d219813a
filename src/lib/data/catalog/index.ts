@@ -152,6 +152,32 @@ export async function fetchBarcodeLabelData(brandId: string) {
   return { products: products.data ?? [], variants: variants.data ?? [] };
 }
 
+/**
+ * Every product with its variants, newest first, for the data export. A failed
+ * read exports nothing (and is logged).
+ */
+export async function fetchProductExportRows(brandId: string) {
+  const { data, error } = await supabase
+    .from("products")
+    .select(
+      `
+      id, name, name_ar, name_en, description, description_ar, description_en,
+      category, image_url, is_active, created_at,
+      product_variants (
+        id, size, size_unit, color, fabric, sku, barcode,
+        cost_price, selling_price, stock_main, stock_incubator
+      )
+    `,
+    )
+    .eq("brand_id", brandId)
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.error("Failed to query products for export:", error);
+    return [];
+  }
+  return data ?? [];
+}
+
 /** The brand's paid add-ons (customization options), by name. */
 export async function fetchCustomizations(brandId: string) {
   const { data, error } = await supabase
@@ -201,6 +227,12 @@ export const catalogQueries = {
       queryFn: () => fetchPackagingMaterials(brandId),
       enabled: Boolean(brandId),
       ...CATALOG_CACHE,
+    }),
+  productExportRows: (brandId: string) =>
+    queryOptions({
+      queryKey: catalogKeys.productExportRows(brandId),
+      queryFn: () => fetchProductExportRows(brandId),
+      enabled: Boolean(brandId),
     }),
   customizations: (brandId: string) =>
     queryOptions({

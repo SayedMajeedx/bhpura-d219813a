@@ -42,6 +42,8 @@ import {
   EXPENSE_PRESETS,
   ExportFormat,
 } from "@/lib/universal-exporter";
+import { importExportQueries } from "@/lib/data/import-export";
+import { catalogQueries } from "@/lib/data/catalog";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/export")({
   component: ExportCenterPage,
@@ -61,35 +63,13 @@ function ExportCenterPage() {
   // -------------------------------------------------------------
   // Data Queries
   // -------------------------------------------------------------
-  const { data: products = [] } = useQuery({
-    queryKey: ["export-products", brandId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select(
-          `
-          id, name, name_ar, name_en, description, description_ar, description_en,
-          category, image_url, is_active, created_at,
-          product_variants (
-            id, size, size_unit, color, fabric, sku, barcode,
-            cost_price, selling_price, stock_main, stock_incubator
-          )
-        `,
-        )
-        .eq("brand_id", brandId)
-        .order("created_at", { ascending: false });
-      if (error) {
-        console.error("Failed to query products for export:", error);
-        return [];
-      }
-      return data || [];
-    },
-  });
+  const { data: products = [] } = useQuery(catalogQueries.productExportRows(brandId));
 
   const { data: customers = [] } = useQuery(customersQueries.exportRows(brandId));
 
   const { data: orders = [] } = useQuery(ordersQueries.exportRows(brandId));
 
+  // Selects columns expenses do not have, so it always exports none (bug backlog #28).
   const { data: expenses = [] } = useQuery({
     queryKey: ["export-expenses", brandId],
     queryFn: async () => {
@@ -108,24 +88,9 @@ function ExportCenterPage() {
 
   const { data: categories = [] } = useQuery(categoriesQueries.exportRows(brandId));
 
-  const { data: exportHistory = [], refetch: refetchHistory } = useQuery({
-    queryKey: ["export-runs-history", brandId],
-    queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from("export_runs")
-          .select("id, preset, entity_type, file_format, record_count, file_name, created_at")
-          .eq("brand_id", brandId)
-          .order("created_at", { ascending: false })
-          .limit(20);
-        if (!error && data && data.length > 0) return data;
-      } catch {
-        // Fall back to local storage
-      }
-      const local = localStorage.getItem(`boutq_export_runs_${brandId}`);
-      return local ? JSON.parse(local) : [];
-    },
-  });
+  const { data: exportHistory = [], refetch: refetchHistory } = useQuery(
+    importExportQueries.exportRuns(brandId),
+  );
 
   // Calculate high-level stats
   const totalVariants = useMemo(

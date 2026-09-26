@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { recordExportRun } from "@/lib/data/import-export";
 
 export type ExportFormat = "xlsx" | "csv" | "json";
 export type ExportEntityType = "products" | "customers" | "orders" | "expenses" | "full_backup";
@@ -676,7 +677,8 @@ export async function logExportRun(params: {
     const { data: userRes } = await supabase.auth.getUser();
     const userId = userRes?.user?.id;
     if (userId) {
-      await supabase.from("export_runs").insert({
+      // The log is best-effort: a failed write leaves the local copy below.
+      await recordExportRun({
         brand_id: params.brandId,
         created_by: userId,
         session_id: sessionId,
@@ -686,7 +688,7 @@ export async function logExportRun(params: {
         record_count: params.recordCount,
         file_size_bytes: params.fileSizeBytes || 0,
         file_name: params.fileName,
-      });
+      }).catch(() => undefined);
     }
   } catch (err) {
     console.warn("Could not log to export_runs table (falling back to local cache):", err);
