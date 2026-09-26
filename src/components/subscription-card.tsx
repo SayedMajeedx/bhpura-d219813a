@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import type { Brand } from "@/lib/brand-context";
-import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -12,6 +11,7 @@ import {
 } from "@/lib/saas-subscription.functions";
 import { BrandSubscriptionHub } from "@/components/subscription/BrandSubscriptionHub";
 import { Copy, CreditCard, Loader2, QrCode, UploadCloud } from "lucide-react";
+import { fetchBillingDetails } from "@/lib/data/system-settings";
 
 type SubscriptionCardProps = { brand: Brand };
 type PaymentSettings = {
@@ -49,13 +49,7 @@ export function SubscriptionCard({ brand }: SubscriptionCardProps) {
 
   useEffect(() => {
     void (async () => {
-      const { data } = await (supabase as any)
-        .from("system_settings")
-        .select(
-          "base_price_bhd, discount_price_bhd, benefit_pay_qr_url, merchant_account_name, subscription_iban",
-        )
-        .eq("id", 1)
-        .maybeSingle();
+      const data = await fetchBillingDetails();
       if (!data) return;
       setSettings({
         price: Number(data.discount_price_bhd || data.base_price_bhd || 49),

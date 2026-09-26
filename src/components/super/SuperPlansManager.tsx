@@ -4,7 +4,6 @@
 
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import {
   listPlansWithDetails,
   createPlanVersion,
@@ -63,6 +62,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { systemSettingsKeys, systemSettingsQueries } from "@/lib/data/system-settings";
 
 type PlanFilter = "all" | "active" | "hidden" | "inactive";
 
@@ -77,15 +77,8 @@ export function SuperPlansManager() {
   });
 
   const { data: platformSettings } = useQuery({
-    queryKey: ["platform_system_settings_billing"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("system_settings")
-        .select("billing_interval_mode")
-        .eq("id", 1)
-        .maybeSingle();
-      return data as { billing_interval_mode: BillingIntervalMode } | null;
-    },
+    ...systemSettingsQueries.billingIntervalMode(),
+    select: (row) => row as { billing_interval_mode: BillingIntervalMode } | null,
   });
 
   const [filter, setFilter] = useState<PlanFilter>("all");
@@ -260,7 +253,7 @@ export function SuperPlansManager() {
           id: toastId,
         },
       );
-      void queryClient.invalidateQueries({ queryKey: ["platform_system_settings_billing"] });
+      void queryClient.invalidateQueries({ queryKey: systemSettingsKeys.billingIntervalMode() });
       void queryClient.invalidateQueries({ queryKey: ["super_saas_plans"] });
     } catch (err) {
       console.error(err);

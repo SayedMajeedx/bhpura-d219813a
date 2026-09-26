@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { Check, Gift, Loader2, MessageCircle, Sparkles, Star } from "lucide-react";
-import { publicSupabase } from "@/integrations/supabase/client";
+import { reviewsQueries, submitPublicOrderReview } from "@/lib/data/reviews";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,15 +39,8 @@ function ReviewPage() {
   const [rewardCode, setRewardCode] = useState<string | null>(null);
 
   const reviewQ = useQuery({
-    queryKey: ["public-order-review", token],
-    retry: false,
-    queryFn: async () => {
-      const { data, error } = await (publicSupabase.rpc as any)("get_public_order_review", {
-        p_token: token,
-      });
-      if (error) throw error;
-      return ((data ?? [])[0] ?? null) as PublicReview | null;
-    },
+    ...reviewsQueries.publicReview(token),
+    select: (row) => row as PublicReview | null,
   });
   const review = reviewQ.data;
   const completed = Boolean(rewardCode || review?.state === "completed");
@@ -56,14 +49,15 @@ function ReviewPage() {
   const submit = async () => {
     if (!rating) return;
     setSubmitting(true);
-    const { data, error } = await (publicSupabase.rpc as any)("submit_public_order_review", {
-      p_token: token,
-      p_rating: rating,
-      p_highlights: highlights,
-      p_comment: comment.trim() || null,
-    });
+    // A failed submit shows nothing and lets the customer try again (bug backlog #30).
+    const reward = await submitPublicOrderReview({
+      token,
+      rating,
+      highlights,
+      comment: comment.trim() || null,
+    }).catch(() => undefined);
     setSubmitting(false);
-    if (!error) setRewardCode(String(data || "THANKU10"));
+    if (reward !== undefined) setRewardCode(String(reward || "THANKU10"));
   };
 
   if (reviewQ.isLoading)
