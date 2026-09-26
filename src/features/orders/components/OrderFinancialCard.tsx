@@ -19,6 +19,7 @@ import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-d
 import { SummaryRow } from "@/features/orders/components/SummaryRow";
 import { tPayment } from "@/features/orders/lib/payment-labels";
 import { BenefitReceiptReview } from "@/features/orders/components/BenefitReceiptReview";
+import { grossProfitLabel } from "@/lib/order-profit-label";
 /** Totals, fees, discount and promo code, tax, payment and BenefitPay receipt review. */
 export function OrderFinancialCard({
   appliedPromo,
@@ -482,15 +483,7 @@ export function OrderFinancialCard({
                   : "text-emerald-600 dark:text-emerald-400",
               )}
             >
-              <span>
-                {totals.remaining > 0
-                  ? isAr
-                    ? "الربح الإجمالي المتوقع بعد التحصيل الكامل:"
-                    : "Estimated gross profit after full collection:"
-                  : isAr
-                    ? "الربح الإجمالي التقديري:"
-                    : "Estimated gross profit:"}
-              </span>
+              <span>{grossProfitLabel(totals.remaining, isAr ? "ar" : "en")}</span>
               <span className="font-mono text-sm font-extrabold">
                 {formatMoney(orderNetProfit, currency)}
               </span>

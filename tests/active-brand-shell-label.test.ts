@@ -1,31 +1,78 @@
-import fs from "node:fs";
-import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { pickActiveBrand, resolveWorkspace, workspaceLabel } from "../src/lib/admin-workspace";
+
+const pura = { id: "b1", slug: "pura", name_en: "Pura", name_ar: "بورا" };
+const lulu = { id: "b2", slug: "lulu", name_en: "Lulu", name_ar: null };
 
 describe("active brand shell label", () => {
-  const shell = fs.readFileSync(path.join(process.cwd(), "src/components/app-shell.tsx"), "utf8");
-
-  it("resolves the displayed brand from the active route slug", () => {
-    // The brands come from the shared directory (its columns are tested in
-    // brands-lookups-data-layer.test.ts).
-    expect(shell).toContain("brandQueries.directory()");
-    expect(shell).toContain("brand.slug.toLowerCase() === activeSlug.toLowerCase()");
-    expect(shell).toContain("profileBrandMatchesRoute");
-    expect(shell).toMatch(/const brandLabel =[\s\S]*?activeBrand\?\.name_ar[\s\S]*?activeSlug/);
+  it("resolves the displayed brand from the active route slug, case-insensitively", () => {
+    const brand = pickActiveBrand({
+      isPlatformMode: false,
+      activeSlug: "PURA",
+      brands: [lulu, pura],
+      profileBrand: lulu,
+    });
+    expect(brand).toBe(pura);
+    expect(
+      workspaceLabel({
+        brand,
+        activeSlug: "PURA",
+        isPlatformMode: false,
+        lang: "ar",
+        appTitle: "Boutq",
+      }),
+    ).toBe("بورا");
   });
 
   it("does not fall back to the profile brand when another route brand is open", () => {
-    expect(shell).toContain(
-      "routeBrand ?? (profileBrandMatchesRoute ? profile?.brand : undefined)",
-    );
+    // A brand member browsing another brand's URL before the list has loaded.
+    expect(
+      pickActiveBrand({
+        isPlatformMode: false,
+        activeSlug: "pura",
+        brands: [],
+        profileBrand: lulu,
+      }),
+    ).toBeUndefined();
+    // Their own brand is used when it is the one in the URL.
+    expect(
+      pickActiveBrand({
+        isPlatformMode: false,
+        activeSlug: "lulu",
+        brands: [],
+        profileBrand: lulu,
+      }),
+    ).toBe(lulu);
+  });
+
+  it("names the brand in the UI language, then English, then its slug", () => {
+    const label = (brand: typeof lulu | undefined, lang: "ar" | "en") =>
+      workspaceLabel({ brand, activeSlug: "lulu", isPlatformMode: false, lang, appTitle: "Boutq" });
+    expect(label(lulu, "en")).toBe("Lulu");
+    expect(label(lulu, "ar")).toBe("Lulu");
+    expect(label(undefined, "en")).toBe("lulu");
   });
 
   it("keeps the super-admin platform workspace tenant-free", () => {
-    expect(shell).toContain("const isPlatformMode = isSuperAdmin && !urlSlug");
-    expect(shell).toMatch(
-      /urlSlug \?\?\s*\(isSuperAdmin \? null : \(?profile\?\.brand\?\.slug \?\? null\)?\)/,
-    );
-    expect(shell).toContain('lang === "ar" ? "إدارة منصة بوتيك" : "Boutq Platform"');
-    expect(shell).toMatch(/const activeBrand = isPlatformMode\s*\? undefined/);
+    const workspace = resolveWorkspace({
+      urlSlug: null,
+      isSuperAdmin: true,
+      profileBrandSlug: "pura",
+    });
+    expect(workspace).toEqual({ isPlatformMode: true, activeSlug: null });
+    expect(pickActiveBrand({ ...workspace, brands: [pura], profileBrand: pura })).toBeUndefined();
+    const label = (lang: "ar" | "en") =>
+      workspaceLabel({ brand: undefined, ...workspace, lang, appTitle: "Boutq" });
+    expect(label("ar")).toBe("إدارة منصة بوتيك");
+    expect(label("en")).toBe("Boutq Platform");
+  });
+
+  it("opens a super admin's impersonated brand from the URL, and a member's own brand without one", () => {
+    expect(
+      resolveWorkspace({ urlSlug: "lulu", isSuperAdmin: true, profileBrandSlug: "pura" }),
+    ).toEqual({ isPlatformMode: false, activeSlug: "lulu" });
+    expect(
+      resolveWorkspace({ urlSlug: null, isSuperAdmin: false, profileBrandSlug: "pura" }),
+    ).toEqual({ isPlatformMode: false, activeSlug: "pura" });
   });
 });

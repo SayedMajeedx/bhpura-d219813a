@@ -25,6 +25,7 @@ import { getStoredPaymentMethodPresentation } from "@/lib/payment-method";
 import { orderRequiresCourier } from "@/lib/order-fulfillment";
 import type { OrderListRow } from "@/lib/data/orders";
 import { catalogQueries } from "@/lib/data/catalog";
+import { grossProfitLabel } from "@/lib/order-profit-label";
 
 interface OrderQuickViewModalProps {
   lang: "ar" | "en";
@@ -465,15 +466,7 @@ export function OrderQuickViewModal({
                         : "text-emerald-600 dark:text-emerald-400"
                     }`}
                   >
-                    <span>
-                      {codRemaining > 0
-                        ? isAr
-                          ? "الربح الإجمالي المتوقع بعد التحصيل الكامل:"
-                          : "Estimated gross profit after full collection:"
-                        : isAr
-                          ? "الربح الإجمالي التقديري:"
-                          : "Estimated gross profit:"}
-                    </span>
+                    <span>{grossProfitLabel(codRemaining, isAr ? "ar" : "en")}</span>
                     <span className="font-mono text-sm font-extrabold">
                       {formatMoney(orderNetProfit, currency, lang)}
                     </span>

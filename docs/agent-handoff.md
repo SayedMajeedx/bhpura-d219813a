@@ -117,8 +117,9 @@ Measured with `node scripts/maintainability-metrics.mjs`:
 
 ### 4.1 Phase 6: behaviour tests (next)
 
-Per `docs/maintainability-roadmap.md`: classify the 71 `readFileSync` test
-files. Keep the architecture guards (ratchet, lint-rule and import-boundary
+Per `docs/maintainability-roadmap.md`. The classification and method are in
+`docs/behaviour-tests.md` (43 to convert, 16 migration contracts, 10 guards);
+convert a few files per PR. Keep the architecture guards (ratchet, lint-rule and import-boundary
 checks); convert feature assertions that read source text into behaviour
 tests against the data-layer functions (the `tests/*-data-layer.test.ts` files
 show the fake-client pattern) or rendered components. Lower
