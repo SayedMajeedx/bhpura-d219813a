@@ -18,7 +18,6 @@ import {
   Share2,
   Zap,
 } from "lucide-react";
-import { publicSupabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,6 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { submitGrantApplication } from "@/lib/data/super-admin";
 
 export const Route = createFileRoute("/grant")({
   component: GrantSurveyPage,
@@ -146,17 +146,15 @@ function GrantSurveyPage() {
         .replace(/^0+/, "");
       const fullPhone = cleanPhone.startsWith("+") ? cleanPhone : `${countryCode}${cleanPhone}`;
 
-      const { data, error } = await (publicSupabase.rpc as any)("submit_grant_application", {
-        p_business_name: businessName.trim(),
-        p_instagram_handle: instagramHandle.trim().replace(/^@/, ""),
-        p_whatsapp_number: fullPhone,
-        p_product_category: productCategory,
-        p_readiness_status: readinessStatus,
-        p_current_sales_channel: currentSalesChannel,
-        p_biggest_challenge: biggestChallenge.trim() || null,
+      const data = await submitGrantApplication({
+        businessName: businessName.trim(),
+        instagramHandle: instagramHandle.trim().replace(/^@/, ""),
+        whatsappNumber: fullPhone,
+        productCategory,
+        readinessStatus,
+        currentSalesChannel,
+        biggestChallenge: biggestChallenge.trim() || null,
       });
-
-      if (error) throw error;
       setSubmittedId(String(data || "success"));
       toast.success("تم إرسال طلبكم بنجاح!");
       window.scrollTo({ top: 0, behavior: "smooth" });

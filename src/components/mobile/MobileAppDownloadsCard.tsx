@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { Apple, CheckCircle2, Download, RefreshCw, ShieldCheck, Smartphone } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { systemSettingsQueries } from "@/lib/data/system-settings";
 
 type Release = {
   id: string;
@@ -22,16 +22,8 @@ const APP_NAMES = { boutq_os: "Boutq OS", pura_line: "Pura Line" } as const;
 
 export function MobileAppDownloadsCard({ brandSlug, isAr }: { brandSlug: string; isAr: boolean }) {
   const releases = useQuery({
-    queryKey: ["mobile-app-releases"],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("mobile_app_releases_public")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data || []) as Release[];
-    },
-    staleTime: 60_000,
+    ...systemSettingsQueries.mobileAppReleases(),
+    select: (rows) => rows as Release[],
   });
   const allowedApps: Array<Release["app_key"]> =
     brandSlug === "pura" || brandSlug === "pura-line" ? ["boutq_os", "pura_line"] : ["boutq_os"];

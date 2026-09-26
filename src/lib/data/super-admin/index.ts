@@ -1,5 +1,5 @@
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { publicSupabase, supabase } from "@/integrations/supabase/client";
 import type { TablesUpdate } from "@/integrations/supabase/types";
 
 /**
@@ -154,6 +154,32 @@ export async function deleteGrantApplication(applicationId: string) {
     .delete()
     .eq("id", applicationId);
   if (error) throw error;
+}
+
+/**
+ * A merchant's grant application from the public page (anonymous client).
+ * Returns the application's id.
+ */
+export async function submitGrantApplication(application: {
+  businessName: string;
+  instagramHandle: string;
+  whatsappNumber: string;
+  productCategory: string;
+  readinessStatus: string;
+  currentSalesChannel: string;
+  biggestChallenge: string | null;
+}) {
+  const { data, error } = await publicSupabase.rpc("submit_grant_application", {
+    p_business_name: application.businessName,
+    p_instagram_handle: application.instagramHandle,
+    p_whatsapp_number: application.whatsappNumber,
+    p_product_category: application.productCategory,
+    p_readiness_status: application.readinessStatus,
+    p_current_sales_channel: application.currentSalesChannel,
+    p_biggest_challenge: application.biggestChallenge ?? undefined,
+  });
+  if (error) throw error;
+  return data;
 }
 
 // ── Entitlement overrides, health, tenant requests ──────────────────────────

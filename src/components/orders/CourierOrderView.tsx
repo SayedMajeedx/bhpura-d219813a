@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +14,7 @@ import { Truck, CheckCircle2 } from "lucide-react";
 import { getOrderCustomerName, getOrderCustomerPhone } from "@/lib/order-customer-snapshot";
 import { DeliveryAddressCard } from "@/components/delivery-address-card";
 import { courierUpdateDelivery, updateOrder, type OrderDetail } from "@/lib/data/orders";
+import { courierQueries } from "@/lib/data/orders";
 
 function normalizeWhatsAppNumber(value: string | null | undefined) {
   const digits = String(value ?? "").replace(/\D/g, "");
@@ -107,17 +107,7 @@ export default function CourierOrderView({
     orderTotal,
     advancePaid,
   );
-  const messageQ = useQuery({
-    queryKey: ["courier-delivery-message", order.id],
-    queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("get_courier_delivery_message", {
-        p_order_id: order.id,
-      });
-      if (error) throw error;
-      return data as { brand_name?: string; message_en?: string; message_ar?: string };
-    },
-    staleTime: 300000,
-  });
+  const messageQ = useQuery(courierQueries.deliveryMessage(order.brand_id, order.id));
   const updateStatus = async (status: string) => {
     const phone =
       status === "out_for_delivery" ? normalizeWhatsAppNumber(getOrderCustomerPhone(order)) : "";

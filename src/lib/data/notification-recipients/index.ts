@@ -12,7 +12,20 @@ import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 export const notificationRecipientsKeys = {
   list: (brandId: string) => ["notification-recipients", brandId] as const,
+  /** The Communications page's delivery log of order emails and messages. */
+  activity: (brandId: string) => ["notification-activity", brandId] as const,
 };
+
+/** The brand's latest 200 order notifications (emails and messages) with their delivery status. */
+export async function fetchNotificationActivity(brandId: string) {
+  const { data, error } = await supabase.rpc("list_brand_email_notifications", {
+    p_brand_id: brandId,
+    p_limit: 200,
+    p_offset: 0,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
 
 /**
  * The brand's recipients, oldest first. Empty when the table is missing (a
@@ -37,6 +50,12 @@ export type NotificationRecipientRow = Awaited<
 >[number];
 
 export const notificationRecipientsQueries = {
+  activity: (brandId: string) =>
+    queryOptions({
+      queryKey: notificationRecipientsKeys.activity(brandId),
+      queryFn: () => fetchNotificationActivity(brandId),
+      enabled: Boolean(brandId),
+    }),
   list: (brandId: string) =>
     queryOptions({
       queryKey: notificationRecipientsKeys.list(brandId),

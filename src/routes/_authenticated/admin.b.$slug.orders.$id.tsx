@@ -2,7 +2,6 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useEffect, useRef, lazy } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
@@ -62,6 +61,7 @@ import { renderOrderPrimaryAction } from "@/features/orders/components/order-pri
 import { OrderCustomerCard } from "@/features/orders/components/OrderCustomerCard";
 import { OrderItemsCard } from "@/features/orders/components/OrderItemsCard";
 import { OrderFinancialCard } from "@/features/orders/components/OrderFinancialCard";
+import { assignOrderCourier } from "@/lib/data/orders";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/orders/$id")({
   component: OrderDetail,
@@ -128,10 +128,10 @@ function OrderDetail() {
   const [waModalOpen, setWaModalOpen] = useState(false);
 
   const assignCourier = async (courierId: string) => {
-    const { error } = await (supabase.rpc as any)("assign_order_courier", {
-      p_order_id: id,
-      p_courier_id: courierId === "unassigned" ? null : courierId,
-    });
+    const error = await assignOrderCourier(id, courierId === "unassigned" ? null : courierId).then(
+      () => null,
+      (err: { message: string }) => err,
+    );
     if (error) return toast.error(error.message);
     toast.success(lang === "ar" ? "تم تحديث مندوب التوصيل" : "Courier assignment updated");
     await orderQ.refetch();

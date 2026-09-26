@@ -110,7 +110,7 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(profiles|brand_notification_recipients|brand_abandoned_cart_settings|abandoned_cart_sequences|abandoned_carts|abandoned_cart_dispatch_logs|brand_tracking_settings|saas_plans|brand_subscriptions|white_label_apps_public|white_label_app_builds_public|merchant_grant_applications|brand_entitlement_overrides|system_health_events|tenant_requests|import_runs|export_runs|branches|system_settings|activity_logs)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(profiles|brand_notification_recipients|brand_abandoned_cart_settings|abandoned_cart_sequences|abandoned_carts|abandoned_cart_dispatch_logs|brand_tracking_settings|saas_plans|brand_subscriptions|white_label_apps_public|white_label_app_builds_public|merchant_grant_applications|brand_entitlement_overrides|system_health_events|tenant_requests|import_runs|export_runs|branches|system_settings|activity_logs|mobile_app_releases_public|brand_public_settings)$/]",
           message:
             "Profiles go through `@/lib/data/profiles` (caller profile, couriers, names, updateProfile), admin alert recipients through `@/lib/data/notification-recipients`, the abandoned-carts screen through `@/lib/data/abandoned-carts`, tracking settings through `@/lib/data/integrations`, the super admin's platform tables through `@/lib/data/super-admin`, import and export history through `@/lib/data/import-export`, the platform settings row through `@/lib/data/system-settings`.",
         },
@@ -128,9 +128,21 @@ export default tseslint.config(
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(auth_profile_role|caller_profile|caller_permissions|reports-(overview(-previous)?|sales|products(-inquiries)?|customers)|brand_by_slug|brand_icon_settings|brands-switcher|super_all_brands_list|brand-notification-recipients|super-admin-video-reoptimizer-list|brand_abandoned_cart_settings|abandoned_cart_sequences|abandoned_carts_list|abandoned_cart_dispatch_logs|integrations|brand-tracking-settings|saas_plans_for_admin|pending_brand_subscriptions|brand-delete-counts|white-label-apps|white-label-app-builds|super-grant-applications|brand_overrides_view|system-health-events|tenant-requests|import-runs-hub|product-import-history|export-runs-history|export-products|export-expenses|brand-order-reviews|ready-order-review-requests|public-order-review|branch|brand_branches_active|system_settings_billing|platform_system_settings_billing|activity_logs|return-activity-logs)$/]",
+            "ArrayExpression > Literal:first-child[value=/^(auth_profile_role|caller_profile|caller_permissions|reports-(overview(-previous)?|sales|products(-inquiries)?|customers)|brand_by_slug|brand_icon_settings|brands-switcher|super_all_brands_list|brand-notification-recipients|super-admin-video-reoptimizer-list|brand_abandoned_cart_settings|abandoned_cart_sequences|abandoned_carts_list|abandoned_cart_dispatch_logs|integrations|brand-tracking-settings|saas_plans_for_admin|pending_brand_subscriptions|brand-delete-counts|white-label-apps|white-label-app-builds|super-grant-applications|brand_overrides_view|system-health-events|tenant-requests|import-runs-hub|product-import-history|export-runs-history|export-products|export-expenses|brand-order-reviews|ready-order-review-requests|public-order-review|branch|brand_branches_active|system_settings_billing|platform_system_settings_billing|activity_logs|return-activity-logs|brand-email-notifications|mobile-app-releases|courier-delivery-message)$/]",
           message:
             "Use `profilesQueries.caller` / `profilesKeys` for the caller's profile, `reportingQueries` / `reportingKeys` for reports, and `brandQueries` / `brandKeys` for brand lookups.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='rpc'][arguments.0.value=/^(list_brand_email_notifications|submit_grant_application|assign_order_courier|get_courier_delivery_message)$/]",
+          message:
+            "Use the data layer: `@/lib/data/notification-recipients` (notification activity), `@/lib/data/super-admin` (grant applications), `@/lib/data/orders` (courier).",
+        },
+        {
+          selector:
+            "CallExpression[callee.expression.property.name='rpc'][arguments.0.value=/^(list_brand_email_notifications|submit_grant_application|assign_order_courier|get_courier_delivery_message)$/]",
+          message:
+            "Use the data layer: `@/lib/data/notification-recipients` (notification activity), `@/lib/data/super-admin` (grant applications), `@/lib/data/orders` (courier).",
         },
       ],
     },
@@ -213,7 +225,7 @@ export default tseslint.config(
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(orders?|expenses|business-settings|cogs|orders-reconciliation|expenses-business-settings|products|variants|packaging-materials|product-bom-items(-all)?|customers|customer_addresses|message-templates|customizations|cash-flow-accounts|vendors(-full)?|purchase-orders|dashboard-(orders-with-items|recent-orders|expenses|expenses-full|business-settings|products|variants|customers|pending-returns|incubator-sales|catalog-inquiries|reporting-overview(-previous)?)|branch|branches|activity_logs)$/]",
+            "ArrayExpression > Literal:first-child[value=/^(orders?|expenses|business-settings|cogs|orders-reconciliation|expenses-business-settings|products|variants|packaging-materials|product-bom-items(-all)?|customers|customer_addresses|message-templates|customizations|cash-flow-accounts|vendors(-full)?|purchase-orders|dashboard-(orders-with-items|recent-orders|expenses|expenses-full|business-settings|products|variants|customers|pending-returns|incubator-sales|catalog-inquiries|reporting-overview(-previous)?)|branch|branches|activity_logs|courier-delivery-message)$/]",
           message:
             "Build these cache keys with `ordersKeys` / `expensesKeys` / `businessSettingsKeys` / `catalogKeys` / `customersKeys` / `accountingKeys` (or the invalidate helpers).",
         },
@@ -231,6 +243,18 @@ export default tseslint.config(
           selector:
             "CallExpression[callee.property.name='rpc'][arguments.0.value='validate_promo_code']",
           message: "Use `validatePromoCode` from `@/lib/data/promo-codes`.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='rpc'][arguments.0.value=/^(assign_order_courier|get_courier_delivery_message)$/]",
+          message:
+            "Courier calls go through `assignOrderCourier` / `courierQueries` from `@/lib/data/orders`.",
+        },
+        {
+          selector:
+            "CallExpression[callee.expression.property.name='rpc'][arguments.0.value=/^(assign_order_courier|get_courier_delivery_message)$/]",
+          message:
+            "Courier calls go through `assignOrderCourier` / `courierQueries` from `@/lib/data/orders`.",
         },
       ],
     },
