@@ -10,6 +10,7 @@ import { TrialExpiredPaywall } from "@/components/admin/TrialExpiredPaywall";
 import { AddonsProvider } from "@/components/addons/AddonsProvider";
 import { useBrandAddons } from "@/hooks/use-brand-addons";
 import { profilesQueries } from "@/lib/data/profiles";
+import { brandQueries } from "@/lib/data/brands";
 
 function getImpersonationToken(request?: Request): string | null {
   if (typeof document !== "undefined") {
@@ -75,48 +76,9 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
 
     // Concurrently fetch target brand, caller profile, and business settings with 5m staleTime
     const [brand, profile, iconSettings] = await Promise.all([
-      fetchWithRetry(() =>
-        queryClient.ensureQueryData({
-          queryKey: ["brand_by_slug", params.slug],
-          queryFn: async () => {
-            const { data: brand, error: brandErr } = await (supabase as any)
-              .from("brands")
-              .select(
-                "id, slug, name_en, name_ar, logo_url, primary_color, is_active, subscription_tier, subscription_status, subscription_expires_at, payment_receipt_url, payment_receipt_uploaded_at, custom_domain, support_access_enabled, plan_type, trial_ends_at, renewal_intent, renewal_intent_recorded_at, created_at",
-              )
-              .eq("slug", params.slug)
-              .maybeSingle();
-
-            // Resolve to null and let beforeLoad redirect; a redirect thrown
-            // here would be swallowed and retried as a query error.
-            if (brandErr || !brand) return null;
-            return brand;
-          },
-          staleTime: 1000 * 60 * 5,
-        }),
-      ),
+      fetchWithRetry(() => queryClient.ensureQueryData(brandQueries.adminBySlug(params.slug))),
       fetchWithRetry(() => queryClient.ensureQueryData(profilesQueries.caller(user.id))),
-      fetchWithRetry(() =>
-        queryClient.ensureQueryData({
-          queryKey: ["brand_icon_settings", params.slug],
-          queryFn: async () => {
-            const { data: brandData } = await (supabase as any)
-              .from("brands")
-              .select("id")
-              .eq("slug", params.slug)
-              .maybeSingle();
-            if (!brandData) return null;
-
-            const { data: iconSettings } = await (supabase.from("business_settings") as any)
-              .select("favicon_url, logo_url")
-              .eq("brand_id", brandData.id)
-              .maybeSingle();
-
-            return iconSettings ?? null;
-          },
-          staleTime: 1000 * 60 * 5,
-        }),
-      ),
+      fetchWithRetry(() => queryClient.ensureQueryData(brandQueries.iconsBySlug(params.slug))),
     ]);
 
     if (!brand) throw redirect({ to: "/admin" });
