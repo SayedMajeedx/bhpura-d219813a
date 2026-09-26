@@ -39,29 +39,29 @@ green then continue with X") and expect a short report after each step.
 
 Measured with `node scripts/maintainability-metrics.mjs`:
 
-| Metric                                | Roadmap start (09-24) | Now                                                            |
-| ------------------------------------- | --------------------- | -------------------------------------------------------------- |
-| Files over 1000 lines                 | 31                    | 23                                                             |
-| `as any`                              | 990                   | 840                                                            |
-| `: any`                               | 784                   | 750                                                            |
-| `as never`                            | 40                    | 0                                                              |
-| Direct Supabase calls in screens      | 393                   | 317 (406 with casts counted, see `docs/maintainability.md` §4) |
-| Test files using `readFileSync`       | 71                    | 71                                                             |
-| Tests                                 | 1078                  | 1310                                                           |
-| Migration drift (local vs production) | 32 / 23 one-sided     | 0 (261 versions)                                               |
+| Metric                                | Roadmap start (09-24) | Now                                                                                                                        |
+| ------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Files over 1000 lines                 | 31                    | 23                                                                                                                         |
+| `as any`                              | 990                   | 596                                                                                                                        |
+| `: any`                               | 784                   | 724                                                                                                                        |
+| `as never`                            | 40                    | 0                                                                                                                          |
+| Direct Supabase calls in screens      | 393                   | 25 (metric re-based 09-25 to count cast-wrapped calls: 200 then); all server routes, one realtime subscription and bug #27 |
+| Test files using `readFileSync`       | 71                    | 71                                                                                                                         |
+| Tests                                 | 1078                  | 1567                                                                                                                       |
+| Migration drift (local vs production) | 32 / 23 one-sided     | 0 (261 versions)                                                                                                           |
 
 ### Phases
 
-| Phase               | Status                                                                                                                                                                                                                          |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0 Ratchets          | Done (`tests/maintainability-ratchet.test.ts`).                                                                                                                                                                                 |
-| 1 Entry docs        | Done (`AGENTS.md`, `README.md`, `docs/README.md`).                                                                                                                                                                              |
-| 2 Migrations        | Done: zero drift, CI job "Supabase Linked Migration Drift Check".                                                                                                                                                               |
-| 3 Honest types      | Types regenerated from production (#35), `as never` = 0. `any` reduction continues alongside Phase 4.                                                                                                                           |
-| 4 Data layer        | **In progress.** Done: storefront catalog, admin orders (reads + writes), business settings, expenses, finance order views, admin catalog **reads** (products, variants, BOM, packaging). Next: catalog **writes** (section 4). |
-| 5 Split giant files | Big splits done: inventory, order editor, orders list, product page, checkout, dashboard, storefront home, storefront shell. Remaining files: split-on-touch policy (section 4.4).                                              |
-| 6 Behaviour tests   | Not started (71 `readFileSync` test files).                                                                                                                                                                                     |
-| 7 Keep it clean     | Not started.                                                                                                                                                                                                                    |
+| Phase               | Status                                                                                                                                                                                                                                                                                                                |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0 Ratchets          | Done (`tests/maintainability-ratchet.test.ts`).                                                                                                                                                                                                                                                                       |
+| 1 Entry docs        | Done (`AGENTS.md`, `README.md`, `docs/README.md`).                                                                                                                                                                                                                                                                    |
+| 2 Migrations        | Done: zero drift, CI job "Supabase Linked Migration Drift Check".                                                                                                                                                                                                                                                     |
+| 3 Honest types      | Types regenerated from production (#35), `as never` = 0. `any` reduction continues alongside Phase 4.                                                                                                                                                                                                                 |
+| 4 Data layer        | **Done for screens** (#63–#107): every route, component and feature reads and writes through `src/lib/data/*` or `src/lib/auth/*`, with ESLint guards per domain. Left direct on purpose: server routes (`api.*`, the manifest route), the order editor's realtime subscription, the rotation audit insert (bug #27). |
+| 5 Split giant files | Big splits done: inventory, order editor, orders list, product page, checkout, dashboard, storefront home, storefront shell. Remaining files: split-on-touch policy (section 4.4).                                                                                                                                    |
+| 6 Behaviour tests   | Not started (71 `readFileSync` test files).                                                                                                                                                                                                                                                                           |
+| 7 Keep it clean     | Not started.                                                                                                                                                                                                                                                                                                          |
 
 ### Merged PRs of this effort (for context; read their descriptions on GitHub)
 
@@ -115,50 +115,26 @@ Measured with `node scripts/maintainability-metrics.mjs`:
 
 ## 4. What to do next (in order)
 
-### 4.1 Catalog writes (next PR)
+### 4.1 Phase 6: behaviour tests (next)
 
-Move the admin catalog **writes** into `src/lib/data/catalog/` (add
-`mutations.ts`): product create/update/delete/duplicate, variant
-create/update/delete/bulk, product axes, BOM (`ProductBomModal`), packaging
-materials (`PackagingMaterialsTab`), the composite-variant healer. Callers:
-`src/features/inventory/hooks/*` (`use-save-product`, `use-product-actions`,
-`use-product-bulk-actions`, `use-variant-mutations`, `use-variant-bulk-actions`,
-`use-composite-variant-healer`), `src/features/inventory/components/{BulkVariantDialog,ManageProductAxesDialog}.tsx`,
-`src/components/products/ProductBomModal.tsx`,
-`src/components/inventory/PackagingMaterialsTab.tsx`. Then extend the ESLint
-guard to `src/features/inventory/**`, `src/components/inventory/**`,
-`src/components/products/**` and the inventory route.
-Watch: inventory bug backlog items #1–#9 live in this code; keep behaviour,
-reference them in the PR. `src/lib/packaging-sync.ts` and
-`src/lib/bom-calculator.ts` write packaging directly (lib helpers taking a
-client): decide whether they become mutations (probably yes, with the brand
-filter).
+Per `docs/maintainability-roadmap.md`: classify the 71 `readFileSync` test
+files. Keep the architecture guards (ratchet, lint-rule and import-boundary
+checks); convert feature assertions that read source text into behaviour
+tests against the data-layer functions (the `tests/*-data-layer.test.ts` files
+show the fake-client pattern) or rendered components. Lower
+`readFileSyncTestFiles` as each file converts.
 
-### 4.2 Next domains (one or two PRs each, same recipe)
+### 4.2 Bugs waiting on the owner
 
-By remaining direct calls (see `node scripts/maintainability-metrics.mjs` and the
-table-count snippet in section 5.6):
-
-1. **Customers** (`customers`, `customer_addresses`: 46 calls, customers list +
-   detail routes, `NewCustomerDialog`, `customer-address-manager` (fix backlog
-   #15 there), the order editor's customers/addresses reads, `$slug.account.tsx`).
-2. **Settings writes** (`business_settings` upsert in
-   `src/features/settings/use-brand-settings-form.tsx`, `brands` updates) with
-   `settings-registry-single-source`.
-3. **Remaining order readers outside the guarded screens** (customer pages,
-   import, thank-you) and the dashboard's own reads (customers count, pending
-   returns, incubator sales RPC, catalog inquiries).
-4. Then smaller domains: categories, loyalty, promo codes, incubators,
-   campaigns/message templates, team/profiles, returns.
-
-Server code (`src/routes/api.*`, `*.server.ts`, `*.functions.ts` using the
-service role) is a different layer: leave it unless a domain's server functions
-are in scope, and keep their `can_access_brand` checks.
+In `docs/bug-backlog.md`. Some need a product decision or a migration the owner
+applies: #25 (nothing creates the cash accounts or credits the cash box), #27
+(key rotations are never audit-logged), #31 (stock movements never record who
+made them). The rest are older refactor finds (#2–#21).
 
 ### 4.3 `any` reduction
 
-Happens mostly as a side effect of 4.1/4.2 (typed rows replace `any`). Quick
-wins to do along the way: stale `(supabase as any)` / `(supabase.rpc as any)`
+Screens now use typed rows, so most remaining `as any` sit on local shapes and
+event handlers. Quick wins to do along the way: stale `(supabase as any)` / `(supabase.rpc as any)`
 casts on tables and RPCs that are in the generated types (all 48 tables behind
 such casts were present when checked), `catch (e: any)` → `unknown` (180 of
 them, low value: do not count as real progress).
@@ -172,16 +148,13 @@ split `src/features/settings/registry.ts` or `src/lib/addons/addon-showcase-data
 (data). Candidates when touched: `admin.b.$slug.content-studio.tsx` (most
 edited), `$slug.account.tsx` (customer-facing, no browser test yet).
 
-### 4.5 Phase 6 and 7
+### 4.5 Phase 7
 
-Per `docs/maintainability-roadmap.md`: classify the 71 `readFileSync` test files
-(keep architecture guards, convert feature assertions to behaviour tests), add
-render helpers, then the PR template and final docs.
+After Phase 6: the PR template and final docs (`docs/maintainability-roadmap.md`).
 
 ### 4.6 Bug backlog
 
-`docs/bug-backlog.md` holds bugs found during refactors (orders #11, #14, #15;
-inventory #1–#9; checkout #12). Fix them only when the owner asks, each in its
+`docs/bug-backlog.md` holds bugs found during refactors (see 4.2). Fix them only when the owner asks, each in its
 own small PR with a test that fails before the fix, and delete the entry in
 that PR.
 

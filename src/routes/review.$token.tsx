@@ -3,7 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { Check, Gift, Loader2, MessageCircle, Sparkles, Star } from "lucide-react";
-import { reviewsQueries, submitPublicOrderReview } from "@/lib/data/reviews";
+import {
+  reviewRefusal,
+  reviewsQueries,
+  submitPublicOrderReview,
+  type ReviewRefusal,
+} from "@/lib/data/reviews";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,6 +42,7 @@ function ReviewPage() {
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [rewardCode, setRewardCode] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const reviewQ = useQuery({
     ...reviewsQueries.publicReview(token),
@@ -49,15 +55,22 @@ function ReviewPage() {
   const submit = async () => {
     if (!rating) return;
     setSubmitting(true);
-    // A failed submit shows nothing and lets the customer try again (bug backlog #30).
-    const reward = await submitPublicOrderReview({
-      token,
-      rating,
-      highlights,
-      comment: comment.trim() || null,
-    }).catch(() => undefined);
-    setSubmitting(false);
-    if (reward !== undefined) setRewardCode(String(reward || "THANKU10"));
+    setSubmitError(null);
+    try {
+      const reward = await submitPublicOrderReview({
+        token,
+        rating,
+        highlights,
+        comment: comment.trim() || null,
+      });
+      setRewardCode(String(reward || "THANKU10"));
+    } catch (error) {
+      // Tell the customer why, instead of silently re-enabling the button.
+      const refusal = reviewRefusal(error);
+      setSubmitError(refusal ? REVIEW_REFUSAL_MESSAGES[refusal] : REVIEW_SUBMIT_FAILED);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (reviewQ.isLoading)
@@ -191,6 +204,14 @@ function ReviewPage() {
             />
           </div>
         )}
+        {submitError ? (
+          <p
+            role="alert"
+            className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          >
+            {submitError}
+          </p>
+        ) : null}
         <Button
           type="button"
           className="min-h-12 w-full gap-2 text-base"
@@ -204,6 +225,15 @@ function ReviewPage() {
     </PageShell>
   );
 }
+
+/** What the customer reads when the review is refused (the page is Arabic only). */
+const REVIEW_REFUSAL_MESSAGES: Record<ReviewRefusal, string> = {
+  REVIEW_NOT_FOUND: "رابط التقييم غير متاح أو لم يحن وقته بعد.",
+  INVALID_RATING: "يرجى اختيار تقييم من نجمة إلى خمس نجوم.",
+  INVALID_HIGHLIGHT: "أحد الخيارات المحددة غير متاح، يرجى إعادة الاختيار.",
+  COMMENT_TOO_LONG: "التعليق طويل جداً، يرجى اختصاره إلى 600 حرف.",
+};
+const REVIEW_SUBMIT_FAILED = "تعذر إرسال التقييم الآن، يرجى المحاولة مرة أخرى.";
 
 function PageShell({ review, children }: { review: PublicReview; children: ReactNode }) {
   return (
