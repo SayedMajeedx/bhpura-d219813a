@@ -42,6 +42,12 @@ Object.defineProperty(window, "matchMedia", {
   })),
 });
 
+// jsdom has no pointer capture; Radix Select calls it when it opens.
+if (typeof Element !== "undefined" && !Element.prototype.hasPointerCapture) {
+  Element.prototype.hasPointerCapture = vi.fn(() => false);
+  Element.prototype.releasePointerCapture = vi.fn();
+}
+
 // jsdom does not implement media playback: play() returns nothing and load()
 // logs "Not implemented". Behave like a browser that resolves playback.
 if (typeof HTMLMediaElement !== "undefined") {

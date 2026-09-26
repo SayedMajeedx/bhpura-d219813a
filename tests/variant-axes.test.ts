@@ -1,6 +1,4 @@
 import { describe, it, expect } from "vitest";
-import fs from "fs";
-import path from "path";
 import {
   describeVariantAxes,
   formatAxisValue,
@@ -80,19 +78,4 @@ describe("variant axes", () => {
   });
 });
 
-describe("storefront surfaces use the axis system", () => {
-  const read = (file: string) => fs.readFileSync(path.resolve(__dirname, "..", file), "utf-8");
-
-  it("quick view has no hard-coded Color/Size labels", () => {
-    const code = read("src/components/storefront/QuickViewModal.tsx");
-    expect(code).toContain("useVariantAxes(");
-    expect(code).not.toContain('t("اللون", "Color")');
-    expect(code).not.toContain('t("المقاس", "Size")');
-  });
-
-  it("category filters and colour dots resolve the store's labels", () => {
-    expect(read("src/components/storefront/CategoryFilters.tsx")).toContain("isColorSwatchAxis(");
-    expect(read("src/components/storefront/ColorDots.tsx")).toContain("isColorSwatchAxis(");
-    expect(read("src/routes/$slug.product.$id.tsx")).toContain("isColorSwatchAxis(");
-  });
-});
+// Rendered storefront surfaces: tests/variant-axes-surfaces.test.tsx.

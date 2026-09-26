@@ -18,8 +18,6 @@ import { useStickyCtaOffset } from "@/hooks/use-sticky-cta-offset";
 import { AddonSlot } from "@/components/addons/AddonSlot";
 import { useAddons } from "@/components/addons/AddonsProvider";
 import { useVocabulary } from "@/hooks/use-vocabulary";
-import { variantAxisDefaultsFrom, resolveAllVariantAxes } from "@/lib/addons/addon-registry";
-import { isColorSwatchAxis } from "@/lib/variant-axes";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { toast } from "sonner";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
@@ -41,7 +39,7 @@ import {
   parsePriceDelta,
   sortVariants,
   uniqueOptionValues,
-  withOfferedAxes,
+  resolveProductAxes,
   type VariantSelection,
 } from "@/features/product-page/lib/variant-options";
 import {
@@ -343,29 +341,25 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   useVariantTranslations(allOptionTerms, lang === "ar" ? "ar" : "en");
 
   const storeVertical = settings?.store_vertical ?? null;
-  const addonAxisDefaults = useMemo(
-    () => variantAxisDefaultsFrom(addons, storeVertical),
-    [addons, storeVertical],
-  );
-  const resolvedAxes = useMemo(
+  const { axes: resolvedAxes, isVisualColorAxis } = useMemo(
     () =>
-      withOfferedAxes(
-        resolveAllVariantAxes({
-          product,
-          addonDefaults: addonAxisDefaults,
-          lang: lang === "ar" ? "ar" : "en",
-        }),
-        {
+      resolveProductAxes({
+        product,
+        addons,
+        storeVertical,
+        lang: lang === "ar" ? "ar" : "en",
+        offered: {
           size: uniqueSizes,
           color: uniqueColors,
           fabric: uniqueFabrics,
           four: uniqueFour,
           five: uniqueFive,
         },
-      ),
+      }),
     [
       product,
-      addonAxisDefaults,
+      addons,
+      storeVertical,
       lang,
       uniqueSizes,
       uniqueColors,
@@ -399,11 +393,6 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const isFabricOutOfStock = useMemo(
     () => outOfStockByValue(variants, "fabric", uniqueFabrics, optionSelection),
     [variants, uniqueFabrics, optionSelection],
-  );
-
-  const isVisualColorAxis = useMemo(
-    () => isColorSwatchAxis(resolvedAxes.color.label, uniqueColors),
-    [resolvedAxes.color.label, uniqueColors],
   );
 
   useVariantSelectionSync({
