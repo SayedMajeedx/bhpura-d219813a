@@ -14,6 +14,7 @@ import { getInvoiceStatusLabel } from "@/lib/status-labels";
 import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
+import { branchesQueries } from "@/lib/data/branches";
 
 type SavedAddress = {
   id?: string;
@@ -196,18 +197,7 @@ function InvoiceBranchName({
   branchId: string;
   isRTL: boolean;
 }) {
-  const q = useQuery({
-    queryKey: ["branch", brandId, branchId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("branches" as any)
-        .select("name_ar, name_en, location_ar, location_en")
-        .eq("id", branchId)
-        .maybeSingle();
-      return data as any;
-    },
-    enabled: !!branchId,
-  });
+  const q = useQuery(branchesQueries.one(brandId, branchId));
   const b = q.data;
   if (!b) return null;
   const name = isRTL ? b.name_ar || b.name_en : b.name_en || b.name_ar;

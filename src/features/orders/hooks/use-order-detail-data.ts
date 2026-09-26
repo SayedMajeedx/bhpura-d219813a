@@ -7,6 +7,7 @@ import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { catalogQueries } from "@/lib/data/catalog";
 import { profilesQueries } from "@/lib/data/profiles";
 import { customersQueries, type CustomerRow } from "@/lib/data/customers";
+import { branchesQueries } from "@/lib/data/branches";
 
 /** The customer picker lists customers by name; the shared list is newest first. */
 const byName = (customers: CustomerRow[]) =>
@@ -102,16 +103,8 @@ export function useOrderDetailData({
     retry: false,
   });
   const branchesQ = useQuery({
-    queryKey: ["branches", brandId],
-    enabled: !isCourier,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("branches")
-        .select("id, name_ar, name_en, location_ar, location_en")
-        .eq("brand_id", brandId);
-      if (error) throw error;
-      return data ?? [];
-    },
+    ...branchesQueries.list(brandId),
+    enabled: !isCourier && Boolean(brandId),
   });
   const customQ = useQuery({
     ...catalogQueries.customizations(brandId),
