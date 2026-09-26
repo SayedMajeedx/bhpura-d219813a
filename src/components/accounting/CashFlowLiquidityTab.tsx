@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
@@ -19,6 +18,12 @@ import { Wallet, Building, ArrowRightLeft, CheckCircle2, Clock, ShieldCheck } fr
 import { formatMoney, formatDate } from "@/lib/format";
 import { toast } from "sonner";
 import { invalidateOrders, ordersQueries, updateOrder } from "@/lib/data/orders";
+import {
+  accountingQueries,
+  invalidateCashAccounts,
+  recordAccountTransaction,
+  setCashAccountBalance,
+} from "@/lib/data/accounting";
 
 export function CashFlowLiquidityTab() {
   const { lang } = useI18n();
@@ -33,17 +38,7 @@ export function CashFlowLiquidityTab() {
   const [isSubmitting, setIsSaving] = useState(false);
 
   // Fetch cash accounts
-  const accountsQ = useQuery({
-    queryKey: ["cash-flow-accounts", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("cash_flow_accounts")
-        .select("*")
-        .eq("brand_id", brandId);
-      if (error) throw error;
-      return (data ?? []) as any[];
-    },
-  });
+  const accountsQ = useQuery(accountingQueries.cashAccounts(brandId));
 
   // Fetch orders with cash/benefit reconciliation status
   const ordersQ = useQuery(ordersQueries.reconciliation(brandId, 20));
@@ -93,31 +88,31 @@ export function CashFlowLiquidityTab() {
 
     setIsSaving(true);
     try {
-      // Deduct from cash box, add to bank account
-      await (supabase as any)
-        .from("cash_flow_accounts")
-        .update({ balance: Math.max(0, Number(cashBoxAcc.balance || 0) - transferAmount) } as any)
-        .eq("id", cashBoxAcc.id)
-        .eq("brand_id", brandId);
+      // Deduct from cash box, add to bank account. Each write's error is
+      // ignored, as before (bug backlog #24).
+      await setCashAccountBalance(
+        brandId,
+        cashBoxAcc.id,
+        Math.max(0, Number(cashBoxAcc.balance || 0) - transferAmount),
+      ).catch(() => undefined);
 
-      await (supabase as any)
-        .from("cash_flow_accounts")
-        .update({ balance: Number(bankAcc.balance || 0) + transferAmount } as any)
-        .eq("id", bankAcc.id)
-        .eq("brand_id", brandId);
+      await setCashAccountBalance(
+        brandId,
+        bankAcc.id,
+        Number(bankAcc.balance || 0) + transferAmount,
+      ).catch(() => undefined);
 
       // Record account transaction log
-      await (supabase as any).from("account_transactions").insert({
-        brand_id: brandId,
+      await recordAccountTransaction(brandId, {
         source_account_id: cashBoxAcc.id,
         target_account_id: bankAcc.id,
         amount: transferAmount,
         transaction_type: "transfer",
         notes: transferNotes || "إيداع نقدي من الصندوق إلى الحساب البنكي",
-      } as any);
+      }).catch(() => undefined);
 
       toast.success(isAr ? "تم تحويل السيولة النقدية بنجاح" : "Funds transferred successfully");
-      qc.invalidateQueries({ queryKey: ["cash-flow-accounts", brandId] });
+      invalidateCashAccounts(qc, brandId);
       setTransferModalOpen(false);
       setTransferAmount(0);
       setTransferNotes("");

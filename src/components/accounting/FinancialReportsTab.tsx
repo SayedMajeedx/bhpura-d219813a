@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
@@ -12,6 +11,7 @@ import { calculateIncomeStatement, calculateCashFlowStatement } from "@/lib/doub
 import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { expensesQueries } from "@/lib/data/expenses";
 import { ordersQueries } from "@/lib/data/orders";
+import { accountingQueries } from "@/lib/data/accounting";
 
 export function FinancialReportsTab() {
   const { lang } = useI18n();
@@ -31,17 +31,7 @@ export function FinancialReportsTab() {
   const expensesQ = useQuery(expensesQueries.list(brandId));
 
   // Fetch cash accounts
-  const accountsQ = useQuery({
-    queryKey: ["cash-flow-accounts", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("cash_flow_accounts")
-        .select("*")
-        .eq("brand_id", brandId);
-      if (error) throw error;
-      return (data ?? []) as any[];
-    },
-  });
+  const accountsQ = useQuery(accountingQueries.cashAccounts(brandId));
 
   const orders: any[] = ordersQ.data ?? [];
   const expenses: any[] = expensesQ.data ?? [];
