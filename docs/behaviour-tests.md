@@ -29,7 +29,7 @@ Examples: `tests/order-profit-clarity.test.ts` (extracted label),
 
 ## Classification
 
-- **convert** (29): feature assertions on source text.
+- **convert** (26): feature assertions on source text.
 - **migration** (19): assertions on SQL in
   `supabase/migrations`. They pin database contracts and stay until the
   project has a database test harness (pgTAP or a local Supabase in CI).
@@ -38,7 +38,6 @@ Examples: `tests/order-profit-clarity.test.ts` (extracted label),
 
 | Group     | Test file                                           | Note                                                     |
 | --------- | --------------------------------------------------- | -------------------------------------------------------- |
-| convert   | `tests/admin-feedback-states.test.ts`               |                                                          |
 | convert   | `tests/annual-subscription-regressions.test.ts`     | source part to convert; SQL part is a migration contract |
 | convert   | `tests/brand-owner-provisioning.test.ts`            | source part to convert; SQL part is a migration contract |
 | convert   | `tests/brand-r2-cleanup-recovery.test.ts`           | source part to convert; SQL part is a migration contract |
@@ -46,10 +45,8 @@ Examples: `tests/order-profit-clarity.test.ts` (extracted label),
 | convert   | `tests/image-crop-system.test.ts`                   |                                                          |
 | convert   | `tests/impersonation-exit-regression.test.ts`       |                                                          |
 | convert   | `tests/impersonation-lifecycle-regression.test.ts`  |                                                          |
-| convert   | `tests/incubator-page-management.test.ts`           |                                                          |
 | convert   | `tests/incubator-reporting-packaging.test.ts`       | source part to convert; SQL part is a migration contract |
 | convert   | `tests/launch-security-regressions.test.ts`         | source part to convert; SQL part is a migration contract |
-| convert   | `tests/manual-order-draft-regression.test.ts`       |                                                          |
 | convert   | `tests/manual-order-tailoring-specs.test.ts`        |                                                          |
 | convert   | `tests/onboarding-plan-catalog.test.ts`             | source part to convert; SQL part is a migration contract |
 | convert   | `tests/order-review-reward.test.ts`                 | source part to convert; SQL part is a migration contract |

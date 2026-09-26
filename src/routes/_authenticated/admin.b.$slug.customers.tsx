@@ -21,19 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Pencil,
-  Plus,
-  Trash2,
-  Users,
-  Star,
-  Check,
-  Loader2,
-  Upload,
-  Download,
-  AlertTriangle,
-  RefreshCw,
-} from "lucide-react";
+import { Pencil, Plus, Trash2, Users, Star, Check, Loader2, Upload, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
 import { BAHRAIN_REGIONS, formatAddressLine, type StructuredAddress } from "@/lib/bahrain-regions";
@@ -84,7 +72,8 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { BulkSelectionToolbar } from "@/components/bulk-selection-toolbar";
 import { ListPagination } from "@/components/list-pagination";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
-import { OsEmptyState } from "@/components/os/os-empty-state";
+import { OsLoadFailedState, combinedLoadState } from "@/components/os/os-load-failed-state";
+import { CustomersEmptyState } from "@/features/customers/components/CustomersEmptyState";
 import { getCurrentUser } from "@/lib/auth/session";
 import { useCustomerDeletion } from "@/features/customers/hooks/use-customer-deletion";
 
@@ -841,12 +830,8 @@ function CustomersPage() {
     `customers-list-${brandId}`,
   );
 
-  const {
-    data,
-    isLoading: customersLoading,
-    isError: customersError,
-    refetch: refetchCustomers,
-  } = useQuery({ ...customersQueries.list(brandId), refetchOnWindowFocus: false });
+  const customersQ = useQuery({ ...customersQueries.list(brandId), refetchOnWindowFocus: false });
+  const { data } = customersQ;
 
   const addressesQ = useQuery({
     ...customersQueries.addresses(brandId),
@@ -940,34 +925,24 @@ function CustomersPage() {
     filteredCustomerIds.every((id) => selectedCustomerIds.has(id));
   const toggleVisibleCustomers = () => toggleCustomers(paginatedCustomerIds);
 
-  if (customersLoading || addressesQ.isLoading || ordersQ.isLoading) {
+  const loadState = combinedLoadState([customersQ, addressesQ, ordersQ]);
+  if (loadState === "loading") {
     return <RoutePendingSkeleton />;
   }
 
-  if (customersError || addressesQ.isError || ordersQ.isError) {
+  if (loadState === "failed") {
     return (
       <div className="space-y-3.5">
         <h1 className="sr-only">{isAr ? "العملاء" : "Customers"}</h1>
-        <OsEmptyState
-          icon={AlertTriangle}
+        <OsLoadFailedState
+          isAr={isAr}
           title={isAr ? "تعذّر تحميل العملاء" : "Customers could not be loaded"}
           description={
             isAr
               ? "لم يتم تغيير أي بيانات. تحقق من الاتصال ثم أعد المحاولة."
               : "No data was changed. Check the connection and try again."
           }
-          action={
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() =>
-                void Promise.all([refetchCustomers(), addressesQ.refetch(), ordersQ.refetch()])
-              }
-            >
-              <RefreshCw className="h-4 w-4 me-1.5" />
-              {isAr ? "إعادة المحاولة" : "Try again"}
-            </Button>
-          }
+          queries={[customersQ, addressesQ, ordersQ]}
         />
       </div>
     );
@@ -1039,40 +1014,15 @@ function CustomersPage() {
       />
 
       {filteredCustomers.length === 0 && (
-        <OsEmptyState
-          icon={Users}
-          compact
-          title={isAr ? "لا يوجد عملاء مطابقون" : "No matching customers"}
-          description={
-            (data ?? []).length === 0
-              ? isAr
-                ? "ابدأ بإضافة أول عميل إلى قاعدة بيانات المتجر."
-                : "Add the first customer to your store database."
-              : isAr
-                ? "غيّر البحث أو الفلاتر لعرض عملاء آخرين."
-                : "Change the search or filters to see other customers."
-          }
-          action={
-            <Button
-              type="button"
-              onClick={() => {
-                if ((data ?? []).length === 0) setOpen(true);
-                else {
-                  setSearch("");
-                  setRegionFilter("all");
-                  setSegmentScope("all");
-                }
-              }}
-            >
-              {(data ?? []).length === 0
-                ? isAr
-                  ? "إضافة عميل"
-                  : "Add Customer"
-                : isAr
-                  ? "مسح الفلاتر"
-                  : "Clear Filters"}
-            </Button>
-          }
+        <CustomersEmptyState
+          customerCount={(data ?? []).length}
+          isAr={isAr}
+          onAddCustomer={() => setOpen(true)}
+          onClearFilters={() => {
+            setSearch("");
+            setRegionFilter("all");
+            setSegmentScope("all");
+          }}
         />
       )}
 
