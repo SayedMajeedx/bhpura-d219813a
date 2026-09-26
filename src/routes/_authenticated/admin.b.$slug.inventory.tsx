@@ -3,8 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ordersQueries } from "@/lib/data/orders";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
-import { Button } from "@/components/ui/button";
-import { AlertTriangle, RefreshCw } from "lucide-react";
 import { useT, useI18n } from "@/lib/i18n";
 import { ActivityLogList } from "@/components/activity-log-list";
 import { useBrand } from "@/lib/brand-context";
@@ -20,7 +18,7 @@ import {
 } from "@/lib/data/catalog";
 
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
-import { OsEmptyState } from "@/components/os/os-empty-state";
+import { OsLoadFailedState, combinedLoadState } from "@/components/os/os-load-failed-state";
 import { useEntitlements } from "@/lib/saas-billing/use-entitlements";
 import { CustomizationsSection } from "@/features/inventory/components/CustomizationsSection";
 
@@ -91,7 +89,8 @@ function Inventory() {
     return <RoutePendingSkeleton />;
   }
 
-  if (products.isLoading || variants.isLoading) {
+  const loadState = combinedLoadState([products, variants]);
+  if (loadState === "loading") {
     return (
       <div className="mx-auto max-w-7xl space-y-4 p-1 sm:p-2 animate-fade-in">
         <InventoryCommandHeader
@@ -105,26 +104,17 @@ function Inventory() {
     );
   }
 
-  if (products.isError || variants.isError) {
+  if (loadState === "failed") {
     return (
-      <OsEmptyState
-        icon={AlertTriangle}
+      <OsLoadFailedState
+        isAr={lang === "ar"}
         title={lang === "ar" ? "تعذّر تحميل المخزون" : "Inventory could not be loaded"}
         description={
           lang === "ar"
             ? "لم يتم تغيير أي منتجات أو كميات. تحقق من الاتصال ثم أعد المحاولة."
             : "No products or quantities were changed. Check the connection and try again."
         }
-        action={
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => void Promise.all([products.refetch(), variants.refetch()])}
-          >
-            <RefreshCw className="h-4 w-4 me-1.5" />
-            {lang === "ar" ? "إعادة المحاولة" : "Try again"}
-          </Button>
-        }
+        queries={[products, variants]}
       />
     );
   }
