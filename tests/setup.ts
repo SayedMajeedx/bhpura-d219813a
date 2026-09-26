@@ -1,6 +1,27 @@
 import "@testing-library/jest-dom";
 import { vi } from "vitest";
 
+// No unit test may reach a real server: the app's Supabase client points at
+// production. A test that forgets a mock (vi.mock needs the relative path as
+// well as the `@/` alias) must fail on its own data, not query the live
+// database. Assigned directly (not vi.stubGlobal) so a test's
+// vi.unstubAllGlobals() restores this blocker, not the real network.
+const blockedRequests: string[] = [];
+globalThis.fetch = ((input: RequestInfo | URL) => {
+  const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+  blockedRequests.push(url);
+  return Promise.reject(new Error(`Network access is blocked in unit tests: ${url}`));
+}) as typeof fetch;
+if (typeof globalThis.WebSocket !== "undefined") {
+  globalThis.WebSocket = class BlockedWebSocket {
+    constructor(url: string | URL) {
+      throw new Error(`WebSocket connections are blocked in unit tests: ${String(url)}`);
+    }
+  } as unknown as typeof WebSocket;
+}
+/** Requests a test tried to make (for tests that assert none happened). */
+(globalThis as { __blockedRequests?: string[] }).__blockedRequests = blockedRequests;
+
 // jsdom does not implement scrollIntoView (used by tab rails to centre the active tab).
 if (typeof Element !== "undefined" && !Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = vi.fn();
