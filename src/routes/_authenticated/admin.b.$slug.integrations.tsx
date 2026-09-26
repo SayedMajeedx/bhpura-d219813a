@@ -54,10 +54,26 @@ import { WebhooksManager } from "@/components/integrations/WebhooksManager";
 import { ApiLogsTable } from "@/components/integrations/ApiLogsTable";
 import { ConnectorsCatalog } from "@/components/integrations/ConnectorsCatalog";
 import { DeveloperDocumentation } from "@/components/integrations/DeveloperDocumentation";
+import {
+  deleteIntegrationCredential,
+  integrationsQueries,
+  invalidateIntegrationCredentials,
+  saveIntegrationCredential,
+  saveTrackingSettings,
+  type IntegrationCredential,
+} from "@/lib/data/integrations";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/integrations")({
   component: IntegrationsPage,
 });
+
+/** A failed write's message, as the toasts showed it before. */
+const errorOf = (error: unknown) => ({
+  message: (error as { message?: string } | null)?.message ?? String(error),
+});
+
+/** The listed credentials in the screen's row shape. */
+const asRows = (rows: IntegrationCredential[]) => rows as Row[];
 
 type Row = {
   id: string;
@@ -111,26 +127,14 @@ function IntegrationsPage() {
   const [rotatingIntegration, setRotatingIntegration] = useState<Row | null>(null);
   const [categoryScope, setCategoryScope] = useState<IntegrationsCategoryScope>("all");
 
-  const q = useQuery({
-    queryKey: ["integrations", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("list_integration_credentials", {
-        p_brand_id: brandId,
-      });
-      if (error) throw error;
-      return (data ?? []) as Row[];
-    },
-  });
+  const q = useQuery({ ...integrationsQueries.credentials(brandId), select: asRows });
 
   const del = async (id: string) => {
     if (!confirm(isAr ? "حذف هذا التكامل؟" : "Delete this integration?")) return;
-    const { error } = await (supabase.rpc as any)("delete_integration_credential", {
-      p_id: id,
-      p_brand_id: brandId,
-    });
+    const error = await deleteIntegrationCredential(brandId, id).then(() => null, errorOf);
     if (error) return toast.error(error.message);
     toast.success(t("common.delete"));
-    qc.invalidateQueries({ queryKey: ["integrations", brandId] });
+    invalidateIntegrationCredentials(qc, brandId);
   };
 
   const rawIntegrationsData = q.data;
@@ -227,7 +231,7 @@ function IntegrationsPage() {
           onSaved={() => {
             setOpen(false);
             setEditing(null);
-            qc.invalidateQueries({ queryKey: ["integrations", brandId] });
+            invalidateIntegrationCredentials(qc, brandId);
           }}
         />
       </Dialog>
@@ -237,7 +241,7 @@ function IntegrationsPage() {
         row={rotatingIntegration}
         isOpen={Boolean(rotatingIntegration)}
         onClose={() => setRotatingIntegration(null)}
-        onRotated={() => qc.invalidateQueries({ queryKey: ["integrations", brandId] })}
+        onRotated={() => invalidateIntegrationCredentials(qc, brandId)}
       />
 
       {categoryScope === "connectors" && <ConnectorsCatalog brandId={brandId} />}
@@ -640,18 +644,7 @@ function AnalyticsTrackingCard({ brandId, isAr }: { brandId: string; isAr: boole
     consent_required: true,
   };
   const [form, setForm] = useState<TrackingForm>(defaults);
-  const q = useQuery({
-    queryKey: ["brand-tracking-settings", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("brand_tracking_settings")
-        .select("*")
-        .eq("brand_id", brandId)
-        .maybeSingle();
-      if (error && error.code !== "PGRST116") throw error;
-      return data as Partial<TrackingForm> | null;
-    },
-  });
+  const q = useQuery(integrationsQueries.tracking(brandId));
   useEffect(() => {
     if (!q.data) return;
     setForm({
@@ -678,17 +671,13 @@ function AnalyticsTrackingCard({ brandId, isAr }: { brandId: string; isAr: boole
           : "Meta Pixel ID must contain digits only",
       );
     setSaving(true);
-    const { error } = await (supabase as any).from("brand_tracking_settings").upsert(
-      {
-        brand_id: brandId,
-        google_analytics_enabled: form.google_analytics_enabled,
-        google_analytics_id: ga || null,
-        meta_pixel_enabled: form.meta_pixel_enabled,
-        meta_pixel_id: meta || null,
-        consent_required: form.consent_required,
-      },
-      { onConflict: "brand_id" },
-    );
+    const error = await saveTrackingSettings(brandId, {
+      google_analytics_enabled: form.google_analytics_enabled,
+      google_analytics_id: ga || null,
+      meta_pixel_enabled: form.meta_pixel_enabled,
+      meta_pixel_id: meta || null,
+      consent_required: form.consent_required,
+    }).then(() => null, errorOf);
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success(isAr ? "تم حفظ إعدادات التتبع" : "Tracking settings saved");
@@ -890,16 +879,15 @@ function IntegrationDialog({
   const save = async () => {
     if (!providerValue) return toast.error(isAr ? "اسم الخدمة مطلوب" : "Provider is required");
     setSaving(true);
-    const { error } = await (supabase.rpc as any)("save_integration_credential", {
-      p_id: row?.id ?? null,
-      p_brand_id: brandId,
-      p_provider: providerValue,
-      p_base_url: form.base_url.trim(),
-      p_api_key: form.api_key.trim(),
-      p_webhook_secret: form.webhook_secret.trim(),
-      p_is_active: form.is_active,
-      p_notes: form.notes.trim(),
-    });
+    const error = await saveIntegrationCredential(brandId, {
+      id: row?.id ?? null,
+      provider: providerValue,
+      baseUrl: form.base_url.trim(),
+      apiKey: form.api_key.trim(),
+      webhookSecret: form.webhook_secret.trim(),
+      isActive: form.is_active,
+      notes: form.notes.trim(),
+    }).then(() => null, errorOf);
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success(t("common.save"));
@@ -1064,19 +1052,17 @@ function RotateKeyDialog({
 
     setSubmitting(true);
     try {
-      const { error } = await (supabase.rpc as any)("save_integration_credential", {
-        p_brand_id: brandId,
-        p_id: row.id,
-        p_provider: row.provider,
-        p_base_url: row.base_url,
-        p_api_key: newApiKey.trim(),
-        p_webhook_secret: newWebhookSecret.trim(),
-        p_is_active: row.is_active,
-        p_notes: row.notes,
+      await saveIntegrationCredential(brandId, {
+        id: row.id,
+        provider: row.provider,
+        baseUrl: row.base_url,
+        apiKey: newApiKey.trim(),
+        webhookSecret: newWebhookSecret.trim(),
+        isActive: row.is_active,
+        notes: row.notes,
       });
 
-      if (error) throw error;
-
+      // Never recorded: wrong columns, and only super admins may insert (bug backlog #27).
       try {
         await (supabase as any).from("saas_audit_logs").insert({
           brand_id: brandId,

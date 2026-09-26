@@ -110,13 +110,23 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(profiles|brand_notification_recipients|brand_abandoned_cart_settings|abandoned_cart_sequences|abandoned_carts|abandoned_cart_dispatch_logs)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(profiles|brand_notification_recipients|brand_abandoned_cart_settings|abandoned_cart_sequences|abandoned_carts|abandoned_cart_dispatch_logs|brand_tracking_settings)$/]",
           message:
-            "Profiles go through `@/lib/data/profiles` (caller profile, couriers, names, updateProfile), admin alert recipients through `@/lib/data/notification-recipients`, the abandoned-carts screen through `@/lib/data/abandoned-carts`.",
+            "Profiles go through `@/lib/data/profiles` (caller profile, couriers, names, updateProfile), admin alert recipients through `@/lib/data/notification-recipients`, the abandoned-carts screen through `@/lib/data/abandoned-carts`, tracking settings through `@/lib/data/integrations`.",
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(auth_profile_role|caller_profile|caller_permissions|reports-(overview(-previous)?|sales|products(-inquiries)?|customers)|brand_by_slug|brand_icon_settings|brands-switcher|super_all_brands_list|brand-notification-recipients|super-admin-video-reoptimizer-list|brand_abandoned_cart_settings|abandoned_cart_sequences|abandoned_carts_list|abandoned_cart_dispatch_logs)$/]",
+            "CallExpression[callee.property.name='rpc'][arguments.0.value=/^(list|save|delete)_integration_credential(s)?$/]",
+          message: "Integration credentials go through `@/lib/data/integrations`.",
+        },
+        {
+          selector:
+            "CallExpression[callee.expression.property.name='rpc'][arguments.0.value=/^(list|save|delete)_integration_credential(s)?$/]",
+          message: "Integration credentials go through `@/lib/data/integrations`.",
+        },
+        {
+          selector:
+            "ArrayExpression > Literal:first-child[value=/^(auth_profile_role|caller_profile|caller_permissions|reports-(overview(-previous)?|sales|products(-inquiries)?|customers)|brand_by_slug|brand_icon_settings|brands-switcher|super_all_brands_list|brand-notification-recipients|super-admin-video-reoptimizer-list|brand_abandoned_cart_settings|abandoned_cart_sequences|abandoned_carts_list|abandoned_cart_dispatch_logs|integrations|brand-tracking-settings)$/]",
           message:
             "Use `profilesQueries.caller` / `profilesKeys` for the caller's profile, `reportingQueries` / `reportingKeys` for reports, and `brandQueries` / `brandKeys` for brand lookups.",
         },
