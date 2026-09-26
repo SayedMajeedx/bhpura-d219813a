@@ -5,6 +5,7 @@ import { catalogKeys } from "./keys";
 
 export * from "./keys";
 export * from "./mutations";
+export * from "./insights";
 
 /**
  * The admin catalog: a brand's products, variants, packaging BOM and

@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { ordersQueries } from "@/lib/data/orders";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,12 @@ import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { queryKeys } from "@/lib/query-keys";
 import { InventoryCommandHeader } from "@/components/inventory/InventoryCommandHeader";
 import { PackagingMaterialsTab } from "@/components/inventory/PackagingMaterialsTab";
-import { catalogQueries, invalidateCatalog, invalidateCustomizations } from "@/lib/data/catalog";
+import {
+  catalogInsightQueries,
+  catalogQueries,
+  invalidateCatalog,
+  invalidateCustomizations,
+} from "@/lib/data/catalog";
 
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { OsEmptyState } from "@/components/os/os-empty-state";
@@ -69,18 +73,8 @@ function Inventory() {
   });
 
   const backInStockRequests = useQuery({
-    queryKey: ["admin", brandId, "back-in-stock-count"],
-    staleTime: 60_000,
+    ...catalogInsightQueries.backInStockCount(brandId),
     refetchOnWindowFocus: false,
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("back_in_stock_requests")
-        .select("*", { count: "exact", head: true })
-        .eq("brand_id", brandId)
-        .is("notified_at", null);
-      if (error) return 0;
-      return count ?? 0;
-    },
   });
 
   const businessName = useQuery({
