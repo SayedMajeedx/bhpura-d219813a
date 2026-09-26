@@ -62,6 +62,7 @@ import {
   saveTrackingSettings,
   type IntegrationCredential,
 } from "@/lib/data/integrations";
+import { getAccessToken } from "@/lib/auth/session";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/integrations")({
   component: IntegrationsPage,
@@ -499,8 +500,7 @@ function NabdaOtpPilotCard({ isAr }: { isAr: boolean }) {
   const request = async (action: "status" | "send" | "verify") => {
     setBusy(action);
     try {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
+      const token = await getAccessToken();
       if (!token) throw new Error(isAr ? "انتهت الجلسة، سجل الدخول مرة أخرى" : "Session expired");
       const response = await fetch("/api/admin/nabda-otp", {
         method: "POST",

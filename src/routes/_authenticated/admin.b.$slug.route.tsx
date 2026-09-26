@@ -1,5 +1,4 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
 import { ensureSessionUser } from "@/lib/auth/ensure-session-user";
 import { BrandProvider, type Brand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
@@ -11,6 +10,7 @@ import { AddonsProvider } from "@/components/addons/AddonsProvider";
 import { useBrandAddons } from "@/hooks/use-brand-addons";
 import { profilesQueries } from "@/lib/data/profiles";
 import { brandQueries } from "@/lib/data/brands";
+import { signOut } from "@/lib/auth/session";
 
 function getImpersonationToken(request?: Request): string | null {
   if (typeof document !== "undefined") {
@@ -89,7 +89,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
     const isActive = !profile || profile.status === "active";
 
     if (!isActive) {
-      await supabase.auth.signOut();
+      await signOut();
       throw redirect({ to: "/auth" });
     }
 

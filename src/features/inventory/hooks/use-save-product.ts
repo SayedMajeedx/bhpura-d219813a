@@ -1,5 +1,4 @@
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
 import { useT } from "@/lib/i18n";
 import { useEntitlements } from "@/lib/saas-billing/use-entitlements";
@@ -21,6 +20,7 @@ import {
   type ProductForm,
   type ProductFormErrors,
 } from "@/features/inventory/lib/product-form";
+import { getCurrentUser } from "@/lib/auth/session";
 
 /**
  * Saves the product editor. Updating an active product with no variants adds a
@@ -60,9 +60,7 @@ export function useSaveProduct({
 
     setErrors({});
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return;
 
     let createdProductId: string | undefined;

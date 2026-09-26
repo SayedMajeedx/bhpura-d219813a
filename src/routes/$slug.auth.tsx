@@ -15,6 +15,7 @@ import {
   clearStorefrontOAuthReturn,
   rememberStorefrontOAuthReturn,
 } from "@/lib/storefront-oauth-return";
+import { signOut } from "@/lib/auth/session";
 
 export const Route = createFileRoute("/$slug/auth")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -98,7 +99,7 @@ function StorefrontAuth() {
         { p_brand_slug: brand.slug },
       );
       if (membershipError || member !== true) {
-        await supabase.auth.signOut();
+        await signOut();
         setTab("signup");
         toast.error(
           t(
@@ -180,7 +181,7 @@ function StorefrontAuth() {
       { p_brand_slug: brand.slug },
     );
     if (membershipError || member !== true) {
-      await supabase.auth.signOut();
+      await signOut();
       setWorking(false);
       setTab("signup");
       toast.error(

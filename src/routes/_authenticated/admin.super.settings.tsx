@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,12 +30,11 @@ import {
   QrCode,
 } from "lucide-react";
 import { fetchCallerProfile } from "@/lib/data/profiles";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export const Route = createFileRoute("/_authenticated/admin/super/settings")({
   beforeLoad: async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) throw redirect({ to: "/auth" });
 
     const email = (user.email || "").toLowerCase();

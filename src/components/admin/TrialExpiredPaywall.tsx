@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
-import { supabase } from "@/integrations/supabase/client";
+import { signOut } from "@/lib/auth/session";
 
 interface TrialExpiredPaywallProps {
   brand: {
@@ -125,7 +125,7 @@ export const TrialExpiredPaywall: React.FC<TrialExpiredPaywallProps> = ({
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     navigate({ to: "/auth" });
   };
 

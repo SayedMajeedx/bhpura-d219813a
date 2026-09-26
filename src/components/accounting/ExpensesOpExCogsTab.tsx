@@ -28,6 +28,7 @@ import {
 } from "@/lib/data/expenses";
 import { catalogKeys } from "@/lib/data/catalog";
 import { accountingQueries } from "@/lib/data/accounting";
+import { getCurrentUser } from "@/lib/auth/session";
 
 interface ExpensesOpExCogsTabProps {
   activeRange?: { from: string; to: string };
@@ -149,9 +150,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
 
     setIsSaving(true);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       // expenses.user_id is required: without a user the insert would fail anyway.
       if (!user) throw new Error("NOT_AUTHENTICATED");
 

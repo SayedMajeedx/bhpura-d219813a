@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,6 +42,7 @@ import {
   hasInvalidBulkRows,
 } from "@/features/inventory/lib/bulk-variants";
 import { prefetchOptionTranslations } from "@/features/inventory/lib/option-translations";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export function BulkVariantDialog({
   productId,
@@ -226,9 +226,7 @@ export function BulkVariantDialog({
       );
     setSaving(true);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) throw new Error("AUTH_REQUIRED");
       await createVariants(
         brand.id,

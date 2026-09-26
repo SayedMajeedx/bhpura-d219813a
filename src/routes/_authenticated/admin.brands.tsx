@@ -1,7 +1,6 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { brandKeys, brandQueries, updateBrand } from "@/lib/data/brands";
 import { getFriendlyErrorMessage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -64,12 +63,11 @@ import {
 import { WhiteLabelAppsPanel } from "@/components/super-admin/WhiteLabelAppsPanel";
 import { fetchCallerProfile } from "@/lib/data/profiles";
 import { deleteBrand, superAdminKeys, superAdminQueries } from "@/lib/data/super-admin";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export const Route = createFileRoute("/_authenticated/admin/brands")({
   beforeLoad: async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) throw redirect({ to: "/auth" });
     const email = (user.email || "").toLowerCase();
     const profile = await fetchCallerProfile(user.id);

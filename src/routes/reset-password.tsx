@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
+import { signOut } from "@/lib/auth/session";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
@@ -183,7 +184,7 @@ function ResetPasswordPage() {
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
-      await supabase.auth.signOut();
+      await signOut();
       setStatus("success");
       toast.success(t("auth.passwordUpdated"));
       setTimeout(() => {

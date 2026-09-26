@@ -25,16 +25,15 @@ import { useI18n } from "@/lib/i18n";
 import { useQueryClient } from "@tanstack/react-query";
 import { evaluatePasswordStrength } from "@/lib/team-credentials-utils";
 import { profilesKeys, updateProfile } from "@/lib/data/profiles";
+import { getCurrentUser, signOut } from "@/lib/auth/session";
 
 export const Route = createFileRoute("/first-login")({
   ssr: false,
   beforeLoad: async () => {
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
+    // A user that cannot be read comes back as none.
+    const user = await getCurrentUser();
 
-    if (error || !user) {
+    if (!user) {
       throw redirect({ to: "/auth" });
     }
 
@@ -59,9 +58,7 @@ export const Route = createFileRoute("/first-login")({
     }
   },
   loader: async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
     const { data: profile } = user
       ? await supabase
@@ -124,7 +121,7 @@ function FirstLoginPage() {
 
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut();
+      await signOut();
       queryClient.clear();
       navigate({ to: "/auth" });
     } catch {

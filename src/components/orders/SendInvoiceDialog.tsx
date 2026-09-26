@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
 import {
@@ -42,6 +41,7 @@ import {
   getOrderCustomerPhone,
   getOrderCustomerEmail,
 } from "@/lib/order-customer-snapshot";
+import { getCurrentUser } from "@/lib/auth/session";
 
 type Tpl = {
   id: string;
@@ -123,9 +123,7 @@ export function ManageTemplatesDialog({
   const save = async () => {
     if (!editing?.name || !editing?.body)
       return toast.error(lang === "ar" ? "الاسم والمحتوى مطلوبان" : "Name and body are required");
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return;
     const payload = {
       user_id: user.id,

@@ -1,5 +1,4 @@
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
 import { getFriendlyErrorMessage } from "@/lib/utils";
 import {
@@ -18,6 +17,7 @@ import {
   variantColumnPatch,
   type VariantDraft,
 } from "@/features/inventory/lib/variant-draft";
+import { getCurrentUser } from "@/lib/auth/session";
 
 /**
  * Add, edit and delete one product's variants. Stock edits go through the
@@ -48,9 +48,7 @@ export function useVariantMutations({
   } = axes;
 
   const add = async (row: VariantDraft, onAdded: () => void) => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return;
     if (isBarcodeInUse(variants, row.barcode)) {
       toast.error(

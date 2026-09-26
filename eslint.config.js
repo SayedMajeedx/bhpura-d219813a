@@ -110,6 +110,12 @@ export default tseslint.config(
         "error",
         {
           selector:
+            "CallExpression[callee.object.property.name='auth'][callee.property.name=/^(getUser|signOut)$/]",
+          message:
+            "Read the signed-in user with `getCurrentUser` and sign out with `signOut` from `@/lib/auth/session` (route guards: `ensureSessionUser`).",
+        },
+        {
+          selector:
             "CallExpression[callee.property.name='from'][arguments.0.value=/^(profiles|brand_notification_recipients|brand_abandoned_cart_settings|abandoned_cart_sequences|abandoned_carts|abandoned_cart_dispatch_logs|brand_tracking_settings|saas_plans|brand_subscriptions|white_label_apps_public|white_label_app_builds_public|merchant_grant_applications|brand_entitlement_overrides|system_health_events|tenant_requests|import_runs|export_runs|branches|system_settings|activity_logs|size_guides|customer_fit_passports|brand_addons|back_in_stock_requests|inventory_movements|products|mobile_app_releases_public|brand_public_settings)$/]",
           message:
             "Profiles go through `@/lib/data/profiles` (caller profile, couriers, names, updateProfile), admin alert recipients through `@/lib/data/notification-recipients`, the abandoned-carts screen through `@/lib/data/abandoned-carts`, tracking settings through `@/lib/data/integrations`, the super admin's platform tables through `@/lib/data/super-admin`, import and export history through `@/lib/data/import-export`, the platform settings row through `@/lib/data/system-settings`.",
@@ -163,6 +169,12 @@ export default tseslint.config(
     rules: {
       "no-restricted-syntax": [
         "error",
+        {
+          selector:
+            "CallExpression[callee.object.property.name='auth'][callee.property.name=/^(getUser|signOut)$/]",
+          message:
+            "Read the signed-in user with `getCurrentUser` and sign out with `signOut` from `@/lib/auth/session` (route guards: `ensureSessionUser`).",
+        },
         {
           selector:
             "CallExpression[callee.property.name='from'][arguments.0.value=/^(products|product_variants|categories|customization_options|profiles|branches)$/]",
@@ -225,6 +237,12 @@ export default tseslint.config(
         "error",
         {
           selector:
+            "CallExpression[callee.object.property.name='auth'][callee.property.name=/^(getUser|signOut)$/]",
+          message:
+            "Read the signed-in user with `getCurrentUser` and sign out with `signOut` from `@/lib/auth/session` (route guards: `ensureSessionUser`).",
+        },
+        {
+          selector:
             "CallExpression[callee.property.name='from'][arguments.0.value=/^(orders|order_items|expenses|business_settings|products|product_variants|product_bom_items|packaging_materials|customers|customer_addresses|return_requests|message_templates|customization_options|cash_flow_accounts|account_transactions|vendors|purchase_orders|profiles|branches|activity_logs|size_guides|customer_fit_passports|brand_addons)$/]",
           message:
             "Orders, expenses, business settings, the catalog, customers and the accounting tabs go through `@/lib/data/{orders,expenses,business-settings,catalog,customers,accounting}`, not direct Supabase calls.",
@@ -281,6 +299,12 @@ export default tseslint.config(
         "error",
         {
           selector:
+            "CallExpression[callee.object.property.name='auth'][callee.property.name=/^(getUser|signOut)$/]",
+          message:
+            "Read the signed-in user with `getCurrentUser` and sign out with `signOut` from `@/lib/auth/session` (route guards: `ensureSessionUser`).",
+        },
+        {
+          selector:
             "CallExpression[callee.property.name='from'][arguments.0.value=/^(products|product_variants|product_bom_items|packaging_materials|business_settings|orders|order_items|categories|customization_options|import_runs|profiles|size_guides|customer_fit_passports|brand_addons|back_in_stock_requests|inventory_movements)$/]",
           message:
             "The admin catalog, categories, the settings row and orders go through `@/lib/data/{catalog,categories,business-settings,orders}`, not direct Supabase calls.",
@@ -323,6 +347,12 @@ export default tseslint.config(
         "error",
         {
           selector:
+            "CallExpression[callee.object.property.name='auth'][callee.property.name=/^(getUser|signOut)$/]",
+          message:
+            "Read the signed-in user with `getCurrentUser` and sign out with `signOut` from `@/lib/auth/session` (route guards: `ensureSessionUser`).",
+        },
+        {
+          selector:
             "CallExpression[callee.property.name='from'][arguments.0.value=/^(customers|customer_addresses|business_settings|orders|order_items|categories|message_templates|customer_push_devices|customer_push_events|import_runs|export_runs|profiles|products)$/]",
           message:
             "Customers, categories, the settings row and orders go through `@/lib/data/{customers,categories,business-settings,orders}`, not direct Supabase calls.",
@@ -356,6 +386,12 @@ export default tseslint.config(
         "error",
         {
           selector:
+            "CallExpression[callee.object.property.name='auth'][callee.property.name=/^(getUser|signOut)$/]",
+          message:
+            "Read the signed-in user with `getCurrentUser` and sign out with `signOut` from `@/lib/auth/session` (route guards: `ensureSessionUser`).",
+        },
+        {
+          selector:
             "CallExpression[callee.property.name='from'][arguments.0.value=/^(business_settings|brands|brand_return_policies|brand_notification_recipients|profiles|size_guides|customer_fit_passports|brand_addons|products)$/]",
           message:
             "Settings go through `@/lib/data/business-settings` and `@/lib/data/brands` (queries and mutations), not direct Supabase calls.",
@@ -381,6 +417,12 @@ export default tseslint.config(
     rules: {
       "no-restricted-syntax": [
         "error",
+        {
+          selector:
+            "CallExpression[callee.object.property.name='auth'][callee.property.name=/^(getUser|signOut)$/]",
+          message:
+            "Read the signed-in user with `getCurrentUser` and sign out with `signOut` from `@/lib/auth/session` (route guards: `ensureSessionUser`).",
+        },
         {
           selector:
             "CallExpression[callee.property.name='from'][arguments.0.value=/^(business_settings|orders|order_items|promo_codes|product_variants|return_requests|brand_return_policies|profiles|activity_logs|products)$/]",
@@ -412,6 +454,12 @@ export default tseslint.config(
     rules: {
       "no-restricted-syntax": [
         "error",
+        {
+          selector:
+            "CallExpression[callee.object.property.name='auth'][callee.property.name=/^(getUser|signOut)$/]",
+          message:
+            "Read the signed-in user with `getCurrentUser` and sign out with `signOut` from `@/lib/auth/session` (route guards: `ensureSessionUser`).",
+        },
         {
           selector:
             "CallExpression[callee.property.name='from'][arguments.0.value=/^(categories|profiles|size_guides|customer_fit_passports|brand_addons)$/]",
@@ -446,6 +494,12 @@ export default tseslint.config(
     rules: {
       "no-restricted-syntax": [
         "error",
+        {
+          selector:
+            "CallExpression[callee.object.property.name='auth'][callee.property.name=/^(getUser|signOut)$/]",
+          message:
+            "Read the signed-in user with `getCurrentUser` and sign out with `signOut` from `@/lib/auth/session` (route guards: `ensureSessionUser`).",
+        },
         {
           selector:
             "CallExpression[callee.property.name='from'][arguments.0.value=/^(brand_loyalty_programs|brand_loyalty_tiers|loyalty_accounts|loyalty_ledger|customers|customer_addresses|profiles)$/]",
@@ -484,6 +538,12 @@ export default tseslint.config(
         "error",
         {
           selector:
+            "CallExpression[callee.object.property.name='auth'][callee.property.name=/^(getUser|signOut)$/]",
+          message:
+            "Read the signed-in user with `getCurrentUser` and sign out with `signOut` from `@/lib/auth/session` (route guards: `ensureSessionUser`).",
+        },
+        {
+          selector:
             "CallExpression[callee.property.name='from'][arguments.0.value=/^(incubators|incubator_inventory|incubator_sales|incubator_payments|products|product_variants|profiles)$/]",
           message:
             "Incubators go through `@/lib/data/incubators` and the catalog through `@/lib/data/catalog`.",
@@ -509,6 +569,12 @@ export default tseslint.config(
     rules: {
       "no-restricted-syntax": [
         "error",
+        {
+          selector:
+            "CallExpression[callee.object.property.name='auth'][callee.property.name=/^(getUser|signOut)$/]",
+          message:
+            "Read the signed-in user with `getCurrentUser` and sign out with `signOut` from `@/lib/auth/session` (route guards: `ensureSessionUser`).",
+        },
         {
           selector:
             "CallExpression[callee.property.name='from'][arguments.0.value=/^(return_requests|brand_return_policies|product_variants|profiles|branches)$/]",

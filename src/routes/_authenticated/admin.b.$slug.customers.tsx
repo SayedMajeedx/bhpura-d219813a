@@ -1,7 +1,6 @@
 import { createFileRoute, Outlet, useNavigate, useRouterState, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, useMemo, useDeferredValue } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { importCustomerDatabase } from "@/lib/customer-importer";
 import { Button } from "@/components/ui/button";
@@ -87,6 +86,7 @@ import { BulkSelectionToolbar } from "@/components/bulk-selection-toolbar";
 import { ListPagination } from "@/components/list-pagination";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { OsEmptyState } from "@/components/os/os-empty-state";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/customers")({
   component: CustomersRoute,
@@ -1321,9 +1321,7 @@ function CustomerDialog({ customer, onSaved }: { customer: Customer | null; onSa
 
   const save = async () => {
     if (!f.name.trim()) return toast.error(t("customers.name"));
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return;
 
     const normalizedPhone = f.phone.replace(/\D/g, "");
@@ -1648,9 +1646,7 @@ function AddressManager({
     if (!draft.region.trim() || !draft.block.trim() || !draft.road.trim() || !draft.house.trim()) {
       return toast.error(t("customers.requiredError"));
     }
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return;
     const payload = {
       user_id: user.id,

@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +18,7 @@ import { useT, useI18n } from "@/lib/i18n";
 import type { Product, Customization } from "@/features/inventory/types";
 import { InventoryDeleteAction } from "@/features/inventory/components/InventoryDeleteAction";
 import { createCustomization, deleteCustomization, updateCustomization } from "@/lib/data/catalog";
+import { getCurrentUser } from "@/lib/auth/session";
 
 /** The database's message, as the toasts showed before. */
 const errorMessage = (error: unknown) =>
@@ -90,9 +90,7 @@ export function CustomizationsSection({
       return;
     }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return;
 
     try {

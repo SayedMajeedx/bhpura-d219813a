@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { ensureSessionUser } from "@/lib/auth/ensure-session-user";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,6 +65,7 @@ import { TeamScopeSwitcher, type TeamStatusScope } from "@/components/team/TeamS
 import { queryKeys } from "@/lib/query-keys";
 import { useEntitlements } from "@/lib/saas-billing/use-entitlements";
 import { profilesQueries } from "@/lib/data/profiles";
+import { getCurrentSession, signOut } from "@/lib/auth/session";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/team")({
   beforeLoad: async ({ context: { queryClient }, params }) => {
@@ -87,7 +87,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/team")({
       throw redirect({ to: "/admin/b/$slug/dashboard", params: { slug: params.slug } });
     }
     if (profile && profile.status !== "active") {
-      await supabase.auth.signOut();
+      await signOut();
       throw redirect({ to: "/auth" });
     }
   },
@@ -101,9 +101,7 @@ const SUPABASE_PUBLIC_KEY =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 async function callUserManagement(action: string, body?: any) {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const session = await getCurrentSession();
   if (!session) throw new Error("No session");
 
   const url = new URL(USER_MANAGEMENT_URL);

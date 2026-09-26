@@ -3,7 +3,6 @@ import { LogOut, Shield, Store } from "lucide-react";
 import { SpotlightCommandPalette } from "@/components/spotlight-command-palette";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { businessSettingsQueries, type BusinessSettingsRow } from "@/lib/data/business-settings";
 import { customersQueries } from "@/lib/data/customers";
 import { Button } from "@/components/ui/button";
@@ -29,6 +28,7 @@ import {
 } from "@/lib/typography";
 import { ordersKeys, ordersQueries, type OrderDetail } from "@/lib/data/orders";
 import { brandQueries } from "@/lib/data/brands";
+import { signOut as signOutSession } from "@/lib/auth/session";
 
 /**
  * Theme is provided here rather than at the router root so the `.dark` class
@@ -252,7 +252,7 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
   const brandsQ = useQuery({ ...brandQueries.directory(), enabled: isSuperAdmin });
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await signOutSession();
     navigate({ to: "/auth" });
   };
 
