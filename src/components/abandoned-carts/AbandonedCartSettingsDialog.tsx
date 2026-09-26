@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import {
   Dialog,
@@ -25,6 +24,10 @@ import {
 import { toast } from "sonner";
 import { ShoppingCart, MessageSquare, Mail, Bell, Shield, Loader2, Sparkles } from "lucide-react";
 import type { BrandAbandonedCartSettings } from "@/lib/abandoned-carts.types";
+import {
+  invalidateAbandonedCartSettings,
+  saveAbandonedCartSettings,
+} from "@/lib/data/abandoned-carts";
 
 interface AbandonedCartSettingsDialogProps {
   open: boolean;
@@ -63,24 +66,15 @@ export function AbandonedCartSettingsDialog({
   }, [initialSettings]);
 
   const saveMutation = useMutation({
-    mutationFn: async (updated: Partial<BrandAbandonedCartSettings>) => {
-      const { error } = await (supabase as any).from("brand_abandoned_cart_settings").upsert(
-        {
-          brand_id: brandId,
-          ...updated,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "brand_id" },
-      );
-      if (error) throw error;
-    },
+    mutationFn: (updated: Partial<BrandAbandonedCartSettings>) =>
+      saveAbandonedCartSettings(brandId, updated),
     onSuccess: () => {
       toast.success(
         isAr
           ? "تم حفظ إعدادات السلات المتروكة بنجاح"
           : "Abandoned cart settings saved successfully",
       );
-      queryClient.invalidateQueries({ queryKey: ["brand_abandoned_cart_settings", brandId] });
+      invalidateAbandonedCartSettings(queryClient, brandId);
       onOpenChange(false);
     },
     onError: (err: any) => {

@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
@@ -12,10 +11,7 @@ import { AbandonedCartsList } from "@/components/abandoned-carts/AbandonedCartsL
 import { AbandonedCartSequencesEditor } from "@/components/abandoned-carts/AbandonedCartSequencesEditor";
 import { AbandonedCartSettingsDialog } from "@/components/abandoned-carts/AbandonedCartSettingsDialog";
 import { AbandonedCartLogsTable } from "@/components/abandoned-carts/AbandonedCartLogsTable";
-import type {
-  BrandAbandonedCartSettings,
-  AbandonedCartSequence,
-} from "@/lib/abandoned-carts.types";
+import { abandonedCartsQueries } from "@/lib/data/abandoned-carts";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/abandoned-carts")({
   component: AbandonedCartsDashboardPage,
@@ -30,32 +26,10 @@ function AbandonedCartsDashboardPage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   // 1. Fetch settings
-  const { data: settings } = useQuery<BrandAbandonedCartSettings | null>({
-    queryKey: ["brand_abandoned_cart_settings", brand.id],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("brand_abandoned_cart_settings")
-        .select("*")
-        .eq("brand_id", brand.id)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-  });
+  const { data: settings } = useQuery(abandonedCartsQueries.settings(brand.id));
 
   // 2. Fetch sequences
-  const { data: sequences = [] } = useQuery<AbandonedCartSequence[]>({
-    queryKey: ["abandoned_cart_sequences", brand.id],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("abandoned_cart_sequences")
-        .select("*")
-        .eq("brand_id", brand.id)
-        .order("step_number", { ascending: true });
-      if (error) throw error;
-      return data || [];
-    },
-  });
+  const { data: sequences = [] } = useQuery(abandonedCartsQueries.sequences(brand.id));
 
   // 3. Fetch abandoned carts
   const {
@@ -63,42 +37,18 @@ function AbandonedCartsDashboardPage() {
     isLoading: loadingCarts,
     refetch: refetchCarts,
   } = useQuery({
-    queryKey: ["abandoned_carts_list", brand.id],
+    ...abandonedCartsQueries.carts(brand.id),
     refetchInterval: 30_000,
     refetchIntervalInBackground: true,
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("abandoned_carts")
-        .select("*, customers(name, email, phone)")
-        .eq("brand_id", brand.id)
-        .order("last_activity_at", { ascending: false })
-        .limit(200);
-      if (error) throw error;
-      return (data || []).filter(
-        (cart: any) => Array.isArray(cart.cart_items) && cart.cart_items.length > 0,
-      );
-    },
   });
 
   // 4. Fetch dispatch logs
   const { data: logs = [], isLoading: loadingLogs } = useQuery({
-    queryKey: ["abandoned_cart_dispatch_logs", brand.id],
+    ...abandonedCartsQueries.dispatchLogs(brand.id),
     refetchInterval: 30_000,
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("abandoned_cart_dispatch_logs")
-        .select("*")
-        .eq("brand_id", brand.id)
-        .order("sent_at", { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      return data || [];
-    },
   });
-  const abandonedCarts = carts.filter(
-    (c: any) => c.status === "abandoned" || c.status === "recovering",
-  );
-  const recoveredCarts = carts.filter((c: any) => c.status === "recovered");
+  const abandonedCarts = carts.filter((c) => c.status === "abandoned" || c.status === "recovering");
+  const recoveredCarts = carts.filter((c) => c.status === "recovered");
 
   const totalAbandonedValue = abandonedCarts.reduce(
     (acc: number, c: any) => acc + Number(c.subtotal || 0),
@@ -237,7 +187,7 @@ function AbandonedCartsDashboardPage() {
 
         <TabsContent value="carts" className="space-y-4">
           <AbandonedCartsList
-            carts={carts as any}
+            carts={carts}
             brandSlug={brand.slug}
             brandName={brand.name_ar || brand.name_en}
             brandId={brand.id}
@@ -251,7 +201,7 @@ function AbandonedCartsDashboardPage() {
         </TabsContent>
 
         <TabsContent value="logs" className="space-y-4">
-          <AbandonedCartLogsTable logs={logs as any} isLoading={loadingLogs} />
+          <AbandonedCartLogsTable logs={logs} isLoading={loadingLogs} />
         </TabsContent>
       </Tabs>
 
