@@ -60,7 +60,6 @@ import {
   customersKeys,
   customersQueries,
   deleteCustomerAddress,
-  deleteCustomers,
   fetchCustomerIdentities,
   invalidateCustomers,
   setDefaultCustomerAddress,
@@ -87,6 +86,7 @@ import { ListPagination } from "@/components/list-pagination";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { OsEmptyState } from "@/components/os/os-empty-state";
 import { getCurrentUser } from "@/lib/auth/session";
+import { useCustomerDeletion } from "@/features/customers/hooks/use-customer-deletion";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/customers")({
   component: CustomersRoute,
@@ -808,9 +808,18 @@ function CustomersPage() {
   const [open, setOpen] = useState(false);
   const [isCustomerImporterOpen, setIsCustomerImporterOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
-  const [selectedCustomerIds, setSelectedCustomerIds] = useState<Set<string>>(new Set());
-  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
-  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const {
+    selectedCustomerIds,
+    toggleCustomer,
+    toggleCustomers,
+    selectCustomers,
+    clearSelection,
+    deleteCustomer: del,
+    deleteSelectedCustomers,
+    bulkDeleteOpen,
+    setBulkDeleteOpen,
+    bulkDeleting,
+  } = useCustomerDeletion({ brandId, isAr });
 
   // Feature 7: Context-preserving return navigation for Customers
   const savedContext = getNavFilterContext("customers");
@@ -863,17 +872,6 @@ function CustomersPage() {
     () => buildCustomerCrmStats(ordersQ.data ?? [], Date.now(), currency),
     [ordersQ.data, currency],
   );
-
-  const del = async (id: string) => {
-    try {
-      await deleteCustomers(brandId, [id]);
-    } catch (error) {
-      toast.error(getFriendlyErrorMessage(error));
-      return;
-    }
-    toast.success(t("common.delete"));
-    void invalidateCustomers(qc, brandId);
-  };
 
   const [segmentScope, setSegmentScope] = useState<CustomerSegmentScope>("all");
 
@@ -940,45 +938,7 @@ function CustomersPage() {
   const allFilteredCustomersSelected =
     filteredCustomerIds.length > 0 &&
     filteredCustomerIds.every((id) => selectedCustomerIds.has(id));
-  const toggleCustomer = (customerId: string) =>
-    setSelectedCustomerIds((current) => {
-      const next = new Set(current);
-      if (next.has(customerId)) next.delete(customerId);
-      else next.add(customerId);
-      return next;
-    });
-  const toggleVisibleCustomers = () =>
-    setSelectedCustomerIds((current) => {
-      const next = new Set(current);
-      if (paginatedCustomerIds.every((id) => next.has(id))) {
-        paginatedCustomerIds.forEach((id) => next.delete(id));
-      } else {
-        paginatedCustomerIds.forEach((id) => next.add(id));
-      }
-      return next;
-    });
-  const deleteSelectedCustomers = async () => {
-    const ids = [...selectedCustomerIds];
-    if (ids.length === 0) return;
-    setBulkDeleting(true);
-    try {
-      await deleteCustomers(brandId, ids);
-      toast.success(isAr ? `تم حذف ${ids.length} عميل` : `${ids.length} customers deleted`);
-      setSelectedCustomerIds(new Set());
-      setBulkDeleteOpen(false);
-      await invalidateCustomers(qc, brandId);
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : isAr
-            ? "تعذر حذف العملاء"
-            : "Could not delete customers",
-      );
-    } finally {
-      setBulkDeleting(false);
-    }
-  };
+  const toggleVisibleCustomers = () => toggleCustomers(paginatedCustomerIds);
 
   if (customersLoading || addressesQ.isLoading || ordersQ.isLoading) {
     return <RoutePendingSkeleton />;
@@ -1073,14 +1033,8 @@ function CustomersPage() {
         selectedCount={selectedCustomerIds.size}
         allFilteredSelected={allFilteredCustomersSelected}
         disabled={bulkDeleting || filteredCustomers.length === 0}
-        onSelectAll={() =>
-          setSelectedCustomerIds((current) => {
-            const next = new Set(current);
-            filteredCustomerIds.forEach((id) => next.add(id));
-            return next;
-          })
-        }
-        onDeselectAll={() => setSelectedCustomerIds(new Set())}
+        onSelectAll={() => selectCustomers(filteredCustomerIds)}
+        onDeselectAll={clearSelection}
         onDeleteSelected={() => setBulkDeleteOpen(true)}
       />
 

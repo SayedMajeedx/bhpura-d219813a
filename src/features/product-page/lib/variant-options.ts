@@ -1,4 +1,7 @@
 import type { StorefrontVariant as Variant } from "@/lib/data/storefront";
+import type { BrandAddonRow } from "@/lib/addons/addon-types";
+import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
+import { isColorSwatchAxis } from "@/lib/variant-axes";
 import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
 
 /**
@@ -124,4 +127,34 @@ export function withOfferedAxes<A extends AxisConfig>(
     four: { ...base.four, visible: base.four.visible || offered.four.length > 0 },
     five: { ...base.five, visible: base.five.visible || offered.five.length > 0 },
   };
+}
+
+/**
+ * The product page's option axes: labels from the product's own overrides,
+ * the store vertical and its addon packs; an axis shows when the store shows
+ * it or the product offers values. Colour swatches only when the colour slot
+ * really holds colours (a roastery keeps the roast there).
+ */
+export function resolveProductAxes({
+  product,
+  addons,
+  storeVertical,
+  lang,
+  offered,
+}: {
+  product: Parameters<typeof resolveAllVariantAxes>[0]["product"];
+  addons: BrandAddonRow[] | null | undefined;
+  storeVertical: string | null | undefined;
+  lang: "ar" | "en";
+  offered: Record<"size" | "color" | "fabric" | "four" | "five", string[]>;
+}) {
+  const axes = withOfferedAxes(
+    resolveAllVariantAxes({
+      product,
+      addonDefaults: variantAxisDefaultsFrom(addons, storeVertical),
+      lang,
+    }),
+    offered,
+  );
+  return { axes, isVisualColorAxis: isColorSwatchAxis(axes.color.label, offered.color) };
 }
