@@ -20,10 +20,30 @@ import { toast } from "sonner";
 import { invalidateOrders, ordersQueries, updateOrder } from "@/lib/data/orders";
 import {
   accountingQueries,
+  cashTransferRefusal,
   invalidateCashAccounts,
-  recordAccountTransaction,
-  setCashAccountBalance,
+  transferCashToBank,
+  type CashTransferRefusal,
 } from "@/lib/data/accounting";
+
+const TRANSFER_REFUSAL_MESSAGES: Record<CashTransferRefusal, { ar: string; en: string }> = {
+  INVALID_TRANSFER_AMOUNT: {
+    ar: "يرجى إدخال مبلغ صحيح للتحويل",
+    en: "Please enter a valid transfer amount",
+  },
+  NOT_AUTHORIZED: {
+    ar: "ليس لديك صلاحية لتحويل السيولة.",
+    en: "You do not have permission to transfer funds.",
+  },
+  CASH_ACCOUNTS_MISSING: {
+    ar: "لا يوجد صندوق نقدي وحساب بنكي لهذا المتجر بعد.",
+    en: "This store has no cash box and bank account yet.",
+  },
+  INSUFFICIENT_CASH_BALANCE: {
+    ar: "رصيد الصندوق أقل من مبلغ التحويل.",
+    en: "The cash box holds less than this amount.",
+  },
+};
 
 export function CashFlowLiquidityTab() {
   const { lang } = useI18n();
@@ -88,28 +108,9 @@ export function CashFlowLiquidityTab() {
 
     setIsSaving(true);
     try {
-      // Deduct from cash box, add to bank account. Each write's error is
-      // ignored, as before (bug backlog #24).
-      await setCashAccountBalance(
-        brandId,
-        cashBoxAcc.id,
-        Math.max(0, Number(cashBoxAcc.balance || 0) - transferAmount),
-      ).catch(() => undefined);
-
-      await setCashAccountBalance(
-        brandId,
-        bankAcc.id,
-        Number(bankAcc.balance || 0) + transferAmount,
-      ).catch(() => undefined);
-
-      // Record account transaction log
-      await recordAccountTransaction(brandId, {
-        source_account_id: cashBoxAcc.id,
-        target_account_id: bankAcc.id,
-        amount: transferAmount,
-        transaction_type: "transfer",
-        notes: transferNotes || "إيداع نقدي من الصندوق إلى الحساب البنكي",
-      }).catch(() => undefined);
+      // Deduct from the cash box, add to the bank account and log the move,
+      // all or nothing, never more than the cash box holds.
+      await transferCashToBank(brandId, transferAmount, transferNotes);
 
       toast.success(isAr ? "تم تحويل السيولة النقدية بنجاح" : "Funds transferred successfully");
       invalidateCashAccounts(qc, brandId);
@@ -118,11 +119,16 @@ export function CashFlowLiquidityTab() {
       setTransferNotes("");
     } catch (err: any) {
       console.error("Transfer error:", err);
+      const refusal = cashTransferRefusal(err);
       toast.error(
-        isAr
-          ? "تعذر تحويل السيولة، يرجى المحاولة مرة أخرى."
-          : "Failed to transfer funds. Please try again.",
+        refusal
+          ? TRANSFER_REFUSAL_MESSAGES[refusal][isAr ? "ar" : "en"]
+          : isAr
+            ? "تعذر تحويل السيولة، يرجى المحاولة مرة أخرى."
+            : "Failed to transfer funds. Please try again.",
       );
+      // A refused transfer may mean the balances on screen are stale.
+      invalidateCashAccounts(qc, brandId);
     } finally {
       setIsSaving(false);
     }
