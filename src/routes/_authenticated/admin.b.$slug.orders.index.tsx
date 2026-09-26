@@ -58,6 +58,7 @@ import { OrderListPagination } from "@/features/orders/components/OrderListPagin
 import { OrderFulfillmentModal } from "@/features/orders/components/OrderFulfillmentModal";
 import { CashCollectionModal } from "@/features/orders/components/CashCollectionModal";
 import { authenticatedJsonHeaders, copyInvoiceLink } from "@/features/orders/actions/order-links";
+import { invalidateActivityLogs } from "@/lib/data/activity-logs";
 type OrdersSearch = {
   tab?: string;
   queue?: string;
@@ -883,7 +884,7 @@ function OrdersList() {
           brandSlug={slug}
           onNotified={async () => {
             await invalidateOrders(qc, brandId);
-            await qc.invalidateQueries({ queryKey: ["activity_logs"] });
+            await invalidateActivityLogs(qc);
           }}
         />
       )}

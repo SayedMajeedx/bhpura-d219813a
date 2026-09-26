@@ -5,6 +5,7 @@ import type { Dispatch, SetStateAction } from "react";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
 import { orderPaymentUpdate, type PaymentDetailsInput } from "@/features/orders/lib/order-payment";
 import { invalidateOrders, updateOrder } from "@/lib/data/orders";
+import { invalidateActivityLogs } from "@/lib/data/activity-logs";
 
 /** Saving payment status, method, advance and reference from the payment modal; saved orders persist and log it immediately. */
 export function useOrderPaymentDetails({
@@ -69,7 +70,7 @@ export function useOrderPaymentDetails({
         },
       });
 
-      qc.invalidateQueries({ queryKey: ["activity_logs"] });
+      invalidateActivityLogs(qc);
       invalidateOrders(qc, brandId);
       await orderQ.refetch();
     }

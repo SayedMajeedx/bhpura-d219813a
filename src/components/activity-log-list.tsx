@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { History, ChevronDown, ChevronUp } from "lucide-react";
 import { useI18n, useT } from "@/lib/i18n";
 import type { ActivityLog } from "@/lib/activity-log";
 import { sanitizeActivityLogMessage } from "@/lib/status-labels";
 import { Badge } from "@/components/ui/badge";
+import { activityLogsQueries } from "@/lib/data/activity-logs";
 
 type Props = {
   orderId?: string;
@@ -33,32 +33,10 @@ export function ActivityLogList({
   const locale = lang === "ar" ? "ar-BH-u-nu-latn" : "en-US";
 
   const q = useQuery({
-    queryKey: ["activity_logs", { orderId, productId, variantIds, scope, limit, brandId }],
+    ...activityLogsQueries.list({ orderId, productId, variantIds, scope, limit, brandId }),
+    select: (rows) => rows as ActivityLog[],
     refetchInterval: 10_000,
     refetchOnWindowFocus: true,
-    queryFn: async () => {
-      let query: any = (supabase.from("activity_logs") as any)
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(limit);
-      if (brandId) query = query.eq("brand_id", brandId);
-      if (orderId) query = query.eq("order_id", orderId);
-      else if (productId) query = query.eq("product_id", productId);
-      else if (scope === "inventory") {
-        query = query.in("action", [
-          "stock_change",
-          "stock_manual",
-          "variant_create",
-          "variant_delete",
-          "product_create",
-          "product_update",
-          "product_delete",
-        ]);
-      }
-      const { data, error } = await query;
-      if (error) throw error;
-      return (data ?? []) as ActivityLog[];
-    },
   });
 
   const logs = q.data ?? [];

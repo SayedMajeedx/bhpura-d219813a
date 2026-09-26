@@ -7,6 +7,7 @@ import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { catalogQueries } from "@/lib/data/catalog";
 import { profilesQueries } from "@/lib/data/profiles";
 import { customersQueries, type CustomerRow } from "@/lib/data/customers";
+import { invalidateActivityLogs } from "@/lib/data/activity-logs";
 
 /** The customer picker lists customers by name; the shared list is newest first. */
 const byName = (customers: CustomerRow[]) =>
@@ -48,7 +49,7 @@ export function useOrderDetailData({
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "activity_logs", filter: `order_id=eq.${id}` },
-        () => void qc.invalidateQueries({ queryKey: ["activity_logs"] }),
+        () => void invalidateActivityLogs(qc),
       )
       .subscribe((status) => {
         if (status === "CHANNEL_ERROR") {

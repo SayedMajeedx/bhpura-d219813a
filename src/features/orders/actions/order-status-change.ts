@@ -7,6 +7,7 @@ import type { Order } from "@/features/orders/types";
 import type { QueryClient } from "@tanstack/react-query";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
 import { invalidateOrders, updateOrder, type OrderPatch } from "@/lib/data/orders";
+import { invalidateActivityLogs } from "@/lib/data/activity-logs";
 
 /**
  * Sets the order's status and fulfillment status directly (from the status
@@ -58,7 +59,7 @@ export function createOrderStatusChange({
 
       await orderQ.refetch();
       invalidateOrders(qc, brandId);
-      qc.invalidateQueries({ queryKey: ["activity_logs"] });
+      invalidateActivityLogs(qc);
     } catch (err: unknown) {
       toast.error(
         getFriendlyErrorMessage(err) ||

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
 import { useProfile } from "@/lib/profile-context";
 import { useI18n } from "@/lib/i18n";
@@ -47,6 +46,7 @@ import {
 } from "@/lib/returns.types";
 import { returnsKeys, returnsQueries } from "@/lib/data/returns";
 import { returnVariantLabel } from "@/lib/returns-variant";
+import { activityLogsQueries } from "@/lib/data/activity-logs";
 
 /** The shared return type over the typed row (JSON and status columns narrowed). */
 const asReturnRequest = (row: unknown) => row as ReturnRequest;
@@ -89,21 +89,7 @@ function ReturnDetailPage() {
 
   // Fetch Activity Logs for this order/return
   const { data: activityLogs = [] } = useQuery({
-    queryKey: ["return-activity-logs", brandId, returnReq?.order_id],
-    queryFn: async () => {
-      if (!brandId || !returnReq?.order_id) return [];
-
-      const { data, error } = await (supabase as any)
-        .from("activity_logs")
-        .select("*")
-        .eq("brand_id", brandId)
-        .eq("order_id", returnReq.order_id)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return (data as any[]) || [];
-    },
-    enabled: !!brandId && !!returnReq?.order_id,
+    ...activityLogsQueries.forOrder(brandId ?? "", returnReq?.order_id ?? ""),
   });
 
   const currency = (returnReq?.order as any)?.currency || (brand as any)?.currency || "BHD";
