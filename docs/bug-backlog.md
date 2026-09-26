@@ -137,16 +137,6 @@ Found while moving the catalog writes into `src/lib/data/catalog` (the calls now
   - The sync reports materials as updated when they were not.
 - **Fix**: surface the errors (toast, stop before the next step). For "apply to all", stop on the first error, ideally as one server-side transaction (RPC). In the sync, count only successful writes.
 
-## Super admin (`src/components/super/`)
-
-### 26. The video re-optimizer lists nothing: it selects `brands.name`, which does not exist
-
-Found while looking at `SuperVideoReoptimizer.tsx` for the brands data layer. The `as any` casts hid it from the type checker.
-
-- **Where**: the list query selects `"id, name, slug, hero_media"` from `brands` and orders by `name`; brands have `name_en` / `name_ar`, not `name` (checked on production).
-- **Effect**: the query fails every time, so the super admin's video re-optimizer shows an error and no videos, neither hero videos (3 brands have one) nor product videos. Product rows read later never run.
-- **Fix**: select and order by `name_en` (show `name_ar` in Arabic), and move the reads and hero/product media writes into `src/lib/data/{brands,catalog}` with typed columns. The hero and product updates also ignore their errors (the entry is marked optimized even when nothing was saved).
-
 ## Categories (`src/routes/_authenticated/admin.b.$slug.categories.tsx`, `src/lib/data/categories`)
 
 ### 20. Reordering categories ignores write errors
