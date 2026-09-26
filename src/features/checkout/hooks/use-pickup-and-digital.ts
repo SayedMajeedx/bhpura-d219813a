@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchPublicBranches, type PublicBranch } from "@/lib/data/branches";
 import type { Storefront } from "@/features/checkout/types";
 
 /** Pickup branches (first one preselected) and the digital delivery channel and contact. */
@@ -12,17 +12,7 @@ export function usePickupAndDigital({
   settings: Storefront["settings"];
   lang: Storefront["lang"];
 }) {
-  const [branches, setBranches] = useState<
-    Array<{
-      id: string;
-      name_ar: string | null;
-      name_en: string | null;
-      location_ar: string | null;
-      location_en: string | null;
-      notes_ar: string | null;
-      notes_en: string | null;
-    }>
-  >([]);
+  const [branches, setBranches] = useState<PublicBranch[]>([]);
   const [branchId, setBranchId] = useState<string>(() => {
     if (typeof window !== "undefined") {
       const saved = sessionStorage.getItem("checkout_branchId");
@@ -47,10 +37,7 @@ export function usePickupAndDigital({
   useEffect(() => {
     if (!settings.pickup_enabled) return;
     (async () => {
-      const { data } = await supabase.rpc("get_public_branches" as any, {
-        p_brand_id: brand.id,
-      });
-      const list = (data ?? []) as any[];
+      const list = await fetchPublicBranches(brand.id);
       setBranches(list);
       setBranchId((cur) => cur || (list[0]?.id ?? ""));
     })();
