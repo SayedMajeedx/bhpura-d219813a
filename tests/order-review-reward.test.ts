@@ -9,7 +9,31 @@ const migration = readFileSync(
 const adminQueue = readFileSync(resolve("src/components/dashboard/ReviewRequestQueue.tsx"), "utf8");
 const reviewPage = readFileSync(resolve("src/routes/review.$token.tsx"), "utf8");
 
+// Bug #33: the enqueue trigger must see completion set by the BEFORE trigger.
+const enqueueFix = readFileSync(
+  resolve("supabase/migrations/20260928170000_enqueue_review_request_on_completion.sql"),
+  "utf8",
+);
+
 describe("post-purchase review reward", () => {
+  it("schedules the request when a status change completes the order (bug #33)", () => {
+    // UPDATE OF completed_at never fires: the app never sets completed_at itself.
+    expect(enqueueFix).not.toMatch(/CREATE TRIGGER[^;]*UPDATE OF completed_at/);
+    expect(enqueueFix).toMatch(
+      /AFTER UPDATE ON public\.orders[\s\S]*?OLD\.completed_at IS DISTINCT FROM NEW\.completed_at/,
+    );
+    // A phone added after completion schedules it too.
+    expect(enqueueFix).toContain(
+      "OLD.customer_phone_snapshot IS DISTINCT FROM NEW.customer_phone_snapshot",
+    );
+    expect(enqueueFix).toMatch(
+      /AFTER INSERT ON public\.orders[\s\S]*?WHEN \(NEW\.completed_at IS NOT NULL\)/,
+    );
+    // Missed orders are scheduled once, without duplicates.
+    expect(enqueueFix).toContain("o.completed_at + interval '3 days'");
+    expect(enqueueFix).toContain("ON CONFLICT (order_id) DO NOTHING");
+  });
+
   it("schedules one tokenized request three days after completion", () => {
     expect(migration).toContain("UNIQUE REFERENCES public.orders(id)");
     expect(migration).toContain("NEW.completed_at + interval '3 days'");
