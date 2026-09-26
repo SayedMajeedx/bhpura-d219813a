@@ -55,14 +55,14 @@ type ReviewStoryDialogProps = {
   brandInstagram?: string | null;
 };
 
-const STORY_WIDTH = 1080;
-const STORY_HEIGHT = 1920;
+export const STORY_WIDTH = 1080;
+export const STORY_HEIGHT = 1920;
 
-function safeColor(value?: string | null) {
+export function safeColor(value?: string | null) {
   return value && /^#[0-9a-f]{6}$/i.test(value) ? value : "#330a0a";
 }
 
-function publicFirstName(name: string) {
+export function publicFirstName(name: string) {
   return name.trim().split(/\s+/)[0] || "";
 }
 
@@ -170,7 +170,7 @@ interface StoryLayers {
   fgCanvas: HTMLCanvasElement;
 }
 
-function prepareStoryLayers({
+export function prepareStoryLayers({
   template,
   review,
   comment,

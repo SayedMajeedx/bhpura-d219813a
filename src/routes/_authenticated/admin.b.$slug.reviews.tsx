@@ -19,6 +19,7 @@ import {
   calculateReviewMetrics,
   REVIEW_HIGHLIGHT_LABELS,
   type OrderReviewAdminRow,
+  storyBrandColor,
 } from "@/lib/order-reviews";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -316,9 +317,7 @@ function CustomerReviewsPage() {
           brandStyleQ.data?.business_name?.trim() ||
           (isAr ? brand.name_ar || brand.name_en : brand.name_en)
         }
-        brandColor={
-          brand.slug.toLowerCase() === "pura" ? "#330a0a" : brand.primary_color || "#330a0a"
-        }
+        brandColor={storyBrandColor(brand.slug, brand.primary_color)}
         logoUrl={brand.logo_url}
         isAr={isAr}
         orderDate={orderDate}
