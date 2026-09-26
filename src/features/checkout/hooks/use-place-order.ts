@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { uploadBenefitReceipt } from "@/lib/benefit-receipt";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { awardOrderLoyaltyPoints, redeemLoyaltyPoints } from "@/lib/loyalty.functions";
@@ -16,6 +15,7 @@ import type {
 } from "@/features/checkout/types";
 import { checkoutFormError } from "@/features/checkout/lib/checkout-validation";
 import { placeOrderFailure, placeStorefrontOrderArgs } from "@/features/checkout/lib/place-order";
+import { placeStorefrontOrder, recordOrderWhatsappOptIn } from "@/lib/data/checkout";
 
 /**
  * Place order: validate, place the order once (a retried card payment reuses
@@ -126,8 +126,7 @@ export function usePlaceOrder({
           method === "benefit" && benefitReceipt
             ? await uploadBenefitReceipt(brand.id, benefitReceipt)
             : null;
-        const { data, error } = await supabase.rpc(
-          "place_storefront_order",
+        const placed = await placeStorefrontOrder(
           placeStorefrontOrderArgs({
             brand,
             form,
@@ -151,20 +150,13 @@ export function usePlaceOrder({
             shipping,
             lang,
             idempotencyKey,
-          }) as any,
+          }),
         );
-        if (error) throw error;
-        orderId = (data as any)?.order_id;
-        confirmationToken = (data as any)?.confirmation_email_token;
+        orderId = placed.orderId;
+        confirmationToken = placed.confirmationToken;
         if (brand.slug === "pura" && whatsappOrderUpdates && orderId && confirmationToken) {
-          const { error: whatsappOptInError } = await supabase.rpc(
-            "record_order_whatsapp_opt_in" as any,
-            {
-              p_order_id: orderId,
-              p_confirmation_token: confirmationToken,
-            },
-          );
-          if (whatsappOptInError) {
+          const recorded = await recordOrderWhatsappOptIn(orderId, confirmationToken);
+          if (!recorded) {
             console.warn("[checkout] WhatsApp order-update consent could not be recorded");
           }
         }
