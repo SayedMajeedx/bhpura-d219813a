@@ -18,6 +18,11 @@ import { useT, useI18n } from "@/lib/i18n";
 
 import type { Product, Customization } from "@/features/inventory/types";
 import { InventoryDeleteAction } from "@/features/inventory/components/InventoryDeleteAction";
+import { createCustomization, deleteCustomization, updateCustomization } from "@/lib/data/catalog";
+
+/** The database's message, as the toasts showed before. */
+const errorMessage = (error: unknown) =>
+  (error as { message?: string } | null)?.message ?? String(error);
 
 export function CustomizationsSection({
   brandId,
@@ -90,17 +95,18 @@ export function CustomizationsSection({
     } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { error } = await (supabase.from("customization_options") as any).insert({
-      user_id: user.id,
-      brand_id: brandId,
-      name: name.trim(),
-      price_delta: Number(price),
-      product_ids: scope === "all" ? [] : selectedProductIds,
-    });
-
-    if (error) {
-      toast.error(error.message);
-    } else {
+    try {
+      await createCustomization(brandId, {
+        user_id: user.id,
+        name: name.trim(),
+        price_delta: Number(price),
+        product_ids: scope === "all" ? [] : selectedProductIds,
+      });
+    } catch (error) {
+      toast.error(errorMessage(error));
+      return;
+    }
+    {
       toast.success(isAr ? "تمت إضافة خيار التخصيص بنجاح" : "Customization add-on created");
       setName("");
       setPrice("0");
@@ -112,15 +118,13 @@ export function CustomizationsSection({
 
   const saveProductScope = async () => {
     if (!editingAddon) return;
-    const { error } = await (supabase.from("customization_options") as any)
-      .update({
-        product_ids: editProductIds,
-      })
-      .eq("id", editingAddon.id);
-
-    if (error) {
-      toast.error(error.message);
-    } else {
+    try {
+      await updateCustomization(brandId, editingAddon.id, { product_ids: editProductIds });
+    } catch (error) {
+      toast.error(errorMessage(error));
+      return;
+    }
+    {
       toast.success(isAr ? "تم تحديث المنتجات المخصصة للإضافة" : "Add-on products updated");
       setEditingAddon(null);
       onChanged();
@@ -128,9 +132,13 @@ export function CustomizationsSection({
   };
 
   const del = async (id: string) => {
-    const { error } = await supabase.from("customization_options").delete().eq("id", id);
-    if (error) toast.error(error.message);
-    else onChanged();
+    try {
+      await deleteCustomization(brandId, id);
+    } catch (error) {
+      toast.error(errorMessage(error));
+      return;
+    }
+    onChanged();
   };
 
   return (

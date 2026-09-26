@@ -114,16 +114,8 @@ export function useOrderDetailData({
     },
   });
   const customQ = useQuery({
-    queryKey: ["customizations", brandId],
-    enabled: !isCourier,
-    queryFn: async () =>
-      (
-        await supabase
-          .from("customization_options")
-          .select("*")
-          .eq("brand_id", brandId)
-          .order("name")
-      ).data ?? [],
+    ...catalogQueries.customizations(brandId),
+    enabled: !isCourier && Boolean(brandId),
   });
   const settingsQ = useQuery({
     ...businessSettingsQueries.detail(brandId),
