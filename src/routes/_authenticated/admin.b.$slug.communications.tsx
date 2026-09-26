@@ -34,6 +34,7 @@ import {
   CommunicationsScopeSwitcher,
   type CommunicationsScope,
 } from "@/components/communications/CommunicationsScopeSwitcher";
+import { notificationRecipientsQueries } from "@/lib/data/notification-recipients";
 
 function CommunicationsPage() {
   useT();
@@ -44,17 +45,8 @@ function CommunicationsPage() {
   const [activeScope, setActiveScope] = useState<CommunicationsScope>("recipients");
   const [addingRecipient, setAddingRecipient] = useState(false);
 
-  const recipientsQ = useQuery({
-    queryKey: ["brand-notification-recipients", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("brand_notification_recipients")
-        .select("*")
-        .eq("brand_id", brandId);
-      if (error) return [];
-      return data ?? [];
-    },
-  });
+  // The editor below reads the same list; a failed read counts as none.
+  const recipientsQ = useQuery(notificationRecipientsQueries.list(brandId));
 
   return (
     <div className="space-y-3.5">

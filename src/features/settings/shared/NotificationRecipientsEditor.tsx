@@ -1,7 +1,6 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import {
+  createNotificationRecipient,
+  deleteNotificationRecipient,
+  invalidateNotificationRecipients,
+  notificationRecipientsQueries,
+  updateNotificationRecipient,
+} from "@/lib/data/notification-recipients";
 
 export type NotificationRecipient = {
   id: string;
@@ -21,6 +27,12 @@ export type NotificationRecipient = {
   receive_order_cancelled: boolean;
   receive_order_delivered: boolean;
   active: boolean;
+};
+
+/** A failed write's code and message, as the toasts showed them before. */
+const databaseError = (error: unknown) => {
+  const { code, message } = (error ?? {}) as { code?: string; message?: string };
+  return { code, message: message ?? String(error) };
 };
 
 export const NOTIFICATION_EVENT_FIELDS = [
@@ -70,37 +82,20 @@ export function NotificationRecipientsEditor({
   };
   const [form, setForm] = useState(emptyForm);
 
-  const q = useQuery({
-    queryKey: ["brand-notification-recipients", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("brand_notification_recipients")
-        .select("*")
-        .eq("brand_id", brandId)
-        .order("created_at", { ascending: true });
-      if (error) {
-        if (error.code === "42P01" || /brand_notification_recipients/i.test(error.message ?? ""))
-          return [] as NotificationRecipient[];
-        throw error;
-      }
-      return (data ?? []) as NotificationRecipient[];
-    },
-  });
+  const q = useQuery(notificationRecipientsQueries.list(brandId));
 
-  const refresh = () =>
-    qc.invalidateQueries({ queryKey: ["brand-notification-recipients", brandId] });
+  const refresh = () => invalidateNotificationRecipients(qc, brandId);
 
   const saveNew = async () => {
     const email = form.email.trim().toLowerCase();
     if (!/^\S+@\S+\.\S+$/.test(email))
       return toast.error(isAr ? "أدخل بريداً إلكترونياً صحيحاً" : "Enter a valid email address");
     setSaving(true);
-    const { error } = await (supabase as any).from("brand_notification_recipients").insert({
-      brand_id: brandId,
+    const error = await createNotificationRecipient(brandId, {
       name: form.name.trim() || null,
       email,
-      ...Object.fromEntries(NOTIFICATION_EVENT_FIELDS.map(({ key }) => [key, (form as any)[key]])),
-    });
+      ...Object.fromEntries(NOTIFICATION_EVENT_FIELDS.map(({ key }) => [key, form[key]])),
+    }).then(() => null, databaseError);
     setSaving(false);
     if (error)
       return toast.error(
@@ -117,22 +112,17 @@ export function NotificationRecipientsEditor({
   };
 
   const update = async (id: string, changes: Partial<NotificationRecipient>) => {
-    const { error } = await (supabase as any)
-      .from("brand_notification_recipients")
-      .update(changes)
-      .eq("id", id)
-      .eq("brand_id", brandId);
+    const error = await updateNotificationRecipient(brandId, id, changes).then(
+      () => null,
+      databaseError,
+    );
     if (error) return toast.error(error.message);
     refresh();
   };
 
   const remove = async (id: string) => {
     if (!confirm(isAr ? "حذف هذا المستلم؟" : "Remove this recipient?")) return;
-    const { error } = await (supabase as any)
-      .from("brand_notification_recipients")
-      .delete()
-      .eq("id", id)
-      .eq("brand_id", brandId);
+    const error = await deleteNotificationRecipient(brandId, id).then(() => null, databaseError);
     if (error) return toast.error(error.message);
     refresh();
   };
