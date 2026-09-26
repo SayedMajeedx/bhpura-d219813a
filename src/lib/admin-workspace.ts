@@ -61,3 +61,14 @@ export function workspaceLabel(args: {
     (args.isPlatformMode ? (lang === "ar" ? "إدارة منصة بوتيك" : "Boutq Platform") : args.appTitle)
   );
 }
+
+/**
+ * The platform workspace always shows the full sidebar and it cannot be
+ * collapsed; a brand workspace follows the user's own choice.
+ */
+export function sidebarLayout(args: { isPlatformMode: boolean; expandedByUser: boolean }) {
+  return {
+    expanded: args.expandedByUser || args.isPlatformMode,
+    collapsible: !args.isPlatformMode,
+  };
+}

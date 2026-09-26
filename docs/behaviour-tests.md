@@ -29,8 +29,8 @@ Examples: `tests/order-profit-clarity.test.ts` (extracted label),
 
 ## Classification
 
-- **convert** (26): feature assertions on source text.
-- **migration** (19): assertions on SQL in
+- **convert** (22): feature assertions on source text.
+- **migration** (20): assertions on SQL in
   `supabase/migrations`. They pin database contracts and stay until the
   project has a database test harness (pgTAP or a local Supabase in CI).
 - **guard** (10): architecture rules where reading source is
@@ -40,11 +40,8 @@ Examples: `tests/order-profit-clarity.test.ts` (extracted label),
 | --------- | --------------------------------------------------- | -------------------------------------------------------- |
 | convert   | `tests/annual-subscription-regressions.test.ts`     | source part to convert; SQL part is a migration contract |
 | convert   | `tests/brand-owner-provisioning.test.ts`            | source part to convert; SQL part is a migration contract |
-| convert   | `tests/brand-r2-cleanup-recovery.test.ts`           | source part to convert; SQL part is a migration contract |
 | convert   | `tests/homepage-editorial-sections.test.ts`         | source part to convert; SQL part is a migration contract |
 | convert   | `tests/image-crop-system.test.ts`                   |                                                          |
-| convert   | `tests/impersonation-exit-regression.test.ts`       |                                                          |
-| convert   | `tests/impersonation-lifecycle-regression.test.ts`  |                                                          |
 | convert   | `tests/incubator-reporting-packaging.test.ts`       | source part to convert; SQL part is a migration contract |
 | convert   | `tests/launch-security-regressions.test.ts`         | source part to convert; SQL part is a migration contract |
 | convert   | `tests/manual-order-tailoring-specs.test.ts`        |                                                          |
@@ -62,10 +59,10 @@ Examples: `tests/order-profit-clarity.test.ts` (extracted label),
 | convert   | `tests/storefront-quality-upgrades.test.ts`         |                                                          |
 | convert   | `tests/storefront-tailoring-experience.test.ts`     |                                                          |
 | convert   | `tests/subscription-renewal-decision.test.ts`       | source part to convert; SQL part is a migration contract |
-| convert   | `tests/super-admin-platform-navigation.test.ts`     |                                                          |
 | convert   | `tests/typography-management.test.ts`               | source part to convert; SQL part is a migration contract |
 | migration | `tests/accounting-brand-isolation.test.ts`          | SQL contract                                             |
 | migration | `tests/auth-user-deletion-lifecycle.test.ts`        | SQL contract                                             |
+| migration | `tests/brand-r2-cleanup-recovery.test.tsx`          | SQL contract                                             |
 | migration | `tests/card-stock-policy-migration.test.ts`         | SQL contract                                             |
 | migration | `tests/catalog-inquiries.test.ts`                   | SQL contract                                             |
 | migration | `tests/category-counts-and-rpc-security.test.ts`    | SQL contract                                             |

@@ -8,6 +8,8 @@ import {
   type SettingsTabId,
 } from "../src/features/settings/registry";
 import { evaluateStoreReadiness } from "../src/components/settings/StoreReadinessChecklist";
+import { SettingsTabBar } from "../src/features/settings/SettingsTabs";
+import { I18nProvider } from "../src/lib/i18n";
 
 describe("Settings Tabs & IA Architecture", () => {
   it("defines exactly the 5 canonical settings tabs in correct order (Owner Decision #5)", () => {
@@ -215,9 +217,7 @@ describe("Store Readiness Checklist Integration", () => {
     }
   });
 
-  it("SettingsTabBar provides full untruncated labels and 44px mobile touch targets", async () => {
-    const { SettingsTabBar } = await import("../src/features/settings/SettingsTabs");
-    const { I18nProvider } = await import("../src/lib/i18n");
+  it("SettingsTabBar provides full untruncated labels and 44px mobile touch targets", () => {
     localStorage.setItem("lang", "en");
     const onTabChange = vi.fn();
     render(

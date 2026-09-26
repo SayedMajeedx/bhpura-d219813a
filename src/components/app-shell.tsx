@@ -29,7 +29,12 @@ import {
 import { ordersKeys, ordersQueries, type OrderDetail } from "@/lib/data/orders";
 import { brandQueries } from "@/lib/data/brands";
 import { signOut as signOutSession } from "@/lib/auth/session";
-import { pickActiveBrand, resolveWorkspace, workspaceLabel } from "@/lib/admin-workspace";
+import {
+  pickActiveBrand,
+  resolveWorkspace,
+  sidebarLayout,
+  workspaceLabel,
+} from "@/lib/admin-workspace";
 import { buildBreadcrumbs } from "@/lib/admin-breadcrumbs";
 
 /**
@@ -185,6 +190,7 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
     isSuperAdmin,
     profileBrandSlug: profile?.brand?.slug,
   });
+  const sidebar = sidebarLayout({ isPlatformMode, expandedByUser: sidebarExpanded });
 
   // Warm the four primary applications once authentication and the active
   // brand are known. This keeps the OS-like app switch fast even before a
@@ -467,7 +473,7 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex overflow-hidden">
         {/* Level 1: Collapsible Navigation (Full Sidebar vs Compact Dock Rail) */}
         {!isFocusMode &&
-          (sidebarExpanded || isPlatformMode ? (
+          (sidebar.expanded ? (
             <OsSidebar
               brandLabel={brandLabel}
               brandSubtitle={activeSlug ? `@${activeSlug}` : "Boutq OS"}
@@ -479,7 +485,7 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
               isCourier={isCourier}
               brands={brandsQ.data ?? []}
               collapsed={false}
-              collapsible={!isPlatformMode}
+              collapsible={sidebar.collapsible}
               onToggleCollapse={toggleSidebarExpanded}
             />
           ) : (
