@@ -110,7 +110,7 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(profiles|brand_notification_recipients|brand_abandoned_cart_settings|abandoned_cart_sequences|abandoned_carts|abandoned_cart_dispatch_logs|brand_tracking_settings|saas_plans|brand_subscriptions|white_label_apps_public|white_label_app_builds_public|merchant_grant_applications|brand_entitlement_overrides|system_health_events|tenant_requests|import_runs|export_runs|branches|system_settings)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(profiles|brand_notification_recipients|brand_abandoned_cart_settings|abandoned_cart_sequences|abandoned_carts|abandoned_cart_dispatch_logs|brand_tracking_settings|saas_plans|brand_subscriptions|white_label_apps_public|white_label_app_builds_public|merchant_grant_applications|brand_entitlement_overrides|system_health_events|tenant_requests|import_runs|export_runs|branches|system_settings|activity_logs)$/]",
           message:
             "Profiles go through `@/lib/data/profiles` (caller profile, couriers, names, updateProfile), admin alert recipients through `@/lib/data/notification-recipients`, the abandoned-carts screen through `@/lib/data/abandoned-carts`, tracking settings through `@/lib/data/integrations`, the super admin's platform tables through `@/lib/data/super-admin`, import and export history through `@/lib/data/import-export`, the platform settings row through `@/lib/data/system-settings`.",
         },
@@ -128,7 +128,7 @@ export default tseslint.config(
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(auth_profile_role|caller_profile|caller_permissions|reports-(overview(-previous)?|sales|products(-inquiries)?|customers)|brand_by_slug|brand_icon_settings|brands-switcher|super_all_brands_list|brand-notification-recipients|super-admin-video-reoptimizer-list|brand_abandoned_cart_settings|abandoned_cart_sequences|abandoned_carts_list|abandoned_cart_dispatch_logs|integrations|brand-tracking-settings|saas_plans_for_admin|pending_brand_subscriptions|brand-delete-counts|white-label-apps|white-label-app-builds|super-grant-applications|brand_overrides_view|system-health-events|tenant-requests|import-runs-hub|product-import-history|export-runs-history|export-products|export-expenses|brand-order-reviews|ready-order-review-requests|public-order-review|branch|brand_branches_active|system_settings_billing|platform_system_settings_billing)$/]",
+            "ArrayExpression > Literal:first-child[value=/^(auth_profile_role|caller_profile|caller_permissions|reports-(overview(-previous)?|sales|products(-inquiries)?|customers)|brand_by_slug|brand_icon_settings|brands-switcher|super_all_brands_list|brand-notification-recipients|super-admin-video-reoptimizer-list|brand_abandoned_cart_settings|abandoned_cart_sequences|abandoned_carts_list|abandoned_cart_dispatch_logs|integrations|brand-tracking-settings|saas_plans_for_admin|pending_brand_subscriptions|brand-delete-counts|white-label-apps|white-label-app-builds|super-grant-applications|brand_overrides_view|system-health-events|tenant-requests|import-runs-hub|product-import-history|export-runs-history|export-products|export-expenses|brand-order-reviews|ready-order-review-requests|public-order-review|branch|brand_branches_active|system_settings_billing|platform_system_settings_billing|activity_logs|return-activity-logs)$/]",
           message:
             "Use `profilesQueries.caller` / `profilesKeys` for the caller's profile, `reportingQueries` / `reportingKeys` for reports, and `brandQueries` / `brandKeys` for brand lookups.",
         },
@@ -207,13 +207,13 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(orders|order_items|expenses|business_settings|products|product_variants|product_bom_items|packaging_materials|customers|customer_addresses|return_requests|message_templates|customization_options|cash_flow_accounts|account_transactions|vendors|purchase_orders|profiles|branches)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(orders|order_items|expenses|business_settings|products|product_variants|product_bom_items|packaging_materials|customers|customer_addresses|return_requests|message_templates|customization_options|cash_flow_accounts|account_transactions|vendors|purchase_orders|profiles|branches|activity_logs)$/]",
           message:
             "Orders, expenses, business settings, the catalog, customers and the accounting tabs go through `@/lib/data/{orders,expenses,business-settings,catalog,customers,accounting}`, not direct Supabase calls.",
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(orders?|expenses|business-settings|cogs|orders-reconciliation|expenses-business-settings|products|variants|packaging-materials|product-bom-items(-all)?|customers|customer_addresses|message-templates|customizations|cash-flow-accounts|vendors(-full)?|purchase-orders|dashboard-(orders-with-items|recent-orders|expenses|expenses-full|business-settings|products|variants|customers|pending-returns|incubator-sales|catalog-inquiries|reporting-overview(-previous)?)|branch|branches)$/]",
+            "ArrayExpression > Literal:first-child[value=/^(orders?|expenses|business-settings|cogs|orders-reconciliation|expenses-business-settings|products|variants|packaging-materials|product-bom-items(-all)?|customers|customer_addresses|message-templates|customizations|cash-flow-accounts|vendors(-full)?|purchase-orders|dashboard-(orders-with-items|recent-orders|expenses|expenses-full|business-settings|products|variants|customers|pending-returns|incubator-sales|catalog-inquiries|reporting-overview(-previous)?)|branch|branches|activity_logs)$/]",
           message:
             "Build these cache keys with `ordersKeys` / `expensesKeys` / `businessSettingsKeys` / `catalogKeys` / `customersKeys` / `accountingKeys` (or the invalidate helpers).",
         },
@@ -353,13 +353,13 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(business_settings|orders|order_items|promo_codes|product_variants|return_requests|brand_return_policies|profiles)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(business_settings|orders|order_items|promo_codes|product_variants|return_requests|brand_return_policies|profiles|activity_logs)$/]",
           message:
             "Read the settings row and orders through `@/lib/data/business-settings` and `@/lib/data/orders`.",
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(business-settings.*|business-name|content-studio-settings|review-story-(brand|order)|discounts-analytics|promo-codes|discounts-product-variants|brand-order-reviews)$/]",
+            "ArrayExpression > Literal:first-child[value=/^(business-settings.*|business-name|content-studio-settings|review-story-(brand|order)|discounts-analytics|promo-codes|discounts-product-variants|brand-order-reviews|return-activity-logs)$/]",
           message: "Use `businessSettingsQueries.detail` instead of a hand-built settings key.",
         },
         {

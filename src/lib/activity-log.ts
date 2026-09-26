@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { insertActivityLogs } from "@/lib/data/activity-logs";
 
 export type ActivityLog = {
   id: string;
@@ -28,17 +29,19 @@ export async function logActivity(input: LogInput) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  await (supabase.from("activity_logs") as any).insert({
-    user_id: user?.id ?? null,
-    brand_id: input.brand_id ?? null,
-    order_id: input.order_id ?? null,
-    product_id: input.product_id ?? null,
-    variant_id: input.variant_id ?? null,
-    action: input.action,
-    message_en: input.en,
-    message_ar: input.ar,
-    metadata: input.metadata ?? {},
-  });
+  await insertActivityLogs([
+    {
+      user_id: user?.id ?? null,
+      brand_id: input.brand_id ?? null,
+      order_id: input.order_id ?? null,
+      product_id: input.product_id ?? null,
+      variant_id: input.variant_id ?? null,
+      action: input.action,
+      message_en: input.en,
+      message_ar: input.ar,
+      metadata: input.metadata ?? {},
+    },
+  ]);
 }
 
 export async function logActivityBatch(inputs: LogInput[]) {
@@ -47,7 +50,7 @@ export async function logActivityBatch(inputs: LogInput[]) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  await (supabase.from("activity_logs") as any).insert(
+  await insertActivityLogs(
     inputs.map((i) => ({
       user_id: user?.id ?? null,
       brand_id: i.brand_id ?? null,
