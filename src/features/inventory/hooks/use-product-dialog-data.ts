@@ -1,11 +1,11 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { categoriesQueries } from "@/lib/data/categories";
 import { useAddons } from "@/components/addons/AddonsProvider";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { CUSTOMIZER_PRESETS } from "@/lib/addons/addon-presets";
 import { customFieldPresetsFrom, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
+import { addonDataQueries } from "@/lib/data/addons";
 
 /**
  * What the product editor reads besides the product: the store profile and
@@ -31,22 +31,10 @@ export function useProductDialogData(brandId: string) {
   const categoriesQ = useQuery(categoriesQueries.active(brandId));
 
   const sizeGuidesQ = useQuery({
-    queryKey: ["admin-size-guides-list", brandId],
-    enabled: Boolean(storeProfile?.modules?.size_guide),
-    queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from("size_guides")
-        .select("id, name_ar, name_en, is_default")
-        .eq("brand_id", brandId)
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
-      return (data ?? []) as Array<{
-        id: string;
-        name_ar: string;
-        name_en: string;
-        is_default: boolean;
-      }>;
-    },
+    ...addonDataQueries.sizeGuides(brandId),
+    enabled: Boolean(brandId && storeProfile?.modules?.size_guide),
+    select: (rows) =>
+      rows as Array<{ id: string; name_ar: string; name_en: string; is_default: boolean }>,
   });
 
   return {
