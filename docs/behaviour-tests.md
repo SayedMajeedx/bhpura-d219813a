@@ -29,8 +29,8 @@ Examples: `tests/order-profit-clarity.test.ts` (extracted label),
 
 ## Classification
 
-- **convert** (22): feature assertions on source text.
-- **migration** (20): assertions on SQL in
+- **convert** (19): feature assertions on source text.
+- **migration** (22): assertions on SQL in
   `supabase/migrations`. They pin database contracts and stay until the
   project has a database test harness (pgTAP or a local Supabase in CI).
 - **guard** (10): architecture rules where reading source is
@@ -38,7 +38,6 @@ Examples: `tests/order-profit-clarity.test.ts` (extracted label),
 
 | Group     | Test file                                           | Note                                                     |
 | --------- | --------------------------------------------------- | -------------------------------------------------------- |
-| convert   | `tests/annual-subscription-regressions.test.ts`     | source part to convert; SQL part is a migration contract |
 | convert   | `tests/brand-owner-provisioning.test.ts`            | source part to convert; SQL part is a migration contract |
 | convert   | `tests/homepage-editorial-sections.test.ts`         | source part to convert; SQL part is a migration contract |
 | convert   | `tests/image-crop-system.test.ts`                   |                                                          |
@@ -56,11 +55,10 @@ Examples: `tests/order-profit-clarity.test.ts` (extracted label),
 | convert   | `tests/storefront-engine-scoping.test.ts`           |                                                          |
 | convert   | `tests/storefront-fit-passport.test.ts`             | source part to convert; SQL part is a migration contract |
 | convert   | `tests/storefront-hero-and-gallery-options.test.ts` |                                                          |
-| convert   | `tests/storefront-quality-upgrades.test.ts`         |                                                          |
 | convert   | `tests/storefront-tailoring-experience.test.ts`     |                                                          |
-| convert   | `tests/subscription-renewal-decision.test.ts`       | source part to convert; SQL part is a migration contract |
 | convert   | `tests/typography-management.test.ts`               | source part to convert; SQL part is a migration contract |
 | migration | `tests/accounting-brand-isolation.test.ts`          | SQL contract                                             |
+| migration | `tests/annual-subscription-regressions.test.tsx`    | SQL contract                                             |
 | migration | `tests/auth-user-deletion-lifecycle.test.ts`        | SQL contract                                             |
 | migration | `tests/brand-r2-cleanup-recovery.test.tsx`          | SQL contract                                             |
 | migration | `tests/card-stock-policy-migration.test.ts`         | SQL contract                                             |
@@ -79,6 +77,7 @@ Examples: `tests/order-profit-clarity.test.ts` (extracted label),
 | migration | `tests/size-guide-templates.test.ts`                | SQL contract                                             |
 | migration | `tests/store-profile.test.ts`                       | SQL contract                                             |
 | migration | `tests/stored-routine-repair-migration.test.ts`     | SQL contract                                             |
+| migration | `tests/subscription-renewal-decision.test.tsx`      | SQL contract                                             |
 | migration | `tests/tenant-activation-regression.test.ts`        | SQL contract                                             |
 | guard     | `tests/addon-contributions-consumed.test.ts`        | every addon contribution is mounted                      |
 | guard     | `tests/arabic-gender-neutral-copy.test.ts`          | copy style across the app                                |

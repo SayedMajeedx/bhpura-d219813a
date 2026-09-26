@@ -1,84 +1,70 @@
-import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { productHead } from "../src/features/product-page/lib/product-head";
+import { sortCatalogProducts } from "../src/lib/catalog-sort";
+import type { ProductRow } from "../src/lib/data/storefront";
 
-const read = (path: string) => readFileSync(path, "utf8");
+// The rest of the upgrades are covered where they live: in-stock first on the
+// home page (tests/home-products.test.ts), optional email and required terms at
+// checkout (tests/checkout-lib.test.ts), products without images on the
+// dashboard (tests/dashboard-metrics.test.ts), and the admin-only chunks rule
+// (tests/storefront-performance-guardrails.test.ts).
 
-// The home page is split across its route and src/features/storefront-home (Phase 5).
-const homeSource = () =>
-  [
-    "src/routes/$slug.index.tsx",
-    ...["components", "lib"].flatMap((dir) =>
-      readdirSync(`src/features/storefront-home/${dir}`)
-        .sort()
-        .map((file) => `src/features/storefront-home/${dir}/${file}`),
-    ),
-  ]
-    .map((file) => readFileSync(file, "utf8"))
-    .join("\n");
-
-// The dashboard is split across its route and src/features/dashboard (Phase 5).
-const dashboardSource = () =>
-  [
-    "src/routes/_authenticated/admin.b.$slug.dashboard.tsx",
-    ...["components", "hooks", "lib"]
-      .filter((dir) => existsSync(`src/features/dashboard/${dir}`))
-      .flatMap((dir) =>
-        readdirSync(`src/features/dashboard/${dir}`)
-          .sort()
-          .map((file) => `src/features/dashboard/${dir}/${file}`),
-      ),
-  ]
-    .map((file) => readFileSync(file, "utf8"))
-    .join("\n");
-
-// The checkout is split across its route and src/features/checkout (Phase 5).
-const checkoutSource = () =>
-  [
-    "src/routes/$slug.checkout.tsx",
-    ...["components", "hooks", "lib"].flatMap((dir) =>
-      readdirSync(`src/features/checkout/${dir}`)
-        .sort()
-        .map((file) => `src/features/checkout/${dir}/${file}`),
-    ),
-  ]
-    .map((file) => readFileSync(file, "utf8"))
-    .join("\n");
+const product = (id: string, overrides: Partial<ProductRow> & { stock?: number } = {}) => {
+  const { stock = 3, ...rest } = overrides;
+  return {
+    id,
+    created_at: "2026-09-01T00:00:00Z",
+    product_variants: [{ id: `${id}-v`, selling_price: 10, stock_main: stock, stock_incubator: 0 }],
+    ...rest,
+  } as unknown as ProductRow;
+};
 
 describe("storefront quality upgrades", () => {
-  it("keeps admin-only chart and PDF libraries out of forced shared chunks", () => {
-    const config = read("vite.config.ts");
-    expect(config).not.toContain('return "vendor-pdf"');
-    expect(config).not.toContain('return "vendor-charts"');
-  });
-
   it("publishes product-specific social and canonical metadata", () => {
-    const route = read("src/routes/$slug.product.$id.tsx");
-    expect(route).toContain('property: "og:type", content: "product"');
-    expect(route).toContain('name: "twitter:title", content: title');
-    expect(route).toContain('rel: "canonical"');
+    const head = productHead({
+      loaderData: {
+        initialLang: "en",
+        brand: { slug: "pura" },
+        product: {
+          id: "p1",
+          name_en: "Silk Abaya",
+          description_en: "Soft   silk\\nabaya",
+          image_url: "https://media.boutq.store/p1.jpg",
+          base_price: 30,
+        },
+      },
+      params: { slug: "pura", id: "p1" },
+    });
+    expect(head.meta).toEqual(
+      expect.arrayContaining([
+        { title: "Silk Abaya | PURA" },
+        { property: "og:type", content: "product" },
+        { property: "og:image", content: "https://media.boutq.store/p1.jpg" },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: "Silk Abaya | PURA" },
+      ]),
+    );
+    expect(head.links).toEqual([{ rel: "canonical", href: "https://boutq.store/pura/product/p1" }]);
+    expect(head.htmlAttrs).toEqual({ lang: "en", dir: "ltr" });
+    expect(productHead({ loaderData: {}, params: { slug: "pura", id: "p1" } })).toEqual({});
   });
 
-  it("prioritizes available inventory in storefront lists", () => {
-    const home = homeSource();
-    const category = read("src/routes/$slug.$category.tsx");
-    expect(home).toContain("function availableFirst");
-    expect(home).toContain("hasAvailableStock(b.product)");
-    expect(home).toContain("Number(hasAvailableStock(b)) - Number(hasAvailableStock(a))");
-    expect(category).toContain("Number(hasAvailableStock(b)) - Number(hasAvailableStock(a))");
-  });
+  it("prioritizes available inventory in category lists, then the chosen sort", () => {
+    const rows = [
+      product("sold-out-new", { stock: 0, created_at: "2026-09-20T00:00:00Z" }),
+      product("old", { created_at: "2026-01-01T00:00:00Z" }),
+      product("new", { created_at: "2026-09-10T00:00:00Z" }),
+    ];
+    const ids = (sorted: ProductRow[]) => sorted.map((row) => row.id);
+    expect(ids(sortCatalogProducts(rows, "new"))).toEqual(["new", "old", "sold-out-new"]);
+    expect(ids(sortCatalogProducts(rows, "old"))).toEqual(["old", "new", "sold-out-new"]);
 
-  it("makes email optional and requires explicit terms acceptance", () => {
-    const checkout = checkoutSource();
-    expect(checkout).toContain("customerEmail &&");
-    expect(checkout).toContain("!acceptedTerms");
-    expect(checkout).toContain('category: "terms-conditions"');
-    expect(checkout).toContain('t("التوصيل المتوقع", "Estimated delivery")');
-    expect(checkout).toContain('preset="thumb"');
-  });
-
-  it("alerts admins about available products without images", () => {
-    const dashboard = dashboardSource();
-    expect(dashboard).toContain("availableWithoutImages");
-    expect(dashboard).toContain("منتجات متوفرة بلا صور");
+    const cheap = product("cheap", {
+      product_variants: [{ selling_price: 5, stock_main: 1 }],
+    } as Partial<ProductRow>);
+    expect(ids(sortCatalogProducts([rows[2], cheap], "price-low"))).toEqual(["cheap", "new"]);
+    expect(ids(sortCatalogProducts([cheap, rows[2]], "price-high"))).toEqual(["new", "cheap"]);
+    // The input is not reordered in place.
+    expect(ids(rows)).toEqual(["sold-out-new", "old", "new"]);
   });
 });

@@ -1,6 +1,7 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { brandRow, brandsPageMocks, renderBrandsPage } from "./helpers/brands-page";
+import type { ServerFn } from "./helpers/server-fn";
 
 const toast = vi.hoisted(() => ({
   error: vi.fn(),
@@ -18,25 +19,9 @@ vi.mock("sonner", () => ({ toast }));
 
 // Server functions: keep what createServerFn is given, so the test can check the
 // middleware and call the handler.
-vi.mock("@tanstack/react-start", () => ({
-  createServerFn: () => {
-    const fn: { middleware: unknown[]; validate: (raw: unknown) => unknown } = {
-      middleware: [],
-      validate: (raw) => raw,
-    };
-    const builder = {
-      middleware: (middleware: unknown[]) => ((fn.middleware = middleware), builder),
-      validator: (validate: (raw: unknown) => unknown) => ((fn.validate = validate), builder),
-      handler: (run: (args: { data: unknown; context: unknown }) => unknown) =>
-        Object.assign(
-          (args: { data?: unknown; context: unknown }) =>
-            run({ data: fn.validate(args.data), context: args.context }),
-          fn,
-        ),
-    };
-    return builder;
-  },
-}));
+vi.mock("@tanstack/react-start", async () =>
+  (await import("./helpers/server-fn")).serverFnModule(),
+);
 const guards = {
   requireSupabaseAuth: { guard: "read-only safeguard" },
   requireSupabaseAuthForImpersonationExit: { guard: "impersonation lifecycle" },
@@ -85,9 +70,6 @@ vi.mock("@/lib/data/super-admin", (io) => mocks.superAdmin(io));
 vi.mock("@/components/super-admin/brand-wizard/BrandWizardDialog", () => mocks.wizard);
 vi.mock("@/components/super-admin/WhiteLabelAppsPanel", () => mocks.whiteLabel);
 
-type ServerFn = ((args: { data?: unknown; context: unknown }) => Promise<unknown>) & {
-  middleware: unknown[];
-};
 const functions = (await vi.importActual(
   "../src/lib/impersonation.functions",
 )) as unknown as Record<string, ServerFn>;
