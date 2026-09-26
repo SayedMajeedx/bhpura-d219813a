@@ -45,6 +45,7 @@ import {
   verticalToLegacyBusinessType,
 } from "@/lib/store-profile";
 import { starterPackFor, getAddon } from "@/lib/addons/addon-registry";
+import { isBrandSlugTaken } from "@/lib/data/brands";
 
 const VERTICAL_ICONS: Record<StoreVertical, React.ComponentType<{ className?: string }>> = {
   [STORE_VERTICALS[0]]: Shirt,
@@ -218,13 +219,7 @@ function OnboardPage() {
     setSlugStatus("checking");
     const timer = setTimeout(async () => {
       try {
-        const { data, error } = await supabase
-          .from("brands")
-          .select("id")
-          .eq("slug", clean)
-          .maybeSingle();
-
-        if (error || data) {
+        if (await isBrandSlugTaken(clean)) {
           setSlugStatus("taken");
         } else {
           setSlugStatus("available");

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { createServerFn } from "@tanstack/react-start";
+import { findActiveBrand } from "@/lib/data/brands";
 
 const resolveDomainRoute = createServerFn({ method: "GET" }).handler(async () => {
   const { resolveDomainRouteImpl } = await import("@/lib/domain-routing.server");
@@ -87,12 +88,7 @@ function IndexRedirector() {
           const subdomain = hostname.slice(0, -12); // Extract "pura" from "pura.boutq.store"
           try {
             // Safe query: only filter and select by public columns allowed for anonymous selection
-            const { data: brand } = await (supabase as any)
-              .from("brands")
-              .select("id, slug")
-              .eq("slug", subdomain)
-              .eq("is_active", true)
-              .maybeSingle();
+            const brand = await findActiveBrand({ slug: subdomain });
 
             if (brand?.slug) {
               if (brand.id) {
@@ -111,12 +107,7 @@ function IndexRedirector() {
 
         // 2. Custom Domain Mapping: Check if this custom hostname is bound to a boutique brand
         try {
-          const { data: brand } = await (supabase as any)
-            .from("brands")
-            .select("id, slug")
-            .eq("custom_domain", hostname)
-            .eq("is_active", true)
-            .maybeSingle();
+          const brand = await findActiveBrand({ customDomain: hostname });
 
           if (brand?.slug) {
             if (brand.id) {
