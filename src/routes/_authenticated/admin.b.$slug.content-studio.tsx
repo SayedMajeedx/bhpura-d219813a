@@ -23,7 +23,6 @@ import {
   ArrowUpLeft,
 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { catalogQueries } from "@/lib/data/catalog";
 import { useBrand } from "@/lib/brand-context";
@@ -50,6 +49,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { catalogInsightQueries } from "@/lib/data/catalog";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/content-studio")({
   component: ContentStudioPage,
@@ -206,19 +206,8 @@ function ContentStudioPage() {
   }, [brandNameEn]);
 
   const productsQ = useQuery({
-    queryKey: ["content-studio-products", brand.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select(
-          "id,name,name_ar,name_en,description,description_ar,image_url,media,base_price,fabric_type,occasion",
-        )
-        .eq("brand_id", brand.id)
-        .eq("is_active", true)
-        .order("updated_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as Product[];
-    },
+    ...catalogInsightQueries.contentStudio(brand.id),
+    select: (rows) => rows as Product[],
   });
   // Prices, stock and images per variant, from the shared catalog.
   const variantsQ = useQuery(catalogQueries.variants(brand.id));

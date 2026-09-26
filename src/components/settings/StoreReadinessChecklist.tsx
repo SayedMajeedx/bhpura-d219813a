@@ -26,6 +26,7 @@ import { readinessChecksFrom } from "@/lib/addons/addon-registry";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { brandQueries } from "@/lib/data/brands";
 import { returnsQueries, type ReturnPolicyRow } from "@/lib/data/returns";
+import { catalogInsightQueries } from "@/lib/data/catalog";
 
 /** Whether the policy has written terms in either language (counts as a policy page). */
 const hasPolicyTerms = (policy: ReturnPolicyRow | null) =>
@@ -446,19 +447,7 @@ export function StoreReadinessChecklist({
   const isAr = lang === "ar";
 
   // 1. Query active products count (using canonical is_active flag)
-  const productsQ = useQuery({
-    queryKey: ["readiness-active-products", brandId],
-    enabled: Boolean(brandId),
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("products")
-        .select("id", { count: "exact", head: true })
-        .eq("brand_id", brandId)
-        .eq("is_active", true);
-      if (error) return 0;
-      return count ?? 0;
-    },
-  });
+  const productsQ = useQuery(catalogInsightQueries.activeCount(brandId));
 
   // 2. The settings row (payments, fulfillment, pages, logo), shared with the settings form
   const businessSettingsQ = useQuery(businessSettingsQueries.detail(brandId));

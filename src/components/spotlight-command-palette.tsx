@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { searchOrders } from "@/lib/data/orders";
 import { searchCustomers } from "@/lib/data/customers";
 import { useI18n } from "@/lib/i18n";
@@ -34,6 +33,7 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import { fetchBrandIdBySlug } from "@/lib/data/brands";
+import { searchProducts } from "@/lib/data/catalog";
 
 export function SpotlightCommandPalette({
   open,
@@ -68,22 +68,15 @@ export function SpotlightCommandPalette({
 
       if (!bId) return { orders: [], products: [], customers: [] };
 
-      const term = `%${q}%`;
-
       const [ordersRes, productsRes, customersRes] = await Promise.all([
         searchOrders(bId, q),
-        supabase
-          .from("products")
-          .select("id, name_en, name_ar, base_price, image_url, product_variants(selling_price)")
-          .eq("brand_id", bId)
-          .or(`name_en.ilike.${term},name_ar.ilike.${term}`)
-          .limit(6),
+        searchProducts(bId, q),
         searchCustomers(bId, q),
       ]);
 
       return {
         orders: ordersRes,
-        products: productsRes.data ?? [],
+        products: productsRes,
         customers: customersRes,
       };
     },
