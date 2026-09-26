@@ -12,10 +12,15 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  activateWhiteLabelBuild,
+  invalidateWhiteLabel,
+  provisionWhiteLabelApp,
+  superAdminQueries,
+} from "@/lib/data/super-admin";
 
 type BrandSummary = {
   id: string;
@@ -69,38 +74,26 @@ export function WhiteLabelAppsPanel({ brands, isAr }: { brands: BrandSummary[]; 
   const qc = useQueryClient();
   const [working, setWorking] = useState<string | null>(null);
   const apps = useQuery({
-    queryKey: ["white-label-apps"],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("white_label_apps_public")
-        .select("*")
-        .order("updated_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as AppRow[];
-    },
+    ...superAdminQueries.whiteLabelApps(),
+    select: (rows) => rows as AppRow[],
     refetchInterval: 15000,
   });
   const builds = useQuery({
-    queryKey: ["white-label-app-builds"],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("white_label_app_builds_public")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as BuildRow[];
-    },
+    ...superAdminQueries.whiteLabelBuilds(),
+    select: (rows) => rows as BuildRow[],
     refetchInterval: 15000,
   });
   const byBrand = new Map((apps.data ?? []).map((app) => [app.brand_id, app]));
   const provision = async (brand: BrandSummary, rebuild: boolean) => {
     setWorking(brand.id);
-    const { data, error } = await supabase.functions.invoke("provision-white-label-app", {
-      body: { brand_id: brand.id, rebuild },
-    });
-    setWorking(null);
-    if (error || data?.error)
-      return toast.error(data?.error || error?.message || "Provisioning failed");
+    let data: Awaited<ReturnType<typeof provisionWhiteLabelApp>>;
+    try {
+      data = await provisionWhiteLabelApp(brand.id, rebuild);
+    } catch (error) {
+      return toast.error((error as Error).message);
+    } finally {
+      setWorking(null);
+    }
     toast.success(
       data.requires_github_connection
         ? isAr
@@ -110,18 +103,18 @@ export function WhiteLabelAppsPanel({ brands, isAr }: { brands: BrandSummary[]; 
           ? "بدأ بناء التطبيق تلقائياً"
           : "App build started automatically",
     );
-    void qc.invalidateQueries({ queryKey: ["white-label-apps"] });
-    void qc.invalidateQueries({ queryKey: ["white-label-app-builds"] });
+    void invalidateWhiteLabel(qc);
   };
   const activateBuild = async (buildId: string) => {
     setWorking(buildId);
-    const { error } = await (supabase as any).rpc("activate_white_label_build", {
-      p_build_id: buildId,
-    });
+    const error = await activateWhiteLabelBuild(buildId).then(
+      () => null,
+      (err: { message: string }) => err,
+    );
     setWorking(null);
     if (error) return toast.error(error.message);
     toast.success(isAr ? "تم اعتماد هذا الإصدار للتنزيل" : "Release activated for download");
-    void qc.invalidateQueries({ queryKey: ["white-label-apps"] });
+    void invalidateWhiteLabel(qc, { builds: false });
   };
   return (
     <div className="space-y-4">

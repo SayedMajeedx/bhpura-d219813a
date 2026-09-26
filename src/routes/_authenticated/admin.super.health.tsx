@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { fetchCallerProfile } from "@/lib/data/profiles";
+import { superAdminQueries } from "@/lib/data/super-admin";
 
 type HealthEvent = {
   id: string;
@@ -38,24 +39,8 @@ function SystemHealthPage() {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const query = useQuery({
-    queryKey: ["system-health-events"],
-    queryFn: async () => {
-      const [{ data, error }, readyResponse] = await Promise.all([
-        supabase
-          .from("system_health_events")
-          .select("id,service,status,correlation_id,duration_ms,metrics,error_code,created_at")
-          .order("created_at", { ascending: false })
-          .limit(500),
-        fetch("/api/health/ready", { cache: "no-store" }),
-      ]);
-      if (error) throw error;
-      const readiness = (await readyResponse.json()) as {
-        status: string;
-        database: string;
-        latencyMs: number;
-      };
-      return { events: (data ?? []) as HealthEvent[], readiness, readyOk: readyResponse.ok };
-    },
+    ...superAdminQueries.systemHealth(),
+    select: (health) => ({ ...health, events: health.events as HealthEvent[] }),
     refetchInterval: 60_000,
   });
 

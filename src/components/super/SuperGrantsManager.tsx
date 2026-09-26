@@ -19,7 +19,6 @@ import {
   RefreshCw,
   Eye,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +41,12 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { normalizePhoneForWhatsApp } from "@/lib/courier-whatsapp";
+import {
+  deleteGrantApplication,
+  superAdminKeys,
+  superAdminQueries,
+  updateGrantApplication,
+} from "@/lib/data/super-admin";
 
 export type GrantApplication = {
   id: string;
@@ -124,25 +129,15 @@ export function SuperGrantsManager() {
     isLoading,
     refetch,
   } = useQuery({
-    queryKey: ["super-grant-applications"],
-    queryFn: async () => {
-      const { data, error } = await (supabase.from as any)("merchant_grant_applications")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data || []) as GrantApplication[];
-    },
+    ...superAdminQueries.grantApplications(),
+    select: (rows) => rows as GrantApplication[],
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<GrantApplication> }) => {
-      const { error } = await (supabase.from as any)("merchant_grant_applications")
-        .update({ ...updates, updated_at: new Date().toISOString() })
-        .eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<GrantApplication> }) =>
+      updateGrantApplication(id, updates),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["super-grant-applications"] });
+      qc.invalidateQueries({ queryKey: superAdminKeys.grantApplications() });
       toast.success("تم تحديث الطلب بنجاح");
       setSelectedApp(null);
     },
@@ -152,14 +147,9 @@ export function SuperGrantsManager() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await (supabase.from as any)("merchant_grant_applications")
-        .delete()
-        .eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => deleteGrantApplication(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["super-grant-applications"] });
+      qc.invalidateQueries({ queryKey: superAdminKeys.grantApplications() });
       toast.success("تم حذف الطلب");
       setSelectedApp(null);
     },

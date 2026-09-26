@@ -63,6 +63,7 @@ import {
 } from "@/lib/saas-subscription.functions";
 import { WhiteLabelAppsPanel } from "@/components/super-admin/WhiteLabelAppsPanel";
 import { fetchCallerProfile } from "@/lib/data/profiles";
+import { deleteBrand, superAdminKeys, superAdminQueries } from "@/lib/data/super-admin";
 
 export const Route = createFileRoute("/_authenticated/admin/brands")({
   beforeLoad: async () => {
@@ -153,17 +154,7 @@ function BrandsPage() {
   const [approving, setApproving] = useState(false);
   const [rejecting, setRejecting] = useState<string | null>(null);
 
-  const { data: saasPlans = [] } = useQuery({
-    queryKey: ["saas_plans_for_admin"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("saas_plans")
-        .select("id, code, name_ar, name_en, is_active, sort_order")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
-      return data ?? [];
-    },
-  });
+  const { data: saasPlans = [] } = useQuery(superAdminQueries.activePlans());
 
   const q = useQuery(brandQueries.list());
 
@@ -176,31 +167,9 @@ function BrandsPage() {
   );
 
   const pendingBrandIds = pendingApprovals.map((b) => b.id);
-  const { data: pendingSubscriptions = [] } = useQuery({
-    queryKey: ["pending_brand_subscriptions", pendingBrandIds],
-    queryFn: async () => {
-      if (pendingBrandIds.length === 0) return [];
-      const { data } = await supabase
-        .from("brand_subscriptions")
-        .select(
-          `
-          id,
-          brand_id,
-          billing_interval,
-          renewal_target_plan_id,
-          target_plan:saas_plans!brand_subscriptions_renewal_target_plan_id_fkey(
-            id,
-            code,
-            name_ar,
-            name_en
-          )
-        `,
-        )
-        .in("brand_id", pendingBrandIds);
-      return data ?? [];
-    },
-    enabled: pendingBrandIds.length > 0,
-  });
+  const { data: pendingSubscriptions = [] } = useQuery(
+    superAdminQueries.pendingSubscriptions(pendingBrandIds),
+  );
 
   // Compute Platform KPI Stats
   const activeSaaSCount = brands.filter((b) => b.subscription_status === "active").length;
@@ -243,7 +212,7 @@ function BrandsPage() {
       );
       setApprovingBrand(null);
       refresh();
-      qc.invalidateQueries({ queryKey: ["pending_brand_subscriptions"] });
+      qc.invalidateQueries({ queryKey: superAdminKeys.pendingSubscriptionsAll() });
     } catch (err: any) {
       toast.error(err.message || "Failed to approve subscription.");
     } finally {
@@ -1067,26 +1036,7 @@ function DeleteBrandDialog({ brand, onDone }: { brand: Brand; onDone: () => void
   const [working, setWorking] = useState(false);
   const [databasePurged, setDatabasePurged] = useState(false);
 
-  const countsQ = useQuery({
-    queryKey: ["brand-delete-counts", brand.id],
-    queryFn: async () => {
-      const [{ count: orders }, { count: products }, { count: customers }] = await Promise.all([
-        supabase
-          .from("orders")
-          .select("id", { head: true, count: "exact" })
-          .eq("brand_id", brand.id),
-        supabase
-          .from("products")
-          .select("id", { head: true, count: "exact" })
-          .eq("brand_id", brand.id),
-        supabase
-          .from("customers")
-          .select("id", { head: true, count: "exact" })
-          .eq("brand_id", brand.id),
-      ]);
-      return { orders: orders ?? 0, products: products ?? 0, customers: customers ?? 0 };
-    },
-  });
+  const countsQ = useQuery(superAdminQueries.brandUsage(brand.id));
   const counts = countsQ.data;
   const run = async () => {
     if (confirm.trim().toLowerCase() !== brand.slug.toLowerCase()) {
@@ -1095,7 +1045,10 @@ function DeleteBrandDialog({ brand, onDone }: { brand: Brand; onDone: () => void
     }
     setWorking(true);
     if (!databasePurged) {
-      const { error } = await supabase.rpc("delete_brand", { p_brand_id: brand.id, p_hard: hard });
+      const error = await deleteBrand(brand.id, hard).then(
+        () => null,
+        (err: { message: string }) => err,
+      );
       if (error) {
         // The database purge may have completed before media cleanup failed.
         // A stale cached card remains a safe recovery handle for orphaned R2 files.
