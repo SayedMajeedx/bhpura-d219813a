@@ -1,16 +1,27 @@
-import { describe, it, expect } from "vitest";
-import fs from "fs";
-import path from "path";
+import { createElement } from "react";
+import { render } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
 import {
   HERO_FILL_DESKTOP_PX,
   HERO_FILL_MOBILE,
   HERO_SMART_FRAME,
   heroFocalPosition,
   heroFrameAspect,
+  heroFrameSizingClass,
   resolveHeroSlideMedia,
 } from "../src/lib/hero-media";
 
 const CDN = "https://media.boutq.store/brands/x/hero";
+
+// HeroV2 reads its settings from the storefront context.
+const storefront = vi.hoisted(() => ({
+  settings: {} as Record<string, unknown>,
+  lang: "en",
+  brand: { slug: "pura", primary_color: null, hero_media: null },
+}));
+vi.mock("../src/lib/storefront-context", () => ({ useStorefront: () => storefront }));
+vi.mock("@/lib/storefront-context", () => ({ useStorefront: () => storefront }));
+const { HeroV2 } = await import("../src/components/storefront/HeroV2");
 const WIDE = 16 / 9;
 
 const videoSlide = {
@@ -142,33 +153,61 @@ describe("heroFocalPosition", () => {
 });
 
 describe("HeroV2 classes mirror the frame model", () => {
-  const heroCode = fs.readFileSync(
-    path.resolve(__dirname, "../src/components/storefront/HeroV2.tsx"),
-    "utf-8",
-  );
-
   it("encodes the Smart Fit limits", () => {
     const m = HERO_SMART_FRAME.mobile;
-    expect(heroCode).toContain(`min-h-[${m.minPx}px]`);
-    expect(heroCode).toContain(`max-h-[min(${m.maxVh * 100}svh,${m.maxPx}px)]`);
-    expect(heroCode).toContain(`sm:min-h-[${HERO_SMART_FRAME.desktop.minPx}px]`);
-    for (const { vh, px } of Object.values(HERO_SMART_FRAME.desktop.max)) {
-      expect(heroCode).toContain(`sm:max-h-[min(${Math.round(vh * 100)}svh,${px}px)]`);
+    for (const [key, { vh, px }] of Object.entries(HERO_SMART_FRAME.desktop.max)) {
+      const classes = heroFrameSizingClass({ smartFit: true, desktopHeight: key });
+      expect(classes).toContain(`min-h-[${m.minPx}px]`);
+      expect(classes).toContain(`max-h-[min(${m.maxVh * 100}svh,${m.maxPx}px)]`);
+      expect(classes).toContain(`sm:min-h-[${HERO_SMART_FRAME.desktop.minPx}px]`);
+      expect(classes).toContain(`sm:max-h-[min(${Math.round(vh * 100)}svh,${px}px)]`);
+      expect(classes).toContain("aspect-[var(--hero-ar-m)] sm:aspect-[var(--hero-ar)]");
     }
   });
 
   it("encodes the Fill frame sizes", () => {
-    for (const { minPx } of Object.values(HERO_FILL_MOBILE)) {
-      expect(heroCode).toContain(`min-h-[${minPx}px]`);
+    for (const [mobileRatio, { minPx }] of Object.entries(HERO_FILL_MOBILE)) {
+      expect(heroFrameSizingClass({ smartFit: false, mobileRatio })).toContain(
+        `min-h-[${minPx}px]`,
+      );
     }
-    for (const px of Object.values(HERO_FILL_DESKTOP_PX)) {
-      expect(heroCode).toContain(`sm:h-[${px}px]`);
+    for (const [desktopHeight, px] of Object.entries(HERO_FILL_DESKTOP_PX)) {
+      expect(heroFrameSizingClass({ smartFit: false, desktopHeight })).toContain(`sm:h-[${px}px]`);
     }
+    // Unset settings use the defaults: portrait phones, standard desktops.
+    expect(heroFrameSizingClass({ smartFit: false })).toBe(
+      heroFrameSizingClass({
+        smartFit: false,
+        mobileRatio: "portrait_4_5",
+        desktopHeight: "standard",
+      }),
+    );
   });
 
-  it("serves phone cuts and keeps the focal point in view", () => {
-    expect(heroCode).toContain("mobileSrc={mobile?.url}");
-    expect(heroCode).toContain("mobilePoster={mobile?.posterUrl}");
-    expect(heroCode).toContain("[object-position:var(--hero-focal)]");
+  it("serves phone cuts and keeps the focal point in view", async () => {
+    storefront.settings = { hero_video_fit: "cover" };
+    const { container } = render(
+      createElement(HeroV2, {
+        slides: [
+          {
+            id: "s1",
+            type: "image",
+            title_en: "Eid edit",
+            title_ar: "",
+            body_en: "",
+            body_ar: "",
+            media_url: `${CDN}/wide.jpg`,
+            media_url_en: `${CDN}/wide.jpg`,
+            media_url_mobile_en: `${CDN}/phone.jpg`,
+          },
+        ],
+      }),
+    );
+    const phoneSource = container.querySelector("picture source");
+    expect(phoneSource?.getAttribute("srcset")).toContain("phone.jpg");
+    expect(container.querySelector("img")?.className).toContain(
+      "[object-position:var(--hero-focal)]",
+    );
+    expect(container.querySelector("article")?.getAttribute("style")).toContain("--hero-focal");
   });
 });

@@ -42,6 +42,14 @@ Object.defineProperty(window, "matchMedia", {
   })),
 });
 
+// jsdom does not implement media playback: play() returns nothing and load()
+// logs "Not implemented". Behave like a browser that resolves playback.
+if (typeof HTMLMediaElement !== "undefined") {
+  HTMLMediaElement.prototype.play = vi.fn(() => Promise.resolve());
+  HTMLMediaElement.prototype.pause = vi.fn();
+  HTMLMediaElement.prototype.load = vi.fn();
+}
+
 // jsdom does not implement window.open and logs "Not implemented" for every
 // call (e.g. WhatsApp share buttons). Behave like a blocked popup instead.
 if (typeof window !== "undefined") {
