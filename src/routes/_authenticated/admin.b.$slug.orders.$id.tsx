@@ -36,9 +36,11 @@ import {
   normalizeOrderMin,
   isUntouchedDraft,
   newDraftOrder,
+  orderEditLock,
   orderItemFromRow,
   orderTotals,
   promoSignature,
+  shouldWarnBeforeLeaving,
 } from "@/features/orders/lib/order-editor";
 import { useOrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
 import { useBenefitReview } from "@/features/orders/hooks/use-benefit-review";
@@ -421,10 +423,14 @@ function OrderDetail() {
   });
 
   const currency = order?.currency ?? "BHD";
-  const isClosedOrder = serverOrder?.status === "completed" || serverOrder?.status === "paid";
-  const isCreationMode = isBlankDraft && !hasSavedDraft;
-  const isReadOnly = !isCreationMode && !editingUnlocked;
-  const canUnlockEditing = !isCourier && (isAdmin || !isClosedOrder);
+  const { isCreationMode, isReadOnly, canUnlockEditing } = orderEditLock({
+    isBlankDraft,
+    hasSavedDraft,
+    editingUnlocked,
+    isCourier,
+    isAdmin,
+    status: serverOrder?.status,
+  });
 
   const { cancelEditing } = useCancelOrderEdit({
     initialSnapshotRef,
@@ -489,7 +495,7 @@ function OrderDetail() {
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isDirty && !isReadOnly && !saving) {
+      if (shouldWarnBeforeLeaving({ isDirty, isReadOnly, saving })) {
         e.preventDefault();
         e.returnValue = "";
       }

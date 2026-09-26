@@ -14,6 +14,11 @@ describe("admin feedback states", () => {
     expect(inventory).toContain("products.refetch()");
   });
 
+  it("uses visible skeletons while customer and inventory data load", () => {
+    expect(customers).toContain("return <RoutePendingSkeleton />");
+    expect(inventory).toContain("return <RoutePendingSkeleton />");
+  });
+
   it("gives mobile and desktop users a useful empty-state action", () => {
     expect(customers).toContain("No matching customers");
     expect(customers).toContain("Clear Filters");

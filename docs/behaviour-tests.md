@@ -21,11 +21,13 @@ component with its data layer mocked. The network is blocked in unit tests
 Examples: `tests/order-profit-clarity.test.ts` (extracted label),
 `tests/active-brand-shell-label.test.ts` (extracted workspace rules),
 `tests/os-breadcrumb-regression.test.tsx` (extracted builder + rendered menu),
-`tests/inventory-history-actor.test.tsx` (rendered sheet, data layer mocked).
+`tests/inventory-history-actor.test.tsx` (rendered sheet, data layer mocked),
+`tests/review-story-generator.test.ts` (canvas renderer with a recording fake context),
+`tests/order-change-confirmations.test.tsx` (modal and Radix menu driven by events).
 
 ## Classification
 
-- **convert** (43): feature assertions on source text.
+- **convert** (40): feature assertions on source text.
 - **migration** (16): assertions on SQL in
   `supabase/migrations`. They pin database contracts and stay until the
   project has a database test harness (pgTAP or a local Supabase in CI).
@@ -53,14 +55,11 @@ Examples: `tests/order-profit-clarity.test.ts` (extracted label),
 | convert   | `tests/manual-order-draft-regression.test.ts`       |                                                          |
 | convert   | `tests/manual-order-tailoring-specs.test.ts`        |                                                          |
 | convert   | `tests/onboarding-plan-catalog.test.ts`             | source part to convert; SQL part is a migration contract |
-| convert   | `tests/order-change-confirmations.test.ts`          |                                                          |
 | convert   | `tests/order-review-reward.test.ts`                 | source part to convert; SQL part is a migration contract |
-| convert   | `tests/order-safe-view-mode.test.ts`                |                                                          |
 | convert   | `tests/orders-bulk-payment-courier.test.ts`         |                                                          |
 | convert   | `tests/orders-fulfillment-method-filter.test.tsx`   |                                                          |
 | convert   | `tests/products-made-to-order.test.ts`              | source part to convert; SQL part is a migration contract |
 | convert   | `tests/review-management-dashboard.test.ts`         | source part to convert; SQL part is a migration contract |
-| convert   | `tests/review-story-generator.test.ts`              |                                                          |
 | convert   | `tests/secondary-banner-parallax.test.ts`           | source part to convert; SQL part is a migration contract |
 | convert   | `tests/settings-tabs.test.ts`                       |                                                          |
 | convert   | `tests/size-guide-templates.test.ts`                |                                                          |

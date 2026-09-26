@@ -357,3 +357,35 @@ export function filterVariantsForSearch(variants: any[], products: any[], query:
     })
     .slice(0, 35);
 }
+
+/**
+ * Safe view mode: an existing order opens locked until the user chooses to
+ * edit. A new draft is editable at once. Couriers never edit, and a closed
+ * order (completed or paid) can be reopened only by an admin.
+ */
+export function orderEditLock(args: {
+  isBlankDraft: boolean;
+  hasSavedDraft: boolean;
+  editingUnlocked: boolean;
+  isCourier: boolean;
+  isAdmin: boolean;
+  status: string | null | undefined;
+}) {
+  const isClosedOrder = args.status === "completed" || args.status === "paid";
+  const isCreationMode = args.isBlankDraft && !args.hasSavedDraft;
+  return {
+    isClosedOrder,
+    isCreationMode,
+    isReadOnly: !isCreationMode && !args.editingUnlocked,
+    canUnlockEditing: !args.isCourier && (args.isAdmin || !isClosedOrder),
+  };
+}
+
+/** Leaving the page asks first only while unsaved edits are open and not saving. */
+export function shouldWarnBeforeLeaving(args: {
+  isDirty: boolean;
+  isReadOnly: boolean;
+  saving: boolean;
+}) {
+  return args.isDirty && !args.isReadOnly && !args.saving;
+}

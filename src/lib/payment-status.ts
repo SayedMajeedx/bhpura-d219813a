@@ -90,3 +90,18 @@ export function formatPaymentBadgeDetail(
   }
   return baseLabel;
 }
+
+/**
+ * Why a manual payment update is inconsistent, or null when it is fine: the
+ * collected amount can never exceed the order total, and "paid" needs the
+ * full total (less is "partial").
+ */
+export function paymentUpdateProblem(
+  status: PaymentBadge,
+  collected: number,
+  total: number,
+): "exceeds_total" | "paid_below_total" | null {
+  if (collected > total) return "exceeds_total";
+  if (status === "paid" && collected < total) return "paid_below_total";
+  return null;
+}

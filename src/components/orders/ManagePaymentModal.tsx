@@ -22,6 +22,7 @@ import { formatMoney } from "@/lib/format";
 import {
   PAYMENT_BADGE_CLASSES,
   PAYMENT_BADGE_LABEL,
+  paymentUpdateProblem,
   type PaymentBadge,
 } from "@/lib/payment-status";
 import { toast } from "sonner";
@@ -95,7 +96,8 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
 
   const handleSave = async () => {
     if (!hasChanges) return;
-    if (parsedAdvance > totals.total) {
+    const problem = paymentUpdateProblem(paymentStatus, parsedAdvance, totals.total);
+    if (problem === "exceeds_total") {
       toast.error(
         isAr
           ? "المبلغ المستلم لا يمكن أن يتجاوز إجمالي الطلب"
@@ -103,7 +105,7 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
       );
       return;
     }
-    if (paymentStatus === "paid" && parsedAdvance < totals.total) {
+    if (problem === "paid_below_total") {
       toast.error(
         isAr
           ? "اختر مدفوع جزئيًا إذا كان المبلغ المستلم أقل من إجمالي الطلب"
