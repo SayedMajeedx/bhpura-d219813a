@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +33,7 @@ import {
   type ReturnItemCondition,
 } from "@/lib/returns.types";
 import { returnVariantLabel } from "@/lib/returns-variant";
+import { branchesQueries } from "@/lib/data/branches";
 
 interface ReturnInspectionDialogProps {
   open: boolean;
@@ -59,17 +59,7 @@ export function ReturnInspectionDialog({
   const [selectedBranchId, setSelectedBranchId] = useState<string>("");
 
   const { data: branches = [] } = useQuery({
-    queryKey: ["brand_branches_active", brandId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("branches")
-        .select("id, name_ar, name_en, is_active, sort_order")
-        .eq("brand_id", brandId)
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
-      if (error) throw error;
-      return data ?? [];
-    },
+    ...branchesQueries.active(brandId),
     enabled: open && !!brandId,
   });
 
