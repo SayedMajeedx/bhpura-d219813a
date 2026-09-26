@@ -29,6 +29,8 @@ import {
 import { ordersKeys, ordersQueries, type OrderDetail } from "@/lib/data/orders";
 import { brandQueries } from "@/lib/data/brands";
 import { signOut as signOutSession } from "@/lib/auth/session";
+import { pickActiveBrand, resolveWorkspace, workspaceLabel } from "@/lib/admin-workspace";
+import { buildBreadcrumbs } from "@/lib/admin-breadcrumbs";
 
 /**
  * Theme is provided here rather than at the router root so the `.dark` class
@@ -178,8 +180,11 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
 
   // Super admins have a platform workspace outside /admin/b/:slug. Do not let
   // their own profile brand leak tenant navigation into that workspace.
-  const isPlatformMode = isSuperAdmin && !urlSlug;
-  const activeSlug = urlSlug ?? (isSuperAdmin ? null : (profile?.brand?.slug ?? null));
+  const { isPlatformMode, activeSlug } = resolveWorkspace({
+    urlSlug,
+    isSuperAdmin,
+    profileBrandSlug: profile?.brand?.slug,
+  });
 
   // Warm the four primary applications once authentication and the active
   // brand are known. This keeps the OS-like app switch fast even before a
@@ -256,14 +261,12 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
     navigate({ to: "/auth" });
   };
 
-  const routeBrand = activeSlug
-    ? brandsQ.data?.find((brand) => brand.slug.toLowerCase() === activeSlug.toLowerCase())
-    : undefined;
-  const profileBrandMatchesRoute =
-    !activeSlug || profile?.brand?.slug?.toLowerCase() === activeSlug.toLowerCase();
-  const activeBrand = isPlatformMode
-    ? undefined
-    : (routeBrand ?? (profileBrandMatchesRoute ? profile?.brand : undefined));
+  const activeBrand = pickActiveBrand({
+    isPlatformMode,
+    activeSlug,
+    brands: brandsQ.data,
+    profileBrand: profile?.brand,
+  });
 
   const { profile: storeProfile } = useAdminStoreProfile(
     isPlatformMode ? undefined : activeBrand?.id,
@@ -301,11 +304,13 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
   const adminTypographyLanguage = lang === "ar" ? "ar" : "en";
   const adminTypographyVars = typographyVariables(adminTypography, adminTypographyLanguage);
   const adminFontFaces = customFontFaces(adminTypography, adminTypographyLanguage);
-  const brandLabel =
-    (lang === "ar" ? activeBrand?.name_ar : activeBrand?.name_en) ??
-    activeBrand?.name_en ??
-    activeSlug ??
-    (isPlatformMode ? (lang === "ar" ? "إدارة منصة بوتيك" : "Boutq Platform") : t("app.title"));
+  const brandLabel = workspaceLabel({
+    brand: activeBrand,
+    activeSlug,
+    isPlatformMode,
+    lang: lang === "ar" ? "ar" : "en",
+    appTitle: t("app.title"),
+  });
 
   const queryClient = useQueryClient();
 
@@ -342,64 +347,34 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
   });
 
   const breadcrumbs = useMemo(() => {
-    const homeLabel = "Boutq OS";
-    const platformHome = "/admin/brands";
-    const tenantHome = activeSlug ? `/admin/b/${activeSlug}/dashboard` : platformHome;
-    const items: Array<{ label: string; href?: string }> = [
-      { label: homeLabel, href: pathname === tenantHome ? undefined : tenantHome },
-    ];
-
-    if (currentPageLabel && pathname !== tenantHome) {
-      const currentBase = activeNavItem
-        ? activeNavItem.to.replace("$slug", activeNavItem.params?.slug ?? "")
-        : pathname;
-      items.push({
-        label: currentPageLabel,
-        href: pathname !== currentBase ? currentBase : undefined,
-      });
-    }
-
-    if (trailingSegment) {
-      const labels: Record<string, { ar: string; en: string }> = {
-        sales: { ar: "المبيعات", en: "Sales" },
-        products: { ar: "المنتجات", en: "Products" },
-        customers: { ar: "العملاء", en: "Customers" },
-        export: { ar: "التصدير", en: "Export" },
-        new: { ar: "طلب جديد", en: "New order" },
-      };
-      const translated = labels[trailingSegment];
-      if (translated) {
-        items.push({
-          label: translated[lang],
-        });
-      } else if (isOrderRoute) {
-        const cachedOrder = activeBrand?.id
-          ? (queryClient.getQueryData<OrderDetail>(
-              ordersKeys.detail(activeBrand.id, trailingSegment, "office"),
-            ) ??
-            queryClient.getQueryData<OrderDetail>(
-              ordersKeys.detail(activeBrand.id, trailingSegment, "assigned-courier"),
-            ))
-          : undefined;
-        const invoiceNum = orderNumberQuery.data?.invoice_number ?? cachedOrder?.invoice_number;
-        const orderLabel = invoiceNum
-          ? `${lang === "ar" ? "الطلب" : "Order"} #${invoiceNum}`
-          : `${lang === "ar" ? "الطلب" : "Order"} #${trailingSegment.slice(0, 8)}`;
-        items.push({
-          label: orderLabel,
-        });
-      } else if (isCustomerRoute) {
-        const customerName = customerBreadcrumbQuery.data?.name;
-        items.push({
-          label: customerName || decodeURIComponent(trailingSegment.slice(0, 8)),
-        });
-      } else {
-        items.push({
-          label: decodeURIComponent(trailingSegment),
-        });
-      }
-    }
-    return items;
+    // The invoice number comes from its query, or from an order already open.
+    const cachedOrder =
+      isOrderRoute && activeBrand?.id && trailingSegment
+        ? (queryClient.getQueryData<OrderDetail>(
+            ordersKeys.detail(activeBrand.id, trailingSegment, "office"),
+          ) ??
+          queryClient.getQueryData<OrderDetail>(
+            ordersKeys.detail(activeBrand.id, trailingSegment, "assigned-courier"),
+          ))
+        : undefined;
+    return buildBreadcrumbs({
+      pathname,
+      activeSlug,
+      lang: lang === "ar" ? "ar" : "en",
+      section: currentPageLabel
+        ? {
+            label: currentPageLabel,
+            href: activeNavItem
+              ? activeNavItem.to.replace("$slug", activeNavItem.params?.slug ?? "")
+              : pathname,
+          }
+        : null,
+      trailingSegment,
+      isOrderRoute,
+      isCustomerRoute,
+      invoiceNumber: orderNumberQuery.data?.invoice_number ?? cachedOrder?.invoice_number,
+      customerName: customerBreadcrumbQuery.data?.name,
+    });
   }, [
     activeBrand?.id,
     activeNavItem,
