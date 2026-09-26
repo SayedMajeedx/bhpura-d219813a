@@ -1,6 +1,5 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -9,6 +8,14 @@ import { useI18n } from "@/lib/i18n";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { optimizeVideo } from "@/lib/video-optimizer";
 import { toast } from "sonner";
+import {
+  invalidateVideoSources,
+  listVideoEntries,
+  mediaOptimizerQueries,
+  replaceHeroVideo,
+  replaceProductVideo,
+  type VideoEntry,
+} from "@/lib/data/media-optimizer";
 import {
   Video,
   Film,
@@ -19,23 +26,6 @@ import {
   Sparkles,
   ExternalLink,
 } from "lucide-react";
-
-interface VideoEntry {
-  id: string;
-  brandId: string;
-  brandName: string;
-  brandSlug: string;
-  sourceType: "hero_background" | "hero_slide" | "product";
-  title: string;
-  videoUrl: string;
-  posterUrl?: string;
-  meta: {
-    slideIndex?: number;
-    slideLang?: "ar" | "en";
-    productId?: string;
-    mediaIndex?: number;
-  };
-}
 
 export function SuperVideoReoptimizer() {
   const { lang } = useI18n();
@@ -50,127 +40,11 @@ export function SuperVideoReoptimizer() {
   const [isBatchRunning, setIsBatchRunning] = useState(false);
 
   // 1. Fetch videos across brands (hero backgrounds & slides) and products
-  const {
-    data: videoEntries = [],
-    isLoading,
-    refetch,
-  } = useQuery({
-    queryKey: ["super-admin-video-reoptimizer-list"],
-    queryFn: async () => {
-      const entries: VideoEntry[] = [];
-
-      // Query brands
-      const { data: brands, error: brandsError } = await (supabase.from("brands") as any)
-        .select("id, name, slug, hero_media")
-        .order("name", { ascending: true });
-
-      if (brandsError) throw brandsError;
-
-      for (const brand of brands ?? []) {
-        const heroMedia =
-          brand.hero_media && typeof brand.hero_media === "object" ? brand.hero_media : null;
-        if (heroMedia) {
-          // Check background video
-          if (heroMedia.background?.type === "video" && heroMedia.background.url) {
-            entries.push({
-              id: `brand-${brand.id}-bg`,
-              brandId: brand.id,
-              brandName: brand.name,
-              brandSlug: brand.slug,
-              sourceType: "hero_background",
-              title: isAr ? "فيديو خلفية الواجهة" : "Hero Background Video",
-              videoUrl: heroMedia.background.url,
-              posterUrl: heroMedia.background.posterUrl,
-              meta: {},
-            });
-          }
-
-          // Check slides
-          if (Array.isArray(heroMedia.slides)) {
-            heroMedia.slides.forEach((slide: any, idx: number) => {
-              if (
-                slide.media_url &&
-                (slide.type === "video" || /\.(mp4|webm|mov|m4v)$/i.test(slide.media_url))
-              ) {
-                entries.push({
-                  id: `brand-${brand.id}-slide-${idx}-def`,
-                  brandId: brand.id,
-                  brandName: brand.name,
-                  brandSlug: brand.slug,
-                  sourceType: "hero_slide",
-                  title: `${isAr ? "شريحة واجهة" : "Hero Slide"} #${idx + 1} (${slide.title_ar || slide.title_en || "Slide"})`,
-                  videoUrl: slide.media_url,
-                  posterUrl: slide.media_poster_url,
-                  meta: { slideIndex: idx },
-                });
-              } else {
-                if (slide.media_url_ar && /\.(mp4|webm|mov|m4v)$/i.test(slide.media_url_ar)) {
-                  entries.push({
-                    id: `brand-${brand.id}-slide-${idx}-ar`,
-                    brandId: brand.id,
-                    brandName: brand.name,
-                    brandSlug: brand.slug,
-                    sourceType: "hero_slide",
-                    title: `${isAr ? "شريحة واجهة (عربي)" : "Hero Slide (AR)"} #${idx + 1}`,
-                    videoUrl: slide.media_url_ar,
-                    posterUrl: slide.media_poster_url_ar,
-                    meta: { slideIndex: idx, slideLang: "ar" },
-                  });
-                }
-                if (slide.media_url_en && /\.(mp4|webm|mov|m4v)$/i.test(slide.media_url_en)) {
-                  entries.push({
-                    id: `brand-${brand.id}-slide-${idx}-en`,
-                    brandId: brand.id,
-                    brandName: brand.name,
-                    brandSlug: brand.slug,
-                    sourceType: "hero_slide",
-                    title: `${isAr ? "شريحة واجهة (إنجليزي)" : "Hero Slide (EN)"} #${idx + 1}`,
-                    videoUrl: slide.media_url_en,
-                    posterUrl: slide.media_poster_url_en,
-                    meta: { slideIndex: idx, slideLang: "en" },
-                  });
-                }
-              }
-            });
-          }
-        }
-      }
-
-      // Query products with video media
-      const { data: products, error: productsError } = await (supabase.from("products") as any)
-        .select("id, brand_id, name, name_ar, name_en, media")
-        .order("created_at", { ascending: false });
-
-      if (productsError) throw productsError;
-
-      // Map brand id to brand details
-      const brandMap = new Map<string, any>((brands ?? []).map((b: any) => [b.id, b]));
-
-      for (const prod of products ?? []) {
-        if (Array.isArray(prod.media)) {
-          prod.media.forEach((item: any, mIdx: number) => {
-            if (item.type === "video" && item.url) {
-              const b = brandMap.get(prod.brand_id) as any;
-              entries.push({
-                id: `prod-${prod.id}-media-${mIdx}`,
-                brandId: prod.brand_id,
-                brandName: b?.name || "Unknown Brand",
-                brandSlug: b?.slug || "",
-                sourceType: "product",
-                title: `${isAr ? "منتج:" : "Product:"} ${prod.name_ar || prod.name_en || prod.name || "Untitled"} (#${mIdx + 1})`,
-                videoUrl: item.url,
-                posterUrl: item.poster_url,
-                meta: { productId: prod.id, mediaIndex: mIdx },
-              });
-            }
-          });
-        }
-      }
-
-      return entries;
-    },
-    staleTime: 60_000,
-  });
+  const { data: sources, isLoading, refetch } = useQuery(mediaOptimizerQueries.sources());
+  const videoEntries = useMemo(
+    () => (sources ? listVideoEntries(sources, isAr ? "ar" : "en") : []),
+    [sources, isAr],
+  );
 
   const optimizeSingleEntry = async (entry: VideoEntry) => {
     try {
@@ -216,88 +90,10 @@ export function SuperVideoReoptimizer() {
           : Promise.resolve(null),
       ]);
 
-      // 4. Update Database
-      if (entry.sourceType === "hero_background") {
-        const { data: bData } = await (supabase.from("brands") as any)
-          .select("hero_media")
-          .eq("id", entry.brandId)
-          .single();
-        const currentHero = bData?.hero_media || {};
-        await (supabase.from("brands") as any)
-          .update({
-            hero_media: {
-              ...currentHero,
-              background: {
-                type: "video",
-                url: newVideoUrl,
-                ...(newPosterUrl ? { posterUrl: newPosterUrl } : {}),
-              },
-            },
-          })
-          .eq("id", entry.brandId);
-      } else if (entry.sourceType === "hero_slide" && entry.meta.slideIndex !== undefined) {
-        const { data: bData } = await (supabase.from("brands") as any)
-          .select("hero_media")
-          .eq("id", entry.brandId)
-          .single();
-        const currentHero = bData?.hero_media || {};
-        const slides = Array.isArray(currentHero.slides) ? [...currentHero.slides] : [];
-        const idx = entry.meta.slideIndex;
-        if (slides[idx]) {
-          if (entry.meta.slideLang === "ar") {
-            slides[idx] = {
-              ...slides[idx],
-              media_url_ar: newVideoUrl,
-              media_url: newVideoUrl,
-              ...(newPosterUrl
-                ? { media_poster_url_ar: newPosterUrl, media_poster_url: newPosterUrl }
-                : {}),
-            };
-          } else if (entry.meta.slideLang === "en") {
-            slides[idx] = {
-              ...slides[idx],
-              media_url_en: newVideoUrl,
-              media_url: newVideoUrl,
-              ...(newPosterUrl
-                ? { media_poster_url_en: newPosterUrl, media_poster_url: newPosterUrl }
-                : {}),
-            };
-          } else {
-            slides[idx] = {
-              ...slides[idx],
-              media_url: newVideoUrl,
-              ...(newPosterUrl ? { media_poster_url: newPosterUrl } : {}),
-            };
-          }
-          await (supabase.from("brands") as any)
-            .update({
-              hero_media: {
-                ...currentHero,
-                slides,
-              },
-            })
-            .eq("id", entry.brandId);
-        }
-      } else if (
-        entry.sourceType === "product" &&
-        entry.meta.productId &&
-        entry.meta.mediaIndex !== undefined
-      ) {
-        const { data: pData } = await (supabase.from("products") as any)
-          .select("media")
-          .eq("id", entry.meta.productId)
-          .single();
-        const media = Array.isArray(pData?.media) ? [...pData.media] : [];
-        const mIdx = entry.meta.mediaIndex;
-        if (media[mIdx]) {
-          media[mIdx] = {
-            ...media[mIdx],
-            url: newVideoUrl,
-            ...(newPosterUrl ? { poster_url: newPosterUrl } : {}),
-          };
-          await (supabase.from("products") as any).update({ media }).eq("id", entry.meta.productId);
-        }
-      }
+      // 4. Update Database (a failed read or write marks the entry failed)
+      const optimized = { videoUrl: newVideoUrl, posterUrl: newPosterUrl };
+      if (entry.sourceType === "product") await replaceProductVideo(entry, optimized);
+      else await replaceHeroVideo(entry, optimized);
 
       setStatusMap((prev) => ({
         ...prev,
@@ -330,7 +126,7 @@ export function SuperVideoReoptimizer() {
       successCount++;
     }
     setIsBatchRunning(false);
-    qc.invalidateQueries({ queryKey: ["super-admin-video-reoptimizer-list"] });
+    invalidateVideoSources(qc);
     toast.success(
       isAr
         ? `اكتملت معالجة الفيديوهات (${successCount})`
