@@ -43,7 +43,8 @@ describe("storefront Google OAuth return", () => {
     const storefrontAuth = readFileSync("src/routes/$slug.auth.tsx", "utf8");
     const adminAuth = readFileSync("src/routes/auth.tsx", "utf8");
     expect(storefrontAuth).toContain("applyRememberMe(true)");
-    expect(adminAuth).toContain("supabase.auth.onAuthStateChange");
+    // The listener goes through `onAuthChange` (tests/auth-sign-in.test.ts).
+    expect(adminAuth).toContain("onAuthChange(");
     expect(adminAuth).toContain("window.location.replace(returnPath)");
   });
 });

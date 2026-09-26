@@ -15,7 +15,6 @@ import {
   Store,
   UserCheck,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,8 +23,9 @@ import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { useQueryClient } from "@tanstack/react-query";
 import { evaluatePasswordStrength } from "@/lib/team-credentials-utils";
-import { profilesKeys, updateProfile } from "@/lib/data/profiles";
+import { fetchFirstLoginProfile, profilesKeys, updateProfile } from "@/lib/data/profiles";
 import { getCurrentUser, signOut } from "@/lib/auth/session";
+import { completeFirstSignInPasswordChange, updatePassword } from "@/lib/auth/sign-in";
 
 export const Route = createFileRoute("/first-login")({
   ssr: false,
@@ -37,13 +37,7 @@ export const Route = createFileRoute("/first-login")({
       throw redirect({ to: "/auth" });
     }
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select(
-        "status, role, name, full_name, must_change_password, brand_id, brand:brands(id, name_en, name_ar, slug, logo_url)",
-      )
-      .eq("id", user.id)
-      .maybeSingle();
+    const profile = await fetchFirstLoginProfile(user.id);
 
     const dashboardRoles = new Set(["super_admin", "admin", "brand_admin", "staff", "courier"]);
     if (!profile || profile.status !== "active" || !dashboardRoles.has(profile.role ?? "")) {
@@ -60,15 +54,7 @@ export const Route = createFileRoute("/first-login")({
   loader: async () => {
     const user = await getCurrentUser();
 
-    const { data: profile } = user
-      ? await supabase
-          .from("profiles")
-          .select(
-            "status, role, name, full_name, must_change_password, brand_id, brand:brands(id, name_en, name_ar, slug, logo_url)",
-          )
-          .eq("id", user.id)
-          .maybeSingle()
-      : { data: null };
+    const profile = user ? await fetchFirstLoginProfile(user.id) : null;
 
     return { user: user!, profile };
   },
@@ -156,14 +142,13 @@ function FirstLoginPage() {
     setSubmitting(true);
     try {
       // 1. Update user password and clear must_change_password in user_metadata
-      const { error: authError } = await supabase.auth.updateUser({
-        password,
-        data: { must_change_password: false },
+      const { error: authError } = await updatePassword(password, {
+        must_change_password: false,
       });
       if (authError) throw authError;
 
       // 2. Clear must_change_password in profiles via RPC
-      const { error: rpcError } = await supabase.rpc("complete_first_sign_in_password_change");
+      const { error: rpcError } = await completeFirstSignInPasswordChange();
       if (rpcError) {
         // Fallback direct update on profile (best-effort, as before)
         await updateProfile(user.id, {

@@ -21,13 +21,13 @@ import { collectMaintainabilityMetrics } from "../scripts/maintainability-metric
  */
 
 const BUDGETS = {
-  asAny: 597,
+  asAny: 596,
   colonAny: 724,
   asNever: 0,
   tsIgnore: 0,
   tsExpectError: 0,
   eslintDisable: 10,
-  directSupabaseCalls: 54,
+  directSupabaseCalls: 25,
   readFileSyncTestFiles: 71,
   filesOver1000: 23,
   maxLinesForNewFile: 600,
@@ -63,7 +63,7 @@ const GIANT_FILES_BUDGETS: Record<string, number> = {
   "src/lib/instagram-ai-importer.ts": 1260,
   "src/routes/_authenticated/admin.brands.tsx": 1170,
   "src/routes/_authenticated/admin.b.$slug.integrations.tsx": 1188,
-  "src/routes/onboard.tsx": 1087,
+  "src/routes/onboard.tsx": 1084,
   "src/routes/_authenticated/admin.b.$slug.customers.$customerId.tsx": 1041,
   "src/routes/_authenticated/admin.b.$slug.pages.tsx": 1058,
 };

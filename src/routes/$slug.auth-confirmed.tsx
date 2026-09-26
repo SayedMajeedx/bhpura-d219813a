@@ -1,10 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AlertCircle, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useStorefront } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
 import { clearStorefrontOAuthReturn } from "@/lib/storefront-oauth-return";
+import { activateStorefrontMembership } from "@/lib/auth/sign-in";
+import { getCurrentSession } from "@/lib/auth/session";
 
 export const Route = createFileRoute("/$slug/auth-confirmed")({
   component: StorefrontAuthConfirmed,
@@ -20,22 +21,21 @@ function StorefrontAuthConfirmed() {
     clearStorefrontOAuthReturn();
     const finish = async () => {
       for (let attempt = 0; attempt < 20 && active; attempt += 1) {
-        const { data } = await supabase.auth.getSession();
-        if (data.session?.user) {
-          const meta = data.session.user.user_metadata ?? {};
+        const session = await getCurrentSession();
+        if (session?.user) {
+          const meta = session.user.user_metadata ?? {};
           // Bypass storefront_slug restriction for Google OAuth sign-ins
           const isGoogleAuth =
-            data.session.user.app_metadata?.provider === "google" ||
-            data.session.user.identities?.some((id) => id.provider === "google");
+            session.user.app_metadata?.provider === "google" ||
+            session.user.identities?.some((id) => id.provider === "google");
 
           if (!isGoogleAuth && meta.storefront_slug !== brand.slug) {
             setFailed(true);
             return;
           }
-          const { error } = await supabase.rpc("activate_storefront_membership", {
-            p_brand_slug: brand.slug,
-            p_name: typeof meta.name === "string" ? meta.name : undefined,
-            p_phone: typeof meta.phone === "string" ? meta.phone : undefined,
+          const { error } = await activateStorefrontMembership(brand.slug, {
+            name: typeof meta.name === "string" ? meta.name : undefined,
+            phone: typeof meta.phone === "string" ? meta.phone : undefined,
           });
           if (error) {
             console.error("Membership activation failed", error);

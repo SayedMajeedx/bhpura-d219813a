@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,7 +26,12 @@ import { applyRememberMe } from "@/lib/session-persistence";
 import { translateAuthError } from "@/lib/auth-errors";
 import { readStorefrontOAuthReturn } from "@/lib/storefront-oauth-return";
 import { fetchCallerProfile } from "@/lib/data/profiles";
-import { getCurrentUser, signOut } from "@/lib/auth/session";
+import { getCurrentSession, getCurrentUser, signOut } from "@/lib/auth/session";
+import {
+  onAuthChange,
+  signInWithPasskey as signInWithPasskeyAuth,
+  signInWithPassword,
+} from "@/lib/auth/sign-in";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -57,10 +61,10 @@ function AuthPage() {
     const continueToStorefront = () => {
       if (active) window.location.replace(returnPath);
     };
-    void supabase.auth.getSession().then(({ data }) => {
-      if (data.session?.user) continueToStorefront();
+    void getCurrentSession().then((session) => {
+      if (session?.user) continueToStorefront();
     });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = onAuthChange((_event, session) => {
       if (session?.user) continueToStorefront();
     });
     return () => {
@@ -73,7 +77,7 @@ function AuthPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await signInWithPassword(email, password);
       if (error) throw error;
       const user = await getCurrentUser();
       const profile = await fetchCallerProfile(user!.id);
@@ -108,7 +112,7 @@ function AuthPage() {
   const signInWithPasskey = async () => {
     setPasskeyLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPasskey();
+      const { data, error } = await signInWithPasskeyAuth();
       if (error) throw error;
       if (!data.user) throw new Error("Passkey sign-in did not return a user.");
       // A failed read comes back as no profile, which the check below rejects.

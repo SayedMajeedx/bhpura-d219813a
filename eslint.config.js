@@ -104,15 +104,25 @@ export default tseslint.config(
     // `profilesQueries.couriers`. Listed first: the domain blocks below replace
     // this rule for their files, so each of them forbids `profiles` too.
     files: ["src/routes/**", "src/components/**", "src/features/**"],
-    ignores: ["src/routes/api.*", "src/routes/first-login.tsx"],
+    ignores: ["src/routes/api.*"],
     rules: {
       "no-restricted-syntax": [
         "error",
         {
-          selector:
-            "CallExpression[callee.object.property.name='auth'][callee.property.name=/^(getUser|signOut)$/]",
+          selector: "CallExpression[callee.object.property.name='auth']",
           message:
-            "Read the signed-in user with `getCurrentUser` and sign out with `signOut` from `@/lib/auth/session` (route guards: `ensureSessionUser`).",
+            "Auth goes through `@/lib/auth/session` (user, session, token, sign-out) and `@/lib/auth/sign-in` (sign-in, sign-up, recovery, passkeys); route guards use `ensureSessionUser`.",
+        },
+        {
+          selector: "CallExpression[callee.object.object.property.name='auth']",
+          message:
+            "Passkeys go through `listPasskeys` / `deletePasskey` from `@/lib/auth/sign-in`.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='rpc'][arguments.0.value=/^(has_storefront_membership|activate_storefront_membership|complete_first_sign_in_password_change)$/]",
+          message:
+            "Storefront membership and the first-login password change go through `@/lib/auth/sign-in`.",
         },
         {
           selector:
@@ -170,10 +180,20 @@ export default tseslint.config(
       "no-restricted-syntax": [
         "error",
         {
-          selector:
-            "CallExpression[callee.object.property.name='auth'][callee.property.name=/^(getUser|signOut)$/]",
+          selector: "CallExpression[callee.object.property.name='auth']",
           message:
-            "Read the signed-in user with `getCurrentUser` and sign out with `signOut` from `@/lib/auth/session` (route guards: `ensureSessionUser`).",
+            "Auth goes through `@/lib/auth/session` (user, session, token, sign-out) and `@/lib/auth/sign-in` (sign-in, sign-up, recovery, passkeys); route guards use `ensureSessionUser`.",
+        },
+        {
+          selector: "CallExpression[callee.object.object.property.name='auth']",
+          message:
+            "Passkeys go through `listPasskeys` / `deletePasskey` from `@/lib/auth/sign-in`.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='rpc'][arguments.0.value=/^(has_storefront_membership|activate_storefront_membership|complete_first_sign_in_password_change)$/]",
+          message:
+            "Storefront membership and the first-login password change go through `@/lib/auth/sign-in`.",
         },
         {
           selector:
@@ -236,10 +256,20 @@ export default tseslint.config(
       "no-restricted-syntax": [
         "error",
         {
-          selector:
-            "CallExpression[callee.object.property.name='auth'][callee.property.name=/^(getUser|signOut)$/]",
+          selector: "CallExpression[callee.object.property.name='auth']",
           message:
-            "Read the signed-in user with `getCurrentUser` and sign out with `signOut` from `@/lib/auth/session` (route guards: `ensureSessionUser`).",
+            "Auth goes through `@/lib/auth/session` (user, session, token, sign-out) and `@/lib/auth/sign-in` (sign-in, sign-up, recovery, passkeys); route guards use `ensureSessionUser`.",
+        },
+        {
+          selector: "CallExpression[callee.object.object.property.name='auth']",
+          message:
+            "Passkeys go through `listPasskeys` / `deletePasskey` from `@/lib/auth/sign-in`.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='rpc'][arguments.0.value=/^(has_storefront_membership|activate_storefront_membership|complete_first_sign_in_password_change)$/]",
+          message:
+            "Storefront membership and the first-login password change go through `@/lib/auth/sign-in`.",
         },
         {
           selector:
@@ -298,10 +328,20 @@ export default tseslint.config(
       "no-restricted-syntax": [
         "error",
         {
-          selector:
-            "CallExpression[callee.object.property.name='auth'][callee.property.name=/^(getUser|signOut)$/]",
+          selector: "CallExpression[callee.object.property.name='auth']",
           message:
-            "Read the signed-in user with `getCurrentUser` and sign out with `signOut` from `@/lib/auth/session` (route guards: `ensureSessionUser`).",
+            "Auth goes through `@/lib/auth/session` (user, session, token, sign-out) and `@/lib/auth/sign-in` (sign-in, sign-up, recovery, passkeys); route guards use `ensureSessionUser`.",
+        },
+        {
+          selector: "CallExpression[callee.object.object.property.name='auth']",
+          message:
+            "Passkeys go through `listPasskeys` / `deletePasskey` from `@/lib/auth/sign-in`.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='rpc'][arguments.0.value=/^(has_storefront_membership|activate_storefront_membership|complete_first_sign_in_password_change)$/]",
+          message:
+            "Storefront membership and the first-login password change go through `@/lib/auth/sign-in`.",
         },
         {
           selector:
@@ -346,10 +386,20 @@ export default tseslint.config(
       "no-restricted-syntax": [
         "error",
         {
-          selector:
-            "CallExpression[callee.object.property.name='auth'][callee.property.name=/^(getUser|signOut)$/]",
+          selector: "CallExpression[callee.object.property.name='auth']",
           message:
-            "Read the signed-in user with `getCurrentUser` and sign out with `signOut` from `@/lib/auth/session` (route guards: `ensureSessionUser`).",
+            "Auth goes through `@/lib/auth/session` (user, session, token, sign-out) and `@/lib/auth/sign-in` (sign-in, sign-up, recovery, passkeys); route guards use `ensureSessionUser`.",
+        },
+        {
+          selector: "CallExpression[callee.object.object.property.name='auth']",
+          message:
+            "Passkeys go through `listPasskeys` / `deletePasskey` from `@/lib/auth/sign-in`.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='rpc'][arguments.0.value=/^(has_storefront_membership|activate_storefront_membership|complete_first_sign_in_password_change)$/]",
+          message:
+            "Storefront membership and the first-login password change go through `@/lib/auth/sign-in`.",
         },
         {
           selector:
@@ -385,10 +435,20 @@ export default tseslint.config(
       "no-restricted-syntax": [
         "error",
         {
-          selector:
-            "CallExpression[callee.object.property.name='auth'][callee.property.name=/^(getUser|signOut)$/]",
+          selector: "CallExpression[callee.object.property.name='auth']",
           message:
-            "Read the signed-in user with `getCurrentUser` and sign out with `signOut` from `@/lib/auth/session` (route guards: `ensureSessionUser`).",
+            "Auth goes through `@/lib/auth/session` (user, session, token, sign-out) and `@/lib/auth/sign-in` (sign-in, sign-up, recovery, passkeys); route guards use `ensureSessionUser`.",
+        },
+        {
+          selector: "CallExpression[callee.object.object.property.name='auth']",
+          message:
+            "Passkeys go through `listPasskeys` / `deletePasskey` from `@/lib/auth/sign-in`.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='rpc'][arguments.0.value=/^(has_storefront_membership|activate_storefront_membership|complete_first_sign_in_password_change)$/]",
+          message:
+            "Storefront membership and the first-login password change go through `@/lib/auth/sign-in`.",
         },
         {
           selector:
@@ -418,10 +478,20 @@ export default tseslint.config(
       "no-restricted-syntax": [
         "error",
         {
-          selector:
-            "CallExpression[callee.object.property.name='auth'][callee.property.name=/^(getUser|signOut)$/]",
+          selector: "CallExpression[callee.object.property.name='auth']",
           message:
-            "Read the signed-in user with `getCurrentUser` and sign out with `signOut` from `@/lib/auth/session` (route guards: `ensureSessionUser`).",
+            "Auth goes through `@/lib/auth/session` (user, session, token, sign-out) and `@/lib/auth/sign-in` (sign-in, sign-up, recovery, passkeys); route guards use `ensureSessionUser`.",
+        },
+        {
+          selector: "CallExpression[callee.object.object.property.name='auth']",
+          message:
+            "Passkeys go through `listPasskeys` / `deletePasskey` from `@/lib/auth/sign-in`.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='rpc'][arguments.0.value=/^(has_storefront_membership|activate_storefront_membership|complete_first_sign_in_password_change)$/]",
+          message:
+            "Storefront membership and the first-login password change go through `@/lib/auth/sign-in`.",
         },
         {
           selector:
@@ -455,10 +525,20 @@ export default tseslint.config(
       "no-restricted-syntax": [
         "error",
         {
-          selector:
-            "CallExpression[callee.object.property.name='auth'][callee.property.name=/^(getUser|signOut)$/]",
+          selector: "CallExpression[callee.object.property.name='auth']",
           message:
-            "Read the signed-in user with `getCurrentUser` and sign out with `signOut` from `@/lib/auth/session` (route guards: `ensureSessionUser`).",
+            "Auth goes through `@/lib/auth/session` (user, session, token, sign-out) and `@/lib/auth/sign-in` (sign-in, sign-up, recovery, passkeys); route guards use `ensureSessionUser`.",
+        },
+        {
+          selector: "CallExpression[callee.object.object.property.name='auth']",
+          message:
+            "Passkeys go through `listPasskeys` / `deletePasskey` from `@/lib/auth/sign-in`.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='rpc'][arguments.0.value=/^(has_storefront_membership|activate_storefront_membership|complete_first_sign_in_password_change)$/]",
+          message:
+            "Storefront membership and the first-login password change go through `@/lib/auth/sign-in`.",
         },
         {
           selector:
@@ -495,10 +575,20 @@ export default tseslint.config(
       "no-restricted-syntax": [
         "error",
         {
-          selector:
-            "CallExpression[callee.object.property.name='auth'][callee.property.name=/^(getUser|signOut)$/]",
+          selector: "CallExpression[callee.object.property.name='auth']",
           message:
-            "Read the signed-in user with `getCurrentUser` and sign out with `signOut` from `@/lib/auth/session` (route guards: `ensureSessionUser`).",
+            "Auth goes through `@/lib/auth/session` (user, session, token, sign-out) and `@/lib/auth/sign-in` (sign-in, sign-up, recovery, passkeys); route guards use `ensureSessionUser`.",
+        },
+        {
+          selector: "CallExpression[callee.object.object.property.name='auth']",
+          message:
+            "Passkeys go through `listPasskeys` / `deletePasskey` from `@/lib/auth/sign-in`.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='rpc'][arguments.0.value=/^(has_storefront_membership|activate_storefront_membership|complete_first_sign_in_password_change)$/]",
+          message:
+            "Storefront membership and the first-login password change go through `@/lib/auth/sign-in`.",
         },
         {
           selector:
@@ -537,10 +627,20 @@ export default tseslint.config(
       "no-restricted-syntax": [
         "error",
         {
-          selector:
-            "CallExpression[callee.object.property.name='auth'][callee.property.name=/^(getUser|signOut)$/]",
+          selector: "CallExpression[callee.object.property.name='auth']",
           message:
-            "Read the signed-in user with `getCurrentUser` and sign out with `signOut` from `@/lib/auth/session` (route guards: `ensureSessionUser`).",
+            "Auth goes through `@/lib/auth/session` (user, session, token, sign-out) and `@/lib/auth/sign-in` (sign-in, sign-up, recovery, passkeys); route guards use `ensureSessionUser`.",
+        },
+        {
+          selector: "CallExpression[callee.object.object.property.name='auth']",
+          message:
+            "Passkeys go through `listPasskeys` / `deletePasskey` from `@/lib/auth/sign-in`.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='rpc'][arguments.0.value=/^(has_storefront_membership|activate_storefront_membership|complete_first_sign_in_password_change)$/]",
+          message:
+            "Storefront membership and the first-login password change go through `@/lib/auth/sign-in`.",
         },
         {
           selector:
@@ -570,10 +670,20 @@ export default tseslint.config(
       "no-restricted-syntax": [
         "error",
         {
-          selector:
-            "CallExpression[callee.object.property.name='auth'][callee.property.name=/^(getUser|signOut)$/]",
+          selector: "CallExpression[callee.object.property.name='auth']",
           message:
-            "Read the signed-in user with `getCurrentUser` and sign out with `signOut` from `@/lib/auth/session` (route guards: `ensureSessionUser`).",
+            "Auth goes through `@/lib/auth/session` (user, session, token, sign-out) and `@/lib/auth/sign-in` (sign-in, sign-up, recovery, passkeys); route guards use `ensureSessionUser`.",
+        },
+        {
+          selector: "CallExpression[callee.object.object.property.name='auth']",
+          message:
+            "Passkeys go through `listPasskeys` / `deletePasskey` from `@/lib/auth/sign-in`.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='rpc'][arguments.0.value=/^(has_storefront_membership|activate_storefront_membership|complete_first_sign_in_password_change)$/]",
+          message:
+            "Storefront membership and the first-login password change go through `@/lib/auth/sign-in`.",
         },
         {
           selector:

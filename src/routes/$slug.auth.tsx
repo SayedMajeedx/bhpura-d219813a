@@ -2,7 +2,6 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useId, useState } from "react";
 import { Loader2, LogIn, MailCheck, User, Fingerprint } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { useStorefront } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +15,14 @@ import {
   rememberStorefrontOAuthReturn,
 } from "@/lib/storefront-oauth-return";
 import { signOut } from "@/lib/auth/session";
+import {
+  activateStorefrontMembership,
+  hasStorefrontMembership,
+  signInWithGoogle as startGoogleSignIn,
+  signInWithPasskey as signInWithPasskeyAuth,
+  signInWithPassword,
+  signUpStorefrontCustomer,
+} from "@/lib/auth/sign-in";
 
 export const Route = createFileRoute("/$slug/auth")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -74,12 +81,9 @@ function StorefrontAuth() {
     const callbackPath = `/${encodeURIComponent(brand.slug)}/auth-confirmed`;
     applyRememberMe(true);
     rememberStorefrontOAuthReturn(callbackPath);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: new URL(callbackPath, window.location.origin).toString(),
-      },
-    });
+    const { error } = await startGoogleSignIn(
+      new URL(callbackPath, window.location.origin).toString(),
+    );
     if (error) {
       clearStorefrontOAuthReturn();
       setWorking(false);
@@ -90,15 +94,12 @@ function StorefrontAuth() {
   const signInWithPasskey = async () => {
     setPasskeyLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPasskey();
+      const { data, error } = await signInWithPasskeyAuth();
       if (error) throw error;
       if (!data.user) throw new Error("Passkey sign-in did not return a user.");
 
-      const { data: member, error: membershipError } = await supabase.rpc(
-        "has_storefront_membership",
-        { p_brand_slug: brand.slug },
-      );
-      if (membershipError || member !== true) {
+      const { isMember, error: membershipError } = await hasStorefrontMembership(brand.slug);
+      if (membershipError || !isMember) {
         await signOut();
         setTab("signup");
         toast.error(
@@ -142,10 +143,9 @@ function StorefrontAuth() {
   }, [brand.slug, isStoreMember, membershipLoading, navigate, session, redirect]);
 
   const activateMembership = async (): Promise<boolean> => {
-    const { error } = await supabase.rpc("activate_storefront_membership", {
-      p_brand_slug: brand.slug,
-      p_name: form.name.trim() || undefined,
-      p_phone: form.phone.trim() || undefined,
+    const { error } = await activateStorefrontMembership(brand.slug, {
+      name: form.name.trim() || undefined,
+      phone: form.phone.trim() || undefined,
     });
     if (error) {
       console.error("Membership activation failed", error);
@@ -167,20 +167,14 @@ function StorefrontAuth() {
         t("البريد الإلكتروني وكلمة المرور مطلوبان", "Email and password are required"),
       );
     setWorking(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: form.email.trim().toLowerCase(),
-      password: form.password,
-    });
+    const { error } = await signInWithPassword(form.email.trim().toLowerCase(), form.password);
     if (error) {
       setWorking(false);
       return toast.error(translateAuthError(error, lang));
     }
 
-    const { data: member, error: membershipError } = await supabase.rpc(
-      "has_storefront_membership",
-      { p_brand_slug: brand.slug },
-    );
-    if (membershipError || member !== true) {
+    const { isMember, error: membershipError } = await hasStorefrontMembership(brand.slug);
+    if (membershipError || !isMember) {
       await signOut();
       setWorking(false);
       setTab("signup");
@@ -215,10 +209,7 @@ function StorefrontAuth() {
       return;
     }
 
-    const existingLogin = await supabase.auth.signInWithPassword({
-      email: form.email.trim().toLowerCase(),
-      password: form.password,
-    });
+    const existingLogin = await signInWithPassword(form.email.trim().toLowerCase(), form.password);
     if (!existingLogin.error && existingLogin.data.session) {
       const activated = await activateMembership();
       setWorking(false);
@@ -228,20 +219,16 @@ function StorefrontAuth() {
       return;
     }
 
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await signUpStorefrontCustomer({
       email: form.email.trim().toLowerCase(),
       password: form.password,
-      options: {
-        data: {
-          name: form.name.trim() || undefined,
-          phone: form.phone.trim() || undefined,
-          storefront_slug: brand.slug,
-        },
-        emailRedirectTo: new URL(
-          `/${encodeURIComponent(brand.slug)}/auth-confirmed`,
-          window.location.origin,
-        ).toString(),
-      },
+      name: form.name.trim() || undefined,
+      phone: form.phone.trim() || undefined,
+      brandSlug: brand.slug,
+      emailRedirectTo: new URL(
+        `/${encodeURIComponent(brand.slug)}/auth-confirmed`,
+        window.location.origin,
+      ).toString(),
     });
     if (error) {
       setWorking(false);

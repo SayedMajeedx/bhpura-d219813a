@@ -1,14 +1,20 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Loader2, KeyRound, AlertCircle, ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
-import { signOut } from "@/lib/auth/session";
+import { getCurrentSession, signOut } from "@/lib/auth/session";
+import {
+  exchangeRecoveryCode,
+  onAuthChange,
+  restoreSessionFromLink,
+  updatePassword,
+  verifyEmailToken,
+} from "@/lib/auth/sign-in";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
@@ -33,7 +39,7 @@ function ResetPasswordPage() {
     let isMounted = true;
 
     // 1. Listen for Supabase Auth state changes (PASSWORD_RECOVERY or SIGNED_IN)
-    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: sub } = onAuthChange((event, session) => {
       if (!isMounted) return;
       if (
         event === "PASSWORD_RECOVERY" ||
@@ -78,7 +84,7 @@ function ResetPasswordPage() {
         // 3. Handle Modern PKCE Flow (?code=...)
         const code = searchParams.get("code") || hashParams.get("code");
         if (code) {
-          const { data, error: exchangeErr } = await supabase.auth.exchangeCodeForSession(code);
+          const { data, error: exchangeErr } = await exchangeRecoveryCode(code);
           if (exchangeErr) {
             console.error("PKCE Code exchange failed:", exchangeErr);
             if (isMounted) {
@@ -97,11 +103,10 @@ function ResetPasswordPage() {
         const tokenHash = searchParams.get("token_hash") || hashParams.get("token_hash");
         const type = searchParams.get("type") || hashParams.get("type");
         if (tokenHash) {
-          const otpType = (type === "recovery" ? "recovery" : "email") as any;
-          const { data, error: otpErr } = await supabase.auth.verifyOtp({
-            token_hash: tokenHash,
-            type: otpType,
-          });
+          const { data, error: otpErr } = await verifyEmailToken(
+            tokenHash,
+            type === "recovery" ? "recovery" : "email",
+          );
           if (otpErr) {
             console.error("Token verification failed:", otpErr);
             if (isMounted) {
@@ -120,10 +125,10 @@ function ResetPasswordPage() {
         const accessToken = hashParams.get("access_token");
         const refreshToken = hashParams.get("refresh_token");
         if (accessToken) {
-          const { data, error: sessionErr } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken || "",
-          });
+          const { data, error: sessionErr } = await restoreSessionFromLink(
+            accessToken,
+            refreshToken || "",
+          );
           if (sessionErr) {
             console.error("Set session error:", sessionErr);
             if (isMounted) {
@@ -139,8 +144,8 @@ function ResetPasswordPage() {
         }
 
         // 6. Check if session already exists
-        const { data: currentSession } = await supabase.auth.getSession();
-        if (currentSession?.session) {
+        const currentSession = await getCurrentSession();
+        if (currentSession) {
           if (isMounted) {
             setStatus("valid");
           }
@@ -182,7 +187,7 @@ function ResetPasswordPage() {
     }
     setSubmitting(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password });
+      const { error } = await updatePassword(password);
       if (error) throw error;
       await signOut();
       setStatus("success");

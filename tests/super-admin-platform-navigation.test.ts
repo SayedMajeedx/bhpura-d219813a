@@ -67,7 +67,8 @@ describe("super-admin platform navigation", () => {
       path.join(process.cwd(), "src/routes/reset-password.tsx"),
       "utf8",
     );
-    expect(resetRoute).toContain("exchangeCodeForSession");
-    expect(resetRoute).toContain("verifyOtp");
+    // Through `@/lib/auth/sign-in` (exchangeCodeForSession / verifyOtp, tests/auth-sign-in.test.ts).
+    expect(resetRoute).toContain("exchangeRecoveryCode(");
+    expect(resetRoute).toContain("verifyEmailToken(");
   });
 });
