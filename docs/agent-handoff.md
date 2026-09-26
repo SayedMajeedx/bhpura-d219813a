@@ -128,8 +128,7 @@ show the fake-client pattern) or rendered components. Lower
 
 In `docs/bug-backlog.md`. Some need a product decision or a migration the owner
 applies: #25 (nothing creates the cash accounts or credits the cash box), #27
-(key rotations are never audit-logged), #31 (stock movements never record who
-made them). The rest are older refactor finds (#2–#21).
+(key rotations are never audit-logged). The rest are older refactor finds (#2–#21).
 
 ### 4.3 `any` reduction
 
