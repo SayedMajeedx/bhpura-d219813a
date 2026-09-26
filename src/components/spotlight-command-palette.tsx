@@ -33,6 +33,7 @@ import {
   Award,
   ShoppingCart,
 } from "lucide-react";
+import { fetchBrandIdBySlug } from "@/lib/data/brands";
 
 export function SpotlightCommandPalette({
   open,
@@ -62,12 +63,7 @@ export function SpotlightCommandPalette({
       // First resolve brandId if brand context is not loaded yet
       let bId = brand?.id;
       if (!bId && activeSlug) {
-        const { data: bData } = await supabase
-          .from("brands")
-          .select("id")
-          .eq("slug", activeSlug)
-          .maybeSingle();
-        bId = bData?.id;
+        bId = (await fetchBrandIdBySlug(activeSlug)) ?? undefined;
       }
 
       if (!bId) return { orders: [], products: [], customers: [] };

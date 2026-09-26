@@ -98,6 +98,11 @@ async function mockAdmin(page: Page, returnRequests: string[]) {
     };
     try {
       window.localStorage.setItem("sb-ikciahnuqhemvnyfvbyp-auth-token", JSON.stringify(session));
+      // A user who chose "Keep me logged in". Without it the root layout
+      // treats this fresh browser as a closed session and signs out at a
+      // random point of the load (src/lib/session-persistence.ts), which made
+      // this test flaky.
+      window.localStorage.setItem("boutq.auth.rememberMe", "1");
     } catch {
       /* ignore storage error */
     }
@@ -184,14 +189,7 @@ test("a return's detail page loads, selecting only variant columns that exist", 
   const returnRequests: string[] = [];
   await mockAdmin(page, returnRequests);
 
-  // A cold first load can land on /auth before the mocked session is read
-  // (the same race admin.spec.ts handles): navigate again when it does.
   await page.goto(`/admin/b/test-brand/returns/${RETURN_ID}`);
-  await page.waitForLoadState("domcontentloaded");
-  if (page.url().includes("/auth")) {
-    await page.goto(`/admin/b/test-brand/returns/${RETURN_ID}`);
-    await page.waitForLoadState("domcontentloaded");
-  }
   await expect(page.getByText("RET-2026-0001").first()).toBeVisible({ timeout: 45_000 });
 
   const detailRequest = returnRequests.find((url) => url.includes(`id=eq.${RETURN_ID}`));

@@ -28,14 +28,7 @@ import {
   typographyVariables,
 } from "@/lib/typography";
 import { ordersKeys, ordersQueries, type OrderDetail } from "@/lib/data/orders";
-
-type BrandRow = {
-  id: string;
-  slug: string;
-  name_en: string;
-  name_ar: string | null;
-  is_active: boolean;
-};
+import { brandQueries } from "@/lib/data/brands";
 
 /**
  * Theme is provided here rather than at the router root so the `.dark` class
@@ -256,18 +249,7 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
   }, [isLoading, profile, signOutAndRedirect]);
 
   // Super admin: load all brands for switcher
-  const brandsQ = useQuery({
-    queryKey: ["brands-switcher"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("brands")
-        .select("id, slug, name_en, name_ar, is_active")
-        .order("name_en");
-      if (error) throw error;
-      return (data ?? []) as BrandRow[];
-    },
-    enabled: isSuperAdmin,
-  });
+  const brandsQ = useQuery({ ...brandQueries.directory(), enabled: isSuperAdmin });
 
   const signOut = async () => {
     await supabase.auth.signOut();

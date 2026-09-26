@@ -152,6 +152,18 @@ export async function fetchBarcodeLabelData(brandId: string) {
   return { products: products.data ?? [], variants: variants.data ?? [] };
 }
 
+/** The brand's paid add-ons (customization options), by name. */
+export async function fetchCustomizations(brandId: string) {
+  const { data, error } = await supabase
+    .from("customization_options")
+    .select("*")
+    .eq("brand_id", brandId)
+    .order("name");
+  if (error) throw error;
+  return data ?? [];
+}
+export type CustomizationOption = Awaited<ReturnType<typeof fetchCustomizations>>[number];
+
 /** Admin screens edit the catalog while others read it; 30s keeps lists fresh without refetch storms. */
 const CATALOG_CACHE = { staleTime: 30_000 } as const;
 
@@ -187,6 +199,13 @@ export const catalogQueries = {
     queryOptions({
       queryKey: catalogKeys.packagingMaterials(brandId),
       queryFn: () => fetchPackagingMaterials(brandId),
+      enabled: Boolean(brandId),
+      ...CATALOG_CACHE,
+    }),
+  customizations: (brandId: string) =>
+    queryOptions({
+      queryKey: catalogKeys.customizations(brandId),
+      queryFn: () => fetchCustomizations(brandId),
       enabled: Boolean(brandId),
       ...CATALOG_CACHE,
     }),

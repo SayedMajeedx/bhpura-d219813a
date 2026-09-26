@@ -6,7 +6,9 @@ describe("active brand shell label", () => {
   const shell = fs.readFileSync(path.join(process.cwd(), "src/components/app-shell.tsx"), "utf8");
 
   it("resolves the displayed brand from the active route slug", () => {
-    expect(shell).toContain('select("id, slug, name_en, name_ar, is_active")');
+    // The brands come from the shared directory (its columns are tested in
+    // brands-lookups-data-layer.test.ts).
+    expect(shell).toContain("brandQueries.directory()");
     expect(shell).toContain("brand.slug.toLowerCase() === activeSlug.toLowerCase()");
     expect(shell).toContain("profileBrandMatchesRoute");
     expect(shell).toMatch(/const brandLabel =[\s\S]*?activeBrand\?\.name_ar[\s\S]*?activeSlug/);
