@@ -41,23 +41,9 @@ import {
   FileText,
   User,
 } from "lucide-react";
-import { fetchInventoryMovements } from "@/lib/data/catalog";
+import { fetchInventoryMovements, type InventoryMovementRow } from "@/lib/data/catalog";
 
-export interface InventoryMovement {
-  id: string;
-  brand_id: string;
-  variant_id: string;
-  location: string;
-  delta: number;
-  balance_after: number;
-  reason: string;
-  reference_type: string | null;
-  reference_id: string | null;
-  idempotency_key: string | null;
-  created_by: string | null;
-  note: string | null;
-  created_at: string;
-}
+export type InventoryMovement = InventoryMovementRow;
 
 const REASON_LABELS: Record<string, { ar: string; en: string; badgeClass: string }> = {
   order_reservation: {
@@ -183,8 +169,7 @@ export function InventoryHistorySheet({
         return;
       }
 
-      // `created_by` is not a column (it is `actor_id`), so the actor stays blank (bug backlog #31).
-      const rows = (data || []) as unknown as InventoryMovement[];
+      const rows: InventoryMovement[] = data || [];
       setMovements(rows);
       setTotalCount(count || 0);
 
@@ -209,7 +194,7 @@ export function InventoryHistorySheet({
 
       // Fetch actor profiles
       const userIds = Array.from(
-        new Set(rows.map((r) => r.created_by).filter((uid): uid is string => Boolean(uid))),
+        new Set(rows.map((r) => r.actor_id).filter((uid): uid is string => Boolean(uid))),
       );
       if (userIds.length > 0) {
         const profs = await fetchProfileNames(userIds);
@@ -404,7 +389,7 @@ export function InventoryHistorySheet({
                     : "text-rose-600 dark:text-rose-400 font-mono font-bold";
 
                   const order = m.reference_id ? orderMap[m.reference_id] : null;
-                  const actor = m.created_by ? profileMap[m.created_by] : null;
+                  const actor = m.actor_id ? profileMap[m.actor_id] : null;
 
                   return (
                     <TableRow key={m.id} className="border-border-subtle hover:bg-muted/30">
@@ -487,9 +472,9 @@ export function InventoryHistorySheet({
                             <User className="h-3 w-3 text-muted-foreground" />
                             <span>{actor.full_name || actor.email}</span>
                           </span>
-                        ) : m.created_by ? (
+                        ) : m.actor_id ? (
                           <span className="font-mono text-muted-foreground text-xs">
-                            {m.created_by.slice(0, 8)}
+                            {m.actor_id.slice(0, 8)}
                           </span>
                         ) : (
                           <span className="text-muted-foreground text-xs italic">

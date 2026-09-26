@@ -121,14 +121,6 @@ Found while fixing #24 (the transfer is now one database function that refuses m
 - **Problem**: the name says it strips fit-passport fields before saving a product, but it strips nothing.
 - **Fix**: find out what it was meant to remove (git history, `src/addons/fit-passport/`). Implement it with a test, or delete it.
 
-### 31. The stock history never shows who made a change
-
-Found while moving the stock-movement history into `src/lib/data/catalog`. The screen kept its behaviour and points here.
-
-- **Where**: `src/components/inventory/InventoryHistorySheet.tsx` reads `created_by` from `inventory_movements`; the column is `actor_id`. Nothing sets `actor_id` either (production: 0 of 33 movements).
-- **Effect**: the history's "by" column is always empty, so a merchant cannot tell which team member changed stock.
-- **Fix**: have the stock functions (`apply_inventory_movement` and the order/return paths) record `auth.uid()` as `actor_id`, and read `actor_id` in the sheet.
-
 ### 16. Catalog writes that ignore their errors
 
 Found while moving the catalog writes into `src/lib/data/catalog` (the calls now end in `.catch(() => undefined)`, or the mutation says so, and point here).

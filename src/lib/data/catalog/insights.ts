@@ -88,6 +88,11 @@ export async function fetchInventoryMovements(args: {
   return { rows: data ?? [], count: count ?? 0 };
 }
 
+/** One stock movement; `actor_id` is who made it (null for system runs such as reconciliation). */
+export type InventoryMovementRow = Awaited<
+  ReturnType<typeof fetchInventoryMovements>
+>["rows"][number];
+
 export const catalogInsightQueries = {
   backInStockCount: (brandId: string) =>
     queryOptions({
