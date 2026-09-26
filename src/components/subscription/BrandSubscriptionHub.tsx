@@ -12,7 +12,6 @@ import {
   getSubscriptionReceiptUploadUrl,
   submitSubscriptionReceipt,
 } from "@/lib/saas-subscription.functions";
-import { supabase } from "@/integrations/supabase/client";
 import { useEntitlements } from "@/lib/saas-billing/use-entitlements";
 import { UsageMeterBar } from "@/components/common/UsageMeterBar";
 import { useI18n } from "@/lib/i18n";
@@ -60,6 +59,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { PayPalSubscriptionButton } from "./PayPalSubscriptionButton";
+import { systemSettingsQueries } from "@/lib/data/system-settings";
 
 interface BrandSubscriptionHubProps {
   brandId: string;
@@ -104,26 +104,8 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch BenefitPay system settings
-  const { data: systemSettings } = useQuery({
-    queryKey: ["system_settings_billing"],
-    queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from("system_settings")
-        .select(
-          "base_price_bhd, discount_price_bhd, benefit_pay_qr_url, merchant_account_name, subscription_iban",
-        )
-        .eq("id", 1)
-        .maybeSingle();
-      return (
-        data ?? {
-          merchant_account_name: "BOUTQ-OFFICIAL",
-          subscription_iban: "BH12KHCB0000001234567890",
-          benefit_pay_qr_url: null,
-        }
-      );
-    },
-  });
+  // BenefitPay system settings (screens fall back to their defaults)
+  const { data: systemSettings } = useQuery(systemSettingsQueries.billingDetails());
 
   const handleCopyIban = () => {
     const iban = systemSettings?.subscription_iban || "BH12KHCB0000001234567890";

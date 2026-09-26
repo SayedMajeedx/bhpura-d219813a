@@ -21,13 +21,13 @@ import { collectMaintainabilityMetrics } from "../scripts/maintainability-metric
  */
 
 const BUDGETS = {
-  asAny: 630,
+  asAny: 628,
   colonAny: 725,
   asNever: 0,
   tsIgnore: 0,
   tsExpectError: 0,
   eslintDisable: 10,
-  directSupabaseCalls: 126,
+  directSupabaseCalls: 123,
   readFileSyncTestFiles: 71,
   filesOver1000: 23,
   maxLinesForNewFile: 600,
@@ -45,11 +45,11 @@ const BUDGETS = {
 const GIANT_FILES_BUDGETS: Record<string, number> = {
   "src/features/settings/registry.ts": 2616,
   "src/routes/_authenticated/admin.b.$slug.content-studio.tsx": 2458,
-  "src/components/subscription/BrandSubscriptionHub.tsx": 1972,
+  "src/components/subscription/BrandSubscriptionHub.tsx": 1954,
   "src/routes/_authenticated/admin.b.$slug.export.tsx": 1838,
   "src/lib/addons/addon-showcase-data.ts": 1893,
   "src/routes/_authenticated/admin.b.$slug.customers.tsx": 1770,
-  "src/components/super/SuperPlansManager.tsx": 1728,
+  "src/components/super/SuperPlansManager.tsx": 1721,
   "src/routes/_authenticated/admin.b.$slug.team.tsx": 1705,
   "src/addons/size-guides/components/admin/SizeGuideStudioPage.tsx": 1703,
   "src/routes/$slug.account.tsx": 1477,
