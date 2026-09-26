@@ -1,11 +1,15 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Gift, MessageCircle, Star, CheckCheck, X } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { normalizePhoneForWhatsApp } from "@/lib/courier-whatsapp";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  invalidateReadyReviewRequests,
+  reviewsQueries,
+  updateReviewRequestStatus,
+} from "@/lib/data/reviews";
 
 type ReviewRequest = {
   request_id: string;
@@ -28,16 +32,9 @@ export function ReviewRequestQueue({
   isAr: boolean;
 }) {
   const queryClient = useQueryClient();
-  const queryKey = ["ready-order-review-requests", brandId];
   const requestQ = useQuery({
-    queryKey,
-    queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("list_ready_order_review_requests", {
-        p_brand_id: brandId,
-      });
-      if (error) throw error;
-      return (data ?? []) as ReviewRequest[];
-    },
+    ...reviewsQueries.readyRequests(brandId),
+    select: (rows) => rows as ReviewRequest[],
     refetchInterval: 60_000,
   });
 
@@ -45,12 +42,8 @@ export function ReviewRequestQueue({
     requestId: string,
     status: "whatsapp_opened" | "sent" | "dismissed",
   ) => {
-    const { error } = await (supabase.rpc as any)("update_order_review_request_status", {
-      p_request_id: requestId,
-      p_status: status,
-    });
-    if (error) throw error;
-    await queryClient.invalidateQueries({ queryKey });
+    await updateReviewRequestStatus(requestId, status);
+    await invalidateReadyReviewRequests(queryClient, brandId);
   };
 
   const openWhatsApp = async (request: ReviewRequest) => {

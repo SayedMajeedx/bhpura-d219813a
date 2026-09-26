@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowUpRight, MessageSquareHeart, Star } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { calculateReviewMetrics, type OrderReviewAdminRow } from "@/lib/order-reviews";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { reviewsQueries } from "@/lib/data/reviews";
 
 export function ReviewInsightsSummary({
   brandId,
@@ -16,15 +16,8 @@ export function ReviewInsightsSummary({
   isAr: boolean;
 }) {
   const reviewsQ = useQuery({
-    queryKey: ["brand-order-reviews", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("list_brand_order_reviews", {
-        p_brand_id: brandId,
-      });
-      if (error) throw error;
-      return (data ?? []) as OrderReviewAdminRow[];
-    },
-    staleTime: 30_000,
+    ...reviewsQueries.orderReviews(brandId),
+    select: (rows) => rows as OrderReviewAdminRow[],
   });
 
   const metrics = calculateReviewMetrics(reviewsQ.data ?? []);

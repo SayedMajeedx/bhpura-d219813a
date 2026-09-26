@@ -148,6 +148,16 @@ Found while moving the integrations screen into `src/lib/data/integrations`. The
 - **Effect**: no rotation has ever been logged (production: 0 `INTEGRATION_KEY_ROTATED` rows of 17 audit rows), while the dialog tells the merchant the rotation was recorded.
 - **Fix**: log inside `save_integration_credential` when a key or secret changes (SECURITY DEFINER, with the caller as actor), and drop the client insert.
 
+## Reviews (`src/routes/review.$token.tsx`, `src/lib/data/reviews`)
+
+### 30. A failed review submission shows the customer nothing
+
+Found while moving reviews into `src/lib/data/reviews`. The call kept its behaviour and points here.
+
+- **Where**: the public review page (`/review/<token>`): when `submit_public_order_review` fails, the page only stops the spinner.
+- **Effect**: an expired link, a second submission or a network error leaves the customer on the form with no message, pressing submit again.
+- **Fix**: show the error (and, for an already-reviewed order, the completed state with its reward code).
+
 ## Categories (`src/routes/_authenticated/admin.b.$slug.categories.tsx`, `src/lib/data/categories`)
 
 ### 20. Reordering categories ignores write errors
