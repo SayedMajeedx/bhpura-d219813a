@@ -28,7 +28,7 @@ const BUDGETS = {
   tsExpectError: 0,
   eslintDisable: 10,
   directSupabaseCalls: 25,
-  readFileSyncTestFiles: 65,
+  readFileSyncTestFiles: 60,
   filesOver1000: 23,
   maxLinesForNewFile: 600,
   maxLinesForExistingFile: 1000,

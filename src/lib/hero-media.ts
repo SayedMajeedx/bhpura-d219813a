@@ -209,6 +209,46 @@ export const HERO_FILL_MOBILE = {
 
 export const HERO_FILL_DESKTOP_PX = { compact: 420, standard: 520, cinematic: 620 } as const;
 
+/**
+ * The hero frame's size classes. Smart Fit follows the media's own shape (CSS
+ * variables set by HeroV2) within the HERO_SMART_FRAME limits; Fill uses the
+ * merchant's phone ratio and desktop height (HERO_FILL_MOBILE /
+ * HERO_FILL_DESKTOP_PX). The classes are written out in full so Tailwind
+ * generates them; tests check they match the model's numbers.
+ */
+export function heroFrameSizingClass(args: {
+  smartFit: boolean;
+  mobileRatio?: string | null;
+  desktopHeight?: string | null;
+}) {
+  const desktop = args.desktopHeight ?? "standard";
+  if (args.smartFit) {
+    const desktopMax =
+      desktop === "compact"
+        ? "sm:max-h-[min(70svh,480px)]"
+        : desktop === "cinematic"
+          ? "sm:max-h-[min(88svh,860px)]"
+          : "sm:max-h-[min(80svh,680px)]";
+    return `aspect-[var(--hero-ar-m)] sm:aspect-[var(--hero-ar)] min-h-[180px] max-h-[min(78svh,680px)] sm:min-h-[320px] ${desktopMax}`;
+  }
+  const mobile = args.mobileRatio ?? "portrait_4_5";
+  const mobileClass =
+    mobile === "story_9_16"
+      ? "aspect-[9/16] min-h-[520px]"
+      : mobile === "square_1_1"
+        ? "aspect-square min-h-[340px]"
+        : mobile === "landscape_4_3"
+          ? "aspect-[4/3] min-h-[260px]"
+          : "aspect-[4/5] min-h-[420px]";
+  const desktopClass =
+    desktop === "compact"
+      ? "sm:aspect-auto sm:h-[420px] sm:min-h-[420px]"
+      : desktop === "cinematic"
+        ? "sm:aspect-auto sm:h-[620px] sm:min-h-[620px]"
+        : "sm:aspect-auto sm:h-[520px] sm:min-h-[520px]";
+  return `${mobileClass} ${desktopClass}`;
+}
+
 export const HERO_PREVIEW_VIEWPORTS = {
   mobile: { w: 390, h: 844 },
   desktop: { w: 1440, h: 900 },

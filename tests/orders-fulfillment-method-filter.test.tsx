@@ -1,7 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
-import fs from "fs";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { OrdersToolbar } from "../src/components/orders/OrdersToolbar";
+import {
+  FULFILLMENT_METHOD_FILTER_OPTIONS,
+  OrdersToolbar,
+} from "../src/components/orders/OrdersToolbar";
 
 function renderToolbar(fulfillmentMethodFilter: string) {
   render(
@@ -39,11 +41,7 @@ describe("orders fulfillment-method filter", () => {
 
   it("offers exactly the methods the orders table allows", () => {
     // orders_fulfillment_method_check: delivery | pickup | digital
-    const src = fs.readFileSync("src/components/orders/OrdersToolbar.tsx", "utf8");
-    const block = src.slice(src.indexOf("FULFILLMENT_METHOD_FILTER_OPTIONS = ["));
-    const values = [...block.slice(0, block.indexOf("] as const")).matchAll(/value: "(\w+)"/g)].map(
-      (m: RegExpMatchArray) => m[1],
-    );
+    const values = FULFILLMENT_METHOD_FILTER_OPTIONS.map((option) => option.value);
     expect(values).toEqual(["all", "delivery", "pickup", "digital"]);
   });
 });

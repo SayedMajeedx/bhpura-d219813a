@@ -1,4 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { createElement } from "react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
 import {
   SETTINGS_TABS,
   SETTINGS_GROUPS,
@@ -214,23 +216,34 @@ describe("Store Readiness Checklist Integration", () => {
   });
 
   it("SettingsTabBar provides full untruncated labels and 44px mobile touch targets", async () => {
-    // Read SettingsTabs.tsx source to verify mobile responsive design guarantees
-    const fs = await import("fs");
-    const path = await import("path");
-    const source = fs.readFileSync(
-      path.resolve(__dirname, "../src/features/settings/SettingsTabs.tsx"),
-      "utf8",
+    const { SettingsTabBar } = await import("../src/features/settings/SettingsTabs");
+    const { I18nProvider } = await import("../src/lib/i18n");
+    localStorage.setItem("lang", "en");
+    const onTabChange = vi.fn();
+    render(
+      createElement(
+        I18nProvider,
+        null,
+        createElement(SettingsTabBar, { activeTab: "identity", onTabChange }),
+      ),
     );
 
-    // Verify it uses a scrollable rail rather than rigid 5-column grid on mobile
-    expect(source).toContain("overflow-x-auto no-scrollbar scroll-smooth");
-    expect(source).not.toContain("grid grid-cols-5");
+    // A scrollable rail rather than a rigid 5-column grid on mobile.
+    const rail = screen.getByRole("tablist", { name: "Settings sections" });
+    expect(rail.className).toContain("overflow-x-auto");
+    expect(rail.className).not.toContain("grid-cols-5");
 
-    // Verify labels are not truncated with ellipsis on mobile
-    expect(source).toContain('className="whitespace-nowrap font-semibold">{tab.label}</div>');
-    expect(source).not.toContain('<div className="truncate">{tab.label}</div>');
-
-    // Verify min-h-11 (44px) touch target compliance with AGENTS.md rule #2
-    expect(source).toContain("min-h-11");
+    const tabs = screen.getAllByRole("tab");
+    expect(tabs.length).toBeGreaterThanOrEqual(5);
+    for (const tab of tabs) {
+      // 44px touch targets (AGENTS.md rule #2) and full labels, never truncated.
+      expect(tab.className).toContain("min-h-11");
+      const label = within(tab).getByText(tab.getAttribute("aria-label") ?? "");
+      expect(label.className).toContain("whitespace-nowrap");
+      expect(label.className).not.toContain("truncate");
+    }
+    expect(screen.getByRole("tab", { name: "Identity" })).toHaveAttribute("aria-selected", "true");
+    fireEvent.click(tabs[1]);
+    expect(onTabChange).toHaveBeenCalledTimes(1);
   });
 });

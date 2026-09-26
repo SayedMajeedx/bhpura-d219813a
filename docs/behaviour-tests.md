@@ -23,12 +23,14 @@ Examples: `tests/order-profit-clarity.test.ts` (extracted label),
 `tests/os-breadcrumb-regression.test.tsx` (extracted builder + rendered menu),
 `tests/inventory-history-actor.test.tsx` (rendered sheet, data layer mocked),
 `tests/review-story-generator.test.ts` (canvas renderer with a recording fake context),
-`tests/order-change-confirmations.test.tsx` (modal and Radix menu driven by events).
+`tests/order-change-confirmations.test.tsx` (modal and Radix menu driven by events),
+`tests/storefront-google-oauth-return.test.ts` (a route's real `beforeLoad` guard),
+`tests/hero-smart-fit.test.ts` (rendered hero and shell, context mocked).
 
 ## Classification
 
-- **convert** (40): feature assertions on source text.
-- **migration** (16): assertions on SQL in
+- **convert** (32): feature assertions on source text.
+- **migration** (19): assertions on SQL in
   `supabase/migrations`. They pin database contracts and stay until the
   project has a database test harness (pgTAP or a local Supabase in CI).
 - **guard** (10): architecture rules where reading source is
@@ -40,10 +42,7 @@ Examples: `tests/order-profit-clarity.test.ts` (extracted label),
 | convert   | `tests/annual-subscription-regressions.test.ts`     | source part to convert; SQL part is a migration contract |
 | convert   | `tests/brand-owner-provisioning.test.ts`            | source part to convert; SQL part is a migration contract |
 | convert   | `tests/brand-r2-cleanup-recovery.test.ts`           | source part to convert; SQL part is a migration contract |
-| convert   | `tests/catalog-inquiries.test.ts`                   |                                                          |
 | convert   | `tests/customers-inventory-bulk-selection.test.ts`  |                                                          |
-| convert   | `tests/hero-media-resolve.test.ts`                  |                                                          |
-| convert   | `tests/hero-smart-fit.test.ts`                      |                                                          |
 | convert   | `tests/homepage-editorial-sections.test.ts`         | source part to convert; SQL part is a migration contract |
 | convert   | `tests/image-crop-system.test.ts`                   |                                                          |
 | convert   | `tests/impersonation-exit-regression.test.ts`       |                                                          |
@@ -57,18 +56,13 @@ Examples: `tests/order-profit-clarity.test.ts` (extracted label),
 | convert   | `tests/onboarding-plan-catalog.test.ts`             | source part to convert; SQL part is a migration contract |
 | convert   | `tests/order-review-reward.test.ts`                 | source part to convert; SQL part is a migration contract |
 | convert   | `tests/orders-bulk-payment-courier.test.ts`         |                                                          |
-| convert   | `tests/orders-fulfillment-method-filter.test.tsx`   |                                                          |
 | convert   | `tests/products-made-to-order.test.ts`              | source part to convert; SQL part is a migration contract |
 | convert   | `tests/review-management-dashboard.test.ts`         | source part to convert; SQL part is a migration contract |
 | convert   | `tests/secondary-banner-parallax.test.ts`           | source part to convert; SQL part is a migration contract |
-| convert   | `tests/settings-tabs.test.ts`                       |                                                          |
-| convert   | `tests/size-guide-templates.test.ts`                |                                                          |
-| convert   | `tests/store-profile.test.ts`                       |                                                          |
 | convert   | `tests/storefront-catalog-mode.test.ts`             | source part to convert; SQL part is a migration contract |
 | convert   | `tests/storefront-e2e-regressions.test.ts`          |                                                          |
 | convert   | `tests/storefront-engine-scoping.test.ts`           |                                                          |
 | convert   | `tests/storefront-fit-passport.test.ts`             | source part to convert; SQL part is a migration contract |
-| convert   | `tests/storefront-google-oauth-return.test.ts`      |                                                          |
 | convert   | `tests/storefront-hero-and-gallery-options.test.ts` |                                                          |
 | convert   | `tests/storefront-quality-upgrades.test.ts`         |                                                          |
 | convert   | `tests/storefront-tailoring-experience.test.ts`     |                                                          |
@@ -79,6 +73,7 @@ Examples: `tests/order-profit-clarity.test.ts` (extracted label),
 | migration | `tests/accounting-brand-isolation.test.ts`          | SQL contract                                             |
 | migration | `tests/auth-user-deletion-lifecycle.test.ts`        | SQL contract                                             |
 | migration | `tests/card-stock-policy-migration.test.ts`         | SQL contract                                             |
+| migration | `tests/catalog-inquiries.test.ts`                   | SQL contract                                             |
 | migration | `tests/category-counts-and-rpc-security.test.ts`    | SQL contract                                             |
 | migration | `tests/custom-tailoring-location.test.ts`           | SQL contract                                             |
 | migration | `tests/fit-passport.test.ts`                        | SQL contract                                             |
@@ -90,6 +85,8 @@ Examples: `tests/order-profit-clarity.test.ts` (extracted label),
 | migration | `tests/reporting-dashboard-consistency.test.ts`     | SQL contract                                             |
 | migration | `tests/returning-customer-promo.test.ts`            | SQL contract                                             |
 | migration | `tests/returns-and-exchanges.test.ts`               | SQL contract                                             |
+| migration | `tests/size-guide-templates.test.ts`                | SQL contract                                             |
+| migration | `tests/store-profile.test.ts`                       | SQL contract                                             |
 | migration | `tests/stored-routine-repair-migration.test.ts`     | SQL contract                                             |
 | migration | `tests/tenant-activation-regression.test.ts`        | SQL contract                                             |
 | guard     | `tests/addon-contributions-consumed.test.ts`        | every addon contribution is mounted                      |

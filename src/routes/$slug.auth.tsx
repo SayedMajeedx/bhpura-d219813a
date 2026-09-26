@@ -9,11 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { translateAuthError } from "@/lib/auth-errors";
-import { applyRememberMe } from "@/lib/session-persistence";
-import {
-  clearStorefrontOAuthReturn,
-  rememberStorefrontOAuthReturn,
-} from "@/lib/storefront-oauth-return";
+import { clearStorefrontOAuthReturn } from "@/lib/storefront-oauth-return";
 import { signOut } from "@/lib/auth/session";
 import {
   activateStorefrontMembership,
@@ -23,6 +19,7 @@ import {
   signInWithPassword,
   signUpStorefrontCustomer,
 } from "@/lib/auth/sign-in";
+import { prepareStorefrontGoogleSignIn } from "@/lib/auth/storefront-return";
 
 export const Route = createFileRoute("/$slug/auth")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -79,8 +76,7 @@ function StorefrontAuth() {
   const signInWithGoogle = async () => {
     setWorking(true);
     const callbackPath = `/${encodeURIComponent(brand.slug)}/auth-confirmed`;
-    applyRememberMe(true);
-    rememberStorefrontOAuthReturn(callbackPath);
+    prepareStorefrontGoogleSignIn(callbackPath);
     const { error } = await startGoogleSignIn(
       new URL(callbackPath, window.location.origin).toString(),
     );

@@ -63,7 +63,7 @@ const FULFILLMENT_STATUS_FILTER_OPTIONS = [
 ] as const;
 
 // Values match orders.fulfillment_method; labels match the invoice wording.
-const FULFILLMENT_METHOD_FILTER_OPTIONS = [
+export const FULFILLMENT_METHOD_FILTER_OPTIONS = [
   { value: "all", ar: "الكل", en: "All" },
   { value: "delivery", ar: "توصيل للمنزل", en: "Home delivery" },
   { value: "pickup", ar: "استلام", en: "Pickup" },

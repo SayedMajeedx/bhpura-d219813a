@@ -10,6 +10,7 @@ import {
 } from "@/lib/media-aspect";
 import {
   heroFocalPosition,
+  heroFrameSizingClass,
   isSmartFitSetting,
   resolveHeroSlideMedia,
   useIsHeroMobile,
@@ -197,34 +198,13 @@ export function HeroV2({ slides, background }: HeroV2Props) {
   const isTinyFrame = Boolean(frameSize && frameSize.h > 0 && frameSize.h < 230);
   const dense = desktopHeight === "compact" || isShortFrame;
 
-  const mobileRatioClass =
-    mobileRatio === "story_9_16"
-      ? "aspect-[9/16] min-h-[520px]"
-      : mobileRatio === "square_1_1"
-        ? "aspect-square min-h-[340px]"
-        : mobileRatio === "landscape_4_3"
-          ? "aspect-[4/3] min-h-[260px]"
-          : "aspect-[4/5] min-h-[420px]";
-
-  const desktopHeightClass =
-    desktopHeight === "compact"
-      ? "sm:aspect-auto sm:h-[420px] sm:min-h-[420px]"
-      : desktopHeight === "cinematic"
-        ? "sm:aspect-auto sm:h-[620px] sm:min-h-[620px]"
-        : "sm:aspect-auto sm:h-[520px] sm:min-h-[520px]";
-
-  const smartDesktopMaxClass =
-    desktopHeight === "compact"
-      ? "sm:max-h-[min(70svh,480px)]"
-      : desktopHeight === "cinematic"
-        ? "sm:max-h-[min(88svh,860px)]"
-        : "sm:max-h-[min(80svh,680px)]";
-
   // The frame's shape comes from CSS variables so the server render is already
   // correct on both phones and desktops (no JS needed to pick the breakpoint).
-  const frameSizingClass = smartFrame
-    ? `aspect-[var(--hero-ar-m)] sm:aspect-[var(--hero-ar)] min-h-[180px] max-h-[min(78svh,680px)] sm:min-h-[320px] ${smartDesktopMaxClass}`
-    : `${mobileRatioClass} ${desktopHeightClass}`;
+  const frameSizingClass = heroFrameSizingClass({
+    smartFit: Boolean(smartFrame),
+    mobileRatio,
+    desktopHeight,
+  });
 
   const outerWrapperClass = isFullBleed
     ? "relative w-full overflow-hidden"

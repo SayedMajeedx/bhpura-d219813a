@@ -24,14 +24,10 @@ import {
 } from "lucide-react";
 import { applyRememberMe } from "@/lib/session-persistence";
 import { translateAuthError } from "@/lib/auth-errors";
-import { readStorefrontOAuthReturn } from "@/lib/storefront-oauth-return";
 import { fetchCallerProfile } from "@/lib/data/profiles";
-import { getCurrentSession, getCurrentUser, signOut } from "@/lib/auth/session";
-import {
-  onAuthChange,
-  signInWithPasskey as signInWithPasskeyAuth,
-  signInWithPassword,
-} from "@/lib/auth/sign-in";
+import { getCurrentUser, signOut } from "@/lib/auth/session";
+import { signInWithPasskey as signInWithPasskeyAuth, signInWithPassword } from "@/lib/auth/sign-in";
+import { continueToStorefrontWhenSignedIn } from "@/lib/auth/storefront-return";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -54,24 +50,8 @@ function AuthPage() {
     );
   }, []);
 
-  useEffect(() => {
-    const returnPath = readStorefrontOAuthReturn();
-    if (!returnPath) return;
-    let active = true;
-    const continueToStorefront = () => {
-      if (active) window.location.replace(returnPath);
-    };
-    void getCurrentSession().then((session) => {
-      if (session?.user) continueToStorefront();
-    });
-    const { data: listener } = onAuthChange((_event, session) => {
-      if (session?.user) continueToStorefront();
-    });
-    return () => {
-      active = false;
-      listener.subscription.unsubscribe();
-    };
-  }, []);
+  // A shopper returning from Google sign-in goes back to their store.
+  useEffect(() => continueToStorefrontWhenSignedIn((path) => window.location.replace(path)), []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();

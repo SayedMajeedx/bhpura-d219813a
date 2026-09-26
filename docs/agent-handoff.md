@@ -118,7 +118,7 @@ Measured with `node scripts/maintainability-metrics.mjs`:
 ### 4.1 Phase 6: behaviour tests (next)
 
 Per `docs/maintainability-roadmap.md`. The classification and method are in
-`docs/behaviour-tests.md` (40 left to convert, 16 migration contracts, 10 guards);
+`docs/behaviour-tests.md` (see its table for what is left to convert);
 convert a few files per PR. Keep the architecture guards (ratchet, lint-rule and import-boundary
 checks); convert feature assertions that read source text into behaviour
 tests against the data-layer functions (the `tests/*-data-layer.test.ts` files
