@@ -115,9 +115,9 @@ export default tseslint.config(
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(auth_profile_role|caller_profile|caller_permissions|reports-(overview(-previous)?|sales|products(-inquiries)?|customers))$/]",
+            "ArrayExpression > Literal:first-child[value=/^(auth_profile_role|caller_profile|caller_permissions|reports-(overview(-previous)?|sales|products(-inquiries)?|customers)|brand_by_slug|brand_icon_settings|brands-switcher|super_all_brands_list)$/]",
           message:
-            "Use `profilesQueries.caller` / `profilesKeys` for the caller's profile, and `reportingQueries` / `reportingKeys` for reports.",
+            "Use `profilesQueries.caller` / `profilesKeys` for the caller's profile, `reportingQueries` / `reportingKeys` for reports, and `brandQueries` / `brandKeys` for brand lookups.",
         },
       ],
     },
@@ -194,13 +194,13 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(orders|order_items|expenses|business_settings|products|product_variants|product_bom_items|packaging_materials|customers|customer_addresses|return_requests|message_templates|cash_flow_accounts|account_transactions|vendors|purchase_orders|profiles)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(orders|order_items|expenses|business_settings|products|product_variants|product_bom_items|packaging_materials|customers|customer_addresses|return_requests|message_templates|customization_options|cash_flow_accounts|account_transactions|vendors|purchase_orders|profiles)$/]",
           message:
             "Orders, expenses, business settings, the catalog, customers and the accounting tabs go through `@/lib/data/{orders,expenses,business-settings,catalog,customers,accounting}`, not direct Supabase calls.",
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(orders?|expenses|business-settings|cogs|orders-reconciliation|expenses-business-settings|products|variants|packaging-materials|product-bom-items(-all)?|customers|customer_addresses|message-templates|cash-flow-accounts|vendors(-full)?|purchase-orders|dashboard-(orders-with-items|recent-orders|expenses|expenses-full|business-settings|products|variants|customers|pending-returns|incubator-sales|catalog-inquiries|reporting-overview(-previous)?))$/]",
+            "ArrayExpression > Literal:first-child[value=/^(orders?|expenses|business-settings|cogs|orders-reconciliation|expenses-business-settings|products|variants|packaging-materials|product-bom-items(-all)?|customers|customer_addresses|message-templates|customizations|cash-flow-accounts|vendors(-full)?|purchase-orders|dashboard-(orders-with-items|recent-orders|expenses|expenses-full|business-settings|products|variants|customers|pending-returns|incubator-sales|catalog-inquiries|reporting-overview(-previous)?))$/]",
           message:
             "Build these cache keys with `ordersKeys` / `expensesKeys` / `businessSettingsKeys` / `catalogKeys` / `customersKeys` / `accountingKeys` (or the invalidate helpers).",
         },
@@ -238,7 +238,7 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(products|product_variants|product_bom_items|packaging_materials|business_settings|orders|order_items|categories|profiles)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(products|product_variants|product_bom_items|packaging_materials|business_settings|orders|order_items|categories|customization_options|profiles)$/]",
           message:
             "The admin catalog, categories, the settings row and orders go through `@/lib/data/{catalog,categories,business-settings,orders}`, not direct Supabase calls.",
         },
@@ -254,7 +254,7 @@ export default tseslint.config(
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(products|variants|packaging-materials|product-bom-items(-all)?|inventory-sales-past45|categories)$/]",
+            "ArrayExpression > Literal:first-child[value=/^(products|variants|packaging-materials|product-bom-items(-all)?|inventory-sales-past45|categories|customizations)$/]",
           message: "Build these cache keys with `catalogKeys` (or `invalidateCatalog`).",
         },
       ],

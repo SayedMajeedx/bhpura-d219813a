@@ -8,4 +8,6 @@ export const catalogKeys = {
   productBom: (brandId: string, productId: string) =>
     [...catalogKeys.productBoms(brandId), productId] as const,
   packagingMaterials: (brandId: string) => ["packaging-materials", brandId] as const,
+  /** Paid add-ons (customization options), shared by the inventory tab and the order editor. */
+  customizations: (brandId: string) => ["customizations", brandId] as const,
 };

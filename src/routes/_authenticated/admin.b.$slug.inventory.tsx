@@ -13,12 +13,11 @@ import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { queryKeys } from "@/lib/query-keys";
 import { InventoryCommandHeader } from "@/components/inventory/InventoryCommandHeader";
 import { PackagingMaterialsTab } from "@/components/inventory/PackagingMaterialsTab";
-import { catalogQueries, invalidateCatalog } from "@/lib/data/catalog";
+import { catalogQueries, invalidateCatalog, invalidateCustomizations } from "@/lib/data/catalog";
 
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { OsEmptyState } from "@/components/os/os-empty-state";
 import { useEntitlements } from "@/lib/saas-billing/use-entitlements";
-import type { Customization } from "@/features/inventory/types";
 import { CustomizationsSection } from "@/features/inventory/components/CustomizationsSection";
 
 import { ProductsSection } from "@/features/inventory/components/ProductsSection";
@@ -65,18 +64,8 @@ function Inventory() {
   const variants = useQuery({ ...catalogQueries.variants(brandId), refetchOnWindowFocus: false });
 
   const customizations = useQuery({
-    queryKey: queryKeys.customizations.all(brandId),
-    staleTime: 30_000,
+    ...catalogQueries.customizations(brandId),
     refetchOnWindowFocus: false,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customization_options")
-        .select("*")
-        .eq("brand_id", brandId)
-        .order("name");
-      if (error) throw error;
-      return data as Customization[];
-    },
   });
 
   const backInStockRequests = useQuery({
@@ -188,9 +177,7 @@ function Inventory() {
           brandId={brandId}
           items={customizations.data ?? []}
           products={products.data ?? []}
-          onChanged={() =>
-            qc.invalidateQueries({ queryKey: queryKeys.customizations.all(brandId) })
-          }
+          onChanged={() => invalidateCustomizations(qc, brandId)}
         />
       )}
 

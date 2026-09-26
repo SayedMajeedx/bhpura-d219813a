@@ -1,6 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchCallerProfile } from "@/lib/data/profiles";
+import { fetchAnyBrandSlug, fetchBrandSlug } from "@/lib/data/brands";
 
 /**
  * /admin smart redirector.
@@ -30,22 +31,18 @@ export const Route = createFileRoute("/_authenticated/admin/")({
     }
 
     if (profile?.brand_id) {
-      const { data: brand } = await supabase
-        .from("brands")
-        .select("slug")
-        .eq("id", profile.brand_id)
-        .maybeSingle();
-      if (brand?.slug) {
+      const slug = await fetchBrandSlug(profile.brand_id);
+      if (slug) {
         throw redirect({
           to: profile?.role === "courier" ? "/admin/b/$slug/orders" : "/admin/b/$slug/dashboard",
-          params: { slug: brand.slug },
+          params: { slug },
         });
       }
     }
 
-    const { data: fallback } = await supabase.from("brands").select("slug").limit(1).maybeSingle();
-    if (fallback?.slug) {
-      throw redirect({ to: "/admin/b/$slug/dashboard", params: { slug: fallback.slug } });
+    const fallback = await fetchAnyBrandSlug();
+    if (fallback) {
+      throw redirect({ to: "/admin/b/$slug/dashboard", params: { slug: fallback } });
     }
 
     throw redirect({ to: "/auth" });

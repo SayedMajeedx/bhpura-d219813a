@@ -21,13 +21,13 @@ import { collectMaintainabilityMetrics } from "../scripts/maintainability-metric
  */
 
 const BUDGETS = {
-  asAny: 674,
+  asAny: 667,
   colonAny: 732,
   asNever: 0,
   tsIgnore: 0,
   tsExpectError: 0,
   eslintDisable: 10,
-  directSupabaseCalls: 189,
+  directSupabaseCalls: 173,
   readFileSyncTestFiles: 71,
   filesOver1000: 23,
   maxLinesForNewFile: 600,
