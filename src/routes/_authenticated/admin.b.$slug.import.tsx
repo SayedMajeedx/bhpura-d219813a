@@ -32,6 +32,7 @@ import { importCustomerDatabase } from "@/lib/customer-importer";
 import { importHistoricalOrders } from "@/lib/order-importer";
 import { InstagramImporterModal } from "@/components/inventory/InstagramImporterModal";
 import { importExportQueries } from "@/lib/data/import-export";
+import { invalidateCatalog } from "@/lib/data/catalog";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/import")({
   component: ImportCenterPage,
@@ -108,6 +109,12 @@ function ImportCenterPage() {
     ...importExportQueries.importRuns(brandId),
     select: (rows) => rows as ImportRunRecord[],
   });
+
+  // New products must show in the inventory list (bug backlog #29).
+  const onProductsImported = () => {
+    void refetchRuns();
+    void invalidateCatalog(qc, brandId);
+  };
 
   // Calculate high-level summary metrics
   const totalImportedEntities = useMemo(() => {
@@ -253,14 +260,7 @@ function ImportCenterPage() {
 
         {/* Tab 1: Products Importer */}
         <TabsContent value="products" className="space-y-4 focus-visible:outline-none">
-          <ProductImportSection
-            brandId={brandId}
-            isAr={isAr}
-            onComplete={() => {
-              void refetchRuns();
-              void qc.invalidateQueries({ queryKey: ["inventory", brandId] });
-            }}
-          />
+          <ProductImportSection brandId={brandId} isAr={isAr} onComplete={onProductsImported} />
         </TabsContent>
 
         {/* Tab 2: Customers Importer */}
@@ -298,10 +298,7 @@ function ImportCenterPage() {
         brandId={brandId}
         open={isInstagramModalOpen}
         onOpenChange={setIsInstagramModalOpen}
-        onComplete={() => {
-          void refetchRuns();
-          void qc.invalidateQueries({ queryKey: ["inventory", brandId] });
-        }}
+        onComplete={onProductsImported}
       />
     </div>
   );

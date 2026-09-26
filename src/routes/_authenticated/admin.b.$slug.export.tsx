@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { categoriesQueries } from "@/lib/data/categories";
 import { ordersQueries } from "@/lib/data/orders";
 import { customersQueries } from "@/lib/data/customers";
@@ -44,6 +43,7 @@ import {
 } from "@/lib/universal-exporter";
 import { importExportQueries } from "@/lib/data/import-export";
 import { catalogQueries } from "@/lib/data/catalog";
+import { expensesQueries, toExpenseExportLine, type ExpenseExportRow } from "@/lib/data/expenses";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/export")({
   component: ExportCenterPage,
@@ -69,22 +69,7 @@ function ExportCenterPage() {
 
   const { data: orders = [] } = useQuery(ordersQueries.exportRows(brandId));
 
-  // Selects columns expenses do not have, so it always exports none (bug backlog #28).
-  const { data: expenses = [] } = useQuery({
-    queryKey: ["export-expenses", brandId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("expenses")
-        .select("id, date, category, title, amount, payment_method, notes, created_at")
-        .eq("brand_id", brandId)
-        .order("date", { ascending: false });
-      if (error) {
-        console.warn("Could not query expenses:", error.message);
-        return [];
-      }
-      return data || [];
-    },
-  });
+  const { data: expenses = [] } = useQuery(expensesQueries.exportRows(brandId));
 
   const { data: categories = [] } = useQuery(categoriesQueries.exportRows(brandId));
 
@@ -1550,7 +1535,7 @@ function ExpenseExportSection({
 }: {
   brandId: string;
   brandSlug: string;
-  expenses: any[];
+  expenses: ExpenseExportRow[];
   isAr: boolean;
   onExportSuccess: () => void;
 }) {
@@ -1559,14 +1544,7 @@ function ExpenseExportSection({
   const preset = EXPENSE_PRESETS[0];
 
   const rows = useMemo(() => {
-    return expenses.map((e) => ({
-      date: (e.date || e.created_at || "").slice(0, 10),
-      category: e.category || "General",
-      title: e.title || "Expense",
-      amount: Number(e.amount) || 0,
-      payment_method: e.payment_method || "Bank Transfer",
-      notes: e.notes || "—",
-    }));
+    return expenses.map(toExpenseExportLine);
   }, [expenses]);
 
   const handleExport = async () => {
