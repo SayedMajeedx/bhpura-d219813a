@@ -9303,6 +9303,10 @@ export type Database = {
         Args: { p_incubator_id?: string };
         Returns: number;
       };
+      transfer_cash_to_bank: {
+        Args: { p_amount: number; p_brand_id: string; p_notes?: string };
+        Returns: string;
+      };
       transfer_stock_to_incubator: {
         Args: {
           p_commission_type?: string;
