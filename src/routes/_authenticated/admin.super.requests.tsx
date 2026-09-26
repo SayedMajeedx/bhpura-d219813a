@@ -43,6 +43,7 @@ import { SuperAddonsManager } from "@/components/super/SuperAddonsManager";
 import { SuperOverridesManager } from "@/components/super/SuperOverridesManager";
 import { SuperGrantsManager } from "@/components/super/SuperGrantsManager";
 import { fetchCallerProfile } from "@/lib/data/profiles";
+import { superAdminKeys, superAdminQueries } from "@/lib/data/super-admin";
 
 export const Route = createFileRoute("/_authenticated/admin/super/requests")({
   beforeLoad: async () => {
@@ -103,17 +104,8 @@ function SuperRequestsPage() {
 
   // Queries
   const requestsQuery = useQuery({
-    queryKey: ["tenant-requests"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tenant_requests")
-        .select("*")
-        .eq("status", "pending")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return data as TenantRequest[];
-    },
+    ...superAdminQueries.tenantRequests(),
+    select: (rows) => rows as TenantRequest[],
   });
   const publicPlansQuery = useQuery({
     queryKey: ["public-onboarding-plans", "admin"],
@@ -202,7 +194,7 @@ function SuperRequestsPage() {
         { id: toastId },
       );
       setApprovingRequest(null);
-      void qc.invalidateQueries({ queryKey: ["tenant-requests"] });
+      void qc.invalidateQueries({ queryKey: superAdminKeys.tenantRequests() });
     } catch (err: any) {
       console.error(err);
       toast.error(getFriendlyErrorMessage(err) || "Approval failed.", { id: toastId });
@@ -230,7 +222,7 @@ function SuperRequestsPage() {
         lang === "ar" ? "تم رفض وأرشفة الطلب بنجاح." : "Request dismissed and archived.",
         { id: toastId },
       );
-      void qc.invalidateQueries({ queryKey: ["tenant-requests"] });
+      void qc.invalidateQueries({ queryKey: superAdminKeys.tenantRequests() });
     } catch (err: any) {
       console.error(err);
       toast.error(getFriendlyErrorMessage(err) || "Rejection failed.", { id: toastId });

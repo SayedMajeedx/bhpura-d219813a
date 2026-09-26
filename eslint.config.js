@@ -110,23 +110,25 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(profiles|brand_notification_recipients|brand_abandoned_cart_settings|abandoned_cart_sequences|abandoned_carts|abandoned_cart_dispatch_logs|brand_tracking_settings)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(profiles|brand_notification_recipients|brand_abandoned_cart_settings|abandoned_cart_sequences|abandoned_carts|abandoned_cart_dispatch_logs|brand_tracking_settings|saas_plans|brand_subscriptions|white_label_apps_public|white_label_app_builds_public|merchant_grant_applications|brand_entitlement_overrides|system_health_events|tenant_requests)$/]",
           message:
-            "Profiles go through `@/lib/data/profiles` (caller profile, couriers, names, updateProfile), admin alert recipients through `@/lib/data/notification-recipients`, the abandoned-carts screen through `@/lib/data/abandoned-carts`, tracking settings through `@/lib/data/integrations`.",
+            "Profiles go through `@/lib/data/profiles` (caller profile, couriers, names, updateProfile), admin alert recipients through `@/lib/data/notification-recipients`, the abandoned-carts screen through `@/lib/data/abandoned-carts`, tracking settings through `@/lib/data/integrations`, the super admin's platform tables through `@/lib/data/super-admin`.",
         },
         {
           selector:
-            "CallExpression[callee.property.name='rpc'][arguments.0.value=/^(list|save|delete)_integration_credential(s)?$/]",
-          message: "Integration credentials go through `@/lib/data/integrations`.",
+            "CallExpression[callee.property.name='rpc'][arguments.0.value=/^((list|save|delete)_integration_credential(s)?|delete_brand|activate_white_label_build)$/]",
+          message:
+            "Integration credentials go through `@/lib/data/integrations`, brand deletion and white-label builds through `@/lib/data/super-admin`.",
         },
         {
           selector:
-            "CallExpression[callee.expression.property.name='rpc'][arguments.0.value=/^(list|save|delete)_integration_credential(s)?$/]",
-          message: "Integration credentials go through `@/lib/data/integrations`.",
+            "CallExpression[callee.expression.property.name='rpc'][arguments.0.value=/^((list|save|delete)_integration_credential(s)?|delete_brand|activate_white_label_build)$/]",
+          message:
+            "Integration credentials go through `@/lib/data/integrations`, brand deletion and white-label builds through `@/lib/data/super-admin`.",
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(auth_profile_role|caller_profile|caller_permissions|reports-(overview(-previous)?|sales|products(-inquiries)?|customers)|brand_by_slug|brand_icon_settings|brands-switcher|super_all_brands_list|brand-notification-recipients|super-admin-video-reoptimizer-list|brand_abandoned_cart_settings|abandoned_cart_sequences|abandoned_carts_list|abandoned_cart_dispatch_logs|integrations|brand-tracking-settings)$/]",
+            "ArrayExpression > Literal:first-child[value=/^(auth_profile_role|caller_profile|caller_permissions|reports-(overview(-previous)?|sales|products(-inquiries)?|customers)|brand_by_slug|brand_icon_settings|brands-switcher|super_all_brands_list|brand-notification-recipients|super-admin-video-reoptimizer-list|brand_abandoned_cart_settings|abandoned_cart_sequences|abandoned_carts_list|abandoned_cart_dispatch_logs|integrations|brand-tracking-settings|saas_plans_for_admin|pending_brand_subscriptions|brand-delete-counts|white-label-apps|white-label-app-builds|super-grant-applications|brand_overrides_view|system-health-events|tenant-requests)$/]",
           message:
             "Use `profilesQueries.caller` / `profilesKeys` for the caller's profile, `reportingQueries` / `reportingKeys` for reports, and `brandQueries` / `brandKeys` for brand lookups.",
         },

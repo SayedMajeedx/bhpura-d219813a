@@ -11,7 +11,6 @@ import {
   listPlansWithDetails,
 } from "@/lib/saas-billing/saas-billing.functions";
 import type { BrandEntitlementOverride } from "@/lib/saas-billing/saas-billing.types";
-import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { getFriendlyErrorMessage } from "@/lib/utils";
 import { toast } from "sonner";
@@ -29,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { brandQueries } from "@/lib/data/brands";
+import { superAdminKeys, superAdminQueries } from "@/lib/data/super-admin";
 
 export function SuperOverridesManager() {
   const { lang } = useI18n();
@@ -64,20 +64,9 @@ export function SuperOverridesManager() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch active overrides for selected brand
-  const { data: brandOverrides = [], isLoading: overridesLoading } = useQuery<
-    BrandEntitlementOverride[]
-  >({
-    queryKey: ["brand_overrides_view", selectedBrandId],
-    queryFn: async () => {
-      if (!selectedBrandId) return [];
-      const { data, error } = await (supabase as any)
-        .from("brand_entitlement_overrides")
-        .select("*")
-        .eq("brand_id", selectedBrandId);
-      if (error) throw error;
-      return (data || []) as BrandEntitlementOverride[];
-    },
-    enabled: Boolean(selectedBrandId),
+  const { data: brandOverrides = [], isLoading: overridesLoading } = useQuery({
+    ...superAdminQueries.entitlementOverrides(selectedBrandId),
+    select: (rows) => rows as BrandEntitlementOverride[],
   });
 
   const handleApplyOverride = async (e: React.FormEvent) => {
@@ -112,7 +101,9 @@ export function SuperOverridesManager() {
         id: toastId,
       });
       setReason("");
-      void queryClient.invalidateQueries({ queryKey: ["brand_overrides_view", selectedBrandId] });
+      void queryClient.invalidateQueries({
+        queryKey: superAdminKeys.entitlementOverrides(selectedBrandId),
+      });
       void queryClient.invalidateQueries({ queryKey: ["super_saas_audit_logs"] });
     } catch (err) {
       console.error(err);
@@ -134,7 +125,9 @@ export function SuperOverridesManager() {
         },
       });
       toast.success(isAr ? "تم إلغاء الاستثناء بنجاح!" : "Override revoked!", { id: toastId });
-      void queryClient.invalidateQueries({ queryKey: ["brand_overrides_view", selectedBrandId] });
+      void queryClient.invalidateQueries({
+        queryKey: superAdminKeys.entitlementOverrides(selectedBrandId),
+      });
       void queryClient.invalidateQueries({ queryKey: ["super_saas_audit_logs"] });
     } catch (err) {
       console.error(err);
