@@ -137,6 +137,17 @@ Found while moving the catalog writes into `src/lib/data/catalog` (the calls now
   - The sync reports materials as updated when they were not.
 - **Fix**: surface the errors (toast, stop before the next step). For "apply to all", stop on the first error, ideally as one server-side transaction (RPC). In the sync, count only successful writes.
 
+## Integrations (`src/routes/_authenticated/admin.b.$slug.integrations.tsx`, `src/lib/data/integrations`)
+
+### 27. Key rotations are never written to the audit log
+
+Found while moving the integrations screen into `src/lib/data/integrations`. The call kept its behaviour and points here.
+
+- **Where**: `RotateKeyDialog` inserts into `saas_audit_logs` after rotating a key.
+- **Problem**: the insert names columns that do not exist (`actor_user_id`, `details`; the table has `actor_id`, `changes`) and leaves out the required `target_id` / `target_type`. RLS also lets only super admins insert. The error is ignored (the `try/catch` never sees it: Supabase returns errors, it does not throw).
+- **Effect**: no rotation has ever been logged (production: 0 `INTEGRATION_KEY_ROTATED` rows of 17 audit rows), while the dialog tells the merchant the rotation was recorded.
+- **Fix**: log inside `save_integration_credential` when a key or secret changes (SECURITY DEFINER, with the caller as actor), and drop the client insert.
+
 ## Categories (`src/routes/_authenticated/admin.b.$slug.categories.tsx`, `src/lib/data/categories`)
 
 ### 20. Reordering categories ignores write errors
