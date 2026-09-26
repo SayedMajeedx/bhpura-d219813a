@@ -110,9 +110,9 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(profiles|brand_notification_recipients|brand_abandoned_cart_settings|abandoned_cart_sequences|abandoned_carts|abandoned_cart_dispatch_logs|brand_tracking_settings|saas_plans|brand_subscriptions|white_label_apps_public|white_label_app_builds_public|merchant_grant_applications|brand_entitlement_overrides|system_health_events|tenant_requests)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(profiles|brand_notification_recipients|brand_abandoned_cart_settings|abandoned_cart_sequences|abandoned_carts|abandoned_cart_dispatch_logs|brand_tracking_settings|saas_plans|brand_subscriptions|white_label_apps_public|white_label_app_builds_public|merchant_grant_applications|brand_entitlement_overrides|system_health_events|tenant_requests|import_runs|export_runs)$/]",
           message:
-            "Profiles go through `@/lib/data/profiles` (caller profile, couriers, names, updateProfile), admin alert recipients through `@/lib/data/notification-recipients`, the abandoned-carts screen through `@/lib/data/abandoned-carts`, tracking settings through `@/lib/data/integrations`, the super admin's platform tables through `@/lib/data/super-admin`.",
+            "Profiles go through `@/lib/data/profiles` (caller profile, couriers, names, updateProfile), admin alert recipients through `@/lib/data/notification-recipients`, the abandoned-carts screen through `@/lib/data/abandoned-carts`, tracking settings through `@/lib/data/integrations`, the super admin's platform tables through `@/lib/data/super-admin`, import and export history through `@/lib/data/import-export`.",
         },
         {
           selector:
@@ -128,7 +128,7 @@ export default tseslint.config(
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(auth_profile_role|caller_profile|caller_permissions|reports-(overview(-previous)?|sales|products(-inquiries)?|customers)|brand_by_slug|brand_icon_settings|brands-switcher|super_all_brands_list|brand-notification-recipients|super-admin-video-reoptimizer-list|brand_abandoned_cart_settings|abandoned_cart_sequences|abandoned_carts_list|abandoned_cart_dispatch_logs|integrations|brand-tracking-settings|saas_plans_for_admin|pending_brand_subscriptions|brand-delete-counts|white-label-apps|white-label-app-builds|super-grant-applications|brand_overrides_view|system-health-events|tenant-requests)$/]",
+            "ArrayExpression > Literal:first-child[value=/^(auth_profile_role|caller_profile|caller_permissions|reports-(overview(-previous)?|sales|products(-inquiries)?|customers)|brand_by_slug|brand_icon_settings|brands-switcher|super_all_brands_list|brand-notification-recipients|super-admin-video-reoptimizer-list|brand_abandoned_cart_settings|abandoned_cart_sequences|abandoned_carts_list|abandoned_cart_dispatch_logs|integrations|brand-tracking-settings|saas_plans_for_admin|pending_brand_subscriptions|brand-delete-counts|white-label-apps|white-label-app-builds|super-grant-applications|brand_overrides_view|system-health-events|tenant-requests|import-runs-hub|product-import-history|export-runs-history|export-products)$/]",
           message:
             "Use `profilesQueries.caller` / `profilesKeys` for the caller's profile, `reportingQueries` / `reportingKeys` for reports, and `brandQueries` / `brandKeys` for brand lookups.",
         },
@@ -251,7 +251,7 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(products|product_variants|product_bom_items|packaging_materials|business_settings|orders|order_items|categories|customization_options|profiles)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(products|product_variants|product_bom_items|packaging_materials|business_settings|orders|order_items|categories|customization_options|import_runs|profiles)$/]",
           message:
             "The admin catalog, categories, the settings row and orders go through `@/lib/data/{catalog,categories,business-settings,orders}`, not direct Supabase calls.",
         },
@@ -267,7 +267,7 @@ export default tseslint.config(
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(products|variants|packaging-materials|product-bom-items(-all)?|inventory-sales-past45|categories|customizations)$/]",
+            "ArrayExpression > Literal:first-child[value=/^(products|variants|packaging-materials|product-bom-items(-all)?|inventory-sales-past45|categories|customizations|product-import-history)$/]",
           message: "Build these cache keys with `catalogKeys` (or `invalidateCatalog`).",
         },
       ],
@@ -293,7 +293,7 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(customers|customer_addresses|business_settings|orders|order_items|categories|message_templates|customer_push_devices|customer_push_events|profiles)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(customers|customer_addresses|business_settings|orders|order_items|categories|message_templates|customer_push_devices|customer_push_events|import_runs|export_runs|profiles)$/]",
           message:
             "Customers, categories, the settings row and orders go through `@/lib/data/{customers,categories,business-settings,orders}`, not direct Supabase calls.",
         },
@@ -304,7 +304,7 @@ export default tseslint.config(
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(customers|customer_addresses|customer-profile(-addresses|-orders)?|customer-orders|campaigns-customer-orders|export-orders|breadcrumb-order-number|message-templates|campaign-templates|customer-push-devices|customer-push-events)$/]",
+            "ArrayExpression > Literal:first-child[value=/^(customers|customer_addresses|customer-profile(-addresses|-orders)?|customer-orders|campaigns-customer-orders|export-orders|breadcrumb-order-number|message-templates|campaign-templates|customer-push-devices|customer-push-events|import-runs-hub|export-runs-history|export-products)$/]",
           message: "Build these cache keys with `customersKeys` (or `invalidateCustomers`).",
         },
       ],
