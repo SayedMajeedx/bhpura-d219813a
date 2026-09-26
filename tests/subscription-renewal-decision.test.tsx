@@ -132,6 +132,44 @@ describe("annual renewal decision window", () => {
     ]);
   });
 
+  it("uploads the renewal receipt with what the server's upload URL accepts (bug #32)", async () => {
+    saas.getSubscriptionReceiptUploadUrl.mockResolvedValue({
+      objectKey: `brands/${BRAND}/subscription-receipts/r.png`,
+      uploadUrl: "https://r2.test/upload",
+    });
+    saas.submitSubscriptionReceipt.mockResolvedValue({ success: true });
+    const put = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null));
+    try {
+      const view = renderCard({
+        id: BRAND,
+        subscription_expires_at: inDays(10),
+        renewal_intent: "renew",
+      });
+      const input = view.container.querySelector('input[type="file"]')!;
+      const receipt = new File(["receipt"], "receipt.png", { type: "image/png" });
+      fireEvent.change(input, { target: { files: [receipt] } });
+      await waitFor(() => expect(saas.submitSubscriptionReceipt).toHaveBeenCalledTimes(1));
+
+      // The card's request must pass the real server validator.
+      const [[{ data: sent }]] = saas.getSubscriptionReceiptUploadUrl.mock.calls as unknown as [
+        [{ data: unknown }],
+      ];
+      const validate = (
+        functions.getSubscriptionReceiptUploadUrl as unknown as {
+          validate: (raw: unknown) => unknown;
+        }
+      ).validate;
+      expect(validate(sent)).toEqual({ brandId: BRAND, contentType: "image/png", size: 7 });
+      expect(put).toHaveBeenCalledWith(
+        "https://r2.test/upload",
+        expect.objectContaining({ method: "PUT" }),
+      );
+      expect(toast.success).toHaveBeenCalledTimes(1);
+    } finally {
+      put.mockRestore();
+    }
+  });
+
   it("blocks a renewal receipt upload until the merchant chose to renew", async () => {
     const pending = fakeSupabase({
       rows: {

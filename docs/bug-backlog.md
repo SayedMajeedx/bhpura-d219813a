@@ -172,13 +172,13 @@ Found while moving the integrations screen into `src/lib/data/integrations`. The
 - **Problem**: no element has the id `payment-methods-section`, so after a failed card payment the button does nothing.
 - **Fix**: give the payment method card (`components/PaymentMethodCard.tsx`) that id, and cover the button in the checkout browser test.
 
-## Subscriptions (`src/components/subscription-card.tsx`, `src/lib/saas-subscription.functions.ts`)
+## Reviews (`supabase/migrations/20260825120000_order_review_rewards.sql`)
 
-### 32. The renewal card's receipt upload always fails validation
+### 33. Completing an order never schedules its review request
 
-Found while converting the subscription tests to behaviour tests (Phase 6).
+Found on 2026-09-26 when Pura's order #1098 (completed 2026-09-20, customer phone on the order) never reached the review queue.
 
-- **Where**: `SubscriptionCard.handleUploadReceipt` calls `getSubscriptionReceiptUploadUrl({ data: { brandId, fileName, contentType, fileSize } })`.
-- **Problem**: the server's `CreateUploadInput` requires `size` (and has no `fileName` / `fileSize`), so the zod parse rejects every call before any check runs. The upgrade path in `BrandSubscriptionHub` sends `size` and works.
-- **Effect**: a merchant who chose "Yes, Renew" and picks a receipt always gets "Failed to upload receipt."; annual renewals can only be submitted through the upgrade flow.
-- **Fix**: send `size: file.size` (drop `fileName` / `fileSize`); cover the upload in a render test with the server functions mocked.
+- **Where**: the `enqueue_order_review_request` trigger is `AFTER INSERT OR UPDATE OF completed_at ON orders`. `completed_at` is filled by the BEFORE trigger `set_order_completed_at` when the status or fulfillment status turns complete.
+- **Problem**: PostgreSQL fires an `UPDATE OF <column>` trigger only when that column is named in the `UPDATE ... SET` list, not when a BEFORE trigger changes it. The app completes orders by setting `fulfillment_status` / `status` / `delivered_at`, never `completed_at`, so the enqueue trigger never runs on completion. Only orders inserted already complete are enqueued.
+- **Effect**: no review request has ever been created by the trigger. Production (checked 2026-09-26): the requests for #1090 and #1091 came from the migration's backfill, and #1092, #1093 and #1096 were inserted by hand (each `eligible_at` equals its creation time). #1098 has none.
+- **Fix**: a migration that (1) replaces the trigger with `AFTER UPDATE ON orders FOR EACH ROW WHEN (NEW.completed_at IS NOT NULL AND OLD.completed_at IS DISTINCT FROM NEW.completed_at)` plus the existing `AFTER INSERT` case, (2) also enqueues when the customer phone snapshot arrives after completion, and (3) backfills requests for completed orders with a phone and no request (`eligible_at = completed_at + 3 days`). Add a SQL contract test.
