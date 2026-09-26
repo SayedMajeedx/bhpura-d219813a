@@ -61,6 +61,7 @@ import {
 import { Link } from "@tanstack/react-router";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useBrandAddons } from "@/hooks/use-brand-addons";
+import { addonDataQueries } from "@/lib/data/addons";
 
 function renderAddonIcon(iconName: string) {
   switch (iconName) {
@@ -108,18 +109,7 @@ export function StoreProfileCard({
   const { profile, isLoading: isProfileLoading } = useAdminStoreProfile(brandId);
   const { addons, installAddon, disableAddon, isMutating } = useBrandAddons(brandId);
 
-  const { data: passportCount } = useQuery({
-    queryKey: ["fit-passport-count", brandId],
-    queryFn: async () => {
-      const { count, error } = await (supabase.from("customer_fit_passports") as any)
-        .select("*", { count: "exact", head: true })
-        .eq("brand_id", brandId);
-      if (error) return 0;
-      return count ?? 0;
-    },
-    staleTime: 60_000,
-    enabled: Boolean(brandId),
-  });
+  const { data: passportCount } = useQuery(addonDataQueries.fitPassportCount(brandId));
 
   const [vertical, setVertical] = useState<StoreVertical>(profile.vertical);
   const [fitProfiles, setFitProfiles] = useState<FitProfileDefinition[] | null>(
