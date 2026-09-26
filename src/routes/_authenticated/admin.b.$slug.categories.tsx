@@ -35,6 +35,7 @@ import { CropUploadButton } from "@/components/crop-upload-button";
 import { syncBrandVerticalCategories, PURA_BRAND_ID } from "@/lib/addons/vertical-categories";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import type { StoreVertical } from "@/lib/store-profile";
+import { addonDataQueries } from "@/lib/data/addons";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/categories")({
   component: CategoriesPage,
@@ -248,21 +249,9 @@ function CategoryDialog({
   const iconInput = useRef<HTMLInputElement>(null);
 
   const { data: sizeGuides } = useQuery({
-    queryKey: ["admin-size-guides-list", brandId],
-    queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from("size_guides")
-        .select("id, name_ar, name_en, is_default")
-        .eq("brand_id", brandId)
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
-      return (data ?? []) as Array<{
-        id: string;
-        name_ar: string;
-        name_en: string;
-        is_default: boolean;
-      }>;
-    },
+    ...addonDataQueries.sizeGuides(brandId),
+    select: (rows) =>
+      rows as Array<{ id: string; name_ar: string; name_en: string; is_default: boolean }>,
   });
 
   useEffect(() => {
