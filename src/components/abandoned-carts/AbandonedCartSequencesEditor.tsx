@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +26,11 @@ import { toast } from "sonner";
 import { Send, MessageSquare, Mail, Bell, Clock, Sparkles, Edit2, Loader2 } from "lucide-react";
 import type { AbandonedCartSequence, RecoveryChannel } from "@/lib/abandoned-carts.types";
 import { DEFAULT_ABANDONED_SEQUENCES } from "@/lib/abandoned-carts.types";
+import {
+  createDefaultRecoverySequences,
+  invalidateRecoverySequences,
+  saveRecoverySequence,
+} from "@/lib/data/abandoned-carts";
 
 interface AbandonedCartSequencesEditorProps {
   brandId: string;
@@ -45,21 +49,12 @@ export function AbandonedCartSequencesEditor({
 
   // Initialize missing sequences if empty
   const initSequencesMutation = useMutation({
-    mutationFn: async () => {
-      const inserts = DEFAULT_ABANDONED_SEQUENCES.map((seq) => ({
-        brand_id: brandId,
-        ...seq,
-      }));
-      const { error } = await (supabase as any)
-        .from("abandoned_cart_sequences")
-        .upsert(inserts, { onConflict: "brand_id,step_number" });
-      if (error) throw error;
-    },
+    mutationFn: () => createDefaultRecoverySequences(brandId),
     onSuccess: () => {
       toast.success(
         isAr ? "تم تهيئة خطوات الاستعادة الافتراضية بنجاح" : "Default sequences initialized",
       );
-      queryClient.invalidateQueries({ queryKey: ["abandoned_cart_sequences", brandId] });
+      invalidateRecoverySequences(queryClient, brandId);
     },
     onError: (err: any) => {
       toast.error(err.message || (isAr ? "فشل تهيئة الخطوات" : "Failed to initialize sequences"));
@@ -67,22 +62,12 @@ export function AbandonedCartSequencesEditor({
   });
 
   const saveSequenceMutation = useMutation({
-    mutationFn: async (seq: AbandonedCartSequence) => {
-      const { error } = await (supabase as any).from("abandoned_cart_sequences").upsert(
-        {
-          ...seq,
-          brand_id: brandId,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "brand_id,step_number" },
-      );
-      if (error) throw error;
-    },
+    mutationFn: (seq: AbandonedCartSequence) => saveRecoverySequence(brandId, seq),
     onSuccess: () => {
       toast.success(
         isAr ? "تم حفظ خطوة الاستعادة بنجاح" : "Recovery sequence updated successfully",
       );
-      queryClient.invalidateQueries({ queryKey: ["abandoned_cart_sequences", brandId] });
+      invalidateRecoverySequences(queryClient, brandId);
       setEditingSequence(null);
     },
     onError: (err: any) => {
