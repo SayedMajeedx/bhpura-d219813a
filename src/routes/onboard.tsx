@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import React, { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,6 +45,7 @@ import {
 } from "@/lib/store-profile";
 import { starterPackFor, getAddon } from "@/lib/addons/addon-registry";
 import { isBrandSlugTaken } from "@/lib/data/brands";
+import { signInWithPassword } from "@/lib/auth/sign-in";
 
 const VERTICAL_ICONS: Record<StoreVertical, React.ComponentType<{ className?: string }>> = {
   [STORE_VERTICALS[0]]: Shirt,
@@ -331,10 +331,7 @@ function OnboardPage() {
         },
       );
 
-      const { error: signInErr } = await supabase.auth.signInWithPassword({
-        email: cleanEmail,
-        password: password,
-      });
+      const { error: signInErr } = await signInWithPassword(cleanEmail, password);
 
       if (signInErr) {
         toast.success(

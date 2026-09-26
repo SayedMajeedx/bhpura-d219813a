@@ -35,6 +35,22 @@ export async function fetchCallerProfile(userId: string) {
 }
 export type CallerProfile = NonNullable<Awaited<ReturnType<typeof fetchCallerProfile>>>;
 
+/**
+ * The profile and brand the first-login page shows while the user sets their
+ * own password. A failed read counts as "no profile" (the page sends them to
+ * sign in).
+ */
+export async function fetchFirstLoginProfile(userId: string) {
+  const { data } = await supabase
+    .from("profiles")
+    .select(
+      "status, role, name, full_name, must_change_password, brand_id, brand:brands(id, name_en, name_ar, slug, logo_url)",
+    )
+    .eq("id", userId)
+    .maybeSingle();
+  return data ?? null;
+}
+
 /** A profile's permissions as the list the guards check. */
 export function permissionsOf(profile: { permissions?: unknown } | null | undefined): string[] {
   const permissions = profile?.permissions;

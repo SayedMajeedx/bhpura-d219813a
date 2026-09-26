@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Fingerprint, KeyRound, LoaderCircle, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useI18n } from "@/lib/i18n";
+import { deletePasskey, listPasskeys, registerPasskey } from "@/lib/auth/sign-in";
 
 type Passkey = {
   id: string;
@@ -24,7 +24,7 @@ export function PasskeySettings() {
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase.auth.passkey.list();
+    const { data, error } = await listPasskeys();
     if (error) toast.error(error.message);
     else setPasskeys((data ?? []) as Passkey[]);
     setLoading(false);
@@ -40,7 +40,7 @@ export function PasskeySettings() {
   const register = async () => {
     setRegistering(true);
     try {
-      const { error } = await supabase.auth.registerPasskey();
+      const { error } = await registerPasskey();
       if (error) throw error;
       toast.success(isAr ? "تم تسجيل البصمة بنجاح" : "Biometric login registered successfully");
       await load();
@@ -61,7 +61,7 @@ export function PasskeySettings() {
 
   const remove = async (passkeyId: string) => {
     setDeletingId(passkeyId);
-    const { error } = await supabase.auth.passkey.delete({ passkeyId });
+    const { error } = await deletePasskey(passkeyId);
     if (error) toast.error(error.message);
     else {
       setPasskeys((current) => current.filter((item) => item.id !== passkeyId));
