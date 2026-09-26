@@ -1,9 +1,8 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { createServerFn } from "@tanstack/react-start";
-import { findActiveBrand } from "@/lib/data/brands";
+import { fetchStorefrontLoaderText, findActiveBrand } from "@/lib/data/brands";
 
 const resolveDomainRoute = createServerFn({ method: "GET" }).handler(async () => {
   const { resolveDomainRouteImpl } = await import("@/lib/domain-routing.server");
@@ -64,11 +63,7 @@ function IndexRedirector() {
         // Helper to load custom loading text for a brand ID
         const fetchCustomLoaderText = async (brandId: string) => {
           try {
-            const { data: settings } = await (supabase as any)
-              .from("brand_public_settings")
-              .select("storefront_loader_text_en, storefront_loader_text_ar")
-              .eq("brand_id", brandId)
-              .maybeSingle();
+            const settings = await fetchStorefrontLoaderText(brandId);
 
             if (settings) {
               const customText = isAr

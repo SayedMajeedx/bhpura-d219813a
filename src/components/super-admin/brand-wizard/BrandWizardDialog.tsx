@@ -9,7 +9,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { provisionBrandWithOwner } from "@/lib/brand-provisioning";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { finalizeBrandSetup } from "@/lib/brand-wizard.functions";
@@ -39,6 +38,7 @@ import {
   CheckCircle2,
   Rocket,
 } from "lucide-react";
+import { provisionWhiteLabelApp } from "@/lib/data/super-admin";
 
 interface BrandWizardDialogProps {
   onSaved: () => void;
@@ -295,10 +295,7 @@ export function BrandWizardDialog({ onSaved, onClose }: BrandWizardDialogProps) 
     if (brandId && data.createMobileApp) {
       updatePipelineStep("mobile_app", "running");
       try {
-        const { error: appError } = await supabase.functions.invoke("provision-white-label-app", {
-          body: { brand_id: brandId, rebuild: false },
-        });
-        if (appError) throw appError;
+        await provisionWhiteLabelApp(brandId, false);
         updatePipelineStep("mobile_app", "success");
       } catch (err: any) {
         updatePipelineStep("mobile_app", "error", err.message || "Mobile app provisioning pending");

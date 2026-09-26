@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -108,16 +107,8 @@ function EmailActivityCard({ brandId, isAr }: { brandId: string; isAr: boolean }
   const [pageSize, setPageSize] = useState(7);
 
   const q = useQuery({
-    queryKey: ["brand-email-notifications", brandId],
-    queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("list_brand_email_notifications", {
-        p_brand_id: brandId,
-        p_limit: 200,
-        p_offset: 0,
-      });
-      if (error) throw error;
-      return (data ?? []) as EmailActivityRow[];
-    },
+    ...notificationRecipientsQueries.activity(brandId),
+    select: (rows) => rows as EmailActivityRow[],
     refetchInterval: 30_000,
   });
 

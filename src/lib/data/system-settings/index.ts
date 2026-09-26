@@ -12,7 +12,18 @@ export const systemSettingsKeys = {
   all: () => ["system-settings"] as const,
   billingDetails: () => [...systemSettingsKeys.all(), "billing-details"] as const,
   billingIntervalMode: () => [...systemSettingsKeys.all(), "billing-interval-mode"] as const,
+  mobileAppReleases: () => [...systemSettingsKeys.all(), "mobile-app-releases"] as const,
 };
+
+/** The published builds of Boutq's own mobile apps, newest first. */
+export async function fetchMobileAppReleases() {
+  const { data, error } = await supabase
+    .from("mobile_app_releases_public")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
 
 /**
  * How merchants pay the subscription, or null when unreadable: screens show
@@ -40,6 +51,12 @@ export async function fetchBillingIntervalMode() {
 }
 
 export const systemSettingsQueries = {
+  mobileAppReleases: () =>
+    queryOptions({
+      queryKey: systemSettingsKeys.mobileAppReleases(),
+      queryFn: fetchMobileAppReleases,
+      staleTime: 60_000,
+    }),
   billingDetails: () =>
     queryOptions({ queryKey: systemSettingsKeys.billingDetails(), queryFn: fetchBillingDetails }),
   billingIntervalMode: () =>

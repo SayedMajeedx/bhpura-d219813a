@@ -133,6 +133,16 @@ export async function findActiveBrand(match: { slug: string } | { customDomain: 
   return data;
 }
 
+/** The storefront's custom loading text (both languages), or null. A failed read is none. */
+export async function fetchStorefrontLoaderText(brandId: string) {
+  const { data } = await supabase
+    .from("brand_public_settings")
+    .select("storefront_loader_text_en, storefront_loader_text_ar")
+    .eq("brand_id", brandId)
+    .maybeSingle();
+  return data;
+}
+
 /** Whether a new store may not take this slug (taken, or the check failed). */
 export async function isBrandSlugTaken(slug: string) {
   const { data, error } = await supabase.from("brands").select("id").eq("slug", slug).maybeSingle();
