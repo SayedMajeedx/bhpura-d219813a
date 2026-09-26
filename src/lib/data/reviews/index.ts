@@ -66,6 +66,24 @@ export async function submitPublicOrderReview(review: {
   return data;
 }
 
+/** Why the database refused a review (the codes `submit_public_order_review` raises). */
+export type ReviewRefusal =
+  "REVIEW_NOT_FOUND" | "INVALID_RATING" | "INVALID_HIGHLIGHT" | "COMMENT_TOO_LONG";
+
+const REVIEW_REFUSALS: readonly ReviewRefusal[] = [
+  "REVIEW_NOT_FOUND",
+  "INVALID_RATING",
+  "INVALID_HIGHLIGHT",
+  "COMMENT_TOO_LONG",
+];
+
+/** The refusal code in a failed submission's error, or null (network and other errors). */
+export function reviewRefusal(error: unknown): ReviewRefusal | null {
+  const message = (error as { message?: unknown } | null)?.message;
+  if (typeof message !== "string") return null;
+  return REVIEW_REFUSALS.find((code) => message.includes(code)) ?? null;
+}
+
 export const reviewsQueries = {
   orderReviews: (brandId: string) =>
     queryOptions({
