@@ -109,13 +109,14 @@ export default tseslint.config(
       "no-restricted-syntax": [
         "error",
         {
-          selector: "CallExpression[callee.property.name='from'][arguments.0.value='profiles']",
+          selector:
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(profiles|brand_notification_recipients)$/]",
           message:
-            "Profiles go through `@/lib/data/profiles` (caller profile, couriers, names, updateProfile).",
+            "Profiles go through `@/lib/data/profiles` (caller profile, couriers, names, updateProfile), admin alert recipients through `@/lib/data/notification-recipients`.",
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(auth_profile_role|caller_profile|caller_permissions|reports-(overview(-previous)?|sales|products(-inquiries)?|customers))$/]",
+            "ArrayExpression > Literal:first-child[value=/^(auth_profile_role|caller_profile|caller_permissions|reports-(overview(-previous)?|sales|products(-inquiries)?|customers)|brand-notification-recipients)$/]",
           message:
             "Use `profilesQueries.caller` / `profilesKeys` for the caller's profile, and `reportingQueries` / `reportingKeys` for reports.",
         },
@@ -313,13 +314,13 @@ export default tseslint.config(
         "error",
         {
           selector:
-            "CallExpression[callee.property.name='from'][arguments.0.value=/^(business_settings|brands|brand_return_policies|profiles)$/]",
+            "CallExpression[callee.property.name='from'][arguments.0.value=/^(business_settings|brands|brand_return_policies|brand_notification_recipients|profiles)$/]",
           message:
             "Settings go through `@/lib/data/business-settings` and `@/lib/data/brands` (queries and mutations), not direct Supabase calls.",
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(business-settings.*|brands?|store-profile|readiness-(business-settings|brand-details))$/]",
+            "ArrayExpression > Literal:first-child[value=/^(business-settings.*|brands?|store-profile|readiness-(business-settings|brand-details)|brand-notification-recipients)$/]",
           message:
             "Build these cache keys with `businessSettingsKeys` / `brandKeys` (or the invalidate helpers).",
         },
