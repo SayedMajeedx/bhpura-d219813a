@@ -11,7 +11,6 @@ import {
   Sparkles,
   Star,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { ordersQueries } from "@/lib/data/orders";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { useBrand } from "@/lib/brand-context";
@@ -35,6 +34,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { ReviewStoryDialog } from "@/components/reviews/ReviewStoryDialog";
+import { reviewsQueries } from "@/lib/data/reviews";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reviews")({
   component: CustomerReviewsPage,
@@ -122,15 +122,8 @@ function CustomerReviewsPage() {
     null;
 
   const reviewsQ = useQuery({
-    queryKey: ["brand-order-reviews", brand.id],
-    queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("list_brand_order_reviews", {
-        p_brand_id: brand.id,
-      });
-      if (error) throw error;
-      return (data ?? []) as OrderReviewAdminRow[];
-    },
-    staleTime: 30_000,
+    ...reviewsQueries.orderReviews(brand.id),
+    select: (rows) => rows as OrderReviewAdminRow[],
   });
 
   const reviews = useMemo(() => reviewsQ.data ?? [], [reviewsQ.data]);

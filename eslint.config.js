@@ -116,19 +116,19 @@ export default tseslint.config(
         },
         {
           selector:
-            "CallExpression[callee.property.name='rpc'][arguments.0.value=/^((list|save|delete)_integration_credential(s)?|delete_brand|activate_white_label_build)$/]",
+            "CallExpression[callee.property.name='rpc'][arguments.0.value=/^((list|save|delete)_integration_credential(s)?|delete_brand|activate_white_label_build|list_brand_order_reviews|list_ready_order_review_requests|update_order_review_request_status|get_public_order_review|submit_public_order_review)$/]",
           message:
-            "Integration credentials go through `@/lib/data/integrations`, brand deletion and white-label builds through `@/lib/data/super-admin`.",
+            "Integration credentials go through `@/lib/data/integrations`, brand deletion and white-label builds through `@/lib/data/super-admin`, order reviews through `@/lib/data/reviews`.",
         },
         {
           selector:
-            "CallExpression[callee.expression.property.name='rpc'][arguments.0.value=/^((list|save|delete)_integration_credential(s)?|delete_brand|activate_white_label_build)$/]",
+            "CallExpression[callee.expression.property.name='rpc'][arguments.0.value=/^((list|save|delete)_integration_credential(s)?|delete_brand|activate_white_label_build|list_brand_order_reviews|list_ready_order_review_requests|update_order_review_request_status|get_public_order_review|submit_public_order_review)$/]",
           message:
-            "Integration credentials go through `@/lib/data/integrations`, brand deletion and white-label builds through `@/lib/data/super-admin`.",
+            "Integration credentials go through `@/lib/data/integrations`, brand deletion and white-label builds through `@/lib/data/super-admin`, order reviews through `@/lib/data/reviews`.",
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(auth_profile_role|caller_profile|caller_permissions|reports-(overview(-previous)?|sales|products(-inquiries)?|customers)|brand_by_slug|brand_icon_settings|brands-switcher|super_all_brands_list|brand-notification-recipients|super-admin-video-reoptimizer-list|brand_abandoned_cart_settings|abandoned_cart_sequences|abandoned_carts_list|abandoned_cart_dispatch_logs|integrations|brand-tracking-settings|saas_plans_for_admin|pending_brand_subscriptions|brand-delete-counts|white-label-apps|white-label-app-builds|super-grant-applications|brand_overrides_view|system-health-events|tenant-requests|import-runs-hub|product-import-history|export-runs-history|export-products|export-expenses)$/]",
+            "ArrayExpression > Literal:first-child[value=/^(auth_profile_role|caller_profile|caller_permissions|reports-(overview(-previous)?|sales|products(-inquiries)?|customers)|brand_by_slug|brand_icon_settings|brands-switcher|super_all_brands_list|brand-notification-recipients|super-admin-video-reoptimizer-list|brand_abandoned_cart_settings|abandoned_cart_sequences|abandoned_carts_list|abandoned_cart_dispatch_logs|integrations|brand-tracking-settings|saas_plans_for_admin|pending_brand_subscriptions|brand-delete-counts|white-label-apps|white-label-app-builds|super-grant-applications|brand_overrides_view|system-health-events|tenant-requests|import-runs-hub|product-import-history|export-runs-history|export-products|export-expenses|brand-order-reviews|ready-order-review-requests|public-order-review)$/]",
           message:
             "Use `profilesQueries.caller` / `profilesKeys` for the caller's profile, `reportingQueries` / `reportingKeys` for reports, and `brandQueries` / `brandKeys` for brand lookups.",
         },
@@ -359,8 +359,18 @@ export default tseslint.config(
         },
         {
           selector:
-            "ArrayExpression > Literal:first-child[value=/^(business-settings.*|business-name|content-studio-settings|review-story-(brand|order)|discounts-analytics|promo-codes|discounts-product-variants)$/]",
+            "ArrayExpression > Literal:first-child[value=/^(business-settings.*|business-name|content-studio-settings|review-story-(brand|order)|discounts-analytics|promo-codes|discounts-product-variants|brand-order-reviews)$/]",
           message: "Use `businessSettingsQueries.detail` instead of a hand-built settings key.",
+        },
+        {
+          selector:
+            "CallExpression[callee.expression.property.name='rpc'][arguments.0.value='list_brand_order_reviews']",
+          message: "Order reviews go through `reviewsQueries` from `@/lib/data/reviews`.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='rpc'][arguments.0.value='list_brand_order_reviews']",
+          message: "Order reviews go through `reviewsQueries` from `@/lib/data/reviews`.",
         },
       ],
     },
