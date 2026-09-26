@@ -55,6 +55,16 @@ Found while moving customers into `src/lib/data/customers`. The calls kept their
 - **Effect**: if clearing fails, the brand has two default templates and the dialog preselects either one.
 - **Fix**: stop when clearing fails, or clear and set in one update / RPC (same shape as #17).
 
+## Accounting (`src/components/accounting/`, `src/lib/data/accounting`)
+
+### 25. Nothing puts money in the cash box
+
+Found while fixing #24 (the transfer is now one database function that refuses more than the cash box holds).
+
+- **Where**: `CashFlowLiquidityTab.tsx` and `FinancialReportsTab.tsx` read `cash_flow_accounts`; nothing in the app or the database creates those accounts or adds to their balances. Production has no rows in `cash_flow_accounts` and none in `account_transactions`.
+- **Effect**: the cash box and bank cards always show the zero fallbacks, the cash flow statement starts from zero, and every transfer is refused ("no cash box and bank account yet"). Reconciling a cash order does not credit the cash box.
+- **Fix** (product decision): create the two accounts per brand, and choose what credits the cash box (reconciled cash orders, a manual "cash in" entry, or both), in the same database function style as the transfer.
+
 ## Inventory (`src/features/inventory/`)
 
 ### 2. Duplicating a product drops variant and product fields
@@ -126,6 +136,16 @@ Found while moving the catalog writes into `src/lib/data/catalog` (the calls now
   - "Apply to all" can fail to delete the old lines and then insert the new ones, so every product has its packaging lines twice and packaging cost (COGS) doubles. It is also not atomic: a failure halfway leaves some products changed.
   - The sync reports materials as updated when they were not.
 - **Fix**: surface the errors (toast, stop before the next step). For "apply to all", stop on the first error, ideally as one server-side transaction (RPC). In the sync, count only successful writes.
+
+## Super admin (`src/components/super/`)
+
+### 26. The video re-optimizer lists nothing: it selects `brands.name`, which does not exist
+
+Found while looking at `SuperVideoReoptimizer.tsx` for the brands data layer. The `as any` casts hid it from the type checker.
+
+- **Where**: the list query selects `"id, name, slug, hero_media"` from `brands` and orders by `name`; brands have `name_en` / `name_ar`, not `name` (checked on production).
+- **Effect**: the query fails every time, so the super admin's video re-optimizer shows an error and no videos, neither hero videos (3 brands have one) nor product videos. Product rows read later never run.
+- **Fix**: select and order by `name_en` (show `name_ar` in Arabic), and move the reads and hero/product media writes into `src/lib/data/{brands,catalog}` with typed columns. The hero and product updates also ignore their errors (the entry is marked optimized even when nothing was saved).
 
 ## Categories (`src/routes/_authenticated/admin.b.$slug.categories.tsx`, `src/lib/data/categories`)
 

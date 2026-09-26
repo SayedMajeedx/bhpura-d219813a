@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { brandQueries } from "@/lib/data/brands";
 
 export function SuperOverridesManager() {
   const { lang } = useI18n();
@@ -35,17 +36,7 @@ export function SuperOverridesManager() {
   const queryClient = useQueryClient();
 
   // Fetch all brands for selection
-  const { data: brandsList } = useQuery({
-    queryKey: ["super_all_brands_list"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("brands")
-        .select("id, slug, name_en, name_ar, plan_type")
-        .order("name_en", { ascending: true });
-      if (error) throw error;
-      return data || [];
-    },
-  });
+  const { data: brandsList } = useQuery(brandQueries.directory());
 
   // Fetch global features for dropdown
   const { data: plansData } = useQuery({

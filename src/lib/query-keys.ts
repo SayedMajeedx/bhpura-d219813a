@@ -58,7 +58,7 @@ export const queryKeys = {
 
   // Customizations
   customizations: {
-    all: (brandId: string) => ["customizations", brandId] as const,
+    all: catalogKeys.customizations,
   },
 
   // Expenses

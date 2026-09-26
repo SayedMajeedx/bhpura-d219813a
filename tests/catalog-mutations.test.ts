@@ -333,3 +333,48 @@ describe("invalidateCatalog", () => {
     ]);
   });
 });
+
+describe("customization options (paid add-ons)", () => {
+  it("are read per brand by name under the key the inventory tab and order editor share", async () => {
+    await catalog.fetchCustomizations("b1");
+    expect(requests[0]).toMatchObject({ table: "customization_options", select: "*" });
+    expect(filters(requests[0], "eq")).toEqual([["brand_id", "b1"]]);
+    expect(filters(requests[0], "order")).toEqual([["name"]]);
+    expect(catalog.catalogQueries.customizations("b1").queryKey).toEqual(["customizations", "b1"]);
+    expect(catalog.catalogQueries.customizations("").enabled).toBe(false);
+    respond = () => ({ data: null, error: denied });
+    await expect(catalog.fetchCustomizations("b1")).rejects.toBe(denied);
+  });
+
+  it("are created in the brand passed and changed or deleted only within it", async () => {
+    await catalog.createCustomization("b1", {
+      user_id: "u1",
+      name: "Gift wrap",
+      price_delta: 1.5,
+      product_ids: [],
+    });
+    await catalog.updateCustomization("b1", "c1", { product_ids: ["p1"] });
+    await catalog.deleteCustomization("b1", "c1");
+    expect(requests.map((r) => [r.table, r.op])).toEqual([
+      ["customization_options", "insert"],
+      ["customization_options", "update"],
+      ["customization_options", "delete"],
+    ]);
+    expect(requests[0].payload).toMatchObject({ name: "Gift wrap", brand_id: "b1" });
+    for (const request of requests.slice(1)) {
+      expect(filters(request, "eq")).toEqual([
+        ["id", "c1"],
+        ["brand_id", "b1"],
+      ]);
+    }
+    respond = () => ({ error: denied });
+    await expect(catalog.deleteCustomization("b1", "c1")).rejects.toBe(denied);
+  });
+
+  it("refresh only the brand's add-ons after a write", async () => {
+    const qc = new QueryClient();
+    const spy = vi.spyOn(qc, "invalidateQueries");
+    await catalog.invalidateCustomizations(qc, "b1");
+    expect(spy.mock.calls.map(([f]) => f?.queryKey)).toEqual([["customizations", "b1"]]);
+  });
+});
