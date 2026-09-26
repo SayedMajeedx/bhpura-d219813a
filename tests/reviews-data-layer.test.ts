@@ -89,3 +89,30 @@ describe("the customer's review page", () => {
     ).rejects.toBe(denied);
   });
 });
+
+describe("a refused review (bug backlog #30)", () => {
+  it("is named by the database's code so the page can explain it", () => {
+    expect(reviews.reviewRefusal({ message: "REVIEW_NOT_FOUND" })).toBe("REVIEW_NOT_FOUND");
+    expect(reviews.reviewRefusal({ message: "P0001: COMMENT_TOO_LONG" })).toBe("COMMENT_TOO_LONG");
+    expect(reviews.reviewRefusal({ message: "INVALID_RATING" })).toBe("INVALID_RATING");
+    expect(reviews.reviewRefusal({ message: "INVALID_HIGHLIGHT" })).toBe("INVALID_HIGHLIGHT");
+  });
+
+  it("is unnamed for network and other failures (the page shows a general retry message)", () => {
+    expect(reviews.reviewRefusal(new TypeError("Failed to fetch"))).toBeNull();
+    expect(reviews.reviewRefusal(null)).toBeNull();
+    expect(reviews.reviewRefusal({ message: 42 })).toBeNull();
+  });
+
+  it("reaches the page: a failed submit throws the database error", async () => {
+    const refused = { message: "REVIEW_NOT_FOUND", code: "P0001" };
+    respond = () => ({ data: null, error: refused });
+    const failure = reviews.submitPublicOrderReview({
+      token: "t1",
+      rating: 5,
+      highlights: [],
+      comment: null,
+    });
+    await expect(failure).rejects.toBe(refused);
+  });
+});
