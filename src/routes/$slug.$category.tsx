@@ -6,10 +6,10 @@ import {
   hasAvailableStock,
   storefrontQueries,
   type CategoryProductsScope,
-  type ProductRow,
   type StorefrontCategory,
 } from "@/lib/data/storefront";
 import { ProductGrid } from "@/components/storefront/product-grid";
+import { sortCatalogProducts } from "@/lib/catalog-sort";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { StorefrontPageContent } from "@/components/storefront/StorefrontPageContent";
@@ -333,26 +333,8 @@ function CategoryPage() {
       list = list.filter((p) => hasAvailableStock(p));
     }
 
-    const rows = [...list];
-    if (smartKind === "best" && sort === "new") return rows;
-    const price = (product: ProductRow) =>
-      Math.min(
-        ...product.product_variants
-          .map((variant) => Number(variant.selling_price))
-          .filter((value) => value >= 0),
-        Number.MAX_SAFE_INTEGER,
-      );
-    return rows.sort((a, b) => {
-      const availability = Number(hasAvailableStock(b)) - Number(hasAvailableStock(a));
-      if (availability !== 0) return availability;
-      return sort === "old"
-        ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-        : sort === "price-low"
-          ? price(a) - price(b)
-          : sort === "price-high"
-            ? price(b) - price(a)
-            : new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    });
+    if (smartKind === "best" && sort === "new") return [...list];
+    return sortCatalogProducts(list, sort);
   }, [
     productsQuery.data,
     selectedSubCategorySlugs,

@@ -64,7 +64,7 @@ import { ProductOptionPickers } from "@/features/product-page/components/Product
 import { ProductAddonsPicker } from "@/features/product-page/components/ProductAddonsPicker";
 import { ProductCustomFields } from "@/features/product-page/components/ProductCustomFields";
 import { ProductMobileBuyBar } from "@/features/product-page/components/ProductMobileBuyBar";
-import { buildProductSchema, buildBreadcrumbsSchema } from "@/lib/seo/structured-data";
+import { productHead } from "@/features/product-page/lib/product-head";
 import { ProductAccordion } from "@/components/storefront/ProductAccordion";
 import { BundleOffer } from "@/components/storefront/BundleOffer";
 import { RecentlyViewed, recordRecentlyViewed } from "@/components/storefront/RecentlyViewed";
@@ -116,84 +116,7 @@ export const Route = createFileRoute("/$slug/product/$id")({
 
     return { brand, product, recommendationCatalog, bestSellerRows, initialLang };
   },
-  head: ({ loaderData, params }) => {
-    const product = loaderData?.product as any;
-    const brand = (loaderData as any)?.brand;
-    if (!product) return {};
-
-    const lang = (loaderData as any)?.initialLang || "ar";
-    const name = (lang === "ar" ? product.name_ar : product.name_en) || product.name || "";
-    const rawDesc =
-      (lang === "ar"
-        ? product.description_ar || product.description || product.description_en
-        : product.description_en || product.description || product.description_ar) || name;
-    const description = rawDesc.replace(/\s+/g, " ").trim().slice(0, 160);
-    const title = `${name} | ${String(params?.slug || "").toUpperCase()}`;
-    const image = product.image_url || undefined;
-
-    const productSchema = buildProductSchema(
-      {
-        id: product.id,
-        name_en: product.name_en || product.name,
-        name_ar: product.name_ar || product.name,
-        description_en: product.description_en || product.description,
-        description_ar: product.description_ar || product.description,
-        price: Number(product.base_price ?? product.product_variants?.[0]?.selling_price ?? 0),
-        sale_price: product.original_price ? Number(product.base_price) : undefined,
-        sku: product.product_variants?.[0]?.id || product.id,
-        primary_image_url: product.image_url,
-        images: Array.isArray(product.media)
-          ? product.media.map((m: any) => (typeof m === "string" ? m : m?.url)).filter(Boolean)
-          : product.image_url
-            ? [product.image_url]
-            : [],
-        is_active: true,
-      },
-      brand || { slug: params.slug },
-      undefined,
-      lang,
-    );
-
-    const breadcrumbsSchema = buildBreadcrumbsSchema([
-      { name: lang === "ar" ? "الرئيسية" : "Home", url: `https://boutq.store/${params.slug}` },
-      { name, url: `https://boutq.store/${params.slug}/product/${params.id}` },
-    ]);
-
-    return {
-      htmlAttrs: {
-        lang,
-        dir: lang === "ar" ? "rtl" : "ltr",
-      },
-      meta: [
-        { title },
-        { name: "description", content: description },
-        { property: "og:title", content: title },
-        { property: "og:description", content: description },
-        { property: "og:type", content: "product" },
-        ...(image ? [{ property: "og:image", content: image }] : []),
-        { name: "twitter:card", content: image ? "summary_large_image" : "summary" },
-        { name: "twitter:title", content: title },
-        { name: "twitter:description", content: description },
-        ...(image ? [{ name: "twitter:image", content: image }] : []),
-      ],
-      links: [
-        {
-          rel: "canonical",
-          href: `https://boutq.store/${params.slug}/product/${params.id}`,
-        },
-      ],
-      scripts: [
-        {
-          type: "application/ld+json",
-          children: JSON.stringify(productSchema),
-        },
-        {
-          type: "application/ld+json",
-          children: JSON.stringify(breadcrumbsSchema),
-        },
-      ],
-    };
-  },
+  head: productHead,
   component: ProductDetail,
 });
 

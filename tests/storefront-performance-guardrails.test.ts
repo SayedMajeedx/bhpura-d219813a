@@ -48,6 +48,12 @@ describe("storefront performance guardrails", () => {
     expect(home).not.toContain('fetchPriority={idx === 0 ? "high" : "auto"}');
   });
 
+  it("keeps admin-only chart and PDF libraries out of forced shared chunks", () => {
+    const config = read("vite.config.ts");
+    expect(config).not.toContain('return "vendor-pdf"');
+    expect(config).not.toContain('return "vendor-charts"');
+  });
+
   it("uses self-hosted default fonts and immutable static assets", () => {
     const root = read("src/routes/__root.tsx");
     const fonts = read("src/fonts.css");

@@ -148,14 +148,6 @@ Found while moving the integrations screen into `src/lib/data/integrations`. The
 - **Effect**: no rotation has ever been logged (production: 0 `INTEGRATION_KEY_ROTATED` rows of 17 audit rows), while the dialog tells the merchant the rotation was recorded.
 - **Fix**: log inside `save_integration_credential` when a key or secret changes (SECURITY DEFINER, with the caller as actor), and drop the client insert.
 
-## 30. A failed review submission shows the customer nothing
-
-Found while moving reviews into `src/lib/data/reviews`. The call kept its behaviour and points here.
-
-- **Where**: the public review page (`/review/<token>`): when `submit_public_order_review` fails, the page only stops the spinner.
-- **Effect**: an expired link, a second submission or a network error leaves the customer on the form with no message, pressing submit again.
-- **Fix**: show the error (and, for an already-reviewed order, the completed state with its reward code).
-
 ## Categories (`src/routes/_authenticated/admin.b.$slug.categories.tsx`, `src/lib/data/categories`)
 
 ### 20. Reordering categories ignores write errors
@@ -179,3 +171,14 @@ Found while moving reviews into `src/lib/data/reviews`. The call kept its behavi
 - **Where**: `components/PaymentFailedCard.tsx`, the outline button scrolls to `document.getElementById("payment-methods-section")`.
 - **Problem**: no element has the id `payment-methods-section`, so after a failed card payment the button does nothing.
 - **Fix**: give the payment method card (`components/PaymentMethodCard.tsx`) that id, and cover the button in the checkout browser test.
+
+## Subscriptions (`src/components/subscription-card.tsx`, `src/lib/saas-subscription.functions.ts`)
+
+### 32. The renewal card's receipt upload always fails validation
+
+Found while converting the subscription tests to behaviour tests (Phase 6).
+
+- **Where**: `SubscriptionCard.handleUploadReceipt` calls `getSubscriptionReceiptUploadUrl({ data: { brandId, fileName, contentType, fileSize } })`.
+- **Problem**: the server's `CreateUploadInput` requires `size` (and has no `fileName` / `fileSize`), so the zod parse rejects every call before any check runs. The upgrade path in `BrandSubscriptionHub` sends `size` and works.
+- **Effect**: a merchant who chose "Yes, Renew" and picks a receipt always gets "Failed to upload receipt."; annual renewals can only be submitted through the upgrade flow.
+- **Fix**: send `size: file.size` (drop `fileName` / `fileSize`); cover the upload in a render test with the server functions mocked.

@@ -48,6 +48,15 @@ if (typeof Element !== "undefined" && !Element.prototype.hasPointerCapture) {
   Element.prototype.releasePointerCapture = vi.fn();
 }
 
+// jsdom has no ResizeObserver; Radix controls (Switch, Slider) measure with it.
+if (typeof globalThis.ResizeObserver === "undefined") {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
+
 // jsdom does not implement media playback: play() returns nothing and load()
 // logs "Not implemented". Behave like a browser that resolves playback.
 if (typeof HTMLMediaElement !== "undefined") {
