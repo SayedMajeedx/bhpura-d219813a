@@ -175,6 +175,12 @@ export default tseslint.config(
         },
         {
           selector:
+            "CallExpression[callee.property.name='rpc'][arguments.0.value=/^(place_storefront_order|record_order_whatsapp_opt_in|check_registered_customer_exists|get_public_branches)$/]",
+          message:
+            "Checkout calls go through `@/lib/data/checkout` (and pickup branches `@/lib/data/branches`).",
+        },
+        {
+          selector:
             "CallExpression[callee.property.name='rpc'][arguments.0.value=/^get_storefront_(page_data|best_sellers|trending)$/]",
           message:
             "Use the fetchers in `@/lib/data/storefront` for storefront page data and rankings.",
