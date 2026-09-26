@@ -112,9 +112,8 @@ export function SubscriptionCard({ brand }: SubscriptionCardProps) {
       const upload = await getSubscriptionReceiptUploadUrl({
         data: {
           brandId: brand.id,
-          fileName: file.name,
-          contentType: file.type,
-          fileSize: file.size,
+          contentType: file.type as "image/jpeg" | "image/png" | "image/webp",
+          size: file.size,
         },
       });
 
