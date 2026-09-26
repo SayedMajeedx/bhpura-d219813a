@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import type { Storefront } from "@/features/checkout/types";
+import { isRegisteredCustomer } from "@/lib/data/checkout";
 
 /**
  * Guests typing an email or phone that already has an account are offered to
@@ -27,18 +27,8 @@ export function useRegisteredAccountCheck({
   const checkRegisteredAccount = async (field: "email" | "phone", value: string) => {
     if (!value || session || ignoredAccountWarning) return;
     try {
-      const { data: exists, error } = await supabase.rpc("check_registered_customer_exists", {
-        p_brand_id: brand.id,
-        p_email: field === "email" ? value.trim() : "",
-        p_phone: field === "phone" ? value.trim() : "",
-      });
-
-      if (error) {
-        console.error("Error executing check_registered_customer_exists RPC:", error);
-        return;
-      }
-
-      if (exists === true) {
+      const exists = await isRegisteredCustomer(brand.id, { [field]: value.trim() });
+      if (exists) {
         setShowAccountPopup({
           show: true,
           field,

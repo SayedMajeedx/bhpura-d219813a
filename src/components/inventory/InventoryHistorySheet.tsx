@@ -24,7 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
 import { fetchInvoiceNumbers } from "@/lib/data/orders";
 import { fetchProfileNames } from "@/lib/data/profiles";
 import { useI18n } from "@/lib/i18n";
@@ -42,6 +41,7 @@ import {
   FileText,
   User,
 } from "lucide-react";
+import { fetchInventoryMovements } from "@/lib/data/catalog";
 
 export interface InventoryMovement {
   id: string;
@@ -164,29 +164,17 @@ export function InventoryHistorySheet({
     setLoading(true);
 
     try {
-      let query = (supabase as any)
-        .from("inventory_movements")
-        .select("*", { count: "exact" })
-        .eq("brand_id", brandId)
-        .order("created_at", { ascending: false });
-
-      if (variantId) {
-        query = query.eq("variant_id", variantId);
-      }
-
-      if (filterReason !== "all") {
-        query = query.eq("reason", filterReason);
-      }
-
-      if (filterLocation !== "all") {
-        query = query.eq("location", filterLocation);
-      }
-
-      const from = page * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-      query = query.range(from, to);
-
-      const { data, count, error } = await query;
+      const { data, count, error } = await fetchInventoryMovements({
+        brandId,
+        variantId,
+        reason: filterReason,
+        location: filterLocation,
+        page,
+        pageSize: PAGE_SIZE,
+      }).then(
+        (result) => ({ data: result.rows, count: result.count, error: null }),
+        (err: unknown) => ({ data: null, count: 0, error: err }),
+      );
 
       if (error) {
         console.error("Error fetching inventory movements:", error);
@@ -195,7 +183,8 @@ export function InventoryHistorySheet({
         return;
       }
 
-      const rows: InventoryMovement[] = data || [];
+      // `created_by` is not a column (it is `actor_id`), so the actor stays blank (bug backlog #31).
+      const rows = (data || []) as unknown as InventoryMovement[];
       setMovements(rows);
       setTotalCount(count || 0);
 

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
 import { formatDate, formatMoney } from "@/lib/format";
 import {
@@ -15,6 +14,7 @@ import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 import { branchesQueries } from "@/lib/data/branches";
+import { addonDataQueries } from "@/lib/data/addons";
 
 type SavedAddress = {
   id?: string;
@@ -229,15 +229,8 @@ export default function InvoicePreview({
 }) {
   const brandId = order?.brand_id;
   const brandAddonsQ = useQuery({
-    queryKey: ["brand_addons", brandId],
+    ...addonDataQueries.installedIds(brandId ?? ""),
     enabled: Boolean(brandId && !propsBrandAddons),
-    queryFn: async () => {
-      const { data } = await (supabase.from("brand_addons") as any)
-        .select("addon_id, status")
-        .eq("brand_id", brandId)
-        .eq("status", "installed");
-      return data ?? [];
-    },
   });
   const effectiveAddons = propsBrandAddons ?? brandAddonsQ.data;
   const addonDefaults = variantAxisDefaultsFrom(
