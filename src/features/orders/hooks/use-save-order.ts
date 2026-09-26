@@ -1,7 +1,6 @@
 import { useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { useT, useI18n } from "@/lib/i18n";
 import { logActivityBatch } from "@/lib/activity-log";
 import type { Order, OrderItem as Item, OrderSnapshot } from "@/features/orders/types";
@@ -28,6 +27,7 @@ import {
 } from "@/lib/data/orders";
 import { catalogKeys } from "@/lib/data/catalog";
 import { invalidateActivityLogs } from "@/lib/data/activity-logs";
+import { getCurrentUser } from "@/lib/auth/session";
 
 /** Saves the order editor: creates a new order with its lines, or updates the order, replaces changed lines and logs status/payment changes. */
 export function useSaveOrder({
@@ -78,9 +78,7 @@ export function useSaveOrder({
     const saveBlocker = orderSaveBlocker(order, items, id, lang);
     if (saveBlocker) return toast.error(saveBlocker);
     setSaving(true);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) {
       setSaving(false);
       return;

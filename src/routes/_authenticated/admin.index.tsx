@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
 import { fetchCallerProfile } from "@/lib/data/profiles";
 import { fetchAnyBrandSlug, fetchBrandSlug } from "@/lib/data/brands";
+import { getCurrentUser } from "@/lib/auth/session";
 
 /**
  * /admin smart redirector.
@@ -13,9 +13,7 @@ import { fetchAnyBrandSlug, fetchBrandSlug } from "@/lib/data/brands";
  */
 export const Route = createFileRoute("/_authenticated/admin/")({
   beforeLoad: async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) throw redirect({ to: "/auth" });
 
     const profile = await fetchCallerProfile(user.id);

@@ -144,6 +144,7 @@ import {
   type ScannedLineItem,
 } from "@/lib/scan-receipt.functions";
 import { permissionsOf, profilesQueries } from "@/lib/data/profiles";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/expenses")({
   beforeLoad: async ({ context: { queryClient }, params }) => {
@@ -725,9 +726,7 @@ function ExpenseDialog({
     if (!form.category.trim()) return toast.error(t("expenses.category"));
     setSaving(true);
     let uploadedUrl: string | null = null;
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) {
       setSaving(false);
       return;
@@ -1062,9 +1061,7 @@ function ReceiptReviewDialog({
       return toast.error(lang === "ar" ? "الفئة مطلوبة" : "Category required");
     setSaving(true);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) return;
       const payload = {
         user_id: user.id,

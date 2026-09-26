@@ -1,10 +1,8 @@
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getCurrentSession } from "@/lib/auth/session";
 
 export async function authenticatedJsonHeaders() {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const session = await getCurrentSession();
 
   if (!session?.access_token) throw new Error("Your session has expired. Please sign in again.");
 

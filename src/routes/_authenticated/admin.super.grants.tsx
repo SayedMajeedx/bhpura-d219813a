@@ -1,17 +1,15 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
 import { SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
 import { Crown, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SuperGrantsManager } from "@/components/super/SuperGrantsManager";
 import { Link } from "@tanstack/react-router";
 import { fetchCallerProfile } from "@/lib/data/profiles";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export const Route = createFileRoute("/_authenticated/admin/super/grants")({
   beforeLoad: async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) throw redirect({ to: "/auth" });
 
     const email = (user.email || "").toLowerCase();

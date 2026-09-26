@@ -146,8 +146,8 @@ function RootComponent() {
       const { shouldClearNonRememberedSession, markTabAlive } =
         await import("@/lib/session-persistence");
       if (shouldClearNonRememberedSession()) {
-        const { supabase } = await import("@/integrations/supabase/client");
-        await supabase.auth.signOut();
+        const { signOut } = await import("@/lib/auth/session");
+        await signOut();
       }
       markTabAlive();
     })();

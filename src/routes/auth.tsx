@@ -27,6 +27,7 @@ import { applyRememberMe } from "@/lib/session-persistence";
 import { translateAuthError } from "@/lib/auth-errors";
 import { readStorefrontOAuthReturn } from "@/lib/storefront-oauth-return";
 import { fetchCallerProfile } from "@/lib/data/profiles";
+import { getCurrentUser, signOut } from "@/lib/auth/session";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -74,13 +75,11 @@ function AuthPage() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       const profile = await fetchCallerProfile(user!.id);
       const dashboardRoles = new Set(["super_admin", "admin", "brand_admin", "staff", "courier"]);
       if (!profile || profile.status !== "active" || !dashboardRoles.has(profile.role ?? "")) {
-        await supabase.auth.signOut();
+        await signOut();
         throw new Error(
           lang === "ar"
             ? "هذا حساب عميل متجر وليس حساب لوحة تحكم."
@@ -116,7 +115,7 @@ function AuthPage() {
       const profile = await fetchCallerProfile(data.user.id);
       const dashboardRoles = new Set(["super_admin", "admin", "brand_admin", "staff", "courier"]);
       if (!profile || profile.status !== "active" || !dashboardRoles.has(profile.role ?? "")) {
-        await supabase.auth.signOut();
+        await signOut();
         throw new Error(
           lang === "ar"
             ? "هذا الحساب غير مخوّل لدخول لوحة التحكم."

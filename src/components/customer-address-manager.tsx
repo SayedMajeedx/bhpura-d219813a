@@ -1,6 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { MapPin, Pencil, Plus, Trash2, Star, Check, Sparkles } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import {
   createCustomerAddress,
   deleteCustomerAddress,
@@ -38,6 +37,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export type ManagedCustomerAddress = {
   id: string;
@@ -180,9 +180,7 @@ export function CustomerAddressManager({
     if (editing) {
       error = await failureOf(updateCustomerAddress(brandId, customerId, editing.id, payload));
     } else {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) {
         setSaving(false);
         return toast.error(

@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import {
   createMessageTemplate,
   deleteMessageTemplate,
@@ -58,6 +57,7 @@ import { isMarketingEligible } from "@/lib/marketing-eligibility";
 
 import { CampaignsCommandHeader } from "@/components/campaigns/CampaignsCommandHeader";
 import { CampaignsScopeSwitcher } from "@/components/campaigns/CampaignsScopeSwitcher";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/campaigns")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -158,9 +158,7 @@ function CampaignsPage() {
     const name = saveName.trim();
     if (!name) return toast.error(isAr ? "أدخل اسم القالب" : "Enter a template name");
     if (!message.trim()) return toast.error(isAr ? "الرسالة فارغة" : "Message is empty");
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return;
 
     try {

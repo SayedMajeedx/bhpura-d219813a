@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Activity, AlertTriangle, CheckCircle2, Clock3, RefreshCw, XCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { fetchCallerProfile } from "@/lib/data/profiles";
 import { superAdminQueries } from "@/lib/data/super-admin";
+import { getCurrentUser } from "@/lib/auth/session";
 
 type HealthEvent = {
   id: string;
@@ -23,9 +23,7 @@ type HealthEvent = {
 
 export const Route = createFileRoute("/_authenticated/admin/super/health")({
   beforeLoad: async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) throw redirect({ to: "/auth" });
     const profile = await fetchCallerProfile(user.id);
     if ((user.email || "").toLowerCase() !== SUPER_ADMIN_EMAIL && profile?.role !== "super_admin") {

@@ -1,7 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { createCustomer, createCustomerAddress, invalidateCustomers } from "@/lib/data/customers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { getFriendlyErrorMessage } from "@/lib/utils";
 import { PhoneInput } from "@/components/phone-input";
+import { getCurrentUser } from "@/lib/auth/session";
 
 /** Creates a customer (and a default address when one is typed) and assigns it to the order. */
 export function NewCustomerDialog({
@@ -49,9 +49,7 @@ export function NewCustomerDialog({
     }
     setCreatingCustomer(true);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) throw new Error("Not authenticated");
 
       // 1. Insert customer
