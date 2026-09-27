@@ -138,7 +138,7 @@ applies. Both earlier ones are fixed: #25 (a cash ledger: accounts per brand,
 reconciled orders posted, manual cash in / out) and #27 (key rotations are
 audit-logged by `save_integration_credential`). The inventory finds #2–#9,
 checkout #12 and #19, and the silent or non-atomic writes #16, #17, #20 and
-#21 are fixed too. Left: #11, #14 and #18 (orders and customers).
+#21, and the courier completion #14 are fixed too.
 
 ### 4.3 `any` reduction
 

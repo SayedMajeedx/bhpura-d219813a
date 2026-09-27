@@ -1,11 +1,11 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 import {
   courierCompleteDelivery,
   invalidateOrders,
   ordersKeys,
-  updateOrder,
   type OrderListRow,
 } from "@/lib/data/orders";
 
@@ -34,10 +34,7 @@ export function useCompleteDelivery({
   setUpdatingOrderId: Dispatch<SetStateAction<string | null>>;
 }) {
   const handleCompleteDelivery = async (
-    order: Pick<
-      OrderListRow,
-      "id" | "total" | "advance_paid" | "payment_status" | "delivery_notes"
-    >,
+    order: Pick<OrderListRow, "id">,
     amountToCollect: number,
     notes?: string,
   ) => {
@@ -66,41 +63,10 @@ export function useCompleteDelivery({
       ),
     );
     try {
-      // 1. Try atomic RPC first
-      const rpcErr = await courierCompleteDelivery(order.id, amountToCollect, notes || null);
-
-      if (rpcErr) {
-        // 2. Direct table update fallback if RPC function missing or column schema mismatch
-        const currentPaid = Number(order.advance_paid ?? 0);
-        const newPaid = currentPaid + amountToCollect;
-        const total = Number(order.total || 0);
-        const newStatus =
-          newPaid >= total
-            ? "paid"
-            : newPaid > 0
-              ? "partially_paid"
-              : order.payment_status || "unpaid";
-
-        let updatedNotes = order.delivery_notes || "";
-        if (notes && notes.trim()) {
-          const timestamp = new Date().toISOString().slice(0, 16).replace("T", " ");
-          updatedNotes = updatedNotes
-            ? `${updatedNotes}\n[${timestamp}]: ${notes.trim()}`
-            : notes.trim();
-        }
-
-        await updateOrder(brandId, order.id, {
-          advance_paid: newPaid,
-          cod_collected_amount: amountToCollect,
-          cod_collected_at: new Date().toISOString(),
-          payment_status: newStatus,
-          fulfillment_status: "COMPLETED",
-          status: "completed",
-          delivery_notes: updatedNotes || null,
-          delivered_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-      }
+      // The server alone completes it (assigned courier or the brand's staff),
+      // so a refusal is shown instead of a browser write that RLS drops (bug #14).
+      const error = await courierCompleteDelivery(order.id, amountToCollect, notes || null);
+      if (error) throw error;
 
       toast.success(
         lang === "ar"
@@ -111,9 +77,16 @@ export function useCompleteDelivery({
       setCashCollectedAmount("");
       setCashModalNotes("");
       invalidateOrders(qc, brandId);
-    } catch (err: any) {
+    } catch (err) {
       qc.setQueryData(ordersQueryKey, previousOrders);
-      toast.error(err.message || "Failed to complete delivery");
+      toast.error(
+        String((err as { message?: string })?.message ?? "").includes("DELIVERY_ALREADY_COMPLETED")
+          ? lang === "ar"
+            ? "تم تسليم هذا الطلب مسبقاً"
+            : "This delivery was already completed"
+          : getFriendlyErrorMessage(err) ||
+              (lang === "ar" ? "تعذر إتمام التسليم" : "Failed to complete delivery"),
+      );
     } finally {
       setUpdatingOrderId(null);
       setIsSubmittingCash(false);
