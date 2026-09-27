@@ -133,8 +133,10 @@ middleware against a fake Supabase client) and `tests/helpers/brands-page.tsx`
 ### 4.2 Bugs waiting on the owner
 
 In `docs/bug-backlog.md`. Some need a product decision or a migration the owner
-applies: #25 (nothing creates the cash accounts or credits the cash box). #27 is fixed
-(key rotations are audit-logged by `save_integration_credential`). The rest are older refactor finds (#2–#21).
+applies. Both earlier ones are fixed: #25 (a cash ledger: accounts per brand,
+reconciled orders posted, manual cash in / out) and #27 (key rotations are
+audit-logged by `save_integration_credential`). The rest are older refactor
+finds (#2–#21).
 
 ### 4.3 `any` reduction
 

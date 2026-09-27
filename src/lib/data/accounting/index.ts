@@ -16,6 +16,9 @@ import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 export const accountingKeys = {
   all: (brandId: string) => ["accounting", brandId] as const,
   cashAccounts: (brandId: string) => [...accountingKeys.all(brandId), "cash-accounts"] as const,
+  /** The accounts' latest movements (under the accounts' key, refreshed with them). */
+  cashMovements: (brandId: string, limit: number) =>
+    [...accountingKeys.cashAccounts(brandId), "movements", limit] as const,
   /** Every vendor list of the brand (prefix). */
   vendors: (brandId: string) => [...accountingKeys.all(brandId), "vendors"] as const,
   vendorList: (brandId: string) => [...accountingKeys.vendors(brandId), "list"] as const,
@@ -32,6 +35,21 @@ export async function fetchCashFlowAccounts(brandId: string) {
   if (error) throw error;
   return data ?? [];
 }
+
+/** The latest movements on the brand's cash accounts, newest first. */
+export async function fetchCashMovements(brandId: string, limit: number) {
+  const { data, error } = await supabase
+    .from("account_transactions")
+    .select(
+      "id, amount, transaction_type, notes, reference_id, source_account_id, target_account_id, created_at",
+    )
+    .eq("brand_id", brandId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data ?? [];
+}
+export type CashMovementRow = Awaited<ReturnType<typeof fetchCashMovements>>[number];
 
 /** Every vendor of the brand, newest first. */
 export async function fetchVendors(brandId: string) {
@@ -72,6 +90,11 @@ export const accountingQueries = {
       queryKey: accountingKeys.cashAccounts(brandId),
       queryFn: () => fetchCashFlowAccounts(brandId),
     }),
+  cashMovements: (brandId: string, limit = 10) =>
+    queryOptions({
+      queryKey: accountingKeys.cashMovements(brandId, limit),
+      queryFn: () => fetchCashMovements(brandId, limit),
+    }),
   vendors: (brandId: string) =>
     queryOptions({
       queryKey: accountingKeys.vendorList(brandId),
@@ -89,6 +112,7 @@ export const accountingQueries = {
     }),
 };
 
+/** The accounts' balances and their movements. */
 export function invalidateCashAccounts(qc: QueryClient, brandId: string) {
   return qc.invalidateQueries({ queryKey: accountingKeys.cashAccounts(brandId) });
 }
@@ -165,4 +189,50 @@ export async function updatePurchaseOrder(
     .eq("id", orderId)
     .eq("brand_id", brandId);
   if (error) throw error;
+}
+
+export type CashAccountType = "cash_box" | "bank_account";
+
+/** Why the database refused a manual entry (the codes `record_cash_account_entry` raises). */
+export type CashEntryRefusal =
+  | "INVALID_ENTRY_AMOUNT"
+  | "INVALID_ENTRY_DIRECTION"
+  | "INVALID_ENTRY_ACCOUNT"
+  | "NOT_AUTHORIZED"
+  | "INSUFFICIENT_BALANCE";
+
+const CASH_ENTRY_REFUSALS: readonly CashEntryRefusal[] = [
+  "INVALID_ENTRY_AMOUNT",
+  "INVALID_ENTRY_DIRECTION",
+  "INVALID_ENTRY_ACCOUNT",
+  "NOT_AUTHORIZED",
+  "INSUFFICIENT_BALANCE",
+];
+
+/** The refusal code in a failed manual entry's error, if it is one. */
+export function cashEntryRefusal(error: unknown): CashEntryRefusal | null {
+  const message = (error as { message?: unknown } | null)?.message;
+  if (typeof message !== "string") return null;
+  return CASH_ENTRY_REFUSALS.find((code) => message.includes(code)) ?? null;
+}
+
+/**
+ * Records money the merchant put in or took out of an account by hand
+ * (opening balance, owner deposit or withdrawal): there is no bank feed.
+ * One database transaction that refuses to overdraw. Returns the logged
+ * movement's id.
+ */
+export async function recordCashAccountEntry(
+  brandId: string,
+  entry: { account: CashAccountType; direction: "in" | "out"; amount: number; notes?: string },
+) {
+  const { data, error } = await supabase.rpc("record_cash_account_entry", {
+    p_brand_id: brandId,
+    p_account_type: entry.account,
+    p_direction: entry.direction,
+    p_amount: entry.amount,
+    p_notes: entry.notes?.trim() || undefined,
+  });
+  if (error) throw error;
+  return data;
 }
