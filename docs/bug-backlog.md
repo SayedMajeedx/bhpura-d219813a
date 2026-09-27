@@ -55,16 +55,6 @@ Found while moving customers into `src/lib/data/customers`. The calls kept their
 - **Effect**: if clearing fails, the brand has two default templates and the dialog preselects either one.
 - **Fix**: stop when clearing fails, or clear and set in one update / RPC (same shape as #17).
 
-## Accounting (`src/components/accounting/`, `src/lib/data/accounting`)
-
-### 25. Nothing puts money in the cash box
-
-Found while fixing #24 (the transfer is now one database function that refuses more than the cash box holds).
-
-- **Where**: `CashFlowLiquidityTab.tsx` and `FinancialReportsTab.tsx` read `cash_flow_accounts`; nothing in the app or the database creates those accounts or adds to their balances. Production has no rows in `cash_flow_accounts` and none in `account_transactions`.
-- **Effect**: the cash box and bank cards always show the zero fallbacks, the cash flow statement starts from zero, and every transfer is refused ("no cash box and bank account yet"). Reconciling a cash order does not credit the cash box.
-- **Fix** (product decision): create the two accounts per brand, and choose what credits the cash box (reconciled cash orders, a manual "cash in" entry, or both), in the same database function style as the transfer.
-
 ## Inventory (`src/features/inventory/`)
 
 ### 2. Duplicating a product drops variant and product fields

@@ -14,7 +14,17 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Wallet, Building, ArrowRightLeft, CheckCircle2, Clock, ShieldCheck } from "lucide-react";
+import {
+  Wallet,
+  Building,
+  ArrowRightLeft,
+  CheckCircle2,
+  Clock,
+  PlusCircle,
+  ShieldCheck,
+} from "lucide-react";
+import { CashEntryDialog } from "@/components/accounting/CashEntryDialog";
+import { CashMovementsList } from "@/components/accounting/CashMovementsList";
 import { formatMoney, formatDate } from "@/lib/format";
 import { toast } from "sonner";
 import { invalidateOrders, ordersQueries, updateOrder } from "@/lib/data/orders";
@@ -56,6 +66,7 @@ export function CashFlowLiquidityTab() {
   const [transferAmount, setTransferAmount] = useState<number>(0);
   const [transferNotes, setTransferNotes] = useState("");
   const [isSubmitting, setIsSaving] = useState(false);
+  const [entryModalOpen, setEntryModalOpen] = useState(false);
 
   // Fetch cash accounts
   const accountsQ = useQuery(accountingQueries.cashAccounts(brandId));
@@ -90,6 +101,8 @@ export function CashFlowLiquidityTab() {
 
       toast.success(isAr ? "تم تحديث حالة التسوية النقدية" : "Reconciliation status updated");
       invalidateOrders(qc, brandId);
+      // Reconciling a paid order posts it to the cash box or the bank account.
+      void invalidateCashAccounts(qc, brandId);
     } catch (err: any) {
       console.error("Reconciliation update error:", err);
       toast.error(
@@ -182,14 +195,25 @@ export function CashFlowLiquidityTab() {
             <span className="text-xs font-bold text-primary">
               {isAr ? "إجمالي السيولة المتاحة" : "Total Liquidity"}
             </span>
-            <Button
-              size="sm"
-              onClick={() => setTransferModalOpen(true)}
-              className="h-7 text-xs font-bold gap-1 px-2"
-            >
-              <ArrowRightLeft className="h-3 w-3" />
-              {isAr ? "تحويل سيولة" : "Transfer"}
-            </Button>
+            <div className="flex gap-1.5">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setEntryModalOpen(true)}
+                className="h-7 text-xs font-bold gap-1 px-2"
+              >
+                <PlusCircle className="h-3 w-3" />
+                {isAr ? "تسجيل حركة" : "Record entry"}
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setTransferModalOpen(true)}
+                className="h-7 text-xs font-bold gap-1 px-2"
+              >
+                <ArrowRightLeft className="h-3 w-3" />
+                {isAr ? "تحويل سيولة" : "Transfer"}
+              </Button>
+            </div>
           </div>
           <span className="text-xl font-extrabold text-primary mt-2">
             {formatMoney(totalLiquidity, "BHD")}
@@ -286,6 +310,21 @@ export function CashFlowLiquidityTab() {
           </div>
         )}
       </div>
+
+      <CashMovementsList
+        brandId={brandId}
+        isAr={isAr}
+        accountNames={
+          new Map(accounts.map((account) => [account.id, isAr ? account.name_ar : account.name_en]))
+        }
+      />
+
+      <CashEntryDialog
+        brandId={brandId}
+        isAr={isAr}
+        open={entryModalOpen}
+        onOpenChange={setEntryModalOpen}
+      />
 
       {/* Inter-Account Transfer Modal */}
       <Dialog open={transferModalOpen} onOpenChange={setTransferModalOpen}>

@@ -41,6 +41,7 @@ function builder(table: string) {
     },
     eq: record("eq"),
     order: record("order"),
+    limit: record("limit"),
     then(resolve: (reply: Reply) => unknown, reject?: (reason: unknown) => unknown) {
       return Promise.resolve(respond(request)).then(resolve, reject);
     },
@@ -185,5 +186,60 @@ describe("the cash box to bank transfer (bug backlog #24)", () => {
     );
     expect(accounting.cashTransferRefusal({ message: "network down" })).toBeNull();
     expect(accounting.cashTransferRefusal(null)).toBeNull();
+  });
+});
+
+describe("the cash ledger (bug backlog #25)", () => {
+  it("records a manual cash in or out as one database call for the brand", async () => {
+    respond = () => ({ data: "tx-2", error: null });
+    expect(
+      await accounting.recordCashAccountEntry("b1", {
+        account: "cash_box",
+        direction: "in",
+        amount: 50,
+        notes: "  Opening balance ",
+      }),
+    ).toBe("tx-2");
+    expect(requests).toEqual([
+      {
+        table: "record_cash_account_entry",
+        op: "rpc",
+        payload: {
+          p_brand_id: "b1",
+          p_account_type: "cash_box",
+          p_direction: "in",
+          p_amount: 50,
+          p_notes: "Opening balance",
+        },
+        filters: [],
+      },
+    ]);
+  });
+
+  it("throws the database's refusal, which the screen can name", async () => {
+    const refusal = { message: "INSUFFICIENT_BALANCE", code: "P0001" };
+    respond = () => ({ data: null, error: refusal });
+    await expect(
+      accounting.recordCashAccountEntry("b1", {
+        account: "bank_account",
+        direction: "out",
+        amount: 9,
+      }),
+    ).rejects.toBe(refusal);
+    expect(accounting.cashEntryRefusal(refusal)).toBe("INSUFFICIENT_BALANCE");
+    expect(accounting.cashEntryRefusal({ message: "NOT_AUTHORIZED" })).toBe("NOT_AUTHORIZED");
+    expect(accounting.cashEntryRefusal({ message: "network down" })).toBeNull();
+  });
+
+  it("reads the brand's latest movements under the cash accounts' key", async () => {
+    respond = () => ({ data: [{ id: "m1" }], error: null });
+    expect(await accounting.fetchCashMovements("b1", 10)).toEqual([{ id: "m1" }]);
+    expect(requests[0].table).toBe("account_transactions");
+    expect(eqs(requests[0])).toEqual([["brand_id", "b1"]]);
+    expect(requests[0].filters).toContainEqual(["limit", 10]);
+    // Refreshing the accounts refreshes their movements too.
+    expect(accounting.accountingKeys.cashMovements("b1", 10).slice(0, 3)).toEqual(
+      accounting.accountingKeys.cashAccounts("b1"),
+    );
   });
 });
