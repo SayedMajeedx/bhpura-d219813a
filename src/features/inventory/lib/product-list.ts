@@ -253,10 +253,27 @@ export function duplicateProductValues(product: Product, brandId: string, isAr: 
     custom_fields: product.custom_fields,
     fabric_type: product.fabric_type,
     occasion: product.occasion,
+    cost_price: product.cost_price ?? 0,
+    variant_label_size_ar: product.variant_label_size_ar ?? null,
+    variant_label_size_en: product.variant_label_size_en ?? null,
+    variant_label_color_ar: product.variant_label_color_ar ?? null,
+    variant_label_color_en: product.variant_label_color_en ?? null,
+    variant_label_fabric_ar: product.variant_label_fabric_ar ?? null,
+    variant_label_fabric_en: product.variant_label_fabric_en ?? null,
+    variant_label_four_ar: product.variant_label_four_ar ?? null,
+    variant_label_four_en: product.variant_label_four_en ?? null,
+    variant_label_five_ar: product.variant_label_five_ar ?? null,
+    variant_label_five_en: product.variant_label_five_en ?? null,
+    show_sale_badge: product.show_sale_badge,
+    size_guide_id: product.size_guide_id ?? null,
+    size_guide_hidden: product.size_guide_hidden ?? false,
+    is_made_to_order: product.is_made_to_order ?? false,
+    // A copy starts as an inactive draft, so it is not featured either.
+    featured_trending: false,
   };
 }
 
-/** Variant copies for a duplicated product: new SKUs, no barcode, no incubator stock. */
+/** Variant copies for a duplicated product: every option, unit, image and price; new SKUs, no barcode, no incubator stock. */
 export function duplicateVariantValues(
   variants: Variant[],
   newProductId: string,
@@ -271,7 +288,12 @@ export function duplicateVariantValues(
     size: v.size,
     color: v.color,
     fabric: v.fabric,
+    option_four: v.option_four ?? null,
+    option_five: v.option_five ?? null,
+    size_unit: v.size_unit,
+    image_url: v.image_url,
     selling_price: v.selling_price,
+    original_price: v.original_price,
     cost_price: v.cost_price,
     stock_main: v.stock_main ?? 0,
     stock_incubator: 0,

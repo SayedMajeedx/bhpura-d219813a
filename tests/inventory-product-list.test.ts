@@ -208,6 +208,34 @@ describe("duplication", () => {
     });
   });
 
+  it("keeps the product's cost, option labels, sale badge, size guide and made-to-order flag (bug #2)", () => {
+    const values = duplicateProductValues(
+      product({
+        cost_price: 12,
+        variant_label_size_en: "Weight",
+        variant_label_color_ar: "درجة التحميص",
+        show_sale_badge: true,
+        featured_trending: true,
+        size_guide_id: "g1",
+        size_guide_hidden: true,
+        is_made_to_order: true,
+      }),
+      "brand-1",
+      false,
+    );
+    expect(values).toMatchObject({
+      cost_price: 12,
+      variant_label_size_en: "Weight",
+      variant_label_color_ar: "درجة التحميص",
+      show_sale_badge: true,
+      size_guide_id: "g1",
+      size_guide_hidden: true,
+      is_made_to_order: true,
+      // An inactive draft copy is not featured.
+      featured_trending: false,
+    });
+  });
+
   it("copies variants with new SKUs, no barcode and no incubator stock", () => {
     const [copy] = duplicateVariantValues([variant()], "p2", "brand-1", () => 0.5);
     expect(copy).toMatchObject({
@@ -216,6 +244,34 @@ describe("duplication", () => {
       barcode: null,
       stock_main: 3,
       stock_incubator: 0,
+    });
+  });
+
+  it("keeps each variant's unit, extra options, image and sale price (bug #2)", () => {
+    const [copy] = duplicateVariantValues(
+      [
+        variant({
+          size: "250",
+          size_unit: "g",
+          option_four: "Espresso",
+          option_five: "Whole bean",
+          image_url: "https://x/v.jpg",
+          selling_price: 8,
+          original_price: 10,
+        }),
+      ],
+      "p2",
+      "brand-1",
+      () => 0.5,
+    );
+    expect(copy).toMatchObject({
+      size: "250",
+      size_unit: "g",
+      option_four: "Espresso",
+      option_five: "Whole bean",
+      image_url: "https://x/v.jpg",
+      selling_price: 8,
+      original_price: 10,
     });
   });
 });

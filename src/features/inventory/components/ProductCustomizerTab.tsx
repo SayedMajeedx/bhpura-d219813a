@@ -15,7 +15,7 @@ import { CUSTOMIZER_PRESETS } from "@/lib/addons/addon-presets";
 import type { CustomField } from "@/features/inventory/types";
 
 import type { Dispatch, SetStateAction } from "react";
-import type { ProductForm } from "@/features/inventory/lib/product-form";
+import { cleanPassportCustomFields, type ProductForm } from "@/features/inventory/lib/product-form";
 import type { ProductDialogData } from "@/features/inventory/hooks/use-product-dialog-data";
 
 /** Third step of the product editor: customer customization fields and their storefront preview. */
@@ -61,7 +61,9 @@ export function ProductCustomizerTab({
                   setForm({
                     ...form,
                     is_made_to_order: isCustomPreset ? true : form.is_made_to_order,
-                    custom_fields: [
+                    // A Fit Passport preset replaces the hand-made measurement
+                    // fields here, where the merchant sees it, not only on save.
+                    custom_fields: cleanPassportCustomFields([
                       ...(form.custom_fields ?? []),
                       ...preset.fields.map(
                         (f: any, index: number) =>
@@ -70,7 +72,7 @@ export function ProductCustomizerTab({
                             key: `f${Date.now()}-${index}-${f.key}`,
                           }) as CustomField,
                       ),
-                    ],
+                    ]),
                   });
                   toast.success(isAr ? "تم تطبيق النموذج بنجاح" : "Preset applied successfully");
                 }

@@ -188,3 +188,8 @@ export function variantColumnPatch(
   }
   return normalizedPatch;
 }
+
+/** The selling price for a cost plus a markup percentage, to 3 decimals (fils). */
+export function markupPrice(cost: number, markupPercent: number): number {
+  return Number((cost * (1 + markupPercent / 100)).toFixed(3));
+}

@@ -9,9 +9,19 @@ import {
   updateVariants,
 } from "@/lib/data/catalog";
 import type { Variant } from "@/features/inventory/types";
+import { markupPrice, variantColumnPatch } from "@/features/inventory/lib/variant-draft";
 
-/** Row selection in the variants table and the actions applied to the selection. */
-export function useVariantBulkActions(variants: Variant[], onChanged: () => void, isAr: boolean) {
+/**
+ * Row selection in the variants table and the actions applied to the selection.
+ * `regularPrice` is the product's base price: a new price below it keeps it as
+ * the struck-through original price, as an inline edit does.
+ */
+export function useVariantBulkActions(
+  variants: Variant[],
+  onChanged: () => void,
+  isAr: boolean,
+  regularPrice: number,
+) {
   const brandId = useBrand().id;
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const isAllSelected = variants.length > 0 && selectedIds.size === variants.length;
@@ -46,7 +56,11 @@ export function useVariantBulkActions(variants: Variant[], onChanged: () => void
     const price = Number(val);
     if (isNaN(price) || price < 0) return toast.error(isAr ? "سعر غير صالح" : "Invalid price");
     try {
-      await updateVariants(brandId, Array.from(selectedIds), { selling_price: price });
+      await updateVariants(
+        brandId,
+        Array.from(selectedIds),
+        variantColumnPatch({ selling_price: price }, regularPrice),
+      );
     } catch (error) {
       toast.error(getFriendlyErrorMessage(error));
       return;
@@ -84,7 +98,7 @@ export function useVariantBulkActions(variants: Variant[], onChanged: () => void
     const val = prompt(
       isAr
         ? "أدخل نسبة الهامش الربحي المئوية (مثال: 50 لـ 50%):"
-        : "Enter markup percentage (e.g. 50 for 55%):",
+        : "Enter markup percentage (e.g. 50 for 50%):",
     );
     if (val === null) return;
     const markup = Number(val);
@@ -92,10 +106,13 @@ export function useVariantBulkActions(variants: Variant[], onChanged: () => void
       return toast.error(isAr ? "نسبة مئوية غير صالحة" : "Invalid markup percentage");
     const selectedVariants = variants.filter((v) => selectedIds.has(v.id));
     const results = await Promise.allSettled(
-      selectedVariants.map((v) => {
-        const newPrice = v.cost_price * (1 + markup / 100);
-        return updateVariant(brandId, v.id, { selling_price: Number(newPrice.toFixed(3)) });
-      }),
+      selectedVariants.map((v) =>
+        updateVariant(
+          brandId,
+          v.id,
+          variantColumnPatch({ selling_price: markupPrice(v.cost_price, markup) }, regularPrice),
+        ),
+      ),
     );
     const hasError = results.some((r) => r.status === "rejected");
     if (hasError)
