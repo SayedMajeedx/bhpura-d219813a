@@ -7992,6 +7992,10 @@ export type Database = {
         Returns: undefined;
       };
       can_access_brand: { Args: { _brand_id: string }; Returns: boolean };
+      cash_account_type_for_payment: {
+        Args: { p_payment_method: string };
+        Returns: string;
+      };
       check_registered_customer_exists: {
         Args: { p_brand_id: string; p_email: string; p_phone: string };
         Returns: boolean;
@@ -8337,6 +8341,10 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      ensure_cash_flow_accounts: {
+        Args: { p_brand_id: string };
+        Returns: undefined;
       };
       format_currency_amount: {
         Args: { p_amount: number; p_currency: string };
@@ -8748,6 +8756,16 @@ export type Database = {
             };
             Returns: boolean;
           };
+      record_cash_account_entry: {
+        Args: {
+          p_account_type: string;
+          p_amount: number;
+          p_brand_id: string;
+          p_direction: string;
+          p_notes?: string;
+        };
+        Returns: string;
+      };
       record_incubator_payment: {
         Args: {
           p_amount: number;
