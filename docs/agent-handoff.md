@@ -131,14 +131,16 @@ middleware against a fake Supabase client) and `tests/helpers/brands-page.tsx`
 (render the super admin's brands page). CI has no Supabase environment: mock
 `@/integrations/supabase/client` in render tests that build real providers.
 
-### 4.2 Bugs waiting on the owner
+### 4.2 Bug backlog: empty
 
-In `docs/bug-backlog.md`. Some need a product decision or a migration the owner
-applies. Both earlier ones are fixed: #25 (a cash ledger: accounts per brand,
-reconciled orders posted, manual cash in / out) and #27 (key rotations are
-audit-logged by `save_integration_credential`). The inventory finds #2–#9,
-checkout #12 and #19, and the silent or non-atomic writes #16, #17, #20 and
-#21, and the courier completion #14 are fixed too.
+`docs/bug-backlog.md` has no open entries: every bug the refactors found
+(#2–#33) is fixed. The last ones: #25 (a cash ledger), #27 (key rotations
+audit-logged by `save_integration_credential`), inventory #2–#9, checkout #12
+and #19, orders #11 and #14 (deliveries complete through
+`courier_complete_delivery` alone, scoped to the brand), loyalty #18 (a
+searchable customer picker), and the silent or non-atomic writes #16, #17, #20
+and #21 (`set_default_customer_address`, `set_default_message_template`,
+`reorder_categories`, `apply_bom_to_all_products`). New finds still go there.
 
 ### 4.3 `any` reduction
 

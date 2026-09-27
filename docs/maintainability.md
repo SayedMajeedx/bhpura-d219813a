@@ -81,7 +81,7 @@ Measured on `main` after Phase 7. The budgets in `tests/maintainability-ratchet.
 | Metric                    | Baseline (09-24) | Now (09-27) | What changed                                                                                             |
 | :------------------------ | :--------------: | :---------: | :------------------------------------------------------------------------------------------------------- |
 | `as any`                  |       990        |     575     | Typed data layer, typed rows and props (Phases 3–4); the order editor's shared line builder.             |
-| `: any`                   |       785        |     718     | Same; most remaining are `catch (e: any)` and local shapes.                                              |
+| `: any`                   |       785        |     714     | Same; most remaining are `catch (e: any)` and local shapes.                                              |
 | `as never`                |        40        |      0      | Types regenerated from production (Phase 3).                                                             |
 | `eslint-disable`          |        10        |     10      | Unchanged (frozen).                                                                                      |
 | Direct Supabase calls     |   392 (406\*)    |     24      | Screens read and write through `src/lib/data/*` (Phase 4); left: server routes and one realtime channel. |
