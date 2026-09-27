@@ -31,6 +31,7 @@ import type { OrderItem } from "@/features/orders/types";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
 
 import { OrderItemEditDialog } from "@/features/orders/components/OrderItemEditDialog";
+import { isTailoredLine } from "@/features/orders/lib/order-editor";
 /** One order line: image, SKU, stock, quantity and price, with its edit dialog. */
 export function OrderLineCard({
   addonDefaults,
@@ -302,13 +303,11 @@ export function OrderLineCard({
       </div>
 
       {/* Custom Item / Specifications */}
-      {!it.product_id ||
-      it.location === "custom" ||
-      it.variant_id === "custom" ||
+      {isTailoredLine(it) ||
       (it.custom_field_values && it.custom_field_values.length > 0) ||
       editingItems[idx] ? (
         <div className="space-y-2">
-          {(!it.product_id || it.location === "custom" || it.variant_id === "custom") && (
+          {isTailoredLine(it) && (
             <div className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary flex flex-wrap items-center justify-between gap-2">
               <span className="flex items-center gap-1.5">
                 {storeProfile.modules.made_to_order ? (

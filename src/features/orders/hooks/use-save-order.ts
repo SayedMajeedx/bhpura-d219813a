@@ -5,6 +5,7 @@ import { useT, useI18n } from "@/lib/i18n";
 import { logActivityBatch } from "@/lib/activity-log";
 import type { Order, OrderItem as Item, OrderSnapshot } from "@/features/orders/types";
 import {
+  isCustomLine,
   normalizeOrderMin,
   orderItemFromRow,
   orderTotals,
@@ -88,8 +89,7 @@ export function useSaveOrder({
 
     if (id === "new") {
       for (const it of items) {
-        const isCustom = it.location === "custom" || !it.variant_id;
-        if (isCustom && !it.location) {
+        if (isCustomLine(it) && !it.location) {
           it.location = "custom";
         }
       }

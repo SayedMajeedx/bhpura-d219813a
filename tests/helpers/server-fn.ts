@@ -17,6 +17,8 @@ export type ServerFn = ((args: { data?: unknown; context: unknown }) => Promise<
 /** A `createServerFn` that keeps its middleware and runs validator + handler when called. */
 export function serverFnModule() {
   return {
+    // Middleware keeps its server function so a test can run it.
+    createMiddleware: () => ({ server: (run: unknown) => ({ run }) }),
     createServerFn: () => {
       const fn: { middleware: unknown[]; validate: (raw: unknown) => unknown } = {
         middleware: [],
@@ -38,30 +40,50 @@ export function serverFnModule() {
 }
 
 type Write = { table: string; values: unknown; filters: Array<[string, unknown]> };
+type Rows = unknown | ((filters: Array<[string, unknown]>) => unknown);
 
 /**
- * A Supabase client whose reads return `rows[table]` and whose RPCs return
- * `rpc[name]`. Updates, inserts and deletes are recorded in `writes`, with
- * their filters (`eq` and `in`).
+ * A Supabase client whose reads return `rows[table]` (or `rows[table](filters)`)
+ * and whose RPCs return `rpc[name]`. Every query is recorded in `queries` and
+ * every update, insert, upsert and delete in `writes`, with their filters.
  */
 export function fakeSupabase(config: {
-  rows?: Record<string, unknown>;
+  rows?: Record<string, Rows>;
   rpc?: Record<string, unknown>;
 }) {
   const writes: Write[] = [];
+  const queries: Write[] = [];
   const from = (table: string) => {
     const write: Write = { table, values: undefined, filters: [] };
-    const result = () => ({ data: config.rows?.[table] ?? null, error: null });
+    queries.push(write);
+    const result = () => {
+      const rows = config.rows?.[table];
+      return {
+        data: (typeof rows === "function" ? rows(write.filters) : rows) ?? null,
+        error: null,
+      };
+    };
+    const filter = (column: string, value: unknown) => (write.filters.push([column, value]), chain);
+    const record = (values: unknown) => ((write.values = values), writes.push(write), chain);
     const chain = {
       select: () => chain,
-      eq: (column: string, value: unknown) => (write.filters.push([column, value]), chain),
+      eq: filter,
       neq: () => chain,
-      in: (column: string, values: unknown) => (write.filters.push([column, values]), chain),
+      in: filter,
+      lte: () => chain,
+      gte: () => chain,
+      lt: () => chain,
+      gt: () => chain,
+      or: () => chain,
+      is: () => chain,
+      not: () => chain,
       order: () => chain,
       limit: () => chain,
-      update: (values: unknown) => ((write.values = values), writes.push(write), chain),
-      insert: (values: unknown) => ((write.values = values), writes.push(write), chain),
-      delete: () => ((write.values = "DELETE"), writes.push(write), chain),
+      update: record,
+      insert: record,
+      upsert: (values: unknown, options?: unknown) =>
+        record(options ? { values, options } : values),
+      delete: () => record("DELETE"),
       maybeSingle: async () => result(),
       single: async () => result(),
       // Awaiting a read returns its rows; awaiting a write returns nothing.
@@ -71,5 +93,5 @@ export function fakeSupabase(config: {
     return chain;
   };
   const rpc = vi.fn(async (name: string) => ({ data: config.rpc?.[name] ?? null, error: null }));
-  return { supabase: { from, rpc }, writes };
+  return { supabase: { from, rpc }, writes, queries };
 }

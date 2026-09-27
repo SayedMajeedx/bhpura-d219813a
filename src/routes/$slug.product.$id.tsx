@@ -40,6 +40,7 @@ import {
   sortVariants,
   uniqueOptionValues,
   resolveProductAxes,
+  showsCustomSizing,
   tailoringState,
   type VariantSelection,
 } from "@/features/product-page/lib/variant-options";
@@ -633,8 +634,12 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           productUrl: typeof window !== "undefined" ? window.location.href : "",
           variantLabel: variant
             ? [
-                (showSizeModeToggle && sizeMode === "custom") ||
-                (!hasReadySizes && isTailoringActive)
+                showsCustomSizing({
+                  showSizeModeToggle,
+                  sizeMode,
+                  hasReadySizes,
+                  isTailoringActive,
+                })
                   ? vocabulary.custom_sizing?.[lang] || t("قياس خاص", "Custom Sizing")
                   : formatSizeWithUnit(variant.size, variant.size_unit, lang),
                 variant.color,

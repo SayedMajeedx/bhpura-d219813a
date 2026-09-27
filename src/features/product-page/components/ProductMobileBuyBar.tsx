@@ -11,6 +11,7 @@ import {
   type StorefrontProductDetail as Product,
   type StorefrontVariant as Variant,
 } from "@/lib/data/storefront";
+import { showsCustomSizing } from "@/features/product-page/lib/variant-options";
 
 /** Phone-only sticky bar with the price and the buy actions. */
 export function ProductMobileBuyBar({
@@ -63,8 +64,12 @@ export function ProductMobileBuyBar({
           <div className="text-xs uppercase tracking-wider text-muted-foreground truncate">
             {variant
               ? [
-                  (showSizeModeToggle && sizeMode === "custom") ||
-                  (!hasReadySizes && isTailoringActive)
+                  showsCustomSizing({
+                    showSizeModeToggle,
+                    sizeMode,
+                    hasReadySizes,
+                    isTailoringActive,
+                  })
                     ? vocabulary.custom_sizing?.[lang] || t("قياس خاص", "Custom Sizing")
                     : formatSizeWithUnit(variant.size, variant.size_unit, lang),
                   variant.color,
