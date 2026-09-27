@@ -18,7 +18,11 @@ import { getFriendlyErrorMessage } from "@/lib/utils";
 import { PhoneInput } from "@/components/phone-input";
 import { getCurrentUser } from "@/lib/auth/session";
 
-/** Creates a customer (and a default address when one is typed) and assigns it to the order. */
+/**
+ * Creates a customer (and a default address when one is typed) and assigns it
+ * to the order. When the address is refused the customer is already created:
+ * the dialog stays open to retry the address or continue without it.
+ */
 export function NewCustomerDialog({
   open,
   onOpenChange,
@@ -42,6 +46,26 @@ export function NewCustomerDialog({
   const [newCustHouse, setNewCustHouse] = useState("");
   const [newCustFlat, setNewCustFlat] = useState("");
   const [creatingCustomer, setCreatingCustomer] = useState(false);
+  const [createdCustomer, setCreatedCustomer] = useState<{ id: string; name: string } | null>(null);
+
+  const finish = (customer: { id: string; name: string }, addressId: string | null) => {
+    toast.success(
+      lang === "ar"
+        ? `تم إضافة العميل "${customer.name}" بنجاح!`
+        : `Customer "${customer.name}" created successfully!`,
+    );
+    onCreated(customer.id, addressId);
+    setNewCustName("");
+    setNewCustPhone("");
+    setNewCustEmail("");
+    setNewCustRegion("");
+    setNewCustBlock("");
+    setNewCustRoad("");
+    setNewCustHouse("");
+    setNewCustFlat("");
+    setCreatedCustomer(null);
+    onOpenChange(false);
+  };
 
   const handleCreateInlineCustomer = async () => {
     if (!newCustName.trim()) {
@@ -52,59 +76,53 @@ export function NewCustomerDialog({
       const user = await getCurrentUser();
       if (!user) throw new Error("Not authenticated");
 
-      // 1. Insert customer
-      const cust = await createCustomer(brandId, {
-        user_id: user.id,
-        brand_id: brandId,
-        name: newCustName.trim(),
-        phone: newCustPhone.trim() || null,
-        email: newCustEmail.trim().toLowerCase() || null,
-        region: newCustRegion.trim() || null,
-        block: newCustBlock.trim() || null,
-        road: newCustRoad.trim() || null,
-        house: newCustHouse.trim() || null,
-        flat: newCustFlat.trim() || null,
-      });
-
-      // 2. Insert default address if address details provided
-      let addressId: string | null = null;
-      if (newCustRegion || newCustBlock || newCustRoad || newCustHouse) {
-        // Best-effort: a failed address leaves the order without one (bug backlog #17).
-        addressId = await createCustomerAddress(brandId, {
+      // 1. The customer, once: a retry after a refused address reuses it.
+      const cust =
+        createdCustomer ??
+        (await createCustomer(brandId, {
           user_id: user.id,
-          customer_id: cust.id,
-          label: "Home",
+          brand_id: brandId,
+          name: newCustName.trim(),
+          phone: newCustPhone.trim() || null,
+          email: newCustEmail.trim().toLowerCase() || null,
           region: newCustRegion.trim() || null,
           block: newCustBlock.trim() || null,
           road: newCustRoad.trim() || null,
           house: newCustHouse.trim() || null,
           flat: newCustFlat.trim() || null,
-          is_default: true,
-        }).catch(() => null);
+        }));
+      if (!createdCustomer) {
+        setCreatedCustomer({ id: cust.id, name: cust.name });
+        void invalidateCustomers(qc, brandId);
       }
 
-      toast.success(
-        lang === "ar"
-          ? `تم إضافة العميل "${cust.name}" بنجاح!`
-          : `Customer "${cust.name}" created successfully!`,
-      );
+      // 2. Its default address, when one was typed.
+      let addressId: string | null = null;
+      if (newCustRegion || newCustBlock || newCustRoad || newCustHouse) {
+        try {
+          addressId = await createCustomerAddress(brandId, {
+            user_id: user.id,
+            customer_id: cust.id,
+            label: "Home",
+            region: newCustRegion.trim() || null,
+            block: newCustBlock.trim() || null,
+            road: newCustRoad.trim() || null,
+            house: newCustHouse.trim() || null,
+            flat: newCustFlat.trim() || null,
+            is_default: true,
+          });
+        } catch (addressErr) {
+          toast.error(
+            lang === "ar"
+              ? "تم إنشاء العميل، لكن تعذر حفظ العنوان. حاول مرة أخرى أو تابع بدون عنوان."
+              : "The customer was created, but the address could not be saved. Try again or continue without it.",
+            { description: getFriendlyErrorMessage(addressErr) },
+          );
+          return;
+        }
+      }
 
-      // Auto-assign to current order!
-      onCreated(cust.id, addressId);
-
-      // Refetch queries
-      void invalidateCustomers(qc, brandId);
-
-      // Reset form & close modal
-      setNewCustName("");
-      setNewCustPhone("");
-      setNewCustEmail("");
-      setNewCustRegion("");
-      setNewCustBlock("");
-      setNewCustRoad("");
-      setNewCustHouse("");
-      setNewCustFlat("");
-      onOpenChange(false);
+      finish({ id: cust.id, name: cust.name }, addressId);
     } catch (err: unknown) {
       toast.error(
         getFriendlyErrorMessage(err) ||
@@ -116,7 +134,14 @@ export function NewCustomerDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        // Closing after the customer exists still assigns it (without the address).
+        if (!next && createdCustomer) finish(createdCustomer, null);
+        else onOpenChange(next);
+      }}
+    >
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto w-[95vw] p-4 sm:p-6 rounded-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
@@ -214,14 +239,25 @@ export function NewCustomerDialog({
           </div>
         </div>
         <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="w-full sm:w-auto h-11"
-          >
-            {lang === "ar" ? "إلغاء" : "Cancel"}
-          </Button>
+          {createdCustomer ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => finish(createdCustomer, null)}
+              className="w-full sm:w-auto h-11"
+            >
+              {lang === "ar" ? "متابعة بدون عنوان" : "Continue without address"}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="w-full sm:w-auto h-11"
+            >
+              {lang === "ar" ? "إلغاء" : "Cancel"}
+            </Button>
+          )}
           <Button
             type="button"
             onClick={handleCreateInlineCustomer}
@@ -236,7 +272,13 @@ export function NewCustomerDialog({
             ) : (
               <>
                 <UserPlus className="h-4 w-4 me-2" />
-                {lang === "ar" ? "حفظ وتعين الزبون" : "Save & Assign Customer"}
+                {createdCustomer
+                  ? lang === "ar"
+                    ? "إعادة حفظ العنوان"
+                    : "Retry address"
+                  : lang === "ar"
+                    ? "حفظ وتعين الزبون"
+                    : "Save & Assign Customer"}
               </>
             )}
           </Button>

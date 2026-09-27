@@ -27,17 +27,13 @@ Line numbers are as of 2026-09-24 and may drift; search for the quoted code.
 
 ## Customers (`src/lib/data/customers`, `src/routes/_authenticated/admin.b.$slug.customers*`)
 
-### 17. Customer address writes that ignore their errors
+### 17. Setting a default address ignores the clearing error
 
-Found while moving customers into `src/lib/data/customers`. The calls kept their behaviour and point here.
+Found while moving customers into `src/lib/data/customers`. (The order editor's "new customer" address is fixed: the dialog stays open to retry it.)
 
-- **Where**:
-  - `setDefaultCustomerAddress` (used by the customers list's address editor, `src/components/customer-address-manager.tsx` and the storefront account page `src/routes/$slug.account.tsx`): clearing the old default ignores its error. The account page's "add address as default" does the same (`clearDefaultCustomerAddress(...).catch(() => undefined)`).
-  - `src/features/orders/components/NewCustomerDialog.tsx`: the new customer's address (`createCustomerAddress(...).catch(() => null)`).
-- **Effect**:
-  - If clearing fails and setting succeeds, the customer has two default addresses, and screens that take "the default" pick either one.
-  - The order editor's "new customer" can create the customer without the address the merchant typed, show a success toast, and leave the order with no shipping address.
-- **Fix**: stop when clearing fails (or clear and set in one update / RPC). In the dialog, show the address error and keep the dialog open with the customer already created.
+- **Where**: `setDefaultCustomerAddress` (used by the customers list's address editor, `src/components/customer-address-manager.tsx` and the storefront account page `src/routes/$slug.account.tsx`): clearing the old default ignores its error. The account page's "add address as default" does the same (`clearDefaultCustomerAddress(...).catch(() => undefined)`).
+- **Effect**: if clearing fails and setting succeeds, the customer has two default addresses, and screens that take "the default" pick either one.
+- **Fix**: clear and set in one transaction (RPC), with #21 and #20.
 
 ### 18. The loyalty adjustment dialog offers only the first 100 customers
 
@@ -57,21 +53,13 @@ Found while moving customers into `src/lib/data/customers`. The calls kept their
 
 ## Inventory (`src/features/inventory/`)
 
-### 16. Catalog writes that ignore their errors
+### 16. "Apply to all products" ignores its errors and is not atomic
 
-Found while moving the catalog writes into `src/lib/data/catalog` (the calls now end in `.catch(() => undefined)`, or the mutation says so, and point here).
+Found while moving the catalog writes into `src/lib/data/catalog`. (The other writes of this entry are fixed: the default and duplicated variants, the option label and the packaging sync now report their errors.)
 
-- **Where**:
-  - `hooks/use-save-product.ts`: the automatic default variant, both when an active product with no variants is saved and when a product is created.
-  - `hooks/use-product-actions.ts`, `handleDuplicateProduct`: copying the variants to the duplicate.
-  - `hooks/use-variant-mutations.ts`, `add`: setting the product's colour/option axis label.
-  - `src/lib/data/catalog/mutations.ts`, `applyBomToAllProducts` (the BOM editor's "apply to all products"): the direct-cost update and the removal of the old BOM lines.
-  - `src/lib/packaging-sync.ts`, `syncPackagingExpensesToInventory`: the cost/stock update of an existing material (counted as "updated" even when it failed), and every write in `syncSingleExpenseToPackagingMaterial`.
-- **Effect**:
-  - A product can be saved or duplicated with no variant while the success toast shows, so it cannot be bought.
-  - "Apply to all" can fail to delete the old lines and then insert the new ones, so every product has its packaging lines twice and packaging cost (COGS) doubles. It is also not atomic: a failure halfway leaves some products changed.
-  - The sync reports materials as updated when they were not.
-- **Fix**: surface the errors (toast, stop before the next step). For "apply to all", stop on the first error, ideally as one server-side transaction (RPC). In the sync, count only successful writes.
+- **Where**: `src/lib/data/catalog/mutations.ts`, `applyBomToAllProducts` (the BOM editor's "apply to all products"): the direct-cost update and the removal of the old BOM lines ignore their errors.
+- **Effect**: "Apply to all" can fail to delete the old lines and then insert the new ones, so every product has its packaging lines twice and packaging cost (COGS) doubles. A failure halfway leaves some products changed.
+- **Fix**: one server-side transaction (RPC).
 
 ## Categories (`src/routes/_authenticated/admin.b.$slug.categories.tsx`, `src/lib/data/categories`)
 

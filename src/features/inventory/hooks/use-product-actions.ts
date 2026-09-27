@@ -93,11 +93,22 @@ export function useProductActions({
 
       const originalVariants = variants.filter((v) => v.product_id === productToDuplicate.id);
       if (originalVariants.length > 0) {
-        // Best-effort, its error is ignored as before (bug backlog #16).
-        await createVariants(
-          brandId,
-          duplicateVariantValues(originalVariants, insertedProductId, brandId),
-        ).catch(() => undefined);
+        try {
+          await createVariants(
+            brandId,
+            duplicateVariantValues(originalVariants, insertedProductId, brandId),
+          );
+        } catch (variantErr) {
+          // The copy exists as an inactive draft; say what it is missing.
+          toast.error(
+            isAr
+              ? "تم إنشاء نسخة المنتج كمسودة، لكن تعذر نسخ المتغيرات. أضفها من تبويب المتغيرات."
+              : "The copy was created as a draft, but its variants could not be copied. Add them in the Variants tab.",
+            { description: getFriendlyErrorMessage(variantErr) },
+          );
+          onChanged();
+          return;
+        }
       }
 
       toast.success(

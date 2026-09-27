@@ -130,7 +130,13 @@ export function PackagingMaterialsTab() {
     try {
       const res = await syncPackagingExpensesToInventory(supabase, brandId);
       qc.invalidateQueries({ queryKey: catalogKeys.packagingMaterials(brandId) });
-      if (res.syncedCount > 0) {
+      if (res.failedCount > 0) {
+        toast.error(
+          isAr
+            ? `تعذر حفظ ${res.failedCount} من مواد التغليف (تمت مزامنة ${res.syncedCount}).`
+            : `${res.failedCount} packaging materials could not be saved (${res.syncedCount} synced).`,
+        );
+      } else if (res.syncedCount > 0) {
         toast.success(
           isAr
             ? `تمت مزامنة وتحديث ${res.syncedCount} من مواد التغليف من شاشة المصاريف بنجاح`

@@ -59,7 +59,7 @@ import { useI18n, useT } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
 import { cn } from "@/lib/utils";
 import { deletePublicMediaUrl, uploadPublicMedia } from "@/lib/r2-upload";
-import { syncSingleExpenseToPackagingMaterial } from "@/lib/packaging-sync";
+import { syncExpensePackaging } from "@/components/accounting/sync-expense-packaging";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
 import {
   createExpense,
@@ -755,7 +755,7 @@ function ExpenseDialog({
         void deletePublicMediaUrl(brand.id, expense.receipt_url).catch(() => undefined);
       }
       // Auto sync packaging expense to packaging materials inventory
-      void syncSingleExpenseToPackagingMaterial(supabase, brand.id, payload).catch(() => undefined);
+      void syncExpensePackaging(supabase, brand.id, payload, lang === "ar");
       toast.success(t("common.save"));
       onSaved();
     } catch (error: any) {

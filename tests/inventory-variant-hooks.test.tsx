@@ -25,11 +25,15 @@ vi.mock("@/lib/brand-context", () => brandContext);
 const translations = { prefetchOptionTranslations: vi.fn() };
 vi.mock("../src/features/inventory/lib/option-translations", () => translations);
 vi.mock("@/features/inventory/lib/option-translations", () => translations);
+const session = { getCurrentUser: async () => ({ id: "u1" }) };
+vi.mock("../src/lib/auth/session", () => session);
+vi.mock("@/lib/auth/session", () => session);
 
 const { useVariantBulkActions } =
   await import("../src/features/inventory/hooks/use-variant-bulk-actions");
 const { useVariantMutations } =
   await import("../src/features/inventory/hooks/use-variant-mutations");
+const { emptyVariantDraft } = await import("../src/features/inventory/lib/variant-draft");
 
 const variant = (overrides: Partial<Variant>): Variant =>
   ({
@@ -127,5 +131,33 @@ describe("editing a variant's barcode", () => {
     await act(() => update(variants[0], { barcode: "NEW-1" }));
     expect(toast.error).not.toHaveBeenCalled();
     expect(catalog.updateVariant).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("adding a variant whose option name cannot be saved", () => {
+  it("adds the variant and says the option's name is missing (bug backlog #16)", async () => {
+    catalog.updateProduct.mockImplementation(async (_b: string, _p: string, patch: object) => {
+      if ("variant_label_color_ar" in patch) throw { message: "permission denied" };
+    });
+    const axis = { label: "", visible: true, isCustom: false };
+    const onAdded = vi.fn();
+    const { result } = renderHook(() =>
+      useVariantMutations({
+        productId: "p1",
+        variants,
+        axes: { size: axis, color: axis, fabric: axis, four: axis, five: axis },
+        isAr: false,
+        onChanged: vi.fn(),
+      }),
+    );
+    await act(() =>
+      result.current.add({ ...emptyVariantDraft(), size: "L", color: "Rose" }, onAdded),
+    );
+    expect(catalog.createVariants).toHaveBeenCalledTimes(1);
+    expect(toast.error).toHaveBeenCalledWith(
+      "Variant added, but the option's name could not be saved.",
+      expect.anything(),
+    );
+    expect(onAdded).toHaveBeenCalledTimes(1);
   });
 });

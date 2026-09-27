@@ -85,11 +85,18 @@ export function useVariantMutations({
     prefetchOptionTranslations([finalColor, row.fabric, row.option_four, row.option_five], isAr);
 
     if (finalColor && !product?.variant_label_color_ar) {
-      // Best-effort, its error is ignored as before (bug backlog #16).
+      // The variant is saved either way; only the option's name is missing.
       await updateProduct(brandId, productId, {
         variant_label_color_ar: colorAxis.label || "النكهة / الخيار",
         variant_label_color_en: "Flavor / Option",
-      }).catch(() => undefined);
+      }).catch((error: unknown) =>
+        toast.error(
+          isAr
+            ? "تمت إضافة المتغير، لكن تعذر حفظ اسم الخيار."
+            : "Variant added, but the option's name could not be saved.",
+          { description: getFriendlyErrorMessage(error) },
+        ),
+      );
     }
 
     if (variants.length === 0) {
