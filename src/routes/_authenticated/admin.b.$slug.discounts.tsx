@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { setPromoAudience } from "@/lib/promo-audience";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { Tags, Calendar } from "lucide-react";
@@ -703,13 +704,7 @@ function DiscountCodes() {
                   </Label>
                   <Switch
                     checked={form.first_time_customers_only}
-                    onCheckedChange={(v) =>
-                      setForm({
-                        ...form,
-                        first_time_customers_only: v,
-                        returning_customers_only: v ? false : form.returning_customers_only,
-                      })
-                    }
+                    onCheckedChange={(v) => setForm(setPromoAudience(form, "first_time", v))}
                   />
                 </div>
                 <div className="flex items-center justify-between gap-4">
@@ -720,13 +715,7 @@ function DiscountCodes() {
                   </Label>
                   <Switch
                     checked={form.returning_customers_only}
-                    onCheckedChange={(v) =>
-                      setForm({
-                        ...form,
-                        returning_customers_only: v,
-                        first_time_customers_only: v ? false : form.first_time_customers_only,
-                      })
-                    }
+                    onCheckedChange={(v) => setForm(setPromoAudience(form, "returning", v))}
                   />
                 </div>
                 <div className="flex items-center justify-between gap-4">

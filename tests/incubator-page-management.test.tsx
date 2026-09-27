@@ -7,6 +7,9 @@ const toast = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
 const incubatorData = vi.hoisted(() => ({
   updateIncubator: vi.fn(async () => undefined),
   invalidateIncubators: vi.fn(async () => undefined),
+  updateIncubatorItem: vi.fn(async () => undefined),
+  syncIncubatorPrices: vi.fn(async () => 3),
+  useRealtimeInvalidate: vi.fn(),
 }));
 vi.mock("sonner", () => ({ toast }));
 
@@ -87,7 +90,7 @@ vi.mock("@/lib/data/catalog", (importOriginal) => catalogModule(importOriginal))
 const brandContext = { useBrand: () => ({ id: "b1", slug: "pura" }) };
 vi.mock("../src/lib/brand-context", () => brandContext);
 vi.mock("@/lib/brand-context", () => brandContext);
-const realtime = { useRealtimeInvalidate: () => undefined };
+const realtime = { useRealtimeInvalidate: incubatorData.useRealtimeInvalidate };
 vi.mock("../src/hooks/use-realtime-invalidate", () => realtime);
 vi.mock("@/hooks/use-realtime-invalidate", () => realtime);
 const transferModal = { BatchIncubatorTransferModal: () => null };
@@ -160,5 +163,53 @@ describe("incubator page management", () => {
     const dialog = await screen.findByRole("dialog");
     const policy = dialog.querySelector('select[name="packaging_policy"]') as HTMLSelectElement;
     expect(policy.value).toBe("incubator");
+  });
+
+  it("edits an item's code, price and commission through the secured update", async () => {
+    renderPage();
+    fireEvent.click((await screen.findAllByRole("button", { name: "Terms" }))[0]);
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText("Incubator code"), {
+      target: { value: " SB-7 " },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Consignment price"), {
+      target: { value: "6.5" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save and update" }));
+    await waitFor(() => expect(incubatorData.updateIncubatorItem).toHaveBeenCalledTimes(1));
+    expect(incubatorData.updateIncubatorItem).toHaveBeenCalledWith({
+      inventoryId: "s1",
+      externalCode: "SB-7",
+      consignmentPrice: 6.5,
+      commissionType: "percentage",
+      commissionValue: 10,
+    });
+  });
+
+  it("refreshes by syncing prices with the inventory, and listens for other screens' changes", async () => {
+    renderPage();
+    const refresh = await screen.findByRole("button", { name: "Refresh" });
+    await waitFor(() => expect(refresh).not.toBeDisabled());
+    fireEvent.click(refresh);
+    await waitFor(() => expect(incubatorData.syncIncubatorPrices).toHaveBeenCalledWith("i1"));
+    expect(toast.success).toHaveBeenCalledWith("3 product prices updated");
+    // Realtime refreshes the incubator tables edited on other screens.
+    const tables = (
+      incubatorData.useRealtimeInvalidate.mock.calls[0][0] as Array<{ table: string }>
+    ).map((entry) => entry.table);
+    expect(tables).toEqual(
+      expect.arrayContaining(["incubators", "incubator_inventory", "incubator_sales"]),
+    );
+  });
+
+  it("lays the page out right-to-left with Bahraini money formatting in Arabic", async () => {
+    localStorage.setItem("lang", "ar");
+    const { container } = renderPage();
+    expect(await screen.findByText("الحاضنات والعُهد")).toBeInTheDocument();
+    expect(container.querySelector('[dir="rtl"]')).not.toBeNull();
+    const money = new Intl.NumberFormat("ar-BH", { style: "currency", currency: "BHD" })
+      .formatToParts(1)
+      .find((part) => part.type === "currency")!.value;
+    await waitFor(() => expect(container.textContent).toContain(money));
   });
 });

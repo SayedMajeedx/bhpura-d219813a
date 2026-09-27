@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { CREATIVE_FORMATS, creativeFileName, deliverCreativeFile } from "@/lib/creative-export";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -69,11 +70,7 @@ type Product = {
   occasion?: string | null;
 };
 
-const FORMATS = {
-  story: { ar: "ستوري", en: "Story", width: 1080, height: 1920, ratio: "aspect-[9/16]" },
-  portrait: { ar: "بوست 4:5", en: "Post 4:5", width: 1080, height: 1350, ratio: "aspect-[4/5]" },
-  square: { ar: "مربع", en: "Square", width: 1080, height: 1080, ratio: "aspect-square" },
-} as const;
+const FORMATS = CREATIVE_FORMATS;
 
 /**
  * The stage is laid out at this fixed CSS width always, then visually scaled
@@ -492,9 +489,7 @@ function ContentStudioPage() {
         useCORS: true,
         logging: false,
       });
-      const fileName = `${brandSlugClean}-${selected?.name || "creative"}-${format}.png`
-        .replace(/\s+/g, "-")
-        .toLowerCase();
+      const fileName = creativeFileName(brandSlugClean, selected?.name, format, "png");
       const blob = await new Promise<Blob>((resolve, reject) =>
         canvas.toBlob(
           (result) => (result ? resolve(result) : reject(new Error("PNG export failed"))),
@@ -502,36 +497,17 @@ function ContentStudioPage() {
           1,
         ),
       );
-      const file = new File([blob], fileName, { type: "image/png" });
-      const isMobileDevice =
-        window.matchMedia("(pointer: coarse)").matches && window.innerWidth < 900;
-      const canShareFile =
-        isMobileDevice &&
-        typeof navigator.share === "function" &&
-        navigator.canShare?.({ files: [file] });
-
-      if (canShareFile) {
-        try {
-          await navigator.share({ files: [file], title: headline || businessName });
-          toast.success(
-            isAr ? "التصميم جاهز للحفظ أو المشاركة" : "Creative ready to save or share",
-          );
-          return;
-        } catch (shareError) {
-          if (shareError instanceof DOMException && shareError.name === "AbortError") return;
-          console.warn("Native file sharing was unavailable; using download fallback", shareError);
-        }
+      const delivered = await deliverCreativeFile(
+        blob,
+        fileName,
+        "image/png",
+        headline || businessName,
+      );
+      if (delivered === "cancelled") return;
+      if (delivered === "shared") {
+        toast.success(isAr ? "التصميم جاهز للحفظ أو المشاركة" : "Creative ready to save or share");
+        return;
       }
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.download = fileName;
-      link.href = url;
-      link.style.display = "none";
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
       toast.success(
         isAr
           ? `تم تنزيل التصميم ${target.width}×${target.height}`
@@ -929,39 +905,20 @@ function ContentStudioPage() {
       setExportProgress(100);
 
       // 8. Deliver file via Web Share or direct download
-      const fileName = `${brandSlugClean}-${selected?.name || "creative"}-${format}.${ext}`
-        .replace(/\s+/g, "-")
-        .toLowerCase();
-      const file = new File([blob], fileName, { type: mimeType });
-      const isMobileDevice =
-        window.matchMedia("(pointer: coarse)").matches && window.innerWidth < 900;
-      const canShareFile =
-        isMobileDevice &&
-        typeof navigator.share === "function" &&
-        navigator.canShare?.({ files: [file] });
-
-      if (canShareFile) {
-        try {
-          await navigator.share({ files: [file], title: headline || businessName });
-          toast.success(
-            isAr ? "فيديو التصميم جاهز للحفظ أو المشاركة" : "Video creative ready to share",
-          );
-          return;
-        } catch (shareError) {
-          if (shareError instanceof DOMException && shareError.name === "AbortError") return;
-          console.warn("Native file sharing unavailable; using fallback", shareError);
-        }
+      const fileName = creativeFileName(brandSlugClean, selected?.name, format, ext);
+      const delivered = await deliverCreativeFile(
+        blob,
+        fileName,
+        mimeType,
+        headline || businessName,
+      );
+      if (delivered === "cancelled") return;
+      if (delivered === "shared") {
+        toast.success(
+          isAr ? "فيديو التصميم جاهز للحفظ أو المشاركة" : "Video creative ready to share",
+        );
+        return;
       }
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.download = fileName;
-      link.href = url;
-      link.style.display = "none";
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
       toast.success(
         isAr
           ? `تم تنزيل فيديو التصميم بنجاح (${target.width}×${target.height})`

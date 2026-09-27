@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { subDays, startOfDay, endOfDay } from "date-fns";
 import { DateRange } from "react-day-picker";
+import { defaultReportRange } from "@/lib/reports-view";
 import { useI18n, useT } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
 import { ReportsToolbar } from "@/components/reports/ReportsToolbar";
@@ -30,10 +30,7 @@ function ReportsProducts() {
   useT();
   const { slug } = Route.useParams();
 
-  const [date, setDate] = useState<DateRange | undefined>({
-    from: subDays(startOfDay(new Date()), 29),
-    to: endOfDay(new Date()),
-  });
+  const [date, setDate] = useState<DateRange | undefined>(defaultReportRange);
 
   const [includeHistorical, setIncludeHistorical] = useState(false);
   const [sortBy, setSortBy] = useState("units_sold_desc");

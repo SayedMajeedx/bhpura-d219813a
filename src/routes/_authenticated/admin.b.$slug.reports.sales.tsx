@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { subDays, startOfDay, endOfDay } from "date-fns";
 import { DateRange } from "react-day-picker";
+import { defaultReportRange, salesBreakdownRows } from "@/lib/reports-view";
 import { useI18n } from "@/lib/i18n";
 import { ReportInterval } from "@/lib/reporting.functions";
 import { ReportsToolbar } from "@/components/reports/ReportsToolbar";
@@ -37,10 +37,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports/sale
 function ReportsSales() {
   const { lang } = useI18n();
   const { slug } = Route.useParams();
-  const [date, setDate] = useState<DateRange | undefined>({
-    from: subDays(startOfDay(new Date()), 29),
-    to: endOfDay(new Date()),
-  });
+  const [date, setDate] = useState<DateRange | undefined>(defaultReportRange);
   const [interval, setInterval] = useState<ReportInterval>("day");
   const [includeHistorical, setIncludeHistorical] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState("");
@@ -259,9 +256,7 @@ function ReportsSales() {
             <BreakdownCard
               title={lang === "ar" ? "طرق الدفع" : "Payment methods"}
               icon={<CreditCard />}
-              rows={((query.data as any)?.payment || []).filter(
-                (row: any) => row.currency === currency,
-              )}
+              rows={salesBreakdownRows(query.data, "payment", currency)}
               keyName="payment_method"
               currency={currency}
               lang={lang}
@@ -269,9 +264,7 @@ function ReportsSales() {
             <BreakdownCard
               title={lang === "ar" ? "طرق الاستلام" : "Fulfillment methods"}
               icon={<Truck />}
-              rows={((query.data as any)?.fulfillment || []).filter(
-                (row: any) => row.currency === currency,
-              )}
+              rows={salesBreakdownRows(query.data, "fulfillment", currency)}
               keyName="fulfillment_method"
               currency={currency}
               lang={lang}

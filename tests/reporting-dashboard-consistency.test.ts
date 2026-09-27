@@ -1,37 +1,20 @@
-import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { defaultReportRange, salesBreakdownRows } from "../src/lib/reports-view";
 
+// The dashboard's side (paid, non-archived revenue; the Reports accounting
+// row) is dashboardFinancials / paidRevenueOrders in tests/dashboard-metrics.test.ts,
+// and the report caches' brand keys are in tests/dashboard-and-storefront-orders-data.test.ts.
 const read = (path: string) => readFileSync(path, "utf8");
 
-// The dashboard is split across its route and src/features/dashboard (Phase 5).
-const dashboardSource = () =>
-  [
-    "src/routes/_authenticated/admin.b.$slug.dashboard.tsx",
-    ...["components", "hooks", "lib"]
-      .filter((dir) => existsSync(`src/features/dashboard/${dir}`))
-      .flatMap((dir) =>
-        readdirSync(`src/features/dashboard/${dir}`)
-          .sort()
-          .map((file) => `src/features/dashboard/${dir}/${file}`),
-      ),
-  ]
-    .map((file) => readFileSync(file, "utf8"))
-    .join("\n");
 const migration = read("supabase/migrations/20260825193000_reporting_dashboard_consistency.sql");
-const dashboard = dashboardSource();
-const overview = read("src/routes/_authenticated/admin.b.$slug.reports.index.tsx");
-const sales = read("src/routes/_authenticated/admin.b.$slug.reports.sales.tsx");
-const products = read("src/routes/_authenticated/admin.b.$slug.reports.products.tsx");
-const customers = read("src/routes/_authenticated/admin.b.$slug.reports.customers.tsx");
 const bomSnapshots = read(
   "supabase/migrations/20260904220000_historical_order_bom_cogs_snapshots.sql",
 );
 
 describe("dashboard and reporting consistency", () => {
-  it("recognizes revenue from paid, non-cancelled orders everywhere", () => {
+  it("recognizes revenue from paid, non-cancelled orders in the reporting RPCs", () => {
     expect(migration.match(/payment_status, ''\)\) = 'paid'/g)?.length).toBeGreaterThanOrEqual(4);
-    expect(dashboard).toContain('String(o.payment_status || "").toLowerCase() === "paid"');
-    expect(dashboard).toContain('"archived_historical"');
   });
 
   it("includes BOM packaging in overview and product COGS", () => {
@@ -40,31 +23,32 @@ describe("dashboard and reporting consistency", () => {
     expect(migration).toContain("COALESCE(pp.unit_packaging_cost, 0)");
   });
 
-  it("uses exactly 30 calendar days and isolates every report cache by brand", () => {
-    for (const source of [overview, sales, products, customers]) {
-      expect(source).toContain("subDays(startOfDay(new Date()), 29)");
-      // Keys come from reportingQueries, under ["reports", slug] (tested in
-      // dashboard-and-storefront-orders-data.test.ts).
-      expect(source).toMatch(/reportingQueries\.\w+\(\s*slug,/);
-    }
+  it("defaults every Reports page to exactly 30 calendar days, today included", () => {
+    const now = new Date(2026, 8, 27, 15, 30);
+    const { from, to } = defaultReportRange(now);
+    expect(from).toEqual(new Date(2026, 7, 29, 0, 0, 0, 0));
+    expect(to).toEqual(new Date(2026, 8, 27, 23, 59, 59, 999));
+    const days = Math.round((to.getTime() - from.getTime()) / 86_400_000);
+    expect(days).toBe(30);
   });
 
-  it("renders the sales breakdown keys returned by the RPC", () => {
-    expect(sales).toContain("?.payment || []");
-    expect(sales).toContain("?.fulfillment || []");
-    expect(sales).not.toContain("payment_methods");
-    expect(sales).not.toContain("fulfillment_methods");
+  it("renders the sales breakdown keys returned by the RPC, per currency", () => {
+    const report = {
+      payment: [
+        { payment_method: "cod", currency: "BHD", pov: 10 },
+        { payment_method: "card", currency: "SAR", pov: 5 },
+      ],
+      fulfillment: [{ fulfillment_method: "pickup", currency: "BHD", pov: 10 }],
+      // Older keys are not read.
+      payment_methods: [{ payment_method: "legacy", currency: "BHD" }],
+    };
+    expect(salesBreakdownRows(report, "payment", "BHD")).toEqual([report.payment[0]]);
+    expect(salesBreakdownRows(report, "fulfillment", "BHD")).toEqual(report.fulfillment);
+    expect(salesBreakdownRows(null, "payment", "BHD")).toEqual([]);
   });
 
   it("includes the selected end date when aggregating dated expenses", () => {
     expect(migration).toContain("expense_date <= (p_end_date AT TIME ZONE p_tz)::date");
-  });
-
-  it("uses the reporting accounting engine for dashboard financial KPIs", () => {
-    expect(dashboard).toContain("reportingQueries.overview(");
-    expect(dashboard).toContain("accountingRow?.net_revenue");
-    expect(dashboard).toContain("accountingRow?.known_cogs_after_returns");
-    expect(dashboard).toContain("accountingRow?.expenses");
   });
 
   it("repairs historical product links and reports frozen packaging COGS", () => {

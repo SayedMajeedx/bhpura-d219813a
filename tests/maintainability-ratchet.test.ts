@@ -21,8 +21,8 @@ import { collectMaintainabilityMetrics } from "../scripts/maintainability-metric
  */
 
 const BUDGETS = {
-  asAny: 592,
-  colonAny: 721,
+  asAny: 590,
+  colonAny: 719,
   asNever: 0,
   tsIgnore: 0,
   tsExpectError: 0,
@@ -44,7 +44,7 @@ const BUDGETS = {
  */
 const GIANT_FILES_BUDGETS: Record<string, number> = {
   "src/features/settings/registry.ts": 2616,
-  "src/routes/_authenticated/admin.b.$slug.content-studio.tsx": 2447,
+  "src/routes/_authenticated/admin.b.$slug.content-studio.tsx": 2404,
   "src/components/subscription/BrandSubscriptionHub.tsx": 1954,
   "src/routes/_authenticated/admin.b.$slug.export.tsx": 1838,
   "src/lib/addons/addon-showcase-data.ts": 1893,

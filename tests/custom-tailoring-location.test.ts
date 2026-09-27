@@ -1,33 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { orderItemFromRow } from "../src/features/orders/lib/order-editor";
 
-// The order editor is split across its route and src/features/orders (Phase 5).
-const orderDetailSource = () =>
-  [
-    "src/routes/_authenticated/admin.b.$slug.orders.$id.tsx",
-    ...["actions", "components", "hooks", "lib"].flatMap((dir) =>
-      readdirSync(`src/features/orders/${dir}`)
-        .sort()
-        .map((file) => `src/features/orders/${dir}/${file}`),
-    ),
-  ]
-    .map((file) => readFileSync(file, "utf8"))
-    .join("\n");
-
-// The checkout is split across its route and src/features/checkout (Phase 5).
-const checkoutSource = () =>
-  [
-    "src/routes/$slug.checkout.tsx",
-    ...["components", "hooks", "lib"].flatMap((dir) =>
-      readdirSync(`src/features/checkout/${dir}`)
-        .sort()
-        .map((file) => `src/features/checkout/${dir}/${file}`),
-    ),
-  ]
-    .map((file) => readFileSync(file, "utf8"))
-    .join("\n");
-
+// The shopper-facing message for the constraint is placeOrderFailure
+// (tests/checkout-lib.test.ts).
 describe("custom tailoring order location", () => {
   const migration = readFileSync(
     "supabase/migrations/20260903213000_allow_custom_tailoring_order_location.sql",
@@ -48,13 +24,5 @@ describe("custom tailoring order location", () => {
     expect(orderItemFromRow({ location: "custom" }).location).toBe("custom");
     expect(orderItemFromRow({ location: "incubator" }).location).toBe("incubator");
     expect(orderItemFromRow({ location: null }).location).toBe("main");
-    const route = orderDetailSource();
-    expect(route.match(/map\(orderItemFromRow\)/g)?.length).toBeGreaterThanOrEqual(2);
-  });
-
-  it("does not expose the database constraint name to shoppers", () => {
-    const checkout = checkoutSource();
-    expect(checkout).toContain('msg.includes("order_items_location_check")');
-    expect(checkout).toContain("تعذر تجهيز الطلب المخصص حالياً");
   });
 });
