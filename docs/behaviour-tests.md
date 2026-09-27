@@ -29,56 +29,57 @@ Examples: `tests/order-profit-clarity.test.ts` (extracted label),
 
 ## Classification
 
-- **convert** (3): feature assertions on source text.
-- **migration** (31): assertions on SQL in
-  `supabase/migrations`. They pin database contracts and stay until the
-  project has a database test harness (pgTAP or a local Supabase in CI).
+- **convert** (0): feature assertions on source text. All converted (2026-09-27).
+- **migration** (34): assertions on SQL in
+  `supabase/migrations` (and two Deno edge functions). They pin database
+  contracts and stay until the project has a database test harness (pgTAP
+  or a local Supabase in CI) and an edge-function runner.
 - **guard** (10): architecture rules where reading source is
   the point. Keep.
 
-| Group     | Test file                                         | Note                                                     |
-| --------- | ------------------------------------------------- | -------------------------------------------------------- |
-| convert   | `tests/brand-owner-provisioning.test.ts`          | source part to convert; SQL part is a migration contract |
-| convert   | `tests/homepage-editorial-sections.test.ts`       | source part to convert; SQL part is a migration contract |
-| convert   | `tests/secondary-banner-parallax.test.ts`         | source part to convert; SQL part is a migration contract |
-| migration | `tests/accounting-brand-isolation.test.ts`        | SQL contract                                             |
-| migration | `tests/annual-subscription-regressions.test.tsx`  | SQL contract                                             |
-| migration | `tests/auth-user-deletion-lifecycle.test.ts`      | SQL contract                                             |
-| migration | `tests/brand-r2-cleanup-recovery.test.tsx`        | SQL contract                                             |
-| migration | `tests/card-stock-policy-migration.test.ts`       | SQL contract                                             |
-| migration | `tests/catalog-inquiries.test.ts`                 | SQL contract                                             |
-| migration | `tests/category-counts-and-rpc-security.test.ts`  | SQL contract                                             |
-| migration | `tests/custom-tailoring-location.test.ts`         | SQL contract                                             |
-| migration | `tests/fit-passport.test.ts`                      | SQL contract                                             |
-| migration | `tests/incubator-consignment.test.ts`             | SQL contract                                             |
-| migration | `tests/incubator-item-edit-sync.test.ts`          | SQL contract                                             |
-| migration | `tests/incubator-price-sync.test.ts`              | SQL contract                                             |
-| migration | `tests/incubator-reporting-packaging.test.ts`     | SQL contract                                             |
-| migration | `tests/inventory-ledger.test.ts`                  | SQL contract                                             |
-| migration | `tests/launch-security-regressions.test.ts`       | SQL contract                                             |
-| migration | `tests/onboarding-plan-catalog.test.tsx`          | SQL contract                                             |
-| migration | `tests/order-review-reward.test.tsx`              | SQL contract                                             |
-| migration | `tests/products-made-to-order.test.ts`            | SQL contract                                             |
-| migration | `tests/pura-growth-tools.test.ts`                 | SQL contract                                             |
-| migration | `tests/reporting-dashboard-consistency.test.ts`   | SQL contract                                             |
-| migration | `tests/returning-customer-promo.test.ts`          | SQL contract                                             |
-| migration | `tests/returns-and-exchanges.test.ts`             | SQL contract                                             |
-| migration | `tests/review-management-dashboard.test.ts`       | SQL contract                                             |
-| migration | `tests/size-guide-templates.test.ts`              | SQL contract                                             |
-| migration | `tests/store-profile.test.ts`                     | SQL contract                                             |
-| migration | `tests/stored-routine-repair-migration.test.ts`   | SQL contract                                             |
-| migration | `tests/storefront-catalog-mode.test.ts`           | SQL contract                                             |
-| migration | `tests/storefront-fit-passport.test.tsx`          | SQL contract                                             |
-| migration | `tests/subscription-renewal-decision.test.tsx`    | SQL contract                                             |
-| migration | `tests/tenant-activation-regression.test.ts`      | SQL contract                                             |
-| migration | `tests/typography-management.test.ts`             | SQL contract                                             |
-| guard     | `tests/addon-contributions-consumed.test.ts`      | every addon contribution is mounted                      |
-| guard     | `tests/arabic-gender-neutral-copy.test.ts`        | copy style across the app                                |
-| guard     | `tests/csp-and-manifest.test.ts`                  | CSP and web manifest                                     |
-| guard     | `tests/design-system-guardrails.test.ts`          | semantic tokens only                                     |
-| guard     | `tests/maintainability-ratchet.test.ts`           | debt ceilings                                            |
-| guard     | `tests/mobile-admin-typography.test.ts`           | mobile app typography config                             |
-| guard     | `tests/query-keys-integrity.test.ts`              | query-key factory shape                                  |
-| guard     | `tests/settings-registry-parity.test.ts`          | registry vs schema parity                                |
-| guard     | `tests/storefront-performance-guardrails.test.ts` | storefront bundle and loading rules                      |
-| guard     | `tests/vanilla-core-guard.test.ts`                | core never imports addons                                |
+| Group     | Test file                                         | Note                                |
+| --------- | ------------------------------------------------- | ----------------------------------- |
+| migration | `tests/accounting-brand-isolation.test.ts`        | SQL contract                        |
+| migration | `tests/annual-subscription-regressions.test.tsx`  | SQL contract                        |
+| migration | `tests/auth-user-deletion-lifecycle.test.ts`      | edge function contract (Deno)       |
+| migration | `tests/brand-owner-provisioning.test.tsx`         | edge function contract (Deno)       |
+| migration | `tests/brand-r2-cleanup-recovery.test.tsx`        | SQL contract                        |
+| migration | `tests/card-stock-policy-migration.test.ts`       | SQL contract                        |
+| migration | `tests/catalog-inquiries.test.ts`                 | SQL contract                        |
+| migration | `tests/category-counts-and-rpc-security.test.ts`  | SQL contract                        |
+| migration | `tests/custom-tailoring-location.test.ts`         | SQL contract                        |
+| migration | `tests/fit-passport.test.ts`                      | SQL contract                        |
+| migration | `tests/homepage-editorial-sections.test.tsx`      | SQL contract                        |
+| migration | `tests/incubator-consignment.test.ts`             | SQL contract                        |
+| migration | `tests/incubator-item-edit-sync.test.ts`          | SQL contract                        |
+| migration | `tests/incubator-price-sync.test.ts`              | SQL contract                        |
+| migration | `tests/incubator-reporting-packaging.test.ts`     | SQL contract                        |
+| migration | `tests/inventory-ledger.test.ts`                  | SQL contract                        |
+| migration | `tests/launch-security-regressions.test.ts`       | SQL contract                        |
+| migration | `tests/onboarding-plan-catalog.test.tsx`          | SQL contract                        |
+| migration | `tests/order-review-reward.test.tsx`              | SQL contract                        |
+| migration | `tests/products-made-to-order.test.ts`            | SQL contract                        |
+| migration | `tests/pura-growth-tools.test.ts`                 | SQL contract                        |
+| migration | `tests/reporting-dashboard-consistency.test.ts`   | SQL contract                        |
+| migration | `tests/returning-customer-promo.test.ts`          | SQL contract                        |
+| migration | `tests/returns-and-exchanges.test.ts`             | SQL contract                        |
+| migration | `tests/review-management-dashboard.test.ts`       | SQL contract                        |
+| migration | `tests/secondary-banner-parallax.test.tsx`        | SQL contract                        |
+| migration | `tests/size-guide-templates.test.ts`              | SQL contract                        |
+| migration | `tests/store-profile.test.ts`                     | SQL contract                        |
+| migration | `tests/stored-routine-repair-migration.test.ts`   | SQL contract                        |
+| migration | `tests/storefront-catalog-mode.test.ts`           | SQL contract                        |
+| migration | `tests/storefront-fit-passport.test.tsx`          | SQL contract                        |
+| migration | `tests/subscription-renewal-decision.test.tsx`    | SQL contract                        |
+| migration | `tests/tenant-activation-regression.test.ts`      | SQL contract                        |
+| migration | `tests/typography-management.test.ts`             | SQL contract                        |
+| guard     | `tests/addon-contributions-consumed.test.ts`      | every addon contribution is mounted |
+| guard     | `tests/arabic-gender-neutral-copy.test.ts`        | copy style across the app           |
+| guard     | `tests/csp-and-manifest.test.ts`                  | CSP and web manifest                |
+| guard     | `tests/design-system-guardrails.test.ts`          | semantic tokens only                |
+| guard     | `tests/maintainability-ratchet.test.ts`           | debt ceilings                       |
+| guard     | `tests/mobile-admin-typography.test.ts`           | mobile app typography config        |
+| guard     | `tests/query-keys-integrity.test.ts`              | query-key factory shape             |
+| guard     | `tests/settings-registry-parity.test.ts`          | registry vs schema parity           |
+| guard     | `tests/storefront-performance-guardrails.test.ts` | storefront bundle and loading rules |
+| guard     | `tests/vanilla-core-guard.test.ts`                | core never imports addons           |
