@@ -4,13 +4,16 @@ Written 2026-09-25 by the agent that ran Phases 4–5 so far (PRs #42–#66), fo
 the next agent (a new Claude account with no memory of that work). Everything
 you need is in the repository; nothing lives only in the old session.
 
+Updated 2026-09-27: Phases 6 and 7 are done too; the roadmap is complete. Section 4
+lists what comes next.
+
 ---
 
 ## 0. Paste this as your first message in the new session
 
 > You are continuing the maintainability roadmap of this repository. Before
 > doing anything, read in this order: `AGENTS.md`, `docs/agent-handoff.md`
-> (all of it), `docs/maintainability-roadmap.md`, `src/lib/data/README.md`,
+> (all of it), `docs/archive/maintainability-roadmap.md` (completed; for context), `src/lib/data/README.md`,
 > `docs/bug-backlog.md`, `.agents/skills/data-layer-migration/SKILL.md`,
 > `.agents/skills/giant-file-split/SKILL.md`, `.agents/rules/AGENTS.md`, and the
 > skills listed for the current phase. Then run `git checkout main && git pull`,
@@ -35,20 +38,20 @@ Bash + PowerShell), in the Claude desktop app, and review PRs on GitHub
 (`SayedMajeedx/bhpura-d219813a`). They write short instructions ("merge when
 green then continue with X") and expect a short report after each step.
 
-## 2. Where things stand (2026-09-25, `main` at `1cd8581f`)
+## 2. Where things stand (2026-09-27, all roadmap phases done)
 
 Measured with `node scripts/maintainability-metrics.mjs`:
 
 | Metric                                | Roadmap start (09-24) | Now                                                                                                                        |
 | ------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | Files over 1000 lines                 | 31                    | 23                                                                                                                         |
-| `as any`                              | 990                   | 596                                                                                                                        |
-| `: any`                               | 784                   | 724                                                                                                                        |
+| `as any`                              | 990                   | 593                                                                                                                        |
+| `: any`                               | 784                   | 721                                                                                                                        |
 | `as never`                            | 40                    | 0                                                                                                                          |
 | Direct Supabase calls in screens      | 393                   | 25 (metric re-based 09-25 to count cast-wrapped calls: 200 then); all server routes, one realtime subscription and bug #27 |
-| Test files using `readFileSync`       | 71                    | 71                                                                                                                         |
-| Tests                                 | 1078                  | 1567                                                                                                                       |
-| Migration drift (local vs production) | 32 / 23 one-sided     | 0 (261 versions)                                                                                                           |
+| Test files using `readFileSync`       | 71                    | 43: SQL/edge-function contracts and architecture guards only                                                               |
+| Tests                                 | 1078                  | 1599                                                                                                                       |
+| Migration drift (local vs production) | 32 / 23 one-sided     | 0 (263 versions)                                                                                                           |
 
 ### Phases
 
@@ -60,8 +63,8 @@ Measured with `node scripts/maintainability-metrics.mjs`:
 | 3 Honest types      | Types regenerated from production (#35), `as never` = 0. `any` reduction continues alongside Phase 4.                                                                                                                                                                                                                 |
 | 4 Data layer        | **Done for screens** (#63–#107): every route, component and feature reads and writes through `src/lib/data/*` or `src/lib/auth/*`, with ESLint guards per domain. Left direct on purpose: server routes (`api.*`, the manifest route), the order editor's realtime subscription, the rotation audit insert (bug #27). |
 | 5 Split giant files | Big splits done: inventory, order editor, orders list, product page, checkout, dashboard, storefront home, storefront shell. Remaining files: split-on-touch policy (section 4.4).                                                                                                                                    |
-| 6 Behaviour tests   | Not started (71 `readFileSync` test files).                                                                                                                                                                                                                                                                           |
-| 7 Keep it clean     | Not started.                                                                                                                                                                                                                                                                                                          |
+| 6 Behaviour tests   | Done (#111–#125): no feature test reads source; see `docs/behaviour-tests.md`.                                                                                                                                                                                                                                        |
+| 7 Keep it clean     | Done: `.github/pull_request_template.md`, final numbers in `docs/maintainability.md`, roadmap archived.                                                                                                                                                                                                               |
 
 ### Merged PRs of this effort (for context; read their descriptions on GitHub)
 
@@ -150,9 +153,12 @@ split `src/features/settings/registry.ts` or `src/lib/addons/addon-showcase-data
 (data). Candidates when touched: `admin.b.$slug.content-studio.tsx` (most
 edited), `$slug.account.tsx` (customer-facing, no browser test yet).
 
-### 4.5 Phase 7 (next)
+### 4.5 Phase 7 (done)
 
-The PR template and final docs (`docs/maintainability-roadmap.md`).
+The PR template (`.github/pull_request_template.md`) carries the checklist; the
+final numbers are in `docs/maintainability.md`; the roadmap is archived in
+`docs/archive/maintainability-roadmap.md`. From here the work is the owner's
+feature requests plus 4.2–4.4, keeping the ratchet budgets moving down.
 
 ### 4.6 Bug backlog
 

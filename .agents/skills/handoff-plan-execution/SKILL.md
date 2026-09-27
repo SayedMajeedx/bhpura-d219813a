@@ -2,7 +2,7 @@
 name: handoff-plan-execution
 description: >
   استخدم هذا الـ skill إجبارياً عندما تُكلَّف بتنفيذ وثيقة خطة/handoff من
-  مجلد `docs/` (مثل `maintainability-roadmap.md` أو خطط `docs/archive/`) في
+  مجلد `docs/` (مثل `agent-handoff.md` أو خطط `docs/archive/`) في
   مستودع Boutq OS. يحدد انضباط التنفيذ: القراءة الكاملة أولاً، التحقق من مراجع
   `file:line` قبل الاعتماد عليها، PR واحد لكل مرحلة، تسجيل الـ baseline، عدم إعادة
   فتح قرارات المالك، توثيق الانحرافات، وشروط الاكتمال. لا يشرح ماذا تبني (الخطة

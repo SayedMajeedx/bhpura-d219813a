@@ -1,7 +1,7 @@
 # Maintainability Baselines & Ratchet System
 
 > Baseline recorded on **2026-09-24** on branch `chore/maintainability-ratchets` (HEAD commit `f3675702`).
-> Corresponds to **Phase 0** of [`docs/maintainability-roadmap.md`](./maintainability-roadmap.md).
+> Corresponds to **Phase 0** of the (completed) [`maintainability roadmap`](./archive/maintainability-roadmap.md). Current numbers: section 3a.
 
 ---
 
@@ -14,7 +14,7 @@ Every number recorded in this document represents a **budget ceiling**. Budgets 
 ### Key Enforcements
 
 1. **Ceilings are one-way ratchets**: Any pull request that increases `as any`, `: any`, `as never`, `@ts-ignore`, `@ts-expect-error`, `eslint-disable`, direct Supabase calls, or `readFileSync` test files will fail the test suite immediately.
-2. **Giant file freeze**: None of the 31 existing files with >1,000 lines may grow by even a single line past its recorded budget.
+2. **Giant file freeze**: No file over 1,000 lines (31 at the baseline, 23 now) may grow by even a single line past its recorded budget.
 3. **New file line limit**: Any _new_ source file added to `src/**` must not exceed **600 lines**.
 4. **Existing non-giant file limit**: Any existing file currently under 1,000 lines must never cross 1,000 lines.
 
@@ -74,6 +74,53 @@ npm run check
 
 ---
 
+## 3a. Current Numbers (2026-09-27, roadmap complete)
+
+Measured on `main` after Phase 7. The budgets in `tests/maintainability-ratchet.test.ts` sit at these values.
+
+| Metric                    | Baseline (09-24) | Now (09-27) | What changed                                                                                                   |
+| :------------------------ | :--------------: | :---------: | :------------------------------------------------------------------------------------------------------------- |
+| `as any`                  |       990        |     593     | Typed data layer, typed rows and props (Phases 3–4).                                                           |
+| `: any`                   |       785        |     721     | Same; most remaining are `catch (e: any)` and local shapes.                                                    |
+| `as never`                |        40        |      0      | Types regenerated from production (Phase 3).                                                                   |
+| `eslint-disable`          |        10        |     10      | Unchanged (frozen).                                                                                            |
+| Direct Supabase calls     |   392 (406\*)    |     25      | Screens read and write through `src/lib/data/*` (Phase 4); left: server routes, one realtime channel, bug #27. |
+| `readFileSync` test files |        71        |     43      | Feature tests run the code (Phase 6); left: SQL / edge-function contracts and architecture guards.             |
+| Files over 1,000 lines    |        31        |     23      | Big screens split into `src/features/*` (Phase 5); the rest split when touched.                                |
+| Tests                     |      1,078       |    1,599    |                                                                                                                |
+
+\* The call pattern was corrected on 2026-09-25 to count cast-wrapped calls (section 4).
+
+The 23 files still over 1,000 lines (split on touch; `registry.ts` and `addon-showcase-data.ts` are data and stay):
+
+|  #  | File Path                                                           | Lines |
+| :-: | :------------------------------------------------------------------ | :---: |
+|  1  | `src/features/settings/registry.ts`                                 | 2,616 |
+|  2  | `src/routes/_authenticated/admin.b.$slug.content-studio.tsx`        | 2,447 |
+|  3  | `src/components/subscription/BrandSubscriptionHub.tsx`              | 1,954 |
+|  4  | `src/lib/addons/addon-showcase-data.ts`                             | 1,893 |
+|  5  | `src/routes/_authenticated/admin.b.$slug.export.tsx`                | 1,838 |
+|  6  | `src/components/super/SuperPlansManager.tsx`                        | 1,721 |
+|  7  | `src/addons/size-guides/components/admin/SizeGuideStudioPage.tsx`   | 1,703 |
+|  8  | `src/routes/_authenticated/admin.b.$slug.team.tsx`                  | 1,703 |
+|  9  | `src/routes/_authenticated/admin.b.$slug.customers.tsx`             | 1,670 |
+| 10  | `src/routes/$slug.account.tsx`                                      | 1,477 |
+| 11  | `src/routes/_authenticated/admin.b.$slug.import.tsx`                | 1,448 |
+| 12  | `src/routes/_authenticated/admin.b.$slug.campaigns.tsx`             | 1,446 |
+| 13  | `src/components/reviews/ReviewStoryDialog.tsx`                      | 1,442 |
+| 14  | `src/routes/_authenticated/admin.b.$slug.incubators.tsx`            | 1,347 |
+| 15  | `src/components/inventory/InstagramImporterModal.tsx`               | 1,328 |
+| 16  | `src/routes/_authenticated/admin.b.$slug.expenses.tsx`              | 1,313 |
+| 17  | `src/lib/public-api/public-api-router.server.ts`                    | 1,271 |
+| 18  | `src/lib/instagram-ai-importer.ts`                                  | 1,260 |
+| 19  | `src/routes/_authenticated/admin.b.$slug.integrations.tsx`          | 1,188 |
+| 20  | `src/routes/onboard.tsx`                                            | 1,084 |
+| 21  | `src/routes/_authenticated/admin.b.$slug.pages.tsx`                 | 1,058 |
+| 22  | `src/routes/_authenticated/admin.b.$slug.customers.$customerId.tsx` | 1,041 |
+| 23  | `src/routes/_authenticated/admin.brands.tsx`                        | 1,024 |
+
+---
+
 ## 4. Direct Supabase Calls Breakdown
 
 > **Measurement note (2026-09-25):** the metric first missed calls behind a cast, `(supabase as any).from(...)`, often split over two lines. With the corrected pattern the Phase 0 baseline would have been higher: 406 instead of 317 on 2026-09-25 (`8ef1f289`). The ratchet budget was re-based once (195 -> 251, same code) and only moves down from there.
@@ -89,7 +136,7 @@ Direct Supabase client calls (`from`, `rpc`, `auth`, `storage`, `functions`, `ch
 
 ---
 
-## 5. The 31 Giant Source Files (>1,000 Lines)
+## 5. The 31 Giant Source Files at the Baseline (>1,000 Lines)
 
 Each file listed below has an individual ceiling recorded in `tests/maintainability-ratchet.test.ts`. None of these files may increase in length.
 
@@ -131,7 +178,7 @@ Each file listed below has an individual ceiling recorded in `tests/maintainabil
 
 ## 6. How to Lower Budgets During Refactoring
 
-When working on a phase from [`docs/maintainability-roadmap.md`](./maintainability-roadmap.md):
+When a change lowers a count (any refactor, not only roadmap work):
 
 1. **Implement your refactoring**: e.g. refactor a giant route file into modular components or replace `as any` with strict types.
 2. **Re-run the metrics script**:
