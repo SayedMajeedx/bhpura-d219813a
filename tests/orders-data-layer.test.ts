@@ -77,7 +77,7 @@ vi.mock("@/integrations/supabase/client", () => ({
 
 const {
   approveBenefitPayment,
-  courierUpdateDelivery,
+  courierCompleteDelivery,
   createOrderWithItems,
   fetchOrderDetail,
   fetchOrderList,
@@ -245,40 +245,22 @@ describe("order writes", () => {
   it("call the order RPCs with their typed arguments", async () => {
     await replaceOrderItems("o1", []);
     await approveBenefitPayment("o1");
-    const err = await courierUpdateDelivery({
-      orderId: "o1",
-      status: "out_for_delivery",
-      notes: null,
-      codCollected: false,
-      codAmount: null,
-    });
+    const err = await courierCompleteDelivery("o1", 0, null);
     expect(err).toBeNull();
     expect(rpcCalls).toEqual([
       ["replace_order_items", { p_order_id: "o1", p_items: [] }],
       ["approve_benefit_payment", { p_order_id: "o1" }],
       [
-        "courier_update_delivery",
-        {
-          p_order_id: "o1",
-          p_status: "out_for_delivery",
-          p_notes: undefined,
-          p_cod_collected: false,
-          p_cod_amount: undefined,
-        },
+        "courier_complete_delivery",
+        { p_order_id: "o1", p_collected_amount: 0, p_notes: undefined },
       ],
     ]);
   });
 
-  it("surface RPC failures: thrown for writes, returned for courier fallbacks", async () => {
+  it("surface RPC failures: thrown for writes, returned for the courier completion", async () => {
     rpcReply = () => ({ data: null, error: new Error("INSUFFICIENT_STOCK") });
     await expect(replaceOrderItems("o1", [])).rejects.toThrow("INSUFFICIENT_STOCK");
-    const err = await courierUpdateDelivery({
-      orderId: "o1",
-      status: "delivered",
-      notes: "left at door",
-      codCollected: true,
-      codAmount: 12,
-    });
+    const err = await courierCompleteDelivery("o1", 12, "left at door");
     expect(err).toBeInstanceOf(Error);
   });
 

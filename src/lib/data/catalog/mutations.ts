@@ -224,43 +224,24 @@ export async function saveProductBom(
 
 /**
  * Gives every product of the brand the same direct packaging cost and BOM
- * lines. Returns how many products there are (nothing is written when there
- * are none). The cost update and the removal of the old lines ignore their
- * errors, as they always have (bug backlog #16).
+ * lines, in one transaction (bug #16). Returns how many products there are
+ * (nothing is written when there are none).
  */
 export async function applyBomToAllProducts(
   brandId: string,
   directPackagingCost: number,
   lines: BomLine[],
 ): Promise<number> {
-  const { data: products, error: productsError } = await supabase
-    .from("products")
-    .select("id")
-    .eq("brand_id", brandId);
-  if (productsError) throw productsError;
-  const productIds = (products ?? []).map((p) => p.id);
-  if (productIds.length === 0) return 0;
-
-  await supabase
-    .from("products")
-    .update({ direct_packaging_cost: directPackagingCost })
-    .eq("brand_id", brandId);
-  await supabase.from("product_bom_items").delete().eq("brand_id", brandId);
-
-  if (lines.length > 0) {
-    const { error } = await supabase.from("product_bom_items").insert(
-      productIds.flatMap((productId) =>
-        lines.map((line) => ({
-          brand_id: brandId,
-          product_id: productId,
-          packaging_material_id: line.packaging_material_id,
-          quantity_per_unit: line.quantity_per_unit,
-        })),
-      ),
-    );
-    if (error) throw error;
-  }
-  return productIds.length;
+  const { data, error } = await supabase.rpc("apply_bom_to_all_products", {
+    p_brand_id: brandId,
+    p_direct_packaging_cost: directPackagingCost,
+    p_lines: lines.map((line) => ({
+      packaging_material_id: line.packaging_material_id,
+      quantity_per_unit: line.quantity_per_unit,
+    })),
+  });
+  if (error) throw error;
+  return data ?? 0;
 }
 
 // ── Customization options (paid add-ons) ────────────────────────────────────

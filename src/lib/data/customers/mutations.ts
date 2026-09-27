@@ -101,27 +101,21 @@ export async function deleteCustomerAddress(
   if (error) throw error;
 }
 
-/** Clears the customer's default address flag on every saved address. */
-export async function clearDefaultCustomerAddress(brandId: string, customerId: string) {
-  const { error } = await supabase
-    .from("customer_addresses")
-    .update({ is_default: false })
-    .eq("customer_id", customerId)
-    .eq("brand_id", brandId);
-  if (error) throw error;
-}
-
 /**
- * Makes one address the customer's default. Clearing the old default ignores
- * its error, as it always has (bug backlog #17); setting the new one throws.
+ * Makes one address the customer's default: the old default is cleared in the
+ * same transaction, so a failure changes nothing (bug #17).
  */
 export async function setDefaultCustomerAddress(
   brandId: string,
   customerId: string,
   addressId: string,
 ) {
-  await clearDefaultCustomerAddress(brandId, customerId).catch(() => undefined);
-  await updateCustomerAddress(brandId, customerId, addressId, { is_default: true });
+  const { error } = await supabase.rpc("set_default_customer_address", {
+    p_brand_id: brandId,
+    p_customer_id: customerId,
+    p_address_id: addressId,
+  });
+  if (error) throw error;
 }
 
 /**

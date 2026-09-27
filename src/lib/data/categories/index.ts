@@ -190,18 +190,15 @@ export async function updateCategory(brandId: string, categoryId: string, patch:
 }
 
 /**
- * Writes new menu positions. Each update's error is ignored, as the reorder
- * buttons always have (bug backlog #20).
+ * Writes the brand's category order: `categoryIds` in their new order, each
+ * getting its position (1, 2, 3...) in one transaction (bug #20).
  */
-export async function setCategorySortOrders(
-  brandId: string,
-  positions: Array<{ id: string; sort_order: number }>,
-) {
-  await Promise.all(
-    positions.map(({ id, sort_order }) =>
-      supabase.from("categories").update({ sort_order }).eq("id", id).eq("brand_id", brandId),
-    ),
-  );
+export async function reorderCategories(brandId: string, categoryIds: string[]) {
+  const { error } = await supabase.rpc("reorder_categories", {
+    p_brand_id: brandId,
+    p_category_ids: categoryIds,
+  });
+  if (error) throw error;
 }
 
 /**

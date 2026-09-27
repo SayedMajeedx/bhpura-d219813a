@@ -7941,6 +7941,14 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      apply_bom_to_all_products: {
+        Args: {
+          p_brand_id: string;
+          p_direct_packaging_cost: number;
+          p_lines: Json;
+        };
+        Returns: number;
+      };
       apply_inventory_movement: {
         Args: {
           p_actor_id?: string;
@@ -8821,6 +8829,10 @@ export type Database = {
       reject_benefit_payment:
         | { Args: { p_order_id: string }; Returns: Json }
         | { Args: { p_order_id: string; p_reason: string }; Returns: Json };
+      reorder_categories: {
+        Args: { p_brand_id: string; p_category_ids: string[] };
+        Returns: undefined;
+      };
       replace_order_items: {
         Args: { p_items: Json; p_order_id: string };
         Returns: undefined;
@@ -9254,6 +9266,18 @@ export type Database = {
           p_webhook_secret: string;
         };
         Returns: string;
+      };
+      set_default_customer_address: {
+        Args: {
+          p_address_id: string;
+          p_brand_id: string;
+          p_customer_id: string;
+        };
+        Returns: undefined;
+      };
+      set_default_message_template: {
+        Args: { p_brand_id: string; p_template_id: string };
+        Returns: undefined;
       };
       show_limit: { Args: never; Returns: number };
       show_trgm: { Args: { "": string }; Returns: string[] };

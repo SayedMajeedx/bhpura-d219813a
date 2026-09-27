@@ -90,9 +90,9 @@ export async function approveBenefitPayment(orderId: string) {
 }
 
 /**
- * The courier completes a delivery and records the cash collected, in one
- * server transaction. Returns the error instead of throwing: callers fall
- * back to a direct update when the function is unavailable.
+ * Completes a delivery and records the cash collected, in one server
+ * transaction, for the assigned courier or the brand's staff (bug #14).
+ * Returns the error instead of throwing.
  */
 export async function courierCompleteDelivery(
   orderId: string,
@@ -103,28 +103,6 @@ export async function courierCompleteDelivery(
     p_order_id: orderId,
     p_collected_amount: collectedAmount,
     p_notes: notes ?? undefined,
-  });
-  return error;
-}
-
-/**
- * The courier moves a delivery forward (out for delivery, delivered, failed,
- * returned); the server checks the assignment and the cash due. Returns the
- * error instead of throwing, like `courierCompleteDelivery`.
- */
-export async function courierUpdateDelivery(args: {
-  orderId: string;
-  status: string;
-  notes: string | null;
-  codCollected: boolean;
-  codAmount: number | null;
-}) {
-  const { error } = await supabase.rpc("courier_update_delivery", {
-    p_order_id: args.orderId,
-    p_status: args.status,
-    p_notes: args.notes ?? undefined,
-    p_cod_collected: args.codCollected,
-    p_cod_amount: args.codAmount ?? undefined,
   });
   return error;
 }
