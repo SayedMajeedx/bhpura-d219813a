@@ -389,3 +389,18 @@ export function shouldWarnBeforeLeaving(args: {
 }) {
   return args.isDirty && !args.isReadOnly && !args.saving;
 }
+
+/** A line saved as a custom (non-catalog) item: marked custom, or without a variant. */
+export function isCustomLine(it: Pick<OrderItem, "location" | "variant_id">): boolean {
+  return it.location === "custom" || !it.variant_id;
+}
+
+/**
+ * A line the editor flags as tailored / custom: no product, marked custom, or the
+ * "custom" variant. Never inferred from the size text (e.g. "تفصيل").
+ */
+export function isTailoredLine(
+  it: Pick<OrderItem, "product_id" | "location" | "variant_id">,
+): boolean {
+  return !it.product_id || it.location === "custom" || it.variant_id === "custom";
+}

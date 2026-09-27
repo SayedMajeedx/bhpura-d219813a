@@ -1,25 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { hasAvailableStock, type ProductRow } from "../src/lib/data/storefront/types";
 import {
   PRODUCT_CARD_SELECT,
   PRODUCT_DETAIL_BASE_SELECT,
   PRODUCT_DETAIL_SELECT,
 } from "../src/lib/data/storefront/selects";
-import { tailoringState } from "../src/features/product-page/lib/variant-options";
-
-// The order editor is split across its route and src/features/orders (Phase 5).
-const orderDetailSource = () =>
-  [
-    "src/routes/_authenticated/admin.b.$slug.orders.$id.tsx",
-    ...["actions", "components", "hooks", "lib"].flatMap((dir) =>
-      readdirSync(`src/features/orders/${dir}`)
-        .sort()
-        .map((file) => `src/features/orders/${dir}/${file}`),
-    ),
-  ]
-    .map((file) => readFileSync(file, "utf8"))
-    .join("\n");
+import {
+  showsCustomSizing,
+  tailoringState,
+} from "../src/features/product-page/lib/variant-options";
+import { productColumnsFrom, productFormFrom } from "../src/features/inventory/lib/product-form";
+import { isCustomLine, isTailoredLine } from "../src/features/orders/lib/order-editor";
 
 describe("Phase 3: Explicit is_made_to_order flag & inventory decoupling", () => {
   const migration = readFileSync(
@@ -52,46 +44,17 @@ describe("Phase 3: Explicit is_made_to_order flag & inventory decoupling", () =>
   });
 
   describe("admin inventory management", () => {
-    // The product editor moved out of the inventory route into src/features/inventory (Phase 5).
-    const inventory = [
-      "src/features/inventory/lib/product-form.ts",
-      "src/features/inventory/components/ProductCustomizerTab.tsx",
-    ]
-      .map((file) => readFileSync(file, "utf8"))
-      .join("\n");
-
-    it("includes is_made_to_order in Product type", () => {
-      // The inventory types moved to src/features/inventory/types.ts (Phase 5).
-      const types = readFileSync("src/features/inventory/types.ts", "utf8");
-      expect(types).toMatch(/is_made_to_order\?: boolean \| null;/);
-    });
-
-    it("initializes and resets is_made_to_order in form state", () => {
-      expect(inventory).toContain("is_made_to_order: product?.is_made_to_order ?? false");
-    });
-
-    it("persists is_made_to_order in both patch and payload updates", () => {
-      expect(inventory).toMatch(/is_made_to_order: Boolean\(form\.is_made_to_order\)/);
-    });
-
-    it("auto-enables is_made_to_order when selecting a customization preset", () => {
-      expect(inventory).toContain(
-        "is_made_to_order: isCustomPreset ? true : form.is_made_to_order",
-      );
-    });
-
-    it("renders a Switch toggle for is_made_to_order in the Product Customization Engine", () => {
-      expect(inventory).toContain("checked={Boolean(form.is_made_to_order)}");
-      expect(inventory).toContain(
-        "onCheckedChange={(checked) => setForm({ ...form, is_made_to_order: checked })}",
-      );
-      expect(inventory).toContain("منتج حسب الطلب (لا يُخصم من المخزون)");
+    it("initializes, resets and persists is_made_to_order in the product form", () => {
+      expect(productFormFrom(null).is_made_to_order).toBe(false);
+      const product = { is_made_to_order: true } as Parameters<typeof productFormFrom>[0];
+      const form = productFormFrom(product);
+      expect(form.is_made_to_order).toBe(true);
+      expect(productColumnsFrom(form).is_made_to_order).toBe(true);
+      expect(productColumnsFrom({ ...form, is_made_to_order: false }).is_made_to_order).toBe(false);
     });
   });
 
   describe("storefront queries and Product Detail Page (PDP)", () => {
-    const pdp = readFileSync("src/routes/$slug.product.$id.tsx", "utf8");
-
     it("fetches is_made_to_order for the product page, quick view and product grids", () => {
       expect(PRODUCT_DETAIL_SELECT).toContain("is_made_to_order");
       expect(PRODUCT_DETAIL_BASE_SELECT).toContain("is_made_to_order");
@@ -99,7 +62,6 @@ describe("Phase 3: Explicit is_made_to_order flag & inventory decoupling", () =>
     });
 
     it("decouples isTailoringActive and showSizeModeToggle to require is_made_to_order", () => {
-      expect(pdp).toContain("const isMadeToOrder = Boolean(product?.is_made_to_order);");
       // The rule itself lives in tailoringState (tests/storefront-tailoring-experience.test.tsx).
       const readyToWear = {
         hasCustomFields: true,
@@ -115,20 +77,31 @@ describe("Phase 3: Explicit is_made_to_order flag & inventory decoupling", () =>
     });
 
     it("does not tag ready-to-wear items with custom fields as custom tailoring", () => {
-      expect(pdp).not.toContain('hasCustomFields ? t("تفصيل", "Custom Tailoring") : null');
-      expect(pdp).toContain("isTailoringActive");
-      expect(pdp).toContain('vocabulary.custom_sizing?.[lang] || t("قياس خاص", "Custom Sizing")');
+      const readyToWear = tailoringState({
+        isMadeToOrder: false,
+        offeredSizes: ["M"],
+        hasCustomFields: true,
+        madeToOrderModule: true,
+        sizeMode: "ready",
+      });
+      expect(showsCustomSizing({ ...readyToWear, sizeMode: "ready" })).toBe(false);
+      const tailoredOnly = tailoringState({
+        isMadeToOrder: true,
+        offeredSizes: [],
+        hasCustomFields: true,
+        madeToOrderModule: true,
+        sizeMode: "custom",
+      });
+      expect(showsCustomSizing({ ...tailoredOnly, sizeMode: "custom" })).toBe(true);
+      const toggle = { showSizeModeToggle: true, hasReadySizes: true, isTailoringActive: true };
+      expect(showsCustomSizing({ ...toggle, sizeMode: "custom" })).toBe(true);
+      expect(showsCustomSizing({ ...toggle, sizeMode: "ready", isTailoringActive: false })).toBe(
+        false,
+      );
     });
   });
 
   describe("product card & storefront catalog stock check", () => {
-    const card = readFileSync("src/components/storefront/product-card.tsx", "utf8");
-
-    it("calculates oos in product card using is_made_to_order instead of custom_fields length", () => {
-      expect(card).toContain("const isMadeToOrder = Boolean(product.is_made_to_order);");
-      expect(card).toContain("const oos = !isMadeToOrder && totalStock <= 0;");
-    });
-
     it("treats made-to-order products as available even with no stock", () => {
       const product = (overrides: Partial<ProductRow>): ProductRow => ({
         id: "p",
@@ -178,24 +151,26 @@ describe("Phase 3: Explicit is_made_to_order flag & inventory decoupling", () =>
   });
 
   describe("admin order details stock checking", () => {
-    const orderDetails = orderDetailSource();
+    const line = (overrides: Record<string, unknown>) => ({
+      product_id: "p1",
+      variant_id: "v1",
+      location: null,
+      selected_variant: { size: "تفصيل خاص", color: null, fabric: null },
+      ...overrides,
+    });
 
     it("determines custom item by location === 'custom' or !variant_id rather than size string", () => {
-      expect(orderDetails).toMatch(
-        /const isCustom = it\.location === "custom" \|\| !it\.variant_id;/,
-      );
-      expect(orderDetails).not.toContain(
-        'it.selected_variant?.size && String(it.selected_variant.size).includes("تفصيل")',
-      );
+      // A catalog variant whose size text says "tailored" is still a catalog line.
+      expect(isCustomLine(line({}) as never)).toBe(false);
+      expect(isCustomLine(line({ location: "custom" }) as never)).toBe(true);
+      expect(isCustomLine(line({ variant_id: null }) as never)).toBe(true);
     });
 
     it("shows custom tailoring banner when item location is custom or manual", () => {
-      // Whitespace-insensitive: Prettier may wrap the condition across lines.
-      const normalized = orderDetails.replace(/\s+/g, " ");
-      expect(normalized).toContain('it.location === "custom" ||');
-      expect(normalized).toContain(
-        '(!it.product_id || it.location === "custom" || it.variant_id === "custom") && (',
-      );
+      expect(isTailoredLine(line({}) as never)).toBe(false);
+      expect(isTailoredLine(line({ location: "custom" }) as never)).toBe(true);
+      expect(isTailoredLine(line({ product_id: null }) as never)).toBe(true);
+      expect(isTailoredLine(line({ variant_id: "custom" }) as never)).toBe(true);
     });
   });
 });

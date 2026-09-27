@@ -190,3 +190,22 @@ export function tailoringState({
     tailoredOnly: isMadeToOrder && !hasReadySizes,
   };
 }
+
+/**
+ * Whether the chosen option reads "Custom Sizing" instead of its size: the
+ * shopper picked custom on the ready/custom toggle, or the product is
+ * tailored only. Ready-to-wear items keep their size even with custom fields.
+ */
+export function showsCustomSizing({
+  showSizeModeToggle,
+  sizeMode,
+  hasReadySizes,
+  isTailoringActive,
+}: {
+  showSizeModeToggle: boolean;
+  sizeMode: "ready" | "custom";
+  hasReadySizes: boolean;
+  isTailoringActive: boolean;
+}): boolean {
+  return (showSizeModeToggle && sizeMode === "custom") || (!hasReadySizes && isTailoringActive);
+}

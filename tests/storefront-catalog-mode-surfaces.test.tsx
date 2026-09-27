@@ -215,6 +215,33 @@ describe("catalog mode is enforced where orders could start", () => {
   });
 });
 
+describe("product cards and made-to-order stock", () => {
+  it("never shows a made-to-order product as sold out", () => {
+    storefront.settings = { storefront_mode: "shop" };
+    const card = (isMadeToOrder: boolean) => {
+      const view = withQuery(
+        <ProductCard
+          product={
+            {
+              id: "p1",
+              name: "Silk Abaya",
+              base_price: 30,
+              image_url: null,
+              is_made_to_order: isMadeToOrder,
+              product_variants: [{ id: "v1", selling_price: 30, stock_main: 0 }],
+            } as never
+          }
+        />,
+      );
+      const soldOut = Boolean(screen.queryByText("Sold out"));
+      view.unmount();
+      return soldOut;
+    };
+    expect(card(false)).toBe(true);
+    expect(card(true)).toBe(false);
+  });
+});
+
 describe("the storefront cart ignores additions in catalog mode", () => {
   it("drops addToCart calls", async () => {
     // The real provider, not the mocked hook above.

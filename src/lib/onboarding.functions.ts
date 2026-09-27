@@ -75,7 +75,9 @@ export const getOnboardingReceiptUploadUrl = createServerFn({ method: "POST" })
     await requireValidTurnstile(data.turnstileToken);
     let env: any = null;
     try {
-      const { getEvent } = await import(/* @vite-ignore */ "vinxi/http");
+      // A variable specifier keeps bundlers and the test runner from resolving it.
+      const vinxiHttp = "vinxi/http";
+      const { getEvent } = await import(/* @vite-ignore */ vinxiHttp);
       const event = getEvent();
       env =
         event?.context?.cloudflare?.env ||
