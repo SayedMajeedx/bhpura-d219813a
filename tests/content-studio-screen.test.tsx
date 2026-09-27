@@ -183,6 +183,14 @@ describe("the content studio", () => {
     expect(within(stage).getByText("@pura.bh")).toBeInTheDocument();
   });
 
+  it("shows the chosen variant's price on the stage (bug #34)", async () => {
+    const stage = await renderStudio();
+    openSelect(screen.getByRole("combobox", { name: "Product Variant" }));
+    fireEvent.click(await screen.findByRole("option", { name: /M · Black/ }));
+    expect(await within(stage).findByText("39.000 BHD")).toBeInTheDocument();
+    expect(within(stage).queryByText("42.000 BHD")).not.toBeInTheDocument();
+  });
+
   it("exports a PNG at the chosen format's size and name", async () => {
     await renderStudio();
     fireEvent.click(screen.getByRole("button", { name: /Square/ }));

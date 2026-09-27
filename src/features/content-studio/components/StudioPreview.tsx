@@ -7,6 +7,7 @@ import type { ContentStudio } from "@/features/content-studio/hooks/use-content-
 /** The live stage: the design at its fixed reference width, scaled to fit. */
 export function StudioPreview({ studio }: { studio: ContentStudio }) {
   const {
+    effectivePrice,
     slug,
     isAr,
     brandNameEn,
@@ -27,7 +28,6 @@ export function StudioPreview({ studio }: { studio: ContentStudio }) {
     headlineIsAr,
     bodyIsAr,
     productName,
-    selected,
     photo,
     isCurrentVideo,
     editionLabel,
@@ -287,13 +287,14 @@ export function StudioPreview({ studio }: { studio: ContentStudio }) {
             >
               {body || " "}
             </p>
-            {showPrice && selected?.base_price ? (
+            {/* The chosen variant's price, as in the caption (bug #34). */}
+            {showPrice && effectivePrice ? (
               <div
                 dir="ltr"
                 className="mt-[2.5%] flex items-center border-t border-current/15 pt-[2%]"
               >
                 <span dir="ltr" className="font-black text-xs sm:text-sm tracking-tight">
-                  {Number(selected.base_price).toFixed(3)} {currencySymbol}
+                  {Number(effectivePrice).toFixed(3)} {currencySymbol}
                 </span>
               </div>
             ) : null}
