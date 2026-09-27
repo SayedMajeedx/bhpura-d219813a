@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
@@ -73,53 +73,8 @@ describe("typography management", () => {
     expect(arabic["--type-body-variation"]).toBe("'HEXP' 64");
   });
 
-  it("bundles the variable fonts as woff2 with their OFL licenses locally", () => {
-    const fontsCss = readFileSync(resolve(process.cwd(), "src/fonts.css"), "utf8");
-    const requiredFiles = [
-      "public/fonts/variable/plus-jakarta-sans-wght.woff2",
-      "public/fonts/variable/plus-jakarta-sans-italic-wght.woff2",
-      "public/fonts/variable/readex-pro-hexp-wght.woff2",
-      "public/fonts/licenses/plus-jakarta-sans-OFL.txt",
-      "public/fonts/licenses/readex-pro-OFL.txt",
-      "public/fonts/licenses/Tajawal-OFL.txt",
-    ];
-
-    for (const file of requiredFiles) {
-      const bytes = readFileSync(resolve(process.cwd(), file));
-      expect(bytes.length).toBeGreaterThan(0);
-      // woff2 magic number: "wOF2"
-      if (file.endsWith(".woff2")) expect(bytes.subarray(0, 4).toString("ascii")).toBe("wOF2");
-    }
-    expect(fontsCss).toContain('font-family: "Plus Jakarta Sans"');
-    expect(fontsCss).toContain('font-family: "Readex Pro"');
-    expect(fontsCss).toContain('format("woff2-variations")');
-    expect(fontsCss).toContain("font-weight: 200 800");
-    expect(fontsCss).toContain("font-weight: 160 700");
-  });
-
-  it("serves the default Arabic body font (Tajawal) locally, split per script", () => {
-    const fontsCss = readFileSync(resolve(process.cwd(), "src/fonts.css"), "utf8");
-    for (const weight of [400, 500, 700]) {
-      for (const subset of ["arabic", "latin"]) {
-        const file = `public/fonts/tajawal/tajawal-${weight}-${subset}.woff2`;
-        expect(readFileSync(resolve(process.cwd(), file)).length).toBeGreaterThan(0);
-        expect(fontsCss).toContain(`/fonts/tajawal/tajawal-${weight}-${subset}.woff2`);
-      }
-    }
-    expect(fontsCss).toContain("unicode-range:");
-    expect(fontsCss).toContain("U+0600-06FF");
-  });
-
-  it("never loads fonts through a render-blocking third-party chain", () => {
-    const fontsCss = readFileSync(resolve(process.cwd(), "src/fonts.css"), "utf8");
-    expect(fontsCss).not.toMatch(/@import\s+url\(/);
-    expect(fontsCss).not.toContain("fonts.googleapis.com");
-    expect(fontsCss).not.toContain(".ttf");
-    expect(
-      readdirSync(resolve(process.cwd(), "public/fonts/variable")).some((f) => f.endsWith(".ttf")),
-    ).toBe(false);
-
-    // Default storefront typography must be fully self-hosted (no Google request).
+  it("keeps the default storefront typography fully self-hosted", () => {
+    // The font files and fonts.css are checked in tests/storefront-performance-guardrails.test.ts.
     expect(getGoogleFontsUrl(defaultStorefrontTypography())).toBeNull();
     for (const family of [
       "Inter",

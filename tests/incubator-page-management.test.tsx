@@ -153,4 +153,12 @@ describe("incubator page management", () => {
     expect(screen.getByText("REF-10")).toBeInTheDocument();
     expect(screen.queryByText("REF-11")).not.toBeInTheDocument();
   });
+
+  it("defaults a new incubator to provider packaging (no cost to the store)", async () => {
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "New incubator" }));
+    const dialog = await screen.findByRole("dialog");
+    const policy = dialog.querySelector('select[name="packaging_policy"]') as HTMLSelectElement;
+    expect(policy.value).toBe("incubator");
+  });
 });

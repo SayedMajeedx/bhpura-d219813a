@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
   isCatalogMode,
@@ -12,17 +12,6 @@ import {
 } from "../src/lib/storefront-mode";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
-
-/** The product page route together with the feature files it was split into. */
-const productPageSource = () =>
-  [
-    "src/routes/$slug.product.$id.tsx",
-    ...readdirSync("src/features/product-page/components")
-      .sort()
-      .map((file) => `src/features/product-page/components/${file}`),
-  ]
-    .map(read)
-    .join("\n");
 
 describe("storefront catalog mode logic (src/lib/storefront-mode.ts)", () => {
   describe("isCatalogMode", () => {
@@ -180,7 +169,9 @@ describe("storefront catalog mode logic (src/lib/storefront-mode.ts)", () => {
   });
 });
 
-describe("Catalog Mode Architectural Contracts & Server Guards", () => {
+// Where catalog mode is enforced (public API, checkout, cart, product page and
+// cards) is rendered and run in tests/storefront-catalog-mode-surfaces.test.tsx.
+describe("Catalog Mode database contract", () => {
   it("migration adds storefront mode columns, constraints, and views", () => {
     const migration = read("supabase/migrations/20260913100000_storefront_mode_catalog.sql");
 
@@ -190,52 +181,5 @@ describe("Catalog Mode Architectural Contracts & Server Guards", () => {
     expect(migration).toContain("CREATE OR REPLACE VIEW public.brand_public_settings");
     expect(migration).toContain("v_settings.storefront_mode = 'catalog'");
     expect(migration).toContain("STOREFRONT_CATALOG_MODE");
-  });
-
-  it("public API router orders endpoint enforces STOREFRONT_CATALOG_MODE guard", () => {
-    const apiRouter = read("src/lib/public-api/public-api-router.server.ts");
-
-    expect(apiRouter).toContain('bSettings?.storefront_mode === "catalog"');
-    expect(apiRouter).toContain("STOREFRONT_CATALOG_MODE");
-    expect(apiRouter).toContain("403");
-  });
-
-  it("checkout route guards against catalog mode and redirects", () => {
-    const checkoutRoute = read("src/routes/$slug.checkout.tsx");
-
-    expect(checkoutRoute).toContain("isCatalogMode(settings)");
-    expect(checkoutRoute).toContain('navigate({ to: "/$slug"');
-  });
-
-  it("storefront context guards addToCart and abandoned cart tracking", () => {
-    const sfContext = read("src/lib/storefront-context.tsx");
-
-    expect(sfContext).toContain("isCatalogMode(settings)");
-    expect(sfContext).toContain("if (isCatalogMode(settings))");
-  });
-
-  it("product details route replaces buy buttons with WhatsApp inquiry in catalog mode", () => {
-    const productRoute = productPageSource();
-
-    expect(productRoute).toContain("isCatalogMode(settings)");
-    expect(productRoute).toContain("buildWhatsAppInquiryUrl");
-    expect(productRoute).toContain("inquiryUrl");
-    expect(productRoute).toContain("shouldShowPrices");
-    expect(productRoute).toContain("تواصل معنا للسعر");
-  });
-
-  it("product card hides price and discount badge when prices are hidden", () => {
-    const productCard = read("src/components/storefront/product-card.tsx");
-
-    expect(productCard).toContain("shouldShowPrices(settings)");
-    expect(productCard).toContain("تواصل معنا للسعر");
-  });
-
-  it("cart drawer and share cart modals return null in catalog mode", () => {
-    const cartDrawer = read("src/components/storefront/StorefrontCartDrawer.tsx");
-    const shareModal = read("src/components/storefront/ShareCartModal.tsx");
-
-    expect(cartDrawer).toContain("if (isCatalogMode(settings))");
-    expect(shareModal).toContain("if (isCatalogMode(settings))");
   });
 });
