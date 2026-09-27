@@ -3,9 +3,13 @@ import { useStorefront } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { CheckCircle2 } from "lucide-react";
 import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { storefrontQueries } from "@/lib/data/storefront";
 
+/**
+ * How the order is fulfilled comes from the URL: checkout sets it from the
+ * order it just placed, and the card gateway's redirect from the order on the
+ * server. Editing the URL only changes which of the three messages the shopper
+ * sees, never the order, so the page does not read the order (bug #19).
+ */
 export const Route = createFileRoute("/$slug/thank-you/$orderId")({
   validateSearch: (search: Record<string, unknown>) => ({
     fulfillment:
@@ -22,38 +26,13 @@ export const Route = createFileRoute("/$slug/thank-you/$orderId")({
 function ThankYou() {
   const { brand, settings, t, clearCart } = useStorefront();
   const { fulfillment, channel } = Route.useSearch();
-  const { orderId } = Route.useParams();
 
   useEffect(() => {
     clearCart();
   }, [clearCart]);
 
-  // Fetch actual order details from Supabase to prevent URL manipulation and ensure correct presentation
-  const { data: order, isLoading } = useQuery(
-    storefrontQueries.orderConfirmation(brand.slug, orderId),
-  );
-
-  const orderFulfillment = order?.fulfillment_method || fulfillment;
-  const orderChannel = order?.digital_delivery_channel || channel;
-
-  const isPickup = orderFulfillment === "pickup";
-  const isDigital = orderFulfillment === "digital";
-
-  if (isLoading) {
-    return (
-      <div className="mx-auto max-w-lg p-6 sm:p-8 flex items-center justify-center min-h-[300px]">
-        <div className="flex flex-col items-center gap-3">
-          <div
-            className="h-8 w-8 animate-spin rounded-full border-4 border-current border-t-transparent"
-            style={{ color: settings.primary_color }}
-          />
-          <p className="text-sm text-muted-foreground">
-            {t("جاري تحميل تفاصيل الطلب...", "Loading order details...")}
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const isPickup = fulfillment === "pickup";
+  const isDigital = fulfillment === "digital";
 
   return (
     <div className="mx-auto max-w-lg p-6 sm:p-8 animate-in fade-in duration-500">
@@ -73,7 +52,7 @@ function ThankYou() {
         </h1>
         <p className="text-sm sm:text-base text-muted-foreground mb-6 leading-relaxed">
           {isDigital
-            ? orderChannel === "whatsapp"
+            ? channel === "whatsapp"
               ? t(
                   "تم استلام طلبك وسيتم إرسال المنتج الرقمي إليك عبر واتساب بعد تجهيز الطلب.",
                   "We received your order. Your digital product will be sent through WhatsApp once it is ready.",

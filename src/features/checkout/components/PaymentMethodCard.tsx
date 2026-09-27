@@ -8,6 +8,9 @@ import type { Dispatch, SetStateAction } from "react";
 import type { Storefront } from "@/features/checkout/types";
 import type { useCheckoutFulfillment } from "@/features/checkout/hooks/use-checkout-fulfillment";
 
+/** The payment method card's id, so "choose another payment method" can bring it into view. */
+export const PAYMENT_METHODS_SECTION_ID = "payment-methods-section";
+
 /** The payment methods for this destination, the Benefit transfer details and receipt upload, and the card note. */
 export function PaymentMethodCard({
   availableMethods,
@@ -35,8 +38,15 @@ export function PaymentMethodCard({
   t: Storefront["t"];
 }) {
   return (
-    <Card className="p-5 space-y-3">
-      <h2 className="font-display text-xl">{t("طريقة الدفع", "Payment method")}</h2>
+    <Card
+      id={PAYMENT_METHODS_SECTION_ID}
+      role="region"
+      aria-labelledby={`${PAYMENT_METHODS_SECTION_ID}-title`}
+      className="p-5 space-y-3 scroll-mt-24"
+    >
+      <h2 id={`${PAYMENT_METHODS_SECTION_ID}-title`} className="font-display text-xl">
+        {t("طريقة الدفع", "Payment method")}
+      </h2>
       {availableMethods.length === 0 && (
         <p className="text-sm text-muted-foreground">
           {t("لا توجد طرق دفع مفعّلة حالياً.", "No payment methods enabled yet.")}
@@ -50,6 +60,8 @@ export function PaymentMethodCard({
             <Button
               key={m.id}
               type="button"
+              data-payment-method={m.id}
+              aria-pressed={active}
               variant={active ? "outline" : "ghost"}
               onClick={() => setMethod(m.id)}
               className={`text-start flex items-center justify-start gap-3 p-3 rounded-lg border h-auto ${
