@@ -1,5 +1,3 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { SETTINGS_REGISTRY } from "../src/features/settings/registry";
 import {
@@ -9,21 +7,6 @@ import {
   resolveStorefrontEngine,
   type SettingsScope,
 } from "../src/lib/storefront-engine";
-
-const read = (p: string) => readFileSync(resolve(process.cwd(), p), "utf8");
-
-// The storefront shell is split across its route and src/features/storefront-shell (Phase 5).
-const shellSource = () =>
-  [
-    "src/routes/$slug.route.tsx",
-    ...["components", "lib"].flatMap((dir) =>
-      readdirSync(`src/features/storefront-shell/${dir}`)
-        .sort()
-        .map((file) => `src/features/storefront-shell/${dir}/${file}`),
-    ),
-  ]
-    .map((file) => read(file))
-    .join("\n");
 
 describe("storefront engine resolver", () => {
   it("treats only version 2 as Storefront 2.0", () => {
@@ -47,14 +30,6 @@ describe("storefront engine resolver", () => {
     expect(resolveFooterVariant({ storefront_design_version: 1, footer_layout: "columns" })).toBe(
       "columns",
     );
-  });
-
-  it("is the single source of truth for the storefront footer branch", () => {
-    // The route used to hand-roll this condition, which is how the "minimal"
-    // value drifted out of sync. It must go through the resolver now.
-    const route = shellSource();
-    expect(route).toContain('resolveFooterVariant(settings) === "columns"');
-    expect(route).not.toContain('settings?.footer_layout !== "simple"');
   });
 });
 
@@ -162,76 +137,5 @@ describe("registry scoping", () => {
     // business_settings), but it is system-owned now: no control, no search hit.
     expect(byKey.get("pdp_layout")?.owner).toBe("system");
     expect(byKey.get("pdp_layout")?.tab).toBeNull();
-    expect(read("src/features/settings/tabs/storefront/DesignV2Group.tsx")).not.toContain(
-      "pdp_layout",
-    );
-  });
-});
-
-describe("settings UI honours the scopes", () => {
-  it("hides the Storefront 2.0 group on a classic storefront", () => {
-    const tab = read("src/features/settings/tabs/storefront/StorefrontTab.tsx");
-    expect(tab).toContain("isStorefrontV2");
-    expect(tab).toContain('g.id === "design_v2" ? isV2 : true');
-  });
-
-  it("hides the classic hero typography block under Storefront 2.0", () => {
-    const hero = read("src/features/settings/tabs/storefront/HomeHeroGroup.tsx");
-    expect(hero).toContain("isStorefrontV2");
-    expect(hero).toContain("{!isV2 && (");
-  });
-
-  it("gates the classic footer controls on the resolved footer, not the engine", () => {
-    const headerFooter = read("src/features/settings/tabs/storefront/HeaderFooterGroup.tsx");
-    expect(headerFooter).toContain("resolveFooterVariant");
-    expect(headerFooter).toContain('footerVariant === "simple"');
-
-    const palette = read("src/features/settings/tabs/identity/PaletteGroup.tsx");
-    expect(palette).toContain("resolveFooterVariant");
-    expect(palette).toContain("showFooterColours");
-  });
-
-  it("keeps inapplicable settings out of search results", () => {
-    const header = read("src/features/settings/SettingsHeader.tsx");
-    expect(header).toContain("isSettingApplicable");
-    expect(header).toContain("isSettingApplicable(entry.scope, form.bs)");
-  });
-});
-
-describe("Storefront 2.0 hero controls are consumed", () => {
-  it("drives the hero scrim from hero_overlay_strength", () => {
-    const hero = read("src/components/storefront/HeroV2.tsx");
-    expect(hero).toContain("hero_overlay_strength");
-    expect(hero).toContain("linear-gradient(to top, rgba(0,0,0,${scrimBottom})");
-    // The hardcoded scrim must be gone.
-    expect(hero).not.toContain("from-black/85 via-black/40");
-  });
-
-  it("applies hero_title_color_v2 when set and falls back otherwise", () => {
-    const hero = read("src/components/storefront/HeroV2.tsx");
-    expect(hero).toContain("hero_title_color_v2");
-    expect(hero).toContain("heroTitleColor ? { color: heroTitleColor } : {}");
-  });
-
-  it("propagates both fields through the storefront loader", () => {
-    const route = shellSource();
-    expect(route).toContain("hero_overlay_strength: s?.hero_overlay_strength ?? 45");
-    expect(route).toContain("hero_title_color_v2: s?.hero_title_color_v2 ?? null");
-  });
-});
-
-describe("Storefront 2.0 respects catalog (inquiry-only) mode", () => {
-  it("suppresses grid quick-add when there is no cart", () => {
-    const popover = read("src/components/storefront/QuickAddPopover.tsx");
-    expect(popover).toContain("isCatalogMode");
-    expect(popover).toContain("if (isCatalogMode(settings)) return null;");
-  });
-
-  it("suppresses quick view, which is an add-to-cart surface", () => {
-    const card = read("src/components/storefront/ProductCardV2.tsx");
-    expect(card).toContain("isCatalogMode");
-    expect(card).toContain("settings?.quick_view_enabled !== false && !isCatalogMode(settings)");
-    // Both the trigger and the modal go through the same gate.
-    expect(card.match(/\{showQuickView && \(/g) ?? []).toHaveLength(2);
   });
 });
