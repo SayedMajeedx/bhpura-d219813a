@@ -100,6 +100,25 @@ export default defineConfig({
       },
     },
   ],
+  server: {
+    watch: {
+      // Vite watches everything under the root and does not read .gitignore.
+      // These folders hold build output, local toolchains (an Android SDK and
+      // JDK) and other checkouts: tens of thousands of files that made the
+      // Windows watcher crawl for minutes, so `npm run dev` never started.
+      ignored: [
+        "**/.output/**",
+        "**/dist/**",
+        "**/.local-tools/**",
+        "**/.worktrees/**",
+        "**/.wrangler/**",
+        "**/apps/**",
+        "**/playwright-report/**",
+        "**/test-results/**",
+        "**/supabase/.temp/**",
+      ],
+    },
+  },
   optimizeDeps: {
     exclude: ["vinxi/http"],
   },
