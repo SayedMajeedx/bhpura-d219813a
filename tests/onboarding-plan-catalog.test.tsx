@@ -56,6 +56,7 @@ const { Route: onboardRoute } = (await import("../src/routes/onboard")) as unkno
   Route: { options: { component: React.ComponentType } };
 };
 const { I18nProvider } = await import("../src/lib/i18n");
+const { toast } = await import("sonner");
 
 const PLAN = "0f2c8f7e-5a8d-4c55-9b7e-2f6f0c9f1a22";
 const VERSION = "1f2c8f7e-5a8d-4c55-9b7e-2f6f0c9f1a33";
@@ -230,5 +231,41 @@ describe("onboarding SaaS catalog contract", () => {
 
   it("allows monthly, annual and trial intervals in the database", () => {
     expect(migration).toContain("billing_interval IN ('monthly','annual','trial')");
+  });
+
+  it("requires one of the platform's verticals, with no fashion fallback", () => {
+    const trial = {
+      brandName: "Qoffee",
+      slug: "qoffee",
+      ownerName: "Sara Ali",
+      contactNumber: "39001122",
+      email: "sara@example.com",
+      password: "secret-123",
+    };
+    const validate = (
+      functions.registerInstantTrial as unknown as {
+        validate: (raw: unknown) => unknown;
+      }
+    ).validate;
+    expect(() => validate({ ...trial, storeVertical: "coffee" })).not.toThrow();
+    expect(() => validate({ ...trial, storeVertical: "Abayas & Fashion" })).toThrow();
+    expect(() => validate(trial)).toThrow();
+  });
+
+  it("makes the merchant choose a vertical before launching", async () => {
+    page.plans = [];
+    localStorage.setItem("lang", "en");
+    const Onboard = onboardRoute.options.component;
+    const { container } = render(
+      <I18nProvider>
+        <Onboard />
+      </I18nProvider>,
+    );
+    expect((await screen.findAllByText("Launch Your Boutique")).length).toBeGreaterThan(0);
+    expect(container.textContent).not.toContain("Boutique & Fashion");
+    // Nothing is preselected: submitting asks for the vertical first.
+    fireEvent.submit(container.querySelector("form")!);
+    expect(toast.error).toHaveBeenCalledWith("Please select your store vertical first.");
+    expect(onboardingStubs.registerInstantTrial).not.toHaveBeenCalled();
   });
 });

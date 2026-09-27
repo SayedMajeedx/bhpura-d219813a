@@ -80,8 +80,8 @@ Measured on `main` after Phase 7. The budgets in `tests/maintainability-ratchet.
 
 | Metric                    | Baseline (09-24) | Now (09-27) | What changed                                                                                             |
 | :------------------------ | :--------------: | :---------: | :------------------------------------------------------------------------------------------------------- |
-| `as any`                  |       990        |     592     | Typed data layer, typed rows and props (Phases 3–4).                                                     |
-| `: any`                   |       785        |     721     | Same; most remaining are `catch (e: any)` and local shapes.                                              |
+| `as any`                  |       990        |     590     | Typed data layer, typed rows and props (Phases 3–4).                                                     |
+| `: any`                   |       785        |     719     | Same; most remaining are `catch (e: any)` and local shapes.                                              |
 | `as never`                |        40        |      0      | Types regenerated from production (Phase 3).                                                             |
 | `eslint-disable`          |        10        |     10      | Unchanged (frozen).                                                                                      |
 | Direct Supabase calls     |   392 (406\*)    |     24      | Screens read and write through `src/lib/data/*` (Phase 4); left: server routes and one realtime channel. |
@@ -96,7 +96,7 @@ The 23 files still over 1,000 lines (split on touch; `registry.ts` and `addon-sh
 |  #  | File Path                                                           | Lines |
 | :-: | :------------------------------------------------------------------ | :---: |
 |  1  | `src/features/settings/registry.ts`                                 | 2,616 |
-|  2  | `src/routes/_authenticated/admin.b.$slug.content-studio.tsx`        | 2,447 |
+|  2  | `src/routes/_authenticated/admin.b.$slug.content-studio.tsx`        | 2,404 |
 |  3  | `src/components/subscription/BrandSubscriptionHub.tsx`              | 1,954 |
 |  4  | `src/lib/addons/addon-showcase-data.ts`                             | 1,893 |
 |  5  | `src/routes/_authenticated/admin.b.$slug.export.tsx`                | 1,838 |

@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { subDays, startOfDay, endOfDay } from "date-fns";
 import { DateRange } from "react-day-picker";
+import { defaultReportRange } from "@/lib/reports-view";
 import { useI18n } from "@/lib/i18n";
 import { ReportsToolbar } from "@/components/reports/ReportsToolbar";
 import { KpiCard } from "@/components/reports/kpi-card";
@@ -38,10 +38,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports/")({
 function ReportsOverview() {
   const { lang } = useI18n();
   const { slug } = Route.useParams();
-  const [date, setDate] = useState<DateRange | undefined>({
-    from: subDays(startOfDay(new Date()), 29),
-    to: endOfDay(new Date()),
-  });
+  const [date, setDate] = useState<DateRange | undefined>(defaultReportRange);
   const [includeHistorical, setIncludeHistorical] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState("");
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;

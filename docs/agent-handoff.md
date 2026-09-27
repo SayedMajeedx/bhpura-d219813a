@@ -45,8 +45,8 @@ Measured with `node scripts/maintainability-metrics.mjs`:
 | Metric                                | Roadmap start (09-24) | Now                                                                                                               |
 | ------------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | Files over 1000 lines                 | 31                    | 23                                                                                                                |
-| `as any`                              | 990                   | 592                                                                                                               |
-| `: any`                               | 784                   | 721                                                                                                               |
+| `as any`                              | 990                   | 590                                                                                                               |
+| `: any`                               | 784                   | 719                                                                                                               |
 | `as never`                            | 40                    | 0                                                                                                                 |
 | Direct Supabase calls in screens      | 393                   | 24 (metric re-based 09-25 to count cast-wrapped calls: 200 then); all server routes and one realtime subscription |
 | Test files using `readFileSync`       | 71                    | 43: SQL/edge-function contracts and architecture guards only                                                      |
@@ -120,7 +120,8 @@ Measured with `node scripts/maintainability-metrics.mjs`:
 
 ### 4.1 Phase 6: behaviour tests (done)
 
-Every feature assertion that read source text now runs the code (PRs #111–#125;
+Every feature assertion that read source text now runs the code (PRs #111–#125
+and #129, after the classifier's `$`-path fix found 8 more;
 `docs/behaviour-tests.md` has the method and the final classification).
 What still reads files is deliberate: architecture guards (ratchet, lint-rule,
 import-boundary and asset checks) and database contracts on SQL migrations or

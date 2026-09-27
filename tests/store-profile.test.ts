@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
   resolveStoreModules,
@@ -8,19 +8,6 @@ import {
   legacyBusinessTypeToVertical,
 } from "../src/lib/store-profile";
 import { orderSizingPresetsForVertical } from "../src/lib/variant-sku-utils";
-
-// The product page is split across its route and src/features/product-page (Phase 5).
-const productPageSource = () =>
-  [
-    "src/routes/$slug.product.$id.tsx",
-    ...["components", "lib"].flatMap((dir) =>
-      readdirSync(`src/features/product-page/${dir}`)
-        .sort()
-        .map((file) => `src/features/product-page/${dir}/${file}`),
-    ),
-  ]
-    .map((file) => readFileSync(file, "utf8"))
-    .join("\n");
 
 describe("store-profile pure library", () => {
   it("resolves default modules correctly for each vertical", () => {
@@ -107,21 +94,11 @@ describe("store-profile pure library", () => {
   });
 });
 
-describe("storefront & admin gating (source checks)", () => {
-  it("gates Fit Passport tab on account page behind modules.fit_passport", () => {
-    const code = readFileSync(resolve(__dirname, "../src/routes/$slug.account.tsx"), "utf-8");
-    expect(code).toContain("modules.fit_passport &&");
-    expect(code).toMatch(/modules\.fit_passport\s*&&\s*\(?\s*<TabsTrigger[^>]*value="fit"/);
-  });
-
-  it("gates SizeGuideModal on product page behind modules.size_guide", () => {
-    const code = productPageSource();
-    expect(
-      code.includes("storefront.product.optionsAside") ||
-        code.includes("modules.size_guide && <SizeGuideModal"),
-    ).toBe(true);
-  });
-
+// The screens are rendered in tests/store-profile-surfaces.test.tsx (account Fit
+// Passport tab, paywall, store profile card, settings form) and
+// tests/onboarding-plan-catalog.test.tsx (mandatory vertical). The size guide
+// mounts through its addon slot (tests/addon-contributions-consumed.test.ts).
+describe("store profile database contract", () => {
   it("migration adds columns and exposes them in public view", () => {
     const migPath = resolve(
       __dirname,
@@ -132,49 +109,6 @@ describe("storefront & admin gating (source checks)", () => {
     expect(sql).toContain("store_vertical");
     expect(sql).toContain("store_modules");
     expect(sql).toMatch(/brand_public_settings[\s\S]*bs\.store_modules/);
-  });
-
-  it("onboarding functions enforce mandatory vertical and strip Abayas & Fashion fallback", () => {
-    const code = readFileSync(resolve(__dirname, "../src/lib/onboarding.functions.ts"), "utf-8");
-    expect(code).not.toContain('"Abayas & Fashion"');
-    expect(code).toMatch(/storeVertical:\s*z\.enum\(STORE_VERTICALS\)/);
-  });
-
-  it("onboarding UI forces manual vertical selection and drops fashion-only copy", () => {
-    const code = readFileSync(resolve(__dirname, "../src/routes/onboard.tsx"), "utf-8");
-    expect(code).not.toContain('"Boutique & Fashion"');
-    expect(code).toMatch(/useState<StoreVertical\s*\|\s*null>\(null\)/);
-    expect(code).toContain("Launch Your Boutique");
-  });
-
-  it("paywall copy drops fashion references", () => {
-    const code = readFileSync(
-      resolve(__dirname, "../src/components/admin/TrialExpiredPaywall.tsx"),
-      "utf-8",
-    );
-    expect(code).not.toMatch(/fashion/i);
-  });
-
-  it("StoreProfileCard uses upsert and synchronizes businessSettings query cache", () => {
-    const code = readFileSync(
-      resolve(__dirname, "../src/components/settings/StoreProfileCard.tsx"),
-      "utf-8",
-    );
-    // The upsert lives in the settings data layer (tests/settings-data-layer.test.ts).
-    expect(code).toContain("saveBusinessSettings(brandId,");
-    expect(code).toContain("queryKeys.brand.businessSettings(brandId)");
-    expect(code).toContain("queryKeys.brand.storeProfile(brandId)");
-  });
-
-  it("useBrandSettingsForm uses upsert for business_settings and invalidates storeProfile", () => {
-    const code = readFileSync(
-      resolve(__dirname, "../src/features/settings/use-brand-settings-form.tsx"),
-      "utf-8",
-    );
-    // saveBusinessSettings upserts; invalidateBusinessSettings refreshes the store profile too
-    // (both covered in tests/settings-data-layer.test.ts).
-    expect(code).toContain("saveBusinessSettings(brandId,");
-    expect(code).toContain("invalidateBusinessSettings(queryClient, brandId)");
   });
 
   it("migration drops ON DELETE CASCADE on business_settings_user_id_fkey and heals missing rows", () => {
