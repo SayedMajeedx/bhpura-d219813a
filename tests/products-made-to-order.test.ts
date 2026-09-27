@@ -6,6 +6,7 @@ import {
   PRODUCT_DETAIL_BASE_SELECT,
   PRODUCT_DETAIL_SELECT,
 } from "../src/lib/data/storefront/selects";
+import { tailoringState } from "../src/features/product-page/lib/variant-options";
 
 // The order editor is split across its route and src/features/orders (Phase 5).
 const orderDetailSource = () =>
@@ -99,13 +100,18 @@ describe("Phase 3: Explicit is_made_to_order flag & inventory decoupling", () =>
 
     it("decouples isTailoringActive and showSizeModeToggle to require is_made_to_order", () => {
       expect(pdp).toContain("const isMadeToOrder = Boolean(product?.is_made_to_order);");
-      expect(pdp).toMatch(
-        /showSizeModeToggle\s*=\s*modules\.made_to_order\s*&&\s*hasReadySizes\s*&&\s*hasCustomFields\s*&&\s*isMadeToOrder;/,
-      );
-      expect(pdp).toContain("const isTailoringActive =");
-      expect(pdp).toContain(
-        'isMadeToOrder && ((showSizeModeToggle && sizeMode === "custom") || !showSizeModeToggle);',
-      );
+      // The rule itself lives in tailoringState (tests/storefront-tailoring-experience.test.tsx).
+      const readyToWear = {
+        hasCustomFields: true,
+        madeToOrderModule: true,
+        sizeMode: "custom" as const,
+      };
+      expect(
+        tailoringState({ ...readyToWear, isMadeToOrder: false, offeredSizes: ["M"] }),
+      ).toMatchObject({ showSizeModeToggle: false, isTailoringActive: false });
+      expect(
+        tailoringState({ ...readyToWear, isMadeToOrder: true, offeredSizes: ["M"] }),
+      ).toMatchObject({ showSizeModeToggle: true, isTailoringActive: true });
     });
 
     it("does not tag ready-to-wear items with custom fields as custom tailoring", () => {

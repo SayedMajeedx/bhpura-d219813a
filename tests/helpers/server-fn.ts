@@ -41,7 +41,8 @@ type Write = { table: string; values: unknown; filters: Array<[string, unknown]>
 
 /**
  * A Supabase client whose reads return `rows[table]` and whose RPCs return
- * `rpc[name]`. Updates and inserts are recorded in `writes`.
+ * `rpc[name]`. Updates, inserts and deletes are recorded in `writes`, with
+ * their filters (`eq` and `in`).
  */
 export function fakeSupabase(config: {
   rows?: Record<string, unknown>;
@@ -55,15 +56,17 @@ export function fakeSupabase(config: {
       select: () => chain,
       eq: (column: string, value: unknown) => (write.filters.push([column, value]), chain),
       neq: () => chain,
-      in: () => chain,
+      in: (column: string, values: unknown) => (write.filters.push([column, values]), chain),
       order: () => chain,
       limit: () => chain,
       update: (values: unknown) => ((write.values = values), writes.push(write), chain),
       insert: (values: unknown) => ((write.values = values), writes.push(write), chain),
+      delete: () => ((write.values = "DELETE"), writes.push(write), chain),
       maybeSingle: async () => result(),
       single: async () => result(),
+      // Awaiting a read returns its rows; awaiting a write returns nothing.
       then: (resolve: (value: { data: unknown; error: null }) => unknown) =>
-        resolve({ data: null, error: null }),
+        resolve(write.values === undefined ? result() : { data: null, error: null }),
     };
     return chain;
   };
