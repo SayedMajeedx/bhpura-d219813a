@@ -41,3 +41,26 @@ export function storyBrandColor(brandSlug: string, primaryColor: string | null |
   if (brandSlug.toLowerCase() === "pura") return "#330a0a";
   return primaryColor || "#330a0a";
 }
+
+/**
+ * The reviews screen's filters: a star rating ("all" or 1–5), a period ("all",
+ * "30" or "90" days back from `now`), and a search over the customer's name,
+ * the invoice number and the comment (already trimmed and lower-cased).
+ */
+export function filterReviews(
+  reviews: OrderReviewAdminRow[],
+  { search, rating, period, now }: { search: string; rating: string; period: string; now: number },
+): OrderReviewAdminRow[] {
+  const periodDays = period === "30" ? 30 : period === "90" ? 90 : null;
+  const cutoff = periodDays ? now - periodDays * 86_400_000 : null;
+  return reviews.filter((review) => {
+    if (rating !== "all" && Number(review.rating) !== Number(rating)) return false;
+    if (cutoff && new Date(review.reviewed_at).getTime() < cutoff) return false;
+    if (!search) return true;
+    return (
+      review.customer_name.toLowerCase().includes(search) ||
+      String(review.invoice_number).includes(search) ||
+      (review.comment ?? "").toLowerCase().includes(search)
+    );
+  });
+}

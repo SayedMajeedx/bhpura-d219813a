@@ -50,7 +50,7 @@ import {
   originalPriceFor,
 } from "@/features/product-page/lib/pdp-pricing";
 import type { CustomField } from "@/features/product-page/types";
-import { productMediaList } from "@/features/product-page/lib/product-media";
+import { galleryRatioClass, productMediaList } from "@/features/product-page/lib/product-media";
 import {
   PDP_BEST_SELLER_LIMIT,
   useProductRecommendations,
@@ -648,20 +648,12 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       })
     : null;
 
-  const pdpGalleryRatio = settings?.pdp_gallery_aspect_ratio ?? "3:4";
-  const galleryRatioClass =
-    pdpGalleryRatio === "1:1"
-      ? "aspect-square"
-      : pdpGalleryRatio === "4:5"
-        ? "aspect-[4/5]"
-        : "aspect-[3/4]";
-
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-3 sm:py-8 pb-28 md:pb-10 overflow-x-hidden w-full max-w-full">
       <div className="grid md:grid-cols-12 gap-6 lg:gap-10 items-start w-full max-w-full">
         <ProductGallery
           displayName={displayName}
-          galleryRatioClass={galleryRatioClass}
+          galleryRatioClass={galleryRatioClass(settings?.pdp_gallery_aspect_ratio)}
           galleryTouchStartX={galleryTouchStartX}
           media={media}
           mediaIdx={mediaIdx}

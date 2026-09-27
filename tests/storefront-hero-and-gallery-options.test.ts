@@ -1,8 +1,6 @@
 import { createElement } from "react";
-import { render } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import fs from "fs";
-import path from "path";
 import { SETTINGS_REGISTRY } from "../src/features/settings/registry";
 
 // HeroV2 reads its settings from the storefront context.
@@ -20,6 +18,9 @@ vi.mock("@/lib/storefront-context", async (importOriginal) => ({
   useStorefront: () => storefront,
 }));
 const { HeroV2 } = await import("../src/components/storefront/HeroV2");
+const { ImageZoom } = await import("../src/components/storefront/ImageZoom");
+const { ProductGallery } = await import("../src/features/product-page/components/ProductGallery");
+const { galleryRatioClass } = await import("../src/features/product-page/lib/product-media");
 const imageSlide = (id: string) => ({
   id,
   type: "image" as const,
@@ -30,20 +31,6 @@ const imageSlide = (id: string) => ({
   media_url: "https://media.boutq.store/brands/x/hero/a.jpg",
   media_url_en: "https://media.boutq.store/brands/x/hero/a.jpg",
 });
-
-// The product page is split across its route and src/features/product-page (Phase 5).
-const productPageSource = () =>
-  [
-    "src/routes/$slug.product.$id.tsx",
-    ...["components", "lib"].flatMap((dir) =>
-      fs
-        .readdirSync(`src/features/product-page/${dir}`)
-        .sort()
-        .map((file) => `src/features/product-page/${dir}/${file}`),
-    ),
-  ]
-    .map((file) => fs.readFileSync(file, "utf8"))
-    .join("\n");
 
 describe("Storefront Hero & PDP Gallery Options Suite", () => {
   it("registers all 6 hero and gallery settings in SETTINGS_REGISTRY with correct metadata", () => {
@@ -160,35 +147,55 @@ describe("Storefront Hero & PDP Gallery Options Suite", () => {
     noArrows.unmount();
   });
 
-  it("ImageZoom uses preset product and bounded container to prevent mobile blowout", () => {
-    const zoomCode = fs.readFileSync(
-      path.resolve(__dirname, "../src/components/storefront/ImageZoom.tsx"),
-      "utf-8",
+  it("ImageZoom uses the product image preset in a bounded container to prevent mobile blowout", () => {
+    const { container } = render(
+      createElement(ImageZoom, { src: "https://media.boutq.store/p1.jpg", alt: "Abaya" }),
     );
-
-    expect(zoomCode).toContain('preset="product"');
-    expect(zoomCode).not.toContain('preset="hero"');
-    expect(zoomCode).toContain("max-w-full");
+    const frame = container.firstElementChild as HTMLElement;
+    expect(frame.className).toContain("max-w-full");
+    const srcset = container.querySelector("img")?.getAttribute("srcset") ?? "";
+    // Product widths (up to 800w), not the hero's (up to 1920w).
+    expect(srcset).toContain(" 800w");
+    expect(srcset).not.toContain(" 1920w");
   });
 
-  it("PDP route enforces gallery aspect ratio, RTL logical arrow positioning, and overflow containment", () => {
-    const pdpCode = productPageSource();
+  it("PDP gallery follows the ratio setting, fills its frame and has logical RTL arrows", () => {
+    expect(galleryRatioClass(undefined)).toBe("aspect-[3/4]");
+    expect(galleryRatioClass("1:1")).toBe("aspect-square");
+    expect(galleryRatioClass("4:5")).toBe("aspect-[4/5]");
 
-    // Gallery aspect ratio from settings
-    expect(pdpCode).toContain("pdp_gallery_aspect_ratio");
-    expect(pdpCode).toContain("galleryRatioClass");
+    const setMediaIdx = vi.fn();
+    const { container } = render(
+      createElement(ProductGallery, {
+        displayName: "Abaya",
+        galleryRatioClass: galleryRatioClass("4:5"),
+        galleryTouchStartX: { current: null },
+        media: [
+          { type: "image", url: "https://media.boutq.store/a.jpg" },
+          { type: "image", url: "https://media.boutq.store/b.jpg" },
+        ],
+        mediaIdx: 0,
+        primary: "#000",
+        product: { id: "p1" } as never,
+        setMediaIdx,
+        settings: { storefront_design_version: 2 } as never,
+        t: (_ar: string, en: string) => en,
+      }),
+    );
+    expect(container.querySelector('[class~="aspect-[4/5]"]')).not.toBeNull();
+    // Storefront 2.0 zooms the image, filling the gallery frame (no aspect-auto blowout).
+    expect(container.querySelector(".cursor-zoom-in")?.className).toContain("w-full h-full");
 
-    // No aspect-auto blowout in ImageZoom
-    expect(pdpCode).not.toContain('aspectRatio="aspect-auto h-full"');
-    expect(pdpCode).toContain('aspectRatio="w-full h-full"');
+    const previous = screen.getByRole("button", { name: "Previous media" });
+    const next = screen.getByRole("button", { name: "Next media" });
+    expect(previous.className).toContain("start-2");
+    expect(next.className).toContain("end-2");
+    // Plain arrows (no circles) that flip in RTL.
+    expect(previous.className).not.toContain("rounded-full");
+    expect(previous.querySelector("svg")?.getAttribute("class")).toContain("rtl:rotate-180");
 
-    // Logical RTL navigation buttons (pure floating arrows without circles)
-    expect(pdpCode).toContain("start-2");
-    expect(pdpCode).toContain("end-2");
-    expect(pdpCode).toContain("rtl:rotate-180");
-    expect(pdpCode).not.toContain("rounded-full shadow-md border border-border-subtle");
-
-    // Root container overflow containment
-    expect(pdpCode).toContain("overflow-x-hidden");
+    fireEvent.click(next);
+    const advance = setMediaIdx.mock.calls[0][0] as (i: number) => number;
+    expect(advance(1)).toBe(0);
   });
 });
