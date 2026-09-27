@@ -1,27 +1,12 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Fingerprint,
-  Languages,
-  ShieldCheck,
-  Sparkles,
-  ArrowRight,
-  Lock,
-  TrendingUp,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Fingerprint, Loader2, ShieldCheck } from "lucide-react";
+import { SignInBrandPanel } from "@/features/auth/components/SignInBrandPanel";
+import { EmailField, LanguageSwitch, PasswordField } from "@/features/auth/components/SignInFields";
 import { applyRememberMe } from "@/lib/session-persistence";
 import { translateAuthError } from "@/lib/auth-errors";
 import { fetchCallerProfile } from "@/lib/data/profiles";
@@ -131,223 +116,163 @@ function AuthPage() {
     }
   };
 
+  const isAr = lang === "ar";
+  const rise = (ms: number) => ({ "--auth-delay": `${ms}ms` }) as React.CSSProperties;
+
   return (
     <div
-      dir={lang === "ar" ? "rtl" : "ltr"}
-      className="min-h-screen w-full flex flex-col items-center justify-center relative bg-zinc-950 text-white px-4 py-8 overflow-hidden select-none"
+      dir={isAr ? "rtl" : "ltr"}
+      className="grid min-h-dvh w-full bg-background text-foreground lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]"
     >
-      {/* Dynamic Tech-Boutique Moving Luxury Gradients */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,var(--os-accent-glow),transparent_60%)] z-0" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(9,9,11,0.95))] z-0" />
-      <div className="absolute top-[20%] right-[-5%] w-80 h-80 rounded-full bg-primary/10 blur-3xl pointer-events-none animate-pulse" />
-      <div className="absolute bottom-[20%] left-[-5%] w-96 h-96 rounded-full bg-primary/15 blur-3xl pointer-events-none" />
-
-      {/* Subtle Grid Pattern Overlay */}
-      <div className="absolute inset-0 bg-[radial-gradient(#ffffff0d_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none z-0" />
-
-      {/* Floating Tech-Boutique Apparel Canvas Elements in Background */}
-      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden hidden lg:block opacity-40">
-        {/* Top-Left Floating Live Order Pill */}
-        <div className="absolute top-[18%] left-10 bg-zinc-900/90 border border-emerald-500/30 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-3">
-          <div className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-          <div className="text-xs font-semibold text-zinc-200">
-            {lang === "ar"
-              ? "صوفيا آل خليفة • تصميم حرير أورجانزا"
-              : "Sofia Al Khalifa • Silk Organza Design"}
-          </div>
-          <span className="text-xs font-bold text-emerald-400">145.000 BHD</span>
+      {/* Brand side (the maroon canvas): wide screens only. */}
+      <aside className="hidden lg:block" aria-hidden="true">
+        <div className="sticky top-0 h-dvh">
+          <SignInBrandPanel lang={isAr ? "ar" : "en"} title={t("app.title")} />
         </div>
+      </aside>
 
-        {/* Bottom-Right Floating Sales Telemetry Card */}
-        <div className="absolute bottom-[18%] right-10 bg-zinc-900/85 border border-border backdrop-blur-md p-4 rounded-2xl shadow-xl w-60">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-xs text-zinc-400 font-bold tracking-wider uppercase flex items-center gap-1">
-              <TrendingUp className="h-3 w-3 text-primary" />
-              {lang === "ar" ? "مبيعات البوتيك" : "BOUTIQUE SALES"}
-            </span>
-            <span className="text-xs bg-rose-500/10 text-rose-300 font-bold border border-rose-500/20 px-2 py-0.5 rounded-full">
-              LIVE
-            </span>
-          </div>
-          <div className="text-xl font-bold font-mono text-zinc-100">4,284.150 BHD</div>
-          <div className="h-6 mt-2 flex items-end gap-1">
-            {[40, 55, 45, 60, 75, 50, 70, 85, 90, 80, 95].map((h, i) => (
-              <div
-                key={i}
-                className={`flex-1 rounded-t transition-all duration-500 ${i === 10 ? "bg-primary" : "bg-zinc-800"}`}
-                style={{
-                  height: `${h}%`,
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Top Header Controls Bar */}
-      <div className="w-full max-w-md flex justify-end mb-6 relative z-10">
-        <div className="flex items-center gap-2 h-9 px-3.5 bg-zinc-900 border border-border rounded-2xl shadow-xs">
-          <Languages className="h-4 w-4 text-primary" />
-          <Select value={lang} onValueChange={(v) => setLang(v as "en" | "ar")}>
-            <SelectTrigger className="h-7 border-0 bg-transparent text-xs font-bold text-zinc-200 focus:ring-0">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-border text-zinc-200">
-              <SelectItem value="en">English</SelectItem>
-              <SelectItem value="ar">العربية</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Center Auth Card Container */}
-      <div className="w-full max-w-md relative z-10 space-y-6">
-        {/* Branding Header */}
-        <div className="text-center space-y-2.5">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-primary/20 border border-primary/40 text-primary-foreground font-mono text-xs font-bold uppercase tracking-widest shadow-xs">
-            <Sparkles
-              className="h-3.5 w-3.5 text-primary-foreground animate-spin"
-              style={{ animationDuration: "6s" }}
-            />
-            <span>BOUTQ OS PORTAL</span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-black font-heading tracking-tight text-white drop-shadow-md">
-            {t("app.title")}
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground font-medium">
-            {t("app.portalSubtitle")}
-          </p>
-        </div>
-
-        {/* Semi-Glossy Tech-Boutique Glass Card */}
-        <div className="bg-zinc-900 border border-border shadow-2xl rounded-3xl p-6 sm:p-8 relative overflow-hidden">
-          {/* Top Sheen Highlight */}
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
-
-          <div className="mb-6 space-y-2">
-            <h2 className="text-xl sm:text-2xl font-bold font-heading text-white flex items-center gap-2">
-              <Lock className="h-5 w-5 text-rose-400 shrink-0" />
-              <span>{t("auth.welcomeBack")}</span>
-            </h2>
-            <p className="text-xs text-zinc-200 leading-relaxed flex items-start gap-2 bg-zinc-950/90 p-3.5 rounded-2xl border border-zinc-800 shadow-inner">
-              <ShieldCheck className="h-4 w-4 mt-0.5 shrink-0 text-emerald-400" />
-              <span>
-                {lang === "ar"
-                  ? "يقتصر الدخول على الشركاء المعتمدين ومندوبي التوصيل. يرجى استخدام بيانات الاعتماد الصادرة عن إدارة البوتيك."
-                  : "Access restricted to authorized partners and logistics couriers. Please use your credentials issued by the boutique administrator."}
-              </span>
-            </p>
-          </div>
-
-          <form onSubmit={submit} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs font-bold text-zinc-300">
-                {t("auth.email")}
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                required
-                placeholder="partner@boutq.store"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="h-11 bg-zinc-950/90 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 rounded-xl transition-all font-medium"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-xs font-bold text-zinc-300">
-                {t("auth.password")}
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                minLength={8}
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-11 bg-zinc-950/90 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 rounded-xl transition-all font-medium"
-              />
-            </div>
-
-            <div className="flex items-center justify-between gap-2 pt-1">
-              <label className="flex items-center gap-2 text-xs font-semibold text-zinc-300 cursor-pointer select-none">
-                <Checkbox
-                  checked={remember}
-                  onCheckedChange={(v) => setRemember(v === true)}
-                  className="border-zinc-600 data-[state=checked]:bg-rose-600 data-[state=checked]:border-rose-600 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
-                />
-                <span>{t("auth.rememberMe")}</span>
-              </label>
-              <Link
-                to="/forgot-password"
-                className="text-xs font-bold text-rose-300 hover:text-white underline transition-colors focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 rounded-sm"
-              >
-                {t("auth.forgotPassword")}
-              </Link>
-            </div>
-
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full h-12 font-bold text-white bg-rose-700 hover:bg-rose-600 active:bg-rose-800 shadow-lg active:scale-[0.99] rounded-xl transition-all duration-200 mt-2 border border-rose-500/40 focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
-            >
-              {loading ? (
-                t("common.pleaseWait")
-              ) : (
-                <span className="flex items-center justify-center gap-2">
-                  <span>{t("auth.signIn")}</span>
-                  <ArrowRight className={`h-4 w-4 ${lang === "ar" ? "rotate-180" : ""}`} />
-                </span>
-              )}
-            </Button>
-          </form>
-
-          {passkeySupported && (
-            <div className="mt-6 space-y-4">
-              <div className="flex items-center gap-3 text-xs font-bold text-zinc-400 uppercase tracking-wider">
-                <span className="h-px flex-1 bg-zinc-800" />
-                <span>{lang === "ar" ? "أو باستخدام" : "or biometric"}</span>
-                <span className="h-px flex-1 bg-zinc-800" />
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                className="h-12 w-full gap-2.5 border-zinc-700 bg-zinc-950/80 hover:bg-zinc-800 text-white font-semibold rounded-xl shadow-xs transition-all active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
-                disabled={passkeyLoading || loading}
-                onClick={() => void signInWithPasskey()}
-              >
-                <Fingerprint className="h-5 w-5 text-rose-400" />
-                <span>
-                  {passkeyLoading
-                    ? t("common.pleaseWait")
-                    : lang === "ar"
-                      ? "تسجيل الدخول بالبصمة"
-                      : "Sign in with Biometric"}
-                </span>
-              </Button>
-
-              <p className="text-center text-xs font-medium text-zinc-400">
-                {lang === "ar"
-                  ? "استخدم Face ID أو Touch ID أو مفتاح أمان مسجّل."
-                  : "Use a registered Face ID, Touch ID, device PIN, or security key."}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Back Home Navigation */}
-        <div className="text-center">
+      <main className="relative flex min-h-dvh flex-col overflow-hidden px-5 py-5 sm:px-10 sm:py-8">
+        <header className="relative flex items-center justify-between gap-4">
           <Link
             to="/"
-            className="text-xs font-bold text-rose-300 hover:text-white transition-colors underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 rounded-sm"
+            className="group inline-flex min-h-11 items-center gap-2 rounded-md text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
-            {t("auth.backHome")}
+            <ArrowLeft
+              className="h-4 w-4 transition-transform group-hover:-translate-x-0.5 rtl:rotate-180 rtl:group-hover:translate-x-0.5"
+              aria-hidden="true"
+            />
+            {isAr ? "العودة للرئيسية" : "Back home"}
           </Link>
+          <LanguageSwitch lang={isAr ? "ar" : "en"} onChange={setLang} />
+        </header>
+
+        <div className="relative flex flex-1 items-center justify-center py-10">
+          <div className="w-full max-w-[26rem]">
+            <div className="mb-8 lg:hidden">
+              <SignInBrandPanel lang={isAr ? "ar" : "en"} title={t("app.title")} compact />
+            </div>
+
+            <div className="auth-rise space-y-3" style={rise(120)}>
+              <p className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                <span className="auth-live-dot h-1.5 w-1.5 rounded-full bg-primary" />
+                {isAr ? "بوابة شركاء بوتيك" : "Boutq OS · Partner portal"}
+              </p>
+              <h1 className="font-display text-4xl leading-tight tracking-tight sm:text-5xl">
+                {t("auth.welcomeBack")}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {isAr
+                  ? "سجّل الدخول لمتابعة الطلبات والمخزون والتوصيل."
+                  : "Sign in to pick up your orders, stock and deliveries."}
+              </p>
+            </div>
+
+            <form onSubmit={submit} className="mt-8 space-y-5">
+              <div className="auth-rise" style={rise(220)}>
+                <EmailField label={t("auth.email")} value={email} onChange={setEmail} />
+              </div>
+
+              <div className="auth-rise" style={rise(300)}>
+                <PasswordField
+                  label={t("auth.password")}
+                  value={password}
+                  onChange={setPassword}
+                  isAr={isAr}
+                  action={
+                    <Link
+                      to="/forgot-password"
+                      className="rounded-sm text-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      {t("auth.forgotPassword")}
+                    </Link>
+                  }
+                />
+              </div>
+
+              <label
+                className="auth-rise flex w-fit cursor-pointer items-center gap-2.5 text-sm text-muted-foreground"
+                style={rise(360)}
+              >
+                <Checkbox checked={remember} onCheckedChange={(v) => setRemember(v === true)} />
+                <span>{t("auth.rememberMe")}</span>
+              </label>
+
+              <div className="auth-rise" style={rise(420)}>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  aria-busy={loading}
+                  className="auth-sheen group h-12 w-full text-base font-semibold shadow-lg shadow-primary/20"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="animate-spin" aria-hidden="true" />
+                      {t("common.pleaseWait")}
+                    </>
+                  ) : (
+                    <>
+                      {t("auth.signIn")}
+                      <ArrowRight
+                        className="transition-transform duration-300 group-hover:translate-x-1 rtl:rotate-180 rtl:group-hover:-translate-x-1"
+                        aria-hidden="true"
+                      />
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+
+            {passkeySupported && (
+              <div className="auth-rise mt-6 space-y-4" style={rise(500)}>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <span className="h-px flex-1 bg-border" />
+                  <span>{isAr ? "أو" : "or"}</span>
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="group h-12 w-full gap-2.5 text-base font-medium"
+                  disabled={passkeyLoading || loading}
+                  aria-busy={passkeyLoading}
+                  onClick={() => void signInWithPasskey()}
+                >
+                  {passkeyLoading ? (
+                    <Loader2 className="animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Fingerprint
+                      className="text-primary transition-transform duration-300 group-hover:scale-110"
+                      aria-hidden="true"
+                    />
+                  )}
+                  {passkeyLoading
+                    ? t("common.pleaseWait")
+                    : isAr
+                      ? "تسجيل الدخول بالبصمة"
+                      : "Sign in with a passkey"}
+                </Button>
+                <p className="text-center text-xs text-muted-foreground">
+                  {isAr
+                    ? "استخدم Face ID أو Touch ID أو مفتاح أمان مسجّل."
+                    : "Use a registered Face ID, Touch ID, device PIN, or security key."}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+
+        <footer
+          className="auth-rise relative mx-auto flex w-full max-w-[26rem] items-start gap-2.5 text-xs leading-relaxed text-muted-foreground"
+          style={rise(600)}
+        >
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden="true" />
+          <p>
+            {isAr
+              ? "يقتصر الدخول على الشركاء المعتمدين ومندوبي التوصيل، ببيانات الاعتماد الصادرة عن إدارة البوتيك."
+              : "For authorised partners and couriers only, with the credentials issued by your boutique administrator."}
+          </p>
+        </footer>
+      </main>
     </div>
   );
 }
