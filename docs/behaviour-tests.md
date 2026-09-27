@@ -29,7 +29,7 @@ Examples: `tests/order-profit-clarity.test.ts` (extracted label),
 
 ## Classification
 
-- **convert** (16): feature assertions on source text.
+- **convert** (13): feature assertions on source text.
 - **migration** (22): assertions on SQL in
   `supabase/migrations`. They pin database contracts and stay until the
   project has a database test harness (pgTAP or a local Supabase in CI).
@@ -40,7 +40,6 @@ Examples: `tests/order-profit-clarity.test.ts` (extracted label),
 | --------- | --------------------------------------------------- | -------------------------------------------------------- |
 | convert   | `tests/brand-owner-provisioning.test.ts`            | source part to convert; SQL part is a migration contract |
 | convert   | `tests/homepage-editorial-sections.test.ts`         | source part to convert; SQL part is a migration contract |
-| convert   | `tests/image-crop-system.test.ts`                   |                                                          |
 | convert   | `tests/incubator-reporting-packaging.test.ts`       | source part to convert; SQL part is a migration contract |
 | convert   | `tests/launch-security-regressions.test.ts`         | source part to convert; SQL part is a migration contract |
 | convert   | `tests/onboarding-plan-catalog.test.ts`             | source part to convert; SQL part is a migration contract |
@@ -49,8 +48,6 @@ Examples: `tests/order-profit-clarity.test.ts` (extracted label),
 | convert   | `tests/review-management-dashboard.test.ts`         | source part to convert; SQL part is a migration contract |
 | convert   | `tests/secondary-banner-parallax.test.ts`           | source part to convert; SQL part is a migration contract |
 | convert   | `tests/storefront-catalog-mode.test.ts`             | source part to convert; SQL part is a migration contract |
-| convert   | `tests/storefront-e2e-regressions.test.ts`          |                                                          |
-| convert   | `tests/storefront-engine-scoping.test.ts`           |                                                          |
 | convert   | `tests/storefront-fit-passport.test.ts`             | source part to convert; SQL part is a migration contract |
 | convert   | `tests/storefront-hero-and-gallery-options.test.ts` |                                                          |
 | convert   | `tests/typography-management.test.ts`               | source part to convert; SQL part is a migration contract |

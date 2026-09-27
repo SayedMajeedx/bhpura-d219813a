@@ -95,4 +95,38 @@ describe("Query Keys Integrity & Single Source of Truth", () => {
     expect(content).toMatch(/vertical:\s*["']general["']/);
     expect(content).toMatch(/fitProfiles:\s*\[\]/);
   });
+
+  it("never throws a router redirect from inside a queryFn", () => {
+    // TanStack Query treats a thrown redirect as a query error and retries it,
+    // so the router never sees it and the route sits on its pending component
+    // forever. /admin hung on "Loading..." for 28s in production because of it.
+    // Brace-match each queryFn body so redirects that legitimately live in
+    // beforeLoad's own scope are not mistaken for offenders.
+    const queryFnBodies = (source: string): string[] => {
+      const bodies: string[] = [];
+      const marker = /queryFn: async \([^)]*\) => \{/g;
+      for (let match = marker.exec(source); match; match = marker.exec(source)) {
+        let depth = 0;
+        let i = match.index + match[0].length - 1;
+        for (; i < source.length; i += 1) {
+          if (source[i] === "{") depth += 1;
+          else if (source[i] === "}") {
+            depth -= 1;
+            if (depth === 0) break;
+          }
+        }
+        bodies.push(source.slice(match.index, i));
+      }
+      return bodies;
+    };
+
+    const offenders = getAllTsFiles(path.join(srcDir, "routes"))
+      .filter((file) =>
+        queryFnBodies(fs.readFileSync(file, "utf-8")).some((body) =>
+          body.includes("throw redirect("),
+        ),
+      )
+      .map((file) => path.relative(rootDir, file));
+    expect(offenders, "move the redirect into beforeLoad's own scope").toEqual([]);
+  });
 });

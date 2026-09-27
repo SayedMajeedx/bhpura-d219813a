@@ -78,6 +78,21 @@ function countMatches(pattern: RegExp, filter?: (rel: string) => boolean): numbe
 }
 
 describe("design system guardrails", () => {
+  it("crops every upload with a named preset, never a hand-picked aspect", () => {
+    // The opening tag, skipping arrow functions in its props. A preset ties the crop ratio to the output size and to the surface that
+    // renders it (tests/image-crop-system.test.tsx), so they cannot drift.
+    const offenders: string[] = [];
+    let uses = 0;
+    for (const { rel, source } of FILES) {
+      for (const match of source.matchAll(/<CropUploadButton\b(?:=>|[^>])*>/g)) {
+        uses += 1;
+        if (!/\bpreset=/.test(match[0]) || /\baspect=/.test(match[0])) offenders.push(rel);
+      }
+    }
+    expect(uses).toBeGreaterThan(0);
+    expect(offenders).toEqual([]);
+  });
+
   it("keeps text below the 12px legibility floor within budget", () => {
     // Phase 2 drives this to 0. Every one of these is an arbitrary pixel size
     // smaller than text-xs, which is already the smallest size worth shipping.
