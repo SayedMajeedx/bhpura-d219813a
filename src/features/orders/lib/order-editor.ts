@@ -106,6 +106,74 @@ export function recalcOrderItem(i: OrderItem): OrderItem {
   return { ...i, customization_total: custTotal, line_total: line };
 }
 
+type NumberLike = number | string | null | undefined;
+const toNumber = (value: NumberLike) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+};
+
+/** What a catalog variant needs to become an order line. */
+export type VariantForOrderLine = {
+  id: string;
+  product_id: string | null;
+  size?: string | null;
+  color?: string | null;
+  fabric?: string | null;
+  option_four?: string | null;
+  option_five?: string | null;
+  selling_price?: NumberLike;
+  cost_price?: NumberLike;
+  original_price?: NumberLike;
+};
+type AxisForOrderLine = { label: string; visible: boolean };
+
+/**
+ * The variant's part of an order line, the same whichever way it was added
+ * (catalog search, barcode scan or the line's variant picker, bug #11): the
+ * product name and each visible option on its own line, the variant's price
+ * and cost, its sale (original) price when it has one, and the options the
+ * order keeps.
+ */
+export function orderLineFromVariant(
+  variant: VariantForOrderLine,
+  product: { id: string; name?: string | null; base_price?: NumberLike } | null | undefined,
+  axes: Record<"size" | "color" | "fabric" | "four" | "five", AxisForOrderLine>,
+): Pick<
+  OrderItem,
+  | "product_id"
+  | "variant_id"
+  | "description"
+  | "unit_price"
+  | "unit_cost"
+  | "original_price"
+  | "selected_variant"
+> {
+  const options: Array<[AxisForOrderLine, string | null | undefined]> = [
+    [axes.size, variant.size],
+    [axes.color, variant.color],
+    [axes.fabric, variant.fabric],
+    [axes.four, variant.option_four],
+    [axes.five, variant.option_five],
+  ];
+  const lines = [product?.name || "Product"];
+  for (const [axis, value] of options) {
+    if (value && axis.visible) lines.push(`${axis.label}: ${value}`);
+  }
+  return {
+    product_id: product?.id ?? variant.product_id,
+    variant_id: variant.id,
+    description: lines.join("\n"),
+    unit_price: toNumber(variant.selling_price ?? product?.base_price),
+    unit_cost: variant.cost_price == null ? null : toNumber(variant.cost_price),
+    original_price: variant.original_price == null ? null : toNumber(variant.original_price),
+    selected_variant: {
+      size: variant.size || null,
+      color: variant.color || null,
+      fabric: variant.fabric || null,
+    },
+  };
+}
+
 /**
  * The unsaved order shown at `/orders/new`: the store's first enabled
  * fulfillment method, its flat delivery fee and default tax rate.

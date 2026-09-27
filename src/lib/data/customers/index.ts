@@ -129,15 +129,19 @@ export async function fetchCustomersForExport(brandId: string) {
   return data ?? [];
 }
 
-/** Up to six customers whose name, phone or email contains `query` (command palette). */
-export async function searchCustomers(brandId: string, query: string) {
-  const term = `%${query}%`;
+/**
+ * Up to `limit` customers whose name, phone or email contains `query` (the
+ * command palette, pickers). Commas and brackets would end PostgREST's `or`
+ * list, so they are searched as spaces.
+ */
+export async function searchCustomers(brandId: string, query: string, limit = 6) {
+  const term = `%${query.replace(/[,()]/g, " ").trim()}%`;
   const { data } = await supabase
     .from("customers")
     .select("id, name, phone, email")
     .eq("brand_id", brandId)
     .or(`name.ilike.${term},phone.ilike.${term},email.ilike.${term}`)
-    .limit(6);
+    .limit(limit);
   return data ?? [];
 }
 
@@ -177,6 +181,13 @@ export const customersQueries = {
       queryKey: customersKeys.customerAddresses(brandId, customerId),
       queryFn: () => fetchCustomerAddresses(brandId, customerId),
       enabled: Boolean(brandId && customerId),
+    }),
+  search: (brandId: string, query: string, limit: number) =>
+    queryOptions({
+      queryKey: customersKeys.search(brandId, query, limit),
+      queryFn: () => searchCustomers(brandId, query, limit),
+      enabled: Boolean(brandId && query.trim()),
+      ...CUSTOMERS_CACHE,
     }),
   directory: (brandId: string, limit: number) =>
     queryOptions({

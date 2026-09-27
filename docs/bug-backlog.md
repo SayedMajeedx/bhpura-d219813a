@@ -10,15 +10,6 @@ Line numbers are as of 2026-09-24 and may drift; search for the quoted code.
 
 ## Orders (`src/routes/_authenticated/admin.b.$slug.orders.$id.tsx`, `src/features/orders/`)
 
-### 11. The three "add item" paths build lines differently
-
-- **Where**: the order editor's `handleSelectVariantFromModal` (search), `handleScanned` (barcode) and `pickVariant` (variant picker).
-- **Problem**:
-  - The search path sets `original_price` to the selling price. The other two use the variant's `original_price`, so a sale item added by search looks undiscounted. This may affect the promo rule `NO_ELIGIBLE_ITEMS` and the sale display on invoices.
-  - The search path joins the description with `" — "`; the other two use newlines.
-  - The search path sets no `custom_field_values`.
-- **Fix**: one pure `orderItemFromVariant(variant, product, axes)` in `src/features/orders/lib/order-editor.ts`, used by all three, with tests. Agree the `original_price` rule with the owner first.
-
 ### 14. Courier "delivered" writes twice, and its fallback cannot write
 
 - **Where**: `src/components/orders/CourierOrderView.tsx`, `updateStatus("delivered")`.
@@ -34,13 +25,6 @@ Found while moving customers into `src/lib/data/customers`. (The order editor's 
 - **Where**: `setDefaultCustomerAddress` (used by the customers list's address editor, `src/components/customer-address-manager.tsx` and the storefront account page `src/routes/$slug.account.tsx`): clearing the old default ignores its error. The account page's "add address as default" does the same (`clearDefaultCustomerAddress(...).catch(() => undefined)`).
 - **Effect**: if clearing fails and setting succeeds, the customer has two default addresses, and screens that take "the default" pick either one.
 - **Fix**: clear and set in one transaction (RPC), with #21 and #20.
-
-### 18. The loyalty adjustment dialog offers only the first 100 customers
-
-- **Where**: `src/components/loyalty/LoyaltyManualAdjustmentDialog.tsx`: `customersQueries.directory(brandId, 100)` (before: `.order("name").limit(100)`).
-- **Problem**: the customer selector is a plain list of the first 100 customers by name, with no search. The placeholder says "search or choose".
-- **Effect**: in a brand with more than 100 customers, points cannot be awarded or deducted by hand for anyone past the 100th name.
-- **Fix**: a searchable picker (`searchCustomers` already exists in `@/lib/data/customers`), or the push centre's 1000 limit as a stopgap.
 
 ## Messages (`src/lib/data/message-templates`)
 
