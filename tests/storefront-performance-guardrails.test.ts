@@ -126,4 +126,34 @@ describe("storefront performance guardrails", () => {
       readdirSync(resolve(process.cwd(), "public/fonts/variable")).some((f) => f.endsWith(".ttf")),
     ).toBe(false);
   });
+
+  it("keeps the banner parallax on editorial and category banners only", () => {
+    // Motion on the hero, cards or grids would run on every product image.
+    const users: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const full = `${dir}/${entry.name}`;
+        if (full.endsWith("secondary-banner-parallax.tsx")) continue; // the component itself
+        if (entry.isDirectory()) walk(full);
+        else if (/\.tsx$/.test(entry.name) && read(full).includes("<SecondaryBannerParallax")) {
+          users.push(full);
+        }
+      }
+    };
+    walk("src");
+    expect(users.sort()).toEqual([
+      "src/features/storefront-home/components/MerchandisingSection.tsx",
+      "src/routes/$slug.$category.tsx",
+    ]);
+  });
+
+  it("gives the banner parallax a CSS scroll-timeline fallback that honours reduced motion", () => {
+    const styles = read("src/styles.css");
+    expect(styles).toContain("animation-timeline: view(block)");
+    expect(styles).toContain("animation-duration: auto");
+    expect(styles).toContain("animation-range-start: entry 0%");
+    expect(styles).toContain("animation-range-end: exit 100%");
+    expect(styles).toContain("translate3d(0, -3rem, 0)");
+    expect(styles).toContain("prefers-reduced-motion: reduce");
+  });
 });

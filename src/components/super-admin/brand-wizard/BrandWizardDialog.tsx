@@ -22,6 +22,7 @@ import { StepIdentity } from "./StepIdentity";
 import { StepPalette } from "./StepPalette";
 import { StepAdminPlan } from "./StepAdminPlan";
 import { StepReview } from "./StepReview";
+import { ownerStepError, provisionPayloadFrom } from "./wizard-rules";
 
 import {
   Sparkles,
@@ -152,20 +153,9 @@ export function BrandWizardDialog({ onSaved, onClose }: BrandWizardDialogProps) 
     }
 
     if (step === "admin") {
-      if (!data.owner_name.trim()) {
-        toast.error(isAr ? "يرجى كتابة اسم مدير البراند" : "Owner name is required");
-        return false;
-      }
-      if (!data.owner_email.trim() || !data.owner_email.includes("@")) {
-        toast.error(isAr ? "يرجى كتابة بريد إلكتروني صالح" : "Valid owner email is required");
-        return false;
-      }
-      if (data.owner_password && data.owner_password.length < 8) {
-        toast.error(
-          isAr
-            ? "كلمة المرور يجب أن تتكون من 8 خانات على الأقل"
-            : "Password must be at least 8 characters",
-        );
+      const error = ownerStepError(data, isAr);
+      if (error) {
+        toast.error(error);
         return false;
       }
       return true;
@@ -201,36 +191,7 @@ export function BrandWizardDialog({ onSaved, onClose }: BrandWizardDialogProps) 
     if (!brandId) {
       updatePipelineStep("provision", "running");
       try {
-        const template = getBrandTemplate(data.store_vertical);
-        const result = await provisionBrandWithOwner({
-          slug: data.slug.trim().toLowerCase(),
-          name_en: data.name_en.trim(),
-          name_ar: data.name_ar.trim() || null,
-          owner_name: data.owner_name.trim(),
-          owner_email: data.owner_email.trim(),
-          owner_phone: data.owner_phone.trim() || null,
-          owner_password: data.owner_password || undefined,
-          plan_type: data.plan_type,
-          business_type: template.label.en,
-          store_vertical: data.store_vertical,
-          storefront_accent_color: data.accentColor,
-          storefront_background_color: data.backgroundColor,
-          brand_palette: data.palette || {
-            primary: data.accentColor,
-            secondary: data.secondaryColor,
-            text: data.textColor,
-            background: data.backgroundColor,
-          },
-          storefront_font_ar: data.fontPreset.fontAr,
-          storefront_font_en: data.fontPreset.fontEn,
-          storefront_radius: data.radius,
-          template_defaults: {
-            fulfillment: template.fulfillment,
-            storefront_mode: template.storefrontMode,
-            catalog_show_prices: template.catalogShowPrices,
-            trust_badges: template.trustBadges,
-          },
-        });
+        const result = await provisionBrandWithOwner(provisionPayloadFrom(data));
 
         brandId = result.brand_id;
         setCreatedBrandId(brandId);

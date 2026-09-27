@@ -115,15 +115,17 @@ Measured with `node scripts/maintainability-metrics.mjs`:
 
 ## 4. What to do next (in order)
 
-### 4.1 Phase 6: behaviour tests (next)
+### 4.1 Phase 6: behaviour tests (done)
 
-Per `docs/maintainability-roadmap.md`. The classification and method are in
-`docs/behaviour-tests.md` (see its table for what is left to convert);
-convert a few files per PR. Keep the architecture guards (ratchet, lint-rule and import-boundary
-checks); convert feature assertions that read source text into behaviour
-tests against the data-layer functions (the `tests/*-data-layer.test.ts` files
-show the fake-client pattern) or rendered components. Lower
-`readFileSyncTestFiles` as each file converts.
+Every feature assertion that read source text now runs the code (PRs #111–#125;
+`docs/behaviour-tests.md` has the method and the final classification).
+What still reads files is deliberate: architecture guards (ratchet, lint-rule,
+import-boundary and asset checks) and database contracts on SQL migrations or
+Deno edge functions, which stay until there is a database test harness.
+Shared test helpers: `tests/helpers/server-fn.ts` (run server functions and
+middleware against a fake Supabase client) and `tests/helpers/brands-page.tsx`
+(render the super admin's brands page). CI has no Supabase environment: mock
+`@/integrations/supabase/client` in render tests that build real providers.
 
 ### 4.2 Bugs waiting on the owner
 
@@ -148,9 +150,9 @@ split `src/features/settings/registry.ts` or `src/lib/addons/addon-showcase-data
 (data). Candidates when touched: `admin.b.$slug.content-studio.tsx` (most
 edited), `$slug.account.tsx` (customer-facing, no browser test yet).
 
-### 4.5 Phase 7
+### 4.5 Phase 7 (next)
 
-After Phase 6: the PR template and final docs (`docs/maintainability-roadmap.md`).
+The PR template and final docs (`docs/maintainability-roadmap.md`).
 
 ### 4.6 Bug backlog
 
