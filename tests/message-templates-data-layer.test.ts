@@ -8,7 +8,7 @@ vi.stubGlobal("fetch", () => {
 
 type Request = {
   table: string;
-  op: "select" | "insert" | "update" | "delete";
+  op: "select" | "insert" | "update" | "delete" | "rpc";
   payload?: unknown;
   select?: string;
   filters: Array<[string, ...unknown[]]>;
@@ -47,7 +47,16 @@ function builder(table: string) {
   return chain;
 }
 
-const client = { supabase: { from: (table: string) => builder(table) } };
+const client = {
+  supabase: {
+    from: (table: string) => builder(table),
+    rpc: (fn: string, args: unknown) => {
+      const request: Request = { table: fn, op: "rpc", payload: args, filters: [] };
+      requests.push(request);
+      return Promise.resolve(respond(request));
+    },
+  },
+};
 vi.mock("../src/integrations/supabase/client", () => client);
 vi.mock("@/integrations/supabase/client", () => client);
 
@@ -123,14 +132,16 @@ describe("writes", () => {
     }
   });
 
-  it("clear the default within the brand only, not across the user's brands", async () => {
-    await templates.clearDefaultMessageTemplate("b1");
-    expect(requests[0]).toMatchObject({ op: "update", payload: { is_default: false } });
-    expect(filters(requests[0], "eq")).toEqual([
-      ["brand_id", "b1"],
-      ["is_default", true],
-    ]);
-    expect(filters(requests[0], "eq").some(([column]) => column === "user_id")).toBe(false);
+  it("make a template the brand's default in one call that clears the old one (bug #21)", async () => {
+    await templates.setDefaultMessageTemplate("b1", "t1");
+    expect(requests[0]).toMatchObject({
+      table: "set_default_message_template",
+      op: "rpc",
+      payload: { p_brand_id: "b1", p_template_id: "t1" },
+    });
+    const denied = { message: "denied" };
+    respond = () => ({ error: denied });
+    await expect(templates.setDefaultMessageTemplate("b1", "t1")).rejects.toBe(denied);
   });
 
   it("throw on error", async () => {

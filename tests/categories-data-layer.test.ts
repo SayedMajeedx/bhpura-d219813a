@@ -172,17 +172,15 @@ describe("writes", () => {
     await expect(categories.updateCategory("b1", "c1", {})).rejects.toBe(denied);
   });
 
-  it("write menu positions within the brand, ignoring errors as before (bug backlog #20)", async () => {
+  it("rewrite the brand's category order in one call and report a failure (bug #20)", async () => {
+    await categories.reorderCategories("b1", ["c2", "c1"]);
+    expect(requests[0]).toMatchObject({
+      table: "reorder_categories",
+      op: "rpc",
+      payload: { p_brand_id: "b1", p_category_ids: ["c2", "c1"] },
+    });
     respond = () => ({ error: denied });
-    await categories.setCategorySortOrders("b1", [
-      { id: "c1", sort_order: 2 },
-      { id: "c2", sort_order: 1 },
-    ]);
-    expect(requests.map((r) => r.payload)).toEqual([{ sort_order: 2 }, { sort_order: 1 }]);
-    expect(filters(requests[0], "eq")).toEqual([
-      ["id", "c1"],
-      ["brand_id", "b1"],
-    ]);
+    await expect(categories.reorderCategories("b1", ["c2", "c1"])).rejects.toBe(denied);
   });
 
   it("report whether a delete removed or deactivated the category", async () => {

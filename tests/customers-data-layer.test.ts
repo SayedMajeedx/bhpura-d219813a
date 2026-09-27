@@ -190,19 +190,19 @@ describe("saved-address writes", () => {
     }
   });
 
-  it("clear the old default before setting the new one, ignoring a failed clear (bug backlog #17)", async () => {
-    respond = (request) =>
-      (request.payload as { is_default: boolean }).is_default ? { error: null } : { error: denied };
+  it("set the default in one call that also clears the old one (bug #17)", async () => {
     await customers.setDefaultCustomerAddress("b1", "c1", "a2");
-    expect(requests.map((r) => r.payload)).toEqual([{ is_default: false }, { is_default: true }]);
-    expect(filters(requests[0], "eq")).toEqual([
-      ["customer_id", "c1"],
-      ["brand_id", "b1"],
+    expect(requests).toEqual([
+      {
+        table: "set_default_customer_address",
+        op: "rpc",
+        payload: { p_brand_id: "b1", p_customer_id: "c1", p_address_id: "a2" },
+        filters: [],
+      },
     ]);
-    expect(filters(requests[1], "eq")[0]).toEqual(["id", "a2"]);
   });
 
-  it("fail when the new default cannot be set", async () => {
+  it("fail when the default cannot be set", async () => {
     respond = () => ({ error: denied });
     await expect(customers.setDefaultCustomerAddress("b1", "c1", "a2")).rejects.toBe(denied);
   });
@@ -330,17 +330,6 @@ describe("the shopper's own records", () => {
   it("do not run the profile query before the shopper is signed in", () => {
     expect(customers.ownCustomerQueries.profile("b1", undefined).enabled).toBe(false);
     expect(customers.ownCustomerQueries.addresses("b1", undefined).enabled).toBe(false);
-  });
-
-  it("clear the default flag within the brand and report a failure", async () => {
-    await customers.clearDefaultCustomerAddress("b1", "c1");
-    expect(requests[0].payload).toEqual({ is_default: false });
-    expect(filters(requests[0], "eq")).toEqual([
-      ["customer_id", "c1"],
-      ["brand_id", "b1"],
-    ]);
-    respond = () => ({ error: denied });
-    await expect(customers.clearDefaultCustomerAddress("b1", "c1")).rejects.toBe(denied);
   });
 });
 

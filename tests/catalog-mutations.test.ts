@@ -247,42 +247,27 @@ describe("packaging BOM", () => {
     expect(requests.map((r) => r.op)).toEqual(["update", "delete"]);
   });
 
-  it("applies one BOM to every product of the brand", async () => {
-    respond = (request) =>
-      request.op === "select"
-        ? { data: [{ id: "p1" }, { id: "p2" }], error: null }
-        : { error: null };
+  it("applies one BOM to every product of the brand in one call (bug #16)", async () => {
+    respond = () => ({ data: 2, error: null });
     expect(await catalog.applyBomToAllProducts("b1", 0.1, lines)).toBe(2);
-    expect(requests.map((r) => [r.table, r.op])).toEqual([
-      ["products", "select"],
-      ["products", "update"],
-      ["product_bom_items", "delete"],
-      ["product_bom_items", "insert"],
-    ]);
-    for (const request of requests.slice(0, 3)) {
-      expect(filters(request, "eq")).toEqual([["brand_id", "b1"]]);
-    }
-    expect(requests[3].payload).toEqual([
-      { brand_id: "b1", product_id: "p1", packaging_material_id: "m1", quantity_per_unit: 2 },
-      { brand_id: "b1", product_id: "p2", packaging_material_id: "m1", quantity_per_unit: 2 },
+    expect(requests).toEqual([
+      {
+        table: "apply_bom_to_all_products",
+        op: "rpc",
+        payload: {
+          p_brand_id: "b1",
+          p_direct_packaging_cost: 0.1,
+          p_lines: [{ packaging_material_id: "m1", quantity_per_unit: 2 }],
+        },
+        filters: [],
+      },
     ]);
   });
 
-  it("writes nothing when the brand has no products", async () => {
-    respond = () => ({ data: [], error: null });
-    expect(await catalog.applyBomToAllProducts("b1", 0.1, lines)).toBe(0);
+  it("reports a failed apply-to-all instead of half applying it", async () => {
+    respond = () => ({ data: null, error: denied });
+    await expect(catalog.applyBomToAllProducts("b1", 0.1, lines)).rejects.toBe(denied);
     expect(requests).toHaveLength(1);
-  });
-
-  it("keeps ignoring cost-update and delete errors when applying to all (bug backlog #16)", async () => {
-    respond = (request) =>
-      request.op === "select"
-        ? { data: [{ id: "p1" }], error: null }
-        : request.op === "insert"
-          ? { error: null }
-          : { error: denied };
-    expect(await catalog.applyBomToAllProducts("b1", 0.1, lines)).toBe(1);
-    expect(requests.map((r) => r.op)).toContain("insert");
   });
 });
 

@@ -3,11 +3,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
 import {
-  clearDefaultMessageTemplate,
   createMessageTemplate,
   deleteMessageTemplate,
   invalidateMessageTemplates,
   messageTemplatesQueries,
+  setDefaultMessageTemplate,
   updateMessageTemplate,
 } from "@/lib/data/message-templates";
 import { getFriendlyErrorMessage } from "@/lib/utils";
@@ -131,15 +131,25 @@ export function ManageTemplatesDialog({
       channel: editing.channel ?? "both",
       subject: editing.subject ?? null,
       body: editing.body!,
-      is_default: !!editing.is_default,
     };
-    if (payload.is_default) {
-      await clearDefaultMessageTemplate(brandId);
-    }
+    // Becoming the default goes through set_default_message_template, which
+    // clears the old default in the same transaction (bug #21).
+    const makeDefault = !!editing.is_default;
+    let id = editing.id;
     try {
-      if (editing.id) await updateMessageTemplate(brandId, editing.id, payload);
-      else await createMessageTemplate(brandId, payload);
+      if (id) {
+        await updateMessageTemplate(
+          brandId,
+          id,
+          makeDefault ? payload : { ...payload, is_default: false },
+        );
+      } else {
+        id = await createMessageTemplate(brandId, { ...payload, is_default: false });
+      }
+      if (makeDefault) await setDefaultMessageTemplate(brandId, id);
     } catch (error) {
+      // A template created before the failure is edited, not created again, on retry.
+      if (id && !editing.id) setEditing({ ...editing, id });
       return toast.error(getFriendlyErrorMessage(error));
     }
     toast.success(lang === "ar" ? "تم الحفظ" : "Saved");

@@ -109,13 +109,13 @@ export async function deleteMessageTemplate(brandId: string, templateId: string)
 }
 
 /**
- * Clears the default flag on the brand's templates, before another becomes
- * the default. Its error is ignored, as the dialog always did.
+ * Makes one template the brand's default: the old default is cleared in the
+ * same transaction, so a failure changes nothing (bug #21).
  */
-export async function clearDefaultMessageTemplate(brandId: string) {
-  await supabase
-    .from("message_templates")
-    .update({ is_default: false })
-    .eq("brand_id", brandId)
-    .eq("is_default", true);
+export async function setDefaultMessageTemplate(brandId: string, templateId: string) {
+  const { error } = await supabase.rpc("set_default_message_template", {
+    p_brand_id: brandId,
+    p_template_id: templateId,
+  });
+  if (error) throw error;
 }

@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useStorefront, formatPrice, useStoreModules } from "@/lib/storefront-context";
 import { cn, getFriendlyErrorMessage } from "@/lib/utils";
 import {
-  clearDefaultCustomerAddress,
   createCustomerAddress,
   customersKeys,
   deleteCustomerAddress,
@@ -1168,11 +1167,7 @@ function AddressesSection({
     }
     setSaving(true);
     try {
-      if (form.is_default) {
-        // Best-effort, its error is ignored as before (bug backlog #17).
-        await clearDefaultCustomerAddress(customer.brand_id, customer.id).catch(() => undefined);
-      }
-      await createCustomerAddress(customer.brand_id, {
+      const addressId = await createCustomerAddress(customer.brand_id, {
         customer_id: customer.id,
         user_id: customer.user_id,
         label: form.label.trim() || null,
@@ -1184,17 +1179,20 @@ function AddressesSection({
         floor: form.floor.trim() || null,
         landmark: form.landmark.trim() || null,
         delivery_notes: form.delivery_notes.trim() || null,
-        is_default: form.is_default,
+        is_default: false,
       });
+      // The old default is cleared in the same transaction (bug #17).
+      if (form.is_default)
+        await setDefaultCustomerAddress(customer.brand_id, customer.id, addressId);
     } catch (error) {
       return toast.error(getFriendlyErrorMessage(error));
     } finally {
       setSaving(false);
+      refreshAddresses();
     }
     toast.success(t("تم إضافة العنوان بنجاح", "Address added successfully"));
     setForm(emptyAddress());
     setAdding(false);
-    refreshAddresses();
   };
 
   const refreshAddresses = () =>

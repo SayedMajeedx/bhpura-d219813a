@@ -8,11 +8,12 @@ import {
   createCategory,
   deleteCategory,
   invalidateCategories,
-  setCategorySortOrders,
+  reorderCategories,
   updateCategory,
   type CategoryWithCounts,
 } from "@/lib/data/categories";
 import { getFriendlyErrorMessage } from "@/lib/utils";
+import { moveCategory } from "@/lib/category-order";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,25 +74,17 @@ function CategoriesPage() {
   const { data, isLoading } = useQuery(categoriesQueries.overview(brandId));
 
   const move = async (c: Category, dir: -1 | 1) => {
-    const list = data ?? [];
-    const index = list.findIndex((x) => x.id === c.id);
-    const targetIndex = index + dir;
-    if (index === -1 || targetIndex < 0 || targetIndex >= list.length) return;
-
-    const targetCat = list[targetIndex];
-    if (targetCat.sort_order === c.sort_order) {
-      const reordered = [...list];
-      reordered.splice(index, 1);
-      reordered.splice(targetIndex, 0, c);
-      await setCategorySortOrders(
-        brandId,
-        reordered.map((cat, idx) => ({ id: cat.id, sort_order: idx + 1 })),
-      );
-    } else {
-      await setCategorySortOrders(brandId, [
-        { id: c.id, sort_order: targetCat.sort_order },
-        { id: targetCat.id, sort_order: c.sort_order },
-      ]);
+    const order = moveCategory(
+      (data ?? []).map((cat) => cat.id),
+      c.id,
+      dir,
+    );
+    if (!order) return;
+    // The whole order is rewritten 1, 2, 3... in one transaction (bug #20).
+    try {
+      await reorderCategories(brandId, order);
+    } catch (error) {
+      toast.error(getFriendlyErrorMessage(error));
     }
     void invalidateCategories(qc, brandId);
   };
