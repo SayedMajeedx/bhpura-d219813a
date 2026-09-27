@@ -42,29 +42,29 @@ green then continue with X") and expect a short report after each step.
 
 Measured with `node scripts/maintainability-metrics.mjs`:
 
-| Metric                                | Roadmap start (09-24) | Now                                                                                                                        |
-| ------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Files over 1000 lines                 | 31                    | 23                                                                                                                         |
-| `as any`                              | 990                   | 593                                                                                                                        |
-| `: any`                               | 784                   | 721                                                                                                                        |
-| `as never`                            | 40                    | 0                                                                                                                          |
-| Direct Supabase calls in screens      | 393                   | 25 (metric re-based 09-25 to count cast-wrapped calls: 200 then); all server routes, one realtime subscription and bug #27 |
-| Test files using `readFileSync`       | 71                    | 43: SQL/edge-function contracts and architecture guards only                                                               |
-| Tests                                 | 1078                  | 1599                                                                                                                       |
-| Migration drift (local vs production) | 32 / 23 one-sided     | 0 (263 versions)                                                                                                           |
+| Metric                                | Roadmap start (09-24) | Now                                                                                                               |
+| ------------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Files over 1000 lines                 | 31                    | 23                                                                                                                |
+| `as any`                              | 990                   | 592                                                                                                               |
+| `: any`                               | 784                   | 721                                                                                                               |
+| `as never`                            | 40                    | 0                                                                                                                 |
+| Direct Supabase calls in screens      | 393                   | 24 (metric re-based 09-25 to count cast-wrapped calls: 200 then); all server routes and one realtime subscription |
+| Test files using `readFileSync`       | 71                    | 43: SQL/edge-function contracts and architecture guards only                                                      |
+| Tests                                 | 1078                  | 1599                                                                                                              |
+| Migration drift (local vs production) | 32 / 23 one-sided     | 0 (263 versions)                                                                                                  |
 
 ### Phases
 
-| Phase               | Status                                                                                                                                                                                                                                                                                                                |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0 Ratchets          | Done (`tests/maintainability-ratchet.test.ts`).                                                                                                                                                                                                                                                                       |
-| 1 Entry docs        | Done (`AGENTS.md`, `README.md`, `docs/README.md`).                                                                                                                                                                                                                                                                    |
-| 2 Migrations        | Done: zero drift, CI job "Supabase Linked Migration Drift Check".                                                                                                                                                                                                                                                     |
-| 3 Honest types      | Types regenerated from production (#35), `as never` = 0. `any` reduction continues alongside Phase 4.                                                                                                                                                                                                                 |
-| 4 Data layer        | **Done for screens** (#63–#107): every route, component and feature reads and writes through `src/lib/data/*` or `src/lib/auth/*`, with ESLint guards per domain. Left direct on purpose: server routes (`api.*`, the manifest route), the order editor's realtime subscription, the rotation audit insert (bug #27). |
-| 5 Split giant files | Big splits done: inventory, order editor, orders list, product page, checkout, dashboard, storefront home, storefront shell. Remaining files: split-on-touch policy (section 4.4).                                                                                                                                    |
-| 6 Behaviour tests   | Done (#111–#125): no feature test reads source; see `docs/behaviour-tests.md`.                                                                                                                                                                                                                                        |
-| 7 Keep it clean     | Done: `.github/pull_request_template.md`, final numbers in `docs/maintainability.md`, roadmap archived.                                                                                                                                                                                                               |
+| Phase               | Status                                                                                                                                                                                                                                                                              |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0 Ratchets          | Done (`tests/maintainability-ratchet.test.ts`).                                                                                                                                                                                                                                     |
+| 1 Entry docs        | Done (`AGENTS.md`, `README.md`, `docs/README.md`).                                                                                                                                                                                                                                  |
+| 2 Migrations        | Done: zero drift, CI job "Supabase Linked Migration Drift Check".                                                                                                                                                                                                                   |
+| 3 Honest types      | Types regenerated from production (#35), `as never` = 0. `any` reduction continues alongside Phase 4.                                                                                                                                                                               |
+| 4 Data layer        | **Done for screens** (#63–#107): every route, component and feature reads and writes through `src/lib/data/*` or `src/lib/auth/*`, with ESLint guards per domain. Left direct on purpose: server routes (`api.*`, the manifest route) and the order editor's realtime subscription. |
+| 5 Split giant files | Big splits done: inventory, order editor, orders list, product page, checkout, dashboard, storefront home, storefront shell. Remaining files: split-on-touch policy (section 4.4).                                                                                                  |
+| 6 Behaviour tests   | Done (#111–#125): no feature test reads source; see `docs/behaviour-tests.md`.                                                                                                                                                                                                      |
+| 7 Keep it clean     | Done: `.github/pull_request_template.md`, final numbers in `docs/maintainability.md`, roadmap archived.                                                                                                                                                                             |
 
 ### Merged PRs of this effort (for context; read their descriptions on GitHub)
 
@@ -133,8 +133,8 @@ middleware against a fake Supabase client) and `tests/helpers/brands-page.tsx`
 ### 4.2 Bugs waiting on the owner
 
 In `docs/bug-backlog.md`. Some need a product decision or a migration the owner
-applies: #25 (nothing creates the cash accounts or credits the cash box), #27
-(key rotations are never audit-logged). The rest are older refactor finds (#2–#21).
+applies: #25 (nothing creates the cash accounts or credits the cash box). #27 is fixed
+(key rotations are audit-logged by `save_integration_credential`). The rest are older refactor finds (#2–#21).
 
 ### 4.3 `any` reduction
 

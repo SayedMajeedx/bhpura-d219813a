@@ -78,16 +78,16 @@ npm run check
 
 Measured on `main` after Phase 7. The budgets in `tests/maintainability-ratchet.test.ts` sit at these values.
 
-| Metric                    | Baseline (09-24) | Now (09-27) | What changed                                                                                                   |
-| :------------------------ | :--------------: | :---------: | :------------------------------------------------------------------------------------------------------------- |
-| `as any`                  |       990        |     593     | Typed data layer, typed rows and props (Phases 3–4).                                                           |
-| `: any`                   |       785        |     721     | Same; most remaining are `catch (e: any)` and local shapes.                                                    |
-| `as never`                |        40        |      0      | Types regenerated from production (Phase 3).                                                                   |
-| `eslint-disable`          |        10        |     10      | Unchanged (frozen).                                                                                            |
-| Direct Supabase calls     |   392 (406\*)    |     25      | Screens read and write through `src/lib/data/*` (Phase 4); left: server routes, one realtime channel, bug #27. |
-| `readFileSync` test files |        71        |     43      | Feature tests run the code (Phase 6); left: SQL / edge-function contracts and architecture guards.             |
-| Files over 1,000 lines    |        31        |     23      | Big screens split into `src/features/*` (Phase 5); the rest split when touched.                                |
-| Tests                     |      1,078       |    1,599    |                                                                                                                |
+| Metric                    | Baseline (09-24) | Now (09-27) | What changed                                                                                             |
+| :------------------------ | :--------------: | :---------: | :------------------------------------------------------------------------------------------------------- |
+| `as any`                  |       990        |     592     | Typed data layer, typed rows and props (Phases 3–4).                                                     |
+| `: any`                   |       785        |     721     | Same; most remaining are `catch (e: any)` and local shapes.                                              |
+| `as never`                |        40        |      0      | Types regenerated from production (Phase 3).                                                             |
+| `eslint-disable`          |        10        |     10      | Unchanged (frozen).                                                                                      |
+| Direct Supabase calls     |   392 (406\*)    |     24      | Screens read and write through `src/lib/data/*` (Phase 4); left: server routes and one realtime channel. |
+| `readFileSync` test files |        71        |     43      | Feature tests run the code (Phase 6); left: SQL / edge-function contracts and architecture guards.       |
+| Files over 1,000 lines    |        31        |     23      | Big screens split into `src/features/*` (Phase 5); the rest split when touched.                          |
+| Tests                     |      1,078       |    1,599    |                                                                                                          |
 
 \* The call pattern was corrected on 2026-09-25 to count cast-wrapped calls (section 4).
 

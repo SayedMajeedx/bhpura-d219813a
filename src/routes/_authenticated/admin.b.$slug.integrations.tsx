@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -1008,7 +1007,7 @@ function RotateKeyDialog({
 }) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
-  const { profile: currentUser, isAdmin, isSuperAdmin, isBrandAdmin } = useProfile();
+  const { isAdmin, isSuperAdmin, isBrandAdmin } = useProfile();
   const canRotate = isSuperAdmin || isAdmin || isBrandAdmin;
 
   const [newApiKey, setNewApiKey] = useState("");
@@ -1062,22 +1061,7 @@ function RotateKeyDialog({
         notes: row.notes,
       });
 
-      // Never recorded: wrong columns, and only super admins may insert (bug backlog #27).
-      try {
-        await (supabase as any).from("saas_audit_logs").insert({
-          brand_id: brandId,
-          actor_user_id: currentUser?.id,
-          action: "INTEGRATION_KEY_ROTATED",
-          details: {
-            provider: row.provider,
-            integration_id: row.id,
-            rotated_at: new Date().toISOString(),
-          },
-        });
-      } catch {
-        // Fallback silently if saas_audit_logs table has RLS
-      }
-
+      // save_integration_credential records the rotation in the audit log.
       toast.success(
         isAr
           ? "تم تدوير المفتاح وتحديث تاريخ التدوير بنجاح"
