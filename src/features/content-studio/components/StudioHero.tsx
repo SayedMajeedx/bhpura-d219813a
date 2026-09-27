@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { ContentStudio } from "@/features/content-studio/hooks/use-content-studio";
+import { TemplateExportActions } from "@/features/content-studio/components/TemplateExportActions";
 
 /** The page header: what the studio does, the caption copy and the export actions. */
 export function StudioHero({ studio }: { studio: ContentStudio }) {
@@ -24,6 +25,7 @@ export function StudioHero({ studio }: { studio: ContentStudio }) {
     brandNameEn,
     productsQ,
     isCurrentVideo,
+    activeTemplate,
     exporting,
     exportProgress,
     downloadOriginalVideo,
@@ -71,7 +73,9 @@ export function StudioHero({ studio }: { studio: ContentStudio }) {
             )}
             <span>{isAr ? "نسخ كابشن انستقرام" : "Copy Instagram Caption"}</span>
           </Button>
-          {isCurrentVideo ? (
+          {activeTemplate ? (
+            <TemplateExportActions studio={studio} />
+          ) : isCurrentVideo ? (
             <div className="flex items-center shadow-2xs">
               <Button
                 onClick={exportCreative}

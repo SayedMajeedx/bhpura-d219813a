@@ -14,7 +14,18 @@ const exporting = vi.hoisted(() => ({
     toBlob: (done: (blob: Blob) => void) => done(new Blob(["png"], { type: "image/png" })),
   })),
   deliverCreativeFile: vi.fn(async () => "downloaded" as const),
+  exportTemplateMp4: vi.fn(async () => new Blob(["mp4"], { type: "video/mp4" })),
+  exportTemplatePng: vi.fn(async () => new Blob(["png"], { type: "image/png" })),
 }));
+// The engine's exporters (WebCodecs is not in jsdom; tested in the engine suite).
+const engineExport = async (importOriginal: () => Promise<object>) => ({
+  ...(await importOriginal()),
+  canExportMp4: async () => true,
+  exportTemplateMp4: exporting.exportTemplateMp4,
+  exportTemplatePng: exporting.exportTemplatePng,
+});
+vi.mock("../src/features/content-studio/engine/export", (io) => engineExport(io));
+vi.mock("@/features/content-studio/engine/export", (io) => engineExport(io));
 vi.mock("html2canvas-pro", () => ({ default: exporting.html2canvas }));
 const creativeExport = async (importOriginal: () => Promise<object>) => ({
   ...(await importOriginal()),
@@ -153,6 +164,14 @@ beforeAll(() => {
 afterAll(() => {
   if (offsetWidth) Object.defineProperty(HTMLElement.prototype, "offsetWidth", offsetWidth);
 });
+// jsdom has no canvas: the preview simply draws nothing.
+const getContext = HTMLCanvasElement.prototype.getContext;
+beforeAll(() => {
+  HTMLCanvasElement.prototype.getContext = (() => null) as typeof getContext;
+});
+afterAll(() => {
+  HTMLCanvasElement.prototype.getContext = getContext;
+});
 const clipboard = { writeText: vi.fn(async () => undefined) };
 beforeEach(() => {
   vi.clearAllMocks();
@@ -245,6 +264,55 @@ describe("the content studio", () => {
     await waitFor(() => expect(screen.getByLabelText("Headline")).toHaveValue("Linen Kaftan"));
     expect(screen.getByLabelText("Body copy")).toHaveValue(
       "Quiet elegance, thoughtful details for every moment.",
+    );
+  });
+
+  it("keeps Classic as the default template", async () => {
+    await renderStudio();
+    expect(screen.getByRole("radio", { name: /Classic/ })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("radio", { name: /Atelier Reveal/ })).toHaveAttribute(
+      "aria-checked",
+      "false",
+    );
+  });
+
+  it("plays Atelier Reveal in an animated preview that can be paused and scrubbed", async () => {
+    await renderStudio();
+    fireEvent.click(screen.getByRole("radio", { name: /Atelier Reveal/ }));
+    expect(await screen.findByRole("img", { name: /Atelier Reveal/ })).toBeInTheDocument();
+    expect(screen.getByText(/1080 × 1920 px · 7 s/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Pause" }));
+    expect(screen.getByRole("button", { name: "Play" })).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("slider", { name: "Timeline" }), {
+      target: { value: "3.5" },
+    });
+    expect(screen.getByText("3.5 s")).toBeInTheDocument();
+  });
+
+  it("exports Atelier Reveal as an MP4 with the studio's copy, price and format", async () => {
+    await renderStudio();
+    fireEvent.click(screen.getByRole("radio", { name: /Atelier Reveal/ }));
+    const download = await screen.findByRole("button", { name: "Download Video (MP4)" });
+    await waitFor(() => expect(download).toBeEnabled());
+    fireEvent.click(download);
+    await waitFor(() => expect(exporting.deliverCreativeFile).toHaveBeenCalledTimes(1));
+    const [{ template, scene }] = exporting.exportTemplateMp4.mock.lastCall as unknown as [
+      { template: { id: string }; scene: Record<string, unknown> },
+    ];
+    expect(template.id).toBe("atelier-reveal");
+    expect(scene).toMatchObject({
+      width: 1080,
+      height: 1920,
+      format: "story",
+      lang: "en",
+      headline: "Silk Abaya",
+      price: "42.000 BHD",
+    });
+    expect(exporting.deliverCreativeFile).toHaveBeenCalledWith(
+      expect.any(Blob),
+      "pura-silk-abaya-story.mp4",
+      "video/mp4",
+      "Silk Abaya",
     );
   });
 });
