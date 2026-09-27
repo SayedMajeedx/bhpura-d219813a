@@ -1,5 +1,9 @@
 # Maintainability roadmap
 
+> **Completed 2026-09-27.** All phases (0–7) are done and this brief is archived.
+> Final numbers and the ratchet: [`docs/maintainability.md`](../maintainability.md);
+> what to do next: [`docs/agent-handoff.md`](../agent-handoff.md).
+
 A ready-to-use brief for any engineer or AI agent working on the codebase's
 structure. Hand it over as-is. The numbers were measured on 2026-09-24; re-measure
 before relying on them.
