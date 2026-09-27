@@ -11,6 +11,7 @@ import {
   promoFailureMessage,
   promoSignature,
   recalcOrderItem,
+  orderLineFromVariant,
 } from "../src/features/orders/lib/order-editor";
 
 const line = (overrides = {}) => ({
@@ -151,5 +152,70 @@ describe("text", () => {
       promoFailureMessage({ reason: "MINIMUM_NOT_MET", minimum_order_amount: 10 }, "en"),
     ).toMatch(/minimum purchase/);
     expect(promoFailureMessage(null, "ar")).toContain("تعذر تطبيق رمز الخصم");
+  });
+});
+
+describe("orderLineFromVariant", () => {
+  const axis = (label: string, visible = true) => ({ label, visible });
+  const axes = {
+    size: axis("Size"),
+    color: axis("Colour"),
+    fabric: axis("Fabric", false),
+    four: axis("Grind"),
+    five: axis("Five"),
+  };
+  const product = { id: "p1", name: "Abaya", base_price: 30 };
+
+  it("keeps a sale variant's original price, so a line added by search shows the discount (bug #11)", () => {
+    const line = orderLineFromVariant(
+      {
+        id: "v1",
+        product_id: "p1",
+        size: "M",
+        selling_price: 24,
+        original_price: 30,
+        cost_price: 9,
+      },
+      product,
+      axes,
+    );
+    expect(line).toMatchObject({
+      product_id: "p1",
+      variant_id: "v1",
+      unit_price: 24,
+      original_price: 30,
+      unit_cost: 9,
+      selected_variant: { size: "M", color: null, fabric: null },
+    });
+  });
+
+  it("names the product and each visible option on its own line", () => {
+    const line = orderLineFromVariant(
+      {
+        id: "v1",
+        product_id: "p1",
+        size: "M",
+        color: "Black",
+        fabric: "Crepe",
+        option_four: "Fine",
+      },
+      product,
+      axes,
+    );
+    expect(line.description.split("\n")).toEqual([
+      "Abaya",
+      "Size: M",
+      "Colour: Black",
+      "Grind: Fine",
+    ]);
+  });
+
+  it("falls back to the product's price, and leaves a missing cost and sale price empty", () => {
+    const line = orderLineFromVariant({ id: "v1", product_id: "p1" }, product, axes);
+    expect(line).toMatchObject({ unit_price: 30, unit_cost: null, original_price: null });
+    expect(orderLineFromVariant({ id: "v2", product_id: null }, null, axes)).toMatchObject({
+      description: "Product",
+      unit_price: 0,
+    });
   });
 });

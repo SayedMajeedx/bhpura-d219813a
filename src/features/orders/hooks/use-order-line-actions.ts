@@ -6,11 +6,27 @@ import type { OrderItem as Item } from "@/features/orders/types";
 import {
   blankOrderItem,
   filterVariantsForSearch,
+  orderLineFromVariant,
   recalcOrderItem,
 } from "@/features/orders/lib/order-editor";
 import type { Dispatch, SetStateAction } from "react";
 import type { OrderItem } from "@/features/orders/types";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
+
+/** A new line of quantity 1 for a variant's part of a line. */
+const newOrderLine = (
+  line: ReturnType<typeof orderLineFromVariant>,
+  location: OrderItem["location"],
+): OrderItem =>
+  recalcOrderItem({
+    ...line,
+    quantity: 1,
+    customizations: [],
+    customization_total: 0,
+    line_total: 0,
+    location,
+    custom_field_values: [],
+  });
 
 /** Adding and editing order lines: catalog search (with an out-of-stock check), barcode scan, variant pick, quantity/price edits and customizations. */
 export function useOrderLineActions({
@@ -35,6 +51,8 @@ export function useOrderLineActions({
     () => filterVariantsForSearch(variantsQ.data ?? [], productsQ.data ?? [], productSearchQuery),
     [productSearchQuery, variantsQ.data, productsQ.data],
   );
+  const axesFor = (product: Parameters<typeof resolveAllVariantAxes>[0]["product"]) =>
+    resolveAllVariantAxes({ product, addonDefaults, lang: lang === "ar" ? "ar" : "en" });
   const handleSelectVariantFromModal = (variant: any, force = false) => {
     const mainStock = Number(variant.stock_main ?? 0);
     const incStock = Number(variant.stock_incubator ?? 0);
@@ -48,51 +66,10 @@ export function useOrderLineActions({
 
     const p = (productsQ.data ?? []).find((x: any) => x.id === variant.product_id);
     const isAr = lang === "ar";
-    const axes = resolveAllVariantAxes({
-      product: p,
-      addonDefaults,
-      lang: isAr ? "ar" : "en",
-    });
-    const variantTitle = [
-      p ? (p as any).name : "",
-      variant.size && axes.size.visible ? `${axes.size.label}: ${variant.size}` : "",
-      variant.color && axes.color.visible ? `${axes.color.label}: ${variant.color}` : "",
-      variant.fabric && axes.fabric.visible ? `${axes.fabric.label}: ${variant.fabric}` : "",
-    ]
-      .filter(Boolean)
-      .join(" — ");
-    const price = Number(
-      variant.selling_price ??
-        variant.price_override ??
-        variant.price ??
-        (p as any)?.selling_price ??
-        (p as any)?.base_price ??
-        (p as any)?.price ??
-        0,
-    );
+    const line = orderLineFromVariant(variant, p, axesFor(p));
+    const variantTitle = line.description.replace(/\n/g, " — ");
     const preferredLoc: "main" | "incubator" = (variant.stock_main ?? 0) > 0 ? "main" : "incubator";
-
-    setItems((prev) => [
-      ...prev,
-      {
-        product_id: variant.product_id,
-        variant_id: variant.id,
-        description: variantTitle || "Custom Item",
-        quantity: 1,
-        unit_price: price,
-        unit_cost: (variant as any).cost_price == null ? null : Number((variant as any).cost_price),
-        original_price: price,
-        customizations: [],
-        customization_total: 0,
-        line_total: price,
-        location: preferredLoc,
-        selected_variant: {
-          size: variant.size || null,
-          color: variant.color || null,
-          fabric: variant.fabric || null,
-        },
-      },
-    ]);
+    setItems((prev) => [...prev, newOrderLine(line, preferredLoc)]);
     toast.success(
       isAr ? `تمت إضافة "${variantTitle}" إلى الطلب!` : `Added "${variantTitle}" to order!`,
     );
@@ -133,39 +110,7 @@ export function useOrderLineActions({
       return;
     }
     const p = products.find((x: any) => x.id === v.product_id);
-    const isAr = lang === "ar";
-    const axes = resolveAllVariantAxes({
-      product: p,
-      addonDefaults,
-      lang: isAr ? "ar" : "en",
-    });
-    const lines = [p?.name || (v as any).title || "Product"];
-    if (v.size && axes.size.visible) lines.push(`${axes.size.label}: ${v.size}`);
-    if (v.color && axes.color.visible) lines.push(`${axes.color.label}: ${v.color}`);
-    if (v.fabric && axes.fabric.visible) lines.push(`${axes.fabric.label}: ${v.fabric}`);
-    setItems([
-      ...items,
-      {
-        product_id: p?.id ?? null,
-        variant_id: v.id,
-        description: lines.join("\n"),
-        quantity: 1,
-        unit_price: Number(v.selling_price || 0),
-        unit_cost: (v as any).cost_price == null ? null : Number((v as any).cost_price),
-        original_price:
-          (v as any).original_price == null ? null : Number((v as any).original_price),
-        customizations: [],
-        customization_total: 0,
-        line_total: Number(v.selling_price || 0),
-        location: "main",
-        selected_variant: {
-          size: v.size || null,
-          color: v.color || null,
-          fabric: v.fabric || null,
-        },
-        custom_field_values: [],
-      },
-    ]);
+    setItems([...items, newOrderLine(orderLineFromVariant(v, p, axesFor(p)), "main")]);
     toast.success(
       lang === "ar" ? `تمت إضافة ${p?.name || "المنتج"} بنجاح!` : `Added ${p?.name || "product"}!`,
     );
@@ -177,29 +122,7 @@ export function useOrderLineActions({
     const v = variantsQ.data?.find((x: any) => x.id === variantId);
     const p = productsQ.data?.find((x: any) => x.id === v?.product_id);
     if (!v || !p) return;
-    const isAr = lang === "ar";
-    const axes = resolveAllVariantAxes({
-      product: p,
-      addonDefaults,
-      lang: isAr ? "ar" : "en",
-    });
-    const lines = [p.name];
-    if (v.size && axes.size.visible) lines.push(`${axes.size.label}: ${v.size}`);
-    if (v.color && axes.color.visible) lines.push(`${axes.color.label}: ${v.color}`);
-    if (v.fabric && axes.fabric.visible) lines.push(`${axes.fabric.label}: ${v.fabric}`);
-    updateItem(idx, {
-      product_id: p.id,
-      variant_id: v.id,
-      description: lines.join("\n"),
-      unit_price: Number(v.selling_price),
-      unit_cost: (v as any).cost_price == null ? null : Number((v as any).cost_price),
-      original_price: (v as any).original_price == null ? null : Number((v as any).original_price),
-      selected_variant: {
-        size: v.size || null,
-        color: v.color || null,
-        fabric: v.fabric || null,
-      },
-    });
+    updateItem(idx, orderLineFromVariant(v, p, axesFor(p)));
   };
   const toggleCustom = (idx: number, c: { name: string; price_delta: number }) => {
     const it = items[idx];

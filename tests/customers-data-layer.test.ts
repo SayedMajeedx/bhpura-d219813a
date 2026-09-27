@@ -281,6 +281,17 @@ describe("pickers, campaigns, export and search", () => {
     respond = () => ({ data: null, error: denied });
     expect(await customers.searchCustomers("b1", "sara")).toEqual([]);
   });
+
+  it("search with a picker's limit, keeping commas and brackets out of the filter (bug #18)", async () => {
+    await customers.searchCustomers("b1", "al (bh), x", 20);
+    expect(filters(requests[0], "or")).toEqual([
+      ["name.ilike.%al  bh   x%,phone.ilike.%al  bh   x%,email.ilike.%al  bh   x%"],
+    ]);
+    expect(filters(requests[0], "limit")).toEqual([[20]]);
+    const options = customers.customersQueries.search("b1", "  ", 20);
+    expect(options.enabled).toBe(false);
+    expect(options.queryKey).toEqual(["customers", "b1", "search", "  ", 20]);
+  });
 });
 
 describe("the shopper's own records", () => {

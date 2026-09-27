@@ -1,7 +1,10 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { adjustLoyaltyPoints, invalidateLoyalty } from "@/lib/data/loyalty";
-import { customersQueries } from "@/lib/data/customers";
+import {
+  CustomerSearchPicker,
+  type PickedCustomer,
+} from "@/components/customers/CustomerSearchPicker";
 import { useI18n } from "@/lib/i18n";
 import {
   Dialog,
@@ -14,13 +17,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "sonner";
 import { Sparkles, Loader2, Coins } from "lucide-react";
 
@@ -39,22 +35,15 @@ export function LoyaltyManualAdjustmentDialog({
   const isAr = lang === "ar";
   const queryClient = useQueryClient();
 
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
+  const [customer, setCustomer] = useState<PickedCustomer | null>(null);
   const [adjustmentType, setAdjustmentType] = useState<"add" | "deduct">("add");
   const [pointsAmount, setPointsAmount] = useState<number>(50);
   const [reasonAr, setReasonAr] = useState<string>("");
   const [reasonEn, setReasonEn] = useState<string>("");
 
-  // Fetch customers for selector
-  // Only the first 100 by name (bug backlog #18).
-  const { data: customers = [] } = useQuery({
-    ...customersQueries.directory(brandId, 100),
-    enabled: open && Boolean(brandId),
-  });
-
   const adjustMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedCustomerId) {
+      if (!customer) {
         throw new Error(isAr ? "يرجى اختيار العميل أولاً" : "Please select a customer");
       }
       if (pointsAmount <= 0) {
@@ -74,7 +63,7 @@ export function LoyaltyManualAdjustmentDialog({
 
       return adjustLoyaltyPoints({
         brandId,
-        customerId: selectedCustomerId,
+        customerId: customer.id,
         pointsDelta,
         reasonAr: trimmedReasonAr || trimmedReasonEn,
         reasonEn: trimmedReasonEn || trimmedReasonAr,
@@ -84,7 +73,7 @@ export function LoyaltyManualAdjustmentDialog({
       toast.success(isAr ? "تم تعديل رصيد النقاط بنجاح" : "Loyalty balance adjusted successfully");
       void invalidateLoyalty(queryClient, brandId);
       onOpenChange(false);
-      setSelectedCustomerId("");
+      setCustomer(null);
       setPointsAmount(50);
       setReasonAr("");
       setReasonEn("");
@@ -113,18 +102,14 @@ export function LoyaltyManualAdjustmentDialog({
           {/* Customer Selector */}
           <div className="space-y-1.5">
             <Label>{isAr ? "اختيار العميل" : "Select Customer"}</Label>
-            <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-              <SelectTrigger className="min-h-[44px] bg-background border-border">
-                <SelectValue placeholder={isAr ? "ابحث أو اختر عميلاً..." : "Select customer..."} />
-              </SelectTrigger>
-              <SelectContent className="max-h-60">
-                {customers.map((c: any) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name || "Customer"} ({c.phone || c.email || "No contact"})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Searches the whole customer base, not the first 100 names (bug #18). */}
+            <CustomerSearchPicker
+              brandId={brandId}
+              value={customer}
+              onChange={setCustomer}
+              isAr={isAr}
+              label={isAr ? "اختيار العميل" : "Select Customer"}
+            />
           </div>
 
           {/* Type of Adjustment */}
@@ -195,7 +180,7 @@ export function LoyaltyManualAdjustmentDialog({
           <Button
             type="button"
             onClick={() => adjustMutation.mutate()}
-            disabled={adjustMutation.isPending || !selectedCustomerId}
+            disabled={adjustMutation.isPending || !customer}
             className="min-h-[44px] bg-primary text-primary-foreground"
           >
             {adjustMutation.isPending ? (

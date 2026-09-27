@@ -20,6 +20,9 @@ export const customersKeys = {
   /** Id, name and contact of up to `limit` customers, by name (pickers). */
   directory: (brandId: string, limit: number) =>
     [...customersKeys.all(brandId), "directory", limit] as const,
+  /** Up to `limit` customers matching a search (pickers). */
+  search: (brandId: string, query: string, limit: number) =>
+    [...customersKeys.all(brandId), "search", query, limit] as const,
   /** Customers with their marketing consent (campaigns). */
   audience: (brandId: string) => [...customersKeys.all(brandId), "audience"] as const,
   /** The columns the data export writes. */
