@@ -120,6 +120,29 @@ describe("Item 5: Stored Secrets and Vault Rotation Invariants", () => {
     );
   });
 
+  it("audit-logs key rotations inside save_integration_credential (bug #27)", () => {
+    const fix = readFileSync(
+      "supabase/migrations/20260928180000_audit_integration_key_rotations.sql",
+      "utf8",
+    );
+    // Written by the function itself, in the rotation's transaction, as the caller.
+    expect(fix).toMatch(/IF v_rotated THEN\s+INSERT INTO public\.saas_audit_logs/);
+    expect(fix).toContain("'integration.key_rotated'");
+    expect(fix).toContain("'integration_credential'");
+    expect(fix).toMatch(
+      /auth\.uid\(\),\s+\(SELECT u\.email FROM auth\.users u WHERE u\.id = auth\.uid\(\)\)/,
+    );
+    // Which secrets changed, never their values.
+    expect(fix).toContain("'api_key', v_api_key_set");
+    expect(fix).toContain("'webhook_secret', v_webhook_secret_set");
+    expect(fix).not.toMatch(/jsonb_build_object\([^;]*p_api_key/);
+    // Still admin-only and brand-scoped, and not callable anonymously.
+    expect(fix).toContain(
+      "IF NOT public.is_admin() OR NOT public.can_access_brand(p_brand_id) THEN",
+    );
+    expect(fix).toContain("FROM PUBLIC, anon;");
+  });
+
   it("updates list_integration_credentials return signature and masks secrets", () => {
     expect(migration5).toContain("last_rotated_at timestamp with time zone");
     expect(migration5).toContain("'••••••••••••' || right(api.decrypted_secret, 4)");
