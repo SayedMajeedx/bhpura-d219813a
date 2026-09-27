@@ -28,10 +28,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  deleteOrderWithPrivateReceipt,
-  deleteOrdersWithPrivateReceipts,
-} from "@/lib/benefit-receipt.functions";
+import { deleteOrderWithPrivateReceipt } from "@/lib/benefit-receipt.functions";
+import { BulkDeleteOrdersDialog } from "@/features/orders/components/BulkDeleteOrdersDialog";
 import { Sparkles } from "lucide-react";
 import { getOrderCustomerContact } from "@/lib/order-customer-snapshot";
 import { getOrderWorkflow } from "@/lib/order-workflow";
@@ -97,7 +95,6 @@ function OrdersList() {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
-  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   // Feature 7: Context-preserving return navigation (restore saved search & filters)
   const savedContext = getNavFilterContext("orders");
 
@@ -252,31 +249,6 @@ function OrdersList() {
       toast.error(err.message || "Failed to delete order");
     } finally {
       setDeleteTarget(null);
-    }
-  };
-
-  const deleteSelectedOrders = async () => {
-    const orderIds = [...selectedOrderIds];
-    if (orderIds.length === 0) return;
-    setIsBulkDeleting(true);
-    try {
-      const result = await deleteOrdersWithPrivateReceipts({
-        data: { brandId, orderIds },
-      });
-      toast.success(
-        lang === "ar"
-          ? `تم حذف ${result.deleted} طلب بنجاح`
-          : `${result.deleted} orders deleted successfully`,
-      );
-      setSelectedOrderIds(new Set());
-      setBulkDeleteOpen(false);
-      await invalidateOrders(qc, brandId);
-    } catch (error: any) {
-      toast.error(
-        error?.message || (lang === "ar" ? "تعذر حذف الطلبات" : "Unable to delete orders"),
-      );
-    } finally {
-      setIsBulkDeleting(false);
     }
   };
 
@@ -794,43 +766,14 @@ function OrdersList() {
       )}
 
       {isAdmin && (
-        <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
-          <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                {lang === "ar"
-                  ? `حذف ${selectedOrderIds.size} طلب؟`
-                  : `Delete ${selectedOrderIds.size} orders?`}
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                {lang === "ar"
-                  ? "سيتم حذف الطلبات المحددة نهائياً واستعادة مخزونها حسب سجلات الحجز. لا يمكن التراجع عن هذا الإجراء."
-                  : "The selected orders will be permanently deleted and reserved stock will be restored according to the inventory records. This cannot be undone."}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isBulkDeleting}>
-                {lang === "ar" ? "إلغاء" : "Cancel"}
-              </AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                disabled={isBulkDeleting || selectedOrderIds.size === 0}
-                onClick={(event) => {
-                  event.preventDefault();
-                  void deleteSelectedOrders();
-                }}
-              >
-                {isBulkDeleting
-                  ? lang === "ar"
-                    ? "جارٍ الحذف..."
-                    : "Deleting..."
-                  : lang === "ar"
-                    ? "تأكيد الحذف"
-                    : "Confirm delete"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <BulkDeleteOrdersDialog
+          open={bulkDeleteOpen}
+          onOpenChange={setBulkDeleteOpen}
+          brandId={brandId}
+          orderIds={selectedOrderIds}
+          lang={lang}
+          onDeleted={() => setSelectedOrderIds(new Set())}
+        />
       )}
 
       {/* Interactive Packing Verification & Fulfillment Modal */}

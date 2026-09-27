@@ -158,3 +158,35 @@ export function resolveProductAxes({
   );
   return { axes, isVisualColorAxis: isColorSwatchAxis(axes.color.label, offered.color) };
 }
+
+/**
+ * Ready size vs tailoring on a made-to-order product. Ready sizes are real
+ * sizes only (placeholder variants carry none). The ready/custom toggle shows
+ * when the store has the made-to-order module, the product offers ready sizes
+ * and has measurement fields; without ready sizes the product is tailored only.
+ */
+export function tailoringState({
+  isMadeToOrder,
+  offeredSizes,
+  hasCustomFields,
+  madeToOrderModule,
+  sizeMode,
+}: {
+  isMadeToOrder: boolean;
+  offeredSizes: readonly string[];
+  hasCustomFields: boolean;
+  madeToOrderModule: boolean;
+  sizeMode: "ready" | "custom";
+}) {
+  const hasReadySizes = offeredSizes.length > 0;
+  const showSizeModeToggle = madeToOrderModule && hasReadySizes && hasCustomFields && isMadeToOrder;
+  const isTailoringActive =
+    isMadeToOrder && ((showSizeModeToggle && sizeMode === "custom") || !showSizeModeToggle);
+  return {
+    hasReadySizes,
+    showSizeModeToggle,
+    isTailoringActive,
+    /** A made-to-order product without ready sizes can only be tailored. */
+    tailoredOnly: isMadeToOrder && !hasReadySizes,
+  };
+}

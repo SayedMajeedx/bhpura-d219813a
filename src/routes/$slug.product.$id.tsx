@@ -40,6 +40,7 @@ import {
   sortVariants,
   uniqueOptionValues,
   resolveProductAxes,
+  tailoringState,
   type VariantSelection,
 } from "@/features/product-page/lib/variant-options";
 import {
@@ -435,18 +436,20 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
 
   // Derived flags + effect run before any early return so hook order is stable.
   const isMadeToOrder = Boolean(product?.is_made_to_order);
-  const hasReadySizes = uniqueSizes.length > 0;
   const hasCustomFields = customFields.length > 0;
-  const showSizeModeToggle =
-    modules.made_to_order && hasReadySizes && hasCustomFields && isMadeToOrder;
-  const isTailoringActive =
-    isMadeToOrder && ((showSizeModeToggle && sizeMode === "custom") || !showSizeModeToggle);
+  const { hasReadySizes, showSizeModeToggle, isTailoringActive, tailoredOnly } = tailoringState({
+    isMadeToOrder,
+    offeredSizes: uniqueSizes,
+    hasCustomFields,
+    madeToOrderModule: Boolean(modules.made_to_order),
+    sizeMode,
+  });
 
   useEffect(() => {
-    if (isMadeToOrder && !hasReadySizes) {
+    if (tailoredOnly) {
       setSizeMode("custom");
     }
-  }, [isMadeToOrder, hasReadySizes]);
+  }, [tailoredOnly]);
 
   if (isLoading && !product) {
     return (
