@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
-import { ArrowLeft, ArrowRight, Fingerprint, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowRight, Fingerprint, Loader2, ShieldCheck } from "lucide-react";
 import { SignInBrandPanel } from "@/features/auth/components/SignInBrandPanel";
 import { EmailField, LanguageSwitch, PasswordField } from "@/features/auth/components/SignInFields";
 import { applyRememberMe } from "@/lib/session-persistence";
@@ -132,17 +132,9 @@ function AuthPage() {
       </aside>
 
       <main className="relative flex min-h-dvh flex-col px-5 py-5 sm:px-10 sm:py-8 lg:min-h-0 lg:overflow-y-auto">
-        <header className="relative flex items-center justify-between gap-4">
-          <Link
-            to="/"
-            className="group inline-flex min-h-11 items-center gap-2 rounded-md text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            <ArrowLeft
-              className="h-4 w-4 transition-transform group-hover:-translate-x-0.5 rtl:rotate-180 rtl:group-hover:translate-x-0.5"
-              aria-hidden="true"
-            />
-            {isAr ? "العودة للرئيسية" : "Back home"}
-          </Link>
+        {/* No "back home" link: on boutq.store "/" leads to /admin, which sends a
+            signed-out visitor straight back here. */}
+        <header className="relative flex items-center justify-end">
           <LanguageSwitch lang={isAr ? "ar" : "en"} onChange={setLang} />
         </header>
 
