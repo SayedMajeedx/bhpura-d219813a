@@ -64,24 +64,28 @@ export function useSaveProduct({
     if (!user) return;
 
     let createdProductId: string | undefined;
+    // The default variant makes the product buyable. When it fails the product
+    // is still saved, and the merchant is told it has no variant yet.
+    let defaultVariantError: unknown = null;
     const columns = productColumnsFrom(form);
+    const newDefaultVariant = (productId: string) =>
+      createVariants(brand.id, [
+        {
+          user_id: user.id,
+          brand_id: brand.id,
+          product_id: productId,
+          ...defaultVariantValues(form, isAr),
+        },
+      ]).catch((error: unknown) => {
+        defaultVariantError = error;
+      });
 
     if (product) {
       try {
         if (form.is_active) {
           const count = await countProductVariants(brand.id, product.id);
-          if (!count) {
-            // Smart default: Automatically create a standard default variant so merchant isn't blocked
-            // (best-effort, its error is ignored as before: bug backlog #16).
-            await createVariants(brand.id, [
-              {
-                user_id: user.id,
-                brand_id: brand.id,
-                product_id: product.id,
-                ...defaultVariantValues(form, isAr),
-              },
-            ]).catch(() => undefined);
-          }
+          // An active product with no variant gets a default one.
+          if (!count) await newDefaultVariant(product.id);
         }
         await updateProduct(brand.id, product.id, columns);
         await syncVariantsWithProduct(brand.id, product.id, columns);
@@ -113,20 +117,18 @@ export function useSaveProduct({
       } catch (error) {
         return toast.error(getFriendlyErrorMessage(error));
       }
-      // Auto-create default standard variant for instant purchaseability
-      // (best-effort, its error is ignored as before: bug backlog #16).
-      await createVariants(brand.id, [
-        {
-          user_id: user.id,
-          brand_id: brand.id,
-          product_id: createdProductId,
-          ...defaultVariantValues(form, isAr),
-        },
-      ]).catch(() => undefined);
+      await newDefaultVariant(createdProductId);
       prefetchOptionTranslations([form.fabric_type], isAr);
     }
     commitMedia();
-    if (product) {
+    if (defaultVariantError) {
+      toast.error(
+        isAr
+          ? "تم حفظ المنتج، لكن تعذر إنشاء المتغير الافتراضي، فلا يمكن شراؤه بعد. أضف متغيراً من تبويب المتغيرات."
+          : "The product was saved, but its default variant could not be created, so it cannot be bought yet. Add a variant in the Variants tab.",
+        { description: getFriendlyErrorMessage(defaultVariantError) },
+      );
+    } else if (product) {
       toast.success(t("common.save"));
     }
     onSaved(createdProductId);

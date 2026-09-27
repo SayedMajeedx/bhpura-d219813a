@@ -102,10 +102,62 @@ describe("Packaging Expenses to Inventory Auto-Sync", () => {
       unit_cost: 0.25,
     });
 
-    expect(success).toBe(true);
+    expect(success).toBe("synced");
     expect(mockMaterials.length).toBe(1);
     expect(mockMaterials[0].name).toBe("كرتون شحن كبير");
     expect(mockMaterials[0].stock_quantity).toBe(200);
     expect(mockMaterials[0].unit_cost).toBe(0.25);
+  });
+
+  it("counts a refused material as failed, not as updated or created", async () => {
+    const mockSupabase: any = {
+      from: (table: string) => ({
+        select: () => ({
+          eq: () =>
+            Promise.resolve({
+              data:
+                table === "packaging_materials"
+                  ? [{ id: "m1", name: "اكياس كبيرة", unit_cost: 0, stock_quantity: 0 }]
+                  : [
+                      {
+                        description: "اكياس كبيرة",
+                        category: "Packaging",
+                        quantity: 10,
+                        amount: 5,
+                      },
+                      { description: "علب هدايا", category: "Packaging", quantity: 10, amount: 5 },
+                    ],
+              error: null,
+            }),
+        }),
+        insert: () => Promise.resolve({ error: { message: "denied" } }),
+        update: () => ({
+          eq: () => ({ eq: () => Promise.resolve({ error: { message: "denied" } }) }),
+        }),
+      }),
+    };
+    expect(await syncPackagingExpensesToInventory(mockSupabase, "brand-1")).toEqual({
+      syncedCount: 0,
+      createdCount: 0,
+      updatedCount: 0,
+      failedCount: 2,
+    });
+  });
+
+  it("reports a single expense's refused write, and skips an expense that is not packaging", async () => {
+    const refusing: any = {
+      from: () => ({
+        select: () => ({ eq: () => Promise.resolve({ data: [], error: null }) }),
+        insert: () => Promise.resolve({ error: { message: "denied" } }),
+      }),
+    };
+    const expense = { description: "كرتون شحن", category: "Packaging", quantity: 10, amount: 5 };
+    expect(await syncSingleExpenseToPackagingMaterial(refusing, "brand-1", expense)).toBe("failed");
+    expect(
+      await syncSingleExpenseToPackagingMaterial(refusing, "brand-1", {
+        description: "Rent",
+        category: "Rent",
+      }),
+    ).toBe("skipped");
   });
 });

@@ -4,7 +4,16 @@ export interface SyncResult {
   syncedCount: number;
   createdCount: number;
   updatedCount: number;
+  /** Materials whose insert or update the database refused (not counted above). */
+  failedCount: number;
 }
+
+const NOTHING_SYNCED: SyncResult = {
+  syncedCount: 0,
+  createdCount: 0,
+  updatedCount: 0,
+  failedCount: 0,
+};
 
 /**
  * Normalizes text to compare material and expense names accurately.
@@ -26,7 +35,7 @@ export async function syncPackagingExpensesToInventory(
   supabase: SupabaseClient<any, any, any>,
   brandId: string,
 ): Promise<SyncResult> {
-  if (!brandId) return { syncedCount: 0, createdCount: 0, updatedCount: 0 };
+  if (!brandId) return NOTHING_SYNCED;
 
   try {
     // 1. Fetch existing packaging materials
@@ -68,13 +77,12 @@ export async function syncPackagingExpensesToInventory(
       );
     });
 
-    if (packagingExpenses.length === 0) {
-      return { syncedCount: 0, createdCount: 0, updatedCount: 0 };
-    }
+    if (packagingExpenses.length === 0) return NOTHING_SYNCED;
 
     const existingList: any[] = existingMaterials ?? [];
     let createdCount = 0;
     let updatedCount = 0;
+    let failedCount = 0;
 
     for (const exp of packagingExpenses) {
       const desc = (exp.description || "").trim();
@@ -103,9 +111,8 @@ export async function syncPackagingExpensesToInventory(
           reorder_level: 10,
         });
 
-        if (!insErr) {
-          createdCount += 1;
-        }
+        if (insErr) failedCount += 1;
+        else createdCount += 1;
       } else {
         // Update unit cost if missing or changed, and update stock if currently zero
         const needsCostUpdate = Number(match.unit_cost) <= 0 && unitCost > 0;
@@ -116,13 +123,14 @@ export async function syncPackagingExpensesToInventory(
           if (needsCostUpdate) patch.unit_cost = Number(unitCost.toFixed(3));
           if (needsStockUpdate) patch.stock_quantity = qty;
 
-          await (supabase as any)
+          const { error: updErr } = await (supabase as any)
             .from("packaging_materials")
             .update(patch)
             .eq("id", match.id)
             .eq("brand_id", brandId);
 
-          updatedCount += 1;
+          if (updErr) failedCount += 1;
+          else updatedCount += 1;
         }
       }
     }
@@ -131,15 +139,18 @@ export async function syncPackagingExpensesToInventory(
       syncedCount: createdCount + updatedCount,
       createdCount,
       updatedCount,
+      failedCount,
     };
   } catch (err) {
     console.warn("[syncPackagingExpensesToInventory] Sync exception:", err);
-    return { syncedCount: 0, createdCount: 0, updatedCount: 0 };
+    return NOTHING_SYNCED;
   }
 }
 
 /**
- * Sync a single expense directly to packaging_materials when created/updated.
+ * Sync a single expense directly to packaging_materials when created/updated:
+ * "synced" when the material was written, "skipped" for an expense that is not
+ * packaging, "failed" when the database refused the read or the write.
  */
 export async function syncSingleExpenseToPackagingMaterial(
   supabase: SupabaseClient<any, any, any>,
@@ -152,8 +163,8 @@ export async function syncSingleExpenseToPackagingMaterial(
     amount?: number | null;
     unit_cost?: number | null;
   },
-): Promise<boolean> {
-  if (!brandId || !expense.description?.trim()) return false;
+): Promise<"synced" | "skipped" | "failed"> {
+  if (!brandId || !expense.description?.trim()) return "skipped";
 
   const cat = (expense.category || "").toLowerCase();
   const desc = expense.description.trim();
@@ -168,7 +179,7 @@ export async function syncSingleExpenseToPackagingMaterial(
     desc.includes("bag") ||
     desc.includes("box");
 
-  if (!isPkg) return false;
+  if (!isPkg) return "skipped";
 
   const qty = Number(expense.quantity) > 0 ? Number(expense.quantity) : 100;
   const amount = Number(expense.amount) || 0;
@@ -176,10 +187,11 @@ export async function syncSingleExpenseToPackagingMaterial(
     Number(expense.unit_cost) > 0 ? Number(expense.unit_cost) : qty > 0 ? amount / qty : 0;
 
   try {
-    const { data: existing } = await (supabase as any)
+    const { data: existing, error: readErr } = await (supabase as any)
       .from("packaging_materials")
       .select("id, name, name_ar, stock_quantity, unit_cost")
       .eq("brand_id", brandId);
+    if (readErr) throw readErr;
 
     const normDesc = normalizeName(desc);
     const match = (existing ?? []).find(
@@ -187,29 +199,28 @@ export async function syncSingleExpenseToPackagingMaterial(
         normalizeName(m.name || "") === normDesc || normalizeName(m.name_ar || "") === normDesc,
     );
 
-    if (match) {
-      await (supabase as any)
-        .from("packaging_materials")
-        .update({
+    const { error: writeErr } = match
+      ? await (supabase as any)
+          .from("packaging_materials")
+          .update({
+            unit_cost: Number(unitCost.toFixed(3)),
+            stock_quantity: Math.max(Number(match.stock_quantity || 0), qty),
+          })
+          .eq("id", match.id)
+          .eq("brand_id", brandId)
+      : await (supabase as any).from("packaging_materials").insert({
+          brand_id: brandId,
+          name: desc,
+          name_ar: desc,
+          stock_quantity: qty,
           unit_cost: Number(unitCost.toFixed(3)),
-          stock_quantity: Math.max(Number(match.stock_quantity || 0), qty),
-        })
-        .eq("id", match.id)
-        .eq("brand_id", brandId);
-    } else {
-      await (supabase as any).from("packaging_materials").insert({
-        brand_id: brandId,
-        name: desc,
-        name_ar: desc,
-        stock_quantity: qty,
-        unit_cost: Number(unitCost.toFixed(3)),
-        reorder_level: 10,
-      });
-    }
+          reorder_level: 10,
+        });
+    if (writeErr) throw writeErr;
 
-    return true;
+    return "synced";
   } catch (err) {
     console.warn("[syncSingleExpenseToPackagingMaterial] Error:", err);
-    return false;
+    return "failed";
   }
 }

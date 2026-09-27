@@ -18,7 +18,7 @@ import {
 import { Plus, Pencil, Trash2, Receipt, Calendar, Sparkles, Building2, Repeat } from "lucide-react";
 import { formatMoney, formatDate } from "@/lib/format";
 import { toast } from "sonner";
-import { syncSingleExpenseToPackagingMaterial } from "@/lib/packaging-sync";
+import { syncExpensePackaging } from "@/components/accounting/sync-expense-packaging";
 import {
   createExpense,
   deleteExpense,
@@ -225,8 +225,9 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
         toast.success(isAr ? "تم إضافة المصروف بنجاح" : "Expense added");
       }
 
-      // Seamlessly mirror packaging / COGS material to packaging_materials inventory
-      void syncSingleExpenseToPackagingMaterial(supabase, brandId, payload).catch(() => undefined);
+      // Mirror a packaging / COGS material to the packaging inventory before
+      // refreshing it.
+      await syncExpensePackaging(supabase, brandId, payload, isAr);
 
       invalidateExpenses(qc, brandId);
       qc.invalidateQueries({ queryKey: catalogKeys.packagingMaterials(brandId) });
