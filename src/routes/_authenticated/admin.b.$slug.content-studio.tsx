@@ -10,6 +10,8 @@ import { FormatStylePicker } from "@/features/content-studio/components/FormatSt
 import { HeaderBrandingPanel } from "@/features/content-studio/components/HeaderBrandingPanel";
 import { CopyPanel } from "@/features/content-studio/components/CopyPanel";
 import { StudioPreview } from "@/features/content-studio/components/StudioPreview";
+import { TemplatePicker } from "@/features/content-studio/components/TemplatePicker";
+import { TemplatePreview } from "@/features/content-studio/components/TemplatePreview";
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/content-studio")({
   component: ContentStudioPage,
 });
@@ -68,6 +70,7 @@ function ContentStudioPage() {
             </div>
           </div>
           <div className="space-y-5 p-4 sm:space-y-6 sm:p-6 min-w-0">
+            <TemplatePicker studio={studio} />
             <ProductMediaPicker studio={studio} />
 
             <FormatStylePicker studio={studio} />
@@ -84,7 +87,11 @@ function ContentStudioPage() {
         </Card>
 
         {/* Live Preview Stage */}
-        <StudioPreview studio={studio} />
+        {studio.activeTemplate ? (
+          <TemplatePreview studio={studio} />
+        ) : (
+          <StudioPreview studio={studio} />
+        )}
       </div>
     </div>
   );

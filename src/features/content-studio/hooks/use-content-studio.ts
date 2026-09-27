@@ -14,6 +14,9 @@ import { useHeaderLayout } from "@/features/content-studio/hooks/use-header-layo
 import { usePreviewScale } from "@/features/content-studio/hooks/use-preview-scale";
 import { useCreativeExport } from "@/features/content-studio/hooks/use-creative-export";
 import { useStudioCaption } from "@/features/content-studio/hooks/use-studio-caption";
+import { useTemplateScene } from "@/features/content-studio/hooks/use-template-scene";
+import { useTemplateExport } from "@/features/content-studio/hooks/use-template-export";
+import { templateById, type TemplateId } from "@/features/content-studio/templates";
 
 /**
  * Everything the content studio's sections read and change, from one call.
@@ -35,6 +38,8 @@ export function useContentStudio(slug: string) {
   const [theme, setTheme] = useState<keyof typeof THEMES>("editorial");
   const [showPrice, setShowPrice] = useState(true);
   const [imageFit, setImageFit] = useState<"cover" | "contain">("cover");
+  const [templateId, setTemplateId] = useState<TemplateId>("classic");
+  const activeTemplate = templateById(templateId);
   const product = useStudioProduct(brand.id, isAr);
   const { selected, settingsQ } = product;
   const copy = useStudioCopy({ selected, isAr, brandNameEn, defaultEditionLabel });
@@ -75,6 +80,35 @@ export function useContentStudio(slug: string) {
     selected,
     format,
     palette,
+    headline,
+    businessName,
+    isAr,
+  });
+  const { buildScene, photoReady } = useTemplateScene({
+    format,
+    isAr,
+    theme,
+    photo: product.photo,
+    isCurrentVideo: product.isCurrentVideo,
+    logo,
+    businessName,
+    instagram,
+    phone,
+    productName,
+    headline,
+    body,
+    showPrice,
+    effectivePrice: product.effectivePrice,
+    currencySymbol,
+  });
+  const templateExport = useTemplateExport({
+    template: activeTemplate,
+    buildScene,
+    format,
+    photo: product.photo,
+    isCurrentVideo: product.isCurrentVideo,
+    brandSlugClean,
+    productFileName: selected?.name,
     headline,
     businessName,
     isAr,
@@ -124,6 +158,12 @@ export function useContentStudio(slug: string) {
     fallbackLineName,
     productName,
     defaultEditionLabel,
+    templateId,
+    setTemplateId,
+    activeTemplate,
+    buildScene,
+    photoReady,
+    ...templateExport,
     ...product,
     ...copy,
     ...creativeExport,
