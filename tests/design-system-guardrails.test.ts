@@ -28,7 +28,6 @@ const HEX_EXEMPT = [
   // Merchants pick literal brand colours in these editors.
   "components/settings/QuickThemeCustomizer.tsx",
   "routes/_authenticated/admin.b.$slug.settings.tsx",
-  "routes/_authenticated/admin.b.$slug.content-studio.tsx",
   // html2canvas / jspdf rasterise these and do not resolve CSS variables.
   "components/orders/InvoicePreview.tsx",
   "routes/invoice.$id.tsx",
@@ -43,6 +42,9 @@ const HEX_EXEMPT_PREFIXES = [
   "features/settings/",
   // Brand wizard colour pickers and palette previews.
   "components/super-admin/brand-wizard/",
+  // The content studio's creative palettes: html2canvas rasterises the stage and
+  // does not resolve CSS variables (moved here from the studio route).
+  "features/content-studio/",
   // Colour maths and per-vertical palette/colour-name data (not UI styling).
   "lib/logo-palette.ts",
   "lib/brand-palette-apply.ts",

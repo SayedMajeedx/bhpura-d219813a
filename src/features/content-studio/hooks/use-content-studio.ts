@@ -1,0 +1,135 @@
+import { useRef, useState } from "react";
+import { useBrand } from "@/lib/brand-context";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
+import { useI18n } from "@/lib/i18n";
+import {
+  containsArabic,
+  FORMATS,
+  instagramHandle,
+  THEMES,
+} from "@/features/content-studio/lib/studio-content";
+import { useStudioProduct } from "@/features/content-studio/hooks/use-studio-product";
+import { useStudioCopy } from "@/features/content-studio/hooks/use-studio-copy";
+import { useHeaderLayout } from "@/features/content-studio/hooks/use-header-layout";
+import { usePreviewScale } from "@/features/content-studio/hooks/use-preview-scale";
+import { useCreativeExport } from "@/features/content-studio/hooks/use-creative-export";
+import { useStudioCaption } from "@/features/content-studio/hooks/use-studio-caption";
+
+/**
+ * Everything the content studio's sections read and change, from one call.
+ */
+export function useContentStudio(slug: string) {
+  const brand = useBrand();
+  const { profile: storeProfile } = useAdminStoreProfile(brand.id);
+  const { lang } = useI18n();
+  const isAr = lang === "ar";
+  const brandNameEn = brand.name_en || (brand as any).name || "Brand";
+  const brandSlugClean = brand.slug || slug || "brand";
+  const defaultEditionLabel = `The ${brandNameEn} Edit`;
+
+  const stageRef = useRef<HTMLDivElement>(null);
+  const stageViewportRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const { previewScale } = usePreviewScale(stageViewportRef);
+  const [format, setFormat] = useState<keyof typeof FORMATS>("story");
+  const [theme, setTheme] = useState<keyof typeof THEMES>("editorial");
+  const [showPrice, setShowPrice] = useState(true);
+  const [imageFit, setImageFit] = useState<"cover" | "contain">("cover");
+  const product = useStudioProduct(brand.id, isAr);
+  const { selected, settingsQ } = product;
+  const copy = useStudioCopy({ selected, isAr, brandNameEn, defaultEditionLabel });
+  const { editionLabel, headline, body } = copy;
+
+  const businessName =
+    settingsQ.data?.business_name || (isAr ? brand.name_ar : brand.name_en) || brand.name_en;
+  const logo = settingsQ.data?.logo_url || brand.logo_url;
+  const phone = settingsQ.data?.phone || settingsQ.data?.whatsapp_number;
+  const instagram = instagramHandle(settingsQ.data?.socials);
+  const currency = settingsQ.data?.currency || "BHD";
+  const currencySymbol = isAr
+    ? currency === "BHD"
+      ? "د.ب."
+      : currency === "SAR"
+        ? "ر.س."
+        : currency === "KWD"
+          ? "د.ك."
+          : currency
+    : currency;
+  const palette = THEMES[theme];
+  const editionIsAr = containsArabic(editionLabel);
+  const headlineIsAr = containsArabic(headline);
+  const bodyIsAr = containsArabic(body);
+  const fallbackLineName = `${brandNameEn.toUpperCase()} LINE`;
+  const productName = selected
+    ? isAr
+      ? selected.name_ar || selected.name
+      : selected.name_en || selected.name
+    : fallbackLineName;
+
+  const creativeExport = useCreativeExport({
+    stageRef,
+    videoRef,
+    photo: product.photo,
+    isCurrentVideo: product.isCurrentVideo,
+    brandSlugClean,
+    selected,
+    format,
+    palette,
+    headline,
+    businessName,
+    isAr,
+  });
+  const header = useHeaderLayout({ exporting: creativeExport.exporting, stageRef });
+  const caption = useStudioCaption({
+    selected,
+    headline,
+    body,
+    selectedDescription: product.selectedDescription,
+    variantsQ: product.variantsQ,
+    currencySymbol,
+    effectivePrice: product.effectivePrice,
+    storeProfile,
+    isAr,
+  });
+
+  return {
+    slug,
+    brand,
+    storeProfile,
+    isAr,
+    brandNameEn,
+    brandSlugClean,
+    stageRef,
+    stageViewportRef,
+    videoRef,
+    previewScale,
+    format,
+    setFormat,
+    theme,
+    setTheme,
+    showPrice,
+    setShowPrice,
+    imageFit,
+    setImageFit,
+    businessName,
+    logo,
+    phone,
+    instagram,
+    currency,
+    currencySymbol,
+    palette,
+    editionIsAr,
+    headlineIsAr,
+    bodyIsAr,
+    fallbackLineName,
+    productName,
+    defaultEditionLabel,
+    ...product,
+    ...copy,
+    ...creativeExport,
+    ...header,
+    ...caption,
+  };
+}
+
+export type ContentStudio = ReturnType<typeof useContentStudio>;

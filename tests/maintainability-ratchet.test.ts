@@ -29,7 +29,7 @@ const BUDGETS = {
   eslintDisable: 10,
   directSupabaseCalls: 24,
   readFileSyncTestFiles: 43,
-  filesOver1000: 23,
+  filesOver1000: 22,
   maxLinesForNewFile: 600,
   maxLinesForExistingFile: 1000,
 } as const;
@@ -40,11 +40,11 @@ const BUDGETS = {
  * When Phase 5 extracts subcomponents and logic, lower each file's budget accordingly.
  * Removed once under 1000 lines: admin.b.$slug.inventory.tsx (Phase 5, now ~250 lines),
  *   admin.b.$slug.orders.$id.tsx (Phase 5, now ~980 lines),
- *   admin.b.$slug.orders.index.tsx (Phase 5, now ~920 lines).
+ *   admin.b.$slug.orders.index.tsx (Phase 5, now ~920 lines),
+ *   admin.b.$slug.content-studio.tsx (content studio Phase 0, now ~90 lines).
  */
 const GIANT_FILES_BUDGETS: Record<string, number> = {
   "src/features/settings/registry.ts": 2616,
-  "src/routes/_authenticated/admin.b.$slug.content-studio.tsx": 2404,
   "src/components/subscription/BrandSubscriptionHub.tsx": 1954,
   "src/routes/_authenticated/admin.b.$slug.export.tsx": 1838,
   "src/lib/addons/addon-showcase-data.ts": 1893,

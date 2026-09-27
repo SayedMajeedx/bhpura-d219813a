@@ -59,6 +59,8 @@ checkout,storefront-shell}/**`); add new storefront slices there.
 
 ## Verify
 
-`npx tsc --noEmit`, `npx eslint <files>`, `npm run check`, then CI (Playwright
-runs only in CI; it cannot start the dev server on the owner's Windows
-machine). Report line counts before/after and bugs found.
+`npx tsc --noEmit`, `npx eslint <files>`, `npm run check`, then CI. Playwright
+can run locally too since the dev watcher ignores the big local folders (#135):
+start the dev server with the preview tool and run
+`PLAYWRIGHT_EXTERNAL_SERVER=1 npx playwright test <spec>` with the Supabase env
+loaded. Report line counts before/after and bugs found.
