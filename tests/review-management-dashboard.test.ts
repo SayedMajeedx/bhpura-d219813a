@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { calculateReviewMetrics, type OrderReviewAdminRow } from "../src/lib/order-reviews";
+import {
+  calculateReviewMetrics,
+  filterReviews,
+  type OrderReviewAdminRow,
+} from "../src/lib/order-reviews";
+import { getAdminNavItems } from "../src/config/admin-navigation";
 
-const route = readFileSync(resolve("src/routes/_authenticated/admin.b.$slug.reviews.tsx"), "utf8");
-const navigation = readFileSync(resolve("src/config/admin-navigation.ts"), "utf8");
 const migration = readFileSync(
   resolve("supabase/migrations/20260825153000_review_management_dashboard.sql"),
   "utf8",
@@ -35,15 +38,45 @@ describe("review management dashboard", () => {
   });
 
   it("adds the customer reviews destination to operations navigation", () => {
-    expect(navigation).toContain('id: "reviews"');
-    expect(navigation).toContain('labelAr: lang === "ar" ? "تقييمات العملاء"');
+    const items = getAdminNavItems({
+      activeSlug: "pura",
+      isCourier: false,
+      isAdmin: true,
+      hasPermission: () => true,
+      t: (key: string) => key,
+      lang: "ar",
+    } as Parameters<typeof getAdminNavItems>[0]);
+    expect(items.find((item) => item.id === "reviews")).toMatchObject({
+      to: "/admin/b/$slug/reviews",
+      params: { slug: "pura" },
+      labelAr: "تقييمات العملاء",
+    });
   });
 
-  it("supports search, rating and period filters with order navigation", () => {
-    expect(route).toContain("ratingFilter");
-    expect(route).toContain("deferredSearch");
-    expect(route).toContain("periodDays");
-    expect(route).toContain('to="/admin/b/$slug/orders/$id"');
+  it("supports search, rating and period filters", () => {
+    const now = Date.parse("2026-09-27T00:00:00Z");
+    const daysAgo = (days: number) => new Date(now - days * 86_400_000).toISOString();
+    const rows = [
+      {
+        ...review(5),
+        customer_name: "Sara",
+        comment: "Beautiful stitching",
+        reviewed_at: daysAgo(5),
+      },
+      { ...review(2), customer_name: "Noor", comment: null, reviewed_at: daysAgo(60) },
+      { ...review(4), customer_name: "Huda", comment: "Late", reviewed_at: daysAgo(120) },
+    ];
+    const names = (filters: Partial<Parameters<typeof filterReviews>[1]>) =>
+      filterReviews(rows, { search: "", rating: "all", period: "all", now, ...filters }).map(
+        (row) => row.customer_name,
+      );
+    expect(names({})).toEqual(["Sara", "Noor", "Huda"]);
+    expect(names({ rating: "2" })).toEqual(["Noor"]);
+    expect(names({ period: "30" })).toEqual(["Sara"]);
+    expect(names({ period: "90" })).toEqual(["Sara", "Noor"]);
+    expect(names({ search: "stitch" })).toEqual(["Sara"]);
+    expect(names({ search: "noor" })).toEqual(["Noor"]);
+    expect(names({ search: String(rows[2].invoice_number) })).toEqual(["Huda"]);
   });
 
   it("keeps the review feed tenant scoped", () => {

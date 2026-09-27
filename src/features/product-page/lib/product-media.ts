@@ -20,3 +20,8 @@ export function productMediaList(
   }
   return list;
 }
+
+/** The gallery frame's ratio from the store's `pdp_gallery_aspect_ratio` (portrait 3:4 by default). */
+export function galleryRatioClass(ratio: string | null | undefined): string {
+  return ratio === "1:1" ? "aspect-square" : ratio === "4:5" ? "aspect-[4/5]" : "aspect-[3/4]";
+}

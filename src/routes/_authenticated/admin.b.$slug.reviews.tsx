@@ -17,6 +17,7 @@ import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
 import {
   calculateReviewMetrics,
+  filterReviews,
   REVIEW_HIGHLIGHT_LABELS,
   type OrderReviewAdminRow,
   storyBrandColor,
@@ -129,20 +130,16 @@ function CustomerReviewsPage() {
 
   const reviews = useMemo(() => reviewsQ.data ?? [], [reviewsQ.data]);
   const metrics = useMemo(() => calculateReviewMetrics(reviews), [reviews]);
-  const filtered = useMemo(() => {
-    const periodDays = period === "30" ? 30 : period === "90" ? 90 : null;
-    const cutoff = periodDays ? Date.now() - periodDays * 86_400_000 : null;
-    return reviews.filter((review) => {
-      if (ratingFilter !== "all" && Number(review.rating) !== Number(ratingFilter)) return false;
-      if (cutoff && new Date(review.reviewed_at).getTime() < cutoff) return false;
-      if (!deferredSearch) return true;
-      return (
-        review.customer_name.toLowerCase().includes(deferredSearch) ||
-        String(review.invoice_number).includes(deferredSearch) ||
-        (review.comment ?? "").toLowerCase().includes(deferredSearch)
-      );
-    });
-  }, [reviews, deferredSearch, ratingFilter, period]);
+  const filtered = useMemo(
+    () =>
+      filterReviews(reviews, {
+        search: deferredSearch,
+        rating: ratingFilter,
+        period,
+        now: Date.now(),
+      }),
+    [reviews, deferredSearch, ratingFilter, period],
+  );
 
   return (
     <div className="mx-auto max-w-[1500px] space-y-4 p-1 sm:p-2">

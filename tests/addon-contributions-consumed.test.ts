@@ -14,6 +14,7 @@ import {
   trustBadgeSuggestionsFrom,
 } from "../src/lib/addons/addon-registry";
 import type { BrandAddonRow } from "../src/lib/addons/addon-types";
+import { ADDON_MANIFESTS } from "../src/addons/registry";
 
 /**
  * Consumer mapping for all contribution types declared in AddonContributions.
@@ -276,5 +277,38 @@ describe("Addon Contributions Consumer Guard", () => {
     // trustBadgeSuggestions
     const trustBadges = trustBadgeSuggestionsFrom(mockRows);
     expect(trustBadges).toContain("Scissors");
+  });
+
+  it("mounts every slot placement an addon declares somewhere in core", () => {
+    // An addon's slot component only shows where core renders
+    // <AddonSlot placement="..."> (e.g. the Fit Passport account tab).
+    const coreSources: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          if (full.split(path.sep).join("/").endsWith("src/addons")) continue;
+          walk(full);
+        } else if (entry.name.endsWith(".tsx")) {
+          coreSources.push(fs.readFileSync(full, "utf8"));
+        }
+      }
+    };
+    walk(path.resolve(__dirname, "../src"));
+
+    const declared = ADDON_MANIFESTS.flatMap((manifest) =>
+      (manifest.contributions?.slots ?? []).map((slot) => ({
+        addon: manifest.id,
+        placement: slot.placement,
+      })),
+    );
+    expect(declared.length).toBeGreaterThan(0);
+    const unmounted = declared.filter(
+      ({ placement }) =>
+        !coreSources.some((source) =>
+          new RegExp(`<AddonSlot[^>]*placement="${placement.replace(/\./g, "\\.")}"`).test(source),
+        ),
+    );
+    expect(unmounted).toEqual([]);
   });
 });
