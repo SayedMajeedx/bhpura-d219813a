@@ -39,6 +39,20 @@ const storefrontModule = async (importOriginal: () => Promise<object>) => ({
 });
 vi.mock("../src/lib/storefront-context", (io) => storefrontModule(io));
 vi.mock("@/lib/storefront-context", (io) => storefrontModule(io));
+// The browser client (the storefront provider's session and membership checks)
+// is a stand-in: CI has no Supabase environment, and nothing here should call out.
+const browserClient = {
+  supabase: {
+    rpc: async () => ({ data: false, error: null }),
+    auth: {
+      getSession: async () => ({ data: { session: null } }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => undefined } } }),
+      signOut: async () => ({ error: null }),
+    },
+  },
+};
+vi.mock("../src/integrations/supabase/client", () => browserClient);
+vi.mock("@/integrations/supabase/client", () => browserClient);
 // The public API runs with the service-role client and billing faked.
 // The router keeps the client it imported, so it gets a stand-in that forwards
 // to the fake each test installs.
