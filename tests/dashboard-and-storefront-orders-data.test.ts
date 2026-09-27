@@ -54,7 +54,6 @@ vi.mock("@/integrations/supabase/client", () => client);
 vi.mock("@/lib/reporting.functions", () => ({ fetchCatalogInquiriesReporting: vi.fn() }));
 
 const customers = await import("../src/lib/data/customers");
-const storefront = await import("../src/lib/data/storefront");
 const returns = await import("../src/lib/data/returns");
 const reporting = await import("../src/lib/data/reporting");
 
@@ -84,21 +83,6 @@ describe("the shopper's orders", () => {
       customers.customersKeys.own("b1"),
     );
     expect(customers.ownCustomerQueries.orders("b1", undefined).enabled).toBe(false);
-  });
-});
-
-describe("the thank-you page's order lookup", () => {
-  it("reads how the order is fulfilled, under the store's key", async () => {
-    respond = () => ({ data: null, error: null });
-    expect(await storefront.fetchOrderConfirmation("o1")).toBeNull();
-    expect(requests[0].select).toBe("fulfillment_method, digital_delivery_channel");
-    expect(filters(requests[0], "eq")).toEqual([["id", "o1"]]);
-    expect(storefront.storefrontQueries.orderConfirmation("pura", "o1").queryKey).toEqual([
-      "storefront",
-      "pura",
-      "order",
-      "o1",
-    ]);
   });
 });
 

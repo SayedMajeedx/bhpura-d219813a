@@ -4,6 +4,22 @@ import { CreditCard, X } from "lucide-react";
 import type { Storefront } from "@/features/checkout/types";
 import type { useCheckoutFulfillment } from "@/features/checkout/hooks/use-checkout-fulfillment";
 import type { usePlaceOrder } from "@/features/checkout/hooks/use-place-order";
+import { PAYMENT_METHODS_SECTION_ID } from "@/features/checkout/components/PaymentMethodCard";
+
+/**
+ * Brings the payment methods into view and puts keyboard focus on the first
+ * method other than the card that just failed (the first method when card is
+ * the only one).
+ */
+export function showOtherPaymentMethods() {
+  const section = document.getElementById(PAYMENT_METHODS_SECTION_ID);
+  if (!section) return;
+  section.scrollIntoView({ behavior: "smooth", block: "start" });
+  const target =
+    section.querySelector<HTMLElement>('[data-payment-method]:not([data-payment-method="card"])') ??
+    section.querySelector<HTMLElement>("[data-payment-method]");
+  target?.focus({ preventScroll: true });
+}
 
 /** Shown after a declined or cancelled card payment: retry with the card or pick another method. */
 export function PaymentFailedCard({
@@ -45,14 +61,7 @@ export function PaymentFailedCard({
           <CreditCard className="w-4 h-4 me-2 rtl:ms-2 rtl:me-0" />
           {t("إعادة المحاولة بالبطاقة", "Retry Payment")}
         </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => {
-            const el = document.getElementById("payment-methods-section");
-            if (el) el.scrollIntoView({ behavior: "smooth" });
-          }}
-        >
+        <Button size="sm" variant="outline" onClick={showOtherPaymentMethods}>
           {t("اختر طريقة دفع أخرى", "Choose Another Payment Method")}
         </Button>
       </div>

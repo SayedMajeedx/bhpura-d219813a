@@ -183,4 +183,46 @@ test.describe("Storefront checkout", () => {
     expect(guard.orderPayloads).toHaveLength(0);
     await expect(page).toHaveURL(new RegExp(`/${SLUG}/checkout`));
   });
+
+  test("after a failed card payment, offers the other payment methods", async ({ page }) => {
+    test.setTimeout(120_000);
+    const variant = await findInStockVariant();
+    test.skip(!variant, "The store has no in-stock variant right now");
+
+    await guardWrites(page);
+    await page.addInitScript(
+      ({ slug, item }) => {
+        window.localStorage.setItem(`storefront-cart:${slug}`, JSON.stringify([item]));
+      },
+      {
+        slug: SLUG,
+        item: {
+          variant_id: variant!.id,
+          product_id: variant!.product_id,
+          name: variant!.products.name,
+          image: variant!.products.image_url,
+          price: Number(variant!.selling_price),
+          size: variant!.size,
+          color: variant!.color,
+          fabric: variant!.fabric,
+          qty: 1,
+          custom_fields: [],
+          max_stock: 1,
+        },
+      },
+    );
+
+    // The card gateway sends a failed payment back like this (bug backlog #12).
+    await page.goto(`/${SLUG}/checkout?lang=en&payment_error=declined&order_id=${FAKE_ORDER_ID}`, {
+      waitUntil: "domcontentloaded",
+    });
+    const other = page.getByRole("button", { name: "Choose Another Payment Method" });
+    await expect(other).toBeVisible({ timeout: 60_000 });
+    await waitForHydration(other);
+    await other.click();
+
+    const methods = page.getByRole("region", { name: "Payment method" });
+    await expect(methods).toBeInViewport();
+    await expect(methods.locator("[data-payment-method]:focus")).toHaveCount(1);
+  });
 });
