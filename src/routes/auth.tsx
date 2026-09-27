@@ -122,16 +122,16 @@ function AuthPage() {
   return (
     <div
       dir={isAr ? "rtl" : "ltr"}
-      className="grid min-h-dvh w-full bg-background text-foreground lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]"
+      // On wide screens the page is exactly the window's height: the brand side
+      // always fills it and only the form column scrolls on a short screen.
+      className="grid min-h-dvh w-full bg-background text-foreground lg:h-dvh lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:overflow-hidden"
     >
       {/* Brand side (the maroon canvas): wide screens only. */}
-      <aside className="hidden lg:block" aria-hidden="true">
-        <div className="sticky top-0 h-dvh">
-          <SignInBrandPanel lang={isAr ? "ar" : "en"} title={t("app.title")} />
-        </div>
+      <aside className="hidden h-full lg:block" aria-hidden="true">
+        <SignInBrandPanel lang={isAr ? "ar" : "en"} title={t("app.title")} />
       </aside>
 
-      <main className="relative flex min-h-dvh flex-col overflow-hidden px-5 py-5 sm:px-10 sm:py-8">
+      <main className="relative flex min-h-dvh flex-col px-5 py-5 sm:px-10 sm:py-8 lg:min-h-0 lg:overflow-y-auto">
         <header className="relative flex items-center justify-between gap-4">
           <Link
             to="/"
