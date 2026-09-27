@@ -1,0 +1,220 @@
+/* Admin sign-in (/auth): the brand panel's palette and the page's motion.
+   The brand panel keeps the maroon identity whatever the theme; the form side
+   uses the theme tokens. Every animation stops under prefers-reduced-motion. */
+
+:root {
+  --auth-ink: oklch(0.2 0.065 22);
+  --auth-ink-deep: oklch(0.14 0.04 22);
+  --auth-wine: oklch(0.38 0.14 22);
+  --auth-rose: oklch(0.64 0.12 18);
+  --auth-silk: oklch(0.9 0.035 40);
+  --auth-ivory: oklch(0.97 0.012 50);
+}
+
+.auth-brand {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: var(--auth-ivory);
+  background:
+    radial-gradient(120% 90% at 0% 100%, var(--auth-ink-deep) 0%, transparent 60%),
+    linear-gradient(160deg, var(--auth-ink) 0%, var(--auth-ink-deep) 100%);
+}
+
+/* Three slow, blurred light pools drifting on different loops. */
+.auth-aurora {
+  position: absolute;
+  z-index: -1;
+  border-radius: 9999px;
+  filter: blur(64px);
+  opacity: 0.55;
+  pointer-events: none;
+  will-change: transform;
+}
+.auth-aurora--wine {
+  width: 60%;
+  aspect-ratio: 1;
+  inset-block-start: -15%;
+  inset-inline-start: -10%;
+  background: var(--auth-wine);
+  animation: auth-drift-a 22s ease-in-out infinite alternate;
+}
+.auth-aurora--rose {
+  width: 45%;
+  aspect-ratio: 1;
+  inset-block-end: -10%;
+  inset-inline-end: -8%;
+  background: var(--auth-rose);
+  opacity: 0.35;
+  animation: auth-drift-b 26s ease-in-out infinite alternate;
+}
+.auth-aurora--silk {
+  width: 30%;
+  aspect-ratio: 1;
+  inset-block-start: 35%;
+  inset-inline-start: 45%;
+  background: var(--auth-silk);
+  opacity: 0.12;
+  animation: auth-drift-c 30s ease-in-out infinite alternate;
+}
+
+@keyframes auth-drift-a {
+  to {
+    transform: translate3d(18%, 22%, 0) scale(1.15);
+  }
+}
+@keyframes auth-drift-b {
+  to {
+    transform: translate3d(-20%, -18%, 0) scale(1.1);
+  }
+}
+@keyframes auth-drift-c {
+  to {
+    transform: translate3d(-35%, 20%, 0) scale(0.85);
+  }
+}
+
+/* Film grain, so the gradients read as fabric rather than a flat fill. */
+.auth-grain {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.09;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+/* The silk thread draws itself once, then a glint keeps travelling along it. */
+.auth-thread {
+  fill: none;
+  stroke: var(--auth-silk);
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: auth-draw 3.6s cubic-bezier(0.65, 0, 0.35, 1) 0.3s forwards;
+}
+.auth-thread-glint {
+  fill: none;
+  stroke: var(--auth-ivory);
+  stroke-linecap: round;
+  stroke-dasharray: 0.06 0.94;
+  stroke-dashoffset: 1;
+  opacity: 0;
+  animation:
+    auth-glint 7s linear 3.9s infinite,
+    auth-appear 0.6s ease-out 3.9s forwards;
+}
+.auth-stitch {
+  fill: none;
+  stroke: var(--auth-silk);
+  stroke-linecap: round;
+  stroke-dasharray: 6 10;
+  animation: auth-stitch 18s linear infinite;
+}
+
+@keyframes auth-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes auth-glint {
+  to {
+    stroke-dashoffset: -1;
+  }
+}
+@keyframes auth-appear {
+  to {
+    opacity: 0.9;
+  }
+}
+@keyframes auth-stitch {
+  to {
+    stroke-dashoffset: -160;
+  }
+}
+
+/* Entrance: each block rises into place, staggered by --auth-delay. */
+.auth-rise {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: auth-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) var(--auth-delay, 0ms) forwards;
+}
+@keyframes auth-rise {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The rotating capability line fades up on each change (keyed in React). */
+.auth-swap {
+  animation: auth-swap 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes auth-swap {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+/* A soft light sweep across the primary button on hover. */
+.auth-sheen {
+  position: relative;
+  overflow: hidden;
+}
+.auth-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, oklch(1 0 0 / 22%) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+.auth-sheen:hover::after {
+  transform: translateX(120%);
+}
+
+@keyframes auth-pulse-dot {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--os-accent-glow);
+  }
+  50% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+.auth-live-dot {
+  animation: auth-pulse-dot 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-aurora,
+  .auth-stitch,
+  .auth-live-dot,
+  .auth-swap {
+    animation: none;
+  }
+  .auth-thread {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .auth-thread-glint {
+    display: none;
+  }
+  .auth-rise {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .auth-sheen::after {
+    display: none;
+  }
+}

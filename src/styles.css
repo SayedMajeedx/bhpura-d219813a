@@ -1,5 +1,6 @@
 @import "./fonts.css";
 @import "./styles/storefront-motion.css";
+@import "./styles/auth-motion.css";
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
