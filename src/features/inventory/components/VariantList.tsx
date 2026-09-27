@@ -118,7 +118,7 @@ export function VariantList({
     bulkAddStock,
     bulkApplyMarkup,
     bulkDelete,
-  } = useVariantBulkActions(variants, onChanged, isAr);
+  } = useVariantBulkActions(variants, onChanged, isAr, Number(product?.base_price ?? 0));
 
   return (
     <div className="mt-4 border-t border-border pt-4">

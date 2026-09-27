@@ -194,12 +194,15 @@ export function VariantAddRow({
                 {isAr ? "التكلفة:" : "Cost:"}
               </span>
               <div className="relative inline-flex items-center w-22 shrink-0">
+                {/* The product's cost, as on the phone form: a new variant takes it,
+                    and saving the product resets every variant to it. */}
                 <Input
                   type="number"
                   step="0.001"
-                  className="h-7 w-full ps-1 pe-5.5 text-center text-xs font-bold font-mono"
+                  className="h-7 w-full ps-1 pe-5.5 text-center text-xs font-bold font-mono bg-muted/50 text-muted-foreground disabled:cursor-not-allowed disabled:opacity-100"
                   value={row.cost_price}
-                  onChange={(e) => setRow({ ...row, cost_price: e.target.value })}
+                  disabled
+                  aria-label={isAr ? "التكلفة" : "Cost"}
                   placeholder="0.000"
                 />
                 <span className="absolute end-1 text-xs font-black text-muted-foreground pointer-events-none">

@@ -4,6 +4,7 @@ import {
   buildProductImportPayload,
   detectProductColumns,
   mergeImportRunsBySession,
+  stockFromCell,
 } from "../src/features/inventory/lib/product-import";
 import { SIZE_UNITS, SIZE_UNIT_LABELS } from "../src/features/inventory/lib/size-units";
 
@@ -33,9 +34,46 @@ describe("detectProductColumns", () => {
     expect(detectProductColumns(["SKU", "Weight"])).toEqual(DEFAULT_PRODUCT_MAPPINGS);
   });
 
-  it("matches headers that contain an alias (known quirk: 'Cost price' maps to price)", () => {
+  it("matches an alias inside a longer header", () => {
     expect(detectProductColumns(["Price (BHD)"]).price).toBe(0);
-    expect(detectProductColumns(["Cost price", "Price"]).price).toBe(0);
+  });
+
+  it("never takes a cost or compare-at column for the selling price", () => {
+    expect(detectProductColumns(["Cost price", "Price"]).price).toBe(1);
+    expect(detectProductColumns(["Compare At Price", "Variant Price"]).price).toBe(1);
+    expect(detectProductColumns(["سعر التكلفة", "سعر البيع"]).price).toBe(1);
+    expect(detectProductColumns(["Cost per item"]).price).toBe(-1);
+  });
+
+  it("prefers an exact header over one that only contains the alias", () => {
+    expect(detectProductColumns(["Product name (internal)", "Name"]).name).toBe(1);
+  });
+
+  it("maps a real Shopify export and never one column to two fields", () => {
+    const headers = [
+      "Handle",
+      "Title",
+      "Body (HTML)",
+      "Variant SKU",
+      "Variant Inventory Qty",
+      "Variant Price",
+      "Variant Compare At Price",
+      "Image Src",
+      "Cost per item",
+    ];
+    const mappings = detectProductColumns(headers);
+    expect(mappings).toEqual({ name: 1, price: 5, image: 7, stock: 4 });
+    const used = Object.values(mappings).filter((column) => column !== -1);
+    expect(new Set(used).size).toBe(used.length);
+  });
+});
+
+describe("stockFromCell", () => {
+  it("keeps a stock of 0 and defaults only an empty cell", () => {
+    expect(stockFromCell("0", 10)).toBe(0);
+    expect(stockFromCell(" 12 pcs", 10)).toBe(12);
+    expect(stockFromCell("", 10)).toBe(10);
+    expect(stockFromCell(undefined, 10)).toBe(10);
   });
 });
 

@@ -1,3 +1,4 @@
+import { matchCustomFieldToMeasurement } from "@/lib/addons/addon-presets";
 import { PLACEHOLDER_SIZE_VALUES } from "@/lib/variant-sku-utils";
 import type { CustomField, MediaItem, Product } from "@/features/inventory/types";
 
@@ -91,11 +92,17 @@ export function primaryImageUrl(form: ProductForm): string | null {
 }
 
 /**
- * Kept as the single place to strip fit-passport fields before saving; it
- * currently returns them unchanged.
+ * Once a product asks for Fit Passport measurements (`passport_*` fields), its
+ * older hand-made measurement fields (length, bust, ...) would ask the customer
+ * for the same measurement twice, so they are dropped on save. Products without
+ * passport fields keep every field.
  */
 export function cleanPassportCustomFields(fields: CustomField[]) {
-  return fields;
+  const passportMode = fields.some((field) => field.key.includes("passport_"));
+  if (!passportMode) return fields;
+  return fields.filter(
+    (field) => field.key.includes("passport_") || !matchCustomFieldToMeasurement(field),
+  );
 }
 
 /**

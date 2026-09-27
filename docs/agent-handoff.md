@@ -136,8 +136,8 @@ middleware against a fake Supabase client) and `tests/helpers/brands-page.tsx`
 In `docs/bug-backlog.md`. Some need a product decision or a migration the owner
 applies. Both earlier ones are fixed: #25 (a cash ledger: accounts per brand,
 reconciled orders posted, manual cash in / out) and #27 (key rotations are
-audit-logged by `save_integration_credential`). The rest are older refactor
-finds (#2–#21).
+audit-logged by `save_integration_credential`). The inventory finds #2–#9 are
+fixed too. The rest are older refactor finds (#11–#21).
 
 ### 4.3 `any` reduction
 

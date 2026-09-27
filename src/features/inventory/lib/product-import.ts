@@ -47,24 +47,63 @@ export const PRODUCT_HEADER_MAPS = {
   ],
 };
 
+/** Headers that name a price but not the selling price (Shopify "Cost per item", "Compare At Price"; Salla "سعر التكلفة"). */
+const NOT_A_SELLING_PRICE = /\b(cost|compare)\b|تكلفة/i;
+
+const words = (text: string) =>
+  text
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}_]+/u)
+    .filter(Boolean)
+    .join(" ");
+
+/** How well a header names a field: 3 exact, 2 the alias as whole words, 1 contained, 0 not at all. */
+function headerScore(field: keyof ProductColumnMappings, header: string, alias: string): number {
+  if (field === "price" && NOT_A_SELLING_PRICE.test(header)) return 0;
+  const h = header.trim().toLowerCase();
+  const a = alias.toLowerCase();
+  if (h === a) return 3;
+  if (` ${words(h)} `.includes(` ${words(a)} `)) return 2;
+  return h.includes(a) ? 1 : 0;
+}
+
 /**
- * Picks the first column whose header equals or contains an alias of each
- * field. "Contains" is deliberate (it matches "Price (BHD)"), but it also means
- * a header like "Cost price" maps to `price`; the importer always shows the
- * mapping for confirmation before importing.
+ * Maps each field to the column whose header names it best: an exact alias
+ * first, then the alias as whole words ("Variant Price", "Price (BHD)"), then
+ * the alias anywhere in the header. A cost or compare-at column is never the
+ * selling price, and one column maps to one field at most. Ties go to the
+ * leftmost column. The importer shows the mapping for confirmation.
  */
 export function detectProductColumns(headers: readonly string[]): ProductColumnMappings {
   const mappings: ProductColumnMappings = { ...DEFAULT_PRODUCT_MAPPINGS };
-  for (const [field, aliases] of Object.entries(PRODUCT_HEADER_MAPS)) {
-    mappings[field as keyof ProductColumnMappings] = headers.findIndex((header) =>
-      aliases.some(
-        (alias) =>
-          header.toLowerCase() === alias.toLowerCase() ||
-          header.toLowerCase().includes(alias.toLowerCase()),
+  const fields = Object.keys(PRODUCT_HEADER_MAPS) as Array<keyof ProductColumnMappings>;
+  const candidates = fields.flatMap((field, fieldOrder) =>
+    headers.map((header, column) => ({
+      field,
+      fieldOrder,
+      column,
+      score: Math.max(
+        ...PRODUCT_HEADER_MAPS[field].map((alias) => headerScore(field, header, alias)),
       ),
-    );
-  }
+    })),
+  );
+  candidates
+    .filter((candidate) => candidate.score > 0)
+    .sort((a, b) => b.score - a.score || a.column - b.column || a.fieldOrder - b.fieldOrder)
+    .forEach(({ field, column }) => {
+      const taken = Object.values(mappings).includes(column);
+      if (mappings[field] === -1 && !taken) mappings[field] = column;
+    });
   return mappings;
+}
+
+/**
+ * The custom preset's stock cell: its digits, with `whenEmpty` only when the
+ * cell has none (a stock of 0 stays 0).
+ */
+export function stockFromCell(cell: string | undefined, whenEmpty: number): number {
+  const digits = (cell ?? "").replace(/[^\d]/g, "");
+  return digits === "" ? whenEmpty : Number.parseInt(digits, 10);
 }
 
 export type ImportRunSummary = {
@@ -248,10 +287,7 @@ export function buildProductImportPayload({
           ? parseFloat(row[finalMappings.price]?.replace(/[^\d.]/g, "") || "10") || 10.0
           : 10.0;
       imageVal = finalMappings.image !== -1 ? row[finalMappings.image] : null;
-      stockVal =
-        finalMappings.stock !== -1
-          ? parseInt(row[finalMappings.stock]?.replace(/[^\d]/g, "") || "0") || 10
-          : 10;
+      stockVal = finalMappings.stock !== -1 ? stockFromCell(row[finalMappings.stock], 10) : 10;
     }
 
     return {

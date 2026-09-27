@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  cleanPassportCustomFields,
   defaultVariantValues,
   hasExtraAxisLabels,
   primaryImageUrl,
@@ -8,7 +9,7 @@ import {
   validateProductForm,
 } from "../src/features/inventory/lib/product-form";
 import { PLACEHOLDER_SIZE_VALUES } from "../src/lib/variant-sku-utils";
-import type { Product } from "../src/features/inventory/types";
+import type { CustomField, Product } from "../src/features/inventory/types";
 
 const product = (overrides: Partial<Product> = {}): Product =>
   ({
@@ -126,6 +127,37 @@ describe("saving", () => {
       size: PLACEHOLDER_SIZE_VALUES[1],
       stock_main: 0,
     });
+  });
+});
+
+describe("cleanPassportCustomFields", () => {
+  const field = (key: string, label_en: string): CustomField => ({
+    key,
+    label_ar: null,
+    label_en,
+    type: "number",
+  });
+
+  it("drops hand-made measurement fields once the product asks for Fit Passport ones", () => {
+    const fields = [
+      field("passport_abaya_length", "Length"),
+      field("length", "Length"),
+      field("chest_cm", "Chest"),
+      field("engraving", "Engraving text"),
+    ];
+    expect(cleanPassportCustomFields(fields).map((f) => f.key)).toEqual([
+      "passport_abaya_length",
+      "engraving",
+    ]);
+  });
+
+  it("keeps every field on a product without Fit Passport fields", () => {
+    const fields = [field("length", "Length"), field("engraving", "Engraving text")];
+    expect(cleanPassportCustomFields(fields)).toEqual(fields);
+    expect(
+      productColumnsFrom(productFormFrom(product({ custom_fields: fields } as Partial<Product>)))
+        .custom_fields,
+    ).toEqual(fields);
   });
 });
 

@@ -119,9 +119,8 @@ export function useVariantMutations({
     // If barcode is changing, verify uniqueness within the brand
     if (
       patch.barcode !== undefined &&
-      patch.barcode !== null &&
-      patch.barcode.trim() !== "" &&
-      variants.some((other) => other.id !== v.id && other.barcode === patch.barcode?.trim())
+      // The same rule as adding: case and scanner characters do not make a barcode new.
+      isBarcodeInUse(variants, patch.barcode, v.id)
     ) {
       toast.error(
         isAr
