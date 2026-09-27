@@ -107,3 +107,15 @@ export function drawLines(
   });
   ctx.restore();
 }
+
+/**
+ * `color` at `alpha` opacity, for gradients that fade into a palette colour.
+ * Takes #rgb / #rrggbb (palette grounds); other formats are returned as is.
+ */
+export function withAlpha(color: string, alpha: number) {
+  const hex = color.trim().replace(/^#/, "");
+  if (!/^([0-9a-f]{3}|[0-9a-f]{6})$/i.test(hex)) return color;
+  const full = hex.length === 3 ? hex.replace(/./g, (c) => c + c) : hex;
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16));
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}

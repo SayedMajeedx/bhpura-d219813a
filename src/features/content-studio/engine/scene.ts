@@ -29,6 +29,14 @@ export type SceneData = {
   price: string | null;
   /** The formatted price before a sale, when there is one. */
   originalPrice: string | null;
+  /** The selling price's amount alone ("31.500"), for templates that set the currency apart. */
+  priceAmount: string | null;
+  /** The pre-sale amount alone, when there is a sale. */
+  originalAmount: string | null;
+  /** The currency as the store writes it ("BHD", "د.ب."). */
+  currencyLabel: string;
+  /** The saving as a whole percentage, when there is a sale. */
+  discountPercent: number | null;
   /** The product photo or, while exporting a video, the current video frame. */
   media: Drawable | null;
 };

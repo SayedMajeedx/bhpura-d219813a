@@ -6,7 +6,7 @@ import type { ContentStudio } from "@/features/content-studio/hooks/use-content-
 
 /** Choose the design: Classic (today's layout) or one of the animated templates. */
 export function TemplatePicker({ studio }: { studio: ContentStudio }) {
-  const { isAr, templateId, setTemplateId } = studio;
+  const { isAr, templateId, setTemplateId, sale } = studio;
   const options: Array<{
     id: TemplateId;
     name: string;
@@ -35,7 +35,7 @@ export function TemplatePicker({ studio }: { studio: ContentStudio }) {
       <div
         role="radiogroup"
         aria-labelledby="studio-template-label"
-        className="grid grid-cols-2 gap-2 sm:gap-2.5"
+        className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-2.5"
       >
         {options.map((option) => {
           const selected = templateId === option.id;
@@ -70,6 +70,13 @@ export function TemplatePicker({ studio }: { studio: ContentStudio }) {
           );
         })}
       </div>
+      {templateId === "price-drop" && !sale && (
+        <p role="status" className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+          {isAr
+            ? "لا يوجد سعر مخفّض لهذا المنتج حالياً، فسيظهر سعره فقط. اختر مقاساً أو لوناً عليه تخفيض لإظهار نسبة التوفير."
+            : "This product has no sale price right now, so the post shows its price only. Choose a variant on sale to show the saving."}
+        </p>
+      )}
     </div>
   );
 }
