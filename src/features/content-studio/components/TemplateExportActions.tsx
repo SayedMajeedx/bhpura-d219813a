@@ -1,4 +1,4 @@
-import { ChevronDown, GalleryHorizontal, Image as ImageIcon, Video, X } from "lucide-react";
+import { ChevronDown, GalleryHorizontal, Image as ImageIcon, Layers, Video, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { ContentStudio } from "@/features/content-studio/hooks/use-content-studio";
+import { BatchExportDialog } from "@/features/content-studio/components/BatchExportDialog";
 
 /**
  * Export buttons for an animated template: the MP4 (with progress and a
@@ -24,14 +25,29 @@ export function TemplateExportActions({ studio }: { studio: ContentStudio }) {
     exportTemplateSlides,
     cancelTemplateExport,
     activeTemplate,
+    batchable,
+    setBatchOpen,
   } = studio;
   const disabled = templateExporting || productsQ.isLoading;
   const hasSlides = Boolean(activeTemplate?.slideTimes);
   const slidesLabel = isAr ? "شرائح كاروسيل إنستغرام" : "Instagram carousel";
+  const batchLabel = isAr ? "عدة منتجات دفعة واحدة" : "Several products at once";
 
   if (mp4Supported === false) {
     return (
       <div className="flex items-center gap-2">
+        {batchable && (
+          <Button
+            variant="outline"
+            onClick={() => setBatchOpen(true)}
+            disabled={disabled}
+            className="h-10 gap-2 rounded-xl text-xs font-semibold px-3.5 sm:px-4"
+          >
+            <Layers className="size-4" />
+            {batchLabel}
+          </Button>
+        )}
+        <BatchExportDialog studio={studio} />
         {hasSlides && (
           <Button
             variant="outline"
@@ -144,8 +160,23 @@ export function TemplateExportActions({ studio }: { studio: ContentStudio }) {
               </div>
             </DropdownMenuItem>
           )}
+          {batchable && (
+            <DropdownMenuItem
+              onClick={() => setBatchOpen(true)}
+              className="gap-2.5 cursor-pointer py-2"
+            >
+              <Layers className="size-4 text-muted-foreground shrink-0" />
+              <div className="flex flex-col">
+                <span className="font-semibold text-xs">{batchLabel}</span>
+                <span className="text-xs text-muted-foreground">
+                  {isAr ? "حتى ١٢ منتجاً في ملف واحد" : "Up to 12, all in one go"}
+                </span>
+              </div>
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
+      <BatchExportDialog studio={studio} />
     </div>
   );
 }

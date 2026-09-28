@@ -19,6 +19,7 @@ import { useTemplateExport } from "@/features/content-studio/hooks/use-template-
 import { useLookbook } from "@/features/content-studio/hooks/use-lookbook";
 import { useDetailZoom } from "@/features/content-studio/hooks/use-detail-zoom";
 import { useOccasion } from "@/features/content-studio/hooks/use-occasion";
+import { useBatchExport } from "@/features/content-studio/hooks/use-batch-export";
 import { templateById, type TemplateId } from "@/features/content-studio/templates";
 import { studioSale } from "@/features/content-studio/lib/sale-price";
 import { optionRun } from "@/features/content-studio/lib/option-run";
@@ -170,6 +171,20 @@ export function useContentStudio(slug: string) {
     businessName,
     isAr,
   });
+  const batch = useBatchExport({
+    template: activeTemplate,
+    buildScene,
+    products: product.products,
+    variants: variantList,
+    axisDefaults,
+    leadId: selected?.id,
+    format,
+    isAr,
+    showPrice,
+    currencySymbol,
+    brandSlugClean,
+    businessName,
+  });
   const header = useHeaderLayout({ exporting: creativeExport.exporting, stageRef });
   const caption = useStudioCaption({
     selected,
@@ -231,6 +246,7 @@ export function useContentStudio(slug: string) {
     ...lookbook,
     ...detailZoom,
     ...occasion,
+    ...batch,
     ...product,
     ...copy,
     ...creativeExport,

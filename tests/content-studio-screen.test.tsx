@@ -565,4 +565,49 @@ describe("the content studio", () => {
       "Eid Mubarak",
     );
   });
+
+  it("runs a template across several products and hands them over together", async () => {
+    // jsdom never loads images: fail each one at once, so products draw without a photo.
+    class FailingImage {
+      onerror: (() => void) | null = null;
+      set src(_url: string) {
+        queueMicrotask(() => this.onerror?.());
+      }
+    }
+    vi.stubGlobal("Image", FailingImage);
+    try {
+      await renderStudio();
+      fireEvent.click(screen.getByRole("radio", { name: /Atelier Reveal/ }));
+      openSelect(await screen.findByRole("button", { name: "Download options" }));
+      fireEvent.click(await screen.findByRole("menuitem", { name: /Several products at once/ }));
+      const picks = await screen.findByRole("group", { name: "Products" });
+      // It opens on the product on screen; add the kaftan.
+      expect(within(picks).getByRole("button", { name: /Silk Abaya/ })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+      fireEvent.click(within(picks).getByRole("button", { name: /Linen Kaftan/ }));
+      fireEvent.click(screen.getByRole("button", { name: /Export 2 creatives/ }));
+
+      await waitFor(() => expect(exporting.deliverCreativeFiles).toHaveBeenCalledTimes(1));
+      const scenes = exporting.exportTemplatePng.mock.calls.map(
+        (call) => (call as unknown as [{ scene: Record<string, unknown> }])[0].scene,
+      );
+      expect(scenes.map(({ productName, price }) => ({ productName, price }))).toEqual([
+        { productName: "Silk Abaya", price: "42.000 BHD" },
+        { productName: "Linen Kaftan", price: "30.000 BHD" },
+      ]);
+      const [files, zipName] = exporting.deliverCreativeFiles.mock.lastCall as unknown as [
+        Array<{ name: string }>,
+        string,
+      ];
+      expect(files.map((file) => file.name)).toEqual([
+        "pura-silk-abaya-story.png",
+        "pura-linen-kaftan-story.png",
+      ]);
+      expect(zipName).toBe("pura-atelier-reveal-story.zip");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });
