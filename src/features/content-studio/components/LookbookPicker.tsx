@@ -1,7 +1,5 @@
-import { ImageOff, Layers } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { firstImage } from "@/features/content-studio/lib/studio-content";
+import { Layers } from "lucide-react";
+import { ProductTileGrid } from "@/features/content-studio/components/ProductTileGrid";
 import { LOOKBOOK_MAX, LOOKBOOK_MIN } from "@/features/content-studio/lib/lookbook";
 import type { ContentStudio } from "@/features/content-studio/hooks/use-content-studio";
 
@@ -40,65 +38,14 @@ export function LookbookPicker({ studio }: { studio: ContentStudio }) {
         </span>
       </div>
 
-      <div
-        role="group"
-        aria-labelledby="studio-lookbook-label"
-        className="grid max-h-80 grid-cols-4 gap-2 overflow-y-auto p-0.5 sm:grid-cols-5"
-      >
-        {products.map((product) => {
-          const place = lookbookIds.indexOf(product.id);
-          const picked = place >= 0;
-          const locked = picked ? atMin : full;
-          const name = isAr ? product.name_ar || product.name : product.name_en || product.name;
-          const image = firstImage(product);
-          return (
-            <Button
-              key={product.id}
-              type="button"
-              variant="ghost"
-              aria-pressed={picked}
-              aria-disabled={locked}
-              title={name}
-              onClick={() => {
-                if (!locked) toggleLookbookProduct(product.id);
-              }}
-              className={cn(
-                "group relative block aspect-[3/4] h-auto min-w-0 overflow-hidden rounded-xl border-2 p-0 text-start font-normal whitespace-normal transition-all hover:bg-transparent",
-                picked
-                  ? "border-primary ring-2 ring-primary/25 shadow-xs"
-                  : "border-border hover:border-primary/40",
-                locked && !picked && "cursor-not-allowed opacity-45",
-                locked && picked && "cursor-default",
-                !locked && "cursor-pointer",
-              )}
-            >
-              {image ? (
-                <img
-                  src={image}
-                  alt=""
-                  loading="lazy"
-                  className={cn(
-                    "size-full object-cover transition-opacity",
-                    !picked && "opacity-70 group-hover:opacity-100",
-                  )}
-                />
-              ) : (
-                <span className="grid size-full place-items-center bg-muted text-muted-foreground">
-                  <ImageOff className="size-4" aria-hidden="true" />
-                </span>
-              )}
-              <span className="absolute inset-x-0 bottom-0 truncate bg-background/85 px-1.5 py-1 text-xs font-medium text-foreground">
-                {name}
-              </span>
-              {picked && (
-                <span className="absolute top-1 start-1 grid size-5 place-items-center rounded-full bg-primary text-xs font-bold tabular-nums text-primary-foreground shadow-xs">
-                  {place + 1}
-                </span>
-              )}
-            </Button>
-          );
-        })}
-      </div>
+      <ProductTileGrid
+        products={products}
+        pickedIds={lookbookIds}
+        isAr={isAr}
+        labelledBy="studio-lookbook-label"
+        isLocked={(picked) => (picked ? atMin : full)}
+        onToggle={toggleLookbookProduct}
+      />
       {full && (
         <p role="status" className="text-xs text-muted-foreground">
           {isAr

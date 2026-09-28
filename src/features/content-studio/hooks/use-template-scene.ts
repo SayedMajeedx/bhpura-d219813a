@@ -6,9 +6,7 @@ import type { Sale } from "@/features/content-studio/lib/sale-price";
 import type { OptionRun } from "@/features/content-studio/lib/option-run";
 import type { LogoTint } from "@/features/content-studio/engine/brand-mark";
 import type { LookbookEntry } from "@/features/content-studio/lib/lookbook";
-
-/** A price amount as the studio prints it ("42.000"). */
-const amount = (value: number) => Number(value).toFixed(3);
+import { formatAmount } from "@/features/content-studio/lib/batch";
 
 /**
  * An image ready to draw on a canvas: loaded with CORS, so exports are not
@@ -135,8 +133,8 @@ export function useTemplateScene({
     [isAr],
   );
   const selling = sale?.price ?? effectivePrice;
-  const priceAmount = showPrice && selling ? amount(selling) : null;
-  const originalAmount = showPrice && sale ? amount(sale.original) : null;
+  const priceAmount = showPrice && selling ? formatAmount(selling) : null;
+  const originalAmount = showPrice && sale ? formatAmount(sale.original) : null;
 
   const buildScene = useCallback(
     (width: number, height: number, media?: Drawable | null): SceneData => ({
@@ -178,7 +176,8 @@ export function useTemplateScene({
       collection: collection
         ? collection.map((entry, index) => ({
             name: entry.name,
-            price: showPrice && entry.price ? `${amount(entry.price)} ${currencySymbol}` : null,
+            price:
+              showPrice && entry.price ? `${formatAmount(entry.price)} ${currencySymbol}` : null,
             media: collectionImages[index] ?? null,
           }))
         : null,
