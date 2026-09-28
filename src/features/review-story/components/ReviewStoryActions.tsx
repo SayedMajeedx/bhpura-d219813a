@@ -7,7 +7,15 @@ import type { ReviewStoryState } from "@/features/review-story/hooks/use-review-
  * and a cancel) and a still PNG. Where the browser cannot encode video, the PNG.
  */
 export function ReviewStoryActions({ story, isAr }: { story: ReviewStoryState; isAr: boolean }) {
-  const { exporting, exportProgress, mp4Supported, exportVideo, exportStill, cancelExport } = story;
+  const {
+    exporting,
+    exportProgress,
+    mp4Supported,
+    exportVideo,
+    exportStill,
+    cancelExport,
+    stillAt,
+  } = story;
 
   if (exporting && exportProgress > 0) {
     return (
@@ -55,9 +63,13 @@ export function ReviewStoryActions({ story, isAr }: { story: ReviewStoryState; i
         ? isAr
           ? "تنزيل PNG للستوري (1080 × 1920)"
           : "Download story PNG (1080 × 1920)"
-        : isAr
-          ? "أو تنزيل كصورة ثابتة (PNG)"
-          : "Or download static story (PNG)"}
+        : stillAt !== null
+          ? isAr
+            ? `أو تنزيل اللقطة عند ${stillAt.toFixed(1)} ث (PNG)`
+            : `Or download the frame at ${stillAt.toFixed(1)} s (PNG)`
+          : isAr
+            ? "أو تنزيل كصورة ثابتة (PNG)"
+            : "Or download static story (PNG)"}
     </Button>
   );
 

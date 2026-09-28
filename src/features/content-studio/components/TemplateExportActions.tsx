@@ -25,6 +25,7 @@ export function TemplateExportActions({ studio }: { studio: ContentStudio }) {
     exportTemplateSlides,
     cancelTemplateExport,
     activeTemplate,
+    stillAt,
     batchable,
     setBatchOpen,
   } = studio;
@@ -142,7 +143,13 @@ export function TemplateExportActions({ studio }: { studio: ContentStudio }) {
                 {isAr ? "تنزيل لقطة كصورة (PNG)" : "Still image (PNG)"}
               </span>
               <span className="text-xs text-muted-foreground">
-                {isAr ? "التصميم مكتملاً" : "The finished frame"}
+                {stillAt === null
+                  ? isAr
+                    ? "التصميم مكتملاً"
+                    : "The finished frame"
+                  : isAr
+                    ? `اللقطة عند ${stillAt.toFixed(1)} ث في المعاينة`
+                    : `The frame at ${stillAt.toFixed(1)} s in the preview`}
               </span>
             </div>
           </DropdownMenuItem>

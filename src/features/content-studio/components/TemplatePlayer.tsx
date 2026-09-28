@@ -28,6 +28,7 @@ export function TemplatePlayer<S extends BaseScene>({
   label,
   className,
   frameClassName,
+  onPausedAt,
 }: {
   template: StudioTemplate<S>;
   buildScene: (width: number, height: number, media?: Drawable | null) => S;
@@ -40,6 +41,8 @@ export function TemplatePlayer<S extends BaseScene>({
   className?: string;
   /** Extra classes for the frame around the canvas (corners, shadow). */
   frameClassName?: string;
+  /** Told the time the preview is paused at (null while it plays): the frame a still exports. */
+  onPausedAt?: (t: number | null) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
@@ -101,6 +104,12 @@ export function TemplatePlayer<S extends BaseScene>({
     frame = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(frame);
   }, [template, playing, duration, previewW, previewH, videoUrl, fontsReady, buildScene, scrubs]);
+
+  const pausedRef = useRef(onPausedAt);
+  pausedRef.current = onPausedAt;
+  useEffect(() => {
+    pausedRef.current?.(playing ? null : timeRef.current);
+  }, [playing, scrubs]);
 
   const scrub = (value: number) => {
     setPlaying(false);

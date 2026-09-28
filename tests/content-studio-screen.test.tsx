@@ -338,6 +338,19 @@ describe("the content studio", () => {
       target: { value: "3.5" },
     });
     expect(screen.getByText("3.5 s")).toBeInTheDocument();
+
+    // The still is the frame the preview is paused on.
+    openSelect(screen.getByRole("button", { name: "Download options" }));
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: /The frame at 3\.5 s in the preview/ }),
+    );
+    await waitFor(() => expect(exporting.exportTemplatePng).toHaveBeenCalledTimes(1));
+    expect(exporting.exportTemplatePng).toHaveBeenCalledWith(expect.objectContaining({ t: 3.5 }));
+
+    // Playing again goes back to the finished frame.
+    fireEvent.click(screen.getByRole("button", { name: "Play" }));
+    openSelect(screen.getByRole("button", { name: "Download options" }));
+    expect(await screen.findByRole("menuitem", { name: /The finished frame/ })).toBeInTheDocument();
   });
 
   it("exports Atelier Reveal as an MP4 with the studio's copy, price and format", async () => {

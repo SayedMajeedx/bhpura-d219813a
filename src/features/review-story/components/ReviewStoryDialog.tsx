@@ -465,6 +465,7 @@ export function ReviewStoryDialog({
               isAr={isAr}
               label={isAr ? "معاينة ستوري تقييم العميل" : "Customer review story preview"}
               frameClassName="rounded-xl bg-white shadow-2xl ring-1 ring-black/10"
+              onPausedAt={story.setStillAt}
             />
           </div>
         </aside>

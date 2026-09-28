@@ -10,7 +10,7 @@ import type { ContentStudio } from "@/features/content-studio/hooks/use-content-
  * output size and length, and a way back to the controls on small screens.
  */
 export function TemplatePreview({ studio }: { studio: ContentStudio }) {
-  const { isAr, format, activeTemplate, buildScene, photo, isCurrentVideo } = studio;
+  const { isAr, format, activeTemplate, buildScene, photo, isCurrentVideo, setStillAt } = studio;
   const { width: outW, height: outH } = FORMATS[format];
   const duration = activeTemplate?.duration ?? 1;
 
@@ -60,6 +60,7 @@ export function TemplatePreview({ studio }: { studio: ContentStudio }) {
           label={`${isAr ? activeTemplate.name.ar : activeTemplate.name.en} — ${isAr ? "معاينة" : "preview"}`}
           className="max-w-[570px]"
           frameClassName="rounded-[22px] shadow-2xl"
+          onPausedAt={setStillAt}
         />
       )}
     </div>
