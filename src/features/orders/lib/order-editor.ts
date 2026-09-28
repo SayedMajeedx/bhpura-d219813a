@@ -472,3 +472,12 @@ export function isTailoredLine(
 ): boolean {
   return !it.product_id || it.location === "custom" || it.variant_id === "custom";
 }
+
+/**
+ * Whether an order exists in the database yet. A new order in the editor has
+ * the id "new" (older drafts: "draft_…") until it is saved; writing to the
+ * database with that id fails ("invalid input syntax for type uuid").
+ */
+export function isSavedOrderId(id: string | null | undefined): id is string {
+  return Boolean(id) && id !== "new" && !id!.startsWith("draft_");
+}

@@ -64,6 +64,7 @@ export function orderSavePayload(
       fulfillmentMethod === "digital" ? order.digital_delivery_contact : null,
     payment_method: order.payment_method ?? null,
     payment_status: order.payment_status ?? "unpaid",
+    payment_reference: order.payment_reference ?? null,
     fulfillment_status: order.fulfillment_status ?? "ON_HOLD",
     discount: totals.discount,
     tax_rate: order.tax_rate,

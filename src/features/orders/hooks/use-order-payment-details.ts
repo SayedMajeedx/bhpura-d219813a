@@ -6,6 +6,7 @@ import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-d
 import { orderPaymentUpdate, type PaymentDetailsInput } from "@/features/orders/lib/order-payment";
 import { invalidateOrders, updateOrder } from "@/lib/data/orders";
 import { invalidateActivityLogs } from "@/lib/data/activity-logs";
+import { isSavedOrderId } from "@/features/orders/lib/order-editor";
 
 /** Saving payment status, method, advance and reference from the payment modal; saved orders persist and log it immediately. */
 export function useOrderPaymentDetails({
@@ -35,8 +36,9 @@ export function useOrderPaymentDetails({
     const nextOrder = { ...order, ...paymentFields };
     setOrder(nextOrder);
 
-    // If order is saved in DB, persist change immediately
-    if (order.id && !order.id.startsWith("draft_")) {
+    // A saved order persists the change now; a new one keeps it in the editor
+    // and saves it with the order.
+    if (isSavedOrderId(order.id)) {
       try {
         await updateOrder(brandId, order.id, paymentFields);
       } catch (error) {
