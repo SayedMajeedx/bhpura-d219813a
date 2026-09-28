@@ -470,4 +470,39 @@ describe("the content studio", () => {
     ]);
     expect(zipName).toBe("pura-lookbook-carousel.zip");
   });
+
+  it("zooms into the detail the merchant taps, named from the product's fabric", async () => {
+    await renderStudio();
+    fireEvent.click(screen.getByRole("radio", { name: /Detail Zoom/ }));
+    expect(await screen.findByLabelText("Detail label")).toHaveValue("Silk");
+    expect(screen.getByLabelText("Note")).toHaveValue("Evening");
+
+    // Tap the photo a quarter across and a third down.
+    const point = screen.getByRole("button", { name: /Detail point/ });
+    const photo = point.querySelector("img")!;
+    photo.getBoundingClientRect = () =>
+      ({ left: 100, top: 50, width: 200, height: 300 }) as DOMRect;
+    fireEvent.click(point, { clientX: 150, clientY: 150, detail: 1 });
+    expect(point).toHaveAccessibleName(/25% across, 33% down/);
+    fireEvent.keyDown(point, { key: "ArrowRight" });
+    expect(point).toHaveAccessibleName(/27% across/);
+    fireEvent.change(screen.getByLabelText("Detail label"), {
+      target: { value: "Hand-beaded cuff" },
+    });
+
+    const download = await screen.findByRole("button", { name: "Download Video (MP4)" });
+    await waitFor(() => expect(download).toBeEnabled());
+    fireEvent.click(download);
+    await waitFor(() => expect(exporting.exportTemplateMp4).toHaveBeenCalledTimes(1));
+    const [{ template, scene }] = exporting.exportTemplateMp4.mock.lastCall as unknown as [
+      {
+        template: { id: string };
+        scene: { detail: { x: number; y: number; label: string; note: string } | null };
+      },
+    ];
+    expect(template.id).toBe("detail-zoom");
+    expect(scene.detail).toMatchObject({ label: "Hand-beaded cuff", note: "Evening" });
+    expect(scene.detail?.x).toBeCloseTo(0.27);
+    expect(scene.detail?.y).toBeCloseTo(1 / 3);
+  });
 });

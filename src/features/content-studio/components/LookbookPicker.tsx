@@ -1,4 +1,5 @@
 import { ImageOff, Layers } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { firstImage } from "@/features/content-studio/lib/studio-content";
 import { LOOKBOOK_MAX, LOOKBOOK_MIN } from "@/features/content-studio/lib/lookbook";
@@ -51,9 +52,10 @@ export function LookbookPicker({ studio }: { studio: ContentStudio }) {
           const name = isAr ? product.name_ar || product.name : product.name_en || product.name;
           const image = firstImage(product);
           return (
-            <button
+            <Button
               key={product.id}
               type="button"
+              variant="ghost"
               aria-pressed={picked}
               aria-disabled={locked}
               title={name}
@@ -61,7 +63,7 @@ export function LookbookPicker({ studio }: { studio: ContentStudio }) {
                 if (!locked) toggleLookbookProduct(product.id);
               }}
               className={cn(
-                "group relative aspect-[3/4] min-w-0 overflow-hidden rounded-xl border-2 text-start transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                "group relative block aspect-[3/4] h-auto min-w-0 overflow-hidden rounded-xl border-2 p-0 text-start font-normal whitespace-normal transition-all hover:bg-transparent",
                 picked
                   ? "border-primary ring-2 ring-primary/25 shadow-xs"
                   : "border-border hover:border-primary/40",
@@ -93,7 +95,7 @@ export function LookbookPicker({ studio }: { studio: ContentStudio }) {
                   {place + 1}
                 </span>
               )}
-            </button>
+            </Button>
           );
         })}
       </div>

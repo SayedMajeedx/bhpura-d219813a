@@ -35,6 +35,24 @@ export function coverCrop(
   return { x, y, w: cropW, h: cropH };
 }
 
+/**
+ * Where a point of the source (`x`, `y` from 0 to 1 across it) lands on the
+ * canvas when the source is drawn into `box` with coverCrop's framing.
+ */
+export function coverPoint(
+  w: number,
+  h: number,
+  box: Box,
+  point: { x: number; y: number },
+  options?: { zoom?: number; focusX?: number; focusY?: number },
+): { x: number; y: number } {
+  const crop = coverCrop(w, h, box, options);
+  return {
+    x: box.x + ((point.x * w - crop.x) * box.w) / crop.w,
+    y: box.y + ((point.y * h - crop.y) * box.h) / crop.h,
+  };
+}
+
 const scaledPhotos = new WeakMap<object, Map<number, HTMLCanvasElement>>();
 
 /**
@@ -91,6 +109,48 @@ export function drawCover(
   ctx.imageSmoothingEnabled = true;
   ctx.drawImage(image, crop.x, crop.y, crop.w, crop.h, box.x, box.y, box.w, box.h);
   ctx.restore();
+}
+
+const shades = new Map<string, HTMLCanvasElement>();
+
+/**
+ * Darkens the top and the foot of a full-bleed photo so white type reads on
+ * it: black fading from `top.alpha` over the top `top.height` of the frame,
+ * and fading in from `foot.from` down to `foot.alpha` at the bottom (both as
+ * fractions of the height). Gradients are slow to paint, and the shading
+ * never changes, so it is painted once per size and stamped on every frame.
+ */
+export function drawShade(
+  ctx: CanvasRenderingContext2D,
+  W: number,
+  H: number,
+  top: { height: number; alpha: number },
+  foot: { from: number; alpha: number },
+) {
+  const key = [Math.round(W), Math.round(H), top.height, top.alpha, foot.from, foot.alpha].join(
+    ":",
+  );
+  let shade = shades.get(key);
+  if (!shade) {
+    shade = document.createElement("canvas");
+    shade.width = Math.round(W);
+    shade.height = Math.round(H);
+    const s = shade.getContext("2d");
+    if (!s) return;
+    const upper = s.createLinearGradient(0, 0, 0, H * top.height);
+    upper.addColorStop(0, `rgba(0,0,0,${top.alpha})`);
+    upper.addColorStop(1, "rgba(0,0,0,0)");
+    s.fillStyle = upper;
+    s.fillRect(0, 0, W, H * top.height);
+    const lower = s.createLinearGradient(0, H * foot.from, 0, H);
+    lower.addColorStop(0, "rgba(0,0,0,0)");
+    lower.addColorStop(1, `rgba(0,0,0,${foot.alpha})`);
+    s.fillStyle = lower;
+    s.fillRect(0, H * foot.from, W, H * (1 - foot.from));
+    if (shades.size > 6) shades.clear();
+    shades.set(key, shade);
+  }
+  ctx.drawImage(shade, 0, 0, W, H);
 }
 
 /** Adds a rounded rectangle path (fill or clip it after). */

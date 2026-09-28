@@ -59,6 +59,12 @@ export type SceneData = {
    * price (null when prices are hidden) and photo. Null outside the lookbook.
    */
   collection: Array<{ name: string; price: string | null; media: Drawable | null }> | null;
+  /**
+   * The detail Detail Zoom pushes into: a point on the photo (0 to 1 across
+   * and down), what it is (the fabric or finish) and a note (the occasion).
+   * Null outside that template.
+   */
+  detail: { x: number; y: number; label: string; note: string } | null;
 };
 
 /** One animated template: its name, length and how it draws a frame at time t. */

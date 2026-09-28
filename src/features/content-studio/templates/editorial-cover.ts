@@ -2,6 +2,7 @@ import { drawBrandMark, logoColor } from "@/features/content-studio/engine/brand
 import {
   drawCover,
   drawLines,
+  drawShade,
   font,
   roundedRect,
   withAlpha,
@@ -64,38 +65,6 @@ function drawTextMasthead(
   ctx.restore();
 }
 
-const shades = new Map<string, HTMLCanvasElement>();
-
-/**
- * The cover's shading (dark at the top for the masthead, darker at the foot
- * for the cover lines). It never changes, so it is painted once per size and
- * stamped on every frame.
- */
-function drawShade(ctx: CanvasRenderingContext2D, W: number, H: number) {
-  const key = `${Math.round(W)}x${Math.round(H)}`;
-  let shade = shades.get(key);
-  if (!shade) {
-    shade = document.createElement("canvas");
-    shade.width = Math.round(W);
-    shade.height = Math.round(H);
-    const s = shade.getContext("2d");
-    if (!s) return;
-    const top = s.createLinearGradient(0, 0, 0, H * 0.34);
-    top.addColorStop(0, "rgba(0,0,0,0.42)");
-    top.addColorStop(1, "rgba(0,0,0,0)");
-    s.fillStyle = top;
-    s.fillRect(0, 0, W, H * 0.34);
-    const foot = s.createLinearGradient(0, H * 0.45, 0, H);
-    foot.addColorStop(0, "rgba(0,0,0,0)");
-    foot.addColorStop(1, "rgba(0,0,0,0.62)");
-    s.fillStyle = foot;
-    s.fillRect(0, H * 0.45, W, H * 0.55);
-    if (shades.size > 6) shades.clear();
-    shades.set(key, shade);
-  }
-  ctx.drawImage(shade, 0, 0, W, H);
-}
-
 function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
   const { width: W, height: H, brand, lang } = scene;
   const { palette } = brand;
@@ -128,7 +97,8 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
     ctx.fillStyle = fill;
     ctx.fillRect(0, 0, W, H);
   }
-  drawShade(ctx, W, H);
+  // The cover's shading: dark at the top for the masthead, darker at the foot for the cover lines.
+  drawShade(ctx, W, H, { height: 0.34, alpha: 0.42 }, { from: 0.45, alpha: 0.62 });
   ctx.restore();
 
   // Masthead: the logo, large and centred, or the name tracking in.
