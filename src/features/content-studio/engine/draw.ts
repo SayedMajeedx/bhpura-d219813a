@@ -1,4 +1,5 @@
 import type { Drawable } from "@/features/content-studio/engine/scene";
+import { textDirection } from "@/features/content-studio/engine/text-layout";
 
 export type Box = { x: number; y: number; w: number; h: number };
 
@@ -211,6 +212,67 @@ export function drawLines(
     ctx.fillText(line, x, y + index * lineHeight + dy);
   });
   ctx.restore();
+}
+
+/** One piece of a line of mixed text (a name, a separator, a price): drawn on its own. */
+export type TextRun = { text: string; dir?: "rtl" | "ltr" };
+
+/** The width of a line of runs `gap` apart, in the current font. */
+export function measureRuns(ctx: CanvasRenderingContext2D, runs: readonly TextRun[], gap: number) {
+  const widths = runs.map((run) => ctx.measureText(run.text).width);
+  return {
+    widths,
+    total: widths.reduce((sum, w) => sum + w, 0) + gap * Math.max(0, runs.length - 1),
+  };
+}
+
+/**
+ * Draws a line made of separate runs in reading order: in a right-to-left
+ * line the first run sits at the right. Each run is drawn by itself in its
+ * own direction, so an Arabic name, a number and a currency never reorder
+ * into each other, as they do when joined into one string and drawn at once.
+ * Always use this, not a joined string, when a line mixes a name with a price
+ * or other numbers. `x` is the line's start (its right end in RTL) or centre.
+ */
+export function drawRuns(
+  ctx: CanvasRenderingContext2D,
+  runs: readonly TextRun[],
+  {
+    x,
+    y,
+    lineDir,
+    align = "start",
+    gap,
+  }: { x: number; y: number; lineDir: "rtl" | "ltr"; align?: "start" | "center"; gap: number },
+): number {
+  const { widths, total } = measureRuns(ctx, runs, gap);
+  let left = align === "center" ? x - total / 2 : lineDir === "rtl" ? x - total : x;
+  const order = runs.map((_, index) => index);
+  if (lineDir === "rtl") order.reverse();
+  ctx.save();
+  ctx.textAlign = "left";
+  for (const index of order) {
+    const run = runs[index];
+    ctx.direction = run.dir ?? textDirection(run.text);
+    ctx.fillText(run.text, left, y);
+    left += widths[index] + gap;
+  }
+  ctx.restore();
+  return total;
+}
+
+/** How light a #rgb / #rrggbb colour is (0 black to 1 white); 0.5 for other formats. */
+export function luminance(color: string): number {
+  const hex = color.trim().replace(/^#/, "");
+  if (!/^([0-9a-f]{3}|[0-9a-f]{6})$/i.test(hex)) return 0.5;
+  const full = hex.length === 3 ? hex.replace(/./g, (c) => c + c) : hex;
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16) / 255);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** Of two colours, the darker: for text on a light box, whichever way round a palette runs. */
+export function darker(a: string, b: string): string {
+  return luminance(a) <= luminance(b) ? a : b;
 }
 
 /**

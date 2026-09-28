@@ -267,7 +267,7 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
     if (slide.price) {
       ctx.globalAlpha = alpha * 0.9;
       ctx.font = font(34 * u, STUDIO_FONTS.body, 500);
-      ctx.direction = "ltr";
+      ctx.direction = textDirection(slide.price);
       ctx.fillText(slide.price, W / 2, y + 14 * u);
       y += 14 * u + 34 * u;
     }

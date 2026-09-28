@@ -198,7 +198,8 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
       ctx.fillStyle = palette.ink;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.direction = "ltr";
+      // An Arabic price ("30.000 د.ب.") reads right to left: number first, then the currency.
+      ctx.direction = textDirection(scene.price);
       ctx.fillText(scene.price, cx, cy + size * 0.04);
       ctx.restore();
     }

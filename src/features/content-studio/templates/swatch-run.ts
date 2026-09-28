@@ -244,7 +244,7 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
     ctx.globalAlpha = presence(t, { start: 1.2, end: DURATION }) * 0.9;
     ctx.fillStyle = palette.ink;
     ctx.font = font(34 * u, STUDIO_FONTS.body, 500);
-    ctx.direction = "ltr";
+    ctx.direction = textDirection(scene.price);
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
     ctx.fillText(scene.price, W / 2, afterRow);

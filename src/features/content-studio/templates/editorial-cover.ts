@@ -2,10 +2,14 @@ import { drawBrandMark, logoColor } from "@/features/content-studio/engine/brand
 import {
   drawCover,
   drawLines,
+  darker,
+  drawRuns,
   drawShade,
   font,
+  measureRuns,
   roundedRect,
   withAlpha,
+  type TextRun,
 } from "@/features/content-studio/engine/draw";
 import { displayFont, STUDIO_FONTS } from "@/features/content-studio/engine/fonts";
 import type { FormatKey, SceneData, StudioTemplate } from "@/features/content-studio/engine/scene";
@@ -241,9 +245,15 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
       ctx.save();
       ctx.globalAlpha = alpha;
       ctx.font = font(tagSize, STUDIO_FONTS.body, 600);
-      const label = `${scene.productName}  ·  ${scene.price}`;
-      ctx.direction = textDirection(label);
-      const w = ctx.measureText(label).width + 2 * 26 * u;
+      // Name, dot and price as separate runs: joined into one string, an
+      // Arabic name and the price's numbers reorder into each other.
+      const runs: TextRun[] = [
+        { text: scene.productName },
+        { text: "·", dir: "ltr" },
+        { text: scene.price },
+      ];
+      const gap = 14 * u;
+      const w = measureRuns(ctx, runs, gap).total + 2 * 26 * u;
       const box = { x: rtl ? startX - w : startX, y: tagY, w, h: tagH };
       const cx = box.x + box.w / 2;
       const cy = box.y + box.h / 2;
@@ -254,10 +264,11 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
       roundedRect(ctx, box, 6 * u);
       ctx.fillStyle = withAlpha(COVER_INK, 0.94);
       ctx.fill();
-      ctx.fillStyle = palette.ground;
-      ctx.textAlign = "center";
+      // The box is white, so its text takes the palette's darker colour
+      // (the ground on dark styles, the ink on light ones).
+      ctx.fillStyle = darker(palette.ink, palette.ground);
       ctx.textBaseline = "middle";
-      ctx.fillText(label, cx, cy + u);
+      drawRuns(ctx, runs, { x: cx, y: cy + u, lineDir: rtl ? "rtl" : "ltr", align: "center", gap });
       ctx.restore();
     }
   }
