@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import {
+  OCCASIONS,
   nextDate,
   occasionById,
   occasionCaption,
@@ -42,6 +43,15 @@ export function useOccasion({
     [occasionId, day, country],
   );
   const occasion = occasionById(occasionId);
+  // Every occasion with its next date, soonest first, for the panel's chips.
+  const occasionChoices = useMemo(
+    () =>
+      OCCASIONS.map((item) => ({
+        occasion: item,
+        date: nextDate(item.id, new Date(day), country),
+      })).sort((a, b) => a.date.getTime() - b.date.getTime()),
+    [day, country],
+  );
 
   const [edits, setEdits] = useState<Record<string, string>>({});
   const key = (field: string) => `${occasionId}:${field}:${lang}`;
@@ -98,6 +108,7 @@ export function useOccasion({
     occasionId,
     setOccasionId,
     occasionDate,
+    occasionChoices,
     occasionCountry: country,
     occasionGreeting,
     setOccasionGreeting: edit(key("greeting")),

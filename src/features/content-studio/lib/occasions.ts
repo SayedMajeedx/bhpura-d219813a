@@ -1,10 +1,22 @@
 /**
  * The GCC calendar's greeting occasions: their default wording in both
  * languages, when each falls (Islamic dates by the Umm al-Qura calendar, so
- * they move each year), and the store's own National Day.
+ * they move each year), and the store's own National Day. Besides the
+ * religious and national days, a seasonal pack follows the retail year:
+ * White Friday, New Year, back to school, graduation and summer.
  */
 
-export type OccasionId = "ramadan" | "eid-al-fitr" | "eid-al-adha" | "national-day" | "mothers-day";
+export type OccasionId =
+  | "ramadan"
+  | "eid-al-fitr"
+  | "eid-al-adha"
+  | "national-day"
+  | "mothers-day"
+  | "white-friday"
+  | "new-year"
+  | "back-to-school"
+  | "graduation"
+  | "summer";
 
 type Words = { en: string; ar: string };
 
@@ -52,6 +64,50 @@ export const OCCASIONS: readonly Occasion[] = [
     message: { en: "To the one who taught us love", ar: "إلى من علّمتنا الحب" },
     hashtags: { en: "#MothersDay", ar: "#عيد_الأم" },
   },
+  {
+    id: "white-friday",
+    name: { en: "White Friday", ar: "الجمعة البيضاء" },
+    greeting: { en: "White Friday", ar: "الجمعة البيضاء" },
+    message: { en: "Our biggest offers of the year", ar: "أقوى عروض السنة" },
+    hashtags: { en: "#WhiteFriday", ar: "#الجمعة_البيضاء" },
+  },
+  {
+    id: "new-year",
+    name: { en: "New Year", ar: "رأس السنة" },
+    greeting: { en: "Happy New Year", ar: "سنة جديدة سعيدة" },
+    message: { en: "Thank you for a wonderful year", ar: "شكراً لأنكم كنتم معنا هذا العام" },
+    hashtags: { en: "#HappyNewYear", ar: "#سنة_جديدة" },
+  },
+  {
+    id: "back-to-school",
+    name: { en: "Back to school", ar: "العودة للمدارس" },
+    greeting: { en: "Back to school", ar: "العودة إلى المدارس" },
+    message: { en: "Ready for a bright new year", ar: "استعدوا لعام دراسي مميز" },
+    hashtags: { en: "#BackToSchool", ar: "#العودة_للمدارس" },
+  },
+  {
+    id: "graduation",
+    name: { en: "Graduation", ar: "التخرج" },
+    greeting: { en: "Congratulations, graduates", ar: "مبروك التخرج" },
+    message: { en: "Here's to what comes next", ar: "إلى نجاحات أكبر" },
+    hashtags: { en: "#Graduation #ClassOf", ar: "#تخرج #مبروك_التخرج" },
+  },
+  {
+    id: "summer",
+    name: { en: "Summer", ar: "الصيف" },
+    greeting: { en: "Hello, summer", ar: "أهلاً بالصيف" },
+    message: { en: "Light pieces for long days", ar: "قطع خفيفة لأيام الصيف" },
+    hashtags: { en: "#Summer", ar: "#صيف" },
+  },
+];
+
+/** The seasonal pack: the retail year's moments, beside the religious and national days. */
+export const SEASONAL_OCCASIONS: readonly OccasionId[] = [
+  "white-friday",
+  "new-year",
+  "back-to-school",
+  "graduation",
+  "summer",
 ];
 
 export function occasionById(id: OccasionId): Occasion {
@@ -94,12 +150,30 @@ export function hijriDate(date: Date): { year: number; month: number; day: numbe
   };
 }
 
-/** Whether `date` falls in the occasion: Ramadan's month, the Eids' days, or the day itself. */
+/** White Friday: the Friday after the fourth Thursday of November (23 to 29 November). */
+function isWhiteFriday(date: Date) {
+  return (
+    date.getUTCMonth() === 10 &&
+    date.getUTCDay() === 5 &&
+    date.getUTCDate() >= 23 &&
+    date.getUTCDate() <= 29
+  );
+}
+
+/**
+ * Whether `date` falls in the occasion: Ramadan's month, the Eids' days, the
+ * seasonal windows (when shops post for them), or the day itself.
+ */
 function within(id: OccasionId, date: Date, country: Country): boolean {
   const month = date.getUTCMonth() + 1;
   const day = date.getUTCDate();
   if (id === "national-day") return month === country.month && day === country.day;
   if (id === "mothers-day") return month === 3 && day === 21;
+  if (id === "white-friday") return isWhiteFriday(date);
+  if (id === "new-year") return month === 1 && day === 1;
+  if (id === "back-to-school") return (month === 8 && day >= 25) || (month === 9 && day <= 5);
+  if (id === "graduation") return month === 6 && day >= 15;
+  if (id === "summer") return month === 6 && day >= 21 && day <= 30;
   const hijri = hijriDate(date);
   if (id === "ramadan") return hijri.month === 9;
   if (id === "eid-al-fitr") return hijri.month === 10 && hijri.day <= 3;
@@ -143,6 +217,10 @@ export function occasionEyebrow(
 ): string {
   if (id === "national-day") return country.name[lang];
   if (id === "mothers-day") return lang === "ar" ? "٢١ مارس" : "21 March";
+  const gregorian = date.getUTCFullYear();
+  if (id === "back-to-school") return `${gregorian}–${gregorian + 1}`;
+  if (id === "graduation") return lang === "ar" ? `دفعة ${gregorian}` : `Class of ${gregorian}`;
+  if (id === "white-friday" || id === "new-year" || id === "summer") return String(gregorian);
   const { year } = hijriDate(date);
   return lang === "ar" ? `${year} هـ` : `${year} AH`;
 }
