@@ -4,6 +4,7 @@ import { paletteFor } from "@/features/content-studio/templates";
 import type { THEMES } from "@/features/content-studio/lib/studio-content";
 import type { Sale } from "@/features/content-studio/lib/sale-price";
 import type { OptionRun } from "@/features/content-studio/lib/option-run";
+import type { LogoTint } from "@/features/content-studio/engine/brand-mark";
 
 /**
  * An image ready to draw on a canvas: loaded with CORS, so exports are not
@@ -76,6 +77,8 @@ export function useTemplateScene({
   currencySymbol,
   sale,
   run,
+  logoScale,
+  logoTint,
 }: {
   format: FormatKey;
   isAr: boolean;
@@ -96,6 +99,8 @@ export function useTemplateScene({
   sale: Sale | null;
   /** The product's options for Swatch Run, or null. */
   run: OptionRun | null;
+  logoScale: number;
+  logoTint: LogoTint;
 }) {
   const photoImage = useLoadedImage(isCurrentVideo ? null : photo);
   const logoImage = useLoadedImage(logo);
@@ -116,6 +121,8 @@ export function useTemplateScene({
       brand: {
         name: businessName,
         logo: logoImage,
+        logoScale,
+        logoTint,
         handle: instagram,
         contact: phone || null,
         palette: paletteFor(theme),
@@ -147,6 +154,8 @@ export function useTemplateScene({
       isAr,
       businessName,
       logoImage,
+      logoScale,
+      logoTint,
       instagram,
       phone,
       theme,

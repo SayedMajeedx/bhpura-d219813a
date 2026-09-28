@@ -13,7 +13,12 @@ import {
   wrapText,
 } from "../src/features/content-studio/engine/text-layout";
 import { coverCrop, withAlpha } from "../src/features/content-studio/engine/draw";
-import type { SceneData, StudioTemplate } from "../src/features/content-studio/engine/scene";
+import type {
+  BrandKit,
+  SceneData,
+  StudioTemplate,
+} from "../src/features/content-studio/engine/scene";
+import { drawBrandMark, logoColor } from "../src/features/content-studio/engine/brand-mark";
 
 // The content studio's animation engine: timing, text layout, image framing
 // and the exporters (the video encoder is mocked; jsdom has no canvas).
@@ -254,5 +259,70 @@ describe("withAlpha", () => {
     expect(withAlpha("#330a0a", 0.5)).toBe("rgba(51, 10, 10, 0.5)");
     expect(withAlpha("#fff", 0)).toBe("rgba(255, 255, 255, 0)");
     expect(withAlpha("rgba(0,0,0,0.4)", 1)).toBe("rgba(0,0,0,0.4)");
+  });
+});
+
+describe("the brand mark", () => {
+  const brand = (overrides: Partial<BrandKit> = {}): BrandKit => ({
+    name: "Pura",
+    logo: null,
+    logoScale: 1,
+    logoTint: "original",
+    handle: null,
+    contact: null,
+    palette: { ground: "#2a0707", ink: "#fbf1ec", accent: "#c9a27a", muted: "#b9a7a2" },
+    ...overrides,
+  });
+  const fakeCtx = () => {
+    const calls: Array<[string, unknown[]]> = [];
+    const ctx = new Proxy(
+      {},
+      {
+        get: (_target, prop: string) =>
+          prop === "measureText"
+            ? () => ({ width: 120 })
+            : (...args: unknown[]) => calls.push([prop, args]),
+        set: () => true,
+      },
+    ) as unknown as CanvasRenderingContext2D;
+    return { ctx, calls };
+  };
+
+  it("colours the mark to suit the template unless told otherwise", () => {
+    expect(logoColor("auto", { onPhoto: true, ink: "#330a0a" })).toBe("#ffffff");
+    expect(logoColor("auto", { onPhoto: false, ink: "#330a0a" })).toBe("#330a0a");
+    expect(logoColor("original", { onPhoto: true, ink: "#330a0a" })).toBeNull();
+    expect(logoColor("white", { onPhoto: false, ink: "#330a0a" })).toBe("#ffffff");
+    expect(logoColor("black", { onPhoto: true, ink: "#330a0a" })).toBe("#111111");
+  });
+
+  it("draws the logo at the merchant's size, keeping its proportions", () => {
+    const logo = { width: 400, height: 100 } as unknown as HTMLCanvasElement;
+    const { ctx, calls } = fakeCtx();
+    const width = drawBrandMark(ctx, brand({ logo, logoScale: 1.5 }), {
+      x: 80,
+      y: 200,
+      u: 1,
+      align: "left",
+      onPhoto: false,
+      ink: "#fbf1ec",
+    });
+    const draw = calls.find(([name]) => name === "drawImage");
+    // 48 px tall at size 1, so 72 px at 150%; 4:1 logo → 288 px wide.
+    expect(draw?.[1].slice(1)).toEqual([80, 164, 288, 72]);
+    expect(width).toBe(288);
+  });
+
+  it("writes the store name when there is no logo", () => {
+    const { ctx, calls } = fakeCtx();
+    drawBrandMark(ctx, brand(), {
+      x: 1000,
+      y: 200,
+      u: 1,
+      align: "right",
+      onPhoto: false,
+      ink: "#fbf1ec",
+    });
+    expect(calls.find(([name]) => name === "fillText")?.[1]).toEqual(["Pura", 1000, 200]);
   });
 });

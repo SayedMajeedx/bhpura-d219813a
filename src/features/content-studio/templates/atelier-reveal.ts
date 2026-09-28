@@ -5,6 +5,7 @@ import {
   roundedRect,
   type Box,
 } from "@/features/content-studio/engine/draw";
+import { drawBrandMark } from "@/features/content-studio/engine/brand-mark";
 import { displayFont, STUDIO_FONTS } from "@/features/content-studio/engine/fonts";
 import type { FormatKey, SceneData, StudioTemplate } from "@/features/content-studio/engine/scene";
 import { fitText, textDirection } from "@/features/content-studio/engine/text-layout";
@@ -27,33 +28,8 @@ const LAYOUT: Record<
   square: { logoY: 0.045, photoY: 0.105, photoH: 0.48, footerY: 0.935, headlineMax: 92 },
 };
 
-/** The brand name as a wordmark, or the logo when the frame has one. */
-function drawWordmark(
-  ctx: CanvasRenderingContext2D,
-  scene: SceneData,
-  x: number,
-  y: number,
-  u: number,
-) {
-  const { brand } = scene;
-  const rtl = scene.lang === "ar";
-  if (brand.logo) {
-    const height = 46 * u;
-    const w = ("naturalWidth" in brand.logo ? brand.logo.naturalWidth : brand.logo.width) || 1;
-    const h = ("naturalHeight" in brand.logo ? brand.logo.naturalHeight : brand.logo.height) || 1;
-    const width = Math.min((w / h) * height, 320 * u);
-    ctx.drawImage(brand.logo, rtl ? x - width : x, y, width, height);
-    return;
-  }
-  ctx.save();
-  ctx.fillStyle = brand.palette.ink;
-  ctx.font = font(44 * u, STUDIO_FONTS.displayLatin, 600, "italic");
-  ctx.direction = textDirection(brand.name);
-  ctx.textAlign = rtl ? "right" : "left";
-  ctx.textBaseline = "top";
-  ctx.fillText(brand.name, x, y);
-  ctx.restore();
-}
+/** Height (fraction of H) the photo gives up when the post has body copy. */
+const BODY_ROOM: Record<FormatKey, number> = { story: 0.075, portrait: 0.085, square: 0.1 };
 
 function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
   const { width: W, height: H, brand, lang } = scene;
@@ -71,11 +47,25 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
   // Wordmark, arriving first.
   ctx.save();
   ctx.globalAlpha = presence(t, { start: 0.05, end: DURATION });
-  drawWordmark(ctx, scene, startX, layout.logoY * H - 23 * u, u);
+  drawBrandMark(ctx, brand, {
+    x: startX,
+    y: layout.logoY * H,
+    u,
+    align: rtl ? "right" : "left",
+    onPhoto: false,
+    ink: palette.ink,
+  });
   ctx.restore();
 
-  // The photo, unveiled from below while it settles (a slow push out).
-  const photo: Box = { x: margin, y: layout.photoY * H, w: W - 2 * margin, h: layout.photoH * H };
+  // The photo, unveiled from below while it settles (a slow push out). It
+  // gives up some height when there is body copy to set under the headline.
+  const bodyRoom = scene.body.trim() ? BODY_ROOM[scene.format] : 0;
+  const photo: Box = {
+    x: margin,
+    y: layout.photoY * H,
+    w: W - 2 * margin,
+    h: (layout.photoH - bodyRoom) * H,
+  };
   const open = progress(t, 0.15, 1.1, ease.inOutCubic);
   const close = progress(t, DURATION - 0.55, 0.5, ease.inOutCubic);
   const visibleTop = photo.y + photo.h * (1 - open);
@@ -132,8 +122,42 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
     },
   });
 
-  // A fine line drawn under the headline, from the reading start.
-  const ruleY = headlineY + fit.lines.length * lineHeight + 0.016 * H;
+  // The body copy, two lines at most, following the headline in.
+  let textBottom = headlineY + fit.lines.length * lineHeight;
+  const body = scene.body.trim();
+  if (body) {
+    const bodySize = 30 * u;
+    ctx.font = font(bodySize, STUDIO_FONTS.body, 400);
+    const bodyFit = fitText(
+      body,
+      { maxWidth: W - 2 * margin, maxLines: 2, min: 24 * u, max: bodySize },
+      (size) => {
+        ctx.font = font(size, STUDIO_FONTS.body, 400);
+        return (text) => ctx.measureText(text).width;
+      },
+    );
+    const bodyY = textBottom + 0.012 * H;
+    ctx.save();
+    ctx.fillStyle = palette.ink;
+    ctx.globalAlpha = 0.78;
+    ctx.font = font(bodyFit.size, STUDIO_FONTS.body, 400);
+    const lines = bodyFit.lines.slice(0, 2);
+    drawLines(ctx, lines, {
+      x: startX,
+      y: bodyY,
+      lineHeight: bodyFit.size * 1.45,
+      dir: textDirection(body),
+      reveal: (index) => {
+        const p = presence(t, { start: stagger(1.35, index, 0.1), end: DURATION });
+        return { alpha: p, dy: (1 - p) * bodyFit.size * 0.5 };
+      },
+    });
+    ctx.restore();
+    textBottom = bodyY + lines.length * bodyFit.size * 1.45;
+  }
+
+  // A fine line drawn under the text, from the reading start.
+  const ruleY = textBottom + 0.016 * H;
   const ruleP = Math.min(
     progress(t, 1.45, 0.7, ease.inOutCubic),
     1 - progress(t, DURATION - 0.5, 0.45, ease.inOutCubic),
