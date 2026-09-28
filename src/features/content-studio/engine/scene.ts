@@ -39,6 +39,15 @@ export type SceneData = {
   discountPercent: number | null;
   /** The product photo or, while exporting a video, the current video frame. */
   media: Drawable | null;
+  /**
+   * The product's options to cycle through (its colours, or another option),
+   * each with its own photo when it has one. Null when there is only one.
+   */
+  options: {
+    axisLabel: string;
+    swatch: boolean;
+    stops: Array<{ label: string; color: string | null; media: Drawable | null }>;
+  } | null;
 };
 
 /** One animated template: its name, length and how it draws a frame at time t. */
