@@ -35,8 +35,19 @@ export function useDetailZoom({
     [active, detailPoint, detailLabel, detailNote],
   );
 
+  /** Puts a draft's detail back, for the photo and product the draft opens on. */
+  const restoreDetail = (
+    saved: { x: number; y: number; label: string; note: string },
+    keys: { mediaUrl: string | null; productId: string },
+  ) => {
+    setPointFor({ url: keys.mediaUrl, point: { x: saved.x, y: saved.y } });
+    setLabelFor({ id: keys.productId, text: saved.label });
+    setNoteFor({ id: keys.productId, text: saved.note });
+  };
+
   return {
     detail,
+    restoreDetail,
     detailPoint,
     setDetailPoint: (point: Point) =>
       setPointFor({

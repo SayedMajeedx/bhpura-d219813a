@@ -2140,6 +2140,60 @@ export type Database = {
           },
         ];
       };
+      content_studio_drafts: {
+        Row: {
+          brand_id: string;
+          created_at: string;
+          created_by: string | null;
+          format: string;
+          id: string;
+          name: string;
+          product_id: string | null;
+          settings: Json;
+          template_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          brand_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          format: string;
+          id?: string;
+          name: string;
+          product_id?: string | null;
+          settings?: Json;
+          template_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          brand_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          format?: string;
+          id?: string;
+          name?: string;
+          product_id?: string | null;
+          settings?: Json;
+          template_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "content_studio_drafts_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "content_studio_drafts_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       customer_addresses: {
         Row: {
           block: string | null;

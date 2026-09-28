@@ -40,5 +40,5 @@ export function useLookbook({
     () => (active ? lookbookEntries(lookbook, variants, isAr ? "ar" : "en") : null),
     [active, lookbook, variants, isAr],
   );
-  return { lookbookIds, toggleLookbookProduct, collection };
+  return { lookbookIds, toggleLookbookProduct, setLookbookIds: setPicks, collection };
 }
