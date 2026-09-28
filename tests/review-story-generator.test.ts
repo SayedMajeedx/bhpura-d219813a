@@ -2,44 +2,44 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   STORY_HEIGHT,
   STORY_WIDTH,
-  prepareStoryLayers,
   publicFirstName,
+  reviewStoryFields,
   safeColor,
-} from "../src/components/reviews/ReviewStoryDialog";
+  type ReviewScene,
+  type StoryLook,
+} from "../src/features/review-story/lib/review-story";
+import { reviewStory } from "../src/features/review-story/templates/review-story";
 import { storyBrandColor, type OrderReviewAdminRow } from "../src/lib/order-reviews";
 
-// jsdom has no canvas: record what the story would draw instead.
+// The customer review story, drawn by the content studio's engine. jsdom has
+// no canvas: record what the story would draw instead.
 let drawnText: string[] = [];
-const canvasSizes: Array<[number, number]> = [];
+let scales: Array<[number, number]> = [];
 
-function fakeContext(canvas: HTMLCanvasElement) {
-  canvasSizes.push([canvas.width, canvas.height]);
+function fakeContext() {
   const noop = () => undefined;
   return new Proxy(
     {},
     {
       get(_target, prop) {
         if (prop === "fillText") return (text: string) => drawnText.push(String(text));
+        if (prop === "scale") return (x: number, y: number) => scales.push([x, y]);
         if (prop === "measureText") return (text: string) => ({ width: String(text).length * 20 });
         if (prop === "createLinearGradient" || prop === "createRadialGradient") {
           return () => ({ addColorStop: noop });
         }
-        if (prop === "canvas") return canvas;
         return noop;
       },
       set: () => true,
     },
-  );
+  ) as unknown as CanvasRenderingContext2D;
 }
 
 beforeEach(() => {
   drawnText = [];
-  canvasSizes.length = 0;
-  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(function (
-    this: HTMLCanvasElement,
-  ) {
-    return fakeContext(this) as unknown as CanvasRenderingContext2D;
-  });
+  scales = [];
+  // The story's cached background is painted on its own canvas.
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => fakeContext());
 });
 afterEach(() => vi.restoreAllMocks());
 
@@ -58,31 +58,53 @@ const review: OrderReviewAdminRow = {
   request_sent_at: null,
 };
 
-const draw = (overrides: Partial<Parameters<typeof prepareStoryLayers>[0]> = {}) =>
-  prepareStoryLayers({
-    template: "classic",
+type Choices = Parameters<typeof reviewStoryFields>[0];
+
+const scene = (choices: Partial<Choices> = {}, extra: Partial<ReviewScene> = {}): ReviewScene => ({
+  width: STORY_WIDTH,
+  height: STORY_HEIGHT,
+  media: null,
+  look: "classic",
+  lang: "en",
+  primary: "#330a0a",
+  brandName: "Pura",
+  logo: null,
+  ...reviewStoryFields({
     review,
     comment: review.comment ?? "",
-    brandName: "Pura",
-    primary: "#330a0a",
     isAr: false,
     showName: true,
     showHighlights: true,
-    ...overrides,
-  });
+    showDate: false,
+    orderDateText: "",
+    showBrandContact: false,
+    brandPhone: "",
+    brandInstagram: "",
+    ...choices,
+  }),
+  ...extra,
+});
 
-describe("customer review story generator", () => {
-  it("draws a full-resolution Instagram story", () => {
+/** Draws the finished story (every layer in) and returns the text drawn. */
+const draw = (story: ReviewScene, t = reviewStory.duration - 1) => {
+  drawnText = [];
+  reviewStory.render(fakeContext(), t, story);
+  return drawnText.join("\n");
+};
+
+describe("customer review story", () => {
+  it("lays out a full-resolution Instagram story, scaled to any preview size", () => {
     expect([STORY_WIDTH, STORY_HEIGHT]).toEqual([1080, 1920]);
-    draw();
-    expect(canvasSizes.length).toBeGreaterThan(0);
-    for (const size of canvasSizes) expect(size).toEqual([1080, 1920]);
+    draw(scene());
+    expect(scales[0]).toEqual([1, 1]);
+    scales = [];
+    draw(scene({}, { width: 540, height: 960 }));
+    expect(scales[0]).toEqual([0.5, 0.5]);
   });
 
   it("shows the rating, the comment and only the customer's first name", () => {
-    draw();
-    const text = drawnText.join("\n");
-    expect(text).toContain("★★★★★");
+    const text = draw(scene());
+    expect(drawnText.filter((t) => t === "★")).toHaveLength(5);
     expect(text).toContain("Fatima");
     expect(text).not.toContain("Al-Mansoor");
     expect(text).toMatch(/Beautiful abaya/);
@@ -90,11 +112,20 @@ describe("customer review story generator", () => {
     expect(publicFirstName("  Fatima Al-Mansoor ")).toBe("Fatima");
   });
 
-  it("never draws private order and reward details, in any template", () => {
-    for (const template of ["classic", "editorial", "midnight"] as const) {
-      drawnText = [];
-      draw({ template, showDate: true, orderDateText: "Sep 2026" });
-      const text = drawnText.join("\n");
+  it("never draws private order and reward details, in any look", () => {
+    for (const look of ["classic", "editorial", "midnight"] as StoryLook[]) {
+      const text = draw(
+        scene(
+          {
+            showDate: true,
+            orderDateText: "Sep 2026",
+            showBrandContact: true,
+            brandInstagram: "@pura.bh",
+          },
+          { look },
+        ),
+      );
+      expect(text).toContain("Sep 2026");
       expect(text).not.toContain("1042");
       expect(text).not.toContain("97339001122");
       expect(text).not.toContain("THANKU10");
@@ -102,10 +133,25 @@ describe("customer review story generator", () => {
   });
 
   it("leaves the name and highlights out when the merchant turns them off", () => {
-    draw({ showName: false, showHighlights: false });
-    const text = drawnText.join("\n");
+    const text = draw(scene({ showName: false, showHighlights: false }));
     expect(text).not.toContain("Fatima");
+    expect(text).toContain("Verified customer");
     expect(text).not.toMatch(/Product quality|Delivery/);
+  });
+
+  it("shows the store's own contacts only when asked", () => {
+    expect(draw(scene())).not.toContain("Instagram:");
+    const text = draw(
+      scene({ showBrandContact: true, brandInstagram: " @pura.bh ", brandPhone: "+973 3300 0000" }),
+    );
+    expect(text).toContain("Instagram: @pura.bh   •   Tel: +973 3300 0000");
+  });
+
+  it("brings the stars in one after another", () => {
+    draw(scene(), 1.2);
+    const early = drawnText.filter((t) => t === "★").length;
+    expect(early).toBeGreaterThan(0);
+    expect(early).toBeLessThan(5);
   });
 
   it("uses the brand color, with Pura maroon for Pura and as the safe default", () => {

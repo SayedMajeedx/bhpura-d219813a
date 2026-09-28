@@ -21,7 +21,7 @@ import { collectMaintainabilityMetrics } from "../scripts/maintainability-metric
  */
 
 const BUDGETS = {
-  asAny: 575,
+  asAny: 569,
   colonAny: 714,
   asNever: 0,
   tsIgnore: 0,
@@ -29,7 +29,7 @@ const BUDGETS = {
   eslintDisable: 10,
   directSupabaseCalls: 24,
   readFileSyncTestFiles: 43,
-  filesOver1000: 22,
+  filesOver1000: 21,
   maxLinesForNewFile: 600,
   maxLinesForExistingFile: 1000,
 } as const;
@@ -56,7 +56,6 @@ const GIANT_FILES_BUDGETS: Record<string, number> = {
   "src/routes/_authenticated/admin.b.$slug.incubators.tsx": 1347,
   "src/routes/_authenticated/admin.b.$slug.campaigns.tsx": 1446,
   "src/routes/_authenticated/admin.b.$slug.import.tsx": 1448,
-  "src/components/reviews/ReviewStoryDialog.tsx": 1442,
   "src/routes/_authenticated/admin.b.$slug.expenses.tsx": 1313,
   "src/components/inventory/InstagramImporterModal.tsx": 1328,
   "src/lib/public-api/public-api-router.server.ts": 1271,
