@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { extractSnappySnippet, type Product } from "@/features/content-studio/lib/studio-content";
 
 /**
@@ -19,6 +19,9 @@ export function useStudioCopy({
   const [editionLabel, setEditionLabel] = useState(() => defaultEditionLabel);
   const [headline, setHeadline] = useState("صُممت لتبقى في الذاكرة");
   const [body, setBody] = useState("أناقة هادئة، وتفاصيل مدروسة لكل لحظة.");
+  // Set when a draft brings its own copy along with a new product, so the
+  // product's refill below does not overwrite it.
+  const keepRestoredCopy = useRef(false);
 
   useEffect(() => {
     setEditionLabel((prev) => {
@@ -35,6 +38,10 @@ export function useStudioCopy({
 
   useEffect(() => {
     if (!selected) return;
+    if (keepRestoredCopy.current) {
+      keepRestoredCopy.current = false;
+      return;
+    }
     const name = isAr ? selected.name_ar || selected.name : selected.name_en || selected.name;
     if (name) {
       setHeadline(name);
@@ -53,7 +60,19 @@ export function useStudioCopy({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id, isAr]);
 
+  /** Puts a draft's copy back. `productChanges`: the draft also picks another product. */
+  const restoreCopy = (
+    copy: { editionLabel: string; headline: string; body: string },
+    productChanges: boolean,
+  ) => {
+    keepRestoredCopy.current = productChanges;
+    if (copy.editionLabel) setEditionLabel(copy.editionLabel);
+    setHeadline(copy.headline);
+    setBody(copy.body);
+  };
+
   return {
+    restoreCopy,
     editionLabel,
     setEditionLabel,
     headline,

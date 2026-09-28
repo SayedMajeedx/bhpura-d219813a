@@ -77,7 +77,24 @@ export function useOccasion({
       })
     : null;
 
+  /** Puts a draft's greeting back: its occasion and its words, in the studio's language. */
+  const restoreOccasion = (saved: {
+    id: OccasionId;
+    greeting: string;
+    message: string;
+    offer: string;
+  }) => {
+    setOccasionId(saved.id);
+    setEdits((current) => ({
+      ...current,
+      [`${saved.id}:greeting:${lang}`]: saved.greeting,
+      [`${saved.id}:message:${lang}`]: saved.message,
+      [`${saved.id}:offer`]: saved.offer,
+    }));
+  };
+
   return {
+    restoreOccasion,
     occasionId,
     setOccasionId,
     occasionDate,

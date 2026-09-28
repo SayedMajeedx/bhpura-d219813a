@@ -20,6 +20,15 @@ import { useLookbook } from "@/features/content-studio/hooks/use-lookbook";
 import { useDetailZoom } from "@/features/content-studio/hooks/use-detail-zoom";
 import { useOccasion } from "@/features/content-studio/hooks/use-occasion";
 import { useBatchExport } from "@/features/content-studio/hooks/use-batch-export";
+import { useDrafts } from "@/features/content-studio/hooks/use-drafts";
+import {
+  readDraftFormat,
+  readDraftSettings,
+  type DraftSettings,
+} from "@/features/content-studio/lib/drafts";
+import { firstImage } from "@/features/content-studio/lib/studio-content";
+import { ENGINE_TEMPLATES } from "@/features/content-studio/templates";
+import type { ContentDraft } from "@/lib/data/content-drafts";
 import { templateById, type TemplateId } from "@/features/content-studio/templates";
 import { studioSale } from "@/features/content-studio/lib/sale-price";
 import { optionRun } from "@/features/content-studio/lib/option-run";
@@ -185,6 +194,79 @@ export function useContentStudio(slug: string) {
     brandSlugClean,
     businessName,
   });
+  // Saved drafts: what the studio keeps, and how a draft is put back.
+  const drafts = useDrafts({
+    brandId: brand.id,
+    isAr,
+    snapshot: (name) => {
+      const settings: DraftSettings = {
+        v: 1,
+        theme,
+        showPrice,
+        imageFit,
+        logoScale,
+        logoTint,
+        editionLabel,
+        headline,
+        body,
+        variantId: product.selectedVariantId,
+        mediaUrl: product.selectedMediaUrl,
+        lookbookIds: [...lookbook.lookbookIds],
+        detail:
+          templateId === "detail-zoom"
+            ? {
+                ...detailZoom.detailPoint,
+                label: detailZoom.detailLabel,
+                note: detailZoom.detailNote,
+              }
+            : null,
+        occasion:
+          templateId === "occasion-pack"
+            ? {
+                id: occasion.occasionId,
+                greeting: occasion.occasionGreeting,
+                message: occasion.occasionMessage,
+                offer: occasion.occasionOffer,
+              }
+            : null,
+      };
+      return {
+        name,
+        template_id: templateId,
+        format,
+        product_id: selected?.id ?? null,
+        settings,
+      };
+    },
+    apply: (draft: ContentDraft) => {
+      const saved = readDraftSettings(draft.settings);
+      const draftProduct = product.products.find((item) => item.id === draft.product_id);
+      const next = draftProduct ?? selected;
+      const productChanges = Boolean(draftProduct) && draftProduct?.id !== selected?.id;
+      const knownTemplate =
+        draft.template_id === "classic" ||
+        ENGINE_TEMPLATES.some((template) => template.id === draft.template_id);
+      setTemplateId(knownTemplate ? (draft.template_id as TemplateId) : "classic");
+      setFormat(readDraftFormat(draft.format));
+      setTheme(saved.theme);
+      setShowPrice(saved.showPrice);
+      setImageFit(saved.imageFit);
+      setLogoScale(saved.logoScale);
+      setLogoTint(saved.logoTint);
+      if (draftProduct) product.setProductId(draftProduct.id);
+      product.setSelectedVariantId(saved.variantId);
+      if (saved.mediaUrl) product.setSelectedMediaUrl(saved.mediaUrl);
+      copy.restoreCopy(saved, productChanges);
+      if (saved.lookbookIds.length > 0) lookbook.setLookbookIds(saved.lookbookIds);
+      if (saved.detail && next) {
+        detailZoom.restoreDetail(saved.detail, {
+          mediaUrl: saved.mediaUrl ?? firstImage(next),
+          productId: next.id,
+        });
+      }
+      if (saved.occasion) occasion.restoreOccasion(saved.occasion);
+    },
+  });
   const header = useHeaderLayout({ exporting: creativeExport.exporting, stageRef });
   const caption = useStudioCaption({
     selected,
@@ -247,6 +329,7 @@ export function useContentStudio(slug: string) {
     ...detailZoom,
     ...occasion,
     ...batch,
+    ...drafts,
     ...product,
     ...copy,
     ...creativeExport,

@@ -146,6 +146,33 @@ const storeProfile = async (importOriginal: () => Promise<object>) => ({
 });
 vi.mock("../src/hooks/use-store-profile", (io) => storeProfile(io));
 vi.mock("@/hooks/use-store-profile", (io) => storeProfile(io));
+// Saved drafts, kept in memory instead of the database.
+const draftStore = vi.hoisted(() => ({
+  rows: [] as Array<Record<string, unknown> & { id: string }>,
+}));
+const contentDrafts = async (importOriginal: () => Promise<object>) => ({
+  ...(await importOriginal()),
+  contentDraftsQueries: {
+    list: (brandId: string) => ({
+      queryKey: ["content-drafts", brandId, "list"],
+      queryFn: async () => [...draftStore.rows],
+    }),
+  },
+  createContentDraft: vi.fn(async (_brandId: string, values: Record<string, unknown>) => {
+    const id = `d${draftStore.rows.length + 1}`;
+    draftStore.rows.unshift({ ...values, id, updated_at: "2026-09-29T10:00:00Z" });
+    return id;
+  }),
+  updateContentDraft: vi.fn(async (_b: string, id: string, values: Record<string, unknown>) => {
+    const row = draftStore.rows.find((draft) => draft.id === id);
+    if (row) Object.assign(row, values);
+  }),
+  deleteContentDraft: vi.fn(async (_b: string, id: string) => {
+    draftStore.rows = draftStore.rows.filter((draft) => draft.id !== id);
+  }),
+});
+vi.mock("../src/lib/data/content-drafts", (io) => contentDrafts(io));
+vi.mock("@/lib/data/content-drafts", (io) => contentDrafts(io));
 vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => (options: object) => ({
     options,
@@ -609,5 +636,52 @@ describe("the content studio", () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  it("saves the design as a draft and puts it back exactly, even from another product", async () => {
+    draftStore.rows = [];
+    await renderStudio();
+    fireEvent.click(screen.getByRole("radio", { name: /Price Drop/ }));
+    openSelect(screen.getByRole("combobox", { name: "Product Variant" }));
+    fireEvent.click(await screen.findByRole("option", { name: /M · Black/ }));
+    fireEvent.change(screen.getByLabelText("Headline"), { target: { value: "The Eid edit" } });
+    fireEvent.change(screen.getByLabelText("Logo size"), { target: { value: "1.6" } });
+
+    fireEvent.click(screen.getByRole("button", { name: /^Drafts/ }));
+    expect(await screen.findByLabelText("Draft name")).toHaveValue("Price Drop · Silk Abaya");
+    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+    await waitFor(() => expect(draftStore.rows).toHaveLength(1));
+    expect(draftStore.rows[0]).toMatchObject({
+      name: "Price Drop · Silk Abaya",
+      template_id: "price-drop",
+      format: "story",
+      product_id: "p1",
+      settings: expect.objectContaining({
+        headline: "The Eid edit",
+        logoScale: 1.6,
+        variantId: "v1",
+      }),
+    });
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+
+    // Move away: another template, another product (which refills the headline).
+    fireEvent.click(screen.getByRole("radio", { name: /Classic/ }));
+    openSelect(screen.getByRole("combobox", { name: "Product" }));
+    fireEvent.click(await screen.findByRole("option", { name: "Linen Kaftan" }));
+    await waitFor(() => expect(screen.getByLabelText("Headline")).toHaveValue("Linen Kaftan"));
+
+    fireEvent.click(screen.getByRole("button", { name: /Price Drop · Silk Abaya/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Open" }));
+    await waitFor(() =>
+      expect(screen.getByRole("radio", { name: /Price Drop/ })).toHaveAttribute(
+        "aria-checked",
+        "true",
+      ),
+    );
+    // The draft's own headline survives the switch back to its product.
+    await waitFor(() => expect(screen.getByLabelText("Headline")).toHaveValue("The Eid edit"));
+    expect(screen.getByRole("combobox", { name: "Product" })).toHaveTextContent("Silk Abaya");
+    expect(screen.getByText("160%")).toBeInTheDocument();
+    expect(screen.queryByText(/no sale price right now/)).not.toBeInTheDocument();
   });
 });

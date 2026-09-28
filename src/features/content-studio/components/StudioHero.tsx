@@ -7,6 +7,7 @@ import {
   Video,
   Image as LucideImage,
   ChevronDown,
+  FolderOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { ContentStudio } from "@/features/content-studio/hooks/use-content-studio";
 import { TemplateExportActions } from "@/features/content-studio/components/TemplateExportActions";
+import { DraftsDialog } from "@/features/content-studio/components/DraftsDialog";
 
 /** The page header: what the studio does, the caption copy and the export actions. */
 export function StudioHero({ studio }: { studio: ContentStudio }) {
@@ -34,6 +36,9 @@ export function StudioHero({ studio }: { studio: ContentStudio }) {
     exportCreative,
     copiedCaption,
     handleCopyCaption,
+    setDraftsOpen,
+    draftsQ,
+    openDraft,
   } = studio;
   return (
     <section className="relative overflow-hidden rounded-2xl sm:rounded-[24px] border border-border-strong bg-card p-4 sm:p-6 lg:p-8 shadow-xs">
@@ -59,6 +64,23 @@ export function StudioHero({ studio }: { studio: ContentStudio }) {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 shrink-0">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setDraftsOpen(true)}
+            className="h-10 gap-2 rounded-xl border-border bg-background/80 text-xs font-semibold px-3.5 sm:px-4 shadow-2xs hover:bg-muted/50"
+          >
+            <FolderOpen className="size-4 text-primary" />
+            <span className="max-w-40 truncate">
+              {openDraft ? openDraft.name : isAr ? "المسودات" : "Drafts"}
+            </span>
+            {!openDraft && (draftsQ.data?.length ?? 0) > 0 && (
+              <span className="rounded-full bg-primary/10 px-1.5 text-xs tabular-nums text-primary">
+                {draftsQ.data?.length}
+              </span>
+            )}
+          </Button>
+          <DraftsDialog studio={studio} />
           <Button
             type="button"
             variant="outline"
