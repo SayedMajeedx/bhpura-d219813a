@@ -114,15 +114,18 @@ export function drawBrandMark(
     onPhoto,
     ink,
     height = 48,
+    maxWidth = 420,
   }: {
     x: number;
     y: number;
     u: number;
-    align: "left" | "right";
+    align: "left" | "right" | "center";
     onPhoto: boolean;
     ink: string;
     /** The mark's height at logo size 1, in reference pixels. */
     height?: number;
+    /** The widest it may be at logo size 1 (a masthead allows more). */
+    maxWidth?: number;
   },
 ): number {
   const color = logoColor(brand.logoTint, { onPhoto, ink });
@@ -133,7 +136,7 @@ export function drawBrandMark(
     // A very wide logo is capped in width, and its height follows (never squashed).
     let h = height * u * scale;
     let w = (lw / lh) * h;
-    const maxW = 420 * u * scale;
+    const maxW = maxWidth * u * scale;
     if (w > maxW) {
       h *= maxW / w;
       w = maxW;
@@ -141,10 +144,14 @@ export function drawBrandMark(
     // Prepare the logo at the pixels it will cover (the canvas may be scaled).
     const m = typeof ctx.getTransform === "function" ? ctx.getTransform() : null;
     const k = m ? Math.hypot(m.a, m.b) || 1 : 1;
-    const image = preparedLogo(brand.logo, color, w * k, h * k);
+    // Rounded up to 16px steps, so a logo that grows or shrinks during an
+    // animation reuses a few prepared sizes instead of one per frame.
+    const pixelW = Math.ceil((w * k) / 16) * 16;
+    const image = preparedLogo(brand.logo, color, pixelW, (pixelW * h) / w);
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(image, align === "right" ? x - w : x, y - h / 2, w, h);
+    const left = align === "right" ? x - w : align === "center" ? x - w / 2 : x;
+    ctx.drawImage(image, left, y - h / 2, w, h);
     ctx.restore();
     return w;
   }

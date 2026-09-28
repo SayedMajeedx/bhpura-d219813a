@@ -317,6 +317,24 @@ describe("the brand mark", () => {
     expect(width).toBe(288);
   });
 
+  it("centres a masthead logo, allowing it wider than a corner mark", () => {
+    const logo = { width: 1000, height: 100 } as unknown as HTMLCanvasElement;
+    const { ctx, calls } = fakeCtx();
+    const width = drawBrandMark(ctx, brand({ logo }), {
+      x: 540,
+      y: 300,
+      u: 1,
+      align: "center",
+      onPhoto: true,
+      ink: "#fbf1ec",
+      height: 80,
+      maxWidth: 820,
+    });
+    // 10:1 at 80 tall would be 800 wide: within the masthead's 820.
+    expect(width).toBe(800);
+    expect(calls.find(([name]) => name === "drawImage")?.[1].slice(1)).toEqual([140, 260, 800, 80]);
+  });
+
   it("writes the store name when there is no logo", () => {
     const { ctx, calls } = fakeCtx();
     drawBrandMark(ctx, brand(), {

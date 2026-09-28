@@ -37,6 +37,8 @@ export type SceneData = {
   priceAmount: string | null;
   /** The pre-sale amount alone, when there is a sale. */
   originalAmount: string | null;
+  /** The month and year, for templates styled as an issue ("September 2026"). */
+  issueLabel: string;
   /** The currency as the store writes it ("BHD", "د.ب."). */
   currencyLabel: string;
   /** The saving as a whole percentage, when there is a sale. */

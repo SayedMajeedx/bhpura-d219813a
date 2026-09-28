@@ -35,6 +35,45 @@ export function coverCrop(
   return { x, y, w: cropW, h: cropH };
 }
 
+const scaledPhotos = new WeakMap<object, Map<number, HTMLCanvasElement>>();
+
+/**
+ * A still photo halved (with high-quality smoothing) until it is less than
+ * twice `longest` on its longest side, cached. Drawing a huge
+ * photo small every frame is slow at high quality and loses detail at low
+ * quality; drawing this copy is both fast and sharp. Only <img> sources are
+ * scaled: video frames change under the same object and arrive at size.
+ */
+function scaledPhoto(source: Drawable, longest: number): Drawable {
+  if (typeof HTMLImageElement === "undefined" || !(source instanceof HTMLImageElement)) {
+    return source;
+  }
+  const bucket = Math.ceil(longest / 256) * 256;
+  const cached = scaledPhotos.get(source)?.get(bucket);
+  if (cached) return cached;
+  let current: Drawable = source;
+  let { w, h } = mediaSize(source);
+  // Halve while the half still covers what is needed (the bucket only keys the cache).
+  while (Math.max(w, h) / 2 >= longest) {
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(w / 2);
+    canvas.height = Math.round(h / 2);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return source;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(current, 0, 0, canvas.width, canvas.height);
+    current = canvas;
+    w = canvas.width;
+    h = canvas.height;
+  }
+  if (current === source) return source;
+  const byBucket = scaledPhotos.get(source) ?? new Map<number, HTMLCanvasElement>();
+  byBucket.set(bucket, current as HTMLCanvasElement);
+  scaledPhotos.set(source, byBucket);
+  return current;
+}
+
 /** Draws `source` to fill `box` like object-fit: cover, optionally zoomed. */
 export function drawCover(
   ctx: CanvasRenderingContext2D,
@@ -42,14 +81,15 @@ export function drawCover(
   box: Box,
   options?: { zoom?: number; focusX?: number; focusY?: number },
 ) {
-  const { w, h } = mediaSize(source);
+  const m = typeof ctx.getTransform === "function" ? ctx.getTransform() : null;
+  const k = m ? Math.hypot(m.a, m.b) || 1 : 1;
+  const image = scaledPhoto(source, Math.max(box.w, box.h) * k * (options?.zoom ?? 1));
+  const { w, h } = mediaSize(image);
   if (!w || !h) return;
   const crop = coverCrop(w, h, box, options);
-  // High-quality filtering keeps detail when a large photo is drawn small.
   ctx.save();
   ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(source, crop.x, crop.y, crop.w, crop.h, box.x, box.y, box.w, box.h);
+  ctx.drawImage(image, crop.x, crop.y, crop.w, crop.h, box.x, box.y, box.w, box.h);
   ctx.restore();
 }
 
