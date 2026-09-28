@@ -8624,16 +8624,6 @@ export type Database = {
       place_storefront_order:
         | {
             Args: {
-              p_brand_slug: string;
-              p_customer: Json;
-              p_items: Json;
-              p_notes?: string;
-              p_payment_method: string;
-            };
-            Returns: Json;
-          }
-        | {
-            Args: {
               p_branch_id?: string;
               p_brand_slug: string;
               p_customer: Json;
