@@ -9,6 +9,8 @@ import {
 import { getExactVideoDuration } from "../src/features/content-studio/lib/video-duration";
 import { studioSale } from "../src/features/content-studio/lib/sale-price";
 import { MAX_STOPS, optionRun } from "../src/features/content-studio/lib/option-run";
+import { templatesForStore } from "../src/features/content-studio/lib/template-order";
+import { ENGINE_TEMPLATES } from "../src/features/content-studio/templates";
 
 // The content studio's pure helpers, moved out of the route in the split.
 
@@ -194,5 +196,33 @@ describe("optionRun", () => {
     const values = ["a", "b", "c", "d", "e", "f", "g", "h"];
     const run = optionRun([axis("fabric", "Fabric", values, false)], [], "en");
     expect(run?.stops).toHaveLength(MAX_STOPS);
+  });
+});
+
+describe("templatesForStore", () => {
+  const order = (vertical: unknown) =>
+    templatesForStore(ENGINE_TEMPLATES, vertical).map((t) => `${t.id}${t.suggested ? "*" : ""}`);
+
+  it("puts an abaya store's templates first and suggests the top three", () => {
+    expect(order("abayas")).toEqual([
+      "atelier-reveal*",
+      "swatch-run*",
+      "detail-zoom*",
+      "lookbook-carousel",
+      "editorial-cover",
+      "price-drop",
+      "occasion-pack",
+    ]);
+  });
+
+  it("gives a roastery its own set, and keeps every template for every store", () => {
+    const coffee = order("coffee");
+    expect(coffee.slice(0, 3)).toEqual(["swatch-run*", "price-drop*", "occasion-pack*"]);
+    expect(coffee).toHaveLength(ENGINE_TEMPLATES.length);
+  });
+
+  it("treats an unknown store type as a general store", () => {
+    expect(order("spaceships")).toEqual(order("general"));
+    expect(order(null)[0]).toBe("atelier-reveal*");
   });
 });

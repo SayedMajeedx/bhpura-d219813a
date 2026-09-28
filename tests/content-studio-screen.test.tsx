@@ -275,6 +275,22 @@ describe("the content studio", () => {
     );
   });
 
+  it("orders the templates for the store, suggesting the best three", async () => {
+    await renderStudio();
+    const names = screen
+      .getAllByRole("radio")
+      .filter((radio) => radio.closest("[aria-labelledby='studio-template-label']"))
+      .map((radio) => radio.textContent ?? "");
+    // The fixture store sells fashion.
+    expect(names[0]).toMatch(/^Classic/);
+    expect(names.slice(1, 4)).toEqual([
+      expect.stringMatching(/^Atelier Reveal.*Suggested/),
+      expect.stringMatching(/^Lookbook.*Suggested/),
+      expect.stringMatching(/^Swatch Run.*Suggested/),
+    ]);
+    expect(names.filter((name) => name.includes("Suggested"))).toHaveLength(3);
+  });
+
   it("keeps Classic as the default template", async () => {
     await renderStudio();
     expect(screen.getByRole("radio", { name: /Classic/ })).toHaveAttribute("aria-checked", "true");

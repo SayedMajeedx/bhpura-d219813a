@@ -2,28 +2,41 @@ import { Check, Clapperboard, LayoutTemplate } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { ENGINE_TEMPLATES, type TemplateId } from "@/features/content-studio/templates";
+import { templatesForStore } from "@/features/content-studio/lib/template-order";
 import type { ContentStudio } from "@/features/content-studio/hooks/use-content-studio";
 
-/** Choose the design: Classic (today's layout) or one of the animated templates. */
+/**
+ * Choose the design: Classic (today's layout) or one of the animated
+ * templates, ordered for the kind of store with the best few suggested.
+ */
 export function TemplatePicker({ studio }: { studio: ContentStudio }) {
-  const { isAr, templateId, setTemplateId, sale, run } = studio;
+  const { isAr, templateId, setTemplateId, sale, run, storeProfile } = studio;
   const options: Array<{
     id: TemplateId;
     name: string;
     note: string;
     animated: boolean;
+    suggested: boolean;
   }> = [
     {
       id: "classic",
       name: isAr ? "كلاسيكي" : "Classic",
       note: isAr ? "صورة ثابتة أو فيديو المنتج" : "Still, or the product video",
       animated: false,
+      suggested: false,
     },
-    ...ENGINE_TEMPLATES.map((template) => ({
+    ...templatesForStore(ENGINE_TEMPLATES, storeProfile.vertical).map((template) => ({
       id: template.id as TemplateId,
       name: isAr ? template.name.ar : template.name.en,
-      note: isAr ? `متحرك · ${template.goal.ar}` : `Animated · ${template.goal.en}`,
+      note: template.suggested
+        ? isAr
+          ? `مقترح لمتجرك · ${template.goal.ar}`
+          : `Suggested · ${template.goal.en}`
+        : isAr
+          ? `متحرك · ${template.goal.ar}`
+          : `Animated · ${template.goal.en}`,
       animated: true,
+      suggested: template.suggested,
     })),
   ];
 
@@ -65,7 +78,14 @@ export function TemplatePicker({ studio }: { studio: ContentStudio }) {
                   </span>
                 )}
               </span>
-              <span className="mt-1 truncate text-xs text-muted-foreground">{option.note}</span>
+              <span
+                className={cn(
+                  "mt-1 truncate text-xs",
+                  option.suggested ? "font-medium text-primary" : "text-muted-foreground",
+                )}
+              >
+                {option.note}
+              </span>
             </button>
           );
         })}
