@@ -1,0 +1,94 @@
+import { useMemo, useState } from "react";
+import {
+  nextDate,
+  occasionById,
+  occasionCaption,
+  occasionEyebrow,
+  storeCountry,
+  upcomingOccasion,
+  type OccasionId,
+} from "@/features/content-studio/lib/occasions";
+import type { SceneData } from "@/features/content-studio/engine/scene";
+
+/**
+ * The Occasion Pack's choices: the occasion (the next one coming up until the
+ * merchant picks), and its greeting, message and offer. Edited wording is
+ * kept per occasion and language, so switching back finds it again.
+ */
+export function useOccasion({
+  active,
+  currency,
+  isAr,
+  handle,
+  today = new Date(),
+}: {
+  active: boolean;
+  currency: string | null | undefined;
+  isAr: boolean;
+  handle: string | null;
+  /** Today, as a parameter so tests can fix the date. */
+  today?: Date;
+}) {
+  const lang = isAr ? "ar" : "en";
+  const country = useMemo(() => storeCountry(currency), [currency]);
+  const day = today.toISOString().slice(0, 10);
+  const [chosen, setOccasionId] = useState<OccasionId | null>(null);
+  const occasionId = useMemo(
+    () => chosen ?? upcomingOccasion(new Date(day), country),
+    [chosen, day, country],
+  );
+  const occasionDate = useMemo(
+    () => nextDate(occasionId, new Date(day), country),
+    [occasionId, day, country],
+  );
+  const occasion = occasionById(occasionId);
+
+  const [edits, setEdits] = useState<Record<string, string>>({});
+  const key = (field: string) => `${occasionId}:${field}:${lang}`;
+  const occasionGreeting = edits[key("greeting")] ?? occasion.greeting[lang];
+  const occasionMessage = edits[key("message")] ?? occasion.message[lang];
+  const occasionOffer = edits[`${occasionId}:offer`] ?? "";
+  const edit = (field: string) => (value: string) =>
+    setEdits((current) => ({ ...current, [field]: value }));
+  const eyebrow = occasionEyebrow(occasionId, occasionDate, country, lang);
+
+  const occasionScene = useMemo<SceneData["occasion"]>(
+    () =>
+      active
+        ? {
+            id: occasionId,
+            eyebrow,
+            greeting: occasionGreeting,
+            message: occasionMessage,
+            offer: occasionOffer,
+          }
+        : null,
+    [active, occasionId, eyebrow, occasionGreeting, occasionMessage, occasionOffer],
+  );
+
+  const occasionCaptionText = active
+    ? occasionCaption({
+        occasion,
+        greeting: occasionGreeting,
+        message: occasionMessage,
+        offer: occasionOffer,
+        handle,
+        lang,
+      })
+    : null;
+
+  return {
+    occasionId,
+    setOccasionId,
+    occasionDate,
+    occasionCountry: country,
+    occasionGreeting,
+    setOccasionGreeting: edit(key("greeting")),
+    occasionMessage,
+    setOccasionMessage: edit(key("message")),
+    occasionOffer,
+    setOccasionOffer: edit(`${occasionId}:offer`),
+    occasionScene,
+    occasionCaptionText,
+  };
+}

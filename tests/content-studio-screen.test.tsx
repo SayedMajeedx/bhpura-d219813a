@@ -505,4 +505,48 @@ describe("the content studio", () => {
     expect(scene.detail?.x).toBeCloseTo(0.27);
     expect(scene.detail?.y).toBeCloseTo(1 / 3);
   });
+
+  it("greets an occasion with its own words, offer and caption, without the product's copy", async () => {
+    await renderStudio();
+    fireEvent.click(screen.getByRole("radio", { name: /Occasion Pack/ }));
+    const occasions = await screen.findByRole("radiogroup", { name: "Occasion" });
+    // The next occasion is chosen to start with (which one depends on today).
+    expect(within(occasions).getAllByRole("radio", { checked: true })).toHaveLength(1);
+    // A greeting has no product: its own panel replaces the product picker and copy.
+    expect(screen.queryByRole("combobox", { name: "Product" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Headline")).not.toBeInTheDocument();
+
+    fireEvent.click(within(occasions).getByRole("radio", { name: "Eid al-Fitr" }));
+    expect(screen.getByLabelText("Greeting")).toHaveValue("Eid Mubarak");
+    fireEvent.change(screen.getByLabelText("Offer (optional)"), {
+      target: { value: "20% off with EID20" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy Instagram Caption" }));
+    await waitFor(() =>
+      expect(clipboard.writeText).toHaveBeenCalledWith(
+        expect.stringContaining("Eid Mubarak\nMay your Eid be filled with joy\n20% off with EID20"),
+      ),
+    );
+
+    const download = await screen.findByRole("button", { name: "Download Video (MP4)" });
+    await waitFor(() => expect(download).toBeEnabled());
+    fireEvent.click(download);
+    await waitFor(() => expect(exporting.deliverCreativeFile).toHaveBeenCalledTimes(1));
+    const [{ template, scene }] = exporting.exportTemplateMp4.mock.lastCall as unknown as [
+      { template: { id: string }; scene: { occasion: Record<string, string> | null } },
+    ];
+    expect(template.id).toBe("occasion-pack");
+    expect(scene.occasion).toMatchObject({
+      id: "eid-al-fitr",
+      greeting: "Eid Mubarak",
+      offer: "20% off with EID20",
+    });
+    expect(exporting.deliverCreativeFile).toHaveBeenCalledWith(
+      expect.any(Blob),
+      "pura-eid-al-fitr-story.mp4",
+      "video/mp4",
+      "Eid Mubarak",
+    );
+  });
 });

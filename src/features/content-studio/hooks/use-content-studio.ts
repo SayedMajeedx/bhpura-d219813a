@@ -18,6 +18,7 @@ import { useTemplateScene } from "@/features/content-studio/hooks/use-template-s
 import { useTemplateExport } from "@/features/content-studio/hooks/use-template-export";
 import { useLookbook } from "@/features/content-studio/hooks/use-lookbook";
 import { useDetailZoom } from "@/features/content-studio/hooks/use-detail-zoom";
+import { useOccasion } from "@/features/content-studio/hooks/use-occasion";
 import { templateById, type TemplateId } from "@/features/content-studio/templates";
 import { studioSale } from "@/features/content-studio/lib/sale-price";
 import { optionRun } from "@/features/content-studio/lib/option-run";
@@ -126,6 +127,12 @@ export function useContentStudio(slug: string) {
     selected,
     mediaUrl: product.photo,
   });
+  const occasion = useOccasion({
+    active: templateId === "occasion-pack",
+    currency,
+    isAr,
+    handle: instagram,
+  });
   const { buildScene, photoReady } = useTemplateScene({
     format,
     isAr,
@@ -146,6 +153,7 @@ export function useContentStudio(slug: string) {
     run,
     collection: lookbook.collection,
     detail: detailZoom.detail,
+    occasion: occasion.occasionScene,
     logoScale,
     logoTint,
   });
@@ -154,10 +162,11 @@ export function useContentStudio(slug: string) {
     buildScene,
     format,
     photo: product.photo,
-    isCurrentVideo: product.isCurrentVideo,
+    // A greeting uses no product media, so it never waits on the product video.
+    isCurrentVideo: templateId === "occasion-pack" ? false : product.isCurrentVideo,
     brandSlugClean,
-    productFileName: selected?.name,
-    headline,
+    productFileName: templateId === "occasion-pack" ? occasion.occasionId : selected?.name,
+    headline: templateId === "occasion-pack" ? occasion.occasionGreeting : headline,
     businessName,
     isAr,
   });
@@ -172,6 +181,7 @@ export function useContentStudio(slug: string) {
     effectivePrice: product.effectivePrice,
     storeProfile,
     isAr,
+    override: occasion.occasionCaptionText,
   });
 
   return {
@@ -220,6 +230,7 @@ export function useContentStudio(slug: string) {
     ...templateExport,
     ...lookbook,
     ...detailZoom,
+    ...occasion,
     ...product,
     ...copy,
     ...creativeExport,

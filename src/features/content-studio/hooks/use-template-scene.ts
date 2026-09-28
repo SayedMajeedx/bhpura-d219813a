@@ -83,6 +83,7 @@ export function useTemplateScene({
   run,
   collection,
   detail,
+  occasion,
   logoScale,
   logoTint,
 }: {
@@ -109,6 +110,8 @@ export function useTemplateScene({
   collection: LookbookEntry[] | null;
   /** Detail Zoom's point, label and note, or null outside it. */
   detail: SceneData["detail"];
+  /** The Occasion Pack's greeting, or null outside it. */
+  occasion: SceneData["occasion"];
   logoScale: number;
   logoTint: LogoTint;
 }) {
@@ -180,6 +183,7 @@ export function useTemplateScene({
           }))
         : null,
       detail,
+      occasion,
     }),
     [
       format,
@@ -206,6 +210,7 @@ export function useTemplateScene({
       collection,
       collectionImages,
       detail,
+      occasion,
     ],
   );
 
