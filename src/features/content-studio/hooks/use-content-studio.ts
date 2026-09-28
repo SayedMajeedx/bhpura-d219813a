@@ -16,6 +16,7 @@ import { useCreativeExport } from "@/features/content-studio/hooks/use-creative-
 import { useStudioCaption } from "@/features/content-studio/hooks/use-studio-caption";
 import { useTemplateScene } from "@/features/content-studio/hooks/use-template-scene";
 import { useTemplateExport } from "@/features/content-studio/hooks/use-template-export";
+import { useLookbook } from "@/features/content-studio/hooks/use-lookbook";
 import { templateById, type TemplateId } from "@/features/content-studio/templates";
 import { studioSale } from "@/features/content-studio/lib/sale-price";
 import { optionRun } from "@/features/content-studio/lib/option-run";
@@ -109,6 +110,16 @@ export function useContentStudio(slug: string) {
     });
     return optionRun(axes, productVariants, lang);
   }, [productVariants, axisDefaults, isAr]);
+  // Lookbook: several products, priced from their cheapest variant.
+  const variantRows = product.variantsQ.data;
+  const variantList = useMemo(() => variantRows ?? [], [variantRows]);
+  const lookbook = useLookbook({
+    active: templateId === "lookbook-carousel",
+    products: product.products,
+    variants: variantList,
+    leadId: selected?.id,
+    isAr,
+  });
   const { buildScene, photoReady } = useTemplateScene({
     format,
     isAr,
@@ -127,6 +138,7 @@ export function useContentStudio(slug: string) {
     currencySymbol,
     sale,
     run,
+    collection: lookbook.collection,
     logoScale,
     logoTint,
   });
@@ -199,6 +211,7 @@ export function useContentStudio(slug: string) {
     buildScene,
     photoReady,
     ...templateExport,
+    ...lookbook,
     ...product,
     ...copy,
     ...creativeExport,

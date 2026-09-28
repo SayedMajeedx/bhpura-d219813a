@@ -110,3 +110,22 @@ export async function exportTemplatePng({
     ),
   );
 }
+
+/**
+ * Renders a template's carousel slides (see StudioTemplate.slideTimes) to one
+ * PNG each, in order. Empty for templates without slides.
+ */
+export async function exportTemplateCarousel({
+  template,
+  scene,
+  createCanvas = makeCanvas,
+}: {
+  template: StudioTemplate;
+  scene: SceneData;
+  createCanvas?: CanvasFactory;
+}): Promise<Blob[]> {
+  const times = template.slideTimes?.(scene) ?? [];
+  const slides: Blob[] = [];
+  for (const t of times) slides.push(await exportTemplatePng({ template, scene, t, createCanvas }));
+  return slides;
+}
