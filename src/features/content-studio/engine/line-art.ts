@@ -240,6 +240,137 @@ export function burst(cx: number, cy: number, r: number, rays = 12): Polyline[] 
   });
 }
 
+/**
+ * A price tag leaning `tilt` radians, with its hole and a string: the point
+ * faces left, or right when `mirror` (so it faces the reading start).
+ */
+export function priceTag(
+  cx: number,
+  cy: number,
+  w: number,
+  tilt = -0.35,
+  mirror = false,
+): Polyline[] {
+  const h = w * 0.55;
+  const cos = Math.cos(tilt);
+  const sin = Math.sin(tilt);
+  const flip = mirror ? -1 : 1;
+  const turn = ([x, y]: Point): Point => {
+    const fx = x * flip;
+    return [cx + fx * cos - y * sin, cy + fx * sin + y * cos];
+  };
+  const body: Polyline = (
+    [
+      [-w / 2, 0],
+      [-w / 2 + h / 2, -h / 2],
+      [w / 2, -h / 2],
+      [w / 2, h / 2],
+      [-w / 2 + h / 2, h / 2],
+      [-w / 2, 0],
+    ] as Point[]
+  ).map(turn);
+  const hole = arcPoints(-w / 2 + h * 0.55, 0, h * 0.12, 0, Math.PI * 2, 20).map(turn);
+  const string = (
+    [
+      [-w / 2 + h * 0.43, 0],
+      [-w / 2 - h * 0.2, -h * 0.5],
+      [-w / 2 - h * 0.1, -h * 1.1],
+    ] as Point[]
+  ).map(turn);
+  return [body, hole, string];
+}
+
+/** A pencil lying at `tilt` radians: its body, the sharpened tip and the lead. */
+export function pencil(cx: number, cy: number, length: number, tilt = -0.6): Polyline[] {
+  const w = length * 0.12;
+  const bodyEnd = length * 0.32;
+  const cos = Math.cos(tilt);
+  const sin = Math.sin(tilt);
+  const turn = ([x, y]: Point): Point => [cx + x * cos - y * sin, cy + x * sin + y * cos];
+  const half = length / 2;
+  return [
+    (
+      [
+        [-half, -w / 2],
+        [bodyEnd, -w / 2],
+        [half, 0],
+        [bodyEnd, w / 2],
+        [-half, w / 2],
+        [-half, -w / 2],
+      ] as Point[]
+    ).map(turn),
+    (
+      [
+        [bodyEnd, -w / 2],
+        [bodyEnd, w / 2],
+      ] as Point[]
+    ).map(turn),
+    (
+      [
+        [-half + w * 0.9, -w / 2],
+        [-half + w * 0.9, w / 2],
+      ] as Point[]
+    ).map(turn),
+  ];
+}
+
+/** An open book seen from the front: two pages meeting at the spine. */
+export function openBook(cx: number, cy: number, w: number): Polyline[] {
+  const h = w * 0.36;
+  const page = (side: 1 | -1): Polyline => [
+    [cx, cy + h * 0.1],
+    [cx + side * w * 0.25, cy - h * 0.05],
+    [cx + side * w * 0.5, cy + h * 0.05],
+    [cx + side * w * 0.5, cy + h],
+    [cx + side * w * 0.25, cy + h * 0.88],
+    [cx, cy + h * 1.05],
+  ];
+  return [
+    page(-1),
+    page(1),
+    [
+      [cx, cy + h * 0.1],
+      [cx, cy + h * 1.05],
+    ],
+  ];
+}
+
+/** A graduation cap: the board, the cap beneath and the tassel. */
+export function mortarboard(cx: number, cy: number, w: number): Polyline[] {
+  const h = w * 0.28;
+  return [
+    [
+      [cx - w / 2, cy],
+      [cx, cy - h],
+      [cx + w / 2, cy],
+      [cx, cy + h],
+      [cx - w / 2, cy],
+    ],
+    [
+      [cx - w * 0.3, cy + h * 0.4],
+      [cx - w * 0.3, cy + h * 1.45],
+      [cx, cy + h * 1.75],
+      [cx + w * 0.3, cy + h * 1.45],
+      [cx + w * 0.3, cy + h * 0.4],
+    ],
+    [
+      [cx, cy],
+      [cx + w * 0.42, cy + h * 0.35],
+      [cx + w * 0.42, cy + h * 1.6],
+    ],
+  ];
+}
+
+/** A wave across `width`, `rows` lines deep: summer water under a sun. */
+export function waves(x: number, y: number, width: number, rows = 2, gap = 22): Polyline[] {
+  return Array.from({ length: rows }, (_, row) =>
+    Array.from({ length: 49 }, (_, i) => {
+      const px = x + (width * i) / 48;
+      return [px, y + row * gap + Math.sin((i / 48) * Math.PI * 4 + row) * gap * 0.3] as Point;
+    }),
+  );
+}
+
 /** Strokes the first `fraction` of each polyline (the stroke style is the caller's). */
 export function traceLines(
   ctx: CanvasRenderingContext2D,

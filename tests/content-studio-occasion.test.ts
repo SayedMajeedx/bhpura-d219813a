@@ -10,6 +10,7 @@ import {
   star,
 } from "../src/features/content-studio/engine/line-art";
 import {
+  OCCASIONS,
   hijriDate,
   nextDate,
   occasionById,
@@ -92,8 +93,11 @@ describe("the occasion calendar", () => {
   });
 
   it("opens on the occasion coming up next, or the one on now", () => {
-    expect(upcomingOccasion(day("2026-09-28"), bahrain)).toBe("national-day");
-    expect(upcomingOccasion(day("2026-09-28"), storeCountry("SAR"))).toBe("ramadan");
+    // White Friday (27 November) comes before Bahrain's National Day (16 December).
+    expect(upcomingOccasion(day("2026-09-28"), bahrain)).toBe("white-friday");
+    expect(upcomingOccasion(day("2026-12-01"), bahrain)).toBe("national-day");
+    expect(upcomingOccasion(day("2026-12-20"), storeCountry("SAR"))).toBe("new-year");
+    expect(upcomingOccasion(day("2027-01-05"), storeCountry("SAR"))).toBe("ramadan");
     // The middle of Ramadan 1447, and the second day of Eid al-Fitr.
     expect(upcomingOccasion(day("2026-03-01"), bahrain)).toBe("ramadan");
     expect(upcomingOccasion(day("2026-03-21"), bahrain)).toBe("eid-al-fitr");
@@ -105,6 +109,23 @@ describe("the occasion calendar", () => {
     expect(occasionEyebrow("ramadan", ramadan, bahrain, "ar")).toBe("1448 هـ");
     expect(occasionEyebrow("national-day", ramadan, bahrain, "ar")).toBe("البحرين");
     expect(occasionEyebrow("mothers-day", ramadan, bahrain, "en")).toBe("21 March");
+    expect(occasionEyebrow("white-friday", day("2026-11-27"), bahrain, "en")).toBe("2026");
+    expect(occasionEyebrow("back-to-school", day("2027-08-25"), bahrain, "en")).toBe("2027–2028");
+    expect(occasionEyebrow("graduation", day("2027-06-15"), bahrain, "en")).toBe("Class of 2027");
+    expect(occasionEyebrow("graduation", day("2027-06-15"), bahrain, "ar")).toBe("دفعة 2027");
+  });
+
+  it("follows the retail year with the seasonal pack", () => {
+    const from = day("2026-09-28");
+    // White Friday: the Friday after the fourth Thursday of November.
+    expect(iso(nextDate("white-friday", from, bahrain))).toBe("2026-11-27");
+    expect(iso(nextDate("white-friday", day("2026-11-28"), bahrain))).toBe("2027-11-26");
+    expect(iso(nextDate("new-year", from, bahrain))).toBe("2027-01-01");
+    expect(iso(nextDate("back-to-school", from, bahrain))).toBe("2027-08-25");
+    expect(iso(nextDate("graduation", from, bahrain))).toBe("2027-06-15");
+    expect(iso(nextDate("summer", from, bahrain))).toBe("2027-06-21");
+    // On now, in its window.
+    expect(iso(nextDate("back-to-school", day("2027-09-03"), bahrain))).toBe("2027-09-03");
   });
 
   it("writes a caption with the greeting, offer, handle and hashtags", () => {
@@ -184,6 +205,42 @@ const scene = (overrides: Partial<SceneData> = {}): SceneData => ({
 });
 
 describe("the Occasion Pack template", () => {
+  it("draws line art and the greeting for every occasion, seasonal ones included", () => {
+    for (const occasion of OCCASIONS) {
+      let strokes = 0;
+      const texts: string[] = [];
+      const ctx = new Proxy(
+        {},
+        {
+          get(_target, key) {
+            if (key === "stroke") return () => (strokes += 1);
+            if (key === "fillText") return (text: string) => texts.push(text);
+            if (key === "measureText") return (text: string) => ({ width: text.length * 11 });
+            if (key === "createRadialGradient") return () => ({ addColorStop: () => undefined });
+            return () => undefined;
+          },
+          set: () => true,
+        },
+      ) as unknown as CanvasRenderingContext2D;
+      occasionPack.render(
+        ctx,
+        5,
+        scene({
+          occasion: {
+            id: occasion.id,
+            eyebrow: "",
+            greeting: occasion.greeting.en,
+            message: occasion.message.en,
+            offer: "",
+          },
+        }),
+      );
+      // The arch's two lines, and the occasion's own art besides.
+      expect(strokes, occasion.id).toBeGreaterThan(4);
+      expect(texts, occasion.id).toContain(occasion.greeting.en);
+    }
+  });
+
   it("draws the art first, then the greeting, message, offer and logo rise", () => {
     const early = recordingContext();
     occasionPack.render(early.ctx, 1, scene());
@@ -218,13 +275,19 @@ describe("the Occasion Pack template", () => {
 });
 
 describe("useOccasion", () => {
-  const today = day("2026-09-28");
+  const today = day("2026-12-01");
 
   it("opens on the next occasion with its own words, in the studio's language", () => {
     const { result } = renderHook(() =>
       useOccasion({ active: true, currency: "BHD", isAr: true, handle: "@pura.bh", today }),
     );
     expect(result.current.occasionId).toBe("national-day");
+    // The chips run soonest first.
+    expect(result.current.occasionChoices.slice(0, 3).map(({ occasion }) => occasion.id)).toEqual([
+      "national-day",
+      "new-year",
+      "ramadan",
+    ]);
     expect(iso(result.current.occasionDate)).toBe("2026-12-16");
     expect(result.current.occasionScene).toEqual({
       id: "national-day",

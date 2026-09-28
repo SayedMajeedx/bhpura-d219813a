@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { formatOccasionDate, OCCASIONS } from "@/features/content-studio/lib/occasions";
+import { formatOccasionDate } from "@/features/content-studio/lib/occasions";
 import type { ContentStudio } from "@/features/content-studio/hooks/use-content-studio";
 
 /**
@@ -17,6 +17,7 @@ export function OccasionPanel({ studio }: { studio: ContentStudio }) {
     setOccasionId,
     occasionDate,
     occasionCountry,
+    occasionChoices,
     occasionGreeting,
     setOccasionGreeting,
     occasionMessage,
@@ -57,7 +58,7 @@ export function OccasionPanel({ studio }: { studio: ContentStudio }) {
         aria-labelledby="studio-occasion-label"
         className="flex flex-wrap gap-2"
       >
-        {OCCASIONS.map((occasion) => {
+        {occasionChoices.map(({ occasion }) => {
           const selected = occasion.id === occasionId;
           return (
             <Button

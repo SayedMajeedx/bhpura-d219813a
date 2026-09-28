@@ -8,16 +8,22 @@ import {
 import { drawBrandMark } from "@/features/content-studio/engine/brand-mark";
 import { displayFont, STUDIO_FONTS } from "@/features/content-studio/engine/fonts";
 import {
+  arcPoints,
   archRise,
   burst,
   crescent,
   eightPointStar,
   flower,
   lantern,
+  mortarboard,
+  openBook,
+  pencil,
   pointedArch,
+  priceTag,
   star,
   stem,
   traceLines,
+  waves,
   type Polyline,
 } from "@/features/content-studio/engine/line-art";
 import type { FormatKey, SceneData, StudioTemplate } from "@/features/content-studio/engine/scene";
@@ -127,6 +133,56 @@ function artFor(
           ...flower(cx, cy - r * 0.15, r * 0.85),
           ...flower(outerL, H * 0.62, 40 * u),
           ...flower(edgeR, H * 0.27, 34 * u),
+        ],
+        sparkles,
+      };
+    // The seasonal pack.
+    case "white-friday":
+      return {
+        lines: [
+          ...priceTag(cx, cy, r * 1.9, rtl ? 0.35 : -0.35, rtl),
+          ...burst(cx + side * r * 1.05, cy - r * 0.7, r * 0.45, 10),
+          ...priceTag(outerL, H * 0.3, 70 * u, 0.5),
+          ...priceTag(edgeR, H * 0.6, 60 * u, -0.5),
+        ],
+        sparkles,
+      };
+    case "new-year":
+      return {
+        lines: [
+          ...burst(cx, cy, r, 16),
+          ...burst(cx - r * 0.95, cy + r * 0.45, r * 0.4, 10),
+          ...burst(cx + r * 0.95, cy - r * 0.55, r * 0.35, 10),
+          ...burst(outerL, H * 0.25, 55 * u, 10),
+          ...burst(edgeR, H * 0.55, 45 * u, 10),
+        ],
+        sparkles,
+      };
+    case "back-to-school":
+      return {
+        lines: [
+          ...openBook(cx, cy - r * 0.05, r * 2),
+          ...pencil(cx + side * r * 0.35, cy - r * 0.55, r * 1.5, rtl ? 0.6 : -0.6),
+          ...pencil(outerL, H * 0.3, 90 * u, 1.2),
+        ],
+        sparkles,
+      };
+    case "graduation":
+      return {
+        lines: [
+          ...mortarboard(cx, cy - r * 0.2, r * 2.1),
+          star(cx - side * r * 1.05, cy - r * 0.8, r * 0.18, 5),
+          star(cx + side * r * 1.15, cy + r * 0.2, r * 0.13, 5),
+          ...mortarboard(edgeR, H * 0.27, 70 * u),
+        ],
+        sparkles,
+      };
+    case "summer":
+      return {
+        lines: [
+          ...burst(cx, cy - r * 0.2, r * 0.95, 14),
+          arcPoints(cx, cy - r * 0.2, r * 0.3, 0, Math.PI * 2, 48),
+          ...waves(cx - r * 1.2, cy + r * 0.85, r * 2.4, 2, r * 0.22),
         ],
         sparkles,
       };
