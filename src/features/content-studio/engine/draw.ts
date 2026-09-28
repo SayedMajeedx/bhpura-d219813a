@@ -45,7 +45,12 @@ export function drawCover(
   const { w, h } = mediaSize(source);
   if (!w || !h) return;
   const crop = coverCrop(w, h, box, options);
+  // High-quality filtering keeps detail when a large photo is drawn small.
+  ctx.save();
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
   ctx.drawImage(source, crop.x, crop.y, crop.w, crop.h, box.x, box.y, box.w, box.h);
+  ctx.restore();
 }
 
 /** Adds a rounded rectangle path (fill or clip it after). */
