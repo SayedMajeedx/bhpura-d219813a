@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ease,
   frameCount,
@@ -18,7 +18,11 @@ import type {
   SceneData,
   StudioTemplate,
 } from "../src/features/content-studio/engine/scene";
-import { drawBrandMark, logoColor } from "../src/features/content-studio/engine/brand-mark";
+import {
+  drawBrandMark,
+  logoColor,
+  preparedLogo,
+} from "../src/features/content-studio/engine/brand-mark";
 
 // The content studio's animation engine: timing, text layout, image framing
 // and the exporters (the video encoder is mocked; jsdom has no canvas).
@@ -324,5 +328,73 @@ describe("the brand mark", () => {
       ink: "#fbf1ec",
     });
     expect(calls.find(([name]) => name === "fillText")?.[1]).toEqual(["Pura", 1000, 200]);
+  });
+});
+
+describe("preparedLogo", () => {
+  type FakeCanvas = { width: number; height: number; ops: string[]; getContext: () => unknown };
+  const made: FakeCanvas[] = [];
+  const realCreate = document.createElement.bind(document);
+
+  beforeEach(() => {
+    made.length = 0;
+    vi.spyOn(document, "createElement").mockImplementation(((tag: string) => {
+      if (tag !== "canvas") return realCreate(tag);
+      const canvas: FakeCanvas = {
+        width: 0,
+        height: 0,
+        ops: [],
+        getContext: () => ({
+          set globalCompositeOperation(value: string) {
+            canvas.ops.push(`composite:${value}`);
+          },
+          set imageSmoothingQuality(value: string) {
+            canvas.ops.push(`quality:${value}`);
+          },
+          imageSmoothingEnabled: true,
+          fillStyle: "",
+          drawImage: () => canvas.ops.push("draw"),
+          fillRect: () => canvas.ops.push("fill"),
+        }),
+      };
+      made.push(canvas);
+      return canvas as unknown as HTMLCanvasElement;
+    }) as typeof document.createElement);
+  });
+  afterEach(() => {
+    vi.mocked(document.createElement).mockRestore();
+  });
+
+  it("halves a large logo step by step, then draws it at exactly the target size", () => {
+    const logo = { width: 2400, height: 900 } as unknown as HTMLCanvasElement;
+    const out = preparedLogo(logo, null, 128, 48) as unknown as FakeCanvas;
+    expect(made.map((c) => [c.width, c.height])).toEqual([
+      [1200, 450],
+      [600, 225],
+      [300, 113],
+      [150, 57],
+      [128, 48],
+    ]);
+    expect(out).toBe(made.at(-1));
+    expect(made.every((c) => c.ops.includes("quality:high"))).toBe(true);
+    expect(out.ops).not.toContain("composite:source-in");
+  });
+
+  it("recolours at the final size and reuses the result", () => {
+    const logo = { width: 400, height: 150 } as unknown as HTMLCanvasElement;
+    const first = preparedLogo(logo, "#ffffff", 160, 60) as unknown as FakeCanvas;
+    expect(first.ops).toContain("composite:source-in");
+    const count = made.length;
+    expect(preparedLogo(logo, "#ffffff", 160, 60)).toBe(first);
+    expect(made.length).toBe(count);
+  });
+
+  it("draws a vector logo straight at its size", () => {
+    const svg = new Image();
+    svg.src = "https://cdn.example/logo.svg";
+    Object.defineProperty(svg, "naturalWidth", { value: 2400 });
+    Object.defineProperty(svg, "naturalHeight", { value: 900 });
+    preparedLogo(svg, null, 128, 48);
+    expect(made.map((c) => [c.width, c.height])).toEqual([[128, 48]]);
   });
 });

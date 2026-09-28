@@ -7,8 +7,8 @@ import { loadStudioFonts } from "@/features/content-studio/engine/fonts";
 import type { Drawable } from "@/features/content-studio/engine/scene";
 import type { ContentStudio } from "@/features/content-studio/hooks/use-content-studio";
 
-/** Preview canvas width in pixels; the export renders the same frame at full size. */
-const PREVIEW_WIDTH = 540;
+/** Preview width before the canvas has been measured (then: on-screen width × pixel density). */
+const INITIAL_PREVIEW_WIDTH = 540;
 
 const prefersReducedMotion = () =>
   typeof window !== "undefined" &&
@@ -22,6 +22,7 @@ const prefersReducedMotion = () =>
 export function TemplatePreview({ studio }: { studio: ContentStudio }) {
   const { isAr, format, activeTemplate, buildScene, photo, isCurrentVideo } = studio;
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(() => !prefersReducedMotion());
   const [time, setTime] = useState(() =>
@@ -35,7 +36,24 @@ export function TemplatePreview({ studio }: { studio: ContentStudio }) {
   sceneRef.current = buildScene;
 
   const { width: outW, height: outH } = FORMATS[format];
-  const previewH = Math.round((PREVIEW_WIDTH * outH) / outW);
+  // Draw at the screen's real resolution (its CSS width × pixel density, never
+  // more than the export), so the preview is as sharp as the exported file.
+  const [previewW, setPreviewW] = useState(INITIAL_PREVIEW_WIDTH);
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (!frame || typeof ResizeObserver === "undefined") return;
+    const measure = () => {
+      const cssWidth = frame.getBoundingClientRect().width;
+      if (cssWidth > 0) {
+        setPreviewW(Math.min(outW, Math.round(cssWidth * (window.devicePixelRatio || 1))));
+      }
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(frame);
+    return () => observer.disconnect();
+  }, [outW]);
+  const previewH = Math.round((previewW * outH) / outW);
   const duration = activeTemplate?.duration ?? 1;
 
   useEffect(() => {
@@ -59,7 +77,7 @@ export function TemplatePreview({ studio }: { studio: ContentStudio }) {
           : isCurrentVideo
             ? null
             : undefined;
-      activeTemplate.render(ctx, timeRef.current, sceneRef.current(PREVIEW_WIDTH, previewH, media));
+      activeTemplate.render(ctx, timeRef.current, sceneRef.current(previewW, previewH, media));
       // The timeline label only needs a tenth of a second.
       if (Math.abs(timeRef.current - shown) >= 0.1 || !playing) {
         shown = timeRef.current;
@@ -69,7 +87,17 @@ export function TemplatePreview({ studio }: { studio: ContentStudio }) {
     };
     frame = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(frame);
-  }, [activeTemplate, playing, duration, previewH, isCurrentVideo, fontsReady, buildScene, scrubs]);
+  }, [
+    activeTemplate,
+    playing,
+    duration,
+    previewW,
+    previewH,
+    isCurrentVideo,
+    fontsReady,
+    buildScene,
+    scrubs,
+  ]);
 
   const scrub = (value: number) => {
     setPlaying(false);
@@ -113,10 +141,13 @@ export function TemplatePreview({ studio }: { studio: ContentStudio }) {
         </Button>
       </div>
 
-      <div className="mx-auto w-full max-w-[570px] overflow-hidden rounded-[22px] shadow-2xl">
+      <div
+        ref={frameRef}
+        className="mx-auto w-full max-w-[570px] overflow-hidden rounded-[22px] shadow-2xl"
+      >
         <canvas
           ref={canvasRef}
-          width={PREVIEW_WIDTH}
+          width={previewW}
           height={previewH}
           role="img"
           aria-label={

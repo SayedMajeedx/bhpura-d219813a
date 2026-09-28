@@ -33,31 +33,67 @@ function sizeOf(logo: Drawable) {
   return { w: w || 1, h: h || 1 };
 }
 
-const tinted = new WeakMap<object, Map<string, HTMLCanvasElement>>();
+/** Prepared logos per source, keyed by colour and pixel size (a few sizes each). */
+const prepared = new WeakMap<object, Map<string, HTMLCanvasElement>>();
+const SIZES_KEPT = 8;
+
+function canvasOf(width: number, height: number) {
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(width));
+  canvas.height = Math.max(1, Math.round(height));
+  const ctx = canvas.getContext("2d");
+  if (ctx) {
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+  }
+  return { canvas, ctx };
+}
 
 /**
- * The logo in one flat colour (its shape kept by the alpha channel), cached per
- * logo and colour so each frame draws it without work. Falls back to the
- * original logo where a canvas is not available.
+ * The logo at exactly `width`×`height` pixels, in one flat `color` when given
+ * (its shape kept by the alpha channel). A large logo is halved step by step
+ * with high-quality smoothing on the way down: shrinking it in one step skips
+ * source pixels and breaks thin strokes. Cached per logo, colour and size.
  */
-function tintedLogo(logo: Drawable, color: string): Drawable {
-  const cached = tinted.get(logo)?.get(color);
+export function preparedLogo(
+  logo: Drawable,
+  color: string | null,
+  width: number,
+  height: number,
+): Drawable {
+  const key = `${color ?? "original"}|${Math.round(width)}x${Math.round(height)}`;
+  const bySize = prepared.get(logo) ?? new Map<string, HTMLCanvasElement>();
+  const cached = bySize.get(key);
   if (cached) return cached;
-  const { w, h } = sizeOf(logo);
-  const scale = Math.min(1, 1024 / Math.max(w, h));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, Math.round(w * scale));
-  canvas.height = Math.max(1, Math.round(h * scale));
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return logo;
-  ctx.drawImage(logo, 0, 0, canvas.width, canvas.height);
-  ctx.globalCompositeOperation = "source-in";
-  ctx.fillStyle = color;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  const byColor = tinted.get(logo) ?? new Map<string, HTMLCanvasElement>();
-  byColor.set(color, canvas);
-  tinted.set(logo, byColor);
-  return canvas;
+
+  let source: Drawable = logo;
+  let { w, h } = sizeOf(logo);
+  // A vector logo is sharpest drawn straight at its final size.
+  const vector =
+    typeof HTMLImageElement !== "undefined" &&
+    logo instanceof HTMLImageElement &&
+    /\.svg(\?|#|$)|^data:image\/svg/i.test(logo.src);
+  while (!vector && w / 2 >= width && h / 2 >= height) {
+    const step = canvasOf(w / 2, h / 2);
+    if (!step.ctx) return logo;
+    step.ctx.drawImage(source, 0, 0, step.canvas.width, step.canvas.height);
+    source = step.canvas;
+    w = step.canvas.width;
+    h = step.canvas.height;
+  }
+  const out = canvasOf(width, height);
+  if (!out.ctx) return logo;
+  out.ctx.drawImage(source, 0, 0, out.canvas.width, out.canvas.height);
+  if (color) {
+    out.ctx.globalCompositeOperation = "source-in";
+    out.ctx.fillStyle = color;
+    out.ctx.fillRect(0, 0, out.canvas.width, out.canvas.height);
+  }
+
+  if (bySize.size >= SIZES_KEPT) bySize.delete(bySize.keys().next().value as string);
+  bySize.set(key, out.canvas);
+  prepared.set(logo, bySize);
+  return out.canvas;
 }
 
 /**
@@ -93,10 +129,21 @@ export function drawBrandMark(
   const scale = brand.logoScale;
   ctx.save();
   if (brand.logo) {
-    const h = height * u * scale;
     const { w: lw, h: lh } = sizeOf(brand.logo);
-    const w = Math.min((lw / lh) * h, 420 * u * scale);
-    const image = color ? tintedLogo(brand.logo, color) : brand.logo;
+    // A very wide logo is capped in width, and its height follows (never squashed).
+    let h = height * u * scale;
+    let w = (lw / lh) * h;
+    const maxW = 420 * u * scale;
+    if (w > maxW) {
+      h *= maxW / w;
+      w = maxW;
+    }
+    // Prepare the logo at the pixels it will cover (the canvas may be scaled).
+    const m = typeof ctx.getTransform === "function" ? ctx.getTransform() : null;
+    const k = m ? Math.hypot(m.a, m.b) || 1 : 1;
+    const image = preparedLogo(brand.logo, color, w * k, h * k);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
     ctx.drawImage(image, align === "right" ? x - w : x, y - h / 2, w, h);
     ctx.restore();
     return w;
