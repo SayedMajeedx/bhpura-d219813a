@@ -105,7 +105,7 @@ describe("design system guardrails", () => {
   it("keeps hand-rolled <button> elements within budget", () => {
     // AGENTS.md §2: anything that behaves like a button uses <Button>.
     const count = countMatches(/<button[\s>]/g);
-    expect(count).toBeLessThanOrEqual(215);
+    expect(count).toBeLessThanOrEqual(214);
   });
 
   it("keeps glass and blur off data surfaces within budget", () => {

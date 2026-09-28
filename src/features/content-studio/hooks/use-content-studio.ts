@@ -17,6 +17,7 @@ import { useStudioCaption } from "@/features/content-studio/hooks/use-studio-cap
 import { useTemplateScene } from "@/features/content-studio/hooks/use-template-scene";
 import { useTemplateExport } from "@/features/content-studio/hooks/use-template-export";
 import { useLookbook } from "@/features/content-studio/hooks/use-lookbook";
+import { useDetailZoom } from "@/features/content-studio/hooks/use-detail-zoom";
 import { templateById, type TemplateId } from "@/features/content-studio/templates";
 import { studioSale } from "@/features/content-studio/lib/sale-price";
 import { optionRun } from "@/features/content-studio/lib/option-run";
@@ -120,6 +121,11 @@ export function useContentStudio(slug: string) {
     leadId: selected?.id,
     isAr,
   });
+  const detailZoom = useDetailZoom({
+    active: templateId === "detail-zoom",
+    selected,
+    mediaUrl: product.photo,
+  });
   const { buildScene, photoReady } = useTemplateScene({
     format,
     isAr,
@@ -139,6 +145,7 @@ export function useContentStudio(slug: string) {
     sale,
     run,
     collection: lookbook.collection,
+    detail: detailZoom.detail,
     logoScale,
     logoTint,
   });
@@ -212,6 +219,7 @@ export function useContentStudio(slug: string) {
     photoReady,
     ...templateExport,
     ...lookbook,
+    ...detailZoom,
     ...product,
     ...copy,
     ...creativeExport,

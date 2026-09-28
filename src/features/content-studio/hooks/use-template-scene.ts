@@ -82,6 +82,7 @@ export function useTemplateScene({
   sale,
   run,
   collection,
+  detail,
   logoScale,
   logoTint,
 }: {
@@ -106,6 +107,8 @@ export function useTemplateScene({
   run: OptionRun | null;
   /** The lookbook's products, or null outside the lookbook. */
   collection: LookbookEntry[] | null;
+  /** Detail Zoom's point, label and note, or null outside it. */
+  detail: SceneData["detail"];
   logoScale: number;
   logoTint: LogoTint;
 }) {
@@ -176,6 +179,7 @@ export function useTemplateScene({
             media: collectionImages[index] ?? null,
           }))
         : null,
+      detail,
     }),
     [
       format,
@@ -201,6 +205,7 @@ export function useTemplateScene({
       stopImages,
       collection,
       collectionImages,
+      detail,
     ],
   );
 

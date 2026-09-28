@@ -14,6 +14,7 @@ import { StudioPreview } from "@/features/content-studio/components/StudioPrevie
 import { TemplatePicker } from "@/features/content-studio/components/TemplatePicker";
 import { TemplatePreview } from "@/features/content-studio/components/TemplatePreview";
 import { LookbookPicker } from "@/features/content-studio/components/LookbookPicker";
+import { DetailPointPicker } from "@/features/content-studio/components/DetailPointPicker";
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/content-studio")({
   component: ContentStudioPage,
 });
@@ -79,6 +80,7 @@ function ContentStudioPage() {
             ) : (
               <ProductMediaPicker studio={studio} />
             )}
+            {studio.templateId === "detail-zoom" && <DetailPointPicker studio={studio} />}
 
             <FormatStylePicker studio={studio} />
 
