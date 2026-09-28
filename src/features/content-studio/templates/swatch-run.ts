@@ -5,6 +5,7 @@ import {
   withAlpha,
   type Box,
 } from "@/features/content-studio/engine/draw";
+import { drawBrandMark } from "@/features/content-studio/engine/brand-mark";
 import { displayFont, STUDIO_FONTS } from "@/features/content-studio/engine/fonts";
 import type {
   Drawable,
@@ -12,7 +13,7 @@ import type {
   SceneData,
   StudioTemplate,
 } from "@/features/content-studio/engine/scene";
-import { textDirection } from "@/features/content-studio/engine/text-layout";
+import { fitText, textDirection } from "@/features/content-studio/engine/text-layout";
 import { ease, mix, presence, progress } from "@/features/content-studio/engine/timeline";
 
 const DURATION = 9;
@@ -28,6 +29,9 @@ const LAYOUT: Record<
   portrait: { topRowY: 0.05, cardY: 0.095, cardH: 0.52, cardInset: 170, footerY: 0.945 },
   square: { topRowY: 0.055, cardY: 0.1, cardH: 0.5, cardInset: 250, footerY: 0.94 },
 };
+
+/** Height (fraction of H) the card gives up when the post has body copy. */
+const BODY_ROOM: Record<FormatKey, number> = { story: 0.06, portrait: 0.07, square: 0.09 };
 
 type Stop = { label: string; color: string | null; media: Drawable | null };
 
@@ -55,15 +59,19 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
   ctx.fillStyle = palette.ground;
   ctx.fillRect(0, 0, W, H);
 
-  // Top row: the brand, and on stories the handle opposite.
+  // Top row: the logo, and on stories the handle opposite.
   ctx.save();
   ctx.globalAlpha = whole;
+  drawBrandMark(ctx, brand, {
+    x: rtl ? W - margin : margin,
+    y: layout.topRowY * H,
+    u,
+    align: rtl ? "right" : "left",
+    onPhoto: false,
+    ink: palette.ink,
+  });
   ctx.fillStyle = palette.ink;
   ctx.textBaseline = "middle";
-  ctx.font = font(44 * u, STUDIO_FONTS.displayLatin, 600, "italic");
-  ctx.direction = textDirection(brand.name);
-  ctx.textAlign = rtl ? "right" : "left";
-  ctx.fillText(brand.name, rtl ? W - margin : margin, layout.topRowY * H);
   const topHandle = layout.footerY === null ? brand.handle || brand.contact : null;
   if (topHandle) {
     ctx.font = font(26 * u, STUDIO_FONTS.body, 400);
@@ -75,7 +83,14 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
 
   // The card: each option's own photo, crossfading with a gentle push.
   const inset = layout.cardInset * u;
-  const card: Box = { x: inset, y: layout.cardY * H, w: W - 2 * inset, h: layout.cardH * H };
+  // The card gives up some height when there is body copy to set below.
+  const bodyRoom = scene.body.trim() ? BODY_ROOM[scene.format] : 0;
+  const card: Box = {
+    x: inset,
+    y: layout.cardY * H,
+    w: W - 2 * inset,
+    h: (layout.cardH - bodyRoom) * H,
+  };
   const cardIn = progress(t, 0.1, 0.9, ease.outExpo);
   ctx.save();
   ctx.globalAlpha = whole;
@@ -200,7 +215,30 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
     ctx.restore();
   }
 
-  // The price, quietly, under the row.
+  // The price, quietly, under the row, then the body copy.
+  const body = scene.body.trim();
+  if (body) {
+    const bodyFit = fitText(
+      body,
+      { maxWidth: W - 2 * margin, maxLines: 2, min: 22 * u, max: 27 * u },
+      (size) => {
+        ctx.font = font(size, STUDIO_FONTS.body, 400);
+        return (text) => ctx.measureText(text).width;
+      },
+    );
+    const bodyY = afterRow + (scene.price ? 56 * u : 0);
+    ctx.save();
+    ctx.globalAlpha = presence(t, { start: 1.4, end: DURATION }) * 0.75;
+    ctx.fillStyle = palette.ink;
+    ctx.font = font(bodyFit.size, STUDIO_FONTS.body, 400);
+    ctx.direction = textDirection(body);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    bodyFit.lines.slice(0, 2).forEach((line, index) => {
+      ctx.fillText(line, W / 2, bodyY + index * bodyFit.size * 1.45);
+    });
+    ctx.restore();
+  }
   if (scene.price) {
     ctx.save();
     ctx.globalAlpha = presence(t, { start: 1.2, end: DURATION }) * 0.9;

@@ -198,9 +198,14 @@ export function StudioPreview({ studio }: { studio: ContentStudio }) {
                   src={logo}
                   crossOrigin="anonymous"
                   alt={businessName}
-                  style={{ height: `${headerLogoHeight}px`, width: "auto" }}
+                  // A wide logo may grow with its height (it used to stop at 144px wide).
+                  style={{
+                    height: `${headerLogoHeight}px`,
+                    width: "auto",
+                    maxWidth: `${Math.min(headerLogoHeight * 5, 320)}px`,
+                  }}
                   className={cn(
-                    "max-w-28 sm:max-w-36 object-contain pointer-events-none transition-all",
+                    "object-contain pointer-events-none transition-all",
                     headerTextColor === "white" ? "brightness-0 invert" : "",
                   )}
                 />

@@ -10,6 +10,10 @@ export type Drawable =
 export type BrandKit = {
   name: string;
   logo: Drawable | null;
+  /** The merchant's logo size (1 is the template's default). */
+  logoScale: number;
+  /** How the logo is coloured: to suit the template, as uploaded, white or black. */
+  logoTint: "auto" | "original" | "white" | "black";
   handle: string | null;
   contact: string | null;
   palette: { ground: string; ink: string; accent: string; muted: string };

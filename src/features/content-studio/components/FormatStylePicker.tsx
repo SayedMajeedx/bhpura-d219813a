@@ -6,7 +6,8 @@ import type { ContentStudio } from "@/features/content-studio/hooks/use-content-
 
 /** Publish size, colour style and how the product photo fills the frame. */
 export function FormatStylePicker({ studio }: { studio: ContentStudio }) {
-  const { isAr, format, setFormat, theme, setTheme, imageFit, setImageFit } = studio;
+  const { isAr, format, setFormat, theme, setTheme, imageFit, setImageFit, activeTemplate } =
+    studio;
   return (
     <>
       {/* Publish Size */}
@@ -97,62 +98,64 @@ export function FormatStylePicker({ studio }: { studio: ContentStudio }) {
         </div>
       </div>
 
-      {/* Product Framing */}
-      <div className="space-y-2 min-w-0">
-        <Label className="text-xs font-bold text-foreground">
-          {isAr ? "طريقة عرض صورة المنتج" : "Product photo framing"}
-        </Label>
-        <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
-          <button
-            type="button"
-            onClick={() => setImageFit("cover")}
-            className={cn(
-              "relative flex flex-col justify-between rounded-xl border p-2.5 sm:p-3 text-start transition-all cursor-pointer min-h-[58px] sm:min-h-[64px] min-w-0",
-              imageFit === "cover"
-                ? "border-primary bg-primary/[0.06] ring-1 ring-primary shadow-2xs"
-                : "border-border hover:border-primary/40 bg-card/60",
-            )}
-          >
-            <div className="flex items-center justify-between w-full min-w-0">
-              <span className="text-xs font-bold text-foreground truncate">
-                {isAr ? "ملء الإطار (قص)" : "Cover frame"}
-              </span>
-              {imageFit === "cover" && (
-                <span className="grid size-3.5 sm:size-4 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
-                  <Check className="size-2 sm:size-2.5 stroke-[3]" />
-                </span>
+      {/* Product Framing: Classic only (the animated templates frame the photo themselves). */}
+      {!activeTemplate && (
+        <div className="space-y-2 min-w-0">
+          <Label className="text-xs font-bold text-foreground">
+            {isAr ? "طريقة عرض صورة المنتج" : "Product photo framing"}
+          </Label>
+          <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
+            <button
+              type="button"
+              onClick={() => setImageFit("cover")}
+              className={cn(
+                "relative flex flex-col justify-between rounded-xl border p-2.5 sm:p-3 text-start transition-all cursor-pointer min-h-[58px] sm:min-h-[64px] min-w-0",
+                imageFit === "cover"
+                  ? "border-primary bg-primary/[0.06] ring-1 ring-primary shadow-2xs"
+                  : "border-border hover:border-primary/40 bg-card/60",
               )}
-            </div>
-            <span className="text-xs text-muted-foreground mt-1 truncate">
-              {isAr ? "تكبير الصورة لملء الخلفية" : "Fills canvas boundary"}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setImageFit("contain")}
-            className={cn(
-              "relative flex flex-col justify-between rounded-xl border p-2.5 sm:p-3 text-start transition-all cursor-pointer min-h-[58px] sm:min-h-[64px] min-w-0",
-              imageFit === "contain"
-                ? "border-primary bg-primary/[0.06] ring-1 ring-primary shadow-2xs"
-                : "border-border hover:border-primary/40 bg-card/60",
-            )}
-          >
-            <div className="flex items-center justify-between w-full min-w-0">
-              <span className="text-xs font-bold text-foreground truncate">
-                {isAr ? "احتواء كامل (كاملة)" : "Fit / Contain"}
-              </span>
-              {imageFit === "contain" && (
-                <span className="grid size-3.5 sm:size-4 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
-                  <Check className="size-2.5 stroke-[3]" />
+            >
+              <div className="flex items-center justify-between w-full min-w-0">
+                <span className="text-xs font-bold text-foreground truncate">
+                  {isAr ? "ملء الإطار (قص)" : "Cover frame"}
                 </span>
+                {imageFit === "cover" && (
+                  <span className="grid size-3.5 sm:size-4 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+                    <Check className="size-2 sm:size-2.5 stroke-[3]" />
+                  </span>
+                )}
+              </div>
+              <span className="text-xs text-muted-foreground mt-1 truncate">
+                {isAr ? "تكبير الصورة لملء الخلفية" : "Fills canvas boundary"}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setImageFit("contain")}
+              className={cn(
+                "relative flex flex-col justify-between rounded-xl border p-2.5 sm:p-3 text-start transition-all cursor-pointer min-h-[58px] sm:min-h-[64px] min-w-0",
+                imageFit === "contain"
+                  ? "border-primary bg-primary/[0.06] ring-1 ring-primary shadow-2xs"
+                  : "border-border hover:border-primary/40 bg-card/60",
               )}
-            </div>
-            <span className="text-xs text-muted-foreground mt-1 truncate">
-              {isAr ? "حفظ كامل تفاصيل الصورة" : "Preserves full photo"}
-            </span>
-          </button>
+            >
+              <div className="flex items-center justify-between w-full min-w-0">
+                <span className="text-xs font-bold text-foreground truncate">
+                  {isAr ? "احتواء كامل (كاملة)" : "Fit / Contain"}
+                </span>
+                {imageFit === "contain" && (
+                  <span className="grid size-3.5 sm:size-4 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+                    <Check className="size-2.5 stroke-[3]" />
+                  </span>
+                )}
+              </div>
+              <span className="text-xs text-muted-foreground mt-1 truncate">
+                {isAr ? "حفظ كامل تفاصيل الصورة" : "Preserves full photo"}
+              </span>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 }

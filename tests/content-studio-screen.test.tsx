@@ -368,4 +368,34 @@ describe("the content studio", () => {
     fireEvent.click(await screen.findByRole("option", { name: "Linen Kaftan" }));
     expect(await screen.findByText(/one option only/)).toBeInTheDocument();
   });
+
+  it("shows only the controls a template uses, with the logo's size and colour", async () => {
+    await renderStudio();
+    expect(screen.getByText("Product photo framing")).toBeInTheDocument();
+    expect(screen.getByText("Header & Branding Bar")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("radio", { name: /Atelier Reveal/ }));
+    expect(await screen.findByText("Brand mark")).toBeInTheDocument();
+    expect(screen.queryByText("Product photo framing")).not.toBeInTheDocument();
+    expect(screen.queryByText("Header & Branding Bar")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Headline")).toBeInTheDocument();
+    expect(screen.getByLabelText("Body copy")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Logo size"), { target: { value: "1.6" } });
+    expect(screen.getByText("160%")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: "White" }));
+
+    const download = await screen.findByRole("button", { name: "Download Video (MP4)" });
+    await waitFor(() => expect(download).toBeEnabled());
+    fireEvent.click(download);
+    await waitFor(() => expect(exporting.exportTemplateMp4).toHaveBeenCalledTimes(1));
+    const [{ scene }] = exporting.exportTemplateMp4.mock.lastCall as unknown as [
+      { scene: { body: string; brand: { logoScale: number; logoTint: string } } },
+    ];
+    expect(scene.brand).toMatchObject({ logoScale: 1.6, logoTint: "white" });
+    expect(scene.body).toBe("Flowing silk crepe for evenings.");
+
+    fireEvent.click(screen.getByRole("radio", { name: /Classic/ }));
+    expect(await screen.findByText("Header & Branding Bar")).toBeInTheDocument();
+  });
 });

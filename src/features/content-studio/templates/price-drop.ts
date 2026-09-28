@@ -1,7 +1,14 @@
-import { drawCover, font, withAlpha, type Box } from "@/features/content-studio/engine/draw";
+import { drawBrandMark } from "@/features/content-studio/engine/brand-mark";
+import {
+  drawCover,
+  drawLines,
+  font,
+  withAlpha,
+  type Box,
+} from "@/features/content-studio/engine/draw";
 import { displayFont, STUDIO_FONTS } from "@/features/content-studio/engine/fonts";
 import type { FormatKey, SceneData, StudioTemplate } from "@/features/content-studio/engine/scene";
-import { textDirection } from "@/features/content-studio/engine/text-layout";
+import { fitText, textDirection } from "@/features/content-studio/engine/text-layout";
 import { ease, mix, presence, progress } from "@/features/content-studio/engine/timeline";
 
 const DURATION = 7;
@@ -63,15 +70,19 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
   ctx.fillRect(0, 0, W, layout.topRowY * H + 90 * u);
   ctx.restore();
 
-  // Top row over the photo: the brand, and on stories the handle opposite.
+  // Top row over the photo: the logo, and on stories the handle opposite.
   ctx.save();
   ctx.globalAlpha = out(0.2);
+  drawBrandMark(ctx, brand, {
+    x: startX,
+    y: layout.topRowY * H,
+    u,
+    align: rtl ? "right" : "left",
+    onPhoto: true,
+    ink: palette.ink,
+  });
   ctx.fillStyle = OVER_PHOTO;
   ctx.textBaseline = "middle";
-  ctx.font = font(44 * u, STUDIO_FONTS.displayLatin, 600, "italic");
-  ctx.direction = textDirection(brand.name);
-  ctx.textAlign = rtl ? "right" : "left";
-  ctx.fillText(brand.name, startX, layout.topRowY * H);
   const topHandle = layout.footerY === null ? brand.handle || brand.contact : null;
   if (topHandle) {
     ctx.font = font(26 * u, STUDIO_FONTS.body, 400);
@@ -163,6 +174,31 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
     ctx.fillText(scene.priceAmount, x, baseline);
     ctx.font = font(currencySize, STUDIO_FONTS.body, 500);
     ctx.fillText(scene.currencyLabel, x + amountW + gap, baseline);
+    ctx.restore();
+  }
+
+  // The body copy under the price, two lines at most.
+  const body = scene.body.trim();
+  if (body) {
+    const bodyFit = fitText(
+      body,
+      { maxWidth: W - 2 * margin, maxLines: 2, min: 22 * u, max: 28 * u },
+      (size) => {
+        ctx.font = font(size, STUDIO_FONTS.body, 400);
+        return (text) => ctx.measureText(text).width;
+      },
+    );
+    ctx.save();
+    ctx.globalAlpha = out(flipStart + 0.5) * 0.75;
+    ctx.fillStyle = palette.ink;
+    ctx.font = font(bodyFit.size, STUDIO_FONTS.body, 400);
+    drawLines(ctx, bodyFit.lines.slice(0, 2), {
+      x: startX,
+      // Below the amount's descenders (the display figures dip under the line).
+      y: cursorY + amountSize * 1.16 + 14 * u,
+      lineHeight: bodyFit.size * 1.45,
+      dir: textDirection(body),
+    });
     ctx.restore();
   }
 

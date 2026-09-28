@@ -21,6 +21,7 @@ import { studioSale } from "@/features/content-studio/lib/sale-price";
 import { optionRun } from "@/features/content-studio/lib/option-run";
 import { useInventoryAxisDefaults } from "@/features/inventory/hooks/use-inventory-axis-defaults";
 import { describeVariantAxes } from "@/lib/variant-axes";
+import type { LogoTint } from "@/features/content-studio/engine/brand-mark";
 
 /**
  * Everything the content studio's sections read and change, from one call.
@@ -44,6 +45,9 @@ export function useContentStudio(slug: string) {
   const [imageFit, setImageFit] = useState<"cover" | "contain">("cover");
   const [templateId, setTemplateId] = useState<TemplateId>("classic");
   const activeTemplate = templateById(templateId);
+  // The logo on animated templates: its size and colour.
+  const [logoScale, setLogoScale] = useState(1);
+  const [logoTint, setLogoTint] = useState<LogoTint>("auto");
   const product = useStudioProduct(brand.id, isAr);
   const { selected, settingsQ } = product;
   const copy = useStudioCopy({ selected, isAr, brandNameEn, defaultEditionLabel });
@@ -123,6 +127,8 @@ export function useContentStudio(slug: string) {
     currencySymbol,
     sale,
     run,
+    logoScale,
+    logoTint,
   });
   const templateExport = useTemplateExport({
     template: activeTemplate,
@@ -185,6 +191,10 @@ export function useContentStudio(slug: string) {
     setTemplateId,
     sale,
     run,
+    logoScale,
+    setLogoScale,
+    logoTint,
+    setLogoTint,
     activeTemplate,
     buildScene,
     photoReady,

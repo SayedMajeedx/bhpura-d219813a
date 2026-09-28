@@ -8,6 +8,7 @@ import { StudioHero } from "@/features/content-studio/components/StudioHero";
 import { ProductMediaPicker } from "@/features/content-studio/components/ProductMediaPicker";
 import { FormatStylePicker } from "@/features/content-studio/components/FormatStylePicker";
 import { HeaderBrandingPanel } from "@/features/content-studio/components/HeaderBrandingPanel";
+import { TemplateBrandPanel } from "@/features/content-studio/components/TemplateBrandPanel";
 import { CopyPanel } from "@/features/content-studio/components/CopyPanel";
 import { StudioPreview } from "@/features/content-studio/components/StudioPreview";
 import { TemplatePicker } from "@/features/content-studio/components/TemplatePicker";
@@ -80,8 +81,12 @@ function ContentStudioPage() {
               <Separator className="bg-border/60" />
             </div>
 
-            {/* Header & Branding Bar Customization Card */}
-            <HeaderBrandingPanel studio={studio} />
+            {/* Classic's logo bar, or the animated templates' brand mark. */}
+            {studio.activeTemplate ? (
+              <TemplateBrandPanel studio={studio} />
+            ) : (
+              <HeaderBrandingPanel studio={studio} />
+            )}
             <CopyPanel studio={studio} />
           </div>
         </Card>
