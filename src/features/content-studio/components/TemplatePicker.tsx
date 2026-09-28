@@ -1,8 +1,11 @@
+import { useMemo, useState } from "react";
 import { Check, Clapperboard, LayoutTemplate } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { ENGINE_TEMPLATES, type TemplateId } from "@/features/content-studio/templates";
 import { templatesForStore } from "@/features/content-studio/lib/template-order";
+import { TemplateThumb } from "@/features/content-studio/components/TemplateThumb";
+import type { SceneData } from "@/features/content-studio/engine/scene";
 import type { ContentStudio } from "@/features/content-studio/hooks/use-content-studio";
 
 /**
@@ -10,7 +13,28 @@ import type { ContentStudio } from "@/features/content-studio/hooks/use-content-
  * templates, ordered for the kind of store with the best few suggested.
  */
 export function TemplatePicker({ studio }: { studio: ContentStudio }) {
-  const { isAr, templateId, setTemplateId, sale, run, storeProfile } = studio;
+  const { isAr, templateId, setTemplateId, sale, run, storeProfile, buildScene, occasionPreview } =
+    studio;
+  const [hovered, setHovered] = useState<string | null>(null);
+  // Each thumbnail draws the studio's own post as a 4:5 miniature; the
+  // Occasion Pack's shows the coming occasion even while it is not chosen.
+  const thumbScene = useMemo(
+    () =>
+      (id: string) =>
+      (width: number, height: number): SceneData => ({
+        ...buildScene(width, height),
+        format: "portrait",
+        ...(id === "occasion-pack" ? { occasion: occasionPreview } : {}),
+      }),
+    [buildScene, occasionPreview],
+  );
+  const scenes = useMemo(
+    () =>
+      Object.fromEntries(
+        ENGINE_TEMPLATES.map((template) => [template.id, thumbScene(template.id)]),
+      ),
+    [thumbScene],
+  );
   const options: Array<{
     id: TemplateId;
     name: string;
@@ -48,11 +72,12 @@ export function TemplatePicker({ studio }: { studio: ContentStudio }) {
       <div
         role="radiogroup"
         aria-labelledby="studio-template-label"
-        className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-2.5"
+        className="-mx-1 flex snap-x gap-2.5 overflow-x-auto px-1 pb-2 pt-0.5"
       >
         {options.map((option) => {
           const selected = templateId === option.id;
           const Icon = option.animated ? Clapperboard : LayoutTemplate;
+          const template = ENGINE_TEMPLATES.find((item) => item.id === option.id);
           return (
             <button
               key={option.id}
@@ -60,13 +85,30 @@ export function TemplatePicker({ studio }: { studio: ContentStudio }) {
               role="radio"
               aria-checked={selected}
               onClick={() => setTemplateId(option.id)}
+              onMouseEnter={() => setHovered(option.id)}
+              onMouseLeave={() => setHovered(null)}
+              onFocus={() => setHovered(option.id)}
+              onBlur={() => setHovered(null)}
               className={cn(
-                "relative flex min-h-[64px] flex-col justify-between rounded-xl border p-2.5 sm:p-3 text-start transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                "relative flex w-[132px] shrink-0 snap-start flex-col justify-between rounded-xl border p-2 text-start transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 selected
                   ? "border-primary bg-primary/[0.06] ring-1 ring-primary shadow-2xs"
                   : "border-border hover:border-primary/40 bg-card/60",
               )}
             >
+              <span className="mb-2 block overflow-hidden rounded-lg bg-muted">
+                {template ? (
+                  <TemplateThumb
+                    template={template}
+                    scene={scenes[template.id]}
+                    playing={hovered === option.id}
+                  />
+                ) : (
+                  <span className="grid aspect-[4/5] place-items-center text-muted-foreground">
+                    <LayoutTemplate className="size-6" aria-hidden="true" />
+                  </span>
+                )}
+              </span>
               <span className="flex w-full min-w-0 items-center justify-between gap-2">
                 <span className="flex min-w-0 items-center gap-1.5">
                   <Icon className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
@@ -80,7 +122,7 @@ export function TemplatePicker({ studio }: { studio: ContentStudio }) {
               </span>
               <span
                 className={cn(
-                  "mt-1 truncate text-xs",
+                  "mt-1 line-clamp-2 text-xs leading-snug",
                   option.suggested ? "font-medium text-primary" : "text-muted-foreground",
                 )}
               >

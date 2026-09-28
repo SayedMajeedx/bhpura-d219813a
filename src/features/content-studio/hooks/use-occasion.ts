@@ -62,19 +62,18 @@ export function useOccasion({
     setEdits((current) => ({ ...current, [field]: value }));
   const eyebrow = occasionEyebrow(occasionId, occasionDate, country, lang);
 
-  const occasionScene = useMemo<SceneData["occasion"]>(
-    () =>
-      active
-        ? {
-            id: occasionId,
-            eyebrow,
-            greeting: occasionGreeting,
-            message: occasionMessage,
-            offer: occasionOffer,
-          }
-        : null,
-    [active, occasionId, eyebrow, occasionGreeting, occasionMessage, occasionOffer],
+  // The greeting as the template draws it; the gallery's thumbnail shows it even when unselected.
+  const occasionPreview = useMemo<NonNullable<SceneData["occasion"]>>(
+    () => ({
+      id: occasionId,
+      eyebrow,
+      greeting: occasionGreeting,
+      message: occasionMessage,
+      offer: occasionOffer,
+    }),
+    [occasionId, eyebrow, occasionGreeting, occasionMessage, occasionOffer],
   );
+  const occasionScene = active ? occasionPreview : null;
 
   const occasionCaptionText = active
     ? occasionCaption({
@@ -117,6 +116,7 @@ export function useOccasion({
     occasionOffer,
     setOccasionOffer: edit(`${occasionId}:offer`),
     occasionScene,
+    occasionPreview,
     occasionCaptionText,
   };
 }
