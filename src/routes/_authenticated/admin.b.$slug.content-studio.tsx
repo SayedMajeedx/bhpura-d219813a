@@ -15,6 +15,7 @@ import { TemplatePicker } from "@/features/content-studio/components/TemplatePic
 import { TemplatePreview } from "@/features/content-studio/components/TemplatePreview";
 import { LookbookPicker } from "@/features/content-studio/components/LookbookPicker";
 import { DetailPointPicker } from "@/features/content-studio/components/DetailPointPicker";
+import { OccasionPanel } from "@/features/content-studio/components/OccasionPanel";
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/content-studio")({
   component: ContentStudioPage,
 });
@@ -74,9 +75,11 @@ function ContentStudioPage() {
           </div>
           <div className="space-y-5 p-4 sm:space-y-6 sm:p-6 min-w-0">
             <TemplatePicker studio={studio} />
-            {/* The Lookbook runs through several products; the rest use one. */}
+            {/* The Lookbook runs through several products, a greeting needs none; the rest use one. */}
             {studio.templateId === "lookbook-carousel" ? (
               <LookbookPicker studio={studio} />
+            ) : studio.templateId === "occasion-pack" ? (
+              <OccasionPanel studio={studio} />
             ) : (
               <ProductMediaPicker studio={studio} />
             )}
@@ -95,7 +98,8 @@ function ContentStudioPage() {
             ) : (
               <HeaderBrandingPanel studio={studio} />
             )}
-            <CopyPanel studio={studio} />
+            {/* A greeting has its own words (in the occasion panel), not the product's copy. */}
+            {studio.templateId !== "occasion-pack" && <CopyPanel studio={studio} />}
           </div>
         </Card>
 

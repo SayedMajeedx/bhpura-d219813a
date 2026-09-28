@@ -1,4 +1,5 @@
 import type { FORMATS } from "@/features/content-studio/lib/studio-content";
+import type { OccasionId } from "@/features/content-studio/lib/occasions";
 
 export type FormatKey = keyof typeof FORMATS;
 
@@ -65,6 +66,17 @@ export type SceneData = {
    * Null outside that template.
    */
   detail: { x: number; y: number; label: string; note: string } | null;
+  /**
+   * The Occasion Pack's greeting: which occasion (its line art), the small line
+   * above, the greeting, a message and an optional offer. Null outside it.
+   */
+  occasion: {
+    id: OccasionId;
+    eyebrow: string;
+    greeting: string;
+    message: string;
+    offer: string;
+  } | null;
 };
 
 /** One animated template: its name, length and how it draws a frame at time t. */

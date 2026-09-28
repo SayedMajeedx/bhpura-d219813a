@@ -5,7 +5,8 @@ import type { Product } from "@/features/content-studio/lib/studio-content";
 import type { useStudioProduct } from "@/features/content-studio/hooks/use-studio-product";
 
 /**
- * The Instagram caption for the chosen product and variant, and copying it.
+ * The Instagram caption for the chosen product and variant (or `override`,
+ * a template's own caption such as an occasion greeting), and copying it.
  */
 export function useStudioCaption({
   selected,
@@ -17,6 +18,7 @@ export function useStudioCaption({
   effectivePrice,
   storeProfile,
   isAr,
+  override = null,
 }: {
   selected: Product | undefined;
   headline: string;
@@ -27,10 +29,11 @@ export function useStudioCaption({
   effectivePrice: number | null;
   storeProfile: ReturnType<typeof useAdminStoreProfile>["profile"];
   isAr: boolean;
+  override?: string | null;
 }) {
   const [copiedCaption, setCopiedCaption] = useState(false);
 
-  const captionText = useMemo(() => {
+  const productCaption = useMemo(() => {
     if (!selected) return "";
     const title = headline.trim() ? `✨ ${headline.trim()}` : "✨ [العنوان العاطفي]";
     const desc = body.trim() || selectedDescription || "";
@@ -85,6 +88,7 @@ ${desc}${detailsBlock}
     storeProfile.modules.made_to_order,
     storeProfile.vertical,
   ]);
+  const captionText = override ?? productCaption;
 
   const handleCopyCaption = async () => {
     if (!captionText) return;
