@@ -66,6 +66,8 @@ export function useReviewStory({
   const [exporting, setExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
   const [mp4Supported, setMp4Supported] = useState<boolean | null>(null);
+  // The frame the preview is paused on: the PNG exports that one (else the finished story).
+  const [stillAt, setStillAt] = useState<number | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const primary = safeColor(brandColor);
@@ -216,6 +218,7 @@ export function useReviewStory({
       const blob = await exportTemplatePng({
         template: reviewStory,
         scene: buildScene(STORY_WIDTH, STORY_HEIGHT),
+        t: stillAt ?? undefined,
       });
       await deliver(blob, "png", "image/png");
     } catch (error) {
@@ -278,6 +281,8 @@ export function useReviewStory({
     mp4Supported,
     exportVideo,
     exportStill,
+    stillAt,
+    setStillAt,
     cancelExport: () => abortRef.current?.abort(),
   };
 }

@@ -100,6 +100,19 @@ describe("the review story dialog", () => {
     );
   });
 
+  it("downloads the frame the preview is paused on", async () => {
+    open();
+    fireEvent.click(screen.getByRole("button", { name: "Pause" }));
+    fireEvent.change(screen.getByRole("slider", { name: "Timeline" }), {
+      target: { value: "2" },
+    });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Or download the frame at 2.0 s (PNG)" }),
+    );
+    await waitFor(() => expect(exporting.exportTemplatePng).toHaveBeenCalledTimes(1));
+    expect(exporting.exportTemplatePng).toHaveBeenCalledWith(expect.objectContaining({ t: 2 }));
+  });
+
   it("downloads the merchant's choices as a still: the look, a hidden name, no highlights", async () => {
     open();
     fireEvent.click(screen.getByRole("button", { name: /Midnight Dark/ }));

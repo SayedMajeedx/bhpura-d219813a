@@ -43,6 +43,8 @@ export function useTemplateExport({
   const [templateExporting, setTemplateExporting] = useState(false);
   const [templateProgress, setTemplateProgress] = useState(0);
   const [mp4Supported, setMp4Supported] = useState<boolean | null>(null);
+  // The frame the preview is paused on: the still exports that one (else the finished frame).
+  const [stillAt, setStillAt] = useState<number | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const { width, height } = FORMATS[format];
 
@@ -113,7 +115,11 @@ export function useTemplateExport({
     setTemplateExporting(true);
     try {
       await loadStudioFonts();
-      const blob = await exportTemplatePng({ template, scene: buildScene(width, height) });
+      const blob = await exportTemplatePng({
+        template,
+        scene: buildScene(width, height),
+        t: stillAt === null ? undefined : Math.min(stillAt, template.duration),
+      });
       await deliver(blob, "png", "image/png");
     } catch (error) {
       console.error("Template PNG export failed", error);
@@ -178,6 +184,8 @@ export function useTemplateExport({
     mp4Supported,
     exportTemplateVideo,
     exportTemplateStill,
+    stillAt,
+    setStillAt,
     exportTemplateSlides,
     cancelTemplateExport,
   };
