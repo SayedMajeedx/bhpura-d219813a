@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -180,5 +180,46 @@ describe("Inventory Ledger Architecture & Invariants (Block 1)", () => {
       "UPDATE public.product_variants\n      SET stock_main = v_main_ledger_sum",
     );
     expect(reconciliationMigration).toContain("inventory_reconciliation_nightly");
+  });
+});
+
+// 20260927100000 dropped orders.stock_deducted and orders.stock_snapshot while
+// order_inventory_transition still wrote them, so every order insert and
+// status change failed. No later migration may use them again.
+describe("the dropped legacy stock columns", () => {
+  const dir = resolve("supabase/migrations");
+  const later = readdirSync(dir)
+    .filter((name) => name.endsWith(".sql") && name.slice(0, 14) > "20260927100000")
+    .sort();
+  const withoutComments = (sql: string) =>
+    sql
+      .split("\n")
+      .map((line) => line.replace(/--.*$/, ""))
+      .join("\n");
+
+  it("are not referenced by any migration after the drop", () => {
+    const offenders = later.filter((name) =>
+      /stock_deducted|stock_snapshot/.test(
+        withoutComments(readFileSync(resolve(dir, name), "utf8")),
+      ),
+    );
+    expect(offenders).toEqual([]);
+  });
+
+  it("are gone from the order state machine and the dead functions that wrote them", () => {
+    const fix = readFileSync(
+      resolve(dir, "20260929100000_drop_stock_deducted_references.sql"),
+      "utf8",
+    );
+    expect(fix).toContain("CREATE OR REPLACE FUNCTION public.order_inventory_transition");
+    expect(fix).toContain(
+      "SET inventory_state = v_desired_state,\n      inventory_revision = v_revision",
+    );
+    expect(fix).toContain(
+      "DROP FUNCTION IF EXISTS public.release_card_stock_on_terminal_payment();",
+    );
+    expect(fix).toContain(
+      "DROP FUNCTION IF EXISTS public.place_storefront_order(text, jsonb, jsonb, text, text);",
+    );
   });
 });
