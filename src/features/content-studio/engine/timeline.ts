@@ -12,8 +12,11 @@ export const ease = {
   inCubic: (x: number) => x * x * x,
   inOutCubic: (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2),
   outExpo: (x: number) => (x >= 1 ? 1 : 1 - Math.pow(2, -10 * x)),
-  /** Overshoots a little before settling: for stamps and badges. */
+  /** Overshoots a little before settling: for stamps and badges. Exactly 0 and 1 at the ends. */
   outBack: (x: number) => {
+    // The formula leaves a rounding error at 0, which would draw a speck before the move starts.
+    if (x <= 0) return 0;
+    if (x >= 1) return 1;
     const c1 = 1.70158;
     const c3 = c1 + 1;
     return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);

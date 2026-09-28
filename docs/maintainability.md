@@ -78,16 +78,16 @@ npm run check
 
 Measured on `main` after Phase 7. The budgets in `tests/maintainability-ratchet.test.ts` sit at these values.
 
-| Metric                    | Baseline (09-24) | Now (09-27) | What changed                                                                                             |
-| :------------------------ | :--------------: | :---------: | :------------------------------------------------------------------------------------------------------- |
-| `as any`                  |       990        |     575     | Typed data layer, typed rows and props (Phases 3–4); the order editor's shared line builder.             |
-| `: any`                   |       785        |     714     | Same; most remaining are `catch (e: any)` and local shapes.                                              |
-| `as never`                |        40        |      0      | Types regenerated from production (Phase 3).                                                             |
-| `eslint-disable`          |        10        |     10      | Unchanged (frozen).                                                                                      |
-| Direct Supabase calls     |   392 (406\*)    |     24      | Screens read and write through `src/lib/data/*` (Phase 4); left: server routes and one realtime channel. |
-| `readFileSync` test files |        71        |     43      | Feature tests run the code (Phase 6); left: SQL / edge-function contracts and architecture guards.       |
-| Files over 1,000 lines    |        31        |     23      | Big screens split into `src/features/*` (Phase 5); the rest split when touched.                          |
-| Tests                     |      1,078       |    1,599    |                                                                                                          |
+| Metric                    | Baseline (09-24) | Now (09-27) | What changed                                                                                                                         |
+| :------------------------ | :--------------: | :---------: | :----------------------------------------------------------------------------------------------------------------------------------- |
+| `as any`                  |       990        |     569     | Typed data layer, typed rows and props (Phases 3–4); the order editor's shared line builder; the review story on the engine (09-28). |
+| `: any`                   |       785        |     714     | Same; most remaining are `catch (e: any)` and local shapes.                                                                          |
+| `as never`                |        40        |      0      | Types regenerated from production (Phase 3).                                                                                         |
+| `eslint-disable`          |        10        |     10      | Unchanged (frozen).                                                                                                                  |
+| Direct Supabase calls     |   392 (406\*)    |     24      | Screens read and write through `src/lib/data/*` (Phase 4); left: server routes and one realtime channel.                             |
+| `readFileSync` test files |        71        |     43      | Feature tests run the code (Phase 6); left: SQL / edge-function contracts and architecture guards.                                   |
+| Files over 1,000 lines    |        31        |     21      | Big screens split into `src/features/*` (Phase 5); the rest split when touched (the review story dialog, 09-28).                     |
+| Tests                     |      1,078       |    1,599    |                                                                                                                                      |
 
 \* The call pattern was corrected on 2026-09-25 to count cast-wrapped calls (section 4).
 
@@ -107,17 +107,16 @@ The 23 files still over 1,000 lines (split on touch; `registry.ts` and `addon-sh
 | 10  | `src/routes/$slug.account.tsx`                                      | 1,477 |
 | 11  | `src/routes/_authenticated/admin.b.$slug.import.tsx`                | 1,448 |
 | 12  | `src/routes/_authenticated/admin.b.$slug.campaigns.tsx`             | 1,446 |
-| 13  | `src/components/reviews/ReviewStoryDialog.tsx`                      | 1,442 |
-| 14  | `src/routes/_authenticated/admin.b.$slug.incubators.tsx`            | 1,347 |
-| 15  | `src/components/inventory/InstagramImporterModal.tsx`               | 1,328 |
-| 16  | `src/routes/_authenticated/admin.b.$slug.expenses.tsx`              | 1,313 |
-| 17  | `src/lib/public-api/public-api-router.server.ts`                    | 1,271 |
-| 18  | `src/lib/instagram-ai-importer.ts`                                  | 1,260 |
-| 19  | `src/routes/_authenticated/admin.b.$slug.integrations.tsx`          | 1,188 |
-| 20  | `src/routes/onboard.tsx`                                            | 1,084 |
-| 21  | `src/routes/_authenticated/admin.b.$slug.pages.tsx`                 | 1,058 |
-| 22  | `src/routes/_authenticated/admin.b.$slug.customers.$customerId.tsx` | 1,041 |
-| 23  | `src/routes/_authenticated/admin.brands.tsx`                        | 1,024 |
+| 13  | `src/routes/_authenticated/admin.b.$slug.incubators.tsx`            | 1,347 |
+| 14  | `src/components/inventory/InstagramImporterModal.tsx`               | 1,328 |
+| 15  | `src/routes/_authenticated/admin.b.$slug.expenses.tsx`              | 1,313 |
+| 16  | `src/lib/public-api/public-api-router.server.ts`                    | 1,271 |
+| 17  | `src/lib/instagram-ai-importer.ts`                                  | 1,260 |
+| 18  | `src/routes/_authenticated/admin.b.$slug.integrations.tsx`          | 1,188 |
+| 19  | `src/routes/onboard.tsx`                                            | 1,084 |
+| 20  | `src/routes/_authenticated/admin.b.$slug.pages.tsx`                 | 1,058 |
+| 21  | `src/routes/_authenticated/admin.b.$slug.customers.$customerId.tsx` | 1,041 |
+| 22  | `src/routes/_authenticated/admin.brands.tsx`                        | 1,024 |
 
 ---
 

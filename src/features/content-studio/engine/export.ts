@@ -1,5 +1,5 @@
 import { frameCount } from "@/features/content-studio/engine/timeline";
-import type { Drawable, SceneData, StudioTemplate } from "@/features/content-studio/engine/scene";
+import type { BaseScene, Drawable, StudioTemplate } from "@/features/content-studio/engine/scene";
 
 /** Frame rate and bitrate of exported videos: smooth on Instagram, crisp text. */
 export const EXPORT_FPS = 30;
@@ -39,7 +39,7 @@ export async function canExportMp4(width: number, height: number): Promise<boole
  * length and never drops a frame, whatever the device's speed. `frameAt`
  * supplies a video frame per time when the product media is a video.
  */
-export async function exportTemplateMp4({
+export async function exportTemplateMp4<S extends BaseScene>({
   template,
   scene,
   fps = EXPORT_FPS,
@@ -49,8 +49,8 @@ export async function exportTemplateMp4({
   signal,
   createCanvas = makeCanvas,
 }: {
-  template: StudioTemplate;
-  scene: SceneData;
+  template: StudioTemplate<S>;
+  scene: S;
   fps?: number;
   bitrate?: number;
   frameAt?: (t: number) => Promise<Drawable | null>;
@@ -90,14 +90,14 @@ export async function exportTemplateMp4({
 }
 
 /** Renders one frame of a template (by default the last, fully built one) to a PNG. */
-export async function exportTemplatePng({
+export async function exportTemplatePng<S extends BaseScene>({
   template,
   scene,
   t = Math.max(0, template.duration - 1),
   createCanvas = makeCanvas,
 }: {
-  template: StudioTemplate;
-  scene: SceneData;
+  template: StudioTemplate<S>;
+  scene: S;
   t?: number;
   createCanvas?: CanvasFactory;
 }): Promise<Blob> {
@@ -115,13 +115,13 @@ export async function exportTemplatePng({
  * Renders a template's carousel slides (see StudioTemplate.slideTimes) to one
  * PNG each, in order. Empty for templates without slides.
  */
-export async function exportTemplateCarousel({
+export async function exportTemplateCarousel<S extends BaseScene>({
   template,
   scene,
   createCanvas = makeCanvas,
 }: {
-  template: StudioTemplate;
-  scene: SceneData;
+  template: StudioTemplate<S>;
+  scene: S;
   createCanvas?: CanvasFactory;
 }): Promise<Blob[]> {
   const times = template.slideTimes?.(scene) ?? [];

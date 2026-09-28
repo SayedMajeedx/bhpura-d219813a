@@ -79,18 +79,25 @@ export type SceneData = {
   } | null;
 };
 
-/** One animated template: its name, length and how it draws a frame at time t. */
-export type StudioTemplate = {
+/** What every scene has: its size in output pixels, and the media to draw (a photo or video frame). */
+export type BaseScene = { width: number; height: number; media: Drawable | null };
+
+/**
+ * One animated template: its name, length and how it draws a frame at time t.
+ * The content studio's templates draw a SceneData; other screens (the review
+ * story) bring their own scene.
+ */
+export type StudioTemplate<S extends BaseScene = SceneData> = {
   id: string;
   name: { en: string; ar: string };
   goal: { en: string; ar: string };
   /** Length in seconds; the animation loops at the end. */
   duration: number;
   /** Draws the whole frame at `t` seconds. Must not keep state between calls. */
-  render: (ctx: CanvasRenderingContext2D, t: number, scene: SceneData) => void;
+  render: (ctx: CanvasRenderingContext2D, t: number, scene: S) => void;
   /**
    * For templates that also export as an Instagram carousel: the time of each
    * slide's settled frame, one PNG per time.
    */
-  slideTimes?: (scene: SceneData) => number[];
+  slideTimes?: (scene: S) => number[];
 };

@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { ReviewStoryDialog } from "@/components/reviews/ReviewStoryDialog";
+import { ReviewStoryDialog } from "@/features/review-story/components/ReviewStoryDialog";
 import { reviewsQueries } from "@/lib/data/reviews";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reviews")({
