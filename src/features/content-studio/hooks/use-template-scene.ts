@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { Drawable, FormatKey, SceneData } from "@/features/content-studio/engine/scene";
 import { paletteFor } from "@/features/content-studio/templates";
 import type { THEMES } from "@/features/content-studio/lib/studio-content";
+import type { Sale } from "@/features/content-studio/lib/sale-price";
 
 /**
  * An image ready to draw on a canvas: loaded with CORS, so exports are not
@@ -47,6 +48,7 @@ export function useTemplateScene({
   showPrice,
   effectivePrice,
   currencySymbol,
+  sale,
 }: {
   format: FormatKey;
   isAr: boolean;
@@ -63,9 +65,16 @@ export function useTemplateScene({
   showPrice: boolean;
   effectivePrice: number | null;
   currencySymbol: string;
+  /** The chosen product's sale, when it has one (the sale price wins over effectivePrice). */
+  sale: Sale | null;
 }) {
   const photoImage = useLoadedImage(isCurrentVideo ? null : photo);
   const logoImage = useLoadedImage(logo);
+
+  const amount = (value: number) => Number(value).toFixed(3);
+  const selling = sale?.price ?? effectivePrice;
+  const priceAmount = showPrice && selling ? amount(selling) : null;
+  const originalAmount = showPrice && sale ? amount(sale.original) : null;
 
   const buildScene = useCallback(
     (width: number, height: number, media?: Drawable | null): SceneData => ({
@@ -83,11 +92,12 @@ export function useTemplateScene({
       productName,
       headline,
       body,
-      price:
-        showPrice && effectivePrice
-          ? `${Number(effectivePrice).toFixed(3)} ${currencySymbol}`
-          : null,
-      originalPrice: null,
+      price: priceAmount ? `${priceAmount} ${currencySymbol}` : null,
+      originalPrice: originalAmount ? `${originalAmount} ${currencySymbol}` : null,
+      priceAmount,
+      originalAmount,
+      currencyLabel: currencySymbol,
+      discountPercent: showPrice && sale ? sale.percent : null,
       media: media === undefined ? photoImage : media,
     }),
     [
@@ -101,9 +111,11 @@ export function useTemplateScene({
       productName,
       headline,
       body,
-      showPrice,
-      effectivePrice,
+      priceAmount,
+      originalAmount,
       currencySymbol,
+      showPrice,
+      sale,
       photoImage,
     ],
   );

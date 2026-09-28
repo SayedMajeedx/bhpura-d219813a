@@ -75,6 +75,7 @@ const variants = [
     size: "M",
     color: "Black",
     selling_price: 39,
+    original_price: 42,
     stock_main: 2,
     stock_incubator: 0,
     image_url: null,
@@ -314,5 +315,33 @@ describe("the content studio", () => {
       "video/mp4",
       "Silk Abaya",
     );
+  });
+
+  it("builds Price Drop from the chosen variant's sale, and says when there is none", async () => {
+    await renderStudio();
+    fireEvent.click(screen.getByRole("radio", { name: /Price Drop/ }));
+    expect(await screen.findByRole("status")).toHaveTextContent("no sale price right now");
+
+    openSelect(screen.getByRole("combobox", { name: "Product Variant" }));
+    fireEvent.click(await screen.findByRole("option", { name: /M · Black/ }));
+    await waitFor(() =>
+      expect(screen.queryByText(/no sale price right now/)).not.toBeInTheDocument(),
+    );
+
+    const download = await screen.findByRole("button", { name: "Download Video (MP4)" });
+    await waitFor(() => expect(download).toBeEnabled());
+    fireEvent.click(download);
+    await waitFor(() => expect(exporting.exportTemplateMp4).toHaveBeenCalledTimes(1));
+    const [{ template, scene }] = exporting.exportTemplateMp4.mock.lastCall as unknown as [
+      { template: { id: string }; scene: Record<string, unknown> },
+    ];
+    expect(template.id).toBe("price-drop");
+    expect(scene).toMatchObject({
+      priceAmount: "39.000",
+      originalAmount: "42.000",
+      originalPrice: "42.000 BHD",
+      currencyLabel: "BHD",
+      discountPercent: 7,
+    });
   });
 });

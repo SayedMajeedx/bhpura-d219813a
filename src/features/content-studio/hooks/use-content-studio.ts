@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useBrand } from "@/lib/brand-context";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useI18n } from "@/lib/i18n";
@@ -17,6 +17,7 @@ import { useStudioCaption } from "@/features/content-studio/hooks/use-studio-cap
 import { useTemplateScene } from "@/features/content-studio/hooks/use-template-scene";
 import { useTemplateExport } from "@/features/content-studio/hooks/use-template-export";
 import { templateById, type TemplateId } from "@/features/content-studio/templates";
+import { studioSale } from "@/features/content-studio/lib/sale-price";
 
 /**
  * Everything the content studio's sections read and change, from one call.
@@ -84,6 +85,11 @@ export function useContentStudio(slug: string) {
     businessName,
     isAr,
   });
+  const { productVariants, activeVariant } = product;
+  const sale = useMemo(
+    () => studioSale(productVariants, activeVariant),
+    [productVariants, activeVariant],
+  );
   const { buildScene, photoReady } = useTemplateScene({
     format,
     isAr,
@@ -100,6 +106,7 @@ export function useContentStudio(slug: string) {
     showPrice,
     effectivePrice: product.effectivePrice,
     currencySymbol,
+    sale,
   });
   const templateExport = useTemplateExport({
     template: activeTemplate,
@@ -160,6 +167,7 @@ export function useContentStudio(slug: string) {
     defaultEditionLabel,
     templateId,
     setTemplateId,
+    sale,
     activeTemplate,
     buildScene,
     photoReady,

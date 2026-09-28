@@ -12,7 +12,7 @@ import {
   textDirection,
   wrapText,
 } from "../src/features/content-studio/engine/text-layout";
-import { coverCrop } from "../src/features/content-studio/engine/draw";
+import { coverCrop, withAlpha } from "../src/features/content-studio/engine/draw";
 import type { SceneData, StudioTemplate } from "../src/features/content-studio/engine/scene";
 
 // The content studio's animation engine: timing, text layout, image framing
@@ -246,5 +246,13 @@ describe("the exporters", () => {
 
   it("reports whether the browser can encode H.264", async () => {
     expect(await canExportMp4(1080, 1920)).toBe(true);
+  });
+});
+
+describe("withAlpha", () => {
+  it("turns a palette hex into a translucent rgba, and leaves other colours alone", () => {
+    expect(withAlpha("#330a0a", 0.5)).toBe("rgba(51, 10, 10, 0.5)");
+    expect(withAlpha("#fff", 0)).toBe("rgba(255, 255, 255, 0)");
+    expect(withAlpha("rgba(0,0,0,0.4)", 1)).toBe("rgba(0,0,0,0.4)");
   });
 });

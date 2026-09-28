@@ -7,6 +7,7 @@ import {
   type Product,
 } from "../src/features/content-studio/lib/studio-content";
 import { getExactVideoDuration } from "../src/features/content-studio/lib/video-duration";
+import { studioSale } from "../src/features/content-studio/lib/sale-price";
 
 // The content studio's pure helpers, moved out of the route in the split.
 
@@ -116,5 +117,34 @@ describe("getExactVideoDuration", () => {
       throw new Error("offline");
     });
     expect(await getExactVideoDuration(video, "https://cdn/clip.mp4")).toBe(0);
+  });
+});
+
+describe("studioSale", () => {
+  const variant = (selling_price: number | null, original_price: number | null) => ({
+    selling_price,
+    original_price,
+  });
+
+  it("uses the chosen variant's own sale", () => {
+    expect(studioSale([], variant(31.5, 42))).toEqual({ original: 42, price: 31.5, percent: 25 });
+    expect(studioSale([], variant(42, null))).toBeNull();
+    expect(studioSale([], variant(42, 42))).toBeNull();
+  });
+
+  it("without a chosen variant, shows a sale only when every variant shares it", () => {
+    expect(studioSale([variant(30, 40), variant(30, 40)], null)).toEqual({
+      original: 40,
+      price: 30,
+      percent: 25,
+    });
+    expect(studioSale([variant(30, 40), variant(35, 40)], null)).toBeNull();
+    expect(studioSale([variant(30, 40), variant(40, null)], null)).toBeNull();
+    expect(studioSale([], null)).toBeNull();
+  });
+
+  it("rounds the saving and never shows 0%", () => {
+    expect(studioSale([], variant(39, 42))?.percent).toBe(7);
+    expect(studioSale([], variant(41.9, 42))?.percent).toBe(1);
   });
 });

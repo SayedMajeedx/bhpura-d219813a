@@ -1,9 +1,10 @@
 import type { BrandKit, StudioTemplate } from "@/features/content-studio/engine/scene";
 import { THEMES } from "@/features/content-studio/lib/studio-content";
 import { atelierReveal } from "@/features/content-studio/templates/atelier-reveal";
+import { priceDrop } from "@/features/content-studio/templates/price-drop";
 
 /** The animated templates, in the order the picker shows them after Classic. */
-export const ENGINE_TEMPLATES: readonly StudioTemplate[] = [atelierReveal];
+export const ENGINE_TEMPLATES: readonly StudioTemplate[] = [atelierReveal, priceDrop];
 
 /** "classic" is today's layout (the HTML stage); the rest run on the engine. */
 export type TemplateId = "classic" | (typeof ENGINE_TEMPLATES)[number]["id"];
