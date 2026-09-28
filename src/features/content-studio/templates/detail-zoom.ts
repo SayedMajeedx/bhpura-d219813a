@@ -289,7 +289,7 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
     let y = blockTop + nameH + rise;
     if (scene.price) {
       ctx.font = font(34 * u, STUDIO_FONTS.body, 500);
-      ctx.direction = "ltr";
+      ctx.direction = textDirection(scene.price);
       ctx.textAlign = rtl ? "right" : "left";
       ctx.textBaseline = "top";
       ctx.fillText(scene.price, startX, y + 14 * u);
