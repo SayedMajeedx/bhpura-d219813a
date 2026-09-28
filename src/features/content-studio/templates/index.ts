@@ -2,9 +2,10 @@ import type { BrandKit, StudioTemplate } from "@/features/content-studio/engine/
 import { THEMES } from "@/features/content-studio/lib/studio-content";
 import { atelierReveal } from "@/features/content-studio/templates/atelier-reveal";
 import { priceDrop } from "@/features/content-studio/templates/price-drop";
+import { swatchRun } from "@/features/content-studio/templates/swatch-run";
 
 /** The animated templates, in the order the picker shows them after Classic. */
-export const ENGINE_TEMPLATES: readonly StudioTemplate[] = [atelierReveal, priceDrop];
+export const ENGINE_TEMPLATES: readonly StudioTemplate[] = [atelierReveal, priceDrop, swatchRun];
 
 /** "classic" is today's layout (the HTML stage); the rest run on the engine. */
 export type TemplateId = "classic" | (typeof ENGINE_TEMPLATES)[number]["id"];

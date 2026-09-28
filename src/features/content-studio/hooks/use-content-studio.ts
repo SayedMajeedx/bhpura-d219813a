@@ -18,6 +18,9 @@ import { useTemplateScene } from "@/features/content-studio/hooks/use-template-s
 import { useTemplateExport } from "@/features/content-studio/hooks/use-template-export";
 import { templateById, type TemplateId } from "@/features/content-studio/templates";
 import { studioSale } from "@/features/content-studio/lib/sale-price";
+import { optionRun } from "@/features/content-studio/lib/option-run";
+import { useInventoryAxisDefaults } from "@/features/inventory/hooks/use-inventory-axis-defaults";
+import { describeVariantAxes } from "@/lib/variant-axes";
 
 /**
  * Everything the content studio's sections read and change, from one call.
@@ -90,6 +93,18 @@ export function useContentStudio(slug: string) {
     () => studioSale(productVariants, activeVariant),
     [productVariants, activeVariant],
   );
+  // The option Swatch Run cycles through, labelled the way the inventory
+  // labels this store's axes (a roastery's "colour" column is its roast).
+  const axisDefaults = useInventoryAxisDefaults(brand.id);
+  const run = useMemo(() => {
+    const lang = isAr ? "ar" : "en";
+    const axes = describeVariantAxes({
+      variants: productVariants,
+      addonDefaults: axisDefaults,
+      lang,
+    });
+    return optionRun(axes, productVariants, lang);
+  }, [productVariants, axisDefaults, isAr]);
   const { buildScene, photoReady } = useTemplateScene({
     format,
     isAr,
@@ -107,6 +122,7 @@ export function useContentStudio(slug: string) {
     effectivePrice: product.effectivePrice,
     currencySymbol,
     sale,
+    run,
   });
   const templateExport = useTemplateExport({
     template: activeTemplate,
@@ -168,6 +184,7 @@ export function useContentStudio(slug: string) {
     templateId,
     setTemplateId,
     sale,
+    run,
     activeTemplate,
     buildScene,
     photoReady,

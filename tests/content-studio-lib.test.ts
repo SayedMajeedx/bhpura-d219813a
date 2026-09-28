@@ -8,6 +8,7 @@ import {
 } from "../src/features/content-studio/lib/studio-content";
 import { getExactVideoDuration } from "../src/features/content-studio/lib/video-duration";
 import { studioSale } from "../src/features/content-studio/lib/sale-price";
+import { MAX_STOPS, optionRun } from "../src/features/content-studio/lib/option-run";
 
 // The content studio's pure helpers, moved out of the route in the split.
 
@@ -146,5 +147,52 @@ describe("studioSale", () => {
   it("rounds the saving and never shows 0%", () => {
     expect(studioSale([], variant(39, 42))?.percent).toBe(7);
     expect(studioSale([], variant(41.9, 42))?.percent).toBe(1);
+  });
+});
+
+describe("optionRun", () => {
+  const axis = (
+    field: "color" | "size" | "fabric",
+    label: string,
+    values: string[],
+    swatch: boolean,
+  ) => ({ key: field === "fabric" ? ("fabric" as const) : field, field, label, values, swatch });
+
+  const variants = [
+    { color: "Black", size: "M", image_url: null },
+    { color: "Black", size: "L", image_url: "black.jpg" },
+    { color: "Sand", size: "M", image_url: "sand.jpg" },
+  ];
+
+  it("runs through the colours, each with its own photo and swatch colour", () => {
+    const run = optionRun(
+      [axis("color", "Colour", ["Black", "Sand"], true), axis("size", "Size", ["M", "L"], false)],
+      variants,
+      "en",
+    );
+    expect(run).toMatchObject({ axisLabel: "Colour", swatch: true });
+    expect(run?.stops.map((stop) => [stop.value, stop.imageUrl])).toEqual([
+      ["Black", "black.jpg"],
+      ["Sand", "sand.jpg"],
+    ]);
+    expect(run?.stops[0].color).toBeTruthy();
+  });
+
+  it("falls back to another option as chips, but never to sizes", () => {
+    const roast = optionRun(
+      [axis("color", "Roast", ["Light", "Dark"], false)],
+      [{ color: "Light" }, { color: "Dark" }],
+      "en",
+    );
+    expect(roast).toMatchObject({ axisLabel: "Roast", swatch: false });
+    expect(roast?.stops.every((stop) => stop.color === null)).toBe(true);
+    expect(optionRun([axis("size", "Size", ["M", "L"], false)], variants, "en")).toBeNull();
+    expect(optionRun([axis("color", "Colour", ["Black"], true)], variants, "en")).toBeNull();
+  });
+
+  it("keeps at most six stops", () => {
+    const values = ["a", "b", "c", "d", "e", "f", "g", "h"];
+    const run = optionRun([axis("fabric", "Fabric", values, false)], [], "en");
+    expect(run?.stops).toHaveLength(MAX_STOPS);
   });
 });

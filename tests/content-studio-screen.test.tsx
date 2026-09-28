@@ -84,7 +84,7 @@ const variants = [
     id: "v2",
     product_id: "p1",
     size: "L",
-    color: "Black",
+    color: "Sand",
     selling_price: 42,
     stock_main: 0,
     stock_incubator: 0,
@@ -343,5 +343,29 @@ describe("the content studio", () => {
       currencyLabel: "BHD",
       discountPercent: 7,
     });
+  });
+
+  it("runs Swatch Run through the product's colours, and says when it has only one", async () => {
+    await renderStudio();
+    fireEvent.click(screen.getByRole("radio", { name: /Swatch Run/ }));
+    expect(screen.queryByText(/one option only/)).not.toBeInTheDocument();
+
+    const download = await screen.findByRole("button", { name: "Download Video (MP4)" });
+    await waitFor(() => expect(download).toBeEnabled());
+    fireEvent.click(download);
+    await waitFor(() => expect(exporting.exportTemplateMp4).toHaveBeenCalledTimes(1));
+    const [{ template, scene }] = exporting.exportTemplateMp4.mock.lastCall as unknown as [
+      {
+        template: { id: string };
+        scene: { options: { swatch: boolean; stops: Array<{ label: string }> } | null };
+      },
+    ];
+    expect(template.id).toBe("swatch-run");
+    expect(scene.options?.swatch).toBe(true);
+    expect(scene.options?.stops.map((stop) => stop.label)).toEqual(["Black", "Sand"]);
+
+    openSelect(screen.getByRole("combobox", { name: "Product" }));
+    fireEvent.click(await screen.findByRole("option", { name: "Linen Kaftan" }));
+    expect(await screen.findByText(/one option only/)).toBeInTheDocument();
   });
 });

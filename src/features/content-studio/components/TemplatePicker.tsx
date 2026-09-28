@@ -6,7 +6,7 @@ import type { ContentStudio } from "@/features/content-studio/hooks/use-content-
 
 /** Choose the design: Classic (today's layout) or one of the animated templates. */
 export function TemplatePicker({ studio }: { studio: ContentStudio }) {
-  const { isAr, templateId, setTemplateId, sale } = studio;
+  const { isAr, templateId, setTemplateId, sale, run } = studio;
   const options: Array<{
     id: TemplateId;
     name: string;
@@ -70,6 +70,13 @@ export function TemplatePicker({ studio }: { studio: ContentStudio }) {
           );
         })}
       </div>
+      {templateId === "swatch-run" && !run && (
+        <p role="status" className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+          {isAr
+            ? "لهذا المنتج خيار واحد فقط، فسيظهر وحده. أضف ألواناً أو خيارات أخرى بصورها من المخزون لتظهر جولة الألوان."
+            : "This product has one option only, so it shows on its own. Add colours or other options with their photos in Inventory to run through them."}
+        </p>
+      )}
       {templateId === "price-drop" && !sale && (
         <p role="status" className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
           {isAr
