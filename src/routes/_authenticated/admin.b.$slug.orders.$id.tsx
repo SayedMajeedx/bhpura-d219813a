@@ -593,6 +593,7 @@ function OrderDetail() {
     orderQ,
     qc,
     brandId,
+    setOrder,
   });
 
   return (

@@ -8,11 +8,14 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
 import { invalidateOrders, updateOrder, type OrderPatch } from "@/lib/data/orders";
 import { invalidateActivityLogs } from "@/lib/data/activity-logs";
+import { isSavedOrderId } from "@/features/orders/lib/order-editor";
+import type { Dispatch, SetStateAction } from "react";
 
 /**
  * Sets the order's status and fulfillment status directly (from the status
  * menu), stamps delivered_at on completion, and logs it. Rethrows on failure
- * so the caller can keep its menu open.
+ * so the caller can keep its menu open. A new, unsaved order takes the
+ * status in the editor and saves it with the order.
  */
 export function createOrderStatusChange({
   order,
@@ -20,12 +23,14 @@ export function createOrderStatusChange({
   orderQ,
   qc,
   brandId,
+  setOrder,
 }: {
   order: Order | null;
   lang: ReturnType<typeof useI18n>["lang"];
   orderQ: OrderDetailData["orderQ"];
   qc: QueryClient;
   brandId: string;
+  setOrder: Dispatch<SetStateAction<Order | null>>;
 }) {
   return async (newStatus: string, newFulfillmentStatus: string) => {
     if (!order) return;
@@ -37,6 +42,20 @@ export function createOrderStatusChange({
       };
       if (newStatus === "completed") {
         updatePayload.delivered_at = new Date().toISOString();
+      }
+
+      if (!isSavedOrderId(order.id)) {
+        setOrder((current) =>
+          current
+            ? { ...current, status: newStatus, fulfillment_status: newFulfillmentStatus }
+            : current,
+        );
+        toast.success(
+          lang === "ar"
+            ? "سيتم حفظ الحالة مع الطلب عند حفظه"
+            : "The status will be saved with the order",
+        );
+        return;
       }
 
       await updateOrder(brandId, order.id, updatePayload);
