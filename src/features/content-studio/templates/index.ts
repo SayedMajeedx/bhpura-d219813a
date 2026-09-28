@@ -4,6 +4,7 @@ import { atelierReveal } from "@/features/content-studio/templates/atelier-revea
 import { priceDrop } from "@/features/content-studio/templates/price-drop";
 import { swatchRun } from "@/features/content-studio/templates/swatch-run";
 import { editorialCover } from "@/features/content-studio/templates/editorial-cover";
+import { lookbookCarousel } from "@/features/content-studio/templates/lookbook-carousel";
 
 /** The animated templates, in the order the picker shows them after Classic. */
 export const ENGINE_TEMPLATES: readonly StudioTemplate[] = [
@@ -11,6 +12,7 @@ export const ENGINE_TEMPLATES: readonly StudioTemplate[] = [
   editorialCover,
   priceDrop,
   swatchRun,
+  lookbookCarousel,
 ];
 
 /** "classic" is today's layout (the HTML stage); the rest run on the engine. */

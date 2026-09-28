@@ -5,6 +5,10 @@ import type { THEMES } from "@/features/content-studio/lib/studio-content";
 import type { Sale } from "@/features/content-studio/lib/sale-price";
 import type { OptionRun } from "@/features/content-studio/lib/option-run";
 import type { LogoTint } from "@/features/content-studio/engine/brand-mark";
+import type { LookbookEntry } from "@/features/content-studio/lib/lookbook";
+
+/** A price amount as the studio prints it ("42.000"). */
+const amount = (value: number) => Number(value).toFixed(3);
 
 /**
  * An image ready to draw on a canvas: loaded with CORS, so exports are not
@@ -77,6 +81,7 @@ export function useTemplateScene({
   currencySymbol,
   sale,
   run,
+  collection,
   logoScale,
   logoTint,
 }: {
@@ -99,6 +104,8 @@ export function useTemplateScene({
   sale: Sale | null;
   /** The product's options for Swatch Run, or null. */
   run: OptionRun | null;
+  /** The lookbook's products, or null outside the lookbook. */
+  collection: LookbookEntry[] | null;
   logoScale: number;
   logoTint: LogoTint;
 }) {
@@ -106,8 +113,12 @@ export function useTemplateScene({
   const logoImage = useLoadedImage(logo);
   const stopUrls = useMemo(() => (run ? run.stops.map((stop) => stop.imageUrl) : []), [run]);
   const stopImages = useLoadedImages(stopUrls);
+  const collectionUrls = useMemo(
+    () => (collection ? collection.map((entry) => entry.imageUrl) : []),
+    [collection],
+  );
+  const collectionImages = useLoadedImages(collectionUrls);
 
-  const amount = (value: number) => Number(value).toFixed(3);
   // This month, as a magazine would print its issue.
   const issueLabel = useMemo(
     () =>
@@ -158,6 +169,13 @@ export function useTemplateScene({
             })),
           }
         : null,
+      collection: collection
+        ? collection.map((entry, index) => ({
+            name: entry.name,
+            price: showPrice && entry.price ? `${amount(entry.price)} ${currencySymbol}` : null,
+            media: collectionImages[index] ?? null,
+          }))
+        : null,
     }),
     [
       format,
@@ -181,6 +199,8 @@ export function useTemplateScene({
       photoImage,
       run,
       stopImages,
+      collection,
+      collectionImages,
     ],
   );
 

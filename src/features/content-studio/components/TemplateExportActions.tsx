@@ -1,4 +1,4 @@
-import { ChevronDown, Image as ImageIcon, Video, X } from "lucide-react";
+import { ChevronDown, GalleryHorizontal, Image as ImageIcon, Video, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -21,20 +21,37 @@ export function TemplateExportActions({ studio }: { studio: ContentStudio }) {
     mp4Supported,
     exportTemplateVideo,
     exportTemplateStill,
+    exportTemplateSlides,
     cancelTemplateExport,
+    activeTemplate,
   } = studio;
   const disabled = templateExporting || productsQ.isLoading;
+  const hasSlides = Boolean(activeTemplate?.slideTimes);
+  const slidesLabel = isAr ? "شرائح كاروسيل إنستغرام" : "Instagram carousel";
 
   if (mp4Supported === false) {
     return (
-      <Button
-        onClick={() => void exportTemplateStill()}
-        disabled={disabled}
-        className="h-10 gap-2 rounded-xl text-xs font-semibold px-3.5 sm:px-4"
-      >
-        <ImageIcon className="size-4" />
-        {isAr ? "تنزيل PNG" : "Download PNG"}
-      </Button>
+      <div className="flex items-center gap-2">
+        {hasSlides && (
+          <Button
+            variant="outline"
+            onClick={() => void exportTemplateSlides()}
+            disabled={disabled}
+            className="h-10 gap-2 rounded-xl text-xs font-semibold px-3.5 sm:px-4"
+          >
+            <GalleryHorizontal className="size-4" />
+            {slidesLabel}
+          </Button>
+        )}
+        <Button
+          onClick={() => void exportTemplateStill()}
+          disabled={disabled}
+          className="h-10 gap-2 rounded-xl text-xs font-semibold px-3.5 sm:px-4"
+        >
+          <ImageIcon className="size-4" />
+          {isAr ? "تنزيل PNG" : "Download PNG"}
+        </Button>
+      </div>
     );
   }
 
@@ -113,6 +130,20 @@ export function TemplateExportActions({ studio }: { studio: ContentStudio }) {
               </span>
             </div>
           </DropdownMenuItem>
+          {hasSlides && (
+            <DropdownMenuItem
+              onClick={() => void exportTemplateSlides()}
+              className="gap-2.5 cursor-pointer py-2"
+            >
+              <GalleryHorizontal className="size-4 text-muted-foreground shrink-0" />
+              <div className="flex flex-col">
+                <span className="font-semibold text-xs">{slidesLabel}</span>
+                <span className="text-xs text-muted-foreground">
+                  {isAr ? "صورة 4:5 لكل منتج" : "One 4:5 image per product"}
+                </span>
+              </div>
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

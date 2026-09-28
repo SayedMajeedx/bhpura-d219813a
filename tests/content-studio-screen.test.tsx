@@ -16,6 +16,11 @@ const exporting = vi.hoisted(() => ({
   deliverCreativeFile: vi.fn(async () => "downloaded" as const),
   exportTemplateMp4: vi.fn(async () => new Blob(["mp4"], { type: "video/mp4" })),
   exportTemplatePng: vi.fn(async () => new Blob(["png"], { type: "image/png" })),
+  exportTemplateCarousel: vi.fn(async () => [
+    new Blob(["one"], { type: "image/png" }),
+    new Blob(["two"], { type: "image/png" }),
+  ]),
+  deliverCreativeFiles: vi.fn(async () => "downloaded" as const),
 }));
 // The engine's exporters (WebCodecs is not in jsdom; tested in the engine suite).
 const engineExport = async (importOriginal: () => Promise<object>) => ({
@@ -23,6 +28,7 @@ const engineExport = async (importOriginal: () => Promise<object>) => ({
   canExportMp4: async () => true,
   exportTemplateMp4: exporting.exportTemplateMp4,
   exportTemplatePng: exporting.exportTemplatePng,
+  exportTemplateCarousel: exporting.exportTemplateCarousel,
 });
 vi.mock("../src/features/content-studio/engine/export", (io) => engineExport(io));
 vi.mock("@/features/content-studio/engine/export", (io) => engineExport(io));
@@ -30,6 +36,7 @@ vi.mock("html2canvas-pro", () => ({ default: exporting.html2canvas }));
 const creativeExport = async (importOriginal: () => Promise<object>) => ({
   ...(await importOriginal()),
   deliverCreativeFile: exporting.deliverCreativeFile,
+  deliverCreativeFiles: exporting.deliverCreativeFiles,
 });
 vi.mock("../src/lib/creative-export", (io) => creativeExport(io));
 vi.mock("@/lib/creative-export", (io) => creativeExport(io));
@@ -413,5 +420,54 @@ describe("the content studio", () => {
     expect(scene.issueLabel).toBe(
       new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" }).format(new Date()),
     );
+  });
+
+  it("builds a Lookbook from several products and exports it as a carousel", async () => {
+    await renderStudio();
+    fireEvent.click(screen.getByRole("radio", { name: /Lookbook/ }));
+    const picks = await screen.findByRole("group", { name: "Lookbook products" });
+    // The lookbook picks products, so the single-product picker steps aside.
+    expect(screen.queryByRole("combobox", { name: "Product" })).not.toBeInTheDocument();
+    const silk = within(picks).getByRole("button", { name: /Silk Abaya/ });
+    const linen = within(picks).getByRole("button", { name: /Linen Kaftan/ });
+    expect(silk).toHaveAttribute("aria-pressed", "true");
+    expect(linen).toHaveAttribute("aria-pressed", "true");
+    // Two is the fewest a lookbook carries.
+    fireEvent.click(silk);
+    expect(silk).toHaveAttribute("aria-pressed", "true");
+
+    const download = await screen.findByRole("button", { name: "Download Video (MP4)" });
+    await waitFor(() => expect(download).toBeEnabled());
+    fireEvent.click(download);
+    await waitFor(() => expect(exporting.exportTemplateMp4).toHaveBeenCalledTimes(1));
+    const [{ template, scene }] = exporting.exportTemplateMp4.mock.lastCall as unknown as [
+      {
+        template: { id: string };
+        scene: { collection: Array<{ name: string; price: string | null }> | null };
+      },
+    ];
+    expect(template.id).toBe("lookbook-carousel");
+    // Each product from its cheapest variant (the silk abaya's is on sale at 39).
+    expect(scene.collection?.map(({ name, price }) => ({ name, price }))).toEqual([
+      { name: "Silk Abaya", price: "39.000 BHD" },
+      { name: "Linen Kaftan", price: "30.000 BHD" },
+    ]);
+
+    openSelect(screen.getByRole("button", { name: "Download options" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: /Instagram carousel/ }));
+    await waitFor(() => expect(exporting.deliverCreativeFiles).toHaveBeenCalledTimes(1));
+    const [{ scene: slideScene }] = exporting.exportTemplateCarousel.mock.lastCall as unknown as [
+      { scene: { width: number; height: number; format: string } },
+    ];
+    expect(slideScene).toMatchObject({ width: 1080, height: 1350, format: "portrait" });
+    const [files, zipName] = exporting.deliverCreativeFiles.mock.lastCall as unknown as [
+      Array<{ name: string }>,
+      string,
+    ];
+    expect(files.map((file) => file.name)).toEqual([
+      "pura-lookbook-carousel-01.png",
+      "pura-lookbook-carousel-02.png",
+    ]);
+    expect(zipName).toBe("pura-lookbook-carousel.zip");
   });
 });

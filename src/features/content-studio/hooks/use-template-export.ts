@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { creativeFileName, deliverCreativeFile } from "@/lib/creative-export";
+import { creativeFileName, deliverCreativeFile, deliverCreativeFiles } from "@/lib/creative-export";
 import { FORMATS } from "@/features/content-studio/lib/studio-content";
 import {
   canExportMp4,
+  exportTemplateCarousel,
   exportTemplateMp4,
   exportTemplatePng,
 } from "@/features/content-studio/engine/export";
@@ -126,6 +127,49 @@ export function useTemplateExport({
     }
   };
 
+  // An Instagram carousel: one 4:5 PNG per slide, shared together or zipped.
+  const exportTemplateSlides = async () => {
+    if (!template?.slideTimes) return;
+    setTemplateExporting(true);
+    try {
+      await loadStudioFonts();
+      const { width: slideW, height: slideH } = FORMATS.portrait;
+      const slides = await exportTemplateCarousel({
+        template,
+        scene: { ...buildScene(slideW, slideH), format: "portrait" },
+      });
+      const files = slides.map((blob, index) => ({
+        name: `${brandSlugClean}-${template.id}-${String(index + 1).padStart(2, "0")}.png`,
+        blob,
+        type: "image/png",
+      }));
+      const delivered = await deliverCreativeFiles(
+        files,
+        `${brandSlugClean}-${template.id}.zip`,
+        headline || businessName,
+      );
+      if (delivered === "cancelled") return;
+      toast.success(
+        delivered === "shared"
+          ? isAr
+            ? "الشرائح جاهزة للمشاركة"
+            : "Carousel ready to share"
+          : isAr
+            ? `تم تنزيل ${files.length} شرائح بمقاس 4:5 في ملف مضغوط`
+            : `Downloaded ${files.length} slides (4:5) as a ZIP`,
+      );
+    } catch (error) {
+      console.error("Template carousel export failed", error);
+      toast.error(
+        isAr
+          ? "تعذر تصدير الشرائح. تحقق من صور المنتجات."
+          : "Could not export the slides. Check the product images.",
+      );
+    } finally {
+      setTemplateExporting(false);
+    }
+  };
+
   const cancelTemplateExport = () => abortRef.current?.abort();
 
   return {
@@ -134,6 +178,7 @@ export function useTemplateExport({
     mp4Supported,
     exportTemplateVideo,
     exportTemplateStill,
+    exportTemplateSlides,
     cancelTemplateExport,
   };
 }
