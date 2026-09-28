@@ -108,6 +108,15 @@ export function useTemplateScene({
   const stopImages = useLoadedImages(stopUrls);
 
   const amount = (value: number) => Number(value).toFixed(3);
+  // This month, as a magazine would print its issue.
+  const issueLabel = useMemo(
+    () =>
+      new Intl.DateTimeFormat(isAr ? "ar-u-nu-latn" : "en-GB", {
+        month: "long",
+        year: "numeric",
+      }).format(new Date()),
+    [isAr],
+  );
   const selling = sale?.price ?? effectivePrice;
   const priceAmount = showPrice && selling ? amount(selling) : null;
   const originalAmount = showPrice && sale ? amount(sale.original) : null;
@@ -135,6 +144,7 @@ export function useTemplateScene({
       priceAmount,
       originalAmount,
       currencyLabel: currencySymbol,
+      issueLabel,
       discountPercent: showPrice && sale ? sale.percent : null,
       media: media === undefined ? photoImage : media,
       options: run
@@ -165,6 +175,7 @@ export function useTemplateScene({
       priceAmount,
       originalAmount,
       currencySymbol,
+      issueLabel,
       showPrice,
       sale,
       photoImage,

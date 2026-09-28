@@ -398,4 +398,20 @@ describe("the content studio", () => {
     fireEvent.click(screen.getByRole("radio", { name: /Classic/ }));
     expect(await screen.findByText("Header & Branding Bar")).toBeInTheDocument();
   });
+
+  it("exports Editorial Cover with this month as its issue line", async () => {
+    await renderStudio();
+    fireEvent.click(screen.getByRole("radio", { name: /Editorial Cover/ }));
+    const download = await screen.findByRole("button", { name: "Download Video (MP4)" });
+    await waitFor(() => expect(download).toBeEnabled());
+    fireEvent.click(download);
+    await waitFor(() => expect(exporting.exportTemplateMp4).toHaveBeenCalledTimes(1));
+    const [{ template, scene }] = exporting.exportTemplateMp4.mock.lastCall as unknown as [
+      { template: { id: string; duration: number }; scene: { issueLabel: string } },
+    ];
+    expect(template).toMatchObject({ id: "editorial-cover", duration: 8 });
+    expect(scene.issueLabel).toBe(
+      new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" }).format(new Date()),
+    );
+  });
 });
