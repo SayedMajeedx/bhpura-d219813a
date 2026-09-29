@@ -159,7 +159,7 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
     ctx.direction = "ltr";
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
-    ctx.font = font(amountSize, displayFont("en"), 600);
+    ctx.font = font(amountSize, displayFont("en", scene.brand.displayFamilies), 600);
     const amountW = ctx.measureText(scene.priceAmount).width;
     ctx.font = font(currencySize, STUDIO_FONTS.body, 500);
     const currencyW = ctx.measureText(scene.currencyLabel).width;
@@ -173,7 +173,7 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
     // In reading order: the amount, then the currency (so in Arabic the currency sits to its left).
     const amountX = rtl ? x + currencyW + gap : x;
     const currencyX = rtl ? x : x + amountW + gap;
-    ctx.font = font(amountSize, displayFont("en"), 600);
+    ctx.font = font(amountSize, displayFont("en", scene.brand.displayFamilies), 600);
     ctx.fillText(scene.priceAmount, amountX, baseline);
     ctx.font = font(currencySize, STUDIO_FONTS.body, 500);
     ctx.direction = textDirection(scene.currencyLabel);

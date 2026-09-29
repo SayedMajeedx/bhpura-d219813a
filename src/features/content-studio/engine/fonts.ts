@@ -12,9 +12,14 @@ export const STUDIO_FONTS = {
   body: '"Readex Pro", "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif',
 } as const;
 
-/** The display stack for a headline in `lang`. */
-export function displayFont(lang: "ar" | "en") {
-  return lang === "ar" ? STUDIO_FONTS.displayArabic : STUDIO_FONTS.displayLatin;
+/**
+ * The display stack for a headline in `lang`: the studio's own faces, or the
+ * store's (`families`, when the merchant chose them) ahead of those.
+ */
+export function displayFont(lang: "ar" | "en", families?: { en: string; ar: string } | null) {
+  const studio = lang === "ar" ? STUDIO_FONTS.displayArabic : STUDIO_FONTS.displayLatin;
+  const store = families?.[lang]?.trim();
+  return store ? `"${store.replace(/"/g, "")}", ${studio}` : studio;
 }
 
 const FACES = [

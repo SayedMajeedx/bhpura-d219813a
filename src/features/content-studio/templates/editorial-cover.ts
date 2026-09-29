@@ -48,7 +48,7 @@ function drawTextMasthead(
   ctx.save();
   ctx.fillStyle = color;
   ctx.textBaseline = "middle";
-  ctx.font = font(size, displayFont(arabic ? "ar" : "en"), 600);
+  ctx.font = font(size, displayFont(arabic ? "ar" : "en", scene.brand.displayFamilies), 600);
   if (arabic) {
     ctx.direction = "rtl";
     ctx.textAlign = "center";
@@ -140,7 +140,7 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
         max: layout.mastMax * u * brand.logoScale,
       },
       (size) => {
-        ctx.font = font(size, displayFont("en"), 600);
+        ctx.font = font(size, displayFont("en", scene.brand.displayFamilies), 600);
         return (text) => ctx.measureText(text).width * 1.1;
       },
     ).size;
@@ -174,7 +174,10 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
 
   // Cover lines, built up from the bottom: the price tag, the body, the headline.
   const headline = scene.headline.trim() || scene.productName;
-  const headFamily = displayFont(textDirection(headline) === "rtl" ? "ar" : "en");
+  const headFamily = displayFont(
+    textDirection(headline) === "rtl" ? "ar" : "en",
+    scene.brand.displayFamilies,
+  );
   const head = fitText(
     headline,
     { maxWidth: W * 0.78, maxLines: 3, min: 64 * u, max: 132 * u },

@@ -144,7 +144,10 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.fillStyle = palette.ink;
-    const family = displayFont(textDirection(stop.label) === "rtl" ? "ar" : "en");
+    const family = displayFont(
+      textDirection(stop.label) === "rtl" ? "ar" : "en",
+      scene.brand.displayFamilies,
+    );
     ctx.font = font(84 * u, family, 600, textDirection(stop.label) === "rtl" ? "normal" : "italic");
     ctx.direction = textDirection(stop.label);
     ctx.textAlign = "center";

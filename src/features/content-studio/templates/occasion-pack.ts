@@ -262,7 +262,10 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
   // The words, centred in the arch: eyebrow, greeting, message and the offer.
   const maxWidth = archW - 2 * 70 * u;
   const greeting = occasion.greeting.trim() || scene.brand.name;
-  const family = displayFont(textDirection(greeting) === "rtl" ? "ar" : "en");
+  const family = displayFont(
+    textDirection(greeting) === "rtl" ? "ar" : "en",
+    scene.brand.displayFamilies,
+  );
   const message = occasion.message.trim();
   const messageFit = message
     ? fitText(message, { maxWidth, maxLines: 2, min: 24 * u, max: 32 * u }, (px) => {

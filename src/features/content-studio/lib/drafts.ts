@@ -15,6 +15,8 @@ export type DraftSettings = {
   imageFit: "cover" | "contain";
   logoScale: number;
   logoTint: LogoTint;
+  /** Headlines in the studio's faces or the store's. */
+  headlineFont: "studio" | "store";
   editionLabel: string;
   headline: string;
   body: string;
@@ -56,6 +58,7 @@ export function readDraftSettings(raw: unknown): DraftSettings {
     imageFit: s.imageFit === "contain" ? "contain" : "cover",
     logoScale: Math.min(2.2, Math.max(0.6, scale)),
     logoTint: TINTS.includes(s.logoTint as LogoTint) ? (s.logoTint as LogoTint) : "auto",
+    headlineFont: s.headlineFont === "store" ? "store" : "studio",
     editionLabel: text(s.editionLabel),
     headline: text(s.headline),
     body: text(s.body),

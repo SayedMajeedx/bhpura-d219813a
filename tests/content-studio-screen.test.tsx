@@ -697,4 +697,38 @@ describe("the content studio", () => {
     expect(screen.getByText("160%")).toBeInTheDocument();
     expect(screen.queryByText(/no sale price right now/)).not.toBeInTheDocument();
   });
+
+  it("sets headlines in the store's own fonts when asked, once they have loaded", async () => {
+    Object.defineProperty(document, "fonts", {
+      configurable: true,
+      value: { load: vi.fn(async () => []) },
+    });
+    try {
+      await renderStudio();
+      fireEvent.click(screen.getByRole("radio", { name: /Atelier Reveal/ }));
+      // The fixture store has no fonts set, so the storefront's default display faces apply.
+      const store = await screen.findByRole("radio", {
+        name: /Store fonts.*29LT Zarid Display · Inter/,
+      });
+      expect(screen.getByRole("radio", { name: /Studio serif/ })).toHaveAttribute(
+        "aria-checked",
+        "true",
+      );
+      fireEvent.click(store);
+
+      const download = await screen.findByRole("button", { name: "Download Video (MP4)" });
+      await waitFor(() => expect(download).toBeEnabled());
+      await waitFor(() => {
+        fireEvent.click(download);
+        const call = exporting.exportTemplateMp4.mock.lastCall as unknown as
+          [{ scene: { brand: { displayFamilies: unknown } } }] | undefined;
+        expect(call?.[0].scene.brand.displayFamilies).toEqual({
+          en: "Inter",
+          ar: "29LT Zarid Display",
+        });
+      });
+    } finally {
+      Reflect.deleteProperty(document, "fonts");
+    }
+  });
 });

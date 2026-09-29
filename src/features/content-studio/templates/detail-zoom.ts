@@ -108,7 +108,10 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
   const opening = presence(t, { start: 0.3, end: 1.9, exit: 0.5 });
   if (opening > 0) {
     const headline = scene.headline.trim() || scene.productName;
-    const family = displayFont(textDirection(headline) === "rtl" ? "ar" : "en");
+    const family = displayFont(
+      textDirection(headline) === "rtl" ? "ar" : "en",
+      scene.brand.displayFamilies,
+    );
     const fit = fitText(headline, { maxWidth, maxLines: 2, min: 56 * u, max: 100 * u }, (size) => {
       ctx.font = font(size, family, 600);
       return (text) => ctx.measureText(text).width;
@@ -172,7 +175,10 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
     const cu = u * (scene.format === "story" ? 1.2 : 1);
     const label = detail.label.trim() || scene.productName;
     const note = detail.note.trim();
-    const labelFamily = displayFont(textDirection(label) === "rtl" ? "ar" : "en");
+    const labelFamily = displayFont(
+      textDirection(label) === "rtl" ? "ar" : "en",
+      scene.brand.displayFamilies,
+    );
     const pad = 30 * cu;
     const cardMax = W * 0.5;
     const labelFit = fitText(
@@ -258,7 +264,10 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
   const closing = presence(t, { start: 6.3, end: DURATION });
   if (closing > 0) {
     const name = scene.productName;
-    const family = displayFont(textDirection(name) === "rtl" ? "ar" : "en");
+    const family = displayFont(
+      textDirection(name) === "rtl" ? "ar" : "en",
+      scene.brand.displayFamilies,
+    );
     const fit = fitText(name, { maxWidth, maxLines: 2, min: 50 * u, max: 88 * u }, (px) => {
       ctx.font = font(px, family, 600);
       return (text) => ctx.measureText(text).width;
