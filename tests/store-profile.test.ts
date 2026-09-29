@@ -15,21 +15,25 @@ describe("store-profile pure library", () => {
       size_guide: true,
       fit_passport: true,
       made_to_order: true,
+      bookings: false,
     });
     expect(resolveStoreModules({ store_vertical: "fashion" })).toEqual({
       size_guide: true,
       fit_passport: true,
       made_to_order: true,
+      bookings: false,
     });
     expect(resolveStoreModules({ store_vertical: "general" })).toEqual({
       size_guide: false,
       fit_passport: false,
       made_to_order: false,
+      bookings: false,
     });
     expect(resolveStoreModules({ store_vertical: "jewelry" })).toEqual({
       size_guide: true,
       fit_passport: false,
       made_to_order: true,
+      bookings: false,
     });
   });
 
@@ -43,6 +47,7 @@ describe("store-profile pure library", () => {
       size_guide: true,
       fit_passport: false,
       made_to_order: true,
+      bookings: false,
     });
     expect(
       resolveStoreModules({
@@ -53,6 +58,7 @@ describe("store-profile pure library", () => {
       size_guide: true,
       fit_passport: false,
       made_to_order: false,
+      bookings: false,
     });
   });
 

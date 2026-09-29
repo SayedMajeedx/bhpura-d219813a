@@ -116,6 +116,47 @@ describe("launch security regressions", () => {
     expect([...accepted].sort()).toEqual([...STORE_VERTICALS].sort());
   });
 
+  it("keeps bookings to their store and their day's places to the database", async () => {
+    const sql = readFileSync("supabase/migrations/20260930100000_bookings_engine.sql", "utf8");
+    for (const table of ["booking_settings", "bookings", "booking_items", "booking_blocks"]) {
+      expect(sql).toContain(`ALTER TABLE public.${table} ENABLE ROW LEVEL SECURITY`);
+    }
+    // Staff read bookings; nobody writes them except through the functions.
+    expect(sql).toContain(
+      "REVOKE INSERT, UPDATE, DELETE ON public.bookings, public.booking_items FROM authenticated",
+    );
+    expect(sql).not.toMatch(/ON public\.(bookings|booking_items)\s+FOR (ALL|INSERT|UPDATE|DELETE)/);
+    // Every staff action checks the brand and the orders permission, then
+    // locks the store's settings row so one booking takes a last place.
+    expect(sql).toMatch(
+      /can_access_brand\(p_brand_id\) AND public\.has_permission\('manage_orders'\)[\s\S]*FOR UPDATE/,
+    );
+    expect(sql.match(/lock_booking_settings_for_staff\(/g)?.length).toBeGreaterThanOrEqual(4);
+    // Another store's booking looks the same as a missing one.
+    expect(sql.match(/NOT public\.can_access_brand\(v_booking\.brand_id\)/g)).toHaveLength(2);
+    // Anonymous callers get availability and rules only (no customer data).
+    const anonGrants = [
+      ...sql.matchAll(/GRANT EXECUTE ON FUNCTION public\.(\w+)\([^)]*\) TO anon/g),
+    ];
+    expect(anonGrants.map((m) => m[1]).sort()).toEqual([
+      "bookings_enabled",
+      "get_booking_availability",
+      "get_public_booking_rules",
+    ]);
+    expect(sql).toContain("p_to - p_from > 62");
+    // A request takes no place; confirmed bookings and live holds do.
+    expect(sql).toContain("b.status IN ('confirmed', 'completed')");
+    expect(sql).toContain("b.status = 'hold' AND b.hold_expires_at > now()");
+    // The SQL default for the bookings module matches the vertical registry.
+    const { STORE_VERTICALS } = await import("../src/lib/store-profile");
+    const { getVerticalDefinition } = await import("../src/lib/verticals/registry");
+    const bookingVerticals = STORE_VERTICALS.filter(
+      (v) => getVerticalDefinition(v).modules.bookings,
+    );
+    expect(bookingVerticals).toEqual(["services"]);
+    expect(sql).toContain("ELSE bs.store_vertical = 'services'");
+  });
+
   it("changes a store's vertical in one audited, super-admin-only transaction", () => {
     const migration = readFileSync(
       "supabase/migrations/20260929160000_vertical_change_audit.sql",
