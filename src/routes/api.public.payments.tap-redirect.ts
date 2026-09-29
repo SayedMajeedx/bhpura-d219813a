@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { orderChargePlan } from "@/lib/payments/booking-deposit.server";
+import { chargeMatches, paidOrderUpdate } from "@/lib/payments/charge-plan";
 
 export const Route = createFileRoute("/api/public/payments/tap-redirect")({
   server: {
@@ -82,11 +84,15 @@ export const Route = createFileRoute("/api/public/payments/tap-redirect")({
             return new Response("Payment reference verification failure.", { status: 400 });
           }
 
-          // Verify amount and currency to prevent altered charge exploitation
-          const chargeAmount = Number(chargeData.amount);
-          const orderTotal = Number(order.total);
-          if (isNaN(chargeAmount) || Math.abs(chargeAmount - orderTotal) > 0.001) {
-            console.error("[Tap Redirect Amount Mismatch]:", { chargeAmount, orderTotal, orderId });
+          // Verify amount and currency to prevent altered charge exploitation. A
+          // booking with a deposit was charged only its deposit (charge-plan).
+          const plan = await orderChargePlan(supabaseAdmin, order, brandId);
+          if (!chargeMatches(chargeData.amount, plan)) {
+            console.error("[Tap Redirect Amount Mismatch]:", {
+              chargeAmount: chargeData.amount,
+              expected: plan.amount,
+              orderId,
+            });
             return new Response("Payment amount verification failure.", { status: 400 });
           }
           const expectedCurrency = (order.currency || "BHD").toUpperCase();
@@ -102,14 +108,10 @@ export const Route = createFileRoute("/api/public/payments/tap-redirect")({
 
           // 4. Handle success vs failure
           if (chargeStatus === "CAPTURED" || chargeStatus === "SUCCESS") {
-            // Update order status to paid and confirmed
+            // Paid (or its booking's deposit paid) and confirmed
             const { error: updateError } = await supabaseAdmin
               .from("orders")
-              .update({
-                payment_status: "paid",
-                status: "confirmed",
-                payment_gateway_reference: tapId,
-              } as any)
+              .update(paidOrderUpdate(plan, tapId) as any)
               .eq("id", orderId)
               .eq("brand_id", brandId);
 

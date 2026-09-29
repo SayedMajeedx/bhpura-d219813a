@@ -15,6 +15,17 @@ import { Route as TapRedirectRoute } from "../src/routes/api.public.payments.tap
 
 type Handler = (context: { request: Request }) => Promise<Response>;
 
+/** The bookings lookup of orderChargePlan: the order's booking deposit, if any. */
+function bookingDeposit(depositAmount: number | null) {
+  const maybeSingle = vi.fn().mockResolvedValue({
+    data: depositAmount === null ? null : { deposit_amount: depositAmount },
+    error: null,
+  });
+  const eq2 = vi.fn().mockReturnValue({ maybeSingle });
+  const eq1 = vi.fn().mockReturnValue({ eq: eq2 });
+  return { select: vi.fn().mockReturnValue({ eq: eq1 }) };
+}
+
 function handler(route: unknown, method: "GET" | "POST" | "PATCH"): Handler {
   return (route as any).options.server.handlers[method];
 }
@@ -474,6 +485,67 @@ describe("server route security regressions", () => {
     expect(updateSpy).not.toHaveBeenCalled();
   });
 
+  it("takes only a booking's deposit and records the rest as due", async () => {
+    const orderMaybeSingle = vi.fn().mockResolvedValue({
+      data: { id: "order-1", total: 12.5, currency: "BHD", payment_gateway_reference: "chg_1" },
+      error: null,
+    });
+    const updateEqBrand = vi.fn().mockResolvedValue({ error: null });
+    const update = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({ eq: updateEqBrand }),
+    });
+    supabaseAdmin.from.mockImplementation((table: string) =>
+      table === "bookings"
+        ? bookingDeposit(3.75)
+        : {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({ maybeSingle: orderMaybeSingle }),
+                maybeSingle: vi.fn().mockResolvedValue({ data: { slug: "shop" }, error: null }),
+              }),
+            }),
+            update,
+          },
+    );
+    supabaseAdmin.rpc.mockResolvedValue({ data: [{ api_key: "test-key" }], error: null });
+    const redirect = (amount: number) => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(
+          new Response(
+            JSON.stringify({
+              status: "CAPTURED",
+              amount,
+              currency: "BHD",
+              metadata: { order_id: "order-1", brand_id: "brand-1" },
+            }),
+            { status: 200 },
+          ),
+        ),
+      );
+      return handler(
+        TapRedirectRoute,
+        "GET",
+      )({
+        request: new Request(
+          "https://example.test/api/public/payments/tap-redirect?tap_id=chg_1&order_id=order-1&brand_id=brand-1",
+        ),
+      });
+    };
+
+    // The full total is not what this order's charge should be.
+    expect((await redirect(12.5)).status).toBe(400);
+    expect(update).not.toHaveBeenCalled();
+
+    await redirect(3.75);
+    expect(update).toHaveBeenCalledWith({
+      payment_status: "partially_paid",
+      advance_paid: 3.75,
+      status: "confirmed",
+      payment_gateway_reference: "chg_1",
+    });
+  });
+
   it("returns 500 instead of reporting payment success when the order update fails", async () => {
     const brandMaybeSingle = vi.fn().mockResolvedValue({
       data: { slug: "shop" },
@@ -769,10 +841,12 @@ describe("server route security regressions", () => {
     const persistEq2 = vi.fn().mockReturnValue({ is: persistIs });
     const persistEq1 = vi.fn().mockReturnValue({ eq: persistEq2 });
     const update = vi.fn().mockReturnValue({ eq: persistEq1 });
-    supabaseAdmin.from.mockReturnValue({
-      select: vi.fn().mockReturnValue({ eq: orderEq1 }),
-      update,
-    });
+    supabaseAdmin.from.mockImplementation((table: string) =>
+      // The order pays for no booking: the charge is the order's total.
+      table === "bookings"
+        ? bookingDeposit(null)
+        : { select: vi.fn().mockReturnValue({ eq: orderEq1 }), update },
+    );
 
     const tapFetch = vi.fn().mockImplementation(
       async () =>

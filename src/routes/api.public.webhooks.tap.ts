@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { orderChargePlan } from "@/lib/payments/booking-deposit.server";
+import { alreadySettled, chargeMatches, paidOrderUpdate } from "@/lib/payments/charge-plan";
 
 export const Route = createFileRoute("/api/public/webhooks/tap")({
   server: {
@@ -100,7 +102,10 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
             return new Response("Order not found.", { status: 404 });
           }
 
-          if (targetOrder.payment_status === "paid") {
+          // A booking with a deposit was charged only its deposit (charge-plan).
+          const plan = await orderChargePlan(supabaseAdmin, targetOrder, brandId);
+
+          if (alreadySettled(targetOrder.payment_status, plan)) {
             console.log(
               "[Tap Webhook Idempotency]: Order",
               orderId,
@@ -132,10 +137,12 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
           }
 
           // 5. AMOUNT & CURRENCY VALIDATION
-          const chargeAmount = Number(tapCharge.amount);
-          const orderTotal = Number(targetOrder.total);
-          if (isNaN(chargeAmount) || Math.abs(chargeAmount - orderTotal) > 0.001) {
-            console.error("[Tap Webhook Amount Mismatch]:", { chargeAmount, orderTotal, orderId });
+          if (!chargeMatches(tapCharge.amount, plan)) {
+            console.error("[Tap Webhook Amount Mismatch]:", {
+              chargeAmount: tapCharge.amount,
+              expected: plan.amount,
+              orderId,
+            });
             return new Response("Amount verification failure.", { status: 400 });
           }
           const expectedCurrency = (targetOrder.currency || "BHD").toUpperCase();
@@ -153,11 +160,7 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
           if (verifiedStatus === "CAPTURED" || verifiedStatus === "SUCCESS") {
             const { error: updateError } = await supabaseAdmin
               .from("orders")
-              .update({
-                payment_status: "paid",
-                status: "confirmed",
-                payment_gateway_reference: chargeId,
-              } as any)
+              .update(paidOrderUpdate(plan, chargeId) as any)
               .eq("id", orderId)
               .eq("brand_id", brandId);
 

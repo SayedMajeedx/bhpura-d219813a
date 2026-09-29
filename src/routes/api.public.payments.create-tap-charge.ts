@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { orderChargePlan } from "@/lib/payments/booking-deposit.server";
+import { alreadySettled } from "@/lib/payments/charge-plan";
 
 const TAP_IDEMPOTENCY_MAX_LENGTH = 50;
 
@@ -144,7 +146,10 @@ export const Route = createFileRoute("/api/public/payments/create-tap-charge")({
             );
           }
 
-          if (["paid", "captured", "success"].includes(paymentStatus)) {
+          // A booking with a deposit charges only the deposit (see charge-plan).
+          const plan = await orderChargePlan(supabaseAdmin, order, brandId);
+
+          if (alreadySettled(paymentStatus, plan)) {
             return new Response(JSON.stringify({ error: "Order is already paid." }), {
               status: 409,
               headers: { "Content-Type": "application/json" },
@@ -236,11 +241,14 @@ export const Route = createFileRoute("/api/public/payments/create-tap-charge")({
           }
 
           const tapPayload = {
-            amount: Number(order.total),
+            amount: plan.amount,
             currency: (order.currency || "BHD").toUpperCase(),
             threeDSecure: true,
             save_card: false,
-            description: `Order #${orderId.slice(0, 8)} Payment`,
+            description:
+              plan.kind === "deposit"
+                ? `Order #${orderId.slice(0, 8)} Deposit`
+                : `Order #${orderId.slice(0, 8)} Payment`,
             statement_descriptor: "BOUTQ",
             metadata: {
               order_id: orderId,

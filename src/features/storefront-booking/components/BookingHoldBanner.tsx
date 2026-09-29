@@ -57,6 +57,13 @@ export function BookingHoldBanner() {
             "The hold has run out; you can still finish if the day is still free."
           )}
         </p>
+        {(booking.depositPercent ?? 0) > 0 && (
+          <p className="text-muted-foreground">
+            {isAr
+              ? `عند الدفع بالبطاقة: عربون ${booking.depositPercent}% الآن، والباقي يوم المناسبة.`
+              : `Paying by card: a ${booking.depositPercent}% deposit now, the rest on the day.`}
+          </p>
+        )}
         <p className="text-xs text-muted-foreground" dir="ltr">
           {booking.reference}
         </p>

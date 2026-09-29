@@ -106,6 +106,16 @@ describe("the booking in the cart", () => {
     expect(screen.getByText("BK-HOLD01")).toBeInTheDocument();
   });
 
+  it("tells the customer a card pays only the deposit now", () => {
+    state.cart = bookingCartLines(
+      hold,
+      { day: "2026-10-10", start: "18:00", durationMinutes: 180, depositPercent: 30 },
+      services,
+    );
+    render(<BookingHoldBanner />);
+    expect(screen.getByText(/a 30% deposit now, the rest on the day/)).toBeInTheDocument();
+  });
+
   it("shows nothing when the cart has no booking", () => {
     state.cart = [];
     const { container } = render(<BookingHoldBanner />);

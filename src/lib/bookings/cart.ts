@@ -15,6 +15,8 @@ export type CartBooking = {
   durationMinutes: number;
   /** When the day stops being held for the customer. */
   expiresAt: string;
+  /** The store's card deposit, 0 when a card pays in full. */
+  depositPercent?: number;
 };
 
 /** What hold_booking returns. */

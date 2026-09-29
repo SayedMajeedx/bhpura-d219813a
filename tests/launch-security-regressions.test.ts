@@ -210,6 +210,27 @@ describe("launch security regressions", () => {
     );
   });
 
+  it("charges a booking's deposit by card only, and confirms the day once it is paid", () => {
+    const sql = readFileSync("supabase/migrations/20260930160000_booking_deposits.sql", "utf8");
+    expect(sql).toContain("CHECK (deposit_percent BETWEEN 0 AND 100)");
+    // Card only, and only a real deposit (not 0% or 100%), rounded up to the fils.
+    expect(sql).toMatch(
+      /WHEN v_card AND v_settings\.deposit_percent > 0 AND v_settings\.deposit_percent < 100\s+THEN ceil\(v_order\.total \* v_settings\.deposit_percent \* 10\) \/ 1000/,
+    );
+    // The checkout function keeps every earlier guard.
+    for (const guard of [
+      "v_booking.hold_token <> p_hold_token",
+      "BOOKING_ITEMS_MISMATCH",
+      "BOOKING_HOLD_EXPIRED",
+      "BOOKING_ALREADY_ORDERED",
+    ]) {
+      expect(sql).toContain(guard);
+    }
+    // A paid deposit confirms the booking like a full payment.
+    expect(sql).toContain("IF NEW.payment_status IN ('paid', 'partially_paid')");
+    expect(sql).toContain("'deposit_percent', s.deposit_percent");
+  });
+
   it("changes a store's vertical in one audited, super-admin-only transaction", () => {
     const migration = readFileSync(
       "supabase/migrations/20260929160000_vertical_change_audit.sql",

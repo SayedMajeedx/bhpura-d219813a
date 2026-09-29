@@ -185,6 +185,13 @@ export function StorefrontBookingPage({ initialService }: { initialService?: str
             </span>
           </div>
         )}
+        {!flow.catalog && (flow.rules?.deposit_percent ?? 0) > 0 && (
+          <p className="text-xs text-muted-foreground">
+            {isAr
+              ? `يُدفع عربون ${flow.rules!.deposit_percent}% بالبطاقة عند الحجز، والباقي يوم المناسبة.`
+              : `A ${flow.rules!.deposit_percent}% deposit is paid by card when you book; the rest on the day.`}
+          </p>
+        )}
         <Button
           type="button"
           size="lg"
