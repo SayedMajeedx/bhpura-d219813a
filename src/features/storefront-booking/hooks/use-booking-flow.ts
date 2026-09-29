@@ -90,7 +90,12 @@ export function useBookingFlow(initialService?: string) {
       for (const line of cart) if (line.booking) removeFromCart(line.cart_line_id);
       const lines = bookingCartLines(
         hold,
-        { day: flow.day!, start: flow.start!, durationMinutes: flow.durationMinutes! },
+        {
+          day: flow.day!,
+          start: flow.start!,
+          durationMinutes: flow.durationMinutes!,
+          depositPercent: rules?.deposit_percent ?? 0,
+        },
         services,
       );
       for (const line of lines) addToCart(line);

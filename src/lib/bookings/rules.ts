@@ -30,6 +30,8 @@ export type BookingRules = {
   hold_minutes: number;
   /** 0 = Sunday ... 6 = Saturday. */
   closed_weekdays: number[];
+  /** Share of the total a card payment takes now (0 = none, 100 = all). */
+  deposit_percent: number;
 };
 
 export const DEFAULT_BOOKING_RULES: BookingRules = {
@@ -45,6 +47,7 @@ export const DEFAULT_BOOKING_RULES: BookingRules = {
   horizon_days: 365,
   hold_minutes: 15,
   closed_weekdays: [],
+  deposit_percent: 0,
 };
 
 export type DayState = "past" | "beyond" | "closed" | "blocked" | "full" | "available";
@@ -195,6 +198,7 @@ export function toBookingRules(
     lead_days: number("lead_days"),
     horizon_days: number("horizon_days"),
     hold_minutes: number("hold_minutes"),
+    deposit_percent: number("deposit_percent"),
     closed_weekdays: Array.isArray(row.closed_weekdays)
       ? (row.closed_weekdays as unknown[]).filter((d): d is number => typeof d === "number")
       : [],

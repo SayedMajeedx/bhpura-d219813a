@@ -31,6 +31,9 @@ export function rulesProblem(rules: BookingRules, isAr: boolean): string | null 
   if (rules.max_duration_minutes < rules.min_duration_minutes) {
     return isAr ? "أطول مدة يجب ألا تقل عن أقصر مدة." : "The longest duration can't be shorter.";
   }
+  if (rules.deposit_percent < 0 || rules.deposit_percent > 100) {
+    return isAr ? "نسبة العربون بين 0 و100." : "The deposit must be 0 to 100%.";
+  }
   if (rules.lead_days < 0 || rules.horizon_days < 1 || rules.horizon_days > 730) {
     return isAr ? "تحقق من مهلة الحجز والمدى." : "Check the notice period and how far ahead.";
   }
@@ -66,7 +69,7 @@ export function BookingRulesDialog({
   });
 
   const number = (
-    key: "daily_capacity" | "lead_days" | "horizon_days",
+    key: "daily_capacity" | "lead_days" | "horizon_days" | "deposit_percent",
     label: string,
     min: number,
     max: number,
@@ -165,6 +168,12 @@ export function BookingRulesDialog({
               isAr ? "أقل مهلة قبل الحجز (أيام)" : "Notice needed (days)",
               0,
               365,
+            )}
+            {number(
+              "deposit_percent",
+              isAr ? "العربون عند الدفع بالبطاقة (%)" : "Card deposit (%)",
+              0,
+              100,
             )}
             {number(
               "horizon_days",
