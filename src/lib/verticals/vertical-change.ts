@@ -16,6 +16,7 @@ import {
   type StoreVocabulary,
   type VocabularyEntry,
 } from "@/lib/store-vocabulary";
+import { verticalFits } from "@/lib/verticals/registry";
 
 export type { CategoryRow };
 
@@ -93,7 +94,7 @@ export function planVerticalChange({
   };
   const disableCandidates = installedIds.filter((id) => {
     const manifest = knownManifest(id);
-    if (!manifest || keep.has(id) || manifest.activities.includes(to)) return false;
+    if (!manifest || keep.has(id) || verticalFits(manifest.activities, to)) return false;
     const others = installedIds.filter((other) => other !== id);
     return dependentsOf(id, others).length === 0;
   });

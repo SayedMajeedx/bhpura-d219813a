@@ -2,53 +2,17 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  STORE_VERTICALS,
-  VERTICAL_ICON_NAMES,
-  VERTICAL_LABELS,
-  type StoreVertical,
-} from "@/lib/store-profile";
+import { VERTICAL_LABELS, type StoreVertical } from "@/lib/store-profile";
+import { pickerVerticals } from "@/lib/verticals/registry";
+import { VerticalIcon } from "@/components/verticals/VerticalIcon";
 import { getBrandTemplate } from "@/lib/brand-templates";
 import type { BrandWizardData } from "./types";
-import {
-  Sparkles,
-  Shirt,
-  Flower2,
-  Coffee,
-  Utensils,
-  Gift,
-  Printer,
-  Gem,
-  Home,
-  Smartphone,
-  FileCode,
-  Store,
-} from "lucide-react";
 
 interface StepIdentityProps {
   data: BrandWizardData;
   onChange: (patch: Partial<BrandWizardData>) => void;
   isAr: boolean;
 }
-
-const ICONS_BY_NAME: Record<string, React.ElementType> = {
-  Sparkles,
-  Shirt,
-  Flower2,
-  Coffee,
-  Utensils,
-  Gift,
-  Printer,
-  Gem,
-  Home,
-  Smartphone,
-  FileCode,
-  Store,
-};
-
-const VERTICAL_ICONS: Record<StoreVertical, React.ElementType> = Object.fromEntries(
-  STORE_VERTICALS.map((v) => [v, ICONS_BY_NAME[VERTICAL_ICON_NAMES[v]] ?? Store]),
-) as Record<StoreVertical, React.ElementType>;
 
 function slugify(text: string): string {
   return text
@@ -174,10 +138,11 @@ export function StepIdentity({ data, onChange, isAr }: StepIdentityProps) {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-[340px] overflow-y-auto p-1 border border-border rounded-xl bg-muted/20">
-          {STORE_VERTICALS.map((vertical) => {
-            const Icon = VERTICAL_ICONS[vertical] || Store;
+          {pickerVerticals(data.store_vertical).map((definition) => {
+            const vertical = definition.id;
             const isSelected = data.store_vertical === vertical;
-            const label = VERTICAL_LABELS[vertical];
+            const label = definition.label;
+            const lang = isAr ? "ar" : "en";
 
             return (
               <Button
@@ -197,13 +162,19 @@ export function StepIdentity({ data, onChange, isAr }: StepIdentityProps) {
                     isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
                   }`}
                 >
-                  <Icon className="h-4 w-4" />
+                  <VerticalIcon vertical={vertical} className="h-4 w-4" />
                 </div>
                 <div className="font-semibold text-xs text-foreground leading-tight">
-                  {isAr ? label.ar : label.en}
+                  {label[lang]}
                 </div>
-                <div className="text-xs text-muted-foreground leading-tight mt-1 truncate max-w-full">
-                  {isAr ? label.en : label.ar}
+                {definition.parent && (
+                  <div className="text-xs text-primary leading-tight mt-0.5">
+                    {isAr ? "ضمن " : "Part of "}
+                    {VERTICAL_LABELS[definition.parent][lang]}
+                  </div>
+                )}
+                <div className="text-xs text-muted-foreground leading-tight mt-1 line-clamp-2 whitespace-normal">
+                  {definition.summary[lang]}
                 </div>
               </Button>
             );

@@ -1,5 +1,6 @@
 import type { AddonId, PlatformAddonPolicy } from "./addon-types";
 import type { StoreVertical } from "@/lib/store-profile";
+import { getVerticalDefinition } from "@/lib/verticals/registry";
 
 export function starterPackFor(
   activity: StoreVertical,
@@ -29,60 +30,7 @@ export function starterPackFor(
     }
   }
 
-  // Fallback to static starter pack mapping for each vertical
-  switch (activity) {
-    case "abayas":
-      return {
-        required: ["fashion-core", "size-guides", "fit-passport", "made-to-order", "abaya-pack"],
-        suggested: [],
-      };
-    case "fashion":
-      return {
-        required: ["fashion-core", "size-guides", "fit-passport", "made-to-order"],
-        suggested: [],
-      };
-    case "beauty":
-      return {
-        required: ["beauty-perfume"],
-        suggested: [],
-      };
-    case "coffee":
-      return {
-        required: ["coffee-roastery"],
-        suggested: [],
-      };
-    case "food":
-      return {
-        required: ["food-beverage"],
-        suggested: ["made-to-order"],
-      };
-    case "digital":
-      return {
-        required: ["digital-products"],
-        suggested: [],
-      };
-    case "gifts":
-      return {
-        required: ["gifts"],
-        suggested: [],
-      };
-    case "print":
-      return {
-        required: ["made-to-order", "print-stamps"],
-        suggested: [],
-      };
-    case "jewelry":
-      return {
-        required: ["size-guides", "made-to-order", "jewelry"],
-        suggested: [],
-      };
-    case "home":
-    case "electronics":
-    case "general":
-    default:
-      return {
-        required: [],
-        suggested: [],
-      };
-  }
+  // Otherwise the vertical's own pack (see the vertical registry).
+  const { required, suggested } = getVerticalDefinition(activity).starterPack;
+  return { required: [...required], suggested: [...suggested] };
 }

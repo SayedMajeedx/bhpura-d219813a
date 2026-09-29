@@ -1,3 +1,5 @@
+import { VERTICAL_DEFINITIONS, type VerticalDefinition } from "@/lib/verticals/registry";
+
 export const STORE_VERTICALS = [
   "abayas",
   "fashion",
@@ -22,51 +24,18 @@ export type StoreModuleId = (typeof STORE_MODULES)[number];
 export type StoreModules = Record<StoreModuleId, boolean>;
 export type StoreModuleOverrides = Partial<StoreModules>;
 
-export const VERTICAL_MODULE_DEFAULTS: Record<StoreVertical, StoreModules> = {
-  abayas: { size_guide: true, fit_passport: true, made_to_order: true },
-  fashion: { size_guide: true, fit_passport: true, made_to_order: true },
-  beauty: { size_guide: false, fit_passport: false, made_to_order: false },
-  coffee: { size_guide: false, fit_passport: false, made_to_order: false },
-  food: { size_guide: false, fit_passport: false, made_to_order: false },
-  gifts: { size_guide: false, fit_passport: false, made_to_order: false },
-  print: { size_guide: false, fit_passport: false, made_to_order: true },
-  jewelry: { size_guide: true, fit_passport: false, made_to_order: true },
-  home: { size_guide: false, fit_passport: false, made_to_order: false },
-  electronics: { size_guide: false, fit_passport: false, made_to_order: false },
-  digital: { size_guide: false, fit_passport: false, made_to_order: false },
-  general: { size_guide: false, fit_passport: false, made_to_order: false },
-};
+const byVertical = <T>(pick: (definition: VerticalDefinition) => T) =>
+  Object.fromEntries(
+    VERTICAL_DEFINITIONS.map((definition) => [definition.id, pick(definition)]),
+  ) as Record<StoreVertical, T>;
+
+/** The modules each vertical turns on (from the vertical registry). */
+export const VERTICAL_MODULE_DEFAULTS = byVertical((definition) => definition.modules);
 
 /** lucide-react icon name per vertical (kept here so UI files stay vertical-agnostic). */
-export const VERTICAL_ICON_NAMES: Record<StoreVertical, string> = {
-  abayas: "Sparkles",
-  fashion: "Shirt",
-  beauty: "Flower2",
-  coffee: "Coffee",
-  food: "Utensils",
-  gifts: "Gift",
-  print: "Printer",
-  jewelry: "Gem",
-  home: "Home",
-  electronics: "Smartphone",
-  digital: "FileCode",
-  general: "Store",
-};
+export const VERTICAL_ICON_NAMES = byVertical((definition) => definition.icon);
 
-export const VERTICAL_LABELS: Record<StoreVertical, { ar: string; en: string }> = {
-  abayas: { ar: "عبايات", en: "Abayas" },
-  fashion: { ar: "أزياء", en: "Fashion" },
-  beauty: { ar: "عطور وتجميل", en: "Beauty & Perfume" },
-  coffee: { ar: "محاصيل وقهوة مختصة", en: "Specialty Coffee & Roastery" },
-  food: { ar: "مأكولات ومشروبات", en: "Food & Beverage" },
-  gifts: { ar: "هدايا وحرف", en: "Gifts & Crafts" },
-  print: { ar: "طباعة وأختام", en: "Print & Stamps" },
-  jewelry: { ar: "مجوهرات وإكسسوارات", en: "Jewelry & Accessories" },
-  home: { ar: "منزل وديكور", en: "Home & Decor" },
-  electronics: { ar: "إلكترونيات", en: "Electronics" },
-  digital: { ar: "منتجات رقمية", en: "Digital Products" },
-  general: { ar: "متجر عام", en: "General Store" },
-};
+export const VERTICAL_LABELS = byVertical((definition) => definition.label);
 
 export const MODULE_LABELS: Record<
   StoreModuleId,

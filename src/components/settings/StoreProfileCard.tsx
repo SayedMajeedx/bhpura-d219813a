@@ -26,7 +26,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { STORE_VERTICALS, VERTICAL_LABELS, type StoreVertical } from "@/lib/store-profile";
+import { VERTICAL_LABELS, type StoreVertical } from "@/lib/store-profile";
 import { resolveFitProfiles, type FitProfileDefinition } from "@/lib/addons/addon-presets";
 import {
   listAddons,
@@ -60,6 +60,8 @@ import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useProfile } from "@/lib/profile-context";
 import { VerticalChangeDialog } from "@/components/settings/VerticalChangeDialog";
 import { VerticalHistory } from "@/components/settings/VerticalHistory";
+import { pickerVerticals, verticalFits } from "@/lib/verticals/registry";
+import { VerticalIcon } from "@/components/verticals/VerticalIcon";
 import { useBrandAddons } from "@/hooks/use-brand-addons";
 import { addonDataQueries } from "@/lib/data/addons";
 
@@ -144,7 +146,7 @@ export function StoreProfileCard({
     for (const id of starter.suggested) set.add(id);
 
     for (const m of listAddons()) {
-      if (m.activities.includes(vertical)) {
+      if (verticalFits(m.activities, vertical)) {
         set.add(m.id);
       }
     }
@@ -228,7 +230,7 @@ export function StoreProfileCard({
         const manifest = getAddon(row.addon_id);
         if (
           manifest &&
-          !manifest.activities.includes(vertical) &&
+          !verticalFits(manifest.activities, vertical) &&
           !pack.required.includes(row.addon_id)
         ) {
           const remainingInstalled = installedRows
@@ -425,9 +427,19 @@ export function StoreProfileCard({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {STORE_VERTICALS.map((v) => (
-                    <SelectItem key={v} value={v}>
-                      {isAr ? VERTICAL_LABELS[v].ar : VERTICAL_LABELS[v].en}
+                  {pickerVerticals(vertical).map((definition) => (
+                    <SelectItem
+                      key={definition.id}
+                      value={definition.id}
+                      className={definition.depth > 0 ? "ps-10" : undefined}
+                    >
+                      <span className="flex items-center gap-2">
+                        <VerticalIcon
+                          vertical={definition.id}
+                          className="size-3.5 text-muted-foreground"
+                        />
+                        {definition.label[isAr ? "ar" : "en"]}
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
