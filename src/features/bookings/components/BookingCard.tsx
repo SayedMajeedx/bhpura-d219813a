@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/format";
 import { nextStatuses, type BookingStatus } from "@/lib/bookings/rules";
 import type { Booking } from "@/lib/data/bookings";
-import { formatClock, localTime } from "@/features/bookings/lib/calendar-view";
+import { formatClock, localTime } from "@/lib/bookings/format";
 
 const STATUS_TEXT: Record<BookingStatus, { ar: string; en: string; tone: string }> = {
   hold: { ar: "قيد الدفع", en: "Checking out", tone: "bg-info-subtle text-info" },

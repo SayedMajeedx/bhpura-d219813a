@@ -1,12 +1,8 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-  dayTitle,
-  monthTitle,
-  weekdayNames,
-  type CalendarCell,
-} from "@/features/bookings/lib/calendar-view";
+import { type CalendarCell } from "@/features/bookings/lib/calendar-view";
+import { dayTitle, monthTitle, weekdayNames } from "@/lib/bookings/format";
 import { WEEK_STARTS_ON, type BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
 
 /** What a day's state reads as, for the legend and screen readers. */

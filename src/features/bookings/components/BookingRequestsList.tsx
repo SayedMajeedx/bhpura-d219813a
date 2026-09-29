@@ -1,6 +1,6 @@
 import { Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { dayTitle, formatClock, localTime } from "@/features/bookings/lib/calendar-view";
+import { dayTitle, formatClock, localTime } from "@/lib/bookings/format";
 import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
 
 /**

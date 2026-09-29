@@ -248,10 +248,67 @@ export async function rescheduleBooking(input: {
   return data;
 }
 
+export type BookingRequestInput = {
+  brandId: string;
+  day: string;
+  start: string;
+  durationMinutes: number;
+  items: Array<{ product_id: string; variant_id?: string | null; quantity: number }>;
+  customer: { name: string; phone: string; email?: string };
+  location?: Record<string, string>;
+  notes?: string;
+};
+
+export type BookingRequestResult = {
+  reference: string;
+  status: string;
+  event_date: string;
+  starts_at: string;
+  ends_at: string;
+  total: number;
+};
+
+/**
+ * A customer's booking request from the storefront (anyone may send one; the
+ * database prices it and limits how often). It takes no place until the store
+ * confirms it.
+ */
+export async function requestBooking(input: BookingRequestInput): Promise<BookingRequestResult> {
+  const { data, error } = await supabase.rpc("request_booking", {
+    p_brand_id: input.brandId,
+    p_day: input.day,
+    p_start: input.start,
+    p_duration_minutes: input.durationMinutes,
+    p_items: input.items as Json,
+    p_customer: input.customer as Json,
+    p_location: (input.location ?? {}) as Json,
+    p_notes: input.notes || undefined,
+  });
+  if (error) throw error;
+  return data as unknown as BookingRequestResult;
+}
+
 /** A readable reason for the database's booking refusals. */
 export function bookingErrorMessage(message: string, isAr: boolean): string {
   const known: Array<[RegExp, string, string]> = [
     [/BOOKING_DAY_FULL/, "هذا اليوم محجوز بالكامل.", "That day is fully booked."],
+    [
+      /BOOKING_DAY_(PAST|BEYOND)/,
+      "هذا التاريخ غير متاح للحجز، اختر يوماً آخر.",
+      "That date can't be booked; please choose another.",
+    ],
+    [/BOOKING_NAME_REQUIRED/, "أدخل اسمك.", "Please enter your name."],
+    [/BOOKING_PHONE_REQUIRED/, "أدخل رقم هاتف صحيح.", "Please enter a valid phone number."],
+    [
+      /BOOKING_RATE_LIMITED/,
+      "أرسلت عدة طلبات للتو. حاول بعد قليل أو تواصل معنا.",
+      "You've sent several requests just now. Try again shortly or contact us.",
+    ],
+    [
+      /BOOKING_PRODUCT_NOT_FOUND/,
+      "إحدى الخدمات لم تعد متاحة.",
+      "One of the services is no longer available.",
+    ],
     [/BOOKING_DAY_BLOCKED/, "هذا اليوم مغلق للحجز.", "That day is blocked."],
     [
       /BOOKING_DAY_CLOSED/,

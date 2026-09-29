@@ -74,6 +74,7 @@ import { getProductRecentPurchaseCount } from "@/lib/storefront-social-proof";
 
 import { RecommendationRail } from "@/features/product-page/components/RecommendationRail";
 import { ProductPurchaseActions } from "@/features/product-page/components/ProductPurchaseActions";
+import { BookServiceButton } from "@/features/storefront-booking/components/BookingEntryPoints";
 import { useVariantSelectionSync } from "@/features/product-page/hooks/use-variant-selection-sync";
 import { ProductTitleAndPrice } from "@/features/product-page/components/ProductTitleAndPrice";
 export const Route = createFileRoute("/$slug/product/$id")({
@@ -805,6 +806,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               onSelectSize: (sz: string) => setSelectedSize(sz),
             }}
           />
+
+          <BookServiceButton productId={product.id} />
 
           <ProductPurchaseActions
             brand={brand}
