@@ -126,7 +126,7 @@ function Checkout() {
     return cart.reduce((sum, item) => sum + (item.qty || 1), 0);
   }, [cart]);
 
-  const shipping = useMemo(() => {
+  const deliveryFee = useMemo(() => {
     if (fulfillment !== "delivery") return 0;
     return calculateShippingFee(
       selectedZone,
@@ -163,7 +163,10 @@ function Checkout() {
     estimatedPointsToEarn,
     handleApplyPoints,
     handleRemovePoints,
+    freeShipping,
   } = useCheckoutLoyalty({ brand, customerId, cartTotal, promoDiscount, currency, lang });
+  // A member whose loyalty tier has free shipping pays none (so does the order).
+  const shipping = freeShipping ? 0 : deliveryFee;
 
   const grandTotal = Math.max(0, cartTotal - promoDiscount - loyaltyDiscount) + shipping;
 

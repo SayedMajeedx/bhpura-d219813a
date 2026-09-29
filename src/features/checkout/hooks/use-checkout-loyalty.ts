@@ -183,6 +183,8 @@ export function useCheckoutLoyalty({
   return {
     loyaltyAccount,
     loyaltyProgram,
+    /** The signed-in member's tier gives free shipping (the database gives the same). */
+    freeShipping: Boolean(loyaltyProgram?.is_enabled && loyaltyTier?.free_shipping),
     pointsToRedeemInput,
     setPointsToRedeemInput,
     redeemedPoints,

@@ -300,6 +300,24 @@ describe("launch security regressions", () => {
     }
   });
 
+  it("gives loyalty free shipping to the signed-in member only (#37)", () => {
+    const sql = readFileSync(
+      "supabase/migrations/20260930220000_loyalty_free_shipping.sql",
+      "utf8",
+    );
+    // Identity from the session, never from a typed phone or email.
+    expect(sql).toContain("IF auth.uid() IS NOT NULL AND EXISTS (");
+    expect(sql).toContain("ON c.id = o.customer_id AND c.auth_user_id = auth.uid()");
+    // The member's tier must have the perk, and the program must be on.
+    expect(sql).toContain("AND t.free_shipping");
+    expect(sql).toContain("ON lp.brand_id = v_brand_id AND lp.is_enabled");
+    // Everything #36 put in place stays.
+    expect(sql).toContain(
+      "v_shipping_fee := GREATEST(v_computed_fee, COALESCE(p_shipping_fee, 0));",
+    );
+    expect(sql).toMatch(/ELSE\s+v_shipping_fee := 0;/);
+  });
+
   it("changes a store's vertical in one audited, super-admin-only transaction", () => {
     const migration = readFileSync(
       "supabase/migrations/20260929160000_vertical_change_audit.sql",
