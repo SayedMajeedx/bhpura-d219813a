@@ -633,6 +633,7 @@ export type Database = {
           brand_id: string;
           closed_weekdays: number[];
           daily_capacity: number;
+          deposit_percent: number;
           duration_step_minutes: number;
           hold_minutes: number;
           horizon_days: number;
@@ -649,6 +650,7 @@ export type Database = {
           brand_id: string;
           closed_weekdays?: number[];
           daily_capacity?: number;
+          deposit_percent?: number;
           duration_step_minutes?: number;
           hold_minutes?: number;
           horizon_days?: number;
@@ -665,6 +667,7 @@ export type Database = {
           brand_id?: string;
           closed_weekdays?: number[];
           daily_capacity?: number;
+          deposit_percent?: number;
           duration_step_minutes?: number;
           hold_minutes?: number;
           horizon_days?: number;
@@ -701,6 +704,7 @@ export type Database = {
           customer_id: string | null;
           customer_name: string | null;
           customer_phone: string | null;
+          deposit_amount: number | null;
           ends_at: string;
           event_date: string;
           hold_expires_at: string | null;
@@ -729,6 +733,7 @@ export type Database = {
           customer_id?: string | null;
           customer_name?: string | null;
           customer_phone?: string | null;
+          deposit_amount?: number | null;
           ends_at: string;
           event_date: string;
           hold_expires_at?: string | null;
@@ -757,6 +762,7 @@ export type Database = {
           customer_id?: string | null;
           customer_name?: string | null;
           customer_phone?: string | null;
+          deposit_amount?: number | null;
           ends_at?: string;
           event_date?: string;
           hold_expires_at?: string | null;
@@ -8525,6 +8531,7 @@ export type Database = {
           customer_id: string | null;
           customer_name: string | null;
           customer_phone: string | null;
+          deposit_amount: number | null;
           ends_at: string;
           event_date: string;
           hold_expires_at: string | null;
@@ -9090,6 +9097,7 @@ export type Database = {
           brand_id: string;
           closed_weekdays: number[];
           daily_capacity: number;
+          deposit_percent: number;
           duration_step_minutes: number;
           hold_minutes: number;
           horizon_days: number;
@@ -9394,6 +9402,7 @@ export type Database = {
           customer_id: string | null;
           customer_name: string | null;
           customer_phone: string | null;
+          deposit_amount: number | null;
           ends_at: string;
           event_date: string;
           hold_expires_at: string | null;
@@ -9856,6 +9865,7 @@ export type Database = {
           customer_id: string | null;
           customer_name: string | null;
           customer_phone: string | null;
+          deposit_amount: number | null;
           ends_at: string;
           event_date: string;
           hold_expires_at: string | null;
