@@ -9953,6 +9953,15 @@ export type Database = {
         Returns: undefined;
       };
       start_room_v2: { Args: { p_room_id: string }; Returns: Json };
+      storefront_delivery_fee: {
+        Args: {
+          p_brand_id: string;
+          p_country_code: string;
+          p_quantity: number;
+          p_zone_id: string;
+        };
+        Returns: number;
+      };
       storefront_user_owns_customer: {
         Args: { p_customer_id: string };
         Returns: boolean;

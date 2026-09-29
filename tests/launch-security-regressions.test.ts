@@ -263,6 +263,43 @@ describe("launch security regressions", () => {
     expect(sql).toContain("'travel_fees', COALESCE((");
   });
 
+  it("charges the store's delivery fee, never less because the browser says so (#36)", () => {
+    const sql = readFileSync("supabase/migrations/20260930200000_server_shipping_fee.sql", "utf8");
+    // The order function works the fee out and keeps a browser's fee only when higher.
+    expect(sql).toContain("v_computed_fee := public.storefront_delivery_fee(");
+    expect(sql).toContain(
+      "v_shipping_fee := GREATEST(v_computed_fee, COALESCE(p_shipping_fee, 0));",
+    );
+    expect(sql).not.toContain("v_shipping_fee := COALESCE(p_shipping_fee, v_order.shipping);");
+    // Pickup and digital orders pay no delivery.
+    expect(sql).toMatch(/ELSE\s+v_shipping_fee := 0;/);
+    // Same formula as the checkout: local fee, or the zone's flat / per piece / bundle fee.
+    for (const part of [
+      "'per_piece'",
+      "'bundle'",
+      "ceil(v_qty::numeric / v_bundle)",
+      "RETURN COALESCE(v_local, 0);",
+    ]) {
+      expect(sql).toContain(part);
+    }
+    // A chosen zone must serve the country; the helper is not callable from outside.
+    expect(sql).toContain("(z -> 'countries') ? p_country_code");
+    expect(sql).toContain(
+      "REVOKE ALL ON FUNCTION public.storefront_delivery_fee(uuid, text, text, integer) FROM PUBLIC, anon, authenticated",
+    );
+    // A booking's order still pays its travel fee, with the total moved by the difference.
+    expect(sql).toContain("SET total = total - shipping + v_booking.travel_fee,");
+    // The order function keeps its idempotency, receipt and tax steps.
+    for (const step of [
+      "IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_PAYLOAD",
+      "BENEFIT_RECEIPT_INVALID",
+      "IF v_vat_inclusive THEN",
+      "public.place_storefront_order_core(",
+    ]) {
+      expect(sql).toContain(step);
+    }
+  });
+
   it("changes a store's vertical in one audited, super-admin-only transaction", () => {
     const migration = readFileSync(
       "supabase/migrations/20260929160000_vertical_change_audit.sql",

@@ -79,6 +79,9 @@ export function placeStorefrontOrderArgs({
       house: form.house,
       flat: form.flat,
       save_to_profile: Boolean(session?.user && saveToProfile),
+      // Where it goes: the database works the delivery fee out from these.
+      shipping_zone_id: selectedDestination === "BH" ? null : (selectedZone?.id ?? null),
+      country_code: selectedDestination === "BH" ? "BH" : selectedCountryCode,
     },
     p_items: cart.map((c) => ({
       variant_id: c.variant_id && c.variant_id.trim() ? c.variant_id : null,
