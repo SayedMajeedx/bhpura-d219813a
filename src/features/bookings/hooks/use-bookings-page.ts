@@ -14,7 +14,8 @@ import {
   type Booking,
 } from "@/lib/data/bookings";
 import { DEFAULT_BOOKING_RULES, todayIn, type BookingStatus } from "@/lib/bookings/rules";
-import { gridRange, shiftMonth, summariseMonth } from "@/features/bookings/lib/calendar-view";
+import { summariseMonth } from "@/features/bookings/lib/calendar-view";
+import { gridRange, shiftMonth } from "@/lib/bookings/format";
 
 /** Weeks start on Sunday, as GCC booking calendars usually do. */
 export const WEEK_STARTS_ON = 0;

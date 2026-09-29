@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_BOOKING_RULES } from "../src/lib/bookings/rules";
+import { summariseMonth } from "../src/features/bookings/lib/calendar-view";
 import {
   formatClock,
   formatDuration,
   gridRange,
   localTime,
   shiftMonth,
-  summariseMonth,
   weekdayNames,
-} from "../src/features/bookings/lib/calendar-view";
+} from "../src/lib/bookings/format";
 import {
   bookingLines,
   bookingTotal,

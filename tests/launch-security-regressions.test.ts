@@ -157,6 +157,29 @@ describe("launch security regressions", () => {
     expect(sql).toContain("ELSE bs.store_vertical = 'services'");
   });
 
+  it("lets anyone ask for a date, at the store's prices and within limits", () => {
+    const sql = readFileSync("supabase/migrations/20260930120000_booking_requests.sql", "utf8");
+    expect(sql).toContain("SECURITY DEFINER");
+    expect(sql).toContain("IF NOT public.bookings_enabled(p_brand_id) THEN");
+    // Customer rules (notice period, horizon), not staff ones.
+    expect(sql).toContain("public.booking_day_state(v_settings, p_day);");
+    expect(sql).not.toMatch(/booking_day_state\([^)]*true\)/);
+    // Prices come from the store's variants, never from the request.
+    expect(sql).toContain("v.selling_price AS price");
+    expect(sql).not.toContain("'unit_price'");
+    expect(sql).toMatch(/p\.brand_id = p_brand_id\s+AND p\.is_active/);
+    // A request takes no place until the store confirms it.
+    expect(sql).toMatch(/'requested', p_day/);
+    // Flood guards: per store and per phone.
+    expect(sql).toContain("interval '10 minutes'");
+    expect(sql).toContain("IF v_count >= 60 THEN");
+    expect(sql).toContain("interval '1 hour'");
+    expect(sql).toContain("IF v_count >= 3 THEN");
+    expect(sql).toContain(
+      "GRANT EXECUTE ON FUNCTION public.request_booking(uuid, date, time, integer, jsonb, jsonb, jsonb, text) TO anon, authenticated",
+    );
+  });
+
   it("changes a store's vertical in one audited, super-admin-only transaction", () => {
     const migration = readFileSync(
       "supabase/migrations/20260929160000_vertical_change_audit.sql",

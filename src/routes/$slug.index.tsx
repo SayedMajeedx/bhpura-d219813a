@@ -25,6 +25,7 @@ import {
 } from "@/features/storefront-home/components/MerchandisingSection";
 import { HeroBanner } from "@/features/storefront-home/components/HeroBanner";
 import { Categories } from "@/features/storefront-home/components/Categories";
+import { BookingInvite } from "@/features/storefront-booking/components/BookingEntryPoints";
 
 export const Route = createFileRoute("/$slug/")({
   loader: async ({ params }) => {
@@ -147,6 +148,7 @@ function StoreHome() {
     <div>
       <HeroBanner />
       {showTrustBarBelowHero && <TrustBar />}
+      <BookingInvite />
       <section className="w-full" style={{ backgroundColor: promoAreaBackground }}>
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
           <PromoCards />

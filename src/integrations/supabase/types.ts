@@ -9318,6 +9318,19 @@ export type Database = {
         Returns: undefined;
       };
       reporting_brand_id: { Args: { p_brand_slug?: string }; Returns: string };
+      request_booking: {
+        Args: {
+          p_brand_id: string;
+          p_customer: Json;
+          p_day: string;
+          p_duration_minutes: number;
+          p_items: Json;
+          p_location?: Json;
+          p_notes?: string;
+          p_start: string;
+        };
+        Returns: Json;
+      };
       request_white_label_rebuild: {
         Args: { p_brand_id: string };
         Returns: string;

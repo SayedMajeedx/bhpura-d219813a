@@ -23,6 +23,7 @@ import { Route as SlugCategoryRouteImport } from './routes/$slug.$category'
 import { Route as SlugAccountRouteImport } from './routes/$slug.account'
 import { Route as SlugAuthRouteImport } from './routes/$slug.auth'
 import { Route as SlugAuthConfirmedRouteImport } from './routes/$slug.auth-confirmed'
+import { Route as SlugBookRouteImport } from './routes/$slug.book'
 import { Route as SlugCheckoutRouteImport } from './routes/$slug.checkout'
 import { Route as SlugCustomOrderRouteImport } from './routes/$slug.custom-order'
 import { Route as SlugManifestDotwebmanifestRouteImport } from './routes/$slug.manifest[.webmanifest]'
@@ -160,6 +161,11 @@ const SlugAuthRoute = SlugAuthRouteImport.update({
 const SlugAuthConfirmedRoute = SlugAuthConfirmedRouteImport.update({
   id: '/auth-confirmed',
   path: '/auth-confirmed',
+  getParentRoute: () => SlugRouteRoute,
+} as any)
+const SlugBookRoute = SlugBookRouteImport.update({
+  id: '/book',
+  path: '/book',
   getParentRoute: () => SlugRouteRoute,
 } as any)
 const SlugCheckoutRoute = SlugCheckoutRouteImport.update({
@@ -571,6 +577,7 @@ export interface FileRoutesByFullPath {
   '/$slug/account': typeof SlugAccountRoute
   '/$slug/auth': typeof SlugAuthRoute
   '/$slug/auth-confirmed': typeof SlugAuthConfirmedRoute
+  '/$slug/book': typeof SlugBookRoute
   '/$slug/checkout': typeof SlugCheckoutRoute
   '/$slug/custom-order': typeof SlugCustomOrderRoute
   '/$slug/manifest.webmanifest': typeof SlugManifestDotwebmanifestRoute
@@ -654,6 +661,7 @@ export interface FileRoutesByTo {
   '/$slug/account': typeof SlugAccountRoute
   '/$slug/auth': typeof SlugAuthRoute
   '/$slug/auth-confirmed': typeof SlugAuthConfirmedRoute
+  '/$slug/book': typeof SlugBookRoute
   '/$slug/checkout': typeof SlugCheckoutRoute
   '/$slug/custom-order': typeof SlugCustomOrderRoute
   '/$slug/manifest.webmanifest': typeof SlugManifestDotwebmanifestRoute
@@ -738,6 +746,7 @@ export interface FileRoutesById {
   '/$slug/account': typeof SlugAccountRoute
   '/$slug/auth': typeof SlugAuthRoute
   '/$slug/auth-confirmed': typeof SlugAuthConfirmedRoute
+  '/$slug/book': typeof SlugBookRoute
   '/$slug/checkout': typeof SlugCheckoutRoute
   '/$slug/custom-order': typeof SlugCustomOrderRoute
   '/$slug/manifest.webmanifest': typeof SlugManifestDotwebmanifestRoute
@@ -824,6 +833,7 @@ export interface FileRouteTypes {
     | '/$slug/account'
     | '/$slug/auth'
     | '/$slug/auth-confirmed'
+    | '/$slug/book'
     | '/$slug/checkout'
     | '/$slug/custom-order'
     | '/$slug/manifest.webmanifest'
@@ -907,6 +917,7 @@ export interface FileRouteTypes {
     | '/$slug/account'
     | '/$slug/auth'
     | '/$slug/auth-confirmed'
+    | '/$slug/book'
     | '/$slug/checkout'
     | '/$slug/custom-order'
     | '/$slug/manifest.webmanifest'
@@ -990,6 +1001,7 @@ export interface FileRouteTypes {
     | '/$slug/account'
     | '/$slug/auth'
     | '/$slug/auth-confirmed'
+    | '/$slug/book'
     | '/$slug/checkout'
     | '/$slug/custom-order'
     | '/$slug/manifest.webmanifest'
@@ -1183,6 +1195,13 @@ declare module '@tanstack/react-router' {
       path: '/auth-confirmed'
       fullPath: '/$slug/auth-confirmed'
       preLoaderRoute: typeof SlugAuthConfirmedRouteImport
+      parentRoute: typeof SlugRouteRoute
+    }
+    '/$slug/book': {
+      id: '/$slug/book'
+      path: '/book'
+      fullPath: '/$slug/book'
+      preLoaderRoute: typeof SlugBookRouteImport
       parentRoute: typeof SlugRouteRoute
     }
     '/$slug/checkout': {
@@ -1676,6 +1695,7 @@ interface SlugRouteRouteChildren {
   SlugAccountRoute: typeof SlugAccountRoute
   SlugAuthRoute: typeof SlugAuthRoute
   SlugAuthConfirmedRoute: typeof SlugAuthConfirmedRoute
+  SlugBookRoute: typeof SlugBookRoute
   SlugCheckoutRoute: typeof SlugCheckoutRoute
   SlugCustomOrderRoute: typeof SlugCustomOrderRoute
   SlugManifestDotwebmanifestRoute: typeof SlugManifestDotwebmanifestRoute
@@ -1694,6 +1714,7 @@ const SlugRouteRouteChildren: SlugRouteRouteChildren = {
   SlugAccountRoute: SlugAccountRoute,
   SlugAuthRoute: SlugAuthRoute,
   SlugAuthConfirmedRoute: SlugAuthConfirmedRoute,
+  SlugBookRoute: SlugBookRoute,
   SlugCheckoutRoute: SlugCheckoutRoute,
   SlugCustomOrderRoute: SlugCustomOrderRoute,
   SlugManifestDotwebmanifestRoute: SlugManifestDotwebmanifestRoute,

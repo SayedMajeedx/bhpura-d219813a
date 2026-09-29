@@ -18,7 +18,7 @@ import { formatMoney } from "@/lib/format";
 import { catalogQueries } from "@/lib/data/catalog";
 import { bookingErrorMessage, createStaffBooking } from "@/lib/data/bookings";
 import { durations, startTimes } from "@/lib/bookings/rules";
-import { dayTitle, formatClock, formatDuration } from "@/features/bookings/lib/calendar-view";
+import { dayTitle, formatClock, formatDuration } from "@/lib/bookings/format";
 import {
   bookingLines,
   bookingTotal,

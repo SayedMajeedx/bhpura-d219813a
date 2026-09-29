@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { saveBookingSettings } from "@/lib/data/bookings";
 import { minutesOf, type BookingRules } from "@/lib/bookings/rules";
-import { weekdayNames } from "@/features/bookings/lib/calendar-view";
+import { weekdayNames } from "@/lib/bookings/format";
 import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
 
 /** What is wrong with a set of rules before the database would refuse them. */
