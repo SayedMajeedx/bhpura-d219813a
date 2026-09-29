@@ -75,6 +75,23 @@ export function brandsPageMocks(state: { brands: unknown[] }) {
   };
 }
 
+/**
+ * Loads the brands page and its providers ahead of the tests. The page is a
+ * large module: imported inside the first test, its load counted against that
+ * test's 5 s timeout and failed it when the full suite ran in parallel. Call it
+ * from a beforeAll (after the file's vi.mock calls, which it needs) with a long
+ * timeout.
+ */
+export async function preloadBrandsPage() {
+  await Promise.all([
+    import("../../src/routes/_authenticated/admin.brands"),
+    import("../../src/lib/i18n"),
+  ]);
+}
+
+/** How long preloading the brands page may take (the module is big; see preloadBrandsPage). */
+export const PRELOAD_TIMEOUT_MS = 60_000;
+
 export async function renderBrandsPage() {
   const { Route } = await import("../../src/routes/_authenticated/admin.brands");
   const { I18nProvider } = await import("../../src/lib/i18n");

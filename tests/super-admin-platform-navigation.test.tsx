@@ -1,7 +1,12 @@
 import React from "react";
 import { render, renderHook, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { brandsPageMocks, renderBrandsPage } from "./helpers/brands-page";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  brandsPageMocks,
+  PRELOAD_TIMEOUT_MS,
+  preloadBrandsPage,
+  renderBrandsPage,
+} from "./helpers/brands-page";
 import { sidebarLayout } from "../src/lib/admin-workspace";
 
 const page = vi.hoisted(() => ({ brands: [] as unknown[] }));
@@ -79,6 +84,9 @@ const outcome = async (run: Promise<unknown>) => {
     return { redirect: (thrown as { to?: string }).to };
   }
 };
+
+// The page is big: load it before the tests, not inside the first one.
+beforeAll(preloadBrandsPage, PRELOAD_TIMEOUT_MS);
 
 beforeEach(() => {
   localStorage.setItem("lang", "en");
