@@ -211,7 +211,7 @@ export async function createStaffBooking(input: StaffBookingInput) {
     p_customer: input.customer as Json,
     p_items: input.items as Json,
     p_location: (input.location ?? {}) as Json,
-    p_notes: input.notes ?? null,
+    p_notes: input.notes || undefined,
     p_status: input.status ?? "confirmed",
     p_source: input.source ?? "admin",
     p_allow_overbook: input.allowOverbook ?? false,
@@ -224,7 +224,7 @@ export async function setBookingStatus(bookingId: string, status: BookingStatus,
   const { data, error } = await supabase.rpc("set_booking_status", {
     p_booking_id: bookingId,
     p_status: status,
-    p_reason: reason ?? null,
+    p_reason: reason || undefined,
   });
   if (error) throw error;
   return data;

@@ -522,6 +522,277 @@ export type Database = {
           },
         ];
       };
+      booking_blocks: {
+        Row: {
+          brand_id: string;
+          created_at: string;
+          created_by: string | null;
+          ends_on: string;
+          id: string;
+          reason: string | null;
+          starts_on: string;
+        };
+        Insert: {
+          brand_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          ends_on: string;
+          id?: string;
+          reason?: string | null;
+          starts_on: string;
+        };
+        Update: {
+          brand_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          ends_on?: string;
+          id?: string;
+          reason?: string | null;
+          starts_on?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "booking_blocks_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      booking_items: {
+        Row: {
+          booking_id: string;
+          brand_id: string;
+          id: string;
+          line_total: number | null;
+          name_ar: string | null;
+          name_en: string | null;
+          product_id: string | null;
+          quantity: number;
+          unit_price: number;
+          variant_id: string | null;
+        };
+        Insert: {
+          booking_id: string;
+          brand_id: string;
+          id?: string;
+          line_total?: number | null;
+          name_ar?: string | null;
+          name_en?: string | null;
+          product_id?: string | null;
+          quantity?: number;
+          unit_price?: number;
+          variant_id?: string | null;
+        };
+        Update: {
+          booking_id?: string;
+          brand_id?: string;
+          id?: string;
+          line_total?: number | null;
+          name_ar?: string | null;
+          name_en?: string | null;
+          product_id?: string | null;
+          quantity?: number;
+          unit_price?: number;
+          variant_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "booking_items_booking_id_fkey";
+            columns: ["booking_id"];
+            isOneToOne: false;
+            referencedRelation: "bookings";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "booking_items_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "booking_items_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "booking_items_variant_id_fkey";
+            columns: ["variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      booking_settings: {
+        Row: {
+          brand_id: string;
+          closed_weekdays: number[];
+          daily_capacity: number;
+          duration_step_minutes: number;
+          hold_minutes: number;
+          horizon_days: number;
+          last_start_time: string;
+          lead_days: number;
+          max_duration_minutes: number;
+          min_duration_minutes: number;
+          open_time: string;
+          slot_minutes: number;
+          timezone: string;
+          updated_at: string;
+        };
+        Insert: {
+          brand_id: string;
+          closed_weekdays?: number[];
+          daily_capacity?: number;
+          duration_step_minutes?: number;
+          hold_minutes?: number;
+          horizon_days?: number;
+          last_start_time?: string;
+          lead_days?: number;
+          max_duration_minutes?: number;
+          min_duration_minutes?: number;
+          open_time?: string;
+          slot_minutes?: number;
+          timezone?: string;
+          updated_at?: string;
+        };
+        Update: {
+          brand_id?: string;
+          closed_weekdays?: number[];
+          daily_capacity?: number;
+          duration_step_minutes?: number;
+          hold_minutes?: number;
+          horizon_days?: number;
+          last_start_time?: string;
+          lead_days?: number;
+          max_duration_minutes?: number;
+          min_duration_minutes?: number;
+          open_time?: string;
+          slot_minutes?: number;
+          timezone?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "booking_settings_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: true;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      bookings: {
+        Row: {
+          brand_id: string;
+          cancel_reason: string | null;
+          cancelled_at: string | null;
+          cancelled_by: string | null;
+          confirmed_at: string | null;
+          confirmed_by: string | null;
+          created_at: string;
+          created_by: string | null;
+          customer_email: string | null;
+          customer_id: string | null;
+          customer_name: string | null;
+          customer_phone: string | null;
+          ends_at: string;
+          event_date: string;
+          hold_expires_at: string | null;
+          id: string;
+          location: Json;
+          notes: string | null;
+          order_id: string | null;
+          reference: string;
+          source: string;
+          starts_at: string;
+          status: string;
+          total: number;
+          updated_at: string;
+        };
+        Insert: {
+          brand_id: string;
+          cancel_reason?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
+          confirmed_at?: string | null;
+          confirmed_by?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          customer_email?: string | null;
+          customer_id?: string | null;
+          customer_name?: string | null;
+          customer_phone?: string | null;
+          ends_at: string;
+          event_date: string;
+          hold_expires_at?: string | null;
+          id?: string;
+          location?: Json;
+          notes?: string | null;
+          order_id?: string | null;
+          reference: string;
+          source: string;
+          starts_at: string;
+          status: string;
+          total?: number;
+          updated_at?: string;
+        };
+        Update: {
+          brand_id?: string;
+          cancel_reason?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
+          confirmed_at?: string | null;
+          confirmed_by?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          customer_email?: string | null;
+          customer_id?: string | null;
+          customer_name?: string | null;
+          customer_phone?: string | null;
+          ends_at?: string;
+          event_date?: string;
+          hold_expires_at?: string | null;
+          id?: string;
+          location?: Json;
+          notes?: string | null;
+          order_id?: string | null;
+          reference?: string;
+          source?: string;
+          starts_at?: string;
+          status?: string;
+          total?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "bookings_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bookings_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bookings_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       branches: {
         Row: {
           address_ar: string | null;
@@ -8106,6 +8377,35 @@ export type Database = {
         Args: { p_courier_id: string; p_order_id: string };
         Returns: undefined;
       };
+      booking_day_state: {
+        Args: {
+          p_day: string;
+          p_except?: string;
+          p_settings: Database["public"]["Tables"]["booking_settings"]["Row"];
+          p_staff?: boolean;
+        };
+        Returns: {
+          remaining: number;
+          state: string;
+        }[];
+      };
+      booking_places_taken: {
+        Args: { p_brand_id: string; p_day: string; p_except?: string };
+        Returns: number;
+      };
+      booking_window: {
+        Args: {
+          p_day: string;
+          p_duration_minutes: number;
+          p_settings: Database["public"]["Tables"]["booking_settings"]["Row"];
+          p_start: string;
+        };
+        Returns: {
+          ends_at: string;
+          starts_at: string;
+        }[];
+      };
+      bookings_enabled: { Args: { p_brand_id: string }; Returns: boolean };
       can_access_brand: { Args: { _brand_id: string }; Returns: boolean };
       cash_account_type_for_payment: {
         Args: { p_payment_method: string };
@@ -8194,6 +8494,54 @@ export type Database = {
           p_title: string;
         };
         Returns: string;
+      };
+      create_staff_booking: {
+        Args: {
+          p_allow_overbook?: boolean;
+          p_brand_id: string;
+          p_customer: Json;
+          p_day: string;
+          p_duration_minutes: number;
+          p_items: Json;
+          p_location?: Json;
+          p_notes?: string;
+          p_source?: string;
+          p_start: string;
+          p_status?: string;
+        };
+        Returns: {
+          brand_id: string;
+          cancel_reason: string | null;
+          cancelled_at: string | null;
+          cancelled_by: string | null;
+          confirmed_at: string | null;
+          confirmed_by: string | null;
+          created_at: string;
+          created_by: string | null;
+          customer_email: string | null;
+          customer_id: string | null;
+          customer_name: string | null;
+          customer_phone: string | null;
+          ends_at: string;
+          event_date: string;
+          hold_expires_at: string | null;
+          id: string;
+          location: Json;
+          notes: string | null;
+          order_id: string | null;
+          reference: string;
+          source: string;
+          starts_at: string;
+          status: string;
+          total: number;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "bookings";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       create_tenant_with_defaults: {
         Args: {
@@ -8474,6 +8822,14 @@ export type Database = {
         Returns: string;
       };
       get_all_admin_quizzes: { Args: never; Returns: Json };
+      get_booking_availability: {
+        Args: { p_brand_id: string; p_from: string; p_to: string };
+        Returns: {
+          day: string;
+          remaining: number;
+          state: string;
+        }[];
+      };
       get_brand_categories_with_counts: {
         Args: { p_brand_id: string };
         Returns: {
@@ -8524,6 +8880,7 @@ export type Database = {
           benefit_account_number: string;
         }[];
       };
+      get_public_booking_rules: { Args: { p_brand_id: string }; Returns: Json };
       get_public_branches: {
         Args: { p_brand_id: string };
         Returns: {
@@ -8710,6 +9067,32 @@ export type Database = {
           review_url_token: string;
         }[];
       };
+      lock_booking_settings_for_staff: {
+        Args: { p_brand_id: string };
+        Returns: {
+          brand_id: string;
+          closed_weekdays: number[];
+          daily_capacity: number;
+          duration_step_minutes: number;
+          hold_minutes: number;
+          horizon_days: number;
+          last_start_time: string;
+          lead_days: number;
+          max_duration_minutes: number;
+          min_duration_minutes: number;
+          open_time: string;
+          slot_minutes: number;
+          timezone: string;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "booking_settings";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      next_booking_reference: { Args: { p_brand_id: string }; Returns: string };
       normalize_customer_email: { Args: { p_value: string }; Returns: string };
       normalize_customer_phone: { Args: { p_value: string }; Returns: string };
       normalize_whatsapp_recipient: {
@@ -8938,6 +9321,48 @@ export type Database = {
       request_white_label_rebuild: {
         Args: { p_brand_id: string };
         Returns: string;
+      };
+      reschedule_booking: {
+        Args: {
+          p_allow_overbook?: boolean;
+          p_booking_id: string;
+          p_day: string;
+          p_duration_minutes: number;
+          p_start: string;
+        };
+        Returns: {
+          brand_id: string;
+          cancel_reason: string | null;
+          cancelled_at: string | null;
+          cancelled_by: string | null;
+          confirmed_at: string | null;
+          confirmed_by: string | null;
+          created_at: string;
+          created_by: string | null;
+          customer_email: string | null;
+          customer_id: string | null;
+          customer_name: string | null;
+          customer_phone: string | null;
+          ends_at: string;
+          event_date: string;
+          hold_expires_at: string | null;
+          id: string;
+          location: Json;
+          notes: string | null;
+          order_id: string | null;
+          reference: string;
+          source: string;
+          starts_at: string;
+          status: string;
+          total: number;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "bookings";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       return_stock_from_incubator: {
         Args: {
@@ -9363,6 +9788,42 @@ export type Database = {
           p_webhook_secret: string;
         };
         Returns: string;
+      };
+      set_booking_status: {
+        Args: { p_booking_id: string; p_reason?: string; p_status: string };
+        Returns: {
+          brand_id: string;
+          cancel_reason: string | null;
+          cancelled_at: string | null;
+          cancelled_by: string | null;
+          confirmed_at: string | null;
+          confirmed_by: string | null;
+          created_at: string;
+          created_by: string | null;
+          customer_email: string | null;
+          customer_id: string | null;
+          customer_name: string | null;
+          customer_phone: string | null;
+          ends_at: string;
+          event_date: string;
+          hold_expires_at: string | null;
+          id: string;
+          location: Json;
+          notes: string | null;
+          order_id: string | null;
+          reference: string;
+          source: string;
+          starts_at: string;
+          status: string;
+          total: number;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "bookings";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       set_default_customer_address: {
         Args: {
