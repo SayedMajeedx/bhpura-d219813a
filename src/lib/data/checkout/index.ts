@@ -22,14 +22,22 @@ export type StorefrontOrderInput = {
 /**
  * Places the order and returns its id and the confirmation token (used to
  * record consent and open the thank-you page). Throws the database error.
+ * With a booking (its services are in the cart), the order also finishes the
+ * booking, in the same transaction (place_booking_order).
  */
-export async function placeStorefrontOrder(input: StorefrontOrderInput) {
+export async function placeStorefrontOrder(
+  input: StorefrontOrderInput,
+  booking?: { id: string; token: string } | null,
+) {
   // The generated overloads type optional arguments as `string | undefined`;
   // the function takes NULL for them (checked against the SQL signature).
-  const { data, error } = await supabase.rpc(
-    "place_storefront_order",
-    input as PlaceStorefrontOrderArgs,
-  );
+  const { data, error } = booking
+    ? await supabase.rpc("place_booking_order", {
+        ...(input as PlaceStorefrontOrderArgs),
+        p_booking_id: booking.id,
+        p_hold_token: booking.token,
+      })
+    : await supabase.rpc("place_storefront_order", input as PlaceStorefrontOrderArgs);
   if (error) throw error;
   const result = data as { order_id?: string; confirmation_email_token?: string } | null;
   return {

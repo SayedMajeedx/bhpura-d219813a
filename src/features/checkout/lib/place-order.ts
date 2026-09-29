@@ -1,4 +1,5 @@
 import { getCountryByCode, type ShippingZone } from "@/lib/shipping";
+import { bookingErrorMessage } from "@/lib/bookings/errors";
 import type {
   AppliedPromo,
   CheckoutForm,
@@ -131,6 +132,11 @@ export function placeOrderFailure(
   msg: string,
   t: Storefront["t"],
 ): { message: string; clearPromo: boolean } {
+  if (/BOOKING_/.test(msg)) {
+    // `t` picks the shopper's language; asking it for "ar"/"en" tells which.
+    const isAr = t("ar", "en") === "ar";
+    return { message: bookingErrorMessage(msg, isAr), clearPromo: false };
+  }
   if (msg.includes("INSUFFICIENT_STOCK")) {
     return {
       message: t("المخزون غير كافٍ لأحد المنتجات", "Insufficient stock for one item"),

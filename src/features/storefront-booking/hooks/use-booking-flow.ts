@@ -1,16 +1,19 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useStorefront } from "@/lib/storefront-context";
-import { shouldShowPrices } from "@/lib/storefront-mode";
+import { isCatalogMode, shouldShowPrices } from "@/lib/storefront-mode";
+import { bookingCartLines } from "@/lib/bookings/cart";
 import { storefrontQueries } from "@/lib/data/storefront";
 import {
-  bookingErrorMessage,
   bookingsKeys,
   bookingsQueries,
+  holdBooking,
   requestBooking,
   type BookingRequestResult,
 } from "@/lib/data/bookings";
+import { bookingErrorMessage } from "@/lib/bookings/errors";
 import { todayIn, type DayState } from "@/lib/bookings/rules";
 import { gridRange, shiftMonth } from "@/lib/bookings/format";
 import {
@@ -29,7 +32,9 @@ export const BOOKING_WEEK_STARTS_ON = 0;
  * customer's choices, sent as a booking request the store confirms.
  */
 export function useBookingFlow(initialService?: string) {
-  const { brand, settings, lang, currency } = useStorefront();
+  const { brand, settings, lang, currency, cart, addToCart, removeFromCart } = useStorefront();
+  const navigate = useNavigate();
+  const catalog = isCatalogMode(settings);
   const isAr = lang === "ar";
   const qc = useQueryClient();
 
@@ -78,6 +83,25 @@ export function useBookingFlow(initialService?: string) {
     },
   });
 
+  // A shop store: hold the day, put the services in the cart, pay at checkout.
+  const checkout = useMutation({
+    mutationFn: () => holdBooking(toBookingRequest(brand.id, flow, services)),
+    onSuccess: async (hold) => {
+      for (const line of cart) if (line.booking) removeFromCart(line.cart_line_id);
+      const lines = bookingCartLines(
+        hold,
+        { day: flow.day!, start: flow.start!, durationMinutes: flow.durationMinutes! },
+        services,
+      );
+      for (const line of lines) addToCart(line);
+      await navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });
+    },
+    onError: (error: Error) => {
+      toast.error(bookingErrorMessage(error.message, isAr));
+      void qc.invalidateQueries({ queryKey: bookingsKeys.all(brand.id) });
+    },
+  });
+
   const step = rules ? missingStep(flow, rules, dayStates) : "date";
 
   return {
@@ -100,8 +124,10 @@ export function useBookingFlow(initialService?: string) {
     update,
     toggleService,
     step,
-    submit: () => submit.mutate(),
-    submitting: submit.isPending,
+    /** Catalog stores send a request; shop stores hold the day and check out. */
+    catalog,
+    submit: () => (catalog ? submit.mutate() : checkout.mutate()),
+    submitting: submit.isPending || checkout.isPending,
     result,
     startOver: () => {
       setResult(null);

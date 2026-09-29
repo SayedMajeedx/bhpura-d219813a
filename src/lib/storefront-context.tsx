@@ -33,6 +33,7 @@ import {
 } from "@/lib/addons/addon-presets";
 import { AddonsProvider } from "@/components/addons/AddonsProvider";
 import { modulesFromAddons } from "@/lib/addons/addon-compat";
+import type { CartBooking } from "@/lib/bookings/cart";
 import type { BrandAddonRow } from "@/lib/addons/addon-types";
 
 export type StoreLang = "ar" | "en";
@@ -323,6 +324,8 @@ export type CartItem = {
   qty: number;
   max_stock: number;
   custom_fields?: CustomFieldValue[];
+  /** Set on the services of a booking being checked out (see lib/bookings/cart). */
+  booking?: CartBooking;
 };
 
 /** Pick the localized product name, falling back through en → ar → base name. */

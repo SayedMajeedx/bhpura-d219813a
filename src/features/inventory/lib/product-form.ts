@@ -8,7 +8,11 @@ import type { CustomField, MediaItem, Product } from "@/features/inventory/types
  * it has none.
  */
 
-export function productFormFrom(product: Product | null) {
+/**
+ * `madeToOrder`: the default for a new product. A bookings store's services
+ * are made to order (they have no stock), so their checkout never waits on it.
+ */
+export function productFormFrom(product: Product | null, defaults: { madeToOrder?: boolean } = {}) {
   return {
     name_ar: product?.name_ar ?? "",
     name_en: product?.name_en ?? product?.name ?? "",
@@ -40,7 +44,7 @@ export function productFormFrom(product: Product | null) {
     occasion: product?.occasion ?? "",
     size_guide_id: product?.size_guide_id ?? null,
     size_guide_hidden: product?.size_guide_hidden ?? false,
-    is_made_to_order: product?.is_made_to_order ?? false,
+    is_made_to_order: product?.is_made_to_order ?? defaults.madeToOrder ?? false,
   };
 }
 
