@@ -34,8 +34,18 @@ export type VerticalDefinition = {
   starterPack: { required: AddonId[]; suggested: AddonId[] };
 };
 
-const NO_MODULES: StoreModules = { size_guide: false, fit_passport: false, made_to_order: false };
-const TAILORING: StoreModules = { size_guide: true, fit_passport: true, made_to_order: true };
+const NO_MODULES: StoreModules = {
+  size_guide: false,
+  fit_passport: false,
+  made_to_order: false,
+  bookings: false,
+};
+const TAILORING: StoreModules = {
+  ...NO_MODULES,
+  size_guide: true,
+  fit_passport: true,
+  made_to_order: true,
+};
 const FASHION_PACK: AddonId[] = ["fashion-core", "size-guides", "fit-passport", "made-to-order"];
 
 /** In picker order: each child right after its parent. */
@@ -122,7 +132,7 @@ export const VERTICAL_DEFINITIONS: readonly VerticalDefinition[] = [
     icon: "Gem",
     parent: null,
     status: "active",
-    modules: { size_guide: true, fit_passport: false, made_to_order: true },
+    modules: { ...NO_MODULES, size_guide: true, made_to_order: true },
     starterPack: { required: ["size-guides", "made-to-order", "jewelry"], suggested: [] },
   },
   {
@@ -148,7 +158,7 @@ export const VERTICAL_DEFINITIONS: readonly VerticalDefinition[] = [
     icon: "Printer",
     parent: null,
     status: "active",
-    modules: { size_guide: false, fit_passport: false, made_to_order: true },
+    modules: { ...NO_MODULES, made_to_order: true },
     starterPack: { required: ["made-to-order", "print-stamps"], suggested: [] },
   },
   {
@@ -195,7 +205,8 @@ export const VERTICAL_DEFINITIONS: readonly VerticalDefinition[] = [
     icon: "CalendarDays",
     parent: null,
     status: "active",
-    modules: NO_MODULES,
+    // The bookings module; bookings_enabled() in SQL has the same default.
+    modules: { ...NO_MODULES, bookings: true },
     starterPack: { required: [], suggested: [] },
   },
   {

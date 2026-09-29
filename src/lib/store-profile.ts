@@ -19,7 +19,7 @@ export const STORE_VERTICALS = [
 
 export type StoreVertical = (typeof STORE_VERTICALS)[number];
 
-export const STORE_MODULES = ["size_guide", "fit_passport", "made_to_order"] as const;
+export const STORE_MODULES = ["size_guide", "fit_passport", "made_to_order", "bookings"] as const;
 
 export type StoreModuleId = (typeof STORE_MODULES)[number];
 
@@ -61,6 +61,12 @@ export const MODULE_LABELS: Record<
     hintAr: "تبديل جاهز/حسب الطلب، ملاحظات الورشة، ومسار الإرسال للورشة",
     hintEn: "Ready/custom toggle, workshop notes, and the send-to-workshop flow",
   },
+  bookings: {
+    ar: "الحجوزات والتقويم",
+    en: "Bookings & calendar",
+    hintAr: "تقويم للحجز بالتاريخ والوقت، أيام محجوزة ومغلقة، وطلبات الحجز",
+    hintEn: "A calendar to book by date and time, booked and closed days, and booking requests",
+  },
 };
 
 export type StoreProfileSource = {
@@ -88,11 +94,9 @@ export function resolveStoreModules(source: StoreProfileSource | null | undefine
   const vertical = normalizeVertical(source?.store_vertical);
   const overrides = normalizeModuleOverrides(source?.store_modules);
   const defaults = VERTICAL_MODULE_DEFAULTS[vertical];
-  return {
-    size_guide: overrides.size_guide ?? defaults.size_guide,
-    fit_passport: overrides.fit_passport ?? defaults.fit_passport,
-    made_to_order: overrides.made_to_order ?? defaults.made_to_order,
-  };
+  return Object.fromEntries(
+    STORE_MODULES.map((id) => [id, overrides[id] ?? defaults[id]]),
+  ) as StoreModules;
 }
 
 export function isModuleEnabled(

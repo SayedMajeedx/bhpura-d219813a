@@ -100,11 +100,13 @@ describe("what the registry feeds (unchanged from before it)", () => {
       size_guide: true,
       fit_passport: true,
       made_to_order: true,
+      bookings: false,
     });
     expect(VERTICAL_MODULE_DEFAULTS.jewelry).toEqual({
       size_guide: true,
       fit_passport: false,
       made_to_order: true,
+      bookings: false,
     });
     expect(VERTICAL_MODULE_DEFAULTS.print.made_to_order).toBe(true);
     expect(VERTICAL_MODULE_DEFAULTS.coffee.size_guide).toBe(false);

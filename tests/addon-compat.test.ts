@@ -36,6 +36,7 @@ describe("modulesFromAddons compatibility adapter", () => {
       size_guide: true,
       fit_passport: false,
       made_to_order: false,
+      bookings: false,
     });
   });
 
@@ -44,6 +45,7 @@ describe("modulesFromAddons compatibility adapter", () => {
       size_guide: false,
       fit_passport: false,
       made_to_order: false,
+      bookings: false,
     });
 
     const allRows: BrandAddonRow[] = [
@@ -89,6 +91,7 @@ describe("modulesFromAddons compatibility adapter", () => {
       size_guide: true,
       fit_passport: true,
       made_to_order: true,
+      bookings: false,
     });
   });
 });

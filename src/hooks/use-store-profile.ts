@@ -62,7 +62,10 @@ export function useAdminStoreProfile(brandId: string | null | undefined) {
   });
 
   // If brand has addon records, derive modules from installed addons; otherwise fallback to legacy resolution
-  const modules = addons.length > 0 ? modulesFromAddons(addons) : fallbackModules;
+  const modules =
+    addons.length > 0
+      ? modulesFromAddons(addons, { ...data, store_vertical: vertical })
+      : fallbackModules;
   const hasFitPassport =
     addons.length > 0 ? isInstalled(addons, "fit-passport") : Boolean(fallbackModules.fit_passport);
 

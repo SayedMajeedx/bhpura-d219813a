@@ -928,7 +928,10 @@ export function useStoreModules() {
         installed_at: "",
         updated_at: "",
       }));
-      return modulesFromAddons(rows);
+      return modulesFromAddons(rows, {
+        store_vertical: storeVertical,
+        store_modules: storeModules,
+      });
     }
     return resolveStoreModules({
       store_vertical: storeVertical,
