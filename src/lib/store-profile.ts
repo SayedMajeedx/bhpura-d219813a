@@ -4,6 +4,7 @@ export const STORE_VERTICALS = [
   "abayas",
   "fashion",
   "beauty",
+  "fragrance",
   "coffee",
   "food",
   "gifts",
@@ -12,6 +13,7 @@ export const STORE_VERTICALS = [
   "home",
   "electronics",
   "digital",
+  "services",
   "general",
 ] as const;
 
@@ -110,7 +112,10 @@ export function legacyBusinessTypeToVertical(
   if (/digital|رقمي/.test(t)) return "digital";
   if (/abaya|عباي/.test(t)) return "abayas";
   if (/fashion|boutique|أزياء|بوتيك/.test(t)) return "fashion";
-  if (/perfume|beauty|عطر|تجميل/.test(t)) return "beauty";
+  if (/perfume|fragrance|oud|bakhoor|عطر|عطور|عود|بخور|دخون/.test(t)) return "fragrance";
+  if (/beauty|cosmetic|makeup|skincare|تجميل|مكياج|عناية/.test(t)) return "beauty";
+  if (/service|booking|event|rental|booth|salon|خدمات|حجز|فعاليات|تأجير|تاجير/.test(t))
+    return "services";
   if (/print|stamp|طباعة|أختام/.test(t)) return "print";
   if (/jewel|gold|مجوهرات|ذهب/.test(t)) return "jewelry";
   if (/gift|هدايا/.test(t)) return "gifts";

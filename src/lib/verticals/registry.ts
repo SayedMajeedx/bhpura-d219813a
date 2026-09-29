@@ -65,8 +65,8 @@ export const VERTICAL_DEFINITIONS: readonly VerticalDefinition[] = [
   },
   {
     id: "beauty",
-    label: { ar: "عطور وتجميل", en: "Beauty & Perfume" },
-    summary: { ar: "عطور وبخور ومستحضرات تجميل", en: "Fragrance, oud and cosmetics" },
+    label: { ar: "تجميل وعناية", en: "Beauty & Care" },
+    summary: { ar: "مكياج وعناية بالبشرة والشعر", en: "Makeup, skincare and haircare" },
     icon: "Flower2",
     parent: null,
     status: "active",
@@ -74,8 +74,21 @@ export const VERTICAL_DEFINITIONS: readonly VerticalDefinition[] = [
     starterPack: { required: ["beauty-perfume"], suggested: [] },
   },
   {
+    id: "fragrance",
+    label: { ar: "عطور وعود", en: "Perfume & Oud" },
+    summary: {
+      ar: "عطور ودهن عود وبخور وأطقم هدايا",
+      en: "Perfume, oud oil, bakhoor and gift sets",
+    },
+    icon: "SprayCan",
+    parent: "beauty",
+    status: "active",
+    modules: NO_MODULES,
+    starterPack: { required: ["beauty-perfume"], suggested: [] },
+  },
+  {
     id: "food",
-    label: { ar: "مأكولات ومشروبات", en: "Food & Beverage" },
+    label: { ar: "مأكولات وحلويات ومشروبات", en: "Food, Sweets & Drinks" },
     summary: {
       ar: "حلويات ومخبوزات ومشروبات، أوزان وحصص",
       en: "Sweets, bakery and drinks, weights and portions",
@@ -114,8 +127,11 @@ export const VERTICAL_DEFINITIONS: readonly VerticalDefinition[] = [
   },
   {
     id: "gifts",
-    label: { ar: "هدايا وحرف", en: "Gifts & Crafts" },
-    summary: { ar: "هدايا وتغليف وبطاقات إهداء", en: "Gifts, wrapping and gift cards" },
+    label: { ar: "هدايا وورود", en: "Gifts & Flowers" },
+    summary: {
+      ar: "هدايا وورود وتغليف وبطاقات إهداء",
+      en: "Gifts, flowers, wrapping and gift cards",
+    },
     icon: "Gift",
     parent: null,
     status: "active",
@@ -124,7 +140,7 @@ export const VERTICAL_DEFINITIONS: readonly VerticalDefinition[] = [
   },
   {
     id: "print",
-    label: { ar: "طباعة وأختام", en: "Print & Stamps" },
+    label: { ar: "طباعة وتخصيص", en: "Print & Personalisation" },
     summary: {
       ar: "طباعة وأختام وتخصيص حسب الطلب",
       en: "Printing, stamps and made-to-order personalisation",
@@ -151,7 +167,8 @@ export const VERTICAL_DEFINITIONS: readonly VerticalDefinition[] = [
     summary: { ar: "أجهزة وإكسسوارات تقنية", en: "Devices and tech accessories" },
     icon: "Smartphone",
     parent: null,
-    status: "active",
+    // Too far from boutique retail to serve well; kept for any store already on it.
+    status: "legacy",
     modules: NO_MODULES,
     starterPack: { required: [], suggested: [] },
   },
@@ -167,6 +184,19 @@ export const VERTICAL_DEFINITIONS: readonly VerticalDefinition[] = [
     status: "active",
     modules: NO_MODULES,
     starterPack: { required: ["digital-products"], suggested: [] },
+  },
+  {
+    id: "services",
+    label: { ar: "خدمات وفعاليات", en: "Services & Events" },
+    summary: {
+      ar: "خدمات وتأجير وباقات فعاليات بالحجز",
+      en: "Bookable services, rentals and event packages",
+    },
+    icon: "CalendarDays",
+    parent: null,
+    status: "active",
+    modules: NO_MODULES,
+    starterPack: { required: [], suggested: [] },
   },
   {
     id: "general",

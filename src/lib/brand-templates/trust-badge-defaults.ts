@@ -17,9 +17,25 @@ export const VERTICAL_PRODUCT_BADGES: Record<string, TrustBadgeItem> = {
   beauty: {
     id: "badge-vertical-beauty",
     icon: "Sparkles",
-    text_ar: "أصناف ومستحضرات أصلية 100%",
-    text_en: "100% Authentic Beauty & Scents",
+    text_ar: "مستحضرات أصلية 100%",
+    text_en: "100% Authentic Beauty",
     color: "rose",
+    enabled: true,
+  },
+  fragrance: {
+    id: "badge-vertical-fragrance",
+    icon: "Sparkles",
+    text_ar: "عطور وزيوت عطرية أصلية 100%",
+    text_en: "100% Authentic Scents & Oils",
+    color: "amber",
+    enabled: true,
+  },
+  services: {
+    id: "badge-vertical-services",
+    icon: "BadgeCheck",
+    text_ar: "حجوزات مؤكدة وفريق محترف",
+    text_en: "Confirmed Bookings, Professional Team",
+    color: "indigo",
     enabled: true,
   },
   jewelry: {

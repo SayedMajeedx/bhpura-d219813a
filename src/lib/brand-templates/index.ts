@@ -34,12 +34,26 @@ export const VERTICAL_DESIGN_PRESETS: Record<StoreVertical, BrandDesignConfig> =
     sectionSpacing: "airy",
     cardStyle: "borderless",
   },
+  fragrance: {
+    preset: "editorial",
+    grid: 4,
+    radius: "0.5rem",
+    sectionSpacing: "airy",
+    cardStyle: "borderless",
+  },
   coffee: {
     preset: "fresh",
     grid: 4,
     radius: "1.25rem",
     sectionSpacing: "regular",
     cardStyle: "bordered",
+  },
+  services: {
+    preset: "editorial",
+    grid: 4,
+    radius: "0.75rem",
+    sectionSpacing: "airy",
+    cardStyle: "borderless",
   },
   food: {
     preset: "fresh",
@@ -217,11 +231,11 @@ export const RAW_BRAND_TEMPLATES: Record<StoreVertical, BrandTemplate> = {
     radius: "0.75rem",
     trustBadges: [
       {
-        icon: "Sparkles",
-        title_ar: "زيوت عطرية أصلية",
-        title_en: "Authentic Oils",
-        subtitle_ar: "ثبات وفوحان يدوم طويلاً",
-        subtitle_en: "Long lasting sillage",
+        icon: "BadgeCheck",
+        title_ar: "منتجات أصلية 100%",
+        title_en: "100% Authentic",
+        subtitle_ar: "من الوكلاء والموزعين المعتمدين",
+        subtitle_en: "From authorised distributors",
       },
       {
         icon: "ShieldCheck",
@@ -233,6 +247,88 @@ export const RAW_BRAND_TEMPLATES: Record<StoreVertical, BrandTemplate> = {
     ],
     starterModules: VERTICAL_MODULE_DEFAULTS.beauty,
     categories: DEFAULT_VERTICAL_CATEGORIES.beauty,
+  },
+
+  fragrance: {
+    vertical: "fragrance",
+    label: VERTICAL_LABELS.fragrance,
+    fontPresetId: "signature",
+    ...getFontPair("signature"),
+    defaultPalette: {
+      primary: "#3f2a14",
+      secondary: "#c8a165",
+      background: "#fffdf8",
+      text: "#1c1917",
+    },
+    storefrontMode: "shop",
+    catalogShowPrices: true,
+    fulfillment: {
+      delivery: true,
+      pickup: true,
+      digital: false,
+      deliveryFee: 1.5,
+    },
+    radius: "0.5rem",
+    trustBadges: [
+      {
+        icon: "Sparkles",
+        title_ar: "زيوت عطرية أصلية",
+        title_en: "Authentic Oils",
+        subtitle_ar: "ثبات وفوحان يدوم طويلاً",
+        subtitle_en: "Long lasting sillage",
+      },
+      {
+        icon: "Gift",
+        title_ar: "تغليف إهدائي فاخر",
+        title_en: "Gift Wrapping",
+        subtitle_ar: "جاهز للإهداء في كل مناسبة",
+        subtitle_en: "Ready for every occasion",
+      },
+    ],
+    starterModules: VERTICAL_MODULE_DEFAULTS.fragrance,
+    categories: DEFAULT_VERTICAL_CATEGORIES.fragrance,
+  },
+
+  services: {
+    vertical: "services",
+    label: VERTICAL_LABELS.services,
+    fontPresetId: "modern",
+    ...getFontPair("modern"),
+    defaultPalette: {
+      primary: "#1e1b4b",
+      secondary: "#f59e0b",
+      background: "#ffffff",
+      text: "#0f172a",
+    },
+    // A calendar and online bookings come with the bookings add-on; until then
+    // customers ask about a date on WhatsApp.
+    storefrontMode: "catalog",
+    catalogShowPrices: true,
+    fulfillment: {
+      delivery: false,
+      pickup: true,
+      digital: false,
+      deliveryFee: 0,
+    },
+    radius: "1rem",
+    trustBadges: [
+      {
+        icon: "BadgeCheck",
+        title_ar: "حجز مؤكد",
+        title_en: "Confirmed Bookings",
+        subtitle_ar: "نؤكد موعدك مباشرة",
+        subtitle_en: "Your date, confirmed",
+      },
+      {
+        icon: "HeartHandshake",
+        title_ar: "فريق محترف",
+        title_en: "Professional Team",
+        subtitle_ar: "تجهيز وتشغيل كامل للفعالية",
+        subtitle_en: "Full setup on the day",
+      },
+    ],
+    starterModules: VERTICAL_MODULE_DEFAULTS.services,
+    categories: DEFAULT_VERTICAL_CATEGORIES.services,
   },
 
   coffee: {

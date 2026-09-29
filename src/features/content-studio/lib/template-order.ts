@@ -11,6 +11,8 @@ const BEST_FIRST: Record<StoreVertical, readonly string[]> = {
   fashion: ["atelier-reveal", "lookbook-carousel", "swatch-run", "editorial-cover", "detail-zoom"],
   jewelry: ["detail-zoom", "editorial-cover", "atelier-reveal", "lookbook-carousel"],
   beauty: ["atelier-reveal", "swatch-run", "detail-zoom", "price-drop"],
+  fragrance: ["atelier-reveal", "detail-zoom", "occasion-pack", "price-drop"],
+  services: ["occasion-pack", "editorial-cover", "lookbook-carousel", "price-drop"],
   coffee: ["swatch-run", "price-drop", "occasion-pack", "lookbook-carousel"],
   food: ["price-drop", "occasion-pack", "lookbook-carousel", "atelier-reveal"],
   gifts: ["occasion-pack", "lookbook-carousel", "price-drop", "atelier-reveal"],
