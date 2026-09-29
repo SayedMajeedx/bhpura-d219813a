@@ -79,6 +79,24 @@ describe("launch security regressions", () => {
     expect(migration).toContain("WITH CHECK (public.is_super_admin())");
   });
 
+  it("lets only a super admin or trusted server code change a store's vertical", () => {
+    const migration = readFileSync(
+      "supabase/migrations/20260929140000_guard_store_vertical.sql",
+      "utf8",
+    );
+    // The caller's own role decides: the guard must not run as its owner.
+    expect(migration).not.toMatch(/SECURITY DEFINER\s*\n\s*SET search_path/);
+    expect(migration).toContain(
+      "current_user NOT IN ('authenticated', 'anon') OR public.is_super_admin()",
+    );
+    // Only an actual change is refused, so other settings still save.
+    expect(migration).toContain("NEW.store_vertical IS DISTINCT FROM OLD.store_vertical");
+    // An upsert's insert only counts when the brand has no settings row yet.
+    expect(migration).toMatch(/NOT EXISTS \(\s*SELECT 1 FROM public\.business_settings/);
+    expect(migration).toContain("BEFORE INSERT OR UPDATE OF store_vertical");
+    expect(migration).toContain("STORE_VERTICAL_SUPER_ADMIN_ONLY");
+  });
+
   it("signs and securely verifies impersonation session tokens with HMAC", async () => {
     const payload = {
       operatorId: "super-user-123",

@@ -60,6 +60,7 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
+import { useProfile } from "@/lib/profile-context";
 import { useBrandAddons } from "@/hooks/use-brand-addons";
 import { addonDataQueries } from "@/lib/data/addons";
 
@@ -107,6 +108,9 @@ export function StoreProfileCard({
   const [saving, setSaving] = useState(false);
 
   const { profile, isLoading: isProfileLoading } = useAdminStoreProfile(brandId);
+  // The vertical is set by the platform: only a super admin changes it (the
+  // database refuses anyone else); brand staff see it and manage their add-ons.
+  const { isSuperAdmin } = useProfile();
   const { addons, installAddon, disableAddon, isMutating } = useBrandAddons(brandId);
 
   const { data: passportCount } = useQuery(addonDataQueries.fitPassportCount(brandId));
@@ -345,7 +349,7 @@ export function StoreProfileCard({
     setSaving(true);
     try {
       await saveBusinessSettings(brandId, {
-        store_vertical: vertical,
+        ...(isSuperAdmin ? { store_vertical: vertical } : {}),
         fit_profiles: fitProfiles,
         updated_at: new Date().toISOString(),
       });
@@ -471,27 +475,48 @@ export function StoreProfileCard({
         </div>
 
         <div className="space-y-4">
-          <div className="max-w-md space-y-2">
-            <Label htmlFor="store-vertical-select" className="text-sm font-medium">
-              {isAr ? "نوع النشاط التجاري" : "Store Vertical"}
-            </Label>
-            <Select
-              value={vertical}
-              onValueChange={(val) => handleSelectVertical(val as StoreVertical)}
-              disabled={isLoading || saving}
-            >
-              <SelectTrigger id="store-vertical-select" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {STORE_VERTICALS.map((v) => (
-                  <SelectItem key={v} value={v}>
-                    {isAr ? VERTICAL_LABELS[v].ar : VERTICAL_LABELS[v].en}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {!isSuperAdmin ? (
+            <div className="max-w-md space-y-2">
+              <span id="store-vertical-label" className="text-sm font-medium">
+                {isAr ? "نوع النشاط التجاري" : "Store Vertical"}
+              </span>
+              <div
+                aria-labelledby="store-vertical-label"
+                className="flex items-start gap-3 rounded-xl border border-border bg-muted/20 p-3"
+              >
+                <Badge variant="secondary" className="shrink-0 text-xs">
+                  {isAr ? VERTICAL_LABELS[vertical].ar : VERTICAL_LABELS[vertical].en}
+                </Badge>
+                <p className="text-xs text-muted-foreground">
+                  {isAr
+                    ? "يحدّد فريق Boutq نوع نشاط متجرك لأنه يضبط الوحدات والأقسام والمصطلحات. لتغييره، تواصل مع دعم Boutq."
+                    : "Boutq sets your store vertical, because it shapes your modules, categories and wording. To change it, contact Boutq support."}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="max-w-md space-y-2">
+              <Label htmlFor="store-vertical-select" className="text-sm font-medium">
+                {isAr ? "نوع النشاط التجاري" : "Store Vertical"}
+              </Label>
+              <Select
+                value={vertical}
+                onValueChange={(val) => handleSelectVertical(val as StoreVertical)}
+                disabled={isLoading || saving}
+              >
+                <SelectTrigger id="store-vertical-select" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STORE_VERTICALS.map((v) => (
+                    <SelectItem key={v} value={v}>
+                      {isAr ? VERTICAL_LABELS[v].ar : VERTICAL_LABELS[v].en}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between">

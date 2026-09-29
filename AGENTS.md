@@ -10,7 +10,7 @@ Boutq is a multi-tenant e-commerce and brand operations platform for GCC boutiqu
 
 - **Tenants / Brands**: Each merchant owns a brand scoped by `brand_id` and unique `slug` (e.g. `/pura`).
 - **Surfaces**:
-  - **Storefront (`src/routes/$slug.*.tsx`)**: Public shopping experience. Supports bilingual (AR/EN), RTL-first layout, currency formatting, and multiple sales modes (`storefront_mode`: `ecommerce`, `catalog_only`, `inquiry`).
+  - **Storefront (`src/routes/$slug.*.tsx`)**: Public shopping experience. Supports bilingual (AR/EN), RTL-first layout, currency formatting, and two sales modes (`storefront_mode`: `shop` for direct checkout, `catalog` for a showcase with WhatsApp inquiries and optional prices).
   - **Admin Panel (`src/routes/_authenticated/admin.b.$slug.*.tsx`)**: Authenticated back-office for catalog, inventory, orders, marketing, expenses, team, and settings.
   - **Super Admin (`src/routes/_authenticated/admin.super.*.tsx`)**: Platform operations, tenant provisioning, system health, and billing plans.
 - **Storefront Engine (V1 vs V2)**: Governed by `storefront_design_version` (1 or 2) in `business_settings`.
@@ -93,11 +93,11 @@ node scripts/maintainability-metrics.mjs # Architecture metrics & debt ratchet c
 
 ## 6. Core Domain Concepts
 
-1. **Store Verticals & Addon Packs** (`src/lib/addons/addon-registry.ts`): Stores belong to business verticals (`fashion`, `abaya`, `perfume`, `coffee`, `jewelry`, etc.). Verticals determine starter packs, default design presets, and category templates.
+1. **Store Verticals & Addon Packs** (`src/lib/store-profile.ts`, `src/lib/addons/addon-registry.ts`): Stores belong to business verticals (`business_settings.store_vertical`: `abayas`, `fashion`, `beauty`, `coffee`, `food`, `jewelry`, etc.). Verticals determine starter packs, default design presets, and category templates. The vertical is set by the platform: only a super admin (or trusted server code) can change it, enforced by the `guard_store_vertical` trigger; brand staff manage their add-ons.
 2. **Dynamic Variant Option Axes** (`src/lib/variant-axes.ts`): Variants store options in generic columns (`size`, `color`, `fabric`, `option_four`, `option_five`) whose meaning depends on the store (a roastery keeps the roast level in `color`). **Never label or render an option by its column name**: resolve labels and swatch-vs-chip rendering with `useVariantAxes` / `describeVariantAxes`, which combine the store vertical, installed addon packs and per-product label overrides.
 3. **Hero Media Pipeline** (`src/lib/hero-media.ts`, `docs/media-video-pipeline.md`): Media items can be image or video. Videos are transcoded in-browser using WebCodecs + `mediabunny` into faststart MP4s. Resolvers choose optimal dimensions and crop focal points.
 4. **Store Vocabulary** (`src/lib/store-vocabulary.ts`): Terminology adapts per vertical (e.g. "Abayas" vs "Products", "Tailoring" vs "Customization").
-5. **Storefront Modes** (`src/lib/storefront-mode.ts`): Brands can operate as full e-commerce (`ecommerce`), browsing only (`catalog_only`), or WhatsApp/contact inquiries (`inquiry`).
+5. **Storefront Modes** (`src/lib/storefront-mode.ts`): Brands operate as a full shop with checkout (`shop`) or as a catalog (`catalog`): products shown with or without prices (`catalog_show_prices`) and a WhatsApp inquiry instead of checkout.
 
 ---
 
