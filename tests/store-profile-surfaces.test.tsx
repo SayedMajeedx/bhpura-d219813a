@@ -13,8 +13,16 @@ const state = vi.hoisted(() => ({
   invalidateBusinessSettings: vi.fn(async () => undefined),
   updateBrand: vi.fn(async () => undefined),
   invalidateBrand: vi.fn(async () => undefined),
+  isSuperAdmin: false,
 }));
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn(), info: vi.fn() } }));
+// Who is signed in: brand staff, or a platform super admin.
+const profileContext = async (importOriginal: () => Promise<object>) => ({
+  ...(await importOriginal()),
+  useProfile: () => ({ isSuperAdmin: state.isSuperAdmin }),
+});
+vi.mock("../src/lib/profile-context", (io) => profileContext(io));
+vi.mock("@/lib/profile-context", (io) => profileContext(io));
 const fixture = (key: string, value: unknown) => () => ({
   queryKey: ["store-profile-test", key],
   queryFn: async () => value,
@@ -149,6 +157,7 @@ const { queryKeys } = await import("../src/lib/query-keys");
 
 beforeEach(() => {
   vi.clearAllMocks();
+  state.isSuperAdmin = false;
   localStorage.setItem("lang", "en");
 });
 
@@ -186,10 +195,29 @@ describe("the store profile on the screens", () => {
     expect(container.textContent).not.toMatch(/fashion/i);
   });
 
+  it("shows brand staff their vertical read-only, and saves the card without it", async () => {
+    render(<StoreProfileCard brandId="b1" slug="pura" />, { wrapper: withProviders() });
+    expect(await screen.findByText("Specialty Coffee & Roastery")).toBeInTheDocument();
+    expect(screen.getByText(/Boutq sets your store vertical/)).toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "Store Vertical" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Save Changes/ }));
+    await waitFor(() => expect(state.saveBusinessSettings).toHaveBeenCalledTimes(1));
+    const [, saved] = state.saveBusinessSettings.mock.lastCall as unknown as [
+      string,
+      Record<string, unknown>,
+    ];
+    expect(saved).not.toHaveProperty("store_vertical");
+    expect(saved).toHaveProperty("fit_profiles");
+  });
+
   it("saves the store profile card through the settings data layer and refreshes its caches", async () => {
+    // A super admin can pick the vertical, and the card saves it.
+    state.isSuperAdmin = true;
     const qc = new QueryClient();
     const invalidate = vi.spyOn(qc, "invalidateQueries");
     render(<StoreProfileCard brandId="b1" slug="pura" />, { wrapper: withProviders(qc) });
+    expect(await screen.findByRole("combobox", { name: "Store Vertical" })).toBeInTheDocument();
     fireEvent.click(await screen.findByRole("button", { name: /Save Changes/ }));
     await waitFor(() => expect(state.saveBusinessSettings).toHaveBeenCalledTimes(1));
     expect(state.saveBusinessSettings).toHaveBeenCalledWith(
