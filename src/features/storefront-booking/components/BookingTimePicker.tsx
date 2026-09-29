@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { bookingEnd, durations, startTimes } from "@/lib/bookings/rules";
+import { bookingEnd, startTimes } from "@/lib/bookings/rules";
 import { formatClock, formatDuration } from "@/lib/bookings/format";
 import type { BookingFlow } from "@/features/storefront-booking/hooks/use-booking-flow";
 
@@ -48,7 +48,7 @@ export function BookingTimePicker({ flow }: { flow: BookingFlow }) {
           {isAr ? "كم المدة التي تحتاجها؟" : "How long do you need?"}
         </p>
         <div className="flex flex-wrap gap-2">
-          {durations(rules).map((minutes) => (
+          {flow.lengths.map((minutes) => (
             <Chip
               key={minutes}
               selected={durationMinutes === minutes}

@@ -156,7 +156,7 @@ describe("booking from the storefront", () => {
     expect(screen.getByText(/Until/)).toHaveTextContent("Until 10:00 PM");
     fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Sara" } });
     fireEvent.change(screen.getByLabelText("WhatsApp number"), { target: { value: "3900 1122" } });
-    fireEvent.change(screen.getByLabelText("Event area"), { target: { value: "Juffair" } });
+    fireEvent.change(screen.getByLabelText("Event area"), { target: { value: "juffair" } });
     expect(send).toBeEnabled();
     fireEvent.click(send);
 
@@ -171,7 +171,8 @@ describe("booking from the storefront", () => {
         { product_id: "p2", variant_id: "v2", quantity: 1 },
       ],
       customer: { name: "Sara", phone: "3900 1122" },
-      location: { area: "Juffair" },
+      // The label as the customer read it, and the code the travel fees use.
+      location: { area: "Juffair", area_code: "juffair" },
       notes: undefined,
     });
 

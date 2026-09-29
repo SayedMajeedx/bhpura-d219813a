@@ -48,6 +48,7 @@ export function useBookingsPage() {
   const rangeQuery = useQuery(bookingsQueries.range(brand.id, from, to));
   const blocksQuery = useQuery(bookingsQueries.blocks(brand.id, from, to));
   const requestsQuery = useQuery(bookingsQueries.requests(brand.id));
+  const areaFeesQuery = useQuery(bookingsQueries.areaFees(brand.id));
   const bookings = useMemo(() => rangeQuery.data ?? [], [rangeQuery.data]);
   const blocks = useMemo(() => blocksQuery.data ?? [], [blocksQuery.data]);
 
@@ -136,6 +137,8 @@ export function useBookingsPage() {
     dayBookings,
     dayBlocks,
     requests: requestsQuery.data ?? [],
+    /** The store's travel fees by area code. */
+    areaFees: areaFeesQuery.data ?? {},
     setStatus: statusMutation.mutate,
     statusPending: statusMutation.isPending,
     blockDays: blockMutation.mutate,

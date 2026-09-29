@@ -13,10 +13,15 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { saveBookingSettings } from "@/lib/data/bookings";
+import { saveBookingAreaFees, saveBookingSettings } from "@/lib/data/bookings";
 import { minutesOf, type BookingRules } from "@/lib/bookings/rules";
 import { weekdayNames } from "@/lib/bookings/format";
 import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
+import {
+  TravelFeesFields,
+  travelFeeDraft,
+  travelFeesToSave,
+} from "@/features/bookings/components/TravelFeesFields";
 
 /** What is wrong with a set of rules before the database would refuse them. */
 export function rulesProblem(rules: BookingRules, isAr: boolean): string | null {
@@ -56,10 +61,20 @@ export function BookingRulesDialog({
   const [rules, setRules] = useState<BookingRules>(page.rules);
   const set = <K extends keyof BookingRules>(key: K, value: BookingRules[K]) =>
     setRules((current) => ({ ...current, [key]: value }));
-  const problem = rulesProblem(rules, isAr);
+  const [travel, setTravel] = useState(() =>
+    travelFeeDraft(page.rules.travel_fee_default, page.areaFees),
+  );
+  const fees = travelFeesToSave(travel, page.areaFees);
+  const problem =
+    rulesProblem(rules, isAr) ??
+    (fees ? null : isAr ? "تحقق من رسوم التنقل." : "Check the travel fees.");
 
   const save = useMutation({
-    mutationFn: () => saveBookingSettings(brand.id, rules),
+    mutationFn: async () => {
+      if (!fees) return;
+      await saveBookingSettings(brand.id, { ...rules, travel_fee_default: fees.defaultFee });
+      await saveBookingAreaFees(brand.id, fees.byArea);
+    },
     onSuccess: async () => {
       await page.refresh();
       toast.success(isAr ? "تم حفظ قواعد الحجز" : "Booking rules saved");
@@ -209,6 +224,8 @@ export function BookingRulesDialog({
               ))}
             </div>
           </fieldset>
+
+          <TravelFeesFields isAr={isAr} draft={travel} onChange={setTravel} />
 
           {problem && (
             <p className="text-xs text-destructive" role="alert">

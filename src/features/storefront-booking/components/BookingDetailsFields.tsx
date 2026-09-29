@@ -7,7 +7,7 @@ import type { BookingFlow } from "@/features/storefront-booking/hooks/use-bookin
 /** Step 4: who is booking and where the event is. */
 export function BookingDetailsFields({ flow }: { flow: BookingFlow }) {
   const { isAr } = flow;
-  const { name, phone, area, venue, notes } = flow.flow;
+  const { name, phone, areaCode, venue, notes } = flow.flow;
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <div className="space-y-1">
@@ -38,12 +38,18 @@ export function BookingDetailsFields({ flow }: { flow: BookingFlow }) {
         <select
           id="booking-area"
           className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          value={area}
-          onChange={(event) => flow.update({ area: event.target.value })}
+          value={areaCode}
+          onChange={(event) => {
+            const region = BAHRAIN_REGIONS.find((r) => r.value === event.target.value);
+            flow.update({
+              areaCode: region?.value ?? "",
+              area: region ? (isAr ? region.ar : region.en) : "",
+            });
+          }}
         >
           <option value="">{isAr ? "اختر المنطقة" : "Choose an area"}</option>
           {BAHRAIN_REGIONS.map((region) => (
-            <option key={region.value} value={isAr ? region.ar : region.en}>
+            <option key={region.value} value={region.value}>
               {isAr ? region.ar : region.en}
             </option>
           ))}

@@ -2,7 +2,12 @@ import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/storefront-context";
-import { fromPrice, serviceName } from "@/features/storefront-booking/lib/booking-flow";
+import {
+  compareAtFor,
+  priceFor,
+  serviceDurations,
+  serviceName,
+} from "@/features/storefront-booking/lib/booking-flow";
 import type { BookingFlow } from "@/features/storefront-booking/hooks/use-booking-flow";
 
 /** Step 2: one or more services, each at its "from" price. */
@@ -21,7 +26,11 @@ export function BookingServicePicker({ flow }: { flow: BookingFlow }) {
     <ul className="grid gap-2 sm:grid-cols-2">
       {services.map((service) => {
         const chosen = flow.flow.services.includes(service.id);
-        const price = fromPrice(service);
+        const minutes = flow.flow.durationMinutes;
+        const price = priceFor(service, minutes);
+        const was = compareAtFor(service, minutes);
+        // "From" until a duration is chosen for a service priced by duration.
+        const from = !minutes && serviceDurations(service).length > 0;
         return (
           <li key={service.id}>
             <Button
@@ -51,8 +60,13 @@ export function BookingServicePicker({ flow }: { flow: BookingFlow }) {
                 </span>
                 {showPrices && price !== null && (
                   <span className="block text-xs text-muted-foreground">
-                    {isAr ? "من " : "From "}
+                    {from && (isAr ? "من " : "From ")}
                     {formatPrice(price, currency, isAr ? "ar" : "en")}
+                    {was !== null && (
+                      <s className="ms-1.5 opacity-70">
+                        {formatPrice(was, currency, isAr ? "ar" : "en")}
+                      </s>
+                    )}
                   </span>
                 )}
               </span>

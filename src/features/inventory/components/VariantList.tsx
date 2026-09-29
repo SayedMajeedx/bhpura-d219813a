@@ -30,6 +30,7 @@ import { VariantMobileCard } from "@/features/inventory/components/VariantMobile
 import { ManageProductAxesDialog } from "@/features/inventory/components/ManageProductAxesDialog";
 import { VariantDesktopRow } from "@/features/inventory/components/VariantDesktopRow";
 import { BulkVariantDialog } from "@/features/inventory/components/BulkVariantDialog";
+import { DurationPricingDialog } from "@/features/inventory/components/DurationPricingDialog";
 
 export function VariantList({
   productId,
@@ -296,6 +297,7 @@ export function VariantList({
             canViewFinancials={canViewFinancials}
             onChanged={onChanged}
           />
+          <DurationPricingDialog productId={productId} variants={variants} onChanged={onChanged} />
           <ManageProductAxesDialog productId={productId} product={product} onChanged={onChanged} />
         </div>
       </div>

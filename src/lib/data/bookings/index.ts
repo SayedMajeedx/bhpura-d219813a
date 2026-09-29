@@ -1,7 +1,12 @@
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
-import { toBookingRules, type BookingRules, type BookingStatus } from "@/lib/bookings/rules";
+import {
+  toBookingRules,
+  type BookingRules,
+  type BookingStatus,
+  type PublicBookingRules,
+} from "@/lib/bookings/rules";
 import type { BookingHold } from "@/lib/bookings/cart";
 
 /**
@@ -28,6 +33,7 @@ export const bookingsKeys = {
   availability: (brandId: string, from: string, to: string) =>
     [...bookingsKeys.all(brandId), "availability", from, to] as const,
   publicRules: (brandId: string) => [...bookingsKeys.all(brandId), "public-rules"] as const,
+  areaFees: (brandId: string) => [...bookingsKeys.all(brandId), "area-fees"] as const,
 };
 
 /** The store's booking rules, or null when it has not set bookings up. */
@@ -96,12 +102,30 @@ export async function fetchBookingAvailability(brandId: string, from: string, to
 }
 
 /** The rules a storefront needs, or null when the store takes no bookings. */
-export async function fetchPublicBookingRules(brandId: string): Promise<BookingRules | null> {
+export async function fetchPublicBookingRules(brandId: string): Promise<PublicBookingRules | null> {
   const { data, error } = await supabase.rpc("get_public_booking_rules", { p_brand_id: brandId });
   if (error) throw error;
-  return data && typeof data === "object" && !Array.isArray(data)
-    ? toBookingRules(data as Record<string, unknown>)
-    : null;
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+  const row = data as Record<string, unknown>;
+  const fees = row.travel_fees && typeof row.travel_fees === "object" ? row.travel_fees : {};
+  return {
+    ...toBookingRules(row),
+    travel_fees: Object.fromEntries(
+      Object.entries(fees as Record<string, unknown>)
+        .map(([code, fee]) => [code, Number(fee)] as const)
+        .filter(([, fee]) => Number.isFinite(fee)),
+    ),
+  };
+}
+
+/** The store's travel fees by area code (admin). */
+export async function fetchBookingAreaFees(brandId: string): Promise<Record<string, number>> {
+  const { data, error } = await supabase
+    .from("booking_area_fees")
+    .select("area_code, fee")
+    .eq("brand_id", brandId);
+  if (error) throw error;
+  return Object.fromEntries((data ?? []).map((row) => [row.area_code, Number(row.fee)]));
 }
 
 export const bookingsQueries = {
@@ -136,6 +160,12 @@ export const bookingsQueries = {
       enabled: Boolean(brandId),
       staleTime: 30_000,
     }),
+  areaFees: (brandId: string) =>
+    queryOptions({
+      queryKey: bookingsKeys.areaFees(brandId),
+      queryFn: () => fetchBookingAreaFees(brandId),
+      enabled: Boolean(brandId),
+    }),
   publicRules: (brandId: string) =>
     queryOptions({
       queryKey: bookingsKeys.publicRules(brandId),
@@ -153,10 +183,56 @@ export function invalidateBookings(qc: QueryClient, brandId: string) {
 
 /** Saves the store's booking rules (creating them the first time). */
 export async function saveBookingSettings(brandId: string, rules: BookingRules) {
-  const { error } = await supabase
-    .from("booking_settings")
-    .upsert({ ...rules, brand_id: brandId, updated_at: new Date().toISOString() });
+  // The table's columns only (the rules a storefront reads carry more).
+  const row = {
+    brand_id: brandId,
+    timezone: rules.timezone,
+    daily_capacity: rules.daily_capacity,
+    open_time: rules.open_time,
+    last_start_time: rules.last_start_time,
+    slot_minutes: rules.slot_minutes,
+    min_duration_minutes: rules.min_duration_minutes,
+    max_duration_minutes: rules.max_duration_minutes,
+    duration_step_minutes: rules.duration_step_minutes,
+    lead_days: rules.lead_days,
+    horizon_days: rules.horizon_days,
+    hold_minutes: rules.hold_minutes,
+    closed_weekdays: rules.closed_weekdays,
+    deposit_percent: rules.deposit_percent,
+    travel_fee_default: rules.travel_fee_default,
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = await supabase.from("booking_settings").upsert(row);
   if (error) throw error;
+}
+
+/** Saves the store's travel fees by area: set ones are kept, cleared (null) ones removed. */
+export async function saveBookingAreaFees(brandId: string, fees: Record<string, number | null>) {
+  const set = Object.entries(fees).filter(
+    (entry): entry is [string, number] => entry[1] !== null && Number.isFinite(entry[1]),
+  );
+  const cleared = Object.entries(fees)
+    .filter(([, fee]) => fee === null)
+    .map(([code]) => code);
+  if (set.length > 0) {
+    const { error } = await supabase.from("booking_area_fees").upsert(
+      set.map(([area_code, fee]) => ({
+        brand_id: brandId,
+        area_code,
+        fee,
+        updated_at: new Date().toISOString(),
+      })),
+    );
+    if (error) throw error;
+  }
+  if (cleared.length > 0) {
+    const { error } = await supabase
+      .from("booking_area_fees")
+      .delete()
+      .eq("brand_id", brandId)
+      .in("area_code", cleared);
+    if (error) throw error;
+  }
 }
 
 export async function addBookingBlock(
