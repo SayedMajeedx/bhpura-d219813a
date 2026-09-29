@@ -49,6 +49,7 @@ vi.mock("../src/lib/data/business-settings", () => settingsData);
 vi.mock("@/lib/data/business-settings", () => settingsData);
 const catalogData = {
   catalogQueries: {
+    // Prices live on variants; base_price is often empty.
     products: () =>
       fixture("products", () => [
         {
@@ -56,10 +57,15 @@ const catalogData = {
           name: "Photo booth",
           name_en: "Photo booth",
           name_ar: "فوتوبوث",
-          base_price: 55,
+          base_price: null,
           is_active: true,
         },
         { id: "p2", name: "Old", name_en: "Old", name_ar: null, base_price: 10, is_active: false },
+      ]),
+    variants: () =>
+      fixture("variants", () => [
+        { id: "v2", product_id: "p1", selling_price: 70 },
+        { id: "v1", product_id: "p1", selling_price: 55 },
       ]),
   },
 };
@@ -215,7 +221,14 @@ describe("the bookings page", () => {
         start: "18:00",
         durationMinutes: 180,
         customer: { name: "Huda", phone: undefined },
-        items: [expect.objectContaining({ product_id: "p1", quantity: 1, unit_price: 55 })],
+        items: [
+          expect.objectContaining({
+            product_id: "p1",
+            variant_id: "v1",
+            quantity: 1,
+            unit_price: 55,
+          }),
+        ],
         status: "confirmed",
       }),
     );

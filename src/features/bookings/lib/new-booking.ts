@@ -13,6 +13,8 @@ export type BookableProduct = {
   name_ar: string | null;
   base_price: number | null;
   is_active: boolean;
+  /** Its variants; the storefront sells a product at its variants' prices. */
+  variants?: ReadonlyArray<{ id: string; selling_price: number }>;
 };
 
 /** Chosen services: product id → quantity and the price agreed for one. */
@@ -33,9 +35,17 @@ export type NewBookingForm = {
   services: ServiceSelection;
 };
 
-/** A service's price for one, as the store lists it. */
+/** The variant a booking of this service uses: its cheapest ("from" price). */
+export function bookedVariant(product: BookableProduct) {
+  const variants = [...(product.variants ?? [])];
+  variants.sort((a, b) => Number(a.selling_price) - Number(b.selling_price));
+  return variants[0] ?? null;
+}
+
+/** A service's price for one, as the storefront shows it ("from"). */
 export function listedPrice(product: BookableProduct): number {
-  return Number(product.base_price ?? 0);
+  const variant = bookedVariant(product);
+  return Number(variant ? variant.selling_price : (product.base_price ?? 0));
 }
 
 /** The booking's lines, in the catalog's order, with names kept as they are now. */
@@ -47,6 +57,7 @@ export function bookingLines(
     .filter((product) => services[product.id])
     .map((product) => ({
       product_id: product.id,
+      variant_id: bookedVariant(product)?.id ?? null,
       name_en: product.name_en || product.name,
       name_ar: product.name_ar || product.name,
       quantity: services[product.id].quantity,

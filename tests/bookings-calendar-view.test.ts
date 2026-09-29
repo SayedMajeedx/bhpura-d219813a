@@ -13,6 +13,7 @@ import {
   bookingLines,
   bookingTotal,
   formProblems,
+  listedPrice,
   toStaffBooking,
   type NewBookingForm,
 } from "../src/features/bookings/lib/new-booking";
@@ -131,6 +132,22 @@ describe("the new booking form", () => {
       "customer",
     );
     expect(formProblems(form, DEFAULT_BOOKING_RULES, [])).toContain("services");
+  });
+
+  it("prices a service from its cheapest variant, as the storefront does", () => {
+    const withVariants = {
+      ...products[0],
+      base_price: null,
+      variants: [
+        { id: "v2", selling_price: 70 },
+        { id: "v1", selling_price: 55 },
+      ],
+    };
+    expect(listedPrice(withVariants)).toBe(55);
+    expect(bookingLines({ p1: { quantity: 1, unit_price: 55 } }, [withVariants])[0]).toMatchObject({
+      variant_id: "v1",
+    });
+    expect(listedPrice(products[1])).toBe(35);
   });
 
   it("sends the database what it takes", () => {

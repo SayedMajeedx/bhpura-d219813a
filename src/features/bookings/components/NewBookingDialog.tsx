@@ -53,7 +53,17 @@ export function NewBookingDialog({
   const { isAr, rules, brand, currency } = page;
   const lang = isAr ? "ar" : "en";
   const products = useQuery(catalogQueries.products(brand.id)).data;
-  const services = useMemo(() => (products ?? []).filter((p) => p.is_active), [products]);
+  const variants = useQuery(catalogQueries.variants(brand.id)).data;
+  const services = useMemo(
+    () =>
+      (products ?? [])
+        .filter((product) => product.is_active)
+        .map((product) => ({
+          ...product,
+          variants: (variants ?? []).filter((variant) => variant.product_id === product.id),
+        })),
+    [products, variants],
+  );
   const times = startTimes(rules);
   const lengths = durations(rules);
 
