@@ -61,6 +61,7 @@ import { Route as ApiPublicWebhooksTapRouteImport } from './routes/api.public.we
 import { Route as BrandsBrandIdKindFilenameRouteImport } from './routes/brands.$brandId.$kind.$filename'
 import { Route as AuthenticatedAdminBSlugAbandonedCartsRouteImport } from './routes/_authenticated/admin.b.$slug.abandoned-carts'
 import { Route as AuthenticatedAdminBSlugAddonsRouteImport } from './routes/_authenticated/admin.b.$slug.addons'
+import { Route as AuthenticatedAdminBSlugBookingsRouteImport } from './routes/_authenticated/admin.b.$slug.bookings'
 import { Route as AuthenticatedAdminBSlugCampaignsRouteImport } from './routes/_authenticated/admin.b.$slug.campaigns'
 import { Route as AuthenticatedAdminBSlugCategoriesRouteImport } from './routes/_authenticated/admin.b.$slug.categories'
 import { Route as AuthenticatedAdminBSlugCommunicationsRouteImport } from './routes/_authenticated/admin.b.$slug.communications'
@@ -370,6 +371,12 @@ const AuthenticatedAdminBSlugAddonsRoute =
     path: '/addons',
     getParentRoute: () => AuthenticatedAdminBSlugRouteRoute,
   } as any)
+const AuthenticatedAdminBSlugBookingsRoute =
+  AuthenticatedAdminBSlugBookingsRouteImport.update({
+    id: '/bookings',
+    path: '/bookings',
+    getParentRoute: () => AuthenticatedAdminBSlugRouteRoute,
+  } as any)
 const AuthenticatedAdminBSlugCampaignsRoute =
   AuthenticatedAdminBSlugCampaignsRouteImport.update({
     id: '/campaigns',
@@ -603,6 +610,7 @@ export interface FileRoutesByFullPath {
   '/brands/$brandId/$kind/$filename': typeof BrandsBrandIdKindFilenameRoute
   '/admin/b/$slug/abandoned-carts': typeof AuthenticatedAdminBSlugAbandonedCartsRoute
   '/admin/b/$slug/addons': typeof AuthenticatedAdminBSlugAddonsRoute
+  '/admin/b/$slug/bookings': typeof AuthenticatedAdminBSlugBookingsRoute
   '/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
   '/admin/b/$slug/categories': typeof AuthenticatedAdminBSlugCategoriesRoute
   '/admin/b/$slug/communications': typeof AuthenticatedAdminBSlugCommunicationsRoute
@@ -684,6 +692,7 @@ export interface FileRoutesByTo {
   '/brands/$brandId/$kind/$filename': typeof BrandsBrandIdKindFilenameRoute
   '/admin/b/$slug/abandoned-carts': typeof AuthenticatedAdminBSlugAbandonedCartsRoute
   '/admin/b/$slug/addons': typeof AuthenticatedAdminBSlugAddonsRoute
+  '/admin/b/$slug/bookings': typeof AuthenticatedAdminBSlugBookingsRoute
   '/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
   '/admin/b/$slug/categories': typeof AuthenticatedAdminBSlugCategoriesRoute
   '/admin/b/$slug/communications': typeof AuthenticatedAdminBSlugCommunicationsRoute
@@ -768,6 +777,7 @@ export interface FileRoutesById {
   '/brands/$brandId/$kind/$filename': typeof BrandsBrandIdKindFilenameRoute
   '/_authenticated/admin/b/$slug/abandoned-carts': typeof AuthenticatedAdminBSlugAbandonedCartsRoute
   '/_authenticated/admin/b/$slug/addons': typeof AuthenticatedAdminBSlugAddonsRoute
+  '/_authenticated/admin/b/$slug/bookings': typeof AuthenticatedAdminBSlugBookingsRoute
   '/_authenticated/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
   '/_authenticated/admin/b/$slug/categories': typeof AuthenticatedAdminBSlugCategoriesRoute
   '/_authenticated/admin/b/$slug/communications': typeof AuthenticatedAdminBSlugCommunicationsRoute
@@ -853,6 +863,7 @@ export interface FileRouteTypes {
     | '/brands/$brandId/$kind/$filename'
     | '/admin/b/$slug/abandoned-carts'
     | '/admin/b/$slug/addons'
+    | '/admin/b/$slug/bookings'
     | '/admin/b/$slug/campaigns'
     | '/admin/b/$slug/categories'
     | '/admin/b/$slug/communications'
@@ -934,6 +945,7 @@ export interface FileRouteTypes {
     | '/brands/$brandId/$kind/$filename'
     | '/admin/b/$slug/abandoned-carts'
     | '/admin/b/$slug/addons'
+    | '/admin/b/$slug/bookings'
     | '/admin/b/$slug/campaigns'
     | '/admin/b/$slug/categories'
     | '/admin/b/$slug/communications'
@@ -1017,6 +1029,7 @@ export interface FileRouteTypes {
     | '/brands/$brandId/$kind/$filename'
     | '/_authenticated/admin/b/$slug/abandoned-carts'
     | '/_authenticated/admin/b/$slug/addons'
+    | '/_authenticated/admin/b/$slug/bookings'
     | '/_authenticated/admin/b/$slug/campaigns'
     | '/_authenticated/admin/b/$slug/categories'
     | '/_authenticated/admin/b/$slug/communications'
@@ -1438,6 +1451,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBSlugAddonsRouteImport
       parentRoute: typeof AuthenticatedAdminBSlugRouteRoute
     }
+    '/_authenticated/admin/b/$slug/bookings': {
+      id: '/_authenticated/admin/b/$slug/bookings'
+      path: '/bookings'
+      fullPath: '/admin/b/$slug/bookings'
+      preLoaderRoute: typeof AuthenticatedAdminBSlugBookingsRouteImport
+      parentRoute: typeof AuthenticatedAdminBSlugRouteRoute
+    }
     '/_authenticated/admin/b/$slug/campaigns': {
       id: '/_authenticated/admin/b/$slug/campaigns'
       path: '/campaigns'
@@ -1736,6 +1756,7 @@ const AuthenticatedAdminBSlugReportsRouteWithChildren =
 interface AuthenticatedAdminBSlugRouteRouteChildren {
   AuthenticatedAdminBSlugAbandonedCartsRoute: typeof AuthenticatedAdminBSlugAbandonedCartsRoute
   AuthenticatedAdminBSlugAddonsRoute: typeof AuthenticatedAdminBSlugAddonsRoute
+  AuthenticatedAdminBSlugBookingsRoute: typeof AuthenticatedAdminBSlugBookingsRoute
   AuthenticatedAdminBSlugCampaignsRoute: typeof AuthenticatedAdminBSlugCampaignsRoute
   AuthenticatedAdminBSlugCategoriesRoute: typeof AuthenticatedAdminBSlugCategoriesRoute
   AuthenticatedAdminBSlugCommunicationsRoute: typeof AuthenticatedAdminBSlugCommunicationsRoute
@@ -1767,6 +1788,7 @@ const AuthenticatedAdminBSlugRouteRouteChildren: AuthenticatedAdminBSlugRouteRou
     AuthenticatedAdminBSlugAbandonedCartsRoute:
       AuthenticatedAdminBSlugAbandonedCartsRoute,
     AuthenticatedAdminBSlugAddonsRoute: AuthenticatedAdminBSlugAddonsRoute,
+    AuthenticatedAdminBSlugBookingsRoute: AuthenticatedAdminBSlugBookingsRoute,
     AuthenticatedAdminBSlugCampaignsRoute:
       AuthenticatedAdminBSlugCampaignsRoute,
     AuthenticatedAdminBSlugCategoriesRoute:
