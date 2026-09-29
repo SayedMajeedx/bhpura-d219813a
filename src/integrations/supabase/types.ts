@@ -1337,6 +1337,47 @@ export type Database = {
           },
         ];
       };
+      brand_vertical_changes: {
+        Row: {
+          applied: Json;
+          brand_id: string;
+          changed_by: string | null;
+          created_at: string;
+          from_vertical: string;
+          id: string;
+          reason: string;
+          to_vertical: string;
+        };
+        Insert: {
+          applied?: Json;
+          brand_id: string;
+          changed_by?: string | null;
+          created_at?: string;
+          from_vertical: string;
+          id?: string;
+          reason: string;
+          to_vertical: string;
+        };
+        Update: {
+          applied?: Json;
+          brand_id?: string;
+          changed_by?: string | null;
+          created_at?: string;
+          from_vertical?: string;
+          id?: string;
+          reason?: string;
+          to_vertical?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "brand_vertical_changes_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       brands: {
         Row: {
           about_ar: string | null;
@@ -8002,6 +8043,18 @@ export type Database = {
           p_lines: Json;
         };
         Returns: number;
+      };
+      apply_brand_vertical_change: {
+        Args: {
+          p_add_categories?: Json;
+          p_brand_id: string;
+          p_disable_addons?: string[];
+          p_installed_addons?: string[];
+          p_reason: string;
+          p_remove_category_ids?: string[];
+          p_to_vertical: string;
+        };
+        Returns: Json;
       };
       apply_inventory_movement: {
         Args: {

@@ -145,6 +145,25 @@ const addonData = async (importOriginal: () => Promise<object>) => {
 };
 vi.mock("../src/lib/data/addons", (io) => addonData(io));
 vi.mock("@/lib/data/addons", (io) => addonData(io));
+const verticals = async (importOriginal: () => Promise<object>) => {
+  const actual = (await importOriginal()) as { verticalQueries: object };
+  const history = [
+    {
+      id: "v1",
+      from_vertical: "food",
+      to_vertical: "coffee",
+      reason: "Owner now roasts coffee",
+      applied: {},
+      created_at: "2026-09-01T10:00:00Z",
+    },
+  ];
+  return {
+    ...actual,
+    verticalQueries: { ...actual.verticalQueries, history: fixture("vertical-history", history) },
+  };
+};
+vi.mock("../src/lib/data/verticals", (io) => verticals(io));
+vi.mock("@/lib/data/verticals", (io) => verticals(io));
 
 const { Route: accountRoute } = (await import("../src/routes/$slug.account")) as unknown as {
   Route: { options: { component: React.ComponentType } };
@@ -212,18 +231,21 @@ describe("the store profile on the screens", () => {
   });
 
   it("saves the store profile card through the settings data layer and refreshes its caches", async () => {
-    // A super admin can pick the vertical, and the card saves it.
+    // A super admin gets the picker and the history; the vertical itself only
+    // changes through the audited change dialog, never through Save.
     state.isSuperAdmin = true;
     const qc = new QueryClient();
     const invalidate = vi.spyOn(qc, "invalidateQueries");
     render(<StoreProfileCard brandId="b1" slug="pura" />, { wrapper: withProviders(qc) });
     expect(await screen.findByRole("combobox", { name: "Store Vertical" })).toBeInTheDocument();
+    expect(await screen.findByText("Owner now roasts coffee")).toBeInTheDocument();
     fireEvent.click(await screen.findByRole("button", { name: /Save Changes/ }));
     await waitFor(() => expect(state.saveBusinessSettings).toHaveBeenCalledTimes(1));
-    expect(state.saveBusinessSettings).toHaveBeenCalledWith(
-      "b1",
-      expect.objectContaining({ store_vertical: "coffee" }),
-    );
+    const [, saved] = state.saveBusinessSettings.mock.lastCall as unknown as [
+      string,
+      Record<string, unknown>,
+    ];
+    expect(saved).not.toHaveProperty("store_vertical");
     await waitFor(() =>
       expect(invalidate).toHaveBeenCalledWith({
         queryKey: queryKeys.brand.businessSettings("b1"),
