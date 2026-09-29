@@ -4,6 +4,7 @@ import {
   navigateWithViewTransition,
 } from "../src/lib/motion/view-transitions";
 import { BRAND_TEMPLATES, VERTICAL_DESIGN_PRESETS } from "../src/lib/brand-templates";
+import { STORE_VERTICALS } from "../src/lib/store-profile";
 import { buildCartItem } from "../src/lib/cart/add-to-cart";
 
 describe("Storefront 2.0 Layer 3 Tests", () => {
@@ -42,9 +43,9 @@ describe("Storefront 2.0 Layer 3 Tests", () => {
   });
 
   describe("Vertical Design Presets (L3-17)", () => {
-    it("has exact mapping for all 12 verticals to editorial, fresh, or tech", () => {
+    it("has exact mapping for every vertical to editorial, fresh, or tech", () => {
       const verticals = Object.keys(BRAND_TEMPLATES);
-      expect(verticals.length).toBe(12);
+      expect(verticals.sort()).toEqual([...STORE_VERTICALS].sort());
 
       for (const template of Object.values(BRAND_TEMPLATES)) {
         expect(template.design).toBeDefined();

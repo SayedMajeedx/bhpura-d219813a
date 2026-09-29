@@ -97,6 +97,25 @@ describe("launch security regressions", () => {
     expect(migration).toContain("STORE_VERTICAL_SUPER_ADMIN_ONLY");
   });
 
+  it("lets the database accept exactly the verticals the app knows", async () => {
+    // The newest migration that sets the store_vertical CHECK is the live one.
+    const { readdirSync } = await import("node:fs");
+    const { STORE_VERTICALS } = await import("../src/lib/store-profile");
+    const latest = readdirSync("supabase/migrations")
+      .filter((name) => name.endsWith(".sql"))
+      .sort()
+      .map((name) => readFileSync(`supabase/migrations/${name}`, "utf8"))
+      .filter((sql) => sql.includes("ADD CONSTRAINT business_settings_store_vertical_check"))
+      .at(-1)!;
+    const check = latest.slice(
+      latest.indexOf("ADD CONSTRAINT business_settings_store_vertical_check"),
+    );
+    const accepted = [...check.slice(0, check.indexOf(";")).matchAll(/'([a-z_]+)'/g)].map(
+      (m) => m[1],
+    );
+    expect([...accepted].sort()).toEqual([...STORE_VERTICALS].sort());
+  });
+
   it("changes a store's vertical in one audited, super-admin-only transaction", () => {
     const migration = readFileSync(
       "supabase/migrations/20260929160000_vertical_change_audit.sql",

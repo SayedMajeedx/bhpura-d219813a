@@ -5,7 +5,7 @@ import { FONT_MOOD_PRESETS } from "../src/components/settings/QuickThemeCustomiz
 
 describe("Brand Vertical Templates Registry", () => {
   it("provides a template for every store vertical", () => {
-    expect(STORE_VERTICALS.length).toBe(12);
+    expect(Object.keys(BRAND_TEMPLATES).sort()).toEqual([...STORE_VERTICALS].sort());
     for (const vertical of STORE_VERTICALS) {
       const template = BRAND_TEMPLATES[vertical];
       expect(template, `Template for ${vertical} must exist`).toBeDefined();

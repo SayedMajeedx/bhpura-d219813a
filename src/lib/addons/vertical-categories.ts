@@ -74,9 +74,21 @@ export const DEFAULT_VERTICAL_CATEGORIES: Record<StoreVertical, DefaultCategoryS
     },
   ],
   beauty: [
+    { name_ar: "مكياج", name_en: "Makeup", slug: "makeup", sort_order: 1 },
+    { name_ar: "العناية بالبشرة", name_en: "Skincare", slug: "skincare", sort_order: 2 },
+    { name_ar: "العناية بالشعر", name_en: "Haircare", slug: "haircare", sort_order: 3 },
+    { name_ar: "العناية بالجسم", name_en: "Body Care", slug: "body-care", sort_order: 4 },
+  ],
+  fragrance: [
     { name_ar: "عطور نسائية", name_en: "Women's Perfumes", slug: "women-perfumes", sort_order: 1 },
     { name_ar: "عطور رجالية", name_en: "Men's Perfumes", slug: "men-perfumes", sort_order: 2 },
     { name_ar: "دخون وعود", name_en: "Oud & Incense", slug: "oud-incense", sort_order: 3 },
+    { name_ar: "أطقم هدايا", name_en: "Gift Sets", slug: "gift-sets", sort_order: 4 },
+  ],
+  services: [
+    { name_ar: "الباقات", name_en: "Packages", slug: "packages", sort_order: 1 },
+    { name_ar: "إضافات", name_en: "Add-ons & Extras", slug: "extras", sort_order: 2 },
+    { name_ar: "تأجير", name_en: "Rentals", slug: "rentals", sort_order: 3 },
   ],
   abayas: [
     { name_ar: "عبايات يومية", name_en: "Daily Abayas", slug: "daily-abayas", sort_order: 1 },

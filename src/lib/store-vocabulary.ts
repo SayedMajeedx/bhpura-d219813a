@@ -63,12 +63,30 @@ export function getVerticalVocabularyOverrides(vertical?: string | null): Partia
       variant_picker_prompt: { ar: "اختر الحجم أو الوزن", en: "Select size or weight" },
     };
   }
-  if (v === "perfumes" || v === "beauty") {
+  if (v === "perfumes" || v === "fragrance") {
     return {
       specifications_label: { ar: "المكونات العطرية", en: "Fragrance Notes" },
       care_instructions_label: { ar: "إرشادات الاستخدام", en: "Usage Guidelines" },
       sizing_guide: { ar: "دليل الأحجام", en: "Size Guide" },
       variant_picker_prompt: { ar: "اختر الحجم أو العبوة", en: "Select size or bottle" },
+    };
+  }
+  if (v === "beauty") {
+    return {
+      specifications_label: { ar: "المكونات والفوائد", en: "Ingredients & Benefits" },
+      care_instructions_label: { ar: "طريقة الاستخدام", en: "How to Use" },
+      sizing_guide: { ar: "دليل الأحجام", en: "Size Guide" },
+      variant_picker_prompt: { ar: "اختر الدرجة أو الحجم", en: "Select shade or size" },
+    };
+  }
+  if (v === "services") {
+    return {
+      product_noun: { ar: "الخدمة", en: "Service" },
+      collections_noun: { ar: "الباقات", en: "Packages" },
+      specifications_label: { ar: "ما تشمله الباقة", en: "What's Included" },
+      care_instructions_label: { ar: "شروط الحجز والإلغاء", en: "Booking & Cancellation" },
+      sizing_guide: { ar: "دليل الباقات", en: "Package Guide" },
+      variant_picker_prompt: { ar: "اختر الباقة", en: "Choose a package" },
     };
   }
   if (v === "electronics") {

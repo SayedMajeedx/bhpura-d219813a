@@ -31,7 +31,7 @@ export function QuickAddPopover({ product, variants = [], onOpenQuickView }: Qui
   const isFood = ["food", "sweets", "cafe", "coffee", "bakery", "restaurant"].includes(
     storeVertical,
   );
-  const isPerfume = ["perfumes", "beauty", "cosmetics"].includes(storeVertical);
+  const isPerfume = ["perfumes", "fragrance", "beauty", "cosmetics"].includes(storeVertical);
   const isElectronics = ["electronics"].includes(storeVertical);
 
   const customSizeLabel =

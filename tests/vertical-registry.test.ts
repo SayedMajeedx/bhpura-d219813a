@@ -145,8 +145,43 @@ describe("parents and children", () => {
 
   it("offers the verticals in picker order with their depth", () => {
     const picker = pickerVerticals();
-    expect(picker.map((d) => d.id)).toEqual(VERTICAL_DEFINITIONS.map((d) => d.id));
+    expect(picker.map((d) => d.id)).toEqual(
+      VERTICAL_DEFINITIONS.filter((d) => d.status === "active").map((d) => d.id),
+    );
     expect(picker.find((d) => d.id === "abayas")?.depth).toBe(1);
     expect(picker.find((d) => d.id === "fashion")?.depth).toBe(0);
+  });
+
+  it("keeps a legacy vertical out of pickers, except for a store already on it", () => {
+    expect(getVerticalDefinition("electronics").status).toBe("legacy");
+    expect(pickerVerticals().map((d) => d.id)).not.toContain("electronics");
+    expect(pickerVerticals("electronics").map((d) => d.id)).toContain("electronics");
+  });
+});
+
+describe("the refined verticals", () => {
+  it("puts perfume under beauty, with the perfume pack, words and categories", () => {
+    expect(verticalLineage("fragrance")).toEqual(["fragrance", "beauty"]);
+    expect(starterPackFor("fragrance").required).toEqual(["beauty-perfume"]);
+    expect(verticalFits(getAddon("beauty-perfume").activities, "fragrance")).toBe(true);
+    expect(DEFAULT_VERTICAL_CATEGORIES.fragrance.map((c) => c.slug)).toContain("oud-incense");
+    expect(DEFAULT_VERTICAL_CATEGORIES.beauty.map((c) => c.slug)).toContain("skincare");
+  });
+
+  it("adds services as a catalog store until bookings arrive", () => {
+    const services = getVerticalDefinition("services");
+    expect(services.parent).toBeNull();
+    expect(services.status).toBe("active");
+    expect(BRAND_TEMPLATES.services.storefrontMode).toBe("catalog");
+    expect(BRAND_TEMPLATES.services.fulfillment.delivery).toBe(false);
+  });
+
+  it("maps old free-text business types to the new verticals", async () => {
+    const { legacyBusinessTypeToVertical } = await import("../src/lib/store-profile");
+    expect(legacyBusinessTypeToVertical("Perfume & Oud")).toBe("fragrance");
+    expect(legacyBusinessTypeToVertical("عطور")).toBe("fragrance");
+    expect(legacyBusinessTypeToVertical("Beauty salon products")).toBe("beauty");
+    expect(legacyBusinessTypeToVertical("Photo booth rental")).toBe("services");
+    expect(legacyBusinessTypeToVertical("تأجير خيام وفعاليات")).toBe("services");
   });
 });

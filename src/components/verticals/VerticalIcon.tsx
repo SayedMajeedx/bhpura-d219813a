@@ -1,4 +1,5 @@
 import {
+  CalendarDays,
   Coffee,
   FileCode,
   Flower2,
@@ -9,6 +10,7 @@ import {
   Shirt,
   Smartphone,
   Sparkles,
+  SprayCan,
   Store,
   Utensils,
   type LucideIcon,
@@ -18,6 +20,7 @@ import { getVerticalDefinition } from "@/lib/verticals/registry";
 
 /** The icons the vertical registry names; an unknown name shows the store icon. */
 const ICONS: Record<string, LucideIcon> = {
+  CalendarDays,
   Coffee,
   FileCode,
   Flower2,
@@ -28,6 +31,7 @@ const ICONS: Record<string, LucideIcon> = {
   Shirt,
   Smartphone,
   Sparkles,
+  SprayCan,
   Store,
   Utensils,
 };

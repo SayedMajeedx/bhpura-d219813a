@@ -26,7 +26,7 @@ export function BrandStorySection({ className = "" }: BrandStorySectionProps) {
   const isFood = ["food", "sweets", "cafe", "coffee", "bakery", "restaurant"].includes(
     storeVertical,
   );
-  const isPerfumes = ["perfumes", "beauty", "cosmetics"].includes(storeVertical);
+  const isPerfumes = ["perfumes", "fragrance"].includes(storeVertical);
 
   const defaultSubtitle = isFood
     ? isAr
