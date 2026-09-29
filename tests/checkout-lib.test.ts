@@ -215,6 +215,12 @@ describe("placeStorefrontOrderArgs", () => {
     );
     expect(args.p_customer.label).toBe("Kuwait - Home");
     expect(args.p_shipping_zone).toBe("GCC (Kuwait)");
+    // The database works the fee out from where it goes, not from p_shipping_fee.
+    expect(args.p_customer).toMatchObject({ shipping_zone_id: zone.id, country_code: "KW" });
+    expect(placeStorefrontOrderArgs(argsInput()).p_customer).toMatchObject({
+      shipping_zone_id: null,
+      country_code: "BH",
+    });
     expect(
       placeStorefrontOrderArgs(argsInput({ selectedDestination: "gone", selectedZone: undefined }))
         .p_shipping_zone,
