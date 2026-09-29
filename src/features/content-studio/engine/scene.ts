@@ -17,6 +17,8 @@ export type BrandKit = {
   logoTint: "auto" | "original" | "white" | "black";
   handle: string | null;
   contact: string | null;
+  /** The store's headline faces, when the merchant uses them instead of the studio's. */
+  displayFamilies?: { en: string; ar: string } | null;
   palette: { ground: string; ink: string; accent: string; muted: string };
 };
 

@@ -21,6 +21,7 @@ import { useDetailZoom } from "@/features/content-studio/hooks/use-detail-zoom";
 import { useOccasion } from "@/features/content-studio/hooks/use-occasion";
 import { useBatchExport } from "@/features/content-studio/hooks/use-batch-export";
 import { useDrafts } from "@/features/content-studio/hooks/use-drafts";
+import { useStoreFonts } from "@/features/content-studio/hooks/use-store-fonts";
 import {
   readDraftFormat,
   readDraftSettings,
@@ -61,6 +62,8 @@ export function useContentStudio(slug: string) {
   // The logo on animated templates: its size and colour.
   const [logoScale, setLogoScale] = useState(1);
   const [logoTint, setLogoTint] = useState<LogoTint>("auto");
+  // Headlines in the studio's own faces (the templates' editorial serif), or the store's.
+  const [headlineFont, setHeadlineFont] = useState<"studio" | "store">("studio");
   const product = useStudioProduct(brand.id, isAr);
   const { selected, settingsQ } = product;
   const copy = useStudioCopy({ selected, isAr, brandNameEn, defaultEditionLabel });
@@ -143,6 +146,7 @@ export function useContentStudio(slug: string) {
     isAr,
     handle: instagram,
   });
+  const storeFonts = useStoreFonts(settingsQ.data, headlineFont === "store");
   const { buildScene, photoReady } = useTemplateScene({
     format,
     isAr,
@@ -166,6 +170,7 @@ export function useContentStudio(slug: string) {
     occasion: occasion.occasionScene,
     logoScale,
     logoTint,
+    displayFamilies: storeFonts.storeFamilies,
   });
   const templateExport = useTemplateExport({
     template: activeTemplate,
@@ -206,6 +211,7 @@ export function useContentStudio(slug: string) {
         imageFit,
         logoScale,
         logoTint,
+        headlineFont,
         editionLabel,
         headline,
         body,
@@ -253,6 +259,7 @@ export function useContentStudio(slug: string) {
       setImageFit(saved.imageFit);
       setLogoScale(saved.logoScale);
       setLogoTint(saved.logoTint);
+      setHeadlineFont(saved.headlineFont);
       if (draftProduct) product.setProductId(draftProduct.id);
       product.setSelectedVariantId(saved.variantId);
       if (saved.mediaUrl) product.setSelectedMediaUrl(saved.mediaUrl);
@@ -321,6 +328,9 @@ export function useContentStudio(slug: string) {
     setLogoScale,
     logoTint,
     setLogoTint,
+    headlineFont,
+    setHeadlineFont,
+    storeFontsLabel: storeFonts.storeFontsLabel,
     activeTemplate,
     buildScene,
     photoReady,

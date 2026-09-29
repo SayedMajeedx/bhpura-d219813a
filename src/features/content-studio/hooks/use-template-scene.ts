@@ -84,6 +84,7 @@ export function useTemplateScene({
   occasion,
   logoScale,
   logoTint,
+  displayFamilies,
 }: {
   format: FormatKey;
   isAr: boolean;
@@ -112,6 +113,8 @@ export function useTemplateScene({
   occasion: SceneData["occasion"];
   logoScale: number;
   logoTint: LogoTint;
+  /** The store's headline faces, when the merchant uses them (null: the studio's). */
+  displayFamilies: { en: string; ar: string } | null;
 }) {
   const photoImage = useLoadedImage(isCurrentVideo ? null : photo);
   const logoImage = useLoadedImage(logo);
@@ -147,6 +150,7 @@ export function useTemplateScene({
         logo: logoImage,
         logoScale,
         logoTint,
+        displayFamilies,
         handle: instagram,
         contact: phone || null,
         palette: paletteFor(theme),
@@ -191,6 +195,7 @@ export function useTemplateScene({
       logoImage,
       logoScale,
       logoTint,
+      displayFamilies,
       instagram,
       phone,
       theme,

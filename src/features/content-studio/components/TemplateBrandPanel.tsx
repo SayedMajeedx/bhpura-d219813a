@@ -14,7 +14,29 @@ const MAX_SCALE = 2.2;
  * ground; the logo's own colours, white or black override that.
  */
 export function TemplateBrandPanel({ studio }: { studio: ContentStudio }) {
-  const { isAr, logo, logoScale, setLogoScale, logoTint, setLogoTint } = studio;
+  const {
+    isAr,
+    logo,
+    logoScale,
+    setLogoScale,
+    logoTint,
+    setLogoTint,
+    headlineFont,
+    setHeadlineFont,
+    storeFontsLabel,
+  } = studio;
+  const headlineFonts: Array<{ value: "studio" | "store"; label: string; note: string }> = [
+    {
+      value: "studio",
+      label: isAr ? "خط الاستوديو" : "Studio serif",
+      note: isAr ? "الخط التحريري للقوالب" : "The templates' editorial face",
+    },
+    {
+      value: "store",
+      label: isAr ? "خطوط المتجر" : "Store fonts",
+      note: storeFontsLabel,
+    },
+  ];
   const tints: Array<{ value: LogoTint; label: string }> = [
     { value: "auto", label: isAr ? "حسب القالب" : "Match template" },
     { value: "original", label: isAr ? "الألوان الأصلية" : "Original" },
@@ -89,6 +111,40 @@ export function TemplateBrandPanel({ studio }: { studio: ContentStudio }) {
                 )}
               >
                 {tint.label}
+              </Button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <span id="studio-headline-font-label" className="text-xs font-medium text-muted-foreground">
+          {isAr ? "خط العناوين" : "Headline font"}
+        </span>
+        <div
+          role="radiogroup"
+          aria-labelledby="studio-headline-font-label"
+          className="grid grid-cols-2 gap-1.5"
+        >
+          {headlineFonts.map((option) => {
+            const selected = headlineFont === option.value;
+            return (
+              <Button
+                key={option.value}
+                type="button"
+                variant="chip"
+                role="radio"
+                aria-checked={selected}
+                onClick={() => setHeadlineFont(option.value)}
+                className={cn(
+                  "h-auto flex-col items-start gap-0 rounded-lg border-border px-3 py-2 text-start",
+                  selected && "border-primary bg-primary/10 text-foreground",
+                )}
+              >
+                <span className="text-xs font-semibold">{option.label}</span>
+                <span className="w-full truncate text-xs font-normal text-muted-foreground">
+                  {option.note}
+                </span>
               </Button>
             );
           })}

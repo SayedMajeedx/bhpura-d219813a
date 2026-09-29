@@ -224,7 +224,7 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
   const nameY = below + (eyebrow ? 52 * u : 0);
   const fits = slides.map((slide) => {
     const dir = textDirection(slide.name);
-    const family = displayFont(dir === "rtl" ? "ar" : "en");
+    const family = displayFont(dir === "rtl" ? "ar" : "en", scene.brand.displayFamilies);
     const style = dir === "rtl" ? "normal" : "italic";
     const fit = fitText(
       slide.name,

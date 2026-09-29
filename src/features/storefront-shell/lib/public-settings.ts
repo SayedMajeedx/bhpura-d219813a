@@ -1,5 +1,5 @@
 import type { Brand, PublicSettings } from "@/lib/storefront-context";
-import { defaultStorefrontTypography, normalizeTypography } from "@/lib/typography";
+import { resolveStorefrontTypography } from "@/lib/typography";
 import type { TrustBadgesConfig } from "@/lib/trust-badges";
 import { normalizeModuleOverrides, normalizeVertical } from "@/lib/store-profile";
 import type { fetchStorefrontPageData } from "@/lib/data/storefront";
@@ -60,30 +60,7 @@ export function publicSettingsFromPageData(brand: Brand, pageData: PageData): Pu
     background_color: rawEditorialSections[key]?.background_color ?? "",
     background_image_url: rawEditorialSections[key]?.background_image_url ?? "",
   });
-  const legacyTypography = defaultStorefrontTypography();
-  legacyTypography.body.en = {
-    family: s?.storefront_font_en ?? "Inter",
-    url: s?.storefront_font_en_url ?? null,
-  };
-  legacyTypography.body.ar = {
-    family: s?.storefront_font_ar ?? "Tajawal",
-    url: s?.storefront_font_ar_url ?? null,
-  };
-  const storefrontTypography = normalizeTypography(s?.storefront_typography, legacyTypography);
-  if (s?.storefront_font_ar) {
-    storefrontTypography.body.ar = {
-      family: s.storefront_font_ar,
-      url: s.storefront_font_ar_url ?? null,
-    };
-    storefrontTypography.display.ar = storefrontTypography.body.ar;
-  }
-  if (s?.storefront_font_en) {
-    storefrontTypography.body.en = {
-      family: s.storefront_font_en,
-      url: s.storefront_font_en_url ?? null,
-    };
-    storefrontTypography.display.en = storefrontTypography.body.en;
-  }
+  const storefrontTypography = resolveStorefrontTypography(s);
 
   const rawTrustBadges = s?.trust_badges;
   let normalizedTrustBadges: TrustBadgesConfig | null = null;

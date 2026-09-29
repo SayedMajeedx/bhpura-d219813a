@@ -98,7 +98,10 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
 
   // Headline: line by line, rising into place.
   const headline = scene.headline.trim() || scene.productName;
-  const family = displayFont(textDirection(headline) === "rtl" ? "ar" : "en");
+  const family = displayFont(
+    textDirection(headline) === "rtl" ? "ar" : "en",
+    scene.brand.displayFamilies,
+  );
   const fit = fitText(
     headline,
     { maxWidth: W - 2 * margin, maxLines: 2, min: 56 * u, max: layout.headlineMax * u },

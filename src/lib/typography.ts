@@ -454,3 +454,48 @@ export function customFontFaces(config: TypographyConfig, language: TypographyLa
     displayUrl ? face("BoutqDisplayCustom", displayUrl) : "",
   ].join("");
 }
+
+/** The business settings columns a store's typography comes from. */
+export type StorefrontFontSettings = {
+  storefront_font_en?: string | null;
+  storefront_font_ar?: string | null;
+  storefront_font_en_url?: string | null;
+  storefront_font_ar_url?: string | null;
+  storefront_typography?: unknown;
+};
+
+/**
+ * The typography a store's pages use: the typography editor's settings, with
+ * the simple English and Arabic font pickers taking over body and display
+ * when they are set (the pickers were synced to win on 2026-09-09). Shared by
+ * the storefront and the content studio, so both show the same fonts.
+ */
+export function resolveStorefrontTypography(
+  s: StorefrontFontSettings | null | undefined,
+): TypographyConfig {
+  const legacyTypography = defaultStorefrontTypography();
+  legacyTypography.body.en = {
+    family: s?.storefront_font_en ?? "Inter",
+    url: s?.storefront_font_en_url ?? null,
+  };
+  legacyTypography.body.ar = {
+    family: s?.storefront_font_ar ?? "Tajawal",
+    url: s?.storefront_font_ar_url ?? null,
+  };
+  const storefrontTypography = normalizeTypography(s?.storefront_typography, legacyTypography);
+  if (s?.storefront_font_ar) {
+    storefrontTypography.body.ar = {
+      family: s.storefront_font_ar,
+      url: s.storefront_font_ar_url ?? null,
+    };
+    storefrontTypography.display.ar = storefrontTypography.body.ar;
+  }
+  if (s?.storefront_font_en) {
+    storefrontTypography.body.en = {
+      family: s.storefront_font_en,
+      url: s.storefront_font_en_url ?? null,
+    };
+    storefrontTypography.display.en = storefrontTypography.body.en;
+  }
+  return storefrontTypography;
+}
