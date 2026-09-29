@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -46,8 +45,6 @@ import {
   ArrowLeft,
   Ruler,
   Puzzle,
-  CheckCircle2,
-  FolderSync,
   UtensilsCrossed,
   Printer,
   Scissors,
@@ -61,6 +58,8 @@ import {
 import { Link } from "@tanstack/react-router";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useProfile } from "@/lib/profile-context";
+import { VerticalChangeDialog } from "@/components/settings/VerticalChangeDialog";
+import { VerticalHistory } from "@/components/settings/VerticalHistory";
 import { useBrandAddons } from "@/hooks/use-brand-addons";
 import { addonDataQueries } from "@/lib/data/addons";
 
@@ -128,11 +127,8 @@ export function StoreProfileCard({
     }
   }, [profile, isProfileLoading]);
 
-  // Dialog state for vertical change confirmation & starter pack sync
+  // The vertical a super admin is changing to (the change dialog is open while set).
   const [pendingVertical, setPendingVertical] = useState<StoreVertical | null>(null);
-  const [showVerticalChangeDialog, setShowVerticalChangeDialog] = useState(false);
-  const [addonsToDisableSelection, setAddonsToDisableSelection] = useState<AddonId[]>([]);
-  const [syncCategoriesOnVerticalChange, setSyncCategoriesOnVerticalChange] = useState(true);
 
   // Dialog state for reset to defaults confirmation
   const [showResetConfirmDialog, setShowResetConfirmDialog] = useState(false);
@@ -176,68 +172,6 @@ export function StoreProfileCard({
   const handleSelectVertical = (newVertical: StoreVertical) => {
     if (newVertical === vertical) return;
     setPendingVertical(newVertical);
-    setAddonsToDisableSelection([]);
-    setSyncCategoriesOnVerticalChange(true);
-    setShowVerticalChangeDialog(true);
-  };
-
-  const handleConfirmVerticalChange = async () => {
-    if (!pendingVertical) return;
-    setSaving(true);
-    try {
-      // 1. Upsert business_settings store_vertical (never write deprecated store_modules)
-      await saveBusinessSettings(brandId, {
-        store_vertical: pendingVertical,
-        updated_at: new Date().toISOString(),
-      });
-
-      // 2. Install missing required starter pack add-ons
-      const pendingStarter = starterPackFor(pendingVertical);
-      for (const addonId of pendingStarter.required) {
-        if (!isInstalled(addons, addonId)) {
-          await installAddon({ addonId, withDependencies: true });
-        }
-      }
-
-      // 3. Disable any candidate add-ons merchant explicitly chose to disable
-      for (const addonId of addonsToDisableSelection) {
-        await disableAddon({ addonId });
-      }
-
-      // 4. Synchronize categories for the new vertical if requested
-      if (syncCategoriesOnVerticalChange) {
-        await syncBrandVerticalCategories({
-          db: supabase,
-          brandId,
-          newVertical: pendingVertical,
-          replaceEmptyOldCategories: true,
-        });
-        await qc.invalidateQueries({ queryKey: queryKeys.categories.all(brandId) });
-        await qc.invalidateQueries({ queryKey: queryKeys.categories.overview(brandId) });
-      }
-
-      // 5. Invalidate profile, business_settings, and addons caches
-      await qc.invalidateQueries({ queryKey: queryKeys.brand.storeProfile(brandId) });
-      await qc.invalidateQueries({ queryKey: queryKeys.brand.businessSettings(brandId) });
-      await qc.invalidateQueries({ queryKey: queryKeys.brand.profile(brandId) });
-      await qc.invalidateQueries({ queryKey: queryKeys.addons.all(brandId) });
-
-      setVertical(pendingVertical);
-      setShowVerticalChangeDialog(false);
-      setPendingVertical(null);
-
-      toast.success(
-        isAr
-          ? "تم تغيير نشاط المتجر وتحديث إضافات حزمة البداية بنجاح"
-          : "Store vertical and starter pack add-ons updated successfully",
-      );
-    } catch (err: any) {
-      toast.error(
-        err.message || (isAr ? "فشل تحديث نشاط المتجر" : "Failed to update store vertical"),
-      );
-    } finally {
-      setSaving(false);
-    }
   };
 
   const handleToggleAddon = async (addonId: AddonId, checked: boolean) => {
@@ -348,8 +282,8 @@ export function StoreProfileCard({
   const handleSave = async () => {
     setSaving(true);
     try {
+      // The vertical changes only through VerticalChangeDialog (audited).
       await saveBusinessSettings(brandId, {
-        ...(isSuperAdmin ? { store_vertical: vertical } : {}),
         fit_profiles: fitProfiles,
         updated_at: new Date().toISOString(),
       });
@@ -370,23 +304,6 @@ export function StoreProfileCard({
       setSaving(false);
     }
   };
-
-  // Compute items for the vertical change dialog
-  const pendingStarter = pendingVertical
-    ? starterPackFor(pendingVertical)
-    : { required: [], suggested: [] };
-  const toInstall = pendingStarter.required.filter((id) => !isInstalled(addons, id));
-  const candidatesToDisable = (addons || [])
-    .filter((r) => r.status === "installed")
-    .filter((r) => {
-      const manifest = getAddon(r.addon_id);
-      return (
-        manifest &&
-        pendingVertical &&
-        !manifest.activities.includes(pendingVertical) &&
-        !pendingStarter.required.includes(r.addon_id)
-      );
-    });
 
   const isLoading = isProfileLoading || isMutating;
 
@@ -517,6 +434,8 @@ export function StoreProfileCard({
               </Select>
             </div>
           )}
+
+          <VerticalHistory brandId={brandId} isAr={isAr} />
 
           <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between">
@@ -733,184 +652,20 @@ export function StoreProfileCard({
         </div>
       </Container>
 
-      {/* Vertical Change & Starter Pack Synchronization Dialog */}
-      <Dialog
-        open={showVerticalChangeDialog}
-        onOpenChange={(open) => {
-          if (!open) {
-            setShowVerticalChangeDialog(false);
+      {/* A super admin's vertical change: preview, reason, one audited step. */}
+      {isSuperAdmin && (
+        <VerticalChangeDialog
+          brandId={brandId}
+          from={vertical}
+          to={pendingVertical}
+          isAr={isAr}
+          onClose={() => setPendingVertical(null)}
+          onChanged={(next) => {
+            setVertical(next);
             setPendingVertical(null);
-          }
-        }}
-      >
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="size-5 text-primary" />
-              <span>
-                {isAr ? "تغيير نشاط المتجر وتحديث الإضافات" : "Change Store Vertical & Add-ons"}
-              </span>
-            </DialogTitle>
-            <DialogDescription>
-              {isAr
-                ? `تغيير النشاط من "${VERTICAL_LABELS[vertical]?.ar}" إلى "${pendingVertical ? VERTICAL_LABELS[pendingVertical]?.ar : ""}". يمكنك مراجعة حزمة البداية المقترحة أدناه.`
-                : `Changing vertical from "${VERTICAL_LABELS[vertical]?.en}" to "${pendingVertical ? VERTICAL_LABELS[pendingVertical]?.en : ""}". Review the starter pack changes below.`}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            {/* New Vertical Required Add-ons */}
-            <div className="space-y-2">
-              <Label className="text-xs font-medium text-foreground">
-                {isAr
-                  ? "إضافات حزمة البداية التي ستُثبَّت وتُفعَّل:"
-                  : "Starter pack add-ons to install & enable:"}
-              </Label>
-              {toInstall.length > 0 ? (
-                <div className="space-y-1.5 max-h-48 overflow-y-auto pe-1">
-                  {toInstall.map((id) => {
-                    const m = getAddon(id);
-                    return (
-                      <div
-                        key={id}
-                        className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-muted/40 text-xs"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            variant="secondary"
-                            className="text-xs px-1.5 py-0 bg-primary/10 text-primary"
-                          >
-                            {isAr ? "أساسي" : "Required"}
-                          </Badge>
-                          <span className="font-medium text-foreground">
-                            {isAr ? m?.name.ar : m?.name.en}
-                          </span>
-                        </div>
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <CheckCircle2 className="size-3 text-primary" />
-                          <span>{isAr ? "سيتم التثبيت" : "Will install"}</span>
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground p-2 rounded-lg bg-muted/30">
-                  {isAr
-                    ? "جميع الإضافات الأساسية للنشاط الجديد مثبتة ومفعلة مسبقاً."
-                    : "All essential add-ons for the new vertical are already installed."}
-                </p>
-              )}
-            </div>
-
-            {/* Candidate Previous Add-ons to Disable */}
-            {candidatesToDisable.length > 0 && (
-              <div className="space-y-2 pt-2 border-t border-border">
-                <div className="space-y-0.5">
-                  <Label className="text-xs font-medium text-foreground">
-                    {isAr
-                      ? "إضافات النشاط السابق (اختياري - يُقترح إيقافها):"
-                      : "Previous vertical add-ons (optional to disable):"}
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    {isAr
-                      ? "تعطيل الإضافة يخفي واجهاتها فقط مع الحفاظ الكامل على كافة بياناتها المخزنة."
-                      : "Disabling hides UI components while preserving all stored data."}
-                  </p>
-                </div>
-                <div className="space-y-1.5 max-h-40 overflow-y-auto pe-1">
-                  {candidatesToDisable.map((r) => {
-                    const m = getAddon(r.addon_id);
-                    const isChecked = addonsToDisableSelection.includes(r.addon_id);
-                    return (
-                      <label
-                        key={r.addon_id}
-                        className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-muted/20 text-xs cursor-pointer hover:bg-muted/40 transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            checked={isChecked}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setAddonsToDisableSelection((prev) => [...prev, r.addon_id]);
-                              } else {
-                                setAddonsToDisableSelection((prev) =>
-                                  prev.filter((id) => id !== r.addon_id),
-                                );
-                              }
-                            }}
-                          />
-                          <span className="font-medium text-foreground">
-                            {isAr ? m?.name.ar : m?.name.en}
-                          </span>
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          {isChecked
-                            ? isAr
-                              ? "سيتم التعطيل"
-                              : "Will disable"
-                            : isAr
-                              ? "إبقاء مفعلة"
-                              : "Keep active"}
-                        </span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Automatic Category Sync Option */}
-            <div className="space-y-2 pt-2 border-t border-border">
-              <label className="flex items-start gap-3 p-3 rounded-xl border border-primary/20 bg-primary/5 text-xs cursor-pointer hover:bg-primary/10 transition-colors">
-                <Checkbox
-                  checked={syncCategoriesOnVerticalChange}
-                  onCheckedChange={(checked) => setSyncCategoriesOnVerticalChange(Boolean(checked))}
-                  className="mt-0.5"
-                />
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 font-medium text-foreground">
-                    <FolderSync className="size-3.5 text-primary" />
-                    <span>
-                      {isAr
-                        ? "تحديث أقسام المتجر تلقائياً لتناسب النشاط الجديد"
-                        : "Sync store categories automatically for the new vertical"}
-                    </span>
-                  </div>
-                  <p className="text-muted-foreground text-xs leading-relaxed">
-                    {isAr
-                      ? "استبدال الأقسام الافتراضية السابقة الخالية (0 منتجات) بأقسام مقترحة لهذا النشاط، مع الحفاظ التام على أي قسم يحتوي على منتجات حالية."
-                      : "Replaces empty default categories (0 products) with suggested categories for this vertical, while strictly preserving any category that has active products."}
-                  </p>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setShowVerticalChangeDialog(false);
-                setPendingVertical(null);
-              }}
-              disabled={saving}
-            >
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button type="button" onClick={handleConfirmVerticalChange} disabled={saving}>
-              {saving
-                ? isAr
-                  ? "جاري التطبيق..."
-                  : "Applying..."
-                : isAr
-                  ? "تأكيد وتطبيق التغييرات"
-                  : "Confirm & Apply"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          }}
+        />
+      )}
 
       {/* Reset to Defaults Confirmation Dialog */}
       <Dialog

@@ -195,6 +195,54 @@ export interface SyncVerticalCategoriesResult {
  * Strictly protects Pura from any automated changes.
  * Safely preserves any category currently associated with products.
  */
+export type CategoryRow = {
+  id: string;
+  slug: string | null;
+  name_ar: string | null;
+  name_en: string | null;
+};
+
+/**
+ * What a product's category field may hold (its id, slug or either name),
+ * normalised for comparison. A category matched by any of them is in use.
+ */
+export function categoryKeys(category: CategoryRow): string[] {
+  return [category.id, category.slug, category.name_ar, category.name_en]
+    .filter((value): value is string => Boolean(value && value.trim()))
+    .map((value) => value.trim().toLowerCase());
+}
+
+/**
+ * How a store's categories follow a new vertical: the vertical's default
+ * categories that are missing are added, and (when asked) categories no
+ * product uses that are not the vertical's are removed. A category any
+ * product uses is never removed.
+ */
+export function planCategorySync({
+  existing,
+  usedKeys,
+  targets,
+  replaceEmpty,
+}: {
+  existing: readonly CategoryRow[];
+  /** The products' category values, lower-cased and trimmed. */
+  usedKeys: ReadonlySet<string>;
+  targets: readonly DefaultCategorySpec[];
+  replaceEmpty: boolean;
+}): { add: DefaultCategorySpec[]; remove: CategoryRow[] } {
+  const targetSlugs = new Set(targets.map((target) => target.slug.toLowerCase()));
+  const remove = replaceEmpty
+    ? existing.filter((category) => {
+        const slug = (category.slug ?? "").trim().toLowerCase();
+        if (slug && targetSlugs.has(slug)) return false;
+        return !categoryKeys(category).some((key) => usedKeys.has(key));
+      })
+    : [];
+  const existingSlugs = new Set(existing.map((category) => (category.slug ?? "").toLowerCase()));
+  const add = targets.filter((target) => !existingSlugs.has(target.slug.toLowerCase()));
+  return { add, remove };
+}
+
 export async function syncBrandVerticalCategories({
   db,
   brandId,
@@ -239,62 +287,40 @@ export async function syncBrandVerticalCategories({
     }
   }
 
+  const plan = planCategorySync({
+    existing: existingCats,
+    usedKeys: usedCategoryIdentifiers,
+    targets,
+    replaceEmpty: replaceEmptyOldCategories,
+  });
+
   let removedCount = 0;
+  if (plan.remove.length > 0) {
+    const idsToRemove = plan.remove.map((c) => c.id);
+    const { error: delErr } = await db
+      .from("categories")
+      .delete()
+      .eq("brand_id", brandId)
+      .in("id", idsToRemove);
 
-  // 3. If replaceEmptyOldCategories is requested, remove unused old categories
-  // that do NOT match the new vertical's target slugs
-  if (replaceEmptyOldCategories && existingCats.length > 0) {
-    const targetSlugs = new Set(targets.map((t) => t.slug.toLowerCase()));
-
-    const categoriesToRemove = existingCats.filter((c) => {
-      const cSlug = (c.slug || "").trim().toLowerCase();
-      const isTarget = cSlug ? targetSlugs.has(cSlug) : false;
-      if (isTarget) return false;
-
-      const isUsedByNameAr = c.name_ar
-        ? usedCategoryIdentifiers.has(c.name_ar.trim().toLowerCase())
-        : false;
-      const isUsedByNameEn = c.name_en
-        ? usedCategoryIdentifiers.has(c.name_en.trim().toLowerCase())
-        : false;
-      const isUsedBySlug = cSlug ? usedCategoryIdentifiers.has(cSlug) : false;
-      const isUsedById = c.id ? usedCategoryIdentifiers.has(c.id.trim().toLowerCase()) : false;
-
-      // Safe to remove ONLY if 0 products are attached
-      return !isUsedByNameAr && !isUsedByNameEn && !isUsedBySlug && !isUsedById;
-    });
-
-    if (categoriesToRemove.length > 0) {
-      const idsToRemove = categoriesToRemove.map((c) => c.id);
-      const { error: delErr } = await db
-        .from("categories")
-        .delete()
-        .eq("brand_id", brandId)
-        .in("id", idsToRemove);
-
-      if (delErr) throw delErr;
-      removedCount = idsToRemove.length;
-    }
+    if (delErr) throw delErr;
+    removedCount = idsToRemove.length;
   }
 
-  // 4. Insert missing target categories for this vertical
+  // Insert missing target categories for this vertical
   let insertedCount = 0;
+  for (const spec of plan.add) {
+    const { error: insErr } = await db.from("categories").insert({
+      brand_id: brandId,
+      name_ar: spec.name_ar,
+      name_en: spec.name_en,
+      slug: spec.slug,
+      sort_order: spec.sort_order,
+      is_active: true,
+    });
 
-  for (const spec of targets) {
-    const exists = existingCats.some((c) => c.slug.toLowerCase() === spec.slug.toLowerCase());
-    if (!exists) {
-      const { error: insErr } = await db.from("categories").insert({
-        brand_id: brandId,
-        name_ar: spec.name_ar,
-        name_en: spec.name_en,
-        slug: spec.slug,
-        sort_order: spec.sort_order,
-        is_active: true,
-      });
-
-      if (insErr) throw insErr;
-      insertedCount++;
-    }
+    if (insErr) throw insErr;
+    insertedCount++;
   }
 
   return {

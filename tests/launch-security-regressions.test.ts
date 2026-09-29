@@ -97,6 +97,34 @@ describe("launch security regressions", () => {
     expect(migration).toContain("STORE_VERTICAL_SUPER_ADMIN_ONLY");
   });
 
+  it("changes a store's vertical in one audited, super-admin-only transaction", () => {
+    const migration = readFileSync(
+      "supabase/migrations/20260929160000_vertical_change_audit.sql",
+      "utf8",
+    );
+    // The history is readable by the brand, written only by the function.
+    expect(migration).toContain(
+      "ALTER TABLE public.brand_vertical_changes ENABLE ROW LEVEL SECURITY",
+    );
+    expect(migration).toContain("FOR SELECT USING (public.can_access_brand(brand_id))");
+    expect(migration).not.toMatch(
+      /GRANT (INSERT|UPDATE|DELETE|ALL)[^;]*brand_vertical_changes TO authenticated/,
+    );
+    // The function checks the caller itself, locks the row, needs a reason.
+    const body = migration.slice(migration.indexOf("AS $function$"));
+    expect(body.indexOf("public.is_super_admin()")).toBeLessThan(body.indexOf("UPDATE public."));
+    expect(migration).toContain("FOR UPDATE");
+    expect(migration).toContain("VERTICAL_CHANGE_REASON_REQUIRED");
+    // A category a product uses is never removed, checked inside the transaction.
+    expect(migration).toMatch(
+      /DELETE FROM public\.categories[\s\S]*AND NOT EXISTS \(\s*SELECT 1 FROM public\.products/,
+    );
+    expect(migration).toContain("FROM PUBLIC, anon");
+    // Brand staff can no longer delete their store's settings row.
+    expect(migration).toContain('DROP POLICY IF EXISTS "brand delete settings"');
+    expect(migration).toContain("FOR DELETE USING (public.is_super_admin())");
+  });
+
   it("signs and securely verifies impersonation session tokens with HMAC", async () => {
     const payload = {
       operatorId: "super-user-123",
