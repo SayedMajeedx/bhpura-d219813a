@@ -1,4 +1,5 @@
 import type { StoreVertical } from "@/lib/store-profile";
+import { verticalFits, verticalLineage } from "@/lib/verticals/registry";
 import { UNIVERSAL_SIZING_PRESETS } from "@/lib/variant-sku-utils";
 import { listAddons, type SizingPreset } from "./addon-registry";
 
@@ -16,7 +17,7 @@ export function getVerticalSizingPresets(
 
   // Manifest presets contributed by add-ons associated with this vertical
   const manifestPresets = listAddons()
-    .filter((m) => m.activities.includes(currentVertical))
+    .filter((m) => verticalFits(m.activities, currentVertical))
     .flatMap((m) => m.contributions?.sizingPresets || []);
 
   const existingIds = new Set(fromAddons.map((p) => p.id));
@@ -24,7 +25,7 @@ export function getVerticalSizingPresets(
 
   // Apparel verticals keep universal apparel presets.
   // Non-apparel verticals exclude fashion-specific presets so UI stays clean and focused.
-  const isApparel = currentVertical === "abayas" || currentVertical === "fashion";
+  const isApparel = verticalLineage(currentVertical).includes("fashion");
   const universalFiltered = isApparel
     ? UNIVERSAL_SIZING_PRESETS
     : UNIVERSAL_SIZING_PRESETS.filter(

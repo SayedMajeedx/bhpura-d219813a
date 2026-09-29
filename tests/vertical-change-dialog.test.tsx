@@ -13,7 +13,10 @@ const plan = planVerticalChange({
   brandId: BRAND,
   from: "food",
   to: "coffee",
-  installed: [{ addon_id: "food-beverage", status: "installed" }],
+  installed: [
+    { addon_id: "food-beverage", status: "installed" },
+    { addon_id: "gifts", status: "installed" },
+  ],
   categories: [{ id: "c9", slug: "old-empty", name_en: "Old sweets", name_ar: "حلويات قديمة" }],
   usedKeys: new Set(),
   syncCategories: true,
@@ -71,7 +74,7 @@ describe("VerticalChangeDialog", () => {
   it("shows what the change does, read from the server's plan", async () => {
     renderDialog();
     expect(await screen.findByText("Add-ons to install")).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: /Food/ })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /Gifts/ })).not.toBeChecked();
     expect(screen.getByText(/Old sweets/)).toBeInTheDocument();
     expect(data.preview).toHaveBeenCalledWith(BRAND, "coffee", true);
   });
@@ -82,7 +85,7 @@ describe("VerticalChangeDialog", () => {
     await screen.findByText("Add-ons to install");
     expect(apply).toBeDisabled();
 
-    fireEvent.click(screen.getByRole("checkbox", { name: /Food/ }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /Gifts/ }));
     fireEvent.change(screen.getByLabelText(/Reason/), { target: { value: "ok" } });
     expect(apply).toBeDisabled();
     fireEvent.change(screen.getByLabelText(/Reason/), {
@@ -96,7 +99,7 @@ describe("VerticalChangeDialog", () => {
       brandId: BRAND,
       vertical: "coffee",
       reason: "Owner now roasts coffee",
-      disableAddons: ["food-beverage"],
+      disableAddons: ["gifts"],
       syncCategories: true,
     });
     expect(data.invalidateAfterVerticalChange).toHaveBeenCalledTimes(1);

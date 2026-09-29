@@ -12,6 +12,8 @@ import type {
 } from "./addon-types";
 import { TRUST_ICON_CATALOG } from "@/lib/trust-badges";
 import { starterPackFor } from "./starter-packs";
+import { normalizeVertical } from "@/lib/store-profile";
+import { verticalLineage } from "@/lib/verticals/registry";
 
 export { starterPackFor };
 
@@ -302,12 +304,14 @@ export function variantAxisDefaultsFrom(
     fabric?: { ar: string; en: string } | null;
   } = {};
 
-  // 1. If storeVertical is specified, seed defaults from manifests configured for this vertical activity
+  // 1. If storeVertical is specified, seed defaults from manifests configured for this vertical
+  //    activity, broader verticals first so the store's own vertical wins (abayas over fashion).
   if (storeVertical) {
-    const norm = storeVertical.trim().toLowerCase();
-    for (const manifest of ADDON_MANIFESTS) {
-      if (manifest.activities && manifest.activities.map((a) => a.toLowerCase()).includes(norm)) {
-        if (manifest.contributions.variantAxisDefaults) {
+    const lineage = verticalLineage(normalizeVertical(storeVertical.trim().toLowerCase()));
+    for (const vertical of [...lineage].reverse()) {
+      for (const manifest of ADDON_MANIFESTS) {
+        const activities = (manifest.activities ?? []).map((a) => a.toLowerCase());
+        if (activities.includes(vertical) && manifest.contributions.variantAxisDefaults) {
           Object.assign(out, manifest.contributions.variantAxisDefaults);
         }
       }

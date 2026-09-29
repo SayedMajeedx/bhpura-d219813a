@@ -18,17 +18,8 @@ import {
   Eye,
   EyeOff,
   Smartphone,
-  Shirt,
-  UtensilsCrossed,
-  Gift,
-  Printer,
-  Gem,
-  Home,
-  Download,
-  Store,
   Lock,
   Puzzle,
-  Coffee,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StorefrontLivePreview } from "@/components/onboarding/StorefrontLivePreview";
@@ -37,30 +28,12 @@ import {
   getPublicOnboardingPlans,
   getOnboardingTrialDays,
 } from "@/lib/onboarding.functions";
-import {
-  StoreVertical,
-  STORE_VERTICALS,
-  VERTICAL_LABELS,
-  verticalToLegacyBusinessType,
-} from "@/lib/store-profile";
+import { StoreVertical, VERTICAL_LABELS, verticalToLegacyBusinessType } from "@/lib/store-profile";
 import { starterPackFor, getAddon } from "@/lib/addons/addon-registry";
 import { isBrandSlugTaken } from "@/lib/data/brands";
+import { pickerVerticals } from "@/lib/verticals/registry";
+import { VerticalIcon } from "@/components/verticals/VerticalIcon";
 import { signInWithPassword } from "@/lib/auth/sign-in";
-
-const VERTICAL_ICONS: Record<StoreVertical, React.ComponentType<{ className?: string }>> = {
-  [STORE_VERTICALS[0]]: Shirt,
-  fashion: Sparkles,
-  beauty: Sparkles,
-  coffee: Coffee,
-  food: UtensilsCrossed,
-  gifts: Gift,
-  print: Printer,
-  jewelry: Gem,
-  home: Home,
-  electronics: Smartphone,
-  digital: Download,
-  general: Store,
-};
 
 function arabicToLatinSlug(text: string): string {
   const map: Record<string, string> = {
@@ -531,8 +504,7 @@ function OnboardPage() {
                       )}
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                      {STORE_VERTICALS.map((v) => {
-                        const Icon = VERTICAL_ICONS[v];
+                      {pickerVerticals(storeVertical).map(({ id: v }) => {
                         const isSelected = storeVertical === v;
                         return (
                           <Button
@@ -547,7 +519,7 @@ function OnboardPage() {
                                 : "hover:bg-muted text-muted-foreground hover:text-foreground",
                             )}
                           >
-                            <Icon className="size-4 shrink-0" />
+                            <VerticalIcon vertical={v} className="size-4 shrink-0" />
                             <span className="leading-tight text-xs">
                               {VERTICAL_LABELS[v][isAr ? "ar" : "en"]}
                             </span>

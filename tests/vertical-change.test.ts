@@ -21,9 +21,15 @@ const plan = (overrides: Partial<Parameters<typeof planVerticalChange>[0]>) =>
 
 describe("planVerticalChange: add-ons", () => {
   it("installs the new vertical's pack and offers the old one to switch off", () => {
-    const result = plan({ installed: installed("food-beverage") });
+    const result = plan({ from: "coffee", to: "food", installed: installed("coffee-roastery") });
+    expect(result.install).toEqual(["food-beverage"]);
+    expect(result.disableCandidates).toEqual(["coffee-roastery"]);
+  });
+
+  it("keeps a parent vertical's add-ons for its child (a roastery is food and drink)", () => {
+    const result = plan({ installed: installed("food-beverage", "gifts") });
     expect(result.install).toEqual(["coffee-roastery"]);
-    expect(result.disableCandidates).toEqual(["food-beverage"]);
+    expect(result.disableCandidates).toEqual(["gifts"]);
   });
 
   it("installs dependencies before the add-ons that need them", () => {
@@ -178,7 +184,7 @@ describe("vertical change server functions", () => {
     })) as ReturnType<typeof planVerticalChange>;
     expect(result.from).toBe("food");
     expect(result.install).toEqual(["coffee-roastery"]);
-    expect(result.disableCandidates).toEqual(["food-beverage", "gifts"]);
+    expect(result.disableCandidates).toEqual(["gifts"]);
   });
 
   it("installs first, then applies one audited change with only allowed disables", async () => {
@@ -189,7 +195,8 @@ describe("vertical change server functions", () => {
         brandId: BRAND,
         vertical: "coffee",
         reason: "  Owner now roasts coffee  ",
-        disableAddons: ["food-beverage", "coffee-roastery", "made-up"],
+        // food-beverage stays (coffee belongs to food); only gifts may go.
+        disableAddons: ["gifts", "food-beverage", "coffee-roastery", "made-up"],
       },
       context: { supabase: db.supabase },
     });
@@ -209,7 +216,7 @@ describe("vertical change server functions", () => {
       p_to_vertical: "coffee",
       p_reason: "Owner now roasts coffee",
       p_installed_addons: ["coffee-roastery"],
-      p_disable_addons: ["food-beverage"],
+      p_disable_addons: ["gifts"],
       p_remove_category_ids: ["c9"],
     });
     expect(db.writes).toEqual([]); // every write goes through the RPC
