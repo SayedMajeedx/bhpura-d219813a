@@ -1,6 +1,12 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { brandRow, brandsPageMocks, renderBrandsPage } from "./helpers/brands-page";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  brandRow,
+  brandsPageMocks,
+  PRELOAD_TIMEOUT_MS,
+  preloadBrandsPage,
+  renderBrandsPage,
+} from "./helpers/brands-page";
 import type { ServerFn } from "./helpers/server-fn";
 
 const toast = vi.hoisted(() => ({
@@ -80,6 +86,9 @@ const operator = (isSuperAdmin: boolean) => ({
   claims: { email: "majeed@hotmail.com" },
   supabase: { rpc: vi.fn(async () => ({ data: isSuperAdmin, error: null })) },
 });
+
+// The page is big: load it before the tests, not inside the first one.
+beforeAll(preloadBrandsPage, PRELOAD_TIMEOUT_MS);
 
 beforeEach(() => {
   vi.clearAllMocks();

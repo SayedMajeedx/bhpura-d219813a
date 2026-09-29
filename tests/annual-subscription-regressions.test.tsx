@@ -2,8 +2,14 @@ import React from "react";
 import { readFileSync } from "node:fs";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { brandRow, brandsPageMocks, renderBrandsPage } from "./helpers/brands-page";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  brandRow,
+  brandsPageMocks,
+  PRELOAD_TIMEOUT_MS,
+  preloadBrandsPage,
+  renderBrandsPage,
+} from "./helpers/brands-page";
 import { fakeSupabase, type ServerFn } from "./helpers/server-fn";
 
 const toast = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn(), loading: vi.fn() }));
@@ -67,6 +73,9 @@ const functions = (await vi.importActual(
 
 const BRAND = "7b0c8f7e-5a8d-4c55-9b7e-2f6f0c9f1a11";
 const PLAN = "0f2c8f7e-5a8d-4c55-9b7e-2f6f0c9f1a22";
+
+// The page is big: load it before the tests, not inside the first one.
+beforeAll(preloadBrandsPage, PRELOAD_TIMEOUT_MS);
 
 beforeEach(() => {
   vi.clearAllMocks();

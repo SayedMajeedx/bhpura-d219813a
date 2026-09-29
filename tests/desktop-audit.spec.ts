@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
 // Desktop 1920x1080 UX Audit Test Suite
 test.use({
@@ -245,8 +245,26 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+/**
+ * Runs `fn` in the page once it is still: a redirect that lands mid-call
+ * destroys the page's context, so wait for the new page and try again.
+ */
+async function evaluateSettled<T>(page: Page, fn: () => T): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await page.waitForLoadState("domcontentloaded");
+      return await page.evaluate(fn);
+    } catch (error) {
+      const navigated = String(error).includes("Execution context was destroyed");
+      if (!navigated || attempt >= 3) throw error;
+    }
+  }
+}
+
 test("Comprehensive 1920x1080 Desktop UX Audit across all routes", async ({ page }) => {
-  test.setTimeout(120_000);
+  // About twenty routes, each allowed up to 30 s on a cold dev server (the first
+  // visit compiles its modules): a 120 s budget for all of them ran out first.
+  test.setTimeout(300_000);
   const consoleLogs: Array<{ type: string; text: string }> = [];
   page.on("console", (msg) => {
     if (msg.type() === "error" || msg.type() === "warning") {
@@ -257,7 +275,9 @@ test("Comprehensive 1920x1080 Desktop UX Audit across all routes", async ({ page
         lower.includes("wss://") ||
         lower.includes("ws://") ||
         lower.includes("failed to load resource") ||
-        lower.startsWith("typeerror: failed to fetch") ||
+        // A request the browser dropped (often cut short by the session guard's
+        // redirect), also when a data layer wraps it in its own error message.
+        lower.includes("typeerror: failed to fetch") ||
         (lower.includes("[realtime] subscription error") && lower.includes("transport failure")) ||
         lower.includes("net::err_") ||
         // Chrome notice when the unsaved-changes guard fires during scripted
@@ -385,20 +405,33 @@ test("Comprehensive 1920x1080 Desktop UX Audit across all routes", async ({ page
     await expect(page.locator("body"), `${path} must not hang`).not.toHaveText(/^Loading\.\.\.$/, {
       timeout: 30_000,
     });
-    const headingScope = page.url().includes("/auth")
-      ? page.locator("h1")
-      : page.locator("main h1");
+    // Where the heading lives is decided on every poll, not once: the session
+    // guard can redirect to /auth after the page has started to render, and a
+    // scope picked before the redirect would wait on the wrong page.
+    // Pages without the app shell (sign-in, and the "account awaiting setup"
+    // screen the app shows when the profile cannot be read) have no <main>:
+    // their one heading is the page's h1.
+    const headingScope = async () =>
+      page.url().includes("/auth") || (await page.locator("main").count()) === 0
+        ? page.locator("h1")
+        : page.locator("main h1");
     // Same allowance as the hang check above: on a cold dev server the first
     // visit to a route compiles its modules, which can take well over 5s in CI.
-    await expect(headingScope, `${path} must expose one page heading`).toHaveCount(1, {
-      timeout: 30_000,
+    await expect
+      .poll(async () => (await headingScope()).count(), {
+        message: `${path} must expose one page heading`,
+        timeout: 30_000,
+      })
+      .toBe(1);
+    await expect
+      .poll(async () => (await headingScope()).isVisible(), {
+        message: `${path} page heading must be visible`,
+        timeout: 30_000,
+      })
+      .toBe(true);
+    const hasDocumentOverflow = await evaluateSettled(page, () => {
+      return document.documentElement.scrollWidth > document.documentElement.clientWidth;
     });
-    await expect(headingScope, `${path} page heading must be visible`).toBeVisible({
-      timeout: 30_000,
-    });
-    const hasDocumentOverflow = await page.evaluate(
-      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-    );
     expect(hasDocumentOverflow, `${path} has document-level horizontal overflow`).toBe(false);
   }
 

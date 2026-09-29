@@ -1,8 +1,13 @@
 import React from "react";
 import { readFileSync } from "node:fs";
 import { fireEvent, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { brandsPageMocks, renderBrandsPage } from "./helpers/brands-page";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  brandsPageMocks,
+  PRELOAD_TIMEOUT_MS,
+  preloadBrandsPage,
+  renderBrandsPage,
+} from "./helpers/brands-page";
 
 // The user-management edge function runs on Deno; its contract stays a source check.
 const userManagement = readFileSync("supabase/functions/user-management/index.ts", "utf8");
@@ -57,6 +62,9 @@ const wizardData = (overrides: Partial<WizardData> = {}) =>
     plan_type: "trial",
     ...overrides,
   }) as WizardData;
+
+// The page is big: load it before the tests, not inside the first one.
+beforeAll(preloadBrandsPage, PRELOAD_TIMEOUT_MS);
 
 beforeEach(() => {
   vi.clearAllMocks();
