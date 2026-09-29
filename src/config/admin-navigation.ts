@@ -1,4 +1,5 @@
 import {
+  CalendarDays,
   LayoutDashboard,
   Package,
   Users,
@@ -282,6 +283,21 @@ export function getAdminNavItems({
       category: "money_reports",
       workspace: "operations",
       tier: "core",
+    },
+    {
+      id: "bookings",
+      to: "/admin/b/$slug/bookings",
+      params: { slug: activeSlug },
+      labelEn: "Bookings",
+      labelAr: lang === "ar" ? "الحجوزات" : "Bookings",
+      descriptionEn: "Booking calendar, booked and blocked days, and booking requests",
+      descriptionAr: "تقويم الحجوزات، الأيام المحجوزة والمغلقة، وطلبات الحجز",
+      icon: CalendarDays,
+      permission: "manage_orders",
+      section: "operations",
+      category: "money_reports",
+      workspace: "operations",
+      tier: "modular",
     },
     {
       id: "returns",
@@ -622,6 +638,7 @@ export function getAdminNavItems({
     if (item.adminOnly && !isAdmin) return false;
     if (item.permission && !hasPermission(item.permission)) return false;
     if (item.id === "size-guides" && !storeModules?.size_guide) return false;
+    if (item.id === "bookings" && !storeModules?.bookings) return false;
     if (storefrontMode === "catalog") {
       if (item.id === "abandoned-carts" || item.id === "loyalty" || item.id === "discounts") {
         return false;

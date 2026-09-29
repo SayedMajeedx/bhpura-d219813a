@@ -76,6 +76,9 @@ node scripts/maintainability-metrics.mjs # Architecture metrics & debt ratchet c
   - Storefront checkout: `src/routes/$slug.checkout.tsx` (composition) + `src/features/checkout/` (validation, `place_storefront_order` args, hooks, sections); `src/routes/$slug.thank-you.$orderId.tsx`
   - Admin dashboard: `src/features/dashboard/` (`useDashboardData`, pure metrics in `lib/dashboard-metrics.ts`, KPI cards)
   - State machine & returns: `src/lib/order-workflow.ts`, `src/lib/returns.functions.ts`
+- **Bookings (services stores)**:
+  - Admin calendar: `src/features/bookings/` (`hooks/use-bookings-page.ts`; `components/` for the calendar, day panel, new booking, requests and rules; `lib/` for the pure calendar view and new-booking rules). The route `src/routes/_authenticated/admin.b.$slug.bookings.tsx` only mounts the page; the menu item shows when the store's `bookings` module is on.
+  - Rules and day states: `src/lib/bookings/rules.ts` (mirrors the database's `booking_day_state`); data: `src/lib/data/bookings/`; engine: `supabase/migrations/20260930100000_bookings_engine.sql`.
 - **Storefront Hero & Media**:
   - Components: `HeroBanner` in `src/features/storefront-home/components/` (V1), `src/components/storefront/HeroV2.tsx` (V2). Home page rules: `src/features/storefront-home/lib/home-products.ts`; storefront shell (settings normaliser, head, theme, footer): `src/features/storefront-shell/`
   - Resolvers & aspect logic: `src/lib/hero-media.ts`, `src/lib/media-aspect.ts`
