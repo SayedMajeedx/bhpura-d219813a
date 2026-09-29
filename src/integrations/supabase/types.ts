@@ -704,6 +704,7 @@ export type Database = {
           ends_at: string;
           event_date: string;
           hold_expires_at: string | null;
+          hold_token: string | null;
           id: string;
           location: Json;
           notes: string | null;
@@ -731,6 +732,7 @@ export type Database = {
           ends_at: string;
           event_date: string;
           hold_expires_at?: string | null;
+          hold_token?: string | null;
           id?: string;
           location?: Json;
           notes?: string | null;
@@ -758,6 +760,7 @@ export type Database = {
           ends_at?: string;
           event_date?: string;
           hold_expires_at?: string | null;
+          hold_token?: string | null;
           id?: string;
           location?: Json;
           notes?: string | null;
@@ -8525,6 +8528,7 @@ export type Database = {
           ends_at: string;
           event_date: string;
           hold_expires_at: string | null;
+          hold_token: string | null;
           id: string;
           location: Json;
           notes: string | null;
@@ -8972,6 +8976,19 @@ export type Database = {
         Args: { p_brand_slug: string };
         Returns: boolean;
       };
+      hold_booking: {
+        Args: {
+          p_brand_id: string;
+          p_customer: Json;
+          p_day: string;
+          p_duration_minutes: number;
+          p_items: Json;
+          p_location?: Json;
+          p_notes?: string;
+          p_start: string;
+        };
+        Returns: Json;
+      };
       is_active: { Args: never; Returns: boolean };
       is_admin: { Args: never; Returns: boolean };
       is_brand_admin: { Args: never; Returns: boolean };
@@ -9110,6 +9127,27 @@ export type Database = {
       order_inventory_transition: {
         Args: { p_order_id: string };
         Returns: undefined;
+      };
+      place_booking_order: {
+        Args: {
+          p_benefit_receipt_id?: string;
+          p_booking_id: string;
+          p_branch_id?: string;
+          p_brand_slug: string;
+          p_customer: Json;
+          p_digital_channel?: string;
+          p_digital_contact?: string;
+          p_fulfillment?: string;
+          p_hold_token: string;
+          p_idempotency_key?: string;
+          p_items: Json;
+          p_notes?: string;
+          p_payment_method: string;
+          p_promo_code?: string;
+          p_shipping_fee?: number;
+          p_shipping_zone?: string;
+        };
+        Returns: Json;
       };
       place_storefront_order:
         | {
@@ -9359,6 +9397,7 @@ export type Database = {
           ends_at: string;
           event_date: string;
           hold_expires_at: string | null;
+          hold_token: string | null;
           id: string;
           location: Json;
           notes: string | null;
@@ -9820,6 +9859,7 @@ export type Database = {
           ends_at: string;
           event_date: string;
           hold_expires_at: string | null;
+          hold_token: string | null;
           id: string;
           location: Json;
           notes: string | null;
