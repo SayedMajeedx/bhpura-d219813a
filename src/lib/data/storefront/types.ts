@@ -34,6 +34,8 @@ export type ProductRow = {
     size_unit?: string | null;
     color: string | null;
     image_url?: string | null;
+    /** Set when a service is priced by how long it is booked. */
+    duration_minutes?: number | null;
   }>;
 };
 

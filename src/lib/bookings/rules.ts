@@ -32,7 +32,22 @@ export type BookingRules = {
   closed_weekdays: number[];
   /** Share of the total a card payment takes now (0 = none, 100 = all). */
   deposit_percent: number;
+  /** The travel fee for an area without its own fee; null = no travel fees. */
+  travel_fee_default: number | null;
 };
+
+/** The storefront's rules also carry the per-area travel fees (area code to fee). */
+export type PublicBookingRules = BookingRules & { travel_fees: Record<string, number> };
+
+/** The travel fee for an area: its own fee, else the store's default, else none (as booking_travel_fee). */
+export function travelFeeFor(
+  rules: Pick<PublicBookingRules, "travel_fees" | "travel_fee_default">,
+  areaCode: string | null | undefined,
+): number | null {
+  const own = areaCode ? rules.travel_fees?.[areaCode] : undefined;
+  if (typeof own === "number") return own;
+  return rules.travel_fee_default ?? null;
+}
 
 export const DEFAULT_BOOKING_RULES: BookingRules = {
   timezone: "Asia/Bahrain",
@@ -48,6 +63,7 @@ export const DEFAULT_BOOKING_RULES: BookingRules = {
   hold_minutes: 15,
   closed_weekdays: [],
   deposit_percent: 0,
+  travel_fee_default: null,
 };
 
 export type DayState = "past" | "beyond" | "closed" | "blocked" | "full" | "available";
@@ -199,6 +215,10 @@ export function toBookingRules(
     horizon_days: number("horizon_days"),
     hold_minutes: number("hold_minutes"),
     deposit_percent: number("deposit_percent"),
+    travel_fee_default:
+      row.travel_fee_default === null || row.travel_fee_default === undefined
+        ? null
+        : Number(row.travel_fee_default),
     closed_weekdays: Array.isArray(row.closed_weekdays)
       ? (row.closed_weekdays as unknown[]).filter((d): d is number => typeof d === "number")
       : [],

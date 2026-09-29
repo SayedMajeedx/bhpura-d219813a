@@ -14,6 +14,8 @@ const state = vi.hoisted(() => ({
   blocks: [] as unknown[],
   bookingsModule: true,
   saveBookingSettings: vi.fn(async () => undefined),
+  saveBookingAreaFees: vi.fn(async () => undefined),
+  areaFees: {} as Record<string, number>,
   setBookingStatus: vi.fn(async () => ({})),
   addBookingBlock: vi.fn(async () => undefined),
   removeBookingBlock: vi.fn(async () => undefined),
@@ -31,10 +33,11 @@ const bookingsData = {
     range: () => fixture("range", () => state.bookings),
     blocks: () => fixture("blocks", () => state.blocks),
     requests: () => fixture("requests", () => state.requests),
+    areaFees: () => fixture("area-fees", () => state.areaFees),
   },
   invalidateBookings: vi.fn(async () => undefined),
-  bookingErrorMessage: (message: string) => message,
   saveBookingSettings: state.saveBookingSettings,
+  saveBookingAreaFees: state.saveBookingAreaFees,
   setBookingStatus: state.setBookingStatus,
   addBookingBlock: state.addBookingBlock,
   removeBookingBlock: state.removeBookingBlock,
@@ -159,6 +162,24 @@ describe("the bookings page", () => {
     await waitFor(() =>
       expect(state.saveBookingSettings).toHaveBeenCalledWith("b1", DEFAULT_BOOKING_RULES),
     );
+  });
+
+  it("saves travel fees: a default and one area's own", async () => {
+    state.areaFees = { hidd: 12 };
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Booking rules" }));
+    fireEvent.change(await screen.findByLabelText(/Default fee/), { target: { value: "5" } });
+    // The saved area fee shows the list already open.
+    fireEvent.change(screen.getByLabelText("Juffair"), { target: { value: "3" } });
+    fireEvent.change(screen.getByLabelText("Hidd"), { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(state.saveBookingAreaFees).toHaveBeenCalledTimes(1));
+    expect(state.saveBookingSettings).toHaveBeenCalledWith(
+      "b1",
+      expect.objectContaining({ travel_fee_default: 5 }),
+    );
+    expect(state.saveBookingAreaFees).toHaveBeenCalledWith("b1", { hidd: null, juffair: 3 });
+    state.areaFees = {};
   });
 
   it("shows the month with booked days and waiting requests", async () => {

@@ -231,6 +231,38 @@ describe("launch security regressions", () => {
     expect(sql).toContain("'deposit_percent', s.deposit_percent");
   });
 
+  it("prices bookings by duration and area on the server, never from the browser", () => {
+    const sql = readFileSync("supabase/migrations/20260930180000_booking_pricing.sql", "utf8");
+    // A duration-priced service is booked at its length's variant, whatever was asked.
+    expect(sql).toMatch(
+      /WHEN EXISTS \([\s\S]*dv\.duration_minutes IS NOT NULL\s*\) THEN v\.duration_minutes = p_duration_minutes/,
+    );
+    expect(sql).toContain("BOOKING_DURATION_NOT_OFFERED");
+    // Travel fees come from the store's own table, keyed by area code.
+    expect(sql).toContain("ALTER TABLE public.booking_area_fees ENABLE ROW LEVEL SECURITY");
+    expect(sql).toContain("REVOKE ALL ON public.booking_area_fees FROM anon");
+    expect(sql).toContain(
+      "v_travel_fee := public.booking_travel_fee(p_brand_id, p_location ->> 'area_code');",
+    );
+    // At checkout the booking's travel fee is the order's delivery fee.
+    expect(sql).toMatch(
+      /p_shipping_fee => CASE\s+WHEN v_booking\.travel_fee IS NOT NULL AND p_fulfillment = 'delivery' THEN v_booking\.travel_fee/,
+    );
+    // Every earlier guard of the checkout and of requests is kept.
+    for (const guard of [
+      "v_booking.hold_token <> p_hold_token",
+      "BOOKING_ITEMS_MISMATCH",
+      "BOOKING_HOLD_EXPIRED",
+      "deposit_amount = CASE",
+      "IF v_count >= 60 THEN",
+      "IF v_count >= 3 THEN",
+      "public.booking_day_state(v_settings, p_day);",
+    ]) {
+      expect(sql).toContain(guard);
+    }
+    expect(sql).toContain("'travel_fees', COALESCE((");
+  });
+
   it("changes a store's vertical in one audited, super-admin-only transaction", () => {
     const migration = readFileSync(
       "supabase/migrations/20260929160000_vertical_change_audit.sql",

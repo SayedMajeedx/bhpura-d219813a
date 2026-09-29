@@ -7,7 +7,6 @@ import { bookingEnd } from "@/lib/bookings/rules";
 import { dayTitle, formatClock } from "@/lib/bookings/format";
 import {
   bookingWhatsAppText,
-  chosenTotal,
   serviceName,
   whatsAppLink,
   type FlowStep,
@@ -96,8 +95,8 @@ export function StorefrontBookingPage({ initialService }: { initialService?: str
     );
   }
 
-  const chosen = flow.services.filter((service) => flow.flow.services.includes(service.id));
-  const total = chosenTotal(flow.flow.services, flow.services);
+  const chosen = flow.chosen;
+  const total = flow.servicesTotal + (flow.flow.areaCode ? (flow.travelFee ?? 0) : 0);
   const stepIndex = flow.step ? STEPS.findIndex((step) => step.id === flow.step) : STEPS.length;
   const done = (id: FlowStep) => STEPS.findIndex((step) => step.id === id) < stepIndex;
 
@@ -175,6 +174,16 @@ export function StorefrontBookingPage({ initialService }: { initialService?: str
       </Step>
 
       <section className="sticky bottom-0 space-y-3 rounded-2xl border border-border bg-card p-4 shadow-lg">
+        {showPrices && flow.flow.areaCode && flow.travelFee !== null && flow.travelFee > 0 && (
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">
+              {isAr ? `التنقل إلى ${flow.flow.area}` : `Travel to ${flow.flow.area}`}
+            </span>
+            <span className="text-foreground" dir="ltr">
+              {formatPrice(flow.travelFee, currency, lang)}
+            </span>
+          </div>
+        )}
         {chosen.length > 0 && showPrices && (
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">

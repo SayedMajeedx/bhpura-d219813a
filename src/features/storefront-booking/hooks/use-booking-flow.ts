@@ -14,11 +14,13 @@ import {
   type BookingRequestResult,
 } from "@/lib/data/bookings";
 import { bookingErrorMessage } from "@/lib/bookings/errors";
-import { todayIn, type DayState } from "@/lib/bookings/rules";
+import { durations, todayIn, travelFeeFor, type DayState } from "@/lib/bookings/rules";
 import { gridRange, shiftMonth } from "@/lib/bookings/format";
 import {
   bookableServices,
+  chosenTotal,
   EMPTY_FLOW,
+  offeredDurations,
   missingStep,
   toBookingRequest,
   type FlowState,
@@ -107,7 +109,9 @@ export function useBookingFlow(initialService?: string) {
     },
   });
 
-  const step = rules ? missingStep(flow, rules, dayStates) : "date";
+  const chosen = services.filter((service) => flow.services.includes(service.id));
+  const step = rules ? missingStep(flow, rules, dayStates, services) : "date";
+  const travelFee = rules ? travelFeeFor(rules, flow.areaCode) : null;
 
   return {
     brand,
@@ -129,6 +133,13 @@ export function useBookingFlow(initialService?: string) {
     update,
     toggleService,
     step,
+    chosen,
+    /** The durations every chosen service is offered for. */
+    lengths: rules ? offeredDurations(durations(rules), chosen) : [],
+    /** The services at the chosen duration's prices. */
+    servicesTotal: chosenTotal(flow.services, services, flow.durationMinutes),
+    /** The trip to the event's area (null: the store charges none). */
+    travelFee,
     /** Catalog stores send a request; shop stores hold the day and check out. */
     catalog,
     submit: () => (catalog ? submit.mutate() : checkout.mutate()),
