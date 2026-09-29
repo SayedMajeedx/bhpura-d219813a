@@ -6,13 +6,13 @@ import { useI18n } from "@/lib/i18n";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
 import {
   addBookingBlock,
-  bookingErrorMessage,
   bookingsQueries,
   invalidateBookings,
   removeBookingBlock,
   setBookingStatus,
   type Booking,
 } from "@/lib/data/bookings";
+import { bookingErrorMessage } from "@/lib/bookings/errors";
 import { DEFAULT_BOOKING_RULES, todayIn, type BookingStatus } from "@/lib/bookings/rules";
 import { summariseMonth } from "@/features/bookings/lib/calendar-view";
 import { gridRange, shiftMonth } from "@/lib/bookings/format";

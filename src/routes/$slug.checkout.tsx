@@ -20,6 +20,7 @@ import { useAbandonedCart } from "@/features/checkout/hooks/use-abandoned-cart";
 import { useCheckoutLoyalty } from "@/features/checkout/hooks/use-checkout-loyalty";
 import { usePlaceOrder } from "@/features/checkout/hooks/use-place-order";
 import { PaymentFailedCard } from "@/features/checkout/components/PaymentFailedCard";
+import { BookingHoldBanner } from "@/features/storefront-booking/components/BookingHoldBanner";
 import { CustomerDetailsCard } from "@/features/checkout/components/CustomerDetailsCard";
 import { FulfillmentMethodCard } from "@/features/checkout/components/FulfillmentMethodCard";
 import { PickupBranchCard } from "@/features/checkout/components/PickupBranchCard";
@@ -250,6 +251,7 @@ function Checkout() {
     <div className="mx-auto max-w-4xl px-4 sm:px-6 pt-8 pb-28 md:py-8 grid md:grid-cols-[1fr_360px] gap-6">
       <h1 className="sr-only">{t("إتمام الطلب", "Checkout")}</h1>
       <div className="space-y-4">
+        <BookingHoldBanner />
         {paymentErrorState && (
           <PaymentFailedCard setMethod={setMethod} submit={submit} submitting={submitting} t={t} />
         )}

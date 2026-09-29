@@ -196,9 +196,13 @@ export function StorefrontBookingPage({ initialService }: { initialService?: str
             ? isAr
               ? "جارٍ الإرسال…"
               : "Sending…"
-            : isAr
-              ? "أرسل طلب الحجز"
-              : "Send booking request"}
+            : flow.catalog
+              ? isAr
+                ? "أرسل طلب الحجز"
+                : "Send booking request"
+              : isAr
+                ? "تابع للدفع"
+                : "Continue to checkout"}
         </Button>
         {flow.step && (
           <p className="text-center text-xs text-muted-foreground" role="status">

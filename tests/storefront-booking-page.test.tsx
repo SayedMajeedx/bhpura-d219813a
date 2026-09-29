@@ -11,6 +11,20 @@ const state = vi.hoisted(() => ({
   rules: null as BookingRules | null,
   lang: "en" as "en" | "ar",
   bookings: true,
+  mode: "catalog",
+  cart: [] as Array<{ cart_line_id: string; booking?: unknown }>,
+  addToCart: vi.fn(),
+  removeFromCart: vi.fn(),
+  navigate: vi.fn(async () => undefined),
+  holdBooking: vi.fn(async () => ({
+    booking_id: "bk1",
+    hold_token: "tok-1",
+    reference: "BK-HOLD01",
+    event_date: "2026-10-10",
+    hold_expires_at: "2026-10-01T09:15:00Z",
+    total: 55,
+    items: [{ product_id: "p1", variant_id: "v1", quantity: 1, unit_price: 55 }],
+  })),
   requestBooking: vi.fn(async () => ({
     reference: "BK-7Q2X9A",
     status: "requested",
@@ -37,7 +51,7 @@ const bookingsData = {
       ]),
   },
   requestBooking: state.requestBooking,
-  bookingErrorMessage: (message: string) => message,
+  holdBooking: state.holdBooking,
 };
 vi.mock("../src/lib/data/bookings", () => bookingsData);
 vi.mock("@/lib/data/bookings", () => bookingsData);
@@ -72,9 +86,12 @@ const storefront = async (importOriginal: () => Promise<object>) => ({
     brand: { id: "b1", slug: "aurora", name_en: "Aurora", name_ar: "أورورا" },
     settings: {
       whatsapp_number: "39990016",
-      storefront_mode: "catalog",
+      storefront_mode: state.mode,
       catalog_show_prices: true,
     },
+    cart: state.cart,
+    addToCart: state.addToCart,
+    removeFromCart: state.removeFromCart,
     lang: state.lang,
     currency: "BHD",
     t: (ar: string, en: string) => (state.lang === "ar" ? ar : en),
@@ -84,6 +101,7 @@ const storefront = async (importOriginal: () => Promise<object>) => ({
 vi.mock("../src/lib/storefront-context", (io) => storefront(io));
 vi.mock("@/lib/storefront-context", (io) => storefront(io));
 vi.mock("@tanstack/react-router", () => ({
+  useNavigate: () => state.navigate,
   Link: ({ children, to, search }: { children: React.ReactNode; to: string; search?: object }) => (
     <a href={`${to}${search ? `?${new URLSearchParams(search as Record<string, string>)}` : ""}`}>
       {children}
@@ -106,6 +124,8 @@ beforeEach(() => {
   state.rules = { ...DEFAULT_BOOKING_RULES };
   state.lang = "en";
   state.bookings = true;
+  state.mode = "catalog";
+  state.cart = [];
 });
 
 const renderWithQuery = (ui: React.ReactElement) =>
@@ -161,6 +181,41 @@ describe("booking from the storefront", () => {
     expect(href.startsWith("https://wa.me/97339990016?text=")).toBe(true);
     expect(decodeURIComponent(href)).toContain("Request: BK-7Q2X9A");
     expect(decodeURIComponent(href)).toContain("Services: Photo booth, Prints");
+  });
+
+  it("in a shop store, holds the day and takes the services to checkout", async () => {
+    state.mode = "shop";
+    state.cart = [
+      { cart_line_id: "old-booking", booking: { id: "old" } },
+      { cart_line_id: "dress" },
+    ];
+    renderWithQuery(<StorefrontBookingPage initialService="p1" />);
+    fireEvent.click(await screen.findByRole("gridcell", { name: /10 October: Available/ }));
+    fireEvent.click(screen.getByRole("button", { name: "3 hours" }));
+    fireEvent.click(screen.getByRole("button", { name: "6:00 PM" }));
+    fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Sara" } });
+    fireEvent.change(screen.getByLabelText("WhatsApp number"), { target: { value: "39001122" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue to checkout" }));
+
+    await waitFor(() => expect(state.navigate).toHaveBeenCalledTimes(1));
+    expect(state.requestBooking).not.toHaveBeenCalled();
+    expect(state.holdBooking).toHaveBeenCalledWith(
+      expect.objectContaining({ day: "2026-10-10", start: "18:00", durationMinutes: 180 }),
+    );
+    // Only the earlier booking's lines make way; other products stay.
+    expect(state.removeFromCart).toHaveBeenCalledWith("old-booking");
+    expect(state.removeFromCart).not.toHaveBeenCalledWith("dress");
+    expect(state.addToCart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        variant_id: "v1",
+        price: 55,
+        booking: expect.objectContaining({ id: "bk1", token: "tok-1", reference: "BK-HOLD01" }),
+      }),
+    );
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: "/$slug/checkout",
+      params: { slug: "aurora" },
+    });
   });
 
   it("says so when the store takes no bookings online", async () => {

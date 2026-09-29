@@ -16,6 +16,7 @@ import type {
 import { checkoutFormError } from "@/features/checkout/lib/checkout-validation";
 import { placeOrderFailure, placeStorefrontOrderArgs } from "@/features/checkout/lib/place-order";
 import { placeStorefrontOrder, recordOrderWhatsappOptIn } from "@/lib/data/checkout";
+import { bookingOfCart } from "@/lib/bookings/cart";
 
 /**
  * Place order: validate, place the order once (a retried card payment reuses
@@ -151,6 +152,7 @@ export function usePlaceOrder({
             lang,
             idempotencyKey,
           }),
+          bookingOfCart(cart),
         );
         orderId = placed.orderId;
         confirmationToken = placed.confirmationToken;

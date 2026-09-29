@@ -2,6 +2,7 @@ import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import { toBookingRules, type BookingRules, type BookingStatus } from "@/lib/bookings/rules";
+import type { BookingHold } from "@/lib/bookings/cart";
 
 /**
  * A services store's bookings: its rules, its bookings and their services,
@@ -288,53 +289,23 @@ export async function requestBooking(input: BookingRequestInput): Promise<Bookin
   return data as unknown as BookingRequestResult;
 }
 
-/** A readable reason for the database's booking refusals. */
-export function bookingErrorMessage(message: string, isAr: boolean): string {
-  const known: Array<[RegExp, string, string]> = [
-    [/BOOKING_DAY_FULL/, "هذا اليوم محجوز بالكامل.", "That day is fully booked."],
-    [
-      /BOOKING_DAY_(PAST|BEYOND)/,
-      "هذا التاريخ غير متاح للحجز، اختر يوماً آخر.",
-      "That date can't be booked; please choose another.",
-    ],
-    [/BOOKING_NAME_REQUIRED/, "أدخل اسمك.", "Please enter your name."],
-    [/BOOKING_PHONE_REQUIRED/, "أدخل رقم هاتف صحيح.", "Please enter a valid phone number."],
-    [
-      /BOOKING_RATE_LIMITED/,
-      "أرسلت عدة طلبات للتو. حاول بعد قليل أو تواصل معنا.",
-      "You've sent several requests just now. Try again shortly or contact us.",
-    ],
-    [
-      /BOOKING_PRODUCT_NOT_FOUND/,
-      "إحدى الخدمات لم تعد متاحة.",
-      "One of the services is no longer available.",
-    ],
-    [/BOOKING_DAY_BLOCKED/, "هذا اليوم مغلق للحجز.", "That day is blocked."],
-    [
-      /BOOKING_DAY_CLOSED/,
-      "المتجر لا يستقبل حجوزات في هذا اليوم.",
-      "The store is closed that day.",
-    ],
-    [
-      /BOOKING_TIME_OUTSIDE_HOURS/,
-      "وقت البداية خارج أوقات الحجز.",
-      "That start time is outside booking hours.",
-    ],
-    [/BOOKING_DURATION_INVALID/, "المدة غير متاحة.", "That duration is not offered."],
-    [/BOOKING_ITEMS_REQUIRED/, "اختر خدمة واحدة على الأقل.", "Choose at least one service."],
-    [
-      /BOOKINGS_DISABLED/,
-      "الحجوزات غير مفعلة لهذا المتجر.",
-      "Bookings are not set up for this store.",
-    ],
-    [/BOOKING_FORBIDDEN/, "لا تملك صلاحية إدارة الحجوزات.", "You can't manage bookings."],
-    [
-      /BOOKING_TRANSITION_INVALID/,
-      "لا يمكن نقل الحجز إلى هذه الحالة.",
-      "A booking can't move to that status.",
-    ],
-  ];
-  const match = known.find(([pattern]) => pattern.test(message));
-  if (match) return isAr ? match[1] : match[2];
-  return isAr ? "تعذّر حفظ الحجز." : "Could not save the booking.";
+/**
+ * Holds the day for the customer while they check out (shop stores): the same
+ * checks, prices and limits as a request, but it takes the day's place for
+ * the store's hold time. Returns the booking, its secret hold token and the
+ * booked services as the database priced them.
+ */
+export async function holdBooking(input: BookingRequestInput): Promise<BookingHold> {
+  const { data, error } = await supabase.rpc("hold_booking", {
+    p_brand_id: input.brandId,
+    p_day: input.day,
+    p_start: input.start,
+    p_duration_minutes: input.durationMinutes,
+    p_items: input.items as Json,
+    p_customer: input.customer as Json,
+    p_location: (input.location ?? {}) as Json,
+    p_notes: input.notes || undefined,
+  });
+  if (error) throw error;
+  return data as unknown as BookingHold;
 }

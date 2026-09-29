@@ -180,6 +180,36 @@ describe("launch security regressions", () => {
     );
   });
 
+  it("holds a day at checkout and ties the booking to its order and payment", () => {
+    const sql = readFileSync("supabase/migrations/20260930140000_booking_checkout.sql", "utf8");
+    // A hold is a request (same checks, prices, limits) that takes the day.
+    expect(sql).toContain("v_request := public.request_booking(");
+    expect(sql).toContain("CHECKOUT_DISABLED_CATALOG_MODE");
+    // Only the hold's secret finishes it, for the same store.
+    expect(sql).toContain("v_booking.hold_token <> p_hold_token");
+    expect(sql).toContain("v_booking.brand_id IS DISTINCT FROM v_brand_id");
+    // The order goes through the storefront's own function, unchanged, and
+    // the cart must carry the booked services.
+    expect(sql.match(/public\.place_storefront_order\(/g)).toHaveLength(2);
+    expect(sql).toContain("BOOKING_ITEMS_MISMATCH");
+    expect(sql).toContain("BOOKING_ALREADY_ORDERED");
+    // A run-out hold works only while the day is free (customer rules).
+    expect(sql).toContain(
+      "public.booking_day_state(v_settings, v_booking.event_date, v_booking.id);",
+    );
+    // Card keeps the day held while paying; other methods confirm at once.
+    expect(sql).toContain("status = CASE WHEN v_card THEN 'hold' ELSE 'confirmed' END");
+    // The booking follows its order.
+    expect(sql).toContain("AFTER UPDATE OF status, payment_status ON public.orders");
+    expect(sql).toMatch(
+      /payment_status = 'paid'[\s\S]*status = 'confirmed'[\s\S]*status IN \('hold', 'expired'\)/,
+    );
+    expect(sql).toContain("NEW.status IN ('cancelled', 'canceled', 'returned')");
+    expect(sql).toContain(
+      "REVOKE ALL ON FUNCTION public.sync_bookings_with_order() FROM PUBLIC, anon, authenticated",
+    );
+  });
+
   it("changes a store's vertical in one audited, super-admin-only transaction", () => {
     const migration = readFileSync(
       "supabase/migrations/20260929160000_vertical_change_audit.sql",

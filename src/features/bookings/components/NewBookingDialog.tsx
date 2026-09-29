@@ -16,7 +16,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatMoney } from "@/lib/format";
 import { catalogQueries } from "@/lib/data/catalog";
-import { bookingErrorMessage, createStaffBooking } from "@/lib/data/bookings";
+import { createStaffBooking } from "@/lib/data/bookings";
+import { bookingErrorMessage } from "@/lib/bookings/errors";
 import { durations, startTimes } from "@/lib/bookings/rules";
 import { dayTitle, formatClock, formatDuration } from "@/lib/bookings/format";
 import {

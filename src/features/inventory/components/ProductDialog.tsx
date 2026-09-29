@@ -35,7 +35,8 @@ export function ProductDialog({
   const brand = useBrand();
   const { storeProfile, addonAxisDefaults, customFieldPresets, categoriesQ, sizeGuidesQ } =
     useProductDialogData(brand.id);
-  const [form, setForm] = useState(() => productFormFrom(product));
+  const madeToOrder = Boolean(storeProfile?.modules?.bookings);
+  const [form, setForm] = useState(() => productFormFrom(product, { madeToOrder }));
   const [errors, setErrors] = useState<ProductFormErrors>({});
   const {
     uploading,
@@ -59,11 +60,11 @@ export function ProductDialog({
   const [showExtraAxes, setShowExtraAxes] = useState(false);
 
   useEffect(() => {
-    setForm(productFormFrom(product));
+    setForm(productFormFrom(product, { madeToOrder }));
     setErrors({});
     setActiveDialogTab("basic");
     setShowExtraAxes(hasExtraAxisLabels(product));
-  }, [product]);
+  }, [product, madeToOrder]);
 
   const save = useSaveProduct({
     product,

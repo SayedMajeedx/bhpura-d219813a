@@ -87,6 +87,9 @@ export function getVerticalVocabularyOverrides(vertical?: string | null): Partia
       care_instructions_label: { ar: "شروط الحجز والإلغاء", en: "Booking & Cancellation" },
       sizing_guide: { ar: "دليل الباقات", en: "Package Guide" },
       variant_picker_prompt: { ar: "اختر الباقة", en: "Choose a package" },
+      // Services are made to order (no stock); say it the way a booking does.
+      made_to_order: { ar: "حسب موعدك", en: "Booked for your date" },
+      custom_order: { ar: "حسب موعدك", en: "Booked for your date" },
     };
   }
   if (v === "electronics") {
