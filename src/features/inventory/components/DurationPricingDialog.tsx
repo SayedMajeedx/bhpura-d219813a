@@ -67,7 +67,10 @@ export function DurationPricingDialog({
   const save = async () => {
     setSaving(true);
     try {
-      await createVariants(brand.id, toCreate);
+      await createVariants(
+        brand.id,
+        toCreate.map((row) => ({ ...row, brand_id: brand.id })),
+      );
       toast.success(isAr ? "تمت إضافة أسعار المدد" : "Duration prices added");
       setOpen(false);
       onChanged();

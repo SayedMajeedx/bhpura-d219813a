@@ -522,6 +522,35 @@ export type Database = {
           },
         ];
       };
+      booking_area_fees: {
+        Row: {
+          area_code: string;
+          brand_id: string;
+          fee: number;
+          updated_at: string;
+        };
+        Insert: {
+          area_code: string;
+          brand_id: string;
+          fee: number;
+          updated_at?: string;
+        };
+        Update: {
+          area_code?: string;
+          brand_id?: string;
+          fee?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "booking_area_fees_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       booking_blocks: {
         Row: {
           brand_id: string;
@@ -644,6 +673,7 @@ export type Database = {
           open_time: string;
           slot_minutes: number;
           timezone: string;
+          travel_fee_default: number | null;
           updated_at: string;
         };
         Insert: {
@@ -661,6 +691,7 @@ export type Database = {
           open_time?: string;
           slot_minutes?: number;
           timezone?: string;
+          travel_fee_default?: number | null;
           updated_at?: string;
         };
         Update: {
@@ -678,6 +709,7 @@ export type Database = {
           open_time?: string;
           slot_minutes?: number;
           timezone?: string;
+          travel_fee_default?: number | null;
           updated_at?: string;
         };
         Relationships: [
@@ -718,6 +750,7 @@ export type Database = {
           starts_at: string;
           status: string;
           total: number;
+          travel_fee: number | null;
           updated_at: string;
         };
         Insert: {
@@ -747,6 +780,7 @@ export type Database = {
           starts_at: string;
           status: string;
           total?: number;
+          travel_fee?: number | null;
           updated_at?: string;
         };
         Update: {
@@ -776,6 +810,7 @@ export type Database = {
           starts_at?: string;
           status?: string;
           total?: number;
+          travel_fee?: number | null;
           updated_at?: string;
         };
         Relationships: [
@@ -5463,6 +5498,7 @@ export type Database = {
           color: string | null;
           cost_price: number;
           created_at: string;
+          duration_minutes: number | null;
           fabric: string | null;
           id: string;
           image_url: string | null;
@@ -5486,6 +5522,7 @@ export type Database = {
           color?: string | null;
           cost_price?: number;
           created_at?: string;
+          duration_minutes?: number | null;
           fabric?: string | null;
           id?: string;
           image_url?: string | null;
@@ -5509,6 +5546,7 @@ export type Database = {
           color?: string | null;
           cost_price?: number;
           created_at?: string;
+          duration_minutes?: number | null;
           fabric?: string | null;
           id?: string;
           image_url?: string | null;
@@ -8402,6 +8440,10 @@ export type Database = {
         Args: { p_brand_id: string; p_day: string; p_except?: string };
         Returns: number;
       };
+      booking_travel_fee: {
+        Args: { p_area_code: string; p_brand_id: string };
+        Returns: number;
+      };
       booking_window: {
         Args: {
           p_day: string;
@@ -8545,6 +8587,7 @@ export type Database = {
           starts_at: string;
           status: string;
           total: number;
+          travel_fee: number | null;
           updated_at: string;
         };
         SetofOptions: {
@@ -9108,6 +9151,7 @@ export type Database = {
           open_time: string;
           slot_minutes: number;
           timezone: string;
+          travel_fee_default: number | null;
           updated_at: string;
         };
         SetofOptions: {
@@ -9416,6 +9460,7 @@ export type Database = {
           starts_at: string;
           status: string;
           total: number;
+          travel_fee: number | null;
           updated_at: string;
         };
         SetofOptions: {
@@ -9879,6 +9924,7 @@ export type Database = {
           starts_at: string;
           status: string;
           total: number;
+          travel_fee: number | null;
           updated_at: string;
         };
         SetofOptions: {
