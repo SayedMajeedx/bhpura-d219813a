@@ -9,6 +9,7 @@ import { DesktopStoreNavigation } from "@/components/storefront/StorefrontNaviga
 import { WhatsAppFab } from "@/features/storefront-shell/components/WhatsAppFab";
 import { StorefrontFooter } from "@/features/storefront-shell/components/StorefrontFooter";
 import { shellTheme } from "@/features/storefront-shell/lib/shell-theme";
+import { isEmbeddedWindow } from "@/features/storefront-shell/lib/embedded";
 
 /** The storefront frame: theme variables, typography, the sticky header, the page, the footer, WhatsApp and the analytics consent. */
 export function StoreShell() {
@@ -31,10 +32,7 @@ export function StoreShell() {
     localStorage.removeItem(`passkey_registered_${brand.slug}`);
 
     // Detect if embedded in an iframe or preview mode to suppress OS scrollbars
-    const isEmbedded =
-      typeof window !== "undefined" &&
-      (window.self !== window.top || window.location.search.includes("preview=1"));
-    if (isEmbedded) {
+    if (isEmbeddedWindow(window)) {
       document.documentElement.classList.add("is-embedded", "scrollbar-none");
       document.body.classList.add("is-embedded", "scrollbar-none");
     }
