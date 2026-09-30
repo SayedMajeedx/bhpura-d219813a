@@ -28,11 +28,11 @@ import {
   getPublicOnboardingPlans,
   getOnboardingTrialDays,
 } from "@/lib/onboarding.functions";
-import { StoreVertical, VERTICAL_LABELS, verticalToLegacyBusinessType } from "@/lib/store-profile";
+import { StoreVertical, verticalToLegacyBusinessType } from "@/lib/store-profile";
 import { starterPackFor, getAddon } from "@/lib/addons/addon-registry";
 import { isBrandSlugTaken } from "@/lib/data/brands";
 import { pickerVerticals } from "@/lib/verticals/registry";
-import { VerticalIcon } from "@/components/verticals/VerticalIcon";
+import { VerticalChoice } from "@/components/verticals/VerticalChoice";
 import { signInWithPassword } from "@/lib/auth/sign-in";
 
 function arabicToLatinSlug(text: string): string {
@@ -504,28 +504,15 @@ function OnboardPage() {
                       )}
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                      {pickerVerticals(storeVertical).map(({ id: v }) => {
-                        const isSelected = storeVertical === v;
-                        return (
-                          <Button
-                            key={v}
-                            type="button"
-                            variant={isSelected ? "default" : "outline"}
-                            onClick={() => setStoreVertical(v)}
-                            className={cn(
-                              "flex flex-col items-center justify-center gap-1.5 h-auto py-2.5 px-2 min-h-[44px] rounded-xl text-xs font-medium transition-all text-center",
-                              isSelected
-                                ? "bg-primary text-primary-foreground font-bold shadow-xs"
-                                : "hover:bg-muted text-muted-foreground hover:text-foreground",
-                            )}
-                          >
-                            <VerticalIcon vertical={v} className="size-4 shrink-0" />
-                            <span className="leading-tight text-xs">
-                              {VERTICAL_LABELS[v][isAr ? "ar" : "en"]}
-                            </span>
-                          </Button>
-                        );
-                      })}
+                      {pickerVerticals(storeVertical).map((definition) => (
+                        <VerticalChoice
+                          key={definition.id}
+                          vertical={definition}
+                          selected={storeVertical === definition.id}
+                          onSelect={() => setStoreVertical(definition.id)}
+                          lang={isAr ? "ar" : "en"}
+                        />
+                      ))}
                     </div>
 
                     {/* Starter Pack Add-ons Card */}

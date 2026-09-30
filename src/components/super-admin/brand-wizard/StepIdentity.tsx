@@ -2,9 +2,9 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { VERTICAL_LABELS, type StoreVertical } from "@/lib/store-profile";
+import type { StoreVertical } from "@/lib/store-profile";
 import { pickerVerticals } from "@/lib/verticals/registry";
-import { VerticalIcon } from "@/components/verticals/VerticalIcon";
+import { VerticalChoice } from "@/components/verticals/VerticalChoice";
 import { getBrandTemplate } from "@/lib/brand-templates";
 import type { BrandWizardData } from "./types";
 
@@ -138,47 +138,16 @@ export function StepIdentity({ data, onChange, isAr }: StepIdentityProps) {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-[340px] overflow-y-auto p-1 border border-border rounded-xl bg-muted/20">
-          {pickerVerticals(data.store_vertical).map((definition) => {
-            const vertical = definition.id;
-            const isSelected = data.store_vertical === vertical;
-            const label = definition.label;
-            const lang = isAr ? "ar" : "en";
-
-            return (
-              <Button
-                key={vertical}
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => handleVerticalSelect(vertical)}
-                className={`h-auto rounded-md flex flex-col items-start text-start p-3 rounded-xl border transition-all ${
-                  isSelected
-                    ? "border-primary bg-primary/10 shadow-sm ring-1 ring-primary"
-                    : "border-border bg-card hover:bg-muted/50 hover:border-border"
-                }`}
-              >
-                <div
-                  className={`p-2 rounded-lg mb-2 ${
-                    isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
-                  }`}
-                >
-                  <VerticalIcon vertical={vertical} className="h-4 w-4" />
-                </div>
-                <div className="font-semibold text-xs text-foreground leading-tight">
-                  {label[lang]}
-                </div>
-                {definition.parent && (
-                  <div className="text-xs text-primary leading-tight mt-0.5">
-                    {isAr ? "ضمن " : "Part of "}
-                    {VERTICAL_LABELS[definition.parent][lang]}
-                  </div>
-                )}
-                <div className="text-xs text-muted-foreground leading-tight mt-1 line-clamp-2 whitespace-normal">
-                  {definition.summary[lang]}
-                </div>
-              </Button>
-            );
-          })}
+          {pickerVerticals(data.store_vertical).map((definition) => (
+            <VerticalChoice
+              key={definition.id}
+              vertical={definition}
+              selected={data.store_vertical === definition.id}
+              onSelect={() => handleVerticalSelect(definition.id)}
+              lang={isAr ? "ar" : "en"}
+              detailed
+            />
+          ))}
         </div>
       </div>
     </div>
