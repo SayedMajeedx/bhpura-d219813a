@@ -8,6 +8,7 @@ import { BookingDayPanel } from "@/features/bookings/components/BookingDayPanel"
 import { BookingRequestsList } from "@/features/bookings/components/BookingRequestsList";
 import { BookingRulesDialog } from "@/features/bookings/components/BookingRulesDialog";
 import { BookingsReport } from "@/features/bookings/components/BookingsReport";
+import { CalendarLinkDialog } from "@/features/bookings/components/CalendarLinkDialog";
 
 /**
  * The bookings page: requests waiting, the month calendar and the chosen
@@ -50,16 +51,19 @@ export function BookingsPageView() {
           </div>
         </div>
         {page.configured && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            onClick={() => setRulesOpen(true)}
-          >
-            <Settings2 className="size-4" />
-            {isAr ? "قواعد الحجز" : "Booking rules"}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <CalendarLinkDialog page={page} />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setRulesOpen(true)}
+            >
+              <Settings2 className="size-4" />
+              {isAr ? "قواعد الحجز" : "Booking rules"}
+            </Button>
+          </div>
         )}
       </header>
 

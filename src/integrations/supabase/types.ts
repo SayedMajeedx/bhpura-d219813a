@@ -660,6 +660,7 @@ export type Database = {
       booking_settings: {
         Row: {
           brand_id: string;
+          calendar_token: string | null;
           closed_weekdays: number[];
           daily_capacity: number;
           deposit_percent: number;
@@ -678,6 +679,7 @@ export type Database = {
         };
         Insert: {
           brand_id: string;
+          calendar_token?: string | null;
           closed_weekdays?: number[];
           daily_capacity?: number;
           deposit_percent?: number;
@@ -696,6 +698,7 @@ export type Database = {
         };
         Update: {
           brand_id?: string;
+          calendar_token?: string | null;
           closed_weekdays?: number[];
           daily_capacity?: number;
           deposit_percent?: number;
@@ -8424,6 +8427,7 @@ export type Database = {
         Args: { p_courier_id: string; p_order_id: string };
         Returns: undefined;
       };
+      booking_calendar_feed: { Args: { p_token: string }; Returns: Json };
       booking_day_state: {
         Args: {
           p_day: string;
@@ -9138,6 +9142,7 @@ export type Database = {
         Args: { p_brand_id: string };
         Returns: {
           brand_id: string;
+          calendar_token: string | null;
           closed_weekdays: number[];
           daily_capacity: number;
           deposit_percent: number;

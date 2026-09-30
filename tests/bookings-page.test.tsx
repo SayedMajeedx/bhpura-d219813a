@@ -16,6 +16,8 @@ const state = vi.hoisted(() => ({
   saveBookingSettings: vi.fn(async () => undefined),
   saveBookingAreaFees: vi.fn(async () => undefined),
   areaFees: {} as Record<string, number>,
+  calendarToken: null as string | null,
+  setCalendarToken: vi.fn(async () => undefined),
   setBookingStatus: vi.fn(async () => ({})),
   addBookingBlock: vi.fn(async () => undefined),
   removeBookingBlock: vi.fn(async () => undefined),
@@ -34,7 +36,10 @@ const bookingsData = {
     blocks: () => fixture("blocks", () => state.blocks),
     requests: () => fixture("requests", () => state.requests),
     areaFees: () => fixture("area-fees", () => state.areaFees),
+    calendarToken: () => fixture("calendar-token", () => state.calendarToken),
   },
+  bookingsKeys: { calendarToken: () => ["bookings-test", "calendar-token"] },
+  setCalendarToken: state.setCalendarToken,
   invalidateBookings: vi.fn(async () => undefined),
   saveBookingSettings: state.saveBookingSettings,
   saveBookingAreaFees: state.saveBookingAreaFees,
@@ -267,6 +272,24 @@ describe("the bookings page", () => {
       "aria-pressed",
       "true",
     );
+  });
+
+  it("makes a private calendar link and shows it to subscribe to", async () => {
+    state.calendarToken = null;
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Calendar link" }));
+    expect(await screen.findByText("There is no link yet.")).toBeInTheDocument();
+    const made = crypto.randomUUID();
+    state.calendarToken = made;
+    fireEvent.click(screen.getByRole("button", { name: "Make the link" }));
+    await waitFor(() => expect(state.setCalendarToken).toHaveBeenCalledTimes(1));
+    const [brandId, token] = state.setCalendarToken.mock.lastCall as unknown as [string, string];
+    expect(brandId).toBe("b1");
+    expect(token).toMatch(/^[0-9a-f-]{36}$/);
+    expect(await screen.findByLabelText("Calendar link")).toHaveValue(
+      `${window.location.origin}/api/public/bookings/calendar/${made}.ics`,
+    );
+    state.calendarToken = null;
   });
 
   it("says when bookings are off for the store", async () => {
