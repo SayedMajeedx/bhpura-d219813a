@@ -83,6 +83,7 @@ import { Route as AuthenticatedAdminBSlugReviewsRouteImport } from './routes/_au
 import { Route as AuthenticatedAdminBSlugSettingsRouteImport } from './routes/_authenticated/admin.b.$slug.settings'
 import { Route as AuthenticatedAdminBSlugSizeGuidesRouteImport } from './routes/_authenticated/admin.b.$slug.size-guides'
 import { Route as AuthenticatedAdminBSlugTeamRouteImport } from './routes/_authenticated/admin.b.$slug.team'
+import { Route as ApiPublicBookingsCalendarTokenRouteImport } from './routes/api.public.bookings.calendar.$token'
 import { Route as AuthenticatedAdminBSlugCustomersCustomerIdRouteImport } from './routes/_authenticated/admin.b.$slug.customers.$customerId'
 import { Route as AuthenticatedAdminBSlugOrdersIndexRouteImport } from './routes/_authenticated/admin.b.$slug.orders.index'
 import { Route as AuthenticatedAdminBSlugOrdersIdRouteImport } from './routes/_authenticated/admin.b.$slug.orders.$id'
@@ -503,6 +504,12 @@ const AuthenticatedAdminBSlugTeamRoute =
     path: '/team',
     getParentRoute: () => AuthenticatedAdminBSlugRouteRoute,
   } as any)
+const ApiPublicBookingsCalendarTokenRoute =
+  ApiPublicBookingsCalendarTokenRouteImport.update({
+    id: '/api/public/bookings/calendar/$token',
+    path: '/api/public/bookings/calendar/$token',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAdminBSlugCustomersCustomerIdRoute =
   AuthenticatedAdminBSlugCustomersCustomerIdRouteImport.update({
     id: '/$customerId',
@@ -638,6 +645,7 @@ export interface FileRoutesByFullPath {
   '/admin/b/$slug/settings': typeof AuthenticatedAdminBSlugSettingsRoute
   '/admin/b/$slug/size-guides': typeof AuthenticatedAdminBSlugSizeGuidesRoute
   '/admin/b/$slug/team': typeof AuthenticatedAdminBSlugTeamRoute
+  '/api/public/bookings/calendar/$token': typeof ApiPublicBookingsCalendarTokenRoute
   '/admin/b/$slug/customers/$customerId': typeof AuthenticatedAdminBSlugCustomersCustomerIdRoute
   '/admin/b/$slug/orders/$id': typeof AuthenticatedAdminBSlugOrdersIdRoute
   '/admin/b/$slug/reports/customers': typeof AuthenticatedAdminBSlugReportsCustomersRoute
@@ -720,6 +728,7 @@ export interface FileRoutesByTo {
   '/admin/b/$slug/settings': typeof AuthenticatedAdminBSlugSettingsRoute
   '/admin/b/$slug/size-guides': typeof AuthenticatedAdminBSlugSizeGuidesRoute
   '/admin/b/$slug/team': typeof AuthenticatedAdminBSlugTeamRoute
+  '/api/public/bookings/calendar/$token': typeof ApiPublicBookingsCalendarTokenRoute
   '/admin/b/$slug/customers/$customerId': typeof AuthenticatedAdminBSlugCustomersCustomerIdRoute
   '/admin/b/$slug/orders/$id': typeof AuthenticatedAdminBSlugOrdersIdRoute
   '/admin/b/$slug/reports/customers': typeof AuthenticatedAdminBSlugReportsCustomersRoute
@@ -807,6 +816,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/b/$slug/settings': typeof AuthenticatedAdminBSlugSettingsRoute
   '/_authenticated/admin/b/$slug/size-guides': typeof AuthenticatedAdminBSlugSizeGuidesRoute
   '/_authenticated/admin/b/$slug/team': typeof AuthenticatedAdminBSlugTeamRoute
+  '/api/public/bookings/calendar/$token': typeof ApiPublicBookingsCalendarTokenRoute
   '/_authenticated/admin/b/$slug/customers/$customerId': typeof AuthenticatedAdminBSlugCustomersCustomerIdRoute
   '/_authenticated/admin/b/$slug/orders/$id': typeof AuthenticatedAdminBSlugOrdersIdRoute
   '/_authenticated/admin/b/$slug/reports/customers': typeof AuthenticatedAdminBSlugReportsCustomersRoute
@@ -894,6 +904,7 @@ export interface FileRouteTypes {
     | '/admin/b/$slug/settings'
     | '/admin/b/$slug/size-guides'
     | '/admin/b/$slug/team'
+    | '/api/public/bookings/calendar/$token'
     | '/admin/b/$slug/customers/$customerId'
     | '/admin/b/$slug/orders/$id'
     | '/admin/b/$slug/reports/customers'
@@ -976,6 +987,7 @@ export interface FileRouteTypes {
     | '/admin/b/$slug/settings'
     | '/admin/b/$slug/size-guides'
     | '/admin/b/$slug/team'
+    | '/api/public/bookings/calendar/$token'
     | '/admin/b/$slug/customers/$customerId'
     | '/admin/b/$slug/orders/$id'
     | '/admin/b/$slug/reports/customers'
@@ -1062,6 +1074,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/b/$slug/settings'
     | '/_authenticated/admin/b/$slug/size-guides'
     | '/_authenticated/admin/b/$slug/team'
+    | '/api/public/bookings/calendar/$token'
     | '/_authenticated/admin/b/$slug/customers/$customerId'
     | '/_authenticated/admin/b/$slug/orders/$id'
     | '/_authenticated/admin/b/$slug/reports/customers'
@@ -1095,6 +1108,7 @@ export interface RootRouteChildren {
   ApiPublicPaymentsTapRedirectRoute: typeof ApiPublicPaymentsTapRedirectRoute
   ApiPublicWebhooksTapRoute: typeof ApiPublicWebhooksTapRoute
   BrandsBrandIdKindFilenameRoute: typeof BrandsBrandIdKindFilenameRoute
+  ApiPublicBookingsCalendarTokenRoute: typeof ApiPublicBookingsCalendarTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1617,6 +1631,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBSlugTeamRouteImport
       parentRoute: typeof AuthenticatedAdminBSlugRouteRoute
     }
+    '/api/public/bookings/calendar/$token': {
+      id: '/api/public/bookings/calendar/$token'
+      path: '/api/public/bookings/calendar/$token'
+      fullPath: '/api/public/bookings/calendar/$token'
+      preLoaderRoute: typeof ApiPublicBookingsCalendarTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin/b/$slug/customers/$customerId': {
       id: '/_authenticated/admin/b/$slug/customers/$customerId'
       path: '/$customerId'
@@ -1926,6 +1947,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicPaymentsTapRedirectRoute: ApiPublicPaymentsTapRedirectRoute,
   ApiPublicWebhooksTapRoute: ApiPublicWebhooksTapRoute,
   BrandsBrandIdKindFilenameRoute: BrandsBrandIdKindFilenameRoute,
+  ApiPublicBookingsCalendarTokenRoute: ApiPublicBookingsCalendarTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

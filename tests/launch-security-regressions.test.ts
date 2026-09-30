@@ -318,6 +318,22 @@ describe("launch security regressions", () => {
     expect(sql).toMatch(/ELSE\s+v_shipping_fee := 0;/);
   });
 
+  it("keeps the booking calendar feed to the service role and to confirmed bookings (SQL contract)", () => {
+    const sql = readFileSync(
+      "supabase/migrations/20260930240000_booking_calendar_feed.sql",
+      "utf8",
+    );
+    expect(sql).toContain(
+      "REVOKE ALL ON FUNCTION public.booking_calendar_feed(uuid) FROM PUBLIC, anon, authenticated",
+    );
+    expect(sql).toContain(
+      "GRANT EXECUTE ON FUNCTION public.booking_calendar_feed(uuid) TO service_role",
+    );
+    expect(sql).toContain("WHERE p_token IS NOT NULL\n     AND s.calendar_token = p_token");
+    expect(sql).toContain("bk.status IN ('confirmed', 'completed')");
+    expect(sql).toContain("CREATE UNIQUE INDEX IF NOT EXISTS booking_settings_calendar_token_key");
+  });
+
   it("changes a store's vertical in one audited, super-admin-only transaction", () => {
     const migration = readFileSync(
       "supabase/migrations/20260929160000_vertical_change_audit.sql",

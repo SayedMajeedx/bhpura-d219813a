@@ -34,6 +34,7 @@ export const bookingsKeys = {
     [...bookingsKeys.all(brandId), "availability", from, to] as const,
   publicRules: (brandId: string) => [...bookingsKeys.all(brandId), "public-rules"] as const,
   areaFees: (brandId: string) => [...bookingsKeys.all(brandId), "area-fees"] as const,
+  calendarToken: (brandId: string) => [...bookingsKeys.all(brandId), "calendar-token"] as const,
 };
 
 /** The store's booking rules, or null when it has not set bookings up. */
@@ -118,6 +119,17 @@ export async function fetchPublicBookingRules(brandId: string): Promise<PublicBo
   };
 }
 
+/** The secret of the store's private calendar link, or null when it has none. */
+export async function fetchCalendarToken(brandId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("booking_settings")
+    .select("calendar_token")
+    .eq("brand_id", brandId)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.calendar_token ?? null;
+}
+
 /** The store's travel fees by area code (admin). */
 export async function fetchBookingAreaFees(brandId: string): Promise<Record<string, number>> {
   const { data, error } = await supabase
@@ -159,6 +171,12 @@ export const bookingsQueries = {
       queryFn: () => fetchBookingAvailability(brandId, from, to),
       enabled: Boolean(brandId),
       staleTime: 30_000,
+    }),
+  calendarToken: (brandId: string) =>
+    queryOptions({
+      queryKey: bookingsKeys.calendarToken(brandId),
+      queryFn: () => fetchCalendarToken(brandId),
+      enabled: Boolean(brandId),
     }),
   areaFees: (brandId: string) =>
     queryOptions({
@@ -203,6 +221,18 @@ export async function saveBookingSettings(brandId: string, rules: BookingRules) 
     updated_at: new Date().toISOString(),
   };
   const { error } = await supabase.from("booking_settings").upsert(row);
+  if (error) throw error;
+}
+
+/**
+ * Makes a new private calendar link (a fresh random secret, so any old link
+ * stops working), or removes it (null).
+ */
+export async function setCalendarToken(brandId: string, token: string | null) {
+  const { error } = await supabase
+    .from("booking_settings")
+    .update({ calendar_token: token })
+    .eq("brand_id", brandId);
   if (error) throw error;
 }
 
