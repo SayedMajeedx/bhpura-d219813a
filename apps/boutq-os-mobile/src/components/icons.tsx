@@ -61,6 +61,7 @@ const iconMap: Record<string, keyof typeof Ionicons.glyphMap> = {
   cash: "cash-outline",
   key: "key-outline",
   mail: "mail-outline",
+  calendar: "calendar-outline",
 };
 
 export function AppIcon({
