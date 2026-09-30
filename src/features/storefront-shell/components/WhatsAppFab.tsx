@@ -1,14 +1,15 @@
 import { useLocation } from "@tanstack/react-router";
 import React from "react";
 import { useStorefront } from "@/lib/storefront-context";
+import { useIsEmbedded } from "@/features/storefront-shell/lib/embedded";
 
 /** The floating WhatsApp button, raised above the sticky buy bar on product and checkout pages. */
 export function WhatsAppFab() {
   const { settings, lang, brand } = useStorefront();
   const { pathname } = useLocation();
-  const isEmbedded =
-    typeof window !== "undefined" &&
-    (window.self !== window.top || window.location.search.includes("preview=1"));
+  // Not read from `window` while rendering: the server has none, and an
+  // embedded preview would then hydrate differently from the server's HTML.
+  const isEmbedded = useIsEmbedded();
   if (isEmbedded) return null;
   if (!settings.whatsapp_enabled) return null;
   const digits = (settings.whatsapp_number ?? "").replace(/\D/g, "");
