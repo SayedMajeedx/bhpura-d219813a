@@ -7,6 +7,7 @@ import { BookingsCalendar } from "@/features/bookings/components/BookingsCalenda
 import { BookingDayPanel } from "@/features/bookings/components/BookingDayPanel";
 import { BookingRequestsList } from "@/features/bookings/components/BookingRequestsList";
 import { BookingRulesDialog } from "@/features/bookings/components/BookingRulesDialog";
+import { BookingsReport } from "@/features/bookings/components/BookingsReport";
 
 /**
  * The bookings page: requests waiting, the month calendar and the chosen
@@ -17,6 +18,7 @@ export function BookingsPageView() {
   const { isAr } = page;
   const { profile, isLoading: profileLoading } = useAdminStoreProfile(page.brand.id);
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [view, setView] = useState<"calendar" | "report">("calendar");
 
   if (page.settingsLoading || profileLoading) {
     return (
@@ -90,11 +92,32 @@ export function BookingsPageView() {
         </section>
       ) : (
         <>
-          <BookingRequestsList page={page} />
-          <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,380px)]">
-            <BookingsCalendar page={page} />
-            <BookingDayPanel key={page.selectedDay} page={page} />
+          <div className="flex gap-2" role="tablist" aria-label={isAr ? "العرض" : "View"}>
+            {(["calendar", "report"] as const).map((id) => (
+              <Button
+                key={id}
+                type="button"
+                role="tab"
+                size="sm"
+                aria-selected={view === id}
+                variant={view === id ? "default" : "outline"}
+                onClick={() => setView(id)}
+              >
+                {id === "calendar" ? (isAr ? "التقويم" : "Calendar") : isAr ? "التقرير" : "Report"}
+              </Button>
+            ))}
           </div>
+          {view === "report" ? (
+            <BookingsReport page={page} />
+          ) : (
+            <>
+              <BookingRequestsList page={page} />
+              <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,380px)]">
+                <BookingsCalendar page={page} />
+                <BookingDayPanel key={page.selectedDay} page={page} />
+              </div>
+            </>
+          )}
         </>
       )}
 

@@ -255,6 +255,20 @@ describe("the bookings page", () => {
     );
   });
 
+  it("shows how the month went in the report view", async () => {
+    renderPage();
+    fireEvent.click(await screen.findByRole("tab", { name: "Report" }));
+    // One confirmed booking (12 Oct, 55) this month; the 15 Oct request waits.
+    expect(await screen.findByText("Confirmed bookings")).toBeInTheDocument();
+    expect(screen.getByText("Top services")).toBeInTheDocument();
+    expect(await screen.findByText(/Photo booth/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Last 90 days" }));
+    expect(screen.getByRole("button", { name: "Last 90 days" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
   it("says when bookings are off for the store", async () => {
     state.bookingsModule = false;
     renderPage();
