@@ -74,7 +74,12 @@ export function BookingTimePicker({ flow }: { flow: BookingFlow }) {
         <p className="text-sm font-medium text-foreground">
           {isAr ? "متى تريد البداية؟" : "When should it start?"}
         </p>
-        <div className="flex flex-wrap gap-2" dir="ltr">
+        {/* Follows the page: in Arabic the first time is at the right and rows run right to left. */}
+        <div
+          className="flex flex-wrap gap-2"
+          role="group"
+          aria-label={isAr ? "وقت البداية" : "Start time"}
+        >
           {startTimes(rules).map((time) => {
             // A time the chosen services cannot take (booked, or needing more notice).
             const taken = flow.freeStarts !== null && !flow.freeStarts.has(time);
@@ -106,7 +111,7 @@ export function BookingTimePicker({ flow }: { flow: BookingFlow }) {
       {end && (
         <p className="text-sm text-muted-foreground" role="status">
           {isAr ? "حتى " : "Until "}
-          <span dir="ltr" className="font-semibold text-foreground">
+          <span dir={isAr ? "rtl" : "ltr"} className="font-semibold text-foreground">
             {formatClock(end.time, isAr)}
           </span>
           {end.nextDay && (isAr ? " (اليوم التالي)" : " (next day)")}

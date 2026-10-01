@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { configure, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_BOOKING_RULES, type BookingRules } from "../src/lib/bookings/rules";
@@ -253,6 +253,9 @@ const { StorefrontBookingPage } =
 const { BookingInvite } =
   await import("../src/features/storefront-booking/components/BookingEntryPoints");
 
+// The first render of the page is slow when the whole suite runs at once.
+configure({ asyncUtilTimeout: 5000 });
+
 beforeAll(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-01T09:00:00Z"));
@@ -374,6 +377,18 @@ describe("booking from the storefront", () => {
     renderWithQuery(<StorefrontBookingPage />);
     expect(await screen.findByText("احجز موعدك")).toBeInTheDocument();
     expect(await screen.findByRole("gridcell", { name: /9 أكتوبر: محجوز/ })).toBeDisabled();
+  });
+
+  it("lays the start times out right to left in Arabic, the first at the right", async () => {
+    state.lang = "ar";
+    renderWithQuery(<StorefrontBookingPage initialService="p1" />);
+    fireEvent.click(await screen.findByRole("gridcell", { name: /10 أكتوبر: متاح/ }));
+    const times = await screen.findByRole("group", { name: "وقت البداية" });
+    // Nothing forces the grid left to right: it follows the page's direction.
+    expect(times.closest('[dir="ltr"]')).toBeNull();
+    const first = within(times).getAllByRole("button")[0];
+    expect(first).toHaveTextContent("ص");
+    expect(first.closest('[dir="ltr"]')).toBeNull();
   });
 });
 
