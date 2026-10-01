@@ -31,11 +31,14 @@ type Booking = {
   customer_phone: string | null;
   location: unknown;
   total: number | string | null;
+  discount_amount: number | string | null;
+  discount_label_en: string | null;
+  discount_label_ar: string | null;
   booking_items: Array<{ name_en: string | null; name_ar: string | null; quantity: number }>;
 };
 
 const COLUMNS =
-  "id, reference, status, event_date, starts_at, ends_at, customer_name, customer_phone, location, total, booking_items(name_en, name_ar, quantity)";
+  "id, reference, status, event_date, starts_at, ends_at, customer_name, customer_phone, location, total, discount_amount, discount_label_en, discount_label_ar, booking_items(name_en, name_ar, quantity)";
 
 /**
  * Bookings in the merchant app: requests waiting (confirm or decline, the
@@ -148,6 +151,15 @@ export function BookingsView({ embedded = false }: { embedded?: boolean }) {
         ) : null}
         {services(booking) ? <Text style={styles.muted}>{services(booking)}</Text> : null}
         {place ? <Text style={styles.muted}>{place}</Text> : null}
+        {Number(booking.discount_amount ?? 0) > 0 ? (
+          <Text style={styles.muted}>
+            {(isAr
+              ? booking.discount_label_ar || booking.discount_label_en
+              : booking.discount_label_en || booking.discount_label_ar) ?? t("bookings.discount")}
+            {" · −"}
+            {formatMoney(Number(booking.discount_amount), currency)}
+          </Text>
+        ) : null}
         <View style={styles.rowBetween}>
           <Text style={styles.total}>{formatMoney(Number(booking.total ?? 0), currency)}</Text>
           {phone ? (

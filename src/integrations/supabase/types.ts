@@ -589,6 +589,68 @@ export type Database = {
           },
         ];
       };
+      booking_discount_rules: {
+        Row: {
+          brand_id: string;
+          created_at: string;
+          id: string;
+          is_active: boolean;
+          kind: string;
+          max_days: number | null;
+          min_days: number;
+          name_ar: string | null;
+          name_en: string | null;
+          product_ids: string[] | null;
+          updated_at: string;
+          valid_from: string | null;
+          valid_to: string | null;
+          value: number;
+          weekdays: number[] | null;
+        };
+        Insert: {
+          brand_id: string;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          kind?: string;
+          max_days?: number | null;
+          min_days?: number;
+          name_ar?: string | null;
+          name_en?: string | null;
+          product_ids?: string[] | null;
+          updated_at?: string;
+          valid_from?: string | null;
+          valid_to?: string | null;
+          value: number;
+          weekdays?: number[] | null;
+        };
+        Update: {
+          brand_id?: string;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          kind?: string;
+          max_days?: number | null;
+          min_days?: number;
+          name_ar?: string | null;
+          name_en?: string | null;
+          product_ids?: string[] | null;
+          updated_at?: string;
+          valid_from?: string | null;
+          valid_to?: string | null;
+          value?: number;
+          weekdays?: number[] | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "booking_discount_rules_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       booking_items: {
         Row: {
           booking_id: string;
@@ -740,6 +802,10 @@ export type Database = {
           customer_name: string | null;
           customer_phone: string | null;
           deposit_amount: number | null;
+          discount_amount: number;
+          discount_label_ar: string | null;
+          discount_label_en: string | null;
+          discount_rule_id: string | null;
           ends_at: string;
           event_date: string;
           hold_expires_at: string | null;
@@ -770,6 +836,10 @@ export type Database = {
           customer_name?: string | null;
           customer_phone?: string | null;
           deposit_amount?: number | null;
+          discount_amount?: number;
+          discount_label_ar?: string | null;
+          discount_label_en?: string | null;
+          discount_rule_id?: string | null;
           ends_at: string;
           event_date: string;
           hold_expires_at?: string | null;
@@ -800,6 +870,10 @@ export type Database = {
           customer_name?: string | null;
           customer_phone?: string | null;
           deposit_amount?: number | null;
+          discount_amount?: number;
+          discount_label_ar?: string | null;
+          discount_label_en?: string | null;
+          discount_rule_id?: string | null;
           ends_at?: string;
           event_date?: string;
           hold_expires_at?: string | null;
@@ -829,6 +903,13 @@ export type Database = {
             columns: ["customer_id"];
             isOneToOne: false;
             referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bookings_discount_rule_id_fkey";
+            columns: ["discount_rule_id"];
+            isOneToOne: false;
+            referencedRelation: "booking_discount_rules";
             referencedColumns: ["id"];
           },
           {
@@ -8386,6 +8467,10 @@ export type Database = {
         };
         Returns: number;
       };
+      apply_booking_discount: {
+        Args: { p_booking_id: string };
+        Returns: number;
+      };
       apply_brand_vertical_change: {
         Args: {
           p_add_categories?: Json;
@@ -8638,6 +8723,7 @@ export type Database = {
             };
             Returns: Json;
           };
+      create_booking_order: { Args: { p_booking_id: string }; Returns: string };
       create_customer_push_campaign: {
         Args: {
           p_body: string;
@@ -8676,6 +8762,10 @@ export type Database = {
           customer_name: string | null;
           customer_phone: string | null;
           deposit_amount: number | null;
+          discount_amount: number;
+          discount_label_ar: string | null;
+          discount_label_en: string | null;
+          discount_rule_id: string | null;
           ends_at: string;
           event_date: string;
           hold_expires_at: string | null;
@@ -8984,6 +9074,22 @@ export type Database = {
           day: string;
           remaining: number;
           state: string;
+        }[];
+      };
+      get_booking_discounts: {
+        Args: { p_brand_id: string };
+        Returns: {
+          id: string;
+          kind: string;
+          max_days: number;
+          min_days: number;
+          name_ar: string;
+          name_en: string;
+          product_ids: string[];
+          valid_from: string;
+          valid_to: string;
+          value: number;
+          weekdays: number[];
         }[];
       };
       get_brand_categories_with_counts: {
@@ -9539,6 +9645,7 @@ export type Database = {
         Returns: undefined;
       };
       reporting_brand_id: { Args: { p_brand_slug?: string }; Returns: string };
+      reprice_order_totals: { Args: { p_order_id: string }; Returns: undefined };
       request_booking: {
         Args: {
           p_brand_id: string;
@@ -9578,6 +9685,10 @@ export type Database = {
           customer_name: string | null;
           customer_phone: string | null;
           deposit_amount: number | null;
+          discount_amount: number;
+          discount_label_ar: string | null;
+          discount_label_en: string | null;
+          discount_rule_id: string | null;
           ends_at: string;
           event_date: string;
           hold_expires_at: string | null;
@@ -10026,6 +10137,49 @@ export type Database = {
         };
         Returns: string;
       };
+      set_booking_discount: {
+        Args: { p_amount: number; p_booking_id: string; p_label?: string };
+        Returns: {
+          brand_id: string;
+          cancel_reason: string | null;
+          cancelled_at: string | null;
+          cancelled_by: string | null;
+          confirmed_at: string | null;
+          confirmed_by: string | null;
+          created_at: string;
+          created_by: string | null;
+          customer_email: string | null;
+          customer_id: string | null;
+          customer_name: string | null;
+          customer_phone: string | null;
+          deposit_amount: number | null;
+          discount_amount: number;
+          discount_label_ar: string | null;
+          discount_label_en: string | null;
+          discount_rule_id: string | null;
+          ends_at: string;
+          event_date: string;
+          hold_expires_at: string | null;
+          hold_token: string | null;
+          id: string;
+          location: Json;
+          notes: string | null;
+          order_id: string | null;
+          reference: string;
+          source: string;
+          starts_at: string;
+          status: string;
+          total: number;
+          travel_fee: number | null;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "bookings";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       set_booking_status: {
         Args: { p_booking_id: string; p_reason?: string; p_status: string };
         Returns: {
@@ -10042,6 +10196,10 @@ export type Database = {
           customer_name: string | null;
           customer_phone: string | null;
           deposit_amount: number | null;
+          discount_amount: number;
+          discount_label_ar: string | null;
+          discount_label_en: string | null;
+          discount_rule_id: string | null;
           ends_at: string;
           event_date: string;
           hold_expires_at: string | null;

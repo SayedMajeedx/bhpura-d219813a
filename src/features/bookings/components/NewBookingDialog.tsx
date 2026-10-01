@@ -16,6 +16,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatMoney } from "@/lib/format";
 import { catalogQueries } from "@/lib/data/catalog";
+import { bookingDiscountsQueries } from "@/lib/data/booking-discounts";
+import { bestDiscount, discountName } from "@/lib/bookings/discounts";
 import { createStaffBooking } from "@/lib/data/bookings";
 import { bookingErrorMessage } from "@/lib/bookings/errors";
 import { durations, startTimes } from "@/lib/bookings/rules";
@@ -86,6 +88,21 @@ export function NewBookingDialog({
     setForm((current) => ({ ...current, [key]: value }));
 
   const lines = bookingLines(form.services, services);
+  // The offer the database will give this booking (the same rule, shown before saving).
+  const offerRules = useQuery(bookingDiscountsQueries.list(brand.id)).data;
+  const offer = form.day
+    ? bestDiscount(
+        (offerRules ?? []).filter((rule) => rule.is_active),
+        {
+          day: form.day,
+          today: page.today,
+          lines: lines.map((line) => ({
+            product_id: line.product_id ?? null,
+            line_total: line.quantity * line.unit_price,
+          })),
+        },
+      )
+    : null;
   const problems = formProblems(form, rules, lines);
   const dayFull =
     page.selectedCell?.day === form.day &&
@@ -329,9 +346,19 @@ export function NewBookingDialog({
             </label>
           )}
 
-          <div className="flex items-center justify-between border-t border-border pt-3 font-semibold">
+          {offer && (
+            <div className="flex items-center justify-between border-t border-border pt-3 text-sm text-success">
+              <span>{discountName(offer.rule, isAr)}</span>
+              <span dir="ltr">− {formatMoney(offer.amount, currency)}</span>
+            </div>
+          )}
+          <div
+            className={`flex items-center justify-between pt-3 font-semibold ${offer ? "" : "border-t border-border"}`}
+          >
             <span>{isAr ? "الإجمالي" : "Total"}</span>
-            <span dir="ltr">{formatMoney(bookingTotal(lines), currency)}</span>
+            <span dir="ltr">
+              {formatMoney(bookingTotal(lines) - (offer?.amount ?? 0), currency)}
+            </span>
           </div>
           {problems.length > 0 && (
             <p className="text-xs text-muted-foreground" role="status">

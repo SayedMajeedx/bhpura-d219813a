@@ -157,6 +157,8 @@ function Checkout() {
   });
 
   const promoDiscount = Math.min(appliedPromo?.amount ?? 0, cartTotal);
+  // The booking's own offer (last minute, early bird): the order carries it too.
+  const bookingDiscount = Math.min(Number(appointment?.discount ?? 0), cartTotal);
 
   const {
     loyaltyAccount,
@@ -170,11 +172,19 @@ function Checkout() {
     handleApplyPoints,
     handleRemovePoints,
     freeShipping,
-  } = useCheckoutLoyalty({ brand, customerId, cartTotal, promoDiscount, currency, lang });
+  } = useCheckoutLoyalty({
+    brand,
+    customerId,
+    cartTotal,
+    promoDiscount: promoDiscount + bookingDiscount,
+    currency,
+    lang,
+  });
   // A member whose loyalty tier has free shipping pays none (so does the order).
   const shipping = freeShipping ? 0 : deliveryFee;
 
-  const grandTotal = Math.max(0, cartTotal - promoDiscount - loyaltyDiscount) + shipping;
+  const grandTotal =
+    Math.max(0, cartTotal - promoDiscount - bookingDiscount - loyaltyDiscount) + shipping;
 
   useEffect(() => {
     if (!cart.length) return;

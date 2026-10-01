@@ -147,13 +147,13 @@ send-order-email`.
 The owner's next asks, in the order they are built (each its own PR; the SQL
 first, applied by the owner, then the screens):
 
-1. **Every booking has an order and an invoice** (`create_booking_order`,
+1. **Every booking has an order and an invoice** (done; screens: the booking card's invoice block, WhatsApp send, create on demand) (`create_booking_order`,
    migration `20261002110000`). Confirming a request, entering a confirmed
    booking and cancelling keep the order in step; any booking can be invoiced
    from its card (a request becomes a pending order, a quote). The booking card
    shows its invoice, with open, copy link and send on WhatsApp. Nothing is
    created in bulk for old bookings.
-2. **Booking-time discounts** (`booking_discount_rules`, migration
+2. **Booking-time discounts** (done; admin Offers dialog, calendar marks and summary on the storefront, checkout and invoice carry it) (`booking_discount_rules`, migration
    `20261002100000`). The store's own rules: a window of days between booking
    and event (last minute: within 1 day 25%, within 7 days 10%; early bird: 30+
    days), a percent or a fixed amount, optionally the event's weekdays, chosen

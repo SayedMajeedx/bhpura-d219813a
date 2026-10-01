@@ -299,3 +299,27 @@ export function discountFormColumns(form: DiscountRuleForm) {
     is_active: form.is_active,
   };
 }
+
+/**
+ * The offer to show on a day before any service is chosen: the best rule that
+ * covers every service, priced on a reference total (a rule limited to some
+ * services shows once services are chosen, through bestDiscount).
+ */
+export function dayOffer(
+  rules: readonly DiscountRule[],
+  day: string,
+  today: string,
+  referenceTotal = 100,
+): { rule: DiscountRule; amount: number } | null {
+  const general = rules.filter((rule) => !rule.product_ids || rule.product_ids.length === 0);
+  return bestDiscount(general, {
+    day,
+    today,
+    lines: [{ product_id: null, line_total: referenceTotal }],
+  });
+}
+
+/** "−25%" or "−5": the short mark on a calendar day. */
+export function offerBadgeText(rule: Pick<DiscountRule, "kind" | "value">): string {
+  return `−${discountValueText(rule)}`;
+}

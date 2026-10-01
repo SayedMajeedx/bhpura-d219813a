@@ -248,6 +248,12 @@ export function OrderSummaryCard({
           </span>
           <span>{shipping > 0 ? formatPrice(shipping, currency, lang) : t("مجانًا", "Free")}</span>
         </div>
+        {Number(appointment?.discount ?? 0) > 0 && (
+          <div className="flex justify-between font-medium text-emerald-700 dark:text-emerald-400">
+            <span>{appointment?.discountLabel || t("عرض الحجز", "Booking offer")}</span>
+            <span>− {formatPrice(Number(appointment?.discount), currency, lang)}</span>
+          </div>
+        )}
         {promoDiscount > 0 && (
           <div className="flex justify-between font-medium text-emerald-700 dark:text-emerald-400">
             <span>

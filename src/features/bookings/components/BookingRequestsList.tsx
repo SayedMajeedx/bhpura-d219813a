@@ -1,5 +1,6 @@
 import { Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatMoney } from "@/lib/format";
 import { dayTitle, formatClock, localTime } from "@/lib/bookings/format";
 import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
 
@@ -38,6 +39,16 @@ export function BookingRequestsList({ page }: { page: BookingsPage }) {
               </span>
               <span className="block text-muted-foreground">
                 {booking.customer_name || booking.customer_phone || booking.reference}
+              </span>
+              <span className="block text-muted-foreground">
+                {(booking.booking_items ?? [])
+                  .map((item) =>
+                    isAr ? item.name_ar || item.name_en : item.name_en || item.name_ar,
+                  )
+                  .filter(Boolean)
+                  .join(isAr ? "، " : ", ")}
+                {" · "}
+                <span dir="ltr">{formatMoney(Number(booking.total ?? 0), page.currency)}</span>
               </span>
             </Button>
             <div className="flex gap-2">

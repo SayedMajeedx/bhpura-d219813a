@@ -19,6 +19,9 @@ export type CartBooking = {
   depositPercent?: number;
   /** The trip to the event's area, when the store charges one (the server sets the real fee). */
   travelFee?: number | null;
+  /** The booking-time offer taken off the services (the server sets the real amount). */
+  discount?: number;
+  discountLabel?: string | null;
 };
 
 /** What hold_booking returns. */
@@ -29,6 +32,8 @@ export type BookingHold = {
   event_date: string;
   hold_expires_at: string;
   total: number;
+  /** What the store's offer took off the services (0: none). */
+  discount?: number;
   items: Array<{ product_id: string; variant_id: string; quantity: number; unit_price: number }>;
 };
 

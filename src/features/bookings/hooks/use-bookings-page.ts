@@ -4,11 +4,14 @@ import { toast } from "sonner";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
+import { invalidateOrders } from "@/lib/data/orders/mutations";
 import {
   addBookingBlock,
   bookingsQueries,
+  createBookingOrder,
   invalidateBookings,
   removeBookingBlock,
+  setBookingDiscount,
   setBookingStatus,
   type Booking,
 } from "@/lib/data/bookings";
@@ -91,6 +94,33 @@ export function useBookingsPage() {
     onError,
   });
 
+  // A booking's invoice is its order: made on demand, or with the booking.
+  const invoiceMutation = useMutation({
+    mutationFn: (booking: Booking) => createBookingOrder(booking.id),
+    onSuccess: async () => {
+      await Promise.all([refresh(), invalidateOrders(qc, brand.id)]);
+      toast.success(isAr ? "تم إنشاء الفاتورة" : "Invoice created");
+    },
+    onError,
+  });
+
+  const discountMutation = useMutation({
+    mutationFn: ({
+      booking,
+      amount,
+      label,
+    }: {
+      booking: Booking;
+      amount: number;
+      label?: string;
+    }) => setBookingDiscount(booking.id, amount, label),
+    onSuccess: async () => {
+      await Promise.all([refresh(), invalidateOrders(qc, brand.id)]);
+      toast.success(isAr ? "تم تحديث الخصم" : "Discount updated");
+    },
+    onError,
+  });
+
   const blockMutation = useMutation({
     mutationFn: (input: { starts_on: string; ends_on: string; reason?: string }) =>
       addBookingBlock(brand.id, input),
@@ -141,6 +171,10 @@ export function useBookingsPage() {
     areaFees: areaFeesQuery.data ?? {},
     setStatus: statusMutation.mutate,
     statusPending: statusMutation.isPending,
+    createInvoice: invoiceMutation.mutate,
+    invoicePending: invoiceMutation.isPending,
+    setDiscount: discountMutation.mutate,
+    discountPending: discountMutation.isPending,
     blockDays: blockMutation.mutate,
     blockPending: blockMutation.isPending,
     unblock: unblockMutation.mutate,

@@ -11,6 +11,8 @@ import { useStorefront } from "@/lib/storefront-context";
 import { isCatalogMode, shouldShowPrices } from "@/lib/storefront-mode";
 import { bookingCartLines } from "@/lib/bookings/cart";
 import { storefrontQueries } from "@/lib/data/storefront";
+import { bookingDiscountsQueries } from "@/lib/data/booking-discounts";
+import { bestDiscount, dayOffer, discountName, type DiscountRule } from "@/lib/bookings/discounts";
 import {
   bookingsKeys,
   bookingsQueries,
@@ -25,6 +27,7 @@ import {
   bookableServices,
   chosenTotal,
   EMPTY_FLOW,
+  priceFor,
   offeredDurations,
   missingStep,
   toBookingRequest,
@@ -111,6 +114,37 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
   const startRows = flow.services.length > 0 ? startsQuery.data : undefined;
   const freeStarts = useMemo(() => freeStartSet(startRows), [startRows]);
 
+  // The store's offers (last minute, early bird...): shown on the calendar and
+  // in the summary; the database applies the same rule when the booking is made.
+  const discountRules: DiscountRule[] =
+    useQuery({
+      ...bookingDiscountsQueries.public(brand.id),
+      enabled: Boolean(rules),
+    }).data ?? [];
+  const chosenForOffer = services.filter((service) => flow.services.includes(service.id));
+  const offer = flow.day
+    ? bestDiscount(discountRules, {
+        day: flow.day,
+        today,
+        lines: chosenForOffer.map((service) => ({
+          product_id: service.id,
+          line_total: priceFor(service, flow.durationMinutes) ?? 0,
+        })),
+      })
+    : null;
+  /** The offer to mark on a calendar day: the exact one with services chosen, else the general one. */
+  const offerOnDay = (day: string) =>
+    chosenForOffer.length > 0
+      ? bestDiscount(discountRules, {
+          day,
+          today,
+          lines: chosenForOffer.map((service) => ({
+            product_id: service.id,
+            line_total: priceFor(service, flow.durationMinutes) ?? 0,
+          })),
+        })
+      : dayOffer(discountRules, day, today);
+
   const [result, setResult] = useState<BookingRequestResult | null>(null);
   const submit = useMutation({
     mutationFn: () => requestBooking(toBookingRequest(brand.id, flow, services, isAr)),
@@ -135,6 +169,8 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
           durationMinutes: flow.durationMinutes!,
           depositPercent: rules?.deposit_percent ?? 0,
           travelFee: rules ? travelFeeFor(rules, flow.areaCode) : null,
+          discount: hold.discount ?? 0,
+          discountLabel: offer ? discountName(offer.rule, isAr) : null,
         },
         services,
       );
@@ -183,6 +219,9 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
     startRows,
     /** The durations every chosen service is offered for. */
     lengths: rules ? offeredDurations(durations(rules), chosen) : [],
+    /** The offer this booking gets (null: none), and the one to mark on a calendar day. */
+    offer,
+    offerOnDay,
     /** The services at the chosen duration's prices. */
     servicesTotal: chosenTotal(flow.services, services, flow.durationMinutes),
     /** The trip to the event's area (null: the store charges none). */
