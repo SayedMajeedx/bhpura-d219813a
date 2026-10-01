@@ -4,6 +4,7 @@ import {
   byDay,
   clockAt,
   dayTitle,
+  durationText,
   phoneDigits,
   placeOf,
   todayIn,
@@ -40,5 +41,15 @@ describe("mobile bookings", () => {
     expect(phoneDigits("+973 3900 1122")).toBe("97339001122");
     expect(phoneDigits("0096655512345")).toBe("96655512345");
     expect(phoneDigits(null)).toBe("");
+  });
+
+  it("says how long a service runs", () => {
+    expect(durationText(180, false)).toBe("3 h");
+    expect(durationText(90, false)).toBe("1 h 30 min");
+    expect(durationText(45, false)).toBe("45 min");
+    expect(durationText(60, true)).toBe("ساعة");
+    expect(durationText(120, true)).toBe("ساعتان");
+    expect(durationText(180, true)).toBe("3 ساعات");
+    expect(durationText(90, true)).toBe("ساعة و30 دقيقة");
   });
 });

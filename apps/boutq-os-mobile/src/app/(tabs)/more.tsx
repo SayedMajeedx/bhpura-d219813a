@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -7,7 +7,6 @@ import { AppTopBar } from "@/components/topbar";
 import { Card, ModalSheet, StatusPill } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
-import { supabase } from "@/lib/supabase";
 import { colors, radius } from "@/theme";
 
 type HubItem = {
@@ -19,26 +18,25 @@ type HubItem = {
   badge?: string;
   adminOnly?: boolean;
   permission?: string;
-  /** Shown only when the store takes bookings. */
-  bookingsOnly?: boolean;
+  /** Hidden when the store has no such module (e.g. incubators in a services store). */
+  needs?: "incubators" | "stock";
+  /** Shown only where bookings take the customers' tab bar place. */
+  inBookingsStore?: boolean;
 };
 
 export default function MoreHubScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { profile, activeBrand, brands, setActiveBrandId, signOut, isAdmin, hasPermission } =
-    useAuth();
-  const [bookingsOn, setBookingsOn] = useState(false);
-  useEffect(() => {
-    if (!activeBrand?.id) return;
-    let live = true;
-    void supabase.rpc("bookings_enabled", { p_brand_id: activeBrand.id }).then(({ data }) => {
-      if (live) setBookingsOn(data === true);
-    });
-    return () => {
-      live = false;
-    };
-  }, [activeBrand?.id]);
+  const {
+    profile,
+    activeBrand,
+    brands,
+    setActiveBrandId,
+    signOut,
+    isAdmin,
+    hasPermission,
+    modules,
+  } = useAuth();
   const { t, isAr, toggleLang } = useI18n();
   const [brandModalOpen, setBrandModalOpen] = useState(false);
 
@@ -61,13 +59,13 @@ export default function MoreHubScreen() {
       titleEn: "Operations & Catalog",
       items: [
         {
-          id: "bookings",
-          titleKey: "nav.bookings",
-          descKey: "bookings.subtitle",
-          icon: "calendar",
-          route: "/more/bookings",
-          permission: "manage_orders",
-          bookingsOnly: true,
+          // A bookings store's bar has no room for the customers' tab.
+          id: "customers",
+          titleKey: "nav.customers",
+          descKey: "customers.title",
+          icon: "people",
+          route: "/customers",
+          inBookingsStore: true,
         },
         {
           id: "categories",
@@ -82,6 +80,7 @@ export default function MoreHubScreen() {
           descKey: "incubators.locations",
           icon: "cube",
           route: "/more/incubators",
+          needs: "incubators",
         },
         {
           id: "reviews",
@@ -237,7 +236,8 @@ export default function MoreHubScreen() {
           const visibleItems = sec.items.filter((item) => {
             if (item.adminOnly && !isAdmin) return false;
             if (item.permission && !hasPermission(item.permission)) return false;
-            if (item.bookingsOnly && !bookingsOn) return false;
+            if (item.needs && !modules[item.needs]) return false;
+            if (item.inBookingsStore && !modules.bookings) return false;
             return true;
           });
 
