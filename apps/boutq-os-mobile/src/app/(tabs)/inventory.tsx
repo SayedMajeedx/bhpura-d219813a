@@ -16,6 +16,7 @@ import { AppIcon } from "@/components/icons";
 import { AppTopBar } from "@/components/topbar";
 import { Card, EmptyState, SearchInput, SegmentedControl } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
+import { durationText } from "@/lib/bookings";
 import { formatMoney } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
@@ -30,6 +31,8 @@ type Variant = {
   barcode: string | null;
   selling_price: number;
   cost_price: number | null;
+  /** Set when a service is priced by how long it is booked. */
+  duration_minutes?: number | null;
   stock: number;
   stock_main?: number;
   stock_incubator?: number;
@@ -48,7 +51,9 @@ type ProductWithVariants = {
 type InventoryFilter = "all" | "low_stock" | "out_of_stock";
 
 export default function InventoryScreen() {
-  const { activeBrandId, currency } = useAuth();
+  const { activeBrandId, currency, modules } = useAuth();
+  // A store that does not count stock (services) has no stock filters, counts or steppers.
+  const tracksStock = modules.stock;
   const { t, isAr } = useI18n();
 
   const [products, setProducts] = useState<ProductWithVariants[]>([]);
@@ -74,7 +79,9 @@ export default function InventoryScreen() {
       // 2. Fetch variants
       const { data: vars, error: vErr } = await supabase
         .from("product_variants")
-        .select("id,product_id,size,color,sku,barcode,selling_price,cost_price,stock")
+        .select(
+          "id,product_id,size,color,sku,barcode,selling_price,cost_price,stock,duration_minutes",
+        )
         .eq("brand_id", activeBrandId);
 
       if (vErr) throw vErr;
@@ -177,24 +184,26 @@ export default function InventoryScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <AppTopBar title={t("nav.inventory")} />
+      <AppTopBar title={tracksStock ? t("nav.inventory") : t("nav.services")} />
 
       <View style={styles.filterSection}>
         <SearchInput
           value={search}
           onChangeText={setSearch}
-          placeholder={t("inventory.searchPh")}
+          placeholder={tracksStock ? t("inventory.searchPh") : t("inventory.searchServicesPh")}
         />
 
-        <SegmentedControl
-          options={[
-            { label: t("inventory.filterAll"), value: "all" },
-            { label: t("inventory.filterLow"), value: "low_stock" },
-            { label: t("inventory.filterOut"), value: "out_of_stock" },
-          ]}
-          value={filter}
-          onChange={(val) => setFilter(val as InventoryFilter)}
-        />
+        {tracksStock && (
+          <SegmentedControl
+            options={[
+              { label: t("inventory.filterAll"), value: "all" },
+              { label: t("inventory.filterLow"), value: "low_stock" },
+              { label: t("inventory.filterOut"), value: "out_of_stock" },
+            ]}
+            value={filter}
+            onChange={(val) => setFilter(val as InventoryFilter)}
+          />
+        )}
       </View>
 
       {/* Quick shortcuts to categories and incubators */}
@@ -203,10 +212,12 @@ export default function InventoryScreen() {
           <AppIcon name="tag" size={16} color={colors.primary} />
           <Text style={styles.shortcutText}>{t("nav.categories")}</Text>
         </Pressable>
-        <Pressable onPress={() => router.push("/more/incubators")} style={styles.shortcutBtn}>
-          <AppIcon name="cube" size={16} color={colors.primary} />
-          <Text style={styles.shortcutText}>{t("nav.incubators")}</Text>
-        </Pressable>
+        {modules.incubators && (
+          <Pressable onPress={() => router.push("/more/incubators")} style={styles.shortcutBtn}>
+            <AppIcon name="cube" size={16} color={colors.primary} />
+            <Text style={styles.shortcutText}>{t("nav.incubators")}</Text>
+          </Pressable>
+        )}
       </View>
 
       {loading ? (
@@ -230,7 +241,7 @@ export default function InventoryScreen() {
           }
           ListEmptyComponent={
             <EmptyState
-              title={t("inventory.noProducts")}
+              title={tracksStock ? t("inventory.noProducts") : t("inventory.noServices")}
               description={
                 isAr
                   ? "لا توجد منتجات تطابق معايير البحث الحالية في المخزون."
@@ -262,22 +273,24 @@ export default function InventoryScreen() {
                     {item.category ? (
                       <Text style={styles.productCategory}>{item.category}</Text>
                     ) : null}
-                    <Text style={styles.totalStockText}>
-                      {isAr ? "إجمالي المخزون: " : "Total stock: "}
-                      <Text
-                        style={{
-                          color:
-                            totalStock === 0
-                              ? colors.danger
-                              : totalStock <= 5
-                                ? colors.warning
-                                : colors.success,
-                          fontWeight: "800",
-                        }}
-                      >
-                        {totalStock} {isAr ? "قطعة" : "units"}
+                    {tracksStock && (
+                      <Text style={styles.totalStockText}>
+                        {isAr ? "إجمالي المخزون: " : "Total stock: "}
+                        <Text
+                          style={{
+                            color:
+                              totalStock === 0
+                                ? colors.danger
+                                : totalStock <= 5
+                                  ? colors.warning
+                                  : colors.success,
+                            fontWeight: "800",
+                          }}
+                        >
+                          {totalStock} {isAr ? "قطعة" : "units"}
+                        </Text>
                       </Text>
-                    </Text>
+                    )}
                   </View>
                 </View>
 
@@ -289,8 +302,10 @@ export default function InventoryScreen() {
                       <View key={v.id} style={styles.variantRow}>
                         <View style={styles.variantDetails}>
                           <Text style={styles.variantSpecs}>
-                            {[v.size, v.color].filter(Boolean).join(" / ") ||
-                              (isAr ? "المقاس القياسي" : "Standard")}
+                            {v.duration_minutes
+                              ? durationText(v.duration_minutes, isAr)
+                              : [v.size, v.color].filter(Boolean).join(" / ") ||
+                                (isAr ? "المقاس القياسي" : "Standard")}
                           </Text>
                           {v.sku ? <Text style={styles.variantSku}>SKU: {v.sku}</Text> : null}
                           <Text style={styles.variantPrice}>
@@ -299,51 +314,53 @@ export default function InventoryScreen() {
                         </View>
 
                         {/* Inline Stepper Controls */}
-                        <View style={styles.stepperContainer}>
-                          <Pressable
-                            onPress={() => adjustStock(v.id, -1)}
-                            disabled={isBusy || (v.stock ?? 0) <= 0}
-                            style={({ pressed }) => [
-                              styles.stepBtn,
-                              ((v.stock ?? 0) <= 0 || isBusy) && styles.stepBtnDisabled,
-                              pressed && { opacity: 0.7 },
-                            ]}
-                          >
-                            <AppIcon
-                              name="remove"
-                              size={16}
-                              color={(v.stock ?? 0) <= 0 ? colors.border : colors.text}
-                            />
-                          </Pressable>
+                        {tracksStock && (
+                          <View style={styles.stepperContainer}>
+                            <Pressable
+                              onPress={() => adjustStock(v.id, -1)}
+                              disabled={isBusy || (v.stock ?? 0) <= 0}
+                              style={({ pressed }) => [
+                                styles.stepBtn,
+                                ((v.stock ?? 0) <= 0 || isBusy) && styles.stepBtnDisabled,
+                                pressed && { opacity: 0.7 },
+                              ]}
+                            >
+                              <AppIcon
+                                name="remove"
+                                size={16}
+                                color={(v.stock ?? 0) <= 0 ? colors.border : colors.text}
+                              />
+                            </Pressable>
 
-                          <View style={styles.stockCountBox}>
-                            {isBusy ? (
-                              <ActivityIndicator size="small" color={colors.primary} />
-                            ) : (
-                              <Text
-                                style={[
-                                  styles.stockCountText,
-                                  (v.stock ?? 0) === 0 && { color: colors.danger },
-                                ]}
-                              >
-                                {v.stock ?? 0}
-                              </Text>
-                            )}
+                            <View style={styles.stockCountBox}>
+                              {isBusy ? (
+                                <ActivityIndicator size="small" color={colors.primary} />
+                              ) : (
+                                <Text
+                                  style={[
+                                    styles.stockCountText,
+                                    (v.stock ?? 0) === 0 && { color: colors.danger },
+                                  ]}
+                                >
+                                  {v.stock ?? 0}
+                                </Text>
+                              )}
+                            </View>
+
+                            <Pressable
+                              onPress={() => adjustStock(v.id, 1)}
+                              disabled={isBusy}
+                              style={({ pressed }) => [
+                                styles.stepBtn,
+                                styles.stepBtnAdd,
+                                isBusy && styles.stepBtnDisabled,
+                                pressed && { opacity: 0.7 },
+                              ]}
+                            >
+                              <AppIcon name="add" size={16} color={colors.primaryFg} />
+                            </Pressable>
                           </View>
-
-                          <Pressable
-                            onPress={() => adjustStock(v.id, 1)}
-                            disabled={isBusy}
-                            style={({ pressed }) => [
-                              styles.stepBtn,
-                              styles.stepBtnAdd,
-                              isBusy && styles.stepBtnDisabled,
-                              pressed && { opacity: 0.7 },
-                            ]}
-                          >
-                            <AppIcon name="add" size={16} color={colors.primaryFg} />
-                          </Pressable>
-                        </View>
+                        )}
                       </View>
                     );
                   })}

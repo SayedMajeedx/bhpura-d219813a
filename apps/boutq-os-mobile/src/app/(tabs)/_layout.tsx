@@ -7,7 +7,9 @@ import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 
 export default function TabLayout() {
-  const { isCourier } = useAuth();
+  const { isCourier, modules } = useAuth();
+  // A store that takes bookings has them in the tab bar, and its items are services.
+  const bookingsTab = modules.bookings && !isCourier;
   const { t } = useI18n();
 
   return (
@@ -30,6 +32,14 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="bookings"
+        options={{
+          title: t("nav.bookings"),
+          href: bookingsTab ? undefined : null,
+          tabBarIcon: ({ color }) => <AppIcon name="calendar" size={22} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="orders"
         options={{
           title: t("nav.orders"),
@@ -39,7 +49,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="inventory"
         options={{
-          title: t("nav.inventory"),
+          title: modules.stock ? t("nav.inventory") : t("nav.services"),
           href: isCourier ? null : undefined,
           tabBarIcon: ({ color }) => <AppIcon name="cube" size={22} color={color} />,
         }}
@@ -48,7 +58,8 @@ export default function TabLayout() {
         name="customers"
         options={{
           title: t("nav.customers"),
-          href: isCourier ? null : undefined,
+          // A bookings store's bar has no room for it: it is in More.
+          href: isCourier || bookingsTab ? null : undefined,
           tabBarIcon: ({ color }) => <AppIcon name="people" size={22} color={color} />,
         }}
       />

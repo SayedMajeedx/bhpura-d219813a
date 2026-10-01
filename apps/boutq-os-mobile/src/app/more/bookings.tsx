@@ -42,7 +42,7 @@ const COLUMNS =
  * day's place checked by the database) and the confirmed bookings coming up,
  * with a tap to call or message the customer.
  */
-export default function BookingsScreen() {
+export function BookingsView({ embedded = false }: { embedded?: boolean }) {
   const insets = useSafeAreaInsets();
   const { activeBrandId } = useAuth();
   const { t, isAr } = useI18n();
@@ -211,7 +211,7 @@ export default function BookingsScreen() {
         />
       }
     >
-      <Text style={styles.title}>{t("nav.bookings")}</Text>
+      {embedded ? null : <Text style={styles.title}>{t("nav.bookings")}</Text>}
       <Text style={styles.muted}>{t("bookings.subtitle")}</Text>
       <SegmentedControl
         options={[
@@ -276,3 +276,7 @@ const styles = StyleSheet.create({
   actionText: { fontSize: 14, fontWeight: "600", color: colors.text },
   actionPrimaryText: { fontSize: 14, fontWeight: "700", color: colors.primaryFg },
 });
+
+export default function BookingsScreen() {
+  return <BookingsView />;
+}

@@ -46,6 +46,7 @@ const en: Dict = {
 
   "nav.dashboard": "Dashboard",
   "nav.inventory": "Inventory",
+  "nav.services": "Services",
   "nav.customers": "Customers",
   "nav.orders": "Orders",
   "nav.expenses": "Expenses",
@@ -125,6 +126,7 @@ const en: Dict = {
 
   "inventory.title": "Inventory & Stock",
   "inventory.searchPh": "Search by SKU, barcode, product name...",
+  "inventory.searchServicesPh": "Search services...",
   "inventory.filterAll": "All Products",
   "inventory.filterLow": "Low Stock (≤ 5)",
   "inventory.filterOut": "Out of Stock",
@@ -135,6 +137,7 @@ const en: Dict = {
   "inventory.stock": "Stock",
   "inventory.sku": "SKU",
   "inventory.noProducts": "No products match criteria.",
+  "inventory.noServices": "No services match.",
 
   "customers.title": "Customers Directory",
   "customers.searchPh": "Search by name or phone...",
@@ -273,6 +276,7 @@ const ar: Dict = {
 
   "nav.dashboard": "لوحة التحكم",
   "nav.inventory": "المخزون",
+  "nav.services": "الخدمات",
   "nav.customers": "العملاء",
   "nav.orders": "الطلبات",
   "nav.expenses": "المصروفات",
@@ -352,6 +356,7 @@ const ar: Dict = {
 
   "inventory.title": "إدارة المخزون والمنتجات",
   "inventory.searchPh": "بحث بالكود (SKU)، الباركود أو اسم المنتج...",
+  "inventory.searchServicesPh": "ابحث في الخدمات...",
   "inventory.filterAll": "كل المنتجات",
   "inventory.filterLow": "مخزون منخفض (≤ 5)",
   "inventory.filterOut": "نفد المخزون",
@@ -362,6 +367,7 @@ const ar: Dict = {
   "inventory.stock": "المخزون",
   "inventory.sku": "كود المنتج",
   "inventory.noProducts": "لا توجد منتجات تطابق الشروط.",
+  "inventory.noServices": "لا توجد خدمات مطابقة.",
 
   "customers.title": "دليل وسجل العملاء",
   "customers.searchPh": "بحث بالاسم أو رقم الهاتف...",

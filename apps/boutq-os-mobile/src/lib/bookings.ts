@@ -72,3 +72,24 @@ export function phoneDigits(raw: string | null | undefined): string {
   if (digits.length === 8 && /^[36]|^17/.test(digits)) digits = `973${digits}`;
   return digits;
 }
+
+/** How long a service runs: "3 h", "1 h 30 min", "45 min" / "3 ساعات", "ساعة ونصف". */
+export function durationText(minutes: number, isAr: boolean): string {
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (isAr) {
+    const hoursAr =
+      hours === 0
+        ? ""
+        : hours === 1
+          ? "ساعة"
+          : hours === 2
+            ? "ساعتان"
+            : hours <= 10
+              ? `${hours} ساعات`
+              : `${hours} ساعة`;
+    const restAr = rest === 0 ? "" : `${rest} دقيقة`;
+    return [hoursAr, restAr].filter(Boolean).join(" و");
+  }
+  return [hours > 0 ? `${hours} h` : "", rest > 0 ? `${rest} min` : ""].filter(Boolean).join(" ");
+}

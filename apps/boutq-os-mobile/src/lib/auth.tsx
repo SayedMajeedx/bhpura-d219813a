@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { supabase } from "@/lib/supabase";
+import { resolveMobileModules, type MobileStoreModules } from "./store-modules";
 import { resolveMobileVocabulary, type MobileStoreVocabulary } from "./store-vocabulary";
 
 export type StaffProfile = {
@@ -53,6 +54,8 @@ type AuthContextValue = {
   installedAddonIds: string[];
   isAddonInstalled: (addonId: string) => boolean;
   storeVertical: string | null;
+  /** What the store has: stock, incubators, shipping, returns, bookings. */
+  modules: MobileStoreModules;
   vocabulary: MobileStoreVocabulary;
 };
 
@@ -69,14 +72,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [brandCurrency, setBrandCurrency] = useState<string>("BHD");
   const [installedAddonIds, setInstalledAddonIds] = useState<string[]>([]);
   const [storeVertical, setStoreVertical] = useState<string | null>(null);
+  const [storeModules, setStoreModules] = useState<unknown>(null);
+  // bookings_enabled: the module is on and the store has set its booking hours.
+  const [bookingsEnabled, setBookingsEnabled] = useState(false);
   const [customVocabulary, setCustomVocabulary] = useState<any>(null);
 
   const loadBrandSettings = useCallback(async (brandId: string) => {
     try {
-      const [settingsRes, addonsRes] = await Promise.all([
+      const [settingsRes, addonsRes, bookingsRes] = await Promise.all([
         supabase
           .from("business_settings")
-          .select("currency, store_vertical, store_vocabulary")
+          .select("currency, store_vertical, store_modules, store_vocabulary")
           .eq("brand_id", brandId)
           .maybeSingle(),
         supabase
@@ -84,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .select("addon_id")
           .eq("brand_id", brandId)
           .eq("status", "installed"),
+        supabase.rpc("bookings_enabled", { p_brand_id: brandId }),
       ]);
 
       if (settingsRes.data?.currency) {
@@ -93,6 +100,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setStoreVertical(settingsRes.data?.store_vertical ?? null);
+      setStoreModules(settingsRes.data?.store_modules ?? null);
+      setBookingsEnabled(bookingsRes.data === true);
       setCustomVocabulary(settingsRes.data?.store_vocabulary ?? null);
 
       const installedIds = ((addonsRes.data || []) as Array<{ addon_id: string }>).map(
@@ -103,6 +112,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setBrandCurrency("BHD");
       setInstalledAddonIds([]);
       setStoreVertical(null);
+      setStoreModules(null);
+      setBookingsEnabled(false);
       setCustomVocabulary(null);
     }
   }, []);
@@ -254,6 +265,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [installedAddonIds],
   );
 
+  const modules = useMemo(
+    () => ({ ...resolveMobileModules(storeVertical, storeModules), bookings: bookingsEnabled }),
+    [storeVertical, storeModules, bookingsEnabled],
+  );
+
   const vocabulary = useMemo(
     () => resolveMobileVocabulary(installedAddonIds, storeVertical, customVocabulary),
     [installedAddonIds, storeVertical, customVocabulary],
@@ -292,6 +308,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setBrands([]);
         setInstalledAddonIds([]);
         setStoreVertical(null);
+        setStoreModules(null);
+        setBookingsEnabled(false);
         setCustomVocabulary(null);
       },
       refreshAuth: async () => {
@@ -301,6 +319,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       installedAddonIds,
       isAddonInstalled,
       storeVertical,
+      modules,
       vocabulary,
     }),
     [
@@ -322,6 +341,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       installedAddonIds,
       isAddonInstalled,
       storeVertical,
+      modules,
       vocabulary,
     ],
   );
