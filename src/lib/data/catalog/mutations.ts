@@ -103,7 +103,9 @@ export async function updateVariants(brandId: string, variantIds: string[], patc
  * After the product editor saves, its variants follow the product: every
  * variant takes the product's cost; variants not on sale take the regular
  * price; variants on sale keep their sale price and take the regular price as
- * the struck-through one. Stops at the first failing step.
+ * the struck-through one. Stops at the first failing step. A service's
+ * per-length variants (duration_minutes set) keep their own prices: they were
+ * overwritten with the base price on every save before.
  */
 export async function syncVariantsWithProduct(
   brandId: string,
@@ -120,12 +122,14 @@ export async function syncVariantsWithProduct(
     .update({ selling_price: product.base_price, original_price: null })
     .eq("product_id", productId)
     .eq("brand_id", brandId)
+    .is("duration_minutes", null)
     .is("original_price", null);
   if (inherited.error) throw inherited.error;
   const onSale = await forProduct()
     .update({ original_price: product.base_price })
     .eq("product_id", productId)
     .eq("brand_id", brandId)
+    .is("duration_minutes", null)
     .not("original_price", "is", null);
   if (onSale.error) throw onSale.error;
 }

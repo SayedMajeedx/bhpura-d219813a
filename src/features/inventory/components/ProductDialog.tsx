@@ -17,6 +17,7 @@ import {
 } from "@/features/inventory/lib/product-form";
 import { useProductMedia } from "@/features/inventory/hooks/use-product-media";
 import { useSaveProduct } from "@/features/inventory/hooks/use-save-product";
+import { useServicePricing } from "@/features/inventory/hooks/use-service-pricing";
 import { useProductDialogData } from "@/features/inventory/hooks/use-product-dialog-data";
 import { ProductBasicTab } from "@/features/inventory/components/ProductBasicTab";
 import { ProductMediaTab } from "@/features/inventory/components/ProductMediaTab";
@@ -27,7 +28,7 @@ export function ProductDialog({
   onSaved,
 }: {
   product: Product | null;
-  onSaved: (newProductId?: string) => void;
+  onSaved: (newProductId?: string, kind?: "service" | "product") => void;
 }) {
   const t = useT();
   const { lang } = useI18n();
@@ -67,6 +68,10 @@ export function ProductDialog({
     setShowExtraAxes(hasExtraAxisLabels(product));
   }, [product, service]);
 
+  const isService = form.item_kind === "service";
+  // A service's prices: its lengths and their prices, saved as its variants.
+  const servicePricing = useServicePricing(brand.id, product?.id ?? null, isService);
+
   const save = useSaveProduct({
     product,
     form,
@@ -75,6 +80,9 @@ export function ProductDialog({
     onInvalid: () => setActiveDialogTab("basic"),
     commitMedia,
     onSaved,
+    service: isService
+      ? { pricing: servicePricing.pricing, variants: servicePricing.variants }
+      : undefined,
   });
 
   return (
@@ -84,7 +92,19 @@ export function ProductDialog({
         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-indigo-500 to-purple-600" />
         <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <span>{product ? t("inventory.editProduct") : t("inventory.newProduct")}</span>
+            <span>
+              {isService
+                ? product
+                  ? isAr
+                    ? "تعديل الخدمة"
+                    : "Edit service"
+                  : isAr
+                    ? "خدمة جديدة"
+                    : "New service"
+                : product
+                  ? t("inventory.editProduct")
+                  : t("inventory.newProduct")}
+            </span>
           </DialogTitle>
         </DialogHeader>
 
@@ -133,7 +153,15 @@ export function ProductDialog({
             }`}
           >
             <Sliders className="h-4 w-4" />
-            <span>{isAr ? "محرك التخصيص" : "Customization"}</span>
+            <span>
+              {isService
+                ? isAr
+                  ? "أسئلة للعميل"
+                  : "Customer questions"
+                : isAr
+                  ? "محرك التخصيص"
+                  : "Customization"}
+            </span>
           </button>
         </div>
       </div>
@@ -157,6 +185,13 @@ export function ProductDialog({
             setAdvancedOpen={setAdvancedOpen}
             showExtraAxes={showExtraAxes}
             setShowExtraAxes={setShowExtraAxes}
+            servicePricing={servicePricing.pricing}
+            onServicePricing={(pricing) => {
+              servicePricing.setPricing(pricing);
+              setErrors((prev) => ({ ...prev, price: undefined }));
+            }}
+            pricingError={isService ? errors.price : null}
+            currency={servicePricing.currency}
           />
         )}
 

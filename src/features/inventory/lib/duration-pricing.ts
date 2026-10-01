@@ -1,9 +1,7 @@
-import { formatDuration } from "@/lib/bookings/format";
-
 /**
- * Pricing a service by how long it is booked: one variant per length the
- * store offers, the shortest at the base price and each extra hour at the
- * extra-hour price. The database books such a service at the variant for the
+ * Filling a service's prices by length (its editor's "Fill prices"): the
+ * shortest length at the base price and each extra hour at the extra-hour
+ * price. The database books such a service at the variant for the
  * booking's length (request_booking), so orders, tax and invoices work from
  * ordinary variant prices.
  */
@@ -33,20 +31,4 @@ export function durationPriceRows({
     price: fils(basePrice + ((minutes - shortest) / 60) * extraHourPrice),
     exists: existingMinutes.includes(minutes),
   }));
-}
-
-/** The variants to create: the lengths without one yet, labelled in the store's language. */
-export function durationVariants(
-  productId: string,
-  rows: readonly DurationPriceRow[],
-  isAr: boolean,
-) {
-  return rows
-    .filter((row) => !row.exists)
-    .map((row) => ({
-      product_id: productId,
-      size: formatDuration(row.minutes, isAr),
-      selling_price: row.price,
-      duration_minutes: row.minutes,
-    }));
 }

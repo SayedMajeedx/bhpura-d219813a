@@ -1,6 +1,12 @@
 import { matchCustomFieldToMeasurement } from "@/lib/addons/addon-presets";
 import { PLACEHOLDER_SIZE_VALUES } from "@/lib/variant-sku-utils";
 import type { CustomField, MediaItem, Product } from "@/features/inventory/types";
+import {
+  serviceIncludesFrom,
+  serviceIncludesToSave,
+  serviceLocationFrom,
+  type ServiceLocation,
+} from "@/features/inventory/lib/service-details";
 
 /**
  * Rules for the product editor: the form's starting values, validation, the
@@ -48,6 +54,9 @@ export function productFormFrom(product: Product | null, defaults: { service?: b
     size_guide_id: product?.size_guide_id ?? null,
     size_guide_hidden: product?.size_guide_hidden ?? false,
     is_made_to_order: isService || (product?.is_made_to_order ?? false),
+    service_location: (serviceLocationFrom(product?.service_location) ??
+      (isService ? "customer" : null)) as ServiceLocation | null,
+    service_includes: serviceIncludesFrom(product?.service_includes),
   };
 }
 
@@ -154,6 +163,10 @@ export function productColumnsFrom(form: ProductForm) {
     size_guide_hidden: Boolean(form.size_guide_hidden),
     item_kind: form.item_kind === "service" ? "service" : "product",
     is_made_to_order: form.item_kind === "service" || Boolean(form.is_made_to_order),
+    // A service's details; a product keeps none.
+    service_location: form.item_kind === "service" ? form.service_location : null,
+    service_includes:
+      form.item_kind === "service" ? serviceIncludesToSave(form.service_includes) : [],
   };
 }
 

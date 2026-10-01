@@ -13,10 +13,7 @@ import {
   type BookableService,
   type FlowState,
 } from "../src/features/storefront-booking/lib/booking-flow";
-import {
-  durationPriceRows,
-  durationVariants,
-} from "../src/features/inventory/lib/duration-pricing";
+import { durationPriceRows } from "../src/features/inventory/lib/duration-pricing";
 import {
   travelFeeDraft,
   travelFeesToSave,
@@ -124,12 +121,6 @@ describe("the price-by-duration helper", () => {
       { minutes: 240, price: 70, exists: true },
       { minutes: 300, price: 85, exists: false },
     ]);
-    // Existing lengths are left alone; the rest are labelled in the store's language.
-    expect(durationVariants("booth", rows, false)).toEqual([
-      { product_id: "booth", size: "3 hours", selling_price: 55, duration_minutes: 180 },
-      { product_id: "booth", size: "5 hours", selling_price: 85, duration_minutes: 300 },
-    ]);
-    expect(durationVariants("booth", rows, true)[0].size).toBe("3 ساعات");
   });
 
   it("works in half hours and rounds to the fils", () => {

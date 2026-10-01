@@ -5609,6 +5609,8 @@ export type Database = {
           name_ar: string | null;
           name_en: string | null;
           occasion: string | null;
+          service_includes: Json;
+          service_location: string | null;
           show_sale_badge: boolean;
           size_guide_hidden: boolean;
           size_guide_id: string | null;
@@ -5654,6 +5656,8 @@ export type Database = {
           name_ar?: string | null;
           name_en?: string | null;
           occasion?: string | null;
+          service_includes?: Json;
+          service_location?: string | null;
           show_sale_badge?: boolean;
           size_guide_hidden?: boolean;
           size_guide_id?: string | null;
@@ -5699,6 +5703,8 @@ export type Database = {
           name_ar?: string | null;
           name_en?: string | null;
           occasion?: string | null;
+          service_includes?: Json;
+          service_location?: string | null;
           show_sale_badge?: boolean;
           size_guide_hidden?: boolean;
           size_guide_id?: string | null;

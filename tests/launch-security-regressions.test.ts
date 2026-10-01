@@ -231,6 +231,14 @@ describe("launch security regressions", () => {
     expect(sql).toContain("'deposit_percent', s.deposit_percent");
   });
 
+  it("keeps a service's place and included lines in checked columns", () => {
+    const sql = readFileSync("supabase/migrations/20261001120000_service_details.sql", "utf8");
+    expect(sql).toContain("service_location IN ('customer', 'venue', 'both')");
+    expect(sql).toContain(
+      "CHECK (jsonb_typeof(service_includes) = 'array' AND jsonb_array_length(service_includes) <= 30)",
+    );
+  });
+
   it("sells a storefront service only with a booking, and never counts its stock", () => {
     const sql = readFileSync("supabase/migrations/20261001100000_products_item_kind.sql", "utf8");
     expect(sql).toContain("CHECK (item_kind IN ('product', 'service'))");
