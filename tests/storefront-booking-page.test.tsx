@@ -21,6 +21,8 @@ const state = vi.hoisted(() => ({
     remaining: number;
   }> | null,
   taken: [] as string[],
+  // The store's active booking offers.
+  discountRules: [] as Array<Record<string, unknown>>,
   addToCart: vi.fn(),
   removeFromCart: vi.fn(),
   navigate: vi.fn(async () => undefined),
@@ -73,6 +75,13 @@ const bookingsData = {
   requestBooking: state.requestBooking,
   holdBooking: state.holdBooking,
 };
+const discountsData = {
+  bookingDiscountsQueries: {
+    public: () => fixture(`discounts-${state.discountRules.length}`, () => state.discountRules),
+  },
+};
+vi.mock("../src/lib/data/booking-discounts", () => discountsData);
+vi.mock("@/lib/data/booking-discounts", () => discountsData);
 vi.mock("../src/lib/data/bookings", () => bookingsData);
 vi.mock("@/lib/data/bookings", () => bookingsData);
 const storefrontData = {
@@ -148,6 +157,7 @@ beforeEach(() => {
   state.cart = [];
   state.serviceDays = null;
   state.taken = [];
+  state.discountRules = [];
 });
 
 const renderWithQuery = (ui: React.ReactElement) =>
@@ -300,5 +310,71 @@ describe("a service with its own capacity", () => {
     fireEvent.click(await screen.findByRole("gridcell", { name: /10 October: Available/ }));
     fireEvent.click(await screen.findByRole("button", { name: "3 hours" }));
     expect(await screen.findByText(/No time is free for this length/)).toBeInTheDocument();
+  });
+});
+
+describe("a store's booking offers", () => {
+  const offer = {
+    id: "o1",
+    name_en: "This week's offer",
+    name_ar: "عرض هذا الأسبوع",
+    kind: "percent",
+    value: 10,
+    min_days: 7,
+    max_days: 14,
+    weekdays: null,
+    product_ids: null,
+    valid_from: null,
+    valid_to: null,
+  };
+
+  it("marks the days it covers on the calendar, and only those", async () => {
+    state.discountRules = [offer];
+    renderWithQuery(<StorefrontBookingPage />);
+    // 10 October is 9 days away; 9 October is booked.
+    expect(
+      await screen.findByRole("gridcell", { name: /10 October: Available · −10%/ }),
+    ).toBeEnabled();
+    expect(screen.getByRole("gridcell", { name: /9 October: Booked$/ })).toBeDisabled();
+  });
+
+  it("shows no mark when the store has no offers", async () => {
+    renderWithQuery(<StorefrontBookingPage />);
+    expect(await screen.findByRole("gridcell", { name: /10 October: Available$/ })).toBeEnabled();
+  });
+
+  it("takes the offer off the total, with its name", async () => {
+    state.discountRules = [offer];
+    renderWithQuery(<StorefrontBookingPage initialService="p1" />);
+    fireEvent.click(await screen.findByRole("gridcell", { name: /10 October: Available/ }));
+    expect(await screen.findByText("This week's offer")).toBeInTheDocument();
+    expect(screen.getByText(/− .*5\.500/)).toBeInTheDocument();
+    expect(screen.getByText(/49\.500/)).toBeInTheDocument();
+  });
+
+  it("carries the offer through to checkout in a shop store", async () => {
+    state.mode = "shop";
+    state.discountRules = [offer];
+    state.holdBooking.mockResolvedValueOnce({
+      ...(await state.holdBooking()),
+      discount: 5.5,
+      total: 49.5,
+    });
+    renderWithQuery(<StorefrontBookingPage initialService="p1" />);
+    fireEvent.click(await screen.findByRole("gridcell", { name: /10 October: Available/ }));
+    fireEvent.click(screen.getByRole("button", { name: "3 hours" }));
+    fireEvent.click(screen.getByRole("button", { name: "6:00 PM" }));
+    fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Sara" } });
+    fireEvent.change(screen.getByLabelText("WhatsApp number"), { target: { value: "39001122" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue to checkout" }));
+    await waitFor(() => expect(state.navigate).toHaveBeenCalledTimes(1));
+    expect(state.addToCart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        booking: expect.objectContaining({
+          discount: 5.5,
+          discountLabel: "This week's offer",
+        }),
+      }),
+    );
   });
 });

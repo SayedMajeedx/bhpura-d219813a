@@ -1,9 +1,12 @@
-import { Clock, MapPin, Phone, User } from "lucide-react";
+import { Clock, Mail, MapPin, Phone, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/format";
 import { nextStatuses, type BookingStatus } from "@/lib/bookings/rules";
 import type { Booking } from "@/lib/data/bookings";
+import { BookingDiscountEditor } from "@/features/bookings/components/BookingDiscountEditor";
+import { BookingInvoiceBlock } from "@/features/bookings/components/BookingInvoiceBlock";
+import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
 import {
   BOOKING_STATUS_TEXT,
   bookingPlaceText,
@@ -23,7 +26,14 @@ function actionText(from: BookingStatus, to: BookingStatus, isAr: boolean): stri
   return isAr ? "تم التنفيذ" : "Mark done";
 }
 
+const SOURCE_TEXT: Record<string, { ar: string; en: string }> = {
+  storefront: { ar: "من المتجر", en: "From the store" },
+  whatsapp: { ar: "واتساب", en: "WhatsApp" },
+  admin: { ar: "أضافه الفريق", en: "Added by staff" },
+};
+
 export function BookingCard({
+  page,
   booking,
   isAr,
   currency,
@@ -31,6 +41,7 @@ export function BookingCard({
   busy,
   onStatus,
 }: {
+  page: BookingsPage;
   booking: Booking;
   isAr: boolean;
   currency: string;
@@ -82,6 +93,16 @@ export function BookingCard({
               {booking.customer_phone}
             </a>
           )}
+          {booking.customer_email && (
+            <a
+              href={`mailto:${booking.customer_email}`}
+              className="flex items-center gap-1 text-primary hover:underline"
+              dir="ltr"
+            >
+              <Mail className="size-3.5" aria-hidden="true" />
+              {booking.customer_email}
+            </a>
+          )}
         </p>
       )}
 
@@ -104,6 +125,23 @@ export function BookingCard({
               <span dir="ltr">{formatMoney(Number(item.line_total ?? 0), currency)}</span>
             </li>
           ))}
+          {Number(booking.travel_fee ?? 0) > 0 && (
+            <li className="flex justify-between gap-2 text-muted-foreground">
+              <span>{isAr ? "التنقل" : "Travel"}</span>
+              <span dir="ltr">{formatMoney(Number(booking.travel_fee), currency)}</span>
+            </li>
+          )}
+          {Number(booking.discount_amount ?? 0) > 0 && (
+            <li className="flex justify-between gap-2 text-success">
+              <span>
+                {(isAr
+                  ? booking.discount_label_ar || booking.discount_label_en
+                  : booking.discount_label_en || booking.discount_label_ar) ??
+                  (isAr ? "خصم" : "Discount")}
+              </span>
+              <span dir="ltr">− {formatMoney(Number(booking.discount_amount), currency)}</span>
+            </li>
+          )}
           <li className="flex justify-between gap-2 border-t border-border pt-1 font-semibold">
             <span>{isAr ? "الإجمالي" : "Total"}</span>
             <span dir="ltr">{formatMoney(Number(booking.total ?? 0), currency)}</span>
@@ -111,7 +149,32 @@ export function BookingCard({
         </ul>
       )}
 
-      {booking.notes && <p className="text-xs text-muted-foreground">{booking.notes}</p>}
+      {booking.notes && (
+        <p className="whitespace-pre-line text-xs text-muted-foreground">{booking.notes}</p>
+      )}
+      <p className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
+        <span>
+          {isAr
+            ? (SOURCE_TEXT[booking.source ?? ""]?.ar ?? "")
+            : (SOURCE_TEXT[booking.source ?? ""]?.en ?? "")}
+        </span>
+        {Number(booking.deposit_amount ?? 0) > 0 && (
+          <span>
+            {isAr ? "عربون: " : "Deposit: "}
+            <span dir="ltr">{formatMoney(Number(booking.deposit_amount), currency)}</span>
+          </span>
+        )}
+      </p>
+      {status !== "cancelled" && status !== "expired" && (
+        <div className="space-y-1">
+          <BookingInvoiceBlock booking={booking} page={page} />
+          <BookingDiscountEditor
+            key={`${booking.id}:${booking.discount_amount}`}
+            booking={booking}
+            page={page}
+          />
+        </div>
+      )}
       {booking.status === "cancelled" && booking.cancel_reason && (
         <p className="text-xs text-destructive">{booking.cancel_reason}</p>
       )}

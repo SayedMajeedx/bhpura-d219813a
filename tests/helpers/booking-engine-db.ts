@@ -1,5 +1,7 @@
 import { PGlite } from "@electric-sql/pglite";
 import migration from "../../supabase/migrations/20261001180000_booking_resource_capacity.sql?raw";
+import bookingDiscounts from "../../supabase/migrations/20261002100000_booking_discounts.sql?raw";
+import bookingOrders from "../../supabase/migrations/20261002110000_booking_orders.sql?raw";
 
 /**
  * The booking engine, run for real: an in-process Postgres (PGlite) with the
@@ -107,6 +109,49 @@ const SCHEMA = `
   );
 `;
 
+// The order tables the booking-orders migration writes (same columns and checks as live).
+const ORDERS_SCHEMA = `
+  ALTER TABLE public.business_settings
+    ADD COLUMN default_tax_rate numeric NOT NULL DEFAULT 0,
+    ADD COLUMN vat_inclusive boolean NOT NULL DEFAULT false,
+    ADD COLUMN currency text NOT NULL DEFAULT 'BHD';
+  ALTER TABLE public.orders
+    ADD COLUMN user_id uuid,
+    ADD COLUMN invoice_number integer NOT NULL DEFAULT 0,
+    ADD COLUMN status text NOT NULL DEFAULT 'draft',
+    ADD COLUMN fulfillment_method text NOT NULL DEFAULT 'delivery'
+      CHECK (fulfillment_method IN ('delivery', 'pickup', 'digital', 'appointment')),
+    ADD COLUMN customer_name_snapshot text, ADD COLUMN customer_phone_snapshot text,
+    ADD COLUMN customer_email_snapshot text,
+    ADD COLUMN subtotal numeric NOT NULL DEFAULT 0 CHECK (subtotal >= 0),
+    ADD COLUMN discount numeric NOT NULL DEFAULT 0 CHECK (discount >= 0),
+    ADD COLUMN shipping numeric NOT NULL DEFAULT 0 CHECK (shipping >= 0),
+    ADD COLUMN tax_rate numeric NOT NULL DEFAULT 0,
+    ADD COLUMN tax_amount numeric NOT NULL DEFAULT 0 CHECK (tax_amount >= 0),
+    ADD COLUMN total numeric NOT NULL DEFAULT 0 CHECK (total >= 0),
+    ADD COLUMN currency text NOT NULL DEFAULT 'BHD',
+    ADD COLUMN order_date date NOT NULL DEFAULT CURRENT_DATE,
+    ADD COLUMN payment_status text NOT NULL DEFAULT 'unpaid',
+    ADD COLUMN advance_paid numeric NOT NULL DEFAULT 0,
+    ADD COLUMN channel text NOT NULL DEFAULT 'admin';
+  CREATE TABLE public.order_items (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id uuid NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+    brand_id uuid NOT NULL, user_id uuid, product_id uuid, variant_id uuid,
+    description text NOT NULL, quantity integer NOT NULL DEFAULT 1,
+    unit_price numeric NOT NULL DEFAULT 0, line_total numeric NOT NULL DEFAULT 0,
+    location text NOT NULL DEFAULT 'main'
+  );
+  CREATE SEQUENCE public.invoice_seq START 1001;
+  CREATE FUNCTION public.allocate_invoice() RETURNS trigger LANGUAGE plpgsql AS $$
+  BEGIN
+    IF NEW.invoice_number = 0 THEN NEW.invoice_number := nextval('public.invoice_seq'); END IF;
+    RETURN NEW;
+  END $$;
+  CREATE TRIGGER allocate_invoice BEFORE INSERT ON public.orders
+    FOR EACH ROW EXECUTE FUNCTION public.allocate_invoice();
+`;
+
 // The helpers the migration does not change, as they are in the live database.
 const UNCHANGED_HELPERS = `
   CREATE FUNCTION public.bookings_enabled(p_brand_id uuid) RETURNS boolean
@@ -205,15 +250,25 @@ export type ServiceRules = {
   active?: boolean;
 };
 
-export type Item = { product_id: string; variant_id?: string; quantity?: number };
+export type Item = {
+  product_id: string;
+  variant_id?: string;
+  quantity?: number;
+  unit_price?: number;
+  name_en?: string;
+};
 
 const asJson = (value: unknown) => JSON.stringify(value);
 
 export async function createEngineDb() {
   const pg = new PGlite();
   await pg.exec(SCHEMA);
+  await pg.exec(ORDERS_SCHEMA);
   await pg.exec(UNCHANGED_HELPERS);
   await pg.exec(migration);
+  // Booking-time discounts, then every booking's order, as in the live database.
+  await pg.exec(bookingDiscounts);
+  await pg.exec(bookingOrders);
 
   const rows = async <T = Record<string, unknown>>(sql: string, params: unknown[] = []) =>
     (await pg.query<T>(sql, params)).rows;

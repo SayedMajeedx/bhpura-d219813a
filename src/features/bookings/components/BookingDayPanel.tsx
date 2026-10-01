@@ -150,6 +150,7 @@ export function BookingDayPanel({ page }: { page: BookingsPage }) {
           {active.map((booking) => (
             <BookingCard
               key={booking.id}
+              page={page}
               booking={booking}
               isAr={isAr}
               currency={page.currency}

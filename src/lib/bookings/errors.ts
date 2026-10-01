@@ -17,6 +17,11 @@ export function bookingErrorMessage(message: string, isAr: boolean): string {
       "هذا التاريخ غير متاح للحجز، اختر يوماً آخر.",
       "That date can't be booked; please choose another.",
     ],
+    [
+      /BOOKING_DISCOUNT_INVALID/,
+      "الخصم لا يمكن أن يتجاوز سعر الخدمات.",
+      "A discount can't be more than the services cost.",
+    ],
     [/BOOKING_NAME_REQUIRED/, "أدخل اسمك.", "Please enter your name."],
     [/BOOKING_PHONE_REQUIRED/, "أدخل رقم هاتف صحيح.", "Please enter a valid phone number."],
     [

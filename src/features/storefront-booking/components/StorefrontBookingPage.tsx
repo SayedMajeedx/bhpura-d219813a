@@ -1,3 +1,4 @@
+import { discountName } from "@/lib/bookings/discounts";
 import type { ReactNode } from "react";
 import { CalendarCheck, CheckCircle2, Loader2, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -102,7 +103,8 @@ export function StorefrontBookingPage({
   }
 
   const chosen = flow.chosen;
-  const total = flow.servicesTotal + (flow.flow.areaCode ? (flow.travelFee ?? 0) : 0);
+  const offerAmount = flow.offer?.amount ?? 0;
+  const total = flow.servicesTotal - offerAmount + (flow.flow.areaCode ? (flow.travelFee ?? 0) : 0);
   const stepIndex = flow.step ? STEPS.findIndex((step) => step.id === flow.step) : STEPS.length;
   const done = (id: FlowStep) => STEPS.findIndex((step) => step.id === id) < stepIndex;
 
@@ -189,6 +191,12 @@ export function StorefrontBookingPage({
             <span className="text-foreground" dir="ltr">
               {formatPrice(flow.travelFee, currency, lang)}
             </span>
+          </div>
+        )}
+        {flow.offer && chosen.length > 0 && showPrices && (
+          <div className="flex items-center justify-between text-sm text-success">
+            <span>{discountName(flow.offer.rule, isAr)}</span>
+            <span dir="ltr">− {formatPrice(offerAmount, currency, lang)}</span>
           </div>
         )}
         {chosen.length > 0 && showPrices && (

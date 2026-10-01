@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { monthGrid, type DayState } from "@/lib/bookings/rules";
 import { dayTitle, monthTitle, weekdayNames } from "@/lib/bookings/format";
+import { offerBadgeText } from "@/lib/bookings/discounts";
 import {
   BOOKING_WEEK_STARTS_ON,
   type BookingFlow,
@@ -80,6 +81,7 @@ export function BookingDayPicker({ flow }: { flow: BookingFlow }) {
               const state = dayStates.get(day);
               const available = state === "available";
               const selected = flow.flow.day === day;
+              const offer = available ? flow.offerOnDay(day) : null;
               return (
                 <Button
                   key={day}
@@ -87,7 +89,7 @@ export function BookingDayPicker({ flow }: { flow: BookingFlow }) {
                   variant="ghost"
                   role="gridcell"
                   aria-selected={selected}
-                  aria-label={`${dayTitle(day, isAr)}: ${unavailableText(state, isAr)}`}
+                  aria-label={`${dayTitle(day, isAr)}: ${unavailableText(state, isAr)}${offer ? ` · ${offerBadgeText(offer.rule)}` : ""}`}
                   disabled={!available}
                   onClick={() => flow.update({ day, start: null })}
                   className={cn(
@@ -98,7 +100,20 @@ export function BookingDayPicker({ flow }: { flow: BookingFlow }) {
                     selected && "bg-primary font-semibold text-primary-foreground hover:bg-primary",
                   )}
                 >
-                  {Number(day.slice(8))}
+                  <span className="flex flex-col items-center leading-none">
+                    {Number(day.slice(8))}
+                    {offer && (
+                      <span
+                        className={cn(
+                          "mt-0.5 text-xs font-semibold",
+                          selected ? "text-primary-foreground" : "text-success",
+                        )}
+                        dir="ltr"
+                      >
+                        {offerBadgeText(offer.rule)}
+                      </span>
+                    )}
+                  </span>
                 </Button>
               );
             })}

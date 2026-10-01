@@ -22,7 +22,7 @@ import type {
  */
 
 const BOOKING_COLUMNS =
-  "id, reference, status, event_date, starts_at, ends_at, customer_id, customer_name, customer_phone, customer_email, location, notes, source, order_id, hold_expires_at, total, travel_fee, deposit_amount, confirmed_at, cancelled_at, cancel_reason, created_at, booking_items(id, product_id, variant_id, name_en, name_ar, quantity, unit_price, line_total)" as const;
+  "id, reference, status, event_date, starts_at, ends_at, customer_id, customer_name, customer_phone, customer_email, location, notes, source, order_id, hold_expires_at, total, travel_fee, deposit_amount, discount_amount, discount_label_en, discount_label_ar, confirmed_at, cancelled_at, cancel_reason, created_at, booking_items(id, product_id, variant_id, name_en, name_ar, quantity, unit_price, line_total), orders(id, invoice_number, public_invoice_token, status, payment_status, total, advance_paid, currency)" as const;
 
 const BLOCK_COLUMNS = "id, starts_on, ends_on, reason, created_at" as const;
 
@@ -514,4 +514,25 @@ export async function holdBooking(input: BookingRequestInput): Promise<BookingHo
   });
   if (error) throw error;
   return data as unknown as BookingHold;
+}
+
+/**
+ * Invoices a booking: its appointment order (a request becomes a pending
+ * order, a quote). Asking again returns the same order's id.
+ */
+export async function createBookingOrder(bookingId: string): Promise<string> {
+  const { data, error } = await supabase.rpc("create_booking_order", { p_booking_id: bookingId });
+  if (error) throw error;
+  return data;
+}
+
+/** Sets a booking's discount by hand (0 clears it); its order follows. */
+export async function setBookingDiscount(bookingId: string, amount: number, label?: string) {
+  const { data, error } = await supabase.rpc("set_booking_discount", {
+    p_booking_id: bookingId,
+    p_amount: amount,
+    p_label: label ?? undefined,
+  });
+  if (error) throw error;
+  return data;
 }

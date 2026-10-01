@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { CalendarDays, Loader2, Settings2 } from "lucide-react";
+import { CalendarDays, Loader2, Settings2, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useBookingsPage } from "@/features/bookings/hooks/use-bookings-page";
 import { BookingsCalendar } from "@/features/bookings/components/BookingsCalendar";
 import { BookingDayPanel } from "@/features/bookings/components/BookingDayPanel";
 import { BookingRequestsList } from "@/features/bookings/components/BookingRequestsList";
+import { BookingDiscountsDialog } from "@/features/bookings/components/BookingDiscountsDialog";
 import { BookingRulesDialog } from "@/features/bookings/components/BookingRulesDialog";
 import { BookingsReport } from "@/features/bookings/components/BookingsReport";
 import { CalendarLinkDialog } from "@/features/bookings/components/CalendarLinkDialog";
@@ -19,6 +20,7 @@ export function BookingsPageView() {
   const { isAr } = page;
   const { profile, isLoading: profileLoading } = useAdminStoreProfile(page.brand.id);
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [offersOpen, setOffersOpen] = useState(false);
   const [view, setView] = useState<"calendar" | "report">("calendar");
 
   if (page.settingsLoading || profileLoading) {
@@ -62,6 +64,16 @@ export function BookingsPageView() {
             >
               <Settings2 className="size-4" />
               {isAr ? "قواعد الحجز" : "Booking rules"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setOffersOpen(true)}
+            >
+              <Tag className="size-4" />
+              {isAr ? "عروض وخصومات" : "Offers"}
             </Button>
           </div>
         )}
@@ -125,6 +137,9 @@ export function BookingsPageView() {
         </>
       )}
 
+      {offersOpen && (
+        <BookingDiscountsDialog page={page} open={offersOpen} onOpenChange={setOffersOpen} />
+      )}
       {rulesOpen && <BookingRulesDialog page={page} open={rulesOpen} onOpenChange={setRulesOpen} />}
     </div>
   );
