@@ -35,8 +35,9 @@ export function ProductDialog({
   const brand = useBrand();
   const { storeProfile, addonAxisDefaults, customFieldPresets, categoriesQ, sizeGuidesQ } =
     useProductDialogData(brand.id);
-  const madeToOrder = Boolean(storeProfile?.modules?.bookings);
-  const [form, setForm] = useState(() => productFormFrom(product, { madeToOrder }));
+  // A bookings store sells services: a new item starts as one.
+  const service = Boolean(storeProfile?.modules?.bookings);
+  const [form, setForm] = useState(() => productFormFrom(product, { service }));
   const [errors, setErrors] = useState<ProductFormErrors>({});
   const {
     uploading,
@@ -60,11 +61,11 @@ export function ProductDialog({
   const [showExtraAxes, setShowExtraAxes] = useState(false);
 
   useEffect(() => {
-    setForm(productFormFrom(product, { madeToOrder }));
+    setForm(productFormFrom(product, { service }));
     setErrors({});
     setActiveDialogTab("basic");
     setShowExtraAxes(hasExtraAxisLabels(product));
-  }, [product, madeToOrder]);
+  }, [product, service]);
 
   const save = useSaveProduct({
     product,

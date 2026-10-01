@@ -23,6 +23,8 @@ export type ProductRow = {
   featured_trending?: boolean;
   show_sale_badge?: boolean;
   is_made_to_order?: boolean;
+  /** "service" for a service, sold only with a booking. */
+  item_kind?: string | null;
   custom_fields?: unknown;
   product_variants: Array<{
     id: string;
@@ -100,6 +102,7 @@ export type StorefrontProductDetail = {
   product_variants: StorefrontVariant[];
   base_price?: number | null;
   is_made_to_order?: boolean | null;
+  item_kind?: string | null;
   size_guide_id?: string | null;
   size_guide_hidden?: boolean | null;
   variant_label_size_ar?: string | null;
@@ -125,6 +128,7 @@ export type RecommendationProduct = {
   media: unknown;
   custom_fields?: unknown;
   is_made_to_order?: boolean | null;
+  item_kind?: string | null;
   product_variants: Array<{
     id: string;
     selling_price: number;

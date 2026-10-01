@@ -1,3 +1,4 @@
+import { ItemKindPicker } from "@/features/inventory/components/ItemKindPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,6 +52,19 @@ export function ProductBasicTab({
 }) {
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
+      {storeProfile?.modules?.bookings && (
+        <ItemKindPicker
+          value={form.item_kind}
+          isAr={isAr}
+          onChange={(kind) =>
+            setForm({
+              ...form,
+              item_kind: kind,
+              is_made_to_order: kind === "service" ? true : form.is_made_to_order,
+            })
+          }
+        />
+      )}
       <BilingualField
         labelAr="اسم المنتج — عربي"
         labelEn="Product name — English"

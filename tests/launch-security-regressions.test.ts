@@ -231,6 +231,24 @@ describe("launch security regressions", () => {
     expect(sql).toContain("'deposit_percent', s.deposit_percent");
   });
 
+  it("sells a storefront service only with a booking, and never counts its stock", () => {
+    const sql = readFileSync("supabase/migrations/20261001100000_products_item_kind.sql", "utf8");
+    expect(sql).toContain("CHECK (item_kind IN ('product', 'service'))");
+    // A service is made to order, whatever the editor sends.
+    expect(sql).toMatch(/IF NEW\.item_kind = 'service' THEN\s+NEW\.is_made_to_order := true;/);
+    // Checked at commit, after place_booking_order has linked the booking.
+    expect(sql).toMatch(
+      /CREATE CONSTRAINT TRIGGER order_item_service_needs_booking\s+AFTER INSERT ON public\.order_items\s+DEFERRABLE INITIALLY DEFERRED/,
+    );
+    expect(sql).toContain("RAISE EXCEPTION 'SERVICE_NEEDS_BOOKING'");
+    // Only the store's staff and server code may record a service without one.
+    expect(sql).toContain("COALESCE(auth.role(), '') = 'service_role'");
+    expect(sql).toContain("public.can_access_brand(v_brand_id)");
+    expect(sql).toContain(
+      "REVOKE ALL ON FUNCTION public.order_item_service_needs_booking() FROM PUBLIC, anon, authenticated;",
+    );
+  });
+
   it("prices bookings by duration and area on the server, never from the browser", () => {
     const sql = readFileSync("supabase/migrations/20260930180000_booking_pricing.sql", "utf8");
     // A duration-priced service is booked at its length's variant, whatever was asked.

@@ -135,7 +135,7 @@ export function placeOrderFailure(
   msg: string,
   t: Storefront["t"],
 ): { message: string; clearPromo: boolean } {
-  if (/BOOKING_/.test(msg)) {
+  if (/BOOKING_|SERVICE_NEEDS_BOOKING/.test(msg)) {
     // `t` picks the shopper's language; asking it for "ar"/"en" tells which.
     const isAr = t("ar", "en") === "ar";
     return { message: bookingErrorMessage(msg, isAr), clearPromo: false };

@@ -1,4 +1,9 @@
-import { describe, expect, it } from "vitest";
+import React from "react";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { ItemKindPicker } from "../src/features/inventory/components/ItemKindPicker";
+import { placeOrderFailure } from "../src/features/checkout/lib/place-order";
+import { soldOnlyByBooking } from "../src/lib/bookings/service";
 import { getAdminNavItems } from "../src/config/admin-navigation";
 import { inventoryScopeTabs } from "../src/features/inventory/lib/inventory-scope-tabs";
 import { resolveStoreModules } from "../src/lib/store-profile";
@@ -74,5 +79,35 @@ describe("the inventory tabs", () => {
     expect(withStock).toEqual(["all", "attention", "active", "inactive", "low", "out", "featured"]);
     const without = inventoryScopeTabs(counts, { tracksStock: false }).map((tab) => tab.id);
     expect(without).toEqual(["all", "active", "inactive", "featured"]);
+  });
+});
+
+describe("a service on the storefront", () => {
+  it("is sold only with a booking in a bookings store", () => {
+    expect(soldOnlyByBooking({ item_kind: "service" }, { bookings: true })).toBe(true);
+    expect(soldOnlyByBooking({ item_kind: "product" }, { bookings: true })).toBe(false);
+    expect(soldOnlyByBooking({ item_kind: "service" }, { bookings: false })).toBe(false);
+    expect(soldOnlyByBooking({}, { bookings: true })).toBe(false);
+    expect(soldOnlyByBooking(null, null)).toBe(false);
+  });
+
+  it("explains a refused order with an unbooked service", () => {
+    const ar = (arText: string) => arText;
+    const en = (_ar: string, enText: string) => enText;
+    expect(placeOrderFailure("SERVICE_NEEDS_BOOKING", ar).message).toMatch(/تُحجز بموعد/);
+    expect(placeOrderFailure("SERVICE_NEEDS_BOOKING", en).message).toMatch(/booked for a date/);
+  });
+});
+
+describe("the item type in a bookings store's editor", () => {
+  it("shows which kind is chosen and switches", () => {
+    const onChange = vi.fn();
+    render(<ItemKindPicker value="service" onChange={onChange} isAr />);
+    const service = screen.getByRole("button", { name: /خدمة/ });
+    const product = screen.getByRole("button", { name: /منتج/ });
+    expect(service.getAttribute("aria-pressed")).toBe("true");
+    expect(product.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(product);
+    expect(onChange).toHaveBeenCalledWith("product");
   });
 });

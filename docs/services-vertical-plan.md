@@ -60,7 +60,7 @@ every other booking rule is store-wide (`booking_settings`).
   - the order email shows it (`send-order-email/appointment.ts`) and calls
     the fulfillment a service appointment. Needs `supabase functions deploy
 send-order-email`.
-- **S1: item kind and modules.** Migration: `products.item_kind`, default
+- **S1: item kind and modules** (done, PR #184). Migration: `products.item_kind`, default
   `product`; services stores' current items become `service`. New modules
   (stock, incubators, packaging, shipping, returns), off for services by
   default; menu, inventory tabs and dashboard follow them. Services are only
