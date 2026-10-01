@@ -103,16 +103,16 @@ export function StepAdminPlan({ data, onChange, isAr }: StepAdminPlanProps) {
             variant="ghost"
             size="sm"
             onClick={() => onChange({ plan_type: "annual" })}
-            className={`h-auto rounded-md p-3.5 rounded-xl border text-start transition-all flex items-start gap-3 ${
+            className={`h-auto w-full min-w-0 justify-start whitespace-normal rounded-xl border p-3.5 text-start transition-all flex items-start gap-3 ${
               data.plan_type === "annual"
                 ? "border-primary bg-primary/10 ring-1 ring-primary shadow-xs"
                 : "border-border bg-card hover:bg-muted/40"
             }`}
           >
-            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+            <div className="shrink-0 p-2 rounded-lg bg-primary/10 text-primary">
               <Sparkles className="h-4 w-4" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="font-semibold text-sm text-foreground">
                 {isAr ? "اشتراك سنوي نشط" : "Annual Active Plan"}
               </div>
@@ -129,16 +129,16 @@ export function StepAdminPlan({ data, onChange, isAr }: StepAdminPlanProps) {
             variant="ghost"
             size="sm"
             onClick={() => onChange({ plan_type: "trial" })}
-            className={`h-auto rounded-md p-3.5 rounded-xl border text-start transition-all flex items-start gap-3 ${
+            className={`h-auto w-full min-w-0 justify-start whitespace-normal rounded-xl border p-3.5 text-start transition-all flex items-start gap-3 ${
               data.plan_type === "trial"
                 ? "border-primary bg-primary/10 ring-1 ring-primary shadow-xs"
                 : "border-border bg-card hover:bg-muted/40"
             }`}
           >
-            <div className="p-2 rounded-lg bg-muted text-foreground">
+            <div className="shrink-0 p-2 rounded-lg bg-muted text-foreground">
               <Calendar className="h-4 w-4" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="font-semibold text-sm text-foreground">
                 {isAr ? "فترة تجريبية (Trial)" : "Trial Period"}
               </div>

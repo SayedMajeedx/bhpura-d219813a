@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useStorefront, formatPrice } from "@/lib/storefront-context";
 import { buildCartItem } from "@/lib/cart/add-to-cart";
 import { toast } from "sonner";
-import { Plus, Check, ShoppingBag, Sparkles } from "lucide-react";
+import { Plus, Check, ShoppingBag, Sparkles, Image as ImageIcon } from "lucide-react";
 
 interface BundleOfferProps {
   mainProduct: any;
@@ -82,8 +82,9 @@ export function BundleOffer({ mainProduct, mainVariant, bundleItems = [] }: Bund
 
       {/* Product Pair Visual */}
       <div className="flex items-center gap-3">
-        {/* Main Product Thumbnail */}
-        <div className="flex items-center gap-2">
+        {/* Main Product Thumbnail: each product shares the row (min-w-0) so
+            long names truncate instead of pushing the pair off a phone screen. */}
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           <div className="h-16 w-14 rounded-lg overflow-hidden bg-muted border border-border shrink-0">
             {mainProduct.image_url ? (
               <img
@@ -96,12 +97,12 @@ export function BundleOffer({ mainProduct, mainVariant, bundleItems = [] }: Bund
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="h-full w-full grid place-items-center text-xs text-muted-foreground">
-                Item
+              <div className="h-full w-full grid place-items-center text-muted-foreground">
+                <ImageIcon className="h-4 w-4" aria-hidden="true" />
               </div>
             )}
           </div>
-          <div className="text-start max-w-[120px]">
+          <div className="min-w-0 text-start">
             <p className="text-xs font-medium truncate">
               {isAr
                 ? mainProduct.name_ar || mainProduct.name
@@ -117,7 +118,7 @@ export function BundleOffer({ mainProduct, mainVariant, bundleItems = [] }: Bund
 
         {/* Complementary Product Thumbnail */}
         {selectedItem && (
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
             <div className="h-16 w-14 rounded-lg overflow-hidden bg-muted border border-border shrink-0">
               {selectedItem.image_url ? (
                 <img
@@ -130,12 +131,12 @@ export function BundleOffer({ mainProduct, mainVariant, bundleItems = [] }: Bund
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="h-full w-full grid place-items-center text-xs text-muted-foreground">
-                  Match
+                <div className="h-full w-full grid place-items-center text-muted-foreground">
+                  <ImageIcon className="h-4 w-4" aria-hidden="true" />
                 </div>
               )}
             </div>
-            <div className="text-start max-w-[120px]">
+            <div className="min-w-0 text-start">
               <p className="text-xs font-medium truncate">
                 {isAr
                   ? selectedItem.name_ar || selectedItem.name
