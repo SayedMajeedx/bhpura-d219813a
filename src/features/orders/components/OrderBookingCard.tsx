@@ -10,7 +10,7 @@ import {
   BOOKING_STATUS_TEXT,
   bookingPlaceText,
   dayTitle,
-  formatClock,
+  formatClockRange,
   localTime,
 } from "@/lib/bookings/format";
 
@@ -70,9 +70,12 @@ export function OrderBookingCard({
         <p className="font-semibold">{dayTitle(booking.event_date, isAr)}</p>
         <p className="flex items-center gap-1.5">
           <Clock className="size-3.5 text-muted-foreground" aria-hidden="true" />
-          <span dir="ltr">
-            {formatClock(localTime(booking.starts_at, timezone), isAr)} –{" "}
-            {formatClock(localTime(booking.ends_at, timezone), isAr)}
+          <span dir={isAr ? "rtl" : "ltr"}>
+            {formatClockRange(
+              localTime(booking.starts_at, timezone),
+              localTime(booking.ends_at, timezone),
+              isAr,
+            )}
           </span>
         </p>
         {place && (

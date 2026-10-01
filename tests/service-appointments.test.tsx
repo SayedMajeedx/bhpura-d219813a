@@ -130,7 +130,7 @@ describe("an order's appointment", () => {
       time: "6:00 PM – 9:00 PM",
       place: "الرفاع، قاعة الريم",
     });
-    expect(appointmentText(booking, "Asia/Bahrain", true).time).toBe("6:00 م – 9:00 م");
+    expect(appointmentText(booking, "Asia/Bahrain", true).time).toBe("⁧6:00 م⁩ – ⁧9:00 م⁩");
     expect(appointmentText(booking, "UTC", false).time).toBe("3:00 PM – 6:00 PM");
   });
 });

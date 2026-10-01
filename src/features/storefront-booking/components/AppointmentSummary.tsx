@@ -1,6 +1,6 @@
 import { CalendarDays } from "lucide-react";
 import { confirmationEnd, type BookingConfirmation } from "@/lib/bookings/confirmation";
-import { dayTitle, formatClock } from "@/lib/bookings/format";
+import { dayTitle, formatClockRange } from "@/lib/bookings/format";
 
 /** The booked appointment on the thank-you page: day, time and reference. */
 export function AppointmentSummary({
@@ -16,8 +16,8 @@ export function AppointmentSummary({
         <CalendarDays className="size-4" aria-hidden="true" />
         {dayTitle(appointment.day, isAr)}
       </p>
-      <p className="text-foreground" dir="ltr">
-        {formatClock(appointment.start, isAr)} – {formatClock(confirmationEnd(appointment), isAr)}
+      <p className="text-foreground">
+        {formatClockRange(appointment.start, confirmationEnd(appointment), isAr)}
       </p>
       <p className="text-xs text-muted-foreground">
         {isAr ? "رقم الحجز" : "Booking reference"}: <span dir="ltr">{appointment.ref}</span>

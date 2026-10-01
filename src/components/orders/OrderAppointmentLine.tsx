@@ -32,7 +32,7 @@ function AppointmentWhen({ booking, isAr }: { booking: OrderBooking; isAr: boole
     <p className="flex items-center gap-1 text-xs font-medium text-indigo-700 dark:text-indigo-300">
       <CalendarDays className="size-3.5 shrink-0" aria-hidden="true" />
       <span>{appointment.day}</span>
-      <span dir="ltr">{appointment.time}</span>
+      <span dir={isAr ? "rtl" : "ltr"}>{appointment.time}</span>
     </p>
   );
 }

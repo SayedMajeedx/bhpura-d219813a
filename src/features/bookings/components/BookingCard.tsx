@@ -10,7 +10,7 @@ import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
 import {
   BOOKING_STATUS_TEXT,
   bookingPlaceText,
-  formatClock,
+  formatClockRange,
   localTime,
 } from "@/lib/bookings/format";
 
@@ -62,9 +62,7 @@ export function BookingCard({
         <div className="min-w-0">
           <p className="flex items-center gap-1.5 font-semibold text-foreground">
             <Clock className="size-3.5 text-muted-foreground" aria-hidden="true" />
-            <span dir="ltr">
-              {formatClock(start, isAr)} – {formatClock(end, isAr)}
-            </span>
+            <span dir={isAr ? "rtl" : "ltr"}>{formatClockRange(start, end, isAr)}</span>
           </p>
           <p className="text-xs text-muted-foreground" dir="ltr">
             {booking.reference}

@@ -16,9 +16,7 @@ export function InvoiceAppointment({
   return (
     <div className="mt-2 space-y-0.5 text-xs" style={{ color, opacity: 0.9 }}>
       <p className="font-semibold">{appointment.day}</p>
-      <p dir="ltr" style={{ textAlign: isRTL ? "right" : "left" }}>
-        {appointment.time}
-      </p>
+      <p dir={isRTL ? "rtl" : "ltr"}>{appointment.time}</p>
       {appointment.place && <p>{appointment.place}</p>}
       {appointment.reference && (
         <p style={{ opacity: 0.75 }}>

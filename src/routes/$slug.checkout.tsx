@@ -31,6 +31,11 @@ import { PaymentMethodCard } from "@/features/checkout/components/PaymentMethodC
 import { OrderSummaryCard } from "@/features/checkout/components/OrderSummaryCard";
 import { MobileCheckoutBar } from "@/features/checkout/components/MobileCheckoutBar";
 import { AccountExistsDialog } from "@/features/checkout/components/AccountExistsDialog";
+import { AppointmentDetailsCard } from "@/features/checkout/components/AppointmentDetailsCard";
+import {
+  appointmentCheckoutForm,
+  appointmentFormApplied,
+} from "@/features/checkout/lib/appointment-checkout";
 
 export const Route = createFileRoute("/$slug/checkout")({
   component: Checkout,
@@ -82,6 +87,11 @@ function Checkout() {
 
   // A cart finishing a booking is a service appointment, not a delivery.
   const appointment = bookingOfCart(cart);
+  // Its details came with the booking: they fill the form once and are not asked again.
+  useEffect(() => {
+    if (!appointment || appointmentFormApplied(form, appointment)) return;
+    setForm((current) => appointmentCheckoutForm(current, appointment));
+  }, [appointment, form, setForm]);
   const {
     fulfillmentOptions,
     fulfillment,
@@ -97,6 +107,11 @@ function Checkout() {
     setMethod,
     estimatedDeliveryText,
   } = useCheckoutFulfillment({ settings, lang, appointment });
+
+  // A booking happens at its own place: not picked up, not delivered, not digital.
+  useEffect(() => {
+    if (appointment && fulfillment !== "delivery") setFulfillment("delivery");
+  }, [appointment, fulfillment, setFulfillment]);
 
   const {
     branches,
@@ -274,7 +289,7 @@ function Checkout() {
         {paymentErrorState && (
           <PaymentFailedCard setMethod={setMethod} submit={submit} submitting={submitting} t={t} />
         )}
-        {!session && (
+        {!session && !appointment && (
           <Card className="p-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-primary/30 bg-primary/5">
             <div className="flex min-w-0 items-center gap-3">
               <User className="h-5 w-5 shrink-0" />
@@ -297,27 +312,33 @@ function Checkout() {
           </Card>
         )}
 
-        <CustomerDetailsCard
-          brand={brand}
-          checkRegisteredAccount={checkRegisteredAccount}
-          form={form}
-          fulfillment={fulfillment}
-          giftMessage={giftMessage}
-          giftRecipient={giftRecipient}
-          isGift={isGift}
-          saveToProfile={saveToProfile}
-          session={session}
-          setForm={setForm}
-          setGiftMessage={setGiftMessage}
-          setGiftRecipient={setGiftRecipient}
-          setIsGift={setIsGift}
-          setSaveToProfile={setSaveToProfile}
-          setWhatsappOrderUpdates={setWhatsappOrderUpdates}
-          t={t}
-          whatsappOrderUpdates={whatsappOrderUpdates}
-        />
+        {appointment && (
+          <AppointmentDetailsCard appointment={appointment} brand={brand} lang={lang} t={t} />
+        )}
 
-        {fulfillmentOptions.length > 0 && (
+        {!appointment && (
+          <CustomerDetailsCard
+            brand={brand}
+            checkRegisteredAccount={checkRegisteredAccount}
+            form={form}
+            fulfillment={fulfillment}
+            giftMessage={giftMessage}
+            giftRecipient={giftRecipient}
+            isGift={isGift}
+            saveToProfile={saveToProfile}
+            session={session}
+            setForm={setForm}
+            setGiftMessage={setGiftMessage}
+            setGiftRecipient={setGiftRecipient}
+            setIsGift={setIsGift}
+            setSaveToProfile={setSaveToProfile}
+            setWhatsappOrderUpdates={setWhatsappOrderUpdates}
+            t={t}
+            whatsappOrderUpdates={whatsappOrderUpdates}
+          />
+        )}
+
+        {!appointment && fulfillmentOptions.length > 0 && (
           <FulfillmentMethodCard
             appointment={Boolean(appointment)}
             currency={currency}
@@ -353,7 +374,7 @@ function Checkout() {
           />
         )}
 
-        {fulfillment === "delivery" && (
+        {fulfillment === "delivery" && !appointment && (
           <DeliveryAddressCard
             appointment={Boolean(appointment)}
             currency={currency}

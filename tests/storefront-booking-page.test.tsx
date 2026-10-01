@@ -21,6 +21,8 @@ const state = vi.hoisted(() => ({
     remaining: number;
   }> | null,
   taken: [] as string[],
+  // A store with a package (made of the booth and two prints).
+  withPackage: false,
   // The store's active booking offers.
   discountRules: [] as Array<Record<string, unknown>>,
   addToCart: vi.fn(),
@@ -75,6 +77,31 @@ const bookingsData = {
   requestBooking: state.requestBooking,
   holdBooking: state.holdBooking,
 };
+const packagesData = {
+  servicePackagesQueries: {
+    items: () =>
+      fixture(`package-items-${state.withPackage}`, () =>
+        state.withPackage
+          ? [
+              { package_id: "p3", product_id: "p1", quantity: 1, sort_order: 0 },
+              { package_id: "p3", product_id: "p2", quantity: 2, sort_order: 1 },
+            ]
+          : [],
+      ),
+  },
+  packageLinesById: (rows: Array<{ package_id: string; product_id: string; quantity: number }>) => {
+    const byPackage = new Map<string, Array<{ product_id: string; quantity: number }>>();
+    for (const row of rows) {
+      byPackage.set(row.package_id, [
+        ...(byPackage.get(row.package_id) ?? []),
+        { product_id: row.product_id, quantity: row.quantity },
+      ]);
+    }
+    return byPackage;
+  },
+};
+vi.mock("../src/lib/data/service-packages", () => packagesData);
+vi.mock("@/lib/data/service-packages", () => packagesData);
 const discountsData = {
   bookingDiscountsQueries: {
     public: () => fixture(`discounts-${state.discountRules.length}`, () => state.discountRules),
@@ -104,6 +131,19 @@ const storefrontData = {
           image_url: null,
           product_variants: [{ id: "v2", selling_price: 35 }],
         },
+        ...(state.withPackage
+          ? [
+              {
+                id: "p3",
+                name: "Gold package",
+                name_ar: "الباقة الذهبية",
+                name_en: "Gold package",
+                image_url: null,
+                is_package: true,
+                product_variants: [{ id: "v3", selling_price: 70, original_price: 90 }],
+              },
+            ]
+          : []),
       ]),
   },
 };
@@ -158,6 +198,7 @@ beforeEach(() => {
   state.serviceDays = null;
   state.taken = [];
   state.discountRules = [];
+  state.withPackage = false;
 });
 
 const renderWithQuery = (ui: React.ReactElement) =>
@@ -376,5 +417,22 @@ describe("a store's booking offers", () => {
         }),
       }),
     );
+  });
+});
+
+describe("a package in the booking flow", () => {
+  it("shows what it includes next to its price", async () => {
+    state.withPackage = true;
+    renderWithQuery(<StorefrontBookingPage />);
+    const pkg = await screen.findByRole("checkbox", { name: /Gold package/ });
+    await waitFor(() => expect(pkg).toHaveTextContent("Includes: Photo booth, Prints × 2"));
+    // The services it is made of are still offered on their own.
+    expect(screen.getByRole("checkbox", { name: /^Photo booth/ })).toBeInTheDocument();
+  });
+
+  it("shows nothing extra for a service that is not a package", async () => {
+    renderWithQuery(<StorefrontBookingPage />);
+    const booth = await screen.findByRole("checkbox", { name: /Photo booth/ });
+    expect(booth).not.toHaveTextContent("Includes");
   });
 });
