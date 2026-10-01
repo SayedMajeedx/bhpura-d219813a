@@ -65,7 +65,8 @@ send-order-email`.
   (stock, incubators, packaging, shipping, returns), off for services by
   default; menu, inventory tabs and dashboard follow them. Services are only
   booked (no cart buttons).
-- **S2: the service editor.** "Add service": basics; packages (name,
+- **S2: the service editor** (done, PR #185; per-service capacity, buffer
+  and notice need booking-engine changes and come with S3's engine work). "Add service": basics; packages (name,
   duration, price, compare-at) in place of the size/colour matrix; where it
   happens; what's included; booking settings (capacity, buffer, notice);
   questions for the customer (the customisation engine, renamed). A services
