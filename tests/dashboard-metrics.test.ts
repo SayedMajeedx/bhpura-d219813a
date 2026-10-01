@@ -201,6 +201,49 @@ describe("inventoryIntelFor", () => {
     expect(intel.availableWithoutImages).toEqual([{ id: "p1", name: "Abaya", stock: 3 }]);
   });
 
+  it("leaves made-to-order items and services out of every stock figure", () => {
+    const service = {
+      id: "s1",
+      name: "Photo booth",
+      name_ar: null,
+      name_en: "Photo booth",
+      is_active: true,
+      is_made_to_order: true,
+      item_kind: "service",
+      image_url: null,
+      media: [],
+    };
+    const bespoke = { ...service, id: "s2", name: "Bespoke", item_kind: "product" };
+    const intel = inventoryIntelFor({
+      productRows: [...products, service, bespoke] as InventoryInput["productRows"],
+      variantRows: [
+        ...variants,
+        {
+          id: "sv1",
+          product_id: "s1",
+          stock_main: 0,
+          stock_incubator: 0,
+          created_at: daysAgo(100),
+        },
+        {
+          id: "sv2",
+          product_id: "s2",
+          stock_main: 0,
+          stock_incubator: 0,
+          created_at: daysAgo(100),
+        },
+      ] as InventoryInput["variantRows"],
+      validRevenueOrders: orders,
+      lang: "en",
+      now,
+    });
+    // Only the two stocked products count, exactly as without them.
+    expect(intel.lowStockCount).toBe(1);
+    expect(intel.outOfStockVariantCount).toBe(1);
+    expect(intel.deadStockCount).toBe(1);
+    expect(intel.lowStockVariants.map((v) => v.id)).toEqual(["v2"]);
+  });
+
   it("lists a variant running out within two weeks, named in the shopper's language", () => {
     const busy = [
       order({ created_at: daysAgo(5), order_items: [{ variant_id: "v1", quantity: 45 }] }),

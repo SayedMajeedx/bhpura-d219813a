@@ -96,10 +96,16 @@ send-order-email`.
   (at your place: address and area, travel fee; at our venue: branch) in
   place of delivery/pickup. Account and WhatsApp messages show the
   appointment, with an add-to-calendar link.
-- **S5: settings and dashboard.** One "Service area & travel fees" section in
-  place of shipping zones; cancellation policy; default pages. Dashboard:
-  today's bookings, the next 7 days, pending requests, occupancy. First-run
-  checklist: first service, booking rules and hours.
+- **S5: settings and dashboard** (done, PR #188). The dashboard of a store that
+  takes bookings opens with its bookings: today's appointments, the next 7
+  days, requests waiting for an answer and occupancy over 14 days (and asks a
+  store with no booking rules to set its hours first); stock figures leave out
+  made-to-order items and services, and the low-stock alert follows the stock
+  module. The launch checklist says "Add your first service" and "Receive your
+  first booking". The settings' fulfillment group, for a store without the
+  shipping module, replaces shipping zones with "where your services happen"
+  (at the customer's venue, at your place) and points to the booking rules for
+  travel fees and the deposit.
 - **S6: mobile app.** A services tab without stock; bookings in the tab bar.
 - **S7: guards.** Tests that fail when a services store shows stock,
   shipping or incubator UI, or a vertical lacks a module default.

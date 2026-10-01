@@ -355,8 +355,13 @@ export function inventoryIntelFor({
   lang: string;
   now: Date;
 }) {
-  const products = productRows;
-  const variants = variantRows;
+  // Made-to-order items and services have no stock to run low, sell slowly or
+  // go dead: they are left out of every stock figure.
+  const products = productRows.filter(
+    (product) => !product.is_made_to_order && product.item_kind !== "service",
+  );
+  const trackedProductIds = new Set(products.map((product) => product.id));
+  const variants = variantRows.filter((variant) => trackedProductIds.has(variant.product_id));
   const orders = validRevenueOrders;
 
   const past45Days = new Date(now);
