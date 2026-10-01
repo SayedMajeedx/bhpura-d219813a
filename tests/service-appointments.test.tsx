@@ -215,6 +215,19 @@ vi.mock("@/lib/data/bookings", () => bookingsData);
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
 }));
+const storefrontCtx = {
+  useStorefront: () => ({
+    brand: { id: "b1", slug: "aurora" },
+    settings: {},
+    lang: "en",
+    currency: "BHD",
+    cart: [],
+    t: (_ar: string, en: string) => en,
+  }),
+  formatPrice: (n: number) => `BHD ${Number(n).toFixed(3)}`,
+};
+vi.mock("../src/lib/storefront-context", () => storefrontCtx);
+vi.mock("@/lib/storefront-context", () => storefrontCtx);
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 const { OrderAppointmentLine } = await import("../src/components/orders/OrderAppointmentLine");
@@ -289,5 +302,124 @@ describe("an appointment on the orders list", () => {
     // Never a packing or shipping button.
     expect(screen.queryByRole("button", { name: /pack|ship|deliver/i })).toBeNull();
     fireEvent.click(document.body);
+  });
+});
+
+const { FulfillmentMethodCard } =
+  await import("../src/features/checkout/components/FulfillmentMethodCard");
+const { OrderSummaryCard } = await import("../src/features/checkout/components/OrderSummaryCard");
+type FulfillmentProps = React.ComponentProps<typeof FulfillmentMethodCard>;
+type FulfillmentOptions = FulfillmentProps["fulfillmentOptions"];
+type FulfillmentSettings = FulfillmentProps["settings"];
+
+describe("the checkout of a booking, as the customer reads it", () => {
+  const t = (_ar: string, en: string) => en;
+  const cartBooking = {
+    id: "b",
+    token: "t",
+    reference: "BK-DEMO01",
+    day: "2026-10-15",
+    start: "18:00",
+    durationMinutes: 240,
+    expiresAt: "2026-10-15T00:00:00Z",
+    travelFee: 5,
+  };
+  const options = [
+    { id: "delivery", ar: "", en: "At my venue", icon: () => null, fee: 5 },
+    { id: "pickup", ar: "", en: "At your place", icon: () => null, fee: 0 },
+  ];
+
+  it("asks where the service is, not how it ships", () => {
+    render(
+      <FulfillmentMethodCard
+        appointment
+        currency="BHD"
+        estimatedDeliveryText="At your booked time"
+        fulfillment="delivery"
+        fulfillmentOptions={options as unknown as FulfillmentOptions}
+        lang="en"
+        setFulfillment={vi.fn()}
+        settings={{ delivery_estimate_enabled: true } as unknown as FulfillmentSettings}
+        t={t}
+      />,
+    );
+    expect(screen.getByRole("heading", { name: "Where is the service?" })).toBeTruthy();
+    expect(screen.getByText("At my venue")).toBeTruthy();
+    expect(screen.queryByText(/Estimated delivery/)).toBeNull();
+  });
+
+  const summary = (appointment: typeof cartBooking | null, shipping: number) =>
+    render(
+      <OrderSummaryCard
+        {...({
+          acceptedTerms: false,
+          appliedPromo: null,
+          applyPromo: vi.fn(),
+          availableMethods: [],
+          benefitReceipt: null,
+          brand: { id: "b1", slug: "aurora" },
+          cart: [
+            {
+              cart_line_id: "l1",
+              product_id: "p",
+              variant_id: "v",
+              name: "Photo booth",
+              image: null,
+              price: 50,
+              size: "4 hours",
+              color: null,
+              qty: 1,
+              max_stock: 99,
+            },
+          ],
+          cartTotal: 50,
+          checkingPromo: false,
+          currency: "BHD",
+          estimatedDeliveryText: "Within 24 - 48 hours in Bahrain",
+          estimatedPointsToEarn: 0,
+          fulfillment: "delivery",
+          fulfillmentOptions: [],
+          grandTotal: 50 + shipping,
+          handleApplyPoints: vi.fn(),
+          handleRemovePoints: vi.fn(),
+          lang: "en",
+          loyaltyAccount: null,
+          loyaltyDiscount: 0,
+          loyaltyProgram: null,
+          marketingConsent: false,
+          method: "cod",
+          pointsToRedeemInput: "",
+          promoDiscount: 0,
+          promoInput: "",
+          redeemedPoints: 0,
+          setAcceptedTerms: vi.fn(),
+          setAppliedPromo: vi.fn(),
+          setMarketingConsent: vi.fn(),
+          setPointsToRedeemInput: vi.fn(),
+          setPromoInput: vi.fn(),
+          setShareOpen: vi.fn(),
+          shareOpen: false,
+          shipping,
+          submit: vi.fn(),
+          submitting: false,
+          t,
+          appointment,
+        } as unknown as React.ComponentProps<typeof OrderSummaryCard>)}
+      />,
+    );
+
+  it("shows the appointment and the travel fee, not a delivery estimate", () => {
+    const view = summary(cartBooking, 5);
+    expect(screen.getByText("Your appointment")).toBeTruthy();
+    expect(screen.getByText("6:00 PM – 10:00 PM")).toBeTruthy();
+    expect(screen.getByText("Travel fee")).toBeTruthy();
+    expect(screen.queryByText("Estimated delivery")).toBeNull();
+    expect(screen.queryByText("Delivery fee")).toBeNull();
+    view.unmount();
+
+    summary(null, 3);
+    expect(screen.getByText("Estimated delivery")).toBeTruthy();
+    expect(screen.getByText("Delivery fee")).toBeTruthy();
+    expect(screen.queryByText("Your appointment")).toBeNull();
   });
 });
