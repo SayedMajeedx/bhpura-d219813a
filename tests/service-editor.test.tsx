@@ -12,7 +12,7 @@ import {
   serviceIncludesFrom,
   serviceIncludesToSave,
   serviceLocationFrom,
-} from "../src/features/inventory/lib/service-details";
+} from "../src/lib/bookings/service-details";
 import { productColumnsFrom, productFormFrom } from "../src/features/inventory/lib/product-form";
 import { ServicePricingFields } from "../src/features/inventory/components/ServicePricingFields";
 import { ServiceDetailsFields } from "../src/features/inventory/components/ServiceDetailsFields";

@@ -21,11 +21,11 @@ export const PRODUCT_CARD_SELECT =
  * fail on every call.
  */
 export const PRODUCT_DETAIL_BASE_SELECT =
-  "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, is_made_to_order, item_kind, base_price, size_guide_id, size_guide_hidden, product_variants(id, size, size_unit, color, fabric, option_four, option_five, selling_price, original_price, stock_main, stock_incubator, image_url)";
+  "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, is_made_to_order, item_kind, service_location, service_includes, base_price, size_guide_id, size_guide_hidden, product_variants(id, size, size_unit, color, fabric, option_four, option_five, selling_price, original_price, stock_main, stock_incubator, image_url, duration_minutes)";
 
 /** Product page and quick view, with option labels. Type: `StorefrontProductDetail`. */
 export const PRODUCT_DETAIL_SELECT =
-  "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, is_made_to_order, item_kind, base_price, size_guide_id, size_guide_hidden, variant_label_size_ar, variant_label_size_en, variant_label_color_ar, variant_label_color_en, variant_label_fabric_ar, variant_label_fabric_en, variant_label_four_ar, variant_label_four_en, variant_label_five_ar, variant_label_five_en, product_variants(id, size, size_unit, color, fabric, option_four, option_five, selling_price, original_price, stock_main, stock_incubator, image_url)";
+  "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, is_made_to_order, item_kind, service_location, service_includes, base_price, size_guide_id, size_guide_hidden, variant_label_size_ar, variant_label_size_en, variant_label_color_ar, variant_label_color_en, variant_label_fabric_ar, variant_label_fabric_en, variant_label_four_ar, variant_label_four_en, variant_label_five_ar, variant_label_five_en, product_variants(id, size, size_unit, color, fabric, option_four, option_five, selling_price, original_price, stock_main, stock_incubator, image_url, duration_minutes)";
 
 /** "You may also like" rails. Type: `RecommendationProduct`. */
 export const RECOMMENDATION_SELECT =

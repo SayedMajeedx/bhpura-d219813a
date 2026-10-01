@@ -111,7 +111,7 @@ vi.mock("@tanstack/react-router", () => ({
 
 const { StorefrontBookingPage } =
   await import("../src/features/storefront-booking/components/StorefrontBookingPage");
-const { BookingInvite, BookServiceButton } =
+const { BookingInvite } =
   await import("../src/features/storefront-booking/components/BookingEntryPoints");
 
 beforeAll(() => {
@@ -241,16 +241,5 @@ describe("where a booking starts", () => {
       "/$slug/book",
     );
     unmount();
-    state.bookings = false;
-    const { container } = renderWithQuery(<BookServiceButton productId="p1" />);
-    expect(container).toBeEmptyDOMElement();
-  });
-
-  it("books a service straight from its page", () => {
-    renderWithQuery(<BookServiceButton productId="p1" />);
-    expect(screen.getByRole("link", { name: "Book this service" })).toHaveAttribute(
-      "href",
-      "/$slug/book?service=p1",
-    );
   });
 });

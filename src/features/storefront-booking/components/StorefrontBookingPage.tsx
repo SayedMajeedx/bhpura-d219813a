@@ -69,8 +69,14 @@ function timeRange(flow: BookingFlow): string {
  * a free date, the services, the time, the details. It sends a booking
  * request; the customer then confirms it with the store on WhatsApp.
  */
-export function StorefrontBookingPage({ initialService }: { initialService?: string }) {
-  const flow = useBookingFlow(initialService);
+export function StorefrontBookingPage({
+  initialService,
+  initialMinutes,
+}: {
+  initialService?: string;
+  initialMinutes?: number;
+}) {
+  const flow = useBookingFlow(initialService, initialMinutes);
   const { isAr, currency, showPrices } = flow;
   const lang = isAr ? "ar" : "en";
 
@@ -112,6 +118,7 @@ export function StorefrontBookingPage({ initialService }: { initialService?: str
       place,
       name: flow.flow.name.trim(),
       totalLabel: showPrices ? formatPrice(Number(flow.result.total), currency, lang) : null,
+      answers: flow.answers,
     });
     const link = whatsAppLink(flow.settings.whatsapp_number, text);
     return (

@@ -7,7 +7,7 @@ import {
   SERVICE_LOCATIONS,
   type ServiceInclude,
   type ServiceLocation,
-} from "@/features/inventory/lib/service-details";
+} from "@/lib/bookings/service-details";
 
 const LOCATION_TEXT: Record<ServiceLocation, { ar: string; en: string }> = {
   customer: { ar: "عند العميل", en: "At the customer's" },

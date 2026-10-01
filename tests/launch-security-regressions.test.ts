@@ -231,6 +231,28 @@ describe("launch security regressions", () => {
     expect(sql).toContain("'deposit_percent', s.deposit_percent");
   });
 
+  it("server-renders the home page with every column the product cards read", () => {
+    const sql = readFileSync(
+      "supabase/migrations/20261001140000_storefront_page_data_services.sql",
+      "utf8",
+    );
+    for (const column of [
+      "'item_kind', p.item_kind",
+      "'service_location', p.service_location",
+      "'service_includes', p.service_includes",
+      "'duration_minutes', pv.duration_minutes",
+      "'size_unit', pv.size_unit",
+      "'image_url', pv.image_url",
+    ]) {
+      expect(sql).toContain(column);
+    }
+    // Everything else of the live definition is kept.
+    expect(sql).toContain("STABLE SECURITY DEFINER");
+    expect(sql).toContain("WHERE p.brand_id = v_brand_id AND p.is_active = true;");
+    expect(sql).toContain("'suspension_reason', CASE WHEN v_is_trial_expired THEN 'trial_expired'");
+    expect(sql).toContain("FROM public.brand_public_addons ba");
+  });
+
   it("keeps a service's place and included lines in checked columns", () => {
     const sql = readFileSync("supabase/migrations/20261001120000_service_details.sql", "utf8");
     expect(sql).toContain("service_location IN ('customer', 'venue', 'both')");

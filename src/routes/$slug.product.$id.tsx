@@ -74,8 +74,11 @@ import { getProductRecentPurchaseCount } from "@/lib/storefront-social-proof";
 
 import { RecommendationRail } from "@/features/product-page/components/RecommendationRail";
 import { ProductPurchaseActions } from "@/features/product-page/components/ProductPurchaseActions";
-import { BookServiceButton } from "@/features/storefront-booking/components/BookingEntryPoints";
 import { soldOnlyByBooking } from "@/lib/bookings/service";
+import { bookingTermsText } from "@/lib/bookings/terms";
+import { bookingsQueries } from "@/lib/data/bookings";
+import { ServicePurchasePanel } from "@/features/product-page/components/ServicePurchasePanel";
+import { ServiceMobileBookBar } from "@/features/product-page/components/ServiceMobileBookBar";
 import { useVariantSelectionSync } from "@/features/product-page/hooks/use-variant-selection-sync";
 import { ProductTitleAndPrice } from "@/features/product-page/components/ProductTitleAndPrice";
 export const Route = createFileRoute("/$slug/product/$id")({
@@ -139,6 +142,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const { addons } = useAddons();
   const { vocabulary } = useVocabulary();
   const modules = useStoreModules();
+  // A services store's booking rules: a service's page shows its booking terms.
+  const publicRules = useQuery({
+    ...bookingsQueries.publicRules(brand.id),
+    enabled: Boolean(modules.bookings),
+  });
   const navigate = useNavigate();
   const [mediaIdx, setMediaIdx] = useState(0);
   const [variantId, setVariantId] = useState<string | null>(null);
@@ -500,6 +508,13 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
 
   const displayName = pickName(lang, product);
   const displayDescription = pickDescription(lang, product);
+  // A service is booked, not bought: its own panel, terms and mobile bar.
+  const isService = soldOnlyByBooking(product, modules);
+  const bookingTerms = isService ? bookingTermsText(publicRules.data, lang === "ar") : null;
+  const serviceFromPrice = Math.min(
+    ...(product.product_variants ?? []).map((v) => Number(v.selling_price) || Infinity),
+  );
+  const bundleItems = relatedProducts.filter((item) => item.item_kind !== "service").slice(0, 3);
 
   const cfLabel = (f: CustomField) => {
     const label = lang === "ar" ? f.label_ar || f.label_en : f.label_en || f.label_ar;
@@ -708,7 +723,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             </p>
           )}
 
-          {(hasVariants || customFields.length > 0) && (
+          {!isService && (hasVariants || customFields.length > 0) && (
             <ProductOptionPickers
               hasReadySizes={hasReadySizes}
               hasVariants={hasVariants}
@@ -754,7 +769,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             />
           )}
 
-          {applicableAddons.length > 0 && (
+          {!isService && applicableAddons.length > 0 && (
             <ProductAddonsPicker
               applicableAddons={applicableAddons}
               currency={currency}
@@ -778,26 +793,28 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             }}
           />
 
-          {visibleCustomFields.length > 0 && (!showSizeModeToggle || sizeMode === "custom") && (
-            <ProductCustomFields
-              brand={brand}
-              cfLabel={cfLabel}
-              cfValues={cfValues}
-              lang={lang}
-              modules={modules}
-              setCfValues={setCfValues}
-              setErrorMsg={setErrorMsg}
-              setTailoringNotes={setTailoringNotes}
-              setUploadingField={setUploadingField}
-              showSizeModeToggle={showSizeModeToggle}
-              sizeMode={sizeMode}
-              t={t}
-              tailoringNotes={tailoringNotes}
-              uploadingField={uploadingField}
-              visibleCustomFields={visibleCustomFields}
-              vocabulary={vocabulary}
-            />
-          )}
+          {!isService &&
+            visibleCustomFields.length > 0 &&
+            (!showSizeModeToggle || sizeMode === "custom") && (
+              <ProductCustomFields
+                brand={brand}
+                cfLabel={cfLabel}
+                cfValues={cfValues}
+                lang={lang}
+                modules={modules}
+                setCfValues={setCfValues}
+                setErrorMsg={setErrorMsg}
+                setTailoringNotes={setTailoringNotes}
+                setUploadingField={setUploadingField}
+                showSizeModeToggle={showSizeModeToggle}
+                sizeMode={sizeMode}
+                t={t}
+                tailoringNotes={tailoringNotes}
+                uploadingField={uploadingField}
+                visibleCustomFields={visibleCustomFields}
+                vocabulary={vocabulary}
+              />
+            )}
 
           <AddonSlot
             placement="storefront.product.afterCta"
@@ -809,8 +826,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           />
 
           {/* A service is sold only with a booking: "Book", no cart buttons. */}
-          {soldOnlyByBooking(product, modules) ? (
-            <BookServiceButton productId={product.id} />
+          {isService ? (
+            <ServicePurchasePanel product={product} />
           ) : (
             <ProductPurchaseActions
               brand={brand}
@@ -843,22 +860,24 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               hasSizeGuide={Boolean(
                 modules?.size_guide || (product?.size_guide_id && !product?.size_guide_hidden),
               )}
+              bookingTerms={bookingTerms}
             />
           )}
 
           {/* Layer 2 Bundle Offer */}
-          {settings?.storefront_design_version === 2 && relatedProducts.length > 0 && (
-            <BundleOffer
-              mainProduct={product}
-              mainVariant={variant}
-              bundleItems={relatedProducts.slice(0, 3)}
-            />
+          {settings?.storefront_design_version === 2 && !isService && bundleItems.length > 0 && (
+            <BundleOffer mainProduct={product} mainVariant={variant} bundleItems={bundleItems} />
           )}
         </div>
 
         {/* Mobile sticky purchase bar. Publishes its height so bottom-fixed
             overlays (consent banner) stack above it rather than over it. */}
-        {!soldOnlyByBooking(product, modules) && (
+        {isService ? (
+          <ServiceMobileBookBar
+            productId={product.id}
+            fromPrice={Number.isFinite(serviceFromPrice) ? serviceFromPrice : 0}
+          />
+        ) : (
           <ProductMobileBuyBar
             brand={brand}
             doAdd={doAdd}

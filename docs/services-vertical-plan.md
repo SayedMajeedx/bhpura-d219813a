@@ -72,6 +72,14 @@ send-order-email`.
   questions for the customer (the customisation engine, renamed). A services
   list with price from, duration, packages, bookings. Migration for the new
   fields.
+- **S4a: the storefront for services** (done, before S3, at the owner's request
+  that services work end to end): no "sold out" on made-to-order items and
+  services (ProductCardV2); service cards say how long they last; a
+  service's page offers its lengths with prices, where it happens, what it
+  includes, its booking terms and a mobile "Book" bar, and books the chosen
+  length; the booking flow asks the services' questions and books services
+  only; the server-rendered home page carries the columns the cards read
+  (migration 20261001140000).
 - **S3: orders.** An `appointment` fulfillment with its own stages
   (confirmed, scheduled, in progress, completed) that follow the booking;
   the appointment in the orders list and on the invoice (public invoice
