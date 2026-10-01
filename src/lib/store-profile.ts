@@ -19,7 +19,22 @@ export const STORE_VERTICALS = [
 
 export type StoreVertical = (typeof STORE_VERTICALS)[number];
 
-export const STORE_MODULES = ["size_guide", "fit_passport", "made_to_order", "bookings"] as const;
+/**
+ * What a store shows. The first four are specialised (off unless the vertical
+ * turns them on); the rest are the core of a shop that sells goods (on,
+ * except where a vertical has no use for them, e.g. a services store).
+ */
+export const STORE_MODULES = [
+  "size_guide",
+  "fit_passport",
+  "made_to_order",
+  "bookings",
+  "stock",
+  "incubators",
+  "packaging",
+  "shipping",
+  "returns",
+] as const;
 
 export type StoreModuleId = (typeof STORE_MODULES)[number];
 
@@ -66,6 +81,36 @@ export const MODULE_LABELS: Record<
     en: "Bookings & calendar",
     hintAr: "تقويم للحجز بالتاريخ والوقت، أيام محجوزة ومغلقة، وطلبات الحجز",
     hintEn: "A calendar to book by date and time, booked and closed days, and booking requests",
+  },
+  stock: {
+    ar: "المخزون",
+    en: "Stock",
+    hintAr: "كميات المخزون، وتنبيهات المخزون المنخفض والنافد",
+    hintEn: "Stock quantities and low and out-of-stock alerts",
+  },
+  incubators: {
+    ar: "الحاضنات والعُهد",
+    en: "Incubators & consignment",
+    hintAr: "بضاعة معروضة لدى محلات أخرى ومستحقاتها",
+    hintEn: "Goods placed with other shops and what they owe",
+  },
+  packaging: {
+    ar: "مواد التغليف",
+    en: "Packaging materials",
+    hintAr: "مخزون مواد التغليف وتكلفتها على الطلبات",
+    hintEn: "Packaging stock and its cost on orders",
+  },
+  shipping: {
+    ar: "الشحن والتوصيل",
+    en: "Shipping & delivery",
+    hintAr: "مناطق الشحن ورسومها ومدة التوصيل",
+    hintEn: "Shipping zones, fees and delivery times",
+  },
+  returns: {
+    ar: "المرتجعات والاستبدال",
+    en: "Returns & exchanges",
+    hintAr: "طلبات إرجاع واستبدال المنتجات",
+    hintEn: "Product return and exchange requests",
   },
 };
 

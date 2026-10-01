@@ -101,14 +101,36 @@ describe("what the registry feeds (unchanged from before it)", () => {
       fit_passport: true,
       made_to_order: true,
       bookings: false,
+      stock: true,
+      incubators: true,
+      packaging: true,
+      shipping: true,
+      returns: true,
     });
     expect(VERTICAL_MODULE_DEFAULTS.jewelry).toEqual({
       size_guide: true,
       fit_passport: false,
       made_to_order: true,
       bookings: false,
+      stock: true,
+      incubators: true,
+      packaging: true,
+      shipping: true,
+      returns: true,
     });
     expect(VERTICAL_MODULE_DEFAULTS.print.made_to_order).toBe(true);
+    // Services are booked, not stocked, shipped or returned.
+    expect(VERTICAL_MODULE_DEFAULTS.services).toEqual({
+      size_guide: false,
+      fit_passport: false,
+      made_to_order: false,
+      bookings: true,
+      stock: false,
+      incubators: false,
+      packaging: false,
+      shipping: false,
+      returns: false,
+    });
     expect(VERTICAL_MODULE_DEFAULTS.coffee.size_guide).toBe(false);
     expect(VERTICAL_LABELS.coffee).toEqual({
       ar: "محاصيل وقهوة مختصة",

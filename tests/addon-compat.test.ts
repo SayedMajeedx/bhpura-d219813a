@@ -37,6 +37,11 @@ describe("modulesFromAddons compatibility adapter", () => {
       fit_passport: false,
       made_to_order: false,
       bookings: false,
+      stock: true,
+      incubators: true,
+      packaging: true,
+      shipping: true,
+      returns: true,
     });
   });
 
@@ -46,6 +51,11 @@ describe("modulesFromAddons compatibility adapter", () => {
       fit_passport: false,
       made_to_order: false,
       bookings: false,
+      stock: true,
+      incubators: true,
+      packaging: true,
+      shipping: true,
+      returns: true,
     });
 
     const allRows: BrandAddonRow[] = [
@@ -92,6 +102,11 @@ describe("modulesFromAddons compatibility adapter", () => {
       fit_passport: true,
       made_to_order: true,
       bookings: false,
+      stock: true,
+      incubators: true,
+      packaging: true,
+      shipping: true,
+      returns: true,
     });
   });
 });

@@ -4,6 +4,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { InventoryCommandHeader } from "@/components/inventory/InventoryCommandHeader";
 import { InventoryScopeSwitcher } from "@/components/inventory/InventoryScopeSwitcher";
 import { InventoryToolbar } from "@/components/inventory/InventoryToolbar";
@@ -68,6 +69,7 @@ export function ProductsSection({
   const navigate = useNavigate();
   const brand = useBrand();
   const brandId = brand.id;
+  const { profile: storeProfile } = useAdminStoreProfile(brandId);
   const isAr = useI18n().lang === "ar";
   const [editing, setEditing] = useState<Product | null>(null);
   const [bomTargetProduct, setBomTargetProduct] = useState<Product | null>(null);
@@ -166,15 +168,18 @@ export function ProductsSection({
     [products, productStock, productWeeklySales],
   );
 
-  const scopeTabs = inventoryScopeTabs({
-    all: products.length,
-    attention: needsAttentionProducts.length,
-    active: products.filter((p) => p.is_active).length,
-    inactive: products.filter((p) => !p.is_active).length,
-    low: lowStock,
-    out: products.filter((p) => isOutOfStock(productStock(p.id))).length,
-    featured: products.filter((p) => p.featured_trending).length,
-  });
+  const scopeTabs = inventoryScopeTabs(
+    {
+      all: products.length,
+      attention: needsAttentionProducts.length,
+      active: products.filter((p) => p.is_active).length,
+      inactive: products.filter((p) => !p.is_active).length,
+      low: lowStock,
+      out: products.filter((p) => isOutOfStock(productStock(p.id))).length,
+      featured: products.filter((p) => p.featured_trending).length,
+    },
+    { tracksStock: storeProfile.modules.stock },
+  );
 
   const categoriesQ = useInventoryCategories(brand.id);
 

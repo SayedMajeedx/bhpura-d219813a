@@ -639,6 +639,9 @@ export function getAdminNavItems({
     if (item.permission && !hasPermission(item.permission)) return false;
     if (item.id === "size-guides" && !storeModules?.size_guide) return false;
     if (item.id === "bookings" && !storeModules?.bookings) return false;
+    // A store without stock or returns (a services store) has no use for these.
+    if (item.id === "incubators" && storeModules?.incubators === false) return false;
+    if (item.id === "returns" && storeModules?.returns === false) return false;
     if (storefrontMode === "catalog") {
       if (item.id === "abandoned-carts" || item.id === "loyalty" || item.id === "discounts") {
         return false;
