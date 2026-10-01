@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useBrand } from "@/lib/brand-context";
 import { getStorefrontUrl } from "@/lib/storefront-url";
+import { checklistCopy } from "@/features/dashboard/lib/checklist-copy";
 
 import type { DashboardData } from "@/features/dashboard/hooks/use-dashboard-data";
 import type { useOnboardingMilestones } from "@/features/dashboard/hooks/use-onboarding-milestones";
@@ -34,6 +35,7 @@ export function OnboardingChecklist({
   togglePreviewMilestone,
   toggleSaleMilestone,
   totalOrdersCount,
+  takesBookings = false,
 }: {
   brand: ReturnType<typeof useBrand>;
   completedStepsCount: number;
@@ -50,7 +52,11 @@ export function OnboardingChecklist({
   togglePreviewMilestone: ReturnType<typeof useOnboardingMilestones>["togglePreviewMilestone"];
   toggleSaleMilestone: ReturnType<typeof useOnboardingMilestones>["toggleSaleMilestone"];
   totalOrdersCount: number;
+  /** A store that takes bookings: services and bookings in place of products and sales. */
+  takesBookings?: boolean;
 }) {
+  const copy = checklistCopy(takesBookings);
+  const text = (value: { ar: string; en: string }) => (isAr ? value.ar : value.en);
   return (
     <Card
       className={`p-5 sm:p-6 border-2 transition-all duration-300 rounded-3xl shadow-xs space-y-4 animate-in fade-in slide-in-from-top-2 ${
@@ -158,17 +164,9 @@ export function OnboardingChecklist({
                 </span>
               )}
             </div>
-            <h4 className="font-bold text-sm text-foreground">
-              {isAr ? "إضافة أول منتج" : "Add Your First Product"}
-            </h4>
+            <h4 className="font-bold text-sm text-foreground">{text(copy.addTitle)}</h4>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              {step1Done
-                ? isAr
-                  ? `لديك الآن ${productsQ.data?.length ?? 1} منتج جاهز للبيع في المتجر.`
-                  : `You have ${productsQ.data?.length ?? 1} products ready to sell.`
-                : isAr
-                  ? "أدخل اسم وسعر وصورة أول منتج لعرضه فوراً أمام عملائك."
-                  : "Add name, price, and photo of your first item to display."}
+              {step1Done ? text(copy.addDone(productsQ.data?.length ?? 1)) : text(copy.addPending)}
             </p>
           </div>
           <Button
@@ -181,13 +179,7 @@ export function OnboardingChecklist({
           >
             <Link to="/admin/b/$slug/inventory" params={{ slug }}>
               <Package className="h-3.5 w-3.5 me-1.5" />
-              {step1Done
-                ? isAr
-                  ? "إدارة المنتجات"
-                  : "Manage Products"
-                : isAr
-                  ? "أضف منتجك الأول الآن"
-                  : "Add Product Now"}
+              {step1Done ? text(copy.addButtonDone) : text(copy.addButtonPending)}
             </Link>
           </Button>
         </div>
@@ -304,21 +296,15 @@ export function OnboardingChecklist({
                 </span>
               )}
             </div>
-            <h4 className="font-bold text-sm text-foreground">
-              {isAr ? "تسجيل أول عملية بيع" : "Record Your First Sale"}
-            </h4>
+            <h4 className="font-bold text-sm text-foreground">{text(copy.firstTitle)}</h4>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              {step3Done
-                ? totalOrdersCount > 0
+              {step3Done && totalOrdersCount > 0
+                ? text(copy.firstDone(totalOrdersCount))
+                : step3Done
                   ? isAr
-                    ? `تم تسجيل ${totalOrdersCount} طلب بنجاح. لوحة المبيعات والتقارير المالية تعمل بكامل طاقتها.`
-                    : `${totalOrdersCount} orders recorded successfully. Sales telemetry is active.`
-                  : isAr
-                    ? "تم تأكيد تسجيل المبيعات بنجاح. لوحة التحكم والتقارير جاهزة للاستخدام."
-                    : "First sale milestone verified. Financial reports are active."
-                : isAr
-                  ? "استقبل أول طلب من متجرك الإلكتروني، أو سجّل طلباً يدوياً لتشغيل لوحة الأرباح والمخزون."
-                  : "Receive your first online order or create a manual order to activate financial metrics."}
+                    ? "تم تأكيد الخطوة. لوحة التحكم والتقارير جاهزة للاستخدام."
+                    : "Milestone verified. The dashboard and reports are ready."
+                  : text(copy.firstPending)}
             </p>
           </div>
           <div className="space-y-1.5">
@@ -328,15 +314,9 @@ export function OnboardingChecklist({
               variant={step3Done ? "outline" : "secondary"}
               className="w-full font-bold text-xs rounded-xl hover:bg-secondary/80"
             >
-              <Link to="/admin/b/$slug/orders" params={{ slug }}>
+              <Link to={copy.firstTo} params={{ slug }}>
                 <ReceiptText className="h-3.5 w-3.5 me-1.5 text-primary" />
-                {step3Done
-                  ? isAr
-                    ? "إدارة الطلبات والفواتير"
-                    : "Manage Orders & Invoices"
-                  : isAr
-                    ? "الطلبات والفواتير"
-                    : "Orders & Invoices"}
+                {step3Done ? text(copy.firstButtonDone) : text(copy.firstButtonPending)}
               </Link>
             </Button>
             <div className="flex justify-end">

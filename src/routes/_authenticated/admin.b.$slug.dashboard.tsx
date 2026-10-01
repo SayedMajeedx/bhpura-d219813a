@@ -1,4 +1,5 @@
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
+import { BookingsGlanceCard } from "@/features/bookings/components/BookingsGlanceCard";
 import { createFileRoute } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -227,9 +228,13 @@ function Dashboard() {
         slug={slug}
         isAr={isAr}
         unfulfilledOrdersCount={unfulfilledOrdersCount}
-        lowStockCount={inventoryIntel.lowStockCount}
+        lowStockCount={storeProfile.modules.stock ? inventoryIntel.lowStockCount : 0}
         pendingReturnsCount={pendingReturnsQ.data ?? 0}
       />
+
+      {storeProfile.modules.bookings && (
+        <BookingsGlanceCard brandId={brandId} slug={slug} isAr={isAr} />
+      )}
 
       <ReviewRequestQueue
         brandId={brandId}
@@ -268,6 +273,7 @@ function Dashboard() {
               togglePreviewMilestone={togglePreviewMilestone}
               toggleSaleMilestone={toggleSaleMilestone}
               totalOrdersCount={totalOrdersCount}
+              takesBookings={storeProfile.modules.bookings}
             />
           )}
 
