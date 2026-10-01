@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  invalidateServiceOptions,
+  optionsOf,
+  serviceOptionsQueries,
+} from "@/lib/data/service-options";
+import { optionFormFrom } from "@/lib/bookings/service-options";
+import {
   invalidateServicePackages,
   packageLinesById,
   servicePackagesQueries,
@@ -81,6 +87,27 @@ export function ProductDialog({
     ...servicePackagesQueries.items(brand.id),
     enabled: isService && Boolean(product?.is_package),
   }).data;
+  // An existing service's add-ons load once into the form.
+  const optionRows = useQuery({
+    ...serviceOptionsQueries.list(brand.id),
+    enabled: isService && Boolean(product),
+  }).data;
+  const savedOptionIds = product
+    ? optionsOf(optionRows, product.id)
+        .filter((option) => option.is_active)
+        .map((option) => option.id)
+    : [];
+  const loadedOptionsFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!product || !optionRows || loadedOptionsFor.current === product.id) return;
+    loadedOptionsFor.current = product.id;
+    setForm((current) => ({
+      ...current,
+      service_options: optionsOf(optionRows, product.id)
+        .filter((option) => option.is_active)
+        .map(optionFormFrom),
+    }));
+  }, [product, optionRows]);
   const loadedPackageFor = useRef<string | null>(null);
   useEffect(() => {
     if (!product?.is_package || !packageRows || loadedPackageFor.current === product.id) return;
@@ -100,9 +127,11 @@ export function ProductDialog({
     setErrors,
     onInvalid: () => setActiveDialogTab("basic"),
     commitMedia,
+    savedOptionIds,
     onSaved: (newProductId, kind) => {
       // What a package includes may have changed.
       void invalidateServicePackages(qc, brand.id);
+      void invalidateServiceOptions(qc, brand.id);
       onSaved(newProductId, kind);
     },
     service: isService

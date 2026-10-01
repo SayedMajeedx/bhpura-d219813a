@@ -12,6 +12,13 @@ import { isCatalogMode, shouldShowPrices } from "@/lib/storefront-mode";
 import { bookingCartLines } from "@/lib/bookings/cart";
 import { storefrontQueries } from "@/lib/data/storefront";
 import { bookingDiscountsQueries } from "@/lib/data/booking-discounts";
+import { optionsOf, serviceOptionsQueries } from "@/lib/data/service-options";
+import {
+  chosenOptions,
+  defaultSelection,
+  optionsPayload,
+  type OptionSelection,
+} from "@/lib/bookings/service-options";
 import { packageLinesById, servicePackagesQueries } from "@/lib/data/service-packages";
 import { packageLinesText } from "@/lib/bookings/service-package";
 import { bestDiscount, dayOffer, discountName, type DiscountRule } from "@/lib/bookings/discounts";
@@ -163,9 +170,41 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
       isAr,
     );
 
+  // The add-ons of each service: what comes with it, what is on by default, what the
+  // customer adds. Their choice is kept per service; untouched means the defaults.
+  const allOptions = useQuery({
+    ...serviceOptionsQueries.list(brand.id),
+    enabled: Boolean(rules),
+  }).data;
+  const optionsOfService = (serviceId: string) =>
+    optionsOf(allOptions, serviceId).filter((option) => option.is_active);
+  const [optionChoices, setOptionChoices] = useState<Record<string, OptionSelection>>({});
+  const selectionFor = (serviceId: string): OptionSelection =>
+    optionChoices[serviceId] ?? defaultSelection(optionsOfService(serviceId));
+  const setOptionQuantity = (serviceId: string, optionId: string, quantity: number) =>
+    setOptionChoices((current) => {
+      const selection = {
+        ...(current[serviceId] ?? defaultSelection(optionsOfService(serviceId))),
+      };
+      if (quantity <= 0) delete selection[optionId];
+      else selection[optionId] = quantity;
+      return { ...current, [serviceId]: selection };
+    });
+  const optionLines = flow.services.flatMap((serviceId) =>
+    chosenOptions(optionsOfService(serviceId), selectionFor(serviceId)),
+  );
+  const optionsTotalValue = optionLines.reduce((sum, line) => sum + line.price, 0);
+  const optionPayloads = Object.fromEntries(
+    flow.services.map((serviceId) => [
+      serviceId,
+      optionsPayload(optionsOfService(serviceId), selectionFor(serviceId)),
+    ]),
+  );
+
   const [result, setResult] = useState<BookingRequestResult | null>(null);
   const submit = useMutation({
-    mutationFn: () => requestBooking(toBookingRequest(brand.id, flow, services, isAr)),
+    mutationFn: () =>
+      requestBooking(toBookingRequest(brand.id, flow, services, isAr, optionPayloads)),
     onSuccess: (data) => setResult(data),
     onError: (error: Error) => {
       toast.error(bookingErrorMessage(error.message, isAr));
@@ -176,7 +215,7 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
 
   // A shop store: hold the day, put the services in the cart, pay at checkout.
   const checkout = useMutation({
-    mutationFn: () => holdBooking(toBookingRequest(brand.id, flow, services, isAr)),
+    mutationFn: () => holdBooking(toBookingRequest(brand.id, flow, services, isAr, optionPayloads)),
     onSuccess: async (hold) => {
       for (const line of cart) if (line.booking) removeFromCart(line.cart_line_id);
       const lines = bookingCartLines(
@@ -188,6 +227,7 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
           depositPercent: rules?.deposit_percent ?? 0,
           travelFee: rules ? travelFeeFor(rules, flow.areaCode) : null,
           discount: hold.discount ?? 0,
+          optionsTotal: hold.options_total ?? 0,
           customer: { name: flow.name.trim(), phone: flow.phone.trim() },
           place: { area: flow.area, venue: flow.venue.trim() },
           notes: toBookingRequest(brand.id, flow, services, isAr).notes ?? null,
@@ -240,6 +280,12 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
     startRows,
     /** The durations every chosen service is offered for. */
     lengths: rules ? offeredDurations(durations(rules), chosen) : [],
+    /** The add-ons: each service's, the choice made, what is chosen with prices, and the total. */
+    optionsOfService,
+    selectionFor,
+    setOptionQuantity,
+    optionLines,
+    optionsTotal: optionsTotalValue,
     /** What a package includes, in words (empty for a service that is not one). */
     includesText,
     /** The offer this booking gets (null: none), and the one to mark on a calendar day. */

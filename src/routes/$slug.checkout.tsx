@@ -199,7 +199,9 @@ function Checkout() {
   const shipping = freeShipping ? 0 : deliveryFee;
 
   const grandTotal =
-    Math.max(0, cartTotal - promoDiscount - bookingDiscount - loyaltyDiscount) + shipping;
+    Math.max(0, cartTotal - promoDiscount - bookingDiscount - loyaltyDiscount) +
+    Number(appointment?.optionsTotal ?? 0) +
+    shipping;
 
   useEffect(() => {
     if (!cart.length) return;

@@ -13,7 +13,7 @@ import { formatMoney } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
 import { formatAddressLine, type StructuredAddress } from "@/lib/bahrain-regions";
 import { DeliveryAddressCard } from "@/components/delivery-address-card";
-import { getFulfillmentLabel } from "@/lib/status-labels";
+import { effectiveFulfillmentStatus, getFulfillmentLabel } from "@/lib/status-labels";
 import type { Order } from "@/features/orders/types";
 import { formatDeliveryAddress } from "@/features/orders/lib/order-editor";
 import { BhdFeeInput } from "@/features/orders/components/BhdFeeInput";
@@ -226,7 +226,10 @@ export function OrderFulfillmentPanel({
                 {lang === "ar" ? "حالة التوصيل:" : "Delivery status:"}
               </span>
               <span className="rounded-full bg-primary/10 px-2.5 py-1 font-semibold text-primary">
-                {getFulfillmentLabel(order.fulfillment_status, lang)}
+                {getFulfillmentLabel(
+                  effectiveFulfillmentStatus(order.fulfillment_status, order.fulfillment_method),
+                  lang,
+                )}
               </span>
               {order.payment_method === "cod" && (
                 <span

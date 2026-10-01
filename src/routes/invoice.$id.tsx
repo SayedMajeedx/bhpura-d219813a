@@ -4,7 +4,7 @@ import { useState } from "react";
 import { formatDate, formatMoney } from "@/lib/format";
 import { formatAddressDetailed, regionLabel, type StructuredAddress } from "@/lib/bahrain-regions";
 import { resolvePaymentStatus, PAYMENT_BADGE_LABEL } from "@/lib/payment-status";
-import { getInvoiceStatusLabel } from "@/lib/status-labels";
+import { effectiveFulfillmentStatus, getInvoiceStatusLabel } from "@/lib/status-labels";
 import { getOrderCustomerEmail } from "@/lib/order-customer-snapshot";
 import {
   appointmentText,
@@ -160,7 +160,9 @@ function PublicInvoice() {
   const items = order.order_items ?? [];
 
   const arabicFont = (settings as any)?.invoice_arabic_font_family || "Cairo";
-  const rawStatus = order.fulfillment_status || order.status;
+  const rawStatus = String(
+    effectiveFulfillmentStatus(order.fulfillment_status || order.status, order.fulfillment_method),
+  ).toLowerCase();
   const isPaidStatus =
     order.payment_status === "paid" || rawStatus === "delivered" || rawStatus === "completed";
   const isUnpaidStatus =

@@ -31,7 +31,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { formatDate } from "@/lib/format";
 import { getOrderTypeLabel, detectOrderType } from "@/lib/order-type-detector";
-import { getFulfillmentLabel, getFulfillmentBadgeClasses } from "@/lib/status-labels";
+import {
+  effectiveFulfillmentStatus,
+  getFulfillmentLabel,
+  getFulfillmentBadgeClasses,
+} from "@/lib/status-labels";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { useAddons } from "@/components/addons/AddonsProvider";
 import { productionStagesFrom } from "@/lib/addons/addon-registry";
@@ -111,6 +115,12 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
 }) => {
   const router = useRouter();
   const isAr = lang === "ar";
+  // An appointment is scheduled until it is done: not packed, shipped or delivered.
+  const isAppointment = String(order?.fulfillment_method ?? "").toLowerCase() === "appointment";
+  const shownStatus = effectiveFulfillmentStatus(
+    order?.fulfillment_status,
+    order?.fulfillment_method,
+  );
   const { vocabulary } = useVocabulary();
   const { addons } = useAddons();
   const hasProductionStages = productionStagesFrom(addons);
@@ -229,10 +239,10 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                     }
                     className={cn(
                       "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold tracking-tight transition-all hover:opacity-90 touch-manipulation focus-visible:ring-2 focus-visible:ring-ring cursor-pointer disabled:cursor-default",
-                      getFulfillmentBadgeClasses(order?.fulfillment_status),
+                      getFulfillmentBadgeClasses(shownStatus),
                     )}
                   >
-                    <span>{getFulfillmentLabel(order?.fulfillment_status, lang, vocabulary)}</span>
+                    <span>{getFulfillmentLabel(shownStatus, lang, vocabulary)}</span>
                     <ChevronDown className="h-3 w-3 opacity-70 shrink-0" />
                   </button>
                 </DropdownMenuTrigger>
@@ -242,27 +252,101 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                   </div>
                   <DropdownMenuSeparator />
 
-                  {(hasProductionStages ||
-                    order?.fulfillment_status === "SENT_TO_TAILOR" ||
-                    order?.fulfillment_status === "RECEIVED_FROM_TAILOR") && (
+                  {isAppointment ? (
                     <>
                       <DropdownMenuItem
                         onClick={() =>
-                          setPendingStatus({
-                            status: "sent_to_tailor",
-                            fulfillmentStatus: "SENT_TO_TAILOR",
-                          })
+                          setPendingStatus({ status: "completed", fulfillmentStatus: "COMPLETED" })
+                        }
+                        className="flex cursor-pointer items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                          <span className="text-xs font-medium">
+                            {isAr ? "تم تنفيذ الخدمة" : "Service done"}
+                          </span>
+                        </div>
+                        {order?.fulfillment_status === "COMPLETED" && (
+                          <Check className="h-3.5 w-3.5 text-primary" />
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          setPendingStatus({ status: "cancelled", fulfillmentStatus: "CANCELLED" })
+                        }
+                        className="flex cursor-pointer items-center justify-between text-destructive focus:text-destructive"
+                      >
+                        <div className="flex items-center gap-2">
+                          <XCircle className="h-4 w-4 shrink-0 text-destructive" />
+                          <span className="text-xs font-medium">
+                            {isAr ? "إلغاء الحجز والطلب" : "Cancel the booking and order"}
+                          </span>
+                        </div>
+                      </DropdownMenuItem>
+                    </>
+                  ) : (
+                    <>
+                      {(hasProductionStages ||
+                        order?.fulfillment_status === "SENT_TO_TAILOR" ||
+                        order?.fulfillment_status === "RECEIVED_FROM_TAILOR") && (
+                        <>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              setPendingStatus({
+                                status: "sent_to_tailor",
+                                fulfillmentStatus: "SENT_TO_TAILOR",
+                              })
+                            }
+                            className="cursor-pointer flex items-center justify-between"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Scissors className="h-4 w-4 text-purple-600 shrink-0" />
+                              <span className="font-medium text-xs">
+                                {vocabulary.sent_to_workshop[lang] ||
+                                  (isAr ? "تم الإرسال للورشة" : "Sent to Workshop")}
+                              </span>
+                            </div>
+                            {order?.fulfillment_status === "SENT_TO_TAILOR" && (
+                              <Check className="h-3.5 w-3.5 text-primary" />
+                            )}
+                          </DropdownMenuItem>
+
+                          <DropdownMenuItem
+                            onClick={() =>
+                              setPendingStatus({
+                                status: "received_from_tailor",
+                                fulfillmentStatus: "RECEIVED_FROM_TAILOR",
+                              })
+                            }
+                            className="cursor-pointer flex items-center justify-between"
+                          >
+                            <div className="flex items-center gap-2">
+                              <PackageCheck className="h-4 w-4 text-teal-600 shrink-0" />
+                              <span className="font-medium text-xs">
+                                {vocabulary.received_from_workshop[lang] ||
+                                  (isAr ? "تم الاستلام من الورشة" : "Receive from Workshop")}
+                              </span>
+                            </div>
+                            {order?.fulfillment_status === "RECEIVED_FROM_TAILOR" && (
+                              <Check className="h-3.5 w-3.5 text-primary" />
+                            )}
+                          </DropdownMenuItem>
+                        </>
+                      )}
+
+                      <DropdownMenuItem
+                        onClick={() =>
+                          setPendingStatus({ status: "packing", fulfillmentStatus: "PACKING" })
                         }
                         className="cursor-pointer flex items-center justify-between"
                       >
                         <div className="flex items-center gap-2">
-                          <Scissors className="h-4 w-4 text-purple-600 shrink-0" />
+                          <Box className="h-4 w-4 text-amber-600 shrink-0" />
                           <span className="font-medium text-xs">
-                            {vocabulary.sent_to_workshop[lang] ||
-                              (isAr ? "تم الإرسال للورشة" : "Sent to Workshop")}
+                            {isAr ? "بدء التعبئة والتغليف" : "Start Packing"}
                           </span>
                         </div>
-                        {order?.fulfillment_status === "SENT_TO_TAILOR" && (
+                        {order?.fulfillment_status === "PACKING" && (
                           <Check className="h-3.5 w-3.5 text-primary" />
                         )}
                       </DropdownMenuItem>
@@ -270,132 +354,94 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                       <DropdownMenuItem
                         onClick={() =>
                           setPendingStatus({
-                            status: "received_from_tailor",
-                            fulfillmentStatus: "RECEIVED_FROM_TAILOR",
+                            status: "ready_for_pickup",
+                            fulfillmentStatus: "READY_FOR_PICKUP",
                           })
                         }
                         className="cursor-pointer flex items-center justify-between"
                       >
                         <div className="flex items-center gap-2">
-                          <PackageCheck className="h-4 w-4 text-teal-600 shrink-0" />
+                          <Store className="h-4 w-4 text-indigo-600 shrink-0" />
                           <span className="font-medium text-xs">
-                            {vocabulary.received_from_workshop[lang] ||
-                              (isAr ? "تم الاستلام من الورشة" : "Receive from Workshop")}
+                            {isAr ? "جاهز للاستلام (المحل)" : "Ready for Pickup"}
                           </span>
                         </div>
-                        {order?.fulfillment_status === "RECEIVED_FROM_TAILOR" && (
+                        {order?.fulfillment_status === "READY_FOR_PICKUP" && (
                           <Check className="h-3.5 w-3.5 text-primary" />
+                        )}
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        onClick={() =>
+                          setPendingStatus({ status: "shipped", fulfillmentStatus: "SHIPPED" })
+                        }
+                        className="cursor-pointer flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Truck className="h-4 w-4 text-sky-600 shrink-0" />
+                          <span className="font-medium text-xs">
+                            {isAr ? "تم الشحن والتسليم للمندوب" : "Mark Shipped"}
+                          </span>
+                        </div>
+                        {order?.fulfillment_status === "SHIPPED" && (
+                          <Check className="h-3.5 w-3.5 text-primary" />
+                        )}
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        onClick={() =>
+                          setPendingStatus({ status: "completed", fulfillmentStatus: "COMPLETED" })
+                        }
+                        className="cursor-pointer flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                          <span className="font-medium text-xs">
+                            {isAr ? "إكمال وتسليم الطلب" : "Complete Order"}
+                          </span>
+                        </div>
+                        {order?.fulfillment_status === "COMPLETED" && (
+                          <Check className="h-3.5 w-3.5 text-primary" />
+                        )}
+                      </DropdownMenuItem>
+
+                      <DropdownMenuSeparator />
+
+                      <DropdownMenuItem
+                        onClick={() =>
+                          setPendingStatus({ status: "pending", fulfillmentStatus: "ON_HOLD" })
+                        }
+                        className="cursor-pointer flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-slate-500 shrink-0" />
+                          <span className="font-medium text-xs">
+                            {isAr ? "قيد الانتظار" : "On Hold / Pending"}
+                          </span>
+                        </div>
+                        {order?.fulfillment_status === "ON_HOLD" && (
+                          <Check className="h-3.5 w-3.5 text-primary" />
+                        )}
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        onClick={() =>
+                          setPendingStatus({ status: "cancelled", fulfillmentStatus: "CANCELLED" })
+                        }
+                        className="cursor-pointer flex items-center justify-between text-destructive focus:text-destructive"
+                      >
+                        <div className="flex items-center gap-2">
+                          <XCircle className="h-4 w-4 text-destructive shrink-0" />
+                          <span className="font-medium text-xs">
+                            {isAr ? "إلغاء الطلب" : "Cancel Order"}
+                          </span>
+                        </div>
+                        {order?.fulfillment_status === "CANCELLED" && (
+                          <Check className="h-3.5 w-3.5 text-destructive" />
                         )}
                       </DropdownMenuItem>
                     </>
                   )}
-
-                  <DropdownMenuItem
-                    onClick={() =>
-                      setPendingStatus({ status: "packing", fulfillmentStatus: "PACKING" })
-                    }
-                    className="cursor-pointer flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Box className="h-4 w-4 text-amber-600 shrink-0" />
-                      <span className="font-medium text-xs">
-                        {isAr ? "بدء التعبئة والتغليف" : "Start Packing"}
-                      </span>
-                    </div>
-                    {order?.fulfillment_status === "PACKING" && (
-                      <Check className="h-3.5 w-3.5 text-primary" />
-                    )}
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem
-                    onClick={() =>
-                      setPendingStatus({
-                        status: "ready_for_pickup",
-                        fulfillmentStatus: "READY_FOR_PICKUP",
-                      })
-                    }
-                    className="cursor-pointer flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Store className="h-4 w-4 text-indigo-600 shrink-0" />
-                      <span className="font-medium text-xs">
-                        {isAr ? "جاهز للاستلام (المحل)" : "Ready for Pickup"}
-                      </span>
-                    </div>
-                    {order?.fulfillment_status === "READY_FOR_PICKUP" && (
-                      <Check className="h-3.5 w-3.5 text-primary" />
-                    )}
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem
-                    onClick={() =>
-                      setPendingStatus({ status: "shipped", fulfillmentStatus: "SHIPPED" })
-                    }
-                    className="cursor-pointer flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Truck className="h-4 w-4 text-sky-600 shrink-0" />
-                      <span className="font-medium text-xs">
-                        {isAr ? "تم الشحن والتسليم للمندوب" : "Mark Shipped"}
-                      </span>
-                    </div>
-                    {order?.fulfillment_status === "SHIPPED" && (
-                      <Check className="h-3.5 w-3.5 text-primary" />
-                    )}
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem
-                    onClick={() =>
-                      setPendingStatus({ status: "completed", fulfillmentStatus: "COMPLETED" })
-                    }
-                    className="cursor-pointer flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                      <span className="font-medium text-xs">
-                        {isAr ? "إكمال وتسليم الطلب" : "Complete Order"}
-                      </span>
-                    </div>
-                    {order?.fulfillment_status === "COMPLETED" && (
-                      <Check className="h-3.5 w-3.5 text-primary" />
-                    )}
-                  </DropdownMenuItem>
-
-                  <DropdownMenuSeparator />
-
-                  <DropdownMenuItem
-                    onClick={() =>
-                      setPendingStatus({ status: "pending", fulfillmentStatus: "ON_HOLD" })
-                    }
-                    className="cursor-pointer flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-slate-500 shrink-0" />
-                      <span className="font-medium text-xs">
-                        {isAr ? "قيد الانتظار" : "On Hold / Pending"}
-                      </span>
-                    </div>
-                    {order?.fulfillment_status === "ON_HOLD" && (
-                      <Check className="h-3.5 w-3.5 text-primary" />
-                    )}
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem
-                    onClick={() =>
-                      setPendingStatus({ status: "cancelled", fulfillmentStatus: "CANCELLED" })
-                    }
-                    className="cursor-pointer flex items-center justify-between text-destructive focus:text-destructive"
-                  >
-                    <div className="flex items-center gap-2">
-                      <XCircle className="h-4 w-4 text-destructive shrink-0" />
-                      <span className="font-medium text-xs">
-                        {isAr ? "إلغاء الطلب" : "Cancel Order"}
-                      </span>
-                    </div>
-                    {order?.fulfillment_status === "CANCELLED" && (
-                      <Check className="h-3.5 w-3.5 text-destructive" />
-                    )}
-                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_BOOKING_RULES, type BookingRules } from "../src/lib/bookings/rules";
@@ -23,6 +23,8 @@ const state = vi.hoisted(() => ({
   taken: [] as string[],
   // A store with a package (made of the booth and two prints).
   withPackage: false,
+  // The booth's add-ons.
+  withOptions: false,
   // The store's active booking offers.
   discountRules: [] as Array<Record<string, unknown>>,
   addToCart: vi.fn(),
@@ -77,6 +79,74 @@ const bookingsData = {
   requestBooking: state.requestBooking,
   holdBooking: state.holdBooking,
 };
+const optionRows = () => [
+  {
+    id: "o1",
+    product_id: "p1",
+    name_en: "Attendant",
+    name_ar: "موظفة",
+    description_en: null,
+    description_ar: null,
+    mode: "required",
+    price: 15,
+    tiers: null,
+    max_quantity: null,
+    sort_order: 0,
+    is_active: true,
+  },
+  {
+    id: "o2",
+    product_id: "p1",
+    name_en: "Instant prints",
+    name_ar: "طباعة",
+    description_en: null,
+    description_ar: null,
+    mode: "default_on",
+    price: 30,
+    tiers: null,
+    max_quantity: null,
+    sort_order: 1,
+    is_active: true,
+  },
+  {
+    id: "o3",
+    product_id: "p1",
+    name_en: "Magnets",
+    name_ar: "مغناطيس",
+    description_en: null,
+    description_ar: null,
+    mode: "optional",
+    price: 25,
+    tiers: null,
+    max_quantity: null,
+    sort_order: 2,
+    is_active: true,
+  },
+  {
+    id: "o4",
+    product_id: "p1",
+    name_en: "Envelopes",
+    name_ar: "أظرف",
+    description_en: null,
+    description_ar: null,
+    mode: "optional",
+    price: 15,
+    tiers: { step: 50, prices: [15, 12.5, 10] },
+    max_quantity: 150,
+    sort_order: 3,
+    is_active: true,
+  },
+];
+const optionsData = {
+  serviceOptionsQueries: {
+    list: () =>
+      fixture(`options-${state.withOptions}`, () => (state.withOptions ? optionRows() : [])),
+  },
+  optionsOf: (all: Array<{ product_id: string }> | undefined, id: string) =>
+    (all ?? []).filter((option) => option.product_id === id),
+};
+vi.mock("../src/lib/data/service-options", () => optionsData);
+vi.mock("@/lib/data/service-options", () => optionsData);
 const packagesData = {
   servicePackagesQueries: {
     items: () =>
@@ -199,6 +269,7 @@ beforeEach(() => {
   state.taken = [];
   state.discountRules = [];
   state.withPackage = false;
+  state.withOptions = false;
 });
 
 const renderWithQuery = (ui: React.ReactElement) =>
@@ -434,5 +505,90 @@ describe("a package in the booking flow", () => {
     renderWithQuery(<StorefrontBookingPage />);
     const booth = await screen.findByRole("checkbox", { name: /Photo booth/ });
     expect(booth).not.toHaveTextContent("Includes");
+  });
+});
+
+describe("a service's add-ons in the booking flow", () => {
+  const open = async () => {
+    state.withOptions = true;
+    renderWithQuery(<StorefrontBookingPage initialService="p1" />);
+    fireEvent.click(await screen.findByRole("gridcell", { name: /10 October: Available/ }));
+    return screen.findByRole("list", { name: "Add-ons" });
+  };
+
+  it("shows what comes with the service, what is on by default and what can be added", async () => {
+    const list = await open();
+    const attendant = within(list).getByRole("checkbox", { name: "Attendant" });
+    expect(attendant).toBeChecked();
+    expect(attendant).toBeDisabled();
+    expect(within(list).getByText("With every booking")).toBeInTheDocument();
+    expect(within(list).getByRole("checkbox", { name: "Instant prints" })).toBeChecked();
+    expect(within(list).getByText(/comes off if you remove it/)).toBeInTheDocument();
+    expect(within(list).getByRole("checkbox", { name: "Magnets" })).not.toBeChecked();
+    expect(
+      within(list).getByText(/first 50: 15 · next 50: 12\.5 · then 10 per 50/),
+    ).toBeInTheDocument();
+  });
+
+  it("adds them to the total as they are chosen, and sends the choice with the request", async () => {
+    const list = await open();
+    // 55 for the booth + the attendant 15 + the prints 30 on by default.
+    expect(await screen.findByText(/100\.000/)).toBeInTheDocument();
+    fireEvent.click(within(list).getByRole("checkbox", { name: "Instant prints" }));
+    fireEvent.click(within(list).getByRole("checkbox", { name: "Magnets" }));
+    fireEvent.click(within(list).getByRole("button", { name: "More Envelopes" }));
+    fireEvent.click(within(list).getByRole("button", { name: "More Envelopes" }));
+    // 55 + 15 + magnets 25 + envelopes 100 (15 + 12.5) = 122.5.
+    expect(await screen.findByText(/122\.500/)).toBeInTheDocument();
+    expect(within(list).getByText("100")).toBeInTheDocument();
+    // The most is 150: a fourth block is not offered.
+    fireEvent.click(within(list).getByRole("button", { name: "More Envelopes" }));
+    expect(within(list).getByRole("button", { name: "More Envelopes" })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "3 hours" }));
+    fireEvent.click(screen.getByRole("button", { name: "6:00 PM" }));
+    fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Sara" } });
+    fireEvent.change(screen.getByLabelText("WhatsApp number"), { target: { value: "39001122" } });
+    fireEvent.change(screen.getByLabelText("Event area"), { target: { value: "juffair" } });
+    fireEvent.click(screen.getByRole("button", { name: "Send booking request" }));
+    await waitFor(() => expect(state.requestBooking).toHaveBeenCalledTimes(1));
+    expect(state.requestBooking).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [
+          {
+            product_id: "p1",
+            variant_id: "v1",
+            quantity: 1,
+            options: [
+              { option_id: "o3", quantity: 1 },
+              { option_id: "o4", quantity: 150 },
+            ],
+          },
+        ],
+      }),
+    );
+  });
+
+  it("sends the prints off when they were taken off (an empty choice is still a choice)", async () => {
+    const list = await open();
+    fireEvent.click(within(list).getByRole("checkbox", { name: "Instant prints" }));
+    fireEvent.click(screen.getByRole("button", { name: "3 hours" }));
+    fireEvent.click(screen.getByRole("button", { name: "6:00 PM" }));
+    fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Sara" } });
+    fireEvent.change(screen.getByLabelText("WhatsApp number"), { target: { value: "39001122" } });
+    fireEvent.change(screen.getByLabelText("Event area"), { target: { value: "juffair" } });
+    fireEvent.click(screen.getByRole("button", { name: "Send booking request" }));
+    await waitFor(() => expect(state.requestBooking).toHaveBeenCalledTimes(1));
+    const sent = (
+      state.requestBooking.mock.calls[0] as unknown as [{ items: Array<{ options?: unknown[] }> }]
+    )[0];
+    expect(sent.items[0].options).toEqual([]);
+  });
+
+  it("shows nothing for a service with no add-ons", async () => {
+    renderWithQuery(<StorefrontBookingPage initialService="p1" />);
+    fireEvent.click(await screen.findByRole("gridcell", { name: /10 October: Available/ }));
+    await screen.findByRole("button", { name: "3 hours" });
+    expect(screen.queryByRole("list", { name: "Add-ons" })).toBeNull();
   });
 });

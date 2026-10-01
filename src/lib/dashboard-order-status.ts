@@ -1,9 +1,15 @@
-import { getFulfillmentLabel, getOrderStatusLabel, type Lang } from "./status-labels";
+import {
+  effectiveFulfillmentStatus,
+  getFulfillmentLabel,
+  getOrderStatusLabel,
+  type Lang,
+} from "./status-labels";
 import type { StoreVocabulary } from "./store-vocabulary";
 
 export type DashboardOrderStatusInput = {
   status?: string | null;
   fulfillment_status?: string | null;
+  fulfillment_method?: string | null;
 };
 
 export function getDashboardOrderStatus(
@@ -11,7 +17,11 @@ export function getDashboardOrderStatus(
   lang: Lang,
   vocab?: Partial<StoreVocabulary> | StoreVocabulary,
 ) {
-  const fulfillmentStatus = String(order.fulfillment_status || "").trim();
+  const fulfillmentStatus = String(
+    order.fulfillment_status
+      ? effectiveFulfillmentStatus(order.fulfillment_status, order.fulfillment_method)
+      : "",
+  ).trim();
   const rawStatus = String(order.status || "").trim();
   const effectiveStatus = (fulfillmentStatus || rawStatus).toLowerCase();
 

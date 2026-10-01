@@ -14,6 +14,7 @@ import {
   updateVariant,
 } from "@/lib/data/catalog";
 import { savePackageItems } from "@/lib/data/service-packages";
+import { saveServiceOptions } from "@/lib/data/service-options";
 import type { Product } from "@/features/inventory/types";
 import { prefetchOptionTranslations } from "@/features/inventory/lib/option-translations";
 import {
@@ -45,6 +46,7 @@ export function useSaveProduct({
   commitMedia,
   onSaved,
   service,
+  savedOptionIds = [],
 }: {
   product: Product | null;
   form: ProductForm;
@@ -54,6 +56,8 @@ export function useSaveProduct({
   onInvalid: () => void;
   commitMedia: () => void;
   onSaved: (newProductId?: string, kind?: "service" | "product") => void;
+  /** The add-ons the service already has (the ones left out of the form are switched off). */
+  savedOptionIds?: string[];
   /**
    * A service's prices and its current variants: saved as its variants
    * (one per length, or one fixed price) in place of a product's default
@@ -129,6 +133,9 @@ export function useSaveProduct({
       if (!form.is_package && !wasPackage) return;
       await savePackageItems(brand.id, productId, form.is_package ? form.package_items : []);
     };
+    // A service's add-ons are saved with it (the ones taken out are switched off).
+    const saveOptions = (productId: string) =>
+      saveServiceOptions(brand.id, productId, form.service_options, savedOptionIds);
     const newDefaultVariant = (productId: string) =>
       createVariants(brand.id, [
         {
@@ -146,6 +153,7 @@ export function useSaveProduct({
         await updateProduct(brand.id, product.id, columns);
         await saveServicePrices(product.id);
         await savePackage(product.id, Boolean(product.is_package));
+        await saveOptions(product.id);
       } catch (error) {
         return toast.error(getFriendlyErrorMessage(error));
       }
@@ -189,6 +197,14 @@ export function useSaveProduct({
       if (isService) {
         await saveServicePrices(createdProductId).catch((error: unknown) => {
           defaultVariantError = error;
+        });
+        await saveOptions(createdProductId).catch((error: unknown) => {
+          toast.error(
+            isAr
+              ? "تم حفظ الخدمة، لكن تعذر حفظ إضافاتها. افتحها وأعد المحاولة."
+              : "The service was saved, but its add-ons were not. Open it and try again.",
+            { description: getFriendlyErrorMessage(error) },
+          );
         });
         await savePackage(createdProductId, false).catch((error: unknown) => {
           toast.error(

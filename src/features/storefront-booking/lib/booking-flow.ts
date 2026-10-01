@@ -28,6 +28,8 @@ export type BookableService = {
   item_kind?: string | null;
   /** A package: a service made of other services (what it includes shows with it). */
   is_package?: boolean | null;
+  /** Each hour past its longest length costs this (null: not bookable longer). */
+  extra_hour_price?: number | null;
   /** The questions the service asks the customer (booking-questions.ts). */
   custom_fields?: unknown;
   name: string;
@@ -59,7 +61,15 @@ export function serviceDurations(service: BookableService): number[] {
   return [...new Set(minutes)].sort((a, b) => a - b);
 }
 
-/** The durations the chosen services all offer, among the store's. */
+/** What the hours past the service's longest length cost (0 within its lengths or without an extra-hour price). */
+export function extraFor(service: BookableService, minutes: number | null | undefined): number {
+  const own = serviceDurations(service);
+  const rate = Number(service.extra_hour_price ?? 0);
+  if (!minutes || own.length === 0 || rate <= 0 || minutes <= own[own.length - 1]) return 0;
+  return Math.ceil((minutes - own[own.length - 1]) / 60) * rate;
+}
+
+/** The durations the chosen services all offer, among the store's (a service with an extra-hour price offers longer ones too). */
 export function offeredDurations(
   storeDurations: readonly number[],
   chosen: readonly BookableService[],
@@ -67,7 +77,8 @@ export function offeredDurations(
   return storeDurations.filter((minutes) =>
     chosen.every((service) => {
       const own = serviceDurations(service);
-      return own.length === 0 || own.includes(minutes);
+      if (own.length === 0 || own.includes(minutes)) return true;
+      return Number(service.extra_hour_price ?? 0) > 0 && minutes > own[own.length - 1];
     }),
   );
 }
@@ -79,7 +90,16 @@ export function variantFor(
 ): ServiceVariant | null {
   if (serviceDurations(service).length > 0) {
     if (!minutes) return cheapestVariant(service);
-    return service.product_variants.find((variant) => variant.duration_minutes === minutes) ?? null;
+    const own = service.product_variants.find((variant) => variant.duration_minutes === minutes);
+    if (own) return own;
+    // Longer than its longest length: that length's variant, plus the extra hours (priceFor).
+    if (extraFor(service, minutes) > 0) {
+      const longest = serviceDurations(service).at(-1);
+      return (
+        service.product_variants.find((variant) => variant.duration_minutes === longest) ?? null
+      );
+    }
+    return null;
   }
   return cheapestVariant(service);
 }
@@ -90,7 +110,7 @@ export function priceFor(
   minutes: number | null | undefined,
 ): number | null {
   const variant = variantFor(service, minutes);
-  return variant ? Number(variant.selling_price) : null;
+  return variant ? Number(variant.selling_price) + extraFor(service, minutes) : null;
 }
 
 /** Its compare-at price when it is on offer (a package below the sum of its parts). */
@@ -100,7 +120,7 @@ export function compareAtFor(
 ): number | null {
   const variant = variantFor(service, minutes);
   const was = Number(variant?.original_price ?? 0);
-  return variant && was > Number(variant.selling_price) ? was : null;
+  return variant && was > Number(variant.selling_price) ? was + extraFor(service, minutes) : null;
 }
 
 /** Services that can be booked: services (not the store's products) with a price to book them at. */
@@ -193,6 +213,8 @@ export function toBookingRequest(
   flow: FlowState,
   services: readonly BookableService[],
   isAr = false,
+  /** What the customer chose of each service's add-ons (a list once it has add-ons). */
+  options: Record<string, Array<{ option_id: string; quantity: number }> | undefined> = {},
 ) {
   const chosen = services.filter((service) => flow.services.includes(service.id));
   // The customer's notes and their answers to the services' questions (at
@@ -215,6 +237,7 @@ export function toBookingRequest(
         product_id: service.id,
         variant_id: variantFor(service, flow.durationMinutes)?.id ?? null,
         quantity: 1,
+        ...(options[service.id] ? { options: options[service.id] } : {}),
       })),
     customer: { name: flow.name.trim(), phone: flow.phone.trim() },
     location,

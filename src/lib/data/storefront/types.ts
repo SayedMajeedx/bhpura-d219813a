@@ -26,6 +26,7 @@ export type ProductRow = {
   /** "service" for a service, sold only with a booking. */
   item_kind?: string | null;
   is_package?: boolean | null;
+  extra_hour_price?: number | null;
   custom_fields?: unknown;
   product_variants: Array<{
     id: string;
@@ -110,6 +111,7 @@ export type StorefrontProductDetail = {
   is_made_to_order?: boolean | null;
   item_kind?: string | null;
   is_package?: boolean | null;
+  extra_hour_price?: number | null;
   /** A service's place (customer, venue, both) and what it includes ([{ ar, en }]). */
   service_location?: string | null;
   service_includes?: unknown;
@@ -140,6 +142,7 @@ export type RecommendationProduct = {
   is_made_to_order?: boolean | null;
   item_kind?: string | null;
   is_package?: boolean | null;
+  extra_hour_price?: number | null;
   product_variants: Array<{
     id: string;
     selling_price: number;
