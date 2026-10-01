@@ -164,3 +164,15 @@ first, applied by the owner, then the screens):
    database.
 3. **Packages**: a service made of other services at its own price, each
    included service still holding its own capacity and notice. (Next.)
+
+Packages (migration `20261002120000_service_packages.sql`): a package is a
+service (`products.is_package`) made of other services
+(`service_package_items`: the included service and how many) at its own price,
+its variants as for any service. A booked package is one priced
+`booking_items` line plus one unpriced line per included service
+(`parent_item_id`), so every included service keeps its own capacity, setup
+time and notice; availability and free start times of a package are those of
+its included services. A package cannot include a package, and only services
+of the same store can be included. The order lists the included services
+free ("↳ name") under the package line. Tested in a real Postgres
+(`tests/service-packages.test.ts`).
