@@ -4,6 +4,7 @@ import bookingDiscounts from "../../supabase/migrations/20261002100000_booking_d
 import bookingOrders from "../../supabase/migrations/20261002110000_booking_orders.sql?raw";
 import servicePackages from "../../supabase/migrations/20261002120000_service_packages.sql?raw";
 import serviceOptions from "../../supabase/migrations/20261002140000_service_options_and_offers.sql?raw";
+import heldBookings from "../../supabase/migrations/20261002150000_fix_storefront_checkout_and_held_bookings.sql?raw";
 
 /**
  * The booking engine, run for real: an in-process Postgres (PGlite) with the
@@ -326,6 +327,12 @@ export async function createEngineDb() {
   await pg.exec(servicePackages);
   // Add-ons, extra hours, offers with another service and chosen dates.
   await pg.exec(serviceOptions);
+  // Held bookings: a transfer waits for its receipt; staff answer a hold.
+  await pg.exec(
+    heldBookings.slice(
+      heldBookings.indexOf("CREATE OR REPLACE FUNCTION public.place_booking_order"),
+    ),
+  );
   // The storefront order builder, reduced to what checkout needs from it.
   await pg.exec(STOREFRONT_ORDER);
 

@@ -229,6 +229,36 @@ describe("the booking card", () => {
     expect(screen.getByRole("button", { name: "Create quote / invoice" })).toBeInTheDocument();
   });
 
+  it("asks the store to check a BenefitPay receipt, and lets it confirm or release the held day", () => {
+    const onStatus = vi.fn();
+    render(
+      <BookingCard
+        page={page()}
+        booking={
+          booking({
+            status: "hold",
+            orders: { ...order, status: "pending_verification" },
+          }) as never
+        }
+        isAr={false}
+        currency="BHD"
+        timezone="Asia/Bahrain"
+        busy={false}
+        onStatus={onStatus}
+      />,
+    );
+    expect(screen.getByText("Awaiting payment")).toBeInTheDocument();
+    expect(screen.getByText(/BenefitPay receipt is waiting/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Review the receipt and approve/ })).toHaveAttribute(
+      "href",
+      "/admin/b/$slug/orders/$id|booth|o1",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Confirm (paid)" }));
+    expect(onStatus).toHaveBeenCalledWith("confirmed");
+    fireEvent.click(screen.getByRole("button", { name: "Release the day" }));
+    expect(onStatus).toHaveBeenCalledWith("cancelled");
+  });
+
   it("has no invoice for a held day or a cancelled booking", () => {
     const { unmount } = renderCard(booking({ order_id: null, orders: null, status: "hold" }));
     expect(screen.queryByRole("button", { name: /invoice/i })).toBeNull();

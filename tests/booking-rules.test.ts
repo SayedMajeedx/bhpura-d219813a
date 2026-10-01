@@ -121,8 +121,10 @@ describe("settings rows and statuses", () => {
   it("moves bookings the way set_booking_status allows", () => {
     expect(nextStatuses("requested")).toEqual(["confirmed", "cancelled"]);
     expect(nextStatuses("confirmed")).toEqual(["completed", "cancelled"]);
+    // A day held for a payment: confirm it once checked, or release it.
+    expect(nextStatuses("hold")).toEqual(["confirmed", "cancelled"]);
+    expect(nextStatuses("expired")).toEqual(["confirmed"]);
     expect(nextStatuses("cancelled")).toEqual(["confirmed"]);
-    expect(nextStatuses("expired")).toEqual([]);
   });
 
   it("counts confirmed bookings and live holds, not requests or expired holds", () => {
