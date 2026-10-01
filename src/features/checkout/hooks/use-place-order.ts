@@ -17,6 +17,7 @@ import { checkoutFormError } from "@/features/checkout/lib/checkout-validation";
 import { placeOrderFailure, placeStorefrontOrderArgs } from "@/features/checkout/lib/place-order";
 import { placeStorefrontOrder, recordOrderWhatsappOptIn } from "@/lib/data/checkout";
 import { bookingOfCart } from "@/lib/bookings/cart";
+import { confirmationFromCart, confirmationSearch } from "@/lib/bookings/confirmation";
 
 /**
  * Place order: validate, place the order once (a retried card payment reuses
@@ -265,11 +266,17 @@ export function usePlaceOrder({
         sessionStorage.removeItem("checkout_digitalChannel");
         sessionStorage.removeItem("checkout_digitalContact");
       }
+      // The appointment goes to the thank-you page with the order (the cart empties first).
+      const cartBooking = bookingOfCart(cart);
       clearCart();
       await navigate({
         to: "/$slug/thank-you/$orderId",
         params: { slug: brand.slug, orderId: String(orderId ?? "") },
-        search: { fulfillment, channel: fulfillment === "digital" ? digitalChannel : "email" },
+        search: {
+          fulfillment,
+          channel: fulfillment === "digital" ? digitalChannel : "email",
+          ...(cartBooking ? confirmationSearch(confirmationFromCart(cartBooking)) : {}),
+        },
       });
     } catch (e: any) {
       const failure = placeOrderFailure(String(e?.message ?? e), t);

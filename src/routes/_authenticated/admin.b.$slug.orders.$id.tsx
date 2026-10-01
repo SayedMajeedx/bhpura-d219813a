@@ -61,6 +61,7 @@ import { OutOfStockConfirmDialog } from "@/features/orders/components/OutOfStock
 import { NewCustomerDialog } from "@/features/orders/components/NewCustomerDialog";
 import { renderOrderPrimaryAction } from "@/features/orders/components/order-primary-action";
 import { OrderCustomerCard } from "@/features/orders/components/OrderCustomerCard";
+import { OrderBookingCard } from "@/features/orders/components/OrderBookingCard";
 import { OrderItemsCard } from "@/features/orders/components/OrderItemsCard";
 import { OrderFinancialCard } from "@/features/orders/components/OrderFinancialCard";
 import { assignOrderCourier } from "@/lib/data/orders";
@@ -711,6 +712,15 @@ function OrderDetail() {
 
             {/* LEFT COLUMN (65% width) - Products, Line Items & Notes */}
             <div className="space-y-3 sm:space-y-6 lg:col-span-2">
+              {!isCreationMode && order?.id && (
+                <OrderBookingCard
+                  brandId={brand.id}
+                  slug={brand.slug}
+                  orderId={order.id}
+                  isAr={lang === "ar"}
+                  currency={currency}
+                />
+              )}
               <OrderItemsCard
                 addItem={addItem}
                 addonDefaults={addonDefaults}

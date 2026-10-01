@@ -18,7 +18,7 @@ import type { BookingHold } from "@/lib/bookings/cart";
  */
 
 const BOOKING_COLUMNS =
-  "id, reference, status, event_date, starts_at, ends_at, customer_id, customer_name, customer_phone, customer_email, location, notes, source, order_id, hold_expires_at, total, confirmed_at, cancelled_at, cancel_reason, created_at, booking_items(id, product_id, variant_id, name_en, name_ar, quantity, unit_price, line_total)" as const;
+  "id, reference, status, event_date, starts_at, ends_at, customer_id, customer_name, customer_phone, customer_email, location, notes, source, order_id, hold_expires_at, total, travel_fee, deposit_amount, confirmed_at, cancelled_at, cancel_reason, created_at, booking_items(id, product_id, variant_id, name_en, name_ar, quantity, unit_price, line_total)" as const;
 
 const BLOCK_COLUMNS = "id, starts_on, ends_on, reason, created_at" as const;
 
@@ -35,6 +35,8 @@ export const bookingsKeys = {
   publicRules: (brandId: string) => [...bookingsKeys.all(brandId), "public-rules"] as const,
   areaFees: (brandId: string) => [...bookingsKeys.all(brandId), "area-fees"] as const,
   calendarToken: (brandId: string) => [...bookingsKeys.all(brandId), "calendar-token"] as const,
+  forOrder: (brandId: string, orderId: string) =>
+    [...bookingsKeys.all(brandId), "order", orderId] as const,
 };
 
 /** The store's booking rules, or null when it has not set bookings up. */
@@ -62,6 +64,20 @@ export async function fetchBookingsInRange(brandId: string, from: string, to: st
 }
 
 export type Booking = Awaited<ReturnType<typeof fetchBookingsInRange>>[number];
+
+/** The booking an order was placed for (a services store's checkout), or null. */
+export async function fetchBookingForOrder(brandId: string, orderId: string) {
+  const { data, error } = await supabase
+    .from("bookings")
+    .select(BOOKING_COLUMNS)
+    .eq("brand_id", brandId)
+    .eq("order_id", orderId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
 
 /** Booking requests waiting for the store, soonest day first. */
 export async function fetchBookingRequests(brandId: string) {
@@ -183,6 +199,12 @@ export const bookingsQueries = {
       queryKey: bookingsKeys.areaFees(brandId),
       queryFn: () => fetchBookingAreaFees(brandId),
       enabled: Boolean(brandId),
+    }),
+  forOrder: (brandId: string, orderId: string) =>
+    queryOptions({
+      queryKey: bookingsKeys.forOrder(brandId, orderId),
+      queryFn: () => fetchBookingForOrder(brandId, orderId),
+      enabled: Boolean(brandId && orderId),
     }),
   publicRules: (brandId: string) =>
     queryOptions({

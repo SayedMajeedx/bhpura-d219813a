@@ -118,6 +118,13 @@ Measured with `node scripts/maintainability-metrics.mjs`:
 
 ## 4. What to do next (in order)
 
+### 4.0 Services vertical (active, 2026-10-01)
+
+The owner approved [`services-vertical-plan.md`](./services-vertical-plan.md):
+the audit of what a services store is shown, four decisions (item kind per
+product, capacity per service, services are always booked, modules per
+vertical) and the steps S0–S7. Continue with the next step not marked done.
+
 ### 4.1 Phase 6: behaviour tests (done)
 
 Every feature assertion that read source text now runs the code (PRs #111–#125

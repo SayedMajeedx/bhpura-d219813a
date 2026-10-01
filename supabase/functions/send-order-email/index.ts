@@ -7,6 +7,7 @@
 //     ~1-3s Zoho SMTPS handshake, avoiding "CPU Time exceeded".
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { appointmentHtml, escapeHtml, fulfillmentText } from "./appointment.ts";
 
 const allowedOrigins = Array.from(
   new Set(
@@ -71,13 +72,6 @@ const WEBHOOK_SECRET = Deno.env.get("ORDER_EMAIL_WEBHOOK_SECRET") ?? "";
 const admin: any = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
-
-function escapeHtml(s: unknown) {
-  return String(s ?? "").replace(
-    /[&<>"']/g,
-    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
-  );
-}
 
 function eventCopy(
   event: NotificationEvent,
@@ -317,20 +311,7 @@ function renderHtml(
             ? "بطاقة"
             : "Card"
           : o.payment_method || (isAr ? "غير محدد" : "Not specified");
-  const fulfillment =
-    o.fulfillment_method === "delivery"
-      ? isAr
-        ? "توصيل"
-        : "Home delivery"
-      : o.fulfillment_method === "pickup"
-        ? isAr
-          ? "استلام من الفرع"
-          : "Pickup from branch"
-        : o.fulfillment_method === "digital"
-          ? isAr
-            ? "توصيل رقمي"
-            : "Digital delivery"
-          : o.fulfillment_method || (isAr ? "غير محدد" : "Not specified");
+  const fulfillment = fulfillmentText(o, isAr);
   const showVat = (o.tax_rate !== null && o.tax_rate !== undefined) || taxAmount > 0;
   const showPaymentSummary = !!o.payment_status || advancePaid > 0 || !!o.payment_method;
   const rows = items
@@ -348,7 +329,7 @@ function renderHtml(
 <div style="padding:24px 28px;background:${primary};color:#fff"><h1 style="margin:0;font-size:22px">${escapeHtml(brandName)}</h1><p style="margin:6px 0 0;opacity:.9">${L.greet}</p></div>
 <div style="padding:24px 28px">
 <div style="margin:0 0 18px;padding:14px 16px;border-radius:10px;background:#f7f5f4;border:1px solid #eee;direction:${dir};text-align:${isAr ? "right" : "left"}"><strong>${escapeHtml(eventMessage.title)}</strong><div style="margin-top:5px;color:#444;line-height:1.55">${escapeHtml(eventMessage.body)}</div></div>
-<p style="margin:0 0 16px">${L.intro}</p>
+${appointmentHtml(o, isAr)}<p style="margin:0 0 16px">${L.intro}</p>
 <p style="margin:0 0 4px"><strong>${L.inv}:</strong> ${escapeHtml(o.invoice_number)}</p>
 <p style="margin:0 0 16px"><strong>${L.date}:</strong> ${new Date(o.order_date).toLocaleDateString(isAr ? "ar-BH" : "en-US")}</p>
 <table dir="${dir}" style="width:100%;border-collapse:collapse;margin-top:8px;font-size:14px;direction:${dir};text-align:${isAr ? "right" : "left"}"><thead><tr>
@@ -608,7 +589,7 @@ async function sendAdminNotification(input: {
     : "https://boutq.store/admin";
   const payload = {
     email: {
-      html: `<h2>${escapeHtml(eventMessage.title)}</h2><p>${escapeHtml(eventMessage.body)}</p><p><strong>Order #${escapeHtml(input.order.invoice_number)}</strong></p><p><a href="${orderUrl}">Open order in Boutq</a></p>`,
+      html: `<h2>${escapeHtml(eventMessage.title)}</h2><p>${escapeHtml(eventMessage.body)}</p><p><strong>Order #${escapeHtml(input.order.invoice_number)}</strong></p>${appointmentHtml(input.order, false)}<p><a href="${orderUrl}">Open order in Boutq</a></p>`,
       text: `${eventMessage.title}\n${eventMessage.body}\nOrder #${input.order.invoice_number}\n${orderUrl}`,
       subject: adminSubjectForEvent(input.event, input.order.invoice_number, brandName),
       from: { name: brandName, email: fromAddress },
@@ -673,7 +654,8 @@ async function sendAndLog(
         shipping, total, currency, customer_id, advance_paid, payment_status, payment_method, fulfillment_method,
         benefit_receipt_rejection_reason, public_invoice_token,
         customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot,
-        brand:brands ( slug ),
+        brand:brands ( slug, booking_settings ( timezone ) ),
+        bookings ( reference, event_date, starts_at, ends_at, location ),
         order_items ( description, quantity, unit_price, line_total ),
         customer:customers ( email, name )
       `,
