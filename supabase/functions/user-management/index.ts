@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
+import { parseProvisionStoreInput } from "./provision-input.ts";
 
 // This function is authenticated with a bearer token and never uses cookies.
 // Allow all browser origins so custom storefront/admin domains can call it;
@@ -223,6 +224,11 @@ async function handleProvisionBrand(supabase: any, body: any) {
   if (!nameEn || !ownerEmail || !ownerName) {
     return jsonError("Brand name, owner name, and owner email are required", 400);
   }
+  // Checked before the owner's account is created: answering early after that
+  // point would skip the rollback below and leave the account behind.
+  const storeInput = parseProvisionStoreInput(body ?? {});
+  if (!storeInput.ok) return jsonError(storeInput.error, 400);
+  const { storeVertical, storefrontAccentColor, storefrontBackgroundColor } = storeInput.value;
 
   const existingAuthUser = await findAuthUserByEmail(supabase, ownerEmail);
   let ownerId = existingAuthUser?.id as string | undefined;
@@ -273,36 +279,6 @@ async function handleProvisionBrand(supabase: any, body: any) {
     );
     if (provisionalProfileError) throw provisionalProfileError;
 
-    const VALID_VERTICALS = [
-      "abayas",
-      "fashion",
-      "beauty",
-      "coffee",
-      "food",
-      "gifts",
-      "print",
-      "jewelry",
-      "home",
-      "electronics",
-      "digital",
-      "general",
-    ];
-    const HEX_COLOR = /^#[0-9a-f]{6}$/i;
-    const storeVertical = String(body.store_vertical ?? "general")
-      .trim()
-      .toLowerCase();
-    if (!VALID_VERTICALS.includes(storeVertical)) {
-      return jsonError("Invalid store vertical", 400);
-    }
-    const rawAccent = String(
-      body.storefront_accent_color ?? body.primary_color ?? "#800020",
-    ).trim();
-    const rawBackground = String(body.storefront_background_color ?? "#ffffff").trim();
-    if (!HEX_COLOR.test(rawAccent) || !HEX_COLOR.test(rawBackground)) {
-      return jsonError("Colours must be 6-digit hex values", 400);
-    }
-    const storefrontAccentColor = rawAccent.toLowerCase();
-    const storefrontBackgroundColor = rawBackground.toLowerCase();
     const brandPalette =
       body.brand_palette && typeof body.brand_palette === "object" ? body.brand_palette : {};
     const storefrontFontAr = String(body.storefront_font_ar ?? "Tajawal").trim();
