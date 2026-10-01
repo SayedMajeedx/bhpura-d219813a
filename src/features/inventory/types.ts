@@ -49,6 +49,7 @@ export type Product = {
   is_made_to_order?: boolean | null;
   /** "service" for a service (sold only with a booking), else "product". */
   item_kind?: string | null;
+  is_package?: boolean | null;
   /** A service's place: customer, venue or both (null for products). */
   service_location?: string | null;
   /** What a service includes: [{ ar, en }] (empty for products). */

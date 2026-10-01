@@ -1,5 +1,5 @@
 import type { CartBooking } from "@/lib/bookings/cart";
-import { dayTitle, formatClock } from "@/lib/bookings/format";
+import { dayTitle, formatClockRange } from "@/lib/bookings/format";
 import { minutesOf, timeOf } from "@/lib/bookings/rules";
 import { Link } from "@tanstack/react-router";
 import { formatPrice } from "@/lib/storefront-context";
@@ -218,9 +218,9 @@ export function OrderSummaryCard({
             <span className="text-muted-foreground">{t("موعدك", "Your appointment")}</span>
             <span className="text-end font-medium text-foreground">
               {dayTitle(appointment.day, lang === "ar")}
-              <span dir="ltr" className="block">
-                {formatClock(appointment.start, lang === "ar")} –{" "}
-                {formatClock(
+              <span className="block">
+                {formatClockRange(
+                  appointment.start,
                   timeOf(minutesOf(appointment.start) + appointment.durationMinutes),
                   lang === "ar",
                 )}

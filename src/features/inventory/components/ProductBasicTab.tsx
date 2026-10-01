@@ -1,5 +1,6 @@
 import { ServicePricingFields } from "@/features/inventory/components/ServicePricingFields";
 import { ServiceDetailsFields } from "@/features/inventory/components/ServiceDetailsFields";
+import { ServicePackageFields } from "@/features/inventory/components/ServicePackageFields";
 import { ServiceBookingFields } from "@/features/inventory/components/ServiceBookingFields";
 import type { ServicePricing } from "@/features/inventory/lib/service-pricing";
 import { ItemKindPicker } from "@/features/inventory/components/ItemKindPicker";
@@ -346,6 +347,20 @@ export function ProductBasicTab({
           onLocation={(location) => setForm({ ...form, service_location: location })}
           onIncludes={(includes) => setForm({ ...form, service_includes: includes })}
           isAr={isAr}
+        />
+      )}
+      {isService && (
+        <ServicePackageFields
+          productId={product?.id ?? null}
+          isPackage={form.is_package}
+          lines={form.package_items}
+          onPackage={(isPackage) => setForm({ ...form, is_package: isPackage })}
+          onLines={(package_items) => setForm({ ...form, package_items })}
+          pricing={servicePricing ?? null}
+          onPricing={onServicePricing}
+          currency={currency}
+          isAr={isAr}
+          error={errors.package}
         />
       )}
       {isService && (

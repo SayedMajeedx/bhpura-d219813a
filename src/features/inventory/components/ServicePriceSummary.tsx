@@ -1,8 +1,38 @@
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Package } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { useBrand } from "@/lib/brand-context";
+import { catalogQueries } from "@/lib/data/catalog";
+import { packageLinesById, servicePackagesQueries } from "@/lib/data/service-packages";
+import { packageLinesText } from "@/lib/bookings/service-package";
 import { formatMoney } from "@/lib/format";
 import { formatDuration } from "@/lib/bookings/format";
 import type { Product, Variant } from "@/features/inventory/types";
 import { describeServiceBooking, serviceBookingFrom } from "@/lib/bookings/service-capacity";
+
+/** The services a package includes, in its list entry. */
+function PackageContentsLine({ productId, isAr }: { productId: string; isAr: boolean }) {
+  const brand = useBrand();
+  const items = useQuery(servicePackagesQueries.items(brand.id)).data;
+  const products = useQuery(catalogQueries.products(brand.id)).data;
+  const included = items ? (packageLinesById(items).get(productId) ?? []) : [];
+  const text = packageLinesText(
+    included,
+    (id) => {
+      const item = (products ?? []).find((candidate) => candidate.id === id);
+      return (isAr ? item?.name_ar || item?.name : item?.name_en || item?.name) ?? "";
+    },
+    isAr,
+  );
+  return (
+    <p className="flex items-start gap-1.5 text-xs font-medium text-foreground">
+      <Package className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+      <span>
+        {isAr ? "باقة تشمل: " : "Package including: "}
+        {text || (isAr ? "لا خدمات بعد" : "no services yet")}
+      </span>
+    </p>
+  );
+}
 
 /**
  * A service in the inventory list: its lengths and prices (or its fixed
@@ -69,6 +99,7 @@ export function ServicePriceSummary({
           ))}
         </ul>
       )}
+      {product?.is_package && <PackageContentsLine productId={product.id} isAr={isAr} />}
       {rules.length > 0 && (
         <p className="text-xs font-medium text-foreground">{rules.join(" · ")}</p>
       )}

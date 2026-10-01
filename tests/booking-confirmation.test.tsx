@@ -86,7 +86,7 @@ describe("the thank-you page's appointment", () => {
       />,
     );
     expect(screen.getByText(dayTitle("2026-10-08", true))).toBeTruthy();
-    expect(screen.getByText("6:00 م – 9:00 م")).toBeTruthy();
+    expect(screen.getByText("⁧6:00 م⁩ – ⁧9:00 م⁩")).toBeTruthy();
     expect(screen.getByText("BK-7Q2M9X")).toBeTruthy();
   });
 });
@@ -190,7 +190,7 @@ describe("the appointment on the admin order", () => {
     orderBooking = booking;
     renderCard();
     expect(await screen.findByText(dayTitle("2026-10-08", true))).toBeTruthy();
-    expect(screen.getByText("6:00 م – 9:00 م")).toBeTruthy();
+    expect(screen.getByText("⁧6:00 م⁩ – ⁧9:00 م⁩")).toBeTruthy();
     expect(screen.getByText("الرفاع، قاعة الريم")).toBeTruthy();
     expect(screen.getByText("مؤكد")).toBeTruthy();
     expect(screen.getByText("رسوم التنقل")).toBeTruthy();

@@ -12,6 +12,8 @@ import { isCatalogMode, shouldShowPrices } from "@/lib/storefront-mode";
 import { bookingCartLines } from "@/lib/bookings/cart";
 import { storefrontQueries } from "@/lib/data/storefront";
 import { bookingDiscountsQueries } from "@/lib/data/booking-discounts";
+import { packageLinesById, servicePackagesQueries } from "@/lib/data/service-packages";
+import { packageLinesText } from "@/lib/bookings/service-package";
 import { bestDiscount, dayOffer, discountName, type DiscountRule } from "@/lib/bookings/discounts";
 import {
   bookingsKeys,
@@ -145,6 +147,22 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
         })
       : dayOffer(discountRules, day, today);
 
+  // What each package includes, shown with it in the service list.
+  const packageRows = useQuery({
+    ...servicePackagesQueries.items(brand.id),
+    enabled: Boolean(rules) && services.some((service) => service.is_package),
+  }).data;
+  const packageLines = useMemo(() => packageLinesById(packageRows ?? []), [packageRows]);
+  const includesText = (serviceId: string) =>
+    packageLinesText(
+      packageLines.get(serviceId) ?? [],
+      (id) => {
+        const item = services.find((candidate) => candidate.id === id);
+        return item ? (isAr ? item.name_ar || item.name : item.name_en || item.name) : "";
+      },
+      isAr,
+    );
+
   const [result, setResult] = useState<BookingRequestResult | null>(null);
   const submit = useMutation({
     mutationFn: () => requestBooking(toBookingRequest(brand.id, flow, services, isAr)),
@@ -170,6 +188,9 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
           depositPercent: rules?.deposit_percent ?? 0,
           travelFee: rules ? travelFeeFor(rules, flow.areaCode) : null,
           discount: hold.discount ?? 0,
+          customer: { name: flow.name.trim(), phone: flow.phone.trim() },
+          place: { area: flow.area, venue: flow.venue.trim() },
+          notes: toBookingRequest(brand.id, flow, services, isAr).notes ?? null,
           discountLabel: offer ? discountName(offer.rule, isAr) : null,
         },
         services,
@@ -219,6 +240,8 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
     startRows,
     /** The durations every chosen service is offered for. */
     lengths: rules ? offeredDurations(durations(rules), chosen) : [],
+    /** What a package includes, in words (empty for a service that is not one). */
+    includesText,
     /** The offer this booking gets (null: none), and the one to mark on a calendar day. */
     offer,
     offerOnDay,

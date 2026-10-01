@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { bookingsQueries } from "@/lib/data/bookings";
 import { addDays, todayIn } from "@/lib/bookings/rules";
-import { dayTitle, formatClock, localTime } from "@/lib/bookings/format";
+import { dayTitle, formatClock, formatClockRange, localTime } from "@/lib/bookings/format";
 import {
   bookingsGlance,
   glanceEnd,
@@ -148,8 +148,12 @@ export function BookingsGlanceCard({
               key={booking.id}
               className="flex flex-wrap items-baseline justify-between gap-x-3 rounded-lg bg-muted/40 px-3 py-2 text-sm"
             >
-              <span dir="ltr" className="font-semibold text-foreground">
-                {clock(booking.starts_at)} – {clock(booking.ends_at)}
+              <span dir={isAr ? "rtl" : "ltr"} className="font-semibold text-foreground">
+                {formatClockRange(
+                  localTime(booking.starts_at, rules.timezone),
+                  localTime(booking.ends_at, rules.timezone),
+                  isAr,
+                )}
               </span>
               <span className="min-w-0 break-words text-muted-foreground">
                 {booking.customer_name || booking.reference}

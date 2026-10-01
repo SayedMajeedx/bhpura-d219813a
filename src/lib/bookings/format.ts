@@ -39,6 +39,19 @@ export function formatClock(time: string, isAr: boolean): string {
   return `${hour12}:${String(minutes).padStart(2, "0")} ${suffix}`;
 }
 
+/**
+ * "6:00 PM – 10:00 PM" / "6:00 م – 10:00 م": the range as one string that
+ * reads start to end in both directions. In Arabic each clock is its own
+ * right-to-left isolate; otherwise the digits, the Arabic AM/PM letters and the
+ * dash reorder into a range that reads backwards. Put it in an element whose
+ * direction is the page's (never a forced left-to-right one).
+ */
+export function formatClockRange(start: string, end: string, isAr: boolean): string {
+  const from = formatClock(start, isAr);
+  const to = formatClock(end, isAr);
+  return isAr ? `\u2067${from}\u2069 – \u2067${to}\u2069` : `${from} – ${to}`;
+}
+
 /** "4 hours" / "4 ساعات", "90 min" / "90 دقيقة". */
 export function formatDuration(minutes: number, isAr: boolean): string {
   if (minutes % 60 !== 0) return isAr ? `${minutes} دقيقة` : `${minutes} min`;

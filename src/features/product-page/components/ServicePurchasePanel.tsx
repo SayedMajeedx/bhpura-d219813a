@@ -8,9 +8,11 @@ import { formatPrice, useStorefront } from "@/lib/storefront-context";
 import { bookingsQueries } from "@/lib/data/bookings";
 import { formatDuration } from "@/lib/bookings/format";
 import { serviceIncludesFrom, serviceLocationFrom } from "@/lib/bookings/service-details";
+import { PackageIncludes } from "@/features/product-page/components/PackageIncludes";
 
 type ServiceProduct = {
   id: string;
+  is_package?: boolean | null;
   service_location?: string | null;
   service_includes?: unknown;
   product_variants: ReadonlyArray<{
@@ -135,6 +137,8 @@ export function ServicePurchasePanel({ product }: { product: ServiceProduct }) {
               )}
         </li>
       </ul>
+
+      <PackageIncludes product={product} minutes={chosen?.duration_minutes ?? null} price={price} />
 
       {includes.length > 0 && (
         <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-4">

@@ -90,7 +90,14 @@ export function ProductCardV2({
   const isOos = hasVariants && !hasAvailableStock(product);
   // A service shows how long it can be booked for.
   const lengths =
-    product.item_kind === "service" ? serviceLengthsText(variants, lang === "ar") : null;
+    product.item_kind === "service"
+      ? [
+          product.is_package ? (lang === "ar" ? "باقة" : "Package") : null,
+          serviceLengthsText(variants, lang === "ar"),
+        ]
+          .filter(Boolean)
+          .join(" · ")
+      : null;
 
   // Badge determination (Priority: Sale > New > Best Seller > Trending)
   const newBadgeDays = Number(settings?.new_badge_days ?? 14);

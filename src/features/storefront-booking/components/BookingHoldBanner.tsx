@@ -3,7 +3,7 @@ import { CalendarClock } from "lucide-react";
 import { useStorefront } from "@/lib/storefront-context";
 import { bookingOfCart, holdSecondsLeft } from "@/lib/bookings/cart";
 import { bookingEnd } from "@/lib/bookings/rules";
-import { dayTitle, formatClock } from "@/lib/bookings/format";
+import { dayTitle, formatClockRange } from "@/lib/bookings/format";
 
 /**
  * At checkout, the booking being paid for: its date and time, and how long
@@ -36,9 +36,7 @@ export function BookingHoldBanner() {
       <div className="space-y-1">
         <p className="font-semibold text-foreground">
           {dayTitle(booking.day, isAr)} ·{" "}
-          <span dir="ltr">
-            {formatClock(booking.start, isAr)} – {formatClock(end.time, isAr)}
-          </span>
+          <span>{formatClockRange(booking.start, end.time, isAr)}</span>
         </p>
         <p className="text-muted-foreground">
           {left > 0 ? (

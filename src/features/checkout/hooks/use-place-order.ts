@@ -109,6 +109,7 @@ export function usePlaceOrder({
       branchId,
       digitalChannel,
       digitalContact,
+      appointment: Boolean(bookingOfCart(cart)),
       t,
     });
     if (formError) {

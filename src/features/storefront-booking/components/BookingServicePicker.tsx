@@ -58,6 +58,12 @@ export function BookingServicePicker({ flow }: { flow: BookingFlow }) {
                 <span className="block text-sm font-semibold text-foreground">
                   {serviceName(service, isAr)}
                 </span>
+                {service.is_package && flow.includesText(service.id) && (
+                  <span className="block text-xs text-muted-foreground">
+                    {isAr ? "تشمل: " : "Includes: "}
+                    {flow.includesText(service.id)}
+                  </span>
+                )}
                 {showPrices && price !== null && (
                   <span className="block text-xs text-muted-foreground">
                     {from && (isAr ? "من " : "From ")}

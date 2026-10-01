@@ -13,6 +13,7 @@ import {
   updateProduct,
   updateVariant,
 } from "@/lib/data/catalog";
+import { savePackageItems } from "@/lib/data/service-packages";
 import type { Product } from "@/features/inventory/types";
 import { prefetchOptionTranslations } from "@/features/inventory/lib/option-translations";
 import {
@@ -123,6 +124,11 @@ export function useSaveProduct({
       }
       if (changes.remove.length) await deleteVariants(brand.id, changes.remove);
     };
+    // What a package includes is saved after the product (the package flag comes first).
+    const savePackage = async (productId: string, wasPackage: boolean) => {
+      if (!form.is_package && !wasPackage) return;
+      await savePackageItems(brand.id, productId, form.is_package ? form.package_items : []);
+    };
     const newDefaultVariant = (productId: string) =>
       createVariants(brand.id, [
         {
@@ -139,6 +145,7 @@ export function useSaveProduct({
       try {
         await updateProduct(brand.id, product.id, columns);
         await saveServicePrices(product.id);
+        await savePackage(product.id, Boolean(product.is_package));
       } catch (error) {
         return toast.error(getFriendlyErrorMessage(error));
       }
@@ -182,6 +189,14 @@ export function useSaveProduct({
       if (isService) {
         await saveServicePrices(createdProductId).catch((error: unknown) => {
           defaultVariantError = error;
+        });
+        await savePackage(createdProductId, false).catch((error: unknown) => {
+          toast.error(
+            isAr
+              ? "تم حفظ الباقة، لكن تعذر حفظ الخدمات المضمّنة. افتحها وأعد المحاولة."
+              : "The package was saved, but what it includes was not. Open it and try again.",
+            { description: getFriendlyErrorMessage(error) },
+          );
         });
       } else {
         await newDefaultVariant(createdProductId);

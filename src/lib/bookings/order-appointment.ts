@@ -1,4 +1,4 @@
-import { bookingPlaceText, dayTitle, formatClock, localTime } from "@/lib/bookings/format";
+import { bookingPlaceText, dayTitle, formatClockRange, localTime } from "@/lib/bookings/format";
 
 /**
  * An order placed for a booking is an appointment (orders.fulfillment_method).
@@ -38,12 +38,14 @@ export function appointmentText(
   timezone: string,
   isAr: boolean,
 ): AppointmentText {
-  const from = formatClock(localTime(booking.starts_at, timezone), isAr);
-  const to = formatClock(localTime(booking.ends_at, timezone), isAr);
   return {
     reference: booking.reference ?? "",
     day: dayTitle(booking.event_date, isAr),
-    time: `${from} – ${to}`,
+    time: formatClockRange(
+      localTime(booking.starts_at, timezone),
+      localTime(booking.ends_at, timezone),
+      isAr,
+    ),
     place: bookingPlaceText(booking.location),
   };
 }

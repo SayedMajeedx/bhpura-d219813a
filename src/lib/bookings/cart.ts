@@ -19,6 +19,11 @@ export type CartBooking = {
   depositPercent?: number;
   /** The trip to the event's area, when the store charges one (the server sets the real fee). */
   travelFee?: number | null;
+  /** Who booked and where, as told on the booking page (checkout asks none of it again). */
+  customer?: { name: string; phone: string };
+  place?: { area: string; venue: string };
+  /** The customer's notes and answers to the services' questions. */
+  notes?: string | null;
   /** The booking-time offer taken off the services (the server sets the real amount). */
   discount?: number;
   discountLabel?: string | null;

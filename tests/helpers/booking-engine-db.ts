@@ -2,6 +2,7 @@ import { PGlite } from "@electric-sql/pglite";
 import migration from "../../supabase/migrations/20261001180000_booking_resource_capacity.sql?raw";
 import bookingDiscounts from "../../supabase/migrations/20261002100000_booking_discounts.sql?raw";
 import bookingOrders from "../../supabase/migrations/20261002110000_booking_orders.sql?raw";
+import servicePackages from "../../supabase/migrations/20261002120000_service_packages.sql?raw";
 
 /**
  * The booking engine, run for real: an in-process Postgres (PGlite) with the
@@ -134,6 +135,7 @@ const ORDERS_SCHEMA = `
     ADD COLUMN payment_status text NOT NULL DEFAULT 'unpaid',
     ADD COLUMN advance_paid numeric NOT NULL DEFAULT 0,
     ADD COLUMN channel text NOT NULL DEFAULT 'admin';
+  ALTER TABLE public.products ADD COLUMN item_kind text NOT NULL DEFAULT 'service';
   CREATE TABLE public.order_items (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id uuid NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
@@ -269,6 +271,8 @@ export async function createEngineDb() {
   // Booking-time discounts, then every booking's order, as in the live database.
   await pg.exec(bookingDiscounts);
   await pg.exec(bookingOrders);
+  // Packages: services made of services.
+  await pg.exec(servicePackages);
 
   const rows = async <T = Record<string, unknown>>(sql: string, params: unknown[] = []) =>
     (await pg.query<T>(sql, params)).rows;
@@ -333,6 +337,32 @@ export async function createEngineDb() {
       "insert into product_variants (brand_id, product_id, selling_price) values ($1, $2, 40) returning id",
       [brandId, product.id],
     );
+    return { id: product.id, variantId: variant.id };
+  }
+
+  /** A package priced at `price` for any length, made of the given services. */
+  async function servicePackage(
+    brandId: string,
+    includes: Array<{ id: string; quantity?: number }>,
+    options: { name?: string; price?: number; active?: boolean } = {},
+  ) {
+    const product = await one<{ id: string }>(
+      `insert into products (brand_id, name, name_en, is_active, is_package)
+       values ($1, $2, $2, $3, true) returning id`,
+      [brandId, options.name ?? "Package", options.active ?? true],
+    );
+    const variant = await one<{ id: string }>(
+      "insert into product_variants (brand_id, product_id, selling_price) values ($1, $2, $3) returning id",
+      [brandId, product.id, options.price ?? 100],
+    );
+    let order = 0;
+    for (const included of includes) {
+      await pg.query(
+        `insert into service_package_items (brand_id, package_id, product_id, quantity, sort_order)
+         values ($1, $2, $3, $4, $5)`,
+        [brandId, product.id, included.id, included.quantity ?? 1, order++],
+      );
+    }
     return { id: product.id, variantId: variant.id };
   }
 
@@ -426,6 +456,7 @@ export async function createEngineDb() {
     day,
     store,
     service,
+    servicePackage,
     staff,
     request,
     availability,

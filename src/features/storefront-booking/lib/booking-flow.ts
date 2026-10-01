@@ -26,6 +26,8 @@ export type BookableService = {
   id: string;
   /** "product" items of a services store are sold through the cart, not booked. */
   item_kind?: string | null;
+  /** A package: a service made of other services (what it includes shows with it). */
+  is_package?: boolean | null;
   /** The questions the service asks the customer (booking-questions.ts). */
   custom_fields?: unknown;
   name: string;

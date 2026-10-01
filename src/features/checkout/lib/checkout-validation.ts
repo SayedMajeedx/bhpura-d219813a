@@ -22,6 +22,7 @@ export function checkoutFormError({
   branchId,
   digitalChannel,
   digitalContact,
+  appointment = false,
   t,
 }: {
   form: CheckoutForm;
@@ -34,6 +35,8 @@ export function checkoutFormError({
   branchId: string;
   digitalChannel: "email" | "whatsapp";
   digitalContact: string;
+  /** A booking's checkout: its place came with the booking, so no address is asked. */
+  appointment?: boolean;
   t: Storefront["t"];
 }): string | null {
   if (!form.name.trim() || (fulfillment !== "digital" && !form.phone.trim())) {
@@ -52,7 +55,7 @@ export function checkoutFormError({
       "Please accept the terms and conditions and privacy policy",
     );
   }
-  if (fulfillment === "delivery") {
+  if (fulfillment === "delivery" && !appointment) {
     if (selectedDestination === "BH") {
       if (!form.region || !form.block.trim() || !form.road.trim() || !form.house.trim()) {
         return t(
