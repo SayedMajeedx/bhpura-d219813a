@@ -3,6 +3,11 @@ export function bookingErrorMessage(message: string, isAr: boolean): string {
   const known: Array<[RegExp, string, string]> = [
     [/BOOKING_DAY_FULL/, "هذا اليوم محجوز بالكامل.", "That day is fully booked."],
     [
+      /BOOKING_SERVICE_FULL/,
+      "هذه الخدمة محجوزة في هذا الوقت. اختر وقتاً أو يوماً آخر.",
+      "That service is already booked at this time. Please choose another time or day.",
+    ],
+    [
       /SERVICE_NEEDS_BOOKING/,
       "الخدمات تُحجز بموعد. احذف الخدمة من السلة واحجزها من صفحتها.",
       "Services are booked for a date. Remove the service from your cart and book it from its page.",

@@ -5588,6 +5588,10 @@ export type Database = {
         Row: {
           auto_deactivated_out_of_stock: boolean | null;
           base_price: number | null;
+          booking_buffer_minutes: number;
+          booking_capacity: number | null;
+          booking_notice_hours: number | null;
+          booking_scope: string;
           brand_id: string;
           category: string | null;
           cost_price: number;
@@ -5635,6 +5639,10 @@ export type Database = {
         Insert: {
           auto_deactivated_out_of_stock?: boolean | null;
           base_price?: number | null;
+          booking_buffer_minutes?: number;
+          booking_capacity?: number | null;
+          booking_notice_hours?: number | null;
+          booking_scope?: string;
           brand_id: string;
           category?: string | null;
           cost_price?: number;
@@ -5682,6 +5690,10 @@ export type Database = {
         Update: {
           auto_deactivated_out_of_stock?: boolean | null;
           base_price?: number | null;
+          booking_buffer_minutes?: number;
+          booking_capacity?: number | null;
+          booking_notice_hours?: number | null;
+          booking_scope?: string;
           brand_id?: string;
           category?: string | null;
           cost_price?: number;
@@ -8432,6 +8444,14 @@ export type Database = {
       };
       approve_benefit_payment: { Args: { p_order_id: string }; Returns: Json };
       archive_room: { Args: { p_room_id: string }; Returns: boolean };
+      assert_booking_items_notice: {
+        Args: { p_brand_id: string; p_items: Json; p_starts_at: string };
+        Returns: undefined;
+      };
+      assert_booking_services_free: {
+        Args: { p_booking_id: string };
+        Returns: undefined;
+      };
       assign_order_courier: {
         Args: { p_courier_id: string; p_order_id: string };
         Returns: undefined;
@@ -8449,8 +8469,67 @@ export type Database = {
           state: string;
         }[];
       };
+      booking_day_state_for: {
+        Args: {
+          p_day: string;
+          p_except: string;
+          p_governed?: boolean;
+          p_notice_hours: number;
+          p_settings: Database["public"]["Tables"]["booking_settings"]["Row"];
+          p_staff: boolean;
+        };
+        Returns: {
+          remaining: number;
+          state: string;
+        }[];
+      };
+      booking_is_governed: { Args: { p_booking_id: string }; Returns: boolean };
+      booking_items_all_governed: {
+        Args: { p_brand_id: string; p_items: Json };
+        Returns: boolean;
+      };
+      booking_items_notice_hours: {
+        Args: { p_brand_id: string; p_items: Json };
+        Returns: number;
+      };
       booking_places_taken: {
         Args: { p_brand_id: string; p_day: string; p_except?: string };
+        Returns: number;
+      };
+      booking_service_free_starts: {
+        Args: {
+          p_day: string;
+          p_duration_minutes: number;
+          p_product_id: string;
+          p_settings: Database["public"]["Tables"]["booking_settings"]["Row"];
+        };
+        Returns: {
+          free: boolean;
+          reason: string;
+          start_time: string;
+        }[];
+      };
+      booking_service_has_room: {
+        Args: {
+          p_brand_id: string;
+          p_day: string;
+          p_end: string;
+          p_except?: string;
+          p_product_id: string;
+          p_quantity?: number;
+          p_start: string;
+        };
+        Returns: boolean;
+      };
+      booking_service_units_used: {
+        Args: {
+          p_brand_id: string;
+          p_day: string;
+          p_end: string;
+          p_except?: string;
+          p_product_id: string;
+          p_start: string;
+        };
         Returns: number;
       };
       booking_travel_fee: {
@@ -8468,6 +8547,16 @@ export type Database = {
           ends_at: string;
           starts_at: string;
         }[];
+      };
+      booking_windows_overlap: {
+        Args: {
+          p_buffer_minutes: number;
+          p_end_a: string;
+          p_end_b: string;
+          p_start_a: string;
+          p_start_b: string;
+        };
+        Returns: boolean;
       };
       bookings_enabled: { Args: { p_brand_id: string }; Returns: boolean };
       can_access_brand: { Args: { _brand_id: string }; Returns: boolean };
@@ -8996,6 +9085,34 @@ export type Database = {
           isOneToOne: false;
           isSetofReturn: true;
         };
+      };
+      get_service_availability: {
+        Args: {
+          p_brand_id: string;
+          p_duration_minutes?: number;
+          p_from: string;
+          p_product_ids: string[];
+          p_to: string;
+        };
+        Returns: {
+          day: string;
+          product_id: string;
+          remaining: number;
+          state: string;
+        }[];
+      };
+      get_service_free_starts: {
+        Args: {
+          p_brand_id: string;
+          p_day: string;
+          p_duration_minutes: number;
+          p_product_ids: string[];
+        };
+        Returns: {
+          free: boolean;
+          reason: string;
+          start_time: string;
+        }[];
       };
       get_shared_cart_by_code: {
         Args: { _code: string };

@@ -53,6 +53,11 @@ export type Product = {
   service_location?: string | null;
   /** What a service includes: [{ ar, en }] (empty for products). */
   service_includes?: unknown;
+  /** A service's own booking rules (migration 20261001180000): see lib/bookings/service-capacity. */
+  booking_capacity?: number | null;
+  booking_scope?: string | null;
+  booking_buffer_minutes?: number | null;
+  booking_notice_hours?: number | null;
 };
 export type Variant = {
   id: string;

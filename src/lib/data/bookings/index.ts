@@ -8,6 +8,10 @@ import {
   type PublicBookingRules,
 } from "@/lib/bookings/rules";
 import type { BookingHold } from "@/lib/bookings/cart";
+import type {
+  ServiceDayRow,
+  StartRow,
+} from "@/features/storefront-booking/lib/service-availability";
 
 /**
  * A services store's bookings: its rules, its bookings and their services,
@@ -33,6 +37,23 @@ export const bookingsKeys = {
   availability: (brandId: string, from: string, to: string) =>
     [...bookingsKeys.all(brandId), "availability", from, to] as const,
   publicRules: (brandId: string) => [...bookingsKeys.all(brandId), "public-rules"] as const,
+  serviceDays: (
+    brandId: string,
+    productIds: readonly string[],
+    from: string,
+    to: string,
+    minutes: number | null,
+  ) =>
+    [
+      ...bookingsKeys.all(brandId),
+      "service-days",
+      [...productIds].sort(),
+      from,
+      to,
+      minutes,
+    ] as const,
+  serviceStarts: (brandId: string, productIds: readonly string[], day: string, minutes: number) =>
+    [...bookingsKeys.all(brandId), "service-starts", [...productIds].sort(), day, minutes] as const,
   areaFees: (brandId: string) => [...bookingsKeys.all(brandId), "area-fees"] as const,
   calendarToken: (brandId: string) => [...bookingsKeys.all(brandId), "calendar-token"] as const,
   forOrder: (brandId: string, orderId: string) =>
@@ -116,6 +137,43 @@ export async function fetchBookingAvailability(brandId: string, from: string, to
   });
   if (error) throw error;
   return data ?? [];
+}
+
+/** Each day's state for the chosen services, each with its own capacity and notice. */
+export async function fetchServiceAvailability(
+  brandId: string,
+  productIds: readonly string[],
+  from: string,
+  to: string,
+  minutes: number | null,
+): Promise<ServiceDayRow[]> {
+  const { data, error } = await supabase.rpc("get_service_availability", {
+    p_brand_id: brandId,
+    p_product_ids: [...productIds],
+    p_from: from,
+    p_to: to,
+    ...(minutes ? { p_duration_minutes: minutes } : {}),
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** The start times ("HH:MM") of one day, free or not, for a booking of the chosen services. */
+export async function fetchServiceFreeStarts(
+  brandId: string,
+  productIds: readonly string[],
+  day: string,
+  minutes: number,
+): Promise<StartRow[]> {
+  const { data, error } = await supabase.rpc("get_service_free_starts", {
+    p_brand_id: brandId,
+    p_product_ids: [...productIds],
+    p_day: day,
+    p_duration_minutes: minutes,
+  });
+  if (error) throw error;
+  // The database answers with a time ("10:00:00"); the flow keeps "HH:MM".
+  return (data ?? []).map((row) => ({ ...row, start_time: row.start_time.slice(0, 5) }));
 }
 
 /** The rules a storefront needs, or null when the store takes no bookings. */
@@ -205,6 +263,26 @@ export const bookingsQueries = {
       queryKey: bookingsKeys.forOrder(brandId, orderId),
       queryFn: () => fetchBookingForOrder(brandId, orderId),
       enabled: Boolean(brandId && orderId),
+    }),
+  serviceDays: (
+    brandId: string,
+    productIds: readonly string[],
+    from: string,
+    to: string,
+    minutes: number | null,
+  ) =>
+    queryOptions({
+      queryKey: bookingsKeys.serviceDays(brandId, productIds, from, to, minutes),
+      queryFn: () => fetchServiceAvailability(brandId, productIds, from, to, minutes),
+      enabled: Boolean(brandId) && productIds.length > 0,
+      staleTime: 30_000,
+    }),
+  serviceStarts: (brandId: string, productIds: readonly string[], day: string, minutes: number) =>
+    queryOptions({
+      queryKey: bookingsKeys.serviceStarts(brandId, productIds, day, minutes),
+      queryFn: () => fetchServiceFreeStarts(brandId, productIds, day, minutes),
+      enabled: Boolean(brandId) && productIds.length > 0 && Boolean(day) && minutes > 0,
+      staleTime: 15_000,
     }),
   publicRules: (brandId: string) =>
     queryOptions({

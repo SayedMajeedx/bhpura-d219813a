@@ -164,6 +164,8 @@ export function missingStep(
   rules: BookingRules,
   dayStates: ReadonlyMap<string, DayState>,
   services: readonly BookableService[] = [],
+  /** The start times still free for the chosen services and length (null: not known, no limit). */
+  freeStarts: ReadonlySet<string> | null = null,
 ): FlowStep | null {
   if (!flow.day || dayStates.get(flow.day) !== "available") return "date";
   if (flow.services.length === 0) return "services";
@@ -172,6 +174,7 @@ export function missingStep(
     !flow.start ||
     !flow.durationMinutes ||
     !isValidSlot(rules, flow.start, flow.durationMinutes) ||
+    (freeStarts !== null && !freeStarts.has(flow.start)) ||
     chosen.some((service) => variantFor(service, flow.durationMinutes) === null)
   ) {
     return "time";

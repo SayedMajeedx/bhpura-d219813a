@@ -13,6 +13,14 @@ const state = vi.hoisted(() => ({
   bookings: true,
   mode: "catalog",
   cart: [] as Array<{ cart_line_id: string; booking?: unknown }>,
+  // The booking engine's answers for the chosen services (null: as the store's own).
+  serviceDays: null as Array<{
+    product_id: string;
+    day: string;
+    state: string;
+    remaining: number;
+  }> | null,
+  taken: [] as string[],
   addToCart: vi.fn(),
   removeFromCart: vi.fn(),
   navigate: vi.fn(async () => undefined),
@@ -39,16 +47,28 @@ const fixture = (key: string, value: () => unknown) => ({
   queryKey: ["storefront-booking-test", key],
   queryFn: async () => value(),
 });
+const everyHalfHour = () =>
+  Array.from({ length: 48 }, (_, i) => {
+    const start_time = `${String(Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "30" : "00"}`;
+    const taken = state.taken.includes(start_time);
+    return { start_time, free: !taken, reason: taken ? "taken" : null };
+  });
+const storeDays = [
+  { day: "2026-10-09", state: "full", remaining: 0 },
+  { day: "2026-10-10", state: "available", remaining: 1 },
+  { day: "2026-10-16", state: "closed", remaining: 0 },
+];
 const bookingsData = {
   bookingsKeys: { all: (brandId: string) => ["storefront-booking-test", brandId] },
   bookingsQueries: {
     publicRules: () => fixture("rules", () => state.rules),
-    availability: () =>
-      fixture("availability", () => [
-        { day: "2026-10-09", state: "full", remaining: 0 },
-        { day: "2026-10-10", state: "available", remaining: 1 },
-        { day: "2026-10-16", state: "closed", remaining: 0 },
-      ]),
+    availability: () => fixture("availability", () => storeDays),
+    serviceDays: (_b: string, ids: string[]) =>
+      fixture(`service-days-${ids.join()}-${state.serviceDays ? "own" : "store"}`, () =>
+        (state.serviceDays ?? storeDays).map((row) => ({ product_id: ids[0], ...row })),
+      ),
+    serviceStarts: (_b: string, ids: string[], day: string) =>
+      fixture(`service-starts-${ids.join()}-${day}-${state.taken.join()}`, everyHalfHour),
   },
   requestBooking: state.requestBooking,
   holdBooking: state.holdBooking,
@@ -126,6 +146,8 @@ beforeEach(() => {
   state.bookings = true;
   state.mode = "catalog";
   state.cart = [];
+  state.serviceDays = null;
+  state.taken = [];
 });
 
 const renderWithQuery = (ui: React.ReactElement) =>
@@ -241,5 +263,42 @@ describe("where a booking starts", () => {
       "/$slug/book",
     );
     unmount();
+  });
+});
+
+describe("a service with its own capacity", () => {
+  it("shows the days its own units are booked, not the store's", async () => {
+    state.serviceDays = [
+      { product_id: "p1", day: "2026-10-09", state: "available", remaining: 1 },
+      { product_id: "p1", day: "2026-10-10", state: "full", remaining: 0 },
+    ];
+    renderWithQuery(<StorefrontBookingPage initialService="p1" />);
+    expect(await screen.findByRole("gridcell", { name: /10 October: Booked/ })).toBeDisabled();
+    expect(screen.getByRole("gridcell", { name: /9 October: Available/ })).toBeEnabled();
+  });
+
+  it("disables the start times already taken, and says why", async () => {
+    state.taken = ["18:00"];
+    renderWithQuery(<StorefrontBookingPage initialService="p1" />);
+    fireEvent.click(await screen.findByRole("gridcell", { name: /10 October: Available/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "3 hours" }));
+    const taken = await waitFor(() => {
+      const chip = screen.getByRole("button", { name: "6:00 PM" });
+      expect(chip).toBeDisabled();
+      return chip;
+    });
+    expect(taken).toHaveAttribute("title", "Booked");
+    expect(screen.getByRole("button", { name: "6:30 PM" })).toBeEnabled();
+  });
+
+  it("says so when no start time is free for the length", async () => {
+    state.taken = Array.from(
+      { length: 48 },
+      (_, i) => `${String(Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "30" : "00"}`,
+    );
+    renderWithQuery(<StorefrontBookingPage initialService="p1" />);
+    fireEvent.click(await screen.findByRole("gridcell", { name: /10 October: Available/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "3 hours" }));
+    expect(await screen.findByText(/No time is free for this length/)).toBeInTheDocument();
   });
 });

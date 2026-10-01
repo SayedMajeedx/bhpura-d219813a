@@ -1,4 +1,8 @@
 import { answersText, bookingQuestions } from "@/features/storefront-booking/lib/booking-questions";
+import {
+  combineServiceDays,
+  freeStartSet,
+} from "@/features/storefront-booking/lib/service-availability";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -54,7 +58,7 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
     ...bookingsQueries.availability(brand.id, from, to),
     enabled: Boolean(rules),
   });
-  const dayStates = useMemo(
+  const storeDayStates = useMemo(
     () => new Map((availabilityQuery.data ?? []).map((row) => [row.day, row.state as DayState])),
     [availabilityQuery.data],
   );
@@ -76,6 +80,36 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
         ? current.services.filter((other) => other !== id)
         : [...current.services, id],
     }));
+
+  // With services chosen, each one's own capacity and notice decide the days and
+  // the start times; a failed query leaves the store's calendar (the booking
+  // itself is still checked by the database).
+  const serviceDaysQuery = useQuery({
+    ...bookingsQueries.serviceDays(brand.id, flow.services, from, to, flow.durationMinutes),
+    enabled: Boolean(rules) && flow.services.length > 0,
+  });
+  const dayStates = useMemo(
+    () =>
+      serviceDaysQuery.data && flow.services.length > 0
+        ? combineServiceDays(serviceDaysQuery.data)
+        : storeDayStates,
+    [serviceDaysQuery.data, flow.services.length, storeDayStates],
+  );
+  const startsQuery = useQuery({
+    ...bookingsQueries.serviceStarts(
+      brand.id,
+      flow.services,
+      flow.day ?? "",
+      flow.durationMinutes ?? 0,
+    ),
+    enabled:
+      Boolean(rules) &&
+      flow.services.length > 0 &&
+      Boolean(flow.day) &&
+      Boolean(flow.durationMinutes),
+  });
+  const startRows = flow.services.length > 0 ? startsQuery.data : undefined;
+  const freeStarts = useMemo(() => freeStartSet(startRows), [startRows]);
 
   const [result, setResult] = useState<BookingRequestResult | null>(null);
   const submit = useMutation({
@@ -115,7 +149,7 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
 
   const chosen = services.filter((service) => flow.services.includes(service.id));
   const questions = bookingQuestions(chosen, isAr);
-  const step = rules ? missingStep(flow, rules, dayStates, services) : "date";
+  const step = rules ? missingStep(flow, rules, dayStates, services, freeStarts) : "date";
   const travelFee = rules ? travelFeeFor(rules, flow.areaCode) : null;
 
   return {
@@ -131,7 +165,7 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
     previousMonth: () => setCursor((current) => shiftMonth(current, -1)),
     nextMonth: () => setCursor((current) => shiftMonth(current, 1)),
     dayStates,
-    availabilityLoading: availabilityQuery.isLoading,
+    availabilityLoading: availabilityQuery.isLoading || serviceDaysQuery.isLoading,
     services,
     servicesLoading: productsQuery.isLoading,
     flow,
@@ -144,6 +178,9 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
     answers: answersText(questions, flow.answers),
     setAnswer: (id: string, value: string) =>
       setFlow((current) => ({ ...current, answers: { ...current.answers, [id]: value } })),
+    /** The start times still free for the chosen services and length (null: not known, no limit). */
+    freeStarts,
+    startRows,
     /** The durations every chosen service is offered for. */
     lengths: rules ? offeredDurations(durations(rules), chosen) : [],
     /** The services at the chosen duration's prices. */

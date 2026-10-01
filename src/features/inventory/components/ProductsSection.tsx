@@ -189,6 +189,7 @@ export function ProductsSection({
         variants={variantsByProduct[prod.id] || []}
         isAr={isAr}
         currency={currency}
+        product={prod}
       />
     ) : (
       <VariantList

@@ -1,7 +1,8 @@
 import { CalendarDays } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { formatDuration } from "@/lib/bookings/format";
-import type { Variant } from "@/features/inventory/types";
+import type { Product, Variant } from "@/features/inventory/types";
+import { describeServiceBooking, serviceBookingFrom } from "@/lib/bookings/service-capacity";
 
 /**
  * A service in the inventory list: its lengths and prices (or its fixed
@@ -12,11 +13,15 @@ export function ServicePriceSummary({
   variants,
   isAr,
   currency,
+  product,
 }: {
   variants: readonly Variant[];
   isAr: boolean;
   currency: string;
+  /** The service itself: its booking rules (capacity, scope, notice) show under its prices. */
+  product?: Product;
 }) {
+  const rules = describeServiceBooking(serviceBookingFrom(product), isAr);
   const rows = [...variants]
     .map((variant) => ({
       id: variant.id,
@@ -63,6 +68,9 @@ export function ServicePriceSummary({
             </li>
           ))}
         </ul>
+      )}
+      {rules.length > 0 && (
+        <p className="text-xs font-medium text-foreground">{rules.join(" · ")}</p>
       )}
       <p className="text-xs text-muted-foreground">
         {isAr ? "تُعدَّل الأسعار من تعديل الخدمة." : "Edit the prices in the service's editor."}
