@@ -141,3 +141,26 @@ send-order-email`.
   never reads as sold out: `hasAvailableStock` (one rule for both product
   cards, sorting and the home page) treats `item_kind = 'service'` as always
   available, whatever was saved.
+
+## Packages, booking-time discounts and invoices (2026-10-02)
+
+The owner's next asks, in the order they are built (each its own PR; the SQL
+first, applied by the owner, then the screens):
+
+1. **Every booking has an order and an invoice** (`create_booking_order`,
+   migration `20261002110000`). Confirming a request, entering a confirmed
+   booking and cancelling keep the order in step; any booking can be invoiced
+   from its card (a request becomes a pending order, a quote). The booking card
+   shows its invoice, with open, copy link and send on WhatsApp. Nothing is
+   created in bulk for old bookings.
+2. **Booking-time discounts** (`booking_discount_rules`, migration
+   `20261002100000`). The store's own rules: a window of days between booking
+   and event (last minute: within 1 day 25%, within 7 days 10%; early bird: 30+
+   days), a percent or a fixed amount, optionally the event's weekdays, chosen
+   services and the dates it can be booked on, on or off. The best matching rule
+   applies once when the booking is made and stays with it; staff can change it
+   (`set_booking_discount`); the order carries it. `src/lib/bookings/discounts.ts`
+   is the same rule in TypeScript for the storefront, tested against the
+   database.
+3. **Packages**: a service made of other services at its own price, each
+   included service still holding its own capacity and notice. (Next.)

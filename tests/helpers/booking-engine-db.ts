@@ -1,6 +1,7 @@
 import { PGlite } from "@electric-sql/pglite";
 import migration from "../../supabase/migrations/20261001180000_booking_resource_capacity.sql?raw";
-import bookingOrders from "../../supabase/migrations/20261002100000_booking_orders.sql?raw";
+import bookingDiscounts from "../../supabase/migrations/20261002100000_booking_discounts.sql?raw";
+import bookingOrders from "../../supabase/migrations/20261002110000_booking_orders.sql?raw";
 
 /**
  * The booking engine, run for real: an in-process Postgres (PGlite) with the
@@ -265,7 +266,8 @@ export async function createEngineDb() {
   await pg.exec(ORDERS_SCHEMA);
   await pg.exec(UNCHANGED_HELPERS);
   await pg.exec(migration);
-  // Bookings have their order, as in the live database.
+  // Booking-time discounts, then every booking's order, as in the live database.
+  await pg.exec(bookingDiscounts);
   await pg.exec(bookingOrders);
 
   const rows = async <T = Record<string, unknown>>(sql: string, params: unknown[] = []) =>

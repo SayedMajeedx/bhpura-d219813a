@@ -1,4 +1,4 @@
--- Migration: 20261002100000_booking_orders.sql
+-- Migration: 20261002110000_booking_orders.sql
 --
 -- Services vertical: every booking has an order, so it has an invoice.
 --
@@ -30,6 +30,7 @@ DECLARE
   v_currency text := 'BHD';
   v_order_id uuid;
   v_subtotal numeric(12, 3);
+  v_discount numeric(12, 3);
   v_shipping numeric(12, 3);
   v_taxable numeric(12, 3);
   v_tax_rate numeric;
@@ -62,7 +63,8 @@ BEGIN
   SELECT COALESCE(sum(line_total), 0) INTO v_subtotal
     FROM public.booking_items WHERE booking_id = v_booking.id;
   v_shipping := COALESCE(v_booking.travel_fee, 0);
-  v_taxable := v_subtotal;
+  v_discount := LEAST(v_subtotal, COALESCE(v_booking.discount_amount, 0));
+  v_taxable := v_subtotal - v_discount;
   IF v_vat_inclusive THEN
     v_tax := v_taxable - (v_taxable / (1 + (v_tax_rate / 100)));
     v_total := v_taxable + v_shipping;
@@ -83,8 +85,8 @@ BEGIN
   ) VALUES (
     v_booking.brand_id, auth.uid(), v_booking.customer_id, 0, v_status, 'appointment',
     v_booking.customer_name, v_booking.customer_phone, v_booking.customer_email,
-    NULLIF(btrim(v_booking.notes), ''),
-    v_subtotal, 0, v_shipping, v_tax_rate, round(v_tax, 3), round(v_total, 3), v_currency,
+    NULLIF(btrim(concat_ws(E'\n', CASE WHEN v_discount > 0 THEN '🏷 ' || COALESCE(v_booking.discount_label_en, v_booking.discount_label_ar, 'Discount') END, v_booking.notes)), ''),
+    v_subtotal, v_discount, v_shipping, v_tax_rate, round(v_tax, 3), round(v_total, 3), v_currency,
     v_booking.event_date, 'unpaid', 0, 'admin'
   )
   RETURNING id INTO v_order_id;
@@ -266,6 +268,10 @@ BEGIN
   END IF;
 
   UPDATE public.bookings SET total = v_total WHERE id = v_booking.id RETURNING * INTO v_booking;
+
+  -- The discount a customer would get for this day (staff can change it on the booking).
+  PERFORM public.apply_booking_discount(v_booking.id);
+  SELECT * INTO v_booking FROM public.bookings WHERE id = v_booking.id;
 
   -- Entered as confirmed: invoiced from the start.
   IF p_status = 'confirmed' THEN
