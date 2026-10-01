@@ -106,6 +106,25 @@ send-order-email`.
   shipping module, replaces shipping zones with "where your services happen"
   (at the customer's venue, at your place) and points to the booking rules for
   travel fees and the deposit.
+- **Booking engine v2: per-service capacity** (migration
+  `20261001180000_booking_resource_capacity.sql`). A service carries its own
+  `booking_capacity` (how many at once; null leaves it to the store's daily
+  places), `booking_scope` (`day`: a booking keeps a unit all day, for events;
+  `time`: only its own hours, for pools, courts, chairs), `booking_buffer_minutes`
+  (setup and clean-up either side of a booking, time scope) and
+  `booking_notice_hours` (replaces the store's lead days when every service
+  chosen has one; each service's own notice is always enforced). A booking whose
+  services all have a capacity does not use the store's daily places.
+  `assert_booking_services_free` refuses with `BOOKING_SERVICE_FULL` in
+  `request_booking`, `create_staff_booking` (unless overbooked on purpose),
+  `reschedule_booking`, `set_booking_status` (to confirmed) and `hold_booking`/
+  `place_booking_order`. `get_service_availability` (a calendar per service)
+  and `get_service_free_starts` (a day's start times, free or why not) are
+  public; the storefront flow combines the days of the chosen services and
+  disables the start times that are taken. Editor: "Booking rules for this
+  service" (`ServiceBookingFields`); pure rules in
+  `src/lib/bookings/service-capacity.ts`. Tested in a real Postgres
+  (`tests/booking-engine-capacity.test.ts`, PGlite).
 - **S6: mobile app.** A services tab without stock; bookings in the tab bar.
 - **S7: guards.** Tests that fail when a services store shows stock,
   shipping or incubator UI, or a vertical lacks a module default.

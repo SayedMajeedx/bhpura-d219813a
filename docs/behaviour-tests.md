@@ -27,6 +27,15 @@ Examples: `tests/order-profit-clarity.test.ts` (extracted label),
 `tests/storefront-google-oauth-return.test.ts` (a route's real `beforeLoad` guard),
 `tests/hero-smart-fit.test.ts` (rendered hero and shell, context mocked).
 
+## Real SQL in tests
+
+A database function whose logic matters (the booking engine) is tested by
+running it, not by reading it: `tests/helpers/booking-engine-db.ts` starts an
+in-process Postgres (PGlite, a dev dependency), builds a small fixture schema,
+applies the migration (imported with `?raw`, so no `readFileSync`) and
+exercises the functions as the anon, authenticated and service roles. CI's
+migration job still applies every migration to Postgres 15.
+
 ## Classification
 
 - **convert** (0): feature assertions on source text. All converted (2026-09-27).
