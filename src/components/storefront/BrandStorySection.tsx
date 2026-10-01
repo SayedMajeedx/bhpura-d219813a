@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import { useReveal } from "@/lib/motion/use-reveal";
 import { Sparkles, ShieldCheck, HeartHandshake, Award } from "lucide-react";
+import { brandStoryDefaults } from "@/lib/brand-templates/brand-story";
 
 interface BrandStorySectionProps {
   className?: string;
@@ -17,40 +18,11 @@ export function BrandStorySection({ className = "" }: BrandStorySectionProps) {
     disabled: settings?.motion_enabled === false,
   });
 
-  const storeVertical = (
-    settings?.store_vertical ||
-    (brand as any)?.store_vertical ||
-    "general"
-  ).toLowerCase();
-
-  const isFood = ["food", "sweets", "cafe", "coffee", "bakery", "restaurant"].includes(
-    storeVertical,
-  );
-  const isPerfumes = ["perfumes", "fragrance"].includes(storeVertical);
-
-  const defaultSubtitle = isFood
-    ? isAr
-      ? "قصتنا وشغفنا بالمذاق الأصيل"
-      : "Our Story & Passion for Authentic Flavors"
-    : isPerfumes
-      ? isAr
-        ? "قصتنا وشغفنا بالعطور الفاخرة"
-        : "Our Story & Passion for Fine Fragrances"
-      : isAr
-        ? "قصتنا وشغفنا بالتصميم الراقي"
-        : "Our Story & Passion for Refined Design";
-
-  const defaultDescAr = isFood
-    ? "نقدم أشهى المأكولات والحلويات المحضرة بعناية فائقة من أجود المكونات الطازجة لتلبي ذوق عملائنا المتميزين، مع التزامنا بأعلى معايير الجودة والنظافة."
-    : isPerfumes
-      ? "نبتكر أرقى النفحات العطرية المميزة بمكونات نقية وفريدة لتلبي ذوق عملائنا الرفيع، مع التزامنا بأعلى معايير الفخامة والثبات."
-      : "نقدم أرقى التشكيلات العصرية المصممة بعناية فائقة لتلبي ذوق عملائنا المتميزين، مع التزامنا بأعلى معايير الجودة والأناقة في كل اختيار.";
-
-  const defaultDescEn = isFood
-    ? "Crafting authentic culinary delicacies prepared with meticulous care from the finest fresh ingredients for our discerning guests, upholding the highest standards of taste and hygiene."
-    : isPerfumes
-      ? "Curating distinctive fragrances crafted from pure and rare ingredients for our refined clientele, upholding luxury and enduring elegance."
-      : "Curating refined contemporary pieces crafted with meticulous care for our distinguished clients, upholding the highest standards of luxury and elegance.";
+  // Default copy per store vertical, until the brand writes its own story.
+  const story = brandStoryDefaults(settings?.store_vertical);
+  const defaultSubtitle = story.subtitle[lang === "ar" ? "ar" : "en"];
+  const defaultDescAr = story.description.ar;
+  const defaultDescEn = story.description.en;
 
   const title = isAr
     ? settings?.brand_story_title_ar || brand.name_ar || brand.name_en
@@ -87,50 +59,10 @@ export function BrandStorySection({ className = "" }: BrandStorySectionProps) {
     bgImageFallback ||
     brand.logo_url;
 
-  const values = isFood
-    ? [
-        {
-          icon: Award,
-          text: t("أعلى معايير الجودة والنظافة", "Premium Quality & Hygiene"),
-        },
-        {
-          icon: HeartHandshake,
-          text: t("مكونات طازجة ومختارة", "Fresh & Handpicked Ingredients"),
-        },
-        {
-          icon: ShieldCheck,
-          text: t("مذاق أصيل وطازج دائماً", "Authentic Flavor & Freshness Guaranteed"),
-        },
-      ]
-    : isPerfumes
-      ? [
-          {
-            icon: Award,
-            text: t("زيوت عطرية نقية", "Pure Fragrance Oils"),
-          },
-          {
-            icon: HeartHandshake,
-            text: t("ثبات وفوحان يدوم", "Long-Lasting Sillage"),
-          },
-          {
-            icon: ShieldCheck,
-            text: t("ضمان الجودة والأصالة", "Authenticity & Quality Guarantee"),
-          },
-        ]
-      : [
-          {
-            icon: Award,
-            text: t("أعلى معايير الجودة", "Premium Quality Standards"),
-          },
-          {
-            icon: HeartHandshake,
-            text: t("تشكيلات حصرية مميزة", "Exclusive Curated Collections"),
-          },
-          {
-            icon: ShieldCheck,
-            text: t("ضمان الجودة والأصالة", "Authenticity & Quality Guarantee"),
-          },
-        ];
+  const values = [Award, HeartHandshake, ShieldCheck].map((icon, index) => ({
+    icon,
+    text: t(story.values[index].ar, story.values[index].en),
+  }));
 
   return (
     <section
