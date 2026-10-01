@@ -108,6 +108,24 @@ describe("design system guardrails", () => {
     expect(count).toBeLessThanOrEqual(213);
   });
 
+  it("lets card-like buttons wrap their text, within budget", () => {
+    // <Button> never wraps (whitespace-nowrap in its base classes). A Button
+    // made into a card (h-auto) with a name and a description then runs its
+    // text out of the card: the brand wizard's typography, radius and plan
+    // cards, and the vertical picker, did on phones. Give such a card
+    // `whitespace-normal` (and `min-w-0` / `break-words` on its lines). The
+    // rest are mostly short one-line links ("Clear", "Retry"); drain them.
+    const offenders: string[] = [];
+    for (const { rel, source } of FILES) {
+      for (const match of source.matchAll(/<Button\b(?:=>|[^>])*>/g)) {
+        if (/\bh-auto\b/.test(match[0]) && !/\bwhitespace-normal\b/.test(match[0])) {
+          offenders.push(rel);
+        }
+      }
+    }
+    expect(offenders.length).toBeLessThanOrEqual(55);
+  });
+
   it("keeps glass and blur off data surfaces within budget", () => {
     // AGENTS.md §6: glassmorphism is for floating elements only.
     const count = countMatches(/backdrop-blur-[a-z0-9]+/g);

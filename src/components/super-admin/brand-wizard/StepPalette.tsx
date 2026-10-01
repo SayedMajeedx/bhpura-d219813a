@@ -297,16 +297,16 @@ export function StepPalette({ data, onChange, isAr }: StepPaletteProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => onChange({ fontPreset: preset })}
-                className={`h-auto rounded-md p-2.5 rounded-xl border text-start transition-all ${
+                className={`h-auto w-full min-w-0 flex-col items-start justify-start gap-0.5 whitespace-normal rounded-xl border p-2.5 text-start transition-all ${
                   isSelected
                     ? "border-primary bg-primary/10 ring-1 ring-primary shadow-xs"
                     : "border-border bg-card hover:bg-muted/40"
                 }`}
               >
-                <div className="font-semibold text-xs text-foreground">
+                <div className="w-full break-words font-semibold text-xs text-foreground">
                   {isAr ? preset.labelAr : preset.labelEn}
                 </div>
-                <div className="text-xs text-muted-foreground mt-0.5">
+                <div className="w-full break-words text-xs text-muted-foreground">
                   {preset.fontAr} / {preset.fontEn}
                 </div>
               </Button>
@@ -320,7 +320,7 @@ export function StepPalette({ data, onChange, isAr }: StepPaletteProps) {
         <Label className="text-sm font-medium">
           {isAr ? "استدارة الحواف (Corner Radius)" : "Corner Radius"}
         </Label>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {[
             { id: "0.25rem", labelAr: "حادة", labelEn: "Sharp (4px)" },
             { id: "0.375rem", labelAr: "ناعمة", labelEn: "Soft (6px)" },
@@ -335,7 +335,7 @@ export function StepPalette({ data, onChange, isAr }: StepPaletteProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => onChange({ radius: r.id })}
-                className={`h-auto rounded-md p-2 rounded-xl border text-center transition-all ${
+                className={`h-auto w-full min-w-0 whitespace-normal rounded-xl border p-2 text-center transition-all ${
                   isSelected
                     ? "border-primary bg-primary/10 ring-1 ring-primary font-medium"
                     : "border-border bg-card hover:bg-muted/40"
