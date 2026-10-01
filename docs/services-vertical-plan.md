@@ -126,5 +126,11 @@ send-order-email`.
   `src/lib/bookings/service-capacity.ts`. Tested in a real Postgres
   (`tests/booking-engine-capacity.test.ts`, PGlite).
 - **S6: mobile app.** A services tab without stock; bookings in the tab bar.
-- **S7: guards.** Tests that fail when a services store shows stock,
-  shipping or incubator UI, or a vertical lacks a module default.
+- **S7: guards** (done). `tests/services-guards.test.ts` fails when a vertical
+  lacks a module default, is half shop and half bookings, turns bookings on
+  where the database's `bookings_enabled` does not (services only), or when the
+  admin menu or inventory tabs show a screen whose module is off; it also runs
+  the `products_service_is_made_to_order` trigger in a real Postgres. A service
+  never reads as sold out: `hasAvailableStock` (one rule for both product
+  cards, sorting and the home page) treats `item_kind = 'service'` as always
+  available, whatever was saved.
