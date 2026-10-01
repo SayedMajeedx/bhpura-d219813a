@@ -117,8 +117,11 @@ export function BookingsCalendar({ page }: { page: BookingsPage }) {
           {isAr ? "مغلق" : "Blocked / closed"}
         </li>
         <li className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-full bg-warning" aria-hidden="true" />
-          {isAr ? "طلبات بانتظار التأكيد" : "Requests waiting"}
+          <span
+            className="size-2.5 rounded-sm border border-warning bg-warning-subtle"
+            aria-hidden="true"
+          />
+          {isAr ? "بانتظار تأكيدك (طلب أو دفع)" : "Awaiting your confirmation (request or payment)"}
         </li>
       </ul>
     </section>
@@ -144,7 +147,11 @@ function DayCell({
       role="gridcell"
       aria-selected={selected}
       aria-label={`${dayTitle(cell.day, isAr)}: ${stateLabel(cell, isAr)}${
-        cell.requests > 0 ? (isAr ? ` · ${cell.requests} طلب` : ` · ${cell.requests} requests`) : ""
+        cell.pending > 0
+          ? isAr
+            ? ` · ${cell.pending} بانتظار تأكيدك`
+            : ` · ${cell.pending} awaiting your confirmation`
+          : ""
       }`}
       onClick={onSelect}
       className={cn(
@@ -152,11 +159,20 @@ function DayCell({
         !cell.inMonth && "opacity-40",
         cell.isPast && "opacity-60",
         cell.state === "full" && "border-primary bg-primary text-primary-foreground",
+        // Nothing confirmed yet, only bookings waiting for the store: a colour of their own.
+        cell.state !== "full" &&
+          cell.state !== "blocked" &&
+          cell.state !== "closed" &&
+          cell.pending > 0 &&
+          cell.confirmed === 0 &&
+          "border-warning bg-warning-subtle text-foreground",
         cell.state === "available" &&
           cell.taken > 0 &&
+          (cell.confirmed > 0 || cell.pending === 0) &&
           "border-primary/40 bg-primary/10 text-foreground",
         cell.state === "available" &&
           cell.taken === 0 &&
+          cell.pending === 0 &&
           "border-border bg-card text-foreground hover:bg-muted",
         unavailable && "border-transparent bg-muted text-muted-foreground line-through",
         selected && "ring-2 ring-ring ring-offset-1 ring-offset-background",
@@ -169,8 +185,13 @@ function DayCell({
           {cell.taken}/{cell.capacity}
         </span>
       )}
-      {cell.requests > 0 && (
-        <span className="absolute end-1 top-1 size-2 rounded-full bg-warning" aria-hidden="true" />
+      {cell.pending > 0 && (
+        <span
+          className="absolute end-1 top-1 grid min-w-4 place-items-center rounded-full bg-warning px-1 text-xs font-bold leading-4 text-warning-foreground"
+          aria-hidden="true"
+        >
+          {cell.pending}
+        </span>
       )}
     </Button>
   );

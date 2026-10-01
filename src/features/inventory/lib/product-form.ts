@@ -7,6 +7,7 @@ import {
   serviceBookingForm,
 } from "@/lib/bookings/service-capacity";
 import { packageError, type PackageLine } from "@/lib/bookings/service-package";
+import type { OptionForm } from "@/lib/bookings/service-options";
 import {
   serviceIncludesFrom,
   serviceIncludesToSave,
@@ -66,6 +67,9 @@ export function productFormFrom(product: Product | null, defaults: { service?: b
     // A package: a service made of other services (its lines load with the editor).
     is_package: Boolean(product?.is_package),
     package_items: [] as PackageLine[],
+    // A service's add-ons (they load with the editor) and its price for extra hours.
+    service_options: [] as OptionForm[],
+    extra_hour_price: product?.extra_hour_price ? String(product.extra_hour_price) : "",
     // A service's own capacity, scope, setup time and notice (the booking engine's rules).
     ...serviceBookingForm(product),
   };
@@ -191,6 +195,10 @@ export function productColumnsFrom(form: ProductForm) {
     service_includes:
       form.item_kind === "service" ? serviceIncludesToSave(form.service_includes) : [],
     is_package: form.item_kind === "service" && form.is_package,
+    extra_hour_price:
+      form.item_kind === "service" && Number(form.extra_hour_price) > 0
+        ? Number(form.extra_hour_price)
+        : null,
     ...serviceBookingColumns(form, form.item_kind === "service"),
   };
 }

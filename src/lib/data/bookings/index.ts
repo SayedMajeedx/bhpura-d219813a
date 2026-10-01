@@ -460,7 +460,12 @@ export type BookingRequestInput = {
   day: string;
   start: string;
   durationMinutes: number;
-  items: Array<{ product_id: string; variant_id?: string | null; quantity: number }>;
+  items: Array<{
+    product_id: string;
+    variant_id?: string | null;
+    quantity: number;
+    options?: Array<{ option_id: string; quantity: number }>;
+  }>;
   customer: { name: string; phone: string; email?: string };
   location?: Record<string, string>;
   notes?: string;

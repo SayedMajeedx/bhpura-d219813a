@@ -1,6 +1,7 @@
 import { ServicePricingFields } from "@/features/inventory/components/ServicePricingFields";
 import { ServiceDetailsFields } from "@/features/inventory/components/ServiceDetailsFields";
 import { ServicePackageFields } from "@/features/inventory/components/ServicePackageFields";
+import { ServiceOptionsFields } from "@/features/inventory/components/ServiceOptionsFields";
 import { ServiceBookingFields } from "@/features/inventory/components/ServiceBookingFields";
 import type { ServicePricing } from "@/features/inventory/lib/service-pricing";
 import { ItemKindPicker } from "@/features/inventory/components/ItemKindPicker";
@@ -361,6 +362,15 @@ export function ProductBasicTab({
           currency={currency}
           isAr={isAr}
           error={errors.package}
+        />
+      )}
+      {isService && (
+        <ServiceOptionsFields
+          options={form.service_options}
+          onOptions={(service_options) => setForm({ ...form, service_options })}
+          extraHour={form.extra_hour_price}
+          onExtraHour={(extra_hour_price) => setForm({ ...form, extra_hour_price })}
+          isAr={isAr}
         />
       )}
       {isService && (

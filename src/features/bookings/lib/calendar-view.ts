@@ -30,6 +30,10 @@ export type CalendarCell = {
   taken: number;
   capacity: number;
   requests: number;
+  /** Bookings on the day waiting for the store: requests, and live holds for a payment. */
+  pending: number;
+  /** Bookings the store has confirmed (or finished) on the day. */
+  confirmed: number;
   blocked: boolean;
 };
 
@@ -72,6 +76,14 @@ export function summariseMonth({
         taken,
         capacity: rules.daily_capacity,
         requests: dayBookings.filter((booking) => booking.status === "requested").length,
+        pending: dayBookings.filter(
+          (booking) =>
+            booking.status === "requested" ||
+            (booking.status === "hold" && takesPlace(booking, now)),
+        ).length,
+        confirmed: dayBookings.filter(
+          (booking) => booking.status === "confirmed" || booking.status === "completed",
+        ).length,
         blocked: blocks.some((block) => day >= block.starts_on && day <= block.ends_on),
       };
     }),

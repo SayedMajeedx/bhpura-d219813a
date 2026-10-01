@@ -43,6 +43,12 @@ describe("the admin month", () => {
         hold_expires_at: "2026-10-01T08:00:00Z",
       },
       { id: "f", event_date: "2026-10-14", status: "cancelled" },
+      {
+        id: "g",
+        event_date: "2026-10-15",
+        status: "hold",
+        hold_expires_at: "2026-10-01T09:30:00Z",
+      },
     ],
   }).flat();
   const cell = (day: string) => cells.find((c) => c.day === day)!;
@@ -68,6 +74,15 @@ describe("the admin month", () => {
     expect(shiftMonth({ year: 2026, month: 12 }, 1)).toEqual({ year: 2027, month: 1 });
     expect(shiftMonth({ year: 2026, month: 1 }, -1)).toEqual({ year: 2025, month: 12 });
     expect(gridRange(2026, 10, 0)).toEqual({ from: "2026-09-27", to: "2026-10-31" });
+  });
+
+  it("counts what waits for the store apart from what it confirmed", () => {
+    // A request and a live hold wait; an expired hold, a cancelled booking and a confirmed one do not.
+    expect(cell("2026-10-12")).toMatchObject({ pending: 1, confirmed: 1 });
+    expect(cell("2026-10-13")).toMatchObject({ pending: 0, confirmed: 0 });
+    expect(cell("2026-10-14")).toMatchObject({ pending: 0, confirmed: 0 });
+    expect(cell("2026-10-15")).toMatchObject({ pending: 1, confirmed: 0 });
+    expect(cell("2026-10-10")).toMatchObject({ pending: 0, confirmed: 2 });
   });
 });
 

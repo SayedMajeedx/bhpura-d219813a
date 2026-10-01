@@ -9,7 +9,7 @@ import {
 } from "@/lib/order-customer-snapshot";
 import { getPaymentGatewayReference } from "@/lib/payment-reference";
 import { getReadableTextColor } from "@/lib/color-utils";
-import { getInvoiceStatusLabel } from "@/lib/status-labels";
+import { effectiveFulfillmentStatus, getInvoiceStatusLabel } from "@/lib/status-labels";
 import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
@@ -286,7 +286,9 @@ export default function InvoicePreview({
       ? "'InvoiceCustomFont', sans-serif"
       : `"${settings.font_family || "Cormorant Garamond"}", serif`;
 
-  const rawStatus = order.fulfillment_status || order.status;
+  const rawStatus = String(
+    effectiveFulfillmentStatus(order.fulfillment_status || order.status, order.fulfillment_method),
+  ).toLowerCase();
   const isPaidStatus =
     order.payment_status === "paid" || rawStatus === "delivered" || rawStatus === "completed";
   const isUnpaidStatus =

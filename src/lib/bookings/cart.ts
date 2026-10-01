@@ -24,6 +24,8 @@ export type CartBooking = {
   place?: { area: string; venue: string };
   /** The customer's notes and answers to the services' questions. */
   notes?: string | null;
+  /** The add-ons chosen with the services (priced on top of the cart's lines). */
+  optionsTotal?: number;
   /** The booking-time offer taken off the services (the server sets the real amount). */
   discount?: number;
   discountLabel?: string | null;
@@ -39,6 +41,8 @@ export type BookingHold = {
   total: number;
   /** What the store's offer took off the services (0: none). */
   discount?: number;
+  /** What the chosen add-ons cost. */
+  options_total?: number;
   items: Array<{ product_id: string; variant_id: string; quantity: number; unit_price: number }>;
 };
 

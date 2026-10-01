@@ -193,9 +193,14 @@ describe("the bookings page", () => {
     expect(await screen.findByText("October 2026")).toBeInTheDocument();
     const full = await screen.findByRole("gridcell", { name: /12 October: Fully booked/ });
     expect(full).toBeInTheDocument();
-    expect(
-      screen.getByRole("gridcell", { name: /15 October: Available · 1 requests/ }),
-    ).toBeInTheDocument();
+    // A day with only a request waiting reads, and is coloured, apart from a confirmed one.
+    const waiting = screen.getByRole("gridcell", {
+      name: /15 October: Available · 1 awaiting your confirmation/,
+    });
+    expect(waiting).toBeInTheDocument();
+    expect(waiting.className).toContain("bg-warning-subtle");
+    expect(full.className).not.toContain("bg-warning-subtle");
+    expect(screen.getByText("Awaiting your confirmation (request or payment)")).toBeInTheDocument();
     expect(screen.getByText("Booking requests (1)")).toBeInTheDocument();
   });
 

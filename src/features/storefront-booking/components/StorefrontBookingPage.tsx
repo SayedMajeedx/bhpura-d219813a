@@ -1,3 +1,4 @@
+import { optionName } from "@/lib/bookings/service-options";
 import { discountName } from "@/lib/bookings/discounts";
 import type { ReactNode } from "react";
 import { CalendarCheck, CheckCircle2, Loader2, MessageCircle } from "lucide-react";
@@ -104,7 +105,11 @@ export function StorefrontBookingPage({
 
   const chosen = flow.chosen;
   const offerAmount = flow.offer?.amount ?? 0;
-  const total = flow.servicesTotal - offerAmount + (flow.flow.areaCode ? (flow.travelFee ?? 0) : 0);
+  const total =
+    flow.servicesTotal +
+    flow.optionsTotal -
+    offerAmount +
+    (flow.flow.areaCode ? (flow.travelFee ?? 0) : 0);
   const stepIndex = flow.step ? STEPS.findIndex((step) => step.id === flow.step) : STEPS.length;
   const done = (id: FlowStep) => STEPS.findIndex((step) => step.id === id) < stepIndex;
 
@@ -191,6 +196,23 @@ export function StorefrontBookingPage({
             <span className="text-foreground" dir="ltr">
               {formatPrice(flow.travelFee, currency, lang)}
             </span>
+          </div>
+        )}
+        {flow.optionLines.some((line) => line.price > 0) && showPrices && (
+          <div className="space-y-0.5 text-sm">
+            {flow.optionLines
+              .filter((line) => line.price > 0)
+              .map((line) => (
+                <div key={line.option.id} className="flex items-center justify-between">
+                  <span className="text-muted-foreground">
+                    {optionName(line.option, isAr)}
+                    {line.option.tiers ? ` × ${line.quantity}` : ""}
+                  </span>
+                  <span className="text-foreground" dir="ltr">
+                    + {formatPrice(line.price, currency, lang)}
+                  </span>
+                </div>
+              ))}
           </div>
         )}
         {flow.offer && chosen.length > 0 && showPrices && (

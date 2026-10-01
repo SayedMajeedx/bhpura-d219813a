@@ -1,3 +1,4 @@
+import { effectiveFulfillmentStatus } from "@/lib/status-labels";
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { customersKeys } from "./keys";
@@ -45,14 +46,21 @@ export async function fetchOwnOrders(brandId: string, customerId: string) {
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "id, invoice_number, order_date, status, payment_status, fulfillment_status, total, currency, public_invoice_token, order_items(id, description, quantity, unit_price)",
+      "id, invoice_number, order_date, status, payment_status, fulfillment_status, fulfillment_method, total, currency, public_invoice_token, order_items(id, description, quantity, unit_price)",
     )
     .eq("brand_id", brandId)
     .eq("customer_id", customerId)
     .order("created_at", { ascending: false })
     .limit(100);
   if (error) throw error;
-  return data ?? [];
+  // An appointment is scheduled until it is done, not "needs packing".
+  return (data ?? []).map((order) => ({
+    ...order,
+    fulfillment_status: effectiveFulfillmentStatus(
+      order.fulfillment_status,
+      order.fulfillment_method,
+    ),
+  }));
 }
 export type OwnOrder = Awaited<ReturnType<typeof fetchOwnOrders>>[number];
 

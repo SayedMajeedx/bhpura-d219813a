@@ -1,3 +1,4 @@
+import { BookingServiceOptions } from "@/features/storefront-booking/components/BookingServiceOptions";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -86,6 +87,7 @@ export function BookingServicePicker({ flow }: { flow: BookingFlow }) {
                 {chosen && <Check className="size-4" />}
               </span>
             </Button>
+            {chosen && <BookingServiceOptions flow={flow} serviceId={service.id} />}
           </li>
         );
       })}

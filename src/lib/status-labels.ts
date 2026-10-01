@@ -14,6 +14,12 @@ export type StatusDefinition = {
 };
 
 export const FULFILLMENT_STATUS_MAP: Record<string, StatusDefinition> = {
+  SCHEDULED: {
+    ar: "موعد مجدول",
+    en: "Scheduled",
+    badgeClasses:
+      "bg-indigo-100 text-indigo-900 border-indigo-300 dark:bg-indigo-950/40 dark:text-indigo-300",
+  },
   NEEDS_PACKING: {
     ar: "بحاجة للتعبئة",
     en: "Needs Packing",
@@ -164,6 +170,24 @@ export const FULFILLMENT_METHOD_MAP: Record<string, StatusDefinition> = {
  * - Completed -> مكتمل
  * - Cancelled -> ملغي
  */
+const TERMINAL_FULFILLMENT = ["COMPLETED", "DELIVERED", "CANCELLED", "RETURNED", "DELIVERY_FAILED"];
+
+/**
+ * The status an order shows. An appointment is not packed, shipped or
+ * delivered: until it is done or cancelled it is "scheduled", whatever its
+ * stored fulfillment status says (a new order waits as ON_HOLD or NEEDS_PACKING).
+ */
+export function effectiveFulfillmentStatus(
+  status: string | null | undefined,
+  fulfillmentMethod: string | null | undefined,
+): string {
+  if (String(fulfillmentMethod ?? "").toLowerCase() !== "appointment") return status ?? "";
+  const upper = String(status || "ON_HOLD")
+    .trim()
+    .toUpperCase();
+  return TERMINAL_FULFILLMENT.includes(upper) ? upper : "SCHEDULED";
+}
+
 export function getInvoiceStatusLabel(
   status: string | null | undefined,
   lang: Lang = "ar",
@@ -180,6 +204,8 @@ export function getInvoiceStatusLabel(
     case "unpaid":
     case "pending_verification":
       return lang === "ar" ? "قيد الانتظار" : "Pending";
+    case "scheduled":
+      return lang === "ar" ? "موعد مجدول" : "Scheduled";
     case "packing":
     case "needs_packing":
       return lang === "ar" ? "قيد التجهيز والتغليف" : "Under Preparation & Packaging";
@@ -333,7 +359,9 @@ export function getFulfillmentBadgeDetails(
   fulfillmentMethod?: string | null,
   vocab?: Partial<StoreVocabulary> | StoreVocabulary,
 ): { label: string; classes: string } {
-  const s = String(status || "ON_HOLD").toUpperCase();
+  const s = String(
+    effectiveFulfillmentStatus(status || "ON_HOLD", fulfillmentMethod),
+  ).toUpperCase();
   const isAppointment = String(fulfillmentMethod ?? "").toLowerCase() === "appointment";
   if (s === "SCHEDULED") {
     return {

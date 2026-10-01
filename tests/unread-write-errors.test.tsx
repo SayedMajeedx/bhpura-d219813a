@@ -20,6 +20,7 @@ const catalog = vi.hoisted(() => ({
   updateProduct: vi.fn(async () => undefined),
 }));
 const packages = vi.hoisted(() => ({ savePackageItems: vi.fn(async () => undefined) }));
+const serviceOptionsData = vi.hoisted(() => ({ saveServiceOptions: vi.fn(async () => undefined) }));
 const customers = vi.hoisted(() => ({
   createCustomer: vi.fn(async () => ({ id: "c1", name: "Sara" })),
   createCustomerAddress: vi.fn(async () => "a1"),
@@ -29,6 +30,8 @@ vi.mock("sonner", () => ({ toast }));
 vi.mock("../src/lib/data/catalog", () => catalog);
 vi.mock("@/lib/data/catalog", () => catalog);
 vi.mock("../src/lib/data/service-packages", () => packages);
+vi.mock("../src/lib/data/service-options", () => serviceOptionsData);
+vi.mock("@/lib/data/service-options", () => serviceOptionsData);
 vi.mock("@/lib/data/service-packages", () => packages);
 vi.mock("../src/lib/data/customers", () => customers);
 vi.mock("@/lib/data/customers", () => customers);
