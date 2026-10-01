@@ -106,9 +106,9 @@ export async function fetchBookingRequests(brandId: string) {
     .from("bookings")
     .select(BOOKING_COLUMNS)
     .eq("brand_id", brandId)
-    .eq("status", "requested")
+    .in("status", ["requested", "hold"])
     .order("event_date", { ascending: true })
-    .limit(100);
+    .limit(200);
   if (error) throw error;
   return data ?? [];
 }

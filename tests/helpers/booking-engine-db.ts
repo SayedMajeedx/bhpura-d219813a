@@ -3,6 +3,8 @@ import migration from "../../supabase/migrations/20261001180000_booking_resource
 import bookingDiscounts from "../../supabase/migrations/20261002100000_booking_discounts.sql?raw";
 import bookingOrders from "../../supabase/migrations/20261002110000_booking_orders.sql?raw";
 import servicePackages from "../../supabase/migrations/20261002120000_service_packages.sql?raw";
+import serviceOptions from "../../supabase/migrations/20261002140000_service_options_and_offers.sql?raw";
+import heldBookings from "../../supabase/migrations/20261002150000_fix_storefront_checkout_and_held_bookings.sql?raw";
 
 /**
  * The booking engine, run for real: an in-process Postgres (PGlite) with the
@@ -136,6 +138,8 @@ const ORDERS_SCHEMA = `
     ADD COLUMN advance_paid numeric NOT NULL DEFAULT 0,
     ADD COLUMN channel text NOT NULL DEFAULT 'admin';
   ALTER TABLE public.products ADD COLUMN item_kind text NOT NULL DEFAULT 'service';
+  ALTER TABLE public.brands ADD COLUMN slug text;
+  ALTER TABLE public.booking_settings ADD COLUMN deposit_percent numeric NOT NULL DEFAULT 0;
   CREATE TABLE public.order_items (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id uuid NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
@@ -152,6 +156,40 @@ const ORDERS_SCHEMA = `
   END $$;
   CREATE TRIGGER allocate_invoice BEFORE INSERT ON public.orders
     FOR EACH ROW EXECUTE FUNCTION public.allocate_invoice();
+`;
+
+// place_storefront_order, reduced: an order for the brand, its lines priced from
+// their variants (as the real one does), no tax, shipping or promo.
+const STOREFRONT_ORDER = `
+  CREATE FUNCTION public.place_storefront_order(
+    p_brand_slug text, p_customer jsonb, p_items jsonb, p_payment_method text,
+    p_notes text DEFAULT NULL, p_fulfillment text DEFAULT 'delivery', p_branch_id uuid DEFAULT NULL,
+    p_digital_channel text DEFAULT NULL, p_digital_contact text DEFAULT NULL,
+    p_promo_code text DEFAULT NULL, p_benefit_receipt_id uuid DEFAULT NULL,
+    p_shipping_fee numeric DEFAULT NULL, p_shipping_zone text DEFAULT NULL,
+    p_idempotency_key text DEFAULT NULL
+  ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $function$
+  DECLARE v_brand uuid; v_order uuid; v_sum numeric := 0; v_line jsonb; v_variant record;
+  BEGIN
+    SELECT id INTO v_brand FROM public.brands WHERE slug = p_brand_slug;
+    INSERT INTO public.orders (brand_id, status, fulfillment_method, customer_name_snapshot,
+      customer_phone_snapshot, invoice_number)
+    VALUES (v_brand, 'pending', 'appointment', p_customer ->> 'name', p_customer ->> 'phone', 0)
+    RETURNING id INTO v_order;
+    FOR v_line IN SELECT * FROM jsonb_array_elements(p_items) LOOP
+      SELECT v.id, v.product_id, v.selling_price, p.name INTO v_variant
+        FROM public.product_variants v JOIN public.products p ON p.id = v.product_id
+       WHERE v.id = (v_line ->> 'variant_id')::uuid;
+      INSERT INTO public.order_items (order_id, brand_id, product_id, variant_id, description,
+        quantity, unit_price, line_total)
+      VALUES (v_order, v_brand, v_variant.product_id, v_variant.id, v_variant.name,
+        (v_line ->> 'quantity')::integer, v_variant.selling_price,
+        v_variant.selling_price * (v_line ->> 'quantity')::integer);
+      v_sum := v_sum + v_variant.selling_price * (v_line ->> 'quantity')::integer;
+    END LOOP;
+    UPDATE public.orders SET subtotal = v_sum, total = v_sum WHERE id = v_order;
+    RETURN jsonb_build_object('order_id', v_order, 'total', v_sum);
+  END $function$;
 `;
 
 // The helpers the migration does not change, as they are in the live database.
@@ -250,6 +288,19 @@ export type ServiceRules = {
   buffer?: number;
   notice?: number | null;
   active?: boolean;
+  /** A fixed price (default 40), or a price per length. */
+  price?: number;
+  lengths?: Array<{ minutes: number; price: number }>;
+  extraHour?: number | null;
+};
+
+export type OptionRules = {
+  name?: string;
+  mode?: "included" | "required" | "default_on" | "optional";
+  price?: number;
+  tiers?: { step: number; prices: number[] } | null;
+  max?: number | null;
+  active?: boolean;
 };
 
 export type Item = {
@@ -258,6 +309,7 @@ export type Item = {
   quantity?: number;
   unit_price?: number;
   name_en?: string;
+  options?: Array<{ option_id: string; quantity?: number }>;
 };
 
 const asJson = (value: unknown) => JSON.stringify(value);
@@ -273,6 +325,16 @@ export async function createEngineDb() {
   await pg.exec(bookingOrders);
   // Packages: services made of services.
   await pg.exec(servicePackages);
+  // Add-ons, extra hours, offers with another service and chosen dates.
+  await pg.exec(serviceOptions);
+  // Held bookings: a transfer waits for its receipt; staff answer a hold.
+  await pg.exec(
+    heldBookings.slice(
+      heldBookings.indexOf("CREATE OR REPLACE FUNCTION public.place_booking_order"),
+    ),
+  );
+  // The storefront order builder, reduced to what checkout needs from it.
+  await pg.exec(STOREFRONT_ORDER);
 
   const rows = async <T = Record<string, unknown>>(sql: string, params: unknown[] = []) =>
     (await pg.query<T>(sql, params)).rows;
@@ -321,8 +383,8 @@ export async function createEngineDb() {
   async function service(brandId: string, rules: ServiceRules = {}) {
     const product = await one<{ id: string }>(
       `insert into products (brand_id, name, name_en, is_active, booking_capacity, booking_scope,
-         booking_buffer_minutes, booking_notice_hours)
-       values ($1, $2, $2, $3, $4, $5, $6, $7) returning id`,
+         booking_buffer_minutes, booking_notice_hours, extra_hour_price)
+       values ($1, $2, $2, $3, $4, $5, $6, $7, $8) returning id`,
       [
         brandId,
         rules.name ?? "Service",
@@ -331,13 +393,49 @@ export async function createEngineDb() {
         rules.scope ?? "day",
         rules.buffer ?? 0,
         rules.notice ?? null,
+        rules.extraHour ?? null,
       ],
     );
+    if (rules.lengths) {
+      for (const length of rules.lengths) {
+        await pg.query(
+          "insert into product_variants (brand_id, product_id, selling_price, duration_minutes) values ($1, $2, $3, $4)",
+          [brandId, product.id, length.price, length.minutes],
+        );
+      }
+      return { id: product.id, variantId: "" };
+    }
     const variant = await one<{ id: string }>(
-      "insert into product_variants (brand_id, product_id, selling_price) values ($1, $2, 40) returning id",
-      [brandId, product.id],
+      "insert into product_variants (brand_id, product_id, selling_price) values ($1, $2, $3) returning id",
+      [brandId, product.id, rules.price ?? 40],
     );
     return { id: product.id, variantId: variant.id };
+  }
+
+  /** An add-on of a service (or package). */
+  async function option(productId: string, brandId: string, rules: OptionRules = {}) {
+    const row = await one<{ id: string }>(
+      `insert into service_options (brand_id, product_id, name_en, name_ar, mode, price, tiers, max_quantity, is_active)
+       values ($1, $2, $3, $3, $4, $5, $6::jsonb, $7, $8) returning id`,
+      [
+        brandId,
+        productId,
+        rules.name ?? "Option",
+        rules.mode ?? "optional",
+        rules.price ?? 0,
+        rules.tiers ? JSON.stringify(rules.tiers) : null,
+        rules.max ?? null,
+        rules.active ?? true,
+      ],
+    );
+    return row.id;
+  }
+
+  /** A brand's public slug (the storefront order builder looks a brand up by it). */
+  async function slugOf(brandId: string) {
+    const slug = `b-${brandId.slice(0, 8)}`;
+    await pg.query("update brands set slug = $2 where id = $1", [brandId, slug]);
+    return slug;
   }
 
   /** A package priced at `price` for any length, made of the given services. */
@@ -456,6 +554,8 @@ export async function createEngineDb() {
     day,
     store,
     service,
+    option,
+    slugOf,
     servicePackage,
     staff,
     request,

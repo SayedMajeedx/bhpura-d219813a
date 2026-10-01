@@ -593,6 +593,8 @@ export type Database = {
         Row: {
           brand_id: string;
           created_at: string;
+          event_from: string | null;
+          event_to: string | null;
           id: string;
           is_active: boolean;
           kind: string;
@@ -601,6 +603,8 @@ export type Database = {
           name_ar: string | null;
           name_en: string | null;
           product_ids: string[] | null;
+          requires_product_ids: string[] | null;
+          stackable: boolean;
           updated_at: string;
           valid_from: string | null;
           valid_to: string | null;
@@ -610,6 +614,8 @@ export type Database = {
         Insert: {
           brand_id: string;
           created_at?: string;
+          event_from?: string | null;
+          event_to?: string | null;
           id?: string;
           is_active?: boolean;
           kind?: string;
@@ -618,6 +624,8 @@ export type Database = {
           name_ar?: string | null;
           name_en?: string | null;
           product_ids?: string[] | null;
+          requires_product_ids?: string[] | null;
+          stackable?: boolean;
           updated_at?: string;
           valid_from?: string | null;
           valid_to?: string | null;
@@ -627,6 +635,8 @@ export type Database = {
         Update: {
           brand_id?: string;
           created_at?: string;
+          event_from?: string | null;
+          event_to?: string | null;
           id?: string;
           is_active?: boolean;
           kind?: string;
@@ -635,6 +645,8 @@ export type Database = {
           name_ar?: string | null;
           name_en?: string | null;
           product_ids?: string[] | null;
+          requires_product_ids?: string[] | null;
+          stackable?: boolean;
           updated_at?: string;
           valid_from?: string | null;
           valid_to?: string | null;
@@ -659,6 +671,8 @@ export type Database = {
           line_total: number | null;
           name_ar: string | null;
           name_en: string | null;
+          option_id: string | null;
+          option_quantity: number | null;
           parent_item_id: string | null;
           product_id: string | null;
           quantity: number;
@@ -672,6 +686,8 @@ export type Database = {
           line_total?: number | null;
           name_ar?: string | null;
           name_en?: string | null;
+          option_id?: string | null;
+          option_quantity?: number | null;
           parent_item_id?: string | null;
           product_id?: string | null;
           quantity?: number;
@@ -685,6 +701,8 @@ export type Database = {
           line_total?: number | null;
           name_ar?: string | null;
           name_en?: string | null;
+          option_id?: string | null;
+          option_quantity?: number | null;
           parent_item_id?: string | null;
           product_id?: string | null;
           quantity?: number;
@@ -704,6 +722,13 @@ export type Database = {
             columns: ["brand_id"];
             isOneToOne: false;
             referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "booking_items_option_id_fkey";
+            columns: ["option_id"];
+            isOneToOne: false;
+            referencedRelation: "service_options";
             referencedColumns: ["id"];
           },
           {
@@ -5692,6 +5717,7 @@ export type Database = {
           description_ar: string | null;
           description_en: string | null;
           direct_packaging_cost: number | null;
+          extra_hour_price: number | null;
           fabric_type: string | null;
           featured_trending: boolean;
           id: string;
@@ -5744,6 +5770,7 @@ export type Database = {
           description_ar?: string | null;
           description_en?: string | null;
           direct_packaging_cost?: number | null;
+          extra_hour_price?: number | null;
           fabric_type?: string | null;
           featured_trending?: boolean;
           id?: string;
@@ -5796,6 +5823,7 @@ export type Database = {
           description_ar?: string | null;
           description_en?: string | null;
           direct_packaging_cost?: number | null;
+          extra_hour_price?: number | null;
           fabric_type?: string | null;
           featured_trending?: boolean;
           id?: string;
@@ -7117,6 +7145,72 @@ export type Database = {
           },
         ];
       };
+      service_options: {
+        Row: {
+          brand_id: string;
+          created_at: string;
+          description_ar: string | null;
+          description_en: string | null;
+          id: string;
+          is_active: boolean;
+          max_quantity: number | null;
+          mode: string;
+          name_ar: string | null;
+          name_en: string | null;
+          price: number;
+          product_id: string;
+          sort_order: number;
+          tiers: Json | null;
+        };
+        Insert: {
+          brand_id: string;
+          created_at?: string;
+          description_ar?: string | null;
+          description_en?: string | null;
+          id?: string;
+          is_active?: boolean;
+          max_quantity?: number | null;
+          mode?: string;
+          name_ar?: string | null;
+          name_en?: string | null;
+          price?: number;
+          product_id: string;
+          sort_order?: number;
+          tiers?: Json | null;
+        };
+        Update: {
+          brand_id?: string;
+          created_at?: string;
+          description_ar?: string | null;
+          description_en?: string | null;
+          id?: string;
+          is_active?: boolean;
+          max_quantity?: number | null;
+          mode?: string;
+          name_ar?: string | null;
+          name_en?: string | null;
+          price?: number;
+          product_id?: string;
+          sort_order?: number;
+          tiers?: Json | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "service_options_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "service_options_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       service_package_items: {
         Row: {
           brand_id: string;
@@ -7348,6 +7442,97 @@ export type Database = {
             columns: ["return_id"];
             isOneToOne: false;
             referencedRelation: "return_requests";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      store_faq_items: {
+        Row: {
+          answer_ar: string | null;
+          answer_en: string | null;
+          brand_id: string;
+          created_at: string;
+          group_ar: string | null;
+          group_en: string | null;
+          id: string;
+          is_active: boolean;
+          question_ar: string | null;
+          question_en: string | null;
+          sort_order: number;
+        };
+        Insert: {
+          answer_ar?: string | null;
+          answer_en?: string | null;
+          brand_id: string;
+          created_at?: string;
+          group_ar?: string | null;
+          group_en?: string | null;
+          id?: string;
+          is_active?: boolean;
+          question_ar?: string | null;
+          question_en?: string | null;
+          sort_order?: number;
+        };
+        Update: {
+          answer_ar?: string | null;
+          answer_en?: string | null;
+          brand_id?: string;
+          created_at?: string;
+          group_ar?: string | null;
+          group_en?: string | null;
+          id?: string;
+          is_active?: boolean;
+          question_ar?: string | null;
+          question_en?: string | null;
+          sort_order?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "store_faq_items_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      store_gallery_items: {
+        Row: {
+          brand_id: string;
+          caption_ar: string | null;
+          caption_en: string | null;
+          created_at: string;
+          id: string;
+          image_url: string;
+          is_active: boolean;
+          sort_order: number;
+        };
+        Insert: {
+          brand_id: string;
+          caption_ar?: string | null;
+          caption_en?: string | null;
+          created_at?: string;
+          id?: string;
+          image_url: string;
+          is_active?: boolean;
+          sort_order?: number;
+        };
+        Update: {
+          brand_id?: string;
+          caption_ar?: string | null;
+          caption_en?: string | null;
+          created_at?: string;
+          id?: string;
+          image_url?: string;
+          is_active?: boolean;
+          sort_order?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "store_gallery_items_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
             referencedColumns: ["id"];
           },
         ];
@@ -8536,6 +8721,16 @@ export type Database = {
         Args: { p_booking_id: string };
         Returns: number;
       };
+      apply_booking_options: {
+        Args: {
+          p_booking_id: string;
+          p_explicit: boolean;
+          p_parent_item_id: string;
+          p_product_id: string;
+          p_selected: Json;
+        };
+        Returns: number;
+      };
       apply_brand_vertical_change: {
         Args: {
           p_add_categories?: Json;
@@ -9156,6 +9351,8 @@ export type Database = {
       get_booking_discounts: {
         Args: { p_brand_id: string };
         Returns: {
+          event_from: string;
+          event_to: string;
           id: string;
           kind: string;
           max_days: number;
@@ -9163,6 +9360,8 @@ export type Database = {
           name_ar: string;
           name_en: string;
           product_ids: string[];
+          requires_product_ids: string[];
+          stackable: boolean;
           valid_from: string;
           valid_to: string;
           value: number;
@@ -10213,6 +10412,15 @@ export type Database = {
           p_webhook_secret: string;
         };
         Returns: string;
+      };
+      service_option_price: {
+        Args: {
+          p_mode: string;
+          p_price: number;
+          p_quantity: number;
+          p_tiers: Json;
+        };
+        Returns: number;
       };
       set_booking_discount: {
         Args: { p_amount: number; p_booking_id: string; p_label?: string };

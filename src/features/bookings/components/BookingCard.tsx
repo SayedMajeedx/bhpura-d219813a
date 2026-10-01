@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { Clock, Mail, MapPin, Phone, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -6,6 +7,7 @@ import { nextStatuses, type BookingStatus } from "@/lib/bookings/rules";
 import type { Booking } from "@/lib/data/bookings";
 import { BookingDiscountEditor } from "@/features/bookings/components/BookingDiscountEditor";
 import { BookingInvoiceBlock } from "@/features/bookings/components/BookingInvoiceBlock";
+import { bookingInvoiceOf } from "@/features/bookings/lib/booking-invoice";
 import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
 import {
   BOOKING_STATUS_TEXT,
@@ -16,6 +18,10 @@ import {
 
 /** The action button for moving a booking from `from` to `to`. */
 function actionText(from: BookingStatus, to: BookingStatus, isAr: boolean): string {
+  if (from === "hold" || from === "expired") {
+    if (to === "confirmed") return isAr ? "تأكيد (تم الدفع)" : "Confirm (paid)";
+    return isAr ? "تحرير الموعد" : "Release the day";
+  }
   if (to === "confirmed") {
     if (from === "requested") return isAr ? "تأكيد الحجز" : "Confirm";
     if (from === "cancelled") return isAr ? "إعادة الحجز" : "Reinstate";
@@ -178,6 +184,23 @@ export function BookingCard({
           </span>
         )}
       </p>
+      {bookingInvoiceOf(booking)?.status === "pending_verification" && (
+        <div className="space-y-2 rounded-lg border border-warning bg-warning-subtle p-2 text-xs">
+          <p className="font-semibold text-foreground">
+            {isAr
+              ? "إيصال بنفت بانتظار تحققك. الموعد محجوز مؤقتاً لحين التأكد من التحويل."
+              : "A BenefitPay receipt is waiting for you to check. The day is held until you confirm the transfer."}
+          </p>
+          <Button asChild size="sm" className="h-8 text-xs">
+            <Link
+              to="/admin/b/$slug/orders/$id"
+              params={{ slug: page.brand.slug, id: bookingInvoiceOf(booking)!.orderId }}
+            >
+              {isAr ? "راجع الإيصال وأكّد الدفع" : "Review the receipt and approve"}
+            </Link>
+          </Button>
+        </div>
+      )}
       {status !== "cancelled" && status !== "expired" && (
         <div className="space-y-1">
           <BookingInvoiceBlock booking={booking} page={page} />

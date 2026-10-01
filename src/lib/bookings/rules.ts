@@ -243,6 +243,11 @@ export function nextStatuses(status: BookingStatus): BookingStatus[] {
   switch (status) {
     case "requested":
       return ["confirmed", "cancelled"];
+    // A day held for a payment: staff confirm it once the payment is checked, or release it.
+    case "hold":
+      return ["confirmed", "cancelled"];
+    case "expired":
+      return ["confirmed"];
     case "confirmed":
       return ["completed", "cancelled"];
     case "completed":

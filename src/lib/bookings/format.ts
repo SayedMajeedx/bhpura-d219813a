@@ -94,7 +94,7 @@ export function dayTitle(day: string, isAr: boolean): string {
 /** A booking's status, as staff and customers read it, with its badge tone. */
 export const BOOKING_STATUS_TEXT: Record<BookingStatus, { ar: string; en: string; tone: string }> =
   {
-    hold: { ar: "قيد الدفع", en: "Checking out", tone: "bg-info-subtle text-info" },
+    hold: { ar: "بانتظار الدفع", en: "Awaiting payment", tone: "bg-info-subtle text-info" },
     requested: { ar: "طلب حجز", en: "Request", tone: "bg-warning-subtle text-warning" },
     confirmed: { ar: "مؤكد", en: "Confirmed", tone: "bg-success-subtle text-success" },
     completed: { ar: "منتهي", en: "Completed", tone: "bg-muted text-muted-foreground" },

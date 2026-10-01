@@ -176,3 +176,33 @@ its included services. A package cannot include a package, and only services
 of the same store can be included. The order lists the included services
 free ("↳ name") under the package line. Tested in a real Postgres
 (`tests/service-packages.test.ts`).
+
+## Matching a professional booking site (2026-10-02)
+
+Measured against a live competitor (a photo-booth site: landing page, services
+with add-ons, offers, a calendar with per-day discounts, FAQ). What it does and
+how we cover it, in the order built:
+
+1. **Add-ons of a service** (`service_options`): an attendant that comes with
+   every booking (required), instant prints on by default and removable,
+   magnets optional, envelopes in blocks of 50 that get cheaper. Modes
+   `included`, `required`, `default_on`, `optional`; flat or block pricing.
+   Booking lines carry them (`booking_items.option_id`), the order and invoice
+   list them as "+ name". They hold no capacity and take no offer.
+2. **Extra hours**: `products.extra_hour_price`; a booking longer than the
+   longest length costs that length plus the price of each extra hour.
+3. **Offers**: "50% off the memory phone when booked with a booth"
+   (`requires_product_ids`), offers that add to the best one (`stackable`), and
+   offers for chosen event dates (`event_from`/`event_to`; a gift is 100%).
+4. **The store's pictures and questions**: `store_gallery_items` (past events)
+   and `store_faq_items` (grouped questions and answers).
+5. Screens: the options and offer editors, the service card with its add-ons
+   and a details view, the calendar's marks and gift days, an offers section
+   with package cards (price, saving, what is included), the gallery and FAQ
+   sections of a services landing page, the booking summary with add-ons.
+6. Still to come: balance-due and cancellation terms on the booking, dark and
+   light switch, a floating WhatsApp button.
+
+Migration `20261002140000_service_options_and_offers.sql`. Also fixed there: a
+card checkout's deposit was worked out from the order's total before the
+booking's offer came off it.

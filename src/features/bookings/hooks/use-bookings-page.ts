@@ -18,6 +18,7 @@ import {
 import { bookingErrorMessage } from "@/lib/bookings/errors";
 import { DEFAULT_BOOKING_RULES, todayIn, type BookingStatus } from "@/lib/bookings/rules";
 import { summariseMonth } from "@/features/bookings/lib/calendar-view";
+import { bookingInvoiceOf } from "@/features/bookings/lib/booking-invoice";
 import { gridRange, shiftMonth } from "@/lib/bookings/format";
 
 /** Weeks start on Sunday, as GCC booking calendars usually do. */
@@ -166,7 +167,12 @@ export function useBookingsPage() {
     selectedCell,
     dayBookings,
     dayBlocks,
-    requests: requestsQuery.data ?? [],
+    requests: (requestsQuery.data ?? []).filter((booking) => booking.status === "requested"),
+    /** A day held for a BenefitPay transfer whose receipt waits for the store's check. */
+    toVerify: (requestsQuery.data ?? []).filter(
+      (booking) =>
+        booking.status === "hold" && bookingInvoiceOf(booking)?.status === "pending_verification",
+    ),
     /** The store's travel fees by area code. */
     areaFees: areaFeesQuery.data ?? {},
     setStatus: statusMutation.mutate,
