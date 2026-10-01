@@ -9,6 +9,7 @@ import { User } from "lucide-react";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { isCatalogMode } from "@/lib/storefront-mode";
 import { calculateShippingFee } from "@/lib/shipping";
+import { bookingOfCart } from "@/lib/bookings/cart";
 import { usePaymentReturnError } from "@/features/checkout/hooks/use-payment-return-error";
 import { useCheckoutForm } from "@/features/checkout/hooks/use-checkout-form";
 import { useCustomerPrefill } from "@/features/checkout/hooks/use-customer-prefill";
@@ -79,6 +80,8 @@ function Checkout() {
     checkRegisteredAccount,
   } = useRegisteredAccountCheck({ brand, session });
 
+  // A cart finishing a booking is a service appointment, not a delivery.
+  const appointment = bookingOfCart(cart);
   const {
     fulfillmentOptions,
     fulfillment,
@@ -93,7 +96,7 @@ function Checkout() {
     method,
     setMethod,
     estimatedDeliveryText,
-  } = useCheckoutFulfillment({ settings, lang });
+  } = useCheckoutFulfillment({ settings, lang, appointment });
 
   const {
     branches,
@@ -128,12 +131,15 @@ function Checkout() {
 
   const deliveryFee = useMemo(() => {
     if (fulfillment !== "delivery") return 0;
+    // A booking pays the trip to its event's area (the server sets the real
+    // fee from the same table), not the store's shipping settings.
+    if (appointment) return Number(appointment.travelFee ?? 0);
     return calculateShippingFee(
       selectedZone,
       totalCartQuantity,
       Number(settings.delivery_fee || 0),
     );
-  }, [fulfillment, selectedZone, totalCartQuantity, settings.delivery_fee]);
+  }, [fulfillment, appointment, selectedZone, totalCartQuantity, settings.delivery_fee]);
 
   const { cartSessionId } = useAbandonedCart({
     brand,
@@ -303,6 +309,7 @@ function Checkout() {
 
         {fulfillmentOptions.length > 0 && (
           <FulfillmentMethodCard
+            appointment={Boolean(appointment)}
             currency={currency}
             estimatedDeliveryText={estimatedDeliveryText}
             fulfillment={fulfillment}
@@ -338,6 +345,7 @@ function Checkout() {
 
         {fulfillment === "delivery" && (
           <DeliveryAddressCard
+            appointment={Boolean(appointment)}
             currency={currency}
             form={form}
             handleAddressChange={handleAddressChange}
@@ -409,6 +417,7 @@ function Checkout() {
           setPromoInput={setPromoInput}
           setShareOpen={setShareOpen}
           shareOpen={shareOpen}
+          appointment={appointment}
           shipping={shipping}
           submit={submit}
           submitting={submitting}

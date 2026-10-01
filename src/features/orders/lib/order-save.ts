@@ -56,8 +56,11 @@ export function orderSavePayload(
     notes: order.notes,
     fulfillment_method: fulfillmentMethod,
     branch_id: fulfillmentMethod === "pickup" ? (order.branch_id ?? null) : null,
+    // An appointment keeps the address the customer gave for the event.
     shipping_address_id:
-      fulfillmentMethod === "delivery" ? (order.shipping_address_id ?? null) : null,
+      fulfillmentMethod === "delivery" || fulfillmentMethod === "appointment"
+        ? (order.shipping_address_id ?? null)
+        : null,
     digital_delivery_channel:
       fulfillmentMethod === "digital" ? order.digital_delivery_channel : null,
     digital_delivery_contact:

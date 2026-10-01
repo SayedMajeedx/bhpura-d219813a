@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
+import { CalendarDays, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { resolvePaymentStatus } from "@/lib/payment-status";
@@ -73,6 +73,7 @@ export function queueActionState(ctx: OrderQueueActionContext, o: Order) {
 
   const isPickup = String(o.fulfillment_method || "").toLowerCase() === "pickup";
   const isDigital = String(o.fulfillment_method || "").toLowerCase() === "digital";
+  const isAppointment = String(o.fulfillment_method || "").toLowerCase() === "appointment";
 
   const handleStatusUpdate = async (payload: Record<string, any>, successMsg: string) => {
     setUpdatingOrderId(o.id);
@@ -127,6 +128,7 @@ export function queueActionState(ctx: OrderQueueActionContext, o: Order) {
     isCod,
     isPickup,
     isDigital,
+    isAppointment,
     handleStatusUpdate,
   };
 }
@@ -152,6 +154,7 @@ export function renderOrderQueueAction(ctx: OrderQueueActionContext, o: Order) {
   const state = queueActionState(ctx, o);
   const {
     handleStatusUpdate,
+    isAppointment,
     isCancelled,
     isDelivered,
     isDigital,
@@ -165,13 +168,17 @@ export function renderOrderQueueAction(ctx: OrderQueueActionContext, o: Order) {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 shadow-sm dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400">
         <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-        {isPickup
+        {isAppointment
           ? lang === "ar"
-            ? "تم الاستلام"
-            : "Picked Up"
-          : lang === "ar"
-            ? "تم التوصيل"
-            : "Delivered"}
+            ? "تم تنفيذ الخدمة"
+            : "Service done"
+          : isPickup
+            ? lang === "ar"
+              ? "تم الاستلام"
+              : "Picked Up"
+            : lang === "ar"
+              ? "تم التوصيل"
+              : "Delivered"}
       </span>
     );
   }
@@ -187,6 +194,52 @@ export function renderOrderQueueAction(ctx: OrderQueueActionContext, o: Order) {
             ? "ملغي"
             : "Cancelled"}
       </span>
+    );
+  }
+
+  // An appointment is not packed or shipped: it waits for its day, then the
+  // service is carried out (collecting any balance).
+  if (isAppointment && workflow.nextAction !== "validate_payment") {
+    const collects = workflow.nextAction === "collect_and_complete_service";
+    if (workflow.nextAction !== "complete_service" && !collects) {
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+          <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+          {lang === "ar" ? "بانتظار الموعد" : "Awaiting appointment"}
+        </span>
+      );
+    }
+    return (
+      <Button
+        size="sm"
+        className="h-8 px-3 text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700"
+        disabled={updatingOrderId !== null}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleStatusUpdate(
+            {
+              fulfillment_status: "COMPLETED",
+              status: "completed",
+              ...(collects ? { payment_status: "paid" } : {}),
+            },
+            lang === "ar" ? "تم تنفيذ الخدمة" : "Service completed",
+          );
+        }}
+      >
+        {isUpdating ? (
+          <Loader2 className="animate-spin h-3.5 w-3.5" />
+        ) : collects ? (
+          lang === "ar" ? (
+            "تحصيل وإتمام الخدمة"
+          ) : (
+            "Collect & complete"
+          )
+        ) : lang === "ar" ? (
+          "تم تنفيذ الخدمة"
+        ) : (
+          "Service done"
+        )}
+      </Button>
     );
   }
 

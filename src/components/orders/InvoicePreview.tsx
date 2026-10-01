@@ -15,6 +15,13 @@ import { useVocabulary } from "@/hooks/use-vocabulary";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 import { branchesQueries } from "@/lib/data/branches";
 import { addonDataQueries } from "@/lib/data/addons";
+import { bookingsQueries } from "@/lib/data/bookings";
+import {
+  appointmentText,
+  bookingOfOrder,
+  fulfillmentMethodText,
+} from "@/lib/bookings/order-appointment";
+import { InvoiceAppointment } from "@/components/orders/InvoiceAppointment";
 
 type SavedAddress = {
   id?: string;
@@ -233,6 +240,12 @@ export default function InvoicePreview({
     enabled: Boolean(brandId && !propsBrandAddons),
   });
   const effectiveAddons = propsBrandAddons ?? brandAddonsQ.data;
+  // An appointment order shows when it happens, in the store's timezone.
+  const orderBooking = bookingOfOrder(order);
+  const bookingRulesQ = useQuery({
+    ...bookingsQueries.settings(brandId ?? ""),
+    enabled: Boolean(brandId && orderBooking),
+  });
   const addonDefaults = variantAxisDefaultsFrom(
     effectiveAddons,
     storeVertical ?? settings?.store_vertical,
@@ -255,6 +268,9 @@ export default function InvoicePreview({
   const { vocabulary } = useVocabulary();
   const L = INVOICE_LABELS[invoiceLang];
   const isRTL = invoiceLang === "ar";
+  const appointment = orderBooking
+    ? appointmentText(orderBooking, bookingRulesQ.data?.timezone ?? "Asia/Bahrain", isRTL)
+    : null;
   const locale = isRTL ? "ar-BH-u-nu-latn" : "en-US";
   const money = (n: number) => {
     const s = formatMoney(n, currency, locale);
@@ -556,7 +572,13 @@ export default function InvoicePreview({
                       className={`text-xs mb-1 ${isRTL ? "" : ""}`}
                       style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
                     >
-                      {isRTL ? "عنوان التوصيل" : "Delivery address"}
+                      {order.fulfillment_method === "appointment"
+                        ? isRTL
+                          ? "عنوان المناسبة"
+                          : "Event address"
+                        : isRTL
+                          ? "عنوان التوصيل"
+                          : "Delivery address"}
                     </p>
                     {detailed ? (
                       <p className="text-sm leading-relaxed" style={{ opacity: 0.85 }}>
@@ -597,18 +619,15 @@ export default function InvoicePreview({
                     {isRTL ? "طريقة التسليم" : "Fulfillment Method"}
                   </p>
                   <p className="font-bold text-base" style={{ color: surfaceCardTextColor }}>
-                    {order.fulfillment_method === "digital"
-                      ? isRTL
-                        ? "تسليم رقمي"
-                        : "Digital delivery"
-                      : order.fulfillment_method === "pickup"
-                        ? isRTL
-                          ? "استلام"
-                          : "Pickup"
-                        : isRTL
-                          ? "توصيل للمنزل"
-                          : "Home delivery"}
+                    {fulfillmentMethodText(order.fulfillment_method, isRTL)}
                   </p>
+                  {appointment && (
+                    <InvoiceAppointment
+                      appointment={appointment}
+                      isRTL={isRTL}
+                      color={surfaceCardTextColor}
+                    />
+                  )}
                 </div>
                 {order.fulfillment_method === "digital" && (
                   <div

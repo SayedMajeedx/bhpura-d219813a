@@ -17,6 +17,8 @@ export type CartBooking = {
   expiresAt: string;
   /** The store's card deposit, 0 when a card pays in full. */
   depositPercent?: number;
+  /** The trip to the event's area, when the store charges one (the server sets the real fee). */
+  travelFee?: number | null;
 };
 
 /** What hold_booking returns. */

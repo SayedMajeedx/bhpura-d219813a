@@ -68,6 +68,7 @@ export const FULFILLMENT_METHOD_FILTER_OPTIONS = [
   { value: "delivery", ar: "توصيل للمنزل", en: "Home delivery" },
   { value: "pickup", ar: "استلام", en: "Pickup" },
   { value: "digital", ar: "تسليم رقمي", en: "Digital delivery" },
+  { value: "appointment", ar: "موعد خدمة", en: "Service appointment" },
 ] as const;
 
 const GATEWAY_FILTER_OPTIONS: Array<{ value: PaymentMethodFilter; ar: string; en: string }> = [

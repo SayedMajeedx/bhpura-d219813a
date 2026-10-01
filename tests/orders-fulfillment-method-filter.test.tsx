@@ -40,8 +40,8 @@ describe("orders fulfillment-method filter", () => {
   });
 
   it("offers exactly the methods the orders table allows", () => {
-    // orders_fulfillment_method_check: delivery | pickup | digital
+    // orders_fulfillment_method_check: delivery | pickup | digital | appointment
     const values = FULFILLMENT_METHOD_FILTER_OPTIONS.map((option) => option.value);
-    expect(values).toEqual(["all", "delivery", "pickup", "digital"]);
+    expect(values).toEqual(["all", "delivery", "pickup", "digital", "appointment"]);
   });
 });

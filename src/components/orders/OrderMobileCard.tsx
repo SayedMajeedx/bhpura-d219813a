@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { getStoredPaymentMethodPresentation } from "@/lib/payment-method";
 import { maskPhoneForList } from "@/lib/privacy";
 import type { OrderListRow } from "@/lib/data/orders";
+import { OrderAppointmentLine } from "@/components/orders/OrderAppointmentLine";
 
 interface OrderMobileCardProps {
   lang: "en" | "ar";
@@ -115,6 +116,8 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
           </span>
         )}
       </div>
+
+      <OrderAppointmentLine order={order} isAr={isAr} />
 
       {/* Primary Action Button Bar */}
       <div className="pt-1 flex items-center justify-end gap-2 border-t border-border-subtle">

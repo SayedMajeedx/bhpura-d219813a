@@ -251,6 +251,59 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
     );
   }
 
+  // An appointment whose time has come: the service was carried out. Any
+  // balance (cash, or the rest after a deposit) is collected with it; the
+  // booking follows the order to "completed" (sync_bookings_with_order).
+  if (
+    workflow.nextAction === "complete_service" ||
+    workflow.nextAction === "collect_and_complete_service"
+  ) {
+    const collects = workflow.nextAction === "collect_and_complete_service";
+    return (
+      <Button
+        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
+        onClick={async () => {
+          try {
+            const updatePayload: OrderPatch = {
+              fulfillment_status: "COMPLETED",
+              status: "completed",
+              delivered_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+            if (collects) updatePayload.payment_status = "paid";
+            await updateOrder(brandId, order.id, updatePayload);
+            toast.success(lang === "ar" ? "تم تنفيذ الخدمة وإتمام الطلب" : "Service completed");
+            await logActivity({
+              action: "status_change",
+              order_id: order.id,
+              en: collects
+                ? "Collected the balance and completed the service"
+                : "Completed the service",
+              ar: collects ? "تحصيل المبلغ المتبقي وإتمام الخدمة" : "تم تنفيذ الخدمة",
+            });
+            await orderQ.refetch();
+            invalidateOrders(qc, brandId);
+            invalidateActivityLogs(qc);
+          } catch (err: unknown) {
+            toast.error(
+              getFriendlyErrorMessage(err) ||
+                (lang === "ar" ? "تعذر إتمام الخدمة" : "Unable to complete the service"),
+            );
+          }
+        }}
+      >
+        <CheckCircle2 className="h-4 w-4 me-1.5" />
+        {collects
+          ? lang === "ar"
+            ? "تحصيل المتبقي وإتمام الخدمة"
+            : "Collect balance & complete"
+          : lang === "ar"
+            ? "تم تنفيذ الخدمة"
+            : "Service done"}
+      </Button>
+    );
+  }
+
   if (workflow.nextAction === "mark_completed") {
     return (
       <Button

@@ -334,6 +334,14 @@ export function getFulfillmentBadgeDetails(
   vocab?: Partial<StoreVocabulary> | StoreVocabulary,
 ): { label: string; classes: string } {
   const s = String(status || "ON_HOLD").toUpperCase();
+  const isAppointment = String(fulfillmentMethod ?? "").toLowerCase() === "appointment";
+  if (s === "SCHEDULED") {
+    return {
+      label: lang === "ar" ? "موعد مجدول" : "Scheduled",
+      classes:
+        "bg-indigo-100 text-indigo-900 border border-indigo-300/80 font-semibold shadow-2xs dark:bg-indigo-950/40 dark:text-indigo-300",
+    };
+  }
   if (s === "SENT_TO_TAILOR" || s === "SENT_TO_WORKSHOP") {
     const label =
       vocab?.sent_to_workshop?.[lang] || (lang === "ar" ? "تم الإرسال للورشة" : "Sent to Workshop");
@@ -391,13 +399,17 @@ export function getFulfillmentBadgeDetails(
   if (s === "COMPLETED" || s === "DELIVERED") {
     const isPickup = String(fulfillmentMethod ?? "").toLowerCase() === "pickup";
     return {
-      label: isPickup
+      label: isAppointment
         ? lang === "ar"
-          ? "تم الاستلام"
-          : "Picked Up"
-        : lang === "ar"
-          ? "تم التوصيل"
-          : "Delivered",
+          ? "تم تنفيذ الخدمة"
+          : "Service done"
+        : isPickup
+          ? lang === "ar"
+            ? "تم الاستلام"
+            : "Picked Up"
+          : lang === "ar"
+            ? "تم التوصيل"
+            : "Delivered",
       classes:
         "bg-emerald-100 text-emerald-900 border border-emerald-300/80 font-semibold shadow-2xs dark:bg-emerald-950/40 dark:text-emerald-300",
     };

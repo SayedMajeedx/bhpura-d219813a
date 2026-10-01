@@ -6,6 +6,12 @@ import { formatAddressDetailed, regionLabel, type StructuredAddress } from "@/li
 import { resolvePaymentStatus, PAYMENT_BADGE_LABEL } from "@/lib/payment-status";
 import { getInvoiceStatusLabel } from "@/lib/status-labels";
 import { getOrderCustomerEmail } from "@/lib/order-customer-snapshot";
+import {
+  appointmentText,
+  bookingOfOrder,
+  fulfillmentMethodText,
+} from "@/lib/bookings/order-appointment";
+import { InvoiceAppointment } from "@/components/orders/InvoiceAppointment";
 
 import { getReadableTextColor } from "@/lib/color-utils";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
@@ -120,7 +126,8 @@ const PAY: Record<string, { en: string; ar: string }> = {
 };
 
 function PublicInvoice() {
-  const { order, settings, shippingAddress, branch, brandAddons } = Route.useLoaderData() as any;
+  const { order, settings, shippingAddress, branch, brandAddons, bookingTimezone } =
+    Route.useLoaderData() as any;
   const [lang, setLang] = useState<"en" | "ar">("en");
   const [copied, setCopied] = useState(false);
   const L = LABELS[lang];
@@ -138,6 +145,11 @@ function PublicInvoice() {
   const showTerms = settings?.invoice_show_terms !== false;
   const showContact = settings?.invoice_show_customer_contact !== false;
   const showFulfillment = settings?.invoice_show_fulfillment !== false;
+  // An appointment order shows when it happens, in the store's timezone.
+  const orderBooking = bookingOfOrder(order);
+  const appointment = orderBooking
+    ? appointmentText(orderBooking, bookingTimezone ?? "Asia/Bahrain", isRTL)
+    : null;
   const showNotes = settings?.invoice_show_notes !== false;
   const logoX = Number(settings?.logo_x) || 0;
   const logoY = Number(settings?.logo_y) || 0;
@@ -490,18 +502,15 @@ function PublicInvoice() {
                     {isRTL ? "طريقة التسليم" : "Fulfillment Method"}
                   </p>
                   <p className="font-bold text-base" style={{ color: surfaceCardTextColor }}>
-                    {order.fulfillment_method === "digital"
-                      ? isRTL
-                        ? "تسليم رقمي"
-                        : "Digital delivery"
-                      : order.fulfillment_method === "pickup"
-                        ? isRTL
-                          ? "استلام"
-                          : "Pickup"
-                        : isRTL
-                          ? "توصيل للمنزل"
-                          : "Home delivery"}
+                    {fulfillmentMethodText(order.fulfillment_method, isRTL)}
                   </p>
+                  {appointment && (
+                    <InvoiceAppointment
+                      appointment={appointment}
+                      isRTL={isRTL}
+                      color={surfaceCardTextColor}
+                    />
+                  )}
                 </div>
                 {order.fulfillment_method === "digital" && (
                   <p
@@ -528,14 +537,16 @@ function PublicInvoice() {
                       : ""}
                   </p>
                 )}
-                {order.fulfillment_method === "delivery" && (addrLine || legacyRegion) && (
-                  <p
-                    className="mt-1 text-xs"
-                    style={{ color: surfaceCardTextColor, opacity: 0.85 }}
-                  >
-                    {addrLine || legacyRegion}
-                  </p>
-                )}
+                {(order.fulfillment_method === "delivery" ||
+                  order.fulfillment_method === "appointment") &&
+                  (addrLine || legacyRegion) && (
+                    <p
+                      className="mt-1 text-xs"
+                      style={{ color: surfaceCardTextColor, opacity: 0.85 }}
+                    >
+                      {addrLine || legacyRegion}
+                    </p>
+                  )}
               </div>
             )}
 
