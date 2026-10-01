@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Banknote, CreditCard, Download, QrCode, Store, Truck } from "lucide-react";
+import { Banknote, CreditCard, Download, MapPin, QrCode, Store, Truck } from "lucide-react";
 import type { ShippingZone } from "@/lib/shipping";
 import type { Fulfillment, Storefront } from "@/features/checkout/types";
 
@@ -11,12 +11,35 @@ import type { Fulfillment, Storefront } from "@/features/checkout/types";
 export function useCheckoutFulfillment({
   settings,
   lang,
+  appointment = null,
 }: {
   settings: Storefront["settings"];
   lang: Storefront["lang"];
+  /**
+   * The booking the cart is finishing. A booked service is not delivered:
+   * it happens at the customer's venue (the travel fee applies) or, when the
+   * store has a pickup place, at the store's.
+   */
+  appointment?: { travelFee?: number | null } | null;
 }) {
+  const isAppointment = Boolean(appointment);
+  const travelFee = Number(appointment?.travelFee ?? 0);
   const fulfillmentOptions = useMemo(() => {
     const opts: Array<{ id: Fulfillment; ar: string; en: string; icon: any; fee: number }> = [];
+    if (isAppointment) {
+      // Whatever the store's shop settings (a services store may have
+      // delivery off), a booking can always happen at the customer's venue.
+      opts.push({
+        id: "delivery",
+        ar: "في موقع مناسبتي",
+        en: "At my venue",
+        icon: MapPin,
+        fee: travelFee,
+      });
+      if (settings.pickup_enabled)
+        opts.push({ id: "pickup", ar: "في مقرّكم", en: "At your place", icon: Store, fee: 0 });
+      return opts;
+    }
     if (settings.delivery_enabled)
       opts.push({
         id: "delivery",
@@ -43,6 +66,8 @@ export function useCheckoutFulfillment({
       });
     return opts;
   }, [
+    isAppointment,
+    travelFee,
     settings.delivery_enabled,
     settings.pickup_enabled,
     settings.digital_delivery_enabled,
@@ -95,8 +120,8 @@ export function useCheckoutFulfillment({
     }> = [
       settings.cod_enabled && {
         id: "cod" as const,
-        ar: "الدفع عند الاستلام",
-        en: "Cash on delivery",
+        ar: isAppointment ? "الدفع يوم الموعد" : "الدفع عند الاستلام",
+        en: isAppointment ? "Pay on the day" : "Cash on delivery",
         icon: Banknote,
       },
       settings.card_enabled && {
@@ -123,6 +148,7 @@ export function useCheckoutFulfillment({
 
     return base;
   }, [
+    isAppointment,
     settings.cod_enabled,
     settings.card_enabled,
     settings.benefit_enabled,
@@ -148,6 +174,9 @@ export function useCheckoutFulfillment({
   }, [method, availableMethods]);
 
   const estimatedDeliveryText = useMemo(() => {
+    if (isAppointment) {
+      return lang === "ar" ? "في موعد حجزك" : "At your booked time";
+    }
     if (fulfillment === "pickup") {
       return lang === "ar" ? "بعد إشعار جاهزية الطلب" : "After your ready notification";
     }
@@ -166,6 +195,7 @@ export function useCheckoutFulfillment({
     }
     return lang === "ar" ? "خلال 3 - 5 أيام عمل" : "3 - 5 business days";
   }, [
+    isAppointment,
     fulfillment,
     selectedDestination,
     selectedZone,

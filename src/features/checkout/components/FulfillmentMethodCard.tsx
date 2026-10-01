@@ -15,7 +15,10 @@ export function FulfillmentMethodCard({
   setFulfillment,
   settings,
   t,
+  appointment = false,
 }: {
+  /** The order is a booked service: where it happens, not how it ships. */
+  appointment?: boolean;
   currency: Storefront["currency"];
   estimatedDeliveryText: ReturnType<typeof useCheckoutFulfillment>["estimatedDeliveryText"];
   fulfillment: ReturnType<typeof useCheckoutFulfillment>["fulfillment"];
@@ -27,7 +30,11 @@ export function FulfillmentMethodCard({
 }) {
   return (
     <Card className="p-5 space-y-3">
-      <h2 className="font-display text-xl">{t("طريقة التسليم", "Fulfillment method")}</h2>
+      <h2 className="font-display text-xl">
+        {appointment
+          ? t("أين تُقدَّم الخدمة؟", "Where is the service?")
+          : t("طريقة التسليم", "Fulfillment method")}
+      </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {fulfillmentOptions.map((opt) => {
           const Icon = opt.icon;
@@ -59,17 +66,19 @@ export function FulfillmentMethodCard({
           );
         })}
       </div>
-      {fulfillment === "delivery" && settings.delivery_estimate_enabled !== false && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground bg-primary/5 rounded-lg px-3 py-2 border border-primary/10 mt-2">
-          <Truck className="h-4 w-4 text-primary shrink-0" />
-          <span>
-            <strong className="text-foreground font-semibold">
-              {t("التوصيل المتوقع", "Estimated delivery")}:
-            </strong>{" "}
-            {estimatedDeliveryText}
-          </span>
-        </div>
-      )}
+      {!appointment &&
+        fulfillment === "delivery" &&
+        settings.delivery_estimate_enabled !== false && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-primary/5 rounded-lg px-3 py-2 border border-primary/10 mt-2">
+            <Truck className="h-4 w-4 text-primary shrink-0" />
+            <span>
+              <strong className="text-foreground font-semibold">
+                {t("التوصيل المتوقع", "Estimated delivery")}:
+              </strong>{" "}
+              {estimatedDeliveryText}
+            </span>
+          </div>
+        )}
     </Card>
   );
 }

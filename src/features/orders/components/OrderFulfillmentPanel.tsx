@@ -89,18 +89,25 @@ export function OrderFulfillmentPanel({
   );
   const defaultAddress =
     customerAddresses.find((item) => item.is_default) ?? customerAddresses[0] ?? null;
+  // An order placed for a booking is an appointment: its method is set by the
+  // booking, so it is not switched here (and has no courier).
+  const isAppointment = method === "appointment";
   const title =
     method === "digital"
       ? lang === "ar"
         ? "تسليم رقمي"
         : "Digital delivery"
-      : method === "pickup"
+      : isAppointment
         ? lang === "ar"
-          ? "استلام"
-          : "Pickup"
-        : lang === "ar"
-          ? "توصيل"
-          : "Delivery";
+          ? "موعد خدمة"
+          : "Service appointment"
+        : method === "pickup"
+          ? lang === "ar"
+            ? "استلام"
+            : "Pickup"
+          : lang === "ar"
+            ? "توصيل"
+            : "Delivery";
   return (
     <div className="mt-5 overflow-hidden rounded-xl border bg-muted/20 text-start shadow-sm">
       <div className="flex flex-col gap-2.5 border-b bg-muted/50 px-4 py-3">
@@ -110,7 +117,7 @@ export function OrderFulfillmentPanel({
           </p>
           <p className="text-base font-semibold leading-tight text-foreground mt-0.5">{title}</p>
         </div>
-        <div className="w-full">
+        <div className={isAppointment ? "hidden" : "w-full"}>
           <Label className="sr-only">
             {lang === "ar" ? "طريقة التسليم" : "Fulfillment method"}
           </Label>
@@ -311,7 +318,15 @@ export function OrderFulfillmentPanel({
           <div className="grid gap-4 grid-cols-1">
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <Label>{lang === "ar" ? "عنوان التوصيل" : "Delivery address"}</Label>
+                <Label>
+                  {isAppointment
+                    ? lang === "ar"
+                      ? "عنوان المناسبة"
+                      : "Event address"
+                    : lang === "ar"
+                      ? "عنوان التوصيل"
+                      : "Delivery address"}
+                </Label>
                 {defaultAddress && (
                   <button
                     type="button"
@@ -357,7 +372,15 @@ export function OrderFulfillmentPanel({
               </p>
             </div>
             <div>
-              <Label>{lang === "ar" ? "رسوم التوصيل" : "Delivery fee"}</Label>
+              <Label>
+                {isAppointment
+                  ? lang === "ar"
+                    ? "رسوم التنقل"
+                    : "Travel fee"
+                  : lang === "ar"
+                    ? "رسوم التوصيل"
+                    : "Delivery fee"}
+              </Label>
               <BhdFeeInput
                 value={Number(order.shipping ?? 0)}
                 disabled={isReadOnly}

@@ -80,10 +80,17 @@ send-order-email`.
   length; the booking flow asks the services' questions and books services
   only; the server-rendered home page carries the columns the cards read
   (migration 20261001140000).
-- **S3: orders.** An `appointment` fulfillment with its own stages
-  (confirmed, scheduled, in progress, completed) that follow the booking;
-  the appointment in the orders list and on the invoice (public invoice
-  through its database function).
+- **S3: orders** (done, PR #187). An order placed for a booking is an
+  `appointment` (`orders.fulfillment_method`, set when the booking is linked
+  to its order): stages Scheduled → Service done instead of packing and
+  shipping, a "Service done" / "Collect balance & complete" action once the
+  appointment has started, the appointment (day, time) on its row in the
+  orders list, a method filter, its own labels, the event address kept, and
+  the appointment on both invoices (admin preview and public). The checkout
+  asks "Where is the service?" (at my venue with the travel fee, or at your
+  place), shows the travel fee and the appointment in the summary, and says
+  "Pay on the day". Per-service capacity, setup buffer and notice remain for
+  the booking-engine step.
 - **S4: the customer's journey.** Product page: duration chip, "What's
   included", "Booking & cancellation", suggested extras. Checkout: "Where?"
   (at your place: address and area, travel fee; at our venue: branch) in

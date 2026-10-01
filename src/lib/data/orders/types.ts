@@ -7,6 +7,11 @@ export type OrderScope = "office" | "assigned-courier";
 export type OrderListRow = Tables<"orders"> & {
   customers: Tables<"customers"> | null;
   order_items: Tables<"order_items">[];
+  /** The booking the order was placed for (at most one), when it is an appointment. */
+  bookings: Pick<
+    Tables<"bookings">,
+    "id" | "reference" | "status" | "event_date" | "starts_at" | "ends_at"
+  >[];
 };
 
 /** A row of `ORDER_DETAIL_SELECT`. */

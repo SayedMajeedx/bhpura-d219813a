@@ -231,6 +231,28 @@ describe("launch security regressions", () => {
     expect(sql).toContain("'deposit_percent', s.deposit_percent");
   });
 
+  it("makes an order placed for a booking an appointment, without shipping it", () => {
+    const sql = readFileSync("supabase/migrations/20261001160000_appointment_orders.sql", "utf8");
+    expect(sql).toContain("'digital'::text, 'appointment'::text");
+    // A booking linked to its order makes it an appointment (and the orders already placed).
+    expect(sql).toMatch(
+      /CREATE TRIGGER booking_marks_order_appointment\s+AFTER INSERT OR UPDATE OF order_id ON public\.bookings/,
+    );
+    expect(sql).toContain("AND fulfillment_method IN ('delivery', 'pickup');");
+    expect(sql).toContain(
+      "REVOKE ALL ON FUNCTION public.booking_marks_order_appointment() FROM PUBLIC, anon, authenticated;",
+    );
+    // The event's address is kept; shipping messages are for deliveries only.
+    expect(sql).toContain("not in ('delivery', 'appointment')");
+    expect(sql).toContain("NOT IN ('pickup', 'appointment')");
+    expect(sql).not.toContain("<> 'pickup'");
+    // Everything else of the two redefined functions is kept.
+    expect(sql).toContain("enqueue_order_whatsapp_event(NEW.id, 'order_delivered')");
+    expect(sql).toContain(
+      "The selected delivery address does not belong to this customer and brand.",
+    );
+  });
+
   it("server-renders the home page with every column the product cards read", () => {
     const sql = readFileSync(
       "supabase/migrations/20261001140000_storefront_page_data_services.sql",

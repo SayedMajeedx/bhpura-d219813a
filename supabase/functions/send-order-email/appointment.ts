@@ -110,6 +110,8 @@ export function appointmentHtml(order: OrderForAppointment, isAr: boolean): stri
 export function fulfillmentText(order: OrderForAppointment, isAr: boolean): string {
   if (emailAppointment(order, isAr)) return isAr ? "موعد خدمة" : "Service appointment";
   switch (order.fulfillment_method) {
+    case "appointment":
+      return isAr ? "موعد خدمة" : "Service appointment";
     case "delivery":
       return isAr ? "توصيل" : "Home delivery";
     case "pickup":

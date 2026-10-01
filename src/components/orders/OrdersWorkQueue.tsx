@@ -1,3 +1,4 @@
+import { OrderAppointmentLine } from "@/components/orders/OrderAppointmentLine";
 import React from "react";
 import { Link } from "@tanstack/react-router";
 import { formatMoney, formatDate } from "@/lib/format";
@@ -263,6 +264,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                         </span>
                       )}
                     </div>
+                    <OrderAppointmentLine order={order} isAr={isAr} />
 
                     {/* Assigned Courier Badge / Quick Assign */}
                     {isDelivery && (

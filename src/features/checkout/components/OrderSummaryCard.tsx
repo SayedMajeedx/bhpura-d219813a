@@ -1,3 +1,6 @@
+import type { CartBooking } from "@/lib/bookings/cart";
+import { dayTitle, formatClock } from "@/lib/bookings/format";
+import { minutesOf, timeOf } from "@/lib/bookings/rules";
 import { Link } from "@tanstack/react-router";
 import { formatPrice } from "@/lib/storefront-context";
 import { displayVariantParts } from "@/lib/variant-sku-utils";
@@ -30,6 +33,7 @@ export function OrderSummaryCard({
   checkingPromo,
   currency,
   estimatedDeliveryText,
+  appointment = null,
   estimatedPointsToEarn,
   fulfillment,
   fulfillmentOptions,
@@ -69,6 +73,8 @@ export function OrderSummaryCard({
   checkingPromo: ReturnType<typeof usePromoCode>["checkingPromo"];
   currency: Storefront["currency"];
   estimatedDeliveryText: ReturnType<typeof useCheckoutFulfillment>["estimatedDeliveryText"];
+  /** The booking the order is for: its day and time replace the delivery estimate. */
+  appointment?: CartBooking | null;
   estimatedPointsToEarn: ReturnType<typeof useCheckoutLoyalty>["estimatedPointsToEarn"];
   fulfillment: ReturnType<typeof useCheckoutFulfillment>["fulfillment"];
   fulfillmentOptions: ReturnType<typeof useCheckoutFulfillment>["fulfillmentOptions"];
@@ -207,7 +213,22 @@ export function OrderSummaryCard({
           <span className="text-muted-foreground">{t("المجموع الفرعي", "Subtotal")}</span>
           <span>{formatPrice(cartTotal, currency, lang)}</span>
         </div>
-        {fulfillment === "delivery" && (
+        {appointment && (
+          <div className="flex justify-between gap-3">
+            <span className="text-muted-foreground">{t("موعدك", "Your appointment")}</span>
+            <span className="text-end font-medium text-foreground">
+              {dayTitle(appointment.day, lang === "ar")}
+              <span dir="ltr" className="block">
+                {formatClock(appointment.start, lang === "ar")} –{" "}
+                {formatClock(
+                  timeOf(minutesOf(appointment.start) + appointment.durationMinutes),
+                  lang === "ar",
+                )}
+              </span>
+            </span>
+          </div>
+        )}
+        {!appointment && fulfillment === "delivery" && (
           <div className="flex justify-between gap-3">
             <span className="text-muted-foreground">
               {t("التوصيل المتوقع", "Estimated delivery")}
@@ -215,14 +236,16 @@ export function OrderSummaryCard({
             <span className="font-medium text-foreground text-end">{estimatedDeliveryText}</span>
           </div>
         )}
-        {fulfillment === "pickup" && (
+        {!appointment && fulfillment === "pickup" && (
           <div className="flex justify-between gap-3">
             <span className="text-muted-foreground">{t("موعد الاستلام", "Pickup timing")}</span>
             <span className="font-medium text-foreground text-end">{estimatedDeliveryText}</span>
           </div>
         )}
         <div className="flex justify-between">
-          <span className="text-muted-foreground">{t("رسوم التوصيل", "Delivery fee")}</span>
+          <span className="text-muted-foreground">
+            {appointment ? t("رسوم التنقل", "Travel fee") : t("رسوم التوصيل", "Delivery fee")}
+          </span>
           <span>{shipping > 0 ? formatPrice(shipping, currency, lang) : t("مجانًا", "Free")}</span>
         </div>
         {promoDiscount > 0 && (

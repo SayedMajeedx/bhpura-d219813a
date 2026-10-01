@@ -100,6 +100,7 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
           start: flow.start!,
           durationMinutes: flow.durationMinutes!,
           depositPercent: rules?.deposit_percent ?? 0,
+          travelFee: rules ? travelFeeFor(rules, flow.areaCode) : null,
         },
         services,
       );

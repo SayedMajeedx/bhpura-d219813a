@@ -36,6 +36,7 @@ export function DeliveryAddressCard({
   t,
   totalCartQuantity,
   zones,
+  appointment = false,
 }: {
   currency: Storefront["currency"];
   form: CheckoutForm;
@@ -54,10 +55,16 @@ export function DeliveryAddressCard({
   t: Storefront["t"];
   totalCartQuantity: number;
   zones: ReturnType<typeof useCheckoutFulfillment>["zones"];
+  /** The order is a booked service: the address is where it happens. */
+  appointment?: boolean;
 }) {
   return (
     <Card className="p-5 space-y-4">
-      <h2 className="font-display text-xl">{t("عنوان التوصيل", "Delivery address")}</h2>
+      <h2 className="font-display text-xl">
+        {appointment
+          ? t("عنوان المناسبة", "Event address")
+          : t("عنوان التوصيل", "Delivery address")}
+      </h2>
 
       {savedAddresses.length > 0 && (
         <div className="mb-4">
@@ -87,100 +94,24 @@ export function DeliveryAddressCard({
         </div>
       )}
 
-      {/* Delivery Destination Options */}
-      <div className="space-y-2 mb-4">
-        <Label className="font-semibold text-sm mb-1.5 block">
-          {t("وجهة التوصيل والشحن", "Delivery Destination")} *
-        </Label>
-        <div className="grid grid-cols-1 gap-2.5">
-          {/* 1. Bahrain Domestic (Default) */}
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={() => setSelectedDestination("BH")}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") setSelectedDestination("BH");
-            }}
-            className={`p-3.5 sm:p-4 rounded-xl border text-sm transition-all text-start cursor-pointer hover:bg-secondary/10 flex flex-col justify-between ${
-              selectedDestination === "BH"
-                ? "border-primary bg-primary/10 ring-1 ring-primary shadow-sm"
-                : "border-border bg-card"
-            }`}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                {/* Radio Circle */}
-                <div
-                  className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                    selectedDestination === "BH" ? "border-primary" : "border-muted-foreground/40"
-                  }`}
-                >
-                  {selectedDestination === "BH" && (
-                    <div className="w-2 h-2 rounded-full bg-primary" />
-                  )}
-                </div>
-
-                <CountryFlag
-                  code="BH"
-                  className="w-7 h-5 rounded-xs object-cover border border-border-subtle shadow-xs shrink-0"
-                />
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-foreground text-sm">
-                      {t("التوصيل داخل البحرين", "Bahrain (Domestic)")}
-                    </span>
-                    <span className="text-xs bg-primary/20 text-primary font-bold px-2 py-0.5 rounded-full shrink-0">
-                      {t("الافتراضي", "Default")}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {t("توصيل لكافة مناطق مملكة البحرين", "Delivery across all Bahrain regions")}
-                  </p>
-                </div>
-              </div>
-              <div className="text-end shrink-0 ps-2">
-                <span className="font-mono font-bold text-sm text-foreground">
-                  {Number(settings.delivery_fee || 0) > 0 ? (
-                    formatPrice(Number(settings.delivery_fee || 0), currency, lang)
-                  ) : (
-                    <span className="text-emerald-600 font-bold">{t("مجانًا", "Free")}</span>
-                  )}
-                </span>
-              </div>
-            </div>
-
-            {settings.delivery_estimate_enabled &&
-              (settings.delivery_estimate_ar || settings.delivery_estimate_en) && (
-                <div className="mt-2.5 pt-2 border-t border-border-subtle text-xs text-muted-foreground flex items-center gap-1.5">
-                  <Truck className="h-3.5 w-3.5 text-primary shrink-0" />
-                  <span>
-                    {lang === "ar" ? settings.delivery_estimate_ar : settings.delivery_estimate_en}
-                  </span>
-                </div>
-              )}
-          </div>
-
-          {/* 2. International Zones */}
-          {zones.map((z) => {
-            const active = z.id === selectedDestination;
-            const zoneShippingFee = calculateShippingFee(
-              z,
-              totalCartQuantity,
-              Number(settings.delivery_fee || 0),
-            );
-            const countryCodes = (z.countries || []).slice(0, 5);
-
-            return (
+      {/* An appointment is at an address in Bahrain: no shipping destination to choose. */}
+      {!appointment && (
+        <>
+          <div className="space-y-2 mb-4">
+            <Label className="font-semibold text-sm mb-1.5 block">
+              {t("وجهة التوصيل والشحن", "Delivery Destination")} *
+            </Label>
+            <div className="grid grid-cols-1 gap-2.5">
+              {/* 1. Bahrain Domestic (Default) */}
               <div
-                key={z.id}
                 role="button"
                 tabIndex={0}
-                onClick={() => setSelectedDestination(z.id)}
+                onClick={() => setSelectedDestination("BH")}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") setSelectedDestination(z.id);
+                  if (e.key === "Enter" || e.key === " ") setSelectedDestination("BH");
                 }}
                 className={`p-3.5 sm:p-4 rounded-xl border text-sm transition-all text-start cursor-pointer hover:bg-secondary/10 flex flex-col justify-between ${
-                  active
+                  selectedDestination === "BH"
                     ? "border-primary bg-primary/10 ring-1 ring-primary shadow-sm"
                     : "border-border bg-card"
                 }`}
@@ -190,44 +121,41 @@ export function DeliveryAddressCard({
                     {/* Radio Circle */}
                     <div
                       className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                        active ? "border-primary" : "border-muted-foreground/40"
+                        selectedDestination === "BH"
+                          ? "border-primary"
+                          : "border-muted-foreground/40"
                       }`}
                     >
-                      {active && <div className="w-2 h-2 rounded-full bg-primary" />}
+                      {selectedDestination === "BH" && (
+                        <div className="w-2 h-2 rounded-full bg-primary" />
+                      )}
                     </div>
 
-                    <div className="flex items-center -space-x-1.5 rtl:space-x-reverse shrink-0">
-                      {countryCodes.map((c) => (
-                        <CountryFlag
-                          key={c}
-                          code={c}
-                          className="w-5 h-3.5 rounded-2xs object-cover border border-background shadow-xs shrink-0"
-                        />
-                      ))}
-                    </div>
+                    <CountryFlag
+                      code="BH"
+                      className="w-7 h-5 rounded-xs object-cover border border-border-subtle shadow-xs shrink-0"
+                    />
                     <div className="min-w-0">
-                      <p className="font-semibold text-foreground text-sm">
-                        {lang === "ar" ? z.name_ar : z.name_en}
-                      </p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-foreground text-sm">
+                          {t("التوصيل داخل البحرين", "Bahrain (Domestic)")}
+                        </span>
+                        <span className="text-xs bg-primary/20 text-primary font-bold px-2 py-0.5 rounded-full shrink-0">
+                          {t("الافتراضي", "Default")}
+                        </span>
+                      </div>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {z.pricing_type === "per_piece"
-                          ? lang === "ar"
-                            ? `${formatPrice(z.fee, currency, lang)} لكل قطعة`
-                            : `${formatPrice(z.fee, currency, lang)}/piece`
-                          : z.pricing_type === "bundle"
-                            ? lang === "ar"
-                              ? `${formatPrice(z.fee, currency, lang)} لكل ${z.bundle_size || 2} قطع`
-                              : `${formatPrice(z.fee, currency, lang)} per ${z.bundle_size || 2} pcs`
-                            : lang === "ar"
-                              ? "شحن دولي محدد"
-                              : "International shipping"}
+                        {t(
+                          "توصيل لكافة مناطق مملكة البحرين",
+                          "Delivery across all Bahrain regions",
+                        )}
                       </p>
                     </div>
                   </div>
                   <div className="text-end shrink-0 ps-2">
                     <span className="font-mono font-bold text-sm text-foreground">
-                      {zoneShippingFee > 0 ? (
-                        formatPrice(zoneShippingFee, currency, lang)
+                      {Number(settings.delivery_fee || 0) > 0 ? (
+                        formatPrice(Number(settings.delivery_fee || 0), currency, lang)
                       ) : (
                         <span className="text-emerald-600 font-bold">{t("مجانًا", "Free")}</span>
                       )}
@@ -235,17 +163,109 @@ export function DeliveryAddressCard({
                   </div>
                 </div>
 
-                {(z.estimate_ar || z.estimate_en) && (
-                  <div className="mt-2.5 pt-2 border-t border-border-subtle text-xs text-muted-foreground flex items-center gap-1.5">
-                    <Truck className="h-3.5 w-3.5 text-primary shrink-0" />
-                    <span>{lang === "ar" ? z.estimate_ar : z.estimate_en}</span>
-                  </div>
-                )}
+                {settings.delivery_estimate_enabled &&
+                  (settings.delivery_estimate_ar || settings.delivery_estimate_en) && (
+                    <div className="mt-2.5 pt-2 border-t border-border-subtle text-xs text-muted-foreground flex items-center gap-1.5">
+                      <Truck className="h-3.5 w-3.5 text-primary shrink-0" />
+                      <span>
+                        {lang === "ar"
+                          ? settings.delivery_estimate_ar
+                          : settings.delivery_estimate_en}
+                      </span>
+                    </div>
+                  )}
               </div>
-            );
-          })}
-        </div>
-      </div>
+
+              {/* 2. International Zones */}
+              {zones.map((z) => {
+                const active = z.id === selectedDestination;
+                const zoneShippingFee = calculateShippingFee(
+                  z,
+                  totalCartQuantity,
+                  Number(settings.delivery_fee || 0),
+                );
+                const countryCodes = (z.countries || []).slice(0, 5);
+
+                return (
+                  <div
+                    key={z.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setSelectedDestination(z.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") setSelectedDestination(z.id);
+                    }}
+                    className={`p-3.5 sm:p-4 rounded-xl border text-sm transition-all text-start cursor-pointer hover:bg-secondary/10 flex flex-col justify-between ${
+                      active
+                        ? "border-primary bg-primary/10 ring-1 ring-primary shadow-sm"
+                        : "border-border bg-card"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {/* Radio Circle */}
+                        <div
+                          className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                            active ? "border-primary" : "border-muted-foreground/40"
+                          }`}
+                        >
+                          {active && <div className="w-2 h-2 rounded-full bg-primary" />}
+                        </div>
+
+                        <div className="flex items-center -space-x-1.5 rtl:space-x-reverse shrink-0">
+                          {countryCodes.map((c) => (
+                            <CountryFlag
+                              key={c}
+                              code={c}
+                              className="w-5 h-3.5 rounded-2xs object-cover border border-background shadow-xs shrink-0"
+                            />
+                          ))}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-foreground text-sm">
+                            {lang === "ar" ? z.name_ar : z.name_en}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {z.pricing_type === "per_piece"
+                              ? lang === "ar"
+                                ? `${formatPrice(z.fee, currency, lang)} لكل قطعة`
+                                : `${formatPrice(z.fee, currency, lang)}/piece`
+                              : z.pricing_type === "bundle"
+                                ? lang === "ar"
+                                  ? `${formatPrice(z.fee, currency, lang)} لكل ${z.bundle_size || 2} قطع`
+                                  : `${formatPrice(z.fee, currency, lang)} per ${z.bundle_size || 2} pcs`
+                                : lang === "ar"
+                                  ? "شحن دولي محدد"
+                                  : "International shipping"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-end shrink-0 ps-2">
+                        <span className="font-mono font-bold text-sm text-foreground">
+                          {zoneShippingFee > 0 ? (
+                            formatPrice(zoneShippingFee, currency, lang)
+                          ) : (
+                            <span className="text-emerald-600 font-bold">
+                              {t("مجانًا", "Free")}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+
+                    {(z.estimate_ar || z.estimate_en) && (
+                      <div className="mt-2.5 pt-2 border-t border-border-subtle text-xs text-muted-foreground flex items-center gap-1.5">
+                        <Truck className="h-3.5 w-3.5 text-primary shrink-0" />
+                        <span>{lang === "ar" ? z.estimate_ar : z.estimate_en}</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* If an international zone is selected and has countries, show country picker */}
       {selectedZone && selectedZone.countries && selectedZone.countries.length > 0 && (

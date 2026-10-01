@@ -13,6 +13,8 @@ export type OrderWorkflowInput = {
   order_type?: OrderType | string | null;
   order_items?: any[] | null;
   items?: any[] | null;
+  /** The booking an appointment order was placed for (its start decides when it can be completed). */
+  bookings?: Array<{ starts_at?: string | null }> | null;
 };
 
 export type FulfillmentStage =
@@ -27,6 +29,8 @@ export type FulfillmentStage =
   | "assigned"
   | "ready_for_pickup"
   | "out_for_delivery"
+  /** An appointment (a booked service) waiting for its day. */
+  | "scheduled"
   | "completed"
   | "cancelled"
   | "failed"
@@ -50,6 +54,9 @@ export type OrderNextAction =
   | "mark_delivered"
   | "collect_and_deliver"
   | "deliver_digital"
+  /** An appointment whose time has come: the service was carried out (collecting any balance). */
+  | "complete_service"
+  | "collect_and_complete_service"
   | "resolve_delivery_failure"
   | "review_order"
   | "none";
@@ -92,6 +99,9 @@ export function getFulfillmentStage(order: OrderWorkflowInput): FulfillmentStage
   if (fulfillment === "returned" || status === "returned") return "returned";
   if (["delivery_failed", "failed"].includes(fulfillment) || status === "failed") return "failed";
 
+  // An appointment is not packed or shipped: it waits for its day.
+  if (normalize(order.fulfillment_method) === "appointment") return "scheduled";
+
   if (
     ["shipped", "out_for_delivery", "ready_for_delivery"].includes(fulfillment) ||
     status === "shipped"
@@ -126,7 +136,7 @@ export function getFulfillmentStage(order: OrderWorkflowInput): FulfillmentStage
 
 export function getOrderWorkflow(
   order: OrderWorkflowInput,
-  options?: { productionStages?: boolean },
+  options?: { productionStages?: boolean; now?: Date },
 ): OrderWorkflow {
   const orderStatus = normalize(order.status);
   const total = Number(order.total ?? 0);
@@ -171,6 +181,14 @@ export function getOrderWorkflow(
       nextAction = "resolve_delivery_failure";
     } else if (isManualBenefit && payment !== "paid") {
       nextAction = "validate_payment";
+    } else if (fulfillment === "scheduled") {
+      // Nothing to do until the appointment starts; then the service is
+      // carried out and any balance (cash, or the rest after a deposit) collected.
+      const startsAt = order.bookings?.[0]?.starts_at;
+      const started = !startsAt || new Date(startsAt) <= (options?.now ?? new Date());
+      if (started) {
+        nextAction = requiresCollection ? "collect_and_complete_service" : "complete_service";
+      }
     } else if (isTailoring) {
       if (["pending", "on_hold", "needs_packing"].includes(fulfillment)) {
         nextAction = "send_to_tailor";

@@ -18,6 +18,7 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
         customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot,
         branch_id, digital_delivery_channel, digital_delivery_contact,
         customers(name, phone, email, region),
+        bookings(reference, event_date, starts_at, ends_at, location),
         order_items(description, quantity, unit_price, original_price, line_total, customization_total,
           customizations, custom_field_values, selected_variant, products(name, variant_label_size_ar, variant_label_size_en, variant_label_color_ar, variant_label_color_en, variant_label_fabric_ar, variant_label_fabric_en), product_variants(size, color, fabric))
       `,
@@ -55,6 +56,17 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
       shippingAddress = addr ?? null;
     }
 
+    // An appointment's time is shown in the store's timezone.
+    let bookingTimezone: string | null = null;
+    if (Array.isArray(order.bookings) && order.bookings.length > 0) {
+      const { data: bookingRules } = await supabaseAdmin
+        .from("booking_settings")
+        .select("timezone")
+        .eq("brand_id", order.brand_id)
+        .maybeSingle();
+      bookingTimezone = bookingRules?.timezone ?? null;
+    }
+
     let branch: any = null;
     if (order.branch_id) {
       const { data: selectedBranch } = await supabaseAdmin
@@ -82,6 +94,7 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
       settings,
       shippingAddress,
       branch,
+      bookingTimezone,
       brandAddons: brandAddons ?? [],
     };
   });
