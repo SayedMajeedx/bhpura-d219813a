@@ -1,4 +1,5 @@
 import { answersText, bookingQuestions } from "@/features/storefront-booking/lib/booking-questions";
+import type { StartRow } from "@/features/storefront-booking/lib/service-availability";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -144,6 +145,12 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
     answers: answersText(questions, flow.answers),
     setAnswer: (id: string, value: string) =>
       setFlow((current) => ({ ...current, answers: { ...current.answers, [id]: value } })),
+    /**
+     * The start times still free for the chosen services and length (null until
+     * the engine's free-starts query is wired: no limit). See service-availability.ts.
+     */
+    freeStarts: null as ReadonlySet<string> | null,
+    startRows: undefined as StartRow[] | undefined,
     /** The durations every chosen service is offered for. */
     lengths: rules ? offeredDurations(durations(rules), chosen) : [],
     /** The services at the chosen duration's prices. */

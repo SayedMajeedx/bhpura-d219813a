@@ -2,6 +2,11 @@ import { matchCustomFieldToMeasurement } from "@/lib/addons/addon-presets";
 import { PLACEHOLDER_SIZE_VALUES } from "@/lib/variant-sku-utils";
 import type { CustomField, MediaItem, Product } from "@/features/inventory/types";
 import {
+  serviceBookingColumns,
+  serviceBookingError,
+  serviceBookingForm,
+} from "@/lib/bookings/service-capacity";
+import {
   serviceIncludesFrom,
   serviceIncludesToSave,
   serviceLocationFrom,
@@ -57,11 +62,18 @@ export function productFormFrom(product: Product | null, defaults: { service?: b
     service_location: (serviceLocationFrom(product?.service_location) ??
       (isService ? "customer" : null)) as ServiceLocation | null,
     service_includes: serviceIncludesFrom(product?.service_includes),
+    // A service's own capacity, scope, setup time and notice (the booking engine's rules).
+    ...serviceBookingForm(product),
   };
 }
 
 export type ProductForm = ReturnType<typeof productFormFrom>;
-export type ProductFormErrors = { name?: string; price?: string; cost?: string };
+export type ProductFormErrors = {
+  name?: string;
+  price?: string;
+  cost?: string;
+  booking?: string;
+};
 export type ProductDialogTab = "basic" | "media" | "customizer";
 
 /** Option axes four and five start open when the product already names them. */
@@ -97,6 +109,10 @@ export function validateProductForm(form: ProductForm, isAr: boolean): ProductFo
     newErrors.cost = isAr
       ? "أدخل تكلفة صحيحة غير سالبة أو اترك الحقل فارغاً"
       : "Enter a valid non-negative cost or leave empty";
+  }
+  if (form.item_kind === "service") {
+    const booking = serviceBookingError(form, isAr);
+    if (booking) newErrors.booking = booking;
   }
   return newErrors;
 }
@@ -167,6 +183,7 @@ export function productColumnsFrom(form: ProductForm) {
     service_location: form.item_kind === "service" ? form.service_location : null,
     service_includes:
       form.item_kind === "service" ? serviceIncludesToSave(form.service_includes) : [],
+    ...serviceBookingColumns(form, form.item_kind === "service"),
   };
 }
 

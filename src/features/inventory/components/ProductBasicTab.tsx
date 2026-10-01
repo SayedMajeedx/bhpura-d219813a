@@ -1,5 +1,6 @@
 import { ServicePricingFields } from "@/features/inventory/components/ServicePricingFields";
 import { ServiceDetailsFields } from "@/features/inventory/components/ServiceDetailsFields";
+import { ServiceBookingFields } from "@/features/inventory/components/ServiceBookingFields";
 import type { ServicePricing } from "@/features/inventory/lib/service-pricing";
 import { ItemKindPicker } from "@/features/inventory/components/ItemKindPicker";
 import { Button } from "@/components/ui/button";
@@ -345,6 +346,14 @@ export function ProductBasicTab({
           onLocation={(location) => setForm({ ...form, service_location: location })}
           onIncludes={(includes) => setForm({ ...form, service_includes: includes })}
           isAr={isAr}
+        />
+      )}
+      {isService && (
+        <ServiceBookingFields
+          value={form}
+          onChange={(patch) => setForm({ ...form, ...patch })}
+          isAr={isAr}
+          error={errors.booking}
         />
       )}
       {/* Step 3 (Collapsible): Advanced Details & Specifications */}
