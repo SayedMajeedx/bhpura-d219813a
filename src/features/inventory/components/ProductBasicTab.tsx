@@ -1,3 +1,6 @@
+import { ServicePricingFields } from "@/features/inventory/components/ServicePricingFields";
+import { ServiceDetailsFields } from "@/features/inventory/components/ServiceDetailsFields";
+import type { ServicePricing } from "@/features/inventory/lib/service-pricing";
 import { ItemKindPicker } from "@/features/inventory/components/ItemKindPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +36,10 @@ export function ProductBasicTab({
   setAdvancedOpen,
   showExtraAxes,
   setShowExtraAxes,
+  servicePricing,
+  onServicePricing,
+  pricingError,
+  currency = "BHD",
 }: {
   t: ReturnType<typeof useT>;
   isAr: boolean;
@@ -49,7 +56,13 @@ export function ProductBasicTab({
   setAdvancedOpen: Dispatch<SetStateAction<boolean>>;
   showExtraAxes: boolean;
   setShowExtraAxes: Dispatch<SetStateAction<boolean>>;
+  /** A service's prices (null while they load, and for products). */
+  servicePricing?: ServicePricing | null;
+  onServicePricing?: (pricing: ServicePricing) => void;
+  pricingError?: string | null;
+  currency?: string;
 }) {
+  const isService = form.item_kind === "service";
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
       {storeProfile?.modules?.bookings && (
@@ -156,40 +169,59 @@ export function ProductBasicTab({
         )}
       </div>
 
+      {isService ? (
+        servicePricing &&
+        onServicePricing && (
+          <ServicePricingFields
+            pricing={servicePricing}
+            onChange={onServicePricing}
+            isAr={isAr}
+            currency={currency}
+            error={pricingError}
+          />
+        )
+      ) : (
+        <div>
+          <Label className="text-xs font-bold text-muted-foreground">
+            {isAr ? "السعر الأساسي للمنتج (د.ب)" : "Base Price (BHD)"}
+          </Label>
+          <Input
+            type="number"
+            step="0.001"
+            min="0"
+            className={`mt-1 h-10.5 rounded-lg ${errors.price ? "border-destructive focus-visible:ring-destructive" : ""}`}
+            placeholder="0.000"
+            value={form.base_price}
+            onChange={(e) => {
+              setForm({ ...form, base_price: e.target.value });
+              const v = e.target.value.trim();
+              if (v && !isNaN(Number(v)) && Number(v) >= 0) {
+                setErrors((prev) => ({ ...prev, price: undefined }));
+              }
+            }}
+          />
+          {errors.price ? (
+            <p className="text-xs text-destructive font-semibold mt-1" role="alert">
+              {errors.price}
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground mt-1.5">
+              {isAr
+                ? "السعر العادي للمنتج، ويُورّث تلقائياً لكل متغير جديد."
+                : "The product's regular price, inherited automatically by every new variant."}
+            </p>
+          )}
+        </div>
+      )}
       <div>
         <Label className="text-xs font-bold text-muted-foreground">
-          {isAr ? "السعر الأساسي للمنتج (د.ب)" : "Base Price (BHD)"}
-        </Label>
-        <Input
-          type="number"
-          step="0.001"
-          min="0"
-          className={`mt-1 h-10.5 rounded-lg ${errors.price ? "border-destructive focus-visible:ring-destructive" : ""}`}
-          placeholder="0.000"
-          value={form.base_price}
-          onChange={(e) => {
-            setForm({ ...form, base_price: e.target.value });
-            const v = e.target.value.trim();
-            if (v && !isNaN(Number(v)) && Number(v) >= 0) {
-              setErrors((prev) => ({ ...prev, price: undefined }));
-            }
-          }}
-        />
-        {errors.price ? (
-          <p className="text-xs text-destructive font-semibold mt-1" role="alert">
-            {errors.price}
-          </p>
-        ) : (
-          <p className="text-xs text-muted-foreground mt-1.5">
-            {isAr
-              ? "السعر العادي للمنتج، ويُورّث تلقائياً لكل متغير جديد."
-              : "The product's regular price, inherited automatically by every new variant."}
-          </p>
-        )}
-      </div>
-      <div>
-        <Label className="text-xs font-bold text-muted-foreground">
-          {isAr ? "تكلفة القطعة عليك (اختياري)" : "Unit Cost (Optional)"}
+          {isService
+            ? isAr
+              ? "تكلفة الخدمة عليك (اختياري)"
+              : "Your cost per booking (optional)"
+            : isAr
+              ? "تكلفة القطعة عليك (اختياري)"
+              : "Unit Cost (Optional)"}
         </Label>
         <Input
           type="number"
@@ -207,7 +239,7 @@ export function ProductBasicTab({
             : "Leave it empty if you don't know it now; you can add it anytime later to track net profit."}
         </p>
       </div>
-      {!product && (
+      {!product && !isService && (
         <div>
           <Label className="text-xs font-bold text-muted-foreground">
             {isAr
@@ -297,7 +329,7 @@ export function ProductBasicTab({
           />
         </div>
       </div>
-      {!product && (
+      {!product && !isService && (
         <div className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-3.5 text-xs text-muted-foreground flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <span className="leading-relaxed">
             {isAr
@@ -306,8 +338,18 @@ export function ProductBasicTab({
           </span>
         </div>
       )}
+      {isService && (
+        <ServiceDetailsFields
+          location={form.service_location}
+          includes={form.service_includes}
+          onLocation={(location) => setForm({ ...form, service_location: location })}
+          onIncludes={(includes) => setForm({ ...form, service_includes: includes })}
+          isAr={isAr}
+        />
+      )}
       {/* Step 3 (Collapsible): Advanced Details & Specifications */}
       <ProductAdvancedDetails
+        isService={isService}
         isAr={isAr}
         product={product}
         storeProfile={storeProfile}

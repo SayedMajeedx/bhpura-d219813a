@@ -8,8 +8,10 @@ import {
   countProductVariants,
   createProduct,
   createVariants,
+  deleteVariants,
   syncVariantsWithProduct,
   updateProduct,
+  updateVariant,
 } from "@/lib/data/catalog";
 import type { Product } from "@/features/inventory/types";
 import { prefetchOptionTranslations } from "@/features/inventory/lib/option-translations";
@@ -21,6 +23,12 @@ import {
   type ProductFormErrors,
 } from "@/features/inventory/lib/product-form";
 import { getCurrentUser } from "@/lib/auth/session";
+import {
+  serviceFromPrice,
+  servicePricingChanges,
+  servicePricingError,
+  type ServicePricing,
+} from "@/features/inventory/lib/service-pricing";
 
 /**
  * Saves the product editor. Updating an active product with no variants adds a
@@ -35,6 +43,7 @@ export function useSaveProduct({
   onInvalid,
   commitMedia,
   onSaved,
+  service,
 }: {
   product: Product | null;
   form: ProductForm;
@@ -43,7 +52,20 @@ export function useSaveProduct({
   /** Called after showing validation errors (the editor returns to the first step). */
   onInvalid: () => void;
   commitMedia: () => void;
-  onSaved: (newProductId?: string) => void;
+  onSaved: (newProductId?: string, kind?: "service" | "product") => void;
+  /**
+   * A service's prices and its current variants: saved as its variants
+   * (one per length, or one fixed price) in place of a product's default
+   * variant and price sync.
+   */
+  service?: {
+    pricing: ServicePricing | null;
+    variants: ReadonlyArray<{
+      id: string;
+      selling_price: number;
+      duration_minutes?: number | null;
+    }>;
+  };
 }) {
   const t = useT();
   const brand = useBrand();
@@ -51,7 +73,17 @@ export function useSaveProduct({
 
   return async (e: React.MouseEvent) => {
     e.preventDefault();
+    const isService = form.item_kind === "service";
     const newErrors = validateProductForm(form, isAr);
+    if (isService) {
+      const pricingProblem = service?.pricing
+        ? servicePricingError(service.pricing, isAr)
+        : isAr
+          ? "ما زالت الأسعار تُحمَّل، حاول بعد لحظة."
+          : "The prices are still loading; try again in a moment.";
+      if (pricingProblem) newErrors.price = pricingProblem;
+      else delete newErrors.price;
+    }
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       onInvalid();
@@ -68,6 +100,29 @@ export function useSaveProduct({
     // is still saved, and the merchant is told it has no variant yet.
     let defaultVariantError: unknown = null;
     const columns = productColumnsFrom(form);
+    // A service's base price is its "from" price: its lowest offered price.
+    if (isService && service?.pricing) columns.base_price = serviceFromPrice(service.pricing);
+    // A service's prices become its variants, each at the service's cost.
+    const saveServicePrices = async (productId: string) => {
+      if (!service?.pricing) return;
+      const changes = servicePricingChanges(service.pricing, service.variants, isAr);
+      if (changes.create.length) {
+        await createVariants(
+          brand.id,
+          changes.create.map((values) => ({
+            user_id: user.id,
+            brand_id: brand.id,
+            product_id: productId,
+            cost_price: columns.cost_price,
+            ...values,
+          })),
+        );
+      }
+      for (const { id, patch } of changes.update) {
+        await updateVariant(brand.id, id, { ...patch, cost_price: columns.cost_price });
+      }
+      if (changes.remove.length) await deleteVariants(brand.id, changes.remove);
+    };
     const newDefaultVariant = (productId: string) =>
       createVariants(brand.id, [
         {
@@ -80,7 +135,14 @@ export function useSaveProduct({
         defaultVariantError = error;
       });
 
-    if (product) {
+    if (product && isService) {
+      try {
+        await updateProduct(brand.id, product.id, columns);
+        await saveServicePrices(product.id);
+      } catch (error) {
+        return toast.error(getFriendlyErrorMessage(error));
+      }
+    } else if (product) {
       try {
         if (form.is_active) {
           const count = await countProductVariants(brand.id, product.id);
@@ -117,8 +179,14 @@ export function useSaveProduct({
       } catch (error) {
         return toast.error(getFriendlyErrorMessage(error));
       }
-      await newDefaultVariant(createdProductId);
-      prefetchOptionTranslations([form.fabric_type], isAr);
+      if (isService) {
+        await saveServicePrices(createdProductId).catch((error: unknown) => {
+          defaultVariantError = error;
+        });
+      } else {
+        await newDefaultVariant(createdProductId);
+        prefetchOptionTranslations([form.fabric_type], isAr);
+      }
     }
     commitMedia();
     if (defaultVariantError) {
@@ -131,6 +199,6 @@ export function useSaveProduct({
     } else if (product) {
       toast.success(t("common.save"));
     }
-    onSaved(createdProductId);
+    onSaved(createdProductId, isService ? "service" : "product");
   };
 }

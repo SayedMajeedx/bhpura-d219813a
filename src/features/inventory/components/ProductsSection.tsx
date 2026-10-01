@@ -1,3 +1,4 @@
+import { ServicePriceSummary } from "@/features/inventory/components/ServicePriceSummary";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useMemo, useCallback, useDeferredValue } from "react";
 import { Dialog } from "@/components/ui/dialog";
@@ -180,6 +181,26 @@ export function ProductsSection({
     },
     { tracksStock: storeProfile.modules.stock },
   );
+
+  // A service shows its lengths and prices; a product its sizes, colours and stock.
+  const renderVariants = (prod: Product) =>
+    prod.item_kind === "service" ? (
+      <ServicePriceSummary
+        variants={variantsByProduct[prod.id] || []}
+        isAr={isAr}
+        currency={currency}
+      />
+    ) : (
+      <VariantList
+        productId={prod.id}
+        productName={prod.name}
+        businessName={businessName}
+        variants={variantsByProduct[prod.id] || []}
+        onChanged={onChanged}
+        salesByVariant={salesByVariant}
+        product={prod}
+      />
+    );
 
   const categoriesQ = useInventoryCategories(brand.id);
 
@@ -380,17 +401,7 @@ export function ProductsSection({
                 onDuplicate={handleDuplicateProduct}
                 onPreview={handlePreviewProduct}
                 onShare={handleShareProduct}
-                renderVariantList={(prod) => (
-                  <VariantList
-                    productId={prod.id}
-                    productName={prod.name}
-                    businessName={businessName}
-                    variants={variantsByProduct[prod.id] || []}
-                    onChanged={onChanged}
-                    salesByVariant={salesByVariant}
-                    product={prod}
-                  />
-                )}
+                renderVariantList={renderVariants}
                 selected={selectedProductIds.has(p.id)}
                 onToggleSelected={toggleSelectedProduct}
                 isExpanded={Boolean(expandedProducts[p.id])}
@@ -424,17 +435,7 @@ export function ProductsSection({
           onDuplicate={handleDuplicateProduct}
           onPreview={handlePreviewProduct}
           onShare={handleShareProduct}
-          renderVariantList={(prod) => (
-            <VariantList
-              productId={prod.id}
-              productName={prod.name}
-              businessName={businessName}
-              variants={variantsByProduct[prod.id] || []}
-              onChanged={onChanged}
-              salesByVariant={salesByVariant}
-              product={prod}
-            />
-          )}
+          renderVariantList={renderVariants}
           selectedProductIds={selectedProductIds}
           onToggleProduct={toggleSelectedProduct}
           onToggleAll={toggleVisibleProducts}
@@ -493,11 +494,15 @@ export function ProductsSection({
         <ProductDialog
           key={`${editing?.id ?? "new"}-${dialogSession}`}
           product={editing}
-          onSaved={(newProductId?: string) => {
+          onSaved={(newProductId?: string, kind?: "service" | "product") => {
             setOpen(false);
             setEditing(null);
             onChanged();
-            if (newProductId) {
+            if (newProductId && kind === "service") {
+              // A service's prices were saved with it: nothing to add.
+              setExpandedProducts((prev) => ({ ...prev, [newProductId]: true }));
+              toast.success(isAr ? "تم إنشاء الخدمة." : "Service created.");
+            } else if (newProductId) {
               setExpandedProducts((prev) => ({ ...prev, [newProductId]: true }));
               toast.success(
                 isAr

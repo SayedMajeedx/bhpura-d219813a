@@ -153,7 +153,12 @@ describe("variant writes", () => {
         ["brand_id", "b1"],
       ]);
     }
-    expect(filters(requests[1], "is")).toEqual([["original_price", null]]);
+    // A service's per-length variants keep their own prices.
+    expect(filters(requests[1], "is")).toEqual([
+      ["duration_minutes", null],
+      ["original_price", null],
+    ]);
+    expect(filters(requests[2], "is")).toEqual([["duration_minutes", null]]);
     expect(filters(requests[2], "not")).toEqual([["original_price", "is", null]]);
   });
 
