@@ -5603,6 +5603,7 @@ export type Database = {
           image_url: string | null;
           is_active: boolean;
           is_made_to_order: boolean;
+          item_kind: string;
           media: Json;
           name: string;
           name_ar: string | null;
@@ -5647,6 +5648,7 @@ export type Database = {
           image_url?: string | null;
           is_active?: boolean;
           is_made_to_order?: boolean;
+          item_kind?: string;
           media?: Json;
           name: string;
           name_ar?: string | null;
@@ -5691,6 +5693,7 @@ export type Database = {
           image_url?: string | null;
           is_active?: boolean;
           is_made_to_order?: boolean;
+          item_kind?: string;
           media?: Json;
           name?: string;
           name_ar?: string | null;

@@ -9,11 +9,14 @@ import type { CustomField, MediaItem, Product } from "@/features/inventory/types
  */
 
 /**
- * `madeToOrder`: the default for a new product. A bookings store's services
- * are made to order (they have no stock), so their checkout never waits on it.
+ * `service`: what a new item is in a bookings store. A service is sold only
+ * with a booking and is made to order (it has no stock), so its checkout
+ * never waits on stock; the database keeps a service made to order too.
  */
-export function productFormFrom(product: Product | null, defaults: { madeToOrder?: boolean } = {}) {
+export function productFormFrom(product: Product | null, defaults: { service?: boolean } = {}) {
+  const isService = product ? product.item_kind === "service" : Boolean(defaults.service);
   return {
+    item_kind: (isService ? "service" : "product") as "service" | "product",
     name_ar: product?.name_ar ?? "",
     name_en: product?.name_en ?? product?.name ?? "",
     description_ar: product?.description_ar ?? "",
@@ -44,7 +47,7 @@ export function productFormFrom(product: Product | null, defaults: { madeToOrder
     occasion: product?.occasion ?? "",
     size_guide_id: product?.size_guide_id ?? null,
     size_guide_hidden: product?.size_guide_hidden ?? false,
-    is_made_to_order: product?.is_made_to_order ?? defaults.madeToOrder ?? false,
+    is_made_to_order: isService || (product?.is_made_to_order ?? false),
   };
 }
 
@@ -149,7 +152,8 @@ export function productColumnsFrom(form: ProductForm) {
     occasion: (form.occasion || "").trim() || null,
     size_guide_id: form.size_guide_hidden ? null : form.size_guide_id || null,
     size_guide_hidden: Boolean(form.size_guide_hidden),
-    is_made_to_order: Boolean(form.is_made_to_order),
+    item_kind: form.item_kind === "service" ? "service" : "product",
+    is_made_to_order: form.item_kind === "service" || Boolean(form.is_made_to_order),
   };
 }
 

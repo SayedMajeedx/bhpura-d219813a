@@ -1,3 +1,4 @@
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { createFileRoute } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ function Dashboard() {
   const { slug } = Route.useParams();
   const brand = useBrand();
   const brandId = brand.id;
+  const { profile: storeProfile } = useAdminStoreProfile(brandId);
   const locale = lang === "ar" ? "ar-BH-u-nu-latn" : "en-US";
   const reportingPeriodLabel = isAr ? "آخر 30 يومًا" : "the last 30 days";
 
@@ -312,6 +314,7 @@ function Dashboard() {
             recentOrdersQ={recentOrdersQ}
             slug={slug}
             t={t}
+            tracksStock={storeProfile.modules.stock}
           />
         </div>
       )}
@@ -334,6 +337,7 @@ function Dashboard() {
           inventoryIntel={inventoryIntel}
           isAr={isAr}
           slug={slug}
+          tracksStock={storeProfile.modules.stock}
         />
       )}
     </div>

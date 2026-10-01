@@ -75,6 +75,7 @@ import { getProductRecentPurchaseCount } from "@/lib/storefront-social-proof";
 import { RecommendationRail } from "@/features/product-page/components/RecommendationRail";
 import { ProductPurchaseActions } from "@/features/product-page/components/ProductPurchaseActions";
 import { BookServiceButton } from "@/features/storefront-booking/components/BookingEntryPoints";
+import { soldOnlyByBooking } from "@/lib/bookings/service";
 import { useVariantSelectionSync } from "@/features/product-page/hooks/use-variant-selection-sync";
 import { ProductTitleAndPrice } from "@/features/product-page/components/ProductTitleAndPrice";
 export const Route = createFileRoute("/$slug/product/$id")({
@@ -807,25 +808,28 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             }}
           />
 
-          <BookServiceButton productId={product.id} />
-
-          <ProductPurchaseActions
-            brand={brand}
-            doAdd={doAdd}
-            errorMsg={errorMsg}
-            inquiryUrl={inquiryUrl}
-            isTailoringActive={isTailoringActive}
-            lang={lang}
-            maxStock={maxStock}
-            product={product}
-            qty={qty}
-            selectedVariantOutOfStock={selectedVariantOutOfStock}
-            setQty={setQty}
-            settings={settings}
-            t={t}
-            variant={variant}
-            vocabulary={vocabulary}
-          />
+          {/* A service is sold only with a booking: "Book", no cart buttons. */}
+          {soldOnlyByBooking(product, modules) ? (
+            <BookServiceButton productId={product.id} />
+          ) : (
+            <ProductPurchaseActions
+              brand={brand}
+              doAdd={doAdd}
+              errorMsg={errorMsg}
+              inquiryUrl={inquiryUrl}
+              isTailoringActive={isTailoringActive}
+              lang={lang}
+              maxStock={maxStock}
+              product={product}
+              qty={qty}
+              selectedVariantOutOfStock={selectedVariantOutOfStock}
+              setQty={setQty}
+              settings={settings}
+              t={t}
+              variant={variant}
+              vocabulary={vocabulary}
+            />
+          )}
 
           {/* Layer 2 Product Accordions */}
           {settings?.storefront_design_version === 2 && (
@@ -854,26 +858,28 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
 
         {/* Mobile sticky purchase bar. Publishes its height so bottom-fixed
             overlays (consent banner) stack above it rather than over it. */}
-        <ProductMobileBuyBar
-          brand={brand}
-          doAdd={doAdd}
-          hasReadySizes={hasReadySizes}
-          inquiryUrl={inquiryUrl}
-          isTailoringActive={isTailoringActive}
-          lang={lang}
-          priceLabel={priceLabel}
-          primary={primary}
-          product={product}
-          scrollToOptions={scrollToOptions}
-          selectedVariantOutOfStock={selectedVariantOutOfStock}
-          settings={settings}
-          showSizeModeToggle={showSizeModeToggle}
-          sizeMode={sizeMode}
-          stickyCtaRef={stickyCtaRef}
-          t={t}
-          variant={variant}
-          vocabulary={vocabulary}
-        />
+        {!soldOnlyByBooking(product, modules) && (
+          <ProductMobileBuyBar
+            brand={brand}
+            doAdd={doAdd}
+            hasReadySizes={hasReadySizes}
+            inquiryUrl={inquiryUrl}
+            isTailoringActive={isTailoringActive}
+            lang={lang}
+            priceLabel={priceLabel}
+            primary={primary}
+            product={product}
+            scrollToOptions={scrollToOptions}
+            selectedVariantOutOfStock={selectedVariantOutOfStock}
+            settings={settings}
+            showSizeModeToggle={showSizeModeToggle}
+            sizeMode={sizeMode}
+            stickyCtaRef={stickyCtaRef}
+            t={t}
+            variant={variant}
+            vocabulary={vocabulary}
+          />
+        )}
       </div>
 
       {(relatedProducts.length > 0 || bestSellingProducts.length > 0) && (

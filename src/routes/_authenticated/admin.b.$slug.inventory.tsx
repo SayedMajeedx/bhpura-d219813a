@@ -1,3 +1,4 @@
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -48,6 +49,7 @@ function Inventory() {
   const brand = useBrand();
   const brandId = brand.id;
   useEntitlements({ brandId });
+  const { profile: storeProfile } = useAdminStoreProfile(brandId);
   const [tab, setTab] = useState<"products" | "customizations" | "packaging">("products");
 
   useState<string | null>(null);
@@ -134,12 +136,14 @@ function Inventory() {
         >
           {t("inventory.customizations")}
         </button>
-        <button
-          className={`flex-1 rounded-lg py-2 px-3 text-sm font-semibold transition-all duration-200 ${tab === "packaging" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:bg-background/20"}`}
-          onClick={() => setTab("packaging")}
-        >
-          {lang === "ar" ? "مواد التغليف" : "Packaging materials"}
-        </button>
+        {storeProfile.modules.packaging && (
+          <button
+            className={`flex-1 rounded-lg py-2 px-3 text-sm font-semibold transition-all duration-200 ${tab === "packaging" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:bg-background/20"}`}
+            onClick={() => setTab("packaging")}
+          >
+            {lang === "ar" ? "مواد التغليف" : "Packaging materials"}
+          </button>
+        )}
       </div>
 
       {tab === "products" ? (
@@ -154,7 +158,7 @@ function Inventory() {
           onChanged={() => void invalidateCatalog(qc, brandId)}
           salesHistory={salesHistory.data ?? []}
         />
-      ) : tab === "packaging" ? (
+      ) : tab === "packaging" && storeProfile.modules.packaging ? (
         <PackagingMaterialsTab />
       ) : (
         <CustomizationsSection

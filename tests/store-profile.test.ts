@@ -16,24 +16,44 @@ describe("store-profile pure library", () => {
       fit_passport: true,
       made_to_order: true,
       bookings: false,
+      stock: true,
+      incubators: true,
+      packaging: true,
+      shipping: true,
+      returns: true,
     });
     expect(resolveStoreModules({ store_vertical: "fashion" })).toEqual({
       size_guide: true,
       fit_passport: true,
       made_to_order: true,
       bookings: false,
+      stock: true,
+      incubators: true,
+      packaging: true,
+      shipping: true,
+      returns: true,
     });
     expect(resolveStoreModules({ store_vertical: "general" })).toEqual({
       size_guide: false,
       fit_passport: false,
       made_to_order: false,
       bookings: false,
+      stock: true,
+      incubators: true,
+      packaging: true,
+      shipping: true,
+      returns: true,
     });
     expect(resolveStoreModules({ store_vertical: "jewelry" })).toEqual({
       size_guide: true,
       fit_passport: false,
       made_to_order: true,
       bookings: false,
+      stock: true,
+      incubators: true,
+      packaging: true,
+      shipping: true,
+      returns: true,
     });
   });
 
@@ -48,6 +68,11 @@ describe("store-profile pure library", () => {
       fit_passport: false,
       made_to_order: true,
       bookings: false,
+      stock: true,
+      incubators: true,
+      packaging: true,
+      shipping: true,
+      returns: true,
     });
     expect(
       resolveStoreModules({
@@ -59,6 +84,11 @@ describe("store-profile pure library", () => {
       fit_passport: false,
       made_to_order: false,
       bookings: false,
+      stock: true,
+      incubators: true,
+      packaging: true,
+      shipping: true,
+      returns: true,
     });
   });
 

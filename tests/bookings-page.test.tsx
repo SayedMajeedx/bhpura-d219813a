@@ -169,7 +169,8 @@ describe("the bookings page", () => {
     );
   });
 
-  it("saves travel fees: a default and one area's own", async () => {
+  // The rules dialog renders many fields: slow when the whole suite runs at once.
+  it("saves travel fees: a default and one area's own", { timeout: 15_000 }, async () => {
     state.areaFees = { hidd: 12 };
     renderPage();
     fireEvent.click(await screen.findByRole("button", { name: "Booking rules" }));

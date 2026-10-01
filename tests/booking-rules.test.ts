@@ -154,6 +154,11 @@ describe("the bookings module", () => {
       fit_passport: false,
       made_to_order: true,
       bookings: true,
+      stock: false,
+      incubators: false,
+      packaging: false,
+      shipping: false,
+      returns: false,
     });
     expect(modulesFromAddons(rows).bookings).toBe(false);
   });

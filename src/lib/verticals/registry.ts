@@ -34,11 +34,17 @@ export type VerticalDefinition = {
   starterPack: { required: AddonId[]; suggested: AddonId[] };
 };
 
+/** No specialised module; a shop's core ones (stock, shipping…) on. */
 const NO_MODULES: StoreModules = {
   size_guide: false,
   fit_passport: false,
   made_to_order: false,
   bookings: false,
+  stock: true,
+  incubators: true,
+  packaging: true,
+  shipping: true,
+  returns: true,
 };
 const TAILORING: StoreModules = {
   ...NO_MODULES,
@@ -205,8 +211,17 @@ export const VERTICAL_DEFINITIONS: readonly VerticalDefinition[] = [
     icon: "CalendarDays",
     parent: null,
     status: "active",
-    // The bookings module; bookings_enabled() in SQL has the same default.
-    modules: { ...NO_MODULES, bookings: true },
+    // The bookings module (bookings_enabled() in SQL has the same default);
+    // services are booked, not stocked, shipped or returned.
+    modules: {
+      ...NO_MODULES,
+      bookings: true,
+      stock: false,
+      incubators: false,
+      packaging: false,
+      shipping: false,
+      returns: false,
+    },
     starterPack: { required: [], suggested: [] },
   },
   {

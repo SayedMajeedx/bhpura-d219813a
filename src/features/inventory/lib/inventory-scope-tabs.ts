@@ -1,17 +1,26 @@
 import { AlertTriangle, Boxes, Check, Package, Search, TrendingUp } from "lucide-react";
 import type { InventoryScopeTab } from "@/components/inventory/InventoryScopeSwitcher";
 
-/** The inventory scope tabs, in display order, with their product counts. */
-export function inventoryScopeTabs(counts: {
-  all: number;
-  attention: number;
-  active: number;
-  inactive: number;
-  low: number;
-  out: number;
-  featured: number;
-}): InventoryScopeTab[] {
-  return [
+/** Tabs that only mean something when the store counts stock. */
+const STOCK_TABS = new Set(["attention", "low", "out"]);
+
+/**
+ * The inventory scope tabs, in display order, with their product counts.
+ * A store that does not count stock (a services store) gets no stock tabs.
+ */
+export function inventoryScopeTabs(
+  counts: {
+    all: number;
+    attention: number;
+    active: number;
+    inactive: number;
+    low: number;
+    out: number;
+    featured: number;
+  },
+  { tracksStock = true }: { tracksStock?: boolean } = {},
+): InventoryScopeTab[] {
+  const tabs: InventoryScopeTab[] = [
     {
       id: "all",
       label_en: "All Products",
@@ -62,4 +71,5 @@ export function inventoryScopeTabs(counts: {
       icon: TrendingUp,
     },
   ];
+  return tracksStock ? tabs : tabs.filter((tab) => !STOCK_TABS.has(tab.id));
 }

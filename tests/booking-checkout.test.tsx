@@ -33,7 +33,9 @@ const { BookingHoldBanner } =
   await import("../src/features/storefront-booking/components/BookingHoldBanner");
 const { placeStorefrontOrder } = await import("../src/lib/data/checkout");
 const { placeOrderFailure } = await import("../src/features/checkout/lib/place-order");
-const { productFormFrom } = await import("../src/features/inventory/lib/product-form");
+const { productColumnsFrom, productFormFrom } =
+  await import("../src/features/inventory/lib/product-form");
+import type { Product } from "../src/features/inventory/types";
 const { getVerticalVocabularyOverrides } = await import("../src/lib/store-vocabulary");
 
 const hold: BookingHold = {
@@ -153,12 +155,31 @@ describe("the order that finishes the booking", () => {
 });
 
 describe("services in a bookings store", () => {
-  it("start as made to order, so checkout never waits on stock", () => {
-    expect(productFormFrom(null, { madeToOrder: true }).is_made_to_order).toBe(true);
-    expect(productFormFrom(null).is_made_to_order).toBe(false);
-    expect(
-      productFormFrom({ is_made_to_order: false } as never, { madeToOrder: true }).is_made_to_order,
-    ).toBe(false);
+  it("start as services, made to order, so checkout never waits on stock", () => {
+    const fresh = productFormFrom(null, { service: true });
+    expect(fresh.item_kind).toBe("service");
+    expect(fresh.is_made_to_order).toBe(true);
+    expect(productColumnsFrom(fresh)).toMatchObject({
+      item_kind: "service",
+      is_made_to_order: true,
+    });
+
+    const shopItem = productFormFrom(null);
+    expect(shopItem.item_kind).toBe("product");
+    expect(shopItem.is_made_to_order).toBe(false);
+  });
+
+  it("keep an existing item's kind, and a service stays made to order", () => {
+    const product = (fields: Partial<Product>) => fields as Product;
+    const kept = productFormFrom(product({ item_kind: "product", is_made_to_order: false }), {
+      service: true,
+    });
+    expect(kept.item_kind).toBe("product");
+    expect(kept.is_made_to_order).toBe(false);
+
+    const service = productFormFrom(product({ item_kind: "service", is_made_to_order: false }));
+    expect(service.is_made_to_order).toBe(true);
+    expect(productColumnsFrom({ ...service, is_made_to_order: false }).is_made_to_order).toBe(true);
   });
 
   it("read as booked for the customer's date", () => {
