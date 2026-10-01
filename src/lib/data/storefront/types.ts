@@ -41,9 +41,12 @@ export type ProductRow = {
   }>;
 };
 
-/** Made-to-order products are always orderable; others need stock in some location. */
+/**
+ * Made-to-order products and services are always orderable (a service is booked,
+ * not stocked); others need stock in some location.
+ */
 export function hasAvailableStock(product: ProductRow): boolean {
-  if (product.is_made_to_order) {
+  if (product.is_made_to_order || product.item_kind === "service") {
     return true;
   }
   return product.product_variants.some(

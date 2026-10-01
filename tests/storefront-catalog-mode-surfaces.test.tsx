@@ -240,6 +240,27 @@ describe("product cards and made-to-order stock", () => {
     expect(card(false)).toBe(true);
     expect(card(true)).toBe(false);
   });
+
+  it("never shows a service as sold out, even if it was not saved as made to order", () => {
+    storefront.settings = { storefront_mode: "shop" };
+    const view = withQuery(
+      <ProductCard
+        product={
+          {
+            id: "p1",
+            name: "Photo booth",
+            base_price: 55,
+            image_url: null,
+            item_kind: "service",
+            is_made_to_order: false,
+            product_variants: [{ id: "v1", selling_price: 55, stock_main: 0 }],
+          } as never
+        }
+      />,
+    );
+    expect(screen.queryByText("Sold out")).not.toBeInTheDocument();
+    view.unmount();
+  });
 });
 
 describe("the storefront cart ignores additions in catalog mode", () => {

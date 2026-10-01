@@ -4,7 +4,7 @@ import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { shouldShowPrices } from "@/lib/storefront-mode";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
-import { type ProductRow } from "@/lib/data/storefront";
+import { hasAvailableStock, type ProductRow } from "@/lib/data/storefront";
 import { Button } from "@/components/ui/button";
 
 import { ProductCardV2 } from "@/components/storefront/ProductCardV2";
@@ -47,12 +47,8 @@ export function ProductCard({
   const discountPercent = discountedVariant
     ? Math.round((1 - discountedVariant.selling_price / originalPrice) * 100)
     : 0;
-  const totalStock = product.product_variants.reduce(
-    (s, v) => s + (Number(v.stock_main || 0) + Number(v.stock_incubator || 0)),
-    0,
-  );
-  const isMadeToOrder = Boolean(product.is_made_to_order);
-  const oos = !isMadeToOrder && totalStock <= 0;
+  // One rule for the whole storefront: made-to-order items and services never run out.
+  const oos = !hasAvailableStock(product);
 
   const media = Array.isArray(product.media)
     ? (product.media as Array<{ type: string; url: string }>)
