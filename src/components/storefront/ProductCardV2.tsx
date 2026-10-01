@@ -10,6 +10,8 @@ import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { Heart, Eye } from "lucide-react";
 import { QuickViewModal } from "@/components/storefront/QuickViewModal";
 import { useReveal } from "@/lib/motion/use-reveal";
+import { serviceLengthsText } from "@/lib/bookings/service-lengths";
+import { hasAvailableStock } from "@/lib/data/storefront";
 
 export interface ProductCardV2Props {
   product: any;
@@ -82,12 +84,13 @@ export function ProductCardV2({
   const originalPrice = Number(product.original_price ?? 0);
 
   // Stock
-  const totalStock = variants.reduce(
-    (sum, v) => sum + Number(v.stock_main ?? 0) + Number(v.stock_incubator ?? 0),
-    0,
-  );
   const hasVariants = variants.length > 0;
-  const isOos = hasVariants && totalStock <= 0;
+  // Made-to-order items and services have no stock to run out of (one rule
+  // for the whole storefront: hasAvailableStock).
+  const isOos = hasVariants && !hasAvailableStock(product);
+  // A service shows how long it can be booked for.
+  const lengths =
+    product.item_kind === "service" ? serviceLengthsText(variants, lang === "ar") : null;
 
   // Badge determination (Priority: Sale > New > Best Seller > Trending)
   const newBadgeDays = Number(settings?.new_badge_days ?? 14);
@@ -292,6 +295,7 @@ export function ProductCardV2({
               <span>{t("السعر عند الطلب", "Price on request")}</span>
             )}
           </div>
+          {lengths && <p className="mt-0.5 text-xs text-muted-foreground">{lengths}</p>}
         </div>
       </Link>
 

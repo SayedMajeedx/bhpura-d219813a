@@ -6,7 +6,7 @@ import {
   serviceIncludesToSave,
   serviceLocationFrom,
   type ServiceLocation,
-} from "@/features/inventory/lib/service-details";
+} from "@/lib/bookings/service-details";
 
 /**
  * Rules for the product editor: the form's starting values, validation, the

@@ -4,7 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { BAHRAIN_REGIONS } from "@/lib/bahrain-regions";
 import type { BookingFlow } from "@/features/storefront-booking/hooks/use-booking-flow";
 
-/** Step 4: who is booking and where the event is. */
+/** Step 4: who is booking, where the event is, and the services' questions. */
 export function BookingDetailsFields({ flow }: { flow: BookingFlow }) {
   const { isAr } = flow;
   const { name, phone, areaCode, venue, notes } = flow.flow;
@@ -75,6 +75,56 @@ export function BookingDetailsFields({ flow }: { flow: BookingFlow }) {
           className="resize-none"
         />
       </div>
+      {flow.questions.length > 0 && (
+        <fieldset className="space-y-3 rounded-xl border border-border bg-muted/20 p-3 sm:col-span-2">
+          <legend className="px-1 text-sm font-semibold text-foreground">
+            {isAr ? "أسئلة عن مناسبتك" : "About your event"}
+          </legend>
+          {flow.questions.map((question) => {
+            const id = `booking-q-${question.id}`;
+            const value = flow.flow.answers?.[question.id] ?? "";
+            const label = `${question.label}${question.required ? " *" : ""}`;
+            return (
+              <div key={question.id} className="space-y-1">
+                <Label htmlFor={id}>
+                  {label}
+                  {new Set(flow.questions.map((q) => q.serviceName)).size > 1 && (
+                    <span className="ms-1 text-xs font-normal text-muted-foreground">
+                      · {question.serviceName}
+                    </span>
+                  )}
+                </Label>
+                {question.type === "select" && question.options.length > 0 ? (
+                  <select
+                    id={id}
+                    required={question.required}
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    value={value}
+                    onChange={(event) => flow.setAnswer(question.id, event.target.value)}
+                  >
+                    <option value="">{isAr ? "اختر" : "Choose"}</option>
+                    {question.options.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <Input
+                    id={id}
+                    required={question.required}
+                    type={question.type === "number" ? "number" : "text"}
+                    inputMode={question.type === "number" ? "numeric" : undefined}
+                    maxLength={200}
+                    value={value}
+                    onChange={(event) => flow.setAnswer(question.id, event.target.value)}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </fieldset>
+      )}
     </div>
   );
 }

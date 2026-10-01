@@ -1,5 +1,10 @@
 import { isValidSlot, type BookingRules, type DayState } from "@/lib/bookings/rules";
 import { normalizeWhatsAppDigits } from "@/lib/storefront-mode";
+import {
+  bookingQuestions,
+  notesWithAnswers,
+  unansweredQuestion,
+} from "@/features/storefront-booking/lib/booking-questions";
 
 /**
  * The storefront booking flow as pure rules: a service's price (its "from"
@@ -19,6 +24,10 @@ export type ServiceVariant = {
 
 export type BookableService = {
   id: string;
+  /** "product" items of a services store are sold through the cart, not booked. */
+  item_kind?: string | null;
+  /** The questions the service asks the customer (booking-questions.ts). */
+  custom_fields?: unknown;
   name: string;
   name_ar: string | null;
   name_en: string | null;
@@ -92,9 +101,11 @@ export function compareAtFor(
   return variant && was > Number(variant.selling_price) ? was : null;
 }
 
-/** Services that can be booked: they have a price to book them at. */
+/** Services that can be booked: services (not the store's products) with a price to book them at. */
 export function bookableServices<T extends BookableService>(services: readonly T[]): T[] {
-  return services.filter((service) => cheapestVariant(service) !== null);
+  return services.filter(
+    (service) => service.item_kind !== "product" && cheapestVariant(service) !== null,
+  );
 }
 
 export function serviceName(service: BookableService, isAr: boolean): string {
@@ -129,6 +140,8 @@ export type FlowState = {
   areaCode: string;
   venue: string;
   notes: string;
+  /** Answers to the chosen services' questions, by question id. */
+  answers: Record<string, string>;
 };
 
 export const EMPTY_FLOW: FlowState = {
@@ -142,6 +155,7 @@ export const EMPTY_FLOW: FlowState = {
   areaCode: "",
   venue: "",
   notes: "",
+  answers: {},
 };
 
 /** The first step the customer still has to finish, or null when it can be sent. */
@@ -164,6 +178,7 @@ export function missingStep(
   }
   const digits = flow.phone.replace(/\D/g, "");
   if (!flow.name.trim() || digits.length < 7 || digits.length > 15) return "details";
+  if (unansweredQuestion(bookingQuestions(chosen, false), flow.answers ?? {})) return "details";
   return null;
 }
 
@@ -172,7 +187,14 @@ export function toBookingRequest(
   brandId: string,
   flow: FlowState,
   services: readonly BookableService[],
+  isAr = false,
 ) {
+  const chosen = services.filter((service) => flow.services.includes(service.id));
+  // The customer's notes and their answers to the services' questions (at
+  // most the 2,000 characters a booking's notes take).
+  const notes = notesWithAnswers(flow.notes, bookingQuestions(chosen, isAr), flow.answers ?? {})
+    .slice(0, 2000)
+    .trim();
   const location: Record<string, string> = {};
   if (flow.area) location.area = flow.area;
   if (flow.areaCode) location.area_code = flow.areaCode;
@@ -191,7 +213,7 @@ export function toBookingRequest(
       })),
     customer: { name: flow.name.trim(), phone: flow.phone.trim() },
     location,
-    notes: flow.notes.trim() || undefined,
+    notes: notes || undefined,
   };
 }
 
@@ -206,6 +228,7 @@ export function bookingWhatsAppText({
   place,
   name,
   totalLabel,
+  answers = "",
 }: {
   isAr: boolean;
   brandName: string;
@@ -216,6 +239,8 @@ export function bookingWhatsAppText({
   place: string;
   name: string;
   totalLabel: string | null;
+  /** The answers to the services' questions, one per line. */
+  answers?: string;
 }): string {
   const lines = isAr
     ? [
@@ -227,6 +252,7 @@ export function bookingWhatsAppText({
         place ? `المكان: ${place}` : "",
         totalLabel ? `الإجمالي: ${totalLabel}` : "",
         `الاسم: ${name}`,
+        answers,
       ]
     : [
         `Hello ${brandName}, I'd like to confirm my booking:`,
@@ -237,6 +263,7 @@ export function bookingWhatsAppText({
         place ? `Place: ${place}` : "",
         totalLabel ? `Total: ${totalLabel}` : "",
         `Name: ${name}`,
+        answers,
       ];
   return lines.filter(Boolean).join("\n");
 }

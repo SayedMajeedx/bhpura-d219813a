@@ -75,6 +75,8 @@ export type StorefrontVariant = {
   stock_main: number;
   stock_incubator?: number;
   image_url?: string | null;
+  /** Set when a service is priced by how long it is booked. */
+  duration_minutes?: number | null;
 };
 
 export type StorefrontCustomField = {
@@ -103,6 +105,9 @@ export type StorefrontProductDetail = {
   base_price?: number | null;
   is_made_to_order?: boolean | null;
   item_kind?: string | null;
+  /** A service's place (customer, venue, both) and what it includes ([{ ar, en }]). */
+  service_location?: string | null;
+  service_includes?: unknown;
   size_guide_id?: string | null;
   size_guide_hidden?: boolean | null;
   variant_label_size_ar?: string | null;

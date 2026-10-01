@@ -215,3 +215,41 @@ describe("Storefront 2.0 respects catalog (inquiry-only) mode", () => {
     expect(screen.queryByRole("button", { name: /add to (cart|bag)/i })).not.toBeInTheDocument();
   });
 });
+
+describe("Storefront 2.0 cards for made-to-order items and services", () => {
+  it("never shows a service or made-to-order item as sold out, and says how long a service lasts", () => {
+    storefront.settings = { storefront_design_version: 2 };
+    const service = {
+      id: "s1",
+      name: "Photo booth",
+      name_en: "Photo booth",
+      base_price: 40,
+      image_url: null,
+      is_made_to_order: true,
+      item_kind: "service",
+      product_variants: [
+        { id: "v3", size: "3 hours", selling_price: 40, stock_main: 0, duration_minutes: 180 },
+        { id: "v8", size: "8 hours", selling_price: 90, stock_main: 0, duration_minutes: 480 },
+      ],
+    };
+    const card = withI18n(<ProductCardV2 product={service} />);
+    expect(screen.queryByText(/sold out|out of stock/i)).not.toBeInTheDocument();
+    expect(screen.getByText("3–8 hours")).toBeInTheDocument();
+    card.unmount();
+
+    // A stocked product with none left is still sold out.
+    withI18n(
+      <ProductCardV2
+        product={{
+          ...service,
+          id: "p2",
+          is_made_to_order: false,
+          item_kind: "product",
+          product_variants: [{ id: "v1", size: "52", selling_price: 30, stock_main: 0 }],
+        }}
+      />,
+    );
+    expect(screen.getByText(/sold out/i)).toBeInTheDocument();
+    expect(screen.queryByText(/hours/)).not.toBeInTheDocument();
+  });
+});

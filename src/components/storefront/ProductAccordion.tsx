@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Sparkles, Shirt, Truck, Ruler } from "lucide-react";
+import { CalendarDays, ChevronDown, Sparkles, Shirt, Truck, Ruler } from "lucide-react";
 import { useStorefront } from "@/lib/storefront-context";
 import { DEFAULT_VOCABULARY, getVerticalVocabularyOverrides } from "@/lib/store-vocabulary";
 
@@ -11,6 +11,8 @@ interface ProductAccordionProps {
   returnPolicy?: string | null;
   onOpenSizeGuide?: () => void;
   hasSizeGuide?: boolean;
+  /** A service's booking terms: shown in place of shipping, returns and care. */
+  bookingTerms?: string | null;
 }
 
 export function ProductAccordion({
@@ -20,6 +22,7 @@ export function ProductAccordion({
   returnPolicy,
   onOpenSizeGuide,
   hasSizeGuide = false,
+  bookingTerms = null,
 }: ProductAccordionProps) {
   const { brand, lang, t, settings } = useStorefront();
   const isAr = lang === "ar";
@@ -81,7 +84,7 @@ export function ProductAccordion({
         </p>
       ),
     },
-    ...(effectiveFabric
+    ...(effectiveFabric && !bookingTerms
       ? [
           {
             id: "fabric",
@@ -95,18 +98,29 @@ export function ProductAccordion({
           },
         ]
       : []),
-    {
-      id: "shipping",
-      title: t("الشحن والاسترجاع", "Shipping & Returns"),
-      icon: Truck,
-      content: (
-        <div className="space-y-2 text-xs leading-relaxed opacity-90">
-          <p>{effectiveShipping}</p>
-          {returnPolicy && <p className="pt-1 border-t border-border opacity-80">{returnPolicy}</p>}
-        </div>
-      ),
-    },
-    ...(hasSizeGuide && onOpenSizeGuide
+    bookingTerms
+      ? {
+          id: "booking",
+          title: t("الحجز والإلغاء", "Booking & cancellation"),
+          icon: CalendarDays,
+          content: (
+            <p className="text-xs leading-relaxed opacity-90 whitespace-pre-line">{bookingTerms}</p>
+          ),
+        }
+      : {
+          id: "shipping",
+          title: t("الشحن والاسترجاع", "Shipping & Returns"),
+          icon: Truck,
+          content: (
+            <div className="space-y-2 text-xs leading-relaxed opacity-90">
+              <p>{effectiveShipping}</p>
+              {returnPolicy && (
+                <p className="pt-1 border-t border-border opacity-80">{returnPolicy}</p>
+              )}
+            </div>
+          ),
+        },
+    ...(hasSizeGuide && onOpenSizeGuide && !bookingTerms
       ? [
           {
             id: "sizeGuide",

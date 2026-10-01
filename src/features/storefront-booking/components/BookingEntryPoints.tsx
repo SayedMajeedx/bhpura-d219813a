@@ -41,17 +41,3 @@ export function BookingInvite() {
     </section>
   );
 }
-
-export function BookServiceButton({ productId }: { productId: string }) {
-  const { brand, t } = useStorefront();
-  const modules = useStoreModules();
-  if (!modules.bookings) return null;
-  return (
-    <Button asChild size="lg" className="w-full gap-2">
-      <Link to="/$slug/book" params={{ slug: brand.slug }} search={{ service: productId }}>
-        <CalendarDays className="size-5" aria-hidden="true" />
-        {t("احجز هذه الخدمة", "Book this service")}
-      </Link>
-    </Button>
-  );
-}

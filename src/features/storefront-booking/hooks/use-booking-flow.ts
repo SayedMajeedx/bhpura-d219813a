@@ -1,3 +1,4 @@
+import { answersText, bookingQuestions } from "@/features/storefront-booking/lib/booking-questions";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -33,7 +34,7 @@ export const BOOKING_WEEK_STARTS_ON = 0;
  * (booked and closed days greyed out), the services it offers, and the
  * customer's choices, sent as a booking request the store confirms.
  */
-export function useBookingFlow(initialService?: string) {
+export function useBookingFlow(initialService?: string, initialMinutes?: number) {
   const { brand, settings, lang, currency, cart, addToCart, removeFromCart } = useStorefront();
   const navigate = useNavigate();
   const catalog = isCatalogMode(settings);
@@ -64,6 +65,8 @@ export function useBookingFlow(initialService?: string) {
   const [flow, setFlow] = useState<FlowState>(() => ({
     ...EMPTY_FLOW,
     services: initialService ? [initialService] : [],
+    // The length the customer picked on the service's page, if any.
+    durationMinutes: initialMinutes ?? null,
   }));
   const update = (patch: Partial<FlowState>) => setFlow((current) => ({ ...current, ...patch }));
   const toggleService = (id: string) =>
@@ -76,7 +79,7 @@ export function useBookingFlow(initialService?: string) {
 
   const [result, setResult] = useState<BookingRequestResult | null>(null);
   const submit = useMutation({
-    mutationFn: () => requestBooking(toBookingRequest(brand.id, flow, services)),
+    mutationFn: () => requestBooking(toBookingRequest(brand.id, flow, services, isAr)),
     onSuccess: (data) => setResult(data),
     onError: (error: Error) => {
       toast.error(bookingErrorMessage(error.message, isAr));
@@ -87,7 +90,7 @@ export function useBookingFlow(initialService?: string) {
 
   // A shop store: hold the day, put the services in the cart, pay at checkout.
   const checkout = useMutation({
-    mutationFn: () => holdBooking(toBookingRequest(brand.id, flow, services)),
+    mutationFn: () => holdBooking(toBookingRequest(brand.id, flow, services, isAr)),
     onSuccess: async (hold) => {
       for (const line of cart) if (line.booking) removeFromCart(line.cart_line_id);
       const lines = bookingCartLines(
@@ -110,6 +113,7 @@ export function useBookingFlow(initialService?: string) {
   });
 
   const chosen = services.filter((service) => flow.services.includes(service.id));
+  const questions = bookingQuestions(chosen, isAr);
   const step = rules ? missingStep(flow, rules, dayStates, services) : "date";
   const travelFee = rules ? travelFeeFor(rules, flow.areaCode) : null;
 
@@ -134,6 +138,11 @@ export function useBookingFlow(initialService?: string) {
     toggleService,
     step,
     chosen,
+    /** The chosen services' questions for the customer, and their answers. */
+    questions,
+    answers: answersText(questions, flow.answers),
+    setAnswer: (id: string, value: string) =>
+      setFlow((current) => ({ ...current, answers: { ...current.answers, [id]: value } })),
     /** The durations every chosen service is offered for. */
     lengths: rules ? offeredDurations(durations(rules), chosen) : [],
     /** The services at the chosen duration's prices. */
