@@ -659,6 +659,7 @@ export type Database = {
           line_total: number | null;
           name_ar: string | null;
           name_en: string | null;
+          parent_item_id: string | null;
           product_id: string | null;
           quantity: number;
           unit_price: number;
@@ -671,6 +672,7 @@ export type Database = {
           line_total?: number | null;
           name_ar?: string | null;
           name_en?: string | null;
+          parent_item_id?: string | null;
           product_id?: string | null;
           quantity?: number;
           unit_price?: number;
@@ -683,6 +685,7 @@ export type Database = {
           line_total?: number | null;
           name_ar?: string | null;
           name_en?: string | null;
+          parent_item_id?: string | null;
           product_id?: string | null;
           quantity?: number;
           unit_price?: number;
@@ -701,6 +704,13 @@ export type Database = {
             columns: ["brand_id"];
             isOneToOne: false;
             referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "booking_items_parent_item_id_fkey";
+            columns: ["parent_item_id"];
+            isOneToOne: false;
+            referencedRelation: "booking_items";
             referencedColumns: ["id"];
           },
           {
@@ -5688,6 +5698,7 @@ export type Database = {
           image_url: string | null;
           is_active: boolean;
           is_made_to_order: boolean;
+          is_package: boolean;
           item_kind: string;
           media: Json;
           name: string;
@@ -5739,6 +5750,7 @@ export type Database = {
           image_url?: string | null;
           is_active?: boolean;
           is_made_to_order?: boolean;
+          is_package?: boolean;
           item_kind?: string;
           media?: Json;
           name: string;
@@ -5790,6 +5802,7 @@ export type Database = {
           image_url?: string | null;
           is_active?: boolean;
           is_made_to_order?: boolean;
+          is_package?: boolean;
           item_kind?: string;
           media?: Json;
           name?: string;
@@ -7100,6 +7113,58 @@ export type Database = {
             columns: ["brand_id"];
             isOneToOne: false;
             referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      service_package_items: {
+        Row: {
+          brand_id: string;
+          created_at: string;
+          id: string;
+          package_id: string;
+          product_id: string;
+          quantity: number;
+          sort_order: number;
+        };
+        Insert: {
+          brand_id: string;
+          created_at?: string;
+          id?: string;
+          package_id: string;
+          product_id: string;
+          quantity?: number;
+          sort_order?: number;
+        };
+        Update: {
+          brand_id?: string;
+          created_at?: string;
+          id?: string;
+          package_id?: string;
+          product_id?: string;
+          quantity?: number;
+          sort_order?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "service_package_items_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "service_package_items_package_id_fkey";
+            columns: ["package_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "service_package_items_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
             referencedColumns: ["id"];
           },
         ];
@@ -8568,6 +8633,10 @@ export type Database = {
           state: string;
         }[];
       };
+      booking_expand_product_ids: {
+        Args: { p_brand_id: string; p_ids: string[] };
+        Returns: string[];
+      };
       booking_is_governed: { Args: { p_booking_id: string }; Returns: boolean };
       booking_items_all_governed: {
         Args: { p_brand_id: string; p_items: Json };
@@ -8580,6 +8649,10 @@ export type Database = {
       booking_places_taken: {
         Args: { p_brand_id: string; p_day: string; p_except?: string };
         Returns: number;
+      };
+      booking_rule_items: {
+        Args: { p_brand_id: string; p_items: Json };
+        Returns: Json;
       };
       booking_service_free_starts: {
         Args: {
@@ -9053,6 +9126,10 @@ export type Database = {
       };
       ensure_cash_flow_accounts: {
         Args: { p_brand_id: string };
+        Returns: undefined;
+      };
+      expand_booking_packages: {
+        Args: { p_booking_id: string };
         Returns: undefined;
       };
       format_currency_amount: {

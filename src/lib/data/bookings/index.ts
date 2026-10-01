@@ -22,7 +22,7 @@ import type {
  */
 
 const BOOKING_COLUMNS =
-  "id, reference, status, event_date, starts_at, ends_at, customer_id, customer_name, customer_phone, customer_email, location, notes, source, order_id, hold_expires_at, total, travel_fee, deposit_amount, discount_amount, discount_label_en, discount_label_ar, confirmed_at, cancelled_at, cancel_reason, created_at, booking_items(id, product_id, variant_id, name_en, name_ar, quantity, unit_price, line_total), orders(id, invoice_number, public_invoice_token, status, payment_status, total, advance_paid, currency)" as const;
+  "id, reference, status, event_date, starts_at, ends_at, customer_id, customer_name, customer_phone, customer_email, location, notes, source, order_id, hold_expires_at, total, travel_fee, deposit_amount, discount_amount, discount_label_en, discount_label_ar, confirmed_at, cancelled_at, cancel_reason, created_at, booking_items(id, product_id, variant_id, name_en, name_ar, quantity, unit_price, line_total, parent_item_id), orders(id, invoice_number, public_invoice_token, status, payment_status, total, advance_paid, currency)" as const;
 
 const BLOCK_COLUMNS = "id, starts_on, ends_on, reason, created_at" as const;
 

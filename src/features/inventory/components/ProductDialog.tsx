@@ -1,4 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  invalidateServicePackages,
+  packageLinesById,
+  servicePackagesQueries,
+} from "@/lib/data/service-packages";
 import { Button } from "@/components/ui/button";
 import { DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FileText, Image as ImageIcon, Sliders } from "lucide-react";
@@ -31,6 +37,7 @@ export function ProductDialog({
   onSaved: (newProductId?: string, kind?: "service" | "product") => void;
 }) {
   const t = useT();
+  const qc = useQueryClient();
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const brand = useBrand();
@@ -69,6 +76,20 @@ export function ProductDialog({
   }, [product, service]);
 
   const isService = form.item_kind === "service";
+  // An existing package's lines load once into the form.
+  const packageRows = useQuery({
+    ...servicePackagesQueries.items(brand.id),
+    enabled: isService && Boolean(product?.is_package),
+  }).data;
+  const loadedPackageFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!product?.is_package || !packageRows || loadedPackageFor.current === product.id) return;
+    loadedPackageFor.current = product.id;
+    setForm((current) => ({
+      ...current,
+      package_items: packageLinesById(packageRows).get(product.id) ?? [],
+    }));
+  }, [product, packageRows]);
   // A service's prices: its lengths and their prices, saved as its variants.
   const servicePricing = useServicePricing(brand.id, product?.id ?? null, isService);
 
@@ -79,7 +100,11 @@ export function ProductDialog({
     setErrors,
     onInvalid: () => setActiveDialogTab("basic"),
     commitMedia,
-    onSaved,
+    onSaved: (newProductId, kind) => {
+      // What a package includes may have changed.
+      void invalidateServicePackages(qc, brand.id);
+      onSaved(newProductId, kind);
+    },
     service: isService
       ? { pricing: servicePricing.pricing, variants: servicePricing.variants }
       : undefined,

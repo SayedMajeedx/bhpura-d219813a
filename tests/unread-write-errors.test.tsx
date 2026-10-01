@@ -19,6 +19,7 @@ const catalog = vi.hoisted(() => ({
   syncVariantsWithProduct: vi.fn(async () => undefined),
   updateProduct: vi.fn(async () => undefined),
 }));
+const packages = vi.hoisted(() => ({ savePackageItems: vi.fn(async () => undefined) }));
 const customers = vi.hoisted(() => ({
   createCustomer: vi.fn(async () => ({ id: "c1", name: "Sara" })),
   createCustomerAddress: vi.fn(async () => "a1"),
@@ -27,6 +28,8 @@ const customers = vi.hoisted(() => ({
 vi.mock("sonner", () => ({ toast }));
 vi.mock("../src/lib/data/catalog", () => catalog);
 vi.mock("@/lib/data/catalog", () => catalog);
+vi.mock("../src/lib/data/service-packages", () => packages);
+vi.mock("@/lib/data/service-packages", () => packages);
 vi.mock("../src/lib/data/customers", () => customers);
 vi.mock("@/lib/data/customers", () => customers);
 const session = { getCurrentUser: async () => ({ id: "u1" }) };

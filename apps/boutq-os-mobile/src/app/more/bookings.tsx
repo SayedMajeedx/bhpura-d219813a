@@ -34,11 +34,16 @@ type Booking = {
   discount_amount: number | string | null;
   discount_label_en: string | null;
   discount_label_ar: string | null;
-  booking_items: Array<{ name_en: string | null; name_ar: string | null; quantity: number }>;
+  booking_items: Array<{
+    name_en: string | null;
+    name_ar: string | null;
+    quantity: number;
+    parent_item_id: string | null;
+  }>;
 };
 
 const COLUMNS =
-  "id, reference, status, event_date, starts_at, ends_at, customer_name, customer_phone, location, total, discount_amount, discount_label_en, discount_label_ar, booking_items(name_en, name_ar, quantity)";
+  "id, reference, status, event_date, starts_at, ends_at, customer_name, customer_phone, location, total, discount_amount, discount_label_en, discount_label_ar, booking_items(name_en, name_ar, quantity, parent_item_id)";
 
 /**
  * Bookings in the merchant app: requests waiting (confirm or decline, the
@@ -127,6 +132,8 @@ export function BookingsView({ embedded = false }: { embedded?: boolean }) {
 
   const services = (booking: Booking) =>
     booking.booking_items
+      // The services a package includes are under it on the web; here the package reads once.
+      .filter((item) => !item.parent_item_id)
       .map((item) => {
         const name = (isAr ? item.name_ar || item.name_en : item.name_en || item.name_ar) ?? "";
         return item.quantity > 1 ? `${name} × ${item.quantity}` : name;

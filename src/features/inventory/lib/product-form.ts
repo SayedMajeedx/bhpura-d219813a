@@ -6,6 +6,7 @@ import {
   serviceBookingError,
   serviceBookingForm,
 } from "@/lib/bookings/service-capacity";
+import { packageError, type PackageLine } from "@/lib/bookings/service-package";
 import {
   serviceIncludesFrom,
   serviceIncludesToSave,
@@ -62,6 +63,9 @@ export function productFormFrom(product: Product | null, defaults: { service?: b
     service_location: (serviceLocationFrom(product?.service_location) ??
       (isService ? "customer" : null)) as ServiceLocation | null,
     service_includes: serviceIncludesFrom(product?.service_includes),
+    // A package: a service made of other services (its lines load with the editor).
+    is_package: Boolean(product?.is_package),
+    package_items: [] as PackageLine[],
     // A service's own capacity, scope, setup time and notice (the booking engine's rules).
     ...serviceBookingForm(product),
   };
@@ -73,6 +77,7 @@ export type ProductFormErrors = {
   price?: string;
   cost?: string;
   booking?: string;
+  package?: string;
 };
 export type ProductDialogTab = "basic" | "media" | "customizer";
 
@@ -113,6 +118,8 @@ export function validateProductForm(form: ProductForm, isAr: boolean): ProductFo
   if (form.item_kind === "service") {
     const booking = serviceBookingError(form, isAr);
     if (booking) newErrors.booking = booking;
+    const pack = form.is_package ? packageError(form.package_items, isAr) : null;
+    if (pack) newErrors.package = pack;
   }
   return newErrors;
 }
@@ -183,6 +190,7 @@ export function productColumnsFrom(form: ProductForm) {
     service_location: form.item_kind === "service" ? form.service_location : null,
     service_includes:
       form.item_kind === "service" ? serviceIncludesToSave(form.service_includes) : [],
+    is_package: form.item_kind === "service" && form.is_package,
     ...serviceBookingColumns(form, form.item_kind === "service"),
   };
 }
