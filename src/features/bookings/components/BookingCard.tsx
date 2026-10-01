@@ -4,16 +4,12 @@ import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/format";
 import { nextStatuses, type BookingStatus } from "@/lib/bookings/rules";
 import type { Booking } from "@/lib/data/bookings";
-import { formatClock, localTime } from "@/lib/bookings/format";
-
-const STATUS_TEXT: Record<BookingStatus, { ar: string; en: string; tone: string }> = {
-  hold: { ar: "قيد الدفع", en: "Checking out", tone: "bg-info-subtle text-info" },
-  requested: { ar: "طلب حجز", en: "Request", tone: "bg-warning-subtle text-warning" },
-  confirmed: { ar: "مؤكد", en: "Confirmed", tone: "bg-success-subtle text-success" },
-  completed: { ar: "منتهي", en: "Completed", tone: "bg-muted text-muted-foreground" },
-  cancelled: { ar: "ملغي", en: "Cancelled", tone: "bg-destructive-subtle text-destructive" },
-  expired: { ar: "منتهي الصلاحية", en: "Expired", tone: "bg-muted text-muted-foreground" },
-};
+import {
+  BOOKING_STATUS_TEXT,
+  bookingPlaceText,
+  formatClock,
+  localTime,
+} from "@/lib/bookings/format";
 
 /** The action button for moving a booking from `from` to `to`. */
 function actionText(from: BookingStatus, to: BookingStatus, isAr: boolean): string {
@@ -25,15 +21,6 @@ function actionText(from: BookingStatus, to: BookingStatus, isAr: boolean): stri
   if (to === "cancelled")
     return from === "requested" ? (isAr ? "رفض" : "Decline") : isAr ? "إلغاء" : "Cancel";
   return isAr ? "تم التنفيذ" : "Mark done";
-}
-
-/** A place is shown as area, venue, whatever the booking recorded. */
-function placeText(location: unknown): string {
-  if (!location || typeof location !== "object") return "";
-  const values = Object.values(location as Record<string, unknown>).filter(
-    (value): value is string => typeof value === "string" && value.trim() !== "",
-  );
-  return values.join("، ");
 }
 
 export function BookingCard({
@@ -52,10 +39,10 @@ export function BookingCard({
   onStatus: (status: BookingStatus) => void;
 }) {
   const status = (booking.status as BookingStatus) ?? "confirmed";
-  const text = STATUS_TEXT[status] ?? STATUS_TEXT.confirmed;
+  const text = BOOKING_STATUS_TEXT[status] ?? BOOKING_STATUS_TEXT.confirmed;
   const start = localTime(booking.starts_at, timezone);
   const end = localTime(booking.ends_at, timezone);
-  const place = placeText(booking.location);
+  const place = bookingPlaceText(booking.location);
   const items = booking.booking_items ?? [];
 
   return (

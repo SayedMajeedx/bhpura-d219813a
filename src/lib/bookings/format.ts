@@ -1,4 +1,4 @@
-import { monthGrid } from "@/lib/bookings/rules";
+import { monthGrid, type BookingStatus } from "@/lib/bookings/rules";
 
 /**
  * Dates and times for booking calendars (the admin calendar and the
@@ -76,4 +76,24 @@ export function dayTitle(day: string, isAr: boolean): string {
     month: "long",
     timeZone: "UTC",
   }).format(new Date(`${day}T00:00:00Z`));
+}
+
+/** A booking's status, as staff and customers read it, with its badge tone. */
+export const BOOKING_STATUS_TEXT: Record<BookingStatus, { ar: string; en: string; tone: string }> =
+  {
+    hold: { ar: "قيد الدفع", en: "Checking out", tone: "bg-info-subtle text-info" },
+    requested: { ar: "طلب حجز", en: "Request", tone: "bg-warning-subtle text-warning" },
+    confirmed: { ar: "مؤكد", en: "Confirmed", tone: "bg-success-subtle text-success" },
+    completed: { ar: "منتهي", en: "Completed", tone: "bg-muted text-muted-foreground" },
+    cancelled: { ar: "ملغي", en: "Cancelled", tone: "bg-destructive-subtle text-destructive" },
+    expired: { ar: "منتهي الصلاحية", en: "Expired", tone: "bg-muted text-muted-foreground" },
+  };
+
+/** A booking's place: its area, venue, address, whatever it recorded. */
+export function bookingPlaceText(location: unknown): string {
+  if (!location || typeof location !== "object") return "";
+  const values = Object.values(location as Record<string, unknown>).filter(
+    (value): value is string => typeof value === "string" && value.trim() !== "",
+  );
+  return values.join("، ");
 }

@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { orderChargePlan } from "@/lib/payments/booking-deposit.server";
 import { chargeMatches, paidOrderUpdate } from "@/lib/payments/charge-plan";
+import { orderBookingConfirmation } from "@/lib/bookings/confirmation.server";
+import { confirmationSearch as appointmentSearch } from "@/lib/bookings/confirmation";
 
 export const Route = createFileRoute("/api/public/payments/tap-redirect")({
   server: {
@@ -122,10 +124,13 @@ export const Route = createFileRoute("/api/public/payments/tap-redirect")({
               });
             }
 
+            // A booking's appointment shows on the thank-you page too.
+            const appointment = await orderBookingConfirmation(supabaseAdmin, orderId, brandId);
             const confirmationSearch = new URLSearchParams({
               payment: "success",
               fulfillment: order.fulfillment_method || "delivery",
               channel: order.digital_delivery_channel || "email",
+              ...(appointment ? appointmentSearch(appointment) : {}),
             });
 
             // Build confirmation messaging from the persisted order rather than
