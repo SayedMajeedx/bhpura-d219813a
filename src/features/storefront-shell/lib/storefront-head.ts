@@ -6,6 +6,7 @@ import {
   selfHostedFontPreloads,
 } from "@/lib/typography";
 import { buildOrganizationSchema, buildWebSiteSchema } from "@/lib/seo/structured-data";
+import { resolveStoreModules } from "@/lib/store-profile";
 import { faviconType, resolveBrandFavicon } from "@/lib/favicon";
 
 /**
@@ -22,14 +23,34 @@ export function storefrontHead(loaderData: unknown) {
   const lang = typedLoaderData?.initialLang || "ar";
   if (!b) return { meta: [{ title: "Storefront" }] };
 
+  // A store that takes bookings and sells no goods is described as a place to book.
+  const modules = resolveStoreModules({
+    store_vertical: settings?.store_vertical,
+    store_modules: settings?.store_modules,
+  });
+  const takesBookings = modules.bookings && !modules.stock && !modules.shipping;
+  const nameAr = settings?.business_name || b.name_ar || b.name_en;
+  const nameEn = settings?.business_name || b.name_en || b.name_ar;
   const title =
     lang === "ar"
-      ? b.meta_title || settings?.business_name || b.name_ar || `${b.name_en} — متجر إلكتروني`
-      : b.meta_title || settings?.business_name || b.name_en || `${b.name_ar} — Online Store`;
+      ? b.meta_title ||
+        (takesBookings ? `${nameAr} — احجز موعدك أونلاين` : settings?.business_name) ||
+        b.name_ar ||
+        `${b.name_en} — متجر إلكتروني`
+      : b.meta_title ||
+        (takesBookings ? `${nameEn} — Book online` : settings?.business_name) ||
+        b.name_en ||
+        `${b.name_ar} — Online Store`;
   const desc =
     lang === "ar"
-      ? b.meta_description || `تسوق من ${b.name_ar || b.name_en} أونلاين.`
-      : b.meta_description || `Shop ${b.name_en || b.name_ar} online.`;
+      ? b.meta_description ||
+        (takesBookings
+          ? `احجز مع ${nameAr} أونلاين: شاهد التواريخ المتاحة وخدماتنا وعروضنا.`
+          : `تسوق من ${b.name_ar || b.name_en} أونلاين.`)
+      : b.meta_description ||
+        (takesBookings
+          ? `Book ${nameEn} online: see the free dates, our services and offers.`
+          : `Shop ${b.name_en || b.name_ar} online.`);
   const img = settings?.logo_url || b.logo_url || "https://boutq.store/og-placeholder.png";
   const favicon = resolveBrandFavicon(settings?.favicon_url, settings?.logo_url ?? b.logo_url);
   const typography = normalizeTypography(
