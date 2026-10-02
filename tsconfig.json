@@ -22,9 +22,12 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
+    "allowJs": true,
+    "esModuleInterop": true,
+    "moduleDetection": "force",
+    "resolveJsonModule": true,
     "paths": {
       "@/*": ["./src/*"]
     }
-  },
-  "extends": "expo/tsconfig.base"
+  }
 }
