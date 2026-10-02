@@ -177,6 +177,14 @@ const discountsData = {
     public: () => fixture(`discounts-${state.discountRules.length}`, () => state.discountRules),
   },
 };
+const storeContentData = {
+  storeContentQueries: {
+    publicGallery: () => ({ queryKey: ["sbp-test", "gallery"], queryFn: async () => [] }),
+    publicFaq: () => ({ queryKey: ["sbp-test", "faq"], queryFn: async () => [] }),
+  },
+};
+vi.mock("../src/lib/data/store-content", () => storeContentData);
+vi.mock("@/lib/data/store-content", () => storeContentData);
 vi.mock("../src/lib/data/booking-discounts", () => discountsData);
 vi.mock("@/lib/data/booking-discounts", () => discountsData);
 vi.mock("../src/lib/data/bookings", () => bookingsData);
