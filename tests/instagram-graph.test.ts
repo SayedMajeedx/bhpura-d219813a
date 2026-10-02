@@ -49,6 +49,19 @@ describe("comments page", () => {
     expect(page.next).toBe("CUR");
   });
 
+  it("counts comments sent without an author instead of losing them silently", () => {
+    const page = parseCommentsPage({
+      data: [
+        { id: "1", text: "a", timestamp: "2026-10-01T10:00:00+0000" },
+        { id: "2", text: "b" },
+        { id: "3", text: "c", username: "Noor" },
+      ],
+    });
+    expect(page.received).toBe(3);
+    expect(page.withoutAuthor).toBe(2);
+    expect(page.comments.map((c) => c.username)).toEqual(["noor"]);
+  });
+
   it("reports no next page when Graph sends no next link", () => {
     expect(parseCommentsPage({ data: [], paging: { cursors: { after: "CUR" } } }).next).toBeNull();
     expect(parseCommentsPage({}).comments).toEqual([]);

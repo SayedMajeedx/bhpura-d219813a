@@ -221,7 +221,7 @@ async function fetchComments(admin: any, brandId: string, body: Record<string, u
 
   const { data: giveaway, error: giveawayError } = await admin
     .from("giveaways")
-    .select("id, brand_id, media_id, fetch_cursor, fetch_done")
+    .select("id, brand_id, media_id, comments_total, fetch_cursor, fetch_done")
     .eq("id", giveawayId)
     .eq("brand_id", brandId)
     .maybeSingle();
@@ -243,6 +243,10 @@ async function fetchComments(admin: any, brandId: string, body: Record<string, u
   const token = await tokenFor(admin, brandId);
   let done = false;
   let rateLimited = false;
+  let received = 0;
+  let withoutAuthor = 0;
+  let saved = 0;
+  const startedFresh = restart || !giveaway.fetch_cursor;
 
   for (let page = 0; page < PAGES_PER_CALL; page++) {
     let parsed;
@@ -267,6 +271,10 @@ async function fetchComments(admin: any, brandId: string, body: Record<string, u
       throw error;
     }
 
+    received += parsed.received;
+    withoutAuthor += parsed.withoutAuthor;
+    saved += parsed.comments.length;
+
     for (const rows of chunk(
       parsed.comments.map((comment) => ({
         ...comment,
@@ -286,6 +294,22 @@ async function fetchComments(admin: any, brandId: string, body: Record<string, u
       done = true;
       break;
     }
+  }
+
+  // A first pull that ends with nothing stored must not look finished: say why.
+  if (startedFresh && done && saved === 0 && (withoutAuthor > 0 || giveaway.comments_total > 0)) {
+    await admin
+      .from("giveaways")
+      .update({ fetch_cursor: null, fetch_done: false, status: "draft" })
+      .eq("id", giveawayId);
+    if (withoutAuthor > 0) {
+      return fail(
+        "missing_username",
+        "Instagram sent the comments without usernames. The token needs instagram_business_manage_comments",
+        400,
+      );
+    }
+    return fail("no_comments", "Instagram returned no comments for this post", 400);
   }
 
   await admin

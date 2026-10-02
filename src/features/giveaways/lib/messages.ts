@@ -23,6 +23,14 @@ export function giveawayErrorMessage(code: string | undefined, isAr: boolean): s
       return isAr
         ? "رفض انستغرام الطلب. تأكد أن الحساب Business أو Creator وأن الصلاحيات ممنوحة."
         : "Instagram refused the request. Check the account is Business or Creator and the permissions are granted.";
+    case "missing_username":
+      return isAr
+        ? "أرسل انستغرام التعليقات بدون أسماء أصحابها، لأن الرمز لا يملك صلاحية قراءة التعليقات. أنشئ رمزاً جديداً من Meta وتأكد من تفعيل instagram_business_manage_comments ثم الصقه هنا."
+        : "Instagram sent the comments without usernames because the token cannot read comments. Make a new token in Meta with instagram_business_manage_comments ticked, then paste it here.";
+    case "no_comments":
+      return isAr
+        ? "لم يُرجع انستغرام أي تعليق لهذا البوست. تأكد أن الحساب Business أو Creator وأن البوست من نفس الحساب المربوط."
+        : "Instagram returned no comments for this post. Check the account is Business or Creator and the post belongs to the connected account.";
     case "network":
       return isAr
         ? "تعذر الاتصال. تحقق من الإنترنت وحاول مرة أخرى."
