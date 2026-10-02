@@ -66,7 +66,7 @@ describe("the merchant's package look", () => {
         />
       </QueryClientProvider>,
     );
-    const shimmer = await screen.findByRole("radio", { name: /Shimmer/ });
+    const shimmer = await screen.findByRole("radio", { name: /Sheen/ });
     await waitFor(() => expect(shimmer).toHaveAttribute("aria-checked", "true"));
     expect(screen.getAllByRole("radio")).toHaveLength(4);
     fireEvent.click(screen.getByRole("radio", { name: /Ribbon/ }));

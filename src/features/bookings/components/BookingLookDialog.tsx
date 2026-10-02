@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Package, Palette } from "lucide-react";
+import { Check, Gem, Palette, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
+  bookingPageOptionsKeys,
   bookingPageOptionsQueries,
   invalidateBookingPageOptions,
   saveBookingPageOptions,
@@ -25,22 +26,33 @@ import {
 } from "@/lib/bookings/package-style";
 import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
 
-/** A small live sample of a package card in one look. */
+/** A small live sample of a package card in one look (the same classes the storefront uses). */
 function Sample({ style, isAr }: { style: PackageStyle; isAr: boolean }) {
   return (
     <span
-      className={cn(packageCardClass(style), "flex h-20 w-full items-center gap-2 rounded-xl p-2")}
+      className={cn(
+        packageCardClass(style),
+        "flex min-h-24 w-full items-center gap-3 p-3",
+        style === "ribbon" && "pt-8",
+      )}
     >
       {style === "ribbon" && (
-        <span className="absolute end-0 top-0 rounded-es-lg bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
-          {isAr ? "باقة" : "Package"}
+        <span className="pkg-tag" aria-hidden="true">
+          <Gem className="size-3.5" />
+          {isAr ? "باقة" : "PACKAGE"}
         </span>
       )}
-      <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-        <Package className="size-5" aria-hidden="true" />
+      <span className="grid size-12 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/30">
+        <Gem className="size-6" aria-hidden="true" />
       </span>
-      <span className="min-w-0 text-start">
-        <span className="block truncate text-xs font-semibold text-foreground">
+      <span className="min-w-0 space-y-0.5 text-start">
+        {style !== "ribbon" && (
+          <span className="flex items-center gap-1 text-xs font-semibold uppercase tracking-widest text-primary">
+            <Sparkles className="size-3" aria-hidden="true" />
+            {isAr ? "باقة" : "Package"}
+          </span>
+        )}
+        <span className="block truncate font-display text-base text-foreground">
           {isAr ? "الباقة الماسية" : "Diamond package"}
         </span>
         <span className="block text-xs text-muted-foreground">
@@ -63,12 +75,17 @@ export function BookingLookDialog({
 }) {
   const { isAr, brand } = page;
   const qc = useQueryClient();
-  const saved = useQuery(bookingPageOptionsQueries.options(brand.id)).data?.package_style;
+  const query = useQuery(bookingPageOptionsQueries.options(brand.id));
+  // The stored look must be known before anything can be saved, or the default
+  // would be written over it.
+  const ready = query.isSuccess;
+  const saved = query.data?.package_style;
   const [picked, setPicked] = useState<PackageStyle | null>(null);
   const current = picked ?? saved ?? DEFAULT_PACKAGE_STYLE;
   const save = useMutation({
-    mutationFn: () => saveBookingPageOptions(brand.id, { package_style: current }),
-    onSuccess: async () => {
+    mutationFn: (style: PackageStyle) => saveBookingPageOptions(brand.id, { package_style: style }),
+    onSuccess: async (_data, style) => {
+      qc.setQueryData(bookingPageOptionsKeys.all(brand.id), { package_style: style });
       await invalidateBookingPageOptions(qc, brand.id);
       toast.success(isAr ? "تم حفظ الشكل" : "Look saved");
       onOpenChange(false);
@@ -78,7 +95,7 @@ export function BookingLookDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto" dir={isAr ? "rtl" : "ltr"}>
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto" dir={isAr ? "rtl" : "ltr"}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Palette className="size-4 text-primary" aria-hidden="true" />
@@ -93,21 +110,23 @@ export function BookingLookDialog({
         <div
           role="radiogroup"
           aria-label={isAr ? "الشكل" : "Look"}
-          className="grid gap-3 sm:grid-cols-2"
+          className="grid gap-4 sm:grid-cols-2"
         >
           {PACKAGE_STYLES.map((style) => {
             const label = PACKAGE_STYLE_LABELS[style];
+            const active = ready && current === style;
             return (
               <Button
                 key={style}
                 type="button"
                 role="radio"
-                aria-checked={current === style}
+                aria-checked={active}
+                disabled={!ready}
                 variant="outline"
                 onClick={() => setPicked(style)}
                 className={cn(
                   "h-auto flex-col items-stretch gap-2 whitespace-normal rounded-2xl p-3 text-start font-normal",
-                  current === style && "border-primary ring-2 ring-primary/40",
+                  active && "border-primary ring-2 ring-primary/40",
                 )}
               >
                 <Sample style={style} isAr={isAr} />
@@ -115,9 +134,7 @@ export function BookingLookDialog({
                   <span className="text-sm font-semibold text-foreground">
                     {isAr ? label.ar : label.en}
                   </span>
-                  {current === style && (
-                    <Check className="size-4 text-primary" aria-hidden="true" />
-                  )}
+                  {active && <Check className="size-4 text-primary" aria-hidden="true" />}
                 </span>
                 <span className="text-xs text-muted-foreground">
                   {isAr ? label.hintAr : label.hintEn}
@@ -126,7 +143,18 @@ export function BookingLookDialog({
             );
           })}
         </div>
-        <Button type="button" disabled={save.isPending} onClick={() => save.mutate()}>
+        {query.isError && (
+          <p className="text-xs font-semibold text-destructive" role="alert">
+            {isAr
+              ? "تعذّر تحميل الشكل الحالي. أعد المحاولة."
+              : "Could not load the current look. Try again."}
+          </p>
+        )}
+        <Button
+          type="button"
+          disabled={!ready || save.isPending}
+          onClick={() => save.mutate(current)}
+        >
           {isAr ? "حفظ الشكل" : "Save look"}
         </Button>
       </DialogContent>
