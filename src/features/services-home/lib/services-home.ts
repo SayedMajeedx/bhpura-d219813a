@@ -113,7 +113,7 @@ export type PackageOffer = {
   includes: Array<{ id: string; name: string; quantity: number }>;
 };
 
-/** A package's offer: its price against its services apart. Null for a package with no price or no services. */
+/** A package's offer: its price against its services apart. Null for a package with no price. */
 export function packageOffer(
   pkg: ProductRow,
   lines: readonly PackageLine[],
@@ -121,8 +121,9 @@ export function packageOffer(
   nameOf: (product: ProductRow) => string,
 ): PackageOffer | null {
   const price = fromPriceOf(pkg);
-  if (price === null || lines.length === 0) return null;
-  const apart = separatePrice(lines, products.map(asPriceable), null);
+  if (price === null) return null;
+  // A package with no linked services still shows (its price and its own "includes" lines).
+  const apart = lines.length === 0 ? null : separatePrice(lines, products.map(asPriceable), null);
   const includes = lines.flatMap((line) => {
     const service = products.find((p) => p.id === line.product_id);
     return service ? [{ id: service.id, name: nameOf(service), quantity: line.quantity }] : [];

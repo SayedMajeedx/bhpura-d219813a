@@ -28,6 +28,8 @@ export type BookableService = {
   item_kind?: string | null;
   /** A package: a service made of other services (what it includes shows with it). */
   is_package?: boolean | null;
+  /** The category it is filed under (a rentals category makes it a rental). */
+  category?: string | null;
   /** Each hour past its longest length costs this (null: not bookable longer). */
   extra_hour_price?: number | null;
   /** The questions the service asks the customer (booking-questions.ts). */
