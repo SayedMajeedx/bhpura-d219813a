@@ -1,4 +1,4 @@
-import { Check, Package } from "lucide-react";
+import { Check, Gem, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/storefront-context";
@@ -13,9 +13,10 @@ import {
 import type { BookingFlow } from "@/features/storefront-booking/hooks/use-booking-flow";
 
 /**
- * A package in the service list: it stands out from a service with a tinted
- * card in the merchant's chosen look (glow, shimmer, ribbon or plain), a
- * "Package" badge, what it includes and what it saves.
+ * A package in the service list: it stands out from a service with the
+ * merchant's chosen look (a foil border, depth and a tint in the brand colour;
+ * Aura, Sheen, Ribbon or Classic), a "Package" mark, what it includes and what
+ * it saves.
  */
 export function BookingPackageCard({
   flow,
@@ -38,22 +39,21 @@ export function BookingPackageCard({
   return (
     <Button
       type="button"
-      variant="outline"
+      variant="ghost"
       role="checkbox"
       aria-checked={chosen}
       onClick={() => flow.toggleService(service.id)}
       className={cn(
         packageCardClass(style),
-        "flex h-auto w-full items-start justify-start gap-3 whitespace-normal rounded-2xl p-3 text-start font-normal hover:bg-transparent",
-        chosen && "border-primary ring-2 ring-primary/40",
+        "flex h-auto w-full items-start justify-start gap-4 whitespace-normal p-4 text-start font-normal hover:bg-transparent",
+        style === "ribbon" && "pt-9",
+        chosen && "ring-2 ring-primary ring-offset-2 ring-offset-background",
       )}
     >
       {style === "ribbon" && (
-        <span
-          className="absolute end-0 top-0 rounded-es-xl bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground"
-          aria-hidden="true"
-        >
-          {isAr ? "باقة" : "Package"}
+        <span className="pkg-tag" aria-hidden="true">
+          <Gem className="size-3.5" />
+          {isAr ? "باقة" : "PACKAGE"}
         </span>
       )}
       {service.image_url ? (
@@ -61,29 +61,29 @@ export function BookingPackageCard({
           src={service.image_url}
           alt=""
           loading="lazy"
-          className="size-16 shrink-0 rounded-xl object-cover"
+          className="size-20 shrink-0 rounded-xl object-cover shadow-md ring-1 ring-primary/30"
         />
       ) : (
         <span
-          className="grid size-16 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"
+          className="grid size-20 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/30"
           aria-hidden="true"
         >
-          <Package className="size-7" />
+          <Gem className="size-8" />
         </span>
       )}
-      <span className="min-w-0 flex-1 space-y-1.5">
+      <span className="min-w-0 flex-1 space-y-2">
+        {style !== "ribbon" && (
+          <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-primary">
+            <Sparkles className="size-3.5" aria-hidden="true" />
+            {isAr ? "باقة" : "Package"}
+          </span>
+        )}
         <span className="flex flex-wrap items-center gap-2">
-          <span className="text-base font-semibold text-foreground">
+          <span className="font-display text-xl leading-tight text-foreground">
             {serviceName(service, isAr)}
           </span>
-          {style !== "ribbon" && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">
-              <Package className="size-3" aria-hidden="true" />
-              {isAr ? "باقة" : "Package"}
-            </span>
-          )}
           {saving !== null && (
-            <span className="rounded-full bg-success px-2 py-0.5 text-xs font-semibold text-success-foreground">
+            <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-primary-foreground">
               {isAr ? `وفّر ${saving}%` : `Save ${saving}%`}
             </span>
           )}
@@ -93,19 +93,22 @@ export function BookingPackageCard({
             {includes.map((line) => (
               <span
                 key={line}
-                className="rounded-full border border-border bg-background/70 px-2 py-0.5 text-xs text-muted-foreground"
+                className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-background/80 px-2.5 py-0.5 text-xs text-foreground"
               >
+                <Check className="size-3 text-primary" aria-hidden="true" />
                 {line}
               </span>
             ))}
           </span>
         )}
         {showPrices && price !== null && (
-          <span className="block text-sm font-semibold text-foreground">
-            {from && (isAr ? "من " : "From ")}
-            {formatPrice(price, currency, lang)}
+          <span className="flex items-baseline gap-2">
+            <span className="font-display text-lg font-semibold text-foreground" dir="ltr">
+              {from && (isAr ? "من " : "From ")}
+              {formatPrice(price, currency, lang)}
+            </span>
             {was !== null && (
-              <s className="ms-2 text-xs font-normal text-muted-foreground">
+              <s className="text-sm font-normal text-muted-foreground" dir="ltr">
                 {formatPrice(was, currency, lang)}
               </s>
             )}
@@ -114,8 +117,8 @@ export function BookingPackageCard({
       </span>
       <span
         className={cn(
-          "grid size-6 shrink-0 place-items-center rounded-full border",
-          chosen ? "border-primary bg-primary text-primary-foreground" : "border-border",
+          "grid size-7 shrink-0 place-items-center rounded-full border-2",
+          chosen ? "border-primary bg-primary text-primary-foreground" : "border-primary/40",
         )}
         aria-hidden="true"
       >
