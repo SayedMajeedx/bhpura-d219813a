@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Gift } from "lucide-react";
+import { useIsServicesStore } from "@/lib/storefront-context";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { Dispatch, SetStateAction } from "react";
 import type { CheckoutForm, SetCheckoutForm, Storefront } from "@/features/checkout/types";
@@ -48,6 +49,7 @@ export function CustomerDetailsCard({
   t: Storefront["t"];
   whatsappOrderUpdates: boolean;
 }) {
+  const servicesStore = useIsServicesStore();
   return (
     <Card className="p-5 space-y-4">
       <h2 className="font-display text-xl">{t("بيانات العميل", "Customer details")}</h2>
@@ -107,48 +109,50 @@ export function CustomerDetailsCard({
           />
         </div>
       </div>
-      {/* 🎁 Gift Option Box */}
-      <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
-        <label className="flex items-center gap-2.5 cursor-pointer select-none">
-          <Checkbox checked={isGift} onCheckedChange={(checked) => setIsGift(checked === true)} />
-          <Gift className="h-4 w-4 text-primary shrink-0" />
-          <span className="text-sm font-semibold text-foreground">
-            {t("هل ترغب في إرسال هذا الطلب كهدية؟ 🎁", "Send this order as a gift? 🎁")}
-          </span>
-        </label>
-        {isGift && (
-          <div className="space-y-3 pt-2 border-t border-primary/15 animate-in fade-in-50 duration-200">
-            <div>
-              <Label htmlFor="gift-recipient" className="text-xs font-medium">
-                {t("اسم المستلم (اختياري)", "Recipient Name (Optional)")}
-              </Label>
-              <Input
-                id="gift-recipient"
-                type="text"
-                placeholder={t("مثال: سارة محمد", "e.g. Sarah Mohamed")}
-                value={giftRecipient}
-                onChange={(e) => setGiftRecipient(e.target.value)}
-                className="h-9 text-xs rounded-lg mt-1 bg-background"
-              />
+      {/* 🎁 Gift Option Box: not for a services store, where an order is a booking. */}
+      {!servicesStore && (
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+          <label className="flex items-center gap-2.5 cursor-pointer select-none">
+            <Checkbox checked={isGift} onCheckedChange={(checked) => setIsGift(checked === true)} />
+            <Gift className="h-4 w-4 text-primary shrink-0" />
+            <span className="text-sm font-semibold text-foreground">
+              {t("هل ترغب في إرسال هذا الطلب كهدية؟ 🎁", "Send this order as a gift? 🎁")}
+            </span>
+          </label>
+          {isGift && (
+            <div className="space-y-3 pt-2 border-t border-primary/15 animate-in fade-in-50 duration-200">
+              <div>
+                <Label htmlFor="gift-recipient" className="text-xs font-medium">
+                  {t("اسم المستلم (اختياري)", "Recipient Name (Optional)")}
+                </Label>
+                <Input
+                  id="gift-recipient"
+                  type="text"
+                  placeholder={t("مثال: سارة محمد", "e.g. Sarah Mohamed")}
+                  value={giftRecipient}
+                  onChange={(e) => setGiftRecipient(e.target.value)}
+                  className="h-9 text-xs rounded-lg mt-1 bg-background"
+                />
+              </div>
+              <div>
+                <Label htmlFor="gift-card-message" className="text-xs font-medium">
+                  {t("رسالة كرت الإهداء", "Gift Card Message")}
+                </Label>
+                <Textarea
+                  id="gift-card-message"
+                  placeholder={t(
+                    "اكتب كلماتك الرقيقة لطباعتها في بطاقة الإهداء الفاخرة...",
+                    "Write your warm message to print on our luxury gift card...",
+                  )}
+                  value={giftMessage}
+                  onChange={(e) => setGiftMessage(e.target.value)}
+                  className="min-h-[70px] text-xs rounded-lg mt-1 bg-background resize-none"
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="gift-card-message" className="text-xs font-medium">
-                {t("رسالة كرت الإهداء", "Gift Card Message")}
-              </Label>
-              <Textarea
-                id="gift-card-message"
-                placeholder={t(
-                  "اكتب كلماتك الرقيقة لطباعتها في بطاقة الإهداء الفاخرة...",
-                  "Write your warm message to print on our luxury gift card...",
-                )}
-                value={giftMessage}
-                onChange={(e) => setGiftMessage(e.target.value)}
-                className="min-h-[70px] text-xs rounded-lg mt-1 bg-background resize-none"
-              />
-            </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       <div>
         <Label htmlFor="checkout-notes">{t("ملاحظات", "Notes")}</Label>

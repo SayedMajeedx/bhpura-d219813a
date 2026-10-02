@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Grid2X2, Rows, PackageSearch } from "lucide-react";
-import { useStorefront } from "@/lib/storefront-context";
+import { useIsServicesStore, useStorefront } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OsEmptyState } from "@/components/os/os-empty-state";
@@ -19,6 +19,8 @@ export function ProductGrid({
   onViewAll: () => void;
 }) {
   const { t } = useStorefront();
+  // A services store lists services, not products.
+  const services = useIsServicesStore();
 
   // [TECH ADVISOR #2]: Hydration guard. Initial render uses "2" columns.
   // Read preference from localStorage only in useEffect after mount to completely prevent hydration mismatches!
@@ -74,24 +76,40 @@ export function ProductGrid({
         icon={PackageSearch}
         title={
           categoryEmpty
-            ? t("لا توجد منتجات متاحة", "No products available")
-            : t("لا توجد منتجات بعد", "No products yet")
+            ? services
+              ? t("لا توجد خدمات متاحة", "No services available")
+              : t("لا توجد منتجات متاحة", "No products available")
+            : services
+              ? t("لا توجد خدمات بعد", "No services yet")
+              : t("لا توجد منتجات بعد", "No products yet")
         }
         description={
           categoryEmpty
-            ? t(
-                "لا توجد منتجات متاحة في هذا القسم حالياً. يمكنك تصفح كافة المنتجات الأخرى.",
-                "No products are currently available in this category. You can browse all other products.",
-              )
-            : t(
-                "لم يتم إضافة أي منتجات إلى هذا المتجر حتى الآن.",
-                "No products have been added to this store yet.",
-              )
+            ? services
+              ? t(
+                  "لا توجد خدمات متاحة في هذا القسم حالياً. يمكنك تصفح كافة الخدمات الأخرى.",
+                  "No services are currently available in this category. You can browse all other services.",
+                )
+              : t(
+                  "لا توجد منتجات متاحة في هذا القسم حالياً. يمكنك تصفح كافة المنتجات الأخرى.",
+                  "No products are currently available in this category. You can browse all other products.",
+                )
+            : services
+              ? t(
+                  "لم تتم إضافة أي خدمات إلى هذا المتجر حتى الآن.",
+                  "No services have been added to this store yet.",
+                )
+              : t(
+                  "لم يتم إضافة أي منتجات إلى هذا المتجر حتى الآن.",
+                  "No products have been added to this store yet.",
+                )
         }
         action={
           categoryEmpty ? (
             <Button variant="default" onClick={onViewAll}>
-              {t("عرض كل المنتجات", "View all products")}
+              {services
+                ? t("عرض كل الخدمات", "View all services")
+                : t("عرض كل المنتجات", "View all products")}
             </Button>
           ) : undefined
         }
@@ -104,7 +122,14 @@ export function ProductGrid({
       {/* Dynamic Grid Layout Switcher control bar */}
       <div className="flex items-center justify-between pb-2 border-b border-border">
         <span className="text-xs text-muted-foreground font-medium">
-          {products.length} {products.length === 1 ? t("منتج", "product") : t("منتجات", "products")}
+          {products.length}{" "}
+          {services
+            ? products.length === 1
+              ? t("خدمة", "service")
+              : t("خدمات", "services")
+            : products.length === 1
+              ? t("منتج", "product")
+              : t("منتجات", "products")}
         </span>
 
         {/* Toggle columns trigger button (strictly visible on mobile viewport <md) */}

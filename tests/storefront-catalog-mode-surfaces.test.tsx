@@ -36,6 +36,7 @@ vi.mock("@tanstack/react-router", () => ({
 const storefrontModule = async (importOriginal: () => Promise<object>) => ({
   ...(await importOriginal()),
   useStorefront: () => storefront,
+  useIsServicesStore: () => false,
 });
 vi.mock("../src/lib/storefront-context", (io) => storefrontModule(io));
 vi.mock("@/lib/storefront-context", (io) => storefrontModule(io));

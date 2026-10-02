@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { useStorefront } from "@/lib/storefront-context";
+import { useIsServicesStore, useStorefront } from "@/lib/storefront-context";
 import { NewsletterForm } from "@/components/storefront/NewsletterForm";
 import { TrustBar } from "@/components/storefront/TrustBar";
 import { Instagram, ChevronDown } from "lucide-react";
@@ -9,6 +9,8 @@ import { Instagram, ChevronDown } from "lucide-react";
 export function FooterV2() {
   const { brand, settings, lang, t } = useStorefront();
   const isAr = lang === "ar";
+  // A services store's footer talks about services and bookings, not products.
+  const servicesStore = useIsServicesStore();
 
   // Mobile accordion state
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -132,7 +134,7 @@ export function FooterV2() {
               className="text-xs font-semibold uppercase tracking-wider opacity-90 border-b border-white/10 pb-2"
               style={{ color: "var(--sf-footer-fg)" }}
             >
-              {t("تسوّق", "Shop")}
+              {servicesStore ? t("خدماتنا", "Our services") : t("تسوّق", "Shop")}
             </h4>
             <nav className="flex flex-col space-y-2 text-xs">
               <Link
@@ -143,30 +145,53 @@ export function FooterV2() {
               >
                 {t("الرئيسية", "Home")}
               </Link>
-              <Link
-                to="/$slug/$category"
-                params={{ slug: brand.slug, category: "all" }}
-                className="opacity-75 hover:opacity-100 hover:translate-x-0.5 transition-all w-fit"
-                style={{ color: "var(--sf-footer-fg)" }}
-              >
-                {t("كل المنتجات", "All Products")}
-              </Link>
-              <Link
-                to="/$slug/$category"
-                params={{ slug: brand.slug, category: "new" }}
-                className="opacity-75 hover:opacity-100 hover:translate-x-0.5 transition-all w-fit"
-                style={{ color: "var(--sf-footer-fg)" }}
-              >
-                {t("وصل حديثاً", "New Arrivals")}
-              </Link>
-              <Link
-                to="/$slug/$category"
-                params={{ slug: brand.slug, category: "sale" }}
-                className="opacity-75 hover:opacity-100 hover:translate-x-0.5 transition-all w-fit text-destructive font-medium"
-              >
-                {t("التخفيضات", "Sale")}
-              </Link>
-              {(brand as any)?.modules?.made_to_order && (
+              {servicesStore ? (
+                <>
+                  <Link
+                    to="/$slug/$category"
+                    params={{ slug: brand.slug, category: "all" }}
+                    className="opacity-75 hover:opacity-100 hover:translate-x-0.5 transition-all w-fit"
+                    style={{ color: "var(--sf-footer-fg)" }}
+                  >
+                    {t("كل الخدمات", "All services")}
+                  </Link>
+                  <Link
+                    to="/$slug/book"
+                    params={{ slug: brand.slug }}
+                    className="opacity-75 hover:opacity-100 hover:translate-x-0.5 transition-all w-fit font-medium"
+                    style={{ color: "var(--sf-footer-fg)" }}
+                  >
+                    {t("احجز موعدك", "Book a date")}
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/$slug/$category"
+                    params={{ slug: brand.slug, category: "all" }}
+                    className="opacity-75 hover:opacity-100 hover:translate-x-0.5 transition-all w-fit"
+                    style={{ color: "var(--sf-footer-fg)" }}
+                  >
+                    {t("كل المنتجات", "All Products")}
+                  </Link>
+                  <Link
+                    to="/$slug/$category"
+                    params={{ slug: brand.slug, category: "new" }}
+                    className="opacity-75 hover:opacity-100 hover:translate-x-0.5 transition-all w-fit"
+                    style={{ color: "var(--sf-footer-fg)" }}
+                  >
+                    {t("وصل حديثاً", "New Arrivals")}
+                  </Link>
+                  <Link
+                    to="/$slug/$category"
+                    params={{ slug: brand.slug, category: "sale" }}
+                    className="opacity-75 hover:opacity-100 hover:translate-x-0.5 transition-all w-fit text-destructive font-medium"
+                  >
+                    {t("التخفيضات", "Sale")}
+                  </Link>
+                </>
+              )}
+              {!servicesStore && (brand as any)?.modules?.made_to_order && (
                 <Link
                   to={"/$slug/custom-order" as any}
                   params={{ slug: brand.slug } as any}
@@ -194,7 +219,9 @@ export function FooterV2() {
                 className="opacity-75 hover:opacity-100 hover:translate-x-0.5 transition-all w-fit"
                 style={{ color: "var(--sf-footer-fg)" }}
               >
-                {t("تتبع الطلبات وحسابي", "Track Order & Account")}
+                {servicesStore
+                  ? t("حجوزاتي وحسابي", "My bookings & account")
+                  : t("تتبع الطلبات وحسابي", "Track Order & Account")}
               </Link>
               {pageLinks.map((p) => (
                 <Link
@@ -216,7 +243,7 @@ export function FooterV2() {
               className="text-xs font-semibold uppercase tracking-wider opacity-90 border-b border-white/10 pb-2"
               style={{ color: "var(--sf-footer-fg)" }}
             >
-              {t("تواصلي معنا", "Stay Connected")}
+              {t("تواصل معنا", "Stay Connected")}
             </h4>
 
             {settings.newsletter_enabled !== false && <NewsletterForm />}
@@ -268,7 +295,7 @@ export function FooterV2() {
               className="h-auto min-h-11 rounded-md w-full flex items-center justify-between py-2 text-xs font-semibold"
               style={{ color: "var(--sf-footer-fg)" }}
             >
-              <span>{t("تسوّق", "Shop")}</span>
+              <span>{servicesStore ? t("خدماتنا", "Our services") : t("تسوّق", "Shop")}</span>
               <ChevronDown
                 className={`h-4 w-4 transition-transform duration-200 ${
                   openSections.shop ? "rotate-180" : ""
@@ -277,29 +304,52 @@ export function FooterV2() {
             </Button>
             {openSections.shop && (
               <nav className="flex flex-col space-y-2 pt-1 pb-2 text-xs ps-2">
-                <Link
-                  to="/$slug/$category"
-                  params={{ slug: brand.slug, category: "all" }}
-                  className="opacity-75 hover:opacity-100 py-1 min-h-11 flex items-center"
-                  style={{ color: "var(--sf-footer-fg)" }}
-                >
-                  {t("كل المنتجات", "All Products")}
-                </Link>
-                <Link
-                  to="/$slug/$category"
-                  params={{ slug: brand.slug, category: "new" }}
-                  className="opacity-75 hover:opacity-100 py-1 min-h-11 flex items-center"
-                  style={{ color: "var(--sf-footer-fg)" }}
-                >
-                  {t("وصل حديثاً", "New Arrivals")}
-                </Link>
-                <Link
-                  to="/$slug/$category"
-                  params={{ slug: brand.slug, category: "sale" }}
-                  className="opacity-75 hover:opacity-100 py-1 text-destructive font-medium"
-                >
-                  {t("التخفيضات", "Sale")}
-                </Link>
+                {servicesStore ? (
+                  <>
+                    <Link
+                      to="/$slug/$category"
+                      params={{ slug: brand.slug, category: "all" }}
+                      className="opacity-75 hover:opacity-100 py-1 min-h-11 flex items-center"
+                      style={{ color: "var(--sf-footer-fg)" }}
+                    >
+                      {t("كل الخدمات", "All services")}
+                    </Link>
+                    <Link
+                      to="/$slug/book"
+                      params={{ slug: brand.slug }}
+                      className="opacity-75 hover:opacity-100 py-1 min-h-11 flex items-center font-medium"
+                      style={{ color: "var(--sf-footer-fg)" }}
+                    >
+                      {t("احجز موعدك", "Book a date")}
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/$slug/$category"
+                      params={{ slug: brand.slug, category: "all" }}
+                      className="opacity-75 hover:opacity-100 py-1 min-h-11 flex items-center"
+                      style={{ color: "var(--sf-footer-fg)" }}
+                    >
+                      {t("كل المنتجات", "All Products")}
+                    </Link>
+                    <Link
+                      to="/$slug/$category"
+                      params={{ slug: brand.slug, category: "new" }}
+                      className="opacity-75 hover:opacity-100 py-1 min-h-11 flex items-center"
+                      style={{ color: "var(--sf-footer-fg)" }}
+                    >
+                      {t("وصل حديثاً", "New Arrivals")}
+                    </Link>
+                    <Link
+                      to="/$slug/$category"
+                      params={{ slug: brand.slug, category: "sale" }}
+                      className="opacity-75 hover:opacity-100 py-1 text-destructive font-medium"
+                    >
+                      {t("التخفيضات", "Sale")}
+                    </Link>
+                  </>
+                )}
               </nav>
             )}
           </div>
@@ -329,7 +379,9 @@ export function FooterV2() {
                   className="opacity-75 hover:opacity-100 py-1 min-h-11 flex items-center"
                   style={{ color: "var(--sf-footer-fg)" }}
                 >
-                  {t("تتبع الطلبات وحسابي", "Track Order & Account")}
+                  {servicesStore
+                    ? t("حجوزاتي وحسابي", "My bookings & account")
+                    : t("تتبع الطلبات وحسابي", "Track Order & Account")}
                 </Link>
                 {pageLinks.map((p) => (
                   <Link

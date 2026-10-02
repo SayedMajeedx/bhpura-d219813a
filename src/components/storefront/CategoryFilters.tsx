@@ -2,7 +2,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { resolveColorHex } from "@/lib/color-names";
-import { useStorefront } from "@/lib/storefront-context";
+import { useIsServicesStore, useStorefront } from "@/lib/storefront-context";
 import { resolveVariantAxis } from "@/lib/addons/addon-registry";
 import { isColorSwatchAxis, useStoreAxisDefaults } from "@/lib/variant-axes";
 import { formatSizeWithUnit } from "@/lib/format";
@@ -43,18 +43,22 @@ export function CategoryFilters({
   className = "",
 }: CategoryFiltersProps) {
   const { lang, t } = useStorefront();
+  const servicesStore = useIsServicesStore();
   const isAr = lang === "ar";
   const axisLang = isAr ? "ar" : "en";
 
   // Filter headings follow the store's own option names (a roastery's "size"
   // is the bag weight and its "color" is the grind), not the column names.
   const axisDefaults = useStoreAxisDefaults();
-  const sizeLabel = resolveVariantAxis({
-    axis: "size",
-    addonDefaults: axisDefaults,
-    lang: axisLang,
-    hasValues: availableSizes.length > 0,
-  }).label;
+  // A service's "size" is how long it is booked for.
+  const sizeLabel = servicesStore
+    ? t("المدة", "Duration")
+    : resolveVariantAxis({
+        axis: "size",
+        addonDefaults: axisDefaults,
+        lang: axisLang,
+        hasValues: availableSizes.length > 0,
+      }).label;
   const colorLabel = resolveVariantAxis({
     axis: "color",
     addonDefaults: axisDefaults,
@@ -91,7 +95,7 @@ export function CategoryFilters({
       <div className="flex items-center justify-between pb-3 border-b border-border">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-foreground">
-            {t("تصفية المنتجات", "Filters")}
+            {servicesStore ? t("تصفية الخدمات", "Filter services") : t("تصفية المنتجات", "Filters")}
           </h3>
           <span className="text-xs text-muted-foreground">({totalFilteredCount})</span>
         </div>
@@ -109,19 +113,21 @@ export function CategoryFilters({
         )}
       </div>
 
-      {/* In-Stock Only Switch */}
-      <div className="flex items-center justify-between">
-        <label htmlFor="filter-instock" className="text-xs font-medium cursor-pointer">
-          {t("المتوفر في المخزون فقط", "In-stock items only")}
-        </label>
-        <input
-          id="filter-instock"
-          type="checkbox"
-          checked={filters.inStockOnly}
-          onChange={(e) => onChange((prev) => ({ ...prev, inStockOnly: e.target.checked }))}
-          className="h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
-        />
-      </div>
+      {/* In-Stock Only Switch (a service is booked, never out of stock) */}
+      {!servicesStore && (
+        <div className="flex items-center justify-between">
+          <label htmlFor="filter-instock" className="text-xs font-medium cursor-pointer">
+            {t("المتوفر في المخزون فقط", "In-stock items only")}
+          </label>
+          <input
+            id="filter-instock"
+            type="checkbox"
+            checked={filters.inStockOnly}
+            onChange={(e) => onChange((prev) => ({ ...prev, inStockOnly: e.target.checked }))}
+            className="h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
+          />
+        </div>
+      )}
 
       {/* Sizes Section */}
       {availableSizes.length > 0 && (

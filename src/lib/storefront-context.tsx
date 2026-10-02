@@ -21,6 +21,7 @@ import { getExistingCartSessionId, getOrCreateCartSessionId } from "@/lib/abando
 import { isCatalogMode, type StorefrontMode } from "@/lib/storefront-mode";
 import {
   resolveStoreModules,
+  isServicesProfile,
   type StoreVertical,
   type StoreModuleOverrides,
 } from "@/lib/store-profile";
@@ -911,6 +912,11 @@ export function useStorefront() {
   const v = useContext(Ctx);
   if (!v) throw new Error("useStorefront must be used within StorefrontProvider");
   return v;
+}
+
+/** Whether this storefront is a services store (see isServicesProfile): bookings, no stock, no shipping. */
+export function useIsServicesStore() {
+  return isServicesProfile(useStoreModules());
 }
 
 export function useStoreModules() {
