@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { CategoryFilters, type FilterState } from "@/components/storefront/CategoryFilters";
-import { useStorefront } from "@/lib/storefront-context";
+import { useIsServicesStore, useStorefront } from "@/lib/storefront-context";
 import { SlidersHorizontal } from "lucide-react";
 
 interface CategoryFiltersSheetProps {
@@ -27,6 +27,7 @@ export function CategoryFiltersSheet({
   totalFilteredCount,
 }: CategoryFiltersSheetProps) {
   const { t } = useStorefront();
+  const servicesStore = useIsServicesStore();
   const [open, setOpen] = useState(false);
 
   const activeCount = [
@@ -62,7 +63,9 @@ export function CategoryFiltersSheet({
       >
         <SheetHeader className="p-4 border-b border-border text-start">
           <SheetTitle className="text-sm font-semibold">
-            {t("تصفية المنتجات", "Filter Products")}
+            {servicesStore
+              ? t("تصفية الخدمات", "Filter Services")
+              : t("تصفية المنتجات", "Filter Products")}
           </SheetTitle>
         </SheetHeader>
 

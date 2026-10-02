@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useStorefront } from "@/lib/storefront-context";
+import { useIsServicesStore, useStorefront } from "@/lib/storefront-context";
 import {
   fetchStorefrontPageMeta,
   hasAvailableStock,
@@ -91,6 +91,7 @@ export const Route = createFileRoute("/$slug/$category")({
 
 function CategoryPage() {
   const { brand, lang, t, settings } = useStorefront();
+  const servicesStore = useIsServicesStore();
   const { category: categorySlug } = Route.useParams();
   const cmsPage = settings.pages.find((page) => page.slug === categorySlug);
   const [filters, setFilters] = useState<FilterState>(() => {
@@ -630,10 +631,15 @@ function CategoryPage() {
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-border">
               <div className="flex items-center gap-3">
                 <span className="text-xs font-medium text-muted-foreground">
-                  {t(
-                    `عرض ${filteredProducts.length} من أصل ${productsQuery.data?.length ?? 0} منتج`,
-                    `Showing ${filteredProducts.length} of ${productsQuery.data?.length ?? 0} products`,
-                  )}
+                  {servicesStore
+                    ? t(
+                        `عرض ${filteredProducts.length} من أصل ${productsQuery.data?.length ?? 0} خدمة`,
+                        `Showing ${filteredProducts.length} of ${productsQuery.data?.length ?? 0} services`,
+                      )
+                    : t(
+                        `عرض ${filteredProducts.length} من أصل ${productsQuery.data?.length ?? 0} منتج`,
+                        `Showing ${filteredProducts.length} of ${productsQuery.data?.length ?? 0} products`,
+                      )}
                 </span>
               </div>
 
@@ -654,7 +660,11 @@ function CategoryPage() {
                 <select
                   id="category-sort"
                   name="category-sort"
-                  aria-label={t("ترتيب المنتجات", "Sort products")}
+                  aria-label={
+                    servicesStore
+                      ? t("ترتيب الخدمات", "Sort services")
+                      : t("ترتيب المنتجات", "Sort products")
+                  }
                   value={sort}
                   onChange={(event) => setSort(event.target.value as typeof sort)}
                   className="h-10 rounded-lg border border-border bg-card px-3 text-xs font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -706,7 +716,11 @@ function CategoryPage() {
               <select
                 id="category-sort"
                 name="category-sort"
-                aria-label={t("ترتيب المنتجات", "Sort products")}
+                aria-label={
+                  servicesStore
+                    ? t("ترتيب الخدمات", "Sort services")
+                    : t("ترتيب المنتجات", "Sort products")
+                }
                 value={sort}
                 onChange={(event) => setSort(event.target.value as typeof sort)}
                 className="h-11 rounded-lg border bg-background px-3 text-sm"

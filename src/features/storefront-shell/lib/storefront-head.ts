@@ -6,7 +6,7 @@ import {
   selfHostedFontPreloads,
 } from "@/lib/typography";
 import { buildOrganizationSchema, buildWebSiteSchema } from "@/lib/seo/structured-data";
-import { resolveStoreModules } from "@/lib/store-profile";
+import { isServicesProfile, resolveStoreModules } from "@/lib/store-profile";
 import { faviconType, resolveBrandFavicon } from "@/lib/favicon";
 
 /**
@@ -28,7 +28,7 @@ export function storefrontHead(loaderData: unknown) {
     store_vertical: settings?.store_vertical,
     store_modules: settings?.store_modules,
   });
-  const takesBookings = modules.bookings && !modules.stock && !modules.shipping;
+  const takesBookings = isServicesProfile(modules);
   const nameAr = settings?.business_name || b.name_ar || b.name_en;
   const nameEn = settings?.business_name || b.name_en || b.name_ar;
   const title =

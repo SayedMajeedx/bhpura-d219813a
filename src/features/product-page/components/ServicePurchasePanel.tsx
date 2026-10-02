@@ -61,7 +61,11 @@ export function ServicePurchasePanel({ product }: { product: ServiceProduct }) {
           <p className="text-sm font-semibold text-foreground">
             {t("اختر المدة", "Choose a length")}
           </p>
-          <div role="radiogroup" aria-label={t("المدة", "Length")} className="flex flex-wrap gap-2">
+          <div
+            role="radiogroup"
+            aria-label={t("المدة", "Length")}
+            className="grid grid-cols-[repeat(auto-fit,minmax(6.5rem,1fr))] gap-2"
+          >
             {lengths.map((variant) => {
               const selected = variant.id === chosen?.id;
               return (
@@ -73,7 +77,7 @@ export function ServicePurchasePanel({ product }: { product: ServiceProduct }) {
                   variant="outline"
                   onClick={() => setChosenId(variant.id)}
                   className={cn(
-                    "h-auto min-w-24 flex-col gap-0.5 whitespace-normal rounded-xl px-3 py-2",
+                    "h-auto w-full flex-col gap-0.5 whitespace-normal rounded-xl px-3 py-2.5",
                     selected && "border-primary bg-primary/10 ring-1 ring-primary",
                   )}
                 >
@@ -91,7 +95,7 @@ export function ServicePurchasePanel({ product }: { product: ServiceProduct }) {
       )}
 
       {price > 0 && (
-        <p className="flex items-baseline gap-2">
+        <p className="flex items-baseline gap-2 pt-1">
           <span className="text-2xl font-bold text-foreground" dir="ltr">
             {formatPrice(price, currency, lang)}
           </span>

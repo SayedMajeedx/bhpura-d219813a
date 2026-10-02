@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useStorefront } from "@/lib/storefront-context";
+import { useIsServicesStore, useStorefront } from "@/lib/storefront-context";
 import { subscribeToNewsletter } from "@/lib/storefront-leads.functions";
 import { toast } from "sonner";
 import { Send, CheckCircle2, MessageCircle, Mail } from "lucide-react";
@@ -14,6 +14,7 @@ interface NewsletterFormProps {
 export function NewsletterForm({ className = "", source = "footer" }: NewsletterFormProps) {
   const { brand, settings, lang, t } = useStorefront();
   const isAr = lang === "ar";
+  const servicesStore = useIsServicesStore();
 
   const [channel, setChannel] = useState<"whatsapp" | "email">("whatsapp");
   const [contact, setContact] = useState("");
@@ -21,8 +22,14 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
   const [success, setSuccess] = useState(false);
 
   const title = isAr
-    ? settings?.newsletter_title_ar || "اشترك في نشرتنا لتصلك أحدث المنتجات والعروض"
-    : settings?.newsletter_title_en || "Subscribe for exclusive updates & new arrivals";
+    ? settings?.newsletter_title_ar ||
+      (servicesStore
+        ? "اشترك في نشرتنا لتصلك عروضنا والمواعيد المتاحة"
+        : "اشترك في نشرتنا لتصلك أحدث المنتجات والعروض")
+    : settings?.newsletter_title_en ||
+      (servicesStore
+        ? "Subscribe for our offers and open dates"
+        : "Subscribe for exclusive updates & new arrivals");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

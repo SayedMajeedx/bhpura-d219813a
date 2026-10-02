@@ -144,6 +144,15 @@ export function resolveStoreModules(source: StoreProfileSource | null | undefine
   ) as StoreModules;
 }
 
+/**
+ * A store that takes bookings and sells no goods: its pages talk about services,
+ * dates and bookings, not products, stock, gifts or shipping. A store that also
+ * keeps stock or ships stays a shop.
+ */
+export function isServicesProfile(modules: Pick<StoreModules, "bookings" | "stock" | "shipping">) {
+  return modules.bookings && !modules.stock && !modules.shipping;
+}
+
 export function isModuleEnabled(
   source: StoreProfileSource | null | undefined,
   id: StoreModuleId,

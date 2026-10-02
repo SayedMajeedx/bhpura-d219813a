@@ -22,10 +22,12 @@ const addonsContext = () => ({ addons: store.addons, isInstalled: () => false, i
 vi.mock("../src/lib/storefront-context", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   useStorefront: storefront,
+  useIsServicesStore: () => false,
 }));
 vi.mock("@/lib/storefront-context", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   useStorefront: storefront,
+  useIsServicesStore: () => false,
 }));
 vi.mock("../src/components/addons/AddonsProvider", async (importOriginal) => ({
   ...(await importOriginal<object>()),
