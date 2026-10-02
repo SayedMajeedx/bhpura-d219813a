@@ -3485,6 +3485,185 @@ export type Database = {
         };
         Relationships: [];
       };
+      giveaway_comments: {
+        Row: {
+          body: string;
+          brand_id: string;
+          comment_id: string;
+          commented_at: string | null;
+          giveaway_id: string;
+          like_count: number;
+          username: string;
+        };
+        Insert: {
+          body?: string;
+          brand_id: string;
+          comment_id: string;
+          commented_at?: string | null;
+          giveaway_id: string;
+          like_count?: number;
+          username: string;
+        };
+        Update: {
+          body?: string;
+          brand_id?: string;
+          comment_id?: string;
+          commented_at?: string | null;
+          giveaway_id?: string;
+          like_count?: number;
+          username?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "giveaway_comments_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "giveaway_comments_giveaway_id_fkey";
+            columns: ["giveaway_id"];
+            isOneToOne: false;
+            referencedRelation: "giveaways";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      giveaway_winners: {
+        Row: {
+          brand_id: string;
+          comment_body: string;
+          comment_id: string;
+          created_at: string;
+          follow_checked: boolean;
+          giveaway_id: string;
+          id: string;
+          kind: string;
+          like_checked: boolean;
+          note: string | null;
+          position: number;
+          status: string;
+          username: string;
+        };
+        Insert: {
+          brand_id: string;
+          comment_body?: string;
+          comment_id: string;
+          created_at?: string;
+          follow_checked?: boolean;
+          giveaway_id: string;
+          id?: string;
+          kind: string;
+          like_checked?: boolean;
+          note?: string | null;
+          position: number;
+          status?: string;
+          username: string;
+        };
+        Update: {
+          brand_id?: string;
+          comment_body?: string;
+          comment_id?: string;
+          created_at?: string;
+          follow_checked?: boolean;
+          giveaway_id?: string;
+          id?: string;
+          kind?: string;
+          like_checked?: boolean;
+          note?: string | null;
+          position?: number;
+          status?: string;
+          username?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "giveaway_winners_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "giveaway_winners_giveaway_id_fkey";
+            columns: ["giveaway_id"];
+            isOneToOne: false;
+            referencedRelation: "giveaways";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      giveaways: {
+        Row: {
+          brand_id: string;
+          comments_total: number;
+          created_at: string;
+          created_by: string | null;
+          draw_seed: string | null;
+          drawn_at: string | null;
+          fetch_cursor: string | null;
+          fetch_done: boolean;
+          id: string;
+          media_caption: string | null;
+          media_id: string;
+          media_permalink: string | null;
+          media_posted_at: string | null;
+          media_thumbnail_url: string | null;
+          rules: Json;
+          status: string;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          brand_id: string;
+          comments_total?: number;
+          created_at?: string;
+          created_by?: string | null;
+          draw_seed?: string | null;
+          drawn_at?: string | null;
+          fetch_cursor?: string | null;
+          fetch_done?: boolean;
+          id?: string;
+          media_caption?: string | null;
+          media_id: string;
+          media_permalink?: string | null;
+          media_posted_at?: string | null;
+          media_thumbnail_url?: string | null;
+          rules?: Json;
+          status?: string;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          brand_id?: string;
+          comments_total?: number;
+          created_at?: string;
+          created_by?: string | null;
+          draw_seed?: string | null;
+          drawn_at?: string | null;
+          fetch_cursor?: string | null;
+          fetch_done?: boolean;
+          id?: string;
+          media_caption?: string | null;
+          media_id?: string;
+          media_permalink?: string | null;
+          media_posted_at?: string | null;
+          media_thumbnail_url?: string | null;
+          rules?: Json;
+          status?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "giveaways_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       idempotency_claims: {
         Row: {
           brand_id: string;
@@ -9453,6 +9632,16 @@ export type Database = {
         Args: { p_order_id: string };
         Returns: Json;
       };
+      get_decrypted_instagram_token: {
+        Args: { p_brand_id: string };
+        Returns: {
+          access_token: string;
+          expires_at: string;
+          instagram_user_id: string;
+          instagram_username: string;
+          last_refreshed_at: string;
+        }[];
+      };
       get_instagram_connection_status: {
         Args: { p_brand_id: string };
         Returns: {
@@ -9941,6 +10130,16 @@ export type Database = {
           p_variant_id: string;
         };
         Returns: string;
+      };
+      record_instagram_token_refresh_result: {
+        Args: {
+          p_brand_id: string;
+          p_error_message?: string;
+          p_new_expires_in?: number;
+          p_new_token?: string;
+          p_success: boolean;
+        };
+        Returns: undefined;
       };
       record_order_whatsapp_opt_in: {
         Args: { p_confirmation_token: string; p_order_id: string };
@@ -10463,6 +10662,18 @@ export type Database = {
       rpc_validate_and_restore_abandoned_cart: {
         Args: { p_brand_slug: string; p_recovery_token: string };
         Returns: Json;
+      };
+      save_instagram_token: {
+        Args: {
+          p_access_token: string;
+          p_brand_id: string;
+          p_expires_in?: number;
+          p_instagram_user_id: string;
+          p_instagram_username: string;
+          p_scope?: string;
+          p_user_id: string;
+        };
+        Returns: string;
       };
       save_integration_credential: {
         Args: {

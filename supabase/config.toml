@@ -13,3 +13,8 @@ verify_jwt = true
 
 [functions.white-label-build-api]
 verify_jwt = false
+
+# Checks the caller itself (a signed-in manager of the brand's settings) before
+# it reads the brand's Instagram token or pulls comments.
+[functions.instagram-giveaway]
+verify_jwt = true
