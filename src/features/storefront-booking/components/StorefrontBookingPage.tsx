@@ -1,5 +1,5 @@
 import { optionName } from "@/lib/bookings/service-options";
-import { discountName } from "@/lib/bookings/discounts";
+import { discountLabel } from "@/lib/bookings/discounts";
 import type { ReactNode } from "react";
 import { CalendarCheck, CheckCircle2, Loader2, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -217,7 +217,7 @@ export function StorefrontBookingPage({
         )}
         {flow.offer && chosen.length > 0 && showPrices && (
           <div className="flex items-center justify-between text-sm text-success">
-            <span>{discountName(flow.offer.rule, isAr)}</span>
+            <span>{discountLabel(flow.offer, isAr)}</span>
             <span dir="ltr">− {formatPrice(offerAmount, currency, lang)}</span>
           </div>
         )}

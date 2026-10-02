@@ -249,6 +249,61 @@ function RuleForm({
         </div>
       </fieldset>
 
+      <fieldset className="space-y-2">
+        <legend className="text-xs font-semibold text-muted-foreground">
+          {isAr
+            ? "يحتاج خدمة أخرى (اتركها فارغة بلا شرط)"
+            : "Needs another service (leave empty for no condition)"}
+        </legend>
+        <div className="grid max-h-40 gap-1.5 overflow-auto sm:grid-cols-2">
+          {services.map((service) => (
+            <Label key={service.id} className="flex items-center gap-2 text-sm font-normal">
+              <Checkbox
+                checked={form.requires_product_ids.includes(service.id)}
+                onCheckedChange={() =>
+                  patch({
+                    requires_product_ids: toggle(form.requires_product_ids, service.id) as string[],
+                  })
+                }
+              />
+              <span className="min-w-0 truncate">{service.name}</span>
+            </Label>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {isAr
+            ? "العرض يعمل فقط إذا اختار العميل إحدى هذه الخدمات."
+            : "The offer applies only when the customer also books one of these."}
+        </p>
+      </fieldset>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="discount-event-from">
+            {isAr ? "للمناسبات من تاريخ" : "For events from"}
+          </Label>
+          <Input
+            id="discount-event-from"
+            type="date"
+            dir="ltr"
+            value={form.event_from}
+            onChange={(event) => patch({ event_from: event.target.value })}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="discount-event-to">
+            {isAr ? "للمناسبات حتى تاريخ" : "For events until"}
+          </Label>
+          <Input
+            id="discount-event-to"
+            type="date"
+            dir="ltr"
+            value={form.event_to}
+            onChange={(event) => patch({ event_to: event.target.value })}
+          />
+        </div>
+      </div>
+
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="discount-from">{isAr ? "يُحجز من تاريخ" : "Can be booked from"}</Label>
@@ -271,6 +326,22 @@ function RuleForm({
           />
         </div>
       </div>
+
+      <Label className="flex items-start gap-2 text-sm font-normal">
+        <Checkbox
+          className="mt-0.5"
+          checked={form.stackable}
+          onCheckedChange={(checked) => patch({ stackable: checked === true })}
+        />
+        <span>
+          {isAr ? "يُضاف إلى العروض الأخرى" : "Adds to other offers"}
+          <span className="block text-xs text-muted-foreground">
+            {isAr
+              ? "بدون هذا الخيار يُطبَّق أفضل عرض واحد فقط. الهدية المجانية: نسبة 100% على خدمة لتواريخ محددة."
+              : "Without it only the best offer applies. A free gift is 100% on a service for chosen dates."}
+          </span>
+        </span>
+      </Label>
 
       <Label className="flex items-center gap-2 text-sm font-normal">
         <Checkbox
@@ -364,8 +435,8 @@ export function BookingDiscountsDialog({
           </DialogTitle>
           <DialogDescription>
             {isAr
-              ? "خصومات حسب موعد الحجز: اللحظة الأخيرة، خلال أسبوع، أو مبكراً. يُطبَّق أفضل عرض واحد على الحجز."
-              : "Discounts by when a booking is made: last minute, within a week, or well ahead. The best matching offer applies to a booking."}
+              ? "خصومات حسب موعد الحجز أو تاريخ المناسبة: اللحظة الأخيرة، مبكراً، هدية مجانية، أو عند طلب خدمة أخرى. يُطبَّق أفضل عرض، وتُضاف إليه العروض القابلة للإضافة."
+              : "Discounts by when a booking is made or the event date: last minute, early, a free gift, or with another service. The best offer applies, plus any that add to it."}
           </DialogDescription>
         </DialogHeader>
 

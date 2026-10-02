@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { formatMoney } from "@/lib/format";
 import { catalogQueries } from "@/lib/data/catalog";
 import { bookingDiscountsQueries } from "@/lib/data/booking-discounts";
-import { bestDiscount, discountName } from "@/lib/bookings/discounts";
+import { bestDiscount, discountLabel } from "@/lib/bookings/discounts";
 import { createStaffBooking } from "@/lib/data/bookings";
 import { bookingErrorMessage } from "@/lib/bookings/errors";
 import { durations, startTimes } from "@/lib/bookings/rules";
@@ -348,7 +348,7 @@ export function NewBookingDialog({
 
           {offer && (
             <div className="flex items-center justify-between border-t border-border pt-3 text-sm text-success">
-              <span>{discountName(offer.rule, isAr)}</span>
+              <span>{discountLabel(offer, isAr)}</span>
               <span dir="ltr">− {formatMoney(offer.amount, currency)}</span>
             </div>
           )}

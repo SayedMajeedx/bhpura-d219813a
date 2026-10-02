@@ -120,6 +120,9 @@ export function BookingDayPicker({ flow }: { flow: BookingFlow }) {
           </div>
         ))}
       </div>
+      {flow.offersLegendText && (
+        <p className="mt-2 text-xs font-semibold text-success">{flow.offersLegendText}</p>
+      )}
       <p className="mt-2 text-xs text-muted-foreground">
         {isAr
           ? "الأيام المشطوبة محجوزة أو غير متاحة."

@@ -21,7 +21,13 @@ import {
 } from "@/lib/bookings/service-options";
 import { packageLinesById, servicePackagesQueries } from "@/lib/data/service-packages";
 import { packageLinesText } from "@/lib/bookings/service-package";
-import { bestDiscount, dayOffer, discountName, type DiscountRule } from "@/lib/bookings/discounts";
+import {
+  bestDiscount,
+  dayOffer,
+  discountLabel,
+  offersLegend,
+  type DiscountRule,
+} from "@/lib/bookings/discounts";
 import {
   bookingsKeys,
   bookingsQueries,
@@ -231,7 +237,7 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
           customer: { name: flow.name.trim(), phone: flow.phone.trim() },
           place: { area: flow.area, venue: flow.venue.trim() },
           notes: toBookingRequest(brand.id, flow, services, isAr).notes ?? null,
-          discountLabel: offer ? discountName(offer.rule, isAr) : null,
+          discountLabel: offer ? discountLabel(offer, isAr) : null,
         },
         services,
       );
@@ -291,6 +297,8 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
     /** The offer this booking gets (null: none), and the one to mark on a calendar day. */
     offer,
     offerOnDay,
+    /** "up to 25% off · free gift" for the calendar (null: no offers). */
+    offersLegendText: offersLegend(discountRules, isAr),
     /** The services at the chosen duration's prices. */
     servicesTotal: chosenTotal(flow.services, services, flow.durationMinutes),
     /** The trip to the event's area (null: the store charges none). */

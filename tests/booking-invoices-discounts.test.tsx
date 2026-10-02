@@ -356,7 +356,8 @@ describe("the store's offers", () => {
     expect(screen.getByText("25% off · within 1 day")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Sun" }));
-    fireEvent.click(screen.getByRole("checkbox", { name: "Photo booth" }));
+    const covered = screen.getByRole("group", { name: /^Services/ });
+    fireEvent.click(within(covered).getByRole("checkbox", { name: "Photo booth" }));
     expect(screen.queryByRole("checkbox", { name: "Old" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Save offer" }));
     await waitFor(() => expect(state.saveDiscountRule).toHaveBeenCalledTimes(1));
@@ -372,6 +373,35 @@ describe("the store's offers", () => {
         product_ids: ["p1"],
         is_active: true,
         name_en: "Last-minute offer",
+      }),
+    );
+  });
+
+  it("makes a free gift for chosen dates that needs another service", async () => {
+    renderDialog();
+    fireEvent.click(await screen.findByRole("button", { name: "Add an offer" }));
+    fireEvent.click(screen.getByRole("button", { name: /Free gift on chosen dates/ }));
+    expect(screen.getByLabelText("Discount")).toHaveValue(100);
+    fireEvent.change(screen.getByLabelText("For events from"), { target: { value: "2026-10-10" } });
+    fireEvent.change(screen.getByLabelText("For events until"), {
+      target: { value: "2026-10-12" },
+    });
+    fireEvent.click(
+      within(screen.getByRole("group", { name: /^Needs another service/ })).getByRole("checkbox", {
+        name: "Photo booth",
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Save offer" }));
+    await waitFor(() => expect(state.saveDiscountRule).toHaveBeenCalled());
+    expect(state.saveDiscountRule).toHaveBeenLastCalledWith(
+      "b1",
+      null,
+      expect.objectContaining({
+        value: 100,
+        stackable: true,
+        event_from: "2026-10-10",
+        event_to: "2026-10-12",
+        requires_product_ids: ["p1"],
       }),
     );
   });
