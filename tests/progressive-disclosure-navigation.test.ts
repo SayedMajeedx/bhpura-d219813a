@@ -53,6 +53,7 @@ describe("Progressive Disclosure & Modular Navigation", () => {
       "campaigns",
       "discounts",
       "loyalty",
+      "giveaways",
       "abandoned-carts",
       "expenses",
       "integrations",
