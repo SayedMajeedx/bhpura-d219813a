@@ -141,6 +141,13 @@ describe("the home page of a services store", () => {
       name,
     );
     expect(same?.saving).toBeNull();
-    expect(packageOffer(bundle, [], [booth], name)).toBeNull();
+    // A package with no linked services still shows, by its price alone.
+    expect(packageOffer(bundle, [], [booth], name)).toEqual({
+      price: 50,
+      apart: null,
+      saving: null,
+      includes: [],
+    });
+    expect(packageOffer(product({ is_package: true }), [], [booth], name)).toBeNull();
   });
 });

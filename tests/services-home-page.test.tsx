@@ -7,8 +7,24 @@ import { describe, expect, it, vi } from "vitest";
 // The data layer and the pieces with their own tests are faked.
 
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ children, params }: { children: React.ReactNode; params: Record<string, string> }) => (
-    <a href={`/${params.slug}/product/${params.id}`}>{children}</a>
+  Link: ({
+    children,
+    to,
+    params,
+    search,
+  }: {
+    children: React.ReactNode;
+    to: string;
+    params: Record<string, string>;
+    search?: Record<string, string>;
+  }) => (
+    <a
+      href={`${to.replace("$slug", params.slug).replace("$id", params.id ?? "")}${
+        search?.service ? `?service=${search.service}` : ""
+      }`}
+    >
+      {children}
+    </a>
   ),
 }));
 const storefrontMock = vi.hoisted(() => () => ({
@@ -116,16 +132,25 @@ const products = [
     ...base,
     id: "booth",
     name: "Photo booth",
+    category: "rentals",
     service_location: "customer",
     extra_hour_price: 15,
     service_includes: [{ ar: "", en: "Instant prints" }],
     product_variants: [variant(40, 60), variant(95, 180)],
   },
-  { ...base, id: "prints", name: "Prints", product_variants: [variant(20, null)] },
+  {
+    ...base,
+    id: "prints",
+    name: "Prints",
+    category: "printing",
+    service_includes: [{ ar: "", en: "Gift wrap" }],
+    product_variants: [variant(20, null)],
+  },
   {
     ...base,
     id: "bundle",
     name: "Party bundle",
+    category: "packages",
     is_package: true,
     product_variants: [variant(50, 60)],
   },
@@ -139,7 +164,8 @@ describe("a service's details view", () => {
       </QueryClientProvider>,
     );
     await screen.findByText(/Guest book/);
-    fireEvent.click(screen.getAllByRole("button", { name: "View details" })[0]);
+    const booth = screen.getByRole("heading", { name: "Photo booth" }).closest("article")!;
+    fireEvent.click(within(booth).getByRole("button", { name: "View details" }));
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).getByText("Length and price")).toBeInTheDocument();
     expect(within(dialog).getByText("BHD 95")).toBeInTheDocument();
@@ -162,15 +188,29 @@ describe("the services home page", () => {
     expect(screen.getByText("gallery")).toBeInTheDocument();
     expect(screen.getByText("faq")).toBeInTheDocument();
 
-    // A service card: from price, lengths, where, includes, extra hour, active add-ons only.
-    expect(screen.getByRole("heading", { name: "Photo booth" })).toBeInTheDocument();
-    expect(screen.getByText("BHD 40")).toBeInTheDocument();
-    expect(screen.getByText("1 hour to 3 hours")).toBeInTheDocument();
-    expect(screen.getByText("At your place")).toBeInTheDocument();
-    expect(screen.getByText("Instant prints")).toBeInTheDocument();
-    expect(screen.getByText(/Extra hour at/)).toBeInTheDocument();
-    expect(await screen.findByText(/Guest book/)).toBeInTheDocument();
+    // Three kinds, each under its own heading: packages, rentals, services.
+    expect(screen.getByRole("heading", { name: "Packages", level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Rentals", level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Services", level: 2 })).toBeInTheDocument();
+
+    // A rental: a ticket with a Rental mark and what each length costs, where, extra hour, add-ons.
+    const rental = screen.getByRole("heading", { name: "Photo booth" }).closest("article")!;
+    expect(rental.className).toContain("rental-card");
+    expect(within(rental).getByText("Rental")).toBeInTheDocument();
+    expect(within(rental).getByText("1 hour")).toBeInTheDocument();
+    expect(within(rental).getByText("BHD 40")).toBeInTheDocument();
+    expect(within(rental).getByText("3 hours")).toBeInTheDocument();
+    expect(within(rental).getByText("BHD 95")).toBeInTheDocument();
+    expect(within(rental).getByText("At your place")).toBeInTheDocument();
+    expect(within(rental).getByText(/Extra hour at/)).toBeInTheDocument();
+    expect(await within(rental).findByText(/Guest book/)).toBeInTheDocument();
     expect(screen.queryByText(/Hidden add-on/)).toBeNull();
+
+    // A plain service keeps the plain card: from price and what the booking includes.
+    const service = screen.getByRole("heading", { name: "Prints" }).closest("article")!;
+    expect(service.className).not.toContain("rental-card");
+    expect(service.className).not.toContain("pkg-card");
+    expect(within(service).getByText("Gift wrap")).toBeInTheDocument();
 
     // The package: its price against the parts apart (40 + 2 x 20 = 80).
     expect(await screen.findByText("Save 38%")).toBeInTheDocument();
@@ -183,9 +223,9 @@ describe("the services home page", () => {
         screen.getByRole("heading", { name: "Party bundle" }).closest("article")?.className,
       ).toContain("pkg-card--shimmer"),
     );
-    expect(screen.getByRole("link", { name: "Choose this package" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Book this package" })).toHaveAttribute(
       "href",
-      "/aurora/product/bundle",
+      "/aurora/book?service=bundle",
     );
   });
 });

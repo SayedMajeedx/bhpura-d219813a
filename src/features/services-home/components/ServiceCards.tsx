@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Check, Clock, MapPin, Package, Plus } from "lucide-react";
+import { Check, Clock, Gem, MapPin, Plus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
 import { packageCardClass, type PackageStyle } from "@/lib/bookings/package-style";
@@ -151,20 +151,36 @@ export function PackageOfferCard({
 }) {
   const { brand, lang, currency, t } = useStorefront();
   const isAr = lang === "ar";
+  const own = includeLinesOf(product, isAr);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   return (
-    <article className={`${packageCardClass(look)} flex flex-col gap-3 rounded-2xl p-5`}>
-      {offer.saving && (
-        <span className="absolute end-3 top-3 rounded-full bg-success px-3 py-1 text-xs font-semibold text-success-foreground">
-          {t(`وفّر ${offer.saving.percent}%`, `Save ${offer.saving.percent}%`)}
+    <article
+      className={`${packageCardClass(look)} flex flex-col gap-3 p-5 ${look === "ribbon" ? "pt-10" : ""}`}
+    >
+      {look === "ribbon" && (
+        <span className="pkg-tag" aria-hidden="true">
+          <Gem className="size-3.5" />
+          {t("باقة", "PACKAGE")}
         </span>
       )}
-      <p className="flex items-center gap-1.5 text-xs font-semibold text-primary">
-        <Package className="size-3.5" aria-hidden="true" />
-        {t("باقة", "Package")}
-      </p>
-      <h3 className="pe-20 font-display text-xl text-foreground">{nameOf(product, isAr)}</h3>
+      {look !== "ribbon" && (
+        <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-primary">
+          <Sparkles className="size-3.5" aria-hidden="true" />
+          {t("باقة", "Package")}
+        </p>
+      )}
+      <div className="flex flex-wrap items-center gap-2">
+        <h3 className="font-display text-2xl leading-tight text-foreground">
+          {nameOf(product, isAr)}
+        </h3>
+        {offer.saving && (
+          <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-primary-foreground">
+            {t(`وفّر ${offer.saving.percent}%`, `Save ${offer.saving.percent}%`)}
+          </span>
+        )}
+      </div>
       <p className="flex flex-wrap items-baseline gap-2">
-        <span className="text-2xl font-semibold text-foreground" dir="ltr">
+        <span className="font-display text-3xl font-semibold text-foreground" dir="ltr">
           {formatPrice(offer.price, currency, lang)}
         </span>
         {offer.saving && offer.apart !== null && (
@@ -173,28 +189,59 @@ export function PackageOfferCard({
           </s>
         )}
       </p>
-      <ul className="space-y-1.5">
-        {offer.includes.map((item) => (
-          <li key={item.id} className="flex items-start gap-2 text-sm text-foreground">
-            <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-            <span className="min-w-0 break-words">
+      {offer.includes.length > 0 && (
+        <ul className="flex flex-wrap gap-1.5">
+          {offer.includes.map((item) => (
+            <li
+              key={item.id}
+              className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-background/80 px-2.5 py-0.5 text-xs text-foreground"
+            >
+              <Check className="size-3 text-primary" aria-hidden="true" />
               {item.name}
               {item.quantity > 1 ? ` × ${item.quantity}` : ""}
-            </span>
-          </li>
-        ))}
-      </ul>
+            </li>
+          ))}
+        </ul>
+      )}
+      {own.length > 0 && (
+        <ul className="space-y-1">
+          {own.slice(0, 4).map((line) => (
+            <li key={line} className="flex items-start gap-2 text-sm text-foreground">
+              <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+              <span className="min-w-0 break-words">{line}</span>
+            </li>
+          ))}
+          {own.length > 4 && (
+            <li className="text-xs text-muted-foreground">
+              {t(`و${own.length - 4} أخرى`, `and ${own.length - 4} more`)}
+            </li>
+          )}
+        </ul>
+      )}
       {extraHour !== null && (
         <p className="text-xs text-muted-foreground">
           {t("ساعة إضافية بسعرها المعتاد: ", "Extra hour at its usual price: ")}
           <span dir="ltr">{formatPrice(extraHour, currency, lang)}</span>
         </p>
       )}
-      <Button asChild className="mt-auto">
-        <Link to="/$slug/product/$id" params={{ slug: brand.slug, id: product.id }}>
-          {t("اختر الباقة", "Choose this package")}
-        </Link>
-      </Button>
+      <div className="mt-auto grid gap-2 sm:grid-cols-2">
+        <Button type="button" variant="outline" onClick={() => setDetailsOpen(true)}>
+          {t("عرض التفاصيل", "View details")}
+        </Button>
+        <Button asChild>
+          <Link to="/$slug/book" params={{ slug: brand.slug }} search={{ service: product.id }}>
+            {t("احجز الباقة", "Book this package")}
+          </Link>
+        </Button>
+      </div>
+      {detailsOpen && (
+        <ServiceDetailsDialog
+          product={product}
+          addOns={[]}
+          open={detailsOpen}
+          onOpenChange={setDetailsOpen}
+        />
+      )}
     </article>
   );
 }

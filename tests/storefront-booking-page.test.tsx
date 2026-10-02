@@ -23,6 +23,8 @@ const state = vi.hoisted(() => ({
   taken: [] as string[],
   // A store with a package (made of the booth and two prints).
   withPackage: false,
+  // The booth is filed under a rentals category.
+  rentals: false,
   // How packages stand out (the merchant's pick).
   packageStyle: "glow",
   // The booth's add-ons.
@@ -218,6 +220,7 @@ const storefrontData = {
           name_ar: "فوتوبوث",
           name_en: "Photo booth",
           image_url: null,
+          category: state.rentals ? "rentals" : "printing",
           product_variants: [{ id: "v1", selling_price: 55 }],
         },
         {
@@ -299,6 +302,7 @@ beforeEach(() => {
   state.taken = [];
   state.discountRules = [];
   state.withPackage = false;
+  state.rentals = false;
   state.packageStyle = "glow";
   state.withOptions = false;
 });
@@ -557,6 +561,19 @@ describe("a package in the booking flow", () => {
     renderWithQuery(<StorefrontBookingPage />);
     const pkg = await screen.findByRole("checkbox", { name: /Gold package/ });
     await waitFor(() => expect(pkg.className).toContain("pkg-card--ribbon"));
+  });
+
+  it("tells a rental from a service: a ticket with a Rental mark, under its own heading", async () => {
+    state.rentals = true;
+    renderWithQuery(<StorefrontBookingPage />);
+    const booth = await screen.findByRole("checkbox", { name: /Photo booth/ });
+    expect(booth.className).toContain("rental-card");
+    expect(booth).toHaveTextContent("Rental");
+    const prints = screen.getByRole("checkbox", { name: /^Prints/ });
+    expect(prints.className).not.toContain("rental-card");
+    expect(prints).not.toHaveTextContent("Rental");
+    expect(screen.getByRole("heading", { name: "Rentals", level: 3 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Services", level: 3 })).toBeInTheDocument();
   });
 
   it("shows nothing extra for a service that is not a package", async () => {

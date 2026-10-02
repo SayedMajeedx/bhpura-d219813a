@@ -1121,3 +1121,38 @@ html.is-embedded .hero-carousel-text-card a {
     transform: none;
   }
 }
+
+/* Rental cards: equipment hired by the hour. A ticket in the brand colour, with a bold
+   top edge and a perforated divider under the header, so a rental never reads as a plain
+   service or as a package. */
+.rental-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-top: 5px solid var(--primary);
+  border-radius: 0.75rem;
+  background: color-mix(in oklch, var(--primary) 4%, var(--card));
+  box-shadow: 0 6px 18px -12px color-mix(in oklch, var(--primary) 40%, transparent);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.rental-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -12px color-mix(in oklch, var(--primary) 45%, transparent);
+}
+
+.rental-card__tear {
+  height: 0;
+  margin-inline: 1rem;
+  border-top: 2px dashed color-mix(in oklch, var(--primary) 30%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rental-card,
+  .rental-card:hover {
+    transition: none !important;
+    transform: none !important;
+  }
+}
