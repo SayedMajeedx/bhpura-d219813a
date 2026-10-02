@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 
@@ -68,6 +68,16 @@ const optionsData = {
     }),
   },
 };
+const pageOptionsData = {
+  bookingPageOptionsQueries: {
+    options: () => ({
+      queryKey: ["sh-test", "page-options"],
+      queryFn: async () => ({ package_style: "shimmer" }),
+    }),
+  },
+};
+vi.mock("../src/lib/data/booking-page-options", () => pageOptionsData);
+vi.mock("@/lib/data/booking-page-options", () => pageOptionsData);
 vi.mock("../src/lib/data/service-options", () => optionsData);
 vi.mock("@/lib/data/service-options", () => optionsData);
 vi.mock("../src/features/storefront-home/components/HeroBanner", () => ({
@@ -167,6 +177,12 @@ describe("the services home page", () => {
     expect(screen.getByRole("heading", { name: "Party bundle" })).toBeInTheDocument();
     expect(screen.getByText("BHD 80")).toBeInTheDocument();
     expect(screen.getByText("Prints × 2")).toBeInTheDocument();
+    // It wears the merchant's look.
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", { name: "Party bundle" }).closest("article")?.className,
+      ).toContain("pkg-card--shimmer"),
+    );
     expect(screen.getByRole("link", { name: "Choose this package" })).toHaveAttribute(
       "href",
       "/aurora/product/bundle",

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CalendarDays, Images, Loader2, ScrollText, Settings2, Tag } from "lucide-react";
+import { CalendarDays, Images, Loader2, Palette, ScrollText, Settings2, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useBookingsPage } from "@/features/bookings/hooks/use-bookings-page";
@@ -10,6 +10,7 @@ import { BookingDiscountsDialog } from "@/features/bookings/components/BookingDi
 import { BookingRulesDialog } from "@/features/bookings/components/BookingRulesDialog";
 import { BookingsReport } from "@/features/bookings/components/BookingsReport";
 import { StoreContentDialog } from "@/features/store-content/components/StoreContentDialog";
+import { BookingLookDialog } from "@/features/bookings/components/BookingLookDialog";
 import { BookingPoliciesDialog } from "@/features/bookings/components/BookingPoliciesDialog";
 import { CalendarLinkDialog } from "@/features/bookings/components/CalendarLinkDialog";
 
@@ -25,6 +26,7 @@ export function BookingsPageView() {
   const [offersOpen, setOffersOpen] = useState(false);
   const [contentOpen, setContentOpen] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
+  const [lookOpen, setLookOpen] = useState(false);
   const [view, setView] = useState<"calendar" | "report">("calendar");
 
   if (page.settingsLoading || profileLoading) {
@@ -99,6 +101,16 @@ export function BookingsPageView() {
               <ScrollText className="size-4" />
               {isAr ? "شروط الحجز" : "Terms"}
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setLookOpen(true)}
+            >
+              <Palette className="size-4" />
+              {isAr ? "شكل الباقات" : "Package look"}
+            </Button>
           </div>
         )}
       </header>
@@ -164,6 +176,7 @@ export function BookingsPageView() {
       {offersOpen && (
         <BookingDiscountsDialog page={page} open={offersOpen} onOpenChange={setOffersOpen} />
       )}
+      {lookOpen && <BookingLookDialog page={page} open={lookOpen} onOpenChange={setLookOpen} />}
       {termsOpen && (
         <BookingPoliciesDialog page={page} open={termsOpen} onOpenChange={setTermsOpen} />
       )}

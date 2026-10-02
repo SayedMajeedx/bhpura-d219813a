@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useStorefront } from "@/lib/storefront-context";
 import { packageLinesById, servicePackagesQueries } from "@/lib/data/service-packages";
+import { bookingPageOptionsQueries } from "@/lib/data/booking-page-options";
+import { DEFAULT_PACKAGE_STYLE } from "@/lib/bookings/package-style";
 import { serviceOptionsQueries } from "@/lib/data/service-options";
 import type { ProductRow } from "@/lib/data/storefront";
 import { HeroBanner } from "@/features/storefront-home/components/HeroBanner";
@@ -29,6 +31,9 @@ export function ServicesHome({ products }: { products: readonly ProductRow[] }) 
     enabled: packages.length > 0,
   }).data;
   const options = useQuery(serviceOptionsQueries.list(brand.id)).data ?? [];
+  const look =
+    useQuery({ ...bookingPageOptionsQueries.options(brand.id), enabled: packages.length > 0 }).data
+      ?.package_style ?? DEFAULT_PACKAGE_STYLE;
   const lines = packageLinesById(items ?? []);
   const nameOf = (product: ProductRow) =>
     (isAr ? product.name_ar || product.name : product.name_en || product.name) ?? "";
@@ -77,6 +82,7 @@ export function ServicesHome({ products }: { products: readonly ProductRow[] }) 
                 product={pkg}
                 offer={offer}
                 extraHour={extraHourPriceOf(pkg)}
+                look={look}
               />
             ))}
           </div>
