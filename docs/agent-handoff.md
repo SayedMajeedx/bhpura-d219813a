@@ -120,6 +120,9 @@ Measured with `node scripts/maintainability-metrics.mjs`:
 
 ### 4.0 Services vertical (active, 2026-10-01)
 
+Start with [`services-handoff.md`](./services-handoff.md) (2026-10-02): the state
+after PRs #183–#196, how the booking system works, the pitfalls, and what is left.
+
 The owner approved [`services-vertical-plan.md`](./services-vertical-plan.md):
 the audit of what a services store is shown, four decisions (item kind per
 product, capacity per service, services are always booked, modules per
