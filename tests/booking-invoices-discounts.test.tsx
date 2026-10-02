@@ -19,6 +19,7 @@ const state = vi.hoisted(() => ({
   setDiscountRuleActive: vi.fn(async () => undefined),
   deleteDiscountRule: vi.fn(async () => undefined),
   copied: [] as string[],
+  policy: null as Record<string, unknown> | null,
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock("@tanstack/react-router", () => ({
@@ -43,6 +44,13 @@ const discountsData = {
 };
 vi.mock("../src/lib/data/booking-discounts", () => discountsData);
 vi.mock("@/lib/data/booking-discounts", () => discountsData);
+const policiesData = {
+  bookingPoliciesQueries: {
+    policy: () => ({ queryKey: ["bd-test", "policy"], queryFn: async () => state.policy }),
+  },
+};
+vi.mock("../src/lib/data/booking-policies", () => policiesData);
+vi.mock("@/lib/data/booking-policies", () => policiesData);
 const catalogData = {
   catalogQueries: {
     products: () => ({
@@ -128,23 +136,32 @@ const page = (over: Record<string, unknown> = {}) =>
     ...over,
   }) as never;
 
+const withClient = (ui: React.ReactElement) => (
+  <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+    {ui}
+  </QueryClientProvider>
+);
+
 const renderCard = (b: unknown, p = page()) =>
   render(
-    <BookingCard
-      page={p}
-      booking={b as never}
-      isAr={false}
-      currency="BHD"
-      timezone="Asia/Bahrain"
-      busy={false}
-      onStatus={vi.fn()}
-    />,
+    withClient(
+      <BookingCard
+        page={p}
+        booking={b as never}
+        isAr={false}
+        currency="BHD"
+        timezone="Asia/Bahrain"
+        busy={false}
+        onStatus={vi.fn()}
+      />,
+    ),
   );
 
 beforeEach(() => {
   vi.clearAllMocks();
   state.rules = [];
   state.copied = [];
+  state.policy = null;
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
     value: { writeText: async (text: string) => void state.copied.push(text) },
@@ -216,6 +233,34 @@ describe("the booking card", () => {
     expect(href).toContain("Hello Sara");
   });
 
+  it("reminds a confirmed booking's customer of the balance and the day it is due", async () => {
+    state.policy = {
+      balance_due_days: 7,
+      reschedule_months: null,
+      deposit_refundable: false,
+      terms_en: null,
+      terms_ar: null,
+    };
+    renderCard(
+      booking({ orders: { ...order, advance_paid: 10, payment_status: "partially_paid" } }),
+    );
+    const reminder = await screen.findByRole("link", { name: /Remind of balance/ });
+    // The due day follows once the store's policy has loaded.
+    await waitFor(() =>
+      expect(decodeURIComponent(reminder.getAttribute("href")!)).toContain("(due 2026-10-05)"),
+    );
+    const href = decodeURIComponent(reminder.getAttribute("href")!);
+    expect(href.startsWith("https://wa.me/97339001122?text=")).toBe(true);
+    expect(href).toContain("Balance: ");
+    expect(href).toContain("/invoice/tok-123");
+  });
+
+  it("has no balance reminder when nothing is owed or the booking is not confirmed", async () => {
+    renderCard(booking({ orders: { ...order, advance_paid: 41.25, payment_status: "paid" } }));
+    await screen.findByText("Invoice #1042");
+    expect(screen.queryByRole("link", { name: /Remind of balance/ })).toBeNull();
+  });
+
   it("offers to invoice a booking that has no order, a request as a quote", () => {
     const p = page();
     const { unmount } = renderCard(booking({ order_id: null, orders: null }), p);
@@ -232,20 +277,22 @@ describe("the booking card", () => {
   it("asks the store to check a BenefitPay receipt, and lets it confirm or release the held day", () => {
     const onStatus = vi.fn();
     render(
-      <BookingCard
-        page={page()}
-        booking={
-          booking({
-            status: "hold",
-            orders: { ...order, status: "pending_verification" },
-          }) as never
-        }
-        isAr={false}
-        currency="BHD"
-        timezone="Asia/Bahrain"
-        busy={false}
-        onStatus={onStatus}
-      />,
+      withClient(
+        <BookingCard
+          page={page()}
+          booking={
+            booking({
+              status: "hold",
+              orders: { ...order, status: "pending_verification" },
+            }) as never
+          }
+          isAr={false}
+          currency="BHD"
+          timezone="Asia/Bahrain"
+          busy={false}
+          onStatus={onStatus}
+        />,
+      ),
     );
     expect(screen.getByText("Awaiting payment")).toBeInTheDocument();
     expect(screen.getByText(/BenefitPay receipt is waiting/)).toBeInTheDocument();

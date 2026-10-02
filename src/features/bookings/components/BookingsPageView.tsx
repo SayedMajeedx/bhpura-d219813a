@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CalendarDays, Images, Loader2, Settings2, Tag } from "lucide-react";
+import { CalendarDays, Images, Loader2, ScrollText, Settings2, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useBookingsPage } from "@/features/bookings/hooks/use-bookings-page";
@@ -10,6 +10,7 @@ import { BookingDiscountsDialog } from "@/features/bookings/components/BookingDi
 import { BookingRulesDialog } from "@/features/bookings/components/BookingRulesDialog";
 import { BookingsReport } from "@/features/bookings/components/BookingsReport";
 import { StoreContentDialog } from "@/features/store-content/components/StoreContentDialog";
+import { BookingPoliciesDialog } from "@/features/bookings/components/BookingPoliciesDialog";
 import { CalendarLinkDialog } from "@/features/bookings/components/CalendarLinkDialog";
 
 /**
@@ -23,6 +24,7 @@ export function BookingsPageView() {
   const [rulesOpen, setRulesOpen] = useState(false);
   const [offersOpen, setOffersOpen] = useState(false);
   const [contentOpen, setContentOpen] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
   const [view, setView] = useState<"calendar" | "report">("calendar");
 
   if (page.settingsLoading || profileLoading) {
@@ -86,6 +88,16 @@ export function BookingsPageView() {
             >
               <Images className="size-4" />
               {isAr ? "المعرض والأسئلة" : "Gallery & FAQ"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setTermsOpen(true)}
+            >
+              <ScrollText className="size-4" />
+              {isAr ? "شروط الحجز" : "Terms"}
             </Button>
           </div>
         )}
@@ -151,6 +163,9 @@ export function BookingsPageView() {
 
       {offersOpen && (
         <BookingDiscountsDialog page={page} open={offersOpen} onOpenChange={setOffersOpen} />
+      )}
+      {termsOpen && (
+        <BookingPoliciesDialog page={page} open={termsOpen} onOpenChange={setTermsOpen} />
       )}
       {contentOpen && (
         <StoreContentDialog

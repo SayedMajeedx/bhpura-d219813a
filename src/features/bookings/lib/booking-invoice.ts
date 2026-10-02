@@ -94,6 +94,51 @@ export function invoiceMessage({
   return [greeting, body].filter(Boolean).join("\n");
 }
 
+/** The WhatsApp message that reminds a customer of the balance still to pay. */
+export function balanceReminderMessage({
+  isAr,
+  brandName,
+  customerName,
+  reference,
+  dayLabel,
+  balance,
+  currency,
+  due,
+  link,
+}: {
+  isAr: boolean;
+  brandName: string;
+  customerName?: string | null;
+  reference: string;
+  dayLabel: string;
+  balance: number;
+  currency: string;
+  /** The day the balance is due (ISO date), when the store has a rule. */
+  due: string | null;
+  link: string;
+}): string {
+  const amount = formatMoney(balance, currency);
+  const greeting = customerName
+    ? isAr
+      ? `مرحباً ${customerName}،`
+      : `Hello ${customerName},`
+    : "";
+  const body = isAr
+    ? [
+        `تذكير من ${brandName} بالرصيد المتبقي لحجزك (${reference})`,
+        `الموعد: ${dayLabel}`,
+        `المتبقي: ${amount}${due ? ` (يُستحق في ${due})` : ""}`,
+        link,
+      ]
+    : [
+        `A reminder from ${brandName} about the balance of your booking (${reference})`,
+        `Date: ${dayLabel}`,
+        `Balance: ${amount}${due ? ` (due ${due})` : ""}`,
+        link,
+      ];
+  return [greeting, ...body].filter(Boolean).join("\n");
+}
+
 /** wa.me link to a customer's number, with the message ready. Null when there is no usable number. */
 export function whatsAppToCustomer(phone: string | null | undefined, text: string): string | null {
   let digits = String(phone ?? "").replace(/\D/g, "");

@@ -183,6 +183,13 @@ const storeContentData = {
     publicFaq: () => ({ queryKey: ["sbp-test", "faq"], queryFn: async () => [] }),
   },
 };
+const policiesData = {
+  bookingPoliciesQueries: {
+    policy: () => ({ queryKey: ["sbp-test", "policy"], queryFn: async () => null }),
+  },
+};
+vi.mock("../src/lib/data/booking-policies", () => policiesData);
+vi.mock("@/lib/data/booking-policies", () => policiesData);
 vi.mock("../src/lib/data/store-content", () => storeContentData);
 vi.mock("@/lib/data/store-content", () => storeContentData);
 vi.mock("../src/lib/data/booking-discounts", () => discountsData);
