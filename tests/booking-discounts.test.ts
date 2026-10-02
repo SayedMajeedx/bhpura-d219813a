@@ -1,13 +1,17 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import {
   bestDiscount,
+  dayOffer,
   describeDiscountRule,
   discountFormColumns,
   discountFormError,
   discountFormFrom,
+  discountLabel,
   discountName,
   EMPTY_DISCOUNT_FORM,
   leadDays,
+  offerBadgeText,
+  offersLegend,
   ruleApplies,
   weekdayOf,
   type DiscountRule,
@@ -34,6 +38,10 @@ type RuleInput = {
   from?: string | null;
   to?: string | null;
   active?: boolean;
+  requires?: string[] | null;
+  stackable?: boolean;
+  eventFrom?: string | null;
+  eventTo?: string | null;
 };
 
 const arrayText = (values: Array<string | number> | null | undefined) =>
@@ -42,8 +50,10 @@ const arrayText = (values: Array<string | number> | null | undefined) =>
 const addRule = (brand: string, r: RuleInput) =>
   db.one<{ id: string }>(
     `insert into booking_discount_rules (brand_id, name_en, name_ar, kind, value, min_days, max_days,
-       weekdays, product_ids, valid_from, valid_to, is_active)
-     values ($1, $2, $2, $3, $4, $5, $6, $7::smallint[], $8::uuid[], $9, $10, $11) returning id`,
+       weekdays, product_ids, valid_from, valid_to, is_active,
+       requires_product_ids, stackable, event_from, event_to)
+     values ($1, $2, $2, $3, $4, $5, $6, $7::smallint[], $8::uuid[], $9, $10, $11,
+       $12::uuid[], $13, $14, $15) returning id`,
     [
       brand,
       r.name ?? "Offer",
@@ -56,6 +66,10 @@ const addRule = (brand: string, r: RuleInput) =>
       r.from ?? null,
       r.to ?? null,
       r.active ?? true,
+      arrayText(r.requires),
+      r.stackable ?? false,
+      r.eventFrom ?? null,
+      r.eventTo ?? null,
     ],
   );
 
@@ -342,6 +356,155 @@ describe("the TypeScript rule agrees with the database", () => {
       const ts = bestDiscount(rules, { day: db.day(lead), today: db.day(0), lines })?.amount ?? 0;
       expect(ts, `lead ${lead}`).toBe(sql);
     }
+  });
+});
+
+describe("the richer offers agree with the database", () => {
+  it("stacks, needs another service and follows event dates the same way", async () => {
+    const brand = await db.store({ dailyCapacity: 50, leadDays: 0 });
+    const booth = await db.service(brand, { name: "Booth" });
+    const prints = await db.service(brand, { name: "Prints" });
+    await addRule(brand, { value: 10, min: 0 });
+    await addRule(brand, { value: 20, min: 0, max: 30 });
+    await addRule(brand, { value: 5, min: 0, stackable: true });
+    await addRule(brand, { kind: "fixed", value: 12, min: 0, stackable: true });
+    await addRule(brand, { value: 50, min: 0, products: [prints.id], requires: [booth.id] });
+    await addRule(brand, {
+      value: 100,
+      min: 0,
+      products: [prints.id],
+      stackable: true,
+      eventFrom: db.day(10),
+      eventTo: db.day(12),
+    });
+    await addRule(brand, { value: 15, min: 0, requires: [prints.id], stackable: true });
+
+    const stored = await db.rows<Record<string, unknown>>(
+      `select id, name_en, name_ar, kind, value::float8 as value, min_days, max_days, weekdays,
+              product_ids, requires_product_ids, stackable,
+              to_char(valid_from, 'YYYY-MM-DD') as valid_from,
+              to_char(valid_to, 'YYYY-MM-DD') as valid_to,
+              to_char(event_from, 'YYYY-MM-DD') as event_from,
+              to_char(event_to, 'YYYY-MM-DD') as event_to
+         from booking_discount_rules where brand_id = $1 and is_active order by created_at`,
+      [brand],
+    );
+    const rules = stored.map((row) => ({
+      ...row,
+      weekdays: (row.weekdays as number[] | null) ?? null,
+    })) as DiscountRule[];
+
+    const combos = [
+      { name: "booth only", picks: [booth] },
+      { name: "prints only", picks: [prints] },
+      { name: "both", picks: [booth, prints] },
+    ];
+    for (const lead of [1, 9, 10, 11, 12, 13, 40]) {
+      for (const combo of combos) {
+        const made = await db.staff(
+          brand,
+          db.day(lead),
+          "12:00",
+          60,
+          combo.picks.map((pick) => ({
+            product_id: pick.id,
+            variant_id: pick.variantId,
+            unit_price: pick === booth ? 70 : 30,
+          })),
+        );
+        const sql = Number((await bookingOf(made.id)).discount_amount);
+        const ts =
+          bestDiscount(rules, {
+            day: db.day(lead),
+            today: db.day(0),
+            lines: combo.picks.map((pick) => ({
+              product_id: pick.id,
+              line_total: pick === booth ? 70 : 30,
+            })),
+          })?.amount ?? 0;
+        expect(ts, `lead ${lead}, ${combo.name}`).toBe(sql);
+      }
+    }
+  });
+});
+
+describe("a free gift and the calendar's marks", () => {
+  const gift = (patch: Partial<DiscountRule> = {}): DiscountRule => ({
+    id: "g",
+    name_en: "Free gift",
+    name_ar: "هدية",
+    kind: "percent",
+    value: 100,
+    min_days: 0,
+    max_days: null,
+    weekdays: null,
+    product_ids: ["prints"],
+    valid_from: null,
+    valid_to: null,
+    stackable: true,
+    event_from: "2026-10-10",
+    event_to: "2026-10-12",
+    ...patch,
+  });
+
+  it("marks the gift days with a gift and adds them to a discount", () => {
+    const today = "2026-10-01";
+    expect(dayOffer([gift()], "2026-10-11", today)?.rule.id).toBe("g");
+    expect(dayOffer([gift()], "2026-10-13", today)).toBeNull();
+    expect(offerBadgeText(gift())).toBe("🎁");
+    expect(offerBadgeText({ kind: "percent", value: 25 })).toBe("−25%");
+    const percent = { ...gift(), id: "p", value: 25, product_ids: null, stackable: false };
+    const result = bestDiscount([percent, gift()], {
+      day: "2026-10-11",
+      today,
+      lines: [
+        { product_id: "booth", line_total: 70 },
+        { product_id: "prints", line_total: 30 },
+      ],
+    });
+    expect(result?.amount).toBe(55);
+    expect(discountLabel(result!, false)).toBe("Free gift + Free gift");
+    expect(result?.rules.map((rule) => rule.id)).toEqual(["p", "g"]);
+  });
+
+  it("asks for another service and never goes past the services", () => {
+    const needs = gift({ requires_product_ids: ["booth"], event_from: null, event_to: null });
+    const day = { day: "2026-10-11", today: "2026-10-01" };
+    expect(
+      bestDiscount([needs], { ...day, lines: [{ product_id: "prints", line_total: 30 }] }),
+    ).toBeNull();
+    expect(
+      bestDiscount([needs, gift({ id: "h" })], {
+        ...day,
+        lines: [
+          { product_id: "booth", line_total: 5 },
+          { product_id: "prints", line_total: 30 },
+        ],
+      })?.amount,
+    ).toBe(35);
+  });
+
+  it("says what the calendar offers", () => {
+    expect(offersLegend([], false)).toBeNull();
+    expect(offersLegend([gift(), { ...gift(), value: 25, id: "x" }], false)).toBe(
+      "up to 25% off · 🎁 free gift",
+    );
+  });
+
+  it("refuses event dates that end before they start", () => {
+    const form = {
+      ...EMPTY_DISCOUNT_FORM,
+      value: "100",
+      event_from: "2026-10-12",
+      event_to: "2026-10-10",
+    };
+    expect(discountFormError(form, false)).toMatch(/event dates/);
+    expect(discountFormColumns({ ...form, event_to: "", stackable: true })).toMatchObject({
+      event_from: "2026-10-12",
+      event_to: null,
+      stackable: true,
+      requires_product_ids: null,
+    });
   });
 });
 

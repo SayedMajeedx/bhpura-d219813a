@@ -17,7 +17,7 @@ export const bookingDiscountsKeys = {
 };
 
 const RULE_COLUMNS =
-  "id, name_en, name_ar, kind, value, min_days, max_days, weekdays, product_ids, valid_from, valid_to, is_active, created_at" as const;
+  "id, name_en, name_ar, kind, value, min_days, max_days, weekdays, product_ids, valid_from, valid_to, requires_product_ids, stackable, event_from, event_to, is_active, created_at" as const;
 
 export type DiscountRuleRow = DiscountRule & { is_active: boolean; created_at: string };
 
