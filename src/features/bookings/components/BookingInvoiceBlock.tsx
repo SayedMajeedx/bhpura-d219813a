@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Copy, ExternalLink, FileText, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -6,9 +7,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/format";
 import { dayTitle } from "@/lib/bookings/format";
+import { bookingPoliciesQueries } from "@/lib/data/booking-policies";
+import { NO_POLICY, balanceReminder } from "@/lib/bookings/policies";
 import type { Booking } from "@/lib/data/bookings";
 import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
 import {
+  balanceReminderMessage,
   bookingInvoiceOf,
   invoiceLink,
   invoiceMessage,
@@ -37,6 +41,7 @@ export function BookingInvoiceBlock({
   const { isAr, brand } = page;
   const invoice = bookingInvoiceOf(booking);
   const [copied, setCopied] = useState(false);
+  const policy = useQuery(bookingPoliciesQueries.policy(brand.id)).data;
 
   if (!invoice) {
     // A card payment still holding the day has its order when it is placed.
@@ -74,6 +79,31 @@ export function BookingInvoiceBlock({
     link,
   });
   const whatsapp = whatsAppToCustomer(booking.customer_phone, message);
+  // A confirmed booking with something still to pay can be reminded of the balance.
+  const owed =
+    booking.status === "confirmed" && invoice.paymentStatus !== "refunded"
+      ? balanceReminder(policy ?? NO_POLICY, {
+          event_date: booking.event_date,
+          total: invoice.total,
+          paid: invoice.paid,
+        })
+      : null;
+  const reminder =
+    owed &&
+    whatsAppToCustomer(
+      booking.customer_phone,
+      balanceReminderMessage({
+        isAr,
+        brandName: (isAr ? brand.name_ar : null) || brand.name_en || "",
+        customerName: booking.customer_name,
+        reference: booking.reference,
+        dayLabel: dayTitle(booking.event_date, isAr),
+        balance: owed.balance,
+        currency: invoice.currency,
+        due: owed.due,
+        link,
+      }),
+    );
 
   const copy = async () => {
     try {
@@ -123,6 +153,14 @@ export function BookingInvoiceBlock({
             <a href={whatsapp} target="_blank" rel="noopener noreferrer">
               <MessageCircle className="size-3.5" aria-hidden="true" />
               {isAr ? "إرسال واتساب" : "Send on WhatsApp"}
+            </a>
+          </Button>
+        )}
+        {reminder && (
+          <Button asChild type="button" size="sm" variant="outline" className="h-8 gap-1.5 text-xs">
+            <a href={reminder} target="_blank" rel="noopener noreferrer">
+              <MessageCircle className="size-3.5" aria-hidden="true" />
+              {isAr ? "تذكير بالرصيد" : "Remind of balance"}
             </a>
           </Button>
         )}

@@ -754,6 +754,44 @@ export type Database = {
           },
         ];
       };
+      booking_policies: {
+        Row: {
+          balance_due_days: number | null;
+          brand_id: string;
+          deposit_refundable: boolean;
+          reschedule_months: number | null;
+          terms_ar: string | null;
+          terms_en: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          balance_due_days?: number | null;
+          brand_id: string;
+          deposit_refundable?: boolean;
+          reschedule_months?: number | null;
+          terms_ar?: string | null;
+          terms_en?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          balance_due_days?: number | null;
+          brand_id?: string;
+          deposit_refundable?: boolean;
+          reschedule_months?: number | null;
+          terms_ar?: string | null;
+          terms_en?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "booking_policies_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: true;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       booking_settings: {
         Row: {
           brand_id: string;

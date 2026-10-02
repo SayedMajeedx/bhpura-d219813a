@@ -20,6 +20,7 @@ import {
 import { BookingDayPicker } from "@/features/storefront-booking/components/BookingDayPicker";
 import { BookingServicePicker } from "@/features/storefront-booking/components/BookingServicePicker";
 import { BookingTimePicker } from "@/features/storefront-booking/components/BookingTimePicker";
+import { BookingPolicies } from "@/features/storefront-booking/components/BookingPolicies";
 import { StoreFaq } from "@/features/store-content/components/StoreFaq";
 import { StoreGallery } from "@/features/store-content/components/StoreGallery";
 import { BookingDetailsFields } from "@/features/storefront-booking/components/BookingDetailsFields";
@@ -141,6 +142,12 @@ export function StorefrontBookingPage({
             ? "يُثبَّت موعدك بعد تأكيد المتجر. أرسل الطلب على واتساب ليصلهم فوراً."
             : "Your date is held once the store confirms. Send it on WhatsApp so they see it now."}
         </p>
+        <BookingPolicies
+          brandId={flow.brand.id}
+          isAr={isAr}
+          depositPercent={flow.catalog ? 0 : (flow.rules?.deposit_percent ?? 0)}
+          eventDay={flow.result.event_date}
+        />
         <p className="rounded-xl bg-muted p-3 text-sm">
           {isAr ? "رقم الطلب: " : "Request: "}
           <span className="font-semibold" dir="ltr">
@@ -189,6 +196,12 @@ export function StorefrontBookingPage({
         <BookingDetailsFields flow={flow} />
       </Step>
 
+      <BookingPolicies
+        brandId={flow.brand.id}
+        isAr={isAr}
+        depositPercent={flow.catalog ? 0 : (flow.rules?.deposit_percent ?? 0)}
+        eventDay={flow.flow.day}
+      />
       <StoreGallery brandId={flow.brand.id} isAr={isAr} />
       <StoreFaq brandId={flow.brand.id} isAr={isAr} />
 
