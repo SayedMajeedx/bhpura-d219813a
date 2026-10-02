@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Check, Clock, MapPin, Plus } from "lucide-react";
+import { Check, Clock, MapPin, Package, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
+import { packageCardClass, type PackageStyle } from "@/lib/bookings/package-style";
 import { optionName, type ServiceOption } from "@/lib/bookings/service-options";
 import type { ProductRow } from "@/lib/data/storefront";
 import { ServiceDetailsDialog } from "@/features/services-home/components/ServiceDetailsDialog";
@@ -140,21 +141,28 @@ export function PackageOfferCard({
   product,
   offer,
   extraHour,
+  look,
 }: {
   product: ProductRow;
   offer: PackageOffer;
   extraHour: number | null;
+  /** The merchant's package look (booking_page_options.package_style). */
+  look: PackageStyle;
 }) {
   const { brand, lang, currency, t } = useStorefront();
   const isAr = lang === "ar";
   return (
-    <article className="relative flex flex-col gap-3 rounded-2xl border border-primary/30 bg-card p-5">
+    <article className={`${packageCardClass(look)} flex flex-col gap-3 rounded-2xl p-5`}>
       {offer.saving && (
-        <span className="absolute -top-3 end-4 rounded-full bg-success px-3 py-1 text-xs font-semibold text-success-foreground">
+        <span className="absolute end-3 top-3 rounded-full bg-success px-3 py-1 text-xs font-semibold text-success-foreground">
           {t(`وفّر ${offer.saving.percent}%`, `Save ${offer.saving.percent}%`)}
         </span>
       )}
-      <h3 className="font-display text-xl text-foreground">{nameOf(product, isAr)}</h3>
+      <p className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+        <Package className="size-3.5" aria-hidden="true" />
+        {t("باقة", "Package")}
+      </p>
+      <h3 className="pe-20 font-display text-xl text-foreground">{nameOf(product, isAr)}</h3>
       <p className="flex flex-wrap items-baseline gap-2">
         <span className="text-2xl font-semibold text-foreground" dir="ltr">
           {formatPrice(offer.price, currency, lang)}

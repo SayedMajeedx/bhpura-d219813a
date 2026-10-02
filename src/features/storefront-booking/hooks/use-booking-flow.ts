@@ -21,6 +21,8 @@ import {
 } from "@/lib/bookings/service-options";
 import { packageLinesById, servicePackagesQueries } from "@/lib/data/service-packages";
 import { packageLinesText } from "@/lib/bookings/service-package";
+import { bookingPageOptionsQueries } from "@/lib/data/booking-page-options";
+import { packageStyleFrom } from "@/lib/bookings/package-style";
 import {
   bestDiscount,
   dayOffer,
@@ -166,6 +168,24 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
     enabled: Boolean(rules) && services.some((service) => service.is_package),
   }).data;
   const packageLines = useMemo(() => packageLinesById(packageRows ?? []), [packageRows]);
+  const includedNames = (id: string) => {
+    const item = services.find((candidate) => candidate.id === id);
+    return item ? (isAr ? item.name_ar || item.name : item.name_en || item.name) : "";
+  };
+  /** What a package includes, one entry per service ("Prints × 2"). */
+  const includesList = (serviceId: string): string[] =>
+    (packageLines.get(serviceId) ?? [])
+      .map((line) => {
+        const name = includedNames(line.product_id);
+        return line.quantity > 1 ? `${name} × ${line.quantity}` : name;
+      })
+      .filter(Boolean);
+  const packageStyle = packageStyleFrom(
+    useQuery({
+      ...bookingPageOptionsQueries.options(brand.id),
+      enabled: Boolean(rules) && services.some((service) => service.is_package),
+    }).data?.package_style,
+  );
   const includesText = (serviceId: string) =>
     packageLinesText(
       packageLines.get(serviceId) ?? [],
@@ -294,6 +314,9 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
     optionsTotal: optionsTotalValue,
     /** What a package includes, in words (empty for a service that is not one). */
     includesText,
+    includesList,
+    /** How packages stand out on the page (the merchant's pick). */
+    packageStyle,
     /** The offer this booking gets (null: none), and the one to mark on a calendar day. */
     offer,
     offerOnDay,

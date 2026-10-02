@@ -754,6 +754,32 @@ export type Database = {
           },
         ];
       };
+      booking_page_options: {
+        Row: {
+          brand_id: string;
+          package_style: string;
+          updated_at: string;
+        };
+        Insert: {
+          brand_id: string;
+          package_style?: string;
+          updated_at?: string;
+        };
+        Update: {
+          brand_id?: string;
+          package_style?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "booking_page_options_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: true;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       booking_policies: {
         Row: {
           balance_due_days: number | null;

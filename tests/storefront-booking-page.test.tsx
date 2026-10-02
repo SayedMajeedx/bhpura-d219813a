@@ -23,6 +23,8 @@ const state = vi.hoisted(() => ({
   taken: [] as string[],
   // A store with a package (made of the booth and two prints).
   withPackage: false,
+  // How packages stand out (the merchant's pick).
+  packageStyle: "glow",
   // The booth's add-ons.
   withOptions: false,
   // The store's active booking offers.
@@ -183,6 +185,16 @@ const storeContentData = {
     publicFaq: () => ({ queryKey: ["sbp-test", "faq"], queryFn: async () => [] }),
   },
 };
+const pageOptionsData = {
+  bookingPageOptionsQueries: {
+    options: () => ({
+      queryKey: ["sbp-test", "page-options", state.packageStyle],
+      queryFn: async () => ({ package_style: state.packageStyle }),
+    }),
+  },
+};
+vi.mock("../src/lib/data/booking-page-options", () => pageOptionsData);
+vi.mock("@/lib/data/booking-page-options", () => pageOptionsData);
 const policiesData = {
   bookingPoliciesQueries: {
     policy: () => ({ queryKey: ["sbp-test", "policy"], queryFn: async () => null }),
@@ -287,6 +299,7 @@ beforeEach(() => {
   state.taken = [];
   state.discountRules = [];
   state.withPackage = false;
+  state.packageStyle = "glow";
   state.withOptions = false;
 });
 
@@ -522,19 +535,35 @@ describe("a store's booking offers", () => {
 });
 
 describe("a package in the booking flow", () => {
-  it("shows what it includes next to its price", async () => {
+  it("stands out from the services, with what it includes and what it saves", async () => {
     state.withPackage = true;
     renderWithQuery(<StorefrontBookingPage />);
     const pkg = await screen.findByRole("checkbox", { name: /Gold package/ });
-    await waitFor(() => expect(pkg).toHaveTextContent("Includes: Photo booth, Prints × 2"));
-    // The services it is made of are still offered on their own.
-    expect(screen.getByRole("checkbox", { name: /^Photo booth/ })).toBeInTheDocument();
+    await waitFor(() => expect(pkg).toHaveTextContent("Prints × 2"));
+    expect(pkg).toHaveTextContent("Photo booth");
+    expect(pkg).toHaveTextContent("Package");
+    expect(pkg).toHaveTextContent("Save 22%");
+    expect(pkg.className).toContain("pkg-card--glow");
+    // Grouped under its own heading, apart from the services it is made of.
+    expect(screen.getByRole("heading", { name: "Packages" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Services", level: 3 })).toBeInTheDocument();
+    const booth = screen.getByRole("checkbox", { name: /^Photo booth/ });
+    expect(booth.className).not.toContain("pkg-card");
+  });
+
+  it("follows the look the merchant picked", async () => {
+    state.withPackage = true;
+    state.packageStyle = "ribbon";
+    renderWithQuery(<StorefrontBookingPage />);
+    const pkg = await screen.findByRole("checkbox", { name: /Gold package/ });
+    await waitFor(() => expect(pkg.className).toContain("pkg-card--ribbon"));
   });
 
   it("shows nothing extra for a service that is not a package", async () => {
     renderWithQuery(<StorefrontBookingPage />);
     const booth = await screen.findByRole("checkbox", { name: /Photo booth/ });
-    expect(booth).not.toHaveTextContent("Includes");
+    expect(booth).not.toHaveTextContent("Package");
+    expect(screen.queryByRole("heading", { name: "Packages" })).toBeNull();
   });
 });
 
