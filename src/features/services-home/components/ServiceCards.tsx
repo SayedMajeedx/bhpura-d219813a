@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Check, Clock, MapPin, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
 import { optionName, type ServiceOption } from "@/lib/bookings/service-options";
 import type { ProductRow } from "@/lib/data/storefront";
+import { ServiceDetailsDialog } from "@/features/services-home/components/ServiceDetailsDialog";
 import {
   extraHourPriceOf,
   fromPriceOf,
@@ -36,6 +38,7 @@ export function ServiceCard({
   const place = PLACES[product.service_location as keyof typeof PLACES];
   const includes = includeLinesOf(product, isAr);
   const extra = extraHourPriceOf(product);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const optional = addOns.filter((o) => o.mode === "optional" || o.mode === "default_on");
 
   return (
@@ -109,11 +112,24 @@ export function ServiceCard({
             <span dir="ltr">{formatPrice(extra, currency, lang)}</span>
           </p>
         )}
-        <Button asChild variant="outline" className="mt-auto">
-          <Link to="/$slug/product/$id" params={{ slug: brand.slug, id: product.id }}>
-            {t("التفاصيل والحجز", "Details and booking")}
-          </Link>
-        </Button>
+        <div className="mt-auto grid gap-2 sm:grid-cols-2">
+          <Button type="button" variant="outline" onClick={() => setDetailsOpen(true)}>
+            {t("عرض التفاصيل", "View details")}
+          </Button>
+          <Button asChild>
+            <Link to="/$slug/book" params={{ slug: brand.slug }} search={{ service: product.id }}>
+              {t("احجز الآن", "Book now")}
+            </Link>
+          </Button>
+        </div>
+        {detailsOpen && (
+          <ServiceDetailsDialog
+            product={product}
+            addOns={addOns}
+            open={detailsOpen}
+            onOpenChange={setDetailsOpen}
+          />
+        )}
       </div>
     </article>
   );

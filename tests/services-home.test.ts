@@ -4,9 +4,11 @@ import {
   fromPriceOf,
   includeLinesOf,
   isServicesStore,
+  lengthPrices,
   lengthRangeText,
   minutesText,
   packageOffer,
+  serviceImages,
   splitServices,
 } from "../src/features/services-home/lib/services-home";
 import type { ProductRow } from "../src/lib/data/storefront";
@@ -89,6 +91,26 @@ describe("the home page of a services store", () => {
     expect(includeLinesOf(booth, false)).toEqual(["Instant prints", "Props"]);
     expect(extraHourPriceOf(booth)).toBe(15);
     expect(extraHourPriceOf(prints)).toBeNull();
+  });
+
+  it("lists a service's pictures once, cover first, and what each length costs", () => {
+    const framed = product({
+      image_url: "https://cdn.test/cover.jpg",
+      media: [
+        { type: "image", url: "https://cdn.test/a.jpg" },
+        { type: "video", url: "https://cdn.test/v.mp4" },
+        { type: "image", url: "https://cdn.test/cover.jpg" },
+        null,
+      ],
+    });
+    expect(serviceImages(framed)).toEqual(["https://cdn.test/cover.jpg", "https://cdn.test/a.jpg"]);
+    expect(serviceImages(product({}))).toEqual([]);
+    expect(lengthPrices(booth)).toEqual([
+      { minutes: 60, price: 40 },
+      { minutes: 120, price: 70 },
+      { minutes: 180, price: 95 },
+    ]);
+    expect(lengthPrices(prints)).toEqual([]);
   });
 
   it("shows a package against its services apart", () => {

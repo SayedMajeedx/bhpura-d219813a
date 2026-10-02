@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 
@@ -120,6 +120,25 @@ const products = [
     product_variants: [variant(50, 60)],
   },
 ] as never;
+
+describe("a service's details view", () => {
+  it("opens from the card with its lengths, prices, includes and add-ons, and books that service", async () => {
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <ServicesHome products={products} />
+      </QueryClientProvider>,
+    );
+    await screen.findByText(/Guest book/);
+    fireEvent.click(screen.getAllByRole("button", { name: "View details" })[0]);
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Length and price")).toBeInTheDocument();
+    expect(within(dialog).getByText("BHD 95")).toBeInTheDocument();
+    expect(within(dialog).getByText("3 hours")).toBeInTheDocument();
+    expect(within(dialog).getByText("Instant prints")).toBeInTheDocument();
+    expect(within(dialog).getByText("Guest book")).toBeInTheDocument();
+    expect(within(dialog).getByRole("link", { name: "Book this service" })).toBeInTheDocument();
+  });
+});
 
 describe("the services home page", () => {
   it("shows the services, the package offer with its saving, and the sections around them", async () => {
