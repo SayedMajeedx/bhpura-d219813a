@@ -35,7 +35,7 @@ export const bookingPageOptionsQueries = {
       queryKey: bookingPageOptionsKeys.all(brandId),
       queryFn: () => fetchBookingPageOptions(brandId),
       enabled: Boolean(brandId),
-      staleTime: 5 * 60_000,
+      staleTime: 30_000,
     }),
 };
 

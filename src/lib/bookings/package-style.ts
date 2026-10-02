@@ -25,28 +25,28 @@ export const PACKAGE_STYLE_LABELS: Record<
   { ar: string; en: string; hintAr: string; hintEn: string }
 > = {
   glow: {
-    ar: "توهج",
-    en: "Glow",
-    hintAr: "إطار يتوهج بهدوء",
-    hintEn: "A soft pulsing glow around the card",
+    ar: "هالة",
+    en: "Aura",
+    hintAr: "إطار معدني متحرك وتوهج هادئ",
+    hintEn: "A living foil border with a breathing glow",
   },
   shimmer: {
-    ar: "لمعان",
-    en: "Shimmer",
-    hintAr: "لمعة خفيفة تعبر البطاقة",
-    hintEn: "A light sweep across the card",
+    ar: "بريق",
+    en: "Sheen",
+    hintAr: "شعاع ضوء ناعم يعبر البطاقة",
+    hintEn: "A soft band of light crosses the card",
   },
   ribbon: {
     ar: "شريط",
     en: "Ribbon",
-    hintAr: "شريط في الزاوية ورفعة عند التمرير",
-    hintEn: "A corner ribbon, lifting on hover",
+    hintAr: "بطاقة معلّقة وحافة بارزة",
+    hintEn: "A hanging tag and a bold edge",
   },
   plain: {
-    ar: "هادئ",
-    en: "Plain",
-    hintAr: "بطاقة ملوّنة بلا حركة",
-    hintEn: "A tinted card, no animation",
+    ar: "كلاسيكي",
+    en: "Classic",
+    hintAr: "لون عميق وإطار رفيع، هادئ وراقٍ",
+    hintEn: "A deep tint and a hairline frame, calm and formal",
   },
 };
 
