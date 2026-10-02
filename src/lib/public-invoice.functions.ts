@@ -57,14 +57,30 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
     }
 
     // An appointment's time is shown in the store's timezone.
+    // Its booking terms (the store's booking policy and deposit) go with it.
     let bookingTimezone: string | null = null;
+    let bookingDepositPercent = 0;
+    let bookingPolicy: {
+      balance_due_days: number | null;
+      reschedule_months: number | null;
+      deposit_refundable: boolean;
+      terms_en: string | null;
+      terms_ar: string | null;
+    } | null = null;
     if (Array.isArray(order.bookings) && order.bookings.length > 0) {
       const { data: bookingRules } = await supabaseAdmin
         .from("booking_settings")
-        .select("timezone")
+        .select("timezone, deposit_percent")
         .eq("brand_id", order.brand_id)
         .maybeSingle();
       bookingTimezone = bookingRules?.timezone ?? null;
+      bookingDepositPercent = Number(bookingRules?.deposit_percent ?? 0);
+      const { data: policy } = await supabaseAdmin
+        .from("booking_policies")
+        .select("balance_due_days, reschedule_months, deposit_refundable, terms_en, terms_ar")
+        .eq("brand_id", order.brand_id)
+        .maybeSingle();
+      bookingPolicy = policy ?? null;
     }
 
     let branch: any = null;
@@ -95,6 +111,8 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
       shippingAddress,
       branch,
       bookingTimezone,
+      bookingDepositPercent,
+      bookingPolicy,
       brandAddons: brandAddons ?? [],
     };
   });

@@ -12,6 +12,8 @@ import {
   fulfillmentMethodText,
 } from "@/lib/bookings/order-appointment";
 import { InvoiceAppointment } from "@/components/orders/InvoiceAppointment";
+import { InvoiceBookingTerms } from "@/components/orders/InvoiceBookingTerms";
+import { policyLines } from "@/lib/bookings/policies";
 
 import { getReadableTextColor } from "@/lib/color-utils";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
@@ -126,8 +128,16 @@ const PAY: Record<string, { en: string; ar: string }> = {
 };
 
 function PublicInvoice() {
-  const { order, settings, shippingAddress, branch, brandAddons, bookingTimezone } =
-    Route.useLoaderData() as any;
+  const {
+    order,
+    settings,
+    shippingAddress,
+    branch,
+    brandAddons,
+    bookingTimezone,
+    bookingDepositPercent,
+    bookingPolicy,
+  } = Route.useLoaderData() as any;
   const [lang, setLang] = useState<"en" | "ar">("en");
   const [copied, setCopied] = useState(false);
   const L = LABELS[lang];
@@ -848,6 +858,18 @@ function PublicInvoice() {
                   <p className="italic" style={{ color: textColor, opacity: 0.85 }}>
                     {settings.footer_note}
                   </p>
+                )}
+                {orderBooking && bookingPolicy && (
+                  <InvoiceBookingTerms
+                    lines={policyLines(bookingPolicy, {
+                      isAr: isRTL,
+                      depositPercent: bookingDepositPercent,
+                      eventDay: orderBooking.event_date,
+                    })}
+                    isRTL={isRTL}
+                    background={secondaryColor}
+                    color={surfaceCardTextColor}
+                  />
                 )}
                 {showTerms && (
                   <div

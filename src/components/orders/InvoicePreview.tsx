@@ -22,6 +22,9 @@ import {
   fulfillmentMethodText,
 } from "@/lib/bookings/order-appointment";
 import { InvoiceAppointment } from "@/components/orders/InvoiceAppointment";
+import { InvoiceBookingTerms } from "@/components/orders/InvoiceBookingTerms";
+import { bookingPoliciesQueries } from "@/lib/data/booking-policies";
+import { policyLines } from "@/lib/bookings/policies";
 
 type SavedAddress = {
   id?: string;
@@ -244,6 +247,10 @@ export default function InvoicePreview({
   const orderBooking = bookingOfOrder(order);
   const bookingRulesQ = useQuery({
     ...bookingsQueries.settings(brandId ?? ""),
+    enabled: Boolean(brandId && orderBooking),
+  });
+  const policyQ = useQuery({
+    ...bookingPoliciesQueries.policy(brandId ?? ""),
     enabled: Boolean(brandId && orderBooking),
   });
   const addonDefaults = variantAxisDefaultsFrom(
@@ -936,6 +943,18 @@ export default function InvoicePreview({
                 <p className="italic" style={{ color: text, opacity: 0.85 }}>
                   {settings.footer_note}
                 </p>
+              )}
+              {orderBooking && policyQ.data && (
+                <InvoiceBookingTerms
+                  lines={policyLines(policyQ.data, {
+                    isAr: isRTL,
+                    depositPercent: bookingRulesQ.data?.deposit_percent ?? 0,
+                    eventDay: orderBooking.event_date,
+                  })}
+                  isRTL={isRTL}
+                  background={secondary}
+                  color={surfaceCardTextColor}
+                />
               )}
               {showTerms && (
                 <div
