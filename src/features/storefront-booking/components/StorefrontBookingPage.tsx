@@ -20,6 +20,8 @@ import {
 import { BookingDayPicker } from "@/features/storefront-booking/components/BookingDayPicker";
 import { BookingServicePicker } from "@/features/storefront-booking/components/BookingServicePicker";
 import { BookingTimePicker } from "@/features/storefront-booking/components/BookingTimePicker";
+import { StoreFaq } from "@/features/store-content/components/StoreFaq";
+import { StoreGallery } from "@/features/store-content/components/StoreGallery";
 import { BookingDetailsFields } from "@/features/storefront-booking/components/BookingDetailsFields";
 
 const STEPS: Array<{ id: FlowStep; ar: string; en: string }> = [
@@ -186,6 +188,9 @@ export function StorefrontBookingPage({
       <Step index={4} title={STEPS[3][lang]} done={done("details")}>
         <BookingDetailsFields flow={flow} />
       </Step>
+
+      <StoreGallery brandId={flow.brand.id} isAr={isAr} />
+      <StoreFaq brandId={flow.brand.id} isAr={isAr} />
 
       <section className="sticky bottom-0 space-y-3 rounded-2xl border border-border bg-card p-4 shadow-lg">
         {showPrices && flow.flow.areaCode && flow.travelFee !== null && flow.travelFee > 0 && (

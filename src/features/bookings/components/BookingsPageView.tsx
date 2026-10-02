@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CalendarDays, Loader2, Settings2, Tag } from "lucide-react";
+import { CalendarDays, Images, Loader2, Settings2, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useBookingsPage } from "@/features/bookings/hooks/use-bookings-page";
@@ -9,6 +9,7 @@ import { BookingRequestsList } from "@/features/bookings/components/BookingReque
 import { BookingDiscountsDialog } from "@/features/bookings/components/BookingDiscountsDialog";
 import { BookingRulesDialog } from "@/features/bookings/components/BookingRulesDialog";
 import { BookingsReport } from "@/features/bookings/components/BookingsReport";
+import { StoreContentDialog } from "@/features/store-content/components/StoreContentDialog";
 import { CalendarLinkDialog } from "@/features/bookings/components/CalendarLinkDialog";
 
 /**
@@ -21,6 +22,7 @@ export function BookingsPageView() {
   const { profile, isLoading: profileLoading } = useAdminStoreProfile(page.brand.id);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [offersOpen, setOffersOpen] = useState(false);
+  const [contentOpen, setContentOpen] = useState(false);
   const [view, setView] = useState<"calendar" | "report">("calendar");
 
   if (page.settingsLoading || profileLoading) {
@@ -74,6 +76,16 @@ export function BookingsPageView() {
             >
               <Tag className="size-4" />
               {isAr ? "عروض وخصومات" : "Offers"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setContentOpen(true)}
+            >
+              <Images className="size-4" />
+              {isAr ? "المعرض والأسئلة" : "Gallery & FAQ"}
             </Button>
           </div>
         )}
@@ -139,6 +151,14 @@ export function BookingsPageView() {
 
       {offersOpen && (
         <BookingDiscountsDialog page={page} open={offersOpen} onOpenChange={setOffersOpen} />
+      )}
+      {contentOpen && (
+        <StoreContentDialog
+          brandId={page.brand.id}
+          isAr={isAr}
+          open={contentOpen}
+          onOpenChange={setContentOpen}
+        />
       )}
       {rulesOpen && <BookingRulesDialog page={page} open={rulesOpen} onOpenChange={setRulesOpen} />}
     </div>
