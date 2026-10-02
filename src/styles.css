@@ -948,3 +948,73 @@ html.is-embedded .hero-carousel-text-card a {
   content-visibility: auto;
   contain-intrinsic-size: auto 420px;
 }
+
+/* Package cards on the booking page: a package stands out from a service.
+   Four looks the merchant picks from (booking_page_options.package_style);
+   everything is drawn from the brand's primary colour. */
+.pkg-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid color-mix(in oklch, var(--primary) 45%, transparent);
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklch, var(--primary) 8%, var(--card)) 0%,
+    var(--card) 70%
+  );
+}
+
+@keyframes pkgGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--primary) 0%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 18px 2px color-mix(in oklch, var(--primary) 35%, transparent);
+  }
+}
+
+@keyframes pkgSweep {
+  0% {
+    transform: translateX(-120%);
+  }
+  60%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+.pkg-card--glow {
+  animation: pkgGlow 3.2s ease-in-out infinite;
+}
+
+.pkg-card--shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    color-mix(in oklch, var(--primary) 14%, transparent) 50%,
+    transparent 70%
+  );
+  animation: pkgSweep 4.5s ease-in-out infinite;
+}
+
+.pkg-card--ribbon,
+.pkg-card--plain {
+  transition: transform 0.2s ease;
+}
+
+.pkg-card--ribbon:hover {
+  transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pkg-card,
+  .pkg-card::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
