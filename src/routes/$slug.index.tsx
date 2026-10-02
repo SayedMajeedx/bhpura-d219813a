@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useStorefront } from "@/lib/storefront-context";
+import { useStorefront, useStoreModules } from "@/lib/storefront-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState, useRef, useEffect } from "react";
 import { ProductGrid } from "@/components/storefront/product-grid";
@@ -26,6 +26,8 @@ import {
 import { HeroBanner } from "@/features/storefront-home/components/HeroBanner";
 import { Categories } from "@/features/storefront-home/components/Categories";
 import { BookingInvite } from "@/features/storefront-booking/components/BookingEntryPoints";
+import { ServicesHome } from "@/features/services-home/components/ServicesHome";
+import { isServicesStore } from "@/features/services-home/lib/services-home";
 
 export const Route = createFileRoute("/$slug/")({
   loader: async ({ params }) => {
@@ -42,6 +44,7 @@ export const Route = createFileRoute("/$slug/")({
 
 function StoreHome() {
   const { brand, settings } = useStorefront();
+  const modules = useStoreModules();
   const loaderData = Route.useLoaderData();
   const [activeCategorySlugs, setActiveCategorySlugs] = useState<string[]>([]);
   const activeCat = activeCategorySlugs[0] || null;
@@ -109,6 +112,11 @@ function StoreHome() {
     trending,
     activeCat,
   });
+
+  // A store that only sells services gets its services page instead of a product shop.
+  if (!isLoading && isServicesStore(modules.bookings, products ?? [])) {
+    return <ServicesHome products={products ?? []} />;
+  }
 
   // Loading state with premium skeleton carousels/grids
   if (isLoading) {

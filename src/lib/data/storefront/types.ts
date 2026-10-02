@@ -27,6 +27,9 @@ export type ProductRow = {
   item_kind?: string | null;
   is_package?: boolean | null;
   extra_hour_price?: number | null;
+  service_location?: string | null;
+  /** What a service includes: `[{ ar, en }]` (service-details.ts reads it). */
+  service_includes?: unknown;
   custom_fields?: unknown;
   product_variants: Array<{
     id: string;
