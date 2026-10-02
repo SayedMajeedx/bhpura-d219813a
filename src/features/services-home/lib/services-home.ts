@@ -80,6 +80,28 @@ export function extraHourPriceOf(product: ProductRow): number | null {
     : null;
 }
 
+/** The pictures of a service for its details view: the cover first, then its other images (no videos), each once. */
+export function serviceImages(product: ProductRow): string[] {
+  const media = Array.isArray(product.media)
+    ? (product.media as Array<Record<string, unknown> | null>)
+    : [];
+  const urls = media.flatMap((item) =>
+    item && item.type !== "video" && typeof item.url === "string" ? [item.url] : [],
+  );
+  return [...new Set([...(product.image_url ? [product.image_url] : []), ...urls])];
+}
+
+/** What each length costs, shortest first (empty for a service not priced by length). */
+export function lengthPrices(product: ProductRow): Array<{ minutes: number; price: number }> {
+  return product.product_variants
+    .flatMap((variant) =>
+      typeof variant.duration_minutes === "number" && variant.duration_minutes > 0
+        ? [{ minutes: variant.duration_minutes, price: Number(variant.selling_price) }]
+        : [],
+    )
+    .sort((a, b) => a.minutes - b.minutes);
+}
+
 export type PackageOffer = {
   /** What the package costs (its "from" price). */
   price: number;

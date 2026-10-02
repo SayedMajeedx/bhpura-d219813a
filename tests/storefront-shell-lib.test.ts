@@ -188,6 +188,33 @@ describe("storefrontHead", () => {
     expect(ar.meta).toContainEqual({ name: "description", content: "تسوق من بورا أونلاين." });
   });
 
+  it("describes a services store as a place to book, unless the merchant wrote their own", () => {
+    const services = { ...settings, store_vertical: "services" } as unknown as PublicSettings;
+    const en = storefrontHead({ brand, settings: services, initialLang: "en" });
+    expect(en.meta).toContainEqual({ title: "Pura — Book online" });
+    expect(en.meta).toContainEqual({
+      name: "description",
+      content: "Book Pura online: see the free dates, our services and offers.",
+    });
+    const ar = storefrontHead({ brand, settings: services, initialLang: "ar" });
+    expect(ar.meta).toContainEqual({ title: "بورا — احجز موعدك أونلاين" });
+    const own = storefrontHead({
+      brand: { ...brand, meta_title: "Aurora Booth", meta_description: "Photo booth rental" },
+      settings: services,
+      initialLang: "en",
+    });
+    expect(own.meta).toContainEqual({ title: "Aurora Booth" });
+    expect(own.meta).toContainEqual({ name: "description", content: "Photo booth rental" });
+    // A services store that also ships goods stays a shop.
+    const hybrid = {
+      ...services,
+      store_modules: { stock: true, shipping: true },
+    } as unknown as PublicSettings;
+    expect(storefrontHead({ brand, settings: hybrid, initialLang: "en" }).meta).toContainEqual({
+      title: "Pura",
+    });
+  });
+
   it("links the manifest and adds structured data", () => {
     const head = storefrontHead({ brand, settings, initialLang: "en" });
     expect("links" in head && head.links).toContainEqual({
