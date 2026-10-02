@@ -167,7 +167,7 @@ export function BookingsGlanceCard({
           <span className="font-semibold text-foreground">
             {dayTitle(glance.next.event_date, isAr)}
           </span>{" "}
-          <span dir="ltr">{clock(glance.next.starts_at)}</span>
+          <span dir={isAr ? "rtl" : "ltr"}>{clock(glance.next.starts_at)}</span>
         </p>
       ) : (
         <p className="text-sm text-muted-foreground">

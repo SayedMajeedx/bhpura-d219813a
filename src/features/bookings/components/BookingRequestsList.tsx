@@ -81,7 +81,7 @@ export function BookingRequestsList({ page }: { page: BookingsPage }) {
                 >
                   <span className="block font-semibold text-foreground">
                     {dayTitle(booking.event_date, isAr)} ·{" "}
-                    <span dir="ltr">
+                    <span dir={isAr ? "rtl" : "ltr"}>
                       {formatClock(localTime(booking.starts_at, page.rules.timezone), isAr)}
                     </span>
                   </span>
