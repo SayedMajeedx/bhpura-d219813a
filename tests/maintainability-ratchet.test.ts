@@ -44,7 +44,7 @@ const BUDGETS = {
  *   admin.b.$slug.content-studio.tsx (content studio Phase 0, now ~90 lines).
  */
 const GIANT_FILES_BUDGETS: Record<string, number> = {
-  "src/features/settings/registry.ts": 2616,
+  "src/features/settings/registry.ts": 2516,
   "src/components/subscription/BrandSubscriptionHub.tsx": 1954,
   "src/routes/_authenticated/admin.b.$slug.export.tsx": 1838,
   "src/lib/addons/addon-showcase-data.ts": 1893,

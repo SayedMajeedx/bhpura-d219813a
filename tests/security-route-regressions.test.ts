@@ -829,7 +829,11 @@ describe("server route security regressions", () => {
     };
     const fetchOrder = vi.fn().mockResolvedValue({ data: order, error: null });
     const orderEq3 = vi.fn().mockReturnValue({ maybeSingle: fetchOrder });
-    const orderEq2 = vi.fn().mockReturnValue({ eq: orderEq3 });
+    // The charge plan also asks which advance percentage the order was placed under (none here).
+    const advanceLookup = vi
+      .fn()
+      .mockResolvedValue({ data: { advance_percent: null }, error: null });
+    const orderEq2 = vi.fn().mockReturnValue({ eq: orderEq3, maybeSingle: advanceLookup });
     const orderEq1 = vi.fn().mockReturnValue({ eq: orderEq2 });
 
     const persistSingle = vi.fn().mockResolvedValue({
