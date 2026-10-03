@@ -56,7 +56,9 @@ export function useInstagramConnection() {
     onSuccess: (url) => goTo(url),
     onError: (e) => {
       const code = e instanceof GiveawayApiError ? e.code : "server_error";
-      setNotice({ kind: "error", text: instagramOAuthMessage(code, isAr) });
+      // The server's own words say which part failed (a refusal, or a check that could not run).
+      const detail = e instanceof GiveawayApiError ? e.message : undefined;
+      setNotice({ kind: "error", text: instagramOAuthMessage(code, isAr, detail) });
     },
   });
 

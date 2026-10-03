@@ -80,7 +80,12 @@ export function fromLocalInput(value: string): string | null {
 }
 
 /** What the screen says when Instagram sends the browser back with a failed connection. */
-export function instagramOAuthMessage(code: string, isAr: boolean): string {
+export function instagramOAuthMessage(code: string, isAr: boolean, detail?: string): string {
+  const base = oauthMessageFor(code, isAr);
+  return detail?.trim() ? `${base} (${detail.trim().slice(0, 240)})` : base;
+}
+
+function oauthMessageFor(code: string, isAr: boolean): string {
   switch (code) {
     case "denied":
       return isAr

@@ -97,6 +97,27 @@ describe("connecting Instagram", () => {
     expect(state.goTo).not.toHaveBeenCalled();
   });
 
+  it("shows which part failed when the server could not check access", async () => {
+    state.startInstagramOAuth.mockRejectedValue(
+      new GiveawayApiError("server_error", "check_failed: PGRST301"),
+    );
+    renderCard();
+    fireEvent.click(await screen.findByRole("button", { name: "Connect with Instagram" }));
+    const text = (await screen.findByRole("alert")).textContent ?? "";
+    expect(text).toContain("could not be connected");
+    expect(text).toContain("(check_failed: PGRST301)");
+    expect(text).not.toContain("do not have permission");
+  });
+
+  it("names the refusal when the database really said no", async () => {
+    state.startInstagramOAuth.mockRejectedValue(new GiveawayApiError("forbidden", "no_permission"));
+    renderCard();
+    fireEvent.click(await screen.findByRole("button", { name: "Connect with Instagram" }));
+    const text = (await screen.findByRole("alert")).textContent ?? "";
+    expect(text).toContain("do not have permission");
+    expect(text).toContain("(no_permission)");
+  });
+
   it("offers Reconnect once connected", async () => {
     state.connection = {
       is_connected: true,
