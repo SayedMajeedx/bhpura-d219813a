@@ -208,15 +208,20 @@ export function allowedReturnOrigin(origin: string): string | null {
 // ── Authorization and token exchange ────────────────────────────────────────
 
 export function buildAuthorizeUrl(appId: string, state: string): string {
-  const url = new URL(AUTHORIZE_URL);
-  url.searchParams.set("client_id", appId);
-  url.searchParams.set("redirect_uri", INSTAGRAM_REDIRECT_URI);
-  url.searchParams.set("response_type", "code");
-  url.searchParams.set("scope", REQUIRED_SCOPES.join(","));
-  url.searchParams.set("state", state);
-  // Always show Instagram's consent screen, so a reconnect can grant the comment permission.
-  url.searchParams.set("force_reauth", "true");
-  return url.toString();
+  // Written the way Meta's own "embed URL" for the app is: the redirect address is
+  // NOT percent-encoded (Instagram has been seen to compare it as text against the
+  // address sent in the token request), the permissions are joined with an encoded
+  // comma, and force_reauth always shows the consent screen so a reconnect can grant
+  // the comment permission. The state is ours: a random hex value.
+  const scope = REQUIRED_SCOPES.map(encodeURIComponent).join("%2C");
+  return (
+    `${AUTHORIZE_URL}?force_reauth=true` +
+    `&client_id=${encodeURIComponent(appId)}` +
+    `&redirect_uri=${INSTAGRAM_REDIRECT_URI}` +
+    `&response_type=code` +
+    `&scope=${scope}` +
+    `&state=${encodeURIComponent(state)}`
+  );
 }
 
 export type CodeExchange = {

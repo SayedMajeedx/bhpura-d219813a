@@ -113,6 +113,25 @@ describe("the authorization address", () => {
     expect(url.searchParams.get("force_reauth")).toBe("true");
     noSecrets(url.toString());
   });
+
+  it("is written the way Meta's own link is, with the redirect address not percent-encoded", () => {
+    const address = buildAuthorizeUrl(APP_ID, "nonce-abc");
+    expect(address).toBe(
+      `https://www.instagram.com/oauth/authorize?force_reauth=true&client_id=${APP_ID}` +
+        "&redirect_uri=https://boutq.store/api/auth/instagram/callback" +
+        "&response_type=code" +
+        "&scope=instagram_business_basic%2Cinstagram_business_manage_comments" +
+        "&state=nonce-abc",
+    );
+    expect(address).not.toContain("https%3A");
+  });
+
+  it("sends the same redirect address in the token request as in the authorization", async () => {
+    const authorization = new URL(buildAuthorizeUrl(APP_ID, "nonce-abc"));
+    const { calls } = await run({ code: "auth-code-123", state: "nonce-abc" });
+    const tokenRequest = new URLSearchParams(calls[0].body);
+    expect(tokenRequest.get("redirect_uri")).toBe(authorization.searchParams.get("redirect_uri"));
+  });
 });
 
 describe("the state cookie", () => {
