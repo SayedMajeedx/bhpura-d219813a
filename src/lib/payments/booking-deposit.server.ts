@@ -1,31 +1,29 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { chargePlan, depositOf, type ChargePlan } from "@/lib/payments/charge-plan";
+import { chargePlan, type ChargePlan } from "@/lib/payments/charge-plan";
 
 /**
  * The card charge for an order (server only, with the service-role client).
  *
- * A store with an advance-payment rule charges that share of the order's total:
- * the percentage kept on the order when it was placed (orders.advance_percent),
- * so a later change to the store's setting does not move it. Without one, a
- * booking's own deposit applies if its booking has one, otherwise the whole
- * total. An order pays for at most one booking. A failed lookup throws rather
- * than guess an amount.
+ * A store with an advance-payment rule charges what the order owes in advance, as the
+ * database works it out from the order's own lines (order_advance_due: the scope, the
+ * percentage kept on the order when it was placed, the matching lines only). The same
+ * function records a BenefitPay approval and refuses cash on delivery, so the card, the
+ * transfer and the refusal always agree. Without an advance, a booking's own deposit
+ * applies if its booking has one, otherwise the whole total. An order pays for at most
+ * one booking. A failed lookup throws rather than guess an amount.
  */
 export async function orderChargePlan(
   admin: SupabaseClient<Database>,
   order: { id: string; total: number | string | null },
   brandId: string,
 ): Promise<ChargePlan> {
-  const { data: placed, error: orderError } = await admin
-    .from("orders")
-    .select("advance_percent")
-    .eq("id", order.id)
-    .eq("brand_id", brandId)
-    .maybeSingle();
-  if (orderError) throw new Error(`ADVANCE_LOOKUP_FAILED: ${orderError.message}`);
-  const percent = Number(placed?.advance_percent ?? 0);
-  if (percent > 0) return chargePlan(Number(order.total), depositOf(Number(order.total), percent));
+  const { data: advance, error: advanceError } = await admin.rpc("order_advance_due", {
+    p_order_id: order.id,
+  });
+  if (advanceError) throw new Error(`ADVANCE_LOOKUP_FAILED: ${advanceError.message}`);
+  const owed = Number(advance);
+  if (Number.isFinite(owed) && owed > 0) return chargePlan(Number(order.total), owed);
 
   const { data, error } = await admin
     .from("bookings")

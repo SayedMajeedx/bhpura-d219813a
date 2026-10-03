@@ -1972,6 +1972,7 @@ export type Database = {
           admin_typography: Json;
           advance_payment_enabled: boolean;
           advance_payment_percent: number;
+          advance_payment_scope: string;
           announcement_audience: string;
           announcement_bg: string;
           announcement_bold: boolean;
@@ -2172,6 +2173,7 @@ export type Database = {
           admin_typography?: Json;
           advance_payment_enabled?: boolean;
           advance_payment_percent?: number;
+          advance_payment_scope?: string;
           announcement_audience?: string;
           announcement_bg?: string;
           announcement_bold?: boolean;
@@ -2372,6 +2374,7 @@ export type Database = {
           admin_typography?: Json;
           advance_payment_enabled?: boolean;
           advance_payment_percent?: number;
+          advance_payment_scope?: string;
           announcement_audience?: string;
           announcement_bg?: string;
           announcement_bold?: boolean;
@@ -5196,6 +5199,7 @@ export type Database = {
         Row: {
           advance_paid: number;
           advance_percent: number | null;
+          advance_scope: string | null;
           assigned_at: string | null;
           assigned_by: string | null;
           assigned_to: string | null;
@@ -5268,6 +5272,7 @@ export type Database = {
         Insert: {
           advance_paid?: number;
           advance_percent?: number | null;
+          advance_scope?: string | null;
           assigned_at?: string | null;
           assigned_by?: string | null;
           assigned_to?: string | null;
@@ -5340,6 +5345,7 @@ export type Database = {
         Update: {
           advance_paid?: number;
           advance_percent?: number | null;
+          advance_scope?: string | null;
           assigned_at?: string | null;
           assigned_by?: string | null;
           assigned_to?: string | null;
@@ -8569,6 +8575,7 @@ export type Database = {
         Row: {
           advance_payment_enabled: boolean | null;
           advance_payment_percent: number | null;
+          advance_payment_scope: string | null;
           announcement_audience: string | null;
           announcement_bg: string | null;
           announcement_bold: boolean | null;
@@ -9373,6 +9380,7 @@ export type Database = {
           admin_typography: Json;
           advance_payment_enabled: boolean;
           advance_payment_percent: number;
+          advance_payment_scope: string;
           announcement_audience: string;
           announcement_bg: string;
           announcement_bold: boolean;
@@ -9951,6 +9959,7 @@ export type Database = {
         Args: { p_percent: number; p_total: number };
         Returns: number;
       };
+      order_advance_due: { Args: { p_order_id: string }; Returns: number };
       order_inventory_desired_state: {
         Args: {
           p_payment_method: string;
