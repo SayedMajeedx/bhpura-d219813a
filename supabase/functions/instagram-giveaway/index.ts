@@ -243,7 +243,6 @@ async function fetchComments(admin: any, brandId: string, body: Record<string, u
   const token = await tokenFor(admin, brandId);
   let done = false;
   let rateLimited = false;
-  let received = 0;
   let withoutAuthor = 0;
   let saved = 0;
   const startedFresh = restart || !giveaway.fetch_cursor;
@@ -271,7 +270,6 @@ async function fetchComments(admin: any, brandId: string, body: Record<string, u
       throw error;
     }
 
-    received += parsed.received;
     withoutAuthor += parsed.withoutAuthor;
     saved += parsed.comments.length;
 
