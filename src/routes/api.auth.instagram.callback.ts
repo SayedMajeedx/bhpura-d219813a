@@ -5,9 +5,11 @@ const PAGE_TEXT: Record<string, string> = {
     "This Instagram connection link is no longer valid. Go back to the giveaways screen and press Connect again.",
 };
 
-function page(status: number, code: string, setCookie: string) {
+function page(status: number, code: string, setCookie: string, reason?: string) {
   const text = PAGE_TEXT[code] ?? "The Instagram connection could not be completed.";
-  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Instagram connection</title></head><body style="font-family:system-ui,sans-serif;max-width:32rem;margin:4rem auto;padding:0 1rem"><h1 style="font-size:1.25rem">Instagram connection</h1><p>${text}</p></body></html>`;
+  // A fixed word from the OAuth library, never anything taken from the request.
+  const detail = reason ? `<p style="color:#555;font-size:.85rem">Reason: ${reason}</p>` : "";
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Instagram connection</title></head><body style="font-family:system-ui,sans-serif;max-width:32rem;margin:4rem auto;padding:0 1rem"><h1 style="font-size:1.25rem">Instagram connection</h1><p>${text}</p>${detail}</body></html>`;
   return new Response(html, {
     status,
     headers: {
@@ -51,7 +53,7 @@ export const Route = createFileRoute("/api/auth/instagram/callback")({
             slugFor: store.brandSlug,
           },
         );
-        if (result.kind === "page") return page(result.status, result.code, clear);
+        if (result.kind === "page") return page(result.status, result.code, clear, result.reason);
         return new Response(null, {
           status: 302,
           headers: { Location: result.location, "Set-Cookie": clear, "Cache-Control": "no-store" },

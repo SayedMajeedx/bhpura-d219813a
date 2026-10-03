@@ -164,24 +164,37 @@ describe("the callback", () => {
       { code: "c", state: "nonce-abc" },
       { cookie: null },
     );
-    expect(result).toEqual({ kind: "page", status: 400, code: "invalid_state" });
+    expect(result).toEqual({
+      kind: "page",
+      status: 400,
+      code: "invalid_state",
+      reason: "no_cookie",
+    });
     expect(calls).toHaveLength(0);
     expect(saveToken).not.toHaveBeenCalled();
   });
 
-  it("rejects a state that does not match, or is missing", async () => {
-    for (const query of [{ code: "c", state: "something-else" }, { code: "c" }]) {
-      const { result, calls } = await run(query);
-      expect(result).toMatchObject({ kind: "page", code: "invalid_state" });
-      expect(calls).toHaveLength(0);
-    }
+  it("names why the state was rejected", async () => {
+    const mismatch = await run({ code: "c", state: "something-else" });
+    expect(mismatch.result).toMatchObject({ kind: "page", reason: "state_mismatch" });
+    const missing = await run({ code: "c" });
+    expect(missing.result).toMatchObject({ kind: "page", reason: "no_state" });
+    for (const r of [mismatch, missing]) expect(r.calls).toHaveLength(0);
   });
 
-  it("rejects an expired or forged cookie", async () => {
+  it("tells an expired or forged cookie from a missing one", async () => {
     const expired = await run({ code: "c", state: "nonce-abc" }, { cookie: state({ e: NOW - 1 }) });
-    expect(expired.result).toMatchObject({ kind: "page", code: "invalid_state" });
+    expect(expired.result).toMatchObject({
+      kind: "page",
+      code: "invalid_state",
+      reason: "bad_cookie",
+    });
     const forged = await run({ code: "c", state: "nonce-abc" }, { cookie: "x.y" });
-    expect(forged.result).toMatchObject({ kind: "page", code: "invalid_state" });
+    expect(forged.result).toMatchObject({
+      kind: "page",
+      code: "invalid_state",
+      reason: "bad_cookie",
+    });
   });
 
   it("does not return to a site that is not the store's", async () => {
@@ -189,7 +202,12 @@ describe("the callback", () => {
       { code: "c", state: "nonce-abc" },
       { cookie: state({ o: "https://evil.example.com" }) },
     );
-    expect(result).toMatchObject({ kind: "page", code: "invalid_state" });
+    expect(result).toMatchObject({ kind: "page", code: "invalid_state", reason: "bad_origin" });
+  });
+
+  it("rejects a state for a store that no longer exists", async () => {
+    const { result } = await run({ code: "c", state: "nonce-abc" }, { slug: null });
+    expect(result).toMatchObject({ kind: "page", reason: "unknown_store" });
   });
 
   it("returns to the giveaways screen when the user refuses", async () => {
