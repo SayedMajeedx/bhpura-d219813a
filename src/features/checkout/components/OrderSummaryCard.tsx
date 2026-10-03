@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Coins, Sparkles, Share2 } from "lucide-react";
+import { AdvancePaymentNotice } from "@/features/checkout/components/AdvancePaymentNotice";
 import { ShareCartModal } from "@/components/storefront/ShareCartModal";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -378,6 +379,11 @@ export function OrderSummaryCard({
         <span>{t("الإجمالي", "Total")}</span>
         <span className="text-primary font-bold">{formatPrice(grandTotal, currency, lang)}</span>
       </div>
+      <AdvancePaymentNotice
+        total={grandTotal}
+        currency={currency}
+        appointment={Boolean(appointment)}
+      />
       <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border-strong bg-muted/20 p-3">
         <Checkbox
           className="mt-0.5"

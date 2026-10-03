@@ -153,6 +153,14 @@ export function placeOrderFailure(
       ),
       clearPromo: false,
     };
+  } else if (msg.includes("ADVANCE_PAYMENT_REQUIRED")) {
+    return {
+      message: t(
+        "يتطلب هذا المتجر دفعة مقدمة بالبطاقة أو بنفت باي لإتمام الطلب.",
+        "This store asks for an advance payment by card or BenefitPay to complete the order.",
+      ),
+      clearPromo: false,
+    };
   } else if (msg.includes("PAYMENT_METHOD_DISABLED")) {
     return { message: t("طريقة الدفع غير متاحة", "Payment method unavailable"), clearPromo: false };
   } else if (

@@ -1970,6 +1970,8 @@ export type Database = {
         Row: {
           address: string | null;
           admin_typography: Json;
+          advance_payment_enabled: boolean;
+          advance_payment_percent: number;
           announcement_audience: string;
           announcement_bg: string;
           announcement_bold: boolean;
@@ -2168,6 +2170,8 @@ export type Database = {
         Insert: {
           address?: string | null;
           admin_typography?: Json;
+          advance_payment_enabled?: boolean;
+          advance_payment_percent?: number;
           announcement_audience?: string;
           announcement_bg?: string;
           announcement_bold?: boolean;
@@ -2366,6 +2370,8 @@ export type Database = {
         Update: {
           address?: string | null;
           admin_typography?: Json;
+          advance_payment_enabled?: boolean;
+          advance_payment_percent?: number;
           announcement_audience?: string;
           announcement_bg?: string;
           announcement_bold?: boolean;
@@ -5189,6 +5195,7 @@ export type Database = {
       orders: {
         Row: {
           advance_paid: number;
+          advance_percent: number | null;
           assigned_at: string | null;
           assigned_by: string | null;
           assigned_to: string | null;
@@ -5260,6 +5267,7 @@ export type Database = {
         };
         Insert: {
           advance_paid?: number;
+          advance_percent?: number | null;
           assigned_at?: string | null;
           assigned_by?: string | null;
           assigned_to?: string | null;
@@ -5331,6 +5339,7 @@ export type Database = {
         };
         Update: {
           advance_paid?: number;
+          advance_percent?: number | null;
           assigned_at?: string | null;
           assigned_by?: string | null;
           assigned_to?: string | null;
@@ -8558,6 +8567,8 @@ export type Database = {
       };
       brand_public_settings: {
         Row: {
+          advance_payment_enabled: boolean | null;
+          advance_payment_percent: number | null;
           announcement_audience: string | null;
           announcement_bg: string | null;
           announcement_bold: boolean | null;
@@ -9360,6 +9371,8 @@ export type Database = {
         Returns: {
           address: string | null;
           admin_typography: Json;
+          advance_payment_enabled: boolean;
+          advance_payment_percent: number;
           announcement_audience: string;
           announcement_bg: string;
           announcement_bold: boolean;
@@ -9933,6 +9946,10 @@ export type Database = {
       normalize_whatsapp_recipient: {
         Args: { p_value: string };
         Returns: string;
+      };
+      order_advance_amount: {
+        Args: { p_percent: number; p_total: number };
+        Returns: number;
       };
       order_inventory_desired_state: {
         Args: {

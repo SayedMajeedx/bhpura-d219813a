@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
 import { AdvancedOnly } from "@/features/settings/FieldVisibility";
+import { AdvancePaymentCard } from "@/features/settings/tabs/orders/AdvancePaymentCard";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -295,6 +296,9 @@ export function PaymentsGroup() {
           </div>
         </AdvancedOnly>
       </div>
+
+      {/* 2. Advance payment */}
+      <AdvancePaymentCard />
     </div>
   );
 }

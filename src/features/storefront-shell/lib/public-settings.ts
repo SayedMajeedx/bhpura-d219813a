@@ -109,6 +109,8 @@ export function publicSettingsFromPageData(brand: Brand, pageData: PageData): Pu
     text_color: s?.storefront_text_color ?? "#111111",
     background_color: s?.storefront_background_color ?? "#ffffff",
     cod_enabled: s?.cod_enabled ?? true,
+    advance_payment_enabled: s?.advance_payment_enabled === true,
+    advance_payment_percent: Number(s?.advance_payment_percent ?? 30) || 30,
     card_enabled: s?.card_enabled ?? false,
     benefit_enabled: s?.benefit_enabled ?? false,
     benefit_qr_url: s?.benefit_qr_url ?? null,

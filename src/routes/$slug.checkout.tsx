@@ -404,6 +404,9 @@ function Checkout() {
           benefitReceipt={benefitReceipt}
           brand={brand}
           fulfillment={fulfillment}
+          grandTotal={grandTotal}
+          currency={currency}
+          appointment={Boolean(appointment)}
           lang={lang}
           method={method}
           selectedDestination={selectedDestination}
