@@ -58,12 +58,13 @@ export function NewGiveawayDialog({
 
   const media = useInfiniteQuery(giveawaysQueries.media(brand.id, open));
   const posts = media.data?.pages.flatMap((page) => page.media) ?? [];
-  const loadError =
-    media.error instanceof GiveawayApiError
-      ? giveawayErrorMessage(media.error.code, isAr)
-      : media.error
-        ? giveawayErrorMessage(undefined, isAr)
-        : null;
+  const loadError = media.error
+    ? giveawayErrorMessage(
+        media.error instanceof GiveawayApiError ? media.error.code : undefined,
+        isAr,
+        media.error.message,
+      )
+    : null;
 
   const create = useMutation({
     mutationFn: () => {

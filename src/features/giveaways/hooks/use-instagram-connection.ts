@@ -34,7 +34,10 @@ export function useInstagramConnection() {
     },
     onError: (e) => {
       const code = e instanceof GiveawayApiError ? e.code : "server_error";
-      setError(giveawayErrorMessage(code === "token_expired" ? "instagram_error" : code, isAr));
+      const detail = e instanceof Error ? e.message : undefined;
+      setError(
+        giveawayErrorMessage(code === "token_expired" ? "instagram_error" : code, isAr, detail),
+      );
     },
   });
 

@@ -1,7 +1,16 @@
 import type { RejectReason } from "./entry-rules";
 
-/** What the screen says for an error code the `instagram-giveaway` function returns. */
-export function giveawayErrorMessage(code: string | undefined, isAr: boolean): string {
+/**
+ * What the screen says for an error code the `instagram-giveaway` function returns.
+ * `detail` is the function's own message (for an Instagram refusal, Instagram's
+ * words); it is added where the code alone does not say what went wrong.
+ */
+export function giveawayErrorMessage(
+  code: string | undefined,
+  isAr: boolean,
+  detail?: string,
+): string {
+  const more = detail?.trim() ? ` (${detail.trim().slice(0, 240)})` : "";
   switch (code) {
     case "not_connected":
       return isAr
@@ -21,8 +30,8 @@ export function giveawayErrorMessage(code: string | undefined, isAr: boolean): s
         : "You do not have permission to manage giveaways.";
     case "instagram_error":
       return isAr
-        ? "رفض انستغرام الطلب. تأكد أن الحساب Business أو Creator وأن الصلاحيات ممنوحة."
-        : "Instagram refused the request. Check the account is Business or Creator and the permissions are granted.";
+        ? `رفض انستغرام الطلب. تأكد أن الحساب Business أو Creator وأن الصلاحيات ممنوحة.${more}`
+        : `Instagram refused the request. Check the account is Business or Creator and the permissions are granted.${more}`;
     case "missing_username":
       return isAr
         ? "أرسل انستغرام التعليقات بدون أسماء أصحابها، لأن الرمز لا يملك صلاحية قراءة التعليقات. أنشئ رمزاً جديداً من Meta وتأكد من تفعيل instagram_business_manage_comments ثم الصقه هنا."
@@ -36,7 +45,9 @@ export function giveawayErrorMessage(code: string | undefined, isAr: boolean): s
         ? "تعذر الاتصال. تحقق من الإنترنت وحاول مرة أخرى."
         : "Could not connect. Check your internet and try again.";
     default:
-      return isAr ? "حدث خطأ. حاول مرة أخرى." : "Something went wrong. Please try again.";
+      return isAr
+        ? `حدث خطأ. حاول مرة أخرى.${more}`
+        : `Something went wrong. Please try again.${more}`;
   }
 }
 

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useGiveawayDetail } from "../hooks/use-giveaway-detail";
 import { CommentsPullCard } from "./CommentsPullCard";
 import { EntriesSummary } from "./EntriesSummary";
+import { ImportCommentsCard } from "./ImportCommentsCard";
 import { RulesForm } from "./RulesForm";
 import { WinnersPanel } from "./WinnersPanel";
 
@@ -74,6 +75,7 @@ export function GiveawayDetailView({
       </header>
 
       <CommentsPullCard detail={detail} />
+      <ImportCommentsCard detail={detail} />
       <RulesForm detail={detail} />
       <EntriesSummary detail={detail} />
       <WinnersPanel detail={detail} />
