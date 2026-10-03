@@ -6,7 +6,7 @@
  *
  * Which part of an order the rule reaches is the scope:
  *   all                        every order, whole
- *   made_to_order              only the made-to-order lines (tailoring, services),
+ *   made_to_order              only the made-to-order lines (services),
  *                              after discounts and with their share of the tax,
  *                              never the delivery fee
  *   delivery                   an order that is delivered, whole, delivery fee included
@@ -49,9 +49,9 @@ export const ADVANCE_SCOPE_LABELS: Record<
     hintEn: "The advance is asked on the whole of any order.",
   },
   made_to_order: {
-    ar: "المنتجات حسب الطلب فقط (تفصيل وخدمات)",
-    en: "Made-to-order items only (tailoring, services)",
-    hintAr: "الدفعة على القطع المفصّلة فقط؛ الجاهز لا يتأثر.",
+    ar: "المنتجات حسب الطلب والخدمات فقط",
+    en: "Made-to-order items and services only",
+    hintAr: "الدفعة على المنتجات حسب الطلب فقط؛ الجاهز لا يتأثر.",
     hintEn:
       "The advance is asked on the made-to-order items only; ready-made items are not touched.",
   },
@@ -63,9 +63,9 @@ export const ADVANCE_SCOPE_LABELS: Record<
       "The advance is asked on the whole order, delivery fee included; pickup is not touched.",
   },
   made_to_order_or_delivery: {
-    ar: "التفصيل أو التوصيل",
+    ar: "حسب الطلب أو التوصيل",
     en: "Made-to-order or delivered",
-    hintAr: "طلب التوصيل كاملاً، وأي طلب آخر على قطعه المفصّلة فقط.",
+    hintAr: "طلب التوصيل كاملاً، وأي طلب آخر على منتجاته حسب الطلب فقط.",
     hintEn: "A delivered order whole; any other order on its made-to-order items only.",
   },
 };

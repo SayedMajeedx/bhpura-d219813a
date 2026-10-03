@@ -7,6 +7,7 @@ import {
   fetchLiveProducts,
   guardWrites,
   inStock,
+  liveAdvanceRule,
   type LiveVariant,
   waitForHydration,
 } from "./helpers/storefront-e2e";
@@ -52,6 +53,8 @@ test.describe("Storefront checkout", () => {
     test.setTimeout(120_000);
     const variant = await findInStockVariant();
     test.skip(!variant, "The store has no in-stock variant right now");
+    // Where the store's advance-payment rule applies, cash on delivery is not offered.
+    test.skip((await liveAdvanceRule()).enabled, "The store asks for an advance payment");
 
     const guard = await guardWrites(page);
     await page.addInitScript(
@@ -144,6 +147,8 @@ test.describe("Storefront checkout", () => {
     test.setTimeout(120_000);
     const variant = await findInStockVariant();
     test.skip(!variant, "The store has no in-stock variant right now");
+    // A store that asks for an advance payment has no cash-on-delivery order to block here.
+    test.skip((await liveAdvanceRule()).enabled, "The store asks for an advance payment");
 
     const guard = await guardWrites(page);
     await page.addInitScript(
@@ -182,6 +187,53 @@ test.describe("Storefront checkout", () => {
     await expect(page.getByText("Name and phone are required").first()).toBeVisible();
     expect(guard.orderPayloads).toHaveLength(0);
     await expect(page).toHaveURL(new RegExp(`/${SLUG}/checkout`));
+  });
+
+  test("a store that asks for an advance offers no cash on delivery and says what to pay now", async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    const variant = await findInStockVariant();
+    test.skip(!variant, "The store has no in-stock variant right now");
+    const rule = await liveAdvanceRule();
+    test.skip(
+      !rule.enabled || rule.scope !== "all",
+      "The store does not ask for an advance on every order",
+    );
+
+    await guardWrites(page);
+    await page.addInitScript(
+      ({ slug, item }) => {
+        window.localStorage.setItem(`storefront-cart:${slug}`, JSON.stringify([item]));
+      },
+      {
+        slug: SLUG,
+        item: {
+          variant_id: variant!.id,
+          product_id: variant!.product_id,
+          name: variant!.products.name,
+          image: variant!.products.image_url,
+          price: Number(variant!.selling_price),
+          size: variant!.size,
+          color: variant!.color,
+          fabric: variant!.fabric,
+          qty: 1,
+          custom_fields: [],
+          max_stock: 1,
+        },
+      },
+    );
+
+    await page.goto(`/${SLUG}/checkout?lang=en`, { waitUntil: "domcontentloaded" });
+    const placeOrder = page.locator("button:visible", { hasText: "Place order" }).first();
+    await expect(placeOrder).toBeVisible({ timeout: 60_000 });
+    await waitForHydration(placeOrder);
+
+    // The advance is asked for, and cash on delivery is not among the methods.
+    await expect(page.getByRole("note").first()).toContainText("Advance payment");
+    await expect(page.getByRole("note").first()).toContainText(`${rule.percent}%`);
+    const methods = page.getByRole("region", { name: "Payment method" });
+    await expect(methods.getByText("Cash on delivery", { exact: true })).toHaveCount(0);
   });
 
   test("after a failed card payment, offers the other payment methods", async ({ page }) => {

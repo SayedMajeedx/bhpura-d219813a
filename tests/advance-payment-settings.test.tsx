@@ -52,7 +52,7 @@ describe("the advance payment card", () => {
     );
     fireEvent.click(screen.getByRole("radio", { name: /Delivered orders only/ }));
     expect(state.setBs).toHaveBeenCalledWith({ advance_payment_scope: "delivery" });
-    fireEvent.click(screen.getByRole("radio", { name: /Made-to-order items only/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /Made-to-order items and services only/ }));
     expect(state.setBs).toHaveBeenLastCalledWith({ advance_payment_scope: "made_to_order" });
   });
 
