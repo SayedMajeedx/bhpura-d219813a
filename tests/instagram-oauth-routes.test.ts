@@ -107,6 +107,8 @@ describe("the callback address", () => {
     const html = await response.text();
     expect(html).toContain("Instagram connection");
     expect(html).not.toContain("Storefront unavailable");
+    // The page says which check failed, with a fixed word.
+    expect(html).toContain("Reason: no_cookie");
     expect(response.headers.get("set-cookie")).toContain("Max-Age=0");
   });
 

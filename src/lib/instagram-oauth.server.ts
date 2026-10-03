@@ -324,11 +324,18 @@ export type CallbackDeps = {
   now?: number;
 };
 
+/**
+ * Which part of the state check failed. A fixed word, safe to show: it says
+ * nothing about the cookie's contents.
+ */
+export type StateProblem =
+  "no_cookie" | "bad_cookie" | "no_state" | "state_mismatch" | "bad_origin" | "unknown_store";
+
 export type CallbackResult =
   /** The browser goes back to the giveaways screen, with the outcome in the query string. */
   | { kind: "redirect"; location: string }
   /** No safe place to send the browser (the state could not be checked): show a plain page. */
-  | { kind: "page"; status: number; code: OAuthErrorCode };
+  | { kind: "page"; status: number; code: OAuthErrorCode; reason?: StateProblem };
 
 function giveawaysUrl(origin: string, slug: string, outcome: Record<string, string>) {
   const url = new URL(`/admin/b/${encodeURIComponent(slug)}/giveaways`, origin);
@@ -347,13 +354,20 @@ export async function completeInstagramConnection(
 ): Promise<CallbackResult> {
   const state = await openState(cookieValue, deps.appSecret, deps.now);
   const returned = query.get("state") ?? "";
+  const invalid = (reason: StateProblem): CallbackResult => ({
+    kind: "page",
+    status: 400,
+    code: "invalid_state",
+    reason,
+  });
   // The callback must belong to the browser that started it.
-  if (!state || !returned || !(await constantTimeSecretEqual(returned, state.n))) {
-    return { kind: "page", status: 400, code: "invalid_state" };
-  }
+  if (!state) return invalid(cookieValue ? "bad_cookie" : "no_cookie");
+  if (!returned) return invalid("no_state");
+  if (!(await constantTimeSecretEqual(returned, state.n))) return invalid("state_mismatch");
   const origin = allowedReturnOrigin(state.o);
-  const slug = origin ? await deps.slugFor(state.b) : null;
-  if (!origin || !slug) return { kind: "page", status: 400, code: "invalid_state" };
+  if (!origin) return invalid("bad_origin");
+  const slug = await deps.slugFor(state.b);
+  if (!slug) return invalid("unknown_store");
 
   const fail = (code: OAuthErrorCode): CallbackResult => ({
     kind: "redirect",
