@@ -34,7 +34,7 @@ type Reply = { ok?: boolean; status?: number; body: unknown };
 
 /** A pretend Instagram: answers by address, and remembers every request. */
 function fakeInstagram(replies: { token?: Reply; long?: Reply; profile?: Reply }) {
-  const calls: Array<{ url: string; method: string; body?: string }> = [];
+  const calls: Array<{ url: string; method: string; body?: string | FormData }> = [];
   const fetcher: CallbackDeps["fetcher"] = async (url, init) => {
     calls.push({ url, method: init?.method ?? "GET", body: init?.body });
     const reply = url.includes("api.instagram.com/oauth/access_token")
@@ -92,6 +92,12 @@ async function run(
   return { result, calls: ig.calls, saveToken };
 }
 
+/** The fields of a request body, whether it was sent as multipart form data or as text. */
+const fieldsOf = (body: string | FormData | undefined) =>
+  typeof body === "string" || body === undefined
+    ? new URLSearchParams(body)
+    : new URLSearchParams(Object.fromEntries(body) as Record<string, string>);
+
 const noSecrets = (text: string) => {
   for (const secret of [APP_SECRET, SHORT_TOKEN, LONG_TOKEN]) expect(text).not.toContain(secret);
 };
@@ -110,14 +116,14 @@ describe("the authorization address", () => {
     expect(url.searchParams.get("response_type")).toBe("code");
     expect(url.searchParams.get("client_id")).toBe(APP_ID);
     expect(url.searchParams.get("state")).toBe("nonce-abc");
-    expect(url.searchParams.get("force_reauth")).toBe("true");
+    expect(url.searchParams.has("force_reauth")).toBe(false);
     noSecrets(url.toString());
   });
 
   it("is written the way Meta's own link is, with the redirect address not percent-encoded", () => {
     const address = buildAuthorizeUrl(APP_ID, "nonce-abc");
     expect(address).toBe(
-      `https://www.instagram.com/oauth/authorize?force_reauth=true&client_id=${APP_ID}` +
+      `https://www.instagram.com/oauth/authorize?client_id=${APP_ID}` +
         "&redirect_uri=https://boutq.store/api/auth/instagram/callback" +
         "&response_type=code" +
         "&scope=instagram_business_basic%2Cinstagram_business_manage_comments" +
@@ -126,10 +132,21 @@ describe("the authorization address", () => {
     expect(address).not.toContain("https%3A");
   });
 
+  it("asks for a fresh login only when told to", () => {
+    expect(buildAuthorizeUrl(APP_ID, "s", { forceReauth: true })).toMatch(/&force_reauth=true$/);
+    expect(buildAuthorizeUrl(APP_ID, "s")).not.toContain("force_reauth");
+  });
+
+  it("sends the code exchange as multipart form data, as Meta's documentation shows", async () => {
+    const { calls } = await run({ code: "auth-code-123", state: "nonce-abc" });
+    expect(calls[0].body).toBeInstanceOf(FormData);
+    expect(fieldsOf(calls[0].body).get("code")).toBe("auth-code-123");
+  });
+
   it("sends the same redirect address in the token request as in the authorization", async () => {
     const authorization = new URL(buildAuthorizeUrl(APP_ID, "nonce-abc"));
     const { calls } = await run({ code: "auth-code-123", state: "nonce-abc" });
-    const tokenRequest = new URLSearchParams(calls[0].body);
+    const tokenRequest = fieldsOf(calls[0].body);
     expect(tokenRequest.get("redirect_uri")).toBe(authorization.searchParams.get("redirect_uri"));
   });
 });
@@ -256,7 +273,7 @@ describe("the callback", () => {
     // 1. The code exchange: a form POST carrying the secret and the exact redirect address.
     expect(calls[0].method).toBe("POST");
     expect(calls[0].url).toBe("https://api.instagram.com/oauth/access_token");
-    const form = new URLSearchParams(calls[0].body);
+    const form = fieldsOf(calls[0].body);
     expect(form.get("client_id")).toBe(APP_ID);
     expect(form.get("client_secret")).toBe(APP_SECRET);
     expect(form.get("grant_type")).toBe("authorization_code");
