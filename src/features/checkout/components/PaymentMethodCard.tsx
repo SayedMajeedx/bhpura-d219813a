@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Download, Copy, CheckCircle2, X, UploadCloud } from "lucide-react";
+import type { AdvanceSplit } from "@/lib/payments/advance-payment";
 import { AdvancePaymentNotice } from "@/features/checkout/components/AdvancePaymentNotice";
 import { ResponsiveImage } from "@/components/responsive-media";
 import type { Dispatch, SetStateAction } from "react";
@@ -18,7 +19,7 @@ export function PaymentMethodCard({
   benefitReceipt,
   brand,
   fulfillment,
-  grandTotal,
+  advance,
   currency,
   appointment = false,
   lang,
@@ -33,8 +34,8 @@ export function PaymentMethodCard({
   benefitReceipt: File | null;
   brand: Storefront["brand"];
   fulfillment: ReturnType<typeof useCheckoutFulfillment>["fulfillment"];
-  /** The order total and currency, for the advance-payment note. */
-  grandTotal: number;
+  /** What the store's advance-payment rule asks of this order, and the currency, for the note. */
+  advance: AdvanceSplit;
   currency: string;
   appointment?: boolean;
   lang: Storefront["lang"];
@@ -84,7 +85,7 @@ export function PaymentMethodCard({
       </div>
 
       {/* Under the store's advance rule: what to pay now (a BenefitPay transfer is the advance only). */}
-      <AdvancePaymentNotice total={grandTotal} currency={currency} appointment={appointment} />
+      <AdvancePaymentNotice split={advance} currency={currency} appointment={appointment} />
 
       {fulfillment === "delivery" && selectedDestination !== "BH" && (
         <p className="text-xs text-muted-foreground pt-1">

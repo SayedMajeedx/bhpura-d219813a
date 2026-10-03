@@ -1,23 +1,45 @@
 import { describe, expect, it } from "vitest";
 import {
+  advanceDue,
+  advanceForOrder,
   advanceLines,
   advancePercentError,
   advanceRuleFrom,
-  advanceSplit,
+  advanceScopeFrom,
   methodsUnderAdvance,
+  type AdvanceOrder,
+  type AdvanceRule,
 } from "../src/lib/payments/advance-payment";
 
 const money = (n: number) => `BHD ${n.toFixed(3)}`;
+const rule = (over: Partial<AdvanceRule> = {}): AdvanceRule => ({
+  enabled: true,
+  percent: 30,
+  scope: "all",
+  ...over,
+});
+const order = (over: Partial<AdvanceOrder> = {}): AdvanceOrder => ({
+  total: 100,
+  shipping: 0,
+  fulfillment: "delivery",
+  lines: [{ amount: 100, madeToOrder: false }],
+  ...over,
+});
+const mixed = [
+  { amount: 60, madeToOrder: true },
+  { amount: 40, madeToOrder: false },
+];
 
 describe("a store's advance-payment rule", () => {
-  it("is off unless switched on, and keeps the percentage within 1 to 100", () => {
-    expect(advanceRuleFrom(undefined)).toEqual({ enabled: false, percent: 30 });
-    expect(advanceRuleFrom({ advance_payment_enabled: true, advance_payment_percent: 40 })).toEqual(
-      {
-        enabled: true,
-        percent: 40,
-      },
-    );
+  it("is off unless switched on, keeps the percentage within 1 to 100, and knows its scope", () => {
+    expect(advanceRuleFrom(undefined)).toEqual({ enabled: false, percent: 30, scope: "all" });
+    expect(
+      advanceRuleFrom({
+        advance_payment_enabled: true,
+        advance_payment_percent: 40,
+        advance_payment_scope: "delivery",
+      }),
+    ).toEqual({ enabled: true, percent: 40, scope: "delivery" });
     expect(
       advanceRuleFrom({ advance_payment_enabled: true, advance_payment_percent: "25.5" }).percent,
     ).toBe(25.5);
@@ -28,39 +50,68 @@ describe("a store's advance-payment rule", () => {
       ).toBe(30);
     }
     expect(advanceRuleFrom({ advance_payment_enabled: null }).enabled).toBe(false);
+    expect(advanceScopeFrom("made_to_order_or_delivery")).toBe("made_to_order_or_delivery");
+    expect(advanceScopeFrom("everything")).toBe("all");
+    expect(advanceScopeFrom(undefined)).toBe("all");
   });
 
-  it("splits a total into the advance (rounded up to the fils) and the balance", () => {
-    const rule = { enabled: true, percent: 30 };
-    expect(advanceSplit(100, rule)).toEqual({
+  it("asks a share of the whole order under 'all', rounded up to the fils", () => {
+    expect(advanceDue(order(), rule())).toBe(30);
+    expect(advanceDue(order({ total: 41.25 }), rule())).toBe(12.375);
+    expect(advanceDue(order({ total: 10.001 }), rule())).toBe(3.001);
+    expect(advanceDue(order({ total: 80 }), rule({ percent: 100 }))).toBe(80);
+    expect(advanceDue(order(), rule({ enabled: false }))).toBeNull();
+    expect(advanceDue(order({ total: 0 }), rule())).toBeNull();
+  });
+
+  it("asks only the made-to-order lines, never the delivery fee, under made_to_order", () => {
+    const r = rule({ scope: "made_to_order", percent: 50 });
+    expect(advanceDue(order({ lines: mixed }), r)).toBe(30);
+    expect(advanceDue(order({ lines: mixed, total: 105, shipping: 5 }), r)).toBe(30);
+    // A discount comes off every line alike: 90 left, a made-to-order share of 54, half of it.
+    expect(advanceDue(order({ lines: mixed, total: 90 }), r)).toBe(27);
+    expect(advanceDue(order({ lines: [{ amount: 100, madeToOrder: false }] }), r)).toBeNull();
+  });
+
+  it("asks the whole delivered order, delivery fee included, under delivery", () => {
+    const r = rule({ scope: "delivery" });
+    expect(advanceDue(order({ total: 105, shipping: 5 }), r)).toBe(31.5);
+    expect(advanceDue(order({ fulfillment: "pickup" }), r)).toBeNull();
+    expect(advanceDue(order({ fulfillment: "digital" }), r)).toBeNull();
+    expect(advanceDue(order({ fulfillment: "appointment" }), r)).toBeNull();
+  });
+
+  it("asks a delivered order whole, any other order its made-to-order lines, under both", () => {
+    const r = rule({ scope: "made_to_order_or_delivery", percent: 40 });
+    expect(advanceDue(order({ lines: mixed, total: 105, shipping: 5 }), r)).toBe(42);
+    expect(advanceDue(order({ lines: mixed, fulfillment: "pickup" }), r)).toBe(24);
+    expect(advanceDue(order({ fulfillment: "pickup" }), r)).toBeNull();
+  });
+
+  it("splits an order into the advance and the balance, and says when the rule does not apply", () => {
+    expect(advanceForOrder(order(), rule())).toMatchObject({
       applies: true,
-      percent: 30,
       dueNow: 30,
       balance: 70,
+      partial: false,
     });
-    expect(advanceSplit(41.25, rule)).toMatchObject({ dueNow: 12.375, balance: 28.875 });
-    expect(advanceSplit(10.001, rule)).toMatchObject({ dueNow: 3.001, balance: 7 });
-    // The whole total at 100%; nothing asked when off or empty.
-    expect(advanceSplit(80, { enabled: true, percent: 100 })).toMatchObject({
-      dueNow: 80,
-      balance: 0,
+    expect(
+      advanceForOrder(order({ lines: mixed }), rule({ scope: "made_to_order", percent: 50 })),
+    ).toMatchObject({ applies: true, dueNow: 30, balance: 70, partial: true });
+    expect(
+      advanceForOrder(order({ fulfillment: "pickup" }), rule({ scope: "delivery" })),
+    ).toMatchObject({ applies: false, dueNow: 100, balance: 0 });
+    expect(advanceForOrder(order({ total: 80 }), rule({ percent: 100 }))).toMatchObject({
       applies: true,
-    });
-    expect(advanceSplit(80, { enabled: false, percent: 30 })).toMatchObject({
-      applies: false,
       dueNow: 80,
       balance: 0,
     });
-    expect(advanceSplit(0, rule).applies).toBe(false);
   });
 
-  it("takes cash on delivery away, and nothing else, while it is on", () => {
+  it("takes cash on delivery away, and nothing else, only where the rule applies", () => {
     const methods = [{ id: "cod" }, { id: "card" }, { id: "benefit" }];
-    expect(methodsUnderAdvance(methods, { enabled: true, percent: 30 }).map((m) => m.id)).toEqual([
-      "card",
-      "benefit",
-    ]);
-    expect(methodsUnderAdvance(methods, { enabled: false, percent: 30 })).toHaveLength(3);
+    expect(methodsUnderAdvance(methods, true).map((m) => m.id)).toEqual(["card", "benefit"]);
+    expect(methodsUnderAdvance(methods, false)).toHaveLength(3);
   });
 
   it("refuses a percentage that is empty, not a number or outside 1 to 100", () => {
@@ -74,20 +125,31 @@ describe("a store's advance-payment rule", () => {
   });
 
   it("tells the customer what to pay now and what stays due, in both languages", () => {
-    const split = advanceSplit(100, { enabled: true, percent: 30 });
-    expect(advanceLines(split, { isAr: false, money })).toEqual([
+    const whole = advanceForOrder(order(), rule());
+    expect(advanceLines(whole, { isAr: false, money })).toEqual([
       "Advance payment (30%) due now: BHD 30.000",
       "Balance BHD 70.000 on delivery",
     ]);
-    expect(advanceLines(split, { isAr: true, money, balanceWhen: "event" })).toEqual([
+    expect(advanceLines(whole, { isAr: true, money, balanceWhen: "event" })).toEqual([
       "الدفعة المقدمة (30%) تُدفع الآن: BHD 30.000",
       "المتبقي BHD 70.000 يوم المناسبة",
     ]);
+    const part = advanceForOrder(
+      order({ lines: mixed }),
+      rule({ scope: "made_to_order", percent: 50 }),
+    );
+    expect(advanceLines(part, { isAr: false, money })[0]).toBe(
+      "Advance payment (50% of the made-to-order items) due now: BHD 30.000",
+    );
+    expect(advanceLines(part, { isAr: true, money })[0]).toContain("من المنتجات حسب الطلب");
     expect(
-      advanceLines(advanceSplit(80, { enabled: true, percent: 100 }), { isAr: false, money }),
+      advanceLines(advanceForOrder(order({ total: 80 }), rule({ percent: 100 })), {
+        isAr: false,
+        money,
+      }),
     ).toEqual(["The full amount is paid now: BHD 80.000"]);
     expect(
-      advanceLines(advanceSplit(80, { enabled: false, percent: 30 }), { isAr: false, money }),
+      advanceLines(advanceForOrder(order(), rule({ enabled: false })), { isAr: false, money }),
     ).toEqual([]);
   });
 });

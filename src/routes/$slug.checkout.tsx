@@ -1,6 +1,13 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useStorefront } from "@/lib/storefront-context";
+import { storefrontQueries } from "@/lib/data/storefront";
+import {
+  advanceForOrder,
+  advanceRuleFrom,
+  methodsUnderAdvance,
+} from "@/lib/payments/advance-payment";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag } from "lucide-react";
@@ -102,7 +109,7 @@ function Checkout() {
     selectedCountryCode,
     setSelectedCountryCode,
     selectedZone,
-    availableMethods,
+    availableMethods: allMethods,
     method,
     setMethod,
     estimatedDeliveryText,
@@ -202,6 +209,44 @@ function Checkout() {
     Math.max(0, cartTotal - promoDiscount - bookingDiscount - loyaltyDiscount) +
     Number(appointment?.optionsTotal ?? 0) +
     shipping;
+
+  // The store's advance-payment rule, worked out for this cart: which lines are made to order
+  // (the catalog says; a booked service always is), how the order is fulfilled and what it costs.
+  const catalog = useQuery(storefrontQueries.products(brand)).data;
+  const madeToOrderIds = useMemo(
+    () =>
+      new Set(
+        (catalog ?? [])
+          .filter((p) => p.is_made_to_order || p.item_kind === "service")
+          .map((p) => p.id),
+      ),
+    [catalog],
+  );
+  const advance = useMemo(
+    () =>
+      advanceForOrder(
+        {
+          total: grandTotal,
+          shipping,
+          fulfillment: appointment ? "appointment" : fulfillment,
+          lines: cart.map((item) => ({
+            amount: item.price * item.qty,
+            madeToOrder: Boolean(item.booking) || madeToOrderIds.has(item.product_id),
+          })),
+        },
+        advanceRuleFrom(settings),
+      ),
+    [grandTotal, shipping, appointment, fulfillment, cart, madeToOrderIds, settings],
+  );
+  // Where it applies, cash on delivery is not offered: the order is completed by paying the
+  // advance by card or BenefitPay (the database refuses cod too).
+  const availableMethods = useMemo(
+    () => methodsUnderAdvance(allMethods, advance.applies),
+    [allMethods, advance.applies],
+  );
+  useEffect(() => {
+    if (advance.applies && method === "cod") setMethod(availableMethods[0]?.id ?? "");
+  }, [advance.applies, method, availableMethods, setMethod]);
 
   useEffect(() => {
     if (!cart.length) return;
@@ -404,7 +449,7 @@ function Checkout() {
           benefitReceipt={benefitReceipt}
           brand={brand}
           fulfillment={fulfillment}
-          grandTotal={grandTotal}
+          advance={advance}
           currency={currency}
           appointment={Boolean(appointment)}
           lang={lang}
@@ -433,6 +478,7 @@ function Checkout() {
           estimatedPointsToEarn={estimatedPointsToEarn}
           fulfillment={fulfillment}
           fulfillmentOptions={fulfillmentOptions}
+          advance={advance}
           grandTotal={grandTotal}
           handleApplyPoints={handleApplyPoints}
           handleRemovePoints={handleRemovePoints}
