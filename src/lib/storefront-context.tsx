@@ -135,6 +135,9 @@ export type PublicSettings = {
   text_color: string;
   background_color: string;
   cod_enabled: boolean;
+  /** An advance of `advance_payment_percent` of an order is paid online before it is complete (cash on delivery is off). */
+  advance_payment_enabled: boolean;
+  advance_payment_percent: number;
   card_enabled: boolean;
   benefit_enabled: boolean;
   benefit_qr_url: string | null;

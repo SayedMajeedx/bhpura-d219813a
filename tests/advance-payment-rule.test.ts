@@ -10,7 +10,6 @@ const BRAND = "00000000-0000-4000-8000-0000000000b1";
 const OTHER = "00000000-0000-4000-8000-0000000000b2";
 
 let db: PGlite;
-let admin = false;
 
 const SCHEMA = `
   CREATE ROLE anon; CREATE ROLE authenticated; CREATE SCHEMA auth;
