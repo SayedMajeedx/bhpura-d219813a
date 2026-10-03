@@ -7,12 +7,20 @@ import { giveawayErrorMessage } from "../src/features/giveaways/lib/messages";
 // function's JSON answer out of a failed response.
 
 const invoke = vi.hoisted(() => vi.fn());
+const session = vi.hoisted(() => ({ getAccessToken: vi.fn() }));
+vi.mock("../src/lib/auth/session", () => session);
+vi.mock("@/lib/auth/session", () => session);
 const client = { supabase: { functions: { invoke } } };
 vi.mock("../src/integrations/supabase/client", () => client);
 vi.mock("@/integrations/supabase/client", () => client);
 
-const { GiveawayApiError, pullComments, listInstagramMedia, connectInstagram } =
-  await import("../src/lib/data/giveaways");
+const {
+  GiveawayApiError,
+  pullComments,
+  listInstagramMedia,
+  connectInstagram,
+  startInstagramOAuth,
+} = await import("../src/lib/data/giveaways");
 
 const httpError = (status: number, body: unknown) =>
   new FunctionsHttpError(
@@ -74,6 +82,52 @@ describe("calling the instagram-giveaway function", () => {
   it("reports a network failure as such", async () => {
     invoke.mockResolvedValue({ data: null, error: new FunctionsFetchError({}) });
     const error = await pullComments("b1", "g1").catch((e) => e);
+    expect(error.code).toBe("network");
+  });
+});
+
+describe("starting the Instagram connection", () => {
+  const reply = (status: number, body: unknown) =>
+    vi.fn(async () => new Response(JSON.stringify(body), { status }));
+
+  beforeEach(() => session.getAccessToken.mockResolvedValue("session-token"));
+
+  it("asks the server with the session token and returns Instagram's address", async () => {
+    const fetchMock = reply(200, { url: "https://www.instagram.com/oauth/authorize?x=1" });
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await startInstagramOAuth("b 1")).toBe("https://www.instagram.com/oauth/authorize?x=1");
+    vi.unstubAllGlobals();
+
+    const [address, init] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      { headers: Record<string, string> },
+    ];
+    expect(address).toBe("/api/auth/instagram/authorize?brandId=b%201");
+    expect(init.headers.Authorization).toBe("Bearer session-token");
+  });
+
+  it("carries the server's refusal code", async () => {
+    vi.stubGlobal("fetch", reply(403, { error: "Forbidden", code: "forbidden" }));
+    const error = await startInstagramOAuth("b1").catch((e) => e);
+    vi.unstubAllGlobals();
+    expect(error).toBeInstanceOf(GiveawayApiError);
+    expect(error.code).toBe("forbidden");
+  });
+
+  it("does not call the server without a session", async () => {
+    session.getAccessToken.mockResolvedValue(null);
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const error = await startInstagramOAuth("b1").catch((e) => e);
+    vi.unstubAllGlobals();
+    expect(error.code).toBe("unauthorized");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("reports a network failure", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("offline")));
+    const error = await startInstagramOAuth("b1").catch((e) => e);
+    vi.unstubAllGlobals();
     expect(error.code).toBe("network");
   });
 });

@@ -78,3 +78,45 @@ export function fromLocalInput(value: string): string | null {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
+
+/** What the screen says when Instagram sends the browser back with a failed connection. */
+export function instagramOAuthMessage(code: string, isAr: boolean): string {
+  switch (code) {
+    case "denied":
+      return isAr
+        ? "لم تتم الموافقة على الوصول في انستغرام، فلم يتم الربط."
+        : "Access was not approved on Instagram, so nothing was connected.";
+    case "invalid_state":
+    case "missing_code":
+      return isAr
+        ? "انتهت صلاحية رابط الربط أو لم يكتمل. اضغط «ربط انستغرام» وحاول مرة أخرى."
+        : "The connection link expired or was incomplete. Press Connect with Instagram and try again.";
+    case "not_configured":
+      return isAr
+        ? "ربط انستغرام غير مفعّل على الخادم: ينقص INSTAGRAM_APP_ID أو INSTAGRAM_APP_SECRET."
+        : "Instagram is not set up on the server: INSTAGRAM_APP_ID or INSTAGRAM_APP_SECRET is missing.";
+    case "missing_comments_permission":
+      return isAr
+        ? "تم الاتصال بانستغرام لكن لم تُمنح صلاحية إدارة التعليقات. أعد الربط ووافق على صلاحية التعليقات."
+        : "Instagram connected, but the comment-management permission was not granted. Reconnect and approve comment access.";
+    case "exchange_failed":
+    case "long_lived_failed":
+    case "profile_failed":
+      return isAr
+        ? "رفض انستغرام إكمال الربط. حاول مرة أخرى، وإن تكرر الأمر تحقق من إعدادات تطبيق Meta."
+        : "Instagram refused to complete the connection. Try again, and if it repeats check the Meta app settings.";
+    case "save_failed":
+      return isAr
+        ? "نجح الربط لكن تعذر حفظ الرمز. حاول مرة أخرى."
+        : "The connection worked but the token could not be saved. Try again.";
+    case "unauthorized":
+    case "forbidden":
+      return isAr
+        ? "ليس لديك صلاحية ربط انستغرام لهذا المتجر."
+        : "You do not have permission to connect Instagram for this store.";
+    default:
+      return isAr
+        ? "تعذر ربط انستغرام. حاول مرة أخرى."
+        : "Instagram could not be connected. Please try again.";
+  }
+}
