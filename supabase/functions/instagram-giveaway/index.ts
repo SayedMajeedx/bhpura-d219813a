@@ -244,8 +244,6 @@ async function fetchComments(admin: any, brandId: string, body: Record<string, u
   let done = false;
   let rateLimited = false;
   let withoutAuthor = 0;
-  let saved = 0;
-  const startedFresh = restart || !giveaway.fetch_cursor;
 
   for (let page = 0; page < PAGES_PER_CALL; page++) {
     let parsed;
@@ -271,7 +269,6 @@ async function fetchComments(admin: any, brandId: string, body: Record<string, u
     }
 
     withoutAuthor += parsed.withoutAuthor;
-    saved += parsed.comments.length;
 
     for (const rows of chunk(
       parsed.comments.map((comment) => ({
@@ -294,20 +291,25 @@ async function fetchComments(admin: any, brandId: string, body: Record<string, u
     }
   }
 
-  // A first pull that ends with nothing stored must not look finished: say why.
-  if (startedFresh && done && saved === 0 && (withoutAuthor > 0 || giveaway.comments_total > 0)) {
-    await admin
-      .from("giveaways")
-      .update({ fetch_cursor: null, fetch_done: false, status: "draft" })
-      .eq("id", giveawayId);
-    if (withoutAuthor > 0) {
-      return fail(
-        "missing_username",
-        "Instagram sent the comments without usernames. The token needs instagram_business_manage_comments",
-        400,
-      );
+  // A pull that ends with nothing stored must not look finished: say why. This is
+  // judged on what is stored, not on this call alone: Instagram can answer with
+  // empty pages that still offer a next page, so the pull runs over several calls.
+  if (done && (withoutAuthor > 0 || giveaway.comments_total > 0)) {
+    const { fetched } = await progress(admin, giveawayId, true, false);
+    if (fetched === 0) {
+      await admin
+        .from("giveaways")
+        .update({ fetch_cursor: null, fetch_done: false, status: "draft" })
+        .eq("id", giveawayId);
+      if (withoutAuthor > 0) {
+        return fail(
+          "missing_username",
+          "Instagram sent the comments without usernames. The token needs instagram_business_manage_comments",
+          400,
+        );
+      }
+      return fail("no_comments", "Instagram returned no comments for this post", 400);
     }
-    return fail("no_comments", "Instagram returned no comments for this post", 400);
   }
 
   await admin

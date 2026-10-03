@@ -12,6 +12,7 @@ import {
   type GiveawayRules,
 } from "../src/features/giveaways/lib/entry-rules";
 import { drawWinners, newSeed, seededRandom } from "../src/features/giveaways/lib/draw";
+import { giveawayErrorMessage } from "../src/features/giveaways/lib/messages";
 import {
   checksComplete,
   resolveWinners,
@@ -236,5 +237,19 @@ describe("winners after checking", () => {
     expect(checksComplete(person, { requireFollow: true, requireLike: false })).toBe(true);
     expect(checksComplete(person, { requireFollow: true, requireLike: true })).toBe(false);
     expect(checksComplete(row(2), { requireFollow: false, requireLike: false })).toBe(true);
+  });
+});
+
+describe("error messages", () => {
+  it("explains an empty pull in both languages, naming Live mode", () => {
+    expect(giveawayErrorMessage("no_comments", false)).toContain("Live");
+    expect(giveawayErrorMessage("no_comments", true)).toContain("Live");
+  });
+
+  it("explains missing usernames and falls back for an unknown code", () => {
+    expect(giveawayErrorMessage("missing_username", false)).toContain(
+      "instagram_business_manage_comments",
+    );
+    expect(giveawayErrorMessage("nope", false)).toBe("Something went wrong. Please try again.");
   });
 });

@@ -29,8 +29,8 @@ export function giveawayErrorMessage(code: string | undefined, isAr: boolean): s
         : "Instagram sent the comments without usernames because the token cannot read comments. Make a new token in Meta with instagram_business_manage_comments ticked, then paste it here.";
     case "no_comments":
       return isAr
-        ? "لم يُرجع انستغرام أي تعليق لهذا البوست. تأكد أن الحساب Business أو Creator وأن البوست من نفس الحساب المربوط."
-        : "Instagram returned no comments for this post. Check the account is Business or Creator and the post belongs to the connected account.";
+        ? "لم يُرجع انستغرام أي تعليق رغم أن البوست عليه تعليقات. هذا يحدث عادة لأن تطبيق Meta ما زال في وضع Development، فيعرض تعليقات أصحاب الأدوار على التطبيق فقط. حوّل تطبيق Boutq-IG إلى وضع Live من لوحة Meta ثم أنشئ رمزاً جديداً وأعد السحب."
+        : "Instagram returned no comments although the post has some. This usually means the Meta app is still in Development mode, which only shows comments from people with a role on the app. Switch Boutq-IG to Live in Meta, make a new token, then pull again.";
     case "network":
       return isAr
         ? "تعذر الاتصال. تحقق من الإنترنت وحاول مرة أخرى."
