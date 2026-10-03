@@ -1,12 +1,57 @@
 import { useState } from "react";
-import { AlertTriangle, CheckCircle2, Instagram, KeyRound, Loader2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Instagram, KeyRound, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { InstagramConnectionState } from "../hooks/use-instagram-connection";
 
-function TokenForm({ conn, compact }: { conn: InstagramConnectionState; compact?: boolean }) {
+/** The result Instagram sent the browser back with (connected, or why not). */
+function Notice({ conn }: { conn: InstagramConnectionState }) {
+  if (!conn.notice) return null;
+  const ok = conn.notice.kind === "success";
+  return (
+    <div
+      role={ok ? "status" : "alert"}
+      className={`flex items-start gap-2 rounded-lg border p-3 text-sm text-foreground ${
+        ok ? "border-success bg-success-subtle" : "border-warning bg-warning-subtle"
+      }`}
+    >
+      {ok ? (
+        <CheckCircle2 className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+      ) : (
+        <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+      )}
+      <span className="flex-1">{conn.notice.text}</span>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="size-6 shrink-0"
+        onClick={conn.dismissNotice}
+        aria-label={conn.isAr ? "إغلاق" : "Dismiss"}
+      >
+        <X className="size-4" />
+      </Button>
+    </div>
+  );
+}
+
+function ConnectButton({ conn, label }: { conn: InstagramConnectionState; label: string }) {
+  return (
+    <Button type="button" onClick={conn.startOAuth} disabled={conn.startingOAuth}>
+      {conn.startingOAuth ? (
+        <Loader2 className="size-4 animate-spin" />
+      ) : (
+        <Instagram className="size-4" />
+      )}
+      {label}
+    </Button>
+  );
+}
+
+/** The fallback: paste a token made by hand in Meta's dashboard. */
+function TokenForm({ conn }: { conn: InstagramConnectionState }) {
   const { isAr } = conn;
   return (
     <form
@@ -16,26 +61,6 @@ function TokenForm({ conn, compact }: { conn: InstagramConnectionState; compact?
         if (conn.token.trim().length >= 20) conn.connect();
       }}
     >
-      {!compact && (
-        <ol className="list-decimal space-y-1 ps-5 text-sm text-muted-foreground">
-          <li>
-            {isAr
-              ? "افتح لوحة Meta للمطورين ثم تطبيق Boutq-IG."
-              : "Open Meta for Developers and your Boutq-IG app."}
-          </li>
-          <li>
-            {isAr
-              ? "من Instagram ثم API setup with Instagram login اضغط Generate token بجانب الحساب."
-              : "Under Instagram, API setup with Instagram login, press Generate token next to the account."}
-          </li>
-          <li>
-            {isAr
-              ? "تأكد من صلاحيتي instagram_business_basic و instagram_business_manage_comments."
-              : "Make sure instagram_business_basic and instagram_business_manage_comments are granted."}
-          </li>
-          <li>{isAr ? "الصق الرمز هنا." : "Paste the token here."}</li>
-        </ol>
-      )}
       <div className="space-y-1.5">
         <Label htmlFor="ig-token">{isAr ? "رمز انستغرام (Token)" : "Instagram token"}</Label>
         <div className="flex flex-wrap gap-2">
@@ -49,7 +74,11 @@ function TokenForm({ conn, compact }: { conn: InstagramConnectionState; compact?
             value={conn.token}
             onChange={(event) => conn.setToken(event.target.value)}
           />
-          <Button type="submit" disabled={conn.connecting || conn.token.trim().length < 20}>
+          <Button
+            type="submit"
+            variant="outline"
+            disabled={conn.connecting || conn.token.trim().length < 20}
+          >
             {conn.connecting ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
@@ -73,7 +102,20 @@ function TokenForm({ conn, compact }: { conn: InstagramConnectionState; compact?
   );
 }
 
-/** Who the store's Instagram is connected as, and the form for a new token. */
+function ManualToken({ conn }: { conn: InstagramConnectionState }) {
+  return (
+    <details className="text-sm">
+      <summary className="cursor-pointer text-muted-foreground">
+        {conn.isAr ? "متقدم: ربط برمز يدوي" : "Advanced: connect with a token by hand"}
+      </summary>
+      <div className="mt-3">
+        <TokenForm conn={conn} />
+      </div>
+    </details>
+  );
+}
+
+/** Who the store's Instagram is connected as, and how to connect or reconnect it. */
 export function InstagramConnectionCard({ conn }: { conn: InstagramConnectionState }) {
   const { isAr } = conn;
   const [replacing, setReplacing] = useState(false);
@@ -89,21 +131,29 @@ export function InstagramConnectionCard({ conn }: { conn: InstagramConnectionSta
             {isAr ? "اربط حساب انستغرام" : "Connect Instagram"}
           </h2>
         </div>
+        <Notice conn={conn} />
         {conn.expired && (
           <p className="flex items-start gap-2 rounded-lg border border-warning bg-warning-subtle p-3 text-sm text-foreground">
             <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
             {isAr
-              ? "انتهت صلاحية الرمز المحفوظ. أنشئ رمزاً جديداً."
-              : "The saved token has expired. Make a new one."}
+              ? "انتهت صلاحية الربط المحفوظ. أعد الربط."
+              : "The saved connection has expired. Connect again."}
           </p>
         )}
-        <TokenForm conn={conn} />
+        <p className="text-sm text-muted-foreground">
+          {isAr
+            ? "سيفتح انستغرام لتوافق على قراءة التعليقات. لا يُحفظ أي رمز في المتصفح."
+            : "Instagram opens so you can approve reading comments. No token is kept in the browser."}
+        </p>
+        <ConnectButton conn={conn} label={isAr ? "ربط انستغرام" : "Connect with Instagram"} />
+        <ManualToken conn={conn} />
       </section>
     );
   }
 
   return (
     <section className="space-y-3 rounded-xl border border-border bg-card p-4">
+      <Notice conn={conn} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <CheckCircle2 className="size-5 text-success" aria-hidden="true" />
@@ -113,24 +163,27 @@ export function InstagramConnectionCard({ conn }: { conn: InstagramConnectionSta
             </p>
             <p className="text-xs text-muted-foreground">
               {isAr
-                ? `مربوط. ينتهي الرمز بعد ${conn.daysLeft ?? 0} يوم، ويتجدد تلقائياً عند فتح هذه الشاشة في آخر 10 أيام.`
-                : `Connected. The token lapses in ${conn.daysLeft ?? 0} days, and renews itself when you open this screen in its last 10 days.`}
+                ? `مربوط. ينتهي الربط بعد ${conn.daysLeft ?? 0} يوم، ويتجدد تلقائياً عند فتح هذه الشاشة في آخر 10 أيام.`
+                : `Connected. The connection lapses in ${conn.daysLeft ?? 0} days, and renews itself when you open this screen in its last 10 days.`}
             </p>
           </div>
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={() => setReplacing((v) => !v)}>
-          {isAr ? "استبدال الرمز" : "Replace token"}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <ConnectButton conn={conn} label={isAr ? "إعادة الربط" : "Reconnect"} />
+          <Button type="button" variant="outline" size="sm" onClick={() => setReplacing((v) => !v)}>
+            {isAr ? "استبدال الرمز" : "Replace token"}
+          </Button>
+        </div>
       </div>
       {(conn.expiringSoon || conn.refreshError) && (
         <p className="flex items-start gap-2 rounded-lg border border-warning bg-warning-subtle p-3 text-sm text-foreground">
           <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           {isAr
-            ? "الرمز قارب على الانتهاء. اسحب تعليقات أي مسابقة ليتجدد، أو أنشئ رمزاً جديداً من Meta."
-            : "The token is close to expiring. Pull comments for any giveaway to renew it, or make a new one in Meta."}
+            ? "الربط قارب على الانتهاء. اسحب تعليقات أي مسابقة ليتجدد، أو اضغط «إعادة الربط»."
+            : "The connection is close to expiring. Pull comments for any giveaway to renew it, or press Reconnect."}
         </p>
       )}
-      {replacing && <TokenForm conn={conn} compact />}
+      {replacing && <TokenForm conn={conn} />}
     </section>
   );
 }

@@ -1,6 +1,7 @@
 import { infiniteQueryOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { getAccessToken } from "@/lib/auth/session";
 import type { CommentEntry, GiveawayRules } from "@/features/giveaways/lib/entry-rules";
 import type { DrawPick } from "@/features/giveaways/lib/draw";
 import type { ImportedComment } from "@/features/giveaways/lib/import-comments";
@@ -341,4 +342,34 @@ export async function importComments(
     onProgress?.(sent);
   } while (sent < comments.length);
   return stored;
+}
+
+/**
+ * Asks the server to start the Instagram connection for this store and returns
+ * Instagram's authorization address. The server also sets the signed state cookie
+ * the callback checks, so the browser must go to the address right after.
+ */
+export async function startInstagramOAuth(brandId: string): Promise<string> {
+  const accessToken = await getAccessToken();
+  if (!accessToken) throw new GiveawayApiError("unauthorized", "No active session");
+  const response = await fetch(
+    `/api/auth/instagram/authorize?brandId=${encodeURIComponent(brandId)}`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
+      credentials: "same-origin",
+    },
+  ).catch(() => null);
+  if (!response) throw new GiveawayApiError("network", "Could not reach the server");
+  const body = (await response.json().catch(() => null)) as {
+    url?: string;
+    code?: string;
+    error?: string;
+  } | null;
+  if (!response.ok || typeof body?.url !== "string") {
+    throw new GiveawayApiError(
+      typeof body?.code === "string" ? body.code : "server_error",
+      typeof body?.error === "string" ? body.error : "Could not start the connection",
+    );
+  }
+  return body.url;
 }

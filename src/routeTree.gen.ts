@@ -56,6 +56,8 @@ import { Route as AuthenticatedAdminSuperGrantsRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminSuperHealthRouteImport } from './routes/_authenticated/admin.super.health'
 import { Route as AuthenticatedAdminSuperRequestsRouteImport } from './routes/_authenticated/admin.super.requests'
 import { Route as AuthenticatedAdminSuperSettingsRouteImport } from './routes/_authenticated/admin.super.settings'
+import { Route as ApiAuthInstagramAuthorizeRouteImport } from './routes/api.auth.instagram.authorize'
+import { Route as ApiAuthInstagramCallbackRouteImport } from './routes/api.auth.instagram.callback'
 import { Route as ApiPublicPaymentsCreateTapChargeRouteImport } from './routes/api.public.payments.create-tap-charge'
 import { Route as ApiPublicPaymentsTapRedirectRouteImport } from './routes/api.public.payments.tap-redirect'
 import { Route as ApiPublicWebhooksTapRouteImport } from './routes/api.public.webhooks.tap'
@@ -344,6 +346,18 @@ const AuthenticatedAdminSuperSettingsRoute =
     path: '/super/settings',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const ApiAuthInstagramAuthorizeRoute =
+  ApiAuthInstagramAuthorizeRouteImport.update({
+    id: '/api/auth/instagram/authorize',
+    path: '/api/auth/instagram/authorize',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAuthInstagramCallbackRoute =
+  ApiAuthInstagramCallbackRouteImport.update({
+    id: '/api/auth/instagram/callback',
+    path: '/api/auth/instagram/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPaymentsCreateTapChargeRoute =
   ApiPublicPaymentsCreateTapChargeRouteImport.update({
     id: '/api/public/payments/create-tap-charge',
@@ -625,6 +639,8 @@ export interface FileRoutesByFullPath {
   '/admin/super/health': typeof AuthenticatedAdminSuperHealthRoute
   '/admin/super/requests': typeof AuthenticatedAdminSuperRequestsRoute
   '/admin/super/settings': typeof AuthenticatedAdminSuperSettingsRoute
+  '/api/auth/instagram/authorize': typeof ApiAuthInstagramAuthorizeRoute
+  '/api/auth/instagram/callback': typeof ApiAuthInstagramCallbackRoute
   '/api/public/payments/create-tap-charge': typeof ApiPublicPaymentsCreateTapChargeRoute
   '/api/public/payments/tap-redirect': typeof ApiPublicPaymentsTapRedirectRoute
   '/api/public/webhooks/tap': typeof ApiPublicWebhooksTapRoute
@@ -710,6 +726,8 @@ export interface FileRoutesByTo {
   '/admin/super/health': typeof AuthenticatedAdminSuperHealthRoute
   '/admin/super/requests': typeof AuthenticatedAdminSuperRequestsRoute
   '/admin/super/settings': typeof AuthenticatedAdminSuperSettingsRoute
+  '/api/auth/instagram/authorize': typeof ApiAuthInstagramAuthorizeRoute
+  '/api/auth/instagram/callback': typeof ApiAuthInstagramCallbackRoute
   '/api/public/payments/create-tap-charge': typeof ApiPublicPaymentsCreateTapChargeRoute
   '/api/public/payments/tap-redirect': typeof ApiPublicPaymentsTapRedirectRoute
   '/api/public/webhooks/tap': typeof ApiPublicWebhooksTapRoute
@@ -798,6 +816,8 @@ export interface FileRoutesById {
   '/_authenticated/admin/super/health': typeof AuthenticatedAdminSuperHealthRoute
   '/_authenticated/admin/super/requests': typeof AuthenticatedAdminSuperRequestsRoute
   '/_authenticated/admin/super/settings': typeof AuthenticatedAdminSuperSettingsRoute
+  '/api/auth/instagram/authorize': typeof ApiAuthInstagramAuthorizeRoute
+  '/api/auth/instagram/callback': typeof ApiAuthInstagramCallbackRoute
   '/api/public/payments/create-tap-charge': typeof ApiPublicPaymentsCreateTapChargeRoute
   '/api/public/payments/tap-redirect': typeof ApiPublicPaymentsTapRedirectRoute
   '/api/public/webhooks/tap': typeof ApiPublicWebhooksTapRoute
@@ -887,6 +907,8 @@ export interface FileRouteTypes {
     | '/admin/super/health'
     | '/admin/super/requests'
     | '/admin/super/settings'
+    | '/api/auth/instagram/authorize'
+    | '/api/auth/instagram/callback'
     | '/api/public/payments/create-tap-charge'
     | '/api/public/payments/tap-redirect'
     | '/api/public/webhooks/tap'
@@ -972,6 +994,8 @@ export interface FileRouteTypes {
     | '/admin/super/health'
     | '/admin/super/requests'
     | '/admin/super/settings'
+    | '/api/auth/instagram/authorize'
+    | '/api/auth/instagram/callback'
     | '/api/public/payments/create-tap-charge'
     | '/api/public/payments/tap-redirect'
     | '/api/public/webhooks/tap'
@@ -1059,6 +1083,8 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/super/health'
     | '/_authenticated/admin/super/requests'
     | '/_authenticated/admin/super/settings'
+    | '/api/auth/instagram/authorize'
+    | '/api/auth/instagram/callback'
     | '/api/public/payments/create-tap-charge'
     | '/api/public/payments/tap-redirect'
     | '/api/public/webhooks/tap'
@@ -1117,6 +1143,8 @@ export interface RootRouteChildren {
   ApiAdminNabdaOtpRoute: typeof ApiAdminNabdaOtpRoute
   ApiCronCleanupBenefitReceiptsRoute: typeof ApiCronCleanupBenefitReceiptsRoute
   ApiOrdersStatusRoute: typeof ApiOrdersStatusRoute
+  ApiAuthInstagramAuthorizeRoute: typeof ApiAuthInstagramAuthorizeRoute
+  ApiAuthInstagramCallbackRoute: typeof ApiAuthInstagramCallbackRoute
   ApiPublicPaymentsCreateTapChargeRoute: typeof ApiPublicPaymentsCreateTapChargeRoute
   ApiPublicPaymentsTapRedirectRoute: typeof ApiPublicPaymentsTapRedirectRoute
   ApiPublicWebhooksTapRoute: typeof ApiPublicWebhooksTapRoute
@@ -1454,6 +1482,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/super/settings'
       preLoaderRoute: typeof AuthenticatedAdminSuperSettingsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/api/auth/instagram/authorize': {
+      id: '/api/auth/instagram/authorize'
+      path: '/api/auth/instagram/authorize'
+      fullPath: '/api/auth/instagram/authorize'
+      preLoaderRoute: typeof ApiAuthInstagramAuthorizeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/instagram/callback': {
+      id: '/api/auth/instagram/callback'
+      path: '/api/auth/instagram/callback'
+      fullPath: '/api/auth/instagram/callback'
+      preLoaderRoute: typeof ApiAuthInstagramCallbackRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/payments/create-tap-charge': {
       id: '/api/public/payments/create-tap-charge'
@@ -1966,6 +2008,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminNabdaOtpRoute: ApiAdminNabdaOtpRoute,
   ApiCronCleanupBenefitReceiptsRoute: ApiCronCleanupBenefitReceiptsRoute,
   ApiOrdersStatusRoute: ApiOrdersStatusRoute,
+  ApiAuthInstagramAuthorizeRoute: ApiAuthInstagramAuthorizeRoute,
+  ApiAuthInstagramCallbackRoute: ApiAuthInstagramCallbackRoute,
   ApiPublicPaymentsCreateTapChargeRoute: ApiPublicPaymentsCreateTapChargeRoute,
   ApiPublicPaymentsTapRedirectRoute: ApiPublicPaymentsTapRedirectRoute,
   ApiPublicWebhooksTapRoute: ApiPublicWebhooksTapRoute,
