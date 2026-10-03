@@ -4,6 +4,7 @@ import {
   buildAuthorizeUrl,
   clearStateCookie,
   completeInstagramConnection,
+  describeFailure,
   INSTAGRAM_REDIRECT_URI,
   openState,
   readCookie,
@@ -340,6 +341,66 @@ describe("the callback", () => {
     expect((result as { location: string }).location).toContain("instagram_error=exchange_failed");
     expect(saveToken).not.toHaveBeenCalled();
     noSecrets(JSON.stringify(result));
+  });
+
+  it("passes on Instagram's own words for a refused code, with the secret removed", async () => {
+    const { result } = await run(
+      { code: "auth-code-123", state: "nonce-abc" },
+      {
+        replies: {
+          token: {
+            ok: false,
+            status: 400,
+            body: {
+              error_type: "OAuthException",
+              error_message: `Invalid client_secret ${APP_SECRET} for code auth-code-123`,
+            },
+          },
+        },
+      },
+    );
+    const location = new URL((result as { location: string }).location);
+    expect(location.searchParams.get("instagram_error")).toBe("exchange_failed");
+    const detail = location.searchParams.get("instagram_detail") ?? "";
+    expect(detail).toContain("code exchange: HTTP 400");
+    expect(detail).toContain("Invalid client_secret");
+    expect(detail).toContain("[redacted]");
+    noSecrets(detail);
+    expect(detail).not.toContain("auth-code-123");
+  });
+
+  it("says which step failed when the long-lived swap is refused", async () => {
+    const { result } = await run(
+      { code: "c", state: "nonce-abc" },
+      {
+        replies: {
+          ...GOOD,
+          long: {
+            ok: false,
+            status: 400,
+            body: { error: { message: `Invalid token ${SHORT_TOKEN}`, type: "OAuthException" } },
+          },
+        },
+      },
+    );
+    const location = new URL((result as { location: string }).location);
+    expect(location.searchParams.get("instagram_error")).toBe("long_lived_failed");
+    const detail = location.searchParams.get("instagram_detail") ?? "";
+    expect(detail).toContain("long-lived exchange: HTTP 400");
+    noSecrets(detail);
+  });
+
+  it("makes a failure description plain and short", () => {
+    const text = describeFailure(
+      "code exchange",
+      500,
+      { error_message: `<script>alert(1)</script> ${"x".repeat(400)}` },
+      [],
+    );
+    expect(text.startsWith("code exchange: HTTP 500 - script alert(1) script")).toBe(true);
+    expect(text).not.toContain("<");
+    expect(text.length).toBeLessThanOrEqual(160);
+    expect(describeFailure("code exchange", 401, {}, [])).toBe("code exchange: HTTP 401");
   });
 
   it("reports a failed long-lived swap and a failed save", async () => {
