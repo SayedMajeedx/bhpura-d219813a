@@ -34,6 +34,7 @@ const rule = (over: Partial<AdvanceRule> = {}): AdvanceRule => ({
   enabled: true,
   percent: 30,
   scope: "all",
+  rules: [],
   ...over,
 });
 const order = (over: Partial<AdvanceOrder> = {}): AdvanceOrder => ({

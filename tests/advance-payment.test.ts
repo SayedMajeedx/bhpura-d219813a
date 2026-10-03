@@ -16,6 +16,7 @@ const rule = (over: Partial<AdvanceRule> = {}): AdvanceRule => ({
   enabled: true,
   percent: 30,
   scope: "all",
+  rules: [],
   ...over,
 });
 const order = (over: Partial<AdvanceOrder> = {}): AdvanceOrder => ({
@@ -32,14 +33,19 @@ const mixed = [
 
 describe("a store's advance-payment rule", () => {
   it("is off unless switched on, keeps the percentage within 1 to 100, and knows its scope", () => {
-    expect(advanceRuleFrom(undefined)).toEqual({ enabled: false, percent: 30, scope: "all" });
+    expect(advanceRuleFrom(undefined)).toEqual({
+      enabled: false,
+      percent: 30,
+      scope: "all",
+      rules: [],
+    });
     expect(
       advanceRuleFrom({
         advance_payment_enabled: true,
         advance_payment_percent: 40,
         advance_payment_scope: "delivery",
       }),
-    ).toEqual({ enabled: true, percent: 40, scope: "delivery" });
+    ).toEqual({ enabled: true, percent: 40, scope: "delivery", rules: [] });
     expect(
       advanceRuleFrom({ advance_payment_enabled: true, advance_payment_percent: "25.5" }).percent,
     ).toBe(25.5);
@@ -93,11 +99,11 @@ describe("a store's advance-payment rule", () => {
       applies: true,
       dueNow: 30,
       balance: 70,
-      partial: false,
+      of: "order",
     });
     expect(
       advanceForOrder(order({ lines: mixed }), rule({ scope: "made_to_order", percent: 50 })),
-    ).toMatchObject({ applies: true, dueNow: 30, balance: 70, partial: true });
+    ).toMatchObject({ applies: true, dueNow: 30, balance: 70, of: "made_to_order" });
     expect(
       advanceForOrder(order({ fulfillment: "pickup" }), rule({ scope: "delivery" })),
     ).toMatchObject({ applies: false, dueNow: 100, balance: 0 });
