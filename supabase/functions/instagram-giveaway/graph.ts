@@ -89,6 +89,14 @@ export async function graphGet(fetcher: Fetcher, url: string): Promise<Record<st
 
 export type CommentsPage = {
   comments: GraphComment[];
+  /** Comments Graph sent, before any were dropped. */
+  received: number;
+  /**
+   * Comments Graph sent without an author. Instagram only names a commenter when
+   * the token has instagram_business_manage_comments; without it every comment is
+   * anonymous and none can be entered in a draw.
+   */
+  withoutAuthor: number;
   /** The cursor for the next page, or null on the last page. */
   next: string | null;
 };
@@ -97,12 +105,17 @@ export type CommentsPage = {
 export function parseCommentsPage(body: Record<string, unknown>): CommentsPage {
   const data = Array.isArray(body.data) ? body.data : [];
   const comments: GraphComment[] = [];
+  let withoutAuthor = 0;
   for (const item of data) {
     const row = asRecord(item);
     const id = str(row.id);
+    if (!id) continue;
     const username = str(row.username) ?? str(asRecord(row.from).username);
     // A comment without an author cannot win anything.
-    if (!id || !username) continue;
+    if (!username) {
+      withoutAuthor += 1;
+      continue;
+    }
     comments.push({
       comment_id: id,
       username: username.toLowerCase(),
@@ -114,7 +127,12 @@ export function parseCommentsPage(body: Record<string, unknown>): CommentsPage {
   const paging = asRecord(body.paging);
   const hasNext = str(paging.next) !== null;
   const after = str(asRecord(paging.cursors).after);
-  return { comments, next: hasNext ? after : null };
+  return {
+    comments,
+    received: comments.length + withoutAuthor,
+    withoutAuthor,
+    next: hasNext ? after : null,
+  };
 }
 
 /** One page of /me/media, with the post's comment count. */
