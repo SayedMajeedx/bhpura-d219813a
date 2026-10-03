@@ -3,6 +3,7 @@ import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { CommentEntry, GiveawayRules } from "@/features/giveaways/lib/entry-rules";
 import type { DrawPick } from "@/features/giveaways/lib/draw";
+import type { ImportedComment } from "@/features/giveaways/lib/import-comments";
 
 /**
  * Instagram giveaways (migration 20261003100000): the draws, the comments pulled
@@ -307,4 +308,37 @@ export async function pullComments(brandId: string, giveawayId: string, restart 
     giveaway_id: giveawayId,
     restart,
   });
+}
+
+/** Comments per call when importing: the function takes up to 2,000. */
+const IMPORT_BATCH = 1000;
+
+/**
+ * Stores comments the merchant brought in by hand, replacing what the giveaway
+ * held. Sent in batches; the last one marks the giveaway ready to draw.
+ */
+export async function importComments(
+  brandId: string,
+  giveawayId: string,
+  comments: ImportedComment[],
+  onProgress?: (done: number) => void,
+) {
+  let sent = 0;
+  let stored = 0;
+  do {
+    const batch = comments.slice(sent, sent + IMPORT_BATCH);
+    const result = await callInstagram<{ ok: true; fetched: number }>({
+      action: "import_comments",
+      brand_id: brandId,
+      giveaway_id: giveawayId,
+      comments: batch,
+      offset: sent,
+      replace: sent === 0,
+      last: sent + batch.length >= comments.length,
+    });
+    sent += batch.length;
+    stored = result.fetched;
+    onProgress?.(sent);
+  } while (sent < comments.length);
+  return stored;
 }

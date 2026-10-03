@@ -20,6 +20,8 @@ import {
 //   connect         { token }                 store a token the merchant generated in Meta's dashboard
 //   list_media      { after? }                the brand's recent posts, with their comment counts
 //   fetch_comments  { giveaway_id, restart? } pull the next batch of pages into giveaway_comments
+//   import_comments { giveaway_id, comments, offset, replace?, last? } store comments the merchant
+//                   brought in by hand (a file), a batch at a time
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -97,6 +99,7 @@ Deno.serve(async (req: Request) => {
     if (action === "connect") return await connect(admin, user.id, brandId, body);
     if (action === "list_media") return await listMedia(admin, brandId, body);
     if (action === "fetch_comments") return await fetchComments(admin, brandId, body);
+    if (action === "import_comments") return await importComments(admin, brandId, body);
     return fail("bad_request", "Unknown action", 400);
   } catch (error) {
     if (error instanceof GraphError) {
@@ -323,6 +326,76 @@ async function fetchComments(admin: any, brandId: string, body: Record<string, u
     .eq("id", giveawayId);
 
   return reply(await progress(admin, giveawayId, done, rateLimited));
+}
+
+/** Most comments one import call takes, and most a giveaway holds. */
+const IMPORT_BATCH_MAX = 2000;
+const IMPORT_TOTAL_MAX = 50_000;
+const USERNAME = /^[a-z0-9._]{1,30}$/;
+
+// deno-lint-ignore no-explicit-any
+async function importComments(admin: any, brandId: string, body: Record<string, unknown>) {
+  const giveawayId = typeof body.giveaway_id === "string" ? body.giveaway_id : "";
+  if (!giveawayId) return fail("bad_request", "giveaway_id is required", 400);
+  const list = Array.isArray(body.comments) ? body.comments : null;
+  if (!list || list.length > IMPORT_BATCH_MAX) {
+    return fail("bad_request", `Send at most ${IMPORT_BATCH_MAX} comments per call`, 400);
+  }
+  const offset = typeof body.offset === "number" && body.offset >= 0 ? Math.trunc(body.offset) : 0;
+  if (offset + list.length > IMPORT_TOTAL_MAX) {
+    return fail("bad_request", `A giveaway holds at most ${IMPORT_TOTAL_MAX} comments`, 400);
+  }
+
+  const { data: giveaway, error: giveawayError } = await admin
+    .from("giveaways")
+    .select("id")
+    .eq("id", giveawayId)
+    .eq("brand_id", brandId)
+    .maybeSingle();
+  if (giveawayError) throw new Error(giveawayError.message);
+  if (!giveaway) return fail("not_found", "Giveaway not found", 404);
+
+  // The first batch replaces whatever the giveaway held (pulled or imported before).
+  if (body.replace === true) {
+    await admin.from("giveaway_comments").delete().eq("giveaway_id", giveawayId);
+  }
+
+  const rows = [];
+  for (let i = 0; i < list.length; i++) {
+    const item = (list[i] ?? {}) as Record<string, unknown>;
+    const username = typeof item.username === "string" ? item.username.toLowerCase() : "";
+    if (!USERNAME.test(username)) continue;
+    const at = typeof item.commented_at === "string" ? Date.parse(item.commented_at) : NaN;
+    rows.push({
+      giveaway_id: giveawayId,
+      brand_id: brandId,
+      // An id that is stable per position, so sending a batch twice does not double it.
+      comment_id: `import-${offset + i}`,
+      username,
+      body: typeof item.body === "string" ? item.body.slice(0, 2200) : "",
+      commented_at: Number.isFinite(at) ? new Date(at).toISOString() : null,
+      like_count: 0,
+    });
+  }
+  for (const part of chunk(rows, 500)) {
+    const { error } = await admin
+      .from("giveaway_comments")
+      .upsert(part, { onConflict: "giveaway_id,comment_id" });
+    if (error) throw new Error(`could not save comments: ${error.message}`);
+  }
+
+  const last = body.last === true;
+  await admin
+    .from("giveaways")
+    .update({
+      fetch_cursor: null,
+      fetch_done: last,
+      status: last ? "ready" : "fetching",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", giveawayId);
+
+  return reply(await progress(admin, giveawayId, last, false));
 }
 
 // deno-lint-ignore no-explicit-any

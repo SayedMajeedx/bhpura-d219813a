@@ -30,6 +30,7 @@ const state = vi.hoisted(() => ({
   saveDraw: vi.fn(async () => undefined),
   updateWinner: vi.fn(),
   saveGiveawayRules: vi.fn(async () => undefined),
+  importComments: vi.fn(async (_brand: string, _id: string, rows: unknown[]) => rows.length),
   qc: null as import("@tanstack/react-query").QueryClient | null,
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() } }));
@@ -64,6 +65,7 @@ const giveawaysData = {
   saveDraw: state.saveDraw,
   updateWinner: state.updateWinner,
   saveGiveawayRules: state.saveGiveawayRules,
+  importComments: state.importComments,
 };
 vi.mock("../src/lib/data/giveaways", () => giveawaysData);
 vi.mock("@/lib/data/giveaways", () => giveawaysData);
@@ -190,6 +192,48 @@ describe("pulling the comments", () => {
       "textContent",
       expect.stringContaining("token has expired"),
     );
+  });
+});
+
+describe("importing comments by hand", () => {
+  it("parses what is pasted and sends it for the giveaway", async () => {
+    renderScreen();
+    fireEvent.change(await screen.findByLabelText("Comments"), {
+      target: { value: "username,text\nSara,@a @b done\nNoor,hi" },
+    });
+    expect(await screen.findByText(/2 readable, 0 lines skipped/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Import" }));
+    await waitFor(() => expect(state.importComments).toHaveBeenCalledTimes(1));
+    const [brand, id, rows] = state.importComments.mock.calls[0] as unknown as [
+      string,
+      string,
+      Array<{ username: string; body: string }>,
+    ];
+    expect([brand, id]).toEqual(["b1", "g1"]);
+    expect(rows.map((r) => [r.username, r.body])).toEqual([
+      ["sara", "@a @b done"],
+      ["noor", "hi"],
+    ]);
+    expect(await screen.findByText("Imported 2 comments.")).toBeTruthy();
+  });
+
+  it("keeps Import off until something readable is pasted", async () => {
+    renderScreen();
+    const button = await screen.findByRole("button", { name: "Import" });
+    expect(button).toHaveProperty("disabled", true);
+    fireEvent.change(screen.getByLabelText("Comments"), { target: { value: "!!! ???" } });
+    expect(screen.getByRole("button", { name: "Import" })).toHaveProperty("disabled", true);
+  });
+
+  it("shows the function's own words when the import fails", async () => {
+    state.importComments.mockRejectedValueOnce(
+      new GiveawayApiError("bad_request", "Send at most 2000"),
+    );
+    renderScreen();
+    fireEvent.change(await screen.findByLabelText("Comments"), { target: { value: "sara hi" } });
+    fireEvent.click(screen.getByRole("button", { name: "Import" }));
+    expect((await screen.findByRole("alert")).textContent).toContain("Send at most 2000");
   });
 });
 

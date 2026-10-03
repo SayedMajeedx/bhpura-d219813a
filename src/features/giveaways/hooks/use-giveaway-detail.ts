@@ -6,6 +6,7 @@ import { useI18n } from "@/lib/i18n";
 import {
   giveawaysQueries,
   GiveawayApiError,
+  importComments,
   invalidateGiveaways,
   pullComments,
   saveDraw,
@@ -15,8 +16,18 @@ import {
 } from "@/lib/data/giveaways";
 import { buildEntries, parseRules, type GiveawayRules } from "../lib/entry-rules";
 import { drawWinners, newSeed } from "../lib/draw";
+import { parseImportedComments } from "../lib/import-comments";
 import { resolveWinners } from "../lib/winners";
 import { giveawayErrorMessage } from "../lib/messages";
+
+export type ImportState = {
+  running: boolean;
+  /** Comments sent so far. */
+  done: number;
+  /** Comments imported by the last successful import. */
+  imported: number | null;
+  error: string | null;
+};
 
 export type PullState = {
   running: boolean;
@@ -27,6 +38,7 @@ export type PullState = {
 };
 
 const IDLE: PullState = { running: false, fetched: 0, paused: false, error: null };
+const IMPORT_IDLE: ImportState = { running: false, done: 0, imported: null, error: null };
 
 /**
  * One giveaway: its comments (pulled in batches until Instagram has no more),
@@ -102,11 +114,12 @@ export function useGiveawayDetail(giveawayId: string) {
       } catch (error) {
         if (stopRef.current) return;
         const code = error instanceof GiveawayApiError ? error.code : "server_error";
+        const detail = error instanceof Error ? error.message : undefined;
         setPull({
           running: false,
           fetched: 0,
           paused: false,
-          error: giveawayErrorMessage(code, isAr),
+          error: giveawayErrorMessage(code, isAr, detail),
         });
         await invalidateGiveaways(qc, brand.id);
       }
@@ -119,6 +132,40 @@ export function useGiveawayDetail(giveawayId: string) {
     setPull((p) => ({ ...p, running: false }));
     void invalidateGiveaways(qc, brand.id);
   }, [brand.id, qc]);
+
+  // ── Importing comments by hand ──────────────────────────────────────────
+  const [importState, setImportState] = useState<ImportState>(IMPORT_IDLE);
+  const importFromText = useCallback(
+    async (text: string) => {
+      const { comments: parsed } = parseImportedComments(text);
+      if (parsed.length === 0) {
+        setImportState({
+          ...IMPORT_IDLE,
+          error: isAr
+            ? "لم نجد أي تعليق مقروء. تأكد أن كل سطر يبدأ باسم الحساب."
+            : "No readable comments found. Check that each line starts with the account name.",
+        });
+        return;
+      }
+      setImportState({ running: true, done: 0, imported: null, error: null });
+      try {
+        const stored = await importComments(brand.id, giveawayId, parsed, (done) =>
+          setImportState((state) => ({ ...state, done })),
+        );
+        setImportState({ running: false, done: parsed.length, imported: stored, error: null });
+        await invalidateGiveaways(qc, brand.id);
+      } catch (error) {
+        const code = error instanceof GiveawayApiError ? error.code : "server_error";
+        const detail = error instanceof Error ? error.message : undefined;
+        setImportState({
+          ...IMPORT_IDLE,
+          error: giveawayErrorMessage(code, isAr, detail),
+        });
+        await invalidateGiveaways(qc, brand.id);
+      }
+    },
+    [brand.id, giveawayId, isAr, qc],
+  );
 
   // ── The draw ────────────────────────────────────────────────────────────
   const drawMutation = useMutation({
@@ -178,6 +225,8 @@ export function useGiveawayDetail(giveawayId: string) {
     pull,
     startPull,
     stopPull,
+    importState,
+    importFromText,
     draw: () => drawMutation.mutate(),
     drawing: drawMutation.isPending,
     hasDraw,
