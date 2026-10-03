@@ -34,10 +34,11 @@ export function useInstagramConnection() {
     handled.current = true;
     const params = new URLSearchParams(window.location.search);
     const failure = params.get("instagram_error");
+    const failureDetail = params.get("instagram_detail") ?? undefined;
     const connectedNow = params.get("instagram") === "connected";
     if (!failure && !connectedNow) return;
     if (failure) {
-      setNotice({ kind: "error", text: instagramOAuthMessage(failure, isAr) });
+      setNotice({ kind: "error", text: instagramOAuthMessage(failure, isAr, failureDetail) });
     } else {
       setNotice({
         kind: "success",
@@ -46,7 +47,9 @@ export function useInstagramConnection() {
       void invalidateGiveaways(qc, brand.id);
     }
     // Leave the address clean so a refresh does not repeat the message.
-    for (const key of ["instagram", "instagram_error", "permissions"]) params.delete(key);
+    for (const key of ["instagram", "instagram_error", "instagram_detail", "permissions"]) {
+      params.delete(key);
+    }
     const rest = params.toString();
     window.history.replaceState(null, "", `${window.location.pathname}${rest ? `?${rest}` : ""}`);
   }, [brand.id, isAr, qc]);

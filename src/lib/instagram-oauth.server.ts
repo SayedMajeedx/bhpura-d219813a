@@ -42,10 +42,13 @@ export type OAuthErrorCode =
 
 export class OAuthError extends Error {
   code: OAuthErrorCode;
-  constructor(code: OAuthErrorCode, message?: string) {
+  /** Instagram's own words for the refusal, already made safe to show (see describeFailure). */
+  detail?: string;
+  constructor(code: OAuthErrorCode, message?: string, detail?: string) {
     super(message ?? code);
     this.name = "OAuthError";
     this.code = code;
+    this.detail = detail;
   }
 }
 
@@ -231,6 +234,36 @@ function parsePermissions(value: unknown): string[] | null {
   return null;
 }
 
+/**
+ * What Instagram said when it refused a request, made safe to show on a page:
+ * the step, the HTTP status and Instagram's own message, with any secret, code or
+ * token removed and only plain characters kept.
+ */
+export function describeFailure(
+  step: string,
+  status: number,
+  body: Record<string, unknown>,
+  redact: string[],
+): string {
+  const nested = asRecord(body.error);
+  const words = [
+    body.error_message,
+    body.error_description,
+    nested.message,
+    typeof body.error === "string" ? body.error : undefined,
+    body.error_type ?? nested.type,
+  ].find((v): v is string => typeof v === "string" && v.trim() !== "");
+  let text = `${step}: HTTP ${status}${words ? ` - ${words}` : ""}`;
+  for (const secret of redact) {
+    if (secret) text = text.split(secret).join("[redacted]");
+  }
+  return text
+    .replace(/[^\w .,:;()'[\]-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 160);
+}
+
 /** Swaps the one-time code for a short-lived token. Server only: it needs the App Secret. */
 export async function exchangeCodeForToken(
   input: { appId: string; appSecret: string; code: string },
@@ -253,7 +286,11 @@ export async function exchangeCodeForToken(
   const first = Array.isArray(body.data) ? asRecord(body.data[0]) : body;
   const token = typeof first.access_token === "string" ? first.access_token : "";
   if (!response.ok || !token) {
-    throw new OAuthError("exchange_failed", `Instagram refused the code (HTTP ${response.status})`);
+    throw new OAuthError(
+      "exchange_failed",
+      `Instagram refused the code (HTTP ${response.status})`,
+      describeFailure("code exchange", response.status, body, [input.appSecret, input.code]),
+    );
   }
   const userId =
     typeof first.user_id === "string" || typeof first.user_id === "number"
@@ -278,6 +315,10 @@ export async function exchangeForLongLived(
     throw new OAuthError(
       "long_lived_failed",
       `Long-lived exchange failed (HTTP ${response.status})`,
+      describeFailure("long-lived exchange", response.status, body, [
+        input.appSecret,
+        input.accessToken,
+      ]),
     );
   }
   const expiresIn =
@@ -369,9 +410,12 @@ export async function completeInstagramConnection(
   const slug = await deps.slugFor(state.b);
   if (!slug) return invalid("unknown_store");
 
-  const fail = (code: OAuthErrorCode): CallbackResult => ({
+  const fail = (code: OAuthErrorCode, detail?: string): CallbackResult => ({
     kind: "redirect",
-    location: giveawaysUrl(origin, slug, { instagram_error: code }),
+    location: giveawaysUrl(origin, slug, {
+      instagram_error: code,
+      ...(detail ? { instagram_detail: detail } : {}),
+    }),
   });
 
   if (query.get("error")) return fail("denied");
@@ -418,6 +462,6 @@ export async function completeInstagramConnection(
       }),
     };
   } catch (error) {
-    return fail(error instanceof OAuthError ? error.code : "exchange_failed");
+    return error instanceof OAuthError ? fail(error.code, error.detail) : fail("exchange_failed");
   }
 }

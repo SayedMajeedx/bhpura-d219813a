@@ -156,6 +156,16 @@ describe("when Instagram sends the browser back", () => {
     expect((await screen.findByRole("alert")).textContent).toContain("expired");
   });
 
+  it("shows Instagram's own words for a refused connection and cleans them from the address", async () => {
+    renderCard(
+      "?instagram_error=exchange_failed&instagram_detail=code%20exchange%3A%20HTTP%20400%20-%20Invalid%20client_secret",
+    );
+    const text = (await screen.findByRole("alert")).textContent ?? "";
+    expect(text).toContain("refused to complete the connection");
+    expect(text).toContain("(code exchange: HTTP 400 - Invalid client_secret)");
+    expect(window.location.search).toBe("");
+  });
+
   it("keeps other parts of the address", async () => {
     renderCard("?tab=x&instagram=connected");
     await screen.findByText("Instagram connected successfully.");
